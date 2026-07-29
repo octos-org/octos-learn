@@ -63,10 +63,11 @@ function translateBridgeError(err: unknown): Error {
 
 async function callSkillActionWs<T>(
   sessionId: string,
+  topic: string | undefined,
   method: string,
   params: unknown,
 ): Promise<T> {
-  const bridge = getActiveBridge(sessionId);
+  const bridge = getActiveBridge(sessionId, topic);
   if (!bridge) {
     throw new Error("ui-protocol-bridge: no connected bridge for " + method);
   }
@@ -77,26 +78,46 @@ async function callSkillActionWs<T>(
   }
 }
 
+export function skillActionScopeId(
+  sessionId: string,
+  topic?: string,
+): string {
+  const trimmedTopic = topic?.trim();
+  return trimmedTopic && !sessionId.includes("#")
+    ? `${sessionId}#${trimmedTopic}`
+    : sessionId;
+}
+
 export async function invokeSkillAction(
   sessionId: string,
   actionId: string,
   args: Record<string, unknown>,
+  topic?: string,
 ): Promise<SkillActionInvokeResponse> {
-  return callSkillActionWs<SkillActionInvokeResponse>(sessionId, METHODS.SKILL_ACTION_INVOKE, {
-    session_id: sessionId,
-    action_id: actionId,
-    arguments: args,
-  });
+  return callSkillActionWs<SkillActionInvokeResponse>(
+    sessionId,
+    topic,
+    METHODS.SKILL_ACTION_INVOKE,
+    {
+      session_id: skillActionScopeId(sessionId, topic),
+      action_id: actionId,
+      arguments: args,
+    },
+  );
 }
 
 export async function listSkillActions(
   sessionId: string,
   surface?: string,
+  topic?: string,
 ): Promise<SkillActionDefinition[]> {
-  const params: Record<string, unknown> = { session_id: sessionId };
+  const params: Record<string, unknown> = {
+    session_id: skillActionScopeId(sessionId, topic),
+  };
   if (surface) params.surface = surface;
   const response = await callSkillActionWs<{ actions?: SkillActionDefinition[] }>(
     sessionId,
+    topic,
     METHODS.SKILL_ACTION_LIST,
     params,
   );
@@ -106,8 +127,11 @@ export async function listSkillActions(
 export async function listSkillActionJobs(
   sessionId: string,
   options: SkillActionJobListOptions = {},
+  topic?: string,
 ): Promise<SkillActionJob[]> {
-  const params: Record<string, unknown> = { session_id: sessionId };
+  const params: Record<string, unknown> = {
+    session_id: skillActionScopeId(sessionId, topic),
+  };
   if (options.batchId) {
     params.batch_id = options.batchId;
   }
@@ -117,6 +141,7 @@ export async function listSkillActionJobs(
 
   const response = await callSkillActionWs<{ jobs?: SkillActionJob[] }>(
     sessionId,
+    topic,
     METHODS.SKILL_ACTION_JOB_LIST,
     params,
   );
@@ -126,11 +151,16 @@ export async function listSkillActionJobs(
 export async function readSkillActionJob(
   sessionId: string,
   jobId: string,
+  topic?: string,
 ): Promise<SkillActionJob> {
   const response = await callSkillActionWs<{ job: SkillActionJob }>(
     sessionId,
+    topic,
     METHODS.SKILL_ACTION_JOB_READ,
-    { session_id: sessionId, job_id: jobId },
+    {
+      session_id: skillActionScopeId(sessionId, topic),
+      job_id: jobId,
+    },
   );
   return response.job;
 }

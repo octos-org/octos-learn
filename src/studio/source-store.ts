@@ -55,8 +55,11 @@ export function parseSourceCatalog(response: SkillActionInvokeResponse): SourceR
   }));
 }
 
-export async function loadSourceCatalog(sessionId: string): Promise<SourceRow[]> {
-  const response = await invokeSkillAction(sessionId, "source.list", {});
+export async function loadSourceCatalog(
+  sessionId: string,
+  topic?: string,
+): Promise<SourceRow[]> {
+  const response = await invokeSkillAction(sessionId, "source.list", {}, topic);
   if (!response.ok) throw new Error("Source catalog is unavailable");
   return parseSourceCatalog(response);
 }

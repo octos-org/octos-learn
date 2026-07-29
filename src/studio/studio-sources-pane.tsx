@@ -18,7 +18,10 @@ import {
 } from "lucide-react";
 
 import { uploadFiles } from "@/api/chat";
-import { invokeSkillAction } from "@/api/skill-actions";
+import {
+  invokeSkillAction,
+  skillActionScopeId,
+} from "@/api/skill-actions";
 
 import {
   SOURCE_IMPORT_ACTION_ID,
@@ -35,6 +38,7 @@ import { StudioFilePreviewDialog } from "./studio-file-preview";
 
 interface Props {
   sessionId: string;
+  historyTopic?: string;
   /** Server file paths currently selected as grounding sources. */
   selected: string[];
   onToggle: (path: string) => void;
@@ -230,6 +234,7 @@ function SourceActionsMenu({
 
 export function StudioSourcesPane({
   sessionId,
+  historyTopic,
   selected,
   onToggle,
   uploaded,
@@ -239,6 +244,7 @@ export function StudioSourcesPane({
   onRemoved,
   onCatalogChanged,
 }: Props) {
+  const scopeId = skillActionScopeId(sessionId, historyTopic);
   const [query, setQuery] = useState("");
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -270,9 +276,12 @@ export function StudioSourcesPane({
     setUploadError(null);
     try {
       const paths = await uploadFiles(files);
-      const imported = await invokeSkillAction(sessionId, SOURCE_IMPORT_ACTION_ID, {
-        paths,
-      });
+      const imported = await invokeSkillAction(
+        sessionId,
+        SOURCE_IMPORT_ACTION_ID,
+        { paths },
+        historyTopic,
+      );
       if (!imported.ok) {
         const failed = imported.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source import failed");
@@ -325,10 +334,15 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_RENAME_ACTION_ID, {
-        source_id: row.sourceId,
-        title,
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_RENAME_ACTION_ID,
+        {
+          source_id: row.sourceId,
+          title,
+        },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source rename failed");
@@ -351,9 +365,12 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_REMOVE_ACTION_ID, {
-        source_id: row.sourceId,
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_REMOVE_ACTION_ID,
+        { source_id: row.sourceId },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source remove failed");
@@ -377,9 +394,12 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_IMPORT_ACTION_ID, {
-        paths: [retryPath],
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_IMPORT_ACTION_ID,
+        { paths: [retryPath] },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source retry failed");
@@ -578,7 +598,7 @@ export function StudioSourcesPane({
           filename={previewRow.filename}
           filePath={sourcePreviewPath(previewRow)}
           mediaType={previewRow.mediaType}
-          sessionId={sessionId}
+          sessionId={scopeId}
           kind="source"
           onClose={() => setPreviewRow(null)}
         />

@@ -1,10 +1,10 @@
 /**
- * Custom chat thread — renders from the thread store.
+ * Custom chat thread — renders from the negotiated render adapter.
  *
- * Threads are read from `useThreads(sessionId, topic)` and rendered as
- * one user bubble + ordered assistant/tool responses + a streaming
- * pending-assistant tail. Supports inline file players, markdown
- * rendering, tool progress, thinking indicators, and message meta.
+ * Threads are selected from the negotiated render model and rendered as one
+ * user bubble + ordered assistant/tool responses + a streaming
+ * pending-assistant tail. Supports inline file players, markdown rendering,
+ * tool progress, thinking indicators, and message meta.
  */
 
 import {
@@ -48,15 +48,15 @@ import {
 } from "@/store/thinking-store";
 import {
   isPlaceholderThread,
-  useThreads,
   type MessageFile,
   type MessageMeta,
   type Thread,
   type ThreadMessage,
   type ThreadToolCall,
 } from "@/store/thread-store";
-import { isProjectionV1Enabled } from "@/store/projection-store";
+import { useRenderThreads } from "@/store/projection-render-adapter";
 import { uploadFiles } from "@/api/chat";
+import { compactSession } from "@/api/sessions";
 import {
   interruptActiveTurn,
   sendMessage as bridgeSend,
@@ -216,7 +216,6 @@ function useBlobUrl(filePath: string, sessionId?: string): BlobUrlState {
     let revoked = false;
     let url: string | undefined;
 
-    setBlobState({ filePath, sessionId, status: "loading" });
     const token = getToken();
     const apiUrl = buildFileUrl(filePath, { sessionId });
     fetch(apiUrl, {
@@ -448,6 +447,7 @@ const COMMANDS = [
   { cmd: "/back", desc: "Switch back to the previous session" },
   { cmd: "/delete", desc: "Delete a session (/delete <name> or /d <name>)" },
   { cmd: "/clear", desc: "Clear current session and start fresh" },
+  { cmd: "/compact", desc: "Compact conversation context now (frees token budget)" },
   // Personality
   { cmd: "/soul", desc: "View or set custom personality (/soul, /soul show, /soul reset, /soul <text>)" },
   // Agent configuration
@@ -516,7 +516,7 @@ interface PendingFile {
 // ---------------------------------------------------------------------------
 // M9-γ-4: optimistic GhostBubble overlay
 //
-// Mounted by `Composer.handleSend` when `projection_v1` is on; lives in
+// Mounted by `Composer.handleSend` after projection v2 is negotiated; lives in
 // the `ChatThreadV2` React tree (NOT in `ThreadStore`) and unmounts as
 // soon as the projection captures `UserView.client_message_id` matching
 // the ghost's cmid.
@@ -529,15 +529,21 @@ interface GhostSpec {
   text: string;
   /** Raw files at send time — purely for the ghost row's display. */
   files: File[];
+  /** Explicit send/terminal error. Kept alongside the optimistic row so a
+   * rejected RPC never makes the user's input silently disappear. */
+  failure?: string;
+  /** The canonical user row has arrived. Keep this metadata until terminal
+   * settlement so a late terminal error can still offer Retry without a
+   * duplicate user bubble. */
+  settled?: boolean;
   /** Closure that re-issues the original send. The GhostBubble surfaces
    *  it via the Retry button after the 30s timeout. Invoked at most
    *  once per ghost. */
   retry: () => void;
 }
 
-/** Stable empty-array reference for the per-bucket ghost lookup so
- *  `useThreads`-style identity comparisons in downstream consumers
- *  don't churn when the current bucket has no ghosts. */
+/** Stable empty-array reference for the per-bucket ghost lookup so downstream
+ * identity comparisons do not churn when the current bucket has no ghosts. */
 const EMPTY_GHOSTS: ReadonlyArray<GhostSpec> = Object.freeze([]);
 
 // ---------------------------------------------------------------------------
@@ -564,7 +570,7 @@ export function ChatThread({
 // ---------------------------------------------------------------------------
 // ChatThreadV2 (M8.10 PR #4): real threaded renderer behind the v2 flag.
 //
-// Iterates threads from `useThreads(sessionId, topic)`. For each thread:
+// Iterates threads from the negotiated render selector. For each thread:
 //   - renders the user message (right-aligned, glass-pill)
 //   - renders assistant + tool responses ordered by intra_thread_seq
 //   - renders the pending assistant inline at the end (with streaming dots)
@@ -1168,31 +1174,10 @@ function isVisibleResponse(
   // on the assistant message; rendering them as standalone bubbles would
   // duplicate output (the assistant already shows tool-call status + progress).
   if (message.role === "tool") return false;
-  // 2026-05-14 hard-refresh replay fix: mirror the server-side wire
-  // filter `is_metadata_only_assistant_row` at the SPA render boundary.
-  //
-  // The agent's iterative tool-call loop commits an Assistant `Message`
-  // per LLM iteration. For a turn whose first LLM iteration emits only
-  // `tool_calls` (no rendered text and no media) — the canonical
-  // shape that brackets every `tool/started` → `tool/completed` for a
-  // spawn_only tool such as `run_pipeline` — the JSONL row has
-  // `content=""`, `media=[]` and (server-side) `tool_calls=[...]`.
-  //
-  // The server's `MessageCommitObserver` suppresses these rows from
-  // the LIVE `message/persisted` wire (see `is_metadata_only_assistant_row`
-  // in `crates/octos-cli/src/api/ui_protocol.rs`). The legacy REST
-  // `session/messages_page` returns the unfiltered JSONL — and its
-  // `MessageInfo` shape (handlers.rs:531) strips `tool_calls`. So on
-  // a hard refresh `replayHistory` ingests a `ThreadMessage` with
-  // `text=""`, `files=[]`, `toolCalls=[]` and renders it as an empty
-  // timestamp-only bubble (the recurring user-visible regression).
-  //
-  // Match predicate: assistant role, no text content, no files, no
-  // tool-call data. Live state cannot match this predicate after
-  // `tool/started` runs (which populates `toolCalls`), so the spawn_only
-  // heartbeat path covered by `chat-thread-heartbeat.test.tsx` is
-  // untouched. A finalised bubble with progress chips always carries
-  // `toolCalls.length > 0`.
+  // Filter metadata-only assistant entries at the projection render boundary.
+  // A turn that contains neither text, files, nor tool-call data would become
+  // a timestamp-only bubble; tool-bearing entries remain visible because they
+  // carry their tool-call state.
   if (
     message.role === "assistant" &&
     !message.text.trim() &&
@@ -1245,13 +1230,15 @@ function ThreadView({
   );
   return (
     <div data-testid="chat-thread-bundle" data-thread-id={thread.id}>
-      <ThreadUserBubble
-        message={thread.userMsg}
-        threadId={thread.id}
-        sessionId={currentSessionId}
-        historyTopic={historyTopic}
-        turnsFromEnd={turnsFromEnd}
-      />
+      {!thread.backgroundChild && (
+        <ThreadUserBubble
+          message={thread.userMsg}
+          threadId={thread.id}
+          sessionId={currentSessionId}
+          historyTopic={historyTopic}
+          turnsFromEnd={turnsFromEnd}
+        />
+      )}
       {visibleResponses.map((response) => (
         <ThreadAssistantBubble
           key={response.id}
@@ -1312,6 +1299,7 @@ function ThreadList({
     if (threads.some((t) => isPlaceholderThread(t))) return byId;
     let fromEnd = 0;
     for (let i = threads.length - 1; i >= 0; i -= 1) {
+      if (threads[i].backgroundChild) continue;
       fromEnd += 1;
       byId.set(threads[i].id, fromEnd);
     }
@@ -1366,6 +1354,8 @@ function ThreadList({
             sessionId={sessionId}
             topic={topic}
             onSettle={() => onSettleGhost(g.clientMessageId)}
+            failure={g.failure}
+            settled={g.settled}
             onRetry={g.retry}
           />
         ))}
@@ -1379,12 +1369,14 @@ function ChatThreadV2({
   allowAttachments = true,
 }: ChatThreadProps) {
   const { currentSessionId, historyTopic } = useSession();
-  const threads = useThreads(currentSessionId, historyTopic);
+  const threads = useRenderThreads(currentSessionId, historyTopic);
   // M9-γ-4: optimistic ghost overlay state. Lives here (NOT in
   // ThreadStore) so the renderer can mount/unmount rows without
   // polluting the durable thread reducer. Composer pushes new ghosts
   // via `mountGhost`; GhostBubble fires `onSettle` once the projection
-  // captures the matching cmid, which calls `unmountGhost`.
+  // captures the matching cmid. We retain settled metadata until terminal
+  // outcome so a late failure can offer Retry without duplicating the
+  // canonical user bubble.
   //
   // Ghosts are bucketed by `(sessionId, historyTopic)` so a session
   // switch doesn't bleed an in-flight optimistic bubble across to the
@@ -1413,6 +1405,22 @@ function ChatThreadV2({
     },
     [ghostBucketKey],
   );
+  const settleGhost = useCallback(
+    (clientMessageId: string) => {
+      setGhostsByBucket((prev) => {
+        const cur = prev[ghostBucketKey];
+        if (!cur || cur.length === 0) return prev;
+        const next = cur.map((ghost) =>
+          ghost.clientMessageId === clientMessageId && !ghost.settled
+            ? { ...ghost, settled: true }
+            : ghost,
+        );
+        if (next.every((ghost, index) => ghost === cur[index])) return prev;
+        return { ...prev, [ghostBucketKey]: next };
+      });
+    },
+    [ghostBucketKey],
+  );
   const unmountGhost = useCallback(
     (clientMessageId: string) => {
       setGhostsByBucket((prev) => {
@@ -1425,32 +1433,56 @@ function ChatThreadV2({
     },
     [ghostBucketKey],
   );
+  const failGhost = useCallback(
+    (clientMessageId: string, error: Error) => {
+      setGhostsByBucket((prev) => {
+        const current = prev[ghostBucketKey] ?? [];
+        const next = current.map((ghost) =>
+          ghost.clientMessageId === clientMessageId
+            ? { ...ghost, failure: error.message || "Send failed." }
+            : ghost,
+        );
+        return next === current ? prev : { ...prev, [ghostBucketKey]: next };
+      });
+    },
+    [ghostBucketKey],
+  );
+  const completeGhost = useCallback(
+    (clientMessageId: string) => {
+      setGhostsByBucket((prev) => {
+        const cur = prev[ghostBucketKey];
+        if (!cur || cur.length === 0) return prev;
+        // A terminal error enqueues failGhost before onComplete, so this
+        // removes only successful overlays. Failed rows remain visible until
+        // the user retries them.
+        const next = cur.filter(
+          (ghost) =>
+            ghost.clientMessageId !== clientMessageId || ghost.failure !== undefined,
+        );
+        if (next.length === cur.length) return prev;
+        return { ...prev, [ghostBucketKey]: next };
+      });
+    },
+    [ghostBucketKey],
+  );
+  const visibleGhosts = ghosts.filter((ghost) => !ghost.settled || ghost.failure);
   const hasThreads = threads.length > 0;
-  const hasGhosts = ghosts.length > 0;
-
-  // Issue #110.2: history hydration is owned by `SessionProvider`
-  // (its restored-on-mount effect + switchSession). Pre-fix this
-  // effect fired its own `loadThreadHistory` plus 3 retry timers at
-  // 2s/5s/12s — multiplying every /chat mount into 4 /messages
-  // round-trips that competed with SessionProvider's load. The
-  // retries were originally added to recover from SSE-era persistence
-  // latency; the M9 WS transport persists synchronously before
-  // emitting `message/persisted`, so the retries are obsolete.
+  const hasGhosts = visibleGhosts.length > 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
       {/* Mounted ONCE at thread level (codex R3): a per-bubble mount
           duplicated the listener/timer per assistant message, and with
-          projection_v1 the preflight compaction events can arrive before
+          projection v2 the preflight compaction events can arrive before
           any bubble exists at all. Renders null when idle. */}
       <CompactionIndicator />
       {hasThreads || hasGhosts ? (
         <ThreadList
           threads={threads}
-          ghosts={ghosts}
+          ghosts={visibleGhosts}
           sessionId={currentSessionId}
           topic={historyTopic}
-          onSettleGhost={unmountGhost}
+          onSettleGhost={settleGhost}
           hideFileOnlyAssistantMessages={hideFileOnlyAssistantMessages}
         />
       ) : (
@@ -1484,6 +1516,8 @@ function ChatThreadV2({
           mountGhost={mountGhost}
           unmountGhost={unmountGhost}
           allowAttachments={allowAttachments}
+          failGhost={failGhost}
+          completeGhost={completeGhost}
         />
       </div>
     </div>
@@ -1495,20 +1529,22 @@ function ChatThreadV2({
 // ---------------------------------------------------------------------------
 
 interface ComposerProps {
-  /** M9-γ-4: mount a `<GhostBubble>` overlay for the current send.
-   *  Composer calls this when `projection_v1` is on; otherwise the
-   *  legacy `addUserMessage` path keeps producing the optimistic row. */
+  /** Mount a `<GhostBubble>` overlay for the current canonical send. */
   mountGhost: (spec: GhostSpec) => void;
   /** Tear down a ghost (used by the Retry path to clear a stale
    *  overlay before re-issuing the send). */
   unmountGhost: (clientMessageId: string) => void;
   allowAttachments?: boolean;
+  failGhost: (clientMessageId: string, error: Error) => void;
+  completeGhost: (clientMessageId: string) => void;
 }
 
 function Composer({
   mountGhost,
   unmountGhost,
   allowAttachments = true,
+  failGhost,
+  completeGhost,
 }: ComposerProps) {
   const {
     currentSessionId,
@@ -1531,9 +1567,8 @@ function Composer({
   // the server-persisted value on every `session/open` ack; the send path
   // reads the same store so every user turn carries the choice.
   const thinkingEffort = useThinkingEffort(currentSessionId, historyTopic);
-  // M10.5: ThreadStore is the single source of truth — read `isRunning`
-  // from the active session's threads.
-  const threadsForRunning = useThreads(currentSessionId, historyTopic);
+  // Read running state from the canonical render selector.
+  const threadsForRunning = useRenderThreads(currentSessionId, historyTopic);
   const isRunning = useMemo(
     () =>
       threadsForRunning.some(
@@ -1831,10 +1866,7 @@ function Composer({
     // upload mutates `pendingFiles`. The ghost's contents are frozen at
     // send-click — exactly what the user sees in a live bubble — and
     // the same snapshot powers retry (codex BLOCK 2).
-    const projectionV1 = isProjectionV1Enabled();
-    const pinnedClientMessageId = projectionV1
-      ? crypto.randomUUID()
-      : undefined;
+    const pinnedClientMessageId = crypto.randomUUID();
     const ghostTextSnapshot = trimmedInput;
     const ghostFilesSnapshot = pendingFiles.map((pf) => pf.file);
 
@@ -1881,6 +1913,33 @@ function Composer({
         COMMANDS.map((c) => `${c.cmd} — ${c.desc}`).join("\n"),
       );
       setTimeout(() => setCmdFeedback(null), 10000);
+      releaseSending();
+      return;
+    }
+
+    if (trimmedInput === "/compact") {
+      // Manual context compaction (CLI `/compact` parity; server
+      // `session/compact`, octos#1671). The RPC takes the session key
+      // VERBATIM — there is no topic param — so a topic bucket must send
+      // its scoped `session#topic` id (the same key the pre-turn context
+      // manager is stored under). Progress and the outcome notice render
+      // through the server-emitted `context/compaction_started|completed`
+      // events (`CompactionIndicator`), so only RPC-level failures (old
+      // server, no runtime) surface in the feedback pill here.
+      setText("");
+      const scopedId = currentSessionId.includes("#")
+        ? currentSessionId
+        : historyTopic?.trim()
+          ? `${currentSessionId}#${historyTopic.trim()}`
+          : currentSessionId;
+      try {
+        await compactSession(scopedId);
+      } catch (e) {
+        setCmdFeedback(
+          `Compact failed: ${e instanceof Error ? e.message : "unknown error"}`,
+        );
+        setTimeout(() => setCmdFeedback(null), 4000);
+      }
       releaseSending();
       return;
     }
@@ -1960,56 +2019,42 @@ function Composer({
     // about to leave the client. Hold onto the original payload so the
     // ghost's Retry button can re-issue the send with a NEW cmid
     // (codex BLOCK 2 — Retry truly resends, not just dismisses).
-    let ghostMounted = false;
-    if (projectionV1 && pinnedClientMessageId) {
-      const cmid = pinnedClientMessageId;
-      const retryPayload = {
-        ...finalPayload,
-        historyTopic: requestedTopic,
-      };
-      const retryFiles = ghostFilesSnapshot;
-      const retryText = ghostTextSnapshot;
-      // Recursive-closure factory: each retry mints a fresh cmid and
-      // mounts a new ghost; the new ghost's `retry` closure captures
-      // the freshly minted cmid so an N-th retry stays consistent.
-      const buildRetry = (currentCmid: string): (() => void) => () => {
-        unmountGhost(currentCmid);
-        const retryCmid = crypto.randomUUID();
-        mountGhost({
-          clientMessageId: retryCmid,
-          text: retryText,
-          files: retryFiles,
-          retry: buildRetry(retryCmid),
-        });
-        // Re-issue the send with the new cmid + the same payload.
-        // The bridge re-registers the pending cmid so the projection's
-        // first envelope on the new thread captures it. Failure of
-        // this retry must NOT pollute ThreadStore — the ghost's
-        // contract is purely visual.
-        bridgeSend({
-          ...retryPayload,
-          clientMessageId: retryCmid,
-          skipOptimisticUserMessage: true,
-          onSessionActive: (firstMsg) => markSessionActive(firstMsg),
-          onComplete: () => {
-            refreshSessions();
-          },
-        });
-        // Release synchronously after the bridge has the request:
-        // `bridgeSend` is fire-and-forget and `ui-protocol-send.ts`
-        // already serializes via a per-session FIFO. Holding `sending`
-        // until `onComplete` (turn/completed) locked the composer for
-        // the whole turn — see issue #112.3 follow-up.
-        releaseSending();
-      };
+    const cmid = pinnedClientMessageId;
+    const retryPayload = {
+      ...finalPayload,
+      historyTopic: requestedTopic,
+    };
+    const retryFiles = ghostFilesSnapshot;
+    const retryText = ghostTextSnapshot;
+    // Recursive-closure factory: each retry mints a fresh cmid and mounts a
+    // new ghost, so every retry remains tied to its canonical user envelope.
+    const buildRetry = (currentCmid: string): (() => void) => () => {
+      unmountGhost(currentCmid);
+      const retryCmid = crypto.randomUUID();
       mountGhost({
-        clientMessageId: cmid,
+        clientMessageId: retryCmid,
         text: retryText,
         files: retryFiles,
-        retry: buildRetry(cmid),
+        retry: buildRetry(retryCmid),
       });
-      ghostMounted = true;
-    }
+      bridgeSend({
+        ...retryPayload,
+        clientMessageId: retryCmid,
+        onSessionActive: (firstMsg) => markSessionActive(firstMsg),
+        onComplete: () => {
+          refreshSessions();
+          completeGhost(retryCmid);
+        },
+        onError: (error) => failGhost(retryCmid, error),
+      });
+      releaseSending();
+    };
+    mountGhost({
+      clientMessageId: cmid,
+      text: retryText,
+      files: retryFiles,
+      retry: buildRetry(cmid),
+    });
 
     // Send via the WS UI Protocol bridge (`/api/ui-protocol/ws`).
     // M9-α-5/α-6 deleted the legacy SSE chat transport — `bridgeSend`
@@ -2017,22 +2062,15 @@ function Composer({
     bridgeSend({
       ...finalPayload,
       historyTopic: requestedTopic,
-      // M9-γ-4: pin the cmid through the send so the ghost's
-      // projection-match predicate sees an envelope tagged with the
-      // exact same value. When `pinnedClientMessageId` is undefined
-      // (projection_v1 OFF) the bridge mints its own as before.
-      ...(pinnedClientMessageId !== undefined
-        ? { clientMessageId: pinnedClientMessageId }
-        : {}),
-      // M9-γ-4: tell the bridge to skip the optimistic
-      // `ThreadStore.addUserMessage` mirror — we've already mounted a
-      // visual `<GhostBubble>` instead. The bridge still registers the
-      // pending cmid so the projection's first envelope captures it.
-      skipOptimisticUserMessage: ghostMounted,
+      // Pin the cmid through the send so the ghost's projection-match
+      // predicate sees the exact same canonical identity.
+      clientMessageId: pinnedClientMessageId,
       onSessionActive: (firstMsg) => markSessionActive(firstMsg),
       onComplete: () => {
         refreshSessions();
+        completeGhost(pinnedClientMessageId);
       },
+      onError: (error: Error) => failGhost(pinnedClientMessageId, error),
     });
     // Release synchronously after the bridge has the request. The
     // per-session FIFO at `ui-protocol-send.ts:163-291` serializes
@@ -2055,6 +2093,8 @@ function Composer({
     beforeSend,
     mountGhost,
     unmountGhost,
+    failGhost,
+    completeGhost,
     releaseSending,
   ]);
 
@@ -2064,11 +2104,12 @@ function Composer({
     // matching turn is in flight on the bridge.
     const bridge = getActiveBridge(currentSessionId, historyTopic);
     if (bridge) {
-      const pendingTurnId = threadsForRunning.find(
+      const pendingThread = threadsForRunning.find(
         (t) =>
           t.pendingAssistant !== null &&
           t.pendingAssistant.status === "streaming",
-      )?.id;
+      );
+      const pendingTurnId = pendingThread?.turnId ?? pendingThread?.id;
       if (pendingTurnId) {
         // codex #261 rounds 2-3 P1: route through the shared
         // seed-ordering-aware helper — a direct `bridge.interruptTurn`
