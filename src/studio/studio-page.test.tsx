@@ -1083,7 +1083,7 @@ describe("StudioPage", () => {
         undefined,
       );
     });
-    expect(screen.getByText("Renamed Photo")).toBeTruthy();
+    expect(await screen.findByText("Renamed Photo")).toBeTruthy();
   });
 
   it("removes an imported source through the source remove action", async () => {
