@@ -6,11 +6,12 @@
  * synchronization themselves.
  */
 
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 import { SessionProvider, useSession } from "./session-context";
 import * as FileStore from "@/store/file-store";
 import * as TaskStore from "@/store/task-store";
 import * as ThreadStore from "@/store/thread-store";
+import * as ProjectionStore from "@/store/projection-store";
 // The per-session status indicator (active turn, deferred files,
 // background tasks) routes through the `getSessionStatus` wrapper,
 // which calls the WS `session/status.get` method. The legacy REST
@@ -37,20 +38,21 @@ function RuntimeWithSession({ children }: { children: ReactNode }) {
   const mountedRef = useRef(new Set<string>());
   const restoredWatchersRef = useRef(false);
 
+  // Clear stale canonical rows before the scoped bridge begins its fresh
+  // snapshot handshake. Rendering remains ProjectionStore-only throughout.
+  useLayoutEffect(() => {
+    ProjectionStore.resetProjectionScope(currentSessionId, historyTopic);
+  }, [currentSessionId, historyTopic]);
+
   useEffect(() => {
     if (restoredWatchersRef.current) return;
     restoredWatchersRef.current = true;
     restoreWatchedSessions();
   }, []);
 
-  // Load message history into the store when a session is activated.
-  // Issue #110.2: `ThreadStore.loadHistory` is now owned by
-  // `SessionProvider` (which fires it on mount + switchSession);
-  // RuntimeProvider only needs to drive the per-session FileStore
-  // and the eviction LRU here. Pre-fix this effect was a duplicate
-  // loadHistory call that competed with SessionProvider's load and
-  // chat-thread's retry timers, producing 3+ /messages requests on
-  // every mount.
+  // Keep session-scoped files warm and maintain the local cache LRU when a
+  // session becomes active. Chat history is supplied only by the canonical
+  // projection snapshot, not by a REST history fetch.
   useEffect(() => {
     void FileStore.loadSessionFiles(currentSessionId);
     mountedRef.current.add(currentSessionId);
@@ -65,6 +67,7 @@ function RuntimeWithSession({ children }: { children: ReactNode }) {
         if (id !== currentSessionId) {
           mountedRef.current.delete(id);
           ThreadStore.clearSession(id);
+          ProjectionStore.clearProjection(id);
           TaskStore.clearTasks(id);
           break;
         }
@@ -156,10 +159,8 @@ function RuntimeWithSession({ children }: { children: ReactNode }) {
         // The WS bridge handles resumption automatically via
         // `session/open`'s replay cursor — when this session re-mounts
         // after a refresh, the bridge's `start()` call dispatches the
-        // server's outstanding envelopes back through the projection
-        // and ThreadStore catches up without an explicit resume call.
-        // M9-γ-6: ThreadStore's orphan-thread path opens the bucket on
-        // the first incoming token; no pre-emptive placeholder write.
+        // server's outstanding envelopes back through the canonical
+        // projection without an explicit resume call.
         if (status.active) {
           window.dispatchEvent(
             new CustomEvent("crew:thinking", {

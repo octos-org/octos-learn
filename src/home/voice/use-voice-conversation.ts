@@ -5,7 +5,8 @@ import {
   sendMessage,
 } from "@/runtime/ui-protocol-send";
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
-import { useThreads, type Thread, type ThreadMessage } from "@/store/thread-store";
+import type { Thread, ThreadMessage } from "@/store/thread-store";
+import { useRenderThreads } from "@/store/projection-render-adapter";
 import { buildFileUrl } from "@/api/files";
 import { buildApiHeaders } from "@/api/client";
 import { useVoiceCapture } from "./use-voice-capture";
@@ -161,7 +162,7 @@ export function buildVoiceTurns(
   threads: Thread[],
   baseline = 0,
 ): VoiceConversationTurn[] {
-  return threads.slice(baseline).map((thread) => {
+  return threads.slice(baseline).filter((thread) => !thread.backgroundChild).map((thread) => {
     const assistants: ThreadMessage[] = [
       ...thread.responses.filter((m) => m.role === "assistant"),
       ...(thread.pendingAssistant ? [thread.pendingAssistant] : []),
@@ -277,7 +278,7 @@ export function useVoiceConversation(
    *  the user expresses an exit intent — invoked AFTER the farewell audio. */
   onExit?: () => void,
 ): VoiceConversation {
-  const threads = useThreads(sessionId, historyTopic);
+  const threads = useRenderThreads(sessionId, historyTopic);
   const capture = useVoiceCapture();
   // Destructure the STABLE function refs (useVoiceCapture returns a fresh
   // object each render, but start/stop are useCallback([])-stable). Depending
@@ -346,6 +347,11 @@ export function useVoiceConversation(
   const ignoredTurnIdsRef = useRef<Set<string>>(new Set());
   const activeTurnIdRef = useRef<string | null>(null);
   const speechInterruptArmedRef = useRef(false);
+  // Which callback/threshold set the single live MicVAD is currently using.
+  // A streamed reply can contain dozens of audio files; keep the `speaking`
+  // capture mode across clip boundaries instead of re-running captureStart()
+  // for every file.
+  const captureModeRef = useRef<"listening" | "thinking" | "speaking" | null>(null);
   const replyTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const stateRef = useRef<VoiceState>("idle");
   stateRef.current = state;
@@ -409,17 +415,23 @@ export function useVoiceConversation(
 
   const requestTurnInterrupt = useCallback(
     (reason: string): boolean => {
-      const turnId =
-        activeTurnIdRef.current ??
+      const activeClientMessageId = activeTurnIdRef.current;
+      const pendingThread =
+        (activeClientMessageId
+          ? threadsRef.current.find((thread) => thread.id === activeClientMessageId)
+          : undefined) ??
         threadsRef.current.find(
           (t) =>
             t.pendingAssistant !== null &&
             t.pendingAssistant.status === "streaming",
-        )?.id ??
-        null;
+        );
+      const turnId = pendingThread?.turnId ?? activeClientMessageId ?? pendingThread?.id ?? null;
       if (!turnId) return false;
-      ignoredTurnIdsRef.current.add(turnId);
-      if (activeTurnIdRef.current === turnId) {
+      // Audio/reply bookkeeping keys on render-thread ids (the canonical user
+      // cmid), whereas interrupt RPCs use the server's explicit turn id.
+      const ignoredThreadId = pendingThread?.id ?? activeClientMessageId;
+      if (ignoredThreadId) ignoredTurnIdsRef.current.add(ignoredThreadId);
+      if (activeTurnIdRef.current === activeClientMessageId) {
         activeTurnIdRef.current = null;
       }
       void interruptActiveTurn({
@@ -492,9 +504,12 @@ export function useVoiceConversation(
 
   const beginBargeIn = useCallback(async () => {
     if (stateRef.current !== "thinking" && stateRef.current !== "speaking") return;
+    const captureMode = stateRef.current;
+    if (captureModeRef.current === captureMode) return;
+    captureModeRef.current = captureMode;
     speechInterruptArmedRef.current = false;
     const vadOptions =
-      stateRef.current === "speaking"
+      captureMode === "speaking"
         ? SPEAKING_INTERRUPT_VAD_OPTIONS
         : THINKING_INTERRUPT_VAD_OPTIONS;
     await captureStart(
@@ -505,6 +520,7 @@ export function useVoiceConversation(
         ) {
           return;
         }
+        captureModeRef.current = null;
         void captureStop();
         void sendUtteranceRef.current(wav);
       },
@@ -544,10 +560,12 @@ export function useVoiceConversation(
   const beginListening = useCallback(async () => {
     stateRef.current = "listening";
     setState("listening");
+    captureModeRef.current = "listening";
     await captureStart(
       (wav: Blob) => {
         // Ignore late utterances that land after we've left listening.
         if (stateRef.current !== "listening") return;
+        captureModeRef.current = null;
         void captureStop();
         void sendUtteranceRef.current(wav);
       },
@@ -660,6 +678,7 @@ export function useVoiceConversation(
     );
     ignoredTurnIdsRef.current = new Set();
     activeTurnIdRef.current = null;
+    captureModeRef.current = null;
     turnBaselineRef.current = threadsRef.current.length;
     setTurnBaseline(threadsRef.current.length);
     setLastAssistantText("");
@@ -717,6 +736,7 @@ export function useVoiceConversation(
     clearTimeout(graceTimerRef.current);
     activeTurnIdRef.current = null;
     speechInterruptArmedRef.current = false;
+    captureModeRef.current = null;
     audioQueueRef.current = [];
     audioTurnByPathRef.current.clear();
     speakingTurnIdRef.current = null;
@@ -781,13 +801,17 @@ export function useVoiceConversation(
       drainGenRef.current++;
       speechInterruptArmedRef.current = false;
       requestTurnInterrupt("user tapped orb while thinking");
+      captureModeRef.current = null;
       void captureStop();
       void beginListeningRef.current();
     }
   }, [captureStop, releaseAudio, requestTurnInterrupt]);
 
   useEffect(() => {
-    if (captureError) setState("error");
+    if (captureError) {
+      captureModeRef.current = null;
+      setState("error");
+    }
   }, [captureError]);
 
   // Play the assistant's TTS audio as soon as it lands in the thread, decoupled
@@ -995,10 +1019,11 @@ export function useVoiceConversation(
   stopRef.current = stop;
   useEffect(() => () => stopRef.current(), []);
 
-  const lastUserText =
-    threads.length > turnBaseline
-      ? (threads[threads.length - 1].userMsg?.text ?? "")
-      : "";
+  const latestUserThread = threads
+    .slice(turnBaseline)
+    .reverse()
+    .find((thread) => !thread.backgroundChild);
+  const lastUserText = latestUserThread?.userMsg.text ?? "";
   const turns = buildVoiceTurns(threads, turnBaseline);
 
   const dismissVisual = useCallback(() => setVisual(null), []);

@@ -8,9 +8,11 @@ import {
   invokeSkillAction,
   listSkillActions,
   listSkillActionJobs,
+  skillActionScopeId,
   type SkillActionJob,
   type SkillActionJobStatus,
 } from "@/api/skill-actions";
+import { useAllFiles } from "@/store/file-store";
 
 import { resolveStudioSkills } from "./action-catalog";
 import {
@@ -44,6 +46,7 @@ const KIND_ICONS: Record<SourceKind, LucideIcon> = {
 };
 
 const ACTIVE_JOB_STATUSES = new Set<SkillActionJobStatus>(["queued", "running"]);
+const LEGACY_ASSET_LIST_CAP = 20;
 
 /**
  * Header-authenticated blob download: keeps the bearer token out of the
@@ -90,7 +93,14 @@ function jobStatusLabel(status: SkillActionJobStatus): string {
   }
 }
 
-export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Props) {
+export function StudioRail({
+  sessionId,
+  historyTopic,
+  selectedSources,
+  selectedSourceIds,
+}: Props) {
+  const scopeId = skillActionScopeId(sessionId, historyTopic);
+  const allFiles = useAllFiles();
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [busySkillId, setBusySkillId] = useState<string | null>(null);
@@ -101,7 +111,7 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
   useEffect(() => {
     let cancelled = false;
     const refreshActions = () => {
-      void listSkillActions(sessionId, "studio.skills")
+      void listSkillActions(sessionId, "studio.skills", historyTopic)
         .then((actions) => {
           if (!cancelled) setSkills(resolveStudioSkills(actions));
         })
@@ -115,27 +125,32 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
       cancelled = true;
       window.removeEventListener("crew:bridge_connected", refreshActions);
     };
-  }, [sessionId]);
+  }, [historyTopic, sessionId]);
 
   useEffect(() => {
     const onJobUpdated = (event: Event) => {
       const job = (event as CustomEvent<SkillActionJob>).detail;
-      if (!job || job.session_id !== sessionId) return;
+      if (!job || job.session_id !== scopeId) return;
       setJobs((prev) => mergeStudioJobs(prev, [job]));
     };
     window.addEventListener("crew:skill_action_job_updated", onJobUpdated);
     return () => {
       window.removeEventListener("crew:skill_action_job_updated", onJobUpdated);
     };
-  }, [sessionId]);
+  }, [scopeId]);
 
   useEffect(() => {
     let cancelled = false;
     const restoreJobs = () => {
-      void listSkillActionJobs(sessionId)
+      void listSkillActionJobs(sessionId, {}, historyTopic)
         .then((restored) => {
           if (!cancelled) {
-            setJobs((current) => mergeStudioJobs(current, restored));
+            setJobs((current) =>
+              mergeStudioJobs(
+                current,
+                restored.filter((job) => job.session_id === scopeId),
+              ),
+            );
           }
         })
         // The bridge may not be connected on first render. The connection
@@ -150,7 +165,7 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
       cancelled = true;
       window.removeEventListener("crew:bridge_connected", restoreJobs);
     };
-  }, [sessionId]);
+  }, [historyTopic, scopeId, sessionId]);
 
   async function runSkill(skill: (typeof skills)[number]): Promise<void> {
     if (!skill.actionId) return;
@@ -159,7 +174,12 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
     try {
       const args =
         selectedSourceIds.length > 0 ? { source_ids: selectedSourceIds } : {};
-      const response = await invokeSkillAction(sessionId, skill.actionId, args);
+      const response = await invokeSkillAction(
+        sessionId,
+        skill.actionId,
+        args,
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || `${skill.label} failed to start`);
@@ -176,7 +196,18 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
     }
   }
 
-  const hasGeneratedItems = jobs.length > 0;
+  const jobArtifacts = jobs.flatMap(artifactsFromJob);
+  const jobArtifactPaths = new Set(
+    jobArtifacts.map((artifact) => artifact.filePath),
+  );
+  const legacyAssets = allFiles
+    .filter(
+      (file) =>
+        file.sessionId === sessionId && !jobArtifactPaths.has(file.filePath),
+    )
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, LEGACY_ASSET_LIST_CAP);
+  const hasGeneratedItems = jobs.length > 0 || legacyAssets.length > 0;
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4">
@@ -278,13 +309,17 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
                         aria-label={`Download ${artifact.filename}`}
                         onClick={() => {
                           setDownloadError(null);
-                          downloadAsset(artifact.filePath, artifact.filename, sessionId).catch(
-                            (err: unknown) => {
-                              setDownloadError(
-                                err instanceof Error ? err.message : "Download failed",
-                              );
-                            },
-                          );
+                          downloadAsset(
+                            artifact.filePath,
+                            artifact.filename,
+                            scopeId,
+                          ).catch((err: unknown) => {
+                            setDownloadError(
+                              err instanceof Error
+                                ? err.message
+                                : "Download failed",
+                            );
+                          });
                         }}
                       >
                         <Download size={14} />
@@ -329,6 +364,57 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
                 </li>
               );
             })}
+            {legacyAssets.map((file) => {
+              const Icon = KIND_ICONS[sourceKind(file.filename)];
+              return (
+                <li
+                  key={`legacy:${file.id}`}
+                  className="studio-list-row studio-card !rounded-xl p-3"
+                >
+                  <Icon size={16} className="shrink-0 text-muted" />
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className="block truncate text-sm leading-tight"
+                      title={file.filename}
+                    >
+                      {file.filename}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] text-muted">
+                      {relativeTime(file.timestamp)}
+                    </span>
+                  </span>
+                  {file.status === "generating" ? (
+                    <span
+                      className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-accent"
+                      role="status"
+                      aria-label={`${file.filename} is generating`}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className="studio-ghost-button studio-asset-action shrink-0 p-1"
+                      aria-label={`Download ${file.filename}`}
+                      onClick={() => {
+                        setDownloadError(null);
+                        downloadAsset(
+                          file.filePath,
+                          file.filename,
+                          scopeId,
+                        ).catch((err: unknown) => {
+                          setDownloadError(
+                            err instanceof Error
+                              ? err.message
+                              : "Download failed",
+                          );
+                        });
+                      }}
+                    >
+                      <Download size={14} />
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -337,7 +423,7 @@ export function StudioRail({ sessionId, selectedSources, selectedSourceIds }: Pr
           filename={previewArtifact.filename}
           filePath={previewArtifact.filePath}
           mediaType={previewArtifact.mediaType}
-          sessionId={sessionId}
+          sessionId={scopeId}
           kind="asset"
           onClose={() => setPreviewArtifact(null)}
         />
