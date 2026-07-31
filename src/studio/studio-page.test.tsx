@@ -1113,8 +1113,12 @@ describe("StudioPage", () => {
         undefined,
       );
     });
-    expect(screen.queryByText("photo.jpg")).toBeNull();
-    expect(screen.queryByText(/source selected for notebook grounding/)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText("photo.jpg")).toBeNull();
+      expect(
+        screen.queryByText(/source selected for notebook grounding/),
+      ).toBeNull();
+    });
     confirm.mockRestore();
   });
 });
