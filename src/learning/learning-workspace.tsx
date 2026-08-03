@@ -112,7 +112,6 @@ export function LearningWorkspace({
   const [persistedOllArtifacts, setPersistedOllArtifacts] = useState<
     ReturnType<typeof collectPersistedOllLessonArtifacts>
   >([]);
-  const [fileListError, setFileListError] = useState<string | null>(null);
   const [rejectedOllArtifactIds, setRejectedOllArtifactIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
@@ -123,24 +122,6 @@ export function LearningWorkspace({
     ),
     [persistedOllArtifacts, threads],
   );
-  const persistedArtifactRefreshVersionRef = useRef(0);
-  const refreshPersistedOllArtifacts = useCallback(async () => {
-    if (ollFixture) return;
-    const version = ++persistedArtifactRefreshVersionRef.current;
-    try {
-      const files = await getSessionFiles(sessionId);
-      if (version !== persistedArtifactRefreshVersionRef.current) return;
-      setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
-      setFileListError(null);
-    } catch (cause) {
-      if (version !== persistedArtifactRefreshVersionRef.current) return;
-      setFileListError(
-        cause instanceof Error
-          ? cause.message
-          : "无法读取已保存的白板课程",
-      );
-    }
-  }, [ollFixture, sessionId]);
   const requestedOllArtifactsRef = useRef(new Set<string>());
   const ollArtifactRequestsRef = useRef(new Map<string, AbortController>());
   const deliveredOllLessons = useMemo(() => {
@@ -193,13 +174,8 @@ export function LearningWorkspace({
     setPlainReply(null);
     setPlainReplySpoken(false);
     setCompletedTurnId(turnId);
-    // Live projection is the fast path for OLL artifacts, but a tool-produced
-    // file may only be visible in the durable workspace by the time the turn
-    // closes. Reconcile here so a missed/delayed attachment envelope cannot
-    // leave an already-generated lesson invisible until the next refresh.
-    void refreshPersistedOllArtifacts();
     conversationOptions?.onTurnComplete?.(turnId);
-  }, [conversationOptions, refreshPersistedOllArtifacts]);
+  }, [conversationOptions]);
   const voiceConversationOptions = useMemo(
     () => ({
       ...conversationOptions,
@@ -254,6 +230,7 @@ export function LearningWorkspace({
     };
   }, [ollLesson, ollOpenSource]);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
   const [textTurnPending, setTextTurnPending] = useState(false);
   const [narrationAudioEnabled, setNarrationAudioEnabled] = useState(true);
@@ -327,22 +304,37 @@ export function LearningWorkspace({
 
   useEffect(() => {
     if (ollFixture) return;
+    let cancelled = false;
+    let requestVersion = 0;
+    const loadPersistedArtifacts = async () => {
+      const version = ++requestVersion;
+      try {
+        const files = await getSessionFiles(sessionId);
+        if (cancelled || version !== requestVersion) return;
+        setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+        setFileListError(null);
+      } catch (cause) {
+        if (cancelled || version !== requestVersion) return;
+        setFileListError(
+          cause instanceof Error
+            ? cause.message
+            : "无法读取已保存的白板课程",
+        );
+      }
+    };
     const handleBridgeConnected = () => {
-      void refreshPersistedOllArtifacts();
+      void loadPersistedArtifacts();
     };
     window.addEventListener("crew:bridge_connected", handleBridgeConnected);
-    const initialRefresh = window.setTimeout(() => {
-      void refreshPersistedOllArtifacts();
-    }, 0);
+    void loadPersistedArtifacts();
     return () => {
-      window.clearTimeout(initialRefresh);
-      persistedArtifactRefreshVersionRef.current += 1;
+      cancelled = true;
       window.removeEventListener(
         "crew:bridge_connected",
         handleBridgeConnected,
       );
     };
-  }, [ollFixture, refreshPersistedOllArtifacts]);
+  }, [ollFixture, sessionId]);
 
   useEffect(() => {
     if (!voiceEnabled) {
