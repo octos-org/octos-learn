@@ -503,6 +503,30 @@ describe("LearningPage", () => {
     );
   });
 
+  it("leaves review mode as soon as a voice turn starts", async () => {
+    sessionApiMock.listSessions.mockResolvedValue([
+      { id: "learn-200-geometry", message_count: 4, title: "几何课程" },
+    ]);
+    render(<LearningPage />);
+
+    await waitFor(() =>
+      expect(learningWorkspaceMock.props?.sessionId).toBe(
+        "learn-200-geometry",
+      ),
+    );
+    expect(learningWorkspaceMock.props?.playbackMode).toBe("review");
+
+    act(() => {
+      learningWorkspaceMock.props?.conversationOptions?.onTurnStart?.(
+        "turn-before-asr",
+      );
+    });
+
+    await waitFor(() =>
+      expect(learningWorkspaceMock.props?.playbackMode).toBe("live"),
+    );
+  });
+
   it("does not expose a transcript-only learning session without an OLL lesson", async () => {
     sessionApiMock.listSessions.mockResolvedValue([
       { id: "learn-903-no-lesson", message_count: 2, title: "失败课程" },

@@ -533,8 +533,13 @@ export function LearningPage() {
       buildTurnText,
       playReplyAudio: false,
       showExistingTurns: true,
+      onTurnStart: () => {
+        setReviewSessionId((current) =>
+          current === record.id ? null : current,
+        );
+      },
     }),
-    [buildTurnText, devicePreferences],
+    [buildTurnText, devicePreferences, record.id],
   );
 
   const handleBoardContextChange = useCallback(
