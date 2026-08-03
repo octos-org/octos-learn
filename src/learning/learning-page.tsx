@@ -65,10 +65,49 @@ const INPUT_MODE_KEY = "octos_learning_input_mode";
 const MINIMUM_WHITEBOARD_SKILL_VERSION = [0, 8, 4] as const;
 const LEARNING_TAB_ID = getLearningTabOwner();
 
+type LearningMediaCapability =
+  | { available: true }
+  | { available: false; message: string };
+
+function detectLearningMediaCapability(): LearningMediaCapability {
+  if (window.isSecureContext === false) {
+    return {
+      available: false,
+      message:
+        "当前页面不是安全连接，浏览器已停用麦克风和摄像头。请使用 HTTPS 地址；同一台电脑也可以使用 http://localhost:5173/learn。",
+    };
+  }
+  if (typeof navigator.mediaDevices?.getUserMedia !== "function") {
+    return {
+      available: false,
+      message:
+        "当前浏览器无法访问麦克风和摄像头。请确认浏览器支持媒体设备，并检查系统或浏览器权限设置。",
+    };
+  }
+  return { available: true };
+}
+
+function describeLearningDeviceError(cause: unknown): string {
+  if (cause instanceof DOMException) {
+    if (cause.name === "NotAllowedError" || cause.name === "SecurityError") {
+      return "麦克风或摄像头权限被拒绝。请在浏览器的网站设置中允许访问后重试。";
+    }
+    if (cause.name === "NotFoundError" || cause.name === "DevicesNotFoundError") {
+      return "没有找到可用的麦克风或摄像头。请连接设备后重试。";
+    }
+    if (cause.name === "NotReadableError" || cause.name === "TrackStartError") {
+      return "麦克风或摄像头正被其他应用占用，或暂时无法读取。";
+    }
+  }
+  return cause instanceof Error ? cause.message : "设备授权失败";
+}
+
 async function requestLearningDevices(autoCamera: boolean): Promise<{
   autoCamera: boolean;
   voiceEnabled: boolean;
 }> {
+  const capability = detectLearningMediaCapability();
+  if (!capability.available) throw new Error(capability.message);
   unlockAudio();
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: true,
@@ -105,12 +144,18 @@ function LearningPermissionGate({
   }) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  const capability = detectLearningMediaCapability();
+  const capabilityMessage = capability.available ? null : capability.message;
 
   const activate = async (autoCamera: boolean) => {
+    if (capabilityMessage) {
+      setError(capabilityMessage);
+      return;
+    }
     try {
       onReady(await requestLearningDevices(autoCamera));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "设备授权失败");
+      setError(describeLearningDeviceError(cause));
     }
   };
 
@@ -126,14 +171,16 @@ function LearningPermissionGate({
         <button
           type="button"
           onClick={() => void activate(true)}
-          className="mt-7 w-full rounded-full bg-cyan-300 px-5 py-3 font-medium text-black"
+          disabled={!capability.available}
+          className="mt-7 w-full rounded-full bg-cyan-300 px-5 py-3 font-medium text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
           启用语音和摄像头
         </button>
         <button
           type="button"
           onClick={() => void activate(false)}
-          className="mt-3 w-full rounded-full border border-white/15 px-5 py-3 text-white/75"
+          disabled={!capability.available}
+          className="mt-3 w-full rounded-full border border-white/15 px-5 py-3 text-white/75 disabled:cursor-not-allowed disabled:opacity-40"
         >
           仅启用语音
         </button>
@@ -148,7 +195,11 @@ function LearningPermissionGate({
         >
           仅用文字进入白板
         </button>
-        {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
+        {(error || capabilityMessage) && (
+          <p className="mt-4 text-sm leading-5 text-red-300" role="alert">
+            {error ?? capabilityMessage}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -339,9 +390,11 @@ export function LearningPage() {
     const storedCamera = localStorage.getItem(AUTO_CAMERA_KEY);
     const storedMode = localStorage.getItem(INPUT_MODE_KEY);
     if (storedCamera === null && storedMode === null) return null;
+    const voiceEnabled = storedMode !== "text";
+    if (voiceEnabled && !detectLearningMediaCapability().available) return null;
     return {
       autoCamera: storedCamera === "true",
-      voiceEnabled: storedMode !== "text",
+      voiceEnabled,
     };
   });
   const [skillState, setSkillState] = useState<

@@ -6,8 +6,10 @@
   "type": "module",
   "scripts": {
     "copy-vad-assets": "node scripts/copy-vad-assets.mjs",
+    "setup:https": "node scripts/setup-local-https.mjs",
     "predev": "node scripts/copy-vad-assets.mjs",
     "dev": "vite",
+    "dev:https": "vite --mode local-https --host 0.0.0.0",
     "prebuild": "node scripts/copy-vad-assets.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
