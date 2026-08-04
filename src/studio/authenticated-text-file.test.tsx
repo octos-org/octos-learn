@@ -69,6 +69,54 @@ describe("AuthenticatedTextFile", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
   });
 
+  it("never renders committed text from another session with the same path", async () => {
+    let resolveSecond!: (response: Response) => void;
+    vi.mocked(fetch)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: async () => "Session A body",
+      } as Response)
+      .mockImplementationOnce(
+        () => new Promise<Response>((resolve) => {
+          resolveSecond = resolve;
+        }),
+      );
+
+    const view = render(
+      <AuthenticatedTextFile
+        file={reportFile()}
+        sessionId="web-session-a"
+        empty="Missing"
+      >
+        {(text) => <p>{text}</p>}
+      </AuthenticatedTextFile>,
+    );
+    await screen.findByText("Session A body");
+
+    view.rerender(
+      <AuthenticatedTextFile
+        file={reportFile()}
+        sessionId="web-session-b"
+        empty="Missing"
+      >
+        {(text) => <p>{text}</p>}
+      </AuthenticatedTextFile>,
+    );
+
+    expect(screen.queryByText("Session A body")).toBeNull();
+    expect(screen.getByRole("status").textContent).toMatch(/loading/i);
+
+    resolveSecond({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      text: async () => "Session B body",
+    } as Response);
+    await screen.findByText("Session B body");
+  });
+
   it("cancels a streamed structured preview as soon as it exceeds the limit", async () => {
     const read = vi.fn()
       .mockResolvedValueOnce({

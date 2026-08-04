@@ -16,6 +16,12 @@
 import { getToken, getSelectedProfileId } from "@/api/client";
 import { TOKEN_KEY, ADMIN_TOKEN_KEY } from "@/lib/constants";
 import {
+  parseProjectionEnvelopeV2,
+  type ProjectionEnvelopeV2,
+  type ProjectionEnvelopeV2TerminalOutcome,
+} from "./projection-envelope-v2";
+import * as ProjectionStore from "@/store/projection-store";
+import {
   AUX_REST_TO_WS_V1_FEATURE,
   isAuxRestToWsV1Enabled,
 } from "@/lib/feature-flags";
@@ -30,15 +36,12 @@ import type {
   TaskCancelResult,
   ApprovalScope,
   ConnectionState,
-  Envelope,
-  HydratedMessage,
   MessageDeltaEvent,
   FileAttachedEvent,
   VisualGeneratingEvent,
   VisualSucceededEvent,
   VisualFailedEvent,
   VoiceExitEvent,
-  MessagePersistedEvent,
   ProgressUpdatedEvent,
   QueueStateEvent,
   RouterFailoverEvent,
@@ -94,11 +97,7 @@ export type {
   TaskCancelResult,
   ApprovalScope,
   ConnectionState,
-  HydratedMessage,
   MessageDeltaEvent,
-  MessagePersistedEvent,
-  PersistedMessage,
-  PersistedMessageFile,
   ProgressUpdatedEvent,
   QueueStateEvent,
   RouterFailoverEvent,
@@ -159,6 +158,7 @@ export const METHODS = {
   SESSION_HYDRATE: "session/hydrate",
   SESSION_ROLLBACK: "session/rollback",
   SESSION_FORK: "session/fork",
+  SESSION_COMPACT: "session/compact",
   LOOP_LIST: "loop/list",
   LOOP_PAUSE: "loop/pause",
   LOOP_RESUME: "loop/resume",
@@ -200,13 +200,26 @@ export const METHODS = {
   MEMORY_ENTITY: "memory/entity",
   CRON_LIST: "cron/list",
   CRON_TOGGLE: "cron/toggle",
+  // Smart-home bridge integration: device control/state now lives
+  // server-side (a per-profile Home Assistant-style bridge) instead of the
+  // browser talking to it directly. Camera video stays a direct
+  // browser-to-bridge stream; these methods only return the playback URL,
+  // never bridge credentials. Unlike the auxiliary group above, these were
+  // never a REST route (no `/api/my/smart-home*` ever existed), so they're
+  // gated on their own `smart_home.v1` capability rather than
+  // `auxiliary.rest_to_ws.v1` — see `UI_PROTOCOL_FEATURES` below. Mirrors
+  // `crates/octos-core/src/ui_protocol.rs::methods`.
+  SMART_HOME_STATUS_GET: "smart_home/status.get",
+  SMART_HOME_DEVICE_LIST: "smart_home/device.list",
+  SMART_HOME_DEVICE_COMMAND: "smart_home/device.command",
+  SMART_HOME_CAMERA_STREAM_START: "smart_home/camera.stream_start",
+  SMART_HOME_CAMERA_STREAM_STOP: "smart_home/camera.stream_stop",
   // server → client
   // Bridge hygiene (parity audit P3): `user_question/requested` is a
   // NOTIFICATION the server pushes; it was mislisted in the
   // client→server half above.
   USER_QUESTION_REQUESTED: "user_question/requested",
   MESSAGE_DELTA: "message/delta",
-  MESSAGE_PERSISTED: "message/persisted",
   TASK_UPDATED: "task/updated",
   LOOP_UPDATED: "loop/updated",
   LOOP_FIRED: "loop/fired",
@@ -218,12 +231,8 @@ export const METHODS = {
   TURN_COMPLETED: "turn/completed",
   TURN_ERROR: "turn/error",
   TURN_SPAWN_COMPLETE: "turn/spawn_complete",
-  // UPCR-2026-014 M9-α-9: dedicated per-artefact envelope emitted by the
-  // server alongside the media carriers on message/persisted /
-  // turn/spawn_complete. The runtime routes this through
-  // ThreadStore.appendFileAttachment so the bubble's <FileAttachment>
-  // row renders even when the richer-envelope reducers miss the
-  // placement (slides soak 2026-05-24 failure mode).
+  // UPCR-2026-014 M9-α-9: dedicated per-artefact envelope for a completed
+  // background tool.
   FILE_ATTACHED: "file/attached",
   // #1477 voice rich output — typed visual lifecycle (replaces scraping an
   // in-band `[[VISUAL:...]]` marker out of the assistant text).
@@ -238,10 +247,9 @@ export const METHODS = {
   WARNING: "warning",
   // Synchronous tool-call lifecycle. Server emits these as
   // `UiNotification::ToolStarted/Progress/Completed` for non-spawn tool
-  // calls. The event-router fans them out into the legacy
-  // `crew:tool_progress` DOM event so the streaming-bubble spinner
-  // (`ToolProgressIndicator`) lights up — the SSE bridge predecessor of
-  // this surface was the sole dispatcher prior to PR #96. See
+  // calls. The event-router fans them out into the compatibility
+  // `crew:tool_progress` DOM event so existing tool-progress listeners
+  // stay in sync. See
   // `crates/octos-cli/src/api/ui_protocol_progress.rs:99-363`.
   // UPCR-2026-026 context-compaction lifecycle: `started` fires
   // immediately before a server-owned compaction pass (may arrive in the
@@ -290,44 +298,22 @@ export const METHODS = {
  * under `octos_auxiliary_rest_to_ws_v1`).
  */
 export const UI_PROTOCOL_FEATURES = [
+  ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
   "approval.typed.v1",
   "user_question.v1",
   "pane.snapshots.v1",
   "harness.task_control.v1",
-  // P1.3 (server PR #767, web PR aligning the wire shape): the server
-  // explicitly filters both live broadcast and cursor replay of
-  // `message/persisted` notifications unless this capability was
-  // negotiated at session/open. Without this feature in the
-  // `ui_feature` query, the bridge's new media-aware
-  // `guardMessagePersisted` + `handleMessagePersisted` path is
-  // unreachable in production. See server `ui_protocol.rs:1941` and
-  // `ui_protocol.rs:2075` for the gating logic.
-  "event.message_persisted.v1",
-  // M10 Phase 1 (server PR #772): server only emits the new
-  // `turn/spawn_complete` envelope when this capability is negotiated at
-  // session/open. Without it, late `spawn_only` results continue to flow
-  // through the legacy `message/persisted` row (and the splice-merge
-  // predicate in ThreadStore). Phase 5 will delete the legacy path; this
-  // PR (Phase 2) only ADDS the new envelope handling so the migration is
-  // backward-compatible during rollout.
+  // The server emits `turn/spawn_complete` when this capability is
+  // negotiated at session/open.
   "event.spawn_complete.v1",
   // UPCR-2026-014 M9-α-9 (server commit landing alongside this web PR):
   // dedicated `file/attached` envelope per delivered artefact from any
   // `spawn_only` background tool (mofa_slides, podcast_generate,
-  // fm_tts, deep_search, mofa_*). Runs alongside the existing media
-  // carriers on `message/persisted` / `turn/spawn_complete` as a
-  // redundant wire signal — when the richer envelopes' placement
-  // logic drops a delivery (slides soak 2026-05-24: PPTX on disk but
-  // no button on SPA), the dedicated envelope ensures the user still
-  // sees the file. Server only emits the envelope to connections that
-  // negotiated this capability.
+  // fm_tts, deep_search, mofa_*). Server only emits the envelope to
+  // connections that negotiated this capability.
   "event.file_attached.v1",
   // M10 Phase 6.2 (server PR #791 / Bug C): server gates `session/hydrate`
-  // RPC behind this feature when feature negotiation is present (UPCR-2026-009).
-  // Without it, our hydrate dedup pass never runs because the server
-  // returns `method_not_supported` for the RPC. The dedup snapshot
-  // populated post-`session/open` from the negotiated `replayed_envelopes`
-  // is what eliminates the N+1 bubble render after page reload.
+  // RPC behind this feature when feature negotiation is present.
   "state.session_hydrate.v1",
   // UPCR-2026-027: persisted background jobs for manifest-declared
   // skill actions such as notebook source import.
@@ -354,6 +340,14 @@ export const UI_PROTOCOL_FEATURES = [
   "coding.autonomy.v1",
   "coding.loop_runtime.v1",
   "coding.goal_runtime.v1",
+  // Smart-home bridge integration (octos smart-home backend migration):
+  // gates `smart_home/status.get`, `smart_home/device.list`,
+  // `smart_home/device.command`, `smart_home/camera.stream_start`,
+  // `smart_home/camera.stream_stop`. Always negotiated like the other
+  // narrow capabilities above — unlike `auxiliary.rest_to_ws.v1` this
+  // isn't a staged REST-to-WS migration with a client-side kill switch,
+  // it's a new capability with no prior REST route to fall back to.
+  "smart_home.v1",
 ] as const;
 
 /**
@@ -426,6 +420,19 @@ export class BridgeTimeoutError extends Error {
   }
 }
 
+/** Canonical v2 terminal surface used by the send queue. It is intentionally
+ * separate from the legacy turn lifecycle notifications, which v2 servers
+ * no longer need to emit. */
+export interface ProjectionTerminalEvent {
+  session_id: string;
+  topic?: string;
+  thread_id: string;
+  turn_id: string;
+  client_message_id?: string;
+  outcome: ProjectionEnvelopeV2TerminalOutcome;
+  error?: { code: string; message: string; data?: unknown };
+}
+
 export interface UiProtocolBridge {
   /** Start the bridge. The optional `topic` arg is used purely client-side
    *  to drop event envelopes whose `params.topic` carries a different
@@ -462,7 +469,7 @@ export interface UiProtocolBridge {
     /** UPCR-2026-015 (M9-β-1): optional `media`, `topic`,
      *  `rewrite_for` extras carried alongside `input`. Each is
      *  forwarded onto the wire only when populated; omitted entirely
-     *  for legacy text-only sends so the on-wire shape stays
+     *  for plain text-only sends so the on-wire shape stays
      *  byte-identical to a pre-β-1 build. */
     extras?: TurnStartExtras,
   ): Promise<TurnStartResult>;
@@ -475,18 +482,7 @@ export interface UiProtocolBridge {
   ): Promise<ApprovalRespondResult>;
   cancelTask(task_id: string): Promise<TaskCancelResult>;
 
-  /**
-   * Issue a `session/hydrate` RPC for the active session. M10 Phase 6.2
-   * (Bug C): `replayed_envelopes` + per-row `(message_id, source)` are
-   * surfaced only when the connection negotiated
-   * `event.spawn_complete.v1` (server PR #791). Used by the runtime
-   * layer to dedup the legacy `Background`-source rows the live wire
-   * suppresses for negotiated clients.
-   *
-   * `include` defaults to `["messages"]` — that's the dedup target.
-   * Returns `null` when the RPC fails: the caller falls back to the
-   * legacy REST `replayHistory` path with no hydrate-time dedup.
-   */
+  /** Issue a `session/hydrate` RPC for the active canonical scope. */
   hydrateSession(
     include?: ReadonlyArray<"messages" | "threads" | "turns" | "pending_approvals">,
   ): Promise<SessionHydrateResult | null>;
@@ -535,7 +531,6 @@ export interface UiProtocolBridge {
   callMethod<T = unknown>(method: string, params?: unknown): Promise<T>;
 
   onMessageDelta(handler: (e: MessageDeltaEvent) => void): () => void;
-  onMessagePersisted(handler: (e: MessagePersistedEvent) => void): () => void;
   onSpawnComplete(handler: (e: TurnSpawnCompleteEvent) => void): () => void;
   /** UPCR-2026-014 M9-α-9 dedicated per-artefact envelope subscriber.
    *  Routes one event per `file/attached` notification — the SPA
@@ -567,6 +562,9 @@ export interface UiProtocolBridge {
     handler: (
       e: TurnStartedEvent | TurnCompletedEvent | TurnErrorEvent,
     ) => void,
+  ): () => void;
+  onProjectionTerminal(
+    handler: (event: ProjectionTerminalEvent) => void,
   ): () => void;
   /** UPCR-2026-026 context-compaction lifecycle (started | completed);
    *  discriminate by `threshold_tokens` (present only on started). */
@@ -635,8 +633,7 @@ export interface UiProtocolBridge {
    *  server emitted between disconnect and reconnect are silently
    *  dropped. Subscribers (the runtime layer) re-issue
    *  `bridge.hydrateSession(["messages"])` on this event to recover the
-   *  missed completion bubble + media attachment from the durable
-   *  ledger via `replayed_envelopes`. */
+   *  missed canonical envelopes from the durable projection snapshot. */
   onReopened(handler: () => void): () => void;
   /** Fires on EVERY successful `session/open` ack (initial open AND
    *  reconnects) with the server's `opened` payload. The runtime layer
@@ -772,93 +769,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
-interface ProjectionEnvelope {
-  session_id?: string;
-  turn_id: string;
-  payload: {
-    type: string;
-    data: Record<string, unknown>;
-  };
-}
-
-function guardHydrateToolEnvelope(p: unknown): Envelope | null {
-  if (!isPlainObject(p)) return null;
-  if (!isString(p.thread_id)) return null;
-  if (typeof p.seq !== "number" || !Number.isFinite(p.seq) || p.seq < 0) {
-    return null;
-  }
-  if (!isPlainObject(p.payload)) return null;
-  const payloadType = p.payload.type;
-  if (
-    payloadType !== "tool_start" &&
-    payloadType !== "tool_progress" &&
-    payloadType !== "tool_end"
-  ) {
-    return null;
-  }
-  if (!isPlainObject(p.payload.data)) return null;
-  const data = p.payload.data;
-  if (!isString(data.tool_call_id)) return null;
-  if (payloadType === "tool_start") {
-    if (!isString(data.name)) return null;
-    return {
-      thread_id: p.thread_id,
-      seq: p.seq,
-      client_message_id:
-        typeof p.client_message_id === "string" ? p.client_message_id : undefined,
-      payload: {
-        type: "tool_start",
-        data: {
-          tool_call_id: data.tool_call_id,
-          name: data.name,
-          ...(data.arguments !== undefined ? { arguments: data.arguments } : {}),
-        },
-      },
-    };
-  }
-  if (payloadType === "tool_progress") {
-    if (typeof data.message !== "string") return null;
-    return {
-      thread_id: p.thread_id,
-      seq: p.seq,
-      client_message_id:
-        typeof p.client_message_id === "string" ? p.client_message_id : undefined,
-      payload: {
-        type: "tool_progress",
-        data: { tool_call_id: data.tool_call_id, message: data.message },
-      },
-    };
-  }
-  if (data.status !== "complete" && data.status !== "error") return null;
-  return {
-    thread_id: p.thread_id,
-    seq: p.seq,
-    client_message_id:
-      typeof p.client_message_id === "string" ? p.client_message_id : undefined,
-    payload: {
-      type: "tool_end",
-      data: {
-        tool_call_id: data.tool_call_id,
-        status: data.status,
-        ...(typeof data.error === "string" ? { error: data.error } : {}),
-      },
-    },
-  };
-}
-
-function guardProjectionEnvelope(p: unknown): ProjectionEnvelope | null {
-  if (!isPlainObject(p)) return null;
-  if (!isString(p.turn_id)) return null;
-  if (!isPlainObject(p.payload)) return null;
-  if (typeof p.payload.type !== "string") return null;
-  return {
-    session_id: typeof p.session_id === "string" ? p.session_id : undefined,
-    turn_id: p.turn_id,
-    payload: {
-      type: p.payload.type,
-      data: isPlainObject(p.payload.data) ? p.payload.data : {},
-    },
-  };
+function guardProjectionEnvelope(p: unknown): ProjectionEnvelopeV2 | null {
+  const parsed = parseProjectionEnvelopeV2(p);
+  return parsed.ok ? parsed.value : null;
 }
 
 function guardMessageDelta(p: unknown): MessageDeltaEvent | null {
@@ -878,83 +791,6 @@ function guardMessageDelta(p: unknown): MessageDeltaEvent | null {
   };
 }
 
-function guardMessagePersisted(p: unknown): MessagePersistedEvent | null {
-  // Validates the flat `UPCR-2026-012` wire shape. Earlier versions of this
-  // guard expected a nested `{ message: { id, thread_id, content, role } }`
-  // payload that no real server has ever sent — it would reject every
-  // production event. This rewrite accepts what the server actually emits.
-  if (!isPlainObject(p)) return null;
-  if (!isString(p.session_id)) return null;
-  if (typeof p.seq !== "number" || !Number.isFinite(p.seq) || p.seq < 0) {
-    return null;
-  }
-  if (!isString(p.message_id) || !p.message_id) return null;
-  if (
-    p.role !== "system" &&
-    p.role !== "user" &&
-    p.role !== "assistant" &&
-    p.role !== "tool"
-  ) {
-    return null;
-  }
-  if (
-    p.source !== "user" &&
-    p.source !== "assistant" &&
-    p.source !== "tool" &&
-    p.source !== "background" &&
-    p.source !== "recovery"
-  ) {
-    return null;
-  }
-  if (
-    !isPlainObject(p.cursor) ||
-    typeof p.cursor.seq !== "number" ||
-    !Number.isFinite(p.cursor.seq) ||
-    p.cursor.seq < 0 ||
-    !isString(p.cursor.stream)
-  ) {
-    return null;
-  }
-  if (!isString(p.persisted_at)) return null;
-  // Optional fields — present-shape-checked but not required.
-  const turn_id =
-    typeof p.turn_id === "string" && p.turn_id.length > 0 ? p.turn_id : undefined;
-  const thread_id =
-    typeof p.thread_id === "string" && p.thread_id.length > 0
-      ? p.thread_id
-      : undefined;
-  const client_message_id =
-    typeof p.client_message_id === "string" && p.client_message_id.length > 0
-      ? p.client_message_id
-      : undefined;
-  let media: string[] | undefined;
-  if (Array.isArray(p.media)) {
-    const filtered = p.media.filter((u): u is string => isString(u) && u.length > 0);
-    if (filtered.length > 0) media = filtered;
-  }
-  // 2026-05-19: server now emits the persisted row's text content on
-  // the wire (`content`, omitted when empty) so the SPA can surface
-  // captions / summaries alongside `media`. Accept the field here so
-  // the router sees it; pre-fix the guard stripped it and the router
-  // wrote `""` to the bubble even when content was present on the wire.
-  const content =
-    typeof p.content === "string" && p.content.length > 0 ? p.content : undefined;
-  return {
-    session_id: p.session_id,
-    turn_id,
-    thread_id,
-    seq: p.seq,
-    role: p.role,
-    message_id: p.message_id,
-    client_message_id,
-    source: p.source,
-    cursor: { stream: p.cursor.stream, seq: p.cursor.seq },
-    persisted_at: p.persisted_at,
-    media,
-    content,
-  };
-}
-
 function guardSpawnComplete(p: unknown): TurnSpawnCompleteEvent | null {
   // M10 Phase 1 envelope. Required-field invariants per the server-side
   // `TurnSpawnCompleteEvent` struct (`crates/octos-core/src/ui_protocol.rs`):
@@ -965,10 +801,6 @@ function guardSpawnComplete(p: unknown): TurnSpawnCompleteEvent | null {
   //   - turn_id, thread_id, response_to_client_message_id      — optional strings
   //   - media                                                  — optional string[]
   //
-  // The `content` non-empty check is the load-bearing distinguisher from
-  // a spawn-ack `message/persisted` row whose content is a short ack
-  // message — a `turn/spawn_complete` with empty content is either a
-  // server bug or the wrong wire shape entirely; either way, fail closed.
   if (!isPlainObject(p)) return null;
   if (!isString(p.session_id)) return null;
   if (!isString(p.task_id)) return null;
@@ -992,8 +824,6 @@ function guardSpawnComplete(p: unknown): TurnSpawnCompleteEvent | null {
   // (server-side spawn_only tool whose result is purely artefactual).
   // Codex round-4 P2 caught this: rejecting empty-content envelopes
   // would silently drop file-only completions for upgraded clients,
-  // because the server suppresses the legacy `message/persisted`
-  // fallback once `event.spawn_complete.v1` is negotiated.
   if (typeof p.content !== "string") return null;
 
   let media: string[] | undefined;
@@ -1122,76 +952,9 @@ function guardVoiceExit(p: unknown): VoiceExitEvent | null {
 }
 
 /**
- * Guard for one row in `SessionHydrateResult.messages`. Fail-closed on
- * type / required-field violations. `message_id` and `source` are
- * Option<String> on the wire (server PR #791 codex round 6 gates them
- * on `event.spawn_complete.v1` negotiation), so absence is normal — we
- * surface them as `undefined` rather than rejecting the row.
- */
-function guardHydratedMessage(p: unknown): HydratedMessage | null {
-  if (!isPlainObject(p)) return null;
-  if (typeof p.seq !== "number" || !Number.isFinite(p.seq) || p.seq < 0) {
-    return null;
-  }
-  if (!isString(p.role)) return null;
-  if (
-    p.role !== "system" &&
-    p.role !== "user" &&
-    p.role !== "assistant" &&
-    p.role !== "tool"
-  ) {
-    return null;
-  }
-  if (typeof p.content !== "string") return null;
-  if (!isString(p.persisted_at)) return null;
-  let media: string[] | undefined;
-  if (Array.isArray(p.media)) {
-    const filtered = p.media.filter(
-      (u): u is string => isString(u) && u.length > 0,
-    );
-    if (filtered.length > 0) media = filtered;
-  }
-  return {
-    seq: p.seq,
-    role: p.role,
-    content: p.content,
-    turn_id:
-      typeof p.turn_id === "string" && p.turn_id.length > 0
-        ? p.turn_id
-        : undefined,
-    thread_id:
-      typeof p.thread_id === "string" && p.thread_id.length > 0
-        ? p.thread_id
-        : undefined,
-    client_message_id:
-      typeof p.client_message_id === "string" && p.client_message_id.length > 0
-        ? p.client_message_id
-        : undefined,
-    persisted_at: p.persisted_at,
-    message_id:
-      typeof p.message_id === "string" && p.message_id.length > 0
-        ? p.message_id
-        : undefined,
-    source:
-      typeof p.source === "string" && p.source.length > 0
-        ? p.source
-        : undefined,
-    media,
-  };
-}
-
-/**
- * Guard for the `session/hydrate` RPC result (server PR #791). The
- * `messages` and `replayed_envelopes` fields are both optional — the
- * server omits them when not requested or not negotiated. Treat any
- * non-object payload as a hard reject (returns null), but accept the
- * shape with all-optional sections for back-compat with older servers.
- *
- * Inner-row failure is non-fatal: malformed `messages[i]` / envelope
- * entries are dropped so a single corrupt row doesn't poison the whole
- * hydrate. Cursor is required in the typed wire shape but the SPA
- * doesn't drive off it today, so an absent / malformed cursor falls
- * back to a synthesized zero-cursor rather than rejecting the result.
+ * Guard for the canonical `session/hydrate` RPC result. Cursor is required
+ * in the typed wire shape but an absent/malformed cursor falls back to a
+ * synthesized zero cursor so a valid snapshot can still be installed.
  */
 export function guardSessionHydrate(p: unknown): SessionHydrateResult | null {
   if (!isPlainObject(p)) return null;
@@ -1210,39 +973,37 @@ export function guardSessionHydrate(p: unknown): SessionHydrateResult | null {
     cursor = { stream: "", seq: 0 };
   }
 
-  let messages: HydratedMessage[] | undefined;
-  if (Array.isArray(p.messages)) {
-    messages = [];
-    for (const m of p.messages) {
-      const guarded = guardHydratedMessage(m);
-      if (guarded) messages.push(guarded);
-    }
-  }
-
-  let replayedEnvelopes: TurnSpawnCompleteEvent[] | undefined;
-  if (Array.isArray(p.replayed_envelopes)) {
-    replayedEnvelopes = [];
-    for (const e of p.replayed_envelopes) {
-      const guarded = guardSpawnComplete(e);
-      if (guarded) replayedEnvelopes.push(guarded);
-    }
-  }
-
-  let replayedToolEnvelopes: Envelope[] | undefined;
-  if (Array.isArray(p.replayed_tool_envelopes)) {
-    replayedToolEnvelopes = [];
-    for (const e of p.replayed_tool_envelopes) {
-      const guarded = guardHydrateToolEnvelope(e);
-      if (guarded) replayedToolEnvelopes.push(guarded);
-    }
-  }
+  const projectionEnvelopes = Array.isArray(p.projection_envelopes)
+    ? p.projection_envelopes.slice()
+    : undefined;
+  const rawProjectionSnapshot = isPlainObject(p.projection_snapshot)
+    ? p.projection_snapshot
+    : undefined;
+  const projectionSnapshot = rawProjectionSnapshot
+    ? {
+        ...(Array.isArray(rawProjectionSnapshot.envelopes)
+          ? { envelopes: rawProjectionSnapshot.envelopes.slice() }
+          : {}),
+        ...(isPlainObject(rawProjectionSnapshot.cursor) &&
+        typeof rawProjectionSnapshot.cursor.stream === "string" &&
+        typeof rawProjectionSnapshot.cursor.seq === "number" &&
+        Number.isFinite(rawProjectionSnapshot.cursor.seq) &&
+        rawProjectionSnapshot.cursor.seq >= 0
+          ? {
+              cursor: {
+                stream: rawProjectionSnapshot.cursor.stream,
+                seq: rawProjectionSnapshot.cursor.seq,
+              },
+            }
+          : {}),
+      }
+    : undefined;
 
   return {
     session_id: p.session_id,
     cursor,
-    messages,
-    replayed_envelopes: replayedEnvelopes,
-    replayed_tool_envelopes: replayedToolEnvelopes,
+    projection_envelopes: projectionEnvelopes,
+    projection_snapshot: projectionSnapshot,
   };
 }
 
@@ -2001,6 +1762,25 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
    *  because the bridge cannot tell what scope they belong to without
    *  server help. Tracked as a follow-up server issue. */
   private topicScope: string | null = null;
+  /** Flips only after the current connection's `session/open` confirms the
+   * required canonical capability. Parsed frames arriving during the
+   * handshake are buffered so a server that replays immediately cannot race
+   * the acknowledgement. */
+  private projectionV2Active = false;
+  /** The transport-level capability decision for this particular socket.
+   * During a reconnect the existing canonical projection remains rendered,
+   * but no inbound frame may enter the ledger until this socket's new
+   * `session/open` acknowledgement. */
+  private projectionHandshake: "pending" | "accepted" | "rejected" = "rejected";
+  private pendingProjectionFrames: ProjectionEnvelopeV2[] = [];
+  private unsubscribeProjectionAdmission: (() => void) | null = null;
+  /** Keeps reconnect `after` synchronized when a hydrate installs an empty
+   * canonical snapshot (there is no admitted envelope to trigger the other
+   * hook in that case). */
+  private unsubscribeProjectionStore: (() => void) | null = null;
+  /** Terminal notifications are derived after admission so a terminal that
+   * drained from a per-thread gap emits exactly once. */
+  private readonly emittedProjectionTerminals = new Set<string>();
   private stopped = false;
   private reconnectAttempts = 0;
   /** True only after `scheduleReconnect` has exhausted
@@ -2028,16 +1808,10 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
    *  resets the flag in `onWsOpen`) or fails (the bounded reconnect
    *  loop takes over and eventually re-latches the abandonment). */
   private visibilityReconnectInFlight = false;
-  /** #245 P2: the highest durable ledger cursor we have seen for this
-   *  session — seeded from the `session/open` ack's `opened.cursor` and
-   *  advanced by the cursor-bearing live frames (`message/persisted`,
-   *  `turn/completed`, `turn/spawn_complete`). Sent back as `after` on a
-   *  REOPEN so the server replays only what happened during the gap
-   *  (`replay_after_with_head`), instead of the reconnect relying solely on
-   *  a full `session/hydrate` refetch. One monotonic stream per session, so
-   *  the highest `seq` wins. Null until the first open acks — a cursorless
-   *  open is "live only / full snapshot" server-side, which is exactly what
-   *  the initial open wants. */
+  /** #245 P2: the highest safe durable ledger cursor for this session. It
+   *  comes only from ProjectionStore's globally contiguous snapshot/live
+   *  watermark—never from a per-thread sequence or an uninstalled ack head.
+   *  Sent back as `after` on a REOPEN so the server replays only the gap. */
   private lastCursor: UiCursor | null = null;
   /** Issue #137: bound visibilitychange listener. Stashed so `stop()`
    *  can remove it; React strict-mode and SPA session-switch flows
@@ -2064,7 +1838,6 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private readonly sendQueue: QueuedFrame[] = [];
 
   private readonly subMessageDelta = new Subscribers<MessageDeltaEvent>();
-  private readonly subMessagePersisted = new Subscribers<MessagePersistedEvent>();
   private readonly subSpawnComplete = new Subscribers<TurnSpawnCompleteEvent>();
   private readonly subFileAttached = new Subscribers<FileAttachedEvent>();
   private readonly subVisualGenerating =
@@ -2090,6 +1863,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private readonly subTurnLifecycle = new Subscribers<
     TurnStartedEvent | TurnCompletedEvent | TurnErrorEvent
   >();
+  private readonly subProjectionTerminal = new Subscribers<ProjectionTerminalEvent>();
   private readonly subApprovalRequested = new Subscribers<ApprovalRequestedEvent>();
   private readonly subApprovalAutoResolved =
     new Subscribers<ApprovalAutoResolvedEvent>();
@@ -2107,8 +1881,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   /** Reload-bug fix (Yue 2026-05-15): fires once on every successful
    *  RECONNECT (subsequent `session/open` acks in the same bridge
    *  lifecycle — not the initial open). The runtime layer subscribes
-   *  to re-issue `session/hydrate` so envelopes emitted while the WS
-   *  was disconnected get replayed from `replayed_envelopes`. */
+   *  to re-issue `session/hydrate` so the canonical snapshot catches up. */
   private readonly subReopened = new Subscribers<void>();
   /** Fires on every successful `session/open` ack with the `opened`
    *  payload (initial + reconnect) — carrier for server-persisted
@@ -2129,10 +1902,6 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     [METHODS.MESSAGE_DELTA]: {
       guard: guardMessageDelta,
       emit: (v) => this.subMessageDelta.emit(v as MessageDeltaEvent),
-    },
-    [METHODS.MESSAGE_PERSISTED]: {
-      guard: guardMessagePersisted,
-      emit: (v) => this.subMessagePersisted.emit(v as MessagePersistedEvent),
     },
     [METHODS.TURN_SPAWN_COMPLETE]: {
       guard: guardSpawnComplete,
@@ -2259,16 +2028,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     },
     "projection/envelope": {
       guard: guardProjectionEnvelope,
-      emit: (v) => {
-        const env = v as ProjectionEnvelope;
-        if (env.payload?.type === "assistant_delta" && typeof env.payload.data?.text === "string") {
-          this.subMessageDelta.emit({
-            session_id: env.session_id ?? "",
-            turn_id: env.turn_id,
-            text: env.payload.data.text,
-          });
-        }
-      },
+      emit: (v) => this.handleProjectionEnvelope(v as ProjectionEnvelopeV2),
     },
     // Issue #113.2 (was M12 Phase D-3 TODO): the server emits
     // `session/title-updated` after a successful `session/title.set`,
@@ -2340,6 +2100,24 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     // envelope-mismatch drop. Empty string => no scope (root).
     const t = opts.topic?.trim();
     this.topicScope = t && t.length > 0 ? t : null;
+    this.projectionV2Active = false;
+    this.projectionHandshake = "pending";
+    this.pendingProjectionFrames = [];
+    this.emittedProjectionTerminals.clear();
+    this.unsubscribeProjectionAdmission?.();
+    this.unsubscribeProjectionStore?.();
+    this.unsubscribeProjectionAdmission = ProjectionStore.onEnvelopeAdmitted(
+      (storeKey, envelope) => this.handleAdmittedProjectionEnvelope(storeKey, envelope),
+    );
+    this.unsubscribeProjectionStore = ProjectionStore.subscribe(() => {
+      this.syncProjectionWatermark();
+    });
+    if (this.sessionId) {
+      ProjectionStore.resetProjectionScope(
+        this.sessionId,
+        this.topicScope ?? undefined,
+      );
+    }
     this.reconnectAttempts = 0;
     this.reconnectAbandoned = false;
     this.latchReason = null;
@@ -2385,7 +2163,6 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.rejectAllPending(new BridgeStoppedError());
     this.sendQueue.length = 0;
     this.subMessageDelta.clear();
-    this.subMessagePersisted.clear();
     this.subSpawnComplete.clear();
     this.subFileAttached.clear();
     this.subVisualGenerating.clear();
@@ -2395,6 +2172,11 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.subTaskOutputDelta.clear();
     this.subSkillActionJobUpdated.clear();
     this.subTurnLifecycle.clear();
+    this.subProjectionTerminal.clear();
+    this.unsubscribeProjectionAdmission?.();
+    this.unsubscribeProjectionAdmission = null;
+    this.unsubscribeProjectionStore?.();
+    this.unsubscribeProjectionStore = null;
     this.subContextCompaction.clear();
     this.subApprovalRequested.clear();
     this.subApprovalAutoResolved.clear();
@@ -2570,9 +2352,8 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       }
       return guarded;
     } catch (err) {
-      // Failure is non-fatal — the legacy REST `loadHistory` path still
-      // populates the thread store. We just lose the hydrate-time dedup
-      // for this session.
+      // Failure is non-fatal. The current projection stays visible and a
+      // later canonical snapshot can reconcile this session.
       this.subWarning.emit({
         reason: "hydrate_rpc_failed",
         context: err instanceof Error ? err.message : String(err),
@@ -2698,9 +2479,6 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   onMessageDelta(handler: Listener<MessageDeltaEvent>): () => void {
     return this.subMessageDelta.add(handler);
   }
-  onMessagePersisted(handler: Listener<MessagePersistedEvent>): () => void {
-    return this.subMessagePersisted.add(handler);
-  }
   onSpawnComplete(handler: Listener<TurnSpawnCompleteEvent>): () => void {
     return this.subSpawnComplete.add(handler);
   }
@@ -2749,6 +2527,9 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     handler: Listener<TurnStartedEvent | TurnCompletedEvent | TurnErrorEvent>,
   ): () => void {
     return this.subTurnLifecycle.add(handler);
+  }
+  onProjectionTerminal(handler: Listener<ProjectionTerminalEvent>): () => void {
+    return this.subProjectionTerminal.add(handler);
   }
   onContextCompaction(
     handler: Listener<ContextCompactionStartedEvent | ContextCompactionCompletedEvent>,
@@ -2961,6 +2742,11 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       this.flushSendQueue();
       return;
     }
+    // A reconnect must obtain a fresh capability acknowledgement before its
+    // replay can mutate the canonical ledger. Retain the current projection
+    // while the handshake is in flight.
+    this.projectionHandshake = "pending";
+    this.pendingProjectionFrames = [];
     try {
       const params: Record<string, unknown> = {
         session_id: this.requireSessionId(),
@@ -2984,10 +2770,6 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
         { bypassQueue: true },
       );
       if (this.stopped) return;
-      // Seed/advance the cursor from the open ack — the server stamps
-      // `opened.cursor` with the authoritative head, so even a session with
-      // no cursor-bearing live frames yet has an `after` for its next reopen.
-      this.advanceCursor(openResult?.opened?.cursor);
       this.reconnectAttempts = 0;
       this.reconnectAbandoned = false;
       // Issue #137: a successful (re)open clears the latch reason and
@@ -3001,6 +2783,14 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       // `startBridgeForSession`.
       const isReopen = this.hasEverOpened;
       this.hasEverOpened = true;
+      const supportedFeatures =
+        openResult?.opened?.capabilities?.supported_features;
+      const negotiatedProjectionV2 =
+        Array.isArray(supportedFeatures) &&
+        supportedFeatures.includes(
+          ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+        );
+      this.setProjectionV2Active(negotiatedProjectionV2);
       this.setState("connected");
       // Surface the `opened` payload (initial + reopen) so the runtime
       // layer can seed server-persisted per-session state — today the
@@ -3017,8 +2807,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
         // while the WS was disconnected (e.g. a `TurnSpawnComplete`
         // for a long-running `spawn_only`) would be silently dropped
         // without this hook. The runtime layer subscribes here to
-        // re-fetch `session/hydrate` so `replayed_envelopes` rolls the
-        // ledger forward for the user's missed turn.
+        // re-fetch `session/hydrate` so the canonical snapshot catches up.
         this.subReopened.emit();
       }
     } catch (err) {
@@ -3150,11 +2939,112 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       return;
     }
     handler.emit(result);
-    // #245 P2: advance the reconnect cursor from any cursor-bearing frame
-    // (message/persisted, turn/completed, turn/spawn_complete). Deltas carry
-    // no cursor, so this tracks the last DURABLE position — exactly what the
-    // server's `after` replay filters on (`entry.seq > after.seq`).
-    this.advanceCursor((result as { cursor?: unknown }).cursor);
+    // Advance the reconnect cursor from any cursor-bearing non-canonical
+    // notification. Canonical envelopes advance it through ProjectionStore.
+    if (note.method !== "projection/envelope") {
+      this.advanceCursor((result as { cursor?: unknown }).cursor);
+    }
+  }
+
+  /** Apply the required canonical capability acknowledgement after
+   * `session/open`. This controls whether inbound canonical frames may enter
+   * the store; it never selects an alternate renderer. */
+  private setProjectionV2Active(active: boolean): void {
+    this.projectionV2Active = active;
+    this.projectionHandshake = active ? "accepted" : "rejected";
+    if (!active) {
+      this.pendingProjectionFrames = [];
+      this.subWarning.emit({
+        reason: "projection_envelope_v2_required",
+        context: ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+      });
+      return;
+    }
+    const buffered = this.pendingProjectionFrames;
+    this.pendingProjectionFrames = [];
+    for (const envelope of buffered) {
+      this.handleProjectionEnvelope(envelope);
+    }
+  }
+
+  private syncProjectionWatermark(): void {
+    if (!this.projectionV2Active || !this.sessionId) return;
+    const storeKey = ProjectionStore.projectionStoreKey(
+      this.sessionId,
+      this.topicScope ?? undefined,
+    );
+    this.advanceCursor(ProjectionStore.getWatermark(storeKey));
+  }
+
+  /** Direct canonical receive path. Compatibility event subscribers are
+   * never invoked here, which guarantees one projected render model. */
+  private handleProjectionEnvelope(envelope: ProjectionEnvelopeV2): void {
+    if (!this.sessionId || envelope.session_id !== this.sessionId) return;
+    if (this.projectionHandshake === "pending") {
+      this.pendingProjectionFrames.push(envelope);
+      return;
+    }
+    // A connection that did not acknowledge the required feature cannot add
+    // frames to the canonical ledger. Drop the notification rather than
+    // retaining an unbounded buffer.
+    if (!this.projectionV2Active) return;
+    const topic = envelope.topic ?? this.topicScope ?? undefined;
+    const storeKey = ProjectionStore.projectionStoreKey(envelope.session_id, topic);
+    const result = ProjectionStore.ingest(storeKey, envelope);
+    if (!result.accepted) return;
+
+    // Store watermarks advance only through contiguous global ledger cursors;
+    // reconnect never treats a thread sequence as the ledger cursor.
+    this.advanceCursor(ProjectionStore.getWatermark(storeKey));
+  }
+
+  /** Terminals are emitted from canonical admission, not raw arrival. That
+   * covers a terminal drained behind a gap and one replayed after snapshot
+   * hydration, both of which must settle the send queue/ghost exactly once. */
+  private handleAdmittedProjectionEnvelope(
+    storeKey: string,
+    envelope: ProjectionEnvelopeV2,
+  ): void {
+    if (
+      !this.projectionV2Active ||
+      !this.sessionId ||
+      envelope.session_id !== this.sessionId
+    ) {
+      return;
+    }
+    const topic = envelope.topic ?? this.topicScope ?? undefined;
+    if (
+      storeKey !==
+      ProjectionStore.projectionStoreKey(envelope.session_id, topic)
+    ) {
+      return;
+    }
+    // Snapshot replacement admits frames without flowing through
+    // `handleProjectionEnvelope`. Advance from the store's ledger watermark
+    // here as well, so reconnect `after` is always a cursor—not a thread
+    // sequence—and includes snapshot/replay progress.
+    this.advanceCursor(ProjectionStore.getWatermark(storeKey));
+    if (envelope.payload.type !== "turn_terminal") return;
+    const identity = [storeKey, envelope.thread_id, String(envelope.seq)].join(":");
+    if (this.emittedProjectionTerminals.has(identity)) return;
+    this.emittedProjectionTerminals.add(identity);
+    const clientMessageId = ProjectionStore.clientMessageIdForTurn(
+      storeKey,
+      envelope.turn_id,
+    );
+    this.subProjectionTerminal.emit({
+      session_id: envelope.session_id,
+      ...(topic !== undefined ? { topic } : {}),
+      thread_id: envelope.thread_id,
+      turn_id: envelope.turn_id,
+      ...(clientMessageId !== undefined
+        ? { client_message_id: clientMessageId }
+        : {}),
+      outcome: envelope.payload.data.outcome,
+      ...(envelope.payload.data.error !== undefined
+        ? { error: envelope.payload.data.error }
+        : {}),
+    });
   }
 
   /** Advance `lastCursor` to the highest durable ledger position seen
@@ -3648,7 +3538,6 @@ export function createUiProtocolBridge(
 // rebuilding the WS scaffolding for every shape variation.
 export const __INTERNAL_GUARDS_FOR_TEST__ = {
   guardMessageDelta,
-  guardMessagePersisted,
   guardSpawnComplete,
   guardSessionHydrate,
   guardTaskUpdated,

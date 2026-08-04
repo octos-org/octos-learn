@@ -12,6 +12,10 @@ import {
   createUiProtocolBridge,
   type UiProtocolBridge,
 } from "./ui-protocol-bridge";
+import {
+  parseProjectionEnvelopeV2,
+  type ProjectionEnvelopeV2,
+} from "./projection-envelope-v2";
 import type {
   ConnectionState,
   UiGoalRecord,
@@ -19,10 +23,7 @@ import type {
 } from "./ui-protocol-types";
 import { attachRouter, type RouterAttachment } from "./ui-protocol-event-router";
 import * as AutonomyStore from "@/store/autonomy-store";
-import {
-  setHydrateSnapshot,
-  suppressPendingDeltasForReplay,
-} from "@/store/thread-store";
+import * as ProjectionStore from "@/store/projection-store";
 import {
   asStoredEffort,
   markThinkingSeeded,
@@ -34,17 +35,12 @@ interface ActiveBridge {
   topic?: string;
   bridge: UiProtocolBridge;
   attachment: RouterAttachment;
-  /** Live connection state, kept in sync via `onConnectionStateChange`.
-   *  `getActiveBridge` only returns this entry when it has reached
-   *  `"connected"`, so callers (the v1 send path) fall back to legacy
-   *  REST/SSE while the WS handshake is still in flight or stalled. */
+  /** Live connection state, kept in sync via `onConnectionStateChange` for
+   *  lifecycle observers and auxiliary request wrappers. */
   connectionState: ConnectionState;
   /** Cleanup fn for the connection-state subscriber. Detached on stop. */
   unsubscribeState: () => void;
-  /** Cleanup fn for the reopen subscriber (reload-bug fix). Detached on
-   *  stop. The reopen subscriber re-fires `session/hydrate` so missed
-   *  envelopes (e.g. a `TurnSpawnComplete` emitted while the WS was
-   *  dropped) get replayed via `replayed_envelopes`. */
+  /** Cleanup fn for the reopen subscriber. Detached on stop. */
   unsubscribeReopened: () => void;
   /** Cleanup fn for the session-opened subscriber (thinking-effort
    *  seeding). Detached on stop. */
@@ -52,6 +48,21 @@ interface ActiveBridge {
 }
 
 let active: ActiveBridge | null = null;
+
+// The canonical store owns gap detection. Keep this bridge-level callback
+// narrow: it only hydrates the currently mounted scope and never reaches
+// into ThreadStore while v2 is active.
+ProjectionStore.onRehydrateRequested((storeKey) => {
+  const current = active;
+  if (!current) return;
+  if (
+    ProjectionStore.projectionStoreKey(current.sessionId, current.topic) !==
+    storeKey
+  ) {
+    return;
+  }
+  runHydrateFor(current.sessionId, current.topic, current.bridge, generation);
+}, { persistent: true });
 
 /**
  * Monotonic generation counter. Each `startBridgeForSession` /
@@ -142,12 +153,9 @@ export async function startBridgeForSession(
     );
   }
   const attachment = attachRouter(bridge, { sessionId, topic });
-  // Track live connection state so `getActiveBridge` can refuse to
-  // hand out a bridge that has not yet negotiated `session/open`.
-  // Without this, a WS endpoint that is blocked / DNS-fails / hangs in
-  // `connecting` would still publish here and the v1 send queue would
-  // park every text turn forever instead of falling back to legacy
-  // REST/SSE. (codex review M10.5 round 2 P2.)
+  // Track live connection state for lifecycle observers. The bridge's send
+  // queue holds turns through the handshake/reconnect window and reports a
+  // terminal transport failure when recovery is exhausted.
   let connectionState: ConnectionState = "connecting";
   const unsubscribeState = bridge.onConnectionStateChange((s) => {
     if (active?.bridge === bridge) {
@@ -192,14 +200,6 @@ export async function startBridgeForSession(
       // bridge down before publishing its own. Use the same generation
       // guard the initial hydrate uses.
       if (myGeneration !== generation) return;
-      // #245 P2: the bridge now sends an `after` cursor on reopen, so the
-      // server replays the gap as live frames — including `message/delta`,
-      // which has no client-side identity. Freeze each in-flight bubble's
-      // delta stream FIRST (replayed deltas would double it; clearing would
-      // truncate it) — the turn's durable frames deliver canonical text and
-      // lift the freeze. Runs for ALL reopens (topic-scoped bridges
-      // included), unlike the topic-gated hydrate below.
-      suppressPendingDeltasForReplay(sessionId, topic);
       runHydrateFor(sessionId, topic, bridge, myGeneration);
       runAutonomySnapshotFor(sessionId, topic, bridge, myGeneration);
     });
@@ -242,23 +242,8 @@ export async function startBridgeForSession(
     unsubscribeSessionOpened,
   };
 
-  // M10 Phase 6.2 (Bug C): immediately fire `session/hydrate` to fetch
-  // the negotiated `replayed_envelopes` + per-row `(message_id,
-  // source)`. Cache the result in ThreadStore so any concurrent or
-  // subsequent REST `replayHistory` (chat-thread.tsx fires retries at
-  // 2s/5s/12s) can dedup the legacy `Background`-source rows the live
-  // wire suppresses for negotiated clients. Best-effort: a failure
-  // here just falls back to the pre-Bug-C N+1 render.
-  //
-  // Topic scoping: the WS bridge starts with the bare `sessionId` (no
-  // topic), so `session/hydrate` returns data for the ROOT
-  // `SessionKey` (which encodes a `#topic` suffix when topics are
-  // active server-side). Until the bridge can negotiate topic with
-  // the server, restrict the dedup to the no-topic case — the soak
-  // suite + Bug C reproducer all run in this scope, and topic-scoped
-  // chat (slides/sites) keeps the legacy REST-only render with the
-  // pre-fix N+1 limitation. This avoids cross-topic envelope leakage
-  // (codex round-2 P2).
+  // Immediately hydrate the canonical v2 snapshot. The bridge keeps live
+  // envelopes buffered atomically while this snapshot is installed.
   runHydrateFor(sessionId, topic, bridge, myGeneration);
   runAutonomySnapshotFor(sessionId, topic, bridge, myGeneration);
 
@@ -266,9 +251,9 @@ export async function startBridgeForSession(
 }
 
 /**
- * Run a `session/hydrate(["messages"])` RPC and push the result into
- * ThreadStore. Used by both the initial bridge start and the post-
- * reconnect reopen path.
+ * Run a `session/hydrate(["messages"])` RPC and install its canonical v2
+ * snapshot. Used by both the initial bridge start and the post-reconnect
+ * reopen path.
  *
  * The reload-bug fix (Yue 2026-05-15) added the reopen call site: the
  * server's `session/open` without an `after` cursor is "live only, no
@@ -276,11 +261,6 @@ export async function startBridgeForSession(
  * envelopes the server emitted between disconnect and reconnect (e.g.
  * a `TurnSpawnComplete` for a long-running `spawn_only`) would be
  * silently dropped. Re-hydrating on reopen rolls the ledger forward.
- *
- * Dedup is the caller's responsibility but already covered: ThreadStore's
- * `applyHydrateDedup` (via `setHydrateSnapshot`) coalesces duplicate
- * `(message_id, source)` rows from `replayed_envelopes`, so it is safe
- * to call this multiple times on the same bridge.
  *
  * Generation-guarded: skips if a newer `startBridgeForSession` /
  * `stopActiveBridge` has bumped the global counter, mirroring the
@@ -292,20 +272,64 @@ function runHydrateFor(
   bridge: UiProtocolBridge,
   capturedGeneration: number,
 ): void {
-  if (topic && topic.trim() !== "") return;
+  const projectionKey = ProjectionStore.projectionStoreKey(sessionId, topic);
+  const ownsProjectionSnapshot = ProjectionStore.beginSnapshot(
+    projectionKey,
+    ProjectionStore.getWatermark(projectionKey),
+  );
+  // A reconnect hydrate and a gap recovery can race. The first one owns the
+  // atomic snapshot transition; its buffered-live replay covers both causes,
+  // so a second RPC must not finish or replace the first one's buffer.
+  if (!ownsProjectionSnapshot) return;
   void (async () => {
-    if (capturedGeneration !== generation) return;
+    if (capturedGeneration !== generation) {
+      if (ownsProjectionSnapshot) {
+        ProjectionStore.finishSnapshotWithoutReplace(projectionKey);
+      }
+      return;
+    }
     // Defensive: test mocks of `UiProtocolBridge` may pre-date this
     // method. Production builds always have it.
-    if (typeof bridge.hydrateSession !== "function") return;
-    const hydrate = await bridge.hydrateSession(["messages"]);
-    if (capturedGeneration !== generation) return;
-    if (!hydrate) return;
-    setHydrateSnapshot(sessionId, topic, {
-      messages: hydrate.messages,
-      replayed_envelopes: hydrate.replayed_envelopes,
-      replayed_tool_envelopes: hydrate.replayed_tool_envelopes,
-    });
+    if (typeof bridge.hydrateSession !== "function") {
+      if (ownsProjectionSnapshot) {
+        ProjectionStore.finishSnapshotWithoutReplace(projectionKey);
+      }
+      return;
+    }
+    try {
+      const hydrate = await bridge.hydrateSession(["messages"]);
+      if (capturedGeneration !== generation) return;
+      if (!hydrate) return;
+      const rawSnapshot =
+        hydrate.projection_snapshot?.envelopes ?? hydrate.projection_envelopes;
+      if (rawSnapshot === undefined) return;
+      const envelopes = rawSnapshot
+        .map((frame) => parseProjectionEnvelopeV2(frame))
+        .filter(
+          (parsed): parsed is { ok: true; value: ProjectionEnvelopeV2 } =>
+            parsed.ok,
+        )
+        .map((parsed) => parsed.value)
+        .filter((envelope) => {
+          if (envelope.session_id !== sessionId) return false;
+          const snapshotTopic = envelope.topic?.trim() || undefined;
+          const requestedTopic = topic?.trim() || undefined;
+          // Older servers omit `topic` from a snapshot that was already
+          // scoped by the hydrate request. An explicit mismatched topic
+          // is never safe to install into this bucket.
+          return snapshotTopic === undefined || snapshotTopic === requestedTopic;
+        });
+      const cursor = hydrate.projection_snapshot?.cursor ?? hydrate.cursor;
+      ProjectionStore.replaceSnapshot(
+        projectionKey,
+        envelopes,
+        cursor?.stream ? cursor : null,
+      );
+    } finally {
+      if (ownsProjectionSnapshot) {
+        ProjectionStore.finishSnapshotWithoutReplace(projectionKey);
+      }
+    }
   })();
 }
 
@@ -354,12 +378,7 @@ function runAutonomySnapshotFor(
 /**
  * Returns the currently-active bridge if it matches the requested scope.
  *
- * The legacy `connectionState === "closed" | "error"` fail-closed gate
- * was removed (M10.5 Wave A round-3): the SSE fallback that used to
- * pick up turns when the WS bridge was dead is itself buggy for text
- * (Yue 2026-05-07 — SSE is the path M10 was supposed to retire). With
- * the gate dropped, sends always flow through the bridge's own send
- * queue, which:
+ * Sends always flow through the bridge's own send queue, which:
  *   - parks the turn while `connecting` / `reconnecting` (handshake
  *     latency window),
  *   - errors loudly when the bridge has truly given up so the SPA
@@ -369,8 +388,7 @@ function runAutonomySnapshotFor(
  * Mismatched scopes still return null so callers don't dispatch into
  * the wrong session's transport. Topic-scoped sessions (sites/slides)
  * and media uploads (`kind: image|audio`) reach this with their own
- * scope; the legacy SSE fallback for those consumers lives at the
- * call site, not here.
+ * scope; callers must never dispatch into a different session or topic.
  */
 export function getActiveBridge(
   sessionId: string,
@@ -647,8 +665,8 @@ export function __resetUiProtocolRuntimeForTest(): void {
 /** Test-only injection so unit tests can drive a mock bridge into the
  *  runtime registry without spinning up a real WebSocket. Defaults the
  *  connection state to `connected` because all existing test cases
- *  assume the bridge is ready; pass `connectionState` to drive other
- *  states (e.g. `connecting` to exercise the legacy-fallback path). */
+ *  assume the bridge is ready; pass `connectionState` to exercise other
+ *  lifecycle states such as `connecting`. */
 export function __setActiveBridgeForTest(
   sessionId: string,
   bridge: UiProtocolBridge,

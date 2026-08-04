@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { PanelLeft, PanelRight } from "lucide-react";
 
 import { ChatThread } from "@/components/chat-thread";
-import { listSkillActionJobs, type SkillActionJob } from "@/api/skill-actions";
 import { StudioNav } from "@/components/studio-nav";
 import { UiProtocolApprovalHost } from "@/components/ui-protocol-approval-host";
 import { UiProtocolQuestionHost } from "@/components/ui-protocol-question-host";
@@ -16,22 +15,14 @@ import {
   type SessionSendRequest,
 } from "@/runtime/session-context";
 import { recordProjectOpened } from "@/store/project-store";
-import * as ThreadStore from "@/store/thread-store";
 import { useResizablePanel } from "@/hooks/use-resizable-panel";
 
-import {
-  SOURCE_IMPORT_ACTION_ID,
-  isSourceRowReady,
-  mergeSourceImportJobs,
-  mergeSourceRows,
-  sourceRowFromSkillActionJob,
-  type SourceRow,
-} from "./source-media";
-import { loadSourceCatalog } from "./source-store";
+import { mergeSourceMedia } from "./source-media";
 import { StudioRail } from "./studio-rail";
 import { StudioSourcesPane } from "./studio-sources-pane";
 import type { CitationTarget } from "./structured-asset-viewers";
 import { withNotebookToolContext } from "./tool-context";
+import { useNotebookSources } from "./use-notebook-sources";
 
 const TITLE_STORAGE_KEY = "octos_session_titles";
 const PANES_STORAGE_KEY = "octos-studio-panes";
@@ -116,34 +107,6 @@ export function StudioPage() {
   return <StudioWorkspace key={projectId} projectId={projectId} />;
 }
 
-function sameSourceRow(a: SourceRow, b: SourceRow): boolean {
-  if (a.sourceId && b.sourceId) return a.sourceId === b.sourceId;
-  if (a.jobId && b.jobId) return a.jobId === b.jobId;
-  if (a.sourcePath && b.sourcePath) {
-    return a.sourcePath.replaceAll("\\", "/")
-      === b.sourcePath.replaceAll("\\", "/");
-  }
-  const aPaths = [a.path, a.sourcePath, a.inputPath, a.materializedPath, a.previewPath]
-    .filter((path): path is string => Boolean(path))
-    .map((path) => path.replaceAll("\\", "/"));
-  const bPaths = new Set(
-    [b.path, b.sourcePath, b.inputPath, b.materializedPath, b.previewPath]
-      .filter((path): path is string => Boolean(path))
-      .map((path) => path.replaceAll("\\", "/")),
-  );
-  return aPaths.some((path) => bPaths.has(path));
-}
-
-function hasStrongSourceIdentityMatch(a: SourceRow, b: SourceRow): boolean {
-  return Boolean(
-    (a.sourceId && b.sourceId && a.sourceId === b.sourceId)
-    || (a.jobId && b.jobId && a.jobId === b.jobId)
-    || (a.sourcePath && b.sourcePath
-      && a.sourcePath.replaceAll("\\", "/")
-        === b.sourcePath.replaceAll("\\", "/")),
-  );
-}
-
 function StudioWorkspace({ projectId }: { projectId: string }) {
   const [title, setTitle] = useState(() => readStoredTitle(projectId));
   const [panes, setPanes] = useState<PaneState>(loadPaneState);
@@ -190,13 +153,17 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
       return next;
     });
   }, []);
-  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
-  const [uploadedSources, setUploadedSources] = useState<SourceRow[]>([]);
-  const [sourcesLoading, setSourcesLoading] = useState(true);
-  const [hasActiveSourceImportJobs, setHasActiveSourceImportJobs] = useState(false);
-  const sourceCatalogRequest = useRef(0);
-  const sourceImportJobsRef = useRef<SkillActionJob[]>([]);
-  const dismissedSourceJobIds = useRef(new Set<string>());
+  const {
+    selectedSources,
+    uploadedSources,
+    sourcesLoading,
+    selectedSourceIds,
+    toggleSource,
+    mergeUploadedSourceRows,
+    renameUploadedSourceRow,
+    removeUploadedSourceRow,
+    refreshSourceCatalog,
+  } = useNotebookSources(projectId);
 
   function openCitation(citation: CitationTarget) {
     setCitationTarget(citation);
@@ -244,204 +211,17 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
     };
   }, [projectId]);
 
-  const mergeUploadedSourceRows = useCallback((rows: SourceRow[]) => {
-    setUploadedSources((prev) => mergeSourceRows(prev, rows));
-  }, []);
-
-  const refreshSourceCatalog = useCallback(async () => {
-    const request = ++sourceCatalogRequest.current;
-    try {
-      const catalog = await loadSourceCatalog(projectId);
-      if (request !== sourceCatalogRequest.current) return;
-      setUploadedSources((current) => {
-        const readyJobRows = current.filter((row) => row.jobId && isSourceRowReady(row));
-        const claimedJobIds = new Set<string>();
-        const catalogRows = catalog.map((row) => {
-          const jobRow = readyJobRows.find((candidate) => {
-            if (!candidate.jobId || claimedJobIds.has(candidate.jobId)) return false;
-            if (!sameSourceRow(row, candidate)) return false;
-            if (hasStrongSourceIdentityMatch(row, candidate)) return true;
-            return catalog.filter((catalogRow) => sameSourceRow(catalogRow, candidate))
-              .length === 1;
-          });
-          if (jobRow?.jobId) claimedJobIds.add(jobRow.jobId);
-          return jobRow
-            ? { ...row, jobId: jobRow.jobId, batchId: jobRow.batchId }
-            : row;
-        });
-        const pendingReadyRows = current.filter((row) =>
-          row.jobId
-          && isSourceRowReady(row)
-          && !catalogRows.some((catalogRow) => sameSourceRow(catalogRow, row))
-        );
-        return [
-          ...catalogRows,
-          ...pendingReadyRows,
-          ...current.filter((row) => !isSourceRowReady(row)),
-        ];
-      });
-    } finally {
-      if (request === sourceCatalogRequest.current) {
-        setSourcesLoading(false);
-      }
-    }
-  }, [projectId]);
-
-  const renameUploadedSourceRow = useCallback((row: SourceRow, title: string) => {
-    setUploadedSources((prev) =>
-      prev.map((existing) =>
-        sameSourceRow(existing, row)
-          ? { ...existing, filename: title, timestamp: Date.now() }
-          : existing,
-      ),
-    );
-    void refreshSourceCatalog();
-  }, [refreshSourceCatalog]);
-
-  const removeUploadedSourceRow = useCallback((row: SourceRow) => {
-    if (row.jobId) {
-      dismissedSourceJobIds.current.add(row.jobId);
-      sourceImportJobsRef.current = sourceImportJobsRef.current.filter(
-        (job) => job.job_id !== row.jobId,
-      );
-      setHasActiveSourceImportJobs(
-        sourceImportJobsRef.current.some(
-          (job) => job.status === "queued" || job.status === "running",
-        ),
-      );
-    }
-    setUploadedSources((prev) => prev.filter((existing) => !sameSourceRow(existing, row)));
-    if (row.sourceId) {
-      setSelectedSourceIds((prev) => prev.filter((sourceId) => sourceId !== row.sourceId));
-    }
-    void refreshSourceCatalog();
-  }, [refreshSourceCatalog]);
-
-  const applySourceImportJobs = useCallback(
-    (jobs: SkillActionJob[]) => {
-      const sourceJobs = jobs.filter(
-        (job) =>
-          job.session_id === projectId &&
-          job.action_id === SOURCE_IMPORT_ACTION_ID
-          && !dismissedSourceJobIds.current.has(job.job_id),
-      );
-      if (sourceJobs.length === 0) return;
-
-      const previousJobs = sourceImportJobsRef.current;
-      const mergedJobs = mergeSourceImportJobs(
-        previousJobs,
-        sourceJobs,
-      );
-      sourceImportJobsRef.current = mergedJobs;
-      setHasActiveSourceImportJobs(
-        mergedJobs.some((job) => job.status === "queued" || job.status === "running"),
-      );
-
-      const acceptedSucceededJobs = sourceJobs.filter((job) => {
-        if (job.status !== "succeeded") return false;
-        const accepted = mergedJobs.find((candidate) => candidate.job_id === job.job_id);
-        if (accepted?.status !== "succeeded"
-          || (accepted.updated_at || accepted.created_at)
-            !== (job.updated_at || job.created_at)) return false;
-        const previous = previousJobs.find((candidate) => candidate.job_id === job.job_id);
-        return previous?.status !== "succeeded"
-          || (accepted.updated_at || accepted.created_at)
-            !== (previous?.updated_at || previous?.created_at);
-      });
-      const transientRows = mergedJobs
-        .filter((job) => job.status !== "succeeded")
-        .map((job) => sourceRowFromSkillActionJob(job));
-      const newlyReadyRows = acceptedSucceededJobs.map((job) =>
-        sourceRowFromSkillActionJob(job)
-      );
-      setUploadedSources((prev) =>
-        mergeSourceRows(prev, [...transientRows, ...newlyReadyRows]),
-      );
-      if (acceptedSucceededJobs.length > 0) void refreshSourceCatalog();
-    },
-    [projectId, refreshSourceCatalog],
-  );
-
-  const restoreSourceImportJobs = useCallback(async () => {
-    try {
-      const jobs = await listSkillActionJobs(projectId, {
-        actionId: SOURCE_IMPORT_ACTION_ID,
-      });
-      applySourceImportJobs(jobs);
-    } catch {
-      // The bridge may not be connected yet; the next bridge_connected
-      // event will retry the snapshot fetch.
-    }
-  }, [applySourceImportJobs, projectId]);
-
-  useEffect(() => {
-    const restoreSoon = () => {
-      void Promise.resolve().then(restoreSourceImportJobs);
-      void Promise.resolve().then(refreshSourceCatalog).catch(() => {});
-    };
-    restoreSoon();
-    const onBridgeReady = () => {
-      restoreSoon();
-    };
-    window.addEventListener("crew:bridge_connected", onBridgeReady);
-    return () => {
-      window.removeEventListener("crew:bridge_connected", onBridgeReady);
-    };
-  }, [refreshSourceCatalog, restoreSourceImportJobs]);
-
-  useEffect(() => {
-    if (!hasActiveSourceImportJobs) return;
-    const poll = window.setInterval(() => {
-      void restoreSourceImportJobs();
-    }, 3_000);
-    return () => window.clearInterval(poll);
-  }, [hasActiveSourceImportJobs, restoreSourceImportJobs]);
-
-  useEffect(() => {
-    const onJobUpdated = (e: Event) => {
-      const job = (e as CustomEvent<SkillActionJob>).detail;
-      if (!job) return;
-      applySourceImportJobs([job]);
-    };
-    window.addEventListener("crew:skill_action_job_updated", onJobUpdated);
-    return () => {
-      window.removeEventListener("crew:skill_action_job_updated", onJobUpdated);
-    };
-  }, [applySourceImportJobs]);
-
-  // History hydration — mirrors slides-chat (Issue #112.2 / #110.2):
-  // `loadHistory` mount-races the bridge handshake and throws before
-  // `connectionState === "connected"`; the swallowed throw cleared the
-  // dedup set but the effect deps never changed, so the thread stayed
-  // blank. Re-issue with `force: true` on every `crew:bridge_connected`
-  // (dispatched by `runtime/ui-protocol-runtime.ts` each time the
-  // bridge reaches `connected`).
-  useEffect(() => {
-    void ThreadStore.loadHistory(projectId, undefined);
-    const onBridgeReady = () => {
-      void ThreadStore.loadHistory(projectId, undefined, { force: true });
-    };
-    window.addEventListener("crew:bridge_connected", onBridgeReady);
-    return () => {
-      window.removeEventListener("crew:bridge_connected", onBridgeReady);
-    };
-  }, [projectId]);
-
-  const toggleSource = useCallback((sourceId: string) => {
-    setSelectedSourceIds((prev) =>
-      prev.includes(sourceId)
-        ? prev.filter((selectedId) => selectedId !== sourceId)
-        : [...prev, sourceId]
-    );
-  }, []);
-
-  // Notebook sources are imported into the session workspace up front.
-  // The center composer does not upload or attach files in Studio mode.
+  // Studio turns carry both the Notebook routing context and the currently
+  // selected catalog paths used for grounding.
   const beforeSend = useCallback(
     async (request: SessionSendRequest): Promise<SessionBeforeSendResult> => {
-      return withNotebookToolContext(request);
+      const contextual = withNotebookToolContext(request);
+      return {
+        ...contextual,
+        media: mergeSourceMedia(contextual.media ?? [], selectedSources),
+      };
     },
-    [],
+    [selectedSources],
   );
 
   const { queueMode, adaptiveMode } = useModeState();

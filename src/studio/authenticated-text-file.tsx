@@ -23,9 +23,16 @@ export function AuthenticatedTextFile({
     key: string;
     text: string | null;
     error: string | null;
-  }>({ key: file?.filePath ?? "", text: null, error: null });
+  }>({
+    key: `${sessionId}\0${file?.filePath ?? ""}`,
+    text: null,
+    error: null,
+  });
   const filePath = file?.filePath ?? "";
-  const key = filePath;
+  // A workspace-relative path is not globally unique. Include the full
+  // authenticated scope so a session switch cannot paint committed text from
+  // the previous session while the same path is fetched for the new one.
+  const key = `${sessionId}\0${filePath}`;
   const declaredSizeError = file?.size !== undefined
     && file.size > MAX_STRUCTURED_ASSET_BYTES
     ? "This asset is too large for the interactive viewer."

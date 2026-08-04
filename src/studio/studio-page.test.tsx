@@ -18,9 +18,7 @@ import type { ReactNode } from "react";
 // ---------------------------------------------------------------------------
 
 const sendMessageMock = vi.hoisted(() => vi.fn());
-const threadStoreMocks = vi.hoisted(() => ({
-  loadHistory: vi.fn(),
-}));
+const beforeSendResultMock = vi.hoisted(() => vi.fn());
 const uploadFilesMock = vi.hoisted(() =>
   vi.fn(async () => ["research/up.pdf"]),
 );
@@ -84,14 +82,38 @@ const fileFixtures = vi.hoisted(() => [
 ]);
 const loadSessionFilesMock = vi.hoisted(() => vi.fn(async () => {}));
 
-vi.mock("@/components/chat-thread", () => ({
-  ChatThread: (props: { allowAttachments?: boolean }) => (
-    <div
-      data-testid="chat-thread-stub"
-      data-allow-attachments={String(props.allowAttachments)}
-    />
-  ),
-}));
+vi.mock("@/components/chat-thread", async () => {
+  const React = await import("react");
+  const { SessionContext } = await import("@/runtime/session-context");
+  return {
+    ChatThread: (props: { allowAttachments?: boolean }) => {
+      const session = React.useContext(SessionContext);
+      return (
+        <>
+          <div
+            data-testid="chat-thread-stub"
+            data-allow-attachments={String(props.allowAttachments)}
+          />
+          <button
+            type="button"
+            data-testid="chat-before-send-probe"
+            onClick={() => {
+              if (!session.beforeSend) return;
+              void Promise.resolve(
+                session.beforeSend({
+                  sessionId: "web-abc",
+                  text: "probe",
+                  requestText: "probe",
+                  media: ["composer.png"],
+                }),
+              ).then(beforeSendResultMock);
+            }}
+          />
+        </>
+      );
+    },
+  };
+});
 vi.mock("@/components/ui-protocol-approval-host", () => ({
   UiProtocolApprovalHost: () => null,
 }));
@@ -108,7 +130,6 @@ vi.mock("@/runtime/runtime-provider", () => ({
 vi.mock("@/runtime/ui-protocol-send", () => ({
   sendMessage: sendMessageMock,
 }));
-vi.mock("@/store/thread-store", () => threadStoreMocks);
 vi.mock("@/store/file-store", () => ({
   useAllFiles: () => fileFixtures,
   loadSessionFiles: loadSessionFilesMock,
@@ -120,6 +141,10 @@ vi.mock("@/api/skill-actions", () => ({
   invokeSkillAction: invokeSkillActionMock,
   listSkillActions: listSkillActionsMock,
   listSkillActionJobs: listSkillActionJobsMock,
+  skillActionScopeId: (sessionId: string, topic?: string) =>
+    topic?.trim() && !sessionId.includes("#")
+      ? `${sessionId}#${topic.trim()}`
+      : sessionId,
 }));
 vi.mock("./source-store", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./source-store")>();
@@ -238,7 +263,7 @@ beforeEach(() => {
     JSON.stringify({ sources: true, rail: true }),
   );
   sendMessageMock.mockReset();
-  threadStoreMocks.loadHistory.mockReset();
+  beforeSendResultMock.mockReset();
   loadSessionFilesMock.mockClear();
   uploadFilesMock.mockClear();
   uploadFilesMock.mockResolvedValue(["research/up.pdf"]);
@@ -315,11 +340,7 @@ describe("StudioPage", () => {
     expect(sourcesPane.queryByText("chart.png")).toBeNull();
     expect(sourcesPane.queryByText("other.md")).toBeNull();
 
-    expect(loadSourceCatalogMock).toHaveBeenCalledWith("web-abc");
-    expect(threadStoreMocks.loadHistory).toHaveBeenCalledWith(
-      "web-abc",
-      undefined,
-    );
+    expect(loadSourceCatalogMock).toHaveBeenCalledWith("web-abc", undefined);
   });
 
   it("resizes the Sources pane and persists its width", async () => {
@@ -445,6 +466,22 @@ describe("StudioPage", () => {
     expect(screen.queryByText(/source selected for notebook grounding/)).toBeNull();
   });
 
+  it("adds only checked catalog sources to the next chat turn", async () => {
+    renderStudio();
+    fireEvent.click(await screen.findByLabelText("Use notes.md as source"));
+    fireEvent.click(screen.getByTestId("chat-before-send-probe"));
+
+    await waitFor(() => {
+      expect(beforeSendResultMock).toHaveBeenCalledWith({
+        sessionId: "web-abc",
+        text: "probe",
+        requestText: "probe",
+        media: ["composer.png", "notebook-sources/notes/source.md"],
+        toolContext: "notebook",
+      });
+    });
+  });
+
   it("does not treat unclassified session files as sources", async () => {
     loadSourceCatalogMock.mockResolvedValue([]);
     renderStudio();
@@ -454,6 +491,48 @@ describe("StudioPage", () => {
       expect(sourcesPane.queryByText("notes.md")).toBeNull();
     });
     expect(sourcesPane.queryByText("chart.png")).toBeNull();
+  });
+
+  it("keeps ordinary session artifacts and deduplicates skill job handles", async () => {
+    listSkillActionJobsMock.mockImplementation(
+      (_sessionId: string, options?: { actionId?: string }) =>
+        Promise.resolve(
+          options?.actionId === "source.import"
+            ? []
+            : [
+                {
+                  job_id: "job-notes",
+                  batch_id: "batch-notes",
+                  profile_id: "alan0x",
+                  session_id: "web-abc",
+                  action_id: "reports.generate",
+                  skill_id: "mofa-notebook-study",
+                  status: "succeeded",
+                  result: {
+                    artifacts: [
+                      {
+                        handle: "research/notes.md",
+                        display_name: "notes.md",
+                        media_type: "text/markdown",
+                        size: 42,
+                      },
+                    ],
+                  },
+                  created_at: "2026-07-09T01:00:00Z",
+                  updated_at: "2026-07-09T01:01:00Z",
+                },
+              ],
+        ),
+    );
+
+    renderStudio();
+
+    const rail = within(screen.getByTestId("studio-rail"));
+    expect(await rail.findAllByText("notes.md")).toHaveLength(1);
+    expect(rail.getByText("chart.png")).toBeTruthy();
+    expect(
+      rail.getByRole("button", { name: "Preview notes.md" }),
+    ).toBeTruthy();
   });
 
   it("renders notebook-style studio skills from the installed notebook skill set", () => {
@@ -513,6 +592,7 @@ describe("StudioPage", () => {
         "web-abc",
         "quiz.generate",
         { source_ids: ["photo"] },
+        undefined,
       );
     });
     expect(sendMessageMock).not.toHaveBeenCalled();
@@ -800,7 +880,7 @@ describe("StudioPage", () => {
     expect(invokeSkillActionMock).not.toHaveBeenCalled();
   });
 
-  it("does not send selected notebook sources as chat turn media attachments", async () => {
+  it("runs notebook actions directly without creating a chat message", async () => {
     mockSourceImportJobs();
     invokeSkillActionMock.mockResolvedValueOnce({
       action_id: "mindmap.generate",
@@ -820,6 +900,7 @@ describe("StudioPage", () => {
         "web-abc",
         "mindmap.generate",
         { source_ids: ["photo"] },
+        undefined,
       ),
     );
     expect(sendMessageMock).not.toHaveBeenCalled();
@@ -857,9 +938,14 @@ describe("StudioPage", () => {
 
     await screen.findByText("up.pdf");
     expect(uploadFilesMock).toHaveBeenCalledTimes(1);
-    expect(invokeSkillActionMock).toHaveBeenCalledWith("web-abc", "source.import", {
-      paths: ["research/up.pdf"],
-    });
+    expect(invokeSkillActionMock).toHaveBeenCalledWith(
+      "web-abc",
+      "source.import",
+      {
+        paths: ["research/up.pdf"],
+      },
+      undefined,
+    );
 
     const checkbox = screen.getByLabelText(
       "Use up.pdf as source",
@@ -1120,9 +1206,14 @@ describe("StudioPage", () => {
     fireEvent.click(screen.getByRole("menuitem", { name: "Retry import" }));
 
     await waitFor(() => {
-      expect(invokeSkillActionMock).toHaveBeenCalledWith("web-abc", "source.import", {
-        paths: ["uploads/photo.jpg"],
-      });
+      expect(invokeSkillActionMock).toHaveBeenCalledWith(
+        "web-abc",
+        "source.import",
+        {
+          paths: ["uploads/photo.jpg"],
+        },
+        undefined,
+      );
     });
     expect(await screen.findByText("Processing")).toBeTruthy();
   });
@@ -1189,6 +1280,7 @@ describe("StudioPage", () => {
       "web-abc",
       "source.remove",
       expect.anything(),
+      undefined,
     );
 
     fireEvent(window, new CustomEvent("crew:skill_action_job_updated", {
@@ -1237,18 +1329,26 @@ describe("StudioPage", () => {
 
     renderStudio();
     await waitFor(() =>
-      expect(listSkillActionJobsMock).toHaveBeenCalledWith("web-abc", {
-        actionId: "source.import",
-      }),
+      expect(listSkillActionJobsMock).toHaveBeenCalledWith(
+        "web-abc",
+        {
+          actionId: "source.import",
+        },
+        undefined,
+      ),
     );
 
     fireEvent(window, new Event("crew:bridge_connected"));
 
     expect(await screen.findByText("restored.pdf")).toBeTruthy();
     expect(screen.getByText("Processing")).toBeTruthy();
-    expect(listSkillActionJobsMock).toHaveBeenLastCalledWith("web-abc", {
-      actionId: "source.import",
-    });
+    expect(listSkillActionJobsMock).toHaveBeenLastCalledWith(
+      "web-abc",
+      {
+        actionId: "source.import",
+      },
+      undefined,
+    );
   });
 
   it("polls a processing source import until its persisted job is terminal", async () => {
@@ -1427,6 +1527,7 @@ describe("StudioPage", () => {
       "web-abc",
       "quiz.generate",
       { source_ids: ["photo"] },
+      undefined,
     ));
   });
 
@@ -1481,6 +1582,7 @@ describe("StudioPage", () => {
       "web-abc",
       "quiz.generate",
       { source_ids: ["photo"] },
+      undefined,
     ));
   });
 
@@ -1552,6 +1654,7 @@ describe("StudioPage", () => {
       "web-abc",
       "quiz.generate",
       { source_ids: ["photo-b"] },
+      undefined,
     ));
   });
 
@@ -1605,6 +1708,7 @@ describe("StudioPage", () => {
       "web-abc",
       "source.remove",
       { source_id: "photo-b" },
+      undefined,
     ));
     expect(screen.getByText("photo A.jpg")).toBeTruthy();
     expect(screen.queryByText("photo B.jpg")).toBeNull();
@@ -1725,9 +1829,10 @@ describe("StudioPage", () => {
         "web-abc",
         "source.rename",
         { source_id: "photo", title: "Renamed Photo" },
+        undefined,
       );
     });
-    expect(screen.getByText("Renamed Photo")).toBeTruthy();
+    expect(await screen.findByText("Renamed Photo")).toBeTruthy();
   });
 
   it("removes an imported source through the source remove action", async () => {
@@ -1754,10 +1859,15 @@ describe("StudioPage", () => {
         "web-abc",
         "source.remove",
         { source_id: "photo" },
+        undefined,
       );
     });
-    expect(screen.queryByText("photo.jpg")).toBeNull();
-    expect(screen.queryByText(/source selected for notebook grounding/)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText("photo.jpg")).toBeNull();
+      expect(
+        screen.queryByText(/source selected for notebook grounding/),
+      ).toBeNull();
+    });
     confirm.mockRestore();
   });
 });

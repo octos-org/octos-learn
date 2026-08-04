@@ -95,7 +95,6 @@ function makeSessionCtx(
     historyTopic: undefined,
     currentSessionTitle: title,
     currentSessionStats: null,
-    initialMessages: [],
     activeTaskOnServer: false,
     queueMode: null,
     adaptiveMode: null,
@@ -180,6 +179,17 @@ afterEach(() => {
 });
 
 describe("ChatLayout panel layout", () => {
+  it("keeps personal Settings available to a non-admin user", () => {
+    const harness = mount(vi.fn());
+    try {
+      expect(
+        harness.container.querySelector("button[aria-label='Settings']"),
+      ).not.toBeNull();
+    } finally {
+      harness.unmount();
+    }
+  });
+
   it("renders the shared glass shell with left/right resize handles", () => {
     const renameSession = vi.fn();
     const harness = mount(renameSession);

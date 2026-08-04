@@ -18,7 +18,10 @@ import {
 } from "lucide-react";
 
 import { uploadFiles } from "@/api/chat";
-import { invokeSkillAction } from "@/api/skill-actions";
+import {
+  invokeSkillAction,
+  skillActionScopeId,
+} from "@/api/skill-actions";
 
 import {
   SOURCE_IMPORT_ACTION_ID,
@@ -36,9 +39,10 @@ import type { CitationTarget } from "./structured-asset-viewers";
 
 interface Props {
   sessionId: string;
-  previewKey: string | null;
-  onPreviewKeyChange: (key: string | null) => void;
-  /** Stable catalog source IDs currently selected for grounding. */
+  historyTopic?: string;
+  previewKey?: string | null;
+  onPreviewKeyChange?: (key: string | null) => void;
+  /** Server file paths currently selected for grounding. */
   selected: string[];
   onToggle: (sourceId: string) => void;
   /**
@@ -52,10 +56,10 @@ interface Props {
   onCatalogChanged: () => void;
   /** True while the initial session file listing is in flight. */
   loading: boolean;
-  query: string;
-  onQueryChange: (query: string) => void;
-  listScrollTop: number;
-  onListScrollTopChange: (scrollTop: number) => void;
+  query?: string;
+  onQueryChange?: (query: string) => void;
+  listScrollTop?: number;
+  onListScrollTopChange?: (scrollTop: number) => void;
   citationTarget?: CitationTarget | null;
   onCitationTargetClear?: () => void;
 }
@@ -239,8 +243,9 @@ function SourceActionsMenu({
 
 export function StudioSourcesPane({
   sessionId,
-  previewKey,
-  onPreviewKeyChange,
+  historyTopic,
+  previewKey: controlledPreviewKey,
+  onPreviewKeyChange: onControlledPreviewKeyChange,
   selected,
   onToggle,
   uploaded,
@@ -249,13 +254,27 @@ export function StudioSourcesPane({
   onRenamed,
   onRemoved,
   onCatalogChanged,
-  query,
-  onQueryChange,
-  listScrollTop,
-  onListScrollTopChange,
+  query: controlledQuery,
+  onQueryChange: onControlledQueryChange,
+  listScrollTop: controlledListScrollTop,
+  onListScrollTopChange: onControlledListScrollTopChange,
   citationTarget,
   onCitationTargetClear,
 }: Props) {
+  const scopeId = skillActionScopeId(sessionId, historyTopic);
+  const [internalPreviewKey, setInternalPreviewKey] = useState<string | null>(
+    null,
+  );
+  const [internalQuery, setInternalQuery] = useState("");
+  const [internalListScrollTop, setInternalListScrollTop] = useState(0);
+  const previewKey = controlledPreviewKey ?? internalPreviewKey;
+  const changePreviewKey =
+    onControlledPreviewKeyChange ?? setInternalPreviewKey;
+  const query = controlledQuery ?? internalQuery;
+  const changeQuery = onControlledQueryChange ?? setInternalQuery;
+  const listScrollTop = controlledListScrollTop ?? internalListScrollTop;
+  const changeListScrollTop =
+    onControlledListScrollTopChange ?? setInternalListScrollTop;
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
@@ -290,9 +309,12 @@ export function StudioSourcesPane({
     setUploadError(null);
     try {
       const paths = await uploadFiles(files);
-      const imported = await invokeSkillAction(sessionId, SOURCE_IMPORT_ACTION_ID, {
-        paths,
-      });
+      const imported = await invokeSkillAction(
+        sessionId,
+        SOURCE_IMPORT_ACTION_ID,
+        { paths },
+        historyTopic,
+      );
       if (!imported.ok) {
         const failed = imported.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source import failed");
@@ -324,7 +346,7 @@ export function StudioSourcesPane({
 
   function openPreview(key: string) {
     lastPreviewTriggerKey.current = key;
-    onPreviewKeyChange(key);
+    changePreviewKey(key);
   }
 
   function closePreview() {
@@ -332,7 +354,7 @@ export function StudioSourcesPane({
     setRestoreFocusKey(
       previewRow ? rowKey(previewRow) : lastPreviewTriggerKey.current,
     );
-    onPreviewKeyChange(null);
+    changePreviewKey(null);
   }
 
   useEffect(() => {
@@ -356,7 +378,7 @@ export function StudioSourcesPane({
         sourceRowIdentityKeys(row).includes(key),
       )
     ) {
-      onPreviewKeyChange(null);
+      changePreviewKey(null);
     }
     onRemoved(row);
   }
@@ -375,10 +397,12 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_RENAME_ACTION_ID, {
-        source_id: row.sourceId,
-        title,
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_RENAME_ACTION_ID,
+        { source_id: row.sourceId, title },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source rename failed");
@@ -401,9 +425,12 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_REMOVE_ACTION_ID, {
-        source_id: row.sourceId,
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_REMOVE_ACTION_ID,
+        { source_id: row.sourceId },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source remove failed");
@@ -427,9 +454,12 @@ export function StudioSourcesPane({
     setBusyKey(key);
     setActionError(null);
     try {
-      const response = await invokeSkillAction(sessionId, SOURCE_IMPORT_ACTION_ID, {
-        paths: [retryPath],
-      });
+      const response = await invokeSkillAction(
+        sessionId,
+        SOURCE_IMPORT_ACTION_ID,
+        { paths: [retryPath] },
+        historyTopic,
+      );
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || "Source retry failed");
@@ -453,7 +483,7 @@ export function StudioSourcesPane({
       <StudioSourcePreview
         key={rowKey(previewRow)}
         row={previewRow}
-        sessionId={sessionId}
+        sessionId={scopeId}
         onBack={closePreview}
         citationTarget={citationTarget}
       />
@@ -506,14 +536,14 @@ export function StudioSourcesPane({
           className="studio-input h-9"
           placeholder="Search project…"
           value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
+          onChange={(e) => changeQuery(e.target.value)}
           aria-label="Search sources"
         />
       </div>
       <div
         ref={listRef}
         className="min-h-0 flex-1 overflow-y-auto"
-        onScroll={(event) => onListScrollTopChange(event.currentTarget.scrollTop)}
+        onScroll={(event) => changeListScrollTop(event.currentTarget.scrollTop)}
       >
         {visible.length === 0 ? (
           <div className="studio-empty-state text-xs">
@@ -542,6 +572,7 @@ export function StudioSourcesPane({
               const canManageSource = ready && Boolean(row.sourceId);
               const selectable = ready && Boolean(row.sourceId);
               const isSelected = selectable
+                && Boolean(row.sourceId)
                 && selected.includes(row.sourceId as string);
               return (
                 <li key={row.jobId ?? row.path} className="studio-list-row">

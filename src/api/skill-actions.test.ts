@@ -13,6 +13,7 @@ import {
   listSkillActions,
   listSkillActionJobs,
   readSkillActionJob,
+  skillActionScopeId,
   type SkillActionJob,
 } from "./skill-actions";
 import { METHODS } from "@/runtime/ui-protocol-bridge";
@@ -57,7 +58,7 @@ describe("skill action API", () => {
     });
     expect(result.jobs).toEqual([JOB]);
     expect(result.queued).toBe(1);
-    expect(getActiveBridgeMock).toHaveBeenCalledWith("web-abc");
+    expect(getActiveBridgeMock).toHaveBeenCalledWith("web-abc", undefined);
   });
 
   it("lists available actions through the requested session bridge", async () => {
@@ -67,7 +68,7 @@ describe("skill action API", () => {
 
     const actions = await listSkillActions("web-abc", "studio.skills");
 
-    expect(getActiveBridgeMock).toHaveBeenCalledWith("web-abc");
+    expect(getActiveBridgeMock).toHaveBeenCalledWith("web-abc", undefined);
     expect(callMethodMock).toHaveBeenCalledWith(METHODS.SKILL_ACTION_LIST, {
       session_id: "web-abc",
       surface: "studio.skills",
@@ -131,5 +132,21 @@ describe("skill action API", () => {
       },
     );
     expect(job.status).toBe("succeeded");
+  });
+
+  it("routes topic-scoped calls through the matching bridge and session key", async () => {
+    callMethodMock.mockResolvedValueOnce({ count: 0, jobs: [] });
+
+    await listSkillActionJobs("web-abc", {}, "slides");
+
+    expect(skillActionScopeId("web-abc", " slides ")).toBe("web-abc#slides");
+    expect(skillActionScopeId("web-abc#slides", "ignored")).toBe(
+      "web-abc#slides",
+    );
+    expect(getActiveBridgeMock).toHaveBeenCalledWith("web-abc", "slides");
+    expect(callMethodMock).toHaveBeenCalledWith(
+      METHODS.SKILL_ACTION_JOB_LIST,
+      { session_id: "web-abc#slides" },
+    );
   });
 });

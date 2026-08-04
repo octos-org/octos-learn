@@ -18,6 +18,8 @@ import {
   Volume2,
   Brain,
   AlarmClock,
+  ShieldCheck,
+  KeyRound,
 } from "lucide-react";
 import {
   WorkbenchStatusPill,
@@ -28,6 +30,7 @@ import { getMyProfile, type Profile } from "./settings-api";
 import { setSelectedProfileId as persistSelectedProfile } from "@/api/client";
 import { ProfileTab } from "./profile-tab";
 import { LlmTab } from "./llm-tab";
+import { ApiKeysTab } from "./api-keys-tab";
 import { SkillsTab } from "./skills-tab";
 import { ChannelsTab } from "./channels-tab";
 import { UsersTab } from "./users-tab";
@@ -40,8 +43,9 @@ import { AppearanceTab } from "./appearance-tab";
 import { VoiceTab } from "./voice-tab";
 import { MemoryTab } from "./memory-tab";
 import { CronTab } from "./cron-tab";
+import { AuthenticationTab } from "./authentication-tab";
 
-type TabId = "profile" | "appearance" | "llm" | "voice" | "memory" | "schedule" | "skills" | "channels" | "sandbox" | "tools" | "users" | "system" | "server" | "ominix";
+type TabId = "profile" | "appearance" | "llm" | "api-keys" | "voice" | "memory" | "schedule" | "skills" | "channels" | "sandbox" | "tools" | "authentication" | "users" | "system" | "server" | "ominix";
 
 interface TabDef {
   id: TabId;
@@ -54,6 +58,7 @@ const TABS: TabDef[] = [
   { id: "profile", label: "Profile", icon: User },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "llm", label: "LLM", icon: Cpu },
+  { id: "api-keys", label: "API Keys", icon: KeyRound },
   { id: "voice", label: "Voice", icon: Volume2 },
   { id: "memory", label: "Memory", icon: Brain },
   { id: "schedule", label: "Schedule", icon: AlarmClock },
@@ -61,6 +66,7 @@ const TABS: TabDef[] = [
   { id: "channels", label: "Channels", icon: Radio },
   { id: "sandbox", label: "Sandbox", icon: Shield },
   { id: "tools", label: "Tools", icon: Wrench },
+  { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true },
   { id: "users", label: "Users", icon: Users, adminOnly: true },
   { id: "system", label: "System", icon: Activity, adminOnly: true },
   { id: "server", label: "Server", icon: Server, adminOnly: true },
@@ -71,12 +77,23 @@ function asTabId(value: string | null): TabId | null {
   return TABS.some((tab) => tab.id === value) ? value as TabId : null;
 }
 
+function accessibleTabId(
+  value: string | null,
+  canAccessAdminPortal: boolean,
+): TabId {
+  const id = asTabId(value);
+  if (!id) return "profile";
+  const tab = TABS.find((entry) => entry.id === id);
+  return tab?.adminOnly && !canAccessAdminPortal ? "profile" : id;
+}
+
 export function AdminSettingsPage() {
   const { portal } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const canAccessAdminPortal = Boolean(portal?.can_access_admin_portal);
   const [activeTab, setActiveTab] = useState<TabId>(
-    () => asTabId(searchParams.get("tab")) ?? "profile",
+    () => accessibleTabId(searchParams.get("tab"), canAccessAdminPortal),
   );
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,16 +117,14 @@ export function AdminSettingsPage() {
   // Render-phase adjustment (the docs' "adjusting state when props change"
   // pattern): adopt a ?tab= change from the URL exactly once per params
   // change, so back/forward and deep links work without effect cascades.
-  const [lastTabParam, setLastTabParam] = useState<string | null>(null);
+  const [lastTabAccessKey, setLastTabAccessKey] = useState<string | null>(null);
   const tabParam = searchParams.get("tab");
-  if (tabParam !== lastTabParam) {
-    setLastTabParam(tabParam);
-    const nextTab = asTabId(tabParam);
-    if (nextTab && nextTab !== activeTab) {
-      const tab = TABS.find((entry) => entry.id === nextTab);
-      if (!tab?.adminOnly || portal?.can_access_admin_portal) {
-        setActiveTab(nextTab);
-      }
+  const tabAccessKey = `${tabParam ?? ""}:${canAccessAdminPortal}`;
+  if (tabAccessKey !== lastTabAccessKey) {
+    setLastTabAccessKey(tabAccessKey);
+    const nextTab = accessibleTabId(tabParam, canAccessAdminPortal);
+    if (nextTab !== activeTab) {
+      setActiveTab(nextTab);
     }
   }
 
@@ -121,7 +136,7 @@ export function AdminSettingsPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const isAdminOnlyTab = activeTab === "system" || activeTab === "server" || activeTab === "users" || activeTab === "ominix";
+  const isAdminOnlyTab = activeTab === "authentication" || activeTab === "system" || activeTab === "server" || activeTab === "users" || activeTab === "ominix";
 
   return (
     <div className="studio-shell settings-shell flex h-screen flex-col overflow-hidden">
@@ -172,10 +187,10 @@ export function AdminSettingsPage() {
                   data-active={activeTab === id ? "true" : undefined}
                   className="settings-tab-button flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm font-medium transition max-md:w-auto max-md:shrink-0 max-md:px-3"
                 >
-                  <Icon size={16} />
+                  <Icon size={16} className="shrink-0" />
                   {label}
                   {adminOnly && (
-                    <span className="ml-auto">
+                    <span className="ml-auto shrink-0">
                       <WorkbenchStatusPill tone="accent">Admin</WorkbenchStatusPill>
                     </span>
                   )}
@@ -188,6 +203,7 @@ export function AdminSettingsPage() {
             <div className={`mx-auto ${isAdminOnlyTab ? "max-w-4xl" : "max-w-3xl"}`}>
               {activeTab === "system" && portal?.can_access_admin_portal && <SystemTab />}
               {activeTab === "server" && portal?.can_access_admin_portal && <ServerTab />}
+              {activeTab === "authentication" && portal?.can_access_admin_portal && <AuthenticationTab />}
               {activeTab === "users" && portal?.can_access_admin_portal && profile && <UsersTab profile={profile} />}
               {activeTab === "ominix" && portal?.can_access_admin_portal && <OminixTab />}
 
@@ -203,6 +219,13 @@ export function AdminSettingsPage() {
                   {activeTab === "appearance" && <AppearanceTab />}
                   {activeTab === "llm" && (
                     <LlmTab profile={profile} onProfileUpdated={setProfile} />
+                  )}
+                  {activeTab === "api-keys" && (
+                    <ApiKeysTab
+                      key={profile.id}
+                      profile={profile}
+                      onProfileUpdated={setProfile}
+                    />
                   )}
                   {activeTab === "voice" && (
                     <VoiceTab
