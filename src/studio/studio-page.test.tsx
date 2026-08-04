@@ -1710,8 +1710,10 @@ describe("StudioPage", () => {
       { source_id: "photo-b" },
       undefined,
     ));
-    expect(screen.getByText("photo A.jpg")).toBeTruthy();
-    expect(screen.queryByText("photo B.jpg")).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText("photo A.jpg")).toBeTruthy();
+      expect(screen.queryByText("photo B.jpg")).toBeNull();
+    });
     confirm.mockRestore();
   });
 
