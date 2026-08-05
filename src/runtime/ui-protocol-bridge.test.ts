@@ -47,6 +47,7 @@ import type {
   WarningEvent,
 } from "./ui-protocol-types";
 import * as ProjectionStore from "@/store/projection-store";
+import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 
 // ---------------------------------------------------------------------------
 // MockWebSocket
@@ -203,6 +204,7 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   ProjectionStore.__resetProjectionForTests();
+  VoiceTranscriptStore.__resetVoiceTranscriptStoreForTests();
 });
 
 // ---------------------------------------------------------------------------
@@ -2596,6 +2598,31 @@ describe("notification dispatch", () => {
     expect(progressed).toHaveLength(1);
     expect(completed).toHaveLength(1);
     expect(updates).toHaveLength(1);
+  });
+
+  it("retains voice transcripts at the WebSocket boundary before router subscribers run", async () => {
+    const { ws } = await freshConnected();
+
+    ws.triggerMessage({
+      jsonrpc: "2.0",
+      method: METHODS.PROGRESS_UPDATED,
+      params: {
+        session_id: "sess-1",
+        turn_id: "server-turn-1",
+        metadata: {
+          kind: "voice_transcript",
+          message: "WebSocket 直接写入",
+          client_message_id: "client-turn-1",
+          transcript: "WebSocket 直接写入",
+        },
+      },
+    });
+
+    const snapshot = VoiceTranscriptStore.getSnapshot("sess-1");
+    expect(snapshot.transcripts.get("client-turn-1")).toBe(
+      "WebSocket 直接写入",
+    );
+    expect(snapshot.turnIds).toEqual(["client-turn-1"]);
   });
 
   it("Wave4-A: routes router/status, router/failover, queue/state through the new subscribers", async () => {
