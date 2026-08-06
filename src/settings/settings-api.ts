@@ -136,6 +136,15 @@ export interface CloudTtsConfig {
   endpoint?: string;
 }
 
+/** Per-profile smart-home bridge connection (self-hosted / same-LAN).
+ *  `token` comes back MASKED from the server; `save_with_merge` on the
+ *  backend restores a masked value, so echoing it back is safe. */
+export interface SmartHomeProfileConfig {
+  bridge_url?: string | null;
+  token?: string | null;
+  token_env?: string | null;
+}
+
 export interface ProfileConfig {
   llm: {
     primary: LlmPrimary;
@@ -156,6 +165,7 @@ export interface ProfileConfig {
   // `null` clears the per-profile override → inherit the server default.
   tts_provider?: string | null;
   tts_cloud?: CloudTtsConfig | null;
+  smart_home?: SmartHomeProfileConfig | null;
 }
 
 export interface ProfileStatus {
@@ -396,6 +406,9 @@ export function mergeProfileConfig(
   }
   if (patch.tts_cloud !== undefined) {
     next.tts_cloud = patch.tts_cloud;
+  }
+  if (patch.smart_home !== undefined) {
+    next.smart_home = patch.smart_home;
   }
 
   return next;
