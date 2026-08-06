@@ -21,6 +21,7 @@ import {
   type ProjectionEnvelopeV2TerminalOutcome,
 } from "./projection-envelope-v2";
 import * as ProjectionStore from "@/store/projection-store";
+import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 import {
   AUX_REST_TO_WS_V1_FEATURE,
 } from "@/lib/feature-flags";
@@ -1931,7 +1932,44 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     },
     [METHODS.PROGRESS_UPDATED]: {
       guard: guardProgressUpdated,
-      emit: (v) => this.subProgressUpdated.emit(v as ProgressUpdatedEvent),
+      emit: (v) => {
+        const event = v as ProgressUpdatedEvent;
+        if (event.metadata.kind === "voice_transcript") {
+          const transcript =
+            typeof event.metadata.transcript === "string"
+              ? event.metadata.transcript
+              : typeof event.metadata.message === "string"
+                ? event.metadata.message
+                : "";
+          const turnId =
+            typeof event.metadata.client_message_id === "string" &&
+            event.metadata.client_message_id.length > 0
+              ? event.metadata.client_message_id
+              : event.turn_id;
+          if (turnId && transcript.trim()) {
+            VoiceTranscriptStore.upsert(
+              event.session_id,
+              this.topicScope ?? undefined,
+              turnId,
+              transcript,
+            );
+          }
+        } else if (event.metadata.kind === "voice_no_speech") {
+          const turnId =
+            typeof event.metadata.client_message_id === "string" &&
+            event.metadata.client_message_id.length > 0
+              ? event.metadata.client_message_id
+              : event.turn_id;
+          if (turnId) {
+            VoiceTranscriptStore.remove(
+              event.session_id,
+              this.topicScope ?? undefined,
+              turnId,
+            );
+          }
+        }
+        this.subProgressUpdated.emit(event);
+      },
     },
     [METHODS.ROUTER_STATUS]: {
       guard: guardRouterStatus,
