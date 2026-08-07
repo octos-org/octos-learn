@@ -26,6 +26,7 @@
   "dependencies": {
     "@assistant-ui/react": "^0.12.15",
     "@assistant-ui/react-markdown": "^0.12.5",
+    "@google/model-viewer": "^4.3.1",
     "@ricky0123/vad-web": "^0.0.30",
     "@tailwindcss/typography": "^0.5.19",
     "@types/dompurify": "^3.0.5",
