@@ -60,6 +60,7 @@ function OctosModelArt({
   reactionKey: number;
 }) {
   const viewerRef = useRef<ModelViewerElement | null>(null);
+  const handledReactionKeyRef = useRef(reactionKey);
   const [runtimeReady, setRuntimeReady] = useState(
     () =>
       typeof customElements !== "undefined" &&
@@ -70,7 +71,7 @@ function OctosModelArt({
   const [failed, setFailed] = useState(
     () => typeof window === "undefined" || !("WebGLRenderingContext" in window),
   );
-  const [reducedMotion] = useState(
+  const [reducedMotion, setReducedMotion] = useState(
     () =>
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true,
@@ -79,6 +80,18 @@ function OctosModelArt({
   const baseAnimation =
     definition.animationByActivity[activity] ??
     definition.animationByActivity.idle;
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!mediaQuery) return;
+
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setReacting(false);
+      setReducedMotion(event.matches);
+    };
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, []);
 
   useEffect(() => {
     if (runtimeReady || failed) return;
@@ -137,8 +150,13 @@ function OctosModelArt({
   }, [baseAnimation, modelReady, reacting, reducedMotion]);
 
   useEffect(() => {
+    const isNewReaction = reactionKey !== handledReactionKeyRef.current;
+    if (isNewReaction) handledReactionKeyRef.current = reactionKey;
+
+    if (reducedMotion) return;
+
     const viewer = viewerRef.current;
-    if (!modelReady || !viewer || reactionKey === 0 || reducedMotion) return;
+    if (!isNewReaction || !modelReady || !viewer) return;
 
     let finished = false;
     const finishReaction = () => {
