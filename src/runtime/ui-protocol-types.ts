@@ -398,6 +398,7 @@ export type SkillActionJobStatus =
   | "running"
   | "succeeded"
   | "failed"
+  | "cancelled"
   | "abandoned";
 
 export interface SkillActionJob {

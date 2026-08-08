@@ -80,6 +80,22 @@ describe("generated assets", () => {
       .toHaveProperty("0.status", "succeeded");
   });
 
+  it("does not regress a cancelled job to a stale running status", () => {
+    const cancelled = job({
+      status: "cancelled",
+      updated_at: "2026-07-09T01:01:00.000000Z",
+    });
+    const lateRunning = job({
+      status: "running",
+      updated_at: "2026-07-09T01:02:00.000000Z",
+    });
+
+    expect(mergeStudioJobs([cancelled], [lateRunning])).toHaveProperty(
+      "0.status",
+      "cancelled",
+    );
+  });
+
   it("preserves sub-millisecond ordering when merging updates", () => {
     const earlier = job({
       status: "running",

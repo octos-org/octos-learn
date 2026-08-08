@@ -9,7 +9,6 @@ import {
   Pencil,
   MoreHorizontal,
   Plus,
-  RotateCcw,
   Search,
   Table,
   Trash2,
@@ -35,6 +34,7 @@ import {
   type SourceRow,
 } from "./source-media";
 import { StudioFilePreviewDialog } from "./studio-file-preview";
+import type { NotebookSourcesCapability } from "./use-notebook-sources";
 
 interface Props {
   sessionId: string;
@@ -53,6 +53,7 @@ interface Props {
   onCatalogChanged: () => void;
   /** True while the initial session file listing is in flight. */
   loading: boolean;
+  capability: NotebookSourcesCapability;
 }
 
 const KIND_ICONS: Record<SourceKind, LucideIcon> = {
@@ -80,23 +81,17 @@ function SourceActionsMenu({
   busy,
   canRename,
   canRemoveSource,
-  canRetry,
   onPreview,
   onRename,
   onRemoveSource,
-  onRetry,
-  onDismiss,
 }: {
   row: SourceRow;
   busy: boolean;
   canRename: boolean;
   canRemoveSource: boolean;
-  canRetry: boolean;
   onPreview: () => void;
   onRename: () => void;
   onRemoveSource: () => void;
-  onRetry: () => void;
-  onDismiss: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -196,36 +191,20 @@ function SourceActionsMenu({
               Rename source
             </button>
           )}
-          {canRetry && (
+          {canRemoveSource && (
             <button
               type="button"
               role="menuitem"
-              className="studio-menu-item"
+              className="studio-menu-item text-red-500"
               onClick={() => {
-                onRetry();
+                onRemoveSource();
                 setOpen(false);
               }}
             >
-              <RotateCcw size={14} aria-hidden="true" />
-              Retry import
+              <Trash2 size={14} aria-hidden="true" />
+              Remove source
             </button>
           )}
-          <button
-            type="button"
-            role="menuitem"
-            className={`studio-menu-item ${canRemoveSource ? "text-red-500" : ""}`}
-            onClick={() => {
-              if (canRemoveSource) {
-                onRemoveSource();
-              } else {
-                onDismiss();
-              }
-              setOpen(false);
-            }}
-          >
-            <Trash2 size={14} aria-hidden="true" />
-            {canRemoveSource ? "Remove source" : "Remove from list"}
-          </button>
         </div>
       )}
     </div>
@@ -243,6 +222,7 @@ export function StudioSourcesPane({
   onRenamed,
   onRemoved,
   onCatalogChanged,
+  capability,
 }: Props) {
   const scopeId = skillActionScopeId(sessionId, historyTopic);
   const [query, setQuery] = useState("");
@@ -384,38 +364,22 @@ export function StudioSourcesPane({
     }
   }
 
-  async function retrySource(row: SourceRow) {
-    const retryPath = row.materializedPath ?? row.inputPath;
-    if (!retryPath) {
-      setActionError("Original upload is no longer available; upload it again.");
-      return;
-    }
-    const key = rowKey(row);
-    setBusyKey(key);
-    setActionError(null);
-    try {
-      const response = await invokeSkillAction(
-        sessionId,
-        SOURCE_IMPORT_ACTION_ID,
-        { paths: [retryPath] },
-        historyTopic,
-      );
-      if (!response.ok) {
-        const failed = response.results?.find((result) => !result.success);
-        throw new Error(failed?.output || "Source retry failed");
-      }
-      if (response.jobs?.length) {
-        onUploaded(
-          response.jobs.map((job) => sourceRowFromSkillActionJob(job, row.filename)),
-        );
-      } else {
-        onCatalogChanged();
-      }
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Source retry failed");
-    } finally {
-      setBusyKey(null);
-    }
+  if (capability.status !== "supported") {
+    const title =
+      capability.status === "connecting"
+        ? "Checking Notebook Sources…"
+        : capability.status === "unsupported"
+          ? "Notebook Sources unavailable"
+          : "Notebook Sources temporarily unavailable";
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3 p-4">
+        <h2 className="studio-headline text-sm">Sources</h2>
+        <div className="studio-empty-state text-xs" role="status">
+          <strong className="block text-text-strong">{title}</strong>
+          <span className="mt-1 block">{capability.reason}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -486,6 +450,8 @@ export function StudioSourcesPane({
                   ? "Processing"
                   : row.status === "failed"
                     ? "Failed"
+                    : row.status === "cancelled"
+                      ? "Cancelled"
                     : row.status === "abandoned"
                       ? "Abandoned"
                       : null;
@@ -495,6 +461,10 @@ export function StudioSourcesPane({
               const canManageSource = ready && Boolean(row.sourceId);
               return (
                 <li key={row.jobId ?? row.path} className="studio-list-row">
+                  {/* Failed/abandoned jobs intentionally expose no local
+                      retry or dismiss control. Those actions must wait for
+                      Core's durable, idempotent lifecycle contract so a
+                      reconnect cannot resurrect a locally hidden attempt. */}
                   {isRenaming ? (
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <Icon size={16} className="shrink-0 text-muted" />
@@ -551,26 +521,19 @@ export function StudioSourcesPane({
                         <X size={14} />
                       </button>
                     </>
-                  ) : (
+                  ) : canManageSource ? (
                     <SourceActionsMenu
                       row={row}
                       busy={isBusy}
                       canRename={canManageSource}
                       canRemoveSource={canManageSource}
-                      canRetry={
-                        row.status === "failed" || row.status === "abandoned"
-                      }
                       onPreview={() => setPreviewRow(row)}
                       onRename={() => beginRename(row)}
                       onRemoveSource={() => {
                         void removeSource(row);
                       }}
-                      onRetry={() => {
-                        void retrySource(row);
-                      }}
-                      onDismiss={() => dismissSourceRow(row)}
                     />
-                  )}
+                  ) : null}
                   <input
                     type="checkbox"
                     className="accent-accent h-4 w-4"

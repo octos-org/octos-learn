@@ -1207,6 +1207,7 @@ function isSkillActionJobStatus(value: unknown): value is SkillActionJobStatus {
     value === "running" ||
     value === "succeeded" ||
     value === "failed" ||
+    value === "cancelled" ||
     value === "abandoned"
   );
 }

@@ -125,6 +125,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
     selectedSources,
     uploadedSources,
     sourcesLoading,
+    sourcesCapability,
     selectedSourceIds,
     toggleSource,
     mergeUploadedSourceRows,
@@ -271,6 +272,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
                   onRemoved={removeUploadedSourceRow}
                   onCatalogChanged={refreshSourceCatalog}
                   loading={sourcesLoading}
+                  capability={sourcesCapability}
                 />
               </aside>
             )}

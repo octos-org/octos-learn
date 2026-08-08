@@ -569,6 +569,22 @@ describe("type guards (fail-closed)", () => {
     ).toBeNull();
   });
 
+  it("accepts the cancelled status projected by TaskSupervisor", () => {
+    expect(
+      guards.guardSkillActionJobUpdated({
+        job_id: "job-1",
+        batch_id: "batch-1",
+        profile_id: "alan0x",
+        session_id: "sess-1",
+        action_id: "source.import",
+        skill_id: "mofa-notebook-source",
+        status: "cancelled",
+        created_at: "2026-07-09T01:00:00Z",
+        updated_at: "2026-07-09T01:01:00Z",
+      })?.status,
+    ).toBe("cancelled");
+  });
+
   it("rejects task/output/delta without chunk", () => {
     expect(
       guards.guardTaskOutputDelta({

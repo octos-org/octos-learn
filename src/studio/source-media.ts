@@ -32,7 +32,12 @@ export const SOURCE_LIST_ACTION_ID = "source.list";
 export const SOURCE_RENAME_ACTION_ID = "source.rename";
 export const SOURCE_REMOVE_ACTION_ID = "source.remove";
 
-export type SourceRowStatus = "processing" | "ready" | "failed" | "abandoned";
+export type SourceRowStatus =
+  | "processing"
+  | "ready"
+  | "failed"
+  | "cancelled"
+  | "abandoned";
 
 /**
  * A source row in the Sources pane. Rows can come from ordinary session
@@ -103,6 +108,8 @@ function sourceStatusFromJob(status: SkillActionJobStatus): SourceRowStatus {
       return "ready";
     case "failed":
       return "failed";
+    case "cancelled":
+      return "cancelled";
     case "abandoned":
       return "abandoned";
     case "queued":

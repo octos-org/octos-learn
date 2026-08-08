@@ -14,6 +14,7 @@ export interface GeneratedArtifact {
 const TERMINAL_JOB_STATUSES = new Set<SkillActionJobStatus>([
   "succeeded",
   "failed",
+  "cancelled",
   "abandoned",
 ]);
 const ACTIVE_JOB_STATUSES = new Set<SkillActionJobStatus>(["queued", "running"]);
