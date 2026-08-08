@@ -89,7 +89,8 @@ describe("StudioSourcePreview", () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       status: 200,
-      json: async () => ({
+      headers: new Headers(),
+      text: async () => JSON.stringify({
         summary_path: "notebook-sources/report/summary.md",
       }),
     } as Response);
@@ -128,6 +129,43 @@ describe("StudioSourcePreview", () => {
         signal: expect.any(AbortSignal),
       }),
     );
+  });
+
+  it("stops reading oversized Source Guide metadata", async () => {
+    const read = vi.fn()
+      .mockResolvedValueOnce({
+        done: false,
+        value: new Uint8Array(256 * 1024),
+      })
+      .mockResolvedValueOnce({ done: false, value: new Uint8Array([1]) });
+    const cancel = vi.fn().mockResolvedValue(undefined);
+    const releaseLock = vi.fn();
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      headers: new Headers(),
+      body: { getReader: () => ({ read, cancel, releaseLock }) },
+    } as unknown as Response);
+
+    render(
+      <StudioSourcePreview
+        row={{
+          sourceId: "report",
+          filename: "Q2 report.pdf",
+          path: "notebook-sources/report/source.md",
+          sourcePath: "notebook-sources/report/source.md",
+          metadataPath: "notebook-sources/report/metadata.json",
+          timestamp: 1,
+        }}
+        sessionId="web-abc"
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("tab", { name: "Source Guide" }));
+
+    expect(await screen.findByText(/metadata is too large/i)).toBeTruthy();
+    expect(cancel).toHaveBeenCalledTimes(1);
   });
 
   it("opens an Office source on Parsed and lets Escape return to the list", () => {

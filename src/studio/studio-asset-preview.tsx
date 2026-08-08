@@ -240,6 +240,7 @@ function VideoOverviewBody({
         )}
         {tab === "scenes" && (
           <AuthenticatedTextFile
+            key={`${sessionId}\0${fileByRole("scene-plan")?.id ?? ""}`}
             file={fileByRole("scene-plan")}
             sessionId={sessionId}
             empty="No scene plan is available."
@@ -292,6 +293,7 @@ function StudyAssetBody({
   onDownload,
 }: Omit<Props, "onBack">) {
   const [tab, setTab] = useState<GenericTab>("preview");
+  const interactiveKey = `${sessionId}\0${asset.primary?.id ?? ""}`;
   return (
     <>
       <TabStrip tabs={GENERIC_TABS} selected={tab} onSelect={setTab} panelId="studio-study-asset-panel" />
@@ -300,6 +302,7 @@ function StudyAssetBody({
           <FilesView files={asset.files} onDownload={onDownload} sessionId={sessionId} />
         ) : (
           <AuthenticatedTextFile
+            key={interactiveKey}
             file={asset.primary}
             sessionId={sessionId}
             empty="This asset does not have an interactive document yet."
@@ -323,6 +326,7 @@ function StructuredAssetBody({
   onCitationOpen,
 }: Omit<Props, "onBack">) {
   const [tab, setTab] = useState<GenericTab>("preview");
+  const interactiveKey = `${sessionId}\0${asset.primary?.id ?? ""}`;
   return (
     <>
       <TabStrip tabs={GENERIC_TABS} selected={tab} onSelect={setTab} panelId="studio-structured-asset-panel" />
@@ -331,6 +335,7 @@ function StructuredAssetBody({
           <FilesView files={asset.files} onDownload={onDownload} sessionId={sessionId} />
         ) : (
           <AuthenticatedTextFile
+            key={interactiveKey}
             file={asset.primary}
             sessionId={sessionId}
             empty="The canonical structured file is unavailable."

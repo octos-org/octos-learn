@@ -6,6 +6,7 @@ import { buildFileUrl } from "@/api/files";
 
 import { isSourceRowReady, sourcePreviewPath, type SourceRow } from "./source-media";
 import { isFilePreviewable } from "./file-preview-mode";
+import { readResponseTextWithLimit } from "./limited-response";
 import { StudioFilePreview } from "./studio-file-preview";
 import { downloadStudioFile } from "./studio-file-download";
 import type { CitationTarget } from "./structured-asset-viewers";
@@ -18,6 +19,8 @@ interface Props {
   citationTarget?: CitationTarget | null;
 }
 type SourcePreviewTab = "original" | "parsed" | "guide";
+const MAX_SOURCE_METADATA_BYTES = 256 * 1024;
+const SOURCE_METADATA_TOO_LARGE = "Source Guide metadata is too large to preview.";
 
 function isSafeWorkspacePath(path: string): boolean {
   const normalized = path.replaceAll("\\", "/");
@@ -114,7 +117,11 @@ export function StudioSourcePreview({ row, sessionId, onBack, citationTarget }: 
     })
       .then(async (response) => {
         if (!response.ok) throw new Error(`Source Guide metadata failed (${response.status})`);
-        const metadata = await response.json() as { summary_path?: unknown };
+        const metadata = JSON.parse(await readResponseTextWithLimit(
+          response,
+          MAX_SOURCE_METADATA_BYTES,
+          SOURCE_METADATA_TOO_LARGE,
+        )) as { summary_path?: unknown };
         const path = typeof metadata.summary_path === "string"
           && isSafeWorkspacePath(metadata.summary_path)
           ? metadata.summary_path

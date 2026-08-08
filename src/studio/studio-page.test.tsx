@@ -1402,6 +1402,16 @@ describe("StudioPage", () => {
     });
     expect(screen.getByText("Processing")).toBeTruthy();
 
+    loadSourceCatalogMock.mockResolvedValue([{
+      sourceId: "photo",
+      filename: "photo.jpg",
+      path: "notebook-sources/photo/source.md",
+      sourcePath: "notebook-sources/photo/source.md",
+      inputPath: "uploads/photo.jpg",
+      previewPath: "uploads/photo.jpg",
+      timestamp: Date.parse("2026-07-09T01:03:00Z"),
+      status: "ready",
+    }]);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(3_000);
     });
@@ -1557,13 +1567,18 @@ describe("StudioPage", () => {
   });
 
   it("keeps a selected source canonical across catalog takeover without duplicate ids", async () => {
-    mockSourceImportJobs([readySourceJob({ source_path: undefined })]);
+    mockSourceImportJobs([]);
     let resolveCatalog: ((rows: unknown[]) => void) | undefined;
     const catalogPromise = new Promise<unknown[]>((resolve) => {
       resolveCatalog = resolve;
     });
     loadSourceCatalogMock.mockReturnValue(catalogPromise);
     renderStudio();
+
+    await waitFor(() => expect(listSkillActionJobsMock).toHaveBeenCalled());
+    fireEvent(window, new CustomEvent("crew:skill_action_job_updated", {
+      detail: readySourceJob({ source_path: undefined }),
+    }));
 
     const beforeTakeover = await screen.findByLabelText(
       "Use photo.jpg as source",
@@ -1626,13 +1641,20 @@ describe("StudioPage", () => {
         filename: "photo B.jpg",
       }),
     ];
-    mockSourceImportJobs(jobs);
+    mockSourceImportJobs([]);
     let resolveCatalog: ((rows: unknown[]) => void) | undefined;
     const catalogPromise = new Promise<unknown[]>((resolve) => {
       resolveCatalog = resolve;
     });
     loadSourceCatalogMock.mockReturnValue(catalogPromise);
     renderStudio();
+
+    await waitFor(() => expect(listSkillActionJobsMock).toHaveBeenCalled());
+    for (const job of jobs) {
+      fireEvent(window, new CustomEvent("crew:skill_action_job_updated", {
+        detail: job,
+      }));
+    }
 
     const sourceA = await screen.findByLabelText(
       "Use photo A.jpg as source",

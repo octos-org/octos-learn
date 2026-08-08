@@ -254,9 +254,11 @@ export function useNotebookSources(sessionId: string, topic?: string) {
       if (request !== sourceCatalogRequest.current) return;
       setState((current) => {
         if (current.scopeId !== scopeId) return current;
-        const readyJobRows = current.uploadedSources.filter(
-          (row) => row.jobId && isSourceRowReady(row),
-        );
+        const readyJobRows = jobState.current.scopeId === scopeId
+          ? jobState.current.jobs
+              .filter((job) => job.status === "succeeded")
+              .map((job) => sourceRowFromSkillActionJob(job))
+          : [];
         const claimedJobIds = new Set<string>();
         const catalogRows = catalog.map((row) => {
           const jobRow = readyJobRows.find((candidate) => {
@@ -270,16 +272,10 @@ export function useNotebookSources(sessionId: string, topic?: string) {
             ? { ...row, jobId: jobRow.jobId, batchId: jobRow.batchId }
             : row;
         });
-        const pendingReadyRows = current.uploadedSources.filter((row) =>
-          row.jobId
-          && isSourceRowReady(row)
-          && !catalogRows.some((catalogRow) => sameSourceRow(catalogRow, row))
-        );
         return {
           ...current,
           uploadedSources: [
             ...catalogRows,
-            ...pendingReadyRows,
             ...current.uploadedSources.filter((row) => !isSourceRowReady(row)),
           ],
         };
@@ -338,7 +334,7 @@ export function useNotebookSources(sessionId: string, topic?: string) {
   );
 
   const applySourceImportJobs = useCallback(
-    (jobs: SkillActionJob[]) => {
+    (jobs: SkillActionJob[], includeSucceededRows = true) => {
       if (jobState.current.scopeId !== scopeId) return;
       const sourceJobs = jobs.filter((job) =>
         job.session_id === scopeId
@@ -364,13 +360,19 @@ export function useNotebookSources(sessionId: string, topic?: string) {
       const transientRows = mergedJobs
         .filter((job) => job.status !== "succeeded")
         .map((job) => sourceRowFromSkillActionJob(job));
-      const newlyReadyRows = acceptedSucceededJobs.map((job) =>
-        sourceRowFromSkillActionJob(job));
+      const newlyReadyRows = includeSucceededRows
+        ? acceptedSucceededJobs.map((job) => sourceRowFromSkillActionJob(job))
+        : [];
+      const succeededIds = new Set(
+        acceptedSucceededJobs.map((job) => job.job_id),
+      );
       setState((current) => current.scopeId === scopeId
         ? {
             ...current,
             uploadedSources: mergeSourceRows(
-              current.uploadedSources,
+              current.uploadedSources.filter(
+                (row) => !row.jobId || !succeededIds.has(row.jobId),
+              ),
               [...transientRows, ...newlyReadyRows],
             ),
             hasActiveImportJobs: mergedJobs.some(
@@ -392,7 +394,11 @@ export function useNotebookSources(sessionId: string, topic?: string) {
         topic,
       );
       if (request !== sourceCapabilityRequest.current) return;
-      applySourceImportJobs(jobs);
+      // Persisted completed imports are history, not catalog membership.
+      // Keep them for identity reconciliation, but only source.list may make
+      // a restored succeeded job visible; otherwise source.remove would be
+      // undone after every reconnect.
+      applySourceImportJobs(jobs, false);
     } catch {
       // Initial bridge connection can race this restore; bridge_connected retries it.
     }

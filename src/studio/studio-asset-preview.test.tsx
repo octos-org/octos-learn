@@ -12,6 +12,10 @@ vi.mock("./authenticated-text-file", () => ({
   AuthenticatedTextFile: ({ children, file }: { children: (text: string) => React.ReactNode; file?: { filename: string } }) => children(
     file?.filename === "scene-plan.json"
       ? JSON.stringify({ title: "Scenes", scenes: [{ scene: 1, type: "chart", visual: "Chart", narration: "Narration", citations: [] }] })
+      : file?.filename === "cards-a.md"
+        ? "# Cards A\n\n- Front: A1\n  Back: A1 back\n- Front: A2\n  Back: A2 back"
+        : file?.filename === "cards-b.md"
+          ? "# Cards B\n\n- Front: B1\n  Back: B1 back"
       : "# Quiz\n\n1. Question?\n   Answer: Answer\n   Explanation: Explanation [Source]",
   ),
 }));
@@ -40,6 +44,27 @@ function videoJob(filenames: string[]): SkillActionJob {
             ? "application/json"
             : "text/markdown",
       })),
+    },
+    created_at: "2026-07-09T01:00:00Z",
+    updated_at: "2026-07-09T01:01:00Z",
+  };
+}
+
+function flashcardsJob(jobId: string, filename: string): SkillActionJob {
+  return {
+    job_id: jobId,
+    batch_id: `batch-${jobId}`,
+    profile_id: "alan0x",
+    session_id: "web-abc",
+    action_id: "flashcards.generate",
+    skill_id: "mofa-notebook-study",
+    status: "succeeded",
+    result: {
+      artifacts: [{
+        handle: `ws/cards/${filename}`,
+        display_name: filename,
+        media_type: "text/markdown",
+      }],
     },
     created_at: "2026-07-09T01:00:00Z",
     updated_at: "2026-07-09T01:01:00Z",
@@ -160,6 +185,31 @@ describe("StudioAssetPreview", () => {
 
     expect(screen.getByTestId("file-preview").textContent).toBe("script.md");
     expect(screen.getAllByText("script.md")).toHaveLength(2);
+  });
+
+  it("resets interactive viewer state when a different asset is selected", () => {
+    const view = render(
+      <StudioAssetPreview
+        asset={buildStudioAsset(flashcardsJob("cards-a", "cards-a.md"))}
+        sessionId="web-abc"
+        onBack={vi.fn()}
+        onDownload={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Got it" }));
+    expect(screen.getByText("A2")).toBeTruthy();
+
+    view.rerender(
+      <StudioAssetPreview
+        asset={buildStudioAsset(flashcardsJob("cards-b", "cards-b.md"))}
+        sessionId="web-abc"
+        onBack={vi.fn()}
+        onDownload={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("B1")).toBeTruthy();
+    expect(screen.queryByText("A2")).toBeNull();
   });
 
   it("uses roving tab stops and links tabs to their active panel", () => {

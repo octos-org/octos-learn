@@ -55,6 +55,7 @@ function pane(
       onRemoved={vi.fn()}
       onCatalogChanged={vi.fn()}
       loading={false}
+      capability={{ status: "supported", reason: null }}
       query=""
       onQueryChange={vi.fn()}
       listScrollTop={0}
@@ -90,6 +91,7 @@ describe("StudioSourcesPane", () => {
         onRemoved={vi.fn()}
         onCatalogChanged={vi.fn()}
         loading={false}
+        capability={{ status: "supported", reason: null }}
         query=""
         onQueryChange={vi.fn()}
         listScrollTop={0}
