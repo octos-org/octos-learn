@@ -13,6 +13,7 @@ import { useOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
 const NAV_LINKS: Array<{ label: string; to: string; adminOnly?: boolean }> = [
   { label: "Dashboard", to: "/" },
   { label: "Chat", to: "/chat" },
+  { label: "Learning", to: "/learn" },
   { label: "Slides", to: "/slides" },
   { label: "Sites", to: "/sites" },
   { label: "Settings", to: "/settings" },
@@ -106,7 +107,7 @@ export function StudioNav({ actions }: { actions?: ReactNode }) {
               src="/images/octos-logo-color.svg"
               alt=""
               aria-hidden="true"
-              className="h-6 w-6"
+              className="h-6 w-auto"
             />
             <span className="studio-headline text-lg font-bold">Octos</span>
           </Link>
