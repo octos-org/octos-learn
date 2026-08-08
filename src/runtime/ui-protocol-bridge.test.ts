@@ -25,6 +25,7 @@ import {
 import {
   UI_PROTOCOL_FEATURES,
   BridgeRpcError,
+  BridgeStartupError,
   BridgeStoppedError,
   BridgeTimeoutError,
   METHODS,
@@ -47,6 +48,7 @@ import type {
   SkillActionJobUpdatedEvent,
 } from "./ui-protocol-types";
 import * as ProjectionStore from "@/store/projection-store";
+import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 
 // ---------------------------------------------------------------------------
 // MockWebSocket
@@ -93,8 +95,40 @@ class MockWebSocket {
   }
 
   triggerMessage(payload: unknown): void {
+    // Most tests model the current Core and only care about fields unrelated
+    // to capability negotiation. Supply its required renderer capability
+    // unless a test explicitly provides `capabilities` (including an empty
+    // list for protocol-mismatch coverage).
+    let normalized = payload;
+    if (typeof payload === "object" && payload !== null) {
+      const message = payload as {
+        result?: { opened?: Record<string, unknown> };
+      };
+      const opened = message.result?.opened;
+      if (
+        opened &&
+        !Object.prototype.hasOwnProperty.call(opened, "capabilities")
+      ) {
+        normalized = {
+          ...payload,
+          result: {
+            ...message.result,
+            opened: {
+              ...opened,
+              capabilities: {
+                supported_features: [
+                  ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+                ],
+              },
+            },
+          },
+        };
+      }
+    }
     const data =
-      typeof payload === "string" ? payload : JSON.stringify(payload);
+      typeof normalized === "string"
+        ? normalized
+        : JSON.stringify(normalized);
     this.onmessage?.({ data });
   }
 
@@ -169,7 +203,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
   ProjectionStore.__resetProjectionForTests();
+  VoiceTranscriptStore.__resetVoiceTranscriptStoreForTests();
 });
 
 // ---------------------------------------------------------------------------
@@ -533,6 +569,22 @@ describe("type guards (fail-closed)", () => {
     ).toBeNull();
   });
 
+  it("accepts the cancelled status projected by TaskSupervisor", () => {
+    expect(
+      guards.guardSkillActionJobUpdated({
+        job_id: "job-1",
+        batch_id: "batch-1",
+        profile_id: "alan0x",
+        session_id: "sess-1",
+        action_id: "source.import",
+        skill_id: "mofa-notebook-source",
+        status: "cancelled",
+        created_at: "2026-07-09T01:00:00Z",
+        updated_at: "2026-07-09T01:01:00Z",
+      })?.status,
+    ).toBe("cancelled");
+  });
+
   it("rejects task/output/delta without chunk", () => {
     expect(
       guards.guardTaskOutputDelta({
@@ -880,17 +932,52 @@ describe("type guards (fail-closed)", () => {
 // ---------------------------------------------------------------------------
 
 describe("connection lifecycle", () => {
+  it("rejects duplicate start without replacing the first scope or socket", async () => {
+    const bridge = createUiProtocolBridge(makeBridgeOpts());
+    const firstStart = bridge.start({ sessionId: "sess-first" });
+    const firstSocket = lastInstance();
+
+    await expect(
+      bridge.start({ sessionId: "sess-second" }),
+    ).rejects.toThrow(/already started/);
+    expect(MockWebSocket.instances).toEqual([firstSocket]);
+
+    firstSocket.triggerOpen();
+    await Promise.resolve();
+    const open = findRequest(firstSocket, METHODS.SESSION_OPEN);
+    expect(open.params).toEqual({ session_id: "sess-first" });
+    firstSocket.triggerMessage({
+      jsonrpc: "2.0",
+      id: open.id,
+      result: { opened: { session_id: "sess-first" } },
+    });
+
+    await firstStart;
+    expect(bridge.getConnectionState()).toBe("connected");
+    await expect(
+      bridge.start({ sessionId: "sess-third" }),
+    ).rejects.toThrow(/already started/);
+    expect(MockWebSocket.instances).toEqual([firstSocket]);
+    await bridge.stop();
+  });
+
   it("transitions connecting → connected on session/open ack", async () => {
     const states: ConnectionState[] = [];
     const bridge = createUiProtocolBridge(makeBridgeOpts());
     bridge.onConnectionStateChange((s) => states.push(s));
     const startPromise = bridge.start({ sessionId: "sess-1" });
+    let startSettled = false;
+    void startPromise.then(() => {
+      startSettled = true;
+    });
     // Give the bridge a tick to construct the socket.
     await Promise.resolve();
+    expect(startSettled).toBe(false);
     const ws = lastInstance();
     ws.triggerOpen();
     // The bridge sent session/open immediately after onopen; reply success.
     await Promise.resolve();
+    expect(startSettled).toBe(false);
     const open = findRequest(ws, METHODS.SESSION_OPEN);
     ws.triggerMessage({
       jsonrpc: "2.0",
@@ -898,9 +985,124 @@ describe("connection lifecycle", () => {
       result: { opened: { session_id: "sess-1" } },
     });
     await startPromise;
+    expect(startSettled).toBe(true);
     expect(states).toEqual(["connecting", "connected"]);
   });
 
+
+  it("rejects a never-ready startup with an actionable typed error", async () => {
+    vi.useFakeTimers();
+    const bridge = createUiProtocolBridge(
+      makeBridgeOpts({ initialConnectTimeoutMs: 250 }),
+    );
+    const startPromise = bridge.start({ sessionId: "sess-origin-rejected" });
+    const observed = startPromise.catch((error: unknown) => error);
+
+    await Promise.resolve();
+    const ws = lastInstance();
+    ws.triggerClose(1006, "");
+    await vi.advanceTimersByTimeAsync(250);
+
+    const error = await observed;
+    expect(error).toBeInstanceOf(BridgeStartupError);
+    expect(error).toMatchObject({
+      kind: "timeout",
+      message: expect.stringMatching(/origin is allowed/i),
+    });
+    expect(bridge.getConnectionState()).toBe("error");
+    expect(bridge.isTerminal()).toBe(true);
+    // The first backoff is 1s, so the startup deadline must stop it before
+    // another hidden handshake can outlive the failed UI attempt.
+    expect(MockWebSocket.instances).toHaveLength(1);
+    await bridge.stop();
+  });
+
+  it("auth probe reuses the bridge bearer before classifying a never-opened close", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockResolvedValue({ status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+    const bridge = createUiProtocolBridge(
+      makeBridgeOpts({ initialConnectTimeoutMs: 250 }),
+    );
+    const startPromise = bridge.start({ sessionId: "sess-origin-probe" });
+    const observed = startPromise.catch((error: unknown) => error);
+
+    await Promise.resolve();
+    const ws = lastInstance();
+    ws.triggerClose(1006, "");
+    await Promise.resolve();
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/auth/me", {
+      credentials: "same-origin",
+      headers: { Authorization: "Bearer test-token" },
+    });
+
+    await vi.advanceTimersByTimeAsync(250);
+    const error = await observed;
+    expect(error).toMatchObject({
+      kind: "timeout",
+      message: expect.stringMatching(/origin is allowed/i),
+    });
+    await bridge.stop();
+  });
+
+  it("does not reconnect behind a startup timeout while session/open is pending", async () => {
+    vi.useFakeTimers();
+    const bridge = createUiProtocolBridge(
+      makeBridgeOpts({ initialConnectTimeoutMs: 250 }),
+    );
+    const startPromise = bridge.start({ sessionId: "sess-open-timeout" });
+    const observed = startPromise.catch((error: unknown) => error);
+
+    await Promise.resolve();
+    const ws = lastInstance();
+    ws.triggerOpen();
+    await Promise.resolve();
+    expect(findRequest(ws, METHODS.SESSION_OPEN)).toBeTruthy();
+
+    await vi.advanceTimersByTimeAsync(250);
+    const error = await observed;
+    expect(error).toMatchObject({ kind: "timeout" });
+
+    // Rejecting the pending session/open reaches its catch path. Advancing
+    // beyond the first reconnect backoff must still leave the bridge dead.
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(MockWebSocket.instances).toHaveLength(1);
+    expect(bridge.isTerminal()).toBe(true);
+    await bridge.stop();
+  });
+
+  it("rejects Core without the required canonical projection capability", async () => {
+    const bridge = createUiProtocolBridge(makeBridgeOpts());
+    const startPromise = bridge.start({ sessionId: "sess-old-core" });
+    const observed = startPromise.catch((error: unknown) => error);
+
+    await Promise.resolve();
+    const ws = lastInstance();
+    ws.triggerOpen();
+    await Promise.resolve();
+    const open = findRequest(ws, METHODS.SESSION_OPEN);
+    ws.triggerMessage({
+      jsonrpc: "2.0",
+      id: open.id,
+      result: {
+        opened: {
+          session_id: "sess-old-core",
+          capabilities: { supported_features: [] },
+        },
+      },
+    });
+
+    const error = await observed;
+    expect(error).toBeInstanceOf(BridgeStartupError);
+    expect(error).toMatchObject({
+      kind: "protocol",
+      message: expect.stringMatching(/projection\.envelope\.v2/i),
+    });
+    expect(bridge.getConnectionState()).toBe("error");
+    expect(bridge.isTerminal()).toBe(true);
+    await bridge.stop();
+  });
 
   it("uses direct canonical v2 ingest only after session/open confirms the capability", async () => {
     const bridge = createUiProtocolBridge(makeBridgeOpts());
@@ -1139,49 +1341,24 @@ describe("connection lifecycle", () => {
   });
 
 
-  it("auxiliary.rest_to_ws.v1 — appended to ui_feature ONLY when flag is ON", async () => {
-    // Import the flag helper inside the test so we don't pollute the
-    // module-scope cache for other tests in this file.
+  it("auxiliary.rest_to_ws.v1 — always negotiated after REST retirement", async () => {
     const {
       __setAuxRestToWsV1ForTests,
       AUX_REST_TO_WS_V1_FEATURE,
     } = await import("@/lib/feature-flags");
 
-    try {
-      // Flag explicit OFF (emergency-rollback escape hatch) — the aux
-      // capability is NOT advertised. (Phase D-4 flipped the default to
-      // ON; tests still cover the explicit-OFF leg.)
-      __setAuxRestToWsV1ForTests(false);
-      let bridge = createUiProtocolBridge(makeBridgeOpts());
-      void bridge.start({ sessionId: "sess-a" });
-      await Promise.resolve();
-      let ws = lastInstance();
-      expect(ws.url.includes(`ui_feature=${AUX_REST_TO_WS_V1_FEATURE}`)).toBe(
-        false,
-      );
-      await bridge.stop();
-
-      // Flag ON — the aux capability MUST be in the negotiated list, or
-      // the M12 Phase D-1 dispatcher rejects every aux RPC even though
-      // `SessionOpened.capabilities` advertises them (octos #913).
-      __setAuxRestToWsV1ForTests(true);
-      bridge = createUiProtocolBridge(makeBridgeOpts());
-      void bridge.start({ sessionId: "sess-b" });
-      await Promise.resolve();
-      ws = lastInstance();
-      expect(ws.url).toContain(`ui_feature=${AUX_REST_TO_WS_V1_FEATURE}`);
-      // Exact-count assertion: the aux feature MUST appear once, never
-      // duplicated. A double `push` in `getUiProtocolFeatures()` would
-      // pass the `toContain` check above but break the server-side
-      // capability set comparison.
-      const auxOccurrences = new URL(ws.url).searchParams
-        .getAll("ui_feature")
-        .filter((feature) => feature === AUX_REST_TO_WS_V1_FEATURE).length;
-      expect(auxOccurrences).toBe(1);
-      await bridge.stop();
-    } finally {
-      __setAuxRestToWsV1ForTests(false);
-    }
+    // A stale pre-cutover rollback value must not disable the only remaining
+    // transport for session/list and the other auxiliary RPCs.
+    __setAuxRestToWsV1ForTests(false);
+    const bridge = createUiProtocolBridge(makeBridgeOpts());
+    void bridge.start({ sessionId: "sess-a" }).catch(() => {});
+    await Promise.resolve();
+    const ws = lastInstance();
+    const auxOccurrences = new URL(ws.url).searchParams
+      .getAll("ui_feature")
+      .filter((feature) => feature === AUX_REST_TO_WS_V1_FEATURE).length;
+    expect(auxOccurrences).toBe(1);
+    await bridge.stop();
   });
 
   it("callMethod() forwards arbitrary JSON-RPC over the open socket", async () => {
@@ -1383,7 +1560,7 @@ describe("reconnect with exponential backoff", () => {
     );
     const states: ConnectionState[] = [];
     bridge.onConnectionStateChange((s) => states.push(s));
-    void bridge.start({ sessionId: "sess-1" });
+    void bridge.start({ sessionId: "sess-1" }).catch(() => {});
     await Promise.resolve();
     const ws1 = lastInstance();
     ws1.triggerClose(1006);
@@ -1405,7 +1582,7 @@ describe("reconnect with exponential backoff", () => {
     const bridge = createUiProtocolBridge(
       makeBridgeOpts({ maxReconnectAttempts: 2 }),
     );
-    void bridge.start({ sessionId: "sess-1" });
+    void bridge.start({ sessionId: "sess-1" }).catch(() => {});
     await Promise.resolve();
     const ws1 = lastInstance();
     ws1.triggerClose(1006);
@@ -1768,7 +1945,7 @@ describe("visibility-driven reset of reconnectAbandoned (#137)", () => {
   it("auth-rejected latch (close-code 1008) is NOT recovered by visibilitychange (token still dead)", async () => {
     vi.useFakeTimers();
     const bridge = createUiProtocolBridge(makeBridgeOpts());
-    void bridge.start({ sessionId: "sess-1" });
+    void bridge.start({ sessionId: "sess-1" }).catch(() => {});
     await Promise.resolve();
     const ws1 = lastInstance();
     // Server rejects upgrade with 1008. Bridge latches reconnectAbandoned
@@ -2610,6 +2787,31 @@ describe("notification dispatch", () => {
     expect(progressed).toHaveLength(1);
     expect(completed).toHaveLength(1);
     expect(updates).toHaveLength(1);
+  });
+
+  it("retains voice transcripts at the WebSocket boundary before router subscribers run", async () => {
+    const { ws } = await freshConnected();
+
+    ws.triggerMessage({
+      jsonrpc: "2.0",
+      method: METHODS.PROGRESS_UPDATED,
+      params: {
+        session_id: "sess-1",
+        turn_id: "server-turn-1",
+        metadata: {
+          kind: "voice_transcript",
+          message: "WebSocket 直接写入",
+          client_message_id: "client-turn-1",
+          transcript: "WebSocket 直接写入",
+        },
+      },
+    });
+
+    const snapshot = VoiceTranscriptStore.getSnapshot("sess-1");
+    expect(snapshot.transcripts.get("client-turn-1")).toBe(
+      "WebSocket 直接写入",
+    );
+    expect(snapshot.turnIds).toEqual(["client-turn-1"]);
   });
 
   it("Wave4-A: routes router/status, router/failover, queue/state through the new subscribers", async () => {

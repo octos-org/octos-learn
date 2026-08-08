@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+  listSkillActions,
   listSkillActionJobs,
   skillActionScopeId,
   type SkillActionJob,
@@ -8,6 +9,9 @@ import {
 
 import {
   SOURCE_IMPORT_ACTION_ID,
+  SOURCE_LIST_ACTION_ID,
+  SOURCE_REMOVE_ACTION_ID,
+  SOURCE_RENAME_ACTION_ID,
   isSourceRowReady,
   mergeSourceImportJobs,
   mergeSourceRows,
@@ -22,7 +26,20 @@ interface SourceState {
   uploadedSources: SourceRow[];
   sourcesLoading: boolean;
   hasActiveImportJobs: boolean;
+  sourcesCapability: NotebookSourcesCapability;
 }
+
+export type NotebookSourcesCapability =
+  | { status: "connecting"; reason: string }
+  | { status: "supported"; reason: null }
+  | { status: "unsupported" | "error"; reason: string };
+
+const REQUIRED_SOURCE_ACTION_IDS = [
+  SOURCE_LIST_ACTION_ID,
+  SOURCE_IMPORT_ACTION_ID,
+  SOURCE_RENAME_ACTION_ID,
+  SOURCE_REMOVE_ACTION_ID,
+] as const;
 
 function initialSourceState(scopeId: string): SourceState {
   return {
@@ -31,6 +48,48 @@ function initialSourceState(scopeId: string): SourceState {
     uploadedSources: [],
     sourcesLoading: true,
     hasActiveImportJobs: false,
+    sourcesCapability: {
+      status: "connecting",
+      reason: "Checking the scoped notebook source capabilities…",
+    },
+  };
+}
+
+function unsupportedSourceCapability(
+  actions: Awaited<ReturnType<typeof listSkillActions>>,
+): NotebookSourcesCapability | null {
+  const byId = new Map(actions.map((action) => [action.id, action]));
+  const missing = REQUIRED_SOURCE_ACTION_IDS.filter(
+    (id) => !byId.get(id)?.available,
+  );
+  if (missing.length === 0) return null;
+
+  const reasons = missing
+    .map((id) => byId.get(id)?.unavailable_reason)
+    .filter((reason): reason is string => Boolean(reason));
+  const detail =
+    reasons.length > 0
+      ? ` ${Array.from(new Set(reasons)).join(" ")}`
+      : "";
+  return {
+    status: "unsupported",
+    reason: `The notebook source skill is not installed or does not expose: ${missing.join(", ")}.${detail}`,
+  };
+}
+
+function failedSourceCapability(error: unknown): NotebookSourcesCapability {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/rpc-error\[-32601\]|method (?:is )?not found/i.test(message)) {
+    return {
+      status: "unsupported",
+      reason:
+        "This Octos Core does not support scoped skill actions. Update Core to use Notebook Sources.",
+    };
+  }
+  return {
+    status: "error",
+    reason:
+      "Notebook source capabilities could not be verified. Reconnect to Octos Core and try again.",
   };
 }
 
@@ -74,7 +133,10 @@ interface ScopedJobState {
  */
 export function useNotebookSources(sessionId: string, topic?: string) {
   const scopeId = skillActionScopeId(sessionId, topic);
-  const [state, setState] = useState<SourceState>(() => initialSourceState(scopeId));
+  const [state, setState] = useState<SourceState>(() =>
+    initialSourceState(scopeId),
+  );
+  const sourceCapabilityRequest = useRef(0);
   const sourceCatalogRequest = useRef(0);
   const jobState = useRef<ScopedJobState>({
     scopeId,
@@ -82,19 +144,25 @@ export function useNotebookSources(sessionId: string, topic?: string) {
     dismissedIds: new Set(),
   });
 
-  // The workspace can switch scopes without remounting. Reset during render
-  // so data from the previous scope is never painted under the new identity.
-  if (state.scopeId !== scopeId) setState(initialSourceState(scopeId));
-
-  useEffect(() => {
-    jobState.current = { scopeId, jobs: [], dismissedIds: new Set() };
-  }, [scopeId]);
-
-  const selectedSourceIds = state.scopeId === scopeId ? state.selectedSourceIds : [];
-  const uploadedSources = state.scopeId === scopeId ? state.uploadedSources : [];
-  const sourcesLoading = state.scopeId === scopeId ? state.sourcesLoading : true;
+  const sourcesCapability =
+    state.scopeId === scopeId
+      ? state.sourcesCapability
+      : initialSourceState(scopeId).sourcesCapability;
+  const capabilitySupported = sourcesCapability.status === "supported";
+  const selectedSourceIds =
+    state.scopeId === scopeId && capabilitySupported
+      ? state.selectedSourceIds
+      : [];
+  const uploadedSources =
+    state.scopeId === scopeId && capabilitySupported
+      ? state.uploadedSources
+      : [];
+  const sourcesLoading =
+    state.scopeId === scopeId ? state.sourcesLoading : true;
   const hasActiveImportJobs =
-    state.scopeId === scopeId ? state.hasActiveImportJobs : false;
+    state.scopeId === scopeId && capabilitySupported
+      ? state.hasActiveImportJobs
+      : false;
 
   const selectedSources = selectedSourceIds
     .map((sourceId) => {
@@ -102,6 +170,73 @@ export function useNotebookSources(sessionId: string, topic?: string) {
       return row?.sourcePath ?? row?.path;
     })
     .filter((path): path is string => Boolean(path));
+
+  useEffect(() => {
+    let cancelled = false;
+    const refreshCapabilities = () => {
+      const request = ++sourceCapabilityRequest.current;
+      sourceCatalogRequest.current += 1;
+      jobState.current = { scopeId, jobs: [], dismissedIds: new Set() };
+      setState((current) =>
+        ({
+          ...(current.scopeId === scopeId
+            ? current
+            : initialSourceState(scopeId)),
+          sourcesLoading: true,
+          sourcesCapability: {
+            status: "connecting",
+            reason: "Checking the scoped notebook source capabilities…",
+          },
+        }),
+      );
+      void listSkillActions(sessionId, "studio.sources", topic)
+        .then((actions) => {
+          if (cancelled || request !== sourceCapabilityRequest.current) return;
+          const unsupported = unsupportedSourceCapability(actions);
+          setState((current) =>
+            current.scopeId === scopeId
+              ? {
+                  ...current,
+                  selectedSourceIds: unsupported
+                    ? []
+                    : current.selectedSourceIds,
+                  uploadedSources: unsupported ? [] : current.uploadedSources,
+                  sourcesLoading: unsupported ? false : current.sourcesLoading,
+                  hasActiveImportJobs: unsupported
+                    ? false
+                    : current.hasActiveImportJobs,
+                  sourcesCapability: unsupported ?? {
+                    status: "supported",
+                    reason: null,
+                  },
+                }
+              : current,
+          );
+        })
+        .catch((error) => {
+          if (cancelled || request !== sourceCapabilityRequest.current) return;
+          setState((current) =>
+            current.scopeId === scopeId
+              ? {
+                  ...current,
+                  selectedSourceIds: [],
+                  uploadedSources: [],
+                  sourcesLoading: false,
+                  hasActiveImportJobs: false,
+                  sourcesCapability: failedSourceCapability(error),
+                }
+              : current,
+          );
+        });
+    };
+
+    refreshCapabilities();
+    window.addEventListener("crew:bridge_connected", refreshCapabilities);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("crew:bridge_connected", refreshCapabilities);
+    };
+  }, [scopeId, sessionId, topic]);
 
   const mergeUploadedSourceRows = useCallback(
     (rows: SourceRow[]) => {
@@ -249,12 +384,14 @@ export function useNotebookSources(sessionId: string, topic?: string) {
   );
 
   const restoreSourceImportJobs = useCallback(async () => {
+    const request = sourceCapabilityRequest.current;
     try {
       const jobs = await listSkillActionJobs(
         sessionId,
         { actionId: SOURCE_IMPORT_ACTION_ID },
         topic,
       );
+      if (request !== sourceCapabilityRequest.current) return;
       applySourceImportJobs(jobs);
     } catch {
       // Initial bridge connection can race this restore; bridge_connected retries it.
@@ -262,29 +399,31 @@ export function useNotebookSources(sessionId: string, topic?: string) {
   }, [applySourceImportJobs, sessionId, topic]);
 
   useEffect(() => {
-    const restoreSoon = () => {
-      void Promise.resolve().then(restoreSourceImportJobs);
-      void Promise.resolve().then(refreshSourceCatalog).catch(() => {});
-    };
-    restoreSoon();
-    window.addEventListener("crew:bridge_connected", restoreSoon);
-    return () => window.removeEventListener("crew:bridge_connected", restoreSoon);
-  }, [refreshSourceCatalog, restoreSourceImportJobs]);
+    if (sourcesCapability.status !== "supported") return;
+    // Capability discovery owns reconnect handling. Re-entering the
+    // supported state after a fresh scoped action/list response triggers
+    // these reads, so no source RPC can race ahead of re-negotiation.
+    void Promise.resolve().then(restoreSourceImportJobs);
+    void Promise.resolve().then(refreshSourceCatalog).catch(() => {});
+  }, [refreshSourceCatalog, restoreSourceImportJobs, sourcesCapability.status]);
 
   useEffect(() => {
-    if (!hasActiveImportJobs) return;
+    if (sourcesCapability.status !== "supported" || !hasActiveImportJobs) return;
     const poll = window.setInterval(() => void restoreSourceImportJobs(), 3_000);
     return () => window.clearInterval(poll);
-  }, [hasActiveImportJobs, restoreSourceImportJobs]);
+  }, [hasActiveImportJobs, restoreSourceImportJobs, sourcesCapability.status]);
 
   useEffect(() => {
+    if (sourcesCapability.status !== "supported") return;
     const onJobUpdated = (event: Event) => {
       const job = (event as CustomEvent<SkillActionJob>).detail;
       if (job) applySourceImportJobs([job]);
     };
     window.addEventListener("crew:skill_action_job_updated", onJobUpdated);
-    return () => window.removeEventListener("crew:skill_action_job_updated", onJobUpdated);
-  }, [applySourceImportJobs]);
+    return () => {
+      window.removeEventListener("crew:skill_action_job_updated", onJobUpdated);
+    };
+  }, [applySourceImportJobs, sourcesCapability.status]);
 
   const toggleSource = useCallback((sourceId: string) => {
     setState((current) => current.scopeId === scopeId
@@ -305,6 +444,7 @@ export function useNotebookSources(sessionId: string, topic?: string) {
     selectedSources,
     uploadedSources,
     sourcesLoading,
+    sourcesCapability,
     selectedSourceIds,
     toggleSource,
     mergeUploadedSourceRows,

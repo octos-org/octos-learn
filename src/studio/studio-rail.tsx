@@ -50,6 +50,25 @@ const KIND_ICONS: Record<SourceKind, LucideIcon> = {
 
 const ACTIVE_JOB_POLL_INTERVAL_MS = 3_000;
 
+type StudioActionCapability =
+  | { status: "connecting"; reason: string }
+  | { status: "supported"; reason: null }
+  | { status: "unsupported" | "error"; reason: string };
+
+function failedStudioCapability(error: unknown): StudioActionCapability {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/rpc-error\[-32601\]|method (?:is )?not found/i.test(message)) {
+    return {
+      status: "unsupported",
+      reason: "This Octos Core does not support scoped Studio actions.",
+    };
+  }
+  return {
+    status: "error",
+    reason: "Studio action capabilities could not be verified. Reconnect and try again.",
+  };
+}
+
 /**
  * Header-authenticated blob download: keeps the bearer token out of the
  * DOM (an <a href> with ?token= is copyable/leakable via "Copy Link").
@@ -66,6 +85,10 @@ function assetStatusLabel(status: StudioAssetStatus): string {
       return "Failed";
     case "unavailable":
       return "Unavailable";
+    case "cancelled":
+      return "Cancelled";
+    case "abandoned":
+      return "Abandoned";
   }
 }
 
@@ -92,6 +115,12 @@ export function StudioRail({
   const [busySkillId, setBusySkillId] = useState<string | null>(null);
   const [jobs, setJobs] = useState<SkillActionJob[]>([]);
   const [skills, setSkills] = useState(() => resolveStudioSkills([]));
+  const [actionCapability, setActionCapability] =
+    useState<StudioActionCapability>({
+      status: "connecting",
+      reason: "Checking the scoped Studio action capabilities…",
+    });
+  const actionCatalogRequest = useRef(0);
   const assetTriggerRefs = useRef(new Map<string, HTMLButtonElement>());
   const lastAssetTriggerId = useRef<string | null>(null);
   const [restoreFocusId, setRestoreFocusId] = useState<string | null>(null);
@@ -108,12 +137,35 @@ export function StudioRail({
   useEffect(() => {
     let cancelled = false;
     const refreshActions = () => {
+      const request = ++actionCatalogRequest.current;
+      setBusySkillId(null);
+      setActionError(null);
+      setSkills(resolveStudioSkills([]));
+      setJobs([]);
+      setInternalSelectedAssetId(null);
+      setActionCapability({
+        status: "connecting",
+        reason: "Checking the scoped Studio action capabilities…",
+      });
       void listSkillActions(sessionId, "studio.skills", historyTopic)
         .then((actions) => {
-          if (!cancelled) setSkills(resolveStudioSkills(actions));
+          if (cancelled || request !== actionCatalogRequest.current) return;
+          const resolved = resolveStudioSkills(actions);
+          setSkills(resolved);
+          setActionCapability(
+            resolved.some((skill) => skill.actionId)
+              ? { status: "supported", reason: null }
+              : {
+                  status: "unsupported",
+                  reason:
+                    "No notebook Studio action skill is installed for this session.",
+                },
+          );
         })
-        .catch(() => {
-          if (!cancelled) setSkills(resolveStudioSkills([]));
+        .catch((error) => {
+          if (cancelled || request !== actionCatalogRequest.current) return;
+          setSkills(resolveStudioSkills([]));
+          setActionCapability(failedStudioCapability(error));
         });
     };
     refreshActions();
@@ -125,12 +177,13 @@ export function StudioRail({
   }, [historyTopic, sessionId]);
 
   useEffect(() => {
-    if (!hasActiveJobs) return;
+    if (actionCapability.status !== "supported" || !hasActiveJobs) return;
     let cancelled = false;
     const poll = window.setInterval(() => {
+      const request = actionCatalogRequest.current;
       void listSkillActionJobs(sessionId, {}, historyTopic)
         .then((restored) => {
-          if (!cancelled) {
+          if (!cancelled && request === actionCatalogRequest.current) {
             setJobs((current) => mergeStudioJobs(
               current,
               restored.filter((job) => job.session_id === scopeId),
@@ -143,9 +196,10 @@ export function StudioRail({
       cancelled = true;
       window.clearInterval(poll);
     };
-  }, [hasActiveJobs, historyTopic, scopeId, sessionId]);
+  }, [actionCapability.status, hasActiveJobs, historyTopic, scopeId, sessionId]);
 
   useEffect(() => {
+    if (actionCapability.status !== "supported") return;
     const onJobUpdated = (event: Event) => {
       const job = (event as CustomEvent<SkillActionJob>).detail;
       if (!job || job.session_id !== scopeId) return;
@@ -155,42 +209,46 @@ export function StudioRail({
     return () => {
       window.removeEventListener("crew:skill_action_job_updated", onJobUpdated);
     };
-  }, [scopeId]);
+  }, [actionCapability.status, scopeId]);
 
   useEffect(() => {
+    if (actionCapability.status !== "supported") return;
     let cancelled = false;
-    const restoreJobs = () => {
-      void listSkillActionJobs(sessionId, {}, historyTopic)
-        .then((restored) => {
-          if (!cancelled) {
-            setJobs((current) => mergeStudioJobs(
+    const request = actionCatalogRequest.current;
+    // Capability discovery owns reconnect handling. A fresh successful
+    // action/list result is required before each persisted-job restore.
+    void listSkillActionJobs(sessionId, {}, historyTopic)
+      .then((restored) => {
+        if (!cancelled && request === actionCatalogRequest.current) {
+          setJobs((current) =>
+            mergeStudioJobs(
               current,
               restored.filter((job) => job.session_id === scopeId),
-            ));
-          }
-        })
-        // The bridge may not be connected on first render. The connection
-        // event below retries this persisted-job restore without surfacing a
-        // spurious user-facing error.
-        .catch(() => {});
-    };
-
-    restoreJobs();
-    window.addEventListener("crew:bridge_connected", restoreJobs);
+            ),
+          );
+        }
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
-      window.removeEventListener("crew:bridge_connected", restoreJobs);
     };
-  }, [historyTopic, scopeId, sessionId]);
+  }, [actionCapability.status, historyTopic, scopeId, sessionId]);
 
   async function runSkill(skill: (typeof skills)[number]): Promise<void> {
     if (!skill.actionId) return;
+    const request = actionCatalogRequest.current;
     setActionError(null);
     setBusySkillId(skill.id);
     try {
       const args =
         selectedSourceIds.length > 0 ? { source_ids: selectedSourceIds } : {};
-      const response = await invokeSkillAction(sessionId, skill.actionId, args, historyTopic);
+      const response = await invokeSkillAction(
+        sessionId,
+        skill.actionId,
+        args,
+        historyTopic,
+      );
+      if (request !== actionCatalogRequest.current) return;
       if (!response.ok) {
         const failed = response.results?.find((result) => !result.success);
         throw new Error(failed?.output || `${skill.label} failed to start`);
@@ -199,11 +257,14 @@ export function StudioRail({
         setJobs((prev) => mergeStudioJobs(prev, response.jobs ?? []));
       }
     } catch (err) {
+      if (request !== actionCatalogRequest.current) return;
       setActionError(
         err instanceof Error ? err.message : `${skill.label} failed to start`,
       );
     } finally {
-      setBusySkillId(null);
+      if (request === actionCatalogRequest.current) {
+        setBusySkillId(null);
+      }
     }
   }
 
@@ -259,6 +320,14 @@ export function StudioRail({
 
       <section className="flex shrink-0 flex-col gap-3">
         <h3 className="text-lg font-medium text-text-strong">Skills</h3>
+        {actionCapability.status !== "supported" && (
+          <p
+            className={`text-xs ${actionCapability.status === "error" ? "text-red-500" : "text-muted"}`}
+            role="status"
+          >
+            {actionCapability.reason}
+          </p>
+        )}
         <div className="grid grid-cols-3 gap-2">
           {skills.map((skill) => {
             const disabled =

@@ -306,6 +306,32 @@ describe("generated assets", () => {
       .toHaveProperty("0.status", "succeeded");
   });
 
+  it("does not regress a cancelled job to a stale running status", () => {
+    const cancelled = job({
+      status: "cancelled",
+      updated_at: "2026-07-09T01:01:00.000000Z",
+    });
+    const lateRunning = job({
+      status: "running",
+      updated_at: "2026-07-09T01:02:00.000000Z",
+    });
+
+    expect(mergeStudioJobs([cancelled], [lateRunning])).toHaveProperty(
+      "0.status",
+      "cancelled",
+    );
+  });
+
+  it("keeps cancelled and abandoned terminal states visible without files", () => {
+    const [cancelled, abandoned] = buildStudioAssets([
+      job({ job_id: "cancelled", status: "cancelled" }),
+      job({ job_id: "abandoned", status: "abandoned" }),
+    ]);
+
+    expect(cancelled.status).toBe("cancelled");
+    expect(abandoned.status).toBe("abandoned");
+  });
+
   it("preserves sub-millisecond ordering when merging updates", () => {
     const earlier = job({
       status: "running",

@@ -18,6 +18,8 @@ export type StudioAssetStatus =
   | "ready"
   | "partial"
   | "failed"
+  | "cancelled"
+  | "abandoned"
   | "unavailable";
 
 export interface AssetFile extends GeneratedArtifact {
@@ -40,6 +42,7 @@ export interface StudioAsset {
 const TERMINAL_JOB_STATUSES = new Set<SkillActionJobStatus>([
   "succeeded",
   "failed",
+  "cancelled",
   "abandoned",
 ]);
 const ACTIVE_JOB_STATUSES = new Set<SkillActionJobStatus>(["queued", "running"]);
@@ -264,7 +267,9 @@ function assetStatus(
   if ((job.status === "failed" || job.status === "abandoned") && files.length > 0) {
     return "partial";
   }
-  if (job.status === "failed" || job.status === "abandoned") return "failed";
+  if (job.status === "failed") return "failed";
+  if (job.status === "cancelled") return files.length > 0 ? "partial" : "cancelled";
+  if (job.status === "abandoned") return "abandoned";
   if (files.length === 0) return "unavailable";
   if (kind === "video-overview" && !files.some((file) => file.role === "video")) {
     return "partial";
@@ -296,6 +301,8 @@ function statusReason(
   files: readonly AssetFile[],
 ): string | undefined {
   if (status === "failed") return job.error ?? job.output ?? "Generation failed.";
+  if (status === "cancelled") return job.error ?? job.output ?? "Generation was cancelled.";
+  if (status === "abandoned") return job.error ?? job.output ?? "Generation was abandoned.";
   if (status === "unavailable") return "Generation completed without a usable file.";
   if (status !== "partial") return undefined;
   if (job.status === "failed" || job.status === "abandoned") {

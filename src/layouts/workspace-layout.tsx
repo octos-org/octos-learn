@@ -171,6 +171,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
     selectedSources,
     uploadedSources,
     sourcesLoading,
+    sourcesCapability,
     selectedSourceIds,
     toggleSource,
     mergeUploadedSourceRows,
@@ -305,6 +306,7 @@ export function WorkspaceLayout({ children }: { children: ReactNode }) {
                   onRemoved={removeUploadedSourceRow}
                   onCatalogChanged={refreshSourceCatalog}
                   loading={sourcesLoading}
+                  capability={sourcesCapability}
                 />
               </div>
               {liveGoal && (

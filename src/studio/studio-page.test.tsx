@@ -33,25 +33,7 @@ const invokeSkillActionMock = vi.hoisted(() =>
 const listSkillActionJobsMock = vi.hoisted(() => vi.fn(async () => []));
 const loadSourceCatalogMock = vi.hoisted(() => vi.fn(async () => []));
 const listSkillActionsMock = vi.hoisted(() =>
-  vi.fn(async () =>
-    [
-      ["video_overview.generate", "Video Overview"],
-      ["mindmap.generate", "Mind Map"],
-      ["reports.generate", "Reports"],
-      ["flashcards.generate", "Flashcards"],
-      ["quiz.generate", "Quiz"],
-      ["data_table.generate", "Data Table"],
-    ].map(([id, label]) => ({
-      id,
-      skill_id: "test-skill",
-      label,
-      tags: ["notebook"],
-      surfaces: ["studio.skills"],
-      input_schema: {},
-      execution: "background",
-      available: true,
-    })),
-  ),
+  vi.fn(),
 );
 const fileFixtures = vi.hoisted(() => [
   {
@@ -268,6 +250,37 @@ beforeEach(() => {
   uploadFilesMock.mockClear();
   uploadFilesMock.mockResolvedValue(["research/up.pdf"]);
   invokeSkillActionMock.mockClear();
+  listSkillActionsMock.mockReset();
+  listSkillActionsMock.mockImplementation(
+    (_sessionId: string, surface?: string) =>
+      Promise.resolve(
+        (surface === "studio.sources"
+          ? [
+              ["source.list", "List sources"],
+              ["source.import", "Import source"],
+              ["source.rename", "Rename source"],
+              ["source.remove", "Remove source"],
+            ]
+          : [
+              ["video_overview.generate", "Video Overview"],
+              ["mindmap.generate", "Mind Map"],
+              ["reports.generate", "Reports"],
+              ["flashcards.generate", "Flashcards"],
+              ["quiz.generate", "Quiz"],
+              ["data_table.generate", "Data Table"],
+            ]
+        ).map(([id, label]) => ({
+          id,
+          skill_id: "test-skill",
+          label,
+          tags: ["notebook"],
+          surfaces: [surface ?? "studio.skills"],
+          input_schema: {},
+          execution: "background",
+          available: true,
+        })),
+      ),
+  );
   listSkillActionJobsMock.mockClear();
   listSkillActionJobsMock.mockResolvedValue([]);
   loadSourceCatalogMock.mockReset();
@@ -316,6 +329,47 @@ afterEach(() => {
 });
 
 describe("StudioPage", () => {
+  it("gates the Sources surface when the scoped action contract is incomplete", async () => {
+    listSkillActionsMock.mockImplementation(
+      (_sessionId: string, surface?: string) =>
+        Promise.resolve(
+          surface === "studio.sources"
+            ? [
+                {
+                  id: "source.list",
+                  skill_id: "mofa-notebook-source",
+                  label: "List sources",
+                  tags: ["notebook"],
+                  surfaces: ["studio.sources"],
+                  input_schema: {},
+                  execution: "sync",
+                  available: true,
+                },
+              ]
+            : [],
+        ),
+    );
+
+    renderStudio();
+
+    const sourcesPane = within(screen.getByTestId("studio-sources-pane"));
+    expect(
+      await sourcesPane.findByText("Notebook Sources unavailable"),
+    ).toBeTruthy();
+    expect(sourcesPane.queryByTestId("studio-upload-input")).toBeNull();
+    expect(loadSourceCatalogMock).not.toHaveBeenCalled();
+    expect(listSkillActionJobsMock).not.toHaveBeenCalledWith(
+      "web-abc",
+      { actionId: "source.import" },
+      undefined,
+    );
+    expect(listSkillActionJobsMock).not.toHaveBeenCalledWith(
+      "web-abc",
+      {},
+      undefined,
+    );
+  });
+
   it("renders the 3-pane workspace with the pinned chat and catalog sources", async () => {
     localStorage.setItem(
       "octos_session_titles",
@@ -531,7 +585,7 @@ describe("StudioPage", () => {
     expect(await rail.findAllByText("notes.md")).toHaveLength(1);
     expect(rail.getByText("chart.png")).toBeTruthy();
     expect(
-      rail.getByRole("button", { name: "Preview notes.md" }),
+      await rail.findByRole("button", { name: "Preview notes.md" }),
     ).toBeTruthy();
   });
 
@@ -868,6 +922,48 @@ describe("StudioPage", () => {
       .toBeTruthy();
   });
 
+  it("ignores a generated job response from before a bridge reconnect", async () => {
+    let resolveStaleRestore!: (value: unknown[]) => void;
+    const staleRestore = new Promise<unknown[]>((resolve) => {
+      resolveStaleRestore = resolve;
+    });
+    let generatedRestoreCount = 0;
+    listSkillActionJobsMock.mockImplementation(
+      (_sessionId: string, options?: { actionId?: string }) => {
+        if (options?.actionId === "source.import") return Promise.resolve([]);
+        generatedRestoreCount += 1;
+        return generatedRestoreCount === 1
+          ? staleRestore
+          : Promise.resolve([]);
+      },
+    );
+
+    renderStudio();
+    await waitFor(() => expect(generatedRestoreCount).toBe(1));
+
+    fireEvent(window, new Event("crew:bridge_connected"));
+    await waitFor(() => expect(generatedRestoreCount).toBe(2));
+
+    await act(async () => {
+      resolveStaleRestore([
+        {
+          job_id: "stale-generated-job",
+          batch_id: "stale-generated-batch",
+          profile_id: "alan0x",
+          session_id: "web-abc",
+          action_id: "quiz.generate",
+          skill_id: "mofa-notebook-study",
+          status: "running",
+          created_at: "2026-07-09T01:00:00Z",
+          updated_at: "2026-07-09T01:01:00Z",
+        },
+      ]);
+      await staleRestore;
+    });
+
+    expect(screen.queryByText("Running")).toBeNull();
+  });
+
   it("disables source-required action skills until a source is selected", () => {
     renderStudio();
 
@@ -906,6 +1002,45 @@ describe("StudioPage", () => {
     expect(sendMessageMock).not.toHaveBeenCalled();
   });
 
+  it("ignores an action response from before a bridge reconnect", async () => {
+    mockSourceImportJobs();
+    let resolveAction!: (value: Record<string, unknown>) => void;
+    invokeSkillActionMock.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveAction = resolve;
+      }),
+    );
+
+    renderStudio();
+    await screen.findByText("photo.jpg");
+    fireEvent.click(screen.getByLabelText("Use photo.jpg as source"));
+    fireEvent.click(screen.getByRole("button", { name: "Quiz" }));
+    await waitFor(() => expect(invokeSkillActionMock).toHaveBeenCalled());
+
+    fireEvent(window, new Event("crew:bridge_connected"));
+    await act(async () => {
+      resolveAction({
+        action_id: "quiz.generate",
+        ok: true,
+        jobs: [
+          {
+            job_id: "stale-job",
+            batch_id: "stale-batch",
+            profile_id: "alan0x",
+            session_id: "web-abc",
+            action_id: "quiz.generate",
+            skill_id: "mofa-notebook-study",
+            status: "running",
+            created_at: "2026-07-09T01:00:00Z",
+            updated_at: "2026-07-09T01:00:00Z",
+          },
+        ],
+      });
+    });
+
+    expect(screen.queryByText("Running")).toBeNull();
+  });
+
   it("uploads sources and shows the queued import without auto-selecting it", async () => {
     invokeSkillActionMock.mockResolvedValueOnce({
       action_id: "source.import",
@@ -929,7 +1064,7 @@ describe("StudioPage", () => {
     });
     renderStudio();
 
-    const input = screen.getByTestId("studio-upload-input");
+    const input = await screen.findByTestId("studio-upload-input");
     fireEvent.change(input, {
       target: {
         files: [new File(["hello"], "up.pdf", { type: "application/pdf" })],
@@ -979,7 +1114,7 @@ describe("StudioPage", () => {
     });
 
     renderStudio();
-    fireEvent.change(screen.getByTestId("studio-upload-input"), {
+    fireEvent.change(await screen.findByTestId("studio-upload-input"), {
       target: {
         files: [new File(["image"], "photo.jpg", { type: "image/jpeg" })],
       },
@@ -1020,7 +1155,7 @@ describe("StudioPage", () => {
     });
 
     renderStudio();
-    fireEvent.change(screen.getByTestId("studio-upload-input"), {
+    fireEvent.change(await screen.findByTestId("studio-upload-input"), {
       target: {
         files: [new File(["image"], "photo.jpg", { type: "image/jpeg" })],
       },
@@ -1141,7 +1276,7 @@ describe("StudioPage", () => {
     });
 
     renderStudio();
-    fireEvent.change(screen.getByTestId("studio-upload-input"), {
+    fireEvent.change(await screen.findByTestId("studio-upload-input"), {
       target: {
         files: [new File(["image"], "photo.jpg", { type: "image/jpeg" })],
       },
@@ -1176,7 +1311,7 @@ describe("StudioPage", () => {
     expect(checkbox.disabled).toBe(true);
   });
 
-  it("retries a failed source import from its retained session path", async () => {
+  it("does not offer local retry or dismissal for durable failed jobs", async () => {
     mockSourceImportJobs([
       readySourceJob({
         status: "failed",
@@ -1186,121 +1321,11 @@ describe("StudioPage", () => {
         error: "Temporary model failure",
       }),
     ]);
-    invokeSkillActionMock.mockResolvedValueOnce({
-      action_id: "source.import",
-      ok: true,
-      queued: 1,
-      jobs: [
-        readySourceJob({
-          job_id: "job-photo-retry",
-          status: "queued",
-          source_id: undefined,
-          source_path: undefined,
-        }),
-      ],
-    });
-
     renderStudio();
     await screen.findByText("Failed");
-    fireEvent.click(screen.getByLabelText("Source actions for photo.jpg"));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Retry import" }));
-
-    await waitFor(() => {
-      expect(invokeSkillActionMock).toHaveBeenCalledWith(
-        "web-abc",
-        "source.import",
-        {
-          paths: ["uploads/photo.jpg"],
-        },
-        undefined,
-      );
-    });
-    expect(await screen.findByText("Processing")).toBeTruthy();
-  });
-
-  it("dismisses failed source import rows without a source id", async () => {
-    uploadFilesMock.mockResolvedValue(["upload-handle-photo"]);
-    invokeSkillActionMock.mockResolvedValue({
-      action_id: "source.import",
-      ok: true,
-      queued: 1,
-      jobs: [
-        {
-          job_id: "job-photo",
-          batch_id: "batch-photo",
-          profile_id: "alan0x",
-          session_id: "web-abc",
-          action_id: "source.import",
-          skill_id: "mofa-notebook-source",
-          status: "running",
-          input_path: "uploads/photo.jpg",
-          filename: "photo.jpg",
-          created_at: "2026-07-09T01:00:00Z",
-          updated_at: "2026-07-09T01:00:00Z",
-        },
-      ],
-    });
-
-    renderStudio();
-    fireEvent.change(screen.getByTestId("studio-upload-input"), {
-      target: {
-        files: [new File(["image"], "photo.jpg", { type: "image/jpeg" })],
-      },
-    });
-    await screen.findByText("Processing");
-
-    fireEvent(
-      window,
-      new CustomEvent("crew:skill_action_job_updated", {
-        detail: {
-          job_id: "job-photo",
-          batch_id: "batch-photo",
-          profile_id: "alan0x",
-          session_id: "web-abc",
-          action_id: "source.import",
-          skill_id: "mofa-notebook-source",
-          status: "failed",
-          input_path: "uploads/photo.jpg",
-          filename: "photo.jpg",
-          error: "Unsupported image payload",
-          created_at: "2026-07-09T01:00:00Z",
-          updated_at: "2026-07-09T01:02:00Z",
-        },
-      }),
-    );
-    expect(await screen.findByText("Failed")).toBeTruthy();
-    expect(screen.getByText("Unsupported image payload")).toBeTruthy();
-
-    fireEvent.click(screen.getByLabelText("Source actions for photo.jpg"));
-    fireEvent.click(screen.getByRole("menuitem", { name: "Remove from list" }));
-
-    expect(screen.queryByText("photo.jpg")).toBeNull();
-    expect(screen.queryByText("Unsupported image payload")).toBeNull();
-    expect(invokeSkillActionMock).not.toHaveBeenCalledWith(
-      "web-abc",
-      "source.remove",
-      expect.anything(),
-      undefined,
-    );
-
-    fireEvent(window, new CustomEvent("crew:skill_action_job_updated", {
-      detail: {
-        ...readySourceJob({
-          job_id: "job-other",
-          status: "running",
-          source_id: undefined,
-          source_path: undefined,
-          input_path: "uploads/other.pdf",
-          materialized_path: "uploads/other.pdf",
-          filename: "other.pdf",
-          updated_at: "2026-07-09T01:03:00Z",
-        }),
-      },
-    }));
-
-    expect(await screen.findByText("other.pdf")).toBeTruthy();
-    expect(screen.queryByText("photo.jpg")).toBeNull();
-    expect(screen.queryByText("Unsupported image payload")).toBeNull();
+    expect(screen.queryByLabelText("Source actions for photo.jpg")).toBeNull();
+    expect(screen.getByLabelText("Preview photo.jpg")).toBeTruthy();
+    expect(invokeSkillActionMock).not.toHaveBeenCalled();
   });
 
   it("restores processing source jobs after the bridge reconnects", async () => {

@@ -4,6 +4,7 @@ import { useAuth } from "@/auth/auth-context";
 import {
   User,
   Cpu,
+  Home,
   Puzzle,
   Radio,
   Users,
@@ -33,6 +34,7 @@ import { LlmTab } from "./llm-tab";
 import { ApiKeysTab } from "./api-keys-tab";
 import { SkillsTab } from "./skills-tab";
 import { ChannelsTab } from "./channels-tab";
+import { SmartHomeTab } from "./smart-home-tab";
 import { UsersTab } from "./users-tab";
 import { SandboxTab } from "./sandbox-tab";
 import { ToolsTab } from "./tools-tab";
@@ -45,7 +47,7 @@ import { MemoryTab } from "./memory-tab";
 import { CronTab } from "./cron-tab";
 import { AuthenticationTab } from "./authentication-tab";
 
-type TabId = "profile" | "appearance" | "llm" | "api-keys" | "voice" | "memory" | "schedule" | "skills" | "channels" | "sandbox" | "tools" | "authentication" | "users" | "system" | "server" | "ominix";
+type TabId = "profile" | "appearance" | "llm" | "api-keys" | "voice" | "memory" | "schedule" | "skills" | "channels" | "smart-home" | "sandbox" | "tools" | "authentication" | "users" | "system" | "server" | "ominix";
 
 interface TabDef {
   id: TabId;
@@ -64,6 +66,7 @@ const TABS: TabDef[] = [
   { id: "schedule", label: "Schedule", icon: AlarmClock },
   { id: "skills", label: "Skills", icon: Puzzle },
   { id: "channels", label: "Channels", icon: Radio },
+  { id: "smart-home", label: "Smart Home", icon: Home },
   { id: "sandbox", label: "Sandbox", icon: Shield },
   { id: "tools", label: "Tools", icon: Wrench },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true },
@@ -238,6 +241,13 @@ export function AdminSettingsPage() {
                   {activeTab === "schedule" && <CronTab key={selectedProfileId} />}
                   {activeTab === "skills" && <SkillsTab />}
                   {activeTab === "channels" && <ChannelsTab profile={profile} onProfileUpdated={setProfile} />}
+                  {activeTab === "smart-home" && (
+                    <SmartHomeTab
+                      key={profile.id}
+                      profile={profile}
+                      onProfileUpdated={setProfile}
+                    />
+                  )}
                   {activeTab === "sandbox" && (
                     <SandboxTab profile={profile} onProfileUpdated={setProfile} />
                   )}

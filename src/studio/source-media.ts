@@ -41,7 +41,12 @@ export const SOURCE_UPLOAD_EXTENSIONS = [
 ] as const;
 export const SOURCE_UPLOAD_ACCEPT = SOURCE_UPLOAD_EXTENSIONS.join(",");
 
-export type SourceRowStatus = "processing" | "ready" | "failed" | "abandoned";
+export type SourceRowStatus =
+  | "processing"
+  | "ready"
+  | "failed"
+  | "cancelled"
+  | "abandoned";
 
 /**
  * A source row in the Sources pane. Rows can come from ordinary session
@@ -127,6 +132,8 @@ function sourceStatusFromJob(status: SkillActionJobStatus): SourceRowStatus {
       return "ready";
     case "failed":
       return "failed";
+    case "cancelled":
+      return "cancelled";
     case "abandoned":
       return "abandoned";
     case "queued":

@@ -4,9 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SourceRow } from "./source-media";
 
 const listSkillActionJobsMock = vi.hoisted(() => vi.fn(async () => []));
+const listSkillActionsMock = vi.hoisted(() => vi.fn(async () => []));
 const loadSourceCatalogMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/api/skill-actions", () => ({
+  listSkillActions: listSkillActionsMock,
   listSkillActionJobs: listSkillActionJobsMock,
   skillActionScopeId: (sessionId: string, topic?: string) =>
     topic?.trim() && !sessionId.includes("#")
@@ -38,8 +40,26 @@ function readyRow(sourceId: string): SourceRow {
   };
 }
 
+function supportedSourceActions() {
+  return ["source.list", "source.import", "source.rename", "source.remove"].map(
+    (id) => ({
+      id,
+      skill_id: "mofa-notebook-source",
+      label: id,
+      tags: ["notebook"],
+      surfaces: ["studio.sources"],
+      input_schema: {},
+      execution: id === "source.list" ? "sync" : "background",
+      available: true,
+    }),
+  );
+}
+
 beforeEach(() => {
+  listSkillActionsMock.mockReset();
+  listSkillActionsMock.mockResolvedValue(supportedSourceActions());
   listSkillActionJobsMock.mockClear();
+  listSkillActionJobsMock.mockResolvedValue([]);
   loadSourceCatalogMock.mockReset();
 });
 
@@ -48,6 +68,138 @@ afterEach(() => {
 });
 
 describe("useNotebookSources", () => {
+  it("does not call source RPCs when the negotiated action contract is incomplete", async () => {
+    listSkillActionsMock.mockResolvedValue([
+      {
+        id: "source.list",
+        skill_id: "mofa-notebook-source",
+        label: "List sources",
+        tags: ["notebook"],
+        surfaces: ["studio.sources"],
+        input_schema: {},
+        execution: "sync",
+        available: true,
+      },
+    ]);
+
+    const { result } = renderHook(() => useNotebookSources("web-session"));
+
+    await waitFor(() =>
+      expect(result.current.sourcesCapability.status).toBe("unsupported"),
+    );
+    expect(result.current.sourcesCapability.reason).toContain(
+      "source.import",
+    );
+    expect(listSkillActionsMock).toHaveBeenCalledWith(
+      "web-session",
+      "studio.sources",
+      undefined,
+    );
+    expect(listSkillActionJobsMock).not.toHaveBeenCalled();
+    expect(loadSourceCatalogMock).not.toHaveBeenCalled();
+  });
+
+  it("rechecks the scoped contract before source RPCs after reconnect", async () => {
+    loadSourceCatalogMock.mockResolvedValue([]);
+    const { result } = renderHook(() => useNotebookSources("web-session"));
+    await waitFor(() =>
+      expect(result.current.sourcesCapability.status).toBe("supported"),
+    );
+    await waitFor(() => expect(loadSourceCatalogMock).toHaveBeenCalled());
+
+    listSkillActionJobsMock.mockClear();
+    loadSourceCatalogMock.mockClear();
+    const capabilityRefresh = deferred<ReturnType<typeof supportedSourceActions>>();
+    listSkillActionsMock.mockReturnValueOnce(capabilityRefresh.promise);
+
+    act(() => {
+      window.dispatchEvent(new Event("crew:bridge_connected"));
+    });
+    expect(result.current.sourcesCapability.status).toBe("connecting");
+    expect(listSkillActionJobsMock).not.toHaveBeenCalled();
+    expect(loadSourceCatalogMock).not.toHaveBeenCalled();
+
+    await act(async () => {
+      capabilityRefresh.resolve(supportedSourceActions());
+      await capabilityRefresh.promise;
+    });
+    await waitFor(() => expect(loadSourceCatalogMock).toHaveBeenCalled());
+    expect(listSkillActionJobsMock).toHaveBeenCalledWith(
+      "web-session",
+      { actionId: "source.import" },
+      undefined,
+    );
+  });
+
+  it("ignores a source job response from before a bridge reconnect", async () => {
+    const staleRestore = deferred<unknown[]>();
+    listSkillActionJobsMock
+      .mockReturnValueOnce(staleRestore.promise)
+      .mockResolvedValueOnce([]);
+    loadSourceCatalogMock.mockResolvedValue([]);
+
+    const { result } = renderHook(() => useNotebookSources("web-session"));
+    await waitFor(() => expect(listSkillActionJobsMock).toHaveBeenCalledTimes(1));
+
+    act(() => window.dispatchEvent(new Event("crew:bridge_connected")));
+    await waitFor(() =>
+      expect(result.current.sourcesCapability.status).toBe("supported"),
+    );
+    await waitFor(() => expect(listSkillActionJobsMock).toHaveBeenCalledTimes(2));
+
+    await act(async () => {
+      staleRestore.resolve([
+        {
+          job_id: "stale-job",
+          batch_id: "stale-batch",
+          profile_id: "profile-1",
+          session_id: "web-session",
+          action_id: "source.import",
+          skill_id: "mofa-notebook-source",
+          status: "running",
+          input_path: "uploads/stale.pdf",
+          filename: "stale.pdf",
+          created_at: "2026-07-09T01:00:00Z",
+          updated_at: "2026-07-09T01:01:00Z",
+        },
+      ]);
+      await staleRestore.promise;
+    });
+
+    expect(result.current.uploadedSources).toEqual([]);
+  });
+
+  it("ignores a stale capability response after a newer reconnect", async () => {
+    loadSourceCatalogMock.mockResolvedValue([]);
+    const { result } = renderHook(() => useNotebookSources("web-session"));
+    await waitFor(() =>
+      expect(result.current.sourcesCapability.status).toBe("supported"),
+    );
+
+    const stale = deferred<ReturnType<typeof supportedSourceActions>>();
+    const current = deferred<ReturnType<typeof supportedSourceActions>>();
+    listSkillActionsMock
+      .mockReturnValueOnce(stale.promise)
+      .mockReturnValueOnce(current.promise);
+
+    act(() => window.dispatchEvent(new Event("crew:bridge_connected")));
+    act(() => window.dispatchEvent(new Event("crew:bridge_connected")));
+
+    await act(async () => {
+      current.resolve(supportedSourceActions());
+      await current.promise;
+    });
+    await waitFor(() =>
+      expect(result.current.sourcesCapability.status).toBe("supported"),
+    );
+
+    await act(async () => {
+      stale.resolve([]);
+      await stale.promise;
+    });
+    expect(result.current.sourcesCapability.status).toBe("supported");
+  });
+
   it("does not let a delayed catalog response cross a session switch", async () => {
     const first = deferred<SourceRow[]>();
     const second = deferred<SourceRow[]>();

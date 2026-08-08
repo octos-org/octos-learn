@@ -48,6 +48,10 @@ function statusLabel(asset: StudioAsset): string {
       return "Partially ready";
     case "failed":
       return "Failed";
+    case "cancelled":
+      return "Cancelled";
+    case "abandoned":
+      return "Abandoned";
     case "unavailable":
       return "Unavailable";
   }

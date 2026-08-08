@@ -157,6 +157,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
     selectedSources,
     uploadedSources,
     sourcesLoading,
+    sourcesCapability,
     selectedSourceIds,
     toggleSource,
     mergeUploadedSourceRows,
@@ -331,6 +332,7 @@ function StudioWorkspace({ projectId }: { projectId: string }) {
                   onListScrollTopChange={setSourceListScrollTop}
                   citationTarget={citationTarget}
                   onCitationTargetClear={() => setCitationTarget(null)}
+                  capability={sourcesCapability}
                 />
               </aside>
             )}
