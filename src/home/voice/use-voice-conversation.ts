@@ -594,6 +594,14 @@ export function useVoiceConversation(
   const sendCapturedUtterance = useCallback(
     async (wav: Blob, includeCamera?: boolean) => {
       const candidate = bargeInCandidateRef.current;
+      if (!candidate) {
+        // Reserve the local voice surface while upload + ASR admission run.
+        // This is not a visible/provisional turn: `onTurnStart` still waits
+        // for admitted speech, while /learn can prevent a text turn from
+        // racing the eventual atomic voice commit on the same session.
+        stateRef.current = "thinking";
+        setState("thinking");
+      }
       try {
         const turnId = crypto.randomUUID();
         const file = new File([wav], "utterance.wav", { type: "audio/wav" });

@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   VoiceConversation,
@@ -36,12 +43,15 @@ const sessionFilesMock = vi.hoisted(() => ({
 const narrationTtsMock = vi.hoisted(() => ({
   useOllNarrationTts: vi.fn(() => ({ error: null })),
 }));
+const sendMessageMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn() }));
 vi.mock("@/api/sessions", () => ({
   getSessionFiles: sessionFilesMock.getSessionFiles,
 }));
-vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: vi.fn() }));
+vi.mock("@/runtime/ui-protocol-send", () => ({
+  sendMessage: sendMessageMock,
+}));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
 vi.mock("@/home/voice/camera-preview", () => ({
   CameraPreview: () => <canvas data-testid="camera-preview" />,
@@ -119,6 +129,7 @@ describe("LearningWorkspace", () => {
     conversationMock.options = null;
     conversationMock.optionsHistory = [];
     narrationTtsMock.useOllNarrationTts.mockClear();
+    sendMessageMock.mockClear();
     sessionFilesMock.getSessionFiles.mockReset();
     sessionFilesMock.getSessionFiles.mockResolvedValue([]);
   });
@@ -420,6 +431,33 @@ describe("LearningWorkspace", () => {
         (options) => options.externalSpeechActive === true,
       ),
     ).toBe(true);
+  });
+
+  it("suspends voice capture and locks sibling sends while a text turn is pending", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-text-voice-exclusion"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "输入学习问题" });
+    expect(conversationMock.options?.externalSpeechActive).toBe(false);
+
+    fireEvent.change(input, { target: { value: "请讲解单位圆" } });
+    fireEvent.submit(input.closest("form") as HTMLFormElement);
+
+    await waitFor(() => expect(sendMessageMock).toHaveBeenCalledTimes(1));
+    expect(conversationMock.options?.externalSpeechActive).toBe(true);
+    expect((input as HTMLInputElement).disabled).toBe(true);
+
+    act(() => {
+      sendMessageMock.mock.calls[0]?.[0].onComplete?.();
+    });
+    await waitFor(() => {
+      expect(conversationMock.options?.externalSpeechActive).toBe(false);
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
   });
 
   it("feeds the OLL fixture into the real /learn Runtime as incremental events", () => {
