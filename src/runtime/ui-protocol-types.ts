@@ -208,6 +208,25 @@ export interface TurnStartResult {
   accepted: boolean;
 }
 
+export type VoiceAdmissionResult =
+  | {
+      status: "speech";
+      admissionId: string;
+      transcript: string;
+      turnId: string;
+    }
+  | {
+      status: "no_speech";
+      turnId: string;
+      rejectReasons?: string[];
+    };
+
+export interface VoiceCommitAdmissionResult extends TurnStartResult {
+  committed: boolean;
+  turn_id: string;
+  idempotent?: boolean;
+}
+
 export interface TurnInterruptResult {
   interrupted: boolean;
 }

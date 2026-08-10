@@ -162,6 +162,8 @@ export const METHODS = {
   SESSION_GOAL_CLEAR: "session/goal/clear",
   TURN_START: "turn/start",
   TURN_INTERRUPT: "turn/interrupt",
+  VOICE_ADMIT: "voice/admit",
+  VOICE_COMMIT_ADMISSION: "voice/commit_admission",
   APPROVAL_RESPOND: "approval/respond",
   USER_QUESTION_RESPOND: "user_question/respond",
   DIFF_PREVIEW_GET: "diff/preview/get",
@@ -289,6 +291,7 @@ export const METHODS = {
  */
 export const UI_PROTOCOL_FEATURES = [
   ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+  "voice.asr_admission.v1",
   "approval.typed.v1",
   "user_question.v1",
   "pane.snapshots.v1",

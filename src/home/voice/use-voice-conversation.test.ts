@@ -27,12 +27,22 @@ const {
   captureStopMock,
   getActiveBridgeMock,
   sendMessageMock,
+  admitVoiceMessageMock,
+  commitAdmittedVoiceMessageMock,
+  interruptActiveTurnMock,
   uploadFilesMock,
 } = vi.hoisted(() => ({
   captureStartMock: vi.fn(async () => {}),
   captureStopMock: vi.fn(async () => {}),
   getActiveBridgeMock: vi.fn((): unknown => undefined),
   sendMessageMock: vi.fn(),
+  admitVoiceMessageMock: vi.fn(async () => ({
+    status: "speech" as const,
+    admissionId: "admission-1",
+    transcript: "你好",
+  })),
+  commitAdmittedVoiceMessageMock: vi.fn(async () => ({ accepted: true })),
+  interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
 }));
 
@@ -127,7 +137,9 @@ vi.mock("@/store/projection-store", () => ({
 }));
 
 vi.mock("@/runtime/ui-protocol-send", () => ({
-  interruptActiveTurn: vi.fn(async () => true),
+  admitVoiceMessage: admitVoiceMessageMock,
+  commitAdmittedVoiceMessage: commitAdmittedVoiceMessageMock,
+  interruptActiveTurn: interruptActiveTurnMock,
   sendMessage: sendMessageMock,
 }));
 
@@ -657,6 +669,15 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     captureStartMock.mockClear();
     captureStopMock.mockClear();
     sendMessageMock.mockClear();
+    admitVoiceMessageMock.mockReset();
+    admitVoiceMessageMock.mockResolvedValue({
+      status: "speech",
+      admissionId: "admission-1",
+      transcript: "你好",
+    });
+    commitAdmittedVoiceMessageMock.mockReset();
+    commitAdmittedVoiceMessageMock.mockResolvedValue({ accepted: true });
+    interruptActiveTurnMock.mockClear();
     uploadFilesMock.mockReset();
     uploadFilesMock.mockResolvedValue([]);
     cameraMock.active = false;
@@ -710,6 +731,38 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     });
 
     expect(captureStartMock).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it("skips the whole turn when ASR admission reports no speech", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    uploadFilesMock.mockResolvedValue(["up/utterance.wav"]);
+    admitVoiceMessageMock.mockResolvedValueOnce({ status: "no_speech" });
+    const onTurnStart = vi.fn();
+    const buildTurnText = vi.fn(() => "[[LEARNING_SESSION]] hidden context");
+
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-no-speech", undefined, undefined, {
+        buildTurnText,
+        onTurnStart,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["noise"], { type: "audio/wav" }),
+      });
+    });
+
+    expect(admitVoiceMessageMock).toHaveBeenCalledTimes(1);
+    expect(buildTurnText).not.toHaveBeenCalled();
+    expect(onTurnStart).not.toHaveBeenCalled();
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("listening");
     unmount();
   });
 
@@ -780,7 +833,7 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(cameraMock.grabFrame).not.toHaveBeenCalled();
     expect(onTurnStart).toHaveBeenCalledTimes(1);
     expect(onTurnStart).toHaveBeenCalledWith(expect.any(String));
-    expect(onTurnStart.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(onTurnStart.mock.invocationCallOrder[0]).toBeGreaterThan(
       uploadFilesMock.mock.invocationCallOrder[0],
     );
     expect(buildTurnText).toHaveBeenCalledWith(
@@ -789,18 +842,21 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
         currentFramePath: undefined,
       }),
     );
-    expect(sendMessageMock).toHaveBeenCalledWith(
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: "learn-wake-test",
         text: "[[LEARNING_SESSION]]",
         media: ["uploads/wake.wav"],
         liveVideo: false,
       }),
+      "admission-1",
+      undefined,
     );
-    expect(sendMessageMock.mock.calls.at(-1)?.[0]).not.toHaveProperty(
+    expect(commitAdmittedVoiceMessageMock.mock.calls.at(-1)?.[0]).not.toHaveProperty(
       "suppressReplyAudio",
     );
-    const complete = sendMessageMock.mock.calls.at(-1)?.[0]?.onComplete as
+    const complete = commitAdmittedVoiceMessageMock.mock.calls.at(-1)?.[0]
+      ?.onComplete as
       | (() => void)
       | undefined;
     await act(async () => {
@@ -942,7 +998,7 @@ describe("interrupt() supersedes the drain loop (stale grace timer)", () => {
     const { result, rerender } = renderHook(() =>
       useVoiceConversation("voice-barge-in-test"),
     );
-    const sendCountBefore = sendMessageMock.mock.calls.length;
+    const sendCountBefore = commitAdmittedVoiceMessageMock.mock.calls.length;
 
     await act(async () => {
       await result.current.start();
@@ -956,7 +1012,7 @@ describe("interrupt() supersedes the drain loop (stale grace timer)", () => {
       await flushMicrotasks();
     });
     expect(result.current.state).toBe("thinking");
-    expect(sendMessageMock).toHaveBeenCalledTimes(sendCountBefore + 1);
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledTimes(sendCountBefore + 1);
 
     threadsMock.value = [
       {
@@ -990,7 +1046,7 @@ describe("interrupt() supersedes the drain loop (stale grace timer)", () => {
       await flushMicrotasks();
     });
     expect(audioMock.stopAudio).not.toHaveBeenCalled();
-    expect(sendMessageMock).toHaveBeenCalledTimes(sendCountBefore + 1);
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledTimes(sendCountBefore + 1);
     expect(result.current.state).toBe("speaking");
 
     await act(async () => {
@@ -1004,8 +1060,180 @@ describe("interrupt() supersedes the drain loop (stale grace timer)", () => {
       await flushMicrotasks();
     });
 
-    expect(sendMessageMock).toHaveBeenCalledTimes(sendCountBefore + 2);
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledTimes(sendCountBefore + 2);
+    expect(
+      commitAdmittedVoiceMessageMock.mock.calls.at(-1)?.[2],
+    ).toEqual(expect.any(String));
     expect(result.current.state).toBe("thinking");
+  });
+
+  it("stops an old reply that begins playing while thinking barge-in awaits admission", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        blob: async () => new Blob(["a"]),
+      })),
+    );
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    uploadFilesMock.mockResolvedValue(["up/utterance.wav"]);
+    let resolveBargeInAdmission!: (value: {
+      status: "speech";
+      admissionId: string;
+      transcript: string;
+    }) => void;
+    admitVoiceMessageMock
+      .mockResolvedValueOnce({
+        status: "speech",
+        admissionId: "first-admission",
+        transcript: "第一句",
+      })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveBargeInAdmission = resolve;
+          }),
+      );
+    audioMock.playAudioBlob.mockClear();
+    audioMock.stopAudio.mockClear();
+
+    const { result, rerender } = renderHook(() =>
+      useVoiceConversation("voice-thinking-barge-in-race"),
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+
+    const firstUtterance = captureStartMock.mock.calls[0][0] as (
+      wav: Blob,
+    ) => void;
+    await act(async () => {
+      firstUtterance(new Blob(["u1"]));
+      await flushMicrotasks();
+    });
+    expect(result.current.state).toBe("thinking");
+
+    const thinkingBargeInCall = captureStartMock.mock.calls.at(-1)!;
+    const thinkingBargeInOptions = thinkingBargeInCall[1] as {
+      onSpeechConfirmed: () => void;
+    };
+    const thinkingBargeInUtterance = thinkingBargeInCall[0] as (
+      wav: Blob,
+    ) => void;
+    await act(async () => {
+      thinkingBargeInOptions.onSpeechConfirmed();
+      thinkingBargeInUtterance(new Blob(["u2"]));
+      await flushMicrotasks();
+    });
+
+    // The old turn publishes its first sentence while the second utterance is
+    // still waiting for ASR admission.
+    threadsMock.value = [
+      {
+        id: "turn-old-thinking",
+        userMsg: { text: "hi" },
+        pendingAssistant: null,
+        responses: [
+          {
+            role: "assistant",
+            text: "old reply",
+            files: [{ path: "w/late-old.wav" }],
+          },
+        ],
+      },
+    ];
+    rerender();
+    await act(async () => {
+      await flushMicrotasks();
+    });
+    expect(audioMock.playAudioBlob).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("speaking");
+
+    await act(async () => {
+      resolveBargeInAdmission({
+        status: "speech",
+        admissionId: "barge-in-admission",
+        transcript: "第二句",
+      });
+      await flushMicrotasks();
+    });
+
+    expect(audioMock.stopAudio).toHaveBeenCalledTimes(1);
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({ clientMessageId: expect.any(String) }),
+      "barge-in-admission",
+      expect.any(String),
+    );
+    expect(result.current.state).toBe("thinking");
+  });
+
+  it("restarts the paused sentence and keeps the old turn when barge-in is no speech", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        blob: async () => new Blob(["a"]),
+      })),
+    );
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    admitVoiceMessageMock
+      .mockResolvedValueOnce({
+        status: "speech",
+        admissionId: "first-admission",
+        transcript: "第一句",
+      })
+      .mockResolvedValueOnce({ status: "no_speech" });
+
+    const { result, rerender } = renderHook(() =>
+      useVoiceConversation("voice-barge-in-no-speech"),
+    );
+    await act(async () => {
+      await result.current.start();
+    });
+    const firstUtterance = captureStartMock.mock.calls[0][0] as (
+      wav: Blob,
+    ) => void;
+    await act(async () => {
+      firstUtterance(new Blob(["u1"]));
+      await flushMicrotasks();
+    });
+    threadsMock.value = [
+      {
+        id: "turn-old",
+        userMsg: { text: "hi" },
+        pendingAssistant: null,
+        responses: [
+          { role: "assistant", text: "reply", files: [{ path: "w/old.wav" }] },
+        ],
+      },
+    ];
+    rerender();
+    await act(async () => {
+      await flushMicrotasks();
+    });
+    expect(result.current.state).toBe("speaking");
+    expect(audioMock.playAudioBlob).toHaveBeenCalledTimes(1);
+
+    const bargeInCall = captureStartMock.mock.calls.at(-1)!;
+    const options = bargeInCall[1] as { onSpeechConfirmed: () => void };
+    const utterance = bargeInCall[0] as (wav: Blob) => void;
+    const commitsBefore = commitAdmittedVoiceMessageMock.mock.calls.length;
+    await act(async () => {
+      options.onSpeechConfirmed();
+      utterance(new Blob(["friction"]));
+      await flushMicrotasks();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushMicrotasks();
+    });
+
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledTimes(commitsBefore);
+    expect(interruptActiveTurnMock).not.toHaveBeenCalled();
+    expect(audioMock.playAudioBlob).toHaveBeenCalledTimes(2);
+    expect(result.current.state).toBe("speaking");
   });
 
   it("keeps one speaking VAD active across multiple reply audio clips", async () => {
