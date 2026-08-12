@@ -2,33 +2,107 @@ import {
   BoxSelect,
   Eraser,
   Hand,
+  Palette,
   PenLine,
   Redo2,
   Undo2,
 } from "lucide-react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import {
   mountInfiniteBoard,
   type MountedInfiniteBoard,
   type ViewportInsets,
 } from "octos-lesson-language/web-runtime";
+import {
+  mountInkRuntime,
+  type InkMode,
+  type InkRuntime,
+  type InkRuntimeState,
+} from "./oll-ink-runtime";
 import type {
-  InkMode,
-  InkRuntime,
-  InkRuntimeState,
-} from "octos-lesson-language/ink-runtime";
-import type { OllLessonRuntimeController } from "./use-oll-lesson-runtime";
+  OllLessonRuntimeController,
+} from "./use-oll-lesson-runtime";
 import "octos-lesson-language/web-runtime/styles.css";
 
-type InkLoadState = "disabled" | "loading" | "ready" | "error";
+type LearningInkState = InkRuntimeState & {
+  pen_color: string;
+  selection_color: string | null;
+};
 
-const emptyInkState: InkRuntimeState = {
+type LearningInkRuntime = InkRuntime & {
+  setPenColor?: (color: string) => void;
+  setSelectionColor?: (color: string) => void | Promise<void>;
+};
+
+const emptyInkState: LearningInkState = {
   mode: "navigate",
   component_count: 0,
   selected_count: 0,
+  pen_color: "#176b62",
+  selection_color: null,
   document_version: 0,
   saved: true,
 };
+
+function normalizeInkState(state: InkRuntimeState): LearningInkState {
+  const enhanced = state as Partial<LearningInkState>;
+  return {
+    ...state,
+    pen_color: enhanced.pen_color ?? "#176b62",
+    selection_color: enhanced.selection_color ?? null,
+  };
+}
+
+const inkColorPresets = [
+  { color: "#176b62", label: "深青" },
+  { color: "#1769aa", label: "蓝色" },
+  { color: "#7a5aa3", label: "紫色" },
+  { color: "#c75445", label: "红色" },
+  { color: "#202b2a", label: "黑色" },
+];
+
+function InkColorControl({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (color: string) => void;
+}) {
+  return (
+    <div className="learning-ink-colors" aria-label={label}>
+      <span>{label}</span>
+      {inkColorPresets.map((preset) => (
+        <button
+          key={preset.color}
+          type="button"
+          className="learning-ink-color-swatch"
+          style={{ "--ink-swatch": preset.color } as CSSProperties}
+          onClick={() => onChange(preset.color)}
+          aria-label={`${label}：${preset.label}`}
+          aria-pressed={value.toLowerCase() === preset.color}
+        />
+      ))}
+      <label className="learning-ink-custom-color" title={`自定义${label}`}>
+        <Palette size={15} />
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          aria-label={`自定义${label}`}
+        />
+      </label>
+    </div>
+  );
+}
 
 function learningBoardInsets(viewport: HTMLElement): ViewportInsets {
   const compact = viewport.clientWidth <= 900;
@@ -50,48 +124,12 @@ export function OllLessonBoard({
   const viewportRef = useRef<HTMLDivElement>(null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const renderedFocusRef = useRef<string[]>([]);
-  const inkRuntimeRef = useRef<InkRuntime | null>(null);
+  const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
-  const inkRequestRef = useRef(0);
-  const [inkLoadState, setInkLoadState] = useState<InkLoadState>("disabled");
-  const [inkState, setInkState] = useState<InkRuntimeState>(emptyInkState);
+  const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
+  const [inkAvailable, setInkAvailable] = useState(false);
+  const [inkSupportsColors, setInkSupportsColors] = useState(false);
   const [inkError, setInkError] = useState("");
-
-  const enableInk = useCallback(async () => {
-    const mounted = mountedRef.current;
-    const viewport = viewportRef.current;
-    if (!mounted || !viewport || !inkSessionId || inkRuntimeRef.current) return;
-    const request = ++inkRequestRef.current;
-    setInkLoadState("loading");
-    setInkError("");
-    let candidate: InkRuntime | null = null;
-    try {
-      const module = await import("./oll-ink-runtime");
-      if (request !== inkRequestRef.current || !mountedRef.current) return;
-      candidate = module.mountInkRuntime({
-        board: mounted.view,
-        viewport,
-        storageKey: `octos-learning-ink:v1:${inkSessionId}`,
-        documentId: `learning-session:${inkSessionId}:student-ink`,
-      });
-      inkRuntimeRef.current = candidate;
-      await candidate.ready;
-      if (request !== inkRequestRef.current || mountedRef.current !== mounted) {
-        await candidate.destroy();
-        if (inkRuntimeRef.current === candidate) inkRuntimeRef.current = null;
-        return;
-      }
-      candidate.setMode("draw");
-      unsubscribeInkRef.current = candidate.subscribe(setInkState);
-      setInkLoadState("ready");
-    } catch (cause) {
-      if (candidate) await candidate.destroy();
-      if (inkRuntimeRef.current === candidate) inkRuntimeRef.current = null;
-      if (request !== inkRequestRef.current) return;
-      setInkLoadState("error");
-      setInkError(cause instanceof Error ? cause.message : "笔迹功能加载失败");
-    }
-  }, [inkSessionId]);
 
   const setInkMode = useCallback((mode: InkMode) => {
     try {
@@ -122,23 +160,98 @@ export function OllLessonBoard({
     }
   }, []);
 
+  const setPenColor = useCallback((color: string) => {
+    try {
+      const setColor = inkRuntimeRef.current?.setPenColor;
+      if (!setColor) throw new Error("当前 Ink Runtime 不支持笔迹颜色");
+      setColor(color);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
+    }
+  }, []);
+
+  const setSelectionColor = useCallback((color: string) => {
+    const ink = inkRuntimeRef.current;
+    if (!ink) return;
+    if (!ink.setSelectionColor) {
+      setInkError("当前 Ink Runtime 不支持选区改色");
+      return;
+    }
+    void Promise.resolve(ink.setSelectionColor(color)).then(
+      () => setInkError(""),
+      (cause) => setInkError(cause instanceof Error ? cause.message : "无法修改选中笔迹的颜色"),
+    );
+  }, []);
+
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     mountedRef.current = mounted;
+    setInkAvailable(false);
+    setInkSupportsColors(false);
+    setInkState(emptyInkState);
+    let active = true;
+    let ink: LearningInkRuntime | null = null;
+    let inkDestroyed = false;
+    const destroyInk = (): Promise<void> | undefined => {
+      if (!ink || inkDestroyed) return undefined;
+      inkDestroyed = true;
+      unsubscribeInkRef.current?.();
+      unsubscribeInkRef.current = null;
+      if (inkRuntimeRef.current === ink) inkRuntimeRef.current = null;
+      return ink.destroy();
+    };
     try {
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
+      if (inkSessionId) {
+        ink = mountInkRuntime({
+          board: mounted.view,
+          viewport,
+          storageKey: `octos-learning-ink:v1:${inkSessionId}`,
+          documentId: `learning-session:${inkSessionId}:student-ink`,
+          locale: "zh-CN",
+        }) as LearningInkRuntime;
+        inkRuntimeRef.current = ink;
+        ink.setMode("navigate");
+        setInkSupportsColors(
+          typeof ink.setPenColor === "function" &&
+          typeof ink.setSelectionColor === "function",
+        );
+        unsubscribeInkRef.current = ink.subscribe((state) => {
+          if (active) setInkState(normalizeInkState(state));
+        });
+        setInkError("");
+        void ink.ready.then(
+          () => {
+            if (active) setInkAvailable(true);
+          },
+          (cause) => {
+            if (!active) return;
+            setInkAvailable(false);
+            setInkSupportsColors(false);
+            setInkError(cause instanceof Error ? cause.message : "笔迹功能加载失败");
+            const destruction = destroyInk();
+            if (destruction) void destruction.catch(() => undefined);
+          },
+        );
+      }
     } catch (cause) {
-      mountedRef.current = null;
-      mounted.destroy();
-      throw cause;
+      setInkAvailable(false);
+      setInkSupportsColors(false);
+      setInkError(cause instanceof Error ? cause.message : "笔迹功能加载失败");
+      const destruction = destroyInk();
+      if (destruction) void destruction.catch(() => undefined);
     }
     return () => {
+      active = false;
       mountedRef.current = null;
+      const destruction = destroyInk();
       mounted.destroy();
+      if (destruction) void destruction.catch(() => undefined);
     };
-  }, []);
+  }, [inkSessionId]);
 
   useEffect(() => {
     const view = mountedRef.current?.view;
@@ -183,15 +296,6 @@ export function OllLessonBoard({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => () => {
-    inkRequestRef.current += 1;
-    unsubscribeInkRef.current?.();
-    unsubscribeInkRef.current = null;
-    const ink = inkRuntimeRef.current;
-    inkRuntimeRef.current = null;
-    if (ink) void ink.destroy();
-  }, []);
-
   return (
     <div className="learning-oll-board-shell">
       <div
@@ -200,25 +304,7 @@ export function OllLessonBoard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
-      {inkSessionId && inkLoadState !== "ready" ? (
-        <button
-          type="button"
-          className="learning-ink-enable"
-          onClick={() => void enableInk()}
-          disabled={inkLoadState === "loading"}
-          aria-label="启用白板书写"
-        >
-          <PenLine size={17} />
-          <span>
-            {inkLoadState === "loading"
-              ? "正在加载书写…"
-              : inkLoadState === "error"
-                ? "重试书写"
-                : "书写"}
-          </span>
-        </button>
-      ) : null}
-      {inkLoadState === "ready" ? (
+      {inkSessionId && inkAvailable ? (
         <div className="learning-ink-toolbar" aria-label="白板书写工具">
           <button
             type="button"
@@ -256,6 +342,20 @@ export function OllLessonBoard({
           >
             <BoxSelect size={17} />
           </button>
+          {inkSupportsColors && inkState.mode === "draw" ? (
+            <InkColorControl
+              label="笔色"
+              value={inkState.pen_color}
+              onChange={setPenColor}
+            />
+          ) : null}
+          {inkSupportsColors && inkState.mode === "select" && inkState.selected_count > 0 ? (
+            <InkColorControl
+              label="选区颜色"
+              value={inkState.selection_color ?? inkState.pen_color}
+              onChange={setSelectionColor}
+            />
+          ) : null}
           <button
             type="button"
             className="learning-ink-select-all"

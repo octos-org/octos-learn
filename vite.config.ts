@@ -27,11 +27,15 @@ export default defineConfig(({ mode }) => {
         "octos-lesson-language",
         "octos-lesson-language/player",
         "octos-lesson-language/web-runtime",
+        "octos-lesson-language/ink-runtime",
       ],
       // OLL's validator uses AJV's CommonJS 2020 entrypoint. Keep that leaf
       // dependency optimized so the directly served OLL modules receive Vite's
       // ESM interop wrapper.
-      include: ["octos-lesson-language > ajv/dist/2020.js"],
+      include: [
+        "octos-lesson-language > ajv/dist/2020.js",
+        "octos-lesson-language > js-draw",
+      ],
     },
     base: process.env.BASE_URL || "/",
     plugins: [react(), tailwindcss()],

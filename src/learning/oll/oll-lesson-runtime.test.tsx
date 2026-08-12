@@ -199,12 +199,14 @@ describe("OLL lesson Runtime integration", () => {
     vi.restoreAllMocks();
   });
 
-  it("loads student ink only after the learner enables writing", async () => {
+  it("mounts writing as a persistent whiteboard capability", async () => {
     const listeners = new Set<(state: InkRuntimeState) => void>();
-    let state: InkRuntimeState = {
+    let state: InkRuntimeState & { pen_color: string; selection_color: string | null } = {
       mode: "navigate",
       component_count: 2,
       selected_count: 0,
+      pen_color: "#176b62",
+      selection_color: null,
       document_version: 3,
       saved: true,
     };
@@ -220,7 +222,15 @@ describe("OLL lesson Runtime integration", () => {
         listeners.forEach((listener) => listener(state));
       }),
       selectAll: vi.fn(() => {
-        state = { ...state, selected_count: 2 };
+        state = { ...state, selected_count: 2, selection_color: "#176b62" };
+        listeners.forEach((listener) => listener(state));
+      }),
+      setPenColor: vi.fn((color: string) => {
+        state = { ...state, pen_color: color };
+        listeners.forEach((listener) => listener(state));
+      }),
+      setSelectionColor: vi.fn((color: string) => {
+        state = { ...state, selection_color: color };
         listeners.forEach((listener) => listener(state));
       }),
       undo: vi.fn(),
@@ -231,33 +241,45 @@ describe("OLL lesson Runtime integration", () => {
 
     render(<InkRuntimeProbe />);
 
-    expect(mountInkRuntimeMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "启用白板书写" }));
-
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
       storageKey: "octos-learning-ink:v1:learn-ink-1",
       documentId: "learning-session:learn-ink-1:student-ink",
+      locale: "zh-CN",
     }));
-    expect(ink.setMode).toHaveBeenCalledWith("draw");
+    expect(ink.setMode).toHaveBeenCalledWith("navigate");
+    expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "退出书写模式" })).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
+    fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
+    expect(ink.setMode).toHaveBeenLastCalledWith("draw");
+    fireEvent.click(screen.getByRole("button", { name: "笔色：蓝色" }));
+    expect(ink.setPenColor).toHaveBeenCalledWith("#1769aa");
 
     fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
     fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
     expect(screen.getByRole("status").textContent).toContain("已选 2");
+    fireEvent.click(screen.getByRole("button", { name: "选区颜色：红色" }));
+    expect(ink.setSelectionColor).toHaveBeenCalledWith("#c75445");
+
+    fireEvent.click(screen.getByRole("button", { name: "浏览白板" }));
+    expect(ink.setMode).toHaveBeenLastCalledWith("navigate");
+    expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
+    expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
+    expect(ink.destroy).not.toHaveBeenCalled();
   });
 
   it("reports a failed restore and disposes the read-only ink layer", async () => {
     const ink = {
       ready: Promise.reject(new Error("保存的笔迹校验失败")),
+      setMode: vi.fn(),
+      subscribe: vi.fn(() => () => undefined),
       destroy: vi.fn(() => Promise.resolve()),
     };
     mountInkRuntimeMock.mockReturnValue(ink);
     render(<InkRuntimeProbe />);
-
-    fireEvent.click(screen.getByRole("button", { name: "启用白板书写" }));
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent).toContain(
@@ -265,8 +287,7 @@ describe("OLL lesson Runtime integration", () => {
       );
     });
     expect(ink.destroy).toHaveBeenCalledOnce();
-    expect(screen.getByRole("button", { name: "启用白板书写" }).textContent)
-      .toContain("重试书写");
+    expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
   });
 
   it("plays Canonical Beats without replacing existing board nodes", () => {
