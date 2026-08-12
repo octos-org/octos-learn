@@ -9,8 +9,18 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import type { CanonicalEvent } from "octos-lesson-language";
+import type {
+  InkMode,
+  InkRuntimeState,
+} from "octos-lesson-language/ink-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
+
+const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
+
+vi.mock("./oll-ink-runtime", () => ({
+  mountInkRuntime: mountInkRuntimeMock,
+}));
 
 function RuntimeProbe() {
   const runtime = useOllLessonRuntime({
@@ -25,6 +35,19 @@ function RuntimeProbe() {
       </span>
       <button type="button" onClick={runtime.nextBeat}>下一 Beat</button>
       <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
+function InkRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-ink-runtime-test",
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={runtime} inkSessionId="learn-ink-1" />
     </div>
   );
 }
@@ -172,7 +195,78 @@ describe("OLL lesson Runtime integration", () => {
   afterEach(() => {
     cleanup();
     localStorage.clear();
+    mountInkRuntimeMock.mockReset();
     vi.restoreAllMocks();
+  });
+
+  it("loads student ink only after the learner enables writing", async () => {
+    const listeners = new Set<(state: InkRuntimeState) => void>();
+    let state: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 2,
+      selected_count: 0,
+      document_version: 3,
+      saved: true,
+    };
+    const ink = {
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn((mode: InkMode) => {
+        state = { ...state, mode };
+        listeners.forEach((listener) => listener(state));
+      }),
+      selectAll: vi.fn(() => {
+        state = { ...state, selected_count: 2 };
+        listeners.forEach((listener) => listener(state));
+      }),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    mountInkRuntimeMock.mockReturnValue(ink);
+
+    render(<InkRuntimeProbe />);
+
+    expect(mountInkRuntimeMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "启用白板书写" }));
+
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
+      storageKey: "octos-learning-ink:v1:learn-ink-1",
+      documentId: "learning-session:learn-ink-1:student-ink",
+    }));
+    expect(ink.setMode).toHaveBeenCalledWith("draw");
+    expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
+
+    fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
+    expect(ink.setMode).toHaveBeenLastCalledWith("select");
+    fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
+    expect(ink.selectAll).toHaveBeenCalledOnce();
+    expect(screen.getByRole("status").textContent).toContain("已选 2");
+  });
+
+  it("reports a failed restore and disposes the read-only ink layer", async () => {
+    const ink = {
+      ready: Promise.reject(new Error("保存的笔迹校验失败")),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    mountInkRuntimeMock.mockReturnValue(ink);
+    render(<InkRuntimeProbe />);
+
+    fireEvent.click(screen.getByRole("button", { name: "启用白板书写" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain(
+        "保存的笔迹校验失败",
+      );
+    });
+    expect(ink.destroy).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "启用白板书写" }).textContent)
+      .toContain("重试书写");
   });
 
   it("plays Canonical Beats without replacing existing board nodes", () => {

@@ -425,9 +425,108 @@
   inset: 0;
 }
 
+.learning-oll-board-shell,
 .learning-oll-board {
   width: 100%;
   height: 100%;
+}
+
+.learning-oll-board-shell {
+  position: relative;
+}
+
+.learning-ink-enable,
+.learning-ink-toolbar,
+.learning-ink-error {
+  position: absolute;
+  top: 88px;
+  left: 20px;
+  z-index: 15;
+}
+
+.learning-ink-enable {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  border: 1px solid rgba(26, 110, 126, 0.2);
+  border-radius: 14px;
+  color: #286a78;
+  background: rgba(247, 253, 251, 0.94);
+  box-shadow: 0 12px 30px rgba(42, 83, 91, 0.14);
+  font-size: 12px;
+  backdrop-filter: blur(16px);
+}
+
+.learning-ink-enable:hover,
+.learning-ink-enable:focus-visible {
+  color: #0b7187;
+  border-color: rgba(17, 116, 138, 0.32);
+  background: rgba(232, 247, 245, 0.97);
+}
+
+.learning-ink-enable:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.learning-ink-toolbar {
+  display: flex;
+  max-width: calc(100vw - 40px);
+  min-height: 46px;
+  align-items: center;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid rgba(63, 73, 67, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 253, 248, 0.94);
+  box-shadow: 0 14px 36px rgba(54, 45, 34, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.learning-ink-toolbar > button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 10px;
+  color: #686158;
+}
+
+.learning-ink-toolbar > button:hover,
+.learning-ink-toolbar > button.is-active {
+  color: #0c7085;
+  background: rgba(24, 128, 146, 0.12);
+}
+
+.learning-ink-toolbar > .learning-ink-select-all {
+  width: auto;
+  padding: 0 9px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.learning-ink-status {
+  padding: 0 8px;
+  color: #6e766f;
+  font-size: 10px;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.learning-ink-error {
+  top: 140px;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 8px 11px;
+  border: 1px solid rgba(159, 69, 45, 0.22);
+  border-radius: 11px;
+  color: #8b3c2b;
+  background: rgba(255, 242, 236, 0.96);
+  box-shadow: 0 10px 26px rgba(83, 47, 35, 0.12);
+  font-size: 11px;
 }
 
 .learning-camera-monitor {
@@ -1038,6 +1137,23 @@
   .learning-workspace-topbar {
     grid-template-columns: minmax(0, 1fr) auto auto;
     left: 72px;
+  }
+
+  .learning-ink-enable,
+  .learning-ink-toolbar {
+    top: 78px;
+    left: 14px;
+  }
+
+  .learning-ink-error {
+    top: 130px;
+    left: 14px;
+  }
+
+  .learning-ink-status {
+    overflow: hidden;
+    max-width: 124px;
+    text-overflow: ellipsis;
   }
 
   .learning-demo-controls > button {

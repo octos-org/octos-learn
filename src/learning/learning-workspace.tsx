@@ -759,7 +759,7 @@ export function LearningWorkspace({
 
       <main className="learning-canvas-shell">
         {ollLesson ? (
-          <OllLessonBoard runtime={ollLesson} />
+          <OllLessonBoard runtime={ollLesson} inkSessionId={sessionId} />
         ) : (
           <InfiniteBoard
             packet={emptyPacket}
