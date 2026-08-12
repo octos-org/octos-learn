@@ -436,11 +436,80 @@
 }
 
 .learning-ink-toolbar,
-.learning-ink-error {
+.learning-ink-error,
+.learning-variable-controls {
   position: absolute;
   top: 88px;
   left: 20px;
   z-index: 15;
+}
+
+.learning-variable-controls {
+  top: auto;
+  right: auto;
+  bottom: 182px;
+  left: 28px;
+  z-index: 14;
+  display: grid;
+  width: min(360px, calc(100vw - 56px));
+  gap: 8px;
+  padding: 13px 15px 11px;
+  border: 1px solid rgba(63, 73, 67, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 253, 248, 0.95);
+  box-shadow: 0 14px 36px rgba(54, 45, 34, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.learning-variable-control {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) minmax(42px, auto) auto;
+  align-items: center;
+  gap: 10px;
+  color: #5d5952;
+  font-size: 12px;
+}
+
+.learning-variable-control > label {
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.learning-variable-control > input {
+  width: 100%;
+  accent-color: #168398;
+  cursor: ew-resize;
+}
+
+.learning-variable-control > output {
+  color: #0d7082;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.learning-variable-control > button {
+  padding: 4px 7px;
+  border: 1px solid rgba(13, 112, 130, 0.2);
+  border-radius: 8px;
+  color: #0d7082;
+  background: rgba(22, 131, 152, 0.08);
+  font-size: 10px;
+}
+
+.learning-variable-control > button:hover {
+  background: rgba(22, 131, 152, 0.15);
+}
+
+.learning-variable-control.is-animating > output {
+  color: #c35e42;
+}
+
+.learning-variable-controls > small {
+  color: #827b72;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .learning-ink-toolbar {
@@ -1197,6 +1266,13 @@
   .learning-ink-error {
     top: 130px;
     left: 14px;
+  }
+
+  .learning-variable-controls {
+    right: auto;
+    bottom: 174px;
+    left: 14px;
+    width: min(330px, calc(100vw - 28px));
   }
 
   .learning-ink-status {

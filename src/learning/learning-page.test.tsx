@@ -147,6 +147,21 @@ describe("LearningPage", () => {
     ).toBeNull();
   });
 
+  it("opens the unit-circle shared-variable fixture without Skill or device gates", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/learn?oll-fixture=unit-circle-sine",
+    );
+    profileSkillsMock.skills = [];
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props?.ollFixture).toBe("unit-circle-sine");
+    expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
+  });
+
   it("blocks an installed learning coach that predates request-source isolation", async () => {
     profileSkillsMock.skills[0].version = "0.8.3";
 

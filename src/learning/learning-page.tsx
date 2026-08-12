@@ -333,11 +333,13 @@ function LearningServerSync({
 
 export function LearningPage() {
   const navigate = useNavigate();
-  const ollFixture = useMemo<"geometry-v2" | undefined>(() => {
+  const ollFixture = useMemo<"geometry-v2" | "unit-circle-sine" | undefined>(() => {
     const requested = new URLSearchParams(window.location.search).get(
       "oll-fixture",
     );
-    return requested === "geometry-v2" ? requested : undefined;
+    return requested === "geometry-v2" || requested === "unit-circle-sine"
+      ? requested
+      : undefined;
   }, []);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),

@@ -16,9 +16,11 @@ import {
   type CSSProperties,
 } from "react";
 import {
+  formatVariableValue,
   mountInfiniteBoard,
   type MountedInfiniteBoard,
   type ViewportInsets,
+  variableControlModels,
 } from "octos-lesson-language/web-runtime";
 import {
   mountInkRuntime,
@@ -122,6 +124,7 @@ export function OllLessonBoard({
   inkSessionId?: string;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
+  const runtimeRef = useRef(runtime);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const renderedFocusRef = useRef<string[]>([]);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
@@ -130,6 +133,11 @@ export function OllLessonBoard({
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkSupportsColors, setInkSupportsColors] = useState(false);
   const [inkError, setInkError] = useState("");
+  const variableControls = variableControlModels(runtime.board);
+
+  useEffect(() => {
+    runtimeRef.current = runtime;
+  }, [runtime]);
 
   const setInkMode = useCallback((mode: InkMode) => {
     try {
@@ -205,6 +213,9 @@ export function OllLessonBoard({
     };
     try {
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
+      mounted.view.setVariableInputHandler((alias, value) => {
+        runtimeRef.current.setVariable(alias, value);
+      });
       if (inkSessionId) {
         ink = mountInkRuntime({
           board: mounted.view,
@@ -390,6 +401,57 @@ export function OllLessonBoard({
       {inkError ? (
         <div className="learning-ink-error" role="alert">
           笔迹功能：{inkError}
+        </div>
+      ) : null}
+      {variableControls.length > 0 ? (
+        <div
+          className="learning-variable-controls"
+          aria-label="课程变量控制"
+          data-testid="oll-variable-controls"
+        >
+          {variableControls.map((control) => {
+            const inputId = `oll-variable-${control.alias}`;
+            return (
+              <div
+                className={runtime.activeVariableAnimation?.variable === control.alias
+                  ? "learning-variable-control is-animating"
+                  : "learning-variable-control"}
+                key={control.alias}
+              >
+                <label htmlFor={inputId}>{control.label}</label>
+                <input
+                  id={inputId}
+                  type="range"
+                  min={control.min}
+                  max={control.max}
+                  step={control.step}
+                  value={control.value}
+                  onChange={(event) => {
+                    runtime.setVariable(control.alias, Number(event.target.value));
+                  }}
+                  aria-label={control.label}
+                />
+                <output>{formatVariableValue(control.value, control.unit)}</output>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const initial = runtime.board?.variables?.[control.alias]?.initial;
+                    if (typeof initial === "number") {
+                      runtime.setVariable(control.alias, initial);
+                    }
+                  }}
+                  aria-label={`复位${control.label}`}
+                >
+                  复位
+                </button>
+              </div>
+            );
+          })}
+          <small>
+            {runtime.activeVariableAnimation
+              ? "动画正在改变同一个变量；拖动会暂停动画"
+              : "拖动后课程会暂停；顶部按钮可继续播放或重新播放"}
+          </small>
         </div>
       ) : null}
     </div>

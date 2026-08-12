@@ -6,6 +6,7 @@ import type {
   PlaybackOperation,
   PlaybackProjection,
   PlaybackStatus,
+  PlaybackVariableAnimation,
 } from "octos-lesson-language/player";
 import {
   BrowserLessonSession,
@@ -42,6 +43,7 @@ export interface OllLessonRuntimeController {
   completed: boolean;
   waiting: boolean;
   board: SemanticBoardState | null;
+  activeVariableAnimation?: PlaybackVariableAnimation;
   currentOperation?: PlaybackOperation;
   play(): void;
   pause(): void;
@@ -52,6 +54,7 @@ export interface OllLessonRuntimeController {
   viewBeat(beatId: string): void;
   playBeat(beatId: string): void;
   completeNarration(beatId: string): void;
+  setVariable(alias: string, value: number): void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -154,6 +157,10 @@ export function useOllLessonRuntime({
     (beatId: string) => session?.completeNarration(beatId),
     [session],
   );
+  const setVariable = useCallback(
+    (alias: string, value: number) => session?.setVariable(alias, value),
+    [session],
+  );
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
       if (!session) throw new Error("OLL Runtime 尚未初始化");
@@ -215,6 +222,7 @@ export function useOllLessonRuntime({
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
     board: projection.board,
+    activeVariableAnimation: session.activeVariableAnimation,
     currentOperation: session.currentOperation,
     play,
     pause,
@@ -225,6 +233,7 @@ export function useOllLessonRuntime({
     viewBeat,
     playBeat,
     completeNarration,
+    setVariable,
     appendEvents,
   };
 }

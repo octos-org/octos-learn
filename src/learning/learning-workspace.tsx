@@ -35,6 +35,7 @@ import {
   type LearningBoardContext,
 } from "./board/session-board";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
+import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
 import { OllLessonBoard } from "./oll/oll-lesson-runtime";
 import { isLessonDeliverySettled } from "./oll/lesson-delivery";
@@ -48,13 +49,22 @@ import {
   mergeOllLessonArtifacts,
   ollArtifactIdentity,
 } from "./oll/oll-artifacts";
-import { ollPlaybackStorageKey } from "./oll/oll-playback-storage";
+import {
+  ollPlaybackStorageKey,
+  type OllFixture,
+} from "./oll/oll-playback-storage";
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
+const unitCircleSineLessonEvents = parseCanonicalJsonl(unitCircleSineLessonSource);
+
+const ollFixtureEvents: Record<OllFixture, CanonicalEvent[]> = {
+  "geometry-v2": geometryLessonEvents,
+  "unit-circle-sine": unitCircleSineLessonEvents,
+};
 
 function threadHasOllArtifact(threads: Thread[], turnId: string): boolean {
   const thread = threads.find((candidate) => candidate.id === turnId);
@@ -80,7 +90,7 @@ export interface LearningWorkspaceProps {
   onBoardContextChange?: (context: LearningBoardContext) => void;
   onBack: () => void;
   onVoiceExit?: () => void;
-  ollFixture?: "geometry-v2";
+  ollFixture?: OllFixture;
 }
 
 export function LearningWorkspace({
@@ -141,8 +151,8 @@ export function LearningWorkspace({
     const events = composeOllClassroomEvents(deliveredOllLessons, sessionId);
     return events.length > 0 ? events : null;
   }, [deliveredOllLessons, sessionId]);
-  const activeOllEvents = ollFixture === "geometry-v2"
-    ? geometryLessonEvents
+  const activeOllEvents = ollFixture
+    ? ollFixtureEvents[ollFixture]
     : deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
   const expectedOllOperationCount = useMemo(
@@ -153,8 +163,8 @@ export function LearningWorkspace({
   );
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
-      ollFixture === "geometry-v2"
-        ? [geometryLessonEvents]
+      ollFixture
+        ? [ollFixtureEvents[ollFixture]]
         : deliveredOllLessons,
     ),
     [deliveredOllLessons, ollFixture],
@@ -244,6 +254,10 @@ export function LearningWorkspace({
       playBeat: (beatId: string) => {
         claim();
         ollLesson.playBeat(beatId);
+      },
+      setVariable: (alias: string, value: number) => {
+        release();
+        ollLesson.setVariable(alias, value);
       },
     };
   }, [ollLesson, ollOpenSource]);
@@ -759,7 +773,10 @@ export function LearningWorkspace({
 
       <main className="learning-canvas-shell">
         {ollLesson ? (
-          <OllLessonBoard runtime={ollLesson} inkSessionId={sessionId} />
+          <OllLessonBoard
+            runtime={controlledOllLesson ?? ollLesson}
+            inkSessionId={sessionId}
+          />
         ) : (
           <InfiniteBoard
             packet={emptyPacket}

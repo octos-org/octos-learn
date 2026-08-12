@@ -9,5 +9,8 @@ describe("OLL playback storage", () => {
     expect(ollPlaybackStorageKey("learn-1", "geometry-v2")).toBe(
       "octos-learning-oll:v4:learn-1:geometry-v2",
     );
+    expect(ollPlaybackStorageKey("learn-1", "unit-circle-sine")).toBe(
+      "octos-learning-oll:v4:learn-1:unit-circle-sine",
+    );
   });
 });

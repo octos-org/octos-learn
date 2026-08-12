@@ -8,6 +8,7 @@ import {
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
+import unitCircleSineLessonSource from "./fixtures/unit-circle-sine.canonical.jsonl?raw";
 import type { CanonicalEvent } from "octos-lesson-language";
 import type {
   InkMode,
@@ -66,6 +67,34 @@ function ReviewRuntimeProbe() {
       </span>
       <span data-testid="review-playing">{String(runtime.playing)}</span>
       <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
+function VariableRuntimeProbe({
+  onVariable,
+}: {
+  onVariable?: (value: number) => void;
+} = {}) {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "oll-variable-runtime-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard
+        runtime={onVariable
+          ? {
+              ...runtime,
+              setVariable: (alias, value) => {
+                onVariable(value);
+                runtime.setVariable(alias, value);
+              },
+            }
+          : runtime}
+      />
     </div>
   );
 }
@@ -329,6 +358,78 @@ describe("OLL lesson Runtime integration", () => {
     });
     expect(screen.getByTestId("review-playing").textContent).toBe("false");
     expect(screen.getByText("关键想法")).toBeTruthy();
+  });
+
+  it("uses one persisted theta for the slider, unit circle, projection, and sine plot", async () => {
+    vi.spyOn(SVGSVGElement.prototype, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 300,
+      bottom: 210,
+      width: 300,
+      height: 210,
+      toJSON: () => ({}),
+    } as DOMRect);
+    const directValues: number[] = [];
+    const first = render(<VariableRuntimeProbe onVariable={(value) => directValues.push(value)} />);
+    const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    const board = screen.getByTestId("oll-lesson-board");
+    const unitPointId = "lesson-unit-circle-sine-001:node:unit-circle:fragment:point-p";
+    const footId = "lesson-unit-circle-sine-001:node:unit-circle:fragment:foot";
+    const plotPointId = "lesson-unit-circle-sine-001:node:sine-plot:fragment:current-angle";
+    const unitPoint = board.querySelector<SVGCircleElement>(`[data-id="${unitPointId}"]`);
+    const plotPoint = board.querySelector<SVGCircleElement>(`[data-id="${plotPointId}"]`);
+    expect(unitPoint).toBeTruthy();
+    expect(plotPoint).toBeTruthy();
+    expect(unitPoint?.dataset.ollVariableControl).toBe("theta");
+    const initialUnitCx = unitPoint?.getAttribute("cx");
+    const initialUnitCy = unitPoint?.getAttribute("cy");
+    const initialPlotCx = plotPoint?.getAttribute("cx");
+
+    fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
+
+    await waitFor(() => {
+      expect(screen.getByText("π/2", { selector: "output" })).toBeTruthy();
+    });
+    const updatedUnitPoint = board.querySelector<SVGCircleElement>(`[data-id="${unitPointId}"]`);
+    const updatedFoot = board.querySelector<SVGCircleElement>(`[data-id="${footId}"]`);
+    const updatedPlotPoint = board.querySelector<SVGCircleElement>(`[data-id="${plotPointId}"]`);
+    expect(updatedUnitPoint?.getAttribute("cx")).not.toBe(initialUnitCx);
+    expect(updatedUnitPoint?.getAttribute("cy")).not.toBe(initialUnitCy);
+    expect(updatedUnitPoint?.getAttribute("cx")).toBe(updatedFoot?.getAttribute("cx"));
+    expect(updatedPlotPoint?.getAttribute("cx")).not.toBe(initialPlotCx);
+
+    const controlPoint = board.querySelector<SVGCircleElement>(`[data-id="${unitPointId}"]`)!;
+    const controlSvg = controlPoint.closest("svg")!;
+    Object.defineProperty(controlSvg, "viewBox", {
+      configurable: true,
+      value: { baseVal: { width: 300, height: 210 } },
+    });
+    const centerX = Number(controlPoint.dataset.angleCenterX);
+    const centerY = Number(controlPoint.dataset.angleCenterY);
+    controlPoint.dispatchEvent(new MouseEvent("pointerdown", {
+      bubbles: true,
+      clientX: centerX - 70,
+      clientY: centerY,
+    }));
+    expect(directValues.at(-1)).toBeCloseTo(Math.PI);
+    fireEvent.pointerUp(window);
+    await waitFor(() => {
+      expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "复位旋转角 θ" }));
+    expect(screen.getByText("0", { selector: "output" })).toBeTruthy();
+    fireEvent.change(screen.getByRole("slider", { name: "旋转角 θ" }), {
+      target: { value: String(Math.PI) },
+    });
+
+    first.unmount();
+    render(<VariableRuntimeProbe />);
+    const restoredSlider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
+    expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
   });
 
   it("groups the outline and seeks backwards to a selected Step", () => {
