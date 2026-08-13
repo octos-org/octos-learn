@@ -486,7 +486,13 @@ export function LearningWorkspace({
   const plainReplyNarrationId = plainReply && !plainReplySpoken && !lessonOwnsNarration
     ? `plain-reply:${plainReply.turnId}`
     : undefined;
+  const startOllNarration = ollLesson?.startNarration;
   const completeOllNarration = ollLesson?.completeNarration;
+  const handleNarrationStart = useCallback((narrationId: string) => {
+    if (!narrationId.startsWith("plain-reply:")) {
+      startOllNarration?.(narrationId);
+    }
+  }, [startOllNarration]);
   const handleNarrationComplete = useCallback((narrationId: string) => {
     if (narrationId.startsWith("plain-reply:")) {
       setPlainReplySpoken(true);
@@ -505,7 +511,15 @@ export function LearningWorkspace({
     narrationId: lessonOwnsNarration
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
+    prefetchEnabled: lessonOwnsNarration,
+    upcomingText: lessonOwnsNarration
+      ? ollLesson?.nextNarration?.text
+      : undefined,
+    upcomingNarrationId: lessonOwnsNarration
+      ? ollLesson?.nextNarration?.beatId
+      : undefined,
     onSpeakingChange: setNarrationSpeechActive,
+    onPlaybackStart: handleNarrationStart,
     onPlaybackComplete: handleNarrationComplete,
   });
 
@@ -585,6 +599,11 @@ export function LearningWorkspace({
 
   const handleTeacherClick = () => {
     unlockAudio();
+    if (lessonOwnsNarration && controlledOllLesson) {
+      if (controlledOllLesson.playing) controlledOllLesson.pause();
+      else controlledOllLesson.play();
+      return;
+    }
     if (!voiceEnabled) {
       if (controlledOllLesson) {
         if (controlledOllLesson.playing) controlledOllLesson.pause();
@@ -820,6 +839,7 @@ export function LearningWorkspace({
       <OctosTeacher
         state={runtime.ready ? conv.state : "error"}
         speech={teacherSpeech}
+        preparing={lessonOwnsNarration && ollNarrationTts.preparing}
         onClick={handleTeacherClick}
       />
 

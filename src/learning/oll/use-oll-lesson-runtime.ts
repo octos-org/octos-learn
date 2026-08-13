@@ -26,6 +26,11 @@ export interface OllLessonOutlineTopic {
   steps: PlaybackOutlineStep[];
 }
 
+export interface OllLessonNarration {
+  beatId: string;
+  text: string;
+}
+
 export interface OllLessonRuntimeController {
   title: string;
   language: string;
@@ -39,6 +44,7 @@ export interface OllLessonRuntimeController {
   currentBeatId?: string;
   attentionTargets: string[];
   activeSpeech: string;
+  nextNarration?: OllLessonNarration;
   playing: boolean;
   completed: boolean;
   waiting: boolean;
@@ -53,6 +59,7 @@ export interface OllLessonRuntimeController {
   playStep(stepId: string): void;
   viewBeat(beatId: string): void;
   playBeat(beatId: string): void;
+  startNarration(beatId: string): void;
   completeNarration(beatId: string): void;
   setVariable(alias: string, value: number): void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
@@ -153,6 +160,10 @@ export function useOllLessonRuntime({
     session.seekToBeat(beatId, "start");
     session.play();
   }, [session]);
+  const startNarration = useCallback(
+    (beatId: string) => session?.startNarration(beatId),
+    [session],
+  );
   const completeNarration = useCallback(
     (beatId: string) => session?.completeNarration(beatId),
     [session],
@@ -179,6 +190,20 @@ export function useOllLessonRuntime({
   const currentBeatId =
     projection.current_beat_id ?? session.currentOperation?.beat_id;
   const currentBeatIndex = currentBeatId ? beats.indexOf(currentBeatId) : -1;
+  const nextNarrationOperation = session.operations
+    .slice(projection.cursor)
+    .find((operation) =>
+      operation.type === "narration.begin" &&
+      operation.beat_id !== currentBeatId &&
+      Boolean(operation.beat_id && operation.narration?.text.trim())
+    );
+  const nextNarration =
+    nextNarrationOperation?.beat_id && nextNarrationOperation.narration
+      ? {
+          beatId: nextNarrationOperation.beat_id,
+          text: nextNarrationOperation.narration.text,
+        }
+      : undefined;
   const steps = session.outline;
   const currentStepId =
     projection.current_step_id ??
@@ -218,6 +243,7 @@ export function useOllLessonRuntime({
     currentBeatId,
     attentionTargets: session.attentionTargets,
     activeSpeech: projection.current_narration?.text ?? "",
+    nextNarration,
     playing: session.isPlaying,
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
@@ -232,6 +258,7 @@ export function useOllLessonRuntime({
     playStep,
     viewBeat,
     playBeat,
+    startNarration,
     completeNarration,
     setVariable,
     appendEvents,

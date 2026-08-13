@@ -34,7 +34,7 @@ const sessionFilesMock = vi.hoisted(() => ({
   getSessionFiles: vi.fn(async () => []),
 }));
 const narrationTtsMock = vi.hoisted(() => ({
-  useOllNarrationTts: vi.fn(() => ({ error: null })),
+  useOllNarrationTts: vi.fn(() => ({ error: null, preparing: false })),
 }));
 
 vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn() }));
@@ -119,6 +119,10 @@ describe("LearningWorkspace", () => {
     conversationMock.options = null;
     conversationMock.optionsHistory = [];
     narrationTtsMock.useOllNarrationTts.mockClear();
+    narrationTtsMock.useOllNarrationTts.mockReturnValue({
+      error: null,
+      preparing: false,
+    });
     sessionFilesMock.getSessionFiles.mockReset();
     sessionFilesMock.getSessionFiles.mockResolvedValue([]);
   });
@@ -484,6 +488,27 @@ describe("LearningWorkspace", () => {
       );
     },
   );
+
+  it("animates the teacher while the next lesson Beat is preparing", () => {
+    narrationTtsMock.useOllNarrationTts.mockReturnValue({
+      error: null,
+      preparing: true,
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-narration-preparing"
+        voiceEnabled
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    const teacher = screen.getByRole("button", {
+      name: "Octos 正在准备下一步",
+    });
+    expect(teacher.getAttribute("aria-busy")).toBe("true");
+    expect(screen.getByText("稍等一下")).toBeTruthy();
+  });
 
   it("uses the shared TTS path when replaying a saved lesson", () => {
     render(

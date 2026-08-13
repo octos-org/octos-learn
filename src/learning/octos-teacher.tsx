@@ -15,10 +15,12 @@ const STATE_LABEL: Record<VoiceState, string> = {
 export function OctosTeacher({
   state,
   speech,
+  preparing = false,
   onClick,
 }: {
   state: VoiceState;
   speech: string;
+  preparing?: boolean;
   onClick: () => void;
 }) {
   const { skin } = useTeacherSkin();
@@ -59,15 +61,26 @@ export function OctosTeacher({
         type="button"
         className="octos-teacher-avatar"
         data-state={state}
+        data-preparing={preparing ? "true" : undefined}
         data-reacting={reacting ? "true" : undefined}
         onClick={handleClick}
+        aria-busy={preparing}
         aria-label={
-          state === "speaking" || state === "thinking"
+          preparing
+            ? "Octos 正在准备下一步"
+            : state === "speaking" || state === "thinking"
             ? "打断 Octos"
             : "和 Octos 说话"
         }
       >
         <span className="octos-teacher-halo" />
+        {preparing && (
+          <span className="octos-teacher-preparing" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
+        )}
         {reacting && (
           <span
             key={reactionKey}
@@ -83,10 +96,12 @@ export function OctosTeacher({
           skin={skin}
           className="octos-teacher-avatar-art"
           eager
-          activity={state}
+          activity={preparing ? "thinking" : state}
           reactionKey={reactionKey}
         />
-        <span className="octos-teacher-state">{STATE_LABEL[state]}</span>
+        <span className="octos-teacher-state">
+          {preparing ? "稍等一下" : STATE_LABEL[state]}
+        </span>
       </button>
     </div>
   );
