@@ -12,6 +12,8 @@ import {
   BrowserLessonSession,
   LocalPlaybackStore,
   parseCanonicalJsonl,
+  type StudentOperation,
+  type StudentVariableInputEvent,
 } from "octos-lesson-language/web-runtime";
 
 export interface OllLessonTopicDefinition {
@@ -50,6 +52,7 @@ export interface OllLessonRuntimeController {
   waiting: boolean;
   board: SemanticBoardState | null;
   activeVariableAnimation?: PlaybackVariableAnimation;
+  studentOperations: StudentOperation[];
   currentOperation?: PlaybackOperation;
   play(): void;
   pause(): void;
@@ -62,6 +65,11 @@ export interface OllLessonRuntimeController {
   startNarration(beatId: string): void;
   completeNarration(beatId: string): void;
   setVariable(alias: string, value: number): void;
+  handleStudentVariableInput(
+    alias: string,
+    value: number,
+    event: StudentVariableInputEvent,
+  ): string | void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -172,6 +180,25 @@ export function useOllLessonRuntime({
     (alias: string, value: number) => session?.setVariable(alias, value),
     [session],
   );
+  const handleStudentVariableInput = useCallback((
+    alias: string,
+    value: number,
+    event: StudentVariableInputEvent,
+  ): string | void => {
+    if (!session) return;
+    if (event.phase === "start") {
+      return session.beginStudentVariableOperation(alias, {
+        control: event.control,
+        input: event.input,
+      });
+    }
+    if (!event.operation_id) return;
+    if (event.phase === "update") {
+      session.updateStudentVariableOperation(event.operation_id, value);
+    } else {
+      session.commitStudentVariableOperation(event.operation_id, value);
+    }
+  }, [session]);
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
       if (!session) throw new Error("OLL Runtime 尚未初始化");
@@ -249,6 +276,7 @@ export function useOllLessonRuntime({
     waiting: projection.status === "waiting",
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
+    studentOperations: session.studentOperations,
     currentOperation: session.currentOperation,
     play,
     pause,
@@ -261,6 +289,7 @@ export function useOllLessonRuntime({
     startNarration,
     completeNarration,
     setVariable,
+    handleStudentVariableInput,
     appendEvents,
   };
 }

@@ -37,7 +37,7 @@
     "katex": "^0.16.38",
     "lucide-react": "^0.577.0",
     "mermaid": "^11.13.0",
-    "octos-lesson-language": "git+https://github.com/alan0x/octos-lesson-language.git#1a69810df96d91822513b94d4deecf3edf7b2e76",
+    "octos-lesson-language": "git+https://github.com/alan0x/octos-lesson-language.git#6bf7334298fe4e5240ba75d9c34ab850c275a9b5",
     "onnxruntime-web": "^1.26.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

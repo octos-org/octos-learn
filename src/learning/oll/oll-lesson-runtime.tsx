@@ -18,7 +18,9 @@ import {
 import {
   formatVariableValue,
   mountInfiniteBoard,
+  studentInputMethod,
   type MountedInfiniteBoard,
+  type StudentInputMethod,
   type ViewportInsets,
   variableControlModels,
 } from "octos-lesson-language/web-runtime";
@@ -129,11 +131,61 @@ export function OllLessonBoard({
   const renderedFocusRef = useRef<string[]>([]);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
+  const sliderOperationsRef = useRef(new Map<string, {
+    input: StudentInputMethod;
+    value: number;
+    operationId?: string;
+  }>());
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkSupportsColors, setInkSupportsColors] = useState(false);
   const [inkError, setInkError] = useState("");
   const variableControls = variableControlModels(runtime.board);
+
+  const startSliderOperation = useCallback((
+    alias: string,
+    value: number,
+    input: StudentInputMethod,
+  ) => {
+    if (sliderOperationsRef.current.has(alias)) return;
+    const operationId = runtimeRef.current.handleStudentVariableInput(alias, value, {
+      phase: "start",
+      control: "slider",
+      input,
+    });
+    sliderOperationsRef.current.set(alias, {
+      input,
+      value,
+      ...(typeof operationId === "string" ? { operationId } : {}),
+    });
+  }, []);
+
+  const updateSliderOperation = useCallback((alias: string, value: number) => {
+    if (!sliderOperationsRef.current.has(alias)) {
+      startSliderOperation(alias, value, "unknown");
+    }
+    const active = sliderOperationsRef.current.get(alias);
+    if (!active) return;
+    active.value = value;
+    runtimeRef.current.handleStudentVariableInput(alias, value, {
+      phase: "update",
+      control: "slider",
+      input: active.input,
+      ...(active.operationId ? { operation_id: active.operationId } : {}),
+    });
+  }, [startSliderOperation]);
+
+  const commitSliderOperation = useCallback((alias: string, value: number) => {
+    const active = sliderOperationsRef.current.get(alias);
+    if (!active) return;
+    sliderOperationsRef.current.delete(alias);
+    runtimeRef.current.handleStudentVariableInput(alias, value, {
+      phase: "commit",
+      control: "slider",
+      input: active.input,
+      ...(active.operationId ? { operation_id: active.operationId } : {}),
+    });
+  }, []);
 
   useEffect(() => {
     runtimeRef.current = runtime;
@@ -197,6 +249,7 @@ export function OllLessonBoard({
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     mountedRef.current = mounted;
+    const sliderOperations = sliderOperationsRef.current;
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
@@ -213,8 +266,8 @@ export function OllLessonBoard({
     };
     try {
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
-      mounted.view.setVariableInputHandler((alias, value) => {
-        runtimeRef.current.setVariable(alias, value);
+      mounted.view.setVariableInputHandler((alias, value, event) => {
+        return runtimeRef.current.handleStudentVariableInput(alias, value, event);
       });
       if (inkSessionId) {
         ink = mountInkRuntime({
@@ -258,6 +311,15 @@ export function OllLessonBoard({
     return () => {
       active = false;
       mountedRef.current = null;
+      for (const [alias, operation] of sliderOperations) {
+        runtimeRef.current.handleStudentVariableInput(alias, operation.value, {
+          phase: "commit",
+          control: "slider",
+          input: operation.input,
+          ...(operation.operationId ? { operation_id: operation.operationId } : {}),
+        });
+      }
+      sliderOperations.clear();
       const destruction = destroyInk();
       mounted.destroy();
       if (destruction) void destruction.catch(() => undefined);
@@ -426,8 +488,35 @@ export function OllLessonBoard({
                   max={control.max}
                   step={control.step}
                   value={control.value}
+                  onPointerDown={(event) => {
+                    startSliderOperation(
+                      control.alias,
+                      control.value,
+                      studentInputMethod(event.pointerType),
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if ([
+                      "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+                      "Home", "End", "PageUp", "PageDown",
+                    ].includes(event.key)) {
+                      startSliderOperation(control.alias, control.value, "keyboard");
+                    }
+                  }}
                   onChange={(event) => {
-                    runtime.setVariable(control.alias, Number(event.target.value));
+                    updateSliderOperation(control.alias, Number(event.target.value));
+                  }}
+                  onPointerUp={(event) => {
+                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
+                  }}
+                  onPointerCancel={(event) => {
+                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
+                  }}
+                  onKeyUp={(event) => {
+                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
+                  }}
+                  onBlur={(event) => {
+                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
                   }}
                   aria-label={control.label}
                 />
@@ -437,7 +526,17 @@ export function OllLessonBoard({
                   onClick={() => {
                     const initial = runtime.board?.variables?.[control.alias]?.initial;
                     if (typeof initial === "number") {
-                      runtime.setVariable(control.alias, initial);
+                      const operationId = runtime.handleStudentVariableInput(
+                        control.alias,
+                        control.value,
+                        { phase: "start", control: "reset", input: "unknown" },
+                      );
+                      runtime.handleStudentVariableInput(control.alias, initial, {
+                        phase: "commit",
+                        control: "reset",
+                        input: "unknown",
+                        ...(typeof operationId === "string" ? { operation_id: operationId } : {}),
+                      });
                     }
                   }}
                   aria-label={`复位${control.label}`}

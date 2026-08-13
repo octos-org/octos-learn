@@ -259,6 +259,14 @@ export function LearningWorkspace({
         release();
         ollLesson.setVariable(alias, value);
       },
+      handleStudentVariableInput: (
+        alias: string,
+        value: number,
+        event: Parameters<typeof ollLesson.handleStudentVariableInput>[2],
+      ) => {
+        release();
+        return ollLesson.handleStudentVariableInput(alias, value, event);
+      },
     };
   }, [ollLesson, ollOpenSource]);
   const [sendError, setSendError] = useState<string | null>(null);

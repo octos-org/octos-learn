@@ -84,13 +84,21 @@ function VariableRuntimeProbe({
   if (!runtime) return null;
   return (
     <div style={{ width: 1200, height: 800 }}>
+      <span data-testid="student-operation-count">
+        {runtime.studentOperations.length}
+      </span>
+      <span data-testid="student-operation-controls">
+        {runtime.studentOperations.map((operation) => operation.control).join(",")}
+      </span>
       <OllLessonBoard
         runtime={onVariable
           ? {
               ...runtime,
-              setVariable: (alias, value) => {
-                onVariable(value);
-                runtime.setVariable(alias, value);
+              handleStudentVariableInput: (alias, value, event) => {
+                if (event.control === "geometry_point" && event.phase === "update") {
+                  onVariable(value);
+                }
+                return runtime.handleStudentVariableInput(alias, value, event);
               },
             }
           : runtime}
@@ -388,10 +396,13 @@ describe("OLL lesson Runtime integration", () => {
     const initialUnitCy = unitPoint?.getAttribute("cy");
     const initialPlotCx = plotPoint?.getAttribute("cx");
 
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
     fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
 
     await waitFor(() => {
       expect(screen.getByText("π/2", { selector: "output" })).toBeTruthy();
+      expect(screen.getByTestId("student-operation-count").textContent).toBe("1");
     });
     const updatedUnitPoint = board.querySelector<SVGCircleElement>(`[data-id="${unitPointId}"]`);
     const updatedFoot = board.querySelector<SVGCircleElement>(`[data-id="${footId}"]`);
@@ -418,18 +429,27 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.pointerUp(window);
     await waitFor(() => {
       expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
+      expect(screen.getByTestId("student-operation-count").textContent).toBe("2");
+      expect(screen.getByTestId("student-operation-controls").textContent)
+        .toBe("slider,geometry_point");
     });
     fireEvent.click(screen.getByRole("button", { name: "复位旋转角 θ" }));
     expect(screen.getByText("0", { selector: "output" })).toBeTruthy();
-    fireEvent.change(screen.getByRole("slider", { name: "旋转角 θ" }), {
+    expect(screen.getByTestId("student-operation-count").textContent).toBe("3");
+    const finalSlider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(finalSlider, { pointerType: "touch" });
+    fireEvent.change(finalSlider, {
       target: { value: String(Math.PI) },
     });
+    fireEvent.pointerUp(finalSlider, { pointerType: "touch" });
+    expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
 
     first.unmount();
     render(<VariableRuntimeProbe />);
     const restoredSlider = await screen.findByRole("slider", { name: "旋转角 θ" });
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
+    expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
   });
 
   it("groups the outline and seeks backwards to a selected Step", () => {
