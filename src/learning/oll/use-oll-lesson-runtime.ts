@@ -13,6 +13,7 @@ import {
   LocalPlaybackStore,
   parseCanonicalJsonl,
   type StudentOperation,
+  type StudentTaskSnapshot,
   type StudentVariableInputEvent,
 } from "octos-lesson-language/web-runtime";
 
@@ -53,6 +54,7 @@ export interface OllLessonRuntimeController {
   board: SemanticBoardState | null;
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
+  studentTasks: StudentTaskSnapshot[];
   currentOperation?: PlaybackOperation;
   play(): void;
   pause(): void;
@@ -70,6 +72,8 @@ export interface OllLessonRuntimeController {
     value: number,
     event: StudentVariableInputEvent,
   ): string | void;
+  requestStudentTaskHint(taskId: string): void;
+  retryStudentTask(taskId: string): void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -199,6 +203,18 @@ export function useOllLessonRuntime({
       session.commitStudentVariableOperation(event.operation_id, value);
     }
   }, [session]);
+  const requestStudentTaskHint = useCallback(
+    (taskId: string) => {
+      session?.requestStudentTaskHint(taskId);
+    },
+    [session],
+  );
+  const retryStudentTask = useCallback(
+    (taskId: string) => {
+      session?.retryStudentTask(taskId);
+    },
+    [session],
+  );
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
       if (!session) throw new Error("OLL Runtime 尚未初始化");
@@ -277,6 +293,7 @@ export function useOllLessonRuntime({
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,
+    studentTasks: session.studentTasks,
     currentOperation: session.currentOperation,
     play,
     pause,
@@ -290,6 +307,8 @@ export function useOllLessonRuntime({
     completeNarration,
     setVariable,
     handleStudentVariableInput,
+    requestStudentTaskHint,
+    retryStudentTask,
     appendEvents,
   };
 }

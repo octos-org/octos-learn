@@ -107,6 +107,20 @@ function VariableRuntimeProbe({
   );
 }
 
+function StudentTaskRuntimeProbe({ startAtEnd = true }: { startAtEnd?: boolean }) {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "oll-student-task-runtime-test",
+    startAtEnd,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
 function OutlineRuntimeProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -450,6 +464,44 @@ describe("OLL lesson Runtime integration", () => {
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
     expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
+  });
+
+  it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
+    const duringLesson = render(<StudentTaskRuntimeProbe startAtEnd={false} />);
+    expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+    duringLesson.unmount();
+
+    const first = render(<StudentTaskRuntimeProbe />);
+    expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    expect(screen.getByText("轮到你操作了，完成后这里会立即反馈。")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "给我提示" })).toBeNull();
+
+    const slider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: String(Math.PI / 4) } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+
+    await waitFor(() => {
+      expect(screen.getByText("已尝试 1 次")).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    expect(screen.getByText("观察圆周点的纵坐标怎样随 θ 变化。")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "重新开始" }));
+    expect(screen.getByText("0", { selector: "output" })).toBeTruthy();
+
+    const resetSlider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(resetSlider, { pointerType: "touch" });
+    fireEvent.change(resetSlider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(resetSlider, { pointerType: "touch" });
+    await waitFor(() => {
+      expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
+    });
+
+    first.unmount();
+    render(<StudentTaskRuntimeProbe />);
+    expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
   });
 
   it("groups the outline and seeks backwards to a selected Step", () => {

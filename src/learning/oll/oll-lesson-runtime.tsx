@@ -1,9 +1,12 @@
 import {
   BoxSelect,
+  CheckCircle2,
   Eraser,
   Hand,
+  Lightbulb,
   Palette,
   PenLine,
+  RotateCcw,
   Redo2,
   Undo2,
 } from "lucide-react";
@@ -140,7 +143,27 @@ export function OllLessonBoard({
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkSupportsColors, setInkSupportsColors] = useState(false);
   const [inkError, setInkError] = useState("");
+  const [taskError, setTaskError] = useState("");
   const variableControls = variableControlModels(runtime.board);
+  const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
+
+  const requestTaskHint = useCallback((taskId: string) => {
+    try {
+      runtimeRef.current.requestStudentTaskHint(taskId);
+      setTaskError("");
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : "暂时无法显示提示");
+    }
+  }, []);
+
+  const retryTask = useCallback((taskId: string) => {
+    try {
+      runtimeRef.current.retryStudentTask(taskId);
+      setTaskError("");
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : "暂时无法重新开始任务");
+    }
+  }, []);
 
   const startSliderOperation = useCallback((
     alias: string,
@@ -552,6 +575,77 @@ export function OllLessonBoard({
               : "拖动后课程会暂停；顶部按钮可继续播放或重新播放"}
           </small>
         </div>
+      ) : null}
+      {availableStudentTasks.length > 0 ? (
+        <section
+          className="learning-student-tasks"
+          aria-label="动手试一试"
+          data-testid="oll-student-tasks"
+        >
+          <header>
+            <span>动手试一试</span>
+            <small>直接使用白板上的滑杆或控制点</small>
+          </header>
+          {availableStudentTasks.map((task) => {
+            const lastAttempt = task.attempts.at(-1);
+            const attempts = task.attempts.length;
+            return (
+              <article
+                key={task.task_id}
+                className={`learning-student-task is-${task.status}`}
+                aria-live="polite"
+              >
+                <p>{task.prompt}</p>
+                {task.status === "succeeded" ? (
+                  <div className="learning-student-task-feedback is-success">
+                    <CheckCircle2 size={17} />
+                    <span>{task.success_message ?? "完成得很好，已经达到目标。"}</span>
+                  </div>
+                ) : lastAttempt ? (
+                  <div className="learning-student-task-feedback">
+                    <span>
+                      {task.status === "needs_hint"
+                        ? "还没达到目标，可以查看提示后再试。"
+                        : "已经记录这次操作，再调整一下试试。"}
+                    </span>
+                    <small>已尝试 {attempts} 次</small>
+                  </div>
+                ) : (
+                  <div className="learning-student-task-feedback">
+                    <span>轮到你操作了，完成后这里会立即反馈。</span>
+                  </div>
+                )}
+                {task.current_hint ? (
+                  <div className="learning-student-task-hint" role="status">
+                    <Lightbulb size={16} />
+                    <span>{task.current_hint}</span>
+                  </div>
+                ) : null}
+                {task.status !== "succeeded" && attempts > 0 ? (
+                  <div className="learning-student-task-actions">
+                    {task.hints_revealed < task.hints.length ? (
+                      <button
+                        type="button"
+                        onClick={() => requestTaskHint(task.task_id)}
+                      >
+                        <Lightbulb size={15} />
+                        {task.current_hint ? "下一个提示" : "给我提示"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={() => retryTask(task.task_id)}
+                    >
+                      <RotateCcw size={15} />
+                      重新开始
+                    </button>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+          {taskError ? <div className="learning-student-task-error" role="alert">{taskError}</div> : null}
+        </section>
       ) : null}
     </div>
   );
