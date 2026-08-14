@@ -769,6 +769,163 @@
   font-size: 11px;
 }
 
+.learning-selection-question {
+  position: absolute;
+  z-index: 34;
+  top: 142px;
+  left: 18px;
+  width: min(420px, calc(100vw - 36px));
+  padding: 14px;
+  border: 1px solid rgba(39, 104, 98, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 254, 249, 0.98);
+  box-shadow: 0 12px 36px rgba(33, 52, 48, 0.15);
+  color: #253735;
+}
+
+.learning-selection-question header,
+.learning-selection-question label {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+
+.learning-selection-question header {
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.learning-selection-question header span {
+  max-width: 25ch;
+  color: #687976;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.learning-selection-question select,
+.learning-selection-question input,
+.learning-selection-question button {
+  border: 1px solid rgba(39, 104, 98, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.learning-selection-question select,
+.learning-selection-question input {
+  padding: 8px 10px;
+}
+
+.learning-selection-suggestions,
+.learning-selection-question-input {
+  display: flex;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.learning-selection-suggestions {
+  flex-wrap: wrap;
+}
+
+.learning-selection-suggestions button,
+.learning-selection-question-input button {
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.learning-selection-question-input input {
+  min-width: 0;
+  flex: 1;
+}
+
+.learning-selection-enhancement-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+
+.learning-selection-enhancement {
+  position: absolute;
+  width: 330px;
+  padding: 16px;
+  border: 1px solid rgba(36, 112, 104, 0.25);
+  border-radius: 16px;
+  background: #fffdf6;
+  box-shadow: 0 9px 26px rgba(33, 52, 48, 0.13);
+  color: #263936;
+  pointer-events: auto;
+}
+
+.learning-selection-source-link {
+  position: absolute;
+  right: 100%;
+  top: 24px;
+  width: 30px;
+  border-top: 2px dashed rgba(36, 112, 104, 0.42);
+}
+
+.learning-selection-enhancement > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.learning-selection-enhancement > header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.learning-selection-enhancement small,
+.learning-selection-enhancement footer {
+  color: #71817e;
+  font-size: 11px;
+}
+
+.learning-selection-enhancement header button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #6d7c79;
+  cursor: pointer;
+}
+
+.learning-selection-enhancement p,
+.learning-selection-enhancement li {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.learning-selection-enhancement footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(36, 112, 104, 0.12);
+}
+
+.learning-selection-plot svg {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: #fbfaf4;
+}
+
+.learning-selection-plot line {
+  stroke: #9babaa;
+  stroke-width: 1;
+}
+
+.learning-selection-plot path {
+  fill: none;
+  stroke: #17786e;
+  stroke-width: 2.5;
+}
+
 .learning-camera-monitor {
   position: absolute;
   top: 86px;

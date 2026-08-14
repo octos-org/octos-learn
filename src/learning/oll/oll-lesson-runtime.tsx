@@ -4,12 +4,15 @@ import {
   Eraser,
   Hand,
   Lightbulb,
+  MessageCircle,
+  Mic,
   Palette,
   PenLine,
   RotateCcw,
   Redo2,
   Undo2,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   useCallback,
   useEffect,
@@ -29,10 +32,16 @@ import {
 } from "octos-lesson-language/web-runtime";
 import {
   mountInkRuntime,
+  type InkSelectionSnapshot,
   type InkMode,
   type InkRuntime,
   type InkRuntimeState,
 } from "./oll-ink-runtime";
+import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
+import type {
+  SelectionContentKind,
+  SelectionEnhancementArtifact,
+} from "../selection-enhancements";
 import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
@@ -54,6 +63,7 @@ const emptyInkState: LearningInkState = {
   selected_count: 0,
   pen_color: "#176b62",
   selection_color: null,
+  selection_input: "unknown",
   document_version: 0,
   saved: true,
 };
@@ -124,9 +134,26 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets {
 export function OllLessonBoard({
   runtime,
   inkSessionId,
+  selectionEnhancements = [],
+  selectionSources = [],
+  onAskInkSelection,
+  onVoiceInkSelection,
+  onDeleteSelectionEnhancement,
 }: {
   runtime: OllLessonRuntimeController;
   inkSessionId?: string;
+  selectionEnhancements?: SelectionEnhancementArtifact[];
+  selectionSources?: InkSelectionSnapshot[];
+  onAskInkSelection?: (request: {
+    snapshot: InkSelectionSnapshot;
+    question: string;
+    contentKind: SelectionContentKind;
+  }) => Promise<void> | void;
+  onVoiceInkSelection?: (request: {
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+  }) => Promise<void> | void;
+  onDeleteSelectionEnhancement?: (turnId: string) => void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef(runtime);
@@ -144,6 +171,13 @@ export function OllLessonBoard({
   const [inkSupportsColors, setInkSupportsColors] = useState(false);
   const [inkError, setInkError] = useState("");
   const [taskError, setTaskError] = useState("");
+  const [enhancementLayer, setEnhancementLayer] =
+    useState<HTMLDivElement | null>(null);
+  const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
+  const [selectionQuestion, setSelectionQuestion] = useState("");
+  const [selectionContentKind, setSelectionContentKind] =
+    useState<SelectionContentKind>("unknown");
+  const [selectionRequestPending, setSelectionRequestPending] = useState(false);
   const variableControls = variableControlModels(runtime.board);
   const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
 
@@ -214,6 +248,10 @@ export function OllLessonBoard({
     runtimeRef.current = runtime;
   }, [runtime]);
 
+  useEffect(() => {
+    if (inkState.selected_count === 0) setSelectionQuestionOpen(false);
+  }, [inkState.selected_count]);
+
   const setInkMode = useCallback((mode: InkMode) => {
     try {
       inkRuntimeRef.current?.setMode(mode);
@@ -267,11 +305,80 @@ export function OllLessonBoard({
     );
   }, []);
 
+  const captureSelection = useCallback(async (): Promise<InkSelectionSnapshot> => {
+    const ink = inkRuntimeRef.current;
+    if (!ink) throw new Error("笔迹功能尚未就绪");
+    await ink.ready;
+    const snapshot = await ink.captureSelectionSnapshot();
+    runtimeRef.current.recordStudentInkSelection({
+      source_id: snapshot.source_id,
+      document_id: snapshot.document_id,
+      document_version: snapshot.document_version,
+      bounds: snapshot.bounds,
+      checksum: snapshot.checksum,
+    }, inkState.selection_input);
+    return snapshot;
+  }, [inkState.selection_input]);
+
+  const askSelection = useCallback(async (question: string) => {
+    const value = question.trim();
+    if (!value || !onAskInkSelection || selectionRequestPending) return;
+    setSelectionRequestPending(true);
+    try {
+      const snapshot = await captureSelection();
+      await onAskInkSelection({
+        snapshot,
+        question: value,
+        contentKind: selectionContentKind,
+      });
+      setSelectionQuestion("");
+      setSelectionQuestionOpen(false);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
+    } finally {
+      setSelectionRequestPending(false);
+    }
+  }, [
+    captureSelection,
+    onAskInkSelection,
+    selectionContentKind,
+    selectionRequestPending,
+  ]);
+
+  const askSelectionByVoice = useCallback(async () => {
+    if (!onVoiceInkSelection || selectionRequestPending) return;
+    setSelectionRequestPending(true);
+    try {
+      const snapshot = await captureSelection();
+      await onVoiceInkSelection({
+        snapshot,
+        contentKind: selectionContentKind,
+      });
+      setSelectionQuestionOpen(false);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法针对当前选区开始语音提问");
+    } finally {
+      setSelectionRequestPending(false);
+    }
+  }, [
+    captureSelection,
+    onVoiceInkSelection,
+    selectionContentKind,
+    selectionRequestPending,
+  ]);
+
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     mountedRef.current = mounted;
+    const enhancementHost = viewport.ownerDocument.createElement("div");
+    enhancementHost.className = "learning-selection-enhancement-layer";
+    const unmountEnhancementLayer =
+      mounted.view.mountWorldLayer(enhancementHost);
+    setEnhancementLayer(enhancementHost);
     const sliderOperations = sliderOperationsRef.current;
     setInkAvailable(false);
     setInkSupportsColors(false);
@@ -291,6 +398,14 @@ export function OllLessonBoard({
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
       mounted.view.setVariableInputHandler((alias, value, event) => {
         return runtimeRef.current.handleStudentVariableInput(alias, value, event);
+      });
+      mounted.view.setScene3dInputHandler((nodeId, view, event) => {
+        const result = runtimeRef.current.handleStudentScene3dInput(
+          nodeId,
+          view,
+          event,
+        );
+        return typeof result === "string" ? result : undefined;
       });
       if (inkSessionId) {
         ink = mountInkRuntime({
@@ -333,6 +448,8 @@ export function OllLessonBoard({
     }
     return () => {
       active = false;
+      setEnhancementLayer(null);
+      unmountEnhancementLayer();
       mountedRef.current = null;
       for (const [alias, operation] of sliderOperations) {
         runtimeRef.current.handleStudentVariableInput(alias, operation.value, {
@@ -359,10 +476,8 @@ export function OllLessonBoard({
     const atPlaybackBoundary =
       runtime.currentOperation?.type === "beat.end" ||
       runtime.currentOperation?.type === "step.commit";
-    view?.render(
-      runtime.board,
-      runtime.currentOperation,
-    );
+    view?.setScene3dViews(runtime.scene3dViews);
+    view?.render(runtime.board, runtime.currentOperation);
     if (runtime.attentionTargets.length > 0) {
       view?.focusTargets(runtime.attentionTargets);
     } else if (atPlaybackBoundary && focusChanged) {
@@ -377,6 +492,7 @@ export function OllLessonBoard({
     runtime.board,
     runtime.currentOperation,
     runtime.cursor,
+    runtime.scene3dViews,
   ]);
 
   useEffect(() => {
@@ -452,6 +568,19 @@ export function OllLessonBoard({
               onChange={setSelectionColor}
             />
           ) : null}
+          {inkState.mode === "select"
+            && inkState.selected_count > 0
+            && onAskInkSelection ? (
+              <button
+                type="button"
+                className="learning-ink-ask"
+                onClick={() => setSelectionQuestionOpen((open) => !open)}
+                aria-expanded={selectionQuestionOpen}
+              >
+                <MessageCircle size={16} />
+                问小章鱼
+              </button>
+            ) : null}
           <button
             type="button"
             className="learning-ink-select-all"
@@ -482,6 +611,90 @@ export function OllLessonBoard({
             {inkState.saved ? " · 已保存" : " · 保存中"}
           </span>
         </div>
+      ) : null}
+      {selectionQuestionOpen && inkState.selected_count > 0 ? (
+        <form
+          className="learning-selection-question"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void askSelection(selectionQuestion);
+          }}
+        >
+          <header>
+            <strong>针对当前选区提问</strong>
+            <span>
+              将发送 {inkState.selected_count} 项选中笔迹和当前课程主题，不会发送整块白板。
+            </span>
+          </header>
+          <label>
+            我写的内容更像
+            <select
+              value={selectionContentKind}
+              onChange={(event) =>
+                setSelectionContentKind(
+                  event.target.value as SelectionContentKind,
+                )}
+            >
+              <option value="unknown">暂不确定</option>
+              <option value="text">文字</option>
+              <option value="math">公式</option>
+              <option value="geometry">图形</option>
+              <option value="data">数据</option>
+            </select>
+          </label>
+          <div className="learning-selection-suggestions">
+            <button
+              type="button"
+              onClick={() => void askSelection("请解释我选中的这部分。")}
+              disabled={selectionRequestPending}
+            >
+              解释这部分
+            </button>
+            <button
+              type="button"
+              onClick={() => void askSelection("请检查我选中的内容，并在旁边给出建议。")}
+              disabled={selectionRequestPending}
+            >
+              检查并建议
+            </button>
+            {selectionContentKind === "math" ? (
+              <button
+                type="button"
+                onClick={() => void askSelection("请按我选中的公式生成函数图像。")}
+                disabled={selectionRequestPending}
+              >
+                生成函数图像
+              </button>
+            ) : null}
+          </div>
+          <div className="learning-selection-question-input">
+            <input
+              value={selectionQuestion}
+              onChange={(event) => setSelectionQuestion(event.target.value)}
+              placeholder="例如：这一步为什么不对？"
+              aria-label="针对选区的问题"
+              disabled={selectionRequestPending}
+            />
+            {onVoiceInkSelection ? (
+              <button
+                type="button"
+                onClick={() => void askSelectionByVoice()}
+                disabled={selectionRequestPending}
+                aria-label="针对当前选区语音提问"
+              >
+                <Mic size={16} />
+              </button>
+            ) : null}
+            <button
+              type="submit"
+              disabled={
+                selectionRequestPending || !selectionQuestion.trim()
+              }
+            >
+              发送
+            </button>
+          </div>
+        </form>
       ) : null}
       {inkError ? (
         <div className="learning-ink-error" role="alert">
@@ -647,6 +860,18 @@ export function OllLessonBoard({
           {taskError ? <div className="learning-student-task-error" role="alert">{taskError}</div> : null}
         </section>
       ) : null}
+      {enhancementLayer
+        ? createPortal(
+            <SelectionEnhancementLayer
+              artifacts={selectionEnhancements}
+              sources={selectionSources}
+              currentDocumentVersion={inkState.document_version}
+              onDelete={(turnId) =>
+                onDeleteSelectionEnhancement?.(turnId)}
+            />,
+            enhancementLayer,
+          )
+        : null}
     </div>
   );
 }

@@ -38,6 +38,7 @@ import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.cano
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
 import { OllLessonBoard } from "./oll/oll-lesson-runtime";
+import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import { isLessonDeliverySettled } from "./oll/lesson-delivery";
 import { useOllNarrationTts } from "./oll/use-oll-narration-tts";
 import {
@@ -54,6 +55,22 @@ import {
   type OllFixture,
 } from "./oll/oll-playback-storage";
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
+import {
+  addSelectionSource,
+  buildSelectionEnhancementTurnContext,
+  collectPersistedSelectionEnhancementArtifacts,
+  collectSelectionEnhancementArtifacts,
+  hideSelectionEnhancement,
+  loadSelectionEnhancementArtifact,
+  loadSelectionEnhancementState,
+  mergeSelectionEnhancementArtifacts,
+  saveSelectionEnhancementState,
+  selectionArtifactMatchesSource,
+  selectionSnapshotToPngFile,
+  type SelectionContentKind,
+  type SelectionEnhancementArtifact,
+  type SelectionEnhancementState,
+} from "./selection-enhancements";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
 import "./learning-workspace.css";
@@ -66,15 +83,26 @@ const ollFixtureEvents: Record<OllFixture, CanonicalEvent[]> = {
   "unit-circle-sine": unitCircleSineLessonEvents,
 };
 
-function threadHasOllArtifact(threads: Thread[], turnId: string): boolean {
-  const thread = threads.find((candidate) => candidate.id === turnId);
+const DELIVERABLE_ARTIFACT_SUFFIXES = [
+  ".octos-lesson.json",
+  ".octos-selection-enhancement.json",
+] as const;
+
+function threadHasDeliverableArtifact(
+  threads: Thread[],
+  turnId: string,
+): boolean {
+  const thread = threads.find(
+    (candidate) => candidate.id === turnId || candidate.turnId === turnId,
+  );
   if (!thread) return false;
   return [
     ...thread.responses,
     ...(thread.pendingAssistant ? [thread.pendingAssistant] : []),
-  ].some((message) => message.files.some((file) =>
-    file.path.toLowerCase().endsWith(".octos-lesson.json")
-  ));
+  ].some((message) => message.files.some((file) => {
+    const path = file.path.toLowerCase();
+    return DELIVERABLE_ARTIFACT_SUFFIXES.some((suffix) => path.endsWith(suffix));
+  }));
 }
 
 export interface LearningWorkspaceProps {
@@ -127,6 +155,46 @@ export function LearningWorkspace({
   const [rejectedOllArtifactIds, setRejectedOllArtifactIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
+  const [selectionState, setSelectionState] =
+    useState<SelectionEnhancementState | null>(null);
+  const [persistedSelectionArtifacts, setPersistedSelectionArtifacts] =
+    useState<ReturnType<typeof collectPersistedSelectionEnhancementArtifacts>>([]);
+  const [loadedSelectionArtifacts, setLoadedSelectionArtifacts] = useState<
+    Record<string, SelectionEnhancementArtifact>
+  >({});
+  const selectionStateRef = useRef<SelectionEnhancementState | null>(null);
+  const selectionArtifacts = useMemo(
+    () => mergeSelectionEnhancementArtifacts(
+      persistedSelectionArtifacts,
+      collectSelectionEnhancementArtifacts(threads),
+    ),
+    [persistedSelectionArtifacts, threads],
+  );
+  const requestedSelectionArtifactsRef = useRef(new Set<string>());
+  const selectionArtifactRequestsRef = useRef(
+    new Map<string, AbortController>(),
+  );
+  const pendingVoiceSelectionRef = useRef<{
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+    file: File;
+    claimed: boolean;
+  } | null>(null);
+  const visibleSelectionEnhancements = useMemo(() => {
+    const hidden = new Set(selectionState?.hidden_enhancement_turn_ids ?? []);
+    return selectionArtifacts.flatMap((artifact) => {
+      const loaded = loadedSelectionArtifacts[artifact.path];
+      const source = selectionState?.sources.find(
+        (candidate) => candidate.source_id === loaded?.source.source_id,
+      );
+      return loaded
+        && source
+        && selectionArtifactMatchesSource(loaded, source)
+        && !hidden.has(loaded.turn_id)
+        ? [loaded]
+        : [];
+    });
+  }, [loadedSelectionArtifacts, selectionArtifacts, selectionState]);
   const ollArtifacts = useMemo(
     () => mergeOllLessonArtifacts(
       persistedOllArtifacts,
@@ -199,6 +267,7 @@ export function LearningWorkspace({
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
   const handleTurnComplete = useCallback((turnId: string) => {
+    pendingVoiceSelectionRef.current = null;
     setPlainReply(null);
     setPlainReplySpoken(false);
     setCompletedTurnId(turnId);
@@ -207,6 +276,38 @@ export function LearningWorkspace({
   const voiceConversationOptions = useMemo(
     () => ({
       ...conversationOptions,
+      getAdditionalTurnFiles: async () => {
+        const pending = pendingVoiceSelectionRef.current;
+        if (!pending || pending.claimed) return [];
+        pending.claimed = true;
+        return [pending.file];
+      },
+      buildTurnText: (
+        context: Parameters<
+          NonNullable<VoiceConversationOptions["buildTurnText"]>
+        >[0],
+      ) => {
+        const base = conversationOptions?.buildTurnText?.(context) ?? "";
+        const pending = pendingVoiceSelectionRef.current;
+        const selectionPath = context.additionalMediaPaths?.[0];
+        if (!pending || !selectionPath) return base;
+        const selectionContext = [
+          base,
+          buildSelectionEnhancementTurnContext({
+            sessionId,
+            turnId: context.turnId,
+            mediaPath: selectionPath,
+            source: pending.snapshot,
+            contentKind: pending.contentKind,
+            lessonTitle: ollLesson?.title,
+            boardSummary: ollLesson
+              ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+              : undefined,
+            }),
+        ].filter(Boolean).join("\n");
+        pendingVoiceSelectionRef.current = null;
+        return selectionContext;
+      },
       externalSpeechActive:
         voiceEnabled && (lessonOwnsNarration || narrationSpeechActive),
       onTurnComplete: handleTurnComplete,
@@ -216,6 +317,8 @@ export function LearningWorkspace({
       handleTurnComplete,
       lessonOwnsNarration,
       narrationSpeechActive,
+      ollLesson,
+      sessionId,
       voiceEnabled,
     ],
   );
@@ -267,6 +370,14 @@ export function LearningWorkspace({
         release();
         return ollLesson.handleStudentVariableInput(alias, value, event);
       },
+      handleStudentScene3dInput: (
+        nodeId: string,
+        view: Parameters<typeof ollLesson.handleStudentScene3dInput>[1],
+        event: Parameters<typeof ollLesson.handleStudentScene3dInput>[2],
+      ) => {
+        release();
+        return ollLesson.handleStudentScene3dInput(nodeId, view, event);
+      },
     };
   }, [ollLesson, ollOpenSource]);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -281,17 +392,23 @@ export function LearningWorkspace({
   const cameraSettings = conv.cameraSettings ?? DEFAULT_CAMERA_FRAME_SETTINGS;
   const startCamera = conv.startCamera;
   const stopCamera = conv.stopCamera;
-  const completedArtifactFilename = completedTurnId
-    ? `${completedTurnId}.octos-lesson.json`
+  const completedArtifactFilenames = completedTurnId
+    ? new Set([
+        `${completedTurnId}.octos-lesson.json`,
+        `${completedTurnId}.octos-selection-enhancement.json`,
+      ])
     : null;
   const completedThreadHasArtifact = Boolean(
-    completedTurnId && threadHasOllArtifact(threads, completedTurnId),
+    completedTurnId && threadHasDeliverableArtifact(threads, completedTurnId),
   );
   const completedTurnHasArtifact = Boolean(
     completedThreadHasArtifact || (
-      completedArtifactFilename && ollArtifacts.some((artifact) =>
-        artifact.filename.replaceAll("\\", "/").split("/").at(-1) === completedArtifactFilename
-      )
+      completedArtifactFilenames && [
+        ...ollArtifacts,
+        ...selectionArtifacts,
+      ].some((artifact) => completedArtifactFilenames.has(
+        artifact.filename.replaceAll("\\", "/").split("/").at(-1) ?? "",
+      ))
     ),
   );
   const completedTurn = completedTurnId
@@ -328,10 +445,18 @@ export function LearningWorkspace({
 
   useEffect(() => {
     if (!plainReply) return;
-    const artifactFilename = `${plainReply.turnId}.octos-lesson.json`;
-    const threadHasArtifact = threadHasOllArtifact(threads, plainReply.turnId);
-    if (threadHasArtifact || ollArtifacts.some((artifact) =>
-      artifact.filename.replaceAll("\\", "/").split("/").at(-1) === artifactFilename
+    const artifactFilenames = new Set([
+      `${plainReply.turnId}.octos-lesson.json`,
+      `${plainReply.turnId}.octos-selection-enhancement.json`,
+    ]);
+    const threadHasArtifact = threadHasDeliverableArtifact(
+      threads,
+      plainReply.turnId,
+    );
+    if (threadHasArtifact || [...ollArtifacts, ...selectionArtifacts].some(
+      (artifact) => artifactFilenames.has(
+        artifact.filename.replaceAll("\\", "/").split("/").at(-1) ?? "",
+      ),
     )) {
       const timer = window.setTimeout(() => {
         setPlainReply(null);
@@ -340,7 +465,7 @@ export function LearningWorkspace({
       return () => window.clearTimeout(timer);
     }
     return undefined;
-  }, [ollArtifacts, plainReply, threads]);
+  }, [ollArtifacts, plainReply, selectionArtifacts, threads]);
 
   useEffect(() => {
     if (ollFixture) return;
@@ -352,6 +477,9 @@ export function LearningWorkspace({
         const files = await getSessionFiles(sessionId);
         if (cancelled || version !== requestVersion) return;
         setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+        setPersistedSelectionArtifacts(
+          collectPersistedSelectionEnhancementArtifacts(files),
+        );
         setFileListError(null);
       } catch (cause) {
         if (cancelled || version !== requestVersion) return;
@@ -377,6 +505,26 @@ export function LearningWorkspace({
   }, [ollFixture, sessionId]);
 
   useEffect(() => {
+    let cancelled = false;
+    for (const controller of selectionArtifactRequestsRef.current.values()) {
+      controller.abort();
+    }
+    selectionArtifactRequestsRef.current.clear();
+    requestedSelectionArtifactsRef.current.clear();
+    selectionStateRef.current = null;
+    setSelectionState(null);
+    setLoadedSelectionArtifacts({});
+    void loadSelectionEnhancementState(sessionId).then((state) => {
+      if (cancelled) return;
+      selectionStateRef.current = state;
+      setSelectionState(state);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!voiceEnabled) {
       conv.stop();
       return;
@@ -396,11 +544,16 @@ export function LearningWorkspace({
 
   useEffect(() => {
     const ollArtifactRequests = ollArtifactRequestsRef.current;
+    const selectionArtifactRequests = selectionArtifactRequestsRef.current;
     return () => {
       for (const controller of ollArtifactRequests.values()) {
         controller.abort();
       }
       ollArtifactRequests.clear();
+      for (const controller of selectionArtifactRequests.values()) {
+        controller.abort();
+      }
+      selectionArtifactRequests.clear();
     };
   }, []);
 
@@ -442,6 +595,47 @@ export function LearningWorkspace({
         });
     });
   }, [ollArtifacts, sessionId]);
+
+  useEffect(() => {
+    if (!selectionState) return;
+    const pending = selectionArtifacts.filter(
+      (artifact) => !requestedSelectionArtifactsRef.current.has(artifact.path),
+    );
+    if (pending.length === 0) return;
+    pending.forEach((artifact) => {
+      const controller = new AbortController();
+      requestedSelectionArtifactsRef.current.add(artifact.path);
+      selectionArtifactRequestsRef.current.set(artifact.path, controller);
+      loadSelectionEnhancementArtifact(artifact, sessionId, controller.signal)
+        .then((loaded) => {
+          const source = selectionState.sources.find(
+            (candidate) => candidate.source_id === loaded.source.source_id,
+          );
+          if (!source || !selectionArtifactMatchesSource(loaded, source)) {
+            throw new Error("选区辅助内容无法对应到已保存的原稿快照");
+          }
+          setLoadedSelectionArtifacts((current) => ({
+            ...current,
+            [artifact.path]: loaded,
+          }));
+        })
+        .catch((cause) => {
+          requestedSelectionArtifactsRef.current.delete(artifact.path);
+          if (controller.signal.aborted) return;
+          setArtifactError(
+            cause instanceof Error ? cause.message : "选区辅助内容读取失败",
+          );
+        })
+        .finally(() => {
+          if (
+            selectionArtifactRequestsRef.current.get(artifact.path)
+              === controller
+          ) {
+            selectionArtifactRequestsRef.current.delete(artifact.path);
+          }
+        });
+    });
+  }, [selectionArtifacts, selectionState, sessionId]);
 
   const emptyPacket = useMemo(
     () => mergeSessionBoardPackets(sessionId, []),
@@ -543,6 +737,114 @@ export function LearningWorkspace({
     },
     [conversationOptions, sessionId],
   );
+
+  const rememberSelectionSource = useCallback(
+    async (snapshot: InkSelectionSnapshot) => {
+      const current = selectionStateRef.current
+        ?? await loadSelectionEnhancementState(sessionId);
+      const next = addSelectionSource(current, snapshot);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      setSelectionState(next);
+    },
+    [sessionId],
+  );
+
+  const sendSelectionQuestion = useCallback(
+    async ({
+      snapshot,
+      question,
+      contentKind,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      question: string;
+      contentKind: SelectionContentKind;
+    }) => {
+      unlockAudio();
+      setSendError(null);
+      setTextTurnPending(true);
+      try {
+        await rememberSelectionSource(snapshot);
+        const file = await selectionSnapshotToPngFile(snapshot);
+        const paths = await uploadFiles([file], "upload");
+        const mediaPath = paths[0];
+        if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+        const turnId = crypto.randomUUID();
+        onLearnerInput?.(question);
+        const selectionContext = buildSelectionEnhancementTurnContext({
+          sessionId,
+          turnId,
+          mediaPath,
+          source: snapshot,
+          contentKind,
+          learnerRequest: question,
+          lessonTitle: ollLesson?.title,
+          boardSummary: ollLesson
+            ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+            : undefined,
+        });
+        sendMessage({
+          sessionId,
+          text: [buildTurnText(turnId, paths, question), selectionContext].join("\n"),
+          media: paths,
+          clientMessageId: turnId,
+          onComplete: () => {
+            setTextTurnPending(false);
+            handleTurnComplete(turnId);
+          },
+          onError: (error) => {
+            setTextTurnPending(false);
+            setSendError(error.message || "选区问题发送失败");
+          },
+        });
+      } catch (cause) {
+        setTextTurnPending(false);
+        setSendError(cause instanceof Error ? cause.message : "选区问题发送失败");
+        throw cause;
+      }
+    },
+    [
+      buildTurnText,
+      handleTurnComplete,
+      ollLesson,
+      onLearnerInput,
+      rememberSelectionSource,
+      sessionId,
+    ],
+  );
+
+  const startSelectionVoiceQuestion = useCallback(
+    async ({
+      snapshot,
+      contentKind,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      contentKind: SelectionContentKind;
+    }) => {
+      await rememberSelectionSource(snapshot);
+      const file = await selectionSnapshotToPngFile(snapshot);
+      pendingVoiceSelectionRef.current = {
+        snapshot,
+        contentKind,
+        file,
+        claimed: false,
+      };
+      if (conv.state === "idle" || conv.state === "error") {
+        await conv.start();
+      }
+    },
+    [conv, rememberSelectionSource],
+  );
+
+  const deleteSelectionEnhancement = useCallback((turnId: string) => {
+    setSelectionState((current) => {
+      if (!current) return current;
+      const next = hideSelectionEnhancement(current, turnId);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      return next;
+    });
+  }, []);
 
   const sendText = useCallback(
     async (text: string) => {
@@ -803,6 +1105,13 @@ export function LearningWorkspace({
           <OllLessonBoard
             runtime={controlledOllLesson ?? ollLesson}
             inkSessionId={sessionId}
+            selectionEnhancements={visibleSelectionEnhancements}
+            selectionSources={selectionState?.sources ?? []}
+            onAskInkSelection={sendSelectionQuestion}
+            onVoiceInkSelection={voiceEnabled
+              ? startSelectionVoiceQuestion
+              : undefined}
+            onDeleteSelectionEnhancement={deleteSelectionEnhancement}
           />
         ) : (
           <InfiniteBoard

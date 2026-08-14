@@ -13,6 +13,12 @@ import {
   LocalPlaybackStore,
   parseCanonicalJsonl,
   type StudentOperation,
+  type StudentInkSelectionOperation,
+  type StudentInkSelectionSource,
+  type StudentInputMethod,
+  type Scene3dViewInputEvent,
+  type Scene3dViewState,
+  type StudentScene3dViewOperation,
   type StudentTaskSnapshot,
   type StudentVariableInputEvent,
 } from "octos-lesson-language/web-runtime";
@@ -55,6 +61,7 @@ export interface OllLessonRuntimeController {
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
   studentTasks: StudentTaskSnapshot[];
+  scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
   play(): void;
   pause(): void;
@@ -74,6 +81,15 @@ export interface OllLessonRuntimeController {
   ): string | void;
   requestStudentTaskHint(taskId: string): void;
   retryStudentTask(taskId: string): void;
+  recordStudentInkSelection(
+    source: StudentInkSelectionSource,
+    input: StudentInputMethod,
+  ): StudentInkSelectionOperation;
+  handleStudentScene3dInput(
+    nodeId: string,
+    view: Scene3dViewState,
+    event: Scene3dViewInputEvent,
+  ): string | StudentScene3dViewOperation | void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -215,6 +231,20 @@ export function useOllLessonRuntime({
     },
     [session],
   );
+  const recordStudentInkSelection = useCallback((
+    source: StudentInkSelectionSource,
+    input: StudentInputMethod,
+  ): StudentInkSelectionOperation => {
+    if (!session) throw new Error("OLL Runtime 尚未初始化");
+    return session.recordStudentInkSelection(source, input);
+  }, [session]);
+  const handleStudentScene3dInput = useCallback((
+    nodeId: string,
+    view: Scene3dViewState,
+    event: Scene3dViewInputEvent,
+  ): string | StudentScene3dViewOperation | void => {
+    return session?.handleStudentScene3dInput(nodeId, view, event);
+  }, [session]);
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
       if (!session) throw new Error("OLL Runtime 尚未初始化");
@@ -294,6 +324,7 @@ export function useOllLessonRuntime({
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,
     studentTasks: session.studentTasks,
+    scene3dViews: session.scene3dViews,
     currentOperation: session.currentOperation,
     play,
     pause,
@@ -309,6 +340,8 @@ export function useOllLessonRuntime({
     handleStudentVariableInput,
     requestStudentTaskHint,
     retryStudentTask,
+    recordStudentInkSelection,
+    handleStudentScene3dInput,
     appendEvents,
   };
 }

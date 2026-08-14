@@ -9,10 +9,19 @@ import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./fixtures/unit-circle-sine.canonical.jsonl?raw";
-import type { CanonicalEvent } from "octos-lesson-language";
+import {
+  normalizeAuthoringLesson,
+  type AuthoringLesson,
+  type CanonicalEvent,
+} from "octos-lesson-language";
 import type {
   InkMode,
   InkRuntimeState,
+} from "octos-lesson-language/ink-runtime";
+import {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
@@ -49,6 +58,35 @@ function InkRuntimeProbe() {
   return (
     <div style={{ width: 1200, height: 800 }}>
       <OllLessonBoard runtime={runtime} inkSessionId="learn-ink-1" />
+    </div>
+  );
+}
+
+function SelectionInkRuntimeProbe({
+  onAsk,
+}: {
+  onAsk: (request: {
+    snapshot: InkSelectionSnapshot;
+    question: string;
+  }) => Promise<void>;
+}) {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-selection-runtime-test",
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <span data-testid="selection-operation-count">
+        {runtime.studentOperations.filter(
+          (operation) => operation.kind === "ink_selection",
+        ).length}
+      </span>
+      <OllLessonBoard
+        runtime={runtime}
+        inkSessionId="learn-selection-1"
+        onAskInkSelection={onAsk}
+      />
     </div>
   );
 }
@@ -158,6 +196,126 @@ const geometryEvents = geometryLessonSource
   .split(/\r?\n/)
   .filter(Boolean)
   .map((line) => JSON.parse(line) as CanonicalEvent);
+
+const scene3dLesson: AuthoringLesson = {
+  dsl: "octos.lesson",
+  version: "0.1",
+  profile: "authoring",
+  lesson: {
+    mode: "explain",
+    language: "zh-CN",
+    title: "可旋转立方体",
+    goals: ["从不同方向观察立方体"],
+    tasks: [{
+      as: "find-front-view",
+      prompt: "把立方体转到正视图",
+      availability: { kind: "after_lesson" },
+      allowed_operations: [{
+        kind: "scene3d_view",
+        node: "cube-scene",
+        controls: ["orbit", "preset", "reset"],
+      }],
+      completion: {
+        kind: "scene3d_view_target",
+        node: "cube-scene",
+        yaw: 0,
+        pitch: 0,
+        zoom: 1,
+        angular_tolerance: 0.04,
+        zoom_tolerance: 0.04,
+      },
+      hints: ["可以拖动观察，也可以使用正视按钮。"],
+      hint_after_attempts: 1,
+      success_message: "正确，这是立方体的正视图。",
+    }],
+  },
+  steps: [{
+    key: "show-cube",
+    purpose: "建立立方体的三维空间表示",
+    beats: [{
+      key: "inspect-cube",
+      say: "拖动立方体，从不同方向观察它的面和棱。",
+      actions: [{
+        do: "write",
+        as: "cube-scene",
+        kind: "scene3d",
+        role: "diagram",
+        content: {
+          title: "立方体",
+          fallback: "一个中心在原点的立方体，标出了顶点 A、棱 AB 和顶面。",
+          axes: true,
+          camera: { yaw: 0.72, pitch: 0.55, zoom: 1 },
+          objects: [{
+            as: "cube",
+            kind: "box",
+            color: "teal",
+            center: { x: 0, y: 0, z: 0 },
+            size: { x: 2, y: 2, z: 2 },
+          }],
+          highlights: [{
+            as: "vertex-a",
+            kind: "point",
+            points: [{ x: -1, y: -1, z: 1 }],
+            label: "顶点 A",
+            color: "red",
+          }, {
+            as: "edge-ab",
+            kind: "edge",
+            points: [{ x: -1, y: -1, z: 1 }, { x: 1, y: -1, z: 1 }],
+            label: "棱 AB",
+            color: "orange",
+          }, {
+            as: "top-face",
+            kind: "face",
+            points: [
+              { x: -1, y: -1, z: 1 },
+              { x: 1, y: -1, z: 1 },
+              { x: 1, y: 1, z: 1 },
+              { x: -1, y: 1, z: 1 },
+            ],
+            label: "顶面",
+            color: "purple",
+          }],
+        },
+        place: { relation: "new_region" },
+      }, {
+        do: "focus",
+        when: "after_speech",
+        targets: ["cube-scene"],
+        intent: "current_step",
+      }],
+    }],
+  }],
+  close: {
+    summary: "完成立方体多视角观察。",
+    focus: ["cube-scene"],
+  },
+};
+
+const scene3dLessonSource = normalizeAuthoringLesson(scene3dLesson, {
+  lessonId: "scene3d-product-test",
+  boardId: "scene3d-board",
+  baseRevision: 0,
+}).map((event) => JSON.stringify(event)).join("\n");
+
+function Scene3dRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: scene3dLessonSource,
+    storageKey: "oll-scene3d-runtime-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <span data-testid="scene3d-operation-count">
+        {runtime.studentOperations.filter(
+          (operation) => operation.kind === "scene3d_view",
+        ).length}
+      </span>
+      <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
 
 function IncrementalRuntimeProbe() {
   const runtime = useOllLessonRuntime({
@@ -322,6 +480,76 @@ describe("OLL lesson Runtime integration", () => {
     expect(ink.destroy).not.toHaveBeenCalled();
   });
 
+  it("asks about an immutable ink selection without modifying the source", async () => {
+    const listeners = new Set<(state: InkRuntimeState) => void>();
+    let state: InkRuntimeState & { pen_color: string; selection_color: string | null } = {
+      mode: "select",
+      component_count: 2,
+      selected_count: 1,
+      pen_color: "#176b62",
+      selection_color: "#176b62",
+      selection_input: "pen",
+      document_version: 3,
+      saved: true,
+    };
+    const snapshot: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-ui-1",
+      document_id: "learning-session:learn-selection-1:student-ink",
+      document_version: 3,
+      created_at: "2026-08-14T12:00:00.000Z",
+      bounds: { x: 40, y: 60, width: 180, height: 90 },
+      checksum: { algorithm: "sha-256", value: "a".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    const ink = {
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn((mode: InkMode) => {
+        state = { ...state, mode };
+        listeners.forEach((listener) => listener(state));
+      }),
+      selectAll: vi.fn(),
+      setPenColor: vi.fn(),
+      setSelectionColor: vi.fn(),
+      captureSelectionSnapshot: vi.fn(async () => snapshot),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    const onAsk = vi.fn(async () => undefined);
+    mountInkRuntimeMock.mockReturnValue(ink);
+
+    render(<SelectionInkRuntimeProbe onAsk={onAsk} />);
+
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
+    fireEvent.change(screen.getByLabelText("我写的内容更像"), {
+      target: { value: "math" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
+
+    await waitFor(() => {
+      expect(onAsk).toHaveBeenCalledWith({
+        snapshot,
+        question: "请按我选中的公式生成函数图像。",
+        contentKind: "math",
+      });
+      expect(screen.getByTestId("selection-operation-count").textContent)
+        .toBe("1");
+    });
+    expect(ink.captureSelectionSnapshot).toHaveBeenCalledOnce();
+    expect(ink.setSelectionColor).not.toHaveBeenCalled();
+    expect(ink.undo).not.toHaveBeenCalled();
+    expect(ink.redo).not.toHaveBeenCalled();
+  });
+
   it("reports a failed restore and disposes the read-only ink layer", async () => {
     const ink = {
       ready: Promise.reject(new Error("保存的笔迹校验失败")),
@@ -464,6 +692,32 @@ describe("OLL lesson Runtime integration", () => {
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
     expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
+  });
+
+  it("renders a highlighted 3D scene, completes its view task, and restores progress", async () => {
+    const first = render(<Scene3dRuntimeProbe />);
+
+    const scene = await screen.findByRole("img", { name: "立方体" });
+    expect(scene.closest("[data-oll-scene3d]")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "等轴" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "俯视" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "复位" })).toBeTruthy();
+    expect(screen.getByText("把立方体转到正视图")).toBeTruthy();
+    expect(screen.getByText("顶点 A")).toBeTruthy();
+    expect(screen.getByText("棱 AB")).toBeTruthy();
+    expect(screen.getByText("顶面")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "正视" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("scene3d-operation-count").textContent).toBe("1");
+      expect(screen.getByText("正确，这是立方体的正视图。")).toBeTruthy();
+    });
+
+    first.unmount();
+    render(<Scene3dRuntimeProbe />);
+    expect(await screen.findByRole("img", { name: "立方体" })).toBeTruthy();
+    expect(screen.getByTestId("scene3d-operation-count").textContent).toBe("1");
+    expect(screen.getByText("正确，这是立方体的正视图。")).toBeTruthy();
   });
 
   it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
