@@ -122,6 +122,64 @@ describe("OLL lesson artifacts", () => {
     ]);
   });
 
+  it("keeps only the newest playable prefix for each turn and lets the final artifact supersede it", () => {
+    const file = (filename: string, modified_at: string) => ({
+      filename,
+      path: `study/oll/${filename}`,
+      size_bytes: 100,
+      modified_at,
+    });
+
+    const partials = collectPersistedOllLessonArtifacts([
+      file("turn-1.part-000.octos-lesson.json", "2026-08-14T10:00:00.000Z"),
+      file("turn-1.part-001.octos-lesson.json", "2026-08-14T10:00:01.000Z"),
+      file("turn-2.part-000.octos-lesson.json", "2026-08-14T10:00:02.000Z"),
+    ]);
+    expect(partials).toEqual([
+      expect.objectContaining({
+        filename: "turn-1.part-001.octos-lesson.json",
+        turnId: "turn-1",
+      }),
+      expect.objectContaining({
+        filename: "turn-2.part-000.octos-lesson.json",
+        turnId: "turn-2",
+      }),
+    ]);
+    expect(ollArtifactIdentity(partials[0]!)).toBe(
+      encodeURIComponent("turn-1.octos-lesson.json"),
+    );
+
+    const [finalArtifact] = collectPersistedOllLessonArtifacts([
+      file("turn-1.part-001.octos-lesson.json", "2026-08-14T10:00:01.000Z"),
+      file("turn-1.octos-lesson.json", "2026-08-14T10:00:03.000Z"),
+    ]);
+    expect(finalArtifact).toEqual(expect.objectContaining({
+      filename: "turn-1.octos-lesson.json",
+      turnId: "turn-1",
+    }));
+  });
+
+  it("replaces a persisted prefix with the delivered final artifact without duplicating the turn", () => {
+    const partial = {
+      id: "partial",
+      filename: "turn-1.part-002.octos-lesson.json",
+      path: "study/oll/turn-1.part-002.octos-lesson.json",
+      threadId: "turn-1",
+      turnId: "turn-1",
+    };
+    const finalArtifact = {
+      id: "final",
+      filename: "turn-1.octos-lesson.json",
+      path: "/workspace/study/oll/turn-1.octos-lesson.json",
+      threadId: "client-turn",
+      turnId: "server-turn",
+    };
+
+    expect(mergeOllLessonArtifacts([partial], [finalArtifact])).toEqual([
+      finalArtifact,
+    ]);
+  });
+
   it("recognizes and collects delivered OLL authoring files", () => {
     expect(isOllLessonArtifact({ filename: "turn.OCTOS-LESSON.JSON" })).toBe(true);
     expect(isOllLessonArtifact({ filename: "turn.octos-board.json" })).toBe(false);

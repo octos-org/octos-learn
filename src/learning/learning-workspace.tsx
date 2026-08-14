@@ -152,6 +152,9 @@ export function LearningWorkspace({
   const [persistedOllArtifacts, setPersistedOllArtifacts] = useState<
     ReturnType<typeof collectPersistedOllLessonArtifacts>
   >([]);
+  const [ollGenerationSessionId, setOllGenerationSessionId] = useState<
+    string | null
+  >(null);
   const [rejectedOllArtifactIds, setRejectedOllArtifactIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
@@ -255,7 +258,10 @@ export function LearningWorkspace({
   // every operation compiled from the currently delivered Canonical events.
   const hasUndeliveredOllEvents = Boolean(
     ollLesson &&
-    ollLesson.totalOperations < expectedOllOperationCount,
+    (
+      ollLesson.totalOperations < expectedOllOperationCount ||
+      ollGenerationSessionId === sessionId
+    ),
   );
   const lessonDeliverySettled = Boolean(
     ollLesson &&
@@ -493,7 +499,28 @@ export function LearningWorkspace({
     const handleBridgeConnected = () => {
       void loadPersistedArtifacts();
     };
+    const handleToolProgress = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        sessionId?: string;
+        tool?: string;
+        message?: string;
+        terminal?: boolean;
+      }>).detail;
+      if (
+        detail?.sessionId !== sessionId ||
+        detail.tool !== "oll_generate_lesson"
+      ) return;
+      setOllGenerationSessionId(detail.terminal === true ? null : sessionId);
+      if (
+        detail.terminal === true ||
+        detail.message?.includes("[artifact:oll_lesson_part]") ||
+        detail.message?.includes('"stage":"lesson-artifact-ready"')
+      ) {
+        void loadPersistedArtifacts();
+      }
+    };
     window.addEventListener("crew:bridge_connected", handleBridgeConnected);
+    window.addEventListener("crew:tool_progress", handleToolProgress);
     void loadPersistedArtifacts();
     return () => {
       cancelled = true;
@@ -501,6 +528,7 @@ export function LearningWorkspace({
         "crew:bridge_connected",
         handleBridgeConnected,
       );
+      window.removeEventListener("crew:tool_progress", handleToolProgress);
     };
   }, [ollFixture, sessionId]);
 
@@ -560,20 +588,30 @@ export function LearningWorkspace({
   useEffect(() => {
     const pending = ollArtifacts.filter(
       (artifact) =>
-        !requestedOllArtifactsRef.current.has(ollArtifactIdentity(artifact)),
+        !requestedOllArtifactsRef.current.has(artifact.path),
     );
     if (pending.length === 0) return;
     pending.forEach((artifact) => {
       const artifactIdentity = ollArtifactIdentity(artifact);
       const controller = new AbortController();
-      requestedOllArtifactsRef.current.add(artifactIdentity);
+      requestedOllArtifactsRef.current.add(artifact.path);
+      ollArtifactRequestsRef.current.get(artifactIdentity)?.abort();
       ollArtifactRequestsRef.current.set(artifactIdentity, controller);
       loadOllLessonArtifact(artifact, sessionId, controller.signal)
         .then((events) => {
+          if (ollArtifactRequestsRef.current.get(artifactIdentity) !== controller) {
+            return;
+          }
           setLoadedOllArtifacts((current) => ({
             ...current,
             [artifactIdentity]: events,
           }));
+          setRejectedOllArtifactIds((current) => {
+            if (!current.has(artifactIdentity)) return current;
+            const next = new Set(current);
+            next.delete(artifactIdentity);
+            return next;
+          });
         })
         .catch((cause) => {
           if (controller.signal.aborted) return;

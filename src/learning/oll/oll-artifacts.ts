@@ -25,14 +25,58 @@ export interface OllLessonTopic {
 
 const OLL_ARTIFACT_SUFFIX = ".octos-lesson.json";
 
+interface OllArtifactFilename {
+  filename: string;
+  turnId: string;
+  rank: number;
+}
+
+function parseOllArtifactFilename(filename: string): OllArtifactFilename {
+  const leaf = filename.replaceAll("\\", "/").split("/").at(-1) ?? filename;
+  const partial = /^(.*)\.part-(\d+)\.octos-lesson\.json$/i.exec(leaf);
+  if (partial) {
+    return {
+      filename: `${partial[1]}.octos-lesson.json`,
+      turnId: partial[1]!,
+      rank: Number.parseInt(partial[2]!, 10),
+    };
+  }
+  const finalArtifact = /^(.*)\.octos-lesson\.json$/i.exec(leaf);
+  return {
+    filename: leaf,
+    turnId: finalArtifact?.[1] ?? leaf,
+    rank: Number.POSITIVE_INFINITY,
+  };
+}
+
+function preferNewestArtifact(
+  artifacts: OllLessonArtifactRef[],
+): OllLessonArtifactRef[] {
+  const selected: OllLessonArtifactRef[] = [];
+  const indexByIdentity = new Map<string, number>();
+  for (const artifact of artifacts) {
+    const identity = ollArtifactIdentity(artifact);
+    const existingIndex = indexByIdentity.get(identity);
+    if (existingIndex === undefined) {
+      indexByIdentity.set(identity, selected.length);
+      selected.push(artifact);
+      continue;
+    }
+    const existing = selected[existingIndex]!;
+    const existingRank = parseOllArtifactFilename(existing.filename).rank;
+    const candidateRank = parseOllArtifactFilename(artifact.filename).rank;
+    if (candidateRank > existingRank) selected[existingIndex] = artifact;
+  }
+  return selected;
+}
+
 export function ollArtifactIdentity(
   artifact: Pick<OllLessonArtifactRef, "filename">,
 ): string {
   // The live projection exposes an absolute path while session/files.list
   // returns an opaque pf/... handle. The turn-scoped filename is the one
   // durable identifier shared by both representations.
-  const filename = artifact.filename.replaceAll("\\", "/").split("/").at(-1);
-  return encodeURIComponent(filename ?? artifact.filename);
+  return encodeURIComponent(parseOllArtifactFilename(artifact.filename).filename);
 }
 
 export function isOllLessonArtifact(
@@ -49,7 +93,6 @@ export function collectOllLessonArtifacts(
   threads: Thread[],
 ): OllLessonArtifactRef[] {
   const artifacts: OllLessonArtifactRef[] = [];
-  const seen = new Set<string>();
   for (const thread of threads) {
     const messages = [
       ...thread.responses,
@@ -65,30 +108,17 @@ export function collectOllLessonArtifacts(
           threadId: thread.id,
           turnId: thread.turnId ?? thread.id,
         };
-        const identity = ollArtifactIdentity(artifact);
-        if (seen.has(identity)) continue;
-        seen.add(identity);
         artifacts.push(artifact);
       }
     }
   }
-  return artifacts;
+  return preferNewestArtifact(artifacts);
 }
 
 export function mergeOllLessonArtifacts(
   ...groups: OllLessonArtifactRef[][]
 ): OllLessonArtifactRef[] {
-  const artifacts: OllLessonArtifactRef[] = [];
-  const seen = new Set<string>();
-  for (const group of groups) {
-    for (const artifact of group) {
-      const identity = ollArtifactIdentity(artifact);
-      if (seen.has(identity)) continue;
-      seen.add(identity);
-      artifacts.push(artifact);
-    }
-  }
-  return artifacts;
+  return preferNewestArtifact(groups.flat());
 }
 
 /**
@@ -99,7 +129,7 @@ export function mergeOllLessonArtifacts(
 export function collectPersistedOllLessonArtifacts(
   files: SessionFileInfo[],
 ): OllLessonArtifactRef[] {
-  return files
+  return preferNewestArtifact(files
     .filter((file) => isOllLessonArtifact(file))
     .sort((left, right) => {
       const byTime =
@@ -109,7 +139,7 @@ export function collectPersistedOllLessonArtifacts(
         : left.path.localeCompare(right.path);
     })
     .map((file) => {
-      const turnId = file.filename.slice(0, -OLL_ARTIFACT_SUFFIX.length);
+      const turnId = parseOllArtifactFilename(file.filename).turnId;
       return {
         id: `persisted:${file.path}`,
         filename: file.filename,
@@ -117,7 +147,7 @@ export function collectPersistedOllLessonArtifacts(
         threadId: turnId,
         turnId,
       };
-    });
+    }));
 }
 
 export async function loadOllLessonArtifact(

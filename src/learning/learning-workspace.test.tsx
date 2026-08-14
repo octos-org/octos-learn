@@ -738,6 +738,120 @@ describe("LearningWorkspace", () => {
     });
   });
 
+  it("loads the first playable lesson section while the generation tool is still running", async () => {
+    const part0File = {
+      filename: "progressive-turn.part-000.octos-lesson.json",
+      path: "study/oll/progressive-turn.part-000.octos-lesson.json",
+      size_bytes: 100,
+      modified_at: "2026-08-14T16:00:00.000Z",
+    };
+    const part1File = {
+      filename: "progressive-turn.part-001.octos-lesson.json",
+      path: "study/oll/progressive-turn.part-001.octos-lesson.json",
+      size_bytes: 200,
+      modified_at: "2026-08-14T16:00:01.000Z",
+    };
+    sessionFilesMock.getSessionFiles
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([part0File])
+      .mockResolvedValue([part0File, part1File]);
+    const partialLesson = {
+      dsl: "octos.lesson",
+      version: "0.1",
+      profile: "authoring",
+      lesson: {
+        mode: "explain",
+        language: "zh-CN",
+        title: "先到达的第一节",
+        goals: ["先播放已经完成的部分"],
+      },
+      steps: [{
+        key: "observe",
+        purpose: "先观察",
+        beats: [{
+          key: "first-board",
+          say: "我们先看第一部分。",
+          actions: [{
+            do: "write",
+            as: "first-card",
+            kind: "note",
+            role: "concept",
+            content: { text: "第一部分已经准备好" },
+            place: { relation: "new_region" },
+          }],
+        }],
+      }],
+      close: { summary: "第一部分完成", focus: ["first-card"] },
+    };
+    const secondStep = {
+      key: "explain",
+      purpose: "继续解释",
+      beats: [{
+        key: "second-board",
+        say: "现在继续第二部分。",
+        actions: [{
+          do: "write",
+          as: "second-card",
+          kind: "note",
+          role: "concept",
+          content: { title: "第二部分", items: ["第二部分也已经准备好"] },
+          place: { relation: "below", anchor: "first-card" },
+        }],
+      }],
+    };
+    const fetchMock = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () => url.includes("part-001")
+        ? { ...partialLesson, steps: [...partialLesson.steps, secondStep] }
+        : partialLesson,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-progressive"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+    await waitFor(() =>
+      expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(1),
+    );
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:tool_progress", {
+        detail: {
+          sessionId: "learn-progressive",
+          tool: "oll_generate_lesson",
+          message: "[artifact:oll_lesson_part] part=0 (study/oll/progressive-turn.part-000.octos-lesson.json)",
+          terminal: false,
+        },
+      }));
+    });
+
+    await waitFor(() => {
+      expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(2);
+      expect(screen.getByText("先到达的第一节")).toBeTruthy();
+      expect(screen.getByTestId("oll-controls")).toBeTruthy();
+    });
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:tool_progress", {
+        detail: {
+          sessionId: "learn-progressive",
+          tool: "oll_generate_lesson",
+          message: "[artifact:oll_lesson_part] part=1 (study/oll/progressive-turn.part-001.octos-lesson.json)",
+          terminal: false,
+        },
+      }));
+    });
+    await waitFor(() => {
+      expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(3);
+      expect(fetchMock.mock.calls.some(([url]) =>
+        String(url).includes("part-001.octos-lesson.json"))).toBe(true);
+    });
+  });
+
   it("does not infer an OLL path when the durable file list is empty", async () => {
     sessionFilesMock.getSessionFiles.mockResolvedValue([]);
     const fetchMock = vi.fn();
