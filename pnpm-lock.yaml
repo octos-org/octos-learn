@@ -48,8 +48,8 @@ importers:
         specifier: ^11.13.0
         version: 11.15.0
       octos-lesson-language:
-        specifier: git+https://github.com/alan0x/octos-lesson-language.git#d25f08f25aa4c46f5fa35ad7b5affdba741fd681
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/d25f08f25aa4c46f5fa35ad7b5affdba741fd681
+        specifier: git+https://github.com/alan0x/octos-lesson-language.git#0f6fdea05ecce62629f63cbee73f520c2ee62cef
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/0f6fdea05ecce62629f63cbee73f520c2ee62cef
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -3311,8 +3311,8 @@ packages:
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/d25f08f25aa4c46f5fa35ad7b5affdba741fd681:
-    resolution: {gitHosted: true, integrity: sha512-+f15KfJxyaJjj7+/DrSVc0xlZEavqBgONcBbTyWDsCVwEARY9E4k150XopW5jGk+XUer1HgPWcP5RSHVFE1raQ==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/d25f08f25aa4c46f5fa35ad7b5affdba741fd681}
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/0f6fdea05ecce62629f63cbee73f520c2ee62cef:
+    resolution: {gitHosted: true, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/0f6fdea05ecce62629f63cbee73f520c2ee62cef}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -7489,7 +7489,7 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/d25f08f25aa4c46f5fa35ad7b5affdba741fd681:
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/0f6fdea05ecce62629f63cbee73f520c2ee62cef:
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0

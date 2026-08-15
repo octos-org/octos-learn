@@ -52,6 +52,7 @@ export interface OllLessonRuntimeController {
   currentStepId?: string;
   currentBeatId?: string;
   attentionTargets: string[];
+  compositionTargets: string[];
   activeSpeech: string;
   nextNarration?: OllLessonNarration;
   playing: boolean;
@@ -315,6 +316,7 @@ export function useOllLessonRuntime({
     currentStepId,
     currentBeatId,
     attentionTargets: session.attentionTargets,
+    compositionTargets: session.compositionTargets,
     activeSpeech: projection.current_narration?.text ?? "",
     nextNarration,
     playing: session.isPlaying,

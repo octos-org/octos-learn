@@ -159,6 +159,7 @@ export function OllLessonBoard({
   const runtimeRef = useRef(runtime);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const renderedFocusRef = useRef<string[]>([]);
+  const renderedCompositionRef = useRef("");
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
@@ -476,10 +477,28 @@ export function OllLessonBoard({
     const atPlaybackBoundary =
       runtime.currentOperation?.type === "beat.end" ||
       runtime.currentOperation?.type === "step.commit";
+    const actionOperation = runtime.currentOperation?.action?.op;
+    const compositionKey = `${runtime.currentBeatId ?? ""}\u0000${runtime.compositionTargets.join("\u0000")}`;
+    const compositionChanged = compositionKey !== renderedCompositionRef.current;
+    const compositionContentChanged =
+      actionOperation === "board.create" ||
+      actionOperation === "board.revise" ||
+      actionOperation === "board.emphasize" ||
+      actionOperation === "board.group" ||
+      actionOperation === "board.connect";
     view?.setScene3dViews(runtime.scene3dViews);
     view?.render(runtime.board, runtime.currentOperation);
     if (runtime.attentionTargets.length > 0) {
       view?.focusTargets(runtime.attentionTargets);
+    } else if (
+      runtime.compositionTargets.length > 0 &&
+      (compositionChanged || compositionContentChanged)
+    ) {
+      // A Beat's declared focus describes the visual composition needed for
+      // its narration. Apply it while the Beat is unfolding so a newly written
+      // formula does not replace the diagram it is explaining. This reuses the
+      // existing focus action and does not add a playback delay.
+      view?.focusTargets(runtime.compositionTargets);
     } else if (atPlaybackBoundary && focusChanged) {
       // React can batch every operation produced by advanceBeat() into the
       // boundary render. In that case the board already contains the new Beat
@@ -487,10 +506,13 @@ export function OllLessonBoard({
       view?.focusTargets(boardFocus);
     }
     renderedFocusRef.current = [...boardFocus];
+    renderedCompositionRef.current = compositionKey;
   }, [
     runtime.attentionTargets,
     runtime.board,
+    runtime.compositionTargets,
     runtime.currentOperation,
+    runtime.currentBeatId,
     runtime.cursor,
     runtime.scene3dViews,
   ]);
