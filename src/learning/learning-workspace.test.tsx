@@ -615,6 +615,72 @@ describe("LearningWorkspace", () => {
     ).toBeNull();
   });
 
+  it("does not turn a local selection enhancement into TTS narration", async () => {
+    vi.useFakeTimers();
+    const fallbackReply = "这是选区旁边的局部解释，不是一节需要朗读的课程。";
+    conversationMock.turns = [{
+      id: "selection-turn",
+      userText: "解释这里",
+      assistantText: fallbackReply,
+      awaitingTranscript: false,
+    }];
+    conversationMock.threads = [{
+      id: "selection-turn",
+      turnId: "selection-turn",
+      userMsg: {
+        id: "selection-user",
+        role: "user",
+        text: "解释这里",
+        files: [],
+        toolCalls: [],
+        status: "complete",
+        timestamp: 1,
+      },
+      responses: [{
+        id: "selection-assistant",
+        role: "assistant",
+        text: fallbackReply,
+        files: [{
+          filename: "selection-turn.octos-selection-enhancement.json",
+          path: "study/oll/selection-turn.octos-selection-enhancement.json",
+        }],
+        toolCalls: [],
+        status: "complete",
+        timestamp: 2,
+      }],
+      pendingAssistant: null,
+    }];
+    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+
+    const view = render(
+      <LearningWorkspace
+        sessionId="learn-selection-no-tts"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    act(() => {
+      conversationMock.options?.onTurnComplete?.("selection-turn");
+      view.rerender(
+        <LearningWorkspace
+          sessionId="learn-selection-no-tts"
+          voiceEnabled
+          onBack={vi.fn()}
+        />,
+      );
+      vi.advanceTimersByTime(3_000);
+    });
+
+    expect(screen.queryByText(/本轮没有更新白板/)).toBeNull();
+    expect(narrationTtsMock.useOllNarrationTts).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: fallbackReply,
+        narrationId: "plain-reply:selection-turn",
+      }),
+    );
+  });
+
   it("restores an OLL lesson from durable session files after refresh", async () => {
     sessionFilesMock.getSessionFiles.mockResolvedValue([
       {

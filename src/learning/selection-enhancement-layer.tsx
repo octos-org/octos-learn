@@ -58,11 +58,13 @@ export function SelectionEnhancementLayer({
   artifacts,
   sources,
   currentDocumentVersion,
+  invalidTargetTurnIds = new Set(),
   onDelete,
 }: {
   artifacts: SelectionEnhancementArtifact[];
   sources: InkSelectionSnapshot[];
   currentDocumentVersion: number;
+  invalidTargetTurnIds?: ReadonlySet<string>;
   onDelete: (turnId: string) => void;
 }) {
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
@@ -73,6 +75,7 @@ export function SelectionEnhancementLayer({
         const source = sourceById.get(artifact.source.source_id);
         const bounds = source?.bounds ?? artifact.source.bounds;
         const stale = currentDocumentVersion > artifact.source.document_version;
+        const targetInvalid = invalidTargetTurnIds.has(artifact.turn_id);
         const sourceIndex = enhancementCountBySource.get(
           artifact.source.source_id,
         ) ?? 0;
@@ -85,7 +88,9 @@ export function SelectionEnhancementLayer({
         return (
           <article
             key={artifact.turn_id}
-            className="learning-selection-enhancement"
+            className={targetInvalid
+              ? "learning-selection-enhancement is-invalid-target"
+              : "learning-selection-enhancement"}
             style={{ left, top }}
             data-source-id={artifact.source.source_id}
           >
@@ -94,7 +99,11 @@ export function SelectionEnhancementLayer({
               <div>
                 <span>小章鱼辅助</span>
                 <small>
-                  {stale ? "基于较早版本的原稿" : "来自当前选区"}
+                  {targetInvalid
+                    ? "引用的白板对象已失效，请重新选择"
+                    : stale
+                      ? "基于较早版本的原稿"
+                      : "来自当前选区"}
                 </small>
               </div>
               <button

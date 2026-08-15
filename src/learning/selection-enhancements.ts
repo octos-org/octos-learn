@@ -8,6 +8,12 @@ import {
   type InkSelectionBounds,
   type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
+import type {
+  BoardTargetCandidate,
+  MountedInfiniteBoard,
+} from "octos-lesson-language/web-runtime";
+import type { SemanticBoardState } from "octos-lesson-language";
+import type { SelectionToolId } from "./selection-tools";
 
 const ARTIFACT_SUFFIX = ".octos-selection-enhancement.json";
 const STATE_PROFILE = "octos.selection-enhancement-state";
@@ -28,12 +34,33 @@ export interface SelectionEnhancementSourceRef {
   checksum: { algorithm: "sha-256"; value: string };
 }
 
+export interface SelectionEnhancementBoardTargetRef {
+  target_id: string;
+  node_id: string;
+  element_id?: string;
+  kind: string;
+  label?: string;
+  value?: unknown;
+  world_bounds: InkSelectionBounds;
+  overlap: number;
+  distance: number;
+  z_index: number;
+}
+
+export interface SelectionEnhancementBoardRef {
+  board_id: string;
+  revision: number;
+  targets: SelectionEnhancementBoardTargetRef[];
+}
+
 export interface SelectionEnhancementArtifact {
   profile: "octos.selection-enhancement";
-  version: "0.1";
+  version: "0.1" | "0.2";
   turn_id: string;
   created_at: string;
   source: SelectionEnhancementSourceRef;
+  board?: SelectionEnhancementBoardRef;
+  tool_id?: SelectionToolId;
   interpretation: {
     kind: SelectionContentKind;
     content: string;
@@ -80,10 +107,27 @@ export interface SelectionEnhancementTurnContext {
   learnerRequest?: string;
   lessonTitle?: string;
   boardSummary?: string;
+  boardContext?: SelectionBoardContext;
+  toolId?: SelectionToolId;
+}
+
+export interface SelectionBoardContext {
+  boardId: string;
+  boardRevision: number;
+  targets: BoardTargetCandidate[];
 }
 
 function contextLine(name: string, value: string | number): string {
   return `${name}: ${String(value).replace(/[\r\n]+/g, " ")}`;
+}
+
+function compactTargetValue(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  try {
+    return JSON.stringify(value)?.slice(0, 2_000);
+  } catch {
+    return undefined;
+  }
 }
 
 /** Explicitly routes one turn to the selection enhancer instead of asking the
@@ -107,6 +151,7 @@ export function buildSelectionEnhancementTurnContext(
     contextLine("source_checksum", context.source.checksum.value),
     contextLine("content_hint", context.contentKind),
   ];
+  if (context.toolId) lines.push(contextLine("selection_tool_id", context.toolId));
   if (context.learnerRequest?.trim()) {
     lines.push(contextLine("learner_request", context.learnerRequest.trim()));
   }
@@ -115,6 +160,30 @@ export function buildSelectionEnhancementTurnContext(
   }
   if (context.boardSummary?.trim()) {
     lines.push(contextLine("board_summary", context.boardSummary.trim()));
+  }
+  if (context.boardContext) {
+    lines.push(
+      contextLine("board_id", context.boardContext.boardId),
+      contextLine("board_revision", context.boardContext.boardRevision),
+      contextLine(
+        "board_targets",
+        JSON.stringify(context.boardContext.targets.map((target) => {
+          const valueJson = compactTargetValue(target.value);
+          return {
+            target_id: target.target_id,
+            node_id: target.node_id,
+            element_id: target.element_id,
+            kind: target.kind,
+            label: target.label,
+            ...(valueJson ? { value_json: valueJson } : {}),
+            world_bounds: target.world_bounds,
+            overlap: target.overlap,
+            distance: target.distance,
+            z_index: target.z_index,
+          };
+        })),
+      ),
+    );
   }
   lines.push("preserve_source_ink: required", "[[/LEARNING_SELECTION]]");
   return lines.join("\n");
@@ -159,6 +228,178 @@ export async function selectionSnapshotToPngFile(
   return new File([png], `${source.source_id}.png`, { type: "image/png" });
 }
 
+const capturedStyleProperties = [
+  "background", "background-color", "border", "border-radius", "box-shadow",
+  "color", "display", "font", "font-family", "font-size", "font-style",
+  "font-weight", "height", "letter-spacing", "line-height", "margin", "opacity",
+  "padding", "position", "text-align", "text-decoration", "text-transform",
+  "transform", "transform-origin", "white-space", "width",
+] as const;
+
+function inlineComputedStyles(source: Element, clone: Element): void {
+  const style = getComputedStyle(source);
+  const targetStyle = (clone as HTMLElement | SVGElement).style;
+  for (const property of capturedStyleProperties) {
+    targetStyle.setProperty(property, style.getPropertyValue(property));
+  }
+  if (source instanceof SVGElement && clone instanceof SVGElement) {
+    for (const property of ["fill", "stroke", "stroke-width", "stroke-dasharray"]) {
+      clone.style.setProperty(property, style.getPropertyValue(property));
+    }
+  }
+  const sourceChildren = Array.from(source.children);
+  const cloneChildren = Array.from(clone.children);
+  sourceChildren.forEach((child, index) => {
+    const clonedChild = cloneChildren[index];
+    if (clonedChild) inlineComputedStyles(child, clonedChild);
+  });
+}
+
+function boardNodeElement(
+  mounted: MountedInfiniteBoard,
+  nodeId: string,
+): HTMLElement | undefined {
+  return Array.from(
+    mounted.elements.nodes.querySelectorAll<HTMLElement>(".board-node"),
+  ).find((element) => element.dataset.id === nodeId);
+}
+
+function unionBounds(
+  bounds: InkSelectionBounds[],
+): InkSelectionBounds {
+  const left = Math.min(...bounds.map((value) => value.x));
+  const top = Math.min(...bounds.map((value) => value.y));
+  const right = Math.max(...bounds.map((value) => value.x + value.width));
+  const bottom = Math.max(...bounds.map((value) => value.y + value.height));
+  const padding = 24;
+  return {
+    x: left - padding,
+    y: top - padding,
+    width: right - left + padding * 2,
+    height: bottom - top + padding * 2,
+  };
+}
+
+async function foreignObjectToPngFile(
+  svg: string,
+  width: number,
+  height: number,
+  filename: string,
+): Promise<File> {
+  const scale = Math.min(2, 1800 / Math.max(width, height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.ceil(width * scale));
+  canvas.height = Math.max(1, Math.ceil(height * scale));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("当前浏览器无法生成选区图片");
+  const image = new Image();
+  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = () => reject(new Error("局部白板图片解析失败"));
+      image.src = url;
+    });
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  const png = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (value) => value ? resolve(value) : reject(new Error("局部白板图片生成失败")),
+      "image/png",
+    );
+  });
+  return new File([png], filename, { type: "image/png" });
+}
+
+/** Builds the image that the selection enhancer sees. It is deliberately
+ * invoked only after a learner asks about a selection. Normal lesson render
+ * and generation never traverse or rasterize the board. */
+export async function selectionContextToPngFile(
+  snapshot: InkSelectionSnapshot,
+  mounted: MountedInfiniteBoard,
+  targets: BoardTargetCandidate[],
+): Promise<File> {
+  const source = validateInkSelectionSnapshot(snapshot);
+  await assertInkSelectionIntegrity(source);
+  if (targets.length === 0) return selectionSnapshotToPngFile(source);
+
+  const uniqueTargets = [...new Map(
+    targets.map((target) => [target.target_id, target]),
+  ).values()];
+  const crop = unionBounds([
+    source.bounds,
+    ...uniqueTargets.map((target) => target.world_bounds),
+  ]);
+  const document = mounted.elements.viewport.ownerDocument;
+  const content = document.createElement("div");
+  Object.assign(content.style, {
+    position: "relative",
+    width: `${crop.width}px`,
+    height: `${crop.height}px`,
+    overflow: "hidden",
+    background: "#fbfaf5",
+    color: "#202b2a",
+  });
+
+  const nodeIds = [...new Set(uniqueTargets.map((target) => target.node_id))];
+  for (const nodeId of nodeIds) {
+    const sourceNode = boardNodeElement(mounted, nodeId);
+    const target = uniqueTargets.find((candidate) => candidate.node_id === nodeId);
+    if (!sourceNode || !target) continue;
+    const clone = sourceNode.cloneNode(true) as HTMLElement;
+    inlineComputedStyles(sourceNode, clone);
+    const nodeBounds = uniqueTargets.find(
+      (candidate) => candidate.node_id === nodeId && candidate.target_id === nodeId,
+    )?.world_bounds ?? {
+      x: Number.parseFloat(sourceNode.style.left),
+      y: Number.parseFloat(sourceNode.style.top),
+      width: Number.parseFloat(sourceNode.style.width),
+      height: Number.parseFloat(sourceNode.style.height),
+    };
+    Object.assign(clone.style, {
+      position: "absolute",
+      left: `${nodeBounds.x - crop.x}px`,
+      top: `${nodeBounds.y - crop.y}px`,
+      width: `${nodeBounds.width}px`,
+      height: `${nodeBounds.height}px`,
+      margin: "0",
+      transform: "none",
+    });
+    content.append(clone);
+  }
+
+  const inkHost = document.createElement("div");
+  Object.assign(inkHost.style, {
+    position: "absolute",
+    left: `${source.bounds.x - crop.x}px`,
+    top: `${source.bounds.y - crop.y}px`,
+    width: `${source.bounds.width}px`,
+    height: `${source.bounds.height}px`,
+  });
+  inkHost.innerHTML = source.svg;
+  const inkSvg = inkHost.querySelector("svg");
+  if (inkSvg) {
+    inkSvg.setAttribute("width", String(source.bounds.width));
+    inkSvg.setAttribute("height", String(source.bounds.height));
+  }
+  content.append(inkHost);
+
+  const serialized = new XMLSerializer().serializeToString(content);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${crop.width}" height="${crop.height}" viewBox="0 0 ${crop.width} ${crop.height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${serialized}</div></foreignObject></svg>`;
+  try {
+    return await foreignObjectToPngFile(
+      svg,
+      crop.width,
+      crop.height,
+      `${source.source_id}-context.png`,
+    );
+  } catch {
+    return selectionSnapshotToPngFile(source);
+  }
+}
+
 function finiteRange(value: unknown): value is { min: number; max: number } {
   if (!value || typeof value !== "object") return false;
   const range = value as { min?: unknown; max?: unknown };
@@ -190,6 +431,55 @@ function validSource(value: unknown): value is SelectionEnhancementSourceRef {
     && /^[a-f0-9]{64}$/.test(source.checksum.value ?? "");
 }
 
+function validBoardRef(value: unknown): value is SelectionEnhancementBoardRef {
+  if (!value || typeof value !== "object") return false;
+  const board = value as Partial<SelectionEnhancementBoardRef>;
+  if (
+    typeof board.board_id !== "string"
+    || !board.board_id.trim()
+    || !Number.isSafeInteger(board.revision)
+    || (board.revision ?? -1) < 0
+    || !Array.isArray(board.targets)
+    || board.targets.length > 6
+  ) return false;
+  const ids = new Set<string>();
+  return board.targets.every((value) => {
+    if (!value || typeof value !== "object") return false;
+    const target = value as Partial<SelectionEnhancementBoardTargetRef>;
+    const overlap = target.overlap;
+    const distance = target.distance;
+    if (
+      typeof target.target_id !== "string"
+      || !target.target_id.trim()
+      || ids.has(target.target_id)
+      || typeof target.node_id !== "string"
+      || !target.node_id.trim()
+      || typeof target.kind !== "string"
+      || !target.kind.trim()
+      || (target.element_id !== undefined && typeof target.element_id !== "string")
+      || (target.element_id !== undefined && target.element_id !== target.target_id)
+      || (target.label !== undefined && typeof target.label !== "string")
+      || !target.world_bounds
+      || !Number.isFinite(target.world_bounds.x)
+      || !Number.isFinite(target.world_bounds.y)
+      || !Number.isFinite(target.world_bounds.width)
+      || target.world_bounds.width <= 0
+      || !Number.isFinite(target.world_bounds.height)
+      || target.world_bounds.height <= 0
+      || typeof overlap !== "number"
+      || !Number.isFinite(overlap)
+      || overlap < 0
+      || overlap > 1
+      || typeof distance !== "number"
+      || !Number.isFinite(distance)
+      || distance < 0
+      || !Number.isSafeInteger(target.z_index)
+    ) return false;
+    ids.add(target.target_id);
+    return true;
+  });
+}
+
 export function validateSelectionEnhancementArtifact(
   value: unknown,
 ): SelectionEnhancementArtifact {
@@ -199,9 +489,16 @@ export function validateSelectionEnhancementArtifact(
   const artifact = value as Partial<SelectionEnhancementArtifact>;
   const interpretation = artifact.interpretation;
   const response = artifact.response;
+  const validVersion = artifact.version === "0.1" || artifact.version === "0.2";
+  const validV2Context = artifact.version !== "0.2"
+    || (validBoardRef(artifact.board)
+      && typeof artifact.tool_id === "string"
+      && ["explain", "check-and-suggest", "generate-plot", "custom-question"]
+        .includes(artifact.tool_id));
   if (
     artifact.profile !== "octos.selection-enhancement"
-    || artifact.version !== "0.1"
+    || !validVersion
+    || !validV2Context
     || typeof artifact.turn_id !== "string"
     || !artifact.turn_id
     || typeof artifact.created_at !== "string"
@@ -256,6 +553,74 @@ export function selectionArtifactMatchesSource(
     && bounds.y === source.bounds.y
     && bounds.width === source.bounds.width
     && bounds.height === source.bounds.height;
+}
+
+export function selectionArtifactTargetsExist(
+  artifact: SelectionEnhancementArtifact,
+  board: SemanticBoardState | null,
+): boolean {
+  if (artifact.version === "0.1" || !artifact.board) return true;
+  if (
+    !board
+    || artifact.board.board_id !== board.board_id
+    || artifact.board.revision !== board.revision
+  ) return false;
+  return artifact.board.targets.every((target) => boardTargetExists(target, board));
+}
+
+export function selectionBoardContextTargetsExist(
+  context: SelectionBoardContext,
+  board: SemanticBoardState | null,
+): boolean {
+  if (
+    !board
+    || context.boardId !== board.board_id
+    || context.boardRevision !== board.revision
+  ) return false;
+  return context.targets.every((target) => boardTargetExists(target, board));
+}
+
+function boardTargetExists(
+  target: Pick<
+    SelectionEnhancementBoardTargetRef,
+    "target_id" | "node_id" | "element_id" | "kind"
+  >,
+  board: SemanticBoardState,
+): boolean {
+  const node = board.nodes[target.node_id];
+  if (!node) return false;
+  if (!target.element_id) return target.target_id === target.node_id;
+  const content = node.content as Record<string, unknown>;
+  if (target.kind === "table-cell") {
+    const header = new RegExp(`^${escapeRegExp(target.node_id)}:table:header:(\\d+)$`)
+      .exec(target.element_id);
+    if (header) {
+      const columns = Array.isArray(content.columns) ? content.columns : [];
+      return Number(header[1]) < columns.length;
+    }
+    const cell = new RegExp(
+      `^${escapeRegExp(target.node_id)}:table:row:(\\d+):column:(\\d+)$`,
+    ).exec(target.element_id);
+    if (!cell) return false;
+    const rows = Array.isArray(content.rows) ? content.rows : [];
+    const columns = Array.isArray(content.columns) ? content.columns : [];
+    return Number(cell[1]) < rows.length && Number(cell[2]) < columns.length;
+  }
+  return [
+    "fragments", "curves", "points", "guides", "regions", "elements",
+    "edges", "circles", "segments", "arcs", "objects", "sections",
+    "highlights",
+  ].some((field) => {
+    const values = content[field];
+    return Array.isArray(values) && values.some((value) =>
+      value && typeof value === "object"
+      && (value as Record<string, unknown>).id === target.element_id,
+    );
+  });
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export function selectionEnhancementStorageKey(sessionId: string): string {

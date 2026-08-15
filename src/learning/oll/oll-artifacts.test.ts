@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { reduceCanonicalEvents } from "octos-lesson-language";
 import type { Thread } from "@/store/thread-store";
 import {
   buildOllLessonTopics,
@@ -265,6 +266,86 @@ describe("OLL lesson artifacts", () => {
       `topic-${ollArtifactIdentity(artifact!)}`,
       `topic-${ollArtifactIdentity(secondArtifact)}`,
     ]);
+    vi.unstubAllGlobals();
+  });
+
+  it("resolves an explicit follow-up against a stable node from an earlier lesson", async () => {
+    const firstArtifact = {
+      id: "first",
+      filename: "first.octos-lesson.json",
+      path: "study/oll/first.octos-lesson.json",
+      threadId: "first",
+      turnId: "first",
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => authoringLesson,
+    }));
+    const first = await loadOllLessonArtifact(firstArtifact, "session-1");
+    const firstClassroom = composeOllClassroomEvents([first], "session-1");
+    const firstState = reduceCanonicalEvents(firstClassroom);
+    const priorNodeId = Object.keys(firstState.nodes)[0]!;
+
+    const followUp = {
+      ...structuredClone(authoringLesson),
+      board_context: {
+        board_id: "learning-board-session-1",
+        revision: firstState.revision,
+        references: [{
+          as: "board-ref-1-1",
+          type: "node",
+          target_id: priorNodeId,
+          label: "之前的核心结论",
+          fragments: [],
+        }],
+      },
+      lesson: {
+        ...authoringLesson.lesson,
+        title: "围绕原结论继续讲解",
+      },
+      steps: [{
+        key: "follow-up",
+        purpose: "在原结论旁补充说明",
+        beats: [{
+          key: "write-follow-up",
+          say: "现在看着刚才的结论，补充它成立的原因。",
+          actions: [{
+            do: "write",
+            as: "follow-up-note",
+            kind: "note",
+            role: "explanation",
+            content: { text: "这条说明保留原内容，只在旁边补充。" },
+            place: { relation: "near", anchor: "board-ref-1-1" },
+          }, {
+            do: "focus",
+            when: "after_speech",
+            targets: ["board-ref-1-1", "follow-up-note"],
+            intent: "compare_original_and_enhancement",
+          }],
+        }],
+      }],
+      close: { summary: "完成补充", focus: ["follow-up-note"] },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => followUp,
+    }));
+    const second = await loadOllLessonArtifact({
+      ...firstArtifact,
+      id: "second",
+      filename: "second.octos-lesson.json",
+      path: "study/oll/second.octos-lesson.json",
+      turnId: "second",
+    }, "session-1");
+    const classroom = composeOllClassroomEvents([first, second], "session-1");
+    const state = reduceCanonicalEvents(classroom);
+    const followUpNode = Object.values(state.nodes).find((node) =>
+      node.content.text === "这条说明保留原内容，只在旁边补充。",
+    );
+
+    expect(followUpNode?.placement?.anchor).toBe(priorNodeId);
+    expect(state.nodes[priorNodeId]).toBeTruthy();
+    expect(state.focus).toContain(priorNodeId);
     vi.unstubAllGlobals();
   });
 

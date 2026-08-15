@@ -25,6 +25,7 @@ import {
   formatVariableValue,
   mountInfiniteBoard,
   studentInputMethod,
+  type BoardTargetCandidate,
   type MountedInfiniteBoard,
   type StudentInputMethod,
   type ViewportInsets,
@@ -39,9 +40,19 @@ import {
 } from "./oll-ink-runtime";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import type {
+  SelectionBoardContext,
   SelectionContentKind,
   SelectionEnhancementArtifact,
 } from "../selection-enhancements";
+import {
+  selectionArtifactTargetsExist,
+  selectionContextToPngFile,
+} from "../selection-enhancements";
+import {
+  availableSelectionTools,
+  selectionLessonTool,
+  type SelectionToolId,
+} from "../selection-tools";
 import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
@@ -56,6 +67,26 @@ type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
 };
+
+interface PreparedSelectionContext {
+  snapshot: InkSelectionSnapshot;
+  candidates: BoardTargetCandidate[];
+  boardId: string;
+  boardRevision: number;
+}
+
+function visibleBoardTargetCandidates(
+  candidates: BoardTargetCandidate[],
+): BoardTargetCandidate[] {
+  const nodesWithFragments = new Set(
+    candidates.filter((candidate) => candidate.element_id).map((candidate) => candidate.node_id),
+  );
+  return candidates
+    .filter((candidate) =>
+      candidate.element_id || !nodesWithFragments.has(candidate.node_id),
+    )
+    .slice(0, 6);
+}
 
 const emptyInkState: LearningInkState = {
   mode: "navigate",
@@ -131,6 +162,20 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets {
   };
 }
 
+function ensureScene3dInteractionHints(viewport: HTMLElement): void {
+  const scenes = viewport.querySelectorAll<HTMLElement>(".scene3d-runtime");
+  scenes.forEach((scene, index) => {
+    if (scene.querySelector(".learning-scene3d-interaction-hint")) return;
+    const hint = viewport.ownerDocument.createElement("div");
+    hint.className = "learning-scene3d-interaction-hint";
+    hint.id = `learning-scene3d-interaction-hint-${index}`;
+    hint.textContent = "拖动画面旋转 · 滚动缩放";
+    const image = scene.querySelector<SVGElement>("svg[role='img']");
+    image?.setAttribute("aria-describedby", hint.id);
+    scene.append(hint);
+  });
+}
+
 export function OllLessonBoard({
   runtime,
   inkSessionId,
@@ -138,6 +183,7 @@ export function OllLessonBoard({
   selectionSources = [],
   onAskInkSelection,
   onVoiceInkSelection,
+  onReferenceInkSelection,
   onDeleteSelectionEnhancement,
 }: {
   runtime: OllLessonRuntimeController;
@@ -148,10 +194,22 @@ export function OllLessonBoard({
     snapshot: InkSelectionSnapshot;
     question: string;
     contentKind: SelectionContentKind;
+    toolId: SelectionToolId;
+    boardContext: SelectionBoardContext;
+    contextImage: File;
   }) => Promise<void> | void;
   onVoiceInkSelection?: (request: {
     snapshot: InkSelectionSnapshot;
     contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
+    contextImage: File;
+  }) => Promise<void> | void;
+  onReferenceInkSelection?: (request: {
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
+    contextImage: File;
+    label: string;
   }) => Promise<void> | void;
   onDeleteSelectionEnhancement?: (turnId: string) => void;
 }) {
@@ -162,6 +220,7 @@ export function OllLessonBoard({
   const renderedCompositionRef = useRef("");
   const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
+  const inkSelectionVersionRef = useRef({ documentVersion: 0, selectedCount: 0 });
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
     input: StudentInputMethod;
@@ -180,6 +239,10 @@ export function OllLessonBoard({
   const [selectionContentKind, setSelectionContentKind] =
     useState<SelectionContentKind>("unknown");
   const [selectionRequestPending, setSelectionRequestPending] = useState(false);
+  const [preparedSelection, setPreparedSelection] =
+    useState<PreparedSelectionContext | null>(null);
+  const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
+    useState<string[]>([]);
   const variableControls = variableControlModels(runtime.board);
   const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
 
@@ -250,10 +313,6 @@ export function OllLessonBoard({
     runtimeRef.current = runtime;
   }, [runtime]);
 
-  useEffect(() => {
-    if (inkState.selected_count === 0) setSelectionQuestionOpen(false);
-  }, [inkState.selected_count]);
-
   const setInkMode = useCallback((mode: InkMode) => {
     try {
       inkRuntimeRef.current?.setMode(mode);
@@ -307,7 +366,7 @@ export function OllLessonBoard({
     );
   }, []);
 
-  const captureSelection = useCallback(async (): Promise<InkSelectionSnapshot> => {
+  const captureSelection = useCallback(async (): Promise<PreparedSelectionContext> => {
     const ink = inkRuntimeRef.current;
     if (!ink) throw new Error("笔迹功能尚未就绪");
     await ink.ready;
@@ -319,22 +378,81 @@ export function OllLessonBoard({
       bounds: snapshot.bounds,
       checksum: snapshot.checksum,
     }, inkState.selection_input);
-    return snapshot;
+    const mounted = mountedRef.current;
+    const candidates = mounted
+      ? visibleBoardTargetCandidates(mounted.view.queryBoardTargets({
+          bounds: snapshot.bounds,
+          ...(snapshot.region?.points ? { path: snapshot.region.points } : {}),
+          limit: 12,
+        }))
+      : [];
+    return {
+      snapshot,
+      candidates,
+      boardId: runtimeRef.current.board?.board_id ?? "unknown-board",
+      boardRevision: runtimeRef.current.board?.revision ?? 0,
+    };
   }, [inkState.selection_input]);
 
-  const askSelection = useCallback(async (question: string) => {
+  const openSelectionQuestion = useCallback(async () => {
+    if (selectionQuestionOpen) {
+      setSelectionQuestionOpen(false);
+      return;
+    }
+    setSelectionQuestionOpen(true);
+    setSelectionRequestPending(true);
+    try {
+      const prepared = await captureSelection();
+      setPreparedSelection(prepared);
+      setSelectedBoardTargetIds(
+        prepared.candidates.length === 1
+          ? [prepared.candidates[0]!.target_id]
+          : [],
+      );
+      setInkError("");
+    } catch (cause) {
+      setSelectionQuestionOpen(false);
+      setInkError(cause instanceof Error ? cause.message : "无法读取当前选区");
+    } finally {
+      setSelectionRequestPending(false);
+    }
+  }, [captureSelection, selectionQuestionOpen]);
+
+  const askSelection = useCallback(async (
+    question: string,
+    toolId: SelectionToolId = "custom-question",
+  ) => {
     const value = question.trim();
     if (!value || !onAskInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
     try {
-      const snapshot = await captureSelection();
+      const prepared = preparedSelection ?? await captureSelection();
+      const targets = prepared.candidates.filter((candidate) =>
+        selectedBoardTargetIds.includes(candidate.target_id),
+      );
+      const mounted = mountedRef.current;
+      if (!mounted) throw new Error("白板尚未就绪");
+      const contextImage = await selectionContextToPngFile(
+        prepared.snapshot,
+        mounted,
+        targets,
+      );
       await onAskInkSelection({
-        snapshot,
+        snapshot: prepared.snapshot,
         question: value,
         contentKind: selectionContentKind,
+        toolId,
+        boardContext: {
+          boardId: prepared.boardId,
+          boardRevision: prepared.boardRevision,
+          targets,
+        },
+        contextImage,
       });
       setSelectionQuestion("");
       setSelectionQuestionOpen(false);
+      setPreparedSelection(null);
+      setSelectedBoardTargetIds([]);
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
@@ -344,6 +462,8 @@ export function OllLessonBoard({
   }, [
     captureSelection,
     onAskInkSelection,
+    preparedSelection,
+    selectedBoardTargetIds,
     selectionContentKind,
     selectionRequestPending,
   ]);
@@ -352,12 +472,30 @@ export function OllLessonBoard({
     if (!onVoiceInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
     try {
-      const snapshot = await captureSelection();
+      const prepared = preparedSelection ?? await captureSelection();
+      const targets = prepared.candidates.filter((candidate) =>
+        selectedBoardTargetIds.includes(candidate.target_id),
+      );
+      const mounted = mountedRef.current;
+      if (!mounted) throw new Error("白板尚未就绪");
+      const contextImage = await selectionContextToPngFile(
+        prepared.snapshot,
+        mounted,
+        targets,
+      );
       await onVoiceInkSelection({
-        snapshot,
+        snapshot: prepared.snapshot,
         contentKind: selectionContentKind,
+        boardContext: {
+          boardId: prepared.boardId,
+          boardRevision: prepared.boardRevision,
+          targets,
+        },
+        contextImage,
       });
       setSelectionQuestionOpen(false);
+      setPreparedSelection(null);
+      setSelectedBoardTargetIds([]);
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法针对当前选区开始语音提问");
@@ -367,6 +505,52 @@ export function OllLessonBoard({
   }, [
     captureSelection,
     onVoiceInkSelection,
+    preparedSelection,
+    selectedBoardTargetIds,
+    selectionContentKind,
+    selectionRequestPending,
+  ]);
+
+  const referenceSelectionForLesson = useCallback(async () => {
+    if (!onReferenceInkSelection || selectionRequestPending) return;
+    setSelectionRequestPending(true);
+    try {
+      const prepared = preparedSelection ?? await captureSelection();
+      const targets = prepared.candidates.filter((candidate) =>
+        selectedBoardTargetIds.includes(candidate.target_id),
+      );
+      const mounted = mountedRef.current;
+      if (!mounted) throw new Error("白板尚未就绪");
+      const contextImage = await selectionContextToPngFile(
+        prepared.snapshot,
+        mounted,
+        targets,
+      );
+      await onReferenceInkSelection({
+        snapshot: prepared.snapshot,
+        contentKind: selectionContentKind,
+        boardContext: {
+          boardId: prepared.boardId,
+          boardRevision: prepared.boardRevision,
+          targets,
+        },
+        contextImage,
+        label: targets[0]?.label ?? "选中的笔迹",
+      });
+      setSelectionQuestionOpen(false);
+      setPreparedSelection(null);
+      setSelectedBoardTargetIds([]);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法引用当前选区");
+    } finally {
+      setSelectionRequestPending(false);
+    }
+  }, [
+    captureSelection,
+    onReferenceInkSelection,
+    preparedSelection,
+    selectedBoardTargetIds,
     selectionContentKind,
     selectionRequestPending,
   ]);
@@ -385,6 +569,7 @@ export function OllLessonBoard({
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
+    inkSelectionVersionRef.current = { documentVersion: 0, selectedCount: 0 };
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
@@ -424,7 +609,22 @@ export function OllLessonBoard({
           typeof ink.setSelectionColor === "function",
         );
         unsubscribeInkRef.current = ink.subscribe((state) => {
-          if (active) setInkState(normalizeInkState(state));
+          if (!active) return;
+          const next = normalizeInkState(state);
+          const previous = inkSelectionVersionRef.current;
+          if (
+            previous.documentVersion !== next.document_version
+            || previous.selectedCount !== next.selected_count
+          ) {
+            setSelectionQuestionOpen(false);
+            setPreparedSelection(null);
+            setSelectedBoardTargetIds([]);
+          }
+          inkSelectionVersionRef.current = {
+            documentVersion: next.document_version,
+            selectedCount: next.selected_count,
+          };
+          setInkState(next);
         });
         setInkError("");
         void ink.ready.then(
@@ -492,6 +692,8 @@ export function OllLessonBoard({
       runtime.cursor !== renderedCompositionCursorRef.current;
     view?.setScene3dViews(runtime.scene3dViews);
     view?.render(runtime.board, runtime.currentOperation);
+    const viewport = viewportRef.current;
+    if (viewport) ensureScene3dInteractionHints(viewport);
     if (runtime.attentionTargets.length > 0) {
       view?.focusTargets(runtime.attentionTargets);
     } else if (
@@ -601,8 +803,9 @@ export function OllLessonBoard({
               <button
                 type="button"
                 className="learning-ink-ask"
-                onClick={() => setSelectionQuestionOpen((open) => !open)}
+                onClick={() => void openSelectionQuestion()}
                 aria-expanded={selectionQuestionOpen}
+                disabled={selectionRequestPending}
               >
                 <MessageCircle size={16} />
                 问小章鱼
@@ -650,9 +853,39 @@ export function OllLessonBoard({
           <header>
             <strong>针对当前选区提问</strong>
             <span>
-              将发送 {inkState.selected_count} 项选中笔迹和当前课程主题，不会发送整块白板。
+              将发送 {inkState.selected_count} 项选中笔迹，以及你在下面明确选择的局部白板内容；不会发送整块白板。
             </span>
           </header>
+          {preparedSelection?.candidates.length ? (
+            <fieldset className="learning-selection-targets">
+              <legend>这段笔迹是在问哪部分白板内容？</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="selection-board-target"
+                  checked={selectedBoardTargetIds.length === 0}
+                  onChange={() => setSelectedBoardTargetIds([])}
+                />
+                只看我的笔迹
+              </label>
+              {preparedSelection.candidates.map((candidate) => (
+                <label key={candidate.target_id}>
+                  <input
+                    type="radio"
+                    name="selection-board-target"
+                    checked={selectedBoardTargetIds.includes(candidate.target_id)}
+                    onChange={() => setSelectedBoardTargetIds([candidate.target_id])}
+                  />
+                  <span>{candidate.label ?? candidate.target_id}</span>
+                  <small>{candidate.kind}</small>
+                </label>
+              ))}
+            </fieldset>
+          ) : (
+            <p className="learning-selection-no-target">
+              当前框选没有覆盖课程对象，本次只参考你的原始笔迹。
+            </p>
+          )}
           <label>
             我写的内容更像
             <select
@@ -670,27 +903,28 @@ export function OllLessonBoard({
             </select>
           </label>
           <div className="learning-selection-suggestions">
-            <button
-              type="button"
-              onClick={() => void askSelection("请解释我选中的这部分。")}
-              disabled={selectionRequestPending}
-            >
-              解释这部分
-            </button>
-            <button
-              type="button"
-              onClick={() => void askSelection("请检查我选中的内容，并在旁边给出建议。")}
-              disabled={selectionRequestPending}
-            >
-              检查并建议
-            </button>
-            {selectionContentKind === "math" ? (
+            {availableSelectionTools(
+              selectionContentKind,
+              preparedSelection?.candidates
+                .filter((candidate) => selectedBoardTargetIds.includes(candidate.target_id))
+                .map((candidate) => candidate.kind),
+            ).map((tool) => (
               <button
+                key={tool.id}
                 type="button"
-                onClick={() => void askSelection("请按我选中的公式生成函数图像。")}
+                onClick={() => void askSelection(tool.prompt, tool.id)}
                 disabled={selectionRequestPending}
               >
-                生成函数图像
+                {tool.label}
+              </button>
+            ))}
+            {onReferenceInkSelection ? (
+              <button
+                type="button"
+                onClick={() => void referenceSelectionForLesson()}
+                disabled={selectionRequestPending}
+              >
+                {selectionLessonTool.label}
               </button>
             ) : null}
           </div>
@@ -824,7 +1058,7 @@ export function OllLessonBoard({
         >
           <header>
             <span>动手试一试</span>
-            <small>直接使用白板上的滑杆或控制点</small>
+            <small>直接操作白板上的图形、视角或控制器</small>
           </header>
           {availableStudentTasks.map((task) => {
             const lastAttempt = task.attempts.at(-1);
@@ -889,13 +1123,39 @@ export function OllLessonBoard({
       ) : null}
       {enhancementLayer
         ? createPortal(
-            <SelectionEnhancementLayer
-              artifacts={selectionEnhancements}
-              sources={selectionSources}
-              currentDocumentVersion={inkState.document_version}
-              onDelete={(turnId) =>
-                onDeleteSelectionEnhancement?.(turnId)}
-            />,
+            <>
+              {selectionQuestionOpen
+                ? preparedSelection?.candidates.map((candidate, index) => (
+                    <div
+                      key={candidate.target_id}
+                      className={selectedBoardTargetIds.includes(candidate.target_id)
+                        ? "learning-selection-target-highlight is-selected"
+                        : "learning-selection-target-highlight"}
+                      style={{
+                        left: candidate.world_bounds.x,
+                        top: candidate.world_bounds.y,
+                        width: candidate.world_bounds.width,
+                        height: candidate.world_bounds.height,
+                      }}
+                      aria-hidden="true"
+                    >
+                      <span>{index + 1}</span>
+                    </div>
+                  ))
+                : null}
+              <SelectionEnhancementLayer
+                artifacts={selectionEnhancements}
+                sources={selectionSources}
+                currentDocumentVersion={inkState.document_version}
+                invalidTargetTurnIds={new Set(selectionEnhancements
+                  .filter((artifact) =>
+                    !selectionArtifactTargetsExist(artifact, runtime.board),
+                  )
+                  .map((artifact) => artifact.turn_id))}
+                onDelete={(turnId) =>
+                  onDeleteSelectionEnhancement?.(turnId)}
+              />
+            </>,
             enhancementLayer,
           )
         : null}

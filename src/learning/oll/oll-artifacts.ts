@@ -165,14 +165,19 @@ export async function loadOllLessonArtifact(
   const authoring = (await response.json()) as AuthoringLesson;
   try {
     const artifactIdentity = ollArtifactIdentity(artifact);
+    const boardId = `learning-board-${sessionId}`;
+    const boardContext = authoring.board_context;
     const events = normalizeAuthoringLesson(authoring, {
       lessonId: `learn-${sessionId}-${artifactIdentity}`,
-      boardId: `learning-board-${sessionId}`,
-      baseRevision: 0,
-      regionIntent: "new_topic",
+      boardId,
+      baseRevision: boardContext?.revision ?? 0,
+      regionIntent: boardContext ? "continue_topic" : "new_topic",
       regionId: `topic-${artifactIdentity}`,
     });
-    reduceCanonicalEvents(events);
+    // A referenced lesson intentionally points at nodes created by earlier
+    // artifacts. It can only be reduced after the classroom composer has put
+    // those earlier events in front of it.
+    if (!boardContext?.references.length) reduceCanonicalEvents(events);
     return events;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "未知格式错误";

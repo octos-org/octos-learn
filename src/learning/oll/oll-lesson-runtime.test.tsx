@@ -27,9 +27,17 @@ import { OllLessonBoard } from "./oll-lesson-runtime";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
 
 const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
+const selectionContextToPngFileMock = vi.hoisted(() => vi.fn(async () =>
+  new File(["selection"], "selection.png", { type: "image/png" }),
+));
 
 vi.mock("./oll-ink-runtime", () => ({
   mountInkRuntime: mountInkRuntimeMock,
+}));
+
+vi.mock("../selection-enhancements", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../selection-enhancements")>(),
+  selectionContextToPngFile: selectionContextToPngFileMock,
 }));
 
 function RuntimeProbe() {
@@ -73,6 +81,7 @@ function SelectionInkRuntimeProbe({
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "oll-selection-runtime-test",
+    startAtEnd: true,
   });
   if (!runtime) return null;
   return (
@@ -405,6 +414,7 @@ describe("OLL lesson Runtime integration", () => {
     cleanup();
     localStorage.clear();
     mountInkRuntimeMock.mockReset();
+    selectionContextToPngFileMock.mockClear();
     vi.restoreAllMocks();
   });
 
@@ -499,7 +509,17 @@ describe("OLL lesson Runtime integration", () => {
       document_id: "learning-session:learn-selection-1:student-ink",
       document_version: 3,
       created_at: "2026-08-14T12:00:00.000Z",
-      bounds: { x: 40, y: 60, width: 180, height: 90 },
+      bounds: { x: -10_000, y: -10_000, width: 20_000, height: 20_000 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: -10_000, y: -10_000 },
+          { x: 10_000, y: -10_000 },
+          { x: 10_000, y: 10_000 },
+          { x: -10_000, y: 10_000 },
+        ],
+      },
       checksum: { algorithm: "sha-256", value: "a".repeat(64) },
       svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
     };
@@ -528,23 +548,52 @@ describe("OLL lesson Runtime integration", () => {
     render(<SelectionInkRuntimeProbe onAsk={onAsk} />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
+    const targets = await screen.findAllByRole("radio");
+    expect(targets.length).toBeGreaterThan(1);
+    expect(document.querySelectorAll(".learning-selection-target-highlight").length)
+      .toBeGreaterThan(0);
+    fireEvent.click(targets[1]!);
+    expect(document.querySelectorAll(".learning-selection-target-highlight.is-selected"))
+      .toHaveLength(1);
     fireEvent.change(screen.getByLabelText("我写的内容更像"), {
       target: { value: "math" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
+    const generatePlot = screen.getByRole("button", { name: "生成函数图像" });
+    await waitFor(() => expect((generatePlot as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(generatePlot);
 
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith({
         snapshot,
         question: "请按我选中的公式生成函数图像。",
         contentKind: "math",
+        toolId: "generate-plot",
+        boardContext: {
+          boardId: expect.any(String),
+          boardRevision: expect.any(Number),
+          targets: [expect.objectContaining({
+            target_id: expect.any(String),
+            node_id: expect.any(String),
+            kind: expect.any(String),
+            world_bounds: expect.objectContaining({
+              width: expect.any(Number),
+              height: expect.any(Number),
+            }),
+            overlap: expect.any(Number),
+            distance: expect.any(Number),
+            z_index: expect.any(Number),
+          })],
+        },
+        contextImage: expect.any(File),
       });
       expect(screen.getByTestId("selection-operation-count").textContent)
         .toBe("1");
     });
     expect(ink.captureSelectionSnapshot).toHaveBeenCalledOnce();
+    expect(selectionContextToPngFileMock).toHaveBeenCalledOnce();
     expect(ink.setSelectionColor).not.toHaveBeenCalled();
     expect(ink.undo).not.toHaveBeenCalled();
     expect(ink.redo).not.toHaveBeenCalled();
@@ -702,6 +751,8 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("button", { name: "等轴" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "俯视" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "复位" })).toBeTruthy();
+    expect(screen.getByText("拖动画面旋转 · 滚动缩放")).toBeTruthy();
+    expect(screen.getByText("直接操作白板上的图形、视角或控制器")).toBeTruthy();
     expect(screen.getByText("把立方体转到正视图")).toBeTruthy();
     expect(screen.getByText("顶点 A")).toBeTruthy();
     expect(screen.getByText("棱 AB")).toBeTruthy();

@@ -11,6 +11,8 @@ import {
   loadSelectionEnhancementState,
   saveSelectionEnhancementState,
   selectionArtifactMatchesSource,
+  selectionArtifactTargetsExist,
+  selectionBoardContextTargetsExist,
   validateSelectionEnhancementArtifact,
 } from "./selection-enhancements";
 
@@ -26,6 +28,16 @@ class MemoryStorage implements Storage {
 
 async function source(): Promise<InkSelectionSnapshot> {
   const svg = '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>';
+  const region = {
+    kind: "rectangle" as const,
+    closed: true,
+    points: [
+      { x: 20, y: 30 },
+      { x: 120, y: 30 },
+      { x: 120, y: 90 },
+      { x: 20, y: 90 },
+    ],
+  };
   return {
     format: INK_SELECTION_FORMAT,
     format_version: INK_SELECTION_FORMAT_VERSION,
@@ -34,7 +46,11 @@ async function source(): Promise<InkSelectionSnapshot> {
     document_version: 2,
     created_at: "2026-08-14T10:00:00.000Z",
     bounds: { x: 20, y: 30, width: 100, height: 60 },
-    checksum: { algorithm: "sha-256", value: await inkSvgChecksum(svg) },
+    region,
+    checksum: {
+      algorithm: "sha-256",
+      value: await inkSvgChecksum(JSON.stringify({ svg, region })),
+    },
     svg,
   };
 }
@@ -109,6 +125,16 @@ describe("selection enhancement persistence", () => {
       document_version: artifact.source.document_version,
       created_at: "2026-08-14T10:00:00.000Z",
       bounds: artifact.source.bounds,
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 20, y: 30 },
+          { x: 120, y: 30 },
+          { x: 120, y: 90 },
+          { x: 20, y: 90 },
+        ],
+      },
       checksum: artifact.source.checksum,
       svg: "<svg />",
     } satisfies InkSelectionSnapshot;
@@ -141,5 +167,160 @@ describe("selection enhancement persistence", () => {
     expect(context).toContain("preserve_source_ink: required");
     expect(context).toContain(selection.checksum.value);
     expect(context).not.toContain(selection.svg);
+  });
+
+  it("records an explicit local tool and exact board targets without serializing the board", async () => {
+    const selection = await source();
+    const context = buildSelectionEnhancementTurnContext({
+      sessionId: "session-1",
+      turnId: "turn-selection-2",
+      mediaPath: "uploads/selection-context.png",
+      source: selection,
+      contentKind: "math",
+      toolId: "generate-plot",
+      boardContext: {
+        boardId: "board-1",
+        boardRevision: 8,
+        targets: [{
+          target_id: "node-1:curve:sin",
+          node_id: "node-1",
+          element_id: "sin",
+          kind: "plot-curve",
+          label: "y = sin x",
+          value: { expression: "sin(x)" },
+          world_bounds: { x: 0, y: 0, width: 100, height: 60 },
+          overlap: 0.9,
+          distance: 0,
+          z_index: 2,
+        }],
+      },
+    });
+
+    expect(context).toContain("selection_tool_id: generate-plot");
+    expect(context).toContain("board_id: board-1");
+    expect(context).toContain("node-1:curve:sin");
+    expect(context).toContain('\\"expression\\":\\"sin(x)\\"');
+    expect(context).toContain('"overlap":0.9');
+    expect(context).not.toContain(selection.svg);
+    expect(context).toContain("world_bounds");
+  });
+
+  it("accepts a v0.2 source-linked artifact and invalidates it when its exact board target disappears", () => {
+    const artifact = validateSelectionEnhancementArtifact({
+      profile: "octos.selection-enhancement",
+      version: "0.2",
+      turn_id: "turn-2",
+      created_at: "2026-08-14T10:00:01.000Z",
+      source: {
+        source_id: "source-1",
+        document_id: "ink-1",
+        document_version: 2,
+        bounds: { x: 20, y: 30, width: 100, height: 60 },
+        checksum: { algorithm: "sha-256", value: "a".repeat(64) },
+      },
+      board: {
+        board_id: "board-1",
+        revision: 8,
+        targets: [{
+          target_id: "node-1:fragment:formula",
+          node_id: "node-1",
+          element_id: "node-1:fragment:formula",
+          kind: "math-fragment",
+          label: "x²+y²=k",
+          value: { latex: "x^2+y^2=k" },
+          world_bounds: { x: 100, y: 120, width: 160, height: 60 },
+          overlap: 0.82,
+          distance: 0,
+          z_index: 3,
+        }],
+      },
+      tool_id: "explain",
+      interpretation: {
+        kind: "math",
+        content: "x²+y²=k",
+        confidence: "high",
+      },
+      response: {
+        kind: "explanation",
+        title: "截线为什么是圆",
+        text: "固定 k 后，半径为根号 k。",
+      },
+    });
+    const matchingBoard = {
+      board_id: "board-1",
+      revision: 8,
+      nodes: {
+        "node-1": {
+          id: "node-1",
+          kind: "math",
+          content: { fragments: [{ id: "node-1:fragment:formula", latex: "x^2+y^2=k" }] },
+        },
+      },
+    };
+
+    expect(selectionArtifactTargetsExist(artifact, matchingBoard as never)).toBe(true);
+    expect(selectionArtifactTargetsExist(artifact, {
+      ...matchingBoard,
+      revision: 9,
+    } as never)).toBe(false);
+    expect(selectionBoardContextTargetsExist({
+      boardId: "board-1",
+      boardRevision: 8,
+      targets: artifact.board!.targets as never,
+    }, matchingBoard as never)).toBe(true);
+    expect(selectionBoardContextTargetsExist({
+      boardId: "board-1",
+      boardRevision: 7,
+      targets: artifact.board!.targets as never,
+    }, matchingBoard as never)).toBe(false);
+    expect(selectionArtifactTargetsExist(artifact, {
+      ...matchingBoard,
+      nodes: { "node-1": { ...matchingBoard.nodes["node-1"], content: { fragments: [] } } },
+    } as never)).toBe(false);
+    expect(() => validateSelectionEnhancementArtifact({
+      ...artifact,
+      tool_id: "model-invented-tool",
+    })).toThrow(/来源或说明/);
+
+    const tableArtifact = validateSelectionEnhancementArtifact({
+      ...artifact,
+      board: {
+        board_id: "board-1",
+        revision: 9,
+        targets: [{
+          target_id: "table-1:table:row:0:column:1",
+          node_id: "table-1",
+          element_id: "table-1:table:row:0:column:1",
+          kind: "table-cell",
+          label: "第二列",
+          value: "42",
+          world_bounds: { x: 40, y: 50, width: 80, height: 32 },
+          overlap: 1,
+          distance: 0,
+          z_index: 2,
+        }],
+      },
+    });
+    const tableBoard = {
+      board_id: "board-1",
+      revision: 9,
+      nodes: {
+        "table-1": {
+          id: "table-1",
+          kind: "table",
+          content: { columns: ["a", "b"], rows: [[1, 42]] },
+        },
+      },
+    };
+    expect(selectionArtifactTargetsExist(tableArtifact, tableBoard as never)).toBe(true);
+    expect(selectionArtifactTargetsExist(tableArtifact, {
+      ...tableBoard,
+      nodes: {
+        "table-1": {
+          ...tableBoard.nodes["table-1"],
+          content: { columns: ["a"], rows: [[1]] },
+        },
+      },
+    } as never)).toBe(false);
   });
 });

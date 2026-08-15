@@ -66,13 +66,19 @@ import {
   mergeSelectionEnhancementArtifacts,
   saveSelectionEnhancementState,
   selectionArtifactMatchesSource,
-  selectionSnapshotToPngFile,
+  selectionBoardContextTargetsExist,
+  type SelectionBoardContext,
   type SelectionContentKind,
   type SelectionEnhancementArtifact,
   type SelectionEnhancementState,
 } from "./selection-enhancements";
+import type { SelectionToolId } from "./selection-tools";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
+import {
+  buildComposerBoardReferenceContext,
+  type ComposerBoardReference,
+} from "./composer-board-references";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -180,9 +186,12 @@ export function LearningWorkspace({
   const pendingVoiceSelectionRef = useRef<{
     snapshot: InkSelectionSnapshot;
     contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
     file: File;
     claimed: boolean;
   } | null>(null);
+  const [composerBoardReferences, setComposerBoardReferences] =
+    useState<ComposerBoardReference[]>([]);
   const visibleSelectionEnhancements = useMemo(() => {
     const hidden = new Set(selectionState?.hidden_enhancement_turn_ids ?? []);
     return selectionArtifacts.flatMap((artifact) => {
@@ -309,6 +318,8 @@ export function LearningWorkspace({
             boardSummary: ollLesson
               ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
               : undefined,
+            boardContext: pending.boardContext,
+            toolId: "custom-question",
             }),
         ].filter(Boolean).join("\n");
         pendingVoiceSelectionRef.current = null;
@@ -793,18 +804,23 @@ export function LearningWorkspace({
       snapshot,
       question,
       contentKind,
+      toolId,
+      boardContext,
+      contextImage,
     }: {
       snapshot: InkSelectionSnapshot;
       question: string;
       contentKind: SelectionContentKind;
+      toolId: SelectionToolId;
+      boardContext: SelectionBoardContext;
+      contextImage: File;
     }) => {
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
       try {
         await rememberSelectionSource(snapshot);
-        const file = await selectionSnapshotToPngFile(snapshot);
-        const paths = await uploadFiles([file], "upload");
+        const paths = await uploadFiles([contextImage], "upload");
         const mediaPath = paths[0];
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
         const turnId = crypto.randomUUID();
@@ -820,6 +836,8 @@ export function LearningWorkspace({
           boardSummary: ollLesson
             ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
             : undefined,
+          boardContext,
+          toolId,
         });
         sendMessage({
           sessionId,
@@ -855,16 +873,20 @@ export function LearningWorkspace({
     async ({
       snapshot,
       contentKind,
+      boardContext,
+      contextImage,
     }: {
       snapshot: InkSelectionSnapshot;
       contentKind: SelectionContentKind;
+      boardContext: SelectionBoardContext;
+      contextImage: File;
     }) => {
       await rememberSelectionSource(snapshot);
-      const file = await selectionSnapshotToPngFile(snapshot);
       pendingVoiceSelectionRef.current = {
         snapshot,
         contentKind,
-        file,
+        boardContext,
+        file: contextImage,
         claimed: false,
       };
       if (conv.state === "idle" || conv.state === "error") {
@@ -873,6 +895,36 @@ export function LearningWorkspace({
     },
     [conv, rememberSelectionSource],
   );
+
+  const referenceSelectionForLesson = useCallback(async ({
+    snapshot,
+    contentKind,
+    boardContext,
+    contextImage,
+    label,
+  }: {
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
+    contextImage: File;
+    label: string;
+  }) => {
+    await rememberSelectionSource(snapshot);
+    const reference: ComposerBoardReference = {
+      id: `board-selection:${crypto.randomUUID()}`,
+      label,
+      snapshot,
+      contentKind,
+      boardContext,
+      contextImage,
+    };
+    setComposerBoardReferences((current) => [
+      ...current.filter((candidate) =>
+        candidate.snapshot.source_id !== snapshot.source_id,
+      ),
+      reference,
+    ].slice(-4));
+  }, [rememberSelectionSource]);
 
   const deleteSelectionEnhancement = useCallback((turnId: string) => {
     setSelectionState((current) => {
@@ -889,24 +941,68 @@ export function LearningWorkspace({
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
-      onLearnerInput?.(text);
       const turnId = crypto.randomUUID();
-      sendMessage({
-        sessionId,
-        text: buildTurnText(turnId, [], text),
-        media: [],
-        clientMessageId: turnId,
-        onComplete: () => {
-          setTextTurnPending(false);
-          handleTurnComplete(turnId);
-        },
-        onError: (error) => {
-          setTextTurnPending(false);
-          setSendError(error.message || "发送失败");
-        },
-      });
+      const references = composerBoardReferences;
+      try {
+        if (references.some((reference) =>
+          !selectionBoardContextTargetsExist(
+            reference.boardContext,
+            ollLesson?.board ?? null,
+          ),
+        )) {
+          throw new Error("引用的白板内容已经变化，请重新框选后再发送");
+        }
+        onLearnerInput?.(text);
+        const mediaPaths = references.length > 0
+          ? await uploadFiles(
+              references.map((reference) => reference.contextImage),
+              "upload",
+            )
+          : [];
+        if (mediaPaths.length !== references.length) {
+          throw new Error("白板引用上传不完整");
+        }
+        const referenceContext = buildComposerBoardReferenceContext(
+          references.map((reference, index) => ({
+            reference,
+            mediaPath: mediaPaths[index]!,
+          })),
+        );
+        sendMessage({
+          sessionId,
+          text: [buildTurnText(turnId, mediaPaths, text), referenceContext]
+            .filter(Boolean)
+            .join("\n"),
+          media: mediaPaths,
+          clientMessageId: turnId,
+          onComplete: () => {
+            setTextTurnPending(false);
+            setComposerBoardReferences((current) => current.filter(
+              (candidate) => !references.some(
+                (reference) => reference.id === candidate.id,
+              ),
+            ));
+            handleTurnComplete(turnId);
+          },
+          onError: (error) => {
+            setTextTurnPending(false);
+            setSendError(error.message || "发送失败");
+          },
+        });
+      } catch (cause) {
+        setTextTurnPending(false);
+        setSendError(cause instanceof Error ? cause.message : "发送失败");
+        throw cause;
+      }
     },
-    [buildTurnText, handleTurnComplete, onLearnerInput, sessionId],
+    [
+      buildTurnText,
+      composerBoardReferences,
+      handleTurnComplete,
+      ollLesson,
+      onLearnerInput,
+      sessionId,
+    ],
   );
 
   const sendImage = useCallback(
@@ -1149,6 +1245,7 @@ export function LearningWorkspace({
             onVoiceInkSelection={voiceEnabled
               ? startSelectionVoiceQuestion
               : undefined}
+            onReferenceInkSelection={referenceSelectionForLesson}
             onDeleteSelectionEnhancement={deleteSelectionEnhancement}
           />
         ) : (
@@ -1229,6 +1326,10 @@ export function LearningWorkspace({
         onToggleCamera={conv.toggleCamera}
         onSendText={sendText}
         onSendImage={sendImage}
+        references={composerBoardReferences.map(({ id, label }) => ({ id, label }))}
+        onRemoveReference={(id) => setComposerBoardReferences((current) =>
+          current.filter((reference) => reference.id !== id),
+        )}
       />
 
       {(sendError ||
