@@ -160,6 +160,7 @@ export function OllLessonBoard({
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const renderedFocusRef = useRef<string[]>([]);
   const renderedCompositionRef = useRef("");
+  const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
@@ -486,13 +487,16 @@ export function OllLessonBoard({
       actionOperation === "board.emphasize" ||
       actionOperation === "board.group" ||
       actionOperation === "board.connect";
+    const compositionOperationChanged =
+      compositionContentChanged &&
+      runtime.cursor !== renderedCompositionCursorRef.current;
     view?.setScene3dViews(runtime.scene3dViews);
     view?.render(runtime.board, runtime.currentOperation);
     if (runtime.attentionTargets.length > 0) {
       view?.focusTargets(runtime.attentionTargets);
     } else if (
       runtime.compositionTargets.length > 0 &&
-      (compositionChanged || compositionContentChanged)
+      (compositionChanged || compositionOperationChanged)
     ) {
       // A Beat's declared focus describes the visual composition needed for
       // its narration. Apply it while the Beat is unfolding so a newly written
@@ -507,6 +511,7 @@ export function OllLessonBoard({
     }
     renderedFocusRef.current = [...boardFocus];
     renderedCompositionRef.current = compositionKey;
+    renderedCompositionCursorRef.current = runtime.cursor;
   }, [
     runtime.attentionTargets,
     runtime.board,
