@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./fixtures/unit-circle-sine.canonical.jsonl?raw";
@@ -160,6 +160,33 @@ function StudentTaskRuntimeProbe({ startAtEnd = true }: { startAtEnd?: boolean }
     storageKey: "oll-student-task-runtime-test",
     startAtEnd,
   });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
+const incrementalStudentTaskLessonSource = unitCircleSineLessonSource
+  .split(/\r?\n/)
+  .filter(Boolean)
+  .map((line) => JSON.parse(line) as CanonicalEvent)
+  .filter((event) => event.event !== "lesson.close")
+  .map((event) => JSON.stringify(event))
+  .join("\n");
+
+function IncrementalStudentTaskRuntimeProbe({ settled }: { settled: boolean }) {
+  const runtime = useOllLessonRuntime({
+    source: incrementalStudentTaskLessonSource,
+    storageKey: "oll-incremental-student-task-runtime-test",
+    incremental: true,
+    startAtEnd: true,
+  });
+  const setDeliverySettled = runtime?.setDeliverySettled;
+  useEffect(() => {
+    setDeliverySettled?.(settled);
+  }, [setDeliverySettled, settled]);
   if (!runtime) return null;
   return (
     <div style={{ width: 1200, height: 800 }}>
@@ -807,6 +834,22 @@ describe("OLL lesson Runtime integration", () => {
     render(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
+  });
+
+  it("opens an after-lesson task when the current incremental delivery settles", async () => {
+    const view = render(<IncrementalStudentTaskRuntimeProbe settled={false} />);
+    expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+
+    view.rerender(<IncrementalStudentTaskRuntimeProbe settled />);
+    expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+
+    const slider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+    await waitFor(() => {
+      expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
+    });
   });
 
   it("groups the outline and seeks backwards to a selected Step", () => {

@@ -91,6 +91,7 @@ export interface OllLessonRuntimeController {
     view: Scene3dViewState,
     event: Scene3dViewInputEvent,
   ): string | StudentScene3dViewOperation | void;
+  setDeliverySettled(settled: boolean): void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -246,6 +247,10 @@ export function useOllLessonRuntime({
   ): string | StudentScene3dViewOperation | void => {
     return session?.handleStudentScene3dInput(nodeId, view, event);
   }, [session]);
+  const setDeliverySettled = useCallback(
+    (settled: boolean) => session?.setDeliverySettled(settled),
+    [session],
+  );
   const appendEvents = useCallback(
     (nextEvents: CanonicalEvent[]) => {
       if (!session) throw new Error("OLL Runtime 尚未初始化");
@@ -344,6 +349,7 @@ export function useOllLessonRuntime({
     retryStudentTask,
     recordStudentInkSelection,
     handleStudentScene3dInput,
+    setDeliverySettled,
     appendEvents,
   };
 }

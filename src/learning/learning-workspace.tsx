@@ -276,6 +276,10 @@ export function LearningWorkspace({
     ollLesson &&
     isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents),
   );
+  const setOllDeliverySettled = ollLesson?.setDeliverySettled;
+  useEffect(() => {
+    setOllDeliverySettled?.(lessonDeliverySettled);
+  }, [lessonDeliverySettled, setOllDeliverySettled]);
   const lessonOwnsNarration =
     playbackMode === "live" &&
     ollLesson !== null &&
