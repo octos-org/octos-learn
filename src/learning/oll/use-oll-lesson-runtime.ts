@@ -58,6 +58,7 @@ export interface OllLessonRuntimeController {
   playing: boolean;
   completed: boolean;
   waiting: boolean;
+  deliverySettled: boolean;
   board: SemanticBoardState | null;
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
@@ -327,6 +328,7 @@ export function useOllLessonRuntime({
     playing: session.isPlaying,
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
+    deliverySettled: session.isDeliverySettled,
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,

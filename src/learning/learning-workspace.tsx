@@ -272,14 +272,20 @@ export function LearningWorkspace({
       ollGenerationSessionId === sessionId
     ),
   );
-  const lessonDeliverySettled = Boolean(
+  const deliveryReachedCurrentEnd = Boolean(
     ollLesson &&
     isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents),
   );
+  const lessonDeliverySettled = Boolean(ollLesson?.deliverySettled);
   const setOllDeliverySettled = ollLesson?.setDeliverySettled;
   useEffect(() => {
-    setOllDeliverySettled?.(lessonDeliverySettled);
-  }, [lessonDeliverySettled, setOllDeliverySettled]);
+    if (hasUndeliveredOllEvents) setOllDeliverySettled?.(false);
+    else if (deliveryReachedCurrentEnd) setOllDeliverySettled?.(true);
+  }, [
+    deliveryReachedCurrentEnd,
+    hasUndeliveredOllEvents,
+    setOllDeliverySettled,
+  ]);
   const lessonOwnsNarration =
     playbackMode === "live" &&
     ollLesson !== null &&

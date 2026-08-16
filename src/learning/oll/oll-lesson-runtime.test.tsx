@@ -24,6 +24,7 @@ import {
   type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
+import { isLessonDeliverySettled } from "./lesson-delivery";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
 
 const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
@@ -176,7 +177,7 @@ const incrementalStudentTaskLessonSource = unitCircleSineLessonSource
   .map((event) => JSON.stringify(event))
   .join("\n");
 
-function IncrementalStudentTaskRuntimeProbe({ settled }: { settled: boolean }) {
+function IncrementalStudentTaskRuntimeProbe() {
   const runtime = useOllLessonRuntime({
     source: incrementalStudentTaskLessonSource,
     storageKey: "oll-incremental-student-task-runtime-test",
@@ -184,9 +185,12 @@ function IncrementalStudentTaskRuntimeProbe({ settled }: { settled: boolean }) {
     startAtEnd: true,
   });
   const setDeliverySettled = runtime?.setDeliverySettled;
+  const deliveryReachedCurrentEnd = Boolean(
+    runtime && isLessonDeliverySettled(runtime, false),
+  );
   useEffect(() => {
-    setDeliverySettled?.(settled);
-  }, [setDeliverySettled, settled]);
+    if (deliveryReachedCurrentEnd) setDeliverySettled?.(true);
+  }, [deliveryReachedCurrentEnd, setDeliverySettled]);
   if (!runtime) return null;
   return (
     <div style={{ width: 1200, height: 800 }}>
@@ -837,16 +841,25 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("opens an after-lesson task when the current incremental delivery settles", async () => {
-    const view = render(<IncrementalStudentTaskRuntimeProbe settled={false} />);
-    expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
-
-    view.rerender(<IncrementalStudentTaskRuntimeProbe settled />);
+    render(<IncrementalStudentTaskRuntimeProbe />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
 
     const slider = screen.getByRole("slider", { name: "旋转角 θ" });
     fireEvent.pointerDown(slider, { pointerType: "mouse" });
-    fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.change(slider, { target: { value: String(Math.PI / 4) } });
+    expect(screen.getByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
     fireEvent.pointerUp(slider, { pointerType: "mouse" });
+    await waitFor(() => {
+      expect(screen.getByText("已尝试 1 次")).toBeTruthy();
+    });
+
+    const retrySlider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(retrySlider, { pointerType: "mouse" });
+    fireEvent.change(retrySlider, { target: { value: String(Math.PI / 3) } });
+    await Promise.resolve();
+    expect(screen.getByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    fireEvent.change(retrySlider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(retrySlider, { pointerType: "mouse" });
     await waitFor(() => {
       expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     });
