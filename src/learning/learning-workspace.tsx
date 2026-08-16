@@ -37,8 +37,15 @@ import {
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
-import { OllLessonBoard } from "./oll/oll-lesson-runtime";
+import {
+  OllLessonBoard,
+  type DegradedVisualRetryRequest,
+} from "./oll/oll-lesson-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
+import {
+  buildDegradedVisualRetryContext,
+  buildDegradedVisualRetryPrompt,
+} from "./degraded-visual-retry";
 import { isLessonDeliverySettled } from "./oll/lesson-delivery";
 import { useOllNarrationTts } from "./oll/use-oll-narration-tts";
 import {
@@ -947,7 +954,7 @@ export function LearningWorkspace({
   }, []);
 
   const sendText = useCallback(
-    async (text: string) => {
+    async (text: string, applicationContext?: string) => {
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
@@ -980,7 +987,11 @@ export function LearningWorkspace({
         );
         sendMessage({
           sessionId,
-          text: [buildTurnText(turnId, mediaPaths, text), referenceContext]
+          text: [
+            buildTurnText(turnId, mediaPaths, text),
+            applicationContext,
+            referenceContext,
+          ]
             .filter(Boolean)
             .join("\n"),
           media: mediaPaths,
@@ -1050,6 +1061,15 @@ export function LearningWorkspace({
     },
     [buildTurnText, handleTurnComplete, onLearnerInput, sessionId],
   );
+
+  const retryDegradedVisual = useCallback(async (
+    degraded: DegradedVisualRetryRequest,
+  ) => {
+    await sendText(
+      buildDegradedVisualRetryPrompt(degraded),
+      buildDegradedVisualRetryContext(degraded),
+    );
+  }, [sendText]);
 
   const handleTeacherClick = () => {
     unlockAudio();
@@ -1257,6 +1277,7 @@ export function LearningWorkspace({
               : undefined}
             onReferenceInkSelection={referenceSelectionForLesson}
             onDeleteSelectionEnhancement={deleteSelectionEnhancement}
+            onRetryDegradedVisual={retryDegradedVisual}
           />
         ) : (
           <InfiniteBoard

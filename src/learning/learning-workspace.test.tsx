@@ -5,6 +5,10 @@ import type {
   VoiceConversationOptions,
 } from "@/home/voice/use-voice-conversation";
 import type { Thread } from "@/store/thread-store";
+import {
+  buildDegradedVisualRetryContext,
+  buildDegradedVisualRetryPrompt,
+} from "./degraded-visual-retry";
 import { LearningWorkspace } from "./learning-workspace";
 
 const conversationMock = vi.hoisted(() => ({
@@ -95,6 +99,27 @@ vi.mock("@/home/voice/use-voice-conversation", () => ({
 }));
 
 describe("LearningWorkspace", () => {
+  it("builds a component-only retry request that preserves the existing board", () => {
+    const degraded = {
+      boardId: "learning-board-session-1",
+      boardRevision: 12,
+      nodeId: "lesson:node:paraboloid-scene",
+      visualId: "paraboloid-scene",
+      surface: "scene3d",
+      purpose: "展示可旋转的抛物面与水平截面",
+      title: "这个互动画面暂时没有生成成功",
+    };
+    expect(buildDegradedVisualRetryPrompt(degraded)).toBe(
+      "请重新生成没有成功展示的三维场景“展示可旋转的抛物面与水平截面”。只补充这个画面，不要重做整堂课。",
+    );
+    const context = buildDegradedVisualRetryContext(degraded);
+    expect(context).toContain("request_source: explicit_board_follow_up");
+    expect(context).toContain("board_id: learning-board-session-1");
+    expect(context).toContain("board_revision: 12");
+    expect(context).toContain('"target_id":"lesson:node:paraboloid-scene"');
+    expect(context).toContain('"as":"failed-visual"');
+  });
+
   beforeEach(() => {
     cleanup();
     conversationMock.turns = [];

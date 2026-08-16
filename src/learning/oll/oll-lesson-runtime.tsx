@@ -75,6 +75,52 @@ interface PreparedSelectionContext {
   boardRevision: number;
 }
 
+export interface DegradedVisualRetryRequest {
+  boardId: string;
+  boardRevision: number;
+  nodeId: string;
+  visualId: string;
+  surface: string;
+  purpose: string;
+  title: string;
+}
+
+type DegradedVisualStatus = DegradedVisualRetryRequest;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function degradedVisualStatuses(
+  board: OllLessonRuntimeController["board"],
+): DegradedVisualStatus[] {
+  if (!board) return [];
+  return Object.values(board.nodes).flatMap((node) => {
+    if (node.role !== "system-status" || !isRecord(node.content.degradation)) {
+      return [];
+    }
+    const degradation = node.content.degradation;
+    if (degradation.kind !== "visual_component"
+      || degradation.retryable !== true
+      || typeof degradation.visual_id !== "string"
+      || typeof degradation.surface !== "string"
+      || typeof degradation.purpose !== "string") {
+      return [];
+    }
+    return [{
+      boardId: board.board_id,
+      boardRevision: board.revision,
+      nodeId: node.id,
+      visualId: degradation.visual_id,
+      surface: degradation.surface,
+      purpose: degradation.purpose,
+      title: typeof node.content.title === "string"
+        ? node.content.title
+        : "互动画面暂时不可用",
+    }];
+  }).sort((left, right) => left.nodeId.localeCompare(right.nodeId));
+}
+
 function visibleBoardTargetCandidates(
   candidates: BoardTargetCandidate[],
 ): BoardTargetCandidate[] {
@@ -185,6 +231,7 @@ export function OllLessonBoard({
   onVoiceInkSelection,
   onReferenceInkSelection,
   onDeleteSelectionEnhancement,
+  onRetryDegradedVisual,
 }: {
   runtime: OllLessonRuntimeController;
   inkSessionId?: string;
@@ -212,6 +259,9 @@ export function OllLessonBoard({
     label: string;
   }) => Promise<void> | void;
   onDeleteSelectionEnhancement?: (turnId: string) => void;
+  onRetryDegradedVisual?: (
+    request: DegradedVisualRetryRequest,
+  ) => Promise<void> | void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef(runtime);
@@ -243,8 +293,36 @@ export function OllLessonBoard({
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
     useState<string[]>([]);
+  const [retryingDegradedNodeId, setRetryingDegradedNodeId] =
+    useState<string | null>(null);
+  const [requestedDegradedNodeIds, setRequestedDegradedNodeIds] =
+    useState<Set<string>>(() => new Set());
   const variableControls = variableControlModels(runtime.board);
   const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
+  const degradedVisuals = degradedVisualStatuses(runtime.board);
+
+  const retryDegradedVisual = useCallback(async (
+    degraded: DegradedVisualStatus,
+  ) => {
+    if (!onRetryDegradedVisual || retryingDegradedNodeId) return;
+    setRetryingDegradedNodeId(degraded.nodeId);
+    try {
+      await onRetryDegradedVisual({
+        boardId: degraded.boardId,
+        boardRevision: degraded.boardRevision,
+        nodeId: degraded.nodeId,
+        visualId: degraded.visualId,
+        surface: degraded.surface,
+        purpose: degraded.purpose,
+        title: degraded.title,
+      });
+      setRequestedDegradedNodeIds((current) => new Set(current).add(degraded.nodeId));
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : "暂时无法重试这个画面");
+    } finally {
+      setRetryingDegradedNodeId(null);
+    }
+  }, [onRetryDegradedVisual, retryingDegradedNodeId]);
 
   const requestTaskHint = useCallback((taskId: string) => {
     try {
@@ -745,6 +823,32 @@ export function OllLessonBoard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
+      {degradedVisuals.length > 0 ? (
+        <aside className="learning-degraded-visuals" aria-label="未完成的互动画面">
+          {degradedVisuals.map((degraded) => {
+            const requested = requestedDegradedNodeIds.has(degraded.nodeId);
+            const retrying = retryingDegradedNodeId === degraded.nodeId;
+            return (
+              <div key={degraded.nodeId} className="learning-degraded-visual">
+                <div>
+                  <strong>{degraded.title}</strong>
+                  <span>{degraded.purpose}</span>
+                </div>
+                {onRetryDegradedVisual ? (
+                  <button
+                    type="button"
+                    onClick={() => void retryDegradedVisual(degraded)}
+                    disabled={retrying || requested}
+                  >
+                    <RotateCcw size={14} />
+                    {retrying ? "正在重试" : requested ? "已发起重试" : "只重试这个画面"}
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </aside>
+      ) : null}
       {inkSessionId && inkAvailable ? (
         <div className="learning-ink-toolbar" aria-label="白板书写工具">
           <button

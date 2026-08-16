@@ -19,7 +19,7 @@ export interface LearningTurnContext {
 }
 
 const LEARNING_CONTEXT_BLOCK =
-  /\[\[LEARNING_(?:SESSION|CONTEXT)\]\][\s\S]*?\[\[\/LEARNING_(?:SESSION|CONTEXT)\]\]\s*/g;
+  /\[\[LEARNING_(?:SESSION|CONTEXT|DEGRADED_VISUAL_RETRY)\]\][\s\S]*?\[\[\/LEARNING_(?:SESSION|CONTEXT|DEGRADED_VISUAL_RETRY)\]\]\s*/g;
 
 function line(name: string, value: string | number | boolean): string {
   return `${name}: ${String(value).replace(/[\r\n]+/g, " ")}`;

@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./fixtures/unit-circle-sine.canonical.jsonl?raw";
@@ -338,6 +338,77 @@ const scene3dLessonSource = normalizeAuthoringLesson(scene3dLesson, {
   baseRevision: 0,
 }).map((event) => JSON.stringify(event)).join("\n");
 
+const degradedVisualLesson: AuthoringLesson = {
+  dsl: "octos.lesson",
+  version: "0.1",
+  profile: "authoring",
+  lesson: {
+    mode: "explain",
+    language: "zh-CN",
+    title: "局部降级课程",
+    goals: ["继续可播放的课程"],
+  },
+  steps: [{
+    key: "degraded-visual",
+    purpose: "一个画面不可用时继续课程",
+    beats: [{
+      key: "show-status",
+      say: "这个画面暂时不可用，我们继续后面的内容。",
+      actions: [{
+        do: "write",
+        as: "paraboloid-scene",
+        kind: "note",
+        role: "system-status",
+        content: {
+          title: "这个互动画面暂时没有生成成功",
+          items: ["课程其余部分可以继续。"],
+          degradation: {
+            kind: "visual_component",
+            visual_id: "paraboloid-scene",
+            surface: "scene3d",
+            purpose: "展示可旋转的抛物面与水平截面",
+            retryable: true,
+          },
+        },
+        place: { relation: "new_region" },
+      }, {
+        do: "focus",
+        when: "after_speech",
+        targets: ["paraboloid-scene"],
+        intent: "current_step",
+      }],
+    }],
+  }],
+  close: {
+    summary: "其余课程仍然可用。",
+    focus: ["paraboloid-scene"],
+  },
+};
+
+const degradedVisualLessonSource = normalizeAuthoringLesson(degradedVisualLesson, {
+  lessonId: "degraded-visual-test",
+  boardId: "degraded-visual-board",
+  baseRevision: 0,
+}).map((event) => JSON.stringify(event)).join("\n");
+
+function DegradedVisualRuntimeProbe({
+  onRetry,
+}: {
+  onRetry: NonNullable<ComponentProps<typeof OllLessonBoard>["onRetryDegradedVisual"]>;
+}) {
+  const runtime = useOllLessonRuntime({
+    source: degradedVisualLessonSource,
+    storageKey: "oll-degraded-visual-runtime-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={runtime} onRetryDegradedVisual={onRetry} />
+    </div>
+  );
+}
+
 function Scene3dRuntimeProbe() {
   const runtime = useOllLessonRuntime({
     source: scene3dLessonSource,
@@ -447,6 +518,30 @@ describe("OLL lesson Runtime integration", () => {
     mountInkRuntimeMock.mockReset();
     selectionContextToPngFileMock.mockClear();
     vi.restoreAllMocks();
+  });
+
+  it("keeps the lesson visible and retries only a degraded visual component", async () => {
+    const onRetry = vi.fn(async () => undefined);
+    render(<DegradedVisualRuntimeProbe onRetry={onRetry} />);
+
+    expect(await screen.findAllByText("这个互动画面暂时没有生成成功")).toHaveLength(2);
+    expect(screen.getByText("展示可旋转的抛物面与水平截面")).toBeTruthy();
+    const retry = screen.getByRole("button", { name: "只重试这个画面" });
+    fireEvent.click(retry);
+
+    await waitFor(() => expect(onRetry).toHaveBeenCalledWith({
+      boardId: "degraded-visual-board",
+      boardRevision: 1,
+      nodeId: "degraded-visual-test:node:paraboloid-scene",
+      visualId: "paraboloid-scene",
+      surface: "scene3d",
+      purpose: "展示可旋转的抛物面与水平截面",
+      title: "这个互动画面暂时没有生成成功",
+    }));
+    expect(
+      (await screen.findByRole("button", { name: "已发起重试" })).hasAttribute("disabled"),
+    ).toBe(true);
+    expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
   });
 
   it("mounts writing as a persistent whiteboard capability", async () => {
