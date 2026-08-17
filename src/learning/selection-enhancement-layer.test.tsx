@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SelectionEnhancementLayer } from "./selection-enhancement-layer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
+import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 
 vi.mock("octos-lesson-language/web-runtime", () => ({
   plotPathData: vi.fn(() => ""),
@@ -143,6 +144,82 @@ describe("SelectionEnhancementLayer", () => {
       name: "调整辅助卡片大小，当前 150%",
     }));
     expect(card?.dataset.cardScale).toBe("1.00");
+  });
+
+  it("places repeated results after the real width of the previous card", () => {
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[
+          { ...artifact, turn_id: "turn-first", created_at: "2026-08-15T10:00:00.000Z" },
+          { ...artifact, turn_id: "turn-second", created_at: "2026-08-15T10:01:00.000Z" },
+        ]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+    expect(cards).toHaveLength(2);
+    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
+      Number.parseFloat(cards[0]!.style.left)
+        + Number.parseFloat(cards[0]!.style.width) + 24,
+    );
+
+    const firstResize = screen.getAllByRole("button", {
+      name: "调整辅助卡片大小，当前 100%",
+    })[0]!;
+    dispatchPointerEvent(firstResize, "pointerdown", {
+      pointerId: 8,
+      clientX: 100,
+      clientY: 100,
+    });
+    dispatchPointerEvent(firstResize, "pointermove", {
+      pointerId: 8,
+      clientX: 210,
+      clientY: 210,
+    });
+
+    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
+      Number.parseFloat(cards[0]!.style.left)
+        + Number.parseFloat(cards[0]!.style.width) + 24,
+    );
+  });
+
+  it("places a selection question before its matching result", () => {
+    const question: WhiteboardQuestionRecord = {
+      id: artifact.turn_id,
+      sessionId: "learn-question-layout",
+      text: "请解释我圈出的这一部分。",
+      origin: "selection",
+      createdAt: "2026-08-15T09:59:00.000Z",
+      status: "answered",
+      source: {
+        sourceId: artifact.source.source_id,
+        bounds: artifact.source.bounds,
+      },
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        questions={[question]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    const questionCard = container.querySelector<HTMLElement>(
+      ".learning-whiteboard-question-card",
+    );
+    const resultCard = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    );
+
+    expect(screen.getByText("我的问题")).toBeTruthy();
+    expect(Number.parseFloat(resultCard?.style.left ?? "0")).toBeGreaterThanOrEqual(
+      Number.parseFloat(questionCard?.style.left ?? "0") + 270 + 24,
+    );
   });
 
   it("shows unsupported content as a clear result instead of an empty card", () => {

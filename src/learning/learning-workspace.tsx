@@ -88,6 +88,12 @@ import {
   buildComposerBoardReferenceContext,
   type ComposerBoardReference,
 } from "./composer-board-references";
+import {
+  loadWhiteboardQuestions,
+  saveWhiteboardQuestions,
+  type WhiteboardQuestionRecord,
+  type WhiteboardQuestionStatus,
+} from "./whiteboard-questions";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -271,6 +277,56 @@ export function LearningWorkspace({
   } | null>(null);
   const [composerBoardReferences, setComposerBoardReferences] =
     useState<ComposerBoardReference[]>([]);
+  const [whiteboardQuestions, setWhiteboardQuestions] = useState<
+    WhiteboardQuestionRecord[]
+  >(() => loadWhiteboardQuestions(sessionId));
+  useEffect(() => {
+    saveWhiteboardQuestions(sessionId, whiteboardQuestions);
+  }, [sessionId, whiteboardQuestions]);
+  const addWhiteboardQuestion = useCallback((
+    question: WhiteboardQuestionRecord,
+  ) => {
+    setWhiteboardQuestions((current) => {
+      const next = [
+        ...current.filter((candidate) => candidate.id !== question.id),
+        question,
+      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+      return next;
+    });
+  }, []);
+  const updateWhiteboardQuestion = useCallback((
+    questionId: string,
+    patch: Partial<Pick<WhiteboardQuestionRecord, "position" | "status">>,
+  ) => {
+    setWhiteboardQuestions((current) => {
+      let changed = false;
+      const next = current.map((question) => {
+        if (question.id !== questionId) return question;
+        const updated = { ...question, ...patch };
+        if (
+          updated.status === question.status
+          && updated.position?.x === question.position?.x
+          && updated.position?.y === question.position?.y
+        ) return question;
+        changed = true;
+        return updated;
+      });
+      if (!changed) return current;
+      return next;
+    });
+  }, []);
+  const setWhiteboardQuestionStatus = useCallback((
+    questionId: string,
+    status: WhiteboardQuestionStatus,
+  ) => updateWhiteboardQuestion(questionId, { status }), [
+    updateWhiteboardQuestion,
+  ]);
+  const placeWhiteboardQuestion = useCallback((
+    questionId: string,
+    position: { x: number; y: number },
+  ) => updateWhiteboardQuestion(questionId, { position }), [
+    updateWhiteboardQuestion,
+  ]);
   const visibleSelectionEnhancements = useMemo(() => {
     const hidden = new Set(selectionState?.hidden_enhancement_turn_ids ?? []);
     return selectionArtifacts.flatMap((artifact) => {
@@ -944,13 +1000,25 @@ export function LearningWorkspace({
       setSendError(null);
       setTextTurnPending(true);
       setSelectionEnhancementPending(true);
+      const turnId = crypto.randomUUID();
+      addWhiteboardQuestion({
+        id: turnId,
+        sessionId,
+        text: question,
+        origin: "selection",
+        createdAt: new Date().toISOString(),
+        status: "pending",
+        source: {
+          sourceId: snapshot.source_id,
+          bounds: { ...snapshot.bounds },
+        },
+      });
+      onLearnerInput?.(question);
       try {
         await rememberSelectionSource(snapshot);
         const paths = await uploadFiles([contextImage], "upload");
         const mediaPath = paths[0];
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
-        const turnId = crypto.randomUUID();
-        onLearnerInput?.(question);
         const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
           turnId,
@@ -990,20 +1058,24 @@ export function LearningWorkspace({
         setPersistedSelectionArtifacts(artifacts);
         setTextTurnPending(false);
         setSelectionEnhancementPending(false);
+        setWhiteboardQuestionStatus(turnId, "answered");
         handleTurnComplete(turnId);
       } catch (cause) {
         setTextTurnPending(false);
         setSelectionEnhancementPending(false);
+        setWhiteboardQuestionStatus(turnId, "failed");
         setSendError(cause instanceof Error ? cause.message : "选区问题发送失败");
         throw cause;
       }
     },
     [
       handleTurnComplete,
+      addWhiteboardQuestion,
       ollLesson,
       onLearnerInput,
       rememberSelectionSource,
       sessionId,
+      setWhiteboardQuestionStatus,
     ],
   );
 
@@ -1116,6 +1188,15 @@ export function LearningWorkspace({
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
       const references = composerBoardReferences;
+      addWhiteboardQuestion({
+        id: turnId,
+        sessionId,
+        text,
+        origin: "composer",
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      });
+      onLearnerInput?.(text);
       try {
         if (references.some((reference) =>
           !selectionBoardContextTargetsExist(
@@ -1125,7 +1206,6 @@ export function LearningWorkspace({
         )) {
           throw new Error("引用的白板内容已经变化，请重新框选后再发送");
         }
-        onLearnerInput?.(text);
         const mediaPaths = references.length > 0
           ? await uploadFiles(
               references.map((reference) => reference.contextImage),
@@ -1159,26 +1239,31 @@ export function LearningWorkspace({
                 (reference) => reference.id === candidate.id,
               ),
             ));
+            setWhiteboardQuestionStatus(turnId, "answered");
             handleTurnComplete(turnId);
           },
           onError: (error) => {
             setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        setWhiteboardQuestionStatus(turnId, "failed");
         setSendError(cause instanceof Error ? cause.message : "发送失败");
         throw cause;
       }
     },
     [
       buildTurnText,
+      addWhiteboardQuestion,
       composerBoardReferences,
       handleTurnComplete,
       ollLesson,
       onLearnerInput,
       sessionId,
+      setWhiteboardQuestionStatus,
     ],
   );
 
@@ -1442,6 +1527,8 @@ export function LearningWorkspace({
           runtime={controlledOllLesson ?? ollLesson}
           inkSessionId={inkSessionId}
           loadingState={whiteboardLoadingState}
+          questions={whiteboardQuestions}
+          onPlaceQuestion={placeWhiteboardQuestion}
           onInkActivity={onWhiteboardActivity}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}

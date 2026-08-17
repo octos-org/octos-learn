@@ -131,6 +131,22 @@ describe("learning session lifecycle", () => {
       JSON.stringify({ session_id: sessionId, sources: [{ source_id: "source-1" }] }),
     );
     expect(hasDurableLocalWhiteboardContent(sessionId)).toBe(true);
+
+    localStorage.removeItem(
+      `learn:selection-enhancements:${sessionId}:v1`,
+    );
+    localStorage.setItem(
+      `octos-learning-questions:v1:${sessionId}`,
+      JSON.stringify([{
+        id: "turn-question",
+        sessionId,
+        text: "为什么会这样？",
+        origin: "composer",
+        createdAt: "2026-08-17T15:00:00.000Z",
+        status: "answered",
+      }]),
+    );
+    expect(hasDurableLocalWhiteboardContent(sessionId)).toBe(true);
     expect(hasDurableLocalWhiteboardContent("learn-902-empty")).toBe(false);
   });
 });

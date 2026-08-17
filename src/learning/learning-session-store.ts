@@ -1,3 +1,5 @@
+import { hasSavedWhiteboardQuestion } from "./whiteboard-questions";
+
 export type LearningSessionStatus =
   | "provisional"
   | "active"
@@ -59,7 +61,8 @@ function hasSavedSelectionSource(
 
 /**
  * A learning session is durable even before it has an OLL lesson when the
- * student has saved ink or created a selection source on its whiteboard.
+ * student has saved ink, created a selection source, or placed a question on
+ * its whiteboard.
  */
 export function hasDurableLocalWhiteboardContent(
   sessionId: string,
@@ -79,7 +82,7 @@ export function hasDurableLocalWhiteboardContent(
   return hasSavedSelectionSource(
     storage.getItem(`${SELECTION_STORAGE_PREFIX}${sessionId}:v1`),
     sessionId,
-  );
+  ) || hasSavedWhiteboardQuestion(sessionId, storage);
 }
 
 function readRecords(): LearningSessionRecord[] {

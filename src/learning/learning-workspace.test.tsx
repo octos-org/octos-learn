@@ -441,6 +441,11 @@ describe("LearningWorkspace", () => {
     expect(await screen.findByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeTruthy();
+    expect(screen.getByText("我的问题")).toBeTruthy();
+    expect(screen.getByText("请解释勾股定理")).toBeTruthy();
+    expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-loading-lesson",
+    )).toContain("请解释勾股定理");
     expect(screen.queryByText(/白板暂未更新/)).toBeNull();
   });
 

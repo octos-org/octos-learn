@@ -40,6 +40,11 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
+import {
+  WhiteboardQuestionCard,
+  WHITEBOARD_QUESTION_CARD_WIDTH,
+} from "../whiteboard-question-card";
+import type { WhiteboardQuestionRecord } from "../whiteboard-questions";
 import type {
   SelectionBoardContext,
   SelectionClassification,
@@ -288,6 +293,8 @@ export function LearningWhiteboard({
   inkMergeSourceSessionId,
   onInkMergeComplete,
   loadingState,
+  questions = [],
+  onPlaceQuestion,
   onInkActivity,
   selectionEnhancements = [],
   selectionSources = [],
@@ -303,6 +310,11 @@ export function LearningWhiteboard({
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: () => void;
   loadingState?: WhiteboardLoadingState | null;
+  questions?: WhiteboardQuestionRecord[];
+  onPlaceQuestion?: (
+    questionId: string,
+    position: { x: number; y: number },
+  ) => void;
   onInkActivity?: () => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   selectionSources?: InkSelectionSnapshot[];
@@ -406,6 +418,17 @@ export function LearningWhiteboard({
     ? availableSelectionTools(selectionClassification.kind)
     : [];
   const loadingStateId = loadingState?.id;
+  const composerQuestions = questions.filter((question) =>
+    question.origin === "composer");
+  const pendingComposerQuestion = [...composerQuestions].reverse().find(
+    (question) => question.status === "pending",
+  );
+  const selectionLoadingQuestion = selectionLoadingSource
+    ? [...questions].reverse().find((question) =>
+        question.origin === "selection"
+        && question.status === "pending"
+        && question.source?.sourceId === selectionLoadingSource.sourceId)
+    : undefined;
 
   useEffect(() => {
     onInkActivityRef.current = onInkActivity;
@@ -428,6 +451,30 @@ export function LearningWhiteboard({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [enhancementLayer, loadingStateId]);
+
+  useEffect(() => {
+    if (!enhancementLayer || !onPlaceQuestion) return;
+    const unplaced = composerQuestions.filter((question) => !question.position);
+    if (unplaced.length === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      const viewport = viewportRef.current;
+      const view = mountedRef.current?.view;
+      if (!viewport || !view) return;
+      const center = view.viewportToBoard({
+        x: viewport.clientWidth / 2,
+        y: viewport.clientHeight / 2,
+      });
+      const alreadyPlaced = composerQuestions.length - unplaced.length;
+      unplaced.forEach((question, index) => {
+        const sequence = alreadyPlaced + index;
+        onPlaceQuestion(question.id, {
+          x: center.x - 180 - WHITEBOARD_QUESTION_CARD_WIDTH - 24,
+          y: center.y - 105 + sequence * 150,
+        });
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [composerQuestions, enhancementLayer, onPlaceQuestion]);
 
   const retryDegradedVisual = useCallback(async (
     degraded: DegradedVisualStatus,
@@ -1633,26 +1680,26 @@ export function LearningWhiteboard({
       {enhancementLayer
         ? createPortal(
             <>
+              {composerQuestions.map((question, index) => (
+                <WhiteboardQuestionCard
+                  key={question.id}
+                  question={question}
+                  left={question.position?.x
+                    ?? lessonLoadingPosition.left
+                      - WHITEBOARD_QUESTION_CARD_WIDTH - 24}
+                  top={question.position?.y
+                    ?? lessonLoadingPosition.top + index * 150}
+                />
+              ))}
               {loadingState ? (
                 <WhiteboardLoadingBlock
                   state={loadingState}
-                  left={lessonLoadingPosition.left}
-                  top={lessonLoadingPosition.top}
-                />
-              ) : null}
-              {selectionRequestStatus && selectionLoadingSource ? (
-                <WhiteboardLoadingBlock
-                  state={{
-                    id: `selection:${selectionLoadingSource.sourceId}`,
-                    kind: "selection",
-                    title: selectionRequestStatus.replace(/…$/, ""),
-                    detail: selectionRequestStatus.includes("函数图像")
-                      ? "正在识别公式，并把可查看的图像放在选区旁边。"
-                      : "正在理解这部分内容，并把辅助说明放在选区旁边。",
-                  }}
-                  left={selectionLoadingSource.bounds.x
-                    + selectionLoadingSource.bounds.width + 30}
-                  top={selectionLoadingSource.bounds.y}
+                  left={pendingComposerQuestion?.position
+                    ? pendingComposerQuestion.position.x
+                      + WHITEBOARD_QUESTION_CARD_WIDTH + 24
+                    : lessonLoadingPosition.left}
+                  top={pendingComposerQuestion?.position?.y
+                    ?? lessonLoadingPosition.top}
                 />
               ) : null}
               {selectionQuestionOpen
@@ -1677,6 +1724,23 @@ export function LearningWhiteboard({
               <SelectionEnhancementLayer
                 artifacts={selectionEnhancements}
                 sources={selectionSources}
+                questions={questions}
+                loading={selectionRequestStatus && selectionLoadingSource
+                  ? {
+                      turnId: selectionLoadingQuestion?.id
+                        ?? `selection:${selectionLoadingSource.sourceId}`,
+                      sourceId: selectionLoadingSource.sourceId,
+                      bounds: selectionLoadingSource.bounds,
+                      state: {
+                        id: `selection:${selectionLoadingSource.sourceId}`,
+                        kind: "selection",
+                        title: selectionRequestStatus.replace(/…$/, ""),
+                        detail: selectionRequestStatus.includes("函数图像")
+                          ? "正在识别公式，并把可查看的图像放在选区旁边。"
+                          : "正在理解这部分内容，并把辅助说明放在选区旁边。",
+                      },
+                    }
+                  : null}
                 currentDocumentVersion={inkState.document_version}
                 invalidTargetTurnIds={new Set(selectionEnhancements
                   .filter((artifact) =>

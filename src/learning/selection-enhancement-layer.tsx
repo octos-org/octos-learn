@@ -15,6 +15,15 @@ import {
 } from "octos-lesson-language/web-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
+import {
+  WhiteboardQuestionCard,
+  WHITEBOARD_QUESTION_CARD_WIDTH,
+} from "./whiteboard-question-card";
+import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
+import {
+  WhiteboardLoadingBlock,
+  type WhiteboardLoadingState,
+} from "./whiteboard-loading-block";
 
 const DEFAULT_CARD_SCALE = 1;
 const MIN_CARD_SCALE = .85;
@@ -22,6 +31,14 @@ const MAX_CARD_SCALE = 2.25;
 const CARD_WIDTH = 330;
 const CARD_FONT_SIZE = 13;
 const SCENE3D_HEIGHT = 270;
+const CARD_GAP = 24;
+
+export interface SelectionEnhancementLoading {
+  turnId: string;
+  sourceId: string;
+  bounds: InkSelectionSnapshot["bounds"];
+  state: WhiteboardLoadingState;
+}
 
 function clampedCardScale(value: number): number {
   return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
@@ -130,12 +147,16 @@ function SelectionScene3d({
 export function SelectionEnhancementLayer({
   artifacts,
   sources,
+  questions = [],
+  loading = null,
   currentDocumentVersion,
   invalidTargetTurnIds = new Set(),
   onDelete,
 }: {
   artifacts: SelectionEnhancementArtifact[];
   sources: InkSelectionSnapshot[];
+  questions?: WhiteboardQuestionRecord[];
+  loading?: SelectionEnhancementLoading | null;
   currentDocumentVersion: number;
   invalidTargetTurnIds?: ReadonlySet<string>;
   onDelete: (turnId: string) => void;
@@ -219,24 +240,122 @@ export function SelectionEnhancementLayer({
       updateCardScale(turnId, DEFAULT_CARD_SCALE);
     }
   };
+  type LayoutItem =
+    | { kind: "question"; key: string; question: WhiteboardQuestionRecord }
+    | { kind: "artifact"; key: string; artifact: SelectionEnhancementArtifact }
+    | { kind: "loading"; key: string; loading: SelectionEnhancementLoading };
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
-  const enhancementCountBySource = new Map<string, number>();
+  const selectionQuestions = questions.filter((question) =>
+    question.origin === "selection" && question.source);
+  const sourceIds = new Set([
+    ...artifacts.map((artifact) => artifact.source.source_id),
+    ...selectionQuestions.map((question) => question.source!.sourceId),
+    ...(loading ? [loading.sourceId] : []),
+  ]);
+  const layoutItems: Array<LayoutItem & { left: number; top: number }> = [];
+  for (const sourceId of sourceIds) {
+    const sourceQuestions = selectionQuestions
+      .filter((question) => question.source?.sourceId === sourceId)
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    const sourceArtifacts = artifacts
+      .filter((artifact) => artifact.source.source_id === sourceId)
+      .sort((left, right) => left.created_at.localeCompare(right.created_at));
+    const artifactByTurnId = new Map(sourceArtifacts.map((artifact) => [
+      artifact.turn_id,
+      artifact,
+    ]));
+    const ordered: LayoutItem[] = [];
+    for (const question of sourceQuestions) {
+      ordered.push({
+        kind: "question",
+        key: `question:${question.id}`,
+        question,
+      });
+      const matchingArtifact = artifactByTurnId.get(question.id);
+      if (matchingArtifact) {
+        ordered.push({
+          kind: "artifact",
+          key: `artifact:${matchingArtifact.turn_id}`,
+          artifact: matchingArtifact,
+        });
+        artifactByTurnId.delete(question.id);
+      }
+      if (loading?.sourceId === sourceId && loading.turnId === question.id) {
+        ordered.push({
+          kind: "loading",
+          key: `loading:${loading.turnId}`,
+          loading,
+        });
+      }
+    }
+    for (const artifact of sourceArtifacts) {
+      if (!artifactByTurnId.has(artifact.turn_id)) continue;
+      ordered.push({
+        kind: "artifact",
+        key: `artifact:${artifact.turn_id}`,
+        artifact,
+      });
+    }
+    if (
+      loading?.sourceId === sourceId
+      && !ordered.some((item) => item.kind === "loading")
+    ) {
+      ordered.push({
+        kind: "loading",
+        key: `loading:${loading.turnId}`,
+        loading,
+      });
+    }
+    const fallbackBounds = sourceById.get(sourceId)?.bounds
+      ?? sourceQuestions[0]?.source?.bounds
+      ?? sourceArtifacts[0]?.source.bounds
+      ?? loading?.bounds;
+    if (!fallbackBounds) continue;
+    let cursor = fallbackBounds.x + fallbackBounds.width + 30;
+    for (const item of ordered) {
+      layoutItems.push({
+        ...item,
+        left: cursor,
+        top: fallbackBounds.y,
+      });
+      const width = item.kind === "question"
+        ? WHITEBOARD_QUESTION_CARD_WIDTH
+        : item.kind === "loading"
+          ? 330
+          : minimizedTurnIds.has(item.artifact.turn_id)
+            ? 26
+            : CARD_WIDTH * (cardScaleByTurnId[item.artifact.turn_id]
+              ?? DEFAULT_CARD_SCALE);
+      cursor += width + CARD_GAP;
+    }
+  }
   return (
     <>
-      {artifacts.map((artifact) => {
-        const source = sourceById.get(artifact.source.source_id);
-        const bounds = source?.bounds ?? artifact.source.bounds;
+      {layoutItems.map((item) => {
+        if (item.kind === "question") {
+          return (
+            <WhiteboardQuestionCard
+              key={item.key}
+              question={item.question}
+              left={item.left}
+              top={item.top}
+              linked
+            />
+          );
+        }
+        if (item.kind === "loading") {
+          return (
+            <WhiteboardLoadingBlock
+              key={item.key}
+              state={item.loading.state}
+              left={item.left}
+              top={item.top}
+            />
+          );
+        }
+        const artifact = item.artifact;
         const stale = currentDocumentVersion > artifact.source.document_version;
         const targetInvalid = invalidTargetTurnIds.has(artifact.turn_id);
-        const sourceIndex = enhancementCountBySource.get(
-          artifact.source.source_id,
-        ) ?? 0;
-        enhancementCountBySource.set(
-          artifact.source.source_id,
-          sourceIndex + 1,
-        );
-        const left = bounds.x + bounds.width + 30 + sourceIndex * 22;
-        const top = bounds.y + sourceIndex * 26;
         const minimized = minimizedTurnIds.has(artifact.turn_id);
         const cardScale = cardScaleByTurnId[artifact.turn_id]
           ?? DEFAULT_CARD_SCALE;
@@ -249,8 +368,8 @@ export function SelectionEnhancementLayer({
                 ? "learning-selection-enhancement-pin is-invalid-target"
                 : "learning-selection-enhancement-pin"}
               style={{
-                left: bounds.x + bounds.width + 12 + sourceIndex * 12,
-                top: bounds.y + 8 + sourceIndex * 42,
+                left: item.left,
+                top: item.top + 8,
               }}
               data-source-id={artifact.source.source_id}
               onClick={() => {
@@ -274,8 +393,8 @@ export function SelectionEnhancementLayer({
               ? "learning-selection-enhancement is-invalid-target"
               : "learning-selection-enhancement"}
             style={{
-              left,
-              top,
+              left: item.left,
+              top: item.top,
               width: CARD_WIDTH * cardScale,
               fontSize: CARD_FONT_SIZE * cardScale,
               "--learning-selection-scene3d-height":
