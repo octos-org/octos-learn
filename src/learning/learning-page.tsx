@@ -23,6 +23,7 @@ import {
   type QueueMode,
 } from "@/runtime/session-context";
 import { unlockAudio } from "@/home/voice/audio-playback";
+import { useWakeLock } from "@/home/use-wake-lock";
 import {
   getMyProfileSkills,
   type SkillInfo,
@@ -333,6 +334,9 @@ function LearningServerSync({
 
 export function LearningPage() {
   const navigate = useNavigate();
+  // Keep the screen on during lessons (long narration + no interaction;
+  // audit L7 — only /home held a wake lock before).
+  useWakeLock();
   const ollFixture = useMemo<"geometry-v2" | "unit-circle-sine" | undefined>(() => {
     const requested = new URLSearchParams(window.location.search).get(
       "oll-fixture",
@@ -344,6 +348,20 @@ export function LearningPage() {
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),
   );
+
+  // Auto-recover from the lease-blocked dead screen (audit L8): once
+  // the other tab closes, its lease expires within the TTL and this
+  // poll acquires it — then reload to boot the real workspace. A live
+  // owner renews every 5s against a 15s TTL, so we can never steal it.
+  useEffect(() => {
+    if (hasTabLease) return;
+    const id = window.setInterval(() => {
+      if (acquireLearningTabLease(LEARNING_TAB_ID)) {
+        window.location.reload();
+      }
+    }, 4000);
+    return () => window.clearInterval(id);
+  }, [hasTabLease]);
   const wakeAudio = useMemo(() => consumeWakeAudio(), []);
   const [initialEntry] = useState(() => {
     if (!hasTabLease) {
@@ -704,7 +722,7 @@ export function LearningPage() {
         <div className="max-w-md text-center">
           <h1 className="text-xl font-semibold">学习助手已在另一个标签页中使用</h1>
           <p className="mt-3 text-sm leading-6 text-white/55">
-            为避免两个页面同时占用麦克风，请先关闭另一个学习页，再刷新这里。
+            为避免两个页面同时占用麦克风，请先关闭另一个学习页。关闭后本页会在数秒内自动恢复。
           </p>
         </div>
       </div>
@@ -806,7 +824,9 @@ export function LearningPage() {
                 type="button"
                 aria-label={`重命名 ${session.title}`}
                 onClick={() => rename(session)}
-                className="p-1 text-white/30 opacity-0 group-hover:opacity-100"
+                // Always visible: hover-only controls are unreachable on
+                // touch devices (2026-08 UI audit M4).
+                className="p-1 text-white/30 transition hover:text-white/80"
               >
                 <Pencil size={14} />
               </button>
@@ -821,7 +841,7 @@ export function LearningPage() {
                 type="button"
                 aria-label={`删除 ${session.title}`}
                 onClick={() => remove(session)}
-                className="mr-2 p-1 text-white/30 opacity-0 group-hover:opacity-100"
+                className="mr-2 p-1 text-white/30 transition hover:text-white/80"
               >
                 <Trash2 size={14} />
               </button>

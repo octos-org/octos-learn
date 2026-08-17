@@ -55,6 +55,8 @@ const inkRuntimeMock = vi.hoisted(() => ({
 vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn() }));
 vi.mock("@/api/sessions", () => ({
   getSessionFiles: sessionFilesMock.getSessionFiles,
+}));
+vi.mock("@/api/skill-actions", () => ({
   invokeSkillAction: sessionFilesMock.invokeSkillAction,
 }));
 vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: vi.fn() }));

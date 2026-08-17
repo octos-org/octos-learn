@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,7 @@ const apiMocks = vi.hoisted(() => ({
 
 const authMocks = vi.hoisted(() => ({
   portal: {
-    accessible_profiles: [] as never[],
+    accessible_profiles: [] as Array<{ id: string; name: string }>,
     can_access_admin_portal: true,
     home_profile_id: "",
   },
@@ -41,6 +41,23 @@ describe("AdminSettingsPage", () => {
     apiMocks.getMyProfile.mockReset();
     apiMocks.getMyProfile.mockResolvedValue(null);
     authMocks.portal.can_access_admin_portal = true;
+    authMocks.portal.accessible_profiles = [];
+  });
+
+  it("keeps self-service settings scoped to the authenticated profile", async () => {
+    authMocks.portal.accessible_profiles = [
+      { id: "profile-a", name: "Profile A" },
+      { id: "profile-b", name: "Profile B" },
+    ];
+
+    render(
+      <MemoryRouter>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => expect(apiMocks.getMyProfile).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole("combobox")).toBeNull();
   });
 
   it("keeps the Authentication menu icon visible beside the admin badge", async () => {
@@ -76,5 +93,58 @@ describe("AdminSettingsPage", () => {
     expect(
       screen.queryByRole("button", { name: /authentication/i }),
     ).toBeNull();
+  });
+
+  it("groups the rail into Personal / Agent / Connections / System & Runtime", async () => {
+    render(
+      <MemoryRouter>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Personal")).toBeTruthy();
+    });
+    expect(screen.getByText("Agent")).toBeTruthy();
+    expect(screen.getByText("Connections")).toBeTruthy();
+    expect(screen.getByText("System & Runtime")).toBeTruthy();
+  });
+
+  it("filters tabs by the search box", async () => {
+    render(
+      <MemoryRouter>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+    });
+    fireEvent.change(screen.getByTestId("settings-tab-search"), {
+      target: { value: "llm" },
+    });
+
+    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
+    // Group headers disappear while searching.
+    expect(screen.queryByText("Personal")).toBeNull();
+  });
+
+  it("shows an empty state when the search matches nothing", async () => {
+    render(
+      <MemoryRouter>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-tab-search")).toBeTruthy();
+    });
+    fireEvent.change(screen.getByTestId("settings-tab-search"), {
+      target: { value: "zzz-nothing" },
+    });
+
+    expect(screen.getByText(/no settings match/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
   });
 });

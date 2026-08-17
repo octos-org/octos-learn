@@ -13,7 +13,8 @@ import {
   X,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
-import { getSessionFiles, invokeSkillAction } from "@/api/sessions";
+import { getSessionFiles } from "@/api/sessions";
+import { invokeSkillAction } from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -211,6 +212,9 @@ export function LearningWorkspace({
   const runtime = useOminixRuntimeSummary();
   const threads = useRenderThreads(sessionId);
   const [narrationSpeechActive, setNarrationSpeechActive] = useState(false);
+  // Declared early: `externalSpeechActive` (below) consults it to decide
+  // whether muted narration still owns the microphone (issue #315).
+  const [narrationAudioEnabled, setNarrationAudioEnabled] = useState(true);
   const [completedTurnId, setCompletedTurnId] = useState<string | null>(null);
   const [plainReply, setPlainReply] = useState<{
     turnId: string;
@@ -403,19 +407,25 @@ export function LearningWorkspace({
               : undefined,
             boardContext: pending.boardContext,
             toolId: "custom-question",
-            }),
+          }),
         ].filter(Boolean).join("\n");
         pendingVoiceSelectionRef.current = null;
         return selectionContext;
       },
+      // Muted narration does NOT own the mic: with the narration silenced
+      // there is nothing external to protect, so the student can barge in
+      // naturally (issue #315).
       externalSpeechActive:
-        voiceEnabled && (lessonOwnsNarration || narrationSpeechActive),
+        voiceEnabled &&
+        ((lessonOwnsNarration && narrationAudioEnabled) ||
+          narrationSpeechActive),
       onTurnComplete: handleTurnComplete,
     }),
     [
       conversationOptions,
       handleTurnComplete,
       lessonOwnsNarration,
+      narrationAudioEnabled,
       narrationSpeechActive,
       ollLesson,
       sessionId,
@@ -513,7 +523,6 @@ export function LearningWorkspace({
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
   const [textTurnPending, setTextTurnPending] = useState(false);
-  const [narrationAudioEnabled, setNarrationAudioEnabled] = useState(true);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
   const [temporaryCameraPreview, setTemporaryCameraPreview] = useState(false);
   const temporaryCameraPreviewRef = useRef(false);
@@ -956,7 +965,7 @@ export function LearningWorkspace({
           "learning.selection.enhance",
           actionArguments,
         );
-        if (!invocation.ok || invocation.results.some((result) => !result.success)) {
+        if (!invocation.ok || (invocation.results ?? []).some((result) => !result.success)) {
           throw new Error("选区辅助内容生成失败");
         }
         const files = await getSessionFiles(sessionId);

@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Music,
   Newspaper,
+  X,
 } from "lucide-react";
 
 import { SettingsGearButton, HomeSettingsPanel } from "./home-settings";
@@ -57,10 +58,15 @@ export function ClassicStandbyView({
 
   const handleOrbClick = useCallback(() => {
     if (!voiceRuntime.ready) {
-      if (!voiceRuntime.loading) navigate("/settings?tab=ominix");
+      // Non-admin reachable destination: the OminiX tab is admin-only, so
+      // point household users at the voice settings tab instead of a dead end.
+      if (!voiceRuntime.loading) navigate("/settings?tab=voice");
       return;
     }
     unlockAudio();
+    // Remember where the user came from so /voice can return them here
+    // (the X button and the spoken "goodbye" both use this entry).
+    sessionStorage.setItem("octos_voice_entry", "/home");
     navigate("/voice");
   }, [navigate, voiceRuntime.loading, voiceRuntime.ready]);
 
@@ -138,6 +144,20 @@ export function ClassicStandbyView({
         ) : (
           <span />
         )}
+        {/* Exit to the Octos workspace — the Display page is full-screen
+            with no navigation of its own, so this is the only way back
+            other than the browser back button. */}
+        <button
+          onClick={() => navigate("/")}
+          className="home-settings-gear absolute right-16 top-4 z-30 flex items-center justify-center rounded-xl"
+          aria-label="Back to Octos workspace"
+          title="Back to Octos workspace"
+        >
+          <X
+            size={22}
+            className="text-white/40 transition-colors hover:text-white/80"
+          />
+        </button>
         <SettingsGearButton onClick={() => setSettingsOpen(true)} />
       </div>
 
