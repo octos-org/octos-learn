@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   VoiceConversation,
@@ -36,14 +43,19 @@ const conversationMock = vi.hoisted(() => ({
 }));
 const sessionFilesMock = vi.hoisted(() => ({
   getSessionFiles: vi.fn(async () => []),
+  invokeSkillAction: vi.fn(async () => ({ action_id: "learning.selection.enhance", ok: true, results: [] })),
 }));
 const narrationTtsMock = vi.hoisted(() => ({
   useOllNarrationTts: vi.fn(() => ({ error: null, preparing: false })),
+}));
+const inkRuntimeMock = vi.hoisted(() => ({
+  mountInkRuntime: vi.fn(),
 }));
 
 vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn() }));
 vi.mock("@/api/sessions", () => ({
   getSessionFiles: sessionFilesMock.getSessionFiles,
+  invokeSkillAction: sessionFilesMock.invokeSkillAction,
 }));
 vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: vi.fn() }));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
@@ -52,6 +64,9 @@ vi.mock("@/home/voice/camera-preview", () => ({
 }));
 vi.mock("./oll/use-oll-narration-tts", () => ({
   useOllNarrationTts: narrationTtsMock.useOllNarrationTts,
+}));
+vi.mock("./oll/oll-ink-runtime", () => ({
+  mountInkRuntime: inkRuntimeMock.mountInkRuntime,
 }));
 vi.mock("@/store/projection-render-adapter", () => ({
   useRenderThreads: () => conversationMock.threads,
@@ -148,8 +163,45 @@ describe("LearningWorkspace", () => {
       error: null,
       preparing: false,
     });
+    inkRuntimeMock.mountInkRuntime.mockReset();
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => {
+      const state = {
+        mode: "navigate" as const,
+        component_count: 0,
+        selected_count: 0,
+        pen_color: "#176b62",
+        selection_color: null,
+        selection_input: "unknown" as const,
+        selection_mode: "rectangle" as const,
+        document_version: 0,
+        saved: true,
+      };
+      return {
+        ready: Promise.resolve(),
+        state,
+        subscribe: vi.fn((listener: (next: typeof state) => void) => {
+          listener(state);
+          return () => undefined;
+        }),
+        setMode: vi.fn(),
+        setPenColor: vi.fn(),
+        setSelectionColor: vi.fn(),
+        setSelectionMode: vi.fn(),
+        selectAll: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        mergeSavedDocument: vi.fn(async () => null),
+        destroy: vi.fn(async () => undefined),
+      };
+    });
     sessionFilesMock.getSessionFiles.mockReset();
     sessionFilesMock.getSessionFiles.mockResolvedValue([]);
+    sessionFilesMock.invokeSkillAction.mockReset();
+    sessionFilesMock.invokeSkillAction.mockResolvedValue({
+      action_id: "learning.selection.enhance",
+      ok: true,
+      results: [],
+    });
   });
 
   afterEach(() => {
@@ -451,6 +503,44 @@ describe("LearningWorkspace", () => {
     ).toBe(true);
   });
 
+  it("keeps lesson narration active while the student moves a variable control", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-student-control-during-narration"
+        voiceEnabled
+        ollFixture="unit-circle-sine"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          playing: true,
+          narrationId: expect.any(String),
+        }),
+      );
+    });
+    const initialNarration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)?.[0];
+
+    const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+
+    await waitFor(() => {
+      expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          playing: true,
+          narrationId: initialNarration?.narrationId,
+        }),
+      );
+    });
+    expect(conversationMock.options?.externalSpeechActive).toBe(true);
+  });
+
   it("feeds the OLL fixture into the real /learn Runtime as incremental events", () => {
     vi.useFakeTimers();
     render(
@@ -535,7 +625,7 @@ describe("LearningWorkspace", () => {
     expect(screen.getByText("稍等一下")).toBeTruthy();
   });
 
-  it("uses the shared TTS path when replaying a saved lesson", () => {
+  it("restarts TTS on a saved lesson and opens a clean ink document", async () => {
     render(
       <LearningWorkspace
         sessionId="learn-narration-review"
@@ -545,9 +635,131 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
-      expect.objectContaining({ enabled: true }),
+    expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ enabled: true, playing: false }),
     );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "重新播放 OLL 课程",
+    }));
+
+    await waitFor(() => {
+      expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          enabled: true,
+          playing: true,
+          narrationId: expect.any(String),
+          text: expect.stringMatching(/\S/),
+        }),
+      );
+    });
+    expect(localStorage.getItem(
+      "octos-learning-ink-run:v1:learn-narration-review",
+    )).toBe("1");
+    expect(localStorage.getItem(
+      "octos-learning-ink-merge-source:v1:learn-narration-review",
+    )).toBe("learn-narration-review");
+    await waitFor(() => {
+      expect(inkRuntimeMock.mountInkRuntime).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          storageKey:
+            "octos-learning-ink:v1:learn-narration-review:replay:1",
+          documentId:
+            "learning-session:learn-narration-review:replay:1:student-ink",
+        }),
+      );
+    });
+    expect(inkRuntimeMock.mountInkRuntime).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storageKey: "octos-learning-ink:v1:learn-narration-review",
+        documentId: "learning-session:learn-narration-review:student-ink",
+      }),
+    );
+  });
+
+  it("restores earlier ink into the current document after replay completes", async () => {
+    localStorage.setItem(
+      "octos-learning-ink-run:v1:learn-finished-replay",
+      "1",
+    );
+    localStorage.setItem(
+      "octos-learning-ink-merge-source:v1:learn-finished-replay",
+      "learn-finished-replay",
+    );
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-finished-replay"
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      const currentInk = inkRuntimeMock.mountInkRuntime.mock.results.at(-1)?.value;
+      expect(currentInk?.mergeSavedDocument).toHaveBeenCalledWith(
+        "octos-learning-ink:v1:learn-finished-replay",
+        "learning-session:learn-finished-replay:student-ink",
+      );
+    });
+    await waitFor(() => {
+      expect(localStorage.getItem(
+        "octos-learning-ink-merge-source:v1:learn-finished-replay",
+      )).toBeNull();
+    });
+    expect(localStorage.getItem(
+      "octos-learning-ink-cumulative-run:v1:learn-finished-replay",
+    )).toBe("1");
+    expect(inkRuntimeMock.mountInkRuntime).toHaveBeenCalledWith(
+      expect.objectContaining({
+        storageKey:
+          "octos-learning-ink:v1:learn-finished-replay:replay:1",
+      }),
+    );
+  });
+
+  it("recovers ink hidden by the previous replay implementation once", async () => {
+    localStorage.setItem(
+      "octos-learning-ink-run:v1:learn-legacy-replay",
+      "1",
+    );
+
+    const view = render(
+      <LearningWorkspace
+        sessionId="learn-legacy-replay"
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      const currentInk = inkRuntimeMock.mountInkRuntime.mock.results.at(-1)?.value;
+      expect(currentInk?.mergeSavedDocument).toHaveBeenCalledWith(
+        "octos-learning-ink:v1:learn-legacy-replay",
+        "learning-session:learn-legacy-replay:student-ink",
+      );
+    });
+    await waitFor(() => {
+      expect(localStorage.getItem(
+        "octos-learning-ink-cumulative-run:v1:learn-legacy-replay",
+      )).toBe("1");
+    });
+
+    view.unmount();
+    inkRuntimeMock.mountInkRuntime.mockClear();
+    render(
+      <LearningWorkspace
+        sessionId="learn-legacy-replay"
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(inkRuntimeMock.mountInkRuntime).toHaveBeenCalled());
+    const restoredInk = inkRuntimeMock.mountInkRuntime.mock.results.at(-1)?.value;
+    expect(restoredInk?.mergeSavedDocument).not.toHaveBeenCalled();
   });
 
   it("loads a delivered OLL Authoring artifact into the /learn Runtime", async () => {

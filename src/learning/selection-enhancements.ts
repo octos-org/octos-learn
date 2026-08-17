@@ -111,6 +111,46 @@ export interface SelectionEnhancementTurnContext {
   toolId?: SelectionToolId;
 }
 
+export function buildSelectionEnhancementActionArguments(
+  context: SelectionEnhancementTurnContext,
+): Record<string, unknown> {
+  return {
+    paths: [context.mediaPath],
+    turn_id: context.turnId,
+    learner_request: context.learnerRequest?.trim() || "请解释我选中的内容",
+    source: {
+      source_id: context.source.source_id,
+      document_id: context.source.document_id,
+      document_version: context.source.document_version,
+      bounds: { ...context.source.bounds },
+      checksum: { ...context.source.checksum },
+    },
+    content_hint: context.contentKind,
+    tool_id: context.toolId ?? "custom-question",
+    board: {
+      board_id: context.boardContext?.boardId ?? context.sessionId,
+      revision: context.boardContext?.boardRevision ?? 0,
+      targets: (context.boardContext?.targets ?? []).map((target) => {
+        const valueJson = compactTargetValue(target.value);
+        return {
+          target_id: target.target_id,
+          node_id: target.node_id,
+          ...(target.element_id ? { element_id: target.element_id } : {}),
+          kind: target.kind,
+          ...(target.label ? { label: target.label } : {}),
+          ...(valueJson ? { value_json: valueJson } : {}),
+          world_bounds: { ...target.world_bounds },
+          overlap: target.overlap,
+          distance: target.distance,
+          z_index: target.z_index,
+        };
+      }),
+    },
+    ...(context.lessonTitle?.trim() ? { lesson_title: context.lessonTitle.trim() } : {}),
+    ...(context.boardSummary?.trim() ? { board_summary: context.boardSummary.trim() } : {}),
+  };
+}
+
 export interface SelectionBoardContext {
   boardId: string;
   boardRevision: number;

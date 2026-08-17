@@ -91,6 +91,40 @@ async function callAuxWs<T>(method: string, params: unknown): Promise<T> {
   }
 }
 
+export interface SkillActionArtifactInfo {
+  handle: string;
+  display_name: string;
+  media_type?: string | null;
+  size?: number | null;
+}
+
+export interface SkillActionResultInfo {
+  success: boolean;
+  output?: unknown;
+  artifacts?: SkillActionArtifactInfo[];
+}
+
+export interface SkillActionInvocationInfo {
+  action_id: string;
+  ok: boolean;
+  results: SkillActionResultInfo[];
+}
+
+/** Invoke one manifest-declared skill action with UI-owned arguments. The
+ * arguments go straight to the declared tool binding; no chat model rewrites
+ * source IDs, checksums, coordinates, or target references. */
+export async function invokeSkillAction(
+  sessionId: string,
+  actionId: string,
+  argumentsValue: Record<string, unknown>,
+): Promise<SkillActionInvocationInfo> {
+  return callAuxWs<SkillActionInvocationInfo>("skill/action/invoke", {
+    session_id: sessionId,
+    action_id: actionId,
+    arguments: argumentsValue,
+  });
+}
+
 export async function listSessions(): Promise<SessionInfo[]> {
   const result = await callAuxWs<{ sessions: SessionInfo[] }>(
     METHODS.SESSION_LIST,

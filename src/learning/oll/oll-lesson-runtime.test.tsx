@@ -601,7 +601,7 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "笔色：蓝色" }));
     expect(ink.setPenColor).toHaveBeenCalledWith("#1769aa");
 
-    fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
     fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
@@ -675,8 +675,10 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "框选笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
+    expect(await screen.findByText("接下来让小章鱼做什么？")).toBeTruthy();
+    expect(screen.getByText("下面是操作，不会改变上面已经确认的选区。")).toBeTruthy();
     const targets = await screen.findAllByRole("radio");
     expect(targets.length).toBeGreaterThan(1);
     expect(document.querySelectorAll(".learning-selection-target-highlight").length)

@@ -289,6 +289,10 @@ export const METHODS = {
  */
 export const UI_PROTOCOL_FEATURES = [
   ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+  // Direct, typed skill actions used by /learn for selection assistance.
+  // Once a client sends any capability tokens, the server rejects
+  // `skill/action/invoke` unless this token was negotiated on the WS URL.
+  "skill.actions.v1",
   "approval.typed.v1",
   "user_question.v1",
   "pane.snapshots.v1",

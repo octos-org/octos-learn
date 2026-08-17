@@ -4,6 +4,7 @@ import {
   Eraser,
   Hand,
   Lightbulb,
+  LassoSelect,
   MessageCircle,
   Mic,
   Palette,
@@ -61,11 +62,13 @@ import "octos-lesson-language/web-runtime/styles.css";
 type LearningInkState = InkRuntimeState & {
   pen_color: string;
   selection_color: string | null;
+  selection_mode: "rectangle" | "lasso";
 };
 
 type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
+  setSelectionMode?: (mode: "rectangle" | "lasso") => void;
 };
 
 interface PreparedSelectionContext {
@@ -124,15 +127,36 @@ function degradedVisualStatuses(
 function visibleBoardTargetCandidates(
   candidates: BoardTargetCandidate[],
 ): BoardTargetCandidate[] {
-  const nodesWithFragments = new Set(
-    candidates.filter((candidate) => candidate.element_id).map((candidate) => candidate.node_id),
-  );
-  return candidates
-    .filter((candidate) =>
-      candidate.element_id || !nodesWithFragments.has(candidate.node_id),
-    )
-    .slice(0, 6);
+  const seen = new Set<string>();
+  const result: BoardTargetCandidate[] = [];
+  const nodeIds = [...new Set(candidates.map((candidate) => candidate.node_id))];
+  for (const nodeId of nodeIds) {
+    const group = candidates.filter((candidate) => candidate.node_id === nodeId);
+    const parent = group.find((candidate) => !candidate.element_id);
+    for (const candidate of [...(parent ? [parent] : []), ...group.filter((item) => item.element_id)]) {
+      if (seen.has(candidate.target_id)) continue;
+      seen.add(candidate.target_id);
+      result.push(candidate);
+      if (result.length === 6) return result;
+    }
+  }
+  return result;
 }
+
+const boardTargetKindLabels: Record<string, string> = {
+  node: "整个内容块",
+  plot: "整个函数图",
+  geometry: "整个几何图",
+  scene3d: "整个三维画面",
+  "plot-point": "图上的点",
+  "plot-curve": "函数曲线",
+  "math-fragment": "公式片段",
+  "geometry-point": "几何点",
+  "geometry-line": "几何线",
+  "scene3d-object": "三维对象",
+};
+
+const boardOcclusionSelector = "[data-learning-board-occlusion]";
 
 const emptyInkState: LearningInkState = {
   mode: "navigate",
@@ -141,6 +165,7 @@ const emptyInkState: LearningInkState = {
   pen_color: "#176b62",
   selection_color: null,
   selection_input: "unknown",
+  selection_mode: "rectangle",
   document_version: 0,
   saved: true,
 };
@@ -151,6 +176,7 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     ...state,
     pen_color: enhanced.pen_color ?? "#176b62",
     selection_color: enhanced.selection_color ?? null,
+    selection_mode: enhanced.selection_mode ?? "rectangle",
   };
 }
 
@@ -198,13 +224,30 @@ function InkColorControl({
   );
 }
 
-function learningBoardInsets(viewport: HTMLElement): ViewportInsets {
+function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
+  occlusions: Array<{ x: number; y: number; width: number; height: number }>;
+} {
   const compact = viewport.clientWidth <= 900;
+  const viewportRect = viewport.getBoundingClientRect();
+  const occlusions = [
+    ...viewport.ownerDocument.querySelectorAll<HTMLElement>(boardOcclusionSelector),
+  ].flatMap((element) => {
+    if (element.hidden) return [];
+    const rect = element.getBoundingClientRect();
+    const left = Math.max(viewportRect.left, rect.left);
+    const top = Math.max(viewportRect.top, rect.top);
+    const right = Math.min(viewportRect.right, rect.right);
+    const bottom = Math.min(viewportRect.bottom, rect.bottom);
+    return right > left && bottom > top
+      ? [{ x: left - viewportRect.left, y: top - viewportRect.top, width: right - left, height: bottom - top }]
+      : [];
+  });
   return {
     top: compact ? 78 : 92,
     right: compact ? 18 : 28,
     bottom: compact ? 180 : 190,
     left: compact ? 18 : 28,
+    occlusions,
   };
 }
 
@@ -225,6 +268,8 @@ function ensureScene3dInteractionHints(viewport: HTMLElement): void {
 export function OllLessonBoard({
   runtime,
   inkSessionId,
+  inkMergeSourceSessionId,
+  onInkMergeComplete,
   selectionEnhancements = [],
   selectionSources = [],
   onAskInkSelection,
@@ -235,6 +280,8 @@ export function OllLessonBoard({
 }: {
   runtime: OllLessonRuntimeController;
   inkSessionId?: string;
+  inkMergeSourceSessionId?: string;
+  onInkMergeComplete?: () => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   selectionSources?: InkSelectionSnapshot[];
   onAskInkSelection?: (request: {
@@ -270,6 +317,7 @@ export function OllLessonBoard({
   const renderedCompositionRef = useRef("");
   const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
+  const inkMergeAttemptRef = useRef<string | null>(null);
   const inkSelectionVersionRef = useRef({ documentVersion: 0, selectedCount: 0 });
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
@@ -442,6 +490,10 @@ export function OllLessonBoard({
       () => setInkError(""),
       (cause) => setInkError(cause instanceof Error ? cause.message : "无法修改选中笔迹的颜色"),
     );
+  }, []);
+
+  const setSelectionMode = useCallback((mode: "rectangle" | "lasso") => {
+    inkRuntimeRef.current?.setSelectionMode?.(mode);
   }, []);
 
   const captureSelection = useCallback(async (): Promise<PreparedSelectionContext> => {
@@ -747,6 +799,40 @@ export function OllLessonBoard({
   }, [inkSessionId]);
 
   useEffect(() => {
+    const ink = inkRuntimeRef.current;
+    if (
+      !ink ||
+      !inkAvailable ||
+      !inkSessionId ||
+      !inkMergeSourceSessionId ||
+      !runtime.deliverySettled
+    ) return;
+    const mergeKey = `${inkSessionId}\u0000${inkMergeSourceSessionId}`;
+    if (inkMergeAttemptRef.current === mergeKey) return;
+    inkMergeAttemptRef.current = mergeKey;
+    void ink.mergeSavedDocument(
+      `octos-learning-ink:v1:${inkMergeSourceSessionId}`,
+      `learning-session:${inkMergeSourceSessionId}:student-ink`,
+    ).then(
+      () => {
+        setInkError("");
+        onInkMergeComplete?.();
+      },
+      (cause) => {
+        setInkError(cause instanceof Error
+          ? cause.message
+          : "上一遍笔迹暂时无法恢复");
+      },
+    );
+  }, [
+    inkAvailable,
+    inkMergeSourceSessionId,
+    inkSessionId,
+    onInkMergeComplete,
+    runtime.deliverySettled,
+  ]);
+
+  useEffect(() => {
     const view = mountedRef.current?.view;
     const boardFocus = runtime.board?.focus ?? [];
     const renderedFocus = renderedFocusRef.current;
@@ -805,14 +891,40 @@ export function OllLessonBoard({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return;
+    let animationFrame = 0;
+    const update = () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(() => {
+        animationFrame = 0;
+        const mounted = mountedRef.current;
+        if (mounted) mounted.view.setViewportInsets(learningBoardInsets(viewport));
+      });
+    };
     const observer = new ResizeObserver(() => {
-      const mounted = mountedRef.current;
-      if (mounted) {
-        mounted.view.setViewportInsets(learningBoardInsets(viewport));
-      }
+      update();
     });
-    observer.observe(viewport);
-    return () => observer.disconnect();
+    const observed = new WeakSet<Element>();
+    const observe = (element: Element) => {
+      if (observed.has(element)) return;
+      observed.add(element);
+      observer.observe(element);
+    };
+    const observeOcclusions = () => {
+      observe(viewport);
+      viewport.ownerDocument.querySelectorAll<Element>(boardOcclusionSelector).forEach(observe);
+      update();
+    };
+    const mutation = typeof MutationObserver === "undefined" ? null : new MutationObserver(() => {
+      observeOcclusions();
+    });
+    const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
+    if (root) mutation?.observe(root, { childList: true, subtree: true });
+    observeOcclusions();
+    return () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      mutation?.disconnect();
+      observer.disconnect();
+    };
   }, []);
 
   return (
@@ -824,7 +936,11 @@ export function OllLessonBoard({
         aria-label="OLL 无限白板"
       />
       {degradedVisuals.length > 0 ? (
-        <aside className="learning-degraded-visuals" aria-label="未完成的互动画面">
+        <aside
+          className="learning-degraded-visuals"
+          data-learning-board-occlusion=""
+          aria-label="未完成的互动画面"
+        >
           {degradedVisuals.map((degraded) => {
             const requested = requestedDegradedNodeIds.has(degraded.nodeId);
             const retrying = retryingDegradedNodeId === degraded.nodeId;
@@ -850,7 +966,7 @@ export function OllLessonBoard({
         </aside>
       ) : null}
       {inkSessionId && inkAvailable ? (
-        <div className="learning-ink-toolbar" aria-label="白板书写工具">
+        <div className="learning-ink-toolbar" data-learning-board-occlusion="" aria-label="白板书写工具">
           <button
             type="button"
             className={inkState.mode === "navigate" ? "is-active" : ""}
@@ -880,12 +996,27 @@ export function OllLessonBoard({
           </button>
           <button
             type="button"
-            className={inkState.mode === "select" ? "is-active" : ""}
-            onClick={() => setInkMode("select")}
-            aria-label="框选笔迹"
-            aria-pressed={inkState.mode === "select"}
+            className={inkState.mode === "select" && inkState.selection_mode === "rectangle" ? "is-active" : ""}
+            onClick={() => {
+              setSelectionMode("rectangle");
+              setInkMode("select");
+            }}
+            aria-label="矩形框选笔迹"
+            aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
           >
             <BoxSelect size={17} />
+          </button>
+          <button
+            type="button"
+            className={inkState.mode === "select" && inkState.selection_mode === "lasso" ? "is-active" : ""}
+            onClick={() => {
+              setSelectionMode("lasso");
+              setInkMode("select");
+            }}
+            aria-label="自由圈选笔迹"
+            aria-pressed={inkState.mode === "select" && inkState.selection_mode === "lasso"}
+          >
+            <LassoSelect size={17} />
           </button>
           {inkSupportsColors && inkState.mode === "draw" ? (
             <InkColorControl
@@ -949,6 +1080,7 @@ export function OllLessonBoard({
       {selectionQuestionOpen && inkState.selected_count > 0 ? (
         <form
           className="learning-selection-question"
+          data-learning-board-occlusion=""
           onSubmit={(event) => {
             event.preventDefault();
             void askSelection(selectionQuestion);
@@ -973,7 +1105,10 @@ export function OllLessonBoard({
                 只看我的笔迹
               </label>
               {preparedSelection.candidates.map((candidate) => (
-                <label key={candidate.target_id}>
+                <label
+                  key={candidate.target_id}
+                  className={selectedBoardTargetIds.includes(candidate.target_id) ? "is-selected" : ""}
+                >
                   <input
                     type="radio"
                     name="selection-board-target"
@@ -981,7 +1116,7 @@ export function OllLessonBoard({
                     onChange={() => setSelectedBoardTargetIds([candidate.target_id])}
                   />
                   <span>{candidate.label ?? candidate.target_id}</span>
-                  <small>{candidate.kind}</small>
+                  <small>{boardTargetKindLabels[candidate.kind] ?? "局部内容"}</small>
                 </label>
               ))}
             </fieldset>
@@ -1006,6 +1141,10 @@ export function OllLessonBoard({
               <option value="data">数据</option>
             </select>
           </label>
+          <p className="learning-selection-action-label">
+            <strong>接下来让小章鱼做什么？</strong>
+            <small>下面是操作，不会改变上面已经确认的选区。</small>
+          </p>
           <div className="learning-selection-suggestions">
             {availableSelectionTools(
               selectionContentKind,
@@ -1069,6 +1208,7 @@ export function OllLessonBoard({
       {variableControls.length > 0 ? (
         <div
           className="learning-variable-controls"
+          data-learning-board-occlusion=""
           aria-label="课程变量控制"
           data-testid="oll-variable-controls"
         >
@@ -1149,14 +1289,15 @@ export function OllLessonBoard({
           })}
           <small>
             {runtime.activeVariableAnimation
-              ? "动画正在改变同一个变量；拖动会暂停动画"
-              : "拖动后课程会暂停；顶部按钮可继续播放或重新播放"}
+              ? "老师正在演示这个变量，结束后即可继续拖动"
+              : "讲解过程中也可以拖动；老师演示同一变量时会暂时接管"}
           </small>
         </div>
       ) : null}
       {availableStudentTasks.length > 0 ? (
         <section
           className="learning-student-tasks"
+          data-learning-board-occlusion=""
           aria-label="动手试一试"
           data-testid="oll-student-tasks"
         >

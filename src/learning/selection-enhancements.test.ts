@@ -7,6 +7,7 @@ import {
 } from "octos-lesson-language/ink-runtime";
 import {
   addSelectionSource,
+  buildSelectionEnhancementActionArguments,
   buildSelectionEnhancementTurnContext,
   loadSelectionEnhancementState,
   saveSelectionEnhancementState,
@@ -56,6 +57,45 @@ async function source(): Promise<InkSelectionSnapshot> {
 }
 
 describe("selection enhancement persistence", () => {
+  it("passes exact selection identity to the direct skill action", async () => {
+    const selection = await source();
+    selection.bounds.x = 12.6666666667;
+    const argumentsValue = buildSelectionEnhancementActionArguments({
+      sessionId: "session-1",
+      turnId: "turn-1",
+      mediaPath: "turn_media/selection.png",
+      source: selection,
+      contentKind: "math",
+      learnerRequest: "解释这部分",
+      toolId: "explain",
+      boardContext: {
+        boardId: "board-1",
+        boardRevision: 8,
+        targets: [{
+          target_id: "plot:curve",
+          node_id: "plot",
+          element_id: "curve",
+          kind: "plot-curve",
+          label: "y = sin(x)",
+          value: { expression: "sin(x)" },
+          world_bounds: { x: 200, y: 100, width: 300, height: 180 },
+          overlap: .75,
+          distance: 0,
+          z_index: 2,
+        }],
+      },
+    });
+    expect(argumentsValue).toMatchObject({
+      paths: ["turn_media/selection.png"],
+      source: { bounds: { x: 12.6666666667 } },
+      board: {
+        board_id: "board-1",
+        revision: 8,
+        targets: [{ value_json: '{"expression":"sin(x)"}' }],
+      },
+    });
+  });
+
   it("restores a checksummed source snapshot without editor component IDs", async () => {
     const storage = new MemoryStorage();
     const selection = await source();

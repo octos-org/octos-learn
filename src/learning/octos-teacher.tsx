@@ -51,7 +51,7 @@ export function OctosTeacher({
   };
 
   return (
-    <div className="octos-teacher">
+    <div className="octos-teacher" data-learning-board-occlusion="">
       {speech && (
         <div className="octos-teacher-caption" aria-live="polite">
           {speech}

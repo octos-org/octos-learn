@@ -69,7 +69,7 @@ export function StudentInputDock({
   const busy = voiceState === "thinking" || voiceState === "speaking";
 
   return (
-    <form className="learning-input-dock" onSubmit={(event) => void submit(event)}>
+    <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
       {references.length > 0 ? (
         <div className="learning-input-references" aria-label="已引用的白板内容">
           {references.map((reference) => (

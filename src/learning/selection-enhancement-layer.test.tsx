@@ -1,7 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SelectionEnhancementLayer } from "./selection-enhancement-layer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
+
+vi.mock("octos-lesson-language/web-runtime", () => ({
+  plotPathData: vi.fn(() => ""),
+  samplePlotExpression: vi.fn(() => []),
+}));
+
+afterEach(cleanup);
 
 const artifact: SelectionEnhancementArtifact = {
   profile: "octos.selection-enhancement",
@@ -40,5 +47,35 @@ describe("SelectionEnhancementLayer", () => {
     expect(screen.getByText("引用的白板对象已失效，请重新选择")).toBeTruthy();
     expect(screen.getByText("原来的说明")).toBeTruthy();
     expect(container.querySelector(".is-invalid-target")).toBeTruthy();
+  });
+
+  it("minimizes an explanation to a nearby question button and restores it", () => {
+    const onDelete = vi.fn();
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "最小化这条辅助内容",
+    }));
+
+    expect(screen.queryByText("原来的说明")).toBeNull();
+    const restore = screen.getByRole("button", {
+      name: "展开小章鱼辅助：原来的说明",
+    });
+    expect(restore.textContent).toBe("?");
+
+    fireEvent.click(restore);
+
+    expect(screen.getByText("原来的说明")).toBeTruthy();
+    expect(screen.getByRole("button", {
+      name: "删除这条辅助内容",
+    })).toBeTruthy();
+    expect(onDelete).not.toHaveBeenCalled();
   });
 });

@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
-import { getSessionFiles } from "@/api/sessions";
+import { getSessionFiles, invokeSkillAction } from "@/api/sessions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -64,6 +64,7 @@ import {
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
 import {
   addSelectionSource,
+  buildSelectionEnhancementActionArguments,
   buildSelectionEnhancementTurnContext,
   collectPersistedSelectionEnhancementArtifacts,
   collectSelectionEnhancementArtifacts,
@@ -134,6 +135,64 @@ export interface LearningWorkspaceProps {
   ollFixture?: OllFixture;
 }
 
+function inkPlaybackRunStorageKey(sessionId: string): string {
+  return `octos-learning-ink-run:v1:${sessionId}`;
+}
+
+function inkMergeSourceStorageKey(sessionId: string): string {
+  return `octos-learning-ink-merge-source:v1:${sessionId}`;
+}
+
+function cumulativeInkRunStorageKey(sessionId: string): string {
+  return `octos-learning-ink-cumulative-run:v1:${sessionId}`;
+}
+
+function inkDocumentSessionId(sessionId: string, run: number): string {
+  return run === 0 ? sessionId : `${sessionId}:replay:${run}`;
+}
+
+function readInkPlaybackRun(sessionId: string): number {
+  try {
+    if (typeof window === "undefined") return 0;
+    const parsed = Number(
+      window.localStorage.getItem(inkPlaybackRunStorageKey(sessionId)),
+    );
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function readInkMergeSourceSessionId(
+  sessionId: string,
+  currentRun: number,
+): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const source = window.localStorage.getItem(
+      inkMergeSourceStorageKey(sessionId),
+    );
+    if (source === sessionId || source?.startsWith(`${sessionId}:replay:`)) {
+      return source;
+    }
+    const cumulativeRun = Number(
+      window.localStorage.getItem(cumulativeInkRunStorageKey(sessionId)),
+    );
+    // Versions before cumulative replay restoration created a new document
+    // but never recorded its parent. Recover the original session document
+    // once, then mark this run cumulative after the merge succeeds.
+    if (
+      currentRun > 0 &&
+      (!Number.isSafeInteger(cumulativeRun) || cumulativeRun !== currentRun)
+    ) {
+      return sessionId;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export function LearningWorkspace({
   sessionId,
   playbackMode = "live",
@@ -159,6 +218,13 @@ export function LearningWorkspace({
   } | null>(null);
   const [plainReplySpoken, setPlainReplySpoken] = useState(false);
   const [pausedLessonSource, setPausedLessonSource] = useState<string | null>(null);
+  const [inkPlaybackRun, setInkPlaybackRun] = useState(
+    () => readInkPlaybackRun(sessionId),
+  );
+  const [inkMergeSourceSessionId, setInkMergeSourceSessionId] = useState(
+    () => readInkMergeSourceSessionId(sessionId, readInkPlaybackRun(sessionId)),
+  );
+  const inkSessionId = inkDocumentSessionId(sessionId, inkPlaybackRun);
   const [loadedOllArtifacts, setLoadedOllArtifacts] = useState<
     Record<string, CanonicalEvent[]>
   >({});
@@ -294,8 +360,8 @@ export function LearningWorkspace({
     setOllDeliverySettled,
   ]);
   const lessonOwnsNarration =
-    playbackMode === "live" &&
     ollLesson !== null &&
+    (playbackMode === "live" || ollLesson.playing) &&
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
   const handleTurnComplete = useCallback((turnId: string) => {
@@ -366,6 +432,25 @@ export function LearningWorkspace({
     if (!ollLesson) return null;
     const claim = () => setPausedLessonSource(null);
     const release = () => setPausedLessonSource(ollOpenSource);
+    const beginFreshInkPlayback = () => {
+      const next = Number.isSafeInteger(inkPlaybackRun + 1)
+        ? inkPlaybackRun + 1
+        : 1;
+      setInkPlaybackRun(next);
+      setInkMergeSourceSessionId(inkSessionId);
+      try {
+        window.localStorage.setItem(
+          inkPlaybackRunStorageKey(sessionId),
+          String(next),
+        );
+        window.localStorage.setItem(
+          inkMergeSourceStorageKey(sessionId),
+          inkSessionId,
+        );
+      } catch {
+        // The new in-memory run still keeps replay clean when storage is unavailable.
+      }
+    };
     return {
       ...ollLesson,
       play: () => {
@@ -378,6 +463,7 @@ export function LearningWorkspace({
       },
       restart: () => {
         claim();
+        beginFreshInkPlayback();
         ollLesson.restart();
       },
       nextBeat: () => {
@@ -393,7 +479,6 @@ export function LearningWorkspace({
         ollLesson.playBeat(beatId);
       },
       setVariable: (alias: string, value: number) => {
-        release();
         ollLesson.setVariable(alias, value);
       },
       handleStudentVariableInput: (
@@ -401,7 +486,6 @@ export function LearningWorkspace({
         value: number,
         event: Parameters<typeof ollLesson.handleStudentVariableInput>[2],
       ) => {
-        release();
         return ollLesson.handleStudentVariableInput(alias, value, event);
       },
       handleStudentScene3dInput: (
@@ -409,11 +493,22 @@ export function LearningWorkspace({
         view: Parameters<typeof ollLesson.handleStudentScene3dInput>[1],
         event: Parameters<typeof ollLesson.handleStudentScene3dInput>[2],
       ) => {
-        release();
         return ollLesson.handleStudentScene3dInput(nodeId, view, event);
       },
     };
-  }, [ollLesson, ollOpenSource]);
+  }, [inkPlaybackRun, inkSessionId, ollLesson, ollOpenSource, sessionId]);
+  const handleInkMergeComplete = useCallback(() => {
+    setInkMergeSourceSessionId(null);
+    try {
+      window.localStorage.removeItem(inkMergeSourceStorageKey(sessionId));
+      window.localStorage.setItem(
+        cumulativeInkRunStorageKey(sessionId),
+        String(inkPlaybackRun),
+      );
+    } catch {
+      // The in-memory state is sufficient for this page load.
+    }
+  }, [inkPlaybackRun, sessionId]);
   const [sendError, setSendError] = useState<string | null>(null);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
@@ -842,7 +937,7 @@ export function LearningWorkspace({
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
         const turnId = crypto.randomUUID();
         onLearnerInput?.(question);
-        const selectionContext = buildSelectionEnhancementTurnContext({
+        const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
           turnId,
           mediaPath,
@@ -856,20 +951,20 @@ export function LearningWorkspace({
           boardContext,
           toolId,
         });
-        sendMessage({
+        const invocation = await invokeSkillAction(
           sessionId,
-          text: [buildTurnText(turnId, paths, question), selectionContext].join("\n"),
-          media: paths,
-          clientMessageId: turnId,
-          onComplete: () => {
-            setTextTurnPending(false);
-            handleTurnComplete(turnId);
-          },
-          onError: (error) => {
-            setTextTurnPending(false);
-            setSendError(error.message || "选区问题发送失败");
-          },
-        });
+          "learning.selection.enhance",
+          actionArguments,
+        );
+        if (!invocation.ok || invocation.results.some((result) => !result.success)) {
+          throw new Error("选区辅助内容生成失败");
+        }
+        const files = await getSessionFiles(sessionId);
+        setPersistedSelectionArtifacts(
+          collectPersistedSelectionEnhancementArtifacts(files),
+        );
+        setTextTurnPending(false);
+        handleTurnComplete(turnId);
       } catch (cause) {
         setTextTurnPending(false);
         setSendError(cause instanceof Error ? cause.message : "选区问题发送失败");
@@ -877,7 +972,6 @@ export function LearningWorkspace({
       }
     },
     [
-      buildTurnText,
       handleTurnComplete,
       ollLesson,
       onLearnerInput,
@@ -1268,7 +1362,9 @@ export function LearningWorkspace({
         {ollLesson ? (
           <OllLessonBoard
             runtime={controlledOllLesson ?? ollLesson}
-            inkSessionId={sessionId}
+            inkSessionId={inkSessionId}
+            inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
+            onInkMergeComplete={handleInkMergeComplete}
             selectionEnhancements={visibleSelectionEnhancements}
             selectionSources={selectionState?.sources ?? []}
             onAskInkSelection={sendSelectionQuestion}

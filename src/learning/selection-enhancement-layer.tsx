@@ -1,4 +1,5 @@
-import { Trash2 } from "lucide-react";
+import { Minimize2, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   plotPathData,
   samplePlotExpression,
@@ -67,6 +68,9 @@ export function SelectionEnhancementLayer({
   invalidTargetTurnIds?: ReadonlySet<string>;
   onDelete: (turnId: string) => void;
 }) {
+  const [minimizedTurnIds, setMinimizedTurnIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
   const enhancementCountBySource = new Map<string, number>();
   return (
@@ -85,6 +89,34 @@ export function SelectionEnhancementLayer({
         );
         const left = bounds.x + bounds.width + 30 + sourceIndex * 22;
         const top = bounds.y + sourceIndex * 26;
+        const minimized = minimizedTurnIds.has(artifact.turn_id);
+        if (minimized) {
+          return (
+            <button
+              key={artifact.turn_id}
+              type="button"
+              className={targetInvalid
+                ? "learning-selection-enhancement-pin is-invalid-target"
+                : "learning-selection-enhancement-pin"}
+              style={{
+                left: bounds.x + bounds.width + 12 + sourceIndex * 12,
+                top: bounds.y + 8 + sourceIndex * 42,
+              }}
+              data-source-id={artifact.source.source_id}
+              onClick={() => {
+                setMinimizedTurnIds((current) => {
+                  const next = new Set(current);
+                  next.delete(artifact.turn_id);
+                  return next;
+                });
+              }}
+              aria-label={`展开小章鱼辅助：${artifact.response.title}`}
+              title={`展开：${artifact.response.title}`}
+            >
+              ?
+            </button>
+          );
+        }
         return (
           <article
             key={artifact.turn_id}
@@ -106,37 +138,56 @@ export function SelectionEnhancementLayer({
                       : "来自当前选区"}
                 </small>
               </div>
-              <button
-                type="button"
-                onClick={() => onDelete(artifact.turn_id)}
-                aria-label="删除这条辅助内容"
-              >
-                <Trash2 size={15} />
-              </button>
+              <div className="learning-selection-enhancement-actions">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMinimizedTurnIds((current) => {
+                      const next = new Set(current);
+                      next.add(artifact.turn_id);
+                      return next;
+                    });
+                  }}
+                  aria-label="最小化这条辅助内容"
+                  title="最小化"
+                >
+                  <Minimize2 size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(artifact.turn_id)}
+                  aria-label="删除这条辅助内容"
+                  title="删除"
+                >
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </header>
-            <strong>{artifact.response.title}</strong>
-            <p>{artifact.response.text}</p>
-            {artifact.response.kind === "explanation"
-              && artifact.response.items?.length ? (
-                <ul>
-                  {artifact.response.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
+            <div className="learning-selection-enhancement-content">
+              <strong>{artifact.response.title}</strong>
+              <p>{artifact.response.text}</p>
+              {artifact.response.kind === "explanation"
+                && artifact.response.items?.length ? (
+                  <ul>
+                    {artifact.response.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              {artifact.response.kind === "plot" ? (
+                <SelectionPlot
+                  artifact={artifact as SelectionEnhancementArtifact & {
+                    response: Extract<
+                      SelectionEnhancementArtifact["response"],
+                      { kind: "plot" }
+                    >;
+                  }}
+                />
               ) : null}
-            {artifact.response.kind === "plot" ? (
-              <SelectionPlot
-                artifact={artifact as SelectionEnhancementArtifact & {
-                  response: Extract<
-                    SelectionEnhancementArtifact["response"],
-                    { kind: "plot" }
-                  >;
-                }}
-              />
-            ) : null}
-            <footer>
-              系统理解：{artifact.interpretation.content || "未能可靠识别"}
-            </footer>
+              <footer>
+                系统理解：{artifact.interpretation.content || "未能可靠识别"}
+              </footer>
+            </div>
           </article>
         );
       })}
