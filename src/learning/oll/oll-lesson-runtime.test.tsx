@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -24,12 +25,16 @@ import {
   type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
+import type { SelectionClassification } from "../selection-enhancements";
 import { isLessonDeliverySettled } from "./lesson-delivery";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
 
 const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
 const selectionContextToPngFileMock = vi.hoisted(() => vi.fn(async () =>
   new File(["selection"], "selection.png", { type: "image/png" }),
+));
+const selectionSnapshotToPngFileMock = vi.hoisted(() => vi.fn(async () =>
+  new File(["selection-only"], "selection-only.png", { type: "image/png" }),
 ));
 
 vi.mock("./oll-ink-runtime", () => ({
@@ -39,6 +44,7 @@ vi.mock("./oll-ink-runtime", () => ({
 vi.mock("../selection-enhancements", async (importOriginal) => ({
   ...await importOriginal<typeof import("../selection-enhancements")>(),
   selectionContextToPngFile: selectionContextToPngFileMock,
+  selectionSnapshotToPngFile: selectionSnapshotToPngFileMock,
 }));
 
 function RuntimeProbe() {
@@ -73,11 +79,16 @@ function InkRuntimeProbe() {
 
 function SelectionInkRuntimeProbe({
   onAsk,
+  onClassify,
 }: {
   onAsk: (request: {
     snapshot: InkSelectionSnapshot;
     question: string;
   }) => Promise<void>;
+  onClassify: (request: {
+    snapshot: InkSelectionSnapshot;
+    selectionImage: File;
+  }) => Promise<SelectionClassification>;
 }) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -95,6 +106,7 @@ function SelectionInkRuntimeProbe({
       <OllLessonBoard
         runtime={runtime}
         inkSessionId="learn-selection-1"
+        onClassifyInkSelection={onClassify}
         onAskInkSelection={onAsk}
       />
     </div>
@@ -517,6 +529,7 @@ describe("OLL lesson Runtime integration", () => {
     localStorage.clear();
     mountInkRuntimeMock.mockReset();
     selectionContextToPngFileMock.mockClear();
+    selectionSnapshotToPngFileMock.mockClear();
     vi.restoreAllMocks();
   });
 
@@ -552,6 +565,7 @@ describe("OLL lesson Runtime integration", () => {
       selected_count: 0,
       pen_color: "#176b62",
       selection_color: null,
+      selection_revision: 0,
       document_version: 3,
       saved: true,
     };
@@ -625,6 +639,7 @@ describe("OLL lesson Runtime integration", () => {
       pen_color: "#176b62",
       selection_color: "#176b62",
       selection_input: "pen",
+      selection_revision: 1,
       document_version: 3,
       saved: true,
     };
@@ -669,13 +684,28 @@ describe("OLL lesson Runtime integration", () => {
       destroy: vi.fn(() => Promise.resolve()),
     };
     const onAsk = vi.fn(async () => undefined);
+    const onClassify = vi.fn(async (): Promise<SelectionClassification> => ({
+      kind: "math",
+      content: "y=x^2",
+      confidence: "high",
+    }));
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(<SelectionInkRuntimeProbe onAsk={onAsk} />);
+    render(<SelectionInkRuntimeProbe onAsk={onAsk} onClassify={onClassify} />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
+    await waitFor(() => expect(onClassify).toHaveBeenCalledWith({
+      snapshot,
+      boardContext: expect.objectContaining({
+        boardId: expect.any(String),
+        boardRevision: expect.any(Number),
+        targets: expect.any(Array),
+      }),
+      selectionImage: expect.any(File),
+    }));
+    expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
     expect(await screen.findByText("接下来让小章鱼做什么？")).toBeTruthy();
     expect(screen.getByText("下面是操作，不会改变上面已经确认的选区。")).toBeTruthy();
@@ -689,7 +719,7 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.change(screen.getByLabelText("我写的内容更像"), {
       target: { value: "math" },
     });
-    const generatePlot = screen.getByRole("button", { name: "生成函数图像" });
+    const generatePlot = screen.getAllByRole("button", { name: "生成函数图像" }).at(-1)!;
     await waitFor(() => expect((generatePlot as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(generatePlot);
 
@@ -720,11 +750,38 @@ describe("OLL lesson Runtime integration", () => {
       expect(screen.getByTestId("selection-operation-count").textContent)
         .toBe("1");
     });
-    expect(ink.captureSelectionSnapshot).toHaveBeenCalledOnce();
-    expect(selectionContextToPngFileMock).toHaveBeenCalledOnce();
+    onAsk.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
+    await waitFor(() => {
+      expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
+        snapshot,
+        question: "请按我选中的公式生成函数图像。",
+        contentKind: "math",
+        toolId: "generate-plot",
+        boardContext: expect.objectContaining({ targets: [] }),
+        contextImage: expect.any(File),
+      }));
+    });
+    expect(ink.captureSelectionSnapshot).toHaveBeenCalledTimes(2);
+    expect(selectionContextToPngFileMock).toHaveBeenCalledTimes(2);
     expect(ink.setSelectionColor).not.toHaveBeenCalled();
     expect(ink.undo).not.toHaveBeenCalled();
     expect(ink.redo).not.toHaveBeenCalled();
+
+    onClassify.mockResolvedValueOnce({
+      kind: "geometry",
+      content: "圈选标记",
+      confidence: "high",
+    });
+    act(() => {
+      state = { ...state, selection_revision: 2 };
+      listeners.forEach((listener) => listener(state));
+    });
+    await waitFor(() => expect(onClassify).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+    });
+    expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
   });
 
   it("reports a failed restore and disposes the read-only ink layer", async () => {

@@ -14,10 +14,20 @@ describe("selection tool registry", () => {
     ).every((tool) => tool.changesSource === false)).toBe(true);
   });
 
-  it("offers plotting for an exact math fragment even before handwriting classification", () => {
+  it("offers plotting only for recognized math or an explicitly selected math fragment", () => {
+    expect(availableSelectionTools("unknown").map((tool) => tool.id))
+      .not.toContain("generate-plot");
+    expect(availableSelectionTools("math").map((tool) => tool.id))
+      .toContain("generate-plot");
     expect(availableSelectionTools("unknown", ["math-fragment"]).map((tool) => tool.id))
       .toContain("generate-plot");
+    expect(availableSelectionTools("geometry", ["plot", "plot-point"]).map((tool) => tool.id))
+      .not.toContain("generate-plot");
     expect(availableSelectionTools("unknown", ["geometry-arc"]).map((tool) => tool.id))
       .not.toContain("generate-plot");
+    expect(selectionToolRegistry.find((tool) => tool.id === "generate-plot"))
+      .toMatchObject({
+        requestContentKind: "math",
+      });
   });
 });

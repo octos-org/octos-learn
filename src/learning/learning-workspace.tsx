@@ -65,6 +65,7 @@ import {
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
 import {
   addSelectionSource,
+  buildSelectionClassificationActionArguments,
   buildSelectionEnhancementActionArguments,
   buildSelectionEnhancementTurnContext,
   collectPersistedSelectionEnhancementArtifacts,
@@ -73,10 +74,12 @@ import {
   loadSelectionEnhancementArtifact,
   loadSelectionEnhancementState,
   mergeSelectionEnhancementArtifacts,
+  parseSelectionClassificationMetadata,
   saveSelectionEnhancementState,
   selectionArtifactMatchesSource,
   selectionBoardContextTargetsExist,
   type SelectionBoardContext,
+  type SelectionClassification,
   type SelectionContentKind,
   type SelectionEnhancementArtifact,
   type SelectionEnhancementState,
@@ -989,6 +992,41 @@ export function LearningWorkspace({
     ],
   );
 
+  const classifyInkSelection = useCallback(
+    async ({
+      snapshot,
+      boardContext,
+      selectionImage,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      boardContext: SelectionBoardContext;
+      selectionImage: File;
+    }): Promise<SelectionClassification> => {
+      const paths = await uploadFiles([selectionImage], "upload");
+      const mediaPath = paths[0];
+      if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+      const invocation = await invokeSkillAction(
+        sessionId,
+        "learning.selection.classify",
+        buildSelectionClassificationActionArguments({
+          turnId: crypto.randomUUID(),
+          mediaPath,
+          source: snapshot,
+          boardContext,
+        }),
+      );
+      if (!invocation.ok || (invocation.results ?? []).some((candidate) => !candidate.success)) {
+        throw new Error("暂时无法识别选区内容");
+      }
+      const result = invocation.results?.find((candidate) =>
+        candidate.success && candidate.structured_metadata !== undefined,
+      );
+      if (!result) throw new Error("选区识别没有返回可用结果");
+      return parseSelectionClassificationMetadata(result.structured_metadata);
+    },
+    [sessionId],
+  );
+
   const startSelectionVoiceQuestion = useCallback(
     async ({
       snapshot,
@@ -1376,6 +1414,7 @@ export function LearningWorkspace({
             onInkMergeComplete={handleInkMergeComplete}
             selectionEnhancements={visibleSelectionEnhancements}
             selectionSources={selectionState?.sources ?? []}
+            onClassifyInkSelection={classifyInkSelection}
             onAskInkSelection={sendSelectionQuestion}
             onVoiceInkSelection={voiceEnabled
               ? startSelectionVoiceQuestion

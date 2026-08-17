@@ -26,6 +26,12 @@ export type SelectionContentKind =
   | "data"
   | "unknown";
 
+export interface SelectionClassification {
+  kind: SelectionContentKind;
+  content: string;
+  confidence: "high" | "medium" | "low";
+}
+
 export interface SelectionEnhancementSourceRef {
   source_id: string;
   document_id: string;
@@ -111,6 +117,93 @@ export interface SelectionEnhancementTurnContext {
   toolId?: SelectionToolId;
 }
 
+export interface SelectionClassificationTurnContext {
+  turnId: string;
+  mediaPath: string;
+  source: InkSelectionSnapshot;
+  boardContext: SelectionBoardContext;
+}
+
+function selectionSourceArgument(source: InkSelectionSnapshot) {
+  return {
+    source_id: source.source_id,
+    document_id: source.document_id,
+    document_version: source.document_version,
+    bounds: { ...source.bounds },
+    checksum: { ...source.checksum },
+  };
+}
+
+function selectionBoardArgument(context: SelectionBoardContext) {
+  return {
+    board_id: context.boardId,
+    revision: context.boardRevision,
+    targets: context.targets.map((target) => {
+      const valueJson = compactTargetValue(target.value);
+      return {
+        target_id: target.target_id,
+        node_id: target.node_id,
+        ...(target.element_id ? { element_id: target.element_id } : {}),
+        kind: target.kind,
+        ...(target.label ? { label: target.label } : {}),
+        ...(valueJson ? { value_json: valueJson } : {}),
+        world_bounds: { ...target.world_bounds },
+        overlap: target.overlap,
+        distance: target.distance,
+        z_index: target.z_index,
+      };
+    }),
+  };
+}
+
+export function buildSelectionClassificationActionArguments(
+  context: SelectionClassificationTurnContext,
+): Record<string, unknown> {
+  return {
+    paths: [context.mediaPath],
+    turn_id: context.turnId,
+    source: selectionSourceArgument(context.source),
+    board: selectionBoardArgument(context.boardContext),
+  };
+}
+
+export function parseSelectionClassificationMetadata(
+  value: unknown,
+): SelectionClassification {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("选区识别结果无效");
+  }
+  const classification = (value as Record<string, unknown>).selection_classification;
+  if (!classification || typeof classification !== "object" || Array.isArray(classification)) {
+    throw new Error("选区识别结果缺少分类信息");
+  }
+  const result = classification as Record<string, unknown>;
+  if (
+    result.kind !== "text"
+    && result.kind !== "math"
+    && result.kind !== "geometry"
+    && result.kind !== "data"
+    && result.kind !== "unknown"
+  ) {
+    throw new Error("选区识别类型无效");
+  }
+  if (
+    result.confidence !== "high"
+    && result.confidence !== "medium"
+    && result.confidence !== "low"
+  ) {
+    throw new Error("选区识别可信度无效");
+  }
+  if (typeof result.content !== "string") {
+    throw new Error("选区识别内容无效");
+  }
+  return {
+    kind: result.kind,
+    content: result.content.trim(),
+    confidence: result.confidence,
+  };
+}
+
 export function buildSelectionEnhancementActionArguments(
   context: SelectionEnhancementTurnContext,
 ): Record<string, unknown> {
@@ -118,34 +211,14 @@ export function buildSelectionEnhancementActionArguments(
     paths: [context.mediaPath],
     turn_id: context.turnId,
     learner_request: context.learnerRequest?.trim() || "请解释我选中的内容",
-    source: {
-      source_id: context.source.source_id,
-      document_id: context.source.document_id,
-      document_version: context.source.document_version,
-      bounds: { ...context.source.bounds },
-      checksum: { ...context.source.checksum },
-    },
+    source: selectionSourceArgument(context.source),
     content_hint: context.contentKind,
     tool_id: context.toolId ?? "custom-question",
-    board: {
-      board_id: context.boardContext?.boardId ?? context.sessionId,
-      revision: context.boardContext?.boardRevision ?? 0,
-      targets: (context.boardContext?.targets ?? []).map((target) => {
-        const valueJson = compactTargetValue(target.value);
-        return {
-          target_id: target.target_id,
-          node_id: target.node_id,
-          ...(target.element_id ? { element_id: target.element_id } : {}),
-          kind: target.kind,
-          ...(target.label ? { label: target.label } : {}),
-          ...(valueJson ? { value_json: valueJson } : {}),
-          world_bounds: { ...target.world_bounds },
-          overlap: target.overlap,
-          distance: target.distance,
-          z_index: target.z_index,
-        };
-      }),
-    },
+    board: selectionBoardArgument(context.boardContext ?? {
+      boardId: context.sessionId,
+      boardRevision: 0,
+      targets: [],
+    }),
     ...(context.lessonTitle?.trim() ? { lesson_title: context.lessonTitle.trim() } : {}),
     ...(context.boardSummary?.trim() ? { board_summary: context.boardSummary.trim() } : {}),
   };

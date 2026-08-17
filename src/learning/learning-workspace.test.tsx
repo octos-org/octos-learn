@@ -175,6 +175,7 @@ describe("LearningWorkspace", () => {
         selection_color: null,
         selection_input: "unknown" as const,
         selection_mode: "rectangle" as const,
+        selection_revision: 0,
         document_version: 0,
         saved: true,
       };

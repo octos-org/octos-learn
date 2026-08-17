@@ -7,9 +7,11 @@ import {
 } from "octos-lesson-language/ink-runtime";
 import {
   addSelectionSource,
+  buildSelectionClassificationActionArguments,
   buildSelectionEnhancementActionArguments,
   buildSelectionEnhancementTurnContext,
   loadSelectionEnhancementState,
+  parseSelectionClassificationMetadata,
   saveSelectionEnhancementState,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
@@ -57,6 +59,46 @@ async function source(): Promise<InkSelectionSnapshot> {
 }
 
 describe("selection enhancement persistence", () => {
+  it("builds a bounded selection-classification action and validates its metadata", async () => {
+    const selection = await source();
+    const argumentsValue = buildSelectionClassificationActionArguments({
+      turnId: "classification-1",
+      mediaPath: "turn_media/selection.png",
+      source: selection,
+      boardContext: {
+        boardId: "board-1",
+        boardRevision: 3,
+        targets: [],
+      },
+    });
+    expect(argumentsValue).toEqual({
+      paths: ["turn_media/selection.png"],
+      turn_id: "classification-1",
+      source: {
+        source_id: selection.source_id,
+        document_id: selection.document_id,
+        document_version: selection.document_version,
+        bounds: selection.bounds,
+        checksum: selection.checksum,
+      },
+      board: { board_id: "board-1", revision: 3, targets: [] },
+    });
+    expect(parseSelectionClassificationMetadata({
+      selection_classification: {
+        kind: "math",
+        content: " y=x^2 ",
+        confidence: "high",
+      },
+    })).toEqual({ kind: "math", content: "y=x^2", confidence: "high" });
+    expect(() => parseSelectionClassificationMetadata({
+      selection_classification: {
+        kind: "plot-tool",
+        content: "y=x^2",
+        confidence: "high",
+      },
+    })).toThrow(/类型无效/);
+  });
+
   it("passes exact selection identity to the direct skill action", async () => {
     const selection = await source();
     selection.bounds.x = 12.6666666667;

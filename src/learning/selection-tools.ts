@@ -12,6 +12,7 @@ export interface SelectionToolDefinition {
   label: string;
   prompt: string;
   contentKinds: SelectionContentKind[];
+  requestContentKind?: SelectionContentKind;
   targetKinds?: BoardTargetKind[];
   output: "annotation" | "plot";
   requiresModel: boolean;
@@ -65,6 +66,7 @@ export const selectionToolRegistry: Array<
     label: "生成函数图像",
     prompt: "请按我选中的公式生成函数图像。",
     contentKinds: ["math"],
+    requestContentKind: "math",
     targetKinds: ["math-fragment"],
     output: "plot",
     requiresModel: true,

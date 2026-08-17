@@ -42,12 +42,14 @@ import {
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import type {
   SelectionBoardContext,
+  SelectionClassification,
   SelectionContentKind,
   SelectionEnhancementArtifact,
 } from "../selection-enhancements";
 import {
   selectionArtifactTargetsExist,
   selectionContextToPngFile,
+  selectionSnapshotToPngFile,
 } from "../selection-enhancements";
 import {
   availableSelectionTools,
@@ -76,6 +78,7 @@ interface PreparedSelectionContext {
   candidates: BoardTargetCandidate[];
   boardId: string;
   boardRevision: number;
+  recorded: boolean;
 }
 
 export interface DegradedVisualRetryRequest {
@@ -156,6 +159,14 @@ const boardTargetKindLabels: Record<string, string> = {
   "scene3d-object": "三维对象",
 };
 
+const selectionContentKindLabels: Record<SelectionContentKind, string> = {
+  text: "文字",
+  math: "公式",
+  geometry: "图形",
+  data: "数据",
+  unknown: "暂不确定",
+};
+
 const boardOcclusionSelector = "[data-learning-board-occlusion]";
 
 const emptyInkState: LearningInkState = {
@@ -166,6 +177,7 @@ const emptyInkState: LearningInkState = {
   selection_color: null,
   selection_input: "unknown",
   selection_mode: "rectangle",
+  selection_revision: 0,
   document_version: 0,
   saved: true,
 };
@@ -177,6 +189,7 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     pen_color: enhanced.pen_color ?? "#176b62",
     selection_color: enhanced.selection_color ?? null,
     selection_mode: enhanced.selection_mode ?? "rectangle",
+    selection_revision: enhanced.selection_revision ?? 0,
   };
 }
 
@@ -272,6 +285,7 @@ export function OllLessonBoard({
   onInkMergeComplete,
   selectionEnhancements = [],
   selectionSources = [],
+  onClassifyInkSelection,
   onAskInkSelection,
   onVoiceInkSelection,
   onReferenceInkSelection,
@@ -284,6 +298,11 @@ export function OllLessonBoard({
   onInkMergeComplete?: () => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   selectionSources?: InkSelectionSnapshot[];
+  onClassifyInkSelection?: (request: {
+    snapshot: InkSelectionSnapshot;
+    boardContext: SelectionBoardContext;
+    selectionImage: File;
+  }) => Promise<SelectionClassification>;
   onAskInkSelection?: (request: {
     snapshot: InkSelectionSnapshot;
     question: string;
@@ -318,7 +337,12 @@ export function OllLessonBoard({
   const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const inkMergeAttemptRef = useRef<string | null>(null);
-  const inkSelectionVersionRef = useRef({ documentVersion: 0, selectedCount: 0 });
+  const inkSelectionVersionRef = useRef({
+    documentVersion: 0,
+    selectedCount: 0,
+    selectionRevision: 0,
+  });
+  const selectionClassificationRequestRef = useRef(0);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
     input: StudentInputMethod;
@@ -341,6 +365,10 @@ export function OllLessonBoard({
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
     useState<string[]>([]);
+  const [selectionClassification, setSelectionClassification] =
+    useState<SelectionClassification | null>(null);
+  const [selectionClassificationStatus, setSelectionClassificationStatus] =
+    useState<"idle" | "loading" | "ready" | "error">("idle");
   const [retryingDegradedNodeId, setRetryingDegradedNodeId] =
     useState<string | null>(null);
   const [requestedDegradedNodeIds, setRequestedDegradedNodeIds] =
@@ -348,6 +376,12 @@ export function OllLessonBoard({
   const variableControls = variableControlModels(runtime.board);
   const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
   const degradedVisuals = degradedVisualStatuses(runtime.board);
+  const quickSelectionTools = selectionClassificationStatus === "ready"
+    && selectionClassification
+    && selectionClassification.confidence !== "low"
+    && selectionClassification.kind !== "unknown"
+    ? availableSelectionTools(selectionClassification.kind)
+    : [];
 
   const retryDegradedVisual = useCallback(async (
     degraded: DegradedVisualStatus,
@@ -496,18 +530,11 @@ export function OllLessonBoard({
     inkRuntimeRef.current?.setSelectionMode?.(mode);
   }, []);
 
-  const captureSelection = useCallback(async (): Promise<PreparedSelectionContext> => {
+  const readSelectionContext = useCallback(async (): Promise<PreparedSelectionContext> => {
     const ink = inkRuntimeRef.current;
     if (!ink) throw new Error("笔迹功能尚未就绪");
     await ink.ready;
     const snapshot = await ink.captureSelectionSnapshot();
-    runtimeRef.current.recordStudentInkSelection({
-      source_id: snapshot.source_id,
-      document_id: snapshot.document_id,
-      document_version: snapshot.document_version,
-      bounds: snapshot.bounds,
-      checksum: snapshot.checksum,
-    }, inkState.selection_input);
     const mounted = mountedRef.current;
     const candidates = mounted
       ? visibleBoardTargetCandidates(mounted.view.queryBoardTargets({
@@ -521,8 +548,93 @@ export function OllLessonBoard({
       candidates,
       boardId: runtimeRef.current.board?.board_id ?? "unknown-board",
       boardRevision: runtimeRef.current.board?.revision ?? 0,
+      recorded: false,
     };
+  }, []);
+
+  const recordSelectionContext = useCallback((
+    prepared: PreparedSelectionContext,
+  ): PreparedSelectionContext => {
+    if (prepared.recorded) return prepared;
+    const { snapshot } = prepared;
+    runtimeRef.current.recordStudentInkSelection({
+      source_id: snapshot.source_id,
+      document_id: snapshot.document_id,
+      document_version: snapshot.document_version,
+      bounds: snapshot.bounds,
+      checksum: snapshot.checksum,
+    }, inkState.selection_input);
+    return { ...prepared, recorded: true };
   }, [inkState.selection_input]);
+
+  const captureSelection = useCallback(async (): Promise<PreparedSelectionContext> => {
+    const prepared = await readSelectionContext();
+    return recordSelectionContext(prepared);
+  }, [readSelectionContext, recordSelectionContext]);
+
+  useEffect(() => {
+    const requestId = ++selectionClassificationRequestRef.current;
+    if (
+      inkState.mode !== "select"
+      || inkState.selected_count === 0
+      || !onClassifyInkSelection
+    ) {
+      const resetTimeout = window.setTimeout(() => {
+        if (requestId !== selectionClassificationRequestRef.current) return;
+        setSelectionClassification(null);
+        setSelectionClassificationStatus("idle");
+        if (inkState.mode !== "select" || inkState.selected_count === 0) {
+          setPreparedSelection(null);
+          setSelectedBoardTargetIds([]);
+        }
+      }, 0);
+      return () => window.clearTimeout(resetTimeout);
+    }
+    let active = true;
+    const loadingTimeout = window.setTimeout(() => {
+      if (!active || requestId !== selectionClassificationRequestRef.current) return;
+      setSelectionClassification(null);
+      setSelectionClassificationStatus("loading");
+    }, 0);
+    const timeout = window.setTimeout(() => void (async () => {
+      try {
+        const prepared = await readSelectionContext();
+        const selectionImage = await selectionSnapshotToPngFile(prepared.snapshot);
+        const classification = await onClassifyInkSelection({
+          snapshot: prepared.snapshot,
+          boardContext: {
+            boardId: prepared.boardId,
+            boardRevision: prepared.boardRevision,
+            targets: prepared.candidates,
+          },
+          selectionImage,
+        });
+        if (!active || requestId !== selectionClassificationRequestRef.current) return;
+        setPreparedSelection(prepared);
+        setSelectionClassification(classification);
+        setSelectionContentKind(
+          classification.confidence === "low" ? "unknown" : classification.kind,
+        );
+        setSelectionClassificationStatus("ready");
+      } catch {
+        if (!active || requestId !== selectionClassificationRequestRef.current) return;
+        setSelectionClassification(null);
+        setSelectionContentKind("unknown");
+        setSelectionClassificationStatus("error");
+      }
+    })(), 250);
+    return () => {
+      active = false;
+      window.clearTimeout(loadingTimeout);
+      window.clearTimeout(timeout);
+    };
+  }, [
+    inkState.mode,
+    inkState.selected_count,
+    inkState.selection_revision,
+    onClassifyInkSelection,
+    readSelectionContext,
+  ]);
 
   const openSelectionQuestion = useCallback(async () => {
     if (selectionQuestionOpen) {
@@ -532,7 +644,8 @@ export function OllLessonBoard({
     setSelectionQuestionOpen(true);
     setSelectionRequestPending(true);
     try {
-      const prepared = await captureSelection();
+      const candidate = preparedSelection ?? await captureSelection();
+      const prepared = recordSelectionContext(candidate);
       setPreparedSelection(prepared);
       setSelectedBoardTargetIds(
         prepared.candidates.length === 1
@@ -546,19 +659,28 @@ export function OllLessonBoard({
     } finally {
       setSelectionRequestPending(false);
     }
-  }, [captureSelection, selectionQuestionOpen]);
+  }, [
+    captureSelection,
+    preparedSelection,
+    recordSelectionContext,
+    selectionQuestionOpen,
+  ]);
 
   const askSelection = useCallback(async (
     question: string,
     toolId: SelectionToolId = "custom-question",
+    requestContentKind?: SelectionContentKind,
+    boardTargetIds?: string[],
   ) => {
     const value = question.trim();
     if (!value || !onAskInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
     try {
-      const prepared = preparedSelection ?? await captureSelection();
+      const candidate = preparedSelection ?? await captureSelection();
+      const prepared = recordSelectionContext(candidate);
+      const requestedBoardTargetIds = boardTargetIds ?? selectedBoardTargetIds;
       const targets = prepared.candidates.filter((candidate) =>
-        selectedBoardTargetIds.includes(candidate.target_id),
+        requestedBoardTargetIds.includes(candidate.target_id),
       );
       const mounted = mountedRef.current;
       if (!mounted) throw new Error("白板尚未就绪");
@@ -570,7 +692,7 @@ export function OllLessonBoard({
       await onAskInkSelection({
         snapshot: prepared.snapshot,
         question: value,
-        contentKind: selectionContentKind,
+        contentKind: requestContentKind ?? selectionContentKind,
         toolId,
         boardContext: {
           boardId: prepared.boardId,
@@ -593,6 +715,7 @@ export function OllLessonBoard({
     captureSelection,
     onAskInkSelection,
     preparedSelection,
+    recordSelectionContext,
     selectedBoardTargetIds,
     selectionContentKind,
     selectionRequestPending,
@@ -602,7 +725,8 @@ export function OllLessonBoard({
     if (!onVoiceInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
     try {
-      const prepared = preparedSelection ?? await captureSelection();
+      const candidate = preparedSelection ?? await captureSelection();
+      const prepared = recordSelectionContext(candidate);
       const targets = prepared.candidates.filter((candidate) =>
         selectedBoardTargetIds.includes(candidate.target_id),
       );
@@ -636,6 +760,7 @@ export function OllLessonBoard({
     captureSelection,
     onVoiceInkSelection,
     preparedSelection,
+    recordSelectionContext,
     selectedBoardTargetIds,
     selectionContentKind,
     selectionRequestPending,
@@ -645,7 +770,8 @@ export function OllLessonBoard({
     if (!onReferenceInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
     try {
-      const prepared = preparedSelection ?? await captureSelection();
+      const candidate = preparedSelection ?? await captureSelection();
+      const prepared = recordSelectionContext(candidate);
       const targets = prepared.candidates.filter((candidate) =>
         selectedBoardTargetIds.includes(candidate.target_id),
       );
@@ -680,6 +806,7 @@ export function OllLessonBoard({
     captureSelection,
     onReferenceInkSelection,
     preparedSelection,
+    recordSelectionContext,
     selectedBoardTargetIds,
     selectionContentKind,
     selectionRequestPending,
@@ -699,7 +826,11 @@ export function OllLessonBoard({
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
-    inkSelectionVersionRef.current = { documentVersion: 0, selectedCount: 0 };
+    inkSelectionVersionRef.current = {
+      documentVersion: 0,
+      selectedCount: 0,
+      selectionRevision: 0,
+    };
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
@@ -745,6 +876,7 @@ export function OllLessonBoard({
           if (
             previous.documentVersion !== next.document_version
             || previous.selectedCount !== next.selected_count
+            || previous.selectionRevision !== next.selection_revision
           ) {
             setSelectionQuestionOpen(false);
             setPreparedSelection(null);
@@ -753,6 +885,7 @@ export function OllLessonBoard({
           inkSelectionVersionRef.current = {
             documentVersion: next.document_version,
             selectedCount: next.selected_count,
+            selectionRevision: next.selection_revision,
           };
           setInkState(next);
         });
@@ -1035,16 +1168,42 @@ export function OllLessonBoard({
           {inkState.mode === "select"
             && inkState.selected_count > 0
             && onAskInkSelection ? (
-              <button
-                type="button"
-                className="learning-ink-ask"
-                onClick={() => void openSelectionQuestion()}
-                aria-expanded={selectionQuestionOpen}
-                disabled={selectionRequestPending}
-              >
-                <MessageCircle size={16} />
-                问小章鱼
-              </button>
+              <>
+                {selectionClassificationStatus === "loading" ? (
+                  <span className="learning-ink-classification-status">
+                    正在识别选区…
+                  </span>
+                ) : null}
+                {quickSelectionTools.map((tool) => (
+                  <button
+                    key={tool.id}
+                    type="button"
+                    className="learning-ink-quick-action"
+                    onClick={() => void askSelection(
+                      tool.prompt,
+                      tool.id,
+                      tool.requestContentKind,
+                      [],
+                    )}
+                    disabled={selectionRequestPending}
+                  >
+                    {tool.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="learning-ink-ask"
+                  onClick={() => void openSelectionQuestion()}
+                  aria-expanded={selectionQuestionOpen}
+                  title={selectionClassificationStatus === "error"
+                    ? "未能自动识别选区，可在提问面板中手动选择内容类型"
+                    : undefined}
+                  disabled={selectionRequestPending}
+                >
+                  <MessageCircle size={16} />
+                  问小章鱼
+                </button>
+              </>
             ) : null}
           <button
             type="button"
@@ -1141,6 +1300,21 @@ export function OllLessonBoard({
               <option value="data">数据</option>
             </select>
           </label>
+          {selectionClassification ? (
+            <p className="learning-selection-classification">
+              自动识别为：{selectionContentKindLabels[selectionClassification.kind]}
+              {selectionClassification.content
+                ? `（${selectionClassification.content}）`
+                : ""}
+              {selectionClassification.confidence === "low"
+                ? "；把握较低，请手动确认"
+                : ""}
+            </p>
+          ) : selectionClassificationStatus === "error" ? (
+            <p className="learning-selection-classification">
+              没有可靠识别出内容，请手动选择类型。
+            </p>
+          ) : null}
           <p className="learning-selection-action-label">
             <strong>接下来让小章鱼做什么？</strong>
             <small>下面是操作，不会改变上面已经确认的选区。</small>
@@ -1155,7 +1329,11 @@ export function OllLessonBoard({
               <button
                 key={tool.id}
                 type="button"
-                onClick={() => void askSelection(tool.prompt, tool.id)}
+                onClick={() => void askSelection(
+                  tool.prompt,
+                  tool.id,
+                  tool.requestContentKind,
+                )}
                 disabled={selectionRequestPending}
               >
                 {tool.label}
