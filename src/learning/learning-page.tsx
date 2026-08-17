@@ -42,15 +42,18 @@ import type { LearningBoardContext } from "./board/session-board";
 import {
   createProvisionalLearningSession,
   adoptLearningSession,
+  hasDurableLocalWhiteboardContent,
   isSubstantiveLearningText,
   listLearningSessions,
   promoteLearningSession,
   removeLearningSession,
   resolveLearningEntrySession,
+  titleFromLearningText,
   updateLearningSession,
   type LearningSessionRecord,
 } from "./learning-session-store";
 import { isOllLessonArtifact } from "./oll/oll-artifacts";
+import { isSelectionEnhancementArtifact } from "./selection-enhancements";
 import { consumeWakeAudio } from "./wake-audio-handoff";
 import {
   acquireLearningTabLease,
@@ -291,7 +294,9 @@ function LearningServerSync({
           })),
         );
         const serverSessions = validatedSessions
-          .filter(({ files }) => files.some(isOllLessonArtifact))
+          .filter(({ files }) => files.some((file) =>
+            isOllLessonArtifact(file) || isSelectionEnhancementArtifact(file),
+          ))
           .map(({ session }) => session);
         const discovered: LearningSessionRecord[] = [];
         for (const session of serverSessions) {
@@ -447,15 +452,28 @@ export function LearningPage() {
       const adopted = discovered.map((session) => adoptLearningSession(session));
       const keepIds = new Set(adopted.map((session) => session.id));
       for (const local of listLearningSessions()) {
-        if (!keepIds.has(local.id)) removeLearningSession(local.id);
+        if (
+          !keepIds.has(local.id)
+          && !hasDurableLocalWhiteboardContent(local.id)
+        ) {
+          removeLearningSession(local.id);
+        }
       }
 
       const current = recordRef.current;
+      const currentHasLocalWhiteboard =
+        hasDurableLocalWhiteboardContent(current.id);
       const currentWasRemoved =
-        current.status !== "provisional" && !keepIds.has(current.id);
+        current.status !== "provisional"
+        && !keepIds.has(current.id)
+        && !currentHasLocalWhiteboard;
       if (
         (currentWasRemoved ||
-          (!initialEntry.hadResumableSession && current.status === "provisional")) &&
+          (
+            !initialEntry.hadResumableSession
+            && current.status === "provisional"
+            && !currentHasLocalWhiteboard
+          )) &&
         adopted.length > 0
       ) {
         const latest = [...adopted].sort(
@@ -590,21 +608,43 @@ export function LearningPage() {
 
   const handleLearnerInput = useCallback(
     (text: string) => {
+      const currentRecord = recordRef.current;
       setReviewSessionId((current) =>
-        current === record.id ? null : current,
+        current === currentRecord.id ? null : current,
       );
-      if (record.status !== "provisional") return;
       if (!isSubstantiveLearningText(text)) return;
-      const promoted = promoteLearningSession(record.id, text);
+      let promoted: LearningSessionRecord | null = null;
+      if (currentRecord.status === "provisional") {
+        promoted = promoteLearningSession(currentRecord.id, text);
+      } else if (currentRecord.title === "手写白板") {
+        promoted = updateLearningSession(currentRecord.id, {
+          title: titleFromLearningText(text),
+        });
+      }
       if (!promoted) return;
+      recordRef.current = promoted;
       setRecord(promoted);
       refreshLocalSessions();
       void setSessionTitle(promoted.id, promoted.title).catch(() => {
         // Local title remains usable when an older server cannot persist it.
       });
     },
-    [record.id, record.status, refreshLocalSessions],
+    [refreshLocalSessions],
   );
+
+  const handleWhiteboardActivity = useCallback(() => {
+    const currentRecord = recordRef.current;
+    if (currentRecord.status !== "provisional") return;
+    const promoted = promoteLearningSession(currentRecord.id, "手写白板");
+    if (!promoted) return;
+    recordRef.current = promoted;
+    setRecord(promoted);
+    refreshLocalSessions();
+    void setSessionTitle(promoted.id, promoted.title).catch(() => {
+      // Ink is already durable locally; the title can be retried after the
+      // first server-backed action creates the corresponding session.
+    });
+  }, [refreshLocalSessions]);
 
   const handleTurnsChange = useCallback(
     (turns: VoiceConversationTurn[]) => {
@@ -879,6 +919,7 @@ export function LearningPage() {
               onUseTextMode={useTextMode}
               onUseVoiceMode={useVoiceAndCameraMode}
               onLearnerInput={handleLearnerInput}
+              onWhiteboardActivity={handleWhiteboardActivity}
               onTurnsChange={handleTurnsChange}
               onBoardContextChange={handleBoardContextChange}
               onBack={leave}

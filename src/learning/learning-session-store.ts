@@ -15,6 +15,72 @@ export interface LearningSessionRecord {
 const STORE_KEY = "octos_learning_sessions_v1";
 const CURRENT_KEY = "octos_learning_current_session";
 const WAKE_ONLY = /^(你好[,，\s]*小章鱼|你好小章鱼)[。！!,.，\s]*$/;
+const INK_STORAGE_PREFIX = "octos-learning-ink:v1:";
+const SELECTION_STORAGE_PREFIX = "learn:selection-enhancements:";
+
+function isSavedInkDocumentForSession(
+  raw: string | null,
+  sessionId: string,
+): boolean {
+  if (!raw) return false;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const documentId = parsed.document_id;
+    return parsed.format === "oll.student-ink.svg"
+      && typeof documentId === "string"
+      && (
+        documentId === `learning-session:${sessionId}:student-ink`
+        || documentId.startsWith(
+          `learning-session:${sessionId}:replay:`,
+        )
+      )
+      && typeof parsed.document_version === "number"
+      && parsed.document_version >= 1
+      && typeof parsed.svg === "string";
+  } catch {
+    return false;
+  }
+}
+
+function hasSavedSelectionSource(
+  raw: string | null,
+  sessionId: string,
+): boolean {
+  if (!raw) return false;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    return parsed.session_id === sessionId
+      && Array.isArray(parsed.sources)
+      && parsed.sources.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * A learning session is durable even before it has an OLL lesson when the
+ * student has saved ink or created a selection source on its whiteboard.
+ */
+export function hasDurableLocalWhiteboardContent(
+  sessionId: string,
+  storage: Storage = localStorage,
+): boolean {
+  const inkKeyPrefix = `${INK_STORAGE_PREFIX}${sessionId}`;
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (
+      key
+      && (key === inkKeyPrefix || key.startsWith(`${inkKeyPrefix}:replay:`))
+      && isSavedInkDocumentForSession(storage.getItem(key), sessionId)
+    ) {
+      return true;
+    }
+  }
+  return hasSavedSelectionSource(
+    storage.getItem(`${SELECTION_STORAGE_PREFIX}${sessionId}:v1`),
+    sessionId,
+  );
+}
 
 function readRecords(): LearningSessionRecord[] {
   try {

@@ -83,6 +83,7 @@ import {
 import type { SelectionToolId } from "./selection-tools";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
+import type { WhiteboardLoadingState } from "./whiteboard-loading-block";
 import {
   buildComposerBoardReferenceContext,
   type ComposerBoardReference,
@@ -126,6 +127,7 @@ export interface LearningWorkspaceProps {
   onUseTextMode?: () => void;
   onUseVoiceMode?: () => Promise<void> | void;
   onLearnerInput?: (text: string) => void;
+  onWhiteboardActivity?: () => void;
   initialAudio?: Blob | null;
   conversationOptions?: VoiceConversationOptions;
   onTurnsChange?: (turns: VoiceConversationTurn[]) => void;
@@ -200,6 +202,7 @@ export function LearningWorkspace({
   onUseTextMode,
   onUseVoiceMode,
   onLearnerInput,
+  onWhiteboardActivity,
   initialAudio,
   conversationOptions,
   onTurnsChange,
@@ -522,6 +525,8 @@ export function LearningWorkspace({
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
   const [textTurnPending, setTextTurnPending] = useState(false);
+  const [selectionEnhancementPending, setSelectionEnhancementPending] =
+    useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
   const [temporaryCameraPreview, setTemporaryCameraPreview] = useState(false);
   const temporaryCameraPreviewRef = useRef(false);
@@ -938,6 +943,7 @@ export function LearningWorkspace({
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
+      setSelectionEnhancementPending(true);
       try {
         await rememberSelectionSource(snapshot);
         const paths = await uploadFiles([contextImage], "upload");
@@ -983,9 +989,11 @@ export function LearningWorkspace({
         }
         setPersistedSelectionArtifacts(artifacts);
         setTextTurnPending(false);
+        setSelectionEnhancementPending(false);
         handleTurnComplete(turnId);
       } catch (cause) {
         setTextTurnPending(false);
+        setSelectionEnhancementPending(false);
         setSendError(cause instanceof Error ? cause.message : "选区问题发送失败");
         throw cause;
       }
@@ -1311,6 +1319,23 @@ export function LearningWorkspace({
           : conv.state === "thinking"
             ? "我正在准备白板课程。"
             : "");
+  const lessonLoading = !selectionEnhancementPending
+    && !plainReply
+    && !completedTurnHasArtifact
+    && (
+      textTurnPending
+      || conv.state === "thinking"
+      || Boolean(completedTurnId)
+      || ollGenerationSessionId === sessionId
+    );
+  const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
+    ? {
+        id: completedTurnId ?? `lesson:${sessionId}`,
+        kind: "lesson",
+        title: ollLesson ? "正在补充白板内容" : "正在搭建这节课",
+        detail: "先整理重点，再把讲解和互动画面放到白板上。",
+      }
+    : null;
 
   return (
     <div className="learning-workspace">
@@ -1416,6 +1441,8 @@ export function LearningWorkspace({
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
           inkSessionId={inkSessionId}
+          loadingState={whiteboardLoadingState}
+          onInkActivity={onWhiteboardActivity}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
           selectionEnhancements={visibleSelectionEnhancements}
@@ -1469,19 +1496,6 @@ export function LearningWorkspace({
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
         onClick={handleTeacherClick}
       />
-
-      {plainReply && (
-        <div className="learning-turn-notice" role="status">
-          本轮没有更新白板，当前画面仍是上一节课程。
-        </div>
-      )}
-      {!plainReply && !completedTurnHasArtifact && (
-        textTurnPending || conv.state === "thinking" || Boolean(completedTurnId)
-      ) && (
-        <div className="learning-turn-notice" role="status">
-          正在处理本轮问题，白板暂未更新。
-        </div>
-      )}
 
       {controlledOllLesson
         ? <OllCourseOutline runtime={controlledOllLesson} />

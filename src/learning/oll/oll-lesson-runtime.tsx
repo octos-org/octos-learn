@@ -59,6 +59,10 @@ import {
 import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
+import {
+  WhiteboardLoadingBlock,
+  type WhiteboardLoadingState,
+} from "../whiteboard-loading-block";
 import "octos-lesson-language/web-runtime/styles.css";
 
 type LearningInkState = InkRuntimeState & {
@@ -283,6 +287,8 @@ export function LearningWhiteboard({
   inkSessionId,
   inkMergeSourceSessionId,
   onInkMergeComplete,
+  loadingState,
+  onInkActivity,
   selectionEnhancements = [],
   selectionSources = [],
   onClassifyInkSelection,
@@ -296,6 +302,8 @@ export function LearningWhiteboard({
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: () => void;
+  loadingState?: WhiteboardLoadingState | null;
+  onInkActivity?: () => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   selectionSources?: InkSelectionSnapshot[];
   onClassifyInkSelection?: (request: {
@@ -339,6 +347,8 @@ export function LearningWhiteboard({
   const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const inkMergeAttemptRef = useRef<string | null>(null);
+  const inkActivityReportedRef = useRef(false);
+  const onInkActivityRef = useRef(onInkActivity);
   const inkSelectionVersionRef = useRef({
     documentVersion: 0,
     selectedCount: 0,
@@ -358,12 +368,20 @@ export function LearningWhiteboard({
   const [taskError, setTaskError] = useState("");
   const [enhancementLayer, setEnhancementLayer] =
     useState<HTMLDivElement | null>(null);
+  const [lessonLoadingPosition, setLessonLoadingPosition] = useState({
+    left: 120,
+    top: 120,
+  });
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
   const [selectionContentKind, setSelectionContentKind] =
     useState<SelectionContentKind>("unknown");
   const [selectionRequestPending, setSelectionRequestPending] = useState(false);
   const [selectionRequestStatus, setSelectionRequestStatus] = useState("");
+  const [selectionLoadingSource, setSelectionLoadingSource] = useState<{
+    sourceId: string;
+    bounds: InkSelectionSnapshot["bounds"];
+  } | null>(null);
   const [preparedSelection, setPreparedSelection] =
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
@@ -387,6 +405,29 @@ export function LearningWhiteboard({
     && selectionClassification.kind !== "unknown"
     ? availableSelectionTools(selectionClassification.kind)
     : [];
+  const loadingStateId = loadingState?.id;
+
+  useEffect(() => {
+    onInkActivityRef.current = onInkActivity;
+  }, [onInkActivity]);
+
+  useEffect(() => {
+    if (!loadingStateId || !enhancementLayer) return;
+    const frame = window.requestAnimationFrame(() => {
+      const viewport = viewportRef.current;
+      const view = mountedRef.current?.view;
+      if (!viewport || !view) return;
+      const center = view.viewportToBoard({
+        x: viewport.clientWidth / 2,
+        y: viewport.clientHeight / 2,
+      });
+      setLessonLoadingPosition({
+        left: center.x - 180,
+        top: center.y - 105,
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [enhancementLayer, loadingStateId]);
 
   const retryDegradedVisual = useCallback(async (
     degraded: DegradedVisualStatus,
@@ -689,6 +730,10 @@ export function LearningWhiteboard({
     try {
       const candidate = preparedSelection ?? await captureSelection();
       const prepared = recordSelectionContext(candidate);
+      setSelectionLoadingSource({
+        sourceId: prepared.snapshot.source_id,
+        bounds: prepared.snapshot.bounds,
+      });
       const requestedBoardTargetIds = boardTargetIds ?? selectedBoardTargetIds;
       const targets = prepared.candidates.filter((candidate) =>
         requestedBoardTargetIds.includes(candidate.target_id),
@@ -724,6 +769,7 @@ export function LearningWhiteboard({
     } finally {
       setSelectionRequestPending(false);
       setSelectionRequestStatus("");
+      setSelectionLoadingSource(null);
     }
   }, [
     captureSelection,
@@ -838,6 +884,7 @@ export function LearningWhiteboard({
       mounted.view.mountWorldLayer(enhancementHost);
     setEnhancementLayer(enhancementHost);
     const sliderOperations = sliderOperationsRef.current;
+    inkActivityReportedRef.current = false;
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
@@ -903,6 +950,14 @@ export function LearningWhiteboard({
             selectionRevision: next.selection_revision,
           };
           setInkState(next);
+          if (
+            next.component_count > 0
+            && next.saved
+            && !inkActivityReportedRef.current
+          ) {
+            inkActivityReportedRef.current = true;
+            onInkActivityRef.current?.();
+          }
         });
         setInkError("");
         void ink.ready.then(
@@ -1085,7 +1140,7 @@ export function LearningWhiteboard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
-      {!runtime && inkState.component_count === 0 ? (
+      {!runtime && inkState.component_count === 0 && !loadingState ? (
         <div className="learning-whiteboard-empty" aria-live="polite">
           <span>这块白板会保存我们的思考过程</span>
           <strong>向 Octos 提问，我们从这里开始</strong>
@@ -1578,6 +1633,28 @@ export function LearningWhiteboard({
       {enhancementLayer
         ? createPortal(
             <>
+              {loadingState ? (
+                <WhiteboardLoadingBlock
+                  state={loadingState}
+                  left={lessonLoadingPosition.left}
+                  top={lessonLoadingPosition.top}
+                />
+              ) : null}
+              {selectionRequestStatus && selectionLoadingSource ? (
+                <WhiteboardLoadingBlock
+                  state={{
+                    id: `selection:${selectionLoadingSource.sourceId}`,
+                    kind: "selection",
+                    title: selectionRequestStatus.replace(/…$/, ""),
+                    detail: selectionRequestStatus.includes("函数图像")
+                      ? "正在识别公式，并把可查看的图像放在选区旁边。"
+                      : "正在理解这部分内容，并把辅助说明放在选区旁边。",
+                  }}
+                  left={selectionLoadingSource.bounds.x
+                    + selectionLoadingSource.bounds.width + 30}
+                  top={selectionLoadingSource.bounds.y}
+                />
+              ) : null}
               {selectionQuestionOpen
                 ? preparedSelection?.candidates.map((candidate, index) => (
                     <div

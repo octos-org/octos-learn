@@ -383,7 +383,7 @@ describe("LearningWorkspace", () => {
     expect(screen.getByRole("button", { name: "自由圈选笔迹" })).toBeTruthy();
   });
 
-  it("speaks a completed plain reply and marks the old board as unchanged", async () => {
+  it("speaks a completed plain reply without covering the board with a notice", async () => {
     vi.useFakeTimers();
     conversationMock.turns = [{
       id: "camera-clarification",
@@ -421,7 +421,27 @@ describe("LearningWorkspace", () => {
         narrationId: "plain-reply:camera-clarification",
       }),
     );
-    expect(screen.getByText(/本轮没有更新白板/)).toBeTruthy();
+    expect(screen.queryByText(/本轮没有更新白板/)).toBeNull();
+  });
+
+  it("places lesson generation feedback on the whiteboard", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-loading-lesson"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请解释勾股定理" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    expect(await screen.findByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeTruthy();
+    expect(screen.queryByText(/白板暂未更新/)).toBeNull();
   });
 
   it("does not speak a generic reply for a voice turn with no learner transcript", async () => {

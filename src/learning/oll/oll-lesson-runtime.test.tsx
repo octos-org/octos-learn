@@ -64,7 +64,11 @@ function RuntimeProbe() {
   );
 }
 
-function InkRuntimeProbe() {
+function InkRuntimeProbe({
+  onInkActivity,
+}: {
+  onInkActivity?: () => void;
+} = {}) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "oll-ink-runtime-test",
@@ -72,7 +76,11 @@ function InkRuntimeProbe() {
   if (!runtime) return null;
   return (
     <div style={{ width: 1200, height: 800 }}>
-      <OllLessonBoard runtime={runtime} inkSessionId="learn-ink-1" />
+      <OllLessonBoard
+        runtime={runtime}
+        inkSessionId="learn-ink-1"
+        onInkActivity={onInkActivity}
+      />
     </div>
   );
 }
@@ -618,7 +626,8 @@ describe("OLL lesson Runtime integration", () => {
     };
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(<InkRuntimeProbe />);
+    const onInkActivity = vi.fn();
+    render(<InkRuntimeProbe onInkActivity={onInkActivity} />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -627,6 +636,7 @@ describe("OLL lesson Runtime integration", () => {
       locale: "zh-CN",
     }));
     expect(ink.setMode).toHaveBeenCalledWith("navigate");
+    expect(onInkActivity).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
     expect(screen.queryByRole("button", { name: "退出书写模式" })).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
@@ -813,6 +823,9 @@ describe("OLL lesson Runtime integration", () => {
     }));
     fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
     expect(await screen.findByText("正在生成函数图像…")).toBeTruthy();
+    expect(screen.getByLabelText(
+      /正在生成函数图像。正在识别公式，并把可查看的图像放在选区旁边/,
+    )).toBeTruthy();
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
         snapshot,
