@@ -85,7 +85,19 @@ import { getToken } from "@/api/client";
 function formatTimestamp(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const hhmm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  // Same-day messages show HH:MM only; older ones gain the date (and
+  // year once it differs) — full second precision is engineer noise
+  // (2026-08 UI audit C10/L1).
+  if (sameDay) return hhmm;
+  const sameYear = d.getFullYear() === now.getFullYear();
+  if (sameYear) return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hhmm}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hhmm}`;
 }
 
 function visibleAttachmentCaption(caption?: string): string {
@@ -553,14 +565,17 @@ const EMPTY_GHOSTS: ReadonlyArray<GhostSpec> = Object.freeze([]);
 
 interface ChatThreadProps {
   hideFileOnlyAssistantMessages?: boolean;
+  allowAttachments?: boolean;
 }
 
 export function ChatThread({
   hideFileOnlyAssistantMessages = false,
+  allowAttachments = true,
 }: ChatThreadProps = {}) {
   return (
     <ChatThreadV2
       hideFileOnlyAssistantMessages={hideFileOnlyAssistantMessages}
+      allowAttachments={allowAttachments}
     />
   );
 }
@@ -703,10 +718,10 @@ const ThreadUserBubble = memo(function ThreadUserBubble({
             void runRewind();
           }
         }}
-        className={`flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-[10px] font-medium transition-opacity ${
+        className={`flex items-center gap-1 rounded-[6px] px-1.5 py-0.5 text-[11px] font-medium transition-opacity ${
           rewindState === "confirm"
             ? "border border-rose-400 text-rose-300"
-            : "text-muted opacity-40 hover:opacity-100"
+            : "text-muted opacity-60 hover:opacity-100"
         } disabled:opacity-60`}
       >
         <RotateCcw size={10} />
@@ -731,8 +746,41 @@ const ThreadUserBubble = memo(function ThreadUserBubble({
   );
 });
 
+function progressLevel(
+  text: string,
+): "info" | "debug" | "warn" | "error" | null {
+  const match = /^\[(info|debug|warn|error)\]\s*/i.exec(text);
+  if (!match) return null;
+  return match[1].toLowerCase() as "info" | "debug" | "warn" | "error";
+}
+
 function stripProgressLevel(text: string): string {
   return text.replace(/^\[(info|debug|warn|error)\]\s*/i, "");
+}
+
+/** Tailwind text color for a tool-progress level (kept visible instead
+ *  of being stripped — audit C6: an `[error]` line must read as one). */
+function progressLevelClass(level: "info" | "debug" | "warn" | "error" | null): string {
+  if (level === "error") return "text-red-400";
+  if (level === "warn") return "text-amber-400";
+  return "";
+}
+
+function ProgressLevelBadge({
+  level,
+}: {
+  level: "info" | "debug" | "warn" | "error" | null;
+}) {
+  if (level !== "error" && level !== "warn") return null;
+  return (
+    <span
+      className={`mr-1 text-[10px] font-bold uppercase tracking-wide ${
+        level === "error" ? "text-red-400" : "text-amber-400"
+      }`}
+    >
+      {level}
+    </span>
+  );
 }
 
 function ToolCallBubble({
@@ -747,7 +795,7 @@ function ToolCallBubble({
       <span
         data-testid="tool-call-retry-badge"
         data-tool-call-retry-count={toolCall.retryCount}
-        className="ml-1 rounded-full bg-amber-500/20 px-1.5 py-px text-[9px] font-semibold text-amber-300"
+        className="ml-1 rounded-full bg-amber-500/20 px-1.5 py-px text-[11px] font-semibold text-amber-300"
         title={`Retried ${toolCall.retryCount} time${toolCall.retryCount === 1 ? "" : "s"}`}
       >
         ×{toolCall.retryCount + 1}
@@ -896,7 +944,7 @@ function ToolCallBubble({
           data-testid="tool-call-args"
           data-tool-call-args-kind={argSummary.label}
           title={`${argSummary.label}: ${argSummary.value}`}
-          className="flex min-w-0 items-start gap-1 text-[9px] leading-4 opacity-85"
+          className="flex min-w-0 items-start gap-1 text-[11px] leading-4 opacity-85"
         >
           <span className="shrink-0 text-current/70">{argSummary.label}:</span>
           <span className="min-w-0 break-all">{argSummary.value}</span>
@@ -919,7 +967,7 @@ function ToolCallBubble({
                     }`
               }
               onClick={handleToggle}
-              className="mt-1 flex items-center gap-1 self-start rounded-sm px-1 py-0.5 text-[9px] uppercase tracking-wide opacity-70 hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-current/40"
+              className="mt-1 flex items-center gap-1 self-start rounded-sm px-1 py-0.5 text-[11px] uppercase tracking-wide opacity-70 hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-current/40"
             >
               {expanded ? (
                 <ChevronDown size={10} aria-hidden="true" />
@@ -941,7 +989,11 @@ function ToolCallBubble({
               className="m-0 mt-1 flex list-none flex-col gap-0.5 border-l border-current/20 pl-2"
             >
               {toolCall.progress.map((entry, idx) => (
-                <li key={idx} className="opacity-80">
+                <li
+                  key={idx}
+                  className={`opacity-80 ${progressLevelClass(progressLevel(entry.message))}`}
+                >
+                  <ProgressLevelBadge level={progressLevel(entry.message)} />
                   {stripProgressLevel(entry.message)}
                 </li>
               ))}
@@ -960,8 +1012,9 @@ function ToolCallBubble({
               {latestProgress && (
                 <li
                   data-testid="tool-call-runtime-latest"
-                  className="opacity-80"
+                  className={`opacity-80 ${progressLevelClass(progressLevel(latestProgress.message))}`}
                 >
+                  <ProgressLevelBadge level={progressLevel(latestProgress.message)} />
                   {stripProgressLevel(latestProgress.message)}
                 </li>
               )}
@@ -1087,8 +1140,11 @@ export const ThreadAssistantBubble = memo(function ThreadAssistantBubble({
             Wrapped in a block-level container so the pill-shaped
             `inline-flex` indicator sits cleanly below the tool-card row
             instead of overlapping it (reported on dspfac 2026-05-22:
-            "渡劫中…(13s) is overlapped on task status bubble"). */}
-        {showLiveIndicators && (
+            "渡劫中…(13s) is overlapped on task status bubble").
+            Mutually exclusive with the tool-progress row: when a tool
+            has reported progress, that concrete status supersedes the
+            generic "thinking" pill (2026-08 UI audit M1). */}
+        {showLiveIndicators && !showToolProgress && (
           <div className="mt-2 block">
             <ThinkingIndicator />
           </div>
@@ -1138,27 +1194,27 @@ export const ThreadAssistantBubble = memo(function ThreadAssistantBubble({
 function ThreadMessageMeta({ message }: { message: ThreadMessage }) {
   const meta: MessageMeta | undefined = message.meta;
 
-  const parts: string[] = [];
+  // Everyday view shows only the timestamp; model / tokens / duration
+  // move into the hover detail (2026-08 UI audit: per-message token
+  // ladders are engineer-facing noise).
+  const timeStr = formatTimestamp(message.timestamp);
+  const detailParts: string[] = [];
   if (meta) {
-    if (meta.model) parts.push(meta.model);
-    if (meta.tokens_in) parts.push(`${formatTokens(meta.tokens_in)} in`);
-    if (meta.tokens_out) parts.push(`${formatTokens(meta.tokens_out)} out`);
-    if (meta.duration_s) parts.push(`${meta.duration_s}s`);
+    if (meta.model) detailParts.push(meta.model);
+    if (meta.tokens_in) detailParts.push(`${formatTokens(meta.tokens_in)} in`);
+    if (meta.tokens_out) detailParts.push(`${formatTokens(meta.tokens_out)} out`);
+    if (meta.duration_s) detailParts.push(`${meta.duration_s}s`);
   }
-  parts.push(formatTimestamp(message.timestamp));
-
-  if (meta && (meta.model || meta.tokens_in || meta.tokens_out)) {
-    return (
-      <div className="flex items-center gap-1.5 text-[10px] text-muted/60 select-none">
-        <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent/40" />
-        {parts.join(" · ")}
-      </div>
-    );
-  }
+  const detail =
+    detailParts.length > 0 ? `${detailParts.join(" · ")} · ${timeStr}` : timeStr;
 
   return (
-    <div className="text-[10px] text-muted/60 select-none">
-      {formatTimestamp(message.timestamp)}
+    <div
+      className="text-[10px] text-muted/60 select-none"
+      title={detail}
+      aria-label={detail}
+    >
+      {timeStr}
     </div>
   );
 }
@@ -1362,8 +1418,31 @@ function ThreadList({
   );
 }
 
+// First-run starter suggestions: clicking one prefills the composer
+// (via the same `crew:composer_prefill` event the Rewind path uses), so
+// new users see concrete, editable examples instead of a blank box.
+const STARTER_SUGGESTIONS: Array<{ title: string; prompt: string }> = [
+  {
+    title: "Summarize",
+    prompt: "Summarize the key points of an article or attached document.",
+  },
+  {
+    title: "Write code",
+    prompt: "Write a Python script that reads a CSV file and prints a summary.",
+  },
+  {
+    title: "Create slides",
+    prompt: "Create a slide deck about a topic I choose next.",
+  },
+  {
+    title: "Explain simply",
+    prompt: "Explain a concept in simple terms, step by step.",
+  },
+];
+
 function ChatThreadV2({
   hideFileOnlyAssistantMessages = false,
+  allowAttachments = true,
 }: ChatThreadProps) {
   const { currentSessionId, historyTopic } = useSession();
   const threads = useRenderThreads(currentSessionId, historyTopic);
@@ -1466,6 +1545,24 @@ function ChatThreadV2({
   const hasThreads = threads.length > 0;
   const hasGhosts = visibleGhosts.length > 0;
 
+  // First-run helper: prefill the composer with a starter prompt. The
+  // Composer already listens for `crew:composer_prefill` (scope-checked
+  // by sessionId + topic), so suggestions and Rewind share one path.
+  const prefillComposer = useCallback(
+    (text: string) => {
+      window.dispatchEvent(
+        new CustomEvent("crew:composer_prefill", {
+          detail: {
+            sessionId: currentSessionId,
+            topic: historyTopic?.trim() || undefined,
+            text,
+          },
+        }),
+      );
+    },
+    [currentSessionId, historyTopic],
+  );
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
       {/* Mounted ONCE at thread level (codex R3): a per-bubble mount
@@ -1492,6 +1589,40 @@ function ChatThreadV2({
             <p className="text-sm text-muted">
               Ask anything, attach files, or record a voice message.
             </p>
+            <div className="mt-6 grid grid-cols-1 gap-2 text-left sm:grid-cols-2">
+              {STARTER_SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion.title}
+                  type="button"
+                  data-testid="starter-suggestion"
+                  onClick={() => prefillComposer(suggestion.prompt)}
+                  className="glass-list-item rounded-[12px] px-4 py-3 text-sm text-text transition hover:text-text-strong"
+                >
+                  <span className="font-medium">{suggestion.title}</span>
+                  <span className="mt-0.5 block text-xs text-muted">
+                    {suggestion.prompt}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-6 text-xs leading-relaxed text-muted/70">
+              Commands:{" "}
+              <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-code-inline">
+                /help
+              </code>{" "}
+              ·{" "}
+              <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-code-inline">
+                /compact
+              </code>{" "}
+              ·{" "}
+              <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-code-inline">
+                /new slides &lt;name&gt;
+              </code>{" "}
+              ·{" "}
+              <code className="rounded bg-surface-container px-1.5 py-0.5 font-mono text-[11px] text-code-inline">
+                /new research &lt;topic&gt;
+              </code>
+            </p>
           </div>
         </div>
       )}
@@ -1513,6 +1644,7 @@ function ChatThreadV2({
         <Composer
           mountGhost={mountGhost}
           unmountGhost={unmountGhost}
+          allowAttachments={allowAttachments}
           failGhost={failGhost}
           completeGhost={completeGhost}
         />
@@ -1531,6 +1663,7 @@ interface ComposerProps {
   /** Tear down a ghost (used by the Retry path to clear a stale
    *  overlay before re-issuing the send). */
   unmountGhost: (clientMessageId: string) => void;
+  allowAttachments?: boolean;
   failGhost: (clientMessageId: string, error: Error) => void;
   completeGhost: (clientMessageId: string) => void;
 }
@@ -1538,6 +1671,7 @@ interface ComposerProps {
 function Composer({
   mountGhost,
   unmountGhost,
+  allowAttachments = true,
   failGhost,
   completeGhost,
 }: ComposerProps) {
@@ -1573,9 +1707,22 @@ function Composer({
       ),
     [threadsForRunning],
   );
+  // Background tasks (run_pipeline / podcast / mofa_*) flip the
+  // streaming status to "complete" within ~30ms of the ack while the
+  // actual work runs for minutes — the composer Stop button must stay
+  // available for that whole window, mirroring the header task dock.
+  const sessionTasks = useTasks(currentSessionId, historyTopic);
+  const hasRunningBackgroundTask = sessionTasks.some(
+    (t) => t.status === "spawned" || t.status === "running",
+  );
+  const showStop = isRunning || hasRunningBackgroundTask;
 
   const [text, setText] = useState("");
   const [cmdFeedback, setCmdFeedback] = useState<string | null>(null);
+  // Errors persist until dismissed (2026-08 UI audit C6): the old
+  // 4-second auto-dismiss hid the exact moment users most need the
+  // message; informational feedback (/help etc.) still auto-clears.
+  const [feedbackIsError, setFeedbackIsError] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
 
   // Rewind → edit-and-resend: `ThreadUserBubble` dispatches
@@ -1710,10 +1857,10 @@ function Composer({
       setRecordingTime(0);
       setRecording(mode);
     } catch (e) {
+      setFeedbackIsError(true);
       setCmdFeedback(
         `Recording failed: ${e instanceof Error ? e.message : "permission denied"}`,
       );
-      setTimeout(() => setCmdFeedback(null), 4000);
     }
   }, []);
 
@@ -1747,8 +1894,8 @@ function Composer({
       });
       setCameraStream(stream);
     } catch (e) {
+      setFeedbackIsError(true);
       setCmdFeedback(`Camera failed: ${e instanceof Error ? e.message : "permission denied"}`);
-      setTimeout(() => setCmdFeedback(null), 4000);
     }
   }, [cameraStream]);
 
@@ -1787,13 +1934,14 @@ function Composer({
   }, [cameraStream]);
 
   const addFiles = useCallback((files: FileList | File[]) => {
+    if (!allowAttachments) return;
     const newFiles: PendingFile[] = Array.from(files).map((file) => {
       const pf: PendingFile = { file, source: "upload" };
       if (file.type.startsWith("image/")) pf.preview = URL.createObjectURL(file);
       return pf;
     });
     setPendingFiles((prev) => [...prev, ...newFiles]);
-  }, []);
+  }, [allowAttachments]);
 
   const removeFile = useCallback((index: number) => {
     setPendingFiles((prev) => {
@@ -1893,16 +2041,17 @@ function Composer({
         return;
       }
     } catch (e) {
+      setFeedbackIsError(true);
       setCmdFeedback(
         `Send failed: ${e instanceof Error ? e.message : "unknown error"}`,
       );
-      setTimeout(() => setCmdFeedback(null), 4000);
       releaseSending();
       return;
     }
 
     if (trimmedInput === "/help" || trimmedInput === "/") {
       setText("");
+      setFeedbackIsError(false);
       setCmdFeedback(
         COMMANDS.map((c) => `${c.cmd} — ${c.desc}`).join("\n"),
       );
@@ -1929,10 +2078,10 @@ function Composer({
       try {
         await compactSession(scopedId);
       } catch (e) {
+        setFeedbackIsError(true);
         setCmdFeedback(
           `Compact failed: ${e instanceof Error ? e.message : "unknown error"}`,
         );
-        setTimeout(() => setCmdFeedback(null), 4000);
       }
       releaseSending();
       return;
@@ -1953,8 +2102,8 @@ function Composer({
           audioUploadMode,
         );
       } catch (e) {
+        setFeedbackIsError(true);
         setCmdFeedback(`Upload failed: ${e instanceof Error ? e.message : "unknown error"}`);
-        setTimeout(() => setCmdFeedback(null), 4000);
         setUploading(false);
         releaseSending();
         return;
@@ -1999,10 +2148,10 @@ function Composer({
         ...intercepted,
       };
     } catch (e) {
+      setFeedbackIsError(true);
       setCmdFeedback(
         `Send failed: ${e instanceof Error ? e.message : "unknown error"}`,
       );
-      setTimeout(() => setCmdFeedback(null), 4000);
       releaseSending();
       return;
     }
@@ -2119,11 +2268,23 @@ function Composer({
           // best-effort: swallow transport errors.
         });
       }
+      // Also cancel active background tasks: for spawn_only tools the
+      // turn completes almost immediately while the job keeps running,
+      // so the Stop button must reach the task store too. The server's
+      // authoritative `task/updated` transitions flip the dock/state.
+      for (const task of sessionTasks) {
+        if (task.status === "spawned" || task.status === "running") {
+          bridge.cancelTask(task.id).catch(() => {
+            // best-effort: the task remains active so the user can retry.
+          });
+        }
+      }
     }
-  }, [currentSessionId, historyTopic, threadsForRunning]);
+  }, [currentSessionId, historyTopic, sessionTasks, threadsForRunning]);
 
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
+      if (!allowAttachments) return;
       const items = e.clipboardData.items;
       const files: File[] = [];
       for (let i = 0; i < items.length; i++) {
@@ -2134,7 +2295,7 @@ function Composer({
       }
       if (files.length > 0) addFiles(files);
     },
-    [addFiles],
+    [addFiles, allowAttachments],
   );
 
   const handleKeyDown = useCallback(
@@ -2175,15 +2336,34 @@ function Composer({
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (e.dataTransfer.files.length > 0) addFiles(e.dataTransfer.files);
+          if (allowAttachments && e.dataTransfer.files.length > 0) {
+            addFiles(e.dataTransfer.files);
+          }
         }}
       >
         {cmdFeedback && (
           <div
             data-testid="cmd-feedback"
-            className="glass-pill animate-shell-rise mb-3 whitespace-pre-wrap rounded-[10px] px-3.5 py-2 text-xs text-accent"
+            className={`glass-pill animate-shell-rise mb-3 flex items-start gap-2 whitespace-pre-wrap rounded-[10px] px-3.5 py-2 text-xs ${
+              feedbackIsError
+                ? "border border-red-500/30 bg-red-500/10 text-red-400"
+                : "text-accent"
+            }`}
           >
-            {cmdFeedback}
+            <span className="min-w-0 flex-1">{cmdFeedback}</span>
+            {feedbackIsError && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCmdFeedback(null);
+                  setFeedbackIsError(false);
+                }}
+                aria-label="Dismiss error"
+                className="shrink-0 rounded p-0.5 text-red-400/70 transition hover:text-red-400"
+              >
+                <X size={12} />
+              </button>
+            )}
           </div>
         )}
         {matchingCmds.length > 0 && (
@@ -2266,7 +2446,12 @@ function Composer({
                 )}
                 <button
                   onClick={() => removeFile(i)}
-                  className="absolute -right-1 -top-1 hidden rounded-full bg-red-600 p-0.5 text-white group-hover:block"
+                  // Always visible: `hidden group-hover:block` is
+                  // unreachable on touch devices, leaving mis-attached
+                  // files impossible to remove without reloading the page.
+                  className="absolute -right-1 -top-1 flex rounded-full bg-red-600/90 p-0.5 text-white opacity-80 transition hover:bg-red-600 hover:opacity-100"
+                  aria-label={`Remove ${pf.file.name}`}
+                  title={`Remove ${pf.file.name}`}
                 >
                   <X size={10} />
                 </button>
@@ -2274,17 +2459,31 @@ function Composer({
             ))}
           </div>
         )}
+        {queueDepth > 0 && (
+          <div
+            data-testid="queue-status-line"
+            className="mb-2 flex items-center gap-2 rounded-[10px] border border-accent/20 bg-accent-container px-3 py-2 text-xs text-text"
+          >
+            <Layers size={12} className="shrink-0 text-accent" />
+            <span>
+              {queueDepth} message{queueDepth > 1 ? "s" : ""} queued — the
+              previous turn is still running; they will be sent in order.
+            </span>
+          </div>
+        )}
         <div className="chat-composer-frame composer-shell animate-shell-rise flex flex-col rounded-[12px] p-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              if (e.target.files) addFiles(e.target.files);
-              e.target.value = "";
-            }}
-          />
+          {allowAttachments && (
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                if (e.target.files) addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          )}
           {/* Top row: text input + send */}
           <div className="flex items-end gap-1.5">
             <textarea
@@ -2295,6 +2494,7 @@ function Composer({
                   ? `${pendingFiles.length} file(s) attached -- add a message...`
                   : "Send a message..."
               }
+              title="Enter to send · Shift+Enter for a new line"
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
@@ -2328,10 +2528,15 @@ function Composer({
                 <SendHorizontal size={18} />
               )}
             </button>
-            {isRunning && (
+            {showStop && (
               <button
                 data-testid="cancel-button"
                 aria-label="Cancel"
+                title={
+                  hasRunningBackgroundTask && !isRunning
+                    ? "Stop the running background task"
+                    : "Cancel the current turn"
+                }
                 onClick={handleCancel}
                 className="chat-stop-button flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-red-600 text-white hover:bg-red-700"
               >
@@ -2341,53 +2546,57 @@ function Composer({
           </div>
           {/* Bottom row: media buttons */}
           <div className="chat-composer-toolbar composer-toolbar mt-2 flex items-center gap-0.5 px-1 pt-2">
-            <button
-              data-testid="attach-button"
-              aria-label="Attach file"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={recording !== null}
-              className="glass-icon-button flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] disabled:opacity-30"
-              title="Attach files"
-            >
-              <Paperclip size={16} />
-            </button>
-            <button
-              data-testid="voice-button"
-              onClick={() => (recording === "voice" ? stopRecording() : startRecording("voice"))}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
-                recording === "voice"
-                  ? "bg-red-600 text-white animate-pulse"
-                  : "glass-icon-button"
-              } ${recording === "video" ? "opacity-30 pointer-events-none" : ""}`}
-              title={recording === "voice" ? "Stop recording" : "Record voice"}
-            >
-              {recording === "voice" ? <StopCircle size={16} /> : <Mic size={16} />}
-            </button>
-            <button
-              data-testid="video-button"
-              onClick={() => (recording === "video" ? stopRecording() : startRecording("video"))}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
-                recording === "video"
-                  ? "bg-red-600 text-white animate-pulse"
-                  : "glass-icon-button"
-              } ${recording === "voice" ? "opacity-30 pointer-events-none" : ""}`}
-              title={recording === "video" ? "Stop recording" : "Record video"}
-            >
-              {recording === "video" ? <StopCircle size={16} /> : <Video size={16} />}
-            </button>
-            <button
-              data-testid="camera-button"
-              onClick={cameraStream ? capturePhoto : openCamera}
-              disabled={recording !== null}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
-                cameraStream
-                  ? "bg-green-600 text-white hover:bg-green-700"
-                  : "glass-icon-button"
-              } disabled:opacity-30`}
-              title={cameraStream ? "Take photo" : "Open camera"}
-            >
-              <Camera size={16} />
-            </button>
+            {allowAttachments && (
+              <>
+                <button
+                  data-testid="attach-button"
+                  aria-label="Attach file"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={recording !== null}
+                  className="glass-icon-button flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] disabled:opacity-30"
+                  title="Attach files"
+                >
+                  <Paperclip size={16} />
+                </button>
+                <button
+                  data-testid="voice-button"
+                  onClick={() => (recording === "voice" ? stopRecording() : startRecording("voice"))}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
+                    recording === "voice"
+                      ? "bg-red-600 text-white animate-pulse"
+                      : "glass-icon-button"
+                  } ${recording === "video" ? "opacity-30 pointer-events-none" : ""}`}
+                  title={recording === "voice" ? "Stop recording" : "Record voice"}
+                >
+                  {recording === "voice" ? <StopCircle size={16} /> : <Mic size={16} />}
+                </button>
+                <button
+                  data-testid="video-button"
+                  onClick={() => (recording === "video" ? stopRecording() : startRecording("video"))}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
+                    recording === "video"
+                      ? "bg-red-600 text-white animate-pulse"
+                      : "glass-icon-button"
+                  } ${recording === "voice" ? "opacity-30 pointer-events-none" : ""}`}
+                  title={recording === "video" ? "Stop recording" : "Record video"}
+                >
+                  {recording === "video" ? <StopCircle size={16} /> : <Video size={16} />}
+                </button>
+                <button
+                  data-testid="camera-button"
+                  onClick={cameraStream ? capturePhoto : openCamera}
+                  disabled={recording !== null}
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] ${
+                    cameraStream
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : "glass-icon-button"
+                  } disabled:opacity-30`}
+                  title={cameraStream ? "Take photo" : "Open camera"}
+                >
+                  <Camera size={16} />
+                </button>
+              </>
+            )}
             {/* Mode indicator badges. Wave4-A: `queueDepth` is the live
                 count of turns parked behind the in-flight gate (see
                 `ui-protocol-send.ts`); we render it whenever a queued

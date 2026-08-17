@@ -27,6 +27,7 @@ const {
   captureStopMock,
   getActiveBridgeMock,
   sendMessageMock,
+  supportsVoiceAdmissionMock,
   admitVoiceMessageMock,
   commitAdmittedVoiceMessageMock,
   interruptActiveTurnMock,
@@ -36,6 +37,7 @@ const {
   captureStopMock: vi.fn(async () => {}),
   getActiveBridgeMock: vi.fn((): unknown => undefined),
   sendMessageMock: vi.fn(),
+  supportsVoiceAdmissionMock: vi.fn(() => true),
   admitVoiceMessageMock: vi.fn(async () => ({
     status: "speech" as const,
     admissionId: "admission-1",
@@ -141,6 +143,7 @@ vi.mock("@/runtime/ui-protocol-send", () => ({
   commitAdmittedVoiceMessage: commitAdmittedVoiceMessageMock,
   interruptActiveTurn: interruptActiveTurnMock,
   sendMessage: sendMessageMock,
+  supportsVoiceAdmission: supportsVoiceAdmissionMock,
 }));
 
 vi.mock("@/runtime/ui-protocol-runtime", () => ({
@@ -158,6 +161,11 @@ vi.mock("@/api/files", () => ({
 vi.mock("@/api/client", () => ({
   buildApiHeaders: () => ({}),
 }));
+
+afterEach(() => {
+  supportsVoiceAdmissionMock.mockReset();
+  supportsVoiceAdmissionMock.mockReturnValue(true);
+});
 
 describe("assembleTurnFiles", () => {
   const audio = new File(["a"], "utterance.wav", { type: "audio/wav" });
@@ -571,6 +579,8 @@ describe("canonical reply-audio delivery", () => {
     captureStartMock.mockClear();
     captureStopMock.mockClear();
     sendMessageMock.mockClear();
+    supportsVoiceAdmissionMock.mockReset();
+    supportsVoiceAdmissionMock.mockReturnValue(true);
     getActiveBridgeMock.mockReset();
     getActiveBridgeMock.mockReturnValue(undefined);
   });
@@ -763,6 +773,43 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("falls back to the legacy voice turn when the server lacks ASR admission", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    supportsVoiceAdmissionMock.mockReturnValue(false);
+    uploadFilesMock.mockResolvedValue(["up/utterance.wav"]);
+    const onTurnStart = vi.fn();
+    const buildTurnText = vi.fn(() => "[[LEARNING_SESSION]] legacy context");
+
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-legacy-voice", undefined, undefined, {
+        buildTurnText,
+        onTurnStart,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["speech"], { type: "audio/wav" }),
+      });
+    });
+
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    expect(sendMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessionId: "learn-legacy-voice",
+        text: "[[LEARNING_SESSION]] legacy context",
+        media: ["up/utterance.wav"],
+      }),
+    );
+    expect(onTurnStart).toHaveBeenCalledTimes(1);
+    expect(result.current.state).toBe("thinking");
     unmount();
   });
 

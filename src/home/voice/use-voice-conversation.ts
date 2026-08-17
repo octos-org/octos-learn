@@ -10,6 +10,8 @@ import {
   admitVoiceMessage,
   commitAdmittedVoiceMessage,
   interruptActiveTurn,
+  sendMessage,
+  supportsVoiceAdmission,
 } from "@/runtime/ui-protocol-send";
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
 import type { Thread, ThreadMessage } from "@/store/thread-store";
@@ -615,6 +617,80 @@ export function useVoiceConversation(
         );
         const sentFrame = files.find((f) => f.type.startsWith("image/"));
         const paths = await uploadFiles(files, "recording");
+        const onVoiceTurnComplete = () => {
+          if (activeTurnIdRef.current === turnId) {
+            activeTurnIdRef.current = null;
+          }
+          if (!playReplyAudio && stateRef.current === "thinking") {
+            void beginListeningRef.current();
+          }
+          onTurnComplete?.(turnId);
+        };
+        const beginCommittedVoiceTurn = () => {
+          setProvisionalTurnIds((current) =>
+            current.includes(turnId) ? current : [...current, turnId],
+          );
+          activeTurnIdRef.current = turnId;
+          stateRef.current = "thinking";
+          setState("thinking");
+          onTurnStart?.(turnId);
+        };
+        const armReplyTimeout = () => {
+          void beginBargeInRef.current();
+          clearTimeout(replyTimerRef.current);
+          replyTimerRef.current = setTimeout(() => {
+            if (stateRef.current === "thinking") {
+              void beginListeningRef.current();
+            }
+          }, REPLY_TIMEOUT_MS);
+        };
+
+        if (!supportsVoiceAdmission(sessionId, historyTopic)) {
+          const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
+          const currentFramePath =
+            sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
+          const text =
+            buildTurnText?.({
+              sessionId,
+              turnId,
+              mediaPaths: paths,
+              currentFramePath,
+            }) ?? "";
+
+          if (sentFrame) showSentFrame(sentFrame);
+          if (candidate?.oldRenderTurnId) {
+            ignoredTurnIdsRef.current.add(candidate.oldRenderTurnId);
+          }
+          bargeInCandidateRef.current = null;
+          if (candidate) {
+            drainGenRef.current++;
+            releaseAudio();
+          }
+          audioQueueRef.current = [];
+          audioTurnByPathRef.current.clear();
+          speakingTurnIdRef.current = null;
+          if (candidate?.supersedesTurnId) {
+            await interruptActiveTurn({
+              sessionId,
+              historyTopic,
+              turnId: candidate.supersedesTurnId,
+              reason: "legacy voice barge-in",
+            });
+          }
+          beginCommittedVoiceTurn();
+          sendMessage({
+            sessionId,
+            historyTopic,
+            text,
+            media: paths,
+            clientMessageId: turnId,
+            liveVideo: sentFrame !== undefined,
+            onComplete: onVoiceTurnComplete,
+          });
+          armReplyTimeout();
+          return;
+        }
+
         const admission = await admitVoiceMessage({
           sessionId,
           historyTopic,
@@ -657,13 +733,7 @@ export function useVoiceConversation(
         audioQueueRef.current = [];
         audioTurnByPathRef.current.clear();
         speakingTurnIdRef.current = null;
-        setProvisionalTurnIds((current) =>
-          current.includes(turnId) ? current : [...current, turnId],
-        );
-        activeTurnIdRef.current = turnId;
-        stateRef.current = "thinking";
-        setState("thinking");
-        onTurnStart?.(turnId);
+        beginCommittedVoiceTurn();
         await commitAdmittedVoiceMessage(
           {
             sessionId,
@@ -675,29 +745,12 @@ export function useVoiceConversation(
             // attached (camera on + grab succeeded) — tell the server so it
             // treats the frame as a real-time view, never inferred from media.
             liveVideo: sentFrame !== undefined,
-            onComplete: () => {
-              if (activeTurnIdRef.current === turnId) {
-                activeTurnIdRef.current = null;
-              }
-              // When reply audio is owned elsewhere, there is no local playback
-              // queue to drive the usual queue-drained listening transition.
-              if (!playReplyAudio && stateRef.current === "thinking") {
-                void beginListeningRef.current();
-              }
-              onTurnComplete?.(turnId);
-            },
+            onComplete: onVoiceTurnComplete,
           },
           admission.admissionId,
           candidate?.supersedesTurnId,
         );
-        void beginBargeInRef.current();
-        // Safety net: if no reply audio shows up in time, return to listening.
-        clearTimeout(replyTimerRef.current);
-        replyTimerRef.current = setTimeout(() => {
-          if (stateRef.current === "thinking") {
-            void beginListeningRef.current();
-          }
-        }, REPLY_TIMEOUT_MS);
+        armReplyTimeout();
       } catch (e) {
         console.error("[voice] upload/send failed", e);
         const failedTurnId = activeTurnIdRef.current;
@@ -815,8 +868,10 @@ export function useVoiceConversation(
 
   const beginListening = useCallback(async () => {
     if (externalSpeechActiveRef.current) {
-      stateRef.current = "thinking";
-      setState("thinking");
+      // External narration (the teacher) is speaking — surface it as
+      // "speaking", not "thinking" (issue #315).
+      stateRef.current = "speaking";
+      setState("speaking");
       return;
     }
     stateRef.current = "listening";
@@ -929,14 +984,16 @@ export function useVoiceConversation(
       captureModeRef.current = null;
       void captureStop();
       if (stateRef.current === "listening") {
-        stateRef.current = "thinking";
-        setState("thinking");
+        // External narration took over the audio channel — show
+        // "speaking" rather than "thinking" (issue #315).
+        stateRef.current = "speaking";
+        setState("speaking");
       }
       return;
     }
     if (
       wasActive &&
-      stateRef.current === "thinking" &&
+      (stateRef.current === "thinking" || stateRef.current === "speaking") &&
       activeTurnIdRef.current === null
     ) {
       void beginListeningRef.current();

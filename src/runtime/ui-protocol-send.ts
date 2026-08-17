@@ -102,6 +102,14 @@ export function sendMessage(opts: SendOptions): void {
   void enqueueSendV1(opts);
 }
 
+/** Read the capability acknowledged by the active session socket. */
+export function supportsVoiceAdmission(
+  sessionId: string,
+  historyTopic?: string,
+): boolean {
+  return getActiveBridge(sessionId, historyTopic)?.supportsVoiceAdmission() ?? false;
+}
+
 /** Run ASR without creating a turn. `no_speech` is a terminal admission
  * decision: callers must discard every sibling text/image input and return to
  * capture without invoking `voice/commit_admission`. */
