@@ -1093,7 +1093,10 @@
 .learning-selection-enhancement {
   position: absolute;
   width: 330px;
+  min-width: 280px;
+  max-width: 744px;
   padding: 16px;
+  padding-bottom: 25px;
   border: 1px solid rgba(36, 112, 104, 0.25);
   border-radius: 16px;
   background: #fffdf6;
@@ -1137,7 +1140,7 @@
 .learning-selection-enhancement small,
 .learning-selection-enhancement footer {
   color: #71817e;
-  font-size: 11px;
+  font-size: 0.85em;
 }
 
 .learning-selection-enhancement-actions {
@@ -1168,6 +1171,7 @@
 
 .learning-selection-enhancement-content > strong {
   display: block;
+  font-size: 1.08em;
 }
 
 .learning-selection-enhancement-pin {
@@ -1214,7 +1218,7 @@
 
 .learning-selection-enhancement p,
 .learning-selection-enhancement li {
-  font-size: 13px;
+  font-size: 1em;
   line-height: 1.55;
 }
 
@@ -1253,6 +1257,47 @@
 .learning-selection-scene3d svg {
   width: 100%;
   max-width: 100%;
+}
+
+.learning-selection-scene3d .scene3d-runtime {
+  height: var(--learning-selection-scene3d-height, 270px);
+  min-height: var(--learning-selection-scene3d-height, 270px);
+}
+
+.learning-selection-scene3d svg {
+  min-height: calc(var(--learning-selection-scene3d-height, 270px) - 20px);
+}
+
+.learning-selection-enhancement-resize {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  color: #607976;
+  background: transparent;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.learning-selection-enhancement-resize:hover,
+.learning-selection-enhancement-resize:focus-visible {
+  color: #176f68;
+  background: rgba(36, 112, 104, 0.1);
+  outline: none;
+}
+
+.learning-selection-enhancement-resize > span {
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  border-radius: 0 0 3px;
 }
 
 .learning-selection-unsupported {

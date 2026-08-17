@@ -38,6 +38,24 @@ const artifact: SelectionEnhancementArtifact = {
   },
 };
 
+function dispatchPointerEvent(
+  target: Element,
+  type: string,
+  { pointerId, clientX, clientY }: {
+    pointerId: number;
+    clientX: number;
+    clientY: number;
+  },
+): void {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.defineProperties(event, {
+    pointerId: { value: pointerId },
+    clientX: { value: clientX },
+    clientY: { value: clientY },
+  });
+  fireEvent(target, event);
+}
+
 describe("SelectionEnhancementLayer", () => {
   it("keeps an invalidated result visible and labels the missing board target", () => {
     const { container } = render(
@@ -83,6 +101,48 @@ describe("SelectionEnhancementLayer", () => {
       name: "删除这条辅助内容",
     })).toBeTruthy();
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it("resizes the card and all of its contents from the corner handle", () => {
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    );
+    const handle = screen.getByRole("button", {
+      name: "调整辅助卡片大小，当前 100%",
+    });
+    expect(card?.style.width).toBe("330px");
+    expect(card?.style.fontSize).toBe("13px");
+
+    dispatchPointerEvent(handle, "pointerdown", {
+      pointerId: 1,
+      clientX: 100,
+      clientY: 100,
+    });
+    dispatchPointerEvent(handle, "pointermove", {
+      pointerId: 1,
+      clientX: 210,
+      clientY: 210,
+    });
+
+    expect(Number.parseFloat(card?.style.width ?? "0")).toBeGreaterThan(330);
+    expect(Number.parseFloat(card?.style.fontSize ?? "0")).toBeGreaterThan(13);
+    expect(card?.dataset.cardScale).toBe("1.50");
+    expect(screen.getByRole("button", {
+      name: "调整辅助卡片大小，当前 150%",
+    })).toBeTruthy();
+
+    fireEvent.doubleClick(screen.getByRole("button", {
+      name: "调整辅助卡片大小，当前 150%",
+    }));
+    expect(card?.dataset.cardScale).toBe("1.00");
   });
 
   it("shows unsupported content as a clear result instead of an empty card", () => {

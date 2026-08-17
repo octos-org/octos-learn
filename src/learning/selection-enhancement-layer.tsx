@@ -1,5 +1,12 @@
 import { Minimize2, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import {
   plotPathData,
   renderScene3d,
@@ -8,6 +15,17 @@ import {
 } from "octos-lesson-language/web-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
+
+const DEFAULT_CARD_SCALE = 1;
+const MIN_CARD_SCALE = .85;
+const MAX_CARD_SCALE = 2.25;
+const CARD_WIDTH = 330;
+const CARD_FONT_SIZE = 13;
+const SCENE3D_HEIGHT = 270;
+
+function clampedCardScale(value: number): number {
+  return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
+}
 
 function SelectionPlot({
   artifact,
@@ -125,6 +143,82 @@ export function SelectionEnhancementLayer({
   const [minimizedTurnIds, setMinimizedTurnIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
+  const [cardScaleByTurnId, setCardScaleByTurnId] = useState<
+    Readonly<Record<string, number>>
+  >({});
+  const resizingCardRef = useRef<{
+    turnId: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startScale: number;
+  } | null>(null);
+  const updateCardScale = (turnId: string, scale: number) => {
+    setCardScaleByTurnId((current) => ({
+      ...current,
+      [turnId]: clampedCardScale(scale),
+    }));
+  };
+  const beginCardResize = (
+    event: ReactPointerEvent<HTMLButtonElement>,
+    turnId: string,
+    startScale: number,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!Number.isFinite(event.clientX) || !Number.isFinite(event.clientY)) {
+      return;
+    }
+    resizingCardRef.current = {
+      turnId,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startScale,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const continueCardResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const resize = resizingCardRef.current;
+    if (
+      !resize
+      || resize.pointerId !== event.pointerId
+      || !Number.isFinite(event.clientX)
+      || !Number.isFinite(event.clientY)
+    ) return;
+    event.preventDefault();
+    const diagonalMovement = (
+      event.clientX - resize.startX + event.clientY - resize.startY
+    ) / 2;
+    updateCardScale(
+      resize.turnId,
+      resize.startScale + diagonalMovement / 220,
+    );
+  };
+  const finishCardResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const resize = resizingCardRef.current;
+    if (!resize || resize.pointerId !== event.pointerId) return;
+    resizingCardRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+  const resizeCardWithKeyboard = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    turnId: string,
+    currentScale: number,
+  ) => {
+    if (["ArrowUp", "ArrowRight"].includes(event.key)) {
+      event.preventDefault();
+      updateCardScale(turnId, currentScale + .1);
+    } else if (["ArrowDown", "ArrowLeft"].includes(event.key)) {
+      event.preventDefault();
+      updateCardScale(turnId, currentScale - .1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      updateCardScale(turnId, DEFAULT_CARD_SCALE);
+    }
+  };
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
   const enhancementCountBySource = new Map<string, number>();
   return (
@@ -144,6 +238,8 @@ export function SelectionEnhancementLayer({
         const left = bounds.x + bounds.width + 30 + sourceIndex * 22;
         const top = bounds.y + sourceIndex * 26;
         const minimized = minimizedTurnIds.has(artifact.turn_id);
+        const cardScale = cardScaleByTurnId[artifact.turn_id]
+          ?? DEFAULT_CARD_SCALE;
         if (minimized) {
           return (
             <button
@@ -177,8 +273,16 @@ export function SelectionEnhancementLayer({
             className={targetInvalid
               ? "learning-selection-enhancement is-invalid-target"
               : "learning-selection-enhancement"}
-            style={{ left, top }}
+            style={{
+              left,
+              top,
+              width: CARD_WIDTH * cardScale,
+              fontSize: CARD_FONT_SIZE * cardScale,
+              "--learning-selection-scene3d-height":
+                `${SCENE3D_HEIGHT * cardScale}px`,
+            } as CSSProperties}
             data-source-id={artifact.source.source_id}
+            data-card-scale={cardScale.toFixed(2)}
           >
             <div className="learning-selection-source-link" aria-hidden="true" />
             <header>
@@ -267,6 +371,36 @@ export function SelectionEnhancementLayer({
                 系统理解：{artifact.interpretation.content || "未能可靠识别"}
               </footer>
             </div>
+            <button
+              type="button"
+              className="learning-selection-enhancement-resize"
+              onPointerDown={(event) => beginCardResize(
+                event,
+                artifact.turn_id,
+                cardScale,
+              )}
+              onPointerMove={continueCardResize}
+              onPointerUp={finishCardResize}
+              onPointerCancel={finishCardResize}
+              onLostPointerCapture={() => {
+                if (resizingCardRef.current?.turnId === artifact.turn_id) {
+                  resizingCardRef.current = null;
+                }
+              }}
+              onDoubleClick={() => updateCardScale(
+                artifact.turn_id,
+                DEFAULT_CARD_SCALE,
+              )}
+              onKeyDown={(event) => resizeCardWithKeyboard(
+                event,
+                artifact.turn_id,
+                cardScale,
+              )}
+              aria-label={`调整辅助卡片大小，当前 ${Math.round(cardScale * 100)}%`}
+              title="拖动放大或缩小；双击恢复原始大小"
+            >
+              <span aria-hidden="true" />
+            </button>
           </article>
         );
       })}
