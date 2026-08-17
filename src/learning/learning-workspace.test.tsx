@@ -7,6 +7,12 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  inkSvgChecksum,
+  type InkSelectionSnapshot,
+} from "octos-lesson-language/ink-runtime";
 import type {
   VoiceConversation,
   VoiceConversationOptions,
@@ -17,6 +23,7 @@ import {
   buildDegradedVisualRetryPrompt,
 } from "./degraded-visual-retry";
 import { LearningWorkspace } from "./learning-workspace";
+import { saveSelectionEnhancementState } from "./selection-enhancements";
 
 const conversationMock = vi.hoisted(() => ({
   turns: [] as VoiceConversation["turns"],
@@ -351,6 +358,31 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByRole("button", { name: "下一步" })).toBeNull();
   });
 
+  it("provides the shared handwriting toolbar on a new blank whiteboard", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-blank-whiteboard-ink"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(inkRuntimeMock.mountInkRuntime).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storageKey: "octos-learning-ink:v1:learn-blank-whiteboard-ink",
+          documentId:
+            "learning-session:learn-blank-whiteboard-ink:student-ink",
+        }),
+      );
+      expect(screen.getByLabelText("白板书写工具")).toBeTruthy();
+    });
+    expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "擦除笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "矩形框选笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "自由圈选笔迹" })).toBeTruthy();
+  });
+
   it("speaks a completed plain reply and marks the old board as unchanged", async () => {
     vi.useFakeTimers();
     conversationMock.turns = [{
@@ -389,7 +421,7 @@ describe("LearningWorkspace", () => {
         narrationId: "plain-reply:camera-clarification",
       }),
     );
-    expect(screen.getByRole("status").textContent).toContain("本轮没有更新白板");
+    expect(screen.getByText(/本轮没有更新白板/)).toBeTruthy();
   });
 
   it("does not speak a generic reply for a voice turn with no learner transcript", async () => {
@@ -919,6 +951,101 @@ describe("LearningWorkspace", () => {
         narrationId: "plain-reply:selection-turn",
       }),
     );
+  });
+
+  it("loads a saved selection enhancement when echoed bounds only differ by floating-point rounding", async () => {
+    const sessionId = "learn-selection-rounded-bounds";
+    const svg = '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>';
+    const region = {
+      kind: "rectangle" as const,
+      closed: true,
+      points: [
+        { x: 523, y: 189 },
+        { x: 754, y: 189 },
+        { x: 754, y: 308.77777777777777 },
+        { x: 523, y: 308.77777777777777 },
+      ],
+    };
+    const source = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "ink-source-rounded-bounds",
+      document_id: `learning-session:${sessionId}:student-ink`,
+      document_version: 6,
+      created_at: "2026-08-17T10:00:00.000Z",
+      bounds: { x: 523, y: 189, width: 231, height: 119.77777777777777 },
+      region,
+      checksum: {
+        algorithm: "sha-256" as const,
+        value: await inkSvgChecksum(JSON.stringify({ svg, region })),
+      },
+      svg,
+    } satisfies InkSelectionSnapshot;
+    saveSelectionEnhancementState({
+      profile: "octos.selection-enhancement-state",
+      version: "0.1",
+      session_id: sessionId,
+      sources: [source],
+      hidden_enhancement_turn_ids: [],
+    });
+    sessionFilesMock.getSessionFiles.mockResolvedValue([{
+      filename: "plot-turn.octos-selection-enhancement.json",
+      path: "skill-output/study/selections/plot-turn.octos-selection-enhancement.json",
+      size_bytes: 900,
+      modified_at: "2026-08-17T10:00:01.000Z",
+    }]);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        profile: "octos.selection-enhancement",
+        version: "0.2",
+        turn_id: "plot-turn",
+        created_at: "2026-08-17T10:00:01.000Z",
+        source: {
+          source_id: source.source_id,
+          document_id: source.document_id,
+          document_version: source.document_version,
+          bounds: {
+            ...source.bounds,
+            height: source.bounds.height - 1e-12,
+          },
+          checksum: source.checksum,
+        },
+        board: {
+          board_id: `learning-whiteboard:${sessionId}`,
+          revision: 0,
+          targets: [],
+        },
+        tool_id: "generate-plot",
+        interpretation: {
+          kind: "math",
+          content: "y = x^2",
+          confidence: "high",
+        },
+        response: {
+          kind: "plot",
+          title: "二次函数 y = x² 图像",
+          text: "这是所选函数的图像。",
+          expression: "x^2",
+          x_range: { min: -5, max: 5 },
+          y_range: { min: -2, max: 25 },
+        },
+      }),
+    }));
+
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("二次函数 y = x² 图像")).toBeTruthy();
+    });
+    expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
+      .toBeNull();
   });
 
   it("restores an OLL lesson from durable session files after refresh", async () => {

@@ -278,7 +278,7 @@ function ensureScene3dInteractionHints(viewport: HTMLElement): void {
   });
 }
 
-export function OllLessonBoard({
+export function LearningWhiteboard({
   runtime,
   inkSessionId,
   inkMergeSourceSessionId,
@@ -292,7 +292,7 @@ export function OllLessonBoard({
   onDeleteSelectionEnhancement,
   onRetryDegradedVisual,
 }: {
-  runtime: OllLessonRuntimeController;
+  runtime?: OllLessonRuntimeController | null;
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: () => void;
@@ -307,6 +307,8 @@ export function OllLessonBoard({
     snapshot: InkSelectionSnapshot;
     question: string;
     contentKind: SelectionContentKind;
+    recognizedContent?: string;
+    recognitionConfidence?: "high" | "medium" | "low";
     toolId: SelectionToolId;
     boardContext: SelectionBoardContext;
     contextImage: File;
@@ -330,7 +332,7 @@ export function OllLessonBoard({
   ) => Promise<void> | void;
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const runtimeRef = useRef(runtime);
+  const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const renderedFocusRef = useRef<string[]>([]);
   const renderedCompositionRef = useRef("");
@@ -361,6 +363,7 @@ export function OllLessonBoard({
   const [selectionContentKind, setSelectionContentKind] =
     useState<SelectionContentKind>("unknown");
   const [selectionRequestPending, setSelectionRequestPending] = useState(false);
+  const [selectionRequestStatus, setSelectionRequestStatus] = useState("");
   const [preparedSelection, setPreparedSelection] =
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
@@ -373,9 +376,11 @@ export function OllLessonBoard({
     useState<string | null>(null);
   const [requestedDegradedNodeIds, setRequestedDegradedNodeIds] =
     useState<Set<string>>(() => new Set());
-  const variableControls = variableControlModels(runtime.board);
-  const availableStudentTasks = runtime.studentTasks.filter((task) => task.available);
-  const degradedVisuals = degradedVisualStatuses(runtime.board);
+  const variableControls = runtime ? variableControlModels(runtime.board) : [];
+  const availableStudentTasks = runtime
+    ? runtime.studentTasks.filter((task) => task.available)
+    : [];
+  const degradedVisuals = runtime ? degradedVisualStatuses(runtime.board) : [];
   const quickSelectionTools = selectionClassificationStatus === "ready"
     && selectionClassification
     && selectionClassification.confidence !== "low"
@@ -408,7 +413,7 @@ export function OllLessonBoard({
 
   const requestTaskHint = useCallback((taskId: string) => {
     try {
-      runtimeRef.current.requestStudentTaskHint(taskId);
+      runtimeRef.current?.requestStudentTaskHint(taskId);
       setTaskError("");
     } catch (cause) {
       setTaskError(cause instanceof Error ? cause.message : "暂时无法显示提示");
@@ -417,7 +422,7 @@ export function OllLessonBoard({
 
   const retryTask = useCallback((taskId: string) => {
     try {
-      runtimeRef.current.retryStudentTask(taskId);
+      runtimeRef.current?.retryStudentTask(taskId);
       setTaskError("");
     } catch (cause) {
       setTaskError(cause instanceof Error ? cause.message : "暂时无法重新开始任务");
@@ -430,7 +435,7 @@ export function OllLessonBoard({
     input: StudentInputMethod,
   ) => {
     if (sliderOperationsRef.current.has(alias)) return;
-    const operationId = runtimeRef.current.handleStudentVariableInput(alias, value, {
+    const operationId = runtimeRef.current?.handleStudentVariableInput(alias, value, {
       phase: "start",
       control: "slider",
       input,
@@ -449,7 +454,7 @@ export function OllLessonBoard({
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
     active.value = value;
-    runtimeRef.current.handleStudentVariableInput(alias, value, {
+    runtimeRef.current?.handleStudentVariableInput(alias, value, {
       phase: "update",
       control: "slider",
       input: active.input,
@@ -461,7 +466,7 @@ export function OllLessonBoard({
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
     sliderOperationsRef.current.delete(alias);
-    runtimeRef.current.handleStudentVariableInput(alias, value, {
+    runtimeRef.current?.handleStudentVariableInput(alias, value, {
       phase: "commit",
       control: "slider",
       input: active.input,
@@ -470,7 +475,7 @@ export function OllLessonBoard({
   }, []);
 
   useEffect(() => {
-    runtimeRef.current = runtime;
+    runtimeRef.current = runtime ?? null;
   }, [runtime]);
 
   const setInkMode = useCallback((mode: InkMode) => {
@@ -546,18 +551,19 @@ export function OllLessonBoard({
     return {
       snapshot,
       candidates,
-      boardId: runtimeRef.current.board?.board_id ?? "unknown-board",
-      boardRevision: runtimeRef.current.board?.revision ?? 0,
+      boardId: runtimeRef.current?.board?.board_id
+        ?? `learning-whiteboard:${inkSessionId ?? "unsaved"}`,
+      boardRevision: runtimeRef.current?.board?.revision ?? 0,
       recorded: false,
     };
-  }, []);
+  }, [inkSessionId]);
 
   const recordSelectionContext = useCallback((
     prepared: PreparedSelectionContext,
   ): PreparedSelectionContext => {
     if (prepared.recorded) return prepared;
     const { snapshot } = prepared;
-    runtimeRef.current.recordStudentInkSelection({
+    runtimeRef.current?.recordStudentInkSelection({
       source_id: snapshot.source_id,
       document_id: snapshot.document_id,
       document_version: snapshot.document_version,
@@ -675,6 +681,11 @@ export function OllLessonBoard({
     const value = question.trim();
     if (!value || !onAskInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
+    setSelectionRequestStatus(
+      toolId === "generate-plot"
+        ? "正在生成函数图像…"
+        : "正在生成选区辅助内容…",
+    );
     try {
       const candidate = preparedSelection ?? await captureSelection();
       const prepared = recordSelectionContext(candidate);
@@ -693,6 +704,8 @@ export function OllLessonBoard({
         snapshot: prepared.snapshot,
         question: value,
         contentKind: requestContentKind ?? selectionContentKind,
+        recognizedContent: selectionClassification?.content,
+        recognitionConfidence: selectionClassification?.confidence,
         toolId,
         boardContext: {
           boardId: prepared.boardId,
@@ -710,6 +723,7 @@ export function OllLessonBoard({
       setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
     } finally {
       setSelectionRequestPending(false);
+      setSelectionRequestStatus("");
     }
   }, [
     captureSelection,
@@ -718,6 +732,7 @@ export function OllLessonBoard({
     recordSelectionContext,
     selectedBoardTargetIds,
     selectionContentKind,
+    selectionClassification,
     selectionRequestPending,
   ]);
 
@@ -845,10 +860,10 @@ export function OllLessonBoard({
     try {
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
       mounted.view.setVariableInputHandler((alias, value, event) => {
-        return runtimeRef.current.handleStudentVariableInput(alias, value, event);
+        return runtimeRef.current?.handleStudentVariableInput(alias, value, event);
       });
       mounted.view.setScene3dInputHandler((nodeId, view, event) => {
-        const result = runtimeRef.current.handleStudentScene3dInput(
+        const result = runtimeRef.current?.handleStudentScene3dInput(
           nodeId,
           view,
           event,
@@ -917,7 +932,7 @@ export function OllLessonBoard({
       unmountEnhancementLayer();
       mountedRef.current = null;
       for (const [alias, operation] of sliderOperations) {
-        runtimeRef.current.handleStudentVariableInput(alias, operation.value, {
+        runtimeRef.current?.handleStudentVariableInput(alias, operation.value, {
           phase: "commit",
           control: "slider",
           input: operation.input,
@@ -938,7 +953,7 @@ export function OllLessonBoard({
       !inkAvailable ||
       !inkSessionId ||
       !inkMergeSourceSessionId ||
-      !runtime.deliverySettled
+      !runtime?.deliverySettled
     ) return;
     const mergeKey = `${inkSessionId}\u0000${inkMergeSourceSessionId}`;
     if (inkMergeAttemptRef.current === mergeKey) return;
@@ -962,21 +977,23 @@ export function OllLessonBoard({
     inkMergeSourceSessionId,
     inkSessionId,
     onInkMergeComplete,
-    runtime.deliverySettled,
+    runtime?.deliverySettled,
   ]);
 
   useEffect(() => {
+    const activeRuntime = runtimeRef.current;
+    if (!activeRuntime) return;
     const view = mountedRef.current?.view;
-    const boardFocus = runtime.board?.focus ?? [];
+    const boardFocus = activeRuntime.board?.focus ?? [];
     const renderedFocus = renderedFocusRef.current;
     const focusChanged =
       boardFocus.length !== renderedFocus.length ||
       boardFocus.some((target, index) => target !== renderedFocus[index]);
     const atPlaybackBoundary =
-      runtime.currentOperation?.type === "beat.end" ||
-      runtime.currentOperation?.type === "step.commit";
-    const actionOperation = runtime.currentOperation?.action?.op;
-    const compositionKey = `${runtime.currentBeatId ?? ""}\u0000${runtime.compositionTargets.join("\u0000")}`;
+      activeRuntime.currentOperation?.type === "beat.end" ||
+      activeRuntime.currentOperation?.type === "step.commit";
+    const actionOperation = activeRuntime.currentOperation?.action?.op;
+    const compositionKey = `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`;
     const compositionChanged = compositionKey !== renderedCompositionRef.current;
     const compositionContentChanged =
       actionOperation === "board.create" ||
@@ -986,22 +1003,22 @@ export function OllLessonBoard({
       actionOperation === "board.connect";
     const compositionOperationChanged =
       compositionContentChanged &&
-      runtime.cursor !== renderedCompositionCursorRef.current;
-    view?.setScene3dViews(runtime.scene3dViews);
-    view?.render(runtime.board, runtime.currentOperation);
+      activeRuntime.cursor !== renderedCompositionCursorRef.current;
+    view?.setScene3dViews(activeRuntime.scene3dViews);
+    view?.render(activeRuntime.board, activeRuntime.currentOperation);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
-    if (runtime.attentionTargets.length > 0) {
-      view?.focusTargets(runtime.attentionTargets);
+    if (activeRuntime.attentionTargets.length > 0) {
+      view?.focusTargets(activeRuntime.attentionTargets);
     } else if (
-      runtime.compositionTargets.length > 0 &&
+      activeRuntime.compositionTargets.length > 0 &&
       (compositionChanged || compositionOperationChanged)
     ) {
       // A Beat's declared focus describes the visual composition needed for
       // its narration. Apply it while the Beat is unfolding so a newly written
       // formula does not replace the diagram it is explaining. This reuses the
       // existing focus action and does not add a playback delay.
-      view?.focusTargets(runtime.compositionTargets);
+      view?.focusTargets(activeRuntime.compositionTargets);
     } else if (atPlaybackBoundary && focusChanged) {
       // React can batch every operation produced by advanceBeat() into the
       // boundary render. In that case the board already contains the new Beat
@@ -1010,15 +1027,15 @@ export function OllLessonBoard({
     }
     renderedFocusRef.current = [...boardFocus];
     renderedCompositionRef.current = compositionKey;
-    renderedCompositionCursorRef.current = runtime.cursor;
+    renderedCompositionCursorRef.current = activeRuntime.cursor;
   }, [
-    runtime.attentionTargets,
-    runtime.board,
-    runtime.compositionTargets,
-    runtime.currentOperation,
-    runtime.currentBeatId,
-    runtime.cursor,
-    runtime.scene3dViews,
+    runtime?.attentionTargets,
+    runtime?.board,
+    runtime?.compositionTargets,
+    runtime?.currentOperation,
+    runtime?.currentBeatId,
+    runtime?.cursor,
+    runtime?.scene3dViews,
   ]);
 
   useEffect(() => {
@@ -1068,6 +1085,12 @@ export function OllLessonBoard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
+      {!runtime && inkState.component_count === 0 ? (
+        <div className="learning-whiteboard-empty" aria-live="polite">
+          <span>这块白板会保存我们的思考过程</span>
+          <strong>向 Octos 提问，我们从这里开始</strong>
+        </div>
+      ) : null}
       {degradedVisuals.length > 0 ? (
         <aside
           className="learning-degraded-visuals"
@@ -1172,6 +1195,14 @@ export function OllLessonBoard({
                 {selectionClassificationStatus === "loading" ? (
                   <span className="learning-ink-classification-status">
                     正在识别选区…
+                  </span>
+                ) : null}
+                {selectionRequestStatus ? (
+                  <span
+                    className="learning-ink-classification-status"
+                    role="status"
+                  >
+                    {selectionRequestStatus}
                   </span>
                 ) : null}
                 {quickSelectionTools.map((tool) => (
@@ -1394,7 +1425,7 @@ export function OllLessonBoard({
             const inputId = `oll-variable-${control.alias}`;
             return (
               <div
-                className={runtime.activeVariableAnimation?.variable === control.alias
+                className={runtime?.activeVariableAnimation?.variable === control.alias
                   ? "learning-variable-control is-animating"
                   : "learning-variable-control"}
                 key={control.alias}
@@ -1443,8 +1474,8 @@ export function OllLessonBoard({
                 <button
                   type="button"
                   onClick={() => {
-                    const initial = runtime.board?.variables?.[control.alias]?.initial;
-                    if (typeof initial === "number") {
+                    const initial = runtime?.board?.variables?.[control.alias]?.initial;
+                    if (runtime && typeof initial === "number") {
                       const operationId = runtime.handleStudentVariableInput(
                         control.alias,
                         control.value,
@@ -1466,7 +1497,7 @@ export function OllLessonBoard({
             );
           })}
           <small>
-            {runtime.activeVariableAnimation
+            {runtime?.activeVariableAnimation
               ? "老师正在演示这个变量，结束后即可继续拖动"
               : "讲解过程中也可以拖动；老师演示同一变量时会暂时接管"}
           </small>
@@ -1572,7 +1603,11 @@ export function OllLessonBoard({
                 currentDocumentVersion={inkState.document_version}
                 invalidTargetTurnIds={new Set(selectionEnhancements
                   .filter((artifact) =>
-                    !selectionArtifactTargetsExist(artifact, runtime.board),
+                    Boolean(artifact.board?.targets.length)
+                    && !selectionArtifactTargetsExist(
+                      artifact,
+                      runtime?.board ?? null,
+                    ),
                   )
                   .map((artifact) => artifact.turn_id))}
                 onDelete={(turnId) =>
@@ -1585,3 +1620,7 @@ export function OllLessonBoard({
     </div>
   );
 }
+
+/** @deprecated Use LearningWhiteboard. Kept for callers that still name the
+ * shared whiteboard after its optional OLL course layer. */
+export const OllLessonBoard = LearningWhiteboard;

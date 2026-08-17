@@ -1,7 +1,9 @@
 import { Minimize2, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   plotPathData,
+  renderScene3d,
+  sampleImplicitPlotExpression,
   samplePlotExpression,
 } from "octos-lesson-language/web-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
@@ -30,7 +32,12 @@ function SelectionPlot({
   let error = "";
   try {
     path = plotPathData(
-      samplePlotExpression(expression, xRange, yRange),
+      artifact.response.plot_kind === "implicit"
+        ? sampleImplicitPlotExpression(expression, xRange, yRange, {
+            level: artifact.response.level,
+            samples: artifact.response.samples,
+          })
+        : samplePlotExpression(expression, xRange, yRange),
       mapX,
       mapY,
     );
@@ -50,7 +57,54 @@ function SelectionPlot({
           <path d={path} />
         </svg>
       )}
-      <code>y = {expression}</code>
+      <code>
+        {artifact.response.plot_kind === "implicit"
+          ? `${expression} = ${artifact.response.level ?? 0}`
+          : `y = ${expression}`}
+      </code>
+    </div>
+  );
+}
+
+function SelectionScene3d({
+  artifact,
+}: {
+  artifact: SelectionEnhancementArtifact & {
+    response: Extract<
+      SelectionEnhancementArtifact["response"],
+      { kind: "scene3d" }
+    >;
+  };
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.replaceChildren();
+    try {
+      renderScene3d(
+        container,
+        {
+          id: `selection-scene3d:${artifact.turn_id}`,
+          kind: "scene3d",
+          content: artifact.response.content,
+        },
+        undefined,
+        {},
+      );
+    } catch (cause) {
+      const message = container.ownerDocument.createElement("span");
+      message.setAttribute("role", "alert");
+      message.textContent = cause instanceof Error
+        ? cause.message
+        : "三维函数图无法显示";
+      container.replaceChildren(message);
+    }
+    return () => container.replaceChildren();
+  }, [artifact]);
+  return (
+    <div className="learning-selection-scene3d">
+      <div ref={containerRef} />
     </div>
   );
 }
@@ -183,6 +237,31 @@ export function SelectionEnhancementLayer({
                     >;
                   }}
                 />
+              ) : null}
+              {artifact.response.kind === "scene3d" ? (
+                <SelectionScene3d
+                  artifact={artifact as SelectionEnhancementArtifact & {
+                    response: Extract<
+                      SelectionEnhancementArtifact["response"],
+                      { kind: "scene3d" }
+                    >;
+                  }}
+                />
+              ) : null}
+              {artifact.response.kind === "unsupported" ? (
+                <div
+                  className="learning-selection-unsupported"
+                  role="alert"
+                >
+                  <strong>当前无法生成这个图像</strong>
+                  {artifact.response.alternatives?.length ? (
+                    <ul>
+                      {artifact.response.alternatives.map((alternative) => (
+                        <li key={alternative}>{alternative}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
               ) : null}
               <footer>
                 系统理解：{artifact.interpretation.content || "未能可靠识别"}

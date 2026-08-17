@@ -84,8 +84,34 @@ export interface SelectionEnhancementArtifact {
         title: string;
         text: string;
         expression: string;
+        plot_kind?: "explicit" | "implicit";
+        level?: number;
+        samples?: number;
         x_range: { min: number; max: number };
         y_range: { min: number; max: number };
+      }
+    | {
+        kind: "scene3d";
+        title: string;
+        text: string;
+        content: {
+          title: string;
+          fallback: string;
+          axes: boolean;
+          camera: { yaw: number; pitch: number; zoom: number };
+          objects: Array<Record<string, unknown>>;
+        };
+      }
+    | {
+        kind: "unsupported";
+        title: string;
+        text: string;
+        reason_code:
+          | "unreadable_expression"
+          | "unsupported_variables"
+          | "unsupported_representation"
+          | "unsafe_complexity";
+        alternatives?: string[];
       };
 }
 
@@ -110,6 +136,8 @@ export interface SelectionEnhancementTurnContext {
   mediaPath: string;
   source: InkSelectionSnapshot;
   contentKind: SelectionContentKind;
+  recognizedContent?: string;
+  recognitionConfidence?: "high" | "medium" | "low";
   learnerRequest?: string;
   lessonTitle?: string;
   boardSummary?: string;
@@ -213,6 +241,12 @@ export function buildSelectionEnhancementActionArguments(
     learner_request: context.learnerRequest?.trim() || "请解释我选中的内容",
     source: selectionSourceArgument(context.source),
     content_hint: context.contentKind,
+    ...(context.recognizedContent?.trim()
+      ? { recognized_content: context.recognizedContent.trim() }
+      : {}),
+    ...(context.recognitionConfidence
+      ? { recognition_confidence: context.recognitionConfidence }
+      : {}),
     tool_id: context.toolId ?? "custom-question",
     board: selectionBoardArgument(context.boardContext ?? {
       boardId: context.sessionId,
@@ -523,6 +557,43 @@ function finiteRange(value: unknown): value is { min: number; max: number } {
     && range.max > range.min;
 }
 
+function validSelectionScene3d(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const content = value as Record<string, unknown>;
+  const camera = content.camera as Record<string, unknown> | undefined;
+  if (
+    typeof content.title !== "string"
+    || !content.title.trim()
+    || typeof content.fallback !== "string"
+    || !content.fallback.trim()
+    || typeof content.axes !== "boolean"
+    || !camera
+    || ![camera.yaw, camera.pitch, camera.zoom].every((number) =>
+      typeof number === "number" && Number.isFinite(number)
+    )
+    || !Array.isArray(content.objects)
+    || content.objects.length !== 1
+  ) return false;
+  const object = content.objects[0];
+  if (!object || typeof object !== "object") return false;
+  const surface = object as Record<string, unknown>;
+  if (
+    (surface.kind !== "surface" && surface.kind !== "implicit_surface")
+    || typeof surface.as !== "string"
+    || !surface.as
+    || typeof surface.expression !== "string"
+    || !surface.expression.trim()
+    || !finiteRange(surface.x_range)
+    || !finiteRange(surface.y_range)
+  ) return false;
+  if (surface.kind === "implicit_surface") {
+    return finiteRange(surface.z_range)
+      && typeof surface.level === "number"
+      && Number.isFinite(surface.level);
+  }
+  return true;
+}
+
 function validSource(value: unknown): value is SelectionEnhancementSourceRef {
   if (!value || typeof value !== "object") return false;
   const source = value as Partial<SelectionEnhancementSourceRef>;
@@ -630,7 +701,28 @@ export function validateSelectionEnhancementArtifact(
   ) {
     throw new Error("选区辅助内容的来源或说明字段无效");
   }
-  if (response.kind === "explanation") {
+  if (response.kind === "unsupported") {
+    if (
+      ![
+        "unreadable_expression",
+        "unsupported_variables",
+        "unsupported_representation",
+        "unsafe_complexity",
+      ].includes(response.reason_code)
+      || (response.alternatives !== undefined && (
+        !Array.isArray(response.alternatives)
+        || response.alternatives.some((item) =>
+          typeof item !== "string" || !item.trim()
+        )
+      ))
+    ) {
+      throw new Error("选区函数图的不支持说明无效");
+    }
+  } else if (response.kind === "scene3d") {
+    if (!validSelectionScene3d(response.content)) {
+      throw new Error("选区三维函数图内容无效");
+    }
+  } else if (response.kind === "explanation") {
     if (
       response.items !== undefined
       && (
@@ -644,6 +736,13 @@ export function validateSelectionEnhancementArtifact(
     response.kind !== "plot"
     || typeof response.expression !== "string"
     || !response.expression.trim()
+    || (response.plot_kind !== undefined
+      && response.plot_kind !== "explicit"
+      && response.plot_kind !== "implicit")
+    || (response.plot_kind === "implicit" && (
+      typeof response.level !== "number"
+      || !Number.isFinite(response.level)
+    ))
     || !finiteRange(response.x_range)
     || !finiteRange(response.y_range)
   ) {
@@ -656,16 +755,16 @@ export function selectionArtifactMatchesSource(
   artifact: SelectionEnhancementArtifact,
   source: InkSelectionSnapshot,
 ): boolean {
-  const bounds = artifact.source.bounds;
+  // The immutable selection is identified by its stable source/document IDs,
+  // document version, and checksum. Bounds are layout metadata, not identity:
+  // JSON tool calls can round an otherwise identical floating-point coordinate
+  // by a few ulps. Rendering also deliberately uses the locally saved source
+  // bounds, never the coordinates echoed by the generated artifact.
   return artifact.source.source_id === source.source_id
     && artifact.source.document_id === source.document_id
     && artifact.source.document_version === source.document_version
     && artifact.source.checksum.algorithm === source.checksum.algorithm
-    && artifact.source.checksum.value === source.checksum.value
-    && bounds.x === source.bounds.x
-    && bounds.y === source.bounds.y
-    && bounds.width === source.bounds.width
-    && bounds.height === source.bounds.height;
+    && artifact.source.checksum.value === source.checksum.value;
 }
 
 export function selectionArtifactTargetsExist(

@@ -5,6 +5,12 @@ import type { SelectionEnhancementArtifact } from "./selection-enhancements";
 
 vi.mock("octos-lesson-language/web-runtime", () => ({
   plotPathData: vi.fn(() => ""),
+  renderScene3d: vi.fn((parent: HTMLElement) => {
+    const scene = document.createElement("div");
+    scene.textContent = "可旋转三维函数图";
+    parent.append(scene);
+  }),
+  sampleImplicitPlotExpression: vi.fn(() => []),
   samplePlotExpression: vi.fn(() => []),
 }));
 
@@ -77,5 +83,67 @@ describe("SelectionEnhancementLayer", () => {
       name: "删除这条辅助内容",
     })).toBeTruthy();
     expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  it("shows unsupported content as a clear result instead of an empty card", () => {
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[{
+          ...artifact,
+          turn_id: "turn-unsupported",
+          response: {
+            kind: "unsupported",
+            title: "暂时无法绘制这个表达式",
+            text: "它包含四个独立变量，无法直接画成三维图像。",
+            reason_code: "unsupported_variables",
+            alternatives: ["固定其中一个变量后绘制三维切片"],
+          },
+        }]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "当前无法生成这个图像",
+    );
+    expect(screen.getByText("固定其中一个变量后绘制三维切片")).toBeTruthy();
+  });
+
+  it("mounts a validated three-dimensional selection result", () => {
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[{
+          ...artifact,
+          turn_id: "turn-scene3d",
+          response: {
+            kind: "scene3d",
+            title: "四次曲面",
+            text: "可以拖动旋转查看。",
+            content: {
+              title: "四次曲面",
+              fallback: "x⁴+y⁴+z⁴=1",
+              axes: true,
+              camera: { yaw: .65, pitch: .45, zoom: 1 },
+              objects: [{
+                as: "surface",
+                kind: "implicit_surface",
+                expression: "x^4+y^4+z^4-1",
+                level: 0,
+                x_range: { min: -1.2, max: 1.2 },
+                y_range: { min: -1.2, max: 1.2 },
+                z_range: { min: -1.2, max: 1.2 },
+              }],
+            },
+          },
+        }]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("可旋转三维函数图")).toBeTruthy();
   });
 });

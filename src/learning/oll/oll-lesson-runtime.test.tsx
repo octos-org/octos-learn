@@ -77,6 +77,26 @@ function InkRuntimeProbe() {
   );
 }
 
+function BlankToLessonWhiteboardProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "blank-to-lesson-runtime-test",
+    startAtEnd: true,
+  });
+  const [showLesson, setShowLesson] = useState(false);
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => setShowLesson(true)}>
+        显示课程内容
+      </button>
+      <OllLessonBoard
+        runtime={showLesson ? runtime : null}
+        inkSessionId="blank-to-lesson-ink"
+      />
+    </div>
+  );
+}
+
 function SelectionInkRuntimeProbe({
   onAsk,
   onClassify,
@@ -630,6 +650,40 @@ describe("OLL lesson Runtime integration", () => {
     expect(ink.destroy).not.toHaveBeenCalled();
   });
 
+  it("keeps the same ink document when course content enters a blank whiteboard", async () => {
+    const state: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 1,
+      selected_count: 0,
+      selection_revision: 0,
+      document_version: 1,
+      saved: true,
+    };
+    const ink = {
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listener(state);
+        return () => undefined;
+      }),
+      setMode: vi.fn(),
+      selectAll: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    mountInkRuntimeMock.mockReturnValue(ink);
+
+    render(<BlankToLessonWhiteboardProbe />);
+
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    expect(screen.getByRole("status").textContent).toContain("1 项笔迹");
+    fireEvent.click(screen.getByRole("button", { name: "显示课程内容" }));
+    await waitFor(() => expect(screen.getByText("① 看清题目")).toBeTruthy());
+    expect(mountInkRuntimeMock).toHaveBeenCalledOnce();
+    expect(ink.destroy).not.toHaveBeenCalled();
+    expect(screen.getByRole("status").textContent).toContain("1 项笔迹");
+  });
+
   it("asks about an immutable ink selection without modifying the source", async () => {
     const listeners = new Set<(state: InkRuntimeState) => void>();
     let state: InkRuntimeState & { pen_color: string; selection_color: string | null } = {
@@ -728,6 +782,8 @@ describe("OLL lesson Runtime integration", () => {
         snapshot,
         question: "请按我选中的公式生成函数图像。",
         contentKind: "math",
+        recognizedContent: "y=x^2",
+        recognitionConfidence: "high",
         toolId: "generate-plot",
         boardContext: {
           boardId: expect.any(String),
@@ -751,7 +807,12 @@ describe("OLL lesson Runtime integration", () => {
         .toBe("1");
     });
     onAsk.mockClear();
+    let rejectSelectionRequest: ((cause: Error) => void) | undefined;
+    onAsk.mockImplementationOnce(() => new Promise<void>((_resolve, reject) => {
+      rejectSelectionRequest = reject;
+    }));
     fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
+    expect(await screen.findByText("正在生成函数图像…")).toBeTruthy();
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
         snapshot,
@@ -762,6 +823,15 @@ describe("OLL lesson Runtime integration", () => {
         contextImage: expect.any(File),
       }));
     });
+    await act(async () => {
+      rejectSelectionRequest?.(new Error("当前公式暂不支持生成函数图像"));
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("alert").textContent).toContain(
+        "当前公式暂不支持生成函数图像",
+      );
+    });
+    expect(screen.queryByText("正在生成函数图像…")).toBeNull();
     expect(ink.captureSelectionSnapshot).toHaveBeenCalledTimes(2);
     expect(selectionContextToPngFileMock).toHaveBeenCalledTimes(2);
     expect(ink.setSelectionColor).not.toHaveBeenCalled();

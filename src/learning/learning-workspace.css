@@ -435,6 +435,34 @@
   position: relative;
 }
 
+.learning-whiteboard-empty {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #8b8277;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.learning-whiteboard-empty span {
+  font-family: var(--font-label);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.learning-whiteboard-empty strong {
+  color: #514a42;
+  font-family: "Kaiti SC", "STKaiti", "KaiTi", cursive;
+  font-size: 24px;
+  font-weight: 500;
+}
+
 .learning-degraded-visuals {
   position: absolute;
   z-index: 16;
@@ -1212,6 +1240,33 @@
   fill: none;
   stroke: #17786e;
   stroke-width: 2.5;
+}
+
+.learning-selection-scene3d {
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #f5faf8;
+}
+
+.learning-selection-scene3d .scene3d-runtime,
+.learning-selection-scene3d svg {
+  width: 100%;
+  max-width: 100%;
+}
+
+.learning-selection-unsupported {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(159, 69, 45, 0.22);
+  border-radius: 10px;
+  color: #823a2b;
+  background: rgba(255, 242, 236, 0.9);
+}
+
+.learning-selection-unsupported > strong {
+  display: block;
+  margin-bottom: 5px;
 }
 
 .learning-camera-monitor {

@@ -29,17 +29,13 @@ import {
 import { useOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
 import { useRenderThreads } from "@/store/projection-render-adapter";
 import type { Thread } from "@/store/thread-store";
-import { InfiniteBoard } from "./board/infinite-board";
 import { CameraSettingsDialog } from "./camera-settings-dialog";
-import {
-  mergeSessionBoardPackets,
-  type LearningBoardContext,
-} from "./board/session-board";
+import type { LearningBoardContext } from "./board/session-board";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
-  OllLessonBoard,
+  LearningWhiteboard,
   type DegradedVisualRetryRequest,
 } from "./oll/oll-lesson-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
@@ -810,10 +806,6 @@ export function LearningWorkspace({
     });
   }, [selectionArtifacts, selectionState, sessionId]);
 
-  const emptyPacket = useMemo(
-    () => mergeSessionBoardPackets(sessionId, []),
-    [sessionId],
-  );
   const appendOllEvents = ollLesson?.appendEvents;
 
   useEffect(() => {
@@ -928,6 +920,8 @@ export function LearningWorkspace({
       snapshot,
       question,
       contentKind,
+      recognizedContent,
+      recognitionConfidence,
       toolId,
       boardContext,
       contextImage,
@@ -935,6 +929,8 @@ export function LearningWorkspace({
       snapshot: InkSelectionSnapshot;
       question: string;
       contentKind: SelectionContentKind;
+      recognizedContent?: string;
+      recognitionConfidence?: "high" | "medium" | "low";
       toolId: SelectionToolId;
       boardContext: SelectionBoardContext;
       contextImage: File;
@@ -955,6 +951,8 @@ export function LearningWorkspace({
           mediaPath,
           source: snapshot,
           contentKind,
+          recognizedContent,
+          recognitionConfidence,
           learnerRequest: question,
           lessonTitle: ollLesson?.title,
           boardSummary: ollLesson
@@ -968,13 +966,22 @@ export function LearningWorkspace({
           "learning.selection.enhance",
           actionArguments,
         );
-        if (!invocation.ok || (invocation.results ?? []).some((result) => !result.success)) {
-          throw new Error("选区辅助内容生成失败");
+        const failedResult = (invocation.results ?? [])
+          .find((result) => !result.success);
+        if (!invocation.ok || failedResult) {
+          throw new Error(
+            failedResult?.output?.trim()
+              || "选区辅助内容生成失败，请重试",
+          );
         }
         const files = await getSessionFiles(sessionId);
-        setPersistedSelectionArtifacts(
-          collectPersistedSelectionEnhancementArtifacts(files),
-        );
+        const artifacts = collectPersistedSelectionEnhancementArtifacts(files);
+        if (!artifacts.some((artifact) => artifact.turnId === turnId)) {
+          throw new Error(
+            "没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。",
+          );
+        }
+        setPersistedSelectionArtifacts(artifacts);
         setTextTurnPending(false);
         handleTurnComplete(turnId);
       } catch (cause) {
@@ -1310,7 +1317,7 @@ export function LearningWorkspace({
       <header className="learning-workspace-topbar">
         <div>
           <span>Octos Learning Canvas</span>
-          <strong>{ollLesson?.title ?? emptyPacket.title}</strong>
+          <strong>{ollLesson?.title ?? "新的学习白板"}</strong>
         </div>
         {ollLesson ? (
           <div className="learning-demo-controls" data-testid="oll-controls">
@@ -1406,29 +1413,22 @@ export function LearningWorkspace({
       </header>
 
       <main className="learning-canvas-shell">
-        {ollLesson ? (
-          <OllLessonBoard
-            runtime={controlledOllLesson ?? ollLesson}
-            inkSessionId={inkSessionId}
-            inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
-            onInkMergeComplete={handleInkMergeComplete}
-            selectionEnhancements={visibleSelectionEnhancements}
-            selectionSources={selectionState?.sources ?? []}
-            onClassifyInkSelection={classifyInkSelection}
-            onAskInkSelection={sendSelectionQuestion}
-            onVoiceInkSelection={voiceEnabled
-              ? startSelectionVoiceQuestion
-              : undefined}
-            onReferenceInkSelection={referenceSelectionForLesson}
-            onDeleteSelectionEnhancement={deleteSelectionEnhancement}
-            onRetryDegradedVisual={retryDegradedVisual}
-          />
-        ) : (
-          <InfiniteBoard
-            packet={emptyPacket}
-            segmentIndex={-1}
-          />
-        )}
+        <LearningWhiteboard
+          runtime={controlledOllLesson ?? ollLesson}
+          inkSessionId={inkSessionId}
+          inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
+          onInkMergeComplete={handleInkMergeComplete}
+          selectionEnhancements={visibleSelectionEnhancements}
+          selectionSources={selectionState?.sources ?? []}
+          onClassifyInkSelection={classifyInkSelection}
+          onAskInkSelection={sendSelectionQuestion}
+          onVoiceInkSelection={voiceEnabled
+            ? startSelectionVoiceQuestion
+            : undefined}
+          onReferenceInkSelection={referenceSelectionForLesson}
+          onDeleteSelectionEnhancement={deleteSelectionEnhancement}
+          onRetryDegradedVisual={retryDegradedVisual}
+        />
       </main>
 
       {voiceEnabled && (conv.cameraStream || conv.lastSentFrameUrl) && (

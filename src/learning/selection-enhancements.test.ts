@@ -108,6 +108,8 @@ describe("selection enhancement persistence", () => {
       mediaPath: "turn_media/selection.png",
       source: selection,
       contentKind: "math",
+      recognizedContent: "y = sin(x)",
+      recognitionConfidence: "high",
       learnerRequest: "解释这部分",
       toolId: "explain",
       boardContext: {
@@ -129,6 +131,8 @@ describe("selection enhancement persistence", () => {
     });
     expect(argumentsValue).toMatchObject({
       paths: ["turn_media/selection.png"],
+      recognized_content: "y = sin(x)",
+      recognition_confidence: "high",
       source: { bounds: { x: 12.6666666667 } },
       board: {
         board_id: "board-1",
@@ -170,7 +174,7 @@ describe("selection enhancement persistence", () => {
       .resolves.toMatchObject({ sources: [] });
   });
 
-  it("accepts only source-linked explanation or plot artifacts", () => {
+  it("accepts source-linked plot and explicit unsupported artifacts", () => {
     const artifact = validateSelectionEnhancementArtifact({
       profile: "octos.selection-enhancement",
       version: "0.1",
@@ -199,6 +203,45 @@ describe("selection enhancement persistence", () => {
     });
     expect(artifact.response.kind).toBe("plot");
 
+    const unsupported = validateSelectionEnhancementArtifact({
+      ...artifact,
+      turn_id: "turn-unsupported",
+      response: {
+        kind: "unsupported",
+        title: "暂时无法绘制",
+        text: "这个表达式包含四个独立变量，不能直接显示为三维图像。",
+        reason_code: "unsupported_variables",
+        alternatives: ["固定其中一个变量后绘制三维切片"],
+      },
+    });
+    expect(unsupported.response.kind).toBe("unsupported");
+
+    const scene3d = validateSelectionEnhancementArtifact({
+      ...artifact,
+      turn_id: "turn-scene3d",
+      response: {
+        kind: "scene3d",
+        title: "四次曲面",
+        text: "拖动旋转查看这个三维曲面。",
+        content: {
+          title: "四次曲面",
+          fallback: "x⁴+y⁴+z⁴=1",
+          axes: true,
+          camera: { yaw: .65, pitch: .45, zoom: 1 },
+          objects: [{
+            as: "selected-function",
+            kind: "implicit_surface",
+            expression: "x^4+y^4+z^4-1",
+            level: 0,
+            x_range: { min: -1.2, max: 1.2 },
+            y_range: { min: -1.2, max: 1.2 },
+            z_range: { min: -1.2, max: 1.2 },
+          }],
+        },
+      },
+    });
+    expect(scene3d.response.kind).toBe("scene3d");
+
     const matchingSource = {
       format: INK_SELECTION_FORMAT,
       format_version: INK_SELECTION_FORMAT_VERSION,
@@ -221,9 +264,24 @@ describe("selection enhancement persistence", () => {
       svg: "<svg />",
     } satisfies InkSelectionSnapshot;
     expect(selectionArtifactMatchesSource(artifact, matchingSource)).toBe(true);
+    expect(selectionArtifactMatchesSource({
+      ...artifact,
+      source: {
+        ...artifact.source,
+        bounds: {
+          ...artifact.source.bounds,
+          x: artifact.source.bounds.x - 1e-12,
+          height: artifact.source.bounds.height + 1e-12,
+        },
+      },
+    }, matchingSource)).toBe(true);
     expect(selectionArtifactMatchesSource(artifact, {
       ...matchingSource,
       checksum: { algorithm: "sha-256", value: "b".repeat(64) },
+    })).toBe(false);
+    expect(selectionArtifactMatchesSource(artifact, {
+      ...matchingSource,
+      document_version: matchingSource.document_version + 1,
     })).toBe(false);
 
     expect(() => validateSelectionEnhancementArtifact({
