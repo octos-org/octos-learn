@@ -27,12 +27,18 @@ export interface OllLessonTopicDefinition {
   id: string;
   title: string;
   stepIds: string[];
+  variableAliases?: string[];
+  taskAliases?: string[];
+  questionId?: string;
 }
 
 export interface OllLessonOutlineTopic {
   id: string;
   title: string;
   steps: PlaybackOutlineStep[];
+  variableAliases?: string[];
+  taskAliases?: string[];
+  questionId?: string;
 }
 
 export interface OllLessonNarration {
@@ -104,6 +110,7 @@ interface OllLessonRuntimeOptions {
   narrationTiming?: "estimated" | "external";
   startAtEnd?: boolean;
   topics?: OllLessonTopicDefinition[];
+  deliveredProgram?: CanonicalEvent[] | null;
 }
 
 function beatIds(operations: PlaybackOperation[]): string[] {
@@ -133,6 +140,7 @@ export function useOllLessonRuntime({
   narrationTiming = "estimated",
   startAtEnd = false,
   topics = [],
+  deliveredProgram = null,
 }: OllLessonRuntimeOptions): OllLessonRuntimeController | null {
   const events = useMemo(
     () => (source ? parseCanonicalJsonl(source) : null),
@@ -145,9 +153,19 @@ export function useOllLessonRuntime({
             events,
             new LocalPlaybackStore(),
             storageKey,
-            { incremental, narrationTiming },
+            {
+              incremental,
+              narrationTiming,
+              ...(deliveredProgram
+                ? { deliveredProgram: structuredClone(deliveredProgram) }
+                : {}),
+            },
           )
         : null,
+    // `deliveredProgram` is a restore-time guard. A Step-only update must be
+    // appended to the existing Runtime rather than reconstructing it; when
+    // lesson.open changes, `events` changes and the current guard is captured.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, incremental, narrationTiming, storageKey],
   );
   const [, setRevision] = useState(0);
@@ -298,7 +316,16 @@ export function useOllLessonRuntime({
       return [step];
     });
     return topicSteps.length > 0
-      ? [{ id: topic.id, title: topic.title, steps: topicSteps }]
+      ? [
+          {
+            id: topic.id,
+            title: topic.title,
+            steps: topicSteps,
+            variableAliases: topic.variableAliases,
+            taskAliases: topic.taskAliases,
+            questionId: topic.questionId,
+          },
+        ]
       : [];
   });
   const remainingSteps = steps.filter((step) => ungroupedSteps.has(step.id));

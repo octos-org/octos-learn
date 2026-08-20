@@ -13,6 +13,22 @@ vi.mock("@/components/octos-skin-art", () => ({
 }));
 
 describe("OctosTeacher", () => {
+  it("renders inline LaTeX in lesson narration instead of exposing delimiters", () => {
+    const rendered = render(
+      <OctosTeacher
+        state="speaking"
+        speech={"当圆心角 $n$ 增大到 $120^\\circ$ 时，弧长会变化。"}
+        onClick={vi.fn()}
+      />,
+    );
+
+    const caption = document.querySelector(".octos-teacher-caption");
+    expect(caption?.querySelectorAll(".katex").length).toBe(2);
+    expect(caption?.textContent).not.toContain("$");
+    expect(caption?.textContent).toContain("当圆心角");
+    rendered.unmount();
+  });
+
   it("shows a generic preparation animation without exposing TTS details", () => {
     const onClick = vi.fn();
     render(

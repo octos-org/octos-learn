@@ -187,7 +187,7 @@ describe("SelectionEnhancementLayer", () => {
     );
   });
 
-  it("places a selection question before its matching result", () => {
+  it("renders a selection question and its matching result as one collapsible card", () => {
     const question: WhiteboardQuestionRecord = {
       id: artifact.turn_id,
       sessionId: "learn-question-layout",
@@ -209,17 +209,29 @@ describe("SelectionEnhancementLayer", () => {
         onDelete={vi.fn()}
       />,
     );
-    const questionCard = container.querySelector<HTMLElement>(
-      ".learning-whiteboard-question-card",
-    );
     const resultCard = container.querySelector<HTMLElement>(
       ".learning-selection-enhancement",
     );
 
     expect(screen.getByText("我的问题")).toBeTruthy();
-    expect(Number.parseFloat(resultCard?.style.left ?? "0")).toBeGreaterThanOrEqual(
-      Number.parseFloat(questionCard?.style.left ?? "0") + 270 + 24,
-    );
+    expect(screen.getByText("请解释我圈出的这一部分。")).toBeTruthy();
+    expect(resultCard).toBeTruthy();
+    expect(container.querySelector(".learning-whiteboard-question-card")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "最小化问题和辅助内容",
+    }));
+
+    expect(screen.queryByText("请解释我圈出的这一部分。")).toBeNull();
+    expect(screen.queryByText("原来的说明")).toBeNull();
+    const restore = screen.getByRole("button", {
+      name: "展开问题和小章鱼辅助：原来的说明",
+    });
+    expect(restore.textContent).toBe("?");
+
+    fireEvent.click(restore);
+    expect(screen.getByText("请解释我圈出的这一部分。")).toBeTruthy();
+    expect(screen.getByText("原来的说明")).toBeTruthy();
   });
 
   it("shows unsupported content as a clear result instead of an empty card", () => {

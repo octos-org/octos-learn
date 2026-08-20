@@ -21,9 +21,131 @@ export interface OllLessonTopic {
   id: string;
   title: string;
   stepIds: string[];
+  variableAliases: string[];
+  taskAliases: string[];
+  questionId?: string;
 }
 
 const OLL_ARTIFACT_SUFFIX = ".octos-lesson.json";
+
+type JsonRecord = Record<string, unknown>;
+
+function stableIdentifierHash(value: string): string {
+  let left = 0x811c9dc5;
+  let right = 0x9e3779b9;
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    left = Math.imul(left ^ code, 0x01000193);
+    right = Math.imul(right ^ code, 0x85ebca6b);
+  }
+  return `${(left >>> 0).toString(16).padStart(8, "0")}${
+    (right >>> 0).toString(16).padStart(8, "0")
+  }`;
+}
+
+function scopedIdentifier(namespace: string, value: string): string {
+  const direct = `${namespace}_${value}`;
+  if (direct.length <= 64) return direct;
+  return `${namespace}_${value.slice(0, 35)}_${stableIdentifierHash(value).slice(0, 8)}`;
+}
+
+function replaceExpressionVariables(
+  expression: string,
+  variables: ReadonlyMap<string, string>,
+): string {
+  return expression.replace(/[a-z][a-z0-9_]*/giu, (identifier) =>
+    variables.get(identifier.toLocaleLowerCase()) ?? identifier);
+}
+
+function namespaceContentVariables(
+  value: unknown,
+  variables: ReadonlyMap<string, string>,
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((item) => namespaceContentVariables(item, variables));
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+  const record = value as JsonRecord;
+  if (typeof record.variable === "string") {
+    record.variable = variables.get(record.variable.toLocaleLowerCase())
+      ?? record.variable;
+  }
+  if (Array.isArray(record.bindings)) {
+    for (const binding of record.bindings) {
+      if (!binding || typeof binding !== "object") continue;
+      const bindingRecord = binding as JsonRecord;
+      if (typeof bindingRecord.expression === "string") {
+        bindingRecord.expression = replaceExpressionVariables(
+          bindingRecord.expression,
+          variables,
+        );
+      }
+    }
+  }
+  for (const [key, child] of Object.entries(record)) {
+    if (key === "bindings") continue;
+    namespaceContentVariables(child, variables);
+  }
+}
+
+/**
+ * Every generated lesson is valid on its own, but one /learn whiteboard can
+ * append several lessons. Give lesson variables and tasks stable internal
+ * identities before composition so two independent turns may both use names
+ * such as `x` or `theta` without sharing state or hiding each other's metadata.
+ */
+function namespaceCanonicalLesson(
+  events: CanonicalEvent[],
+  artifactIdentity: string,
+): CanonicalEvent[] {
+  const result = structuredClone(events);
+  const open = result.find((event) => event.event === "lesson.open");
+  const lesson = open?.lesson;
+  if (!lesson) return result;
+  const namespace = `v${stableIdentifierHash(artifactIdentity)}`;
+  const variableNames = new Map(
+    (lesson.variables ?? []).map((variable) => [
+      variable.as.toLocaleLowerCase(),
+      scopedIdentifier(namespace, variable.as),
+    ]),
+  );
+  for (const variable of lesson.variables ?? []) {
+    variable.as = variableNames.get(variable.as.toLocaleLowerCase())!;
+  }
+  for (const task of lesson.tasks ?? []) {
+    task.as = scopedIdentifier(namespace, task.as);
+    for (const operation of task.allowed_operations) {
+      if (operation.kind !== "variable_change") continue;
+      operation.variable = variableNames.get(operation.variable.toLocaleLowerCase())
+        ?? operation.variable;
+    }
+    if (task.completion.kind === "expression_target") {
+      task.completion.expression = replaceExpressionVariables(
+        task.completion.expression,
+        variableNames,
+      );
+    }
+  }
+  for (const event of result) {
+    for (const beat of event.step?.beats ?? []) {
+      for (const stage of Object.values(beat.stage)) {
+        for (const action of stage) {
+          if (action.animation) {
+            action.animation.variable = variableNames.get(
+              action.animation.variable.toLocaleLowerCase(),
+            ) ?? action.animation.variable;
+          }
+          if (action.node) namespaceContentVariables(action.node.content, variableNames);
+          if (action.revision) {
+            namespaceContentVariables(action.revision.content, variableNames);
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
 
 interface OllArtifactFilename {
   filename: string;
@@ -189,7 +311,18 @@ export function composeOllClassroomEvents(
   lessons: CanonicalEvent[][],
   sessionId: string,
 ): CanonicalEvent[] {
-  const firstOpen = lessons[0]?.find((event) => event.event === "lesson.open");
+  // Keep the first lesson's public variable names stable for existing saved
+  // checkpoints. Later independent lessons are scoped before their metadata
+  // and Steps enter the long-lived classroom.
+  const classroomLessons = lessons.map((lesson, index) => {
+    const open = lesson.find((event) => event.event === "lesson.open");
+    return index === 0 || !open
+      ? structuredClone(lesson)
+      : namespaceCanonicalLesson(lesson, open.lesson_id);
+  });
+  const firstOpen = classroomLessons[0]?.find(
+    (event) => event.event === "lesson.open",
+  );
   if (!firstOpen) return [];
   const lessonId = `learning-session-${sessionId}`;
   const result: CanonicalEvent[] = [{
@@ -202,8 +335,16 @@ export function composeOllClassroomEvents(
       region_intent: "new_topic",
     },
   }];
+  const variables = classroomLessons.flatMap((lesson) =>
+    lesson.find((event) => event.event === "lesson.open")?.lesson?.variables ?? []);
+  const tasks = classroomLessons.flatMap((lesson) =>
+    lesson.find((event) => event.event === "lesson.open")?.lesson?.tasks ?? []);
+  if (result[0]?.lesson) {
+    result[0].lesson.variables = structuredClone(variables);
+    result[0].lesson.tasks = structuredClone(tasks);
+  }
   let activeRegionId = firstOpen.board?.region_id ?? firstOpen.lesson_id;
-  for (const lesson of lessons) {
+  for (const lesson of classroomLessons) {
     const open = lesson.find((event) => event.event === "lesson.open");
     if (open?.board?.region_intent === "new_topic") {
       activeRegionId = open.board.region_id ?? open.lesson_id;
@@ -234,6 +375,7 @@ export function composeOllClassroomEvents(
 
 export function buildOllLessonTopics(
   lessons: CanonicalEvent[][],
+  questionIds: Array<string | undefined> = [],
 ): OllLessonTopic[] {
   return lessons.flatMap((events, index) => {
     const open = events.find((event) => event.event === "lesson.open");
@@ -241,10 +383,18 @@ export function buildOllLessonTopics(
       event.event === "lesson.step" && event.step ? [event.step.id] : [],
     );
     if (!open || stepIds.length === 0) return [];
+    const namespace = index === 0
+      ? null
+      : `v${stableIdentifierHash(open.lesson_id)}`;
     return [{
       id: open.board?.region_id ?? open.lesson_id,
       title: open.lesson?.title ?? `课程主题 ${index + 1}`,
       stepIds,
+      variableAliases: (open.lesson?.variables ?? []).map((variable) =>
+        namespace ? scopedIdentifier(namespace, variable.as) : variable.as),
+      taskAliases: (open.lesson?.tasks ?? []).map((task) =>
+        namespace ? scopedIdentifier(namespace, task.as) : task.as),
+      ...(questionIds[index] ? { questionId: questionIds[index] } : {}),
     }];
   });
 }

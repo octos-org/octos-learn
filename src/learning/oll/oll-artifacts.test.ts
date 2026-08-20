@@ -250,11 +250,15 @@ describe("OLL lesson artifacts", () => {
         id: first[0]?.board?.region_id,
         title: first[0]?.lesson?.title,
         stepIds: [first[1]?.step?.id],
+        variableAliases: [],
+        taskAliases: [],
       },
       {
         id: second[0]?.board?.region_id,
         title: second[0]?.lesson?.title,
         stepIds: [second[1]?.step?.id],
+        variableAliases: [],
+        taskAliases: [],
       },
     ]);
     const createdRegions = classroom.slice(1).map((event) =>
@@ -266,6 +270,111 @@ describe("OLL lesson artifacts", () => {
       `topic-${ollArtifactIdentity(artifact!)}`,
       `topic-${ollArtifactIdentity(secondArtifact)}`,
     ]);
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps variables from independent teaching turns isolated when composing one whiteboard", async () => {
+    const lessonWithVariable = (variable: string, initial: number) => ({
+      ...structuredClone(authoringLesson),
+      lesson: {
+        ...structuredClone(authoringLesson.lesson),
+        variables: [{
+          as: variable,
+          initial,
+          min: -10,
+          max: 10,
+          label: variable,
+          control: { kind: "slider" },
+        }],
+      },
+      steps: [{
+        ...structuredClone(authoringLesson.steps[0]),
+        beats: [{
+          ...structuredClone(authoringLesson.steps[0]!.beats[0]),
+          actions: [
+            {
+              do: "write",
+              as: "graph",
+              kind: "plot",
+              role: "diagram",
+              content: {
+                axes: {
+                  x: { min: -4, max: 4 },
+                  y: { min: -1, max: 10 },
+                },
+                curves: [{ as: "curve", expression: "x^2", label: "y=x²" }],
+                points: [{ as: "moving", x: initial, y: initial ** 2 }],
+                bindings: [
+                  { target: "moving.x", expression: variable },
+                  { target: "moving.y", expression: `${variable}^2` },
+                ],
+              },
+              place: { relation: "new_region" },
+            },
+            { do: "animate", variable, value: initial + 1 },
+          ],
+        }],
+      }],
+      close: { summary: "完成讲解", focus: ["graph"] },
+    });
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => lessonWithVariable("x", 0),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => lessonWithVariable("theta", 1),
+      }));
+    const firstArtifact = {
+      id: "first",
+      filename: "first-turn.octos-lesson.json",
+      path: "study/oll/first-turn.octos-lesson.json",
+      threadId: "first-turn",
+      turnId: "first-turn",
+    };
+    const secondArtifact = {
+      id: "second",
+      filename: "second-turn.octos-lesson.json",
+      path: "study/oll/second-turn.octos-lesson.json",
+      threadId: "second-turn",
+      turnId: "second-turn",
+    };
+    const first = await loadOllLessonArtifact(firstArtifact, "session-1");
+    const second = await loadOllLessonArtifact(secondArtifact, "session-1");
+    const classroom = composeOllClassroomEvents([first, second], "session-1");
+    const variableNames = classroom[0]?.lesson?.variables?.map(({ as }) => as) ?? [];
+    const animationVariables = classroom.flatMap((event) =>
+      event.step?.beats.flatMap((beat) =>
+        Object.values(beat.stage).flatMap((actions) =>
+          actions.flatMap((action) => action.animation?.variable ?? []))) ?? []);
+
+    expect(variableNames).toHaveLength(2);
+    expect(new Set(variableNames).size).toBe(2);
+    expect(variableNames).toContain("x");
+    expect(variableNames).not.toContain("theta");
+    expect(new Set(animationVariables)).toEqual(new Set(variableNames));
+    expect(buildOllLessonTopics([first, second]).map((topic) =>
+      topic.variableAliases)).toEqual([[variableNames[0]], [variableNames[1]]]);
+    const plotContents = classroom.flatMap((event) =>
+      event.step?.beats.flatMap((beat) =>
+        Object.values(beat.stage).flatMap((actions) =>
+          actions.flatMap((action) => action.node?.kind === "plot"
+            ? [action.node.content]
+            : []))) ?? []);
+    expect(plotContents.map((content) =>
+      (content.curves as Array<{ expression: string }>).map(({ expression }) =>
+        expression,
+      ),
+    )).toEqual([["x^2"], ["x^2"]]);
+    const bindingExpressions = plotContents.map((content) =>
+      (content.bindings as Array<{ expression: string }>).map(
+        ({ expression }) => expression,
+      ));
+    expect(bindingExpressions[0]).toEqual(["x", "x^2"]);
+    expect(bindingExpressions[1]?.every((expression) =>
+      !["theta", "theta^2"].includes(expression))).toBe(true);
+    expect(() => reduceCanonicalEvents(classroom)).not.toThrow();
     vi.unstubAllGlobals();
   });
 

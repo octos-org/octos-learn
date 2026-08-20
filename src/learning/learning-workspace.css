@@ -78,6 +78,36 @@
   opacity: 0.28;
 }
 
+.learning-course-generation-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: 5px;
+  padding: 6px 10px;
+  border: 1px solid rgba(20, 119, 137, 0.14);
+  border-radius: 999px;
+  color: #416b72;
+  background: rgba(228, 244, 242, 0.72);
+  white-space: nowrap;
+}
+
+.learning-course-generation-status > i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a9b9b;
+  box-shadow: 0 0 0 4px rgba(42, 155, 155, 0.11);
+}
+
+.learning-course-generation-status > span {
+  color: inherit;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .oll-course-outline {
   position: absolute;
   right: 48px;
@@ -570,6 +600,26 @@
   background: rgba(255, 253, 248, 0.95);
   box-shadow: 0 14px 36px rgba(54, 45, 34, 0.14);
   backdrop-filter: blur(18px);
+}
+
+.learning-variable-controls.is-world,
+.learning-student-tasks.is-world {
+  right: auto;
+  bottom: auto;
+  pointer-events: auto;
+}
+
+.learning-variable-controls.is-world {
+  /* World-coordinate cards scale and move with their lesson content. */
+  top: auto;
+  max-width: none;
+  backdrop-filter: none;
+}
+
+.learning-student-tasks.is-world {
+  top: auto;
+  max-width: none;
+  backdrop-filter: none;
 }
 
 .learning-variable-control {
@@ -1422,6 +1472,41 @@
   font-weight: 650;
 }
 
+.learning-selection-enhancement-question {
+  margin: -3px -3px 14px;
+  padding: 2px 3px 13px;
+  border-bottom: 1px solid rgba(111, 97, 62, 0.16);
+}
+
+.learning-selection-enhancement-question > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.learning-selection-enhancement-question > div > strong {
+  color: #5a4c2b;
+  font-size: .98em;
+}
+
+.learning-selection-enhancement-question > div > span {
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #66736f;
+  background: rgba(82, 112, 104, 0.08);
+  font-size: .78em;
+  white-space: nowrap;
+}
+
+.learning-selection-enhancement-question > p {
+  margin: 8px 0 0;
+  color: #3f4946;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .learning-selection-source-link {
   position: absolute;
   right: 100%;
@@ -2256,6 +2341,10 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  .learning-course-generation-status > i {
+    animation: learning-course-generation-pulse 1.45s ease-in-out infinite;
+  }
+
   .octos-teacher-avatar[data-preparing="true"] .octos-teacher-avatar-art {
     animation: learning-teacher-prepare 1.45s ease-in-out infinite;
   }
@@ -2286,6 +2375,17 @@
 
   .octos-teacher-reaction > span:nth-child(3) {
     animation-delay: 100ms;
+  }
+}
+
+@keyframes learning-course-generation-pulse {
+  0%, 100% {
+    opacity: 0.52;
+    transform: scale(0.84);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
   }
 }
 

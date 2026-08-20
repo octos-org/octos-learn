@@ -14,7 +14,11 @@ import {
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
 import { getSessionFiles } from "@/api/sessions";
-import { invokeSkillAction } from "@/api/skill-actions";
+import {
+  invokeSkillAction,
+  listSkillActionJobs,
+  type SkillActionJob,
+} from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -94,6 +98,15 @@ import {
   type WhiteboardQuestionRecord,
   type WhiteboardQuestionStatus,
 } from "./whiteboard-questions";
+import {
+  COURSE_PENDING_FOOTPRINT_HEIGHT,
+  COURSE_PENDING_FOOTPRINT_WIDTH,
+  createCourseRegion,
+  expandCourseRegionBounds,
+  loadCourseRegions,
+  saveCourseRegions,
+  type CourseRegionRecord,
+} from "./course-regions";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -108,6 +121,68 @@ const DELIVERABLE_ARTIFACT_SUFFIXES = [
   ".octos-lesson.json",
   ".octos-selection-enhancement.json",
 ] as const;
+
+interface PendingLessonJobRecord {
+  jobId: string;
+  turnId: string;
+  referenceIds: string[];
+}
+
+function pendingLessonJobsStorageKey(sessionId: string): string {
+  return `octos-learning-lesson-jobs:v1:${sessionId}`;
+}
+
+function loadPendingLessonJobs(sessionId: string): Map<string, PendingLessonJobRecord> {
+  try {
+    if (typeof window === "undefined") return new Map();
+    const raw = window.localStorage.getItem(pendingLessonJobsStorageKey(sessionId));
+    if (!raw) return new Map();
+    const records = JSON.parse(raw) as unknown;
+    if (!Array.isArray(records)) return new Map();
+    return new Map(records.flatMap((candidate) => {
+      if (
+        !candidate
+        || typeof candidate !== "object"
+        || typeof candidate.jobId !== "string"
+        || typeof candidate.turnId !== "string"
+        || !Array.isArray(candidate.referenceIds)
+      ) return [];
+      return [[candidate.jobId, candidate as PendingLessonJobRecord]];
+    }));
+  } catch {
+    return new Map();
+  }
+}
+
+function savePendingLessonJobs(
+  sessionId: string,
+  jobs: ReadonlyMap<string, PendingLessonJobRecord>,
+): void {
+  try {
+    if (typeof window === "undefined") return;
+    if (jobs.size === 0) {
+      window.localStorage.removeItem(pendingLessonJobsStorageKey(sessionId));
+      return;
+    }
+    window.localStorage.setItem(
+      pendingLessonJobsStorageKey(sessionId),
+      JSON.stringify([...jobs.values()]),
+    );
+  } catch {
+    // The current page still tracks the job when browser storage is unavailable.
+  }
+}
+
+function lessonJobError(job: SkillActionJob): string {
+  const detail = `${job.error ?? ""} ${job.output ?? ""}`.trim();
+  if (/\b429\b|resource exhausted|rate.?limit|quota/iu.test(detail)) {
+    return "课程生成服务当前比较繁忙，请稍后再试。";
+  }
+  if (/timeout|timed out|超时/iu.test(detail)) {
+    return "课程生成超时，请稍后再试。";
+  }
+  return detail || "课程生成失败，请重试。";
+}
 
 function threadHasDeliverableArtifact(
   threads: Thread[],
@@ -237,6 +312,7 @@ export function LearningWorkspace({
     () => readInkMergeSourceSessionId(sessionId, readInkPlaybackRun(sessionId)),
   );
   const inkSessionId = inkDocumentSessionId(sessionId, inkPlaybackRun);
+  const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const [loadedOllArtifacts, setLoadedOllArtifacts] = useState<
     Record<string, CanonicalEvent[]>
   >({});
@@ -246,6 +322,7 @@ export function LearningWorkspace({
   const [ollGenerationSessionId, setOllGenerationSessionId] = useState<
     string | null
   >(null);
+  const pendingLessonJobsRef = useRef(loadPendingLessonJobs(sessionId));
   const [rejectedOllArtifactIds, setRejectedOllArtifactIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
@@ -280,9 +357,15 @@ export function LearningWorkspace({
   const [whiteboardQuestions, setWhiteboardQuestions] = useState<
     WhiteboardQuestionRecord[]
   >(() => loadWhiteboardQuestions(sessionId));
+  const [courseRegions, setCourseRegions] = useState<CourseRegionRecord[]>(
+    () => loadCourseRegions(sessionId),
+  );
   useEffect(() => {
     saveWhiteboardQuestions(sessionId, whiteboardQuestions);
   }, [sessionId, whiteboardQuestions]);
+  useEffect(() => {
+    saveCourseRegions(sessionId, courseRegions);
+  }, [courseRegions, sessionId]);
   const addWhiteboardQuestion = useCallback((
     question: WhiteboardQuestionRecord,
   ) => {
@@ -324,9 +407,66 @@ export function LearningWorkspace({
   const placeWhiteboardQuestion = useCallback((
     questionId: string,
     position: { x: number; y: number },
-  ) => updateWhiteboardQuestion(questionId, { position }), [
+  ) => {
+    updateWhiteboardQuestion(questionId, { position });
+    const question = whiteboardQuestions.find((candidate) =>
+      candidate.id === questionId && candidate.origin === "composer");
+    if (!question) return;
+    setCourseRegions((current) => {
+      const existing = current.find((region) => region.questionId === questionId);
+      if (!existing) {
+        return [...current, createCourseRegion(
+          sessionId,
+          questionId,
+          position,
+          {
+            width: COURSE_PENDING_FOOTPRINT_WIDTH,
+            height: COURSE_PENDING_FOOTPRINT_HEIGHT,
+          },
+          question.createdAt,
+        )].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+      }
+      if (existing.origin.x === position.x && existing.origin.y === position.y) {
+        return current;
+      }
+      const offsetX = position.x - existing.origin.x;
+      const offsetY = position.y - existing.origin.y;
+      return current.map((region) => region.id === existing.id ? {
+        ...region,
+        origin: { ...position },
+        bounds: {
+          ...region.bounds,
+          x: region.bounds.x + offsetX,
+          y: region.bounds.y + offsetY,
+        },
+      } : region);
+    });
+  }, [
+    sessionId,
     updateWhiteboardQuestion,
+    whiteboardQuestions,
   ]);
+  const updateCourseRegion = useCallback((
+    regionId: string,
+    patch: Partial<Pick<
+      CourseRegionRecord,
+      "runtimeRegionId" | "bounds" | "reservedWidth"
+    >>,
+  ) => {
+    setCourseRegions((current) => current.map((region) => {
+      if (region.id !== regionId) return region;
+      const updated = {
+        ...region,
+        ...patch,
+        ...(patch.bounds ? {
+          bounds: expandCourseRegionBounds(region.bounds, patch.bounds),
+        } : {}),
+      };
+      return JSON.stringify(updated) === JSON.stringify(region)
+        ? region
+        : updated;
+    }));
+  }, []);
   const visibleSelectionEnhancements = useMemo(() => {
     const hidden = new Set(selectionState?.hidden_enhancement_turn_ids ?? []);
     return selectionArtifacts.flatMap((artifact) => {
@@ -366,6 +506,14 @@ export function LearningWorkspace({
     const events = composeOllClassroomEvents(deliveredOllLessons, sessionId);
     return events.length > 0 ? events : null;
   }, [deliveredOllLessons, sessionId]);
+  const deliveredOllQuestionIds = useMemo(
+    () => deliveredOllLessons.map((events) => {
+      const artifact = ollArtifacts.find((candidate) =>
+        loadedOllArtifacts[ollArtifactIdentity(candidate)] === events);
+      return artifact?.turnId;
+    }),
+    [deliveredOllLessons, loadedOllArtifacts, ollArtifacts],
+  );
   const activeOllEvents = ollFixture
     ? ollFixtureEvents[ollFixture]
     : deliveredOllEvents;
@@ -381,8 +529,9 @@ export function LearningWorkspace({
       ollFixture
         ? [ollFixtureEvents[ollFixture]]
         : deliveredOllLessons,
+      ollFixture ? [] : deliveredOllQuestionIds,
     ),
-    [deliveredOllLessons, ollFixture],
+    [deliveredOllLessons, deliveredOllQuestionIds, ollFixture],
   );
   const ollOpenSource = activeOllEvents?.[0]
     ? JSON.stringify(activeOllEvents[0])
@@ -395,6 +544,7 @@ export function LearningWorkspace({
     narrationTiming: "external",
     startAtEnd: Boolean(activeOllEvents) && playbackMode === "review",
     topics: activeOllTopics,
+    deliveredProgram: activeOllEvents,
   });
   // Audio ownership follows playback intent, not the current speech sample.
   // A live lesson claims the microphone on its first render and keeps it
@@ -688,9 +838,6 @@ export function LearningWorkspace({
         );
       }
     };
-    const handleBridgeConnected = () => {
-      void loadPersistedArtifacts();
-    };
     const handleToolProgress = (event: Event) => {
       const detail = (event as CustomEvent<{
         sessionId?: string;
@@ -711,9 +858,76 @@ export function LearningWorkspace({
         void loadPersistedArtifacts();
       }
     };
+    const applyLessonJobUpdate = async (job: SkillActionJob) => {
+      if (
+        !job
+        || job.session_id !== sessionId
+        || job.action_id !== "learning.lesson.generate"
+      ) return;
+      const pending = pendingLessonJobsRef.current.get(job.job_id);
+      if (!pending) return;
+      if (job.status === "queued" || job.status === "running") {
+        setOllGenerationSessionId(sessionId);
+        return;
+      }
+      pendingLessonJobsRef.current.delete(job.job_id);
+      savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
+      const sameTurnStillRunning = [...pendingLessonJobsRef.current.values()]
+        .some((candidate) => candidate.turnId === pending.turnId);
+      if (sameTurnStillRunning) return;
+      setOllGenerationSessionId(null);
+      let artifacts: ReturnType<typeof collectPersistedOllLessonArtifacts> = [];
+      try {
+        const files = await getSessionFiles(sessionId);
+        artifacts = collectPersistedOllLessonArtifacts(files);
+        setPersistedOllArtifacts(artifacts);
+      } catch {
+        // The ordinary session-file refresh path can retry after reconnect.
+      }
+      const keptPartialLesson = artifacts.some(
+        (artifact) => artifact.turnId === pending.turnId,
+      );
+      if (job.status === "succeeded") {
+        setWhiteboardQuestionStatus(pending.turnId, "answered");
+        handleTurnComplete(pending.turnId);
+        return;
+      }
+      if (keptPartialLesson) {
+        setWhiteboardQuestionStatus(pending.turnId, "answered");
+        setSendError("后续课程内容没有生成完成，已经保留并展示成功生成的部分。");
+        handleTurnComplete(pending.turnId);
+        return;
+      }
+      setWhiteboardQuestionStatus(pending.turnId, "failed");
+      setSendError(lessonJobError(job));
+    };
+    const handleLessonJobUpdated = (event: Event) => {
+      const job = (event as CustomEvent<SkillActionJob>).detail;
+      if (job) void applyLessonJobUpdate(job);
+    };
+    const restorePendingLessonJobs = () => {
+      if (pendingLessonJobsRef.current.size === 0) return;
+      setOllGenerationSessionId(sessionId);
+      void listSkillActionJobs(sessionId, {
+        actionId: "learning.lesson.generate",
+      }).then((jobs) => {
+        jobs.forEach((job) => void applyLessonJobUpdate(job));
+      }).catch(() => {
+        // The bridge-connected event retries after reconnect.
+      });
+    };
+    const handleBridgeConnected = () => {
+      void loadPersistedArtifacts();
+      restorePendingLessonJobs();
+    };
     window.addEventListener("crew:bridge_connected", handleBridgeConnected);
     window.addEventListener("crew:tool_progress", handleToolProgress);
+    window.addEventListener(
+      "crew:skill_action_job_updated",
+      handleLessonJobUpdated,
+    );
     void loadPersistedArtifacts();
+    restorePendingLessonJobs();
     return () => {
       cancelled = true;
       window.removeEventListener(
@@ -721,8 +935,17 @@ export function LearningWorkspace({
         handleBridgeConnected,
       );
       window.removeEventListener("crew:tool_progress", handleToolProgress);
+      window.removeEventListener(
+        "crew:skill_action_job_updated",
+        handleLessonJobUpdated,
+      );
     };
-  }, [ollFixture, sessionId]);
+  }, [
+    handleTurnComplete,
+    ollFixture,
+    sessionId,
+    setWhiteboardQuestionStatus,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -868,6 +1091,14 @@ export function LearningWorkspace({
   }, [selectionArtifacts, selectionState, sessionId]);
 
   const appendOllEvents = ollLesson?.appendEvents;
+
+  useEffect(() => {
+    // A changed lesson.open creates a new BrowserLessonSession. Re-submit the
+    // complete delivered prefix: an upgraded checkpoint will deduplicate its
+    // accepted Steps, while a rejected stale checkpoint needs every Step from
+    // sequence 1 again.
+    appendedOllEventCountRef.current = 1;
+  }, [ollOpenSource]);
 
   useEffect(() => {
     if (!activeOllEvents || !appendOllEvents) return;
@@ -1221,6 +1452,46 @@ export function LearningWorkspace({
             mediaPath: mediaPaths[index]!,
           })),
         );
+        if (references.length === 0 && !applicationContext?.trim()) {
+          const invocation = await invokeSkillAction(
+            sessionId,
+            "learning.lesson.generate",
+            {
+              turn_id: turnId,
+              learner_request: text,
+              request_source: "self_contained",
+              language: "zh-CN",
+            },
+          );
+          const failedResult = (invocation.results ?? [])
+            .find((result) => !result.success);
+          if (!invocation.ok || failedResult) {
+            throw new Error(
+              failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
+            );
+          }
+          const jobs = invocation.jobs ?? [];
+          if (jobs.length === 0) {
+            await getSessionFiles(sessionId).then((files) => {
+              setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+            });
+            setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "answered");
+            handleTurnComplete(turnId);
+            return;
+          }
+          jobs.forEach((job) => {
+            pendingLessonJobsRef.current.set(job.job_id, {
+              jobId: job.job_id,
+              turnId,
+              referenceIds: [],
+            });
+          });
+          savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
+          setOllGenerationSessionId(sessionId);
+          setTextTurnPending(false);
+          return;
+        }
         sendMessage({
           sessionId,
           text: [
@@ -1404,20 +1675,41 @@ export function LearningWorkspace({
           : conv.state === "thinking"
             ? "我正在准备白板课程。"
             : "");
-  const lessonLoading = !selectionEnhancementPending
-    && !plainReply
-    && !completedTurnHasArtifact
-    && (
-      textTurnPending
-      || conv.state === "thinking"
-      || Boolean(completedTurnId)
-      || ollGenerationSessionId === sessionId
-    );
+  const pendingLessonQuestion = [...whiteboardQuestions].reverse().find(
+    (question) => question.origin === "composer" && question.status === "pending",
+  );
+  const pendingLessonHasPlayableArtifact = Boolean(
+    pendingLessonQuestion && ollArtifacts.some((artifact) =>
+      artifact.turnId === pendingLessonQuestion.id
+      && Boolean(loadedOllArtifacts[ollArtifactIdentity(artifact)])),
+  );
+  const pendingLessonAwaitingFirstArtifact = Boolean(
+    pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
+  );
+  const lessonLoading = !selectionEnhancementPending && (
+    pendingLessonAwaitingFirstArtifact
+    || (
+      !plainReply
+      && !completedTurnHasArtifact
+      && (
+        textTurnPending
+        || conv.state === "thinking"
+        || Boolean(completedTurnId)
+        || ollGenerationSessionId === sessionId
+      )
+    )
+  );
+  const lessonGenerationInProgress = Boolean(
+    ollLesson && ollGenerationSessionId === sessionId,
+  );
   const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
+    && (!ollLesson || Boolean(
+      pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
+    ))
     ? {
-        id: completedTurnId ?? `lesson:${sessionId}`,
+        id: pendingLessonQuestion?.id ?? completedTurnId ?? `lesson:${sessionId}`,
         kind: "lesson",
-        title: ollLesson ? "正在补充白板内容" : "正在搭建这节课",
+        title: "正在搭建这节课",
         detail: "先整理重点，再把讲解和互动画面放到白板上。",
       }
     : null;
@@ -1481,6 +1773,16 @@ export function LearningWorkspace({
                 ? <Volume2 size={16} />
                 : <VolumeX size={16} />}
             </button>
+            {lessonGenerationInProgress ? (
+              <div
+                className="learning-course-generation-status"
+                role="status"
+                aria-label="课程内容仍在生成"
+              >
+                <i aria-hidden="true" />
+                <span>继续生成中</span>
+              </div>
+            ) : null}
           </div>
         ) : null}
         <div className="learning-workspace-actions">
@@ -1527,13 +1829,21 @@ export function LearningWorkspace({
           runtime={controlledOllLesson ?? ollLesson}
           inkSessionId={inkSessionId}
           loadingState={whiteboardLoadingState}
-          questions={whiteboardQuestions}
+          questions={replayingWithoutStudentAdditions
+            ? whiteboardQuestions.filter((question) => question.origin !== "selection")
+            : whiteboardQuestions}
+          courseRegions={courseRegions}
           onPlaceQuestion={placeWhiteboardQuestion}
+          onUpdateCourseRegion={updateCourseRegion}
           onInkActivity={onWhiteboardActivity}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
-          selectionEnhancements={visibleSelectionEnhancements}
-          selectionSources={selectionState?.sources ?? []}
+          selectionEnhancements={replayingWithoutStudentAdditions
+            ? []
+            : visibleSelectionEnhancements}
+          selectionSources={replayingWithoutStudentAdditions
+            ? []
+            : selectionState?.sources ?? []}
           onClassifyInkSelection={classifyInkSelection}
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled

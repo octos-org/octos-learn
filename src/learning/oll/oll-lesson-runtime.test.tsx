@@ -24,7 +24,10 @@ import {
   INK_SELECTION_FORMAT_VERSION,
   type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
+import { InfiniteBoardView } from "octos-lesson-language/web-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
+import { WHITEBOARD_QUESTION_CARD_WIDTH } from "../whiteboard-question-card";
+import { createCourseRegion } from "../course-regions";
 import type { SelectionClassification } from "../selection-enhancements";
 import { isLessonDeliverySettled } from "./lesson-delivery";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
@@ -59,6 +62,24 @@ function RuntimeProbe() {
         {runtime.cursor}/{runtime.totalOperations}
       </span>
       <button type="button" onClick={runtime.nextBeat}>下一 Beat</button>
+      <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
+function CameraRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-camera-runtime-test",
+  });
+  const [, rerenderHostUi] = useState(0);
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={runtime.nextBeat}>下一 Beat</button>
+      <button type="button" onClick={() => rerenderHostUi((value) => value + 1)}>
+        更新旁边界面
+      </button>
       <OllLessonBoard runtime={runtime} />
     </div>
   );
@@ -100,6 +121,152 @@ function BlankToLessonWhiteboardProbe() {
       <OllLessonBoard
         runtime={showLesson ? runtime : null}
         inkSessionId="blank-to-lesson-ink"
+      />
+    </div>
+  );
+}
+
+function QuestionPlacementProbe({
+  onPlaceQuestion,
+  inkSessionId,
+  pending = false,
+  showLoading = pending,
+  withCourseRegion = false,
+}: {
+  onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
+  inkSessionId?: string;
+  pending?: boolean;
+  showLoading?: boolean;
+  withCourseRegion?: boolean;
+}) {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "question-placement-runtime-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard
+        runtime={{
+          ...runtime,
+          outline: runtime.outline.map((topic) => ({
+            ...topic,
+            questionId: "lesson-unit-circle-sine-001",
+          })),
+        }}
+        inkSessionId={inkSessionId}
+        loadingState={showLoading ? {
+          id: "lesson-unit-circle-sine-001",
+          kind: "lesson",
+          title: "正在搭建这节课",
+          detail: "请稍等",
+        } : null}
+        questions={[{
+          id: "lesson-unit-circle-sine-001",
+          sessionId: "question-placement",
+          text: "请结合单位圆解释正弦函数",
+          origin: "composer",
+          createdAt: "2026-08-17T00:00:00.000Z",
+          status: pending ? "pending" : "answered",
+          ...(pending ? {} : { position: { x: 2_400, y: 160 } }),
+        }]}
+        courseRegions={withCourseRegion ? [createCourseRegion(
+          "question-placement",
+          "lesson-unit-circle-sine-001",
+          { x: 2_400, y: 160 },
+          { width: 654, height: 220 },
+          "2026-08-17T00:00:00.000Z",
+        )] : []}
+        onPlaceQuestion={onPlaceQuestion}
+      />
+    </div>
+  );
+}
+
+function PendingQuestionFocusProbe({ showLoading = true }: { showLoading?: boolean }) {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "pending-question-focus-runtime-test",
+    startAtEnd: true,
+  });
+  const [, updateHostUi] = useState(0);
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => updateHostUi((value) => value + 1)}>
+        更新旁边界面
+      </button>
+      <OllLessonBoard
+        runtime={runtime}
+        loadingState={showLoading ? {
+          id: "turn-new-topic",
+          kind: "lesson",
+          title: "正在搭建这节课",
+          detail: "请稍等",
+        } : null}
+        questions={[{
+          id: "turn-new-topic",
+          sessionId: "pending-question-focus",
+          text: "继续讲自然对数",
+          origin: "composer",
+          createdAt: "2026-08-19T00:00:00.000Z",
+          status: "pending",
+          position: { x: 2_400, y: 160 },
+        }]}
+      />
+    </div>
+  );
+}
+
+function CompletedCourseFocusProbe({ restored = false }: { restored?: boolean }) {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "completed-course-focus-runtime-test",
+    startAtEnd: true,
+  });
+  const [settled, setSettled] = useState(false);
+  const [, updateHostUi] = useState(0);
+  if (!runtime || runtime.outline.length === 0) return null;
+  const oldRegion = createCourseRegion(
+    "completed-course-focus",
+    "old-course",
+    { x: 100, y: 120 },
+    { width: 1_100, height: 760 },
+    "2026-08-17T00:00:00.000Z",
+  );
+  const currentRegion = createCourseRegion(
+    "completed-course-focus",
+    "current-course",
+    { x: 2_400, y: 180 },
+    { width: 1_180, height: 820 },
+    "2026-08-17T00:01:00.000Z",
+  );
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => setSettled(true)}>
+        结束当前课程
+      </button>
+      <button type="button" onClick={() => updateHostUi((value) => value + 1)}>
+        更新结束界面
+      </button>
+      <OllLessonBoard
+        runtime={{
+          ...runtime,
+          completed: restored,
+          waiting: !restored,
+          deliverySettled: settled,
+          outline: [{
+            id: "old-topic",
+            title: "旧课程",
+            steps: [],
+            questionId: "old-course",
+          }, {
+            ...runtime.outline[0]!,
+            questionId: "current-course",
+          }],
+        }}
+        courseRegions={[oldRegion, currentRegion]}
       />
     </div>
   );
@@ -191,6 +358,39 @@ function VariableRuntimeProbe({
             }
           : runtime}
       />
+    </div>
+  );
+}
+
+function CurrentTopicVariableRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "oll-current-topic-variable-runtime-test",
+    startAtEnd: true,
+  });
+  const currentVariable = runtime?.board?.variables?.theta;
+  if (!runtime || !runtime.board || !currentVariable) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={{
+        ...runtime,
+        board: {
+          ...runtime.board,
+          variables: {
+            old_lesson_number: {
+              ...currentVariable,
+              label: "旧课程参数",
+            },
+            theta: currentVariable,
+          },
+        },
+        outline: [{
+          id: "current-topic",
+          title: "当前课程",
+          steps: runtime.outline.flatMap((topic) => topic.steps),
+          variableAliases: ["theta"],
+        }],
+      }} />
     </div>
   );
 }
@@ -554,6 +754,7 @@ function ReviewToLiveRuntimeProbe() {
 describe("OLL lesson Runtime integration", () => {
   afterEach(() => {
     cleanup();
+    vi.useRealTimers();
     localStorage.clear();
     mountInkRuntimeMock.mockReset();
     selectionContextToPngFileMock.mockClear();
@@ -583,6 +784,156 @@ describe("OLL lesson Runtime integration", () => {
       (await screen.findByRole("button", { name: "已发起重试" })).hasAttribute("disabled"),
     ).toBe(true);
     expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
+  });
+
+  it("pins a lesson region to the existing composer question origin", async () => {
+    const setRegionLayouts = vi.spyOn(
+      InfiniteBoardView.prototype,
+      "setRegionLayouts",
+    );
+    const onPlaceQuestion = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={onPlaceQuestion}
+        withCourseRegion
+      />,
+    );
+
+    await waitFor(() => {
+      expect(setRegionLayouts).toHaveBeenCalledWith({
+        __legacy__: {
+          x: 2_694,
+          y: 160,
+          reservedWidth: 886,
+        },
+      });
+    });
+    expect(onPlaceQuestion).not.toHaveBeenCalled();
+    const controls = await screen.findByTestId("oll-variable-controls");
+    const controlTop = Number.parseFloat(controls.style.top);
+    const lessonBottom = Math.max(...Array.from(
+      document.querySelectorAll<HTMLElement>(".board-node"),
+    ).map((node) => Number.parseFloat(node.style.top)
+      + Number.parseFloat(node.style.height)));
+    expect(controlTop).toBeGreaterThanOrEqual(lessonBottom + 42);
+  });
+
+  it("reserves a new course area before its loading state renders", async () => {
+    const onPlaceQuestion = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={onPlaceQuestion}
+        pending
+        showLoading={false}
+      />,
+    );
+
+    await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+    const oldLessonRight = Math.max(...Array.from(
+      document.querySelectorAll<HTMLElement>(".board-node"),
+    ).map((node) => Number.parseFloat(node.style.left)
+      + Number.parseFloat(node.style.width)));
+    const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
+    expect(position.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+  });
+
+  it("focuses a new question and loading block once without reclaiming the camera", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<PendingQuestionFocusProbe />);
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
+      x: 2_400,
+      y: 160,
+      width: 654,
+      height: 194,
+    }));
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "更新旁边界面" }));
+    await act(async () => undefined);
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
+  });
+
+  it("focuses the complete course footprint before loading UI catches up", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<PendingQuestionFocusProbe showLoading={false} />);
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
+      x: 2_400,
+      y: 160,
+      width: 654,
+      height: 220,
+    }));
+  });
+
+  it("ends inside the current course region instead of fitting every course", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    const bounds = focusWorldRect.mock.calls[0]?.[0];
+    expect(bounds).toMatchObject({ x: 2_400, y: 180 });
+    expect(bounds!.width).toBeLessThan(2_000);
+
+    fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
+    await act(async () => undefined);
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not move a restored completed course when delivery state hydrates", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe restored />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+    await act(async () => undefined);
+
+    expect(focusWorldRect).not.toHaveBeenCalled();
+  });
+
+  it("keeps a newly anchored composer question away from restored student ink", async () => {
+    const inkBounds = { x: -1_000, y: -1_000, width: 2_000, height: 2_000 };
+    const state: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 1,
+      selected_count: 0,
+      selection_revision: 0,
+      content_bounds: inkBounds,
+      document_version: 2,
+      saved: true,
+    };
+    mountInkRuntimeMock.mockReturnValue({
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listener(state);
+        return () => undefined;
+      }),
+      setMode: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    });
+    const onPlaceQuestion = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        inkSessionId="question-placement-ink"
+        onPlaceQuestion={onPlaceQuestion}
+        pending
+      />,
+    );
+
+    await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+    const position = onPlaceQuestion.mock.calls.at(-1)?.[1];
+    expect(position).toBeTruthy();
+    expect(
+      position.x < inkBounds.x + inkBounds.width
+      && position.x + WHITEBOARD_QUESTION_CARD_WIDTH > inkBounds.x
+      && position.y < inkBounds.y + inkBounds.height
+      && position.y + 130 > inkBounds.y,
+    ).toBe(false);
   });
 
   it("mounts writing as a persistent whiteboard capability", async () => {
@@ -630,6 +981,8 @@ describe("OLL lesson Runtime integration", () => {
     render(<InkRuntimeProbe onInkActivity={onInkActivity} />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    expect(document.querySelector(".learning-selection-enhancement-layer")
+      ?.getAttribute("data-oll-ink-input")).toBe("ignore");
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
       storageKey: "octos-learning-ink:v1:learn-ink-1",
       documentId: "learning-session:learn-ink-1:student-ink",
@@ -956,6 +1309,7 @@ describe("OLL lesson Runtime integration", () => {
     const initialPlotCx = plotPoint?.getAttribute("cx");
 
     fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    expect(board.classList.contains("dragging")).toBe(false);
     fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
     fireEvent.pointerUp(slider, { pointerType: "mouse" });
 
@@ -1009,6 +1363,13 @@ describe("OLL lesson Runtime integration", () => {
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
     expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
+  });
+
+  it("shows only the current lesson's controls on a multi-lesson whiteboard", async () => {
+    render(<CurrentTopicVariableRuntimeProbe />);
+
+    expect(await screen.findByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
+    expect(screen.queryByRole("slider", { name: "旧课程参数" })).toBeNull();
   });
 
   it("renders a highlighted 3D scene, completes its view task, and restores progress", async () => {
@@ -1152,6 +1513,62 @@ describe("OLL lesson Runtime integration", () => {
     expect(new Set(scales).size).toBeGreaterThanOrEqual(4);
     expect(transforms[5]).not.toBe(transforms[6]);
     expect(transforms[7]).not.toBe(transforms[8]);
+  });
+
+  it("keeps learner pan and zoom control after the lesson has ended", () => {
+    vi.useFakeTimers();
+    render(<ReviewRuntimeProbe />);
+
+    const board = screen.getByTestId("oll-lesson-board");
+    fireEvent.pointerDown(board, {
+      pointerType: "mouse",
+      clientX: 240,
+      clientY: 180,
+    });
+    fireEvent.pointerMove(window, {
+      pointerType: "mouse",
+      clientX: 340,
+      clientY: 240,
+    });
+    fireEvent.pointerUp(window, { pointerType: "mouse" });
+
+    expect(board.classList.contains("manual-navigation")).toBe(true);
+    act(() => vi.advanceTimersByTime(30_000));
+    expect(
+      board.classList.contains("manual-navigation"),
+      "elapsed time must not hand the completed lesson camera back to automatic focus",
+    ).toBe(true);
+  });
+
+  it("ignores ordinary host rerenders but lets a new teaching Beat reclaim the camera", () => {
+    render(<CameraRuntimeProbe />);
+    fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
+
+    const board = screen.getByTestId("oll-lesson-board");
+    fireEvent.pointerDown(board, {
+      pointerType: "mouse",
+      clientX: 240,
+      clientY: 180,
+    });
+    fireEvent.pointerMove(window, {
+      pointerType: "mouse",
+      clientX: 340,
+      clientY: 240,
+    });
+    fireEvent.pointerUp(window, { pointerType: "mouse" });
+    expect(board.classList.contains("manual-navigation")).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "更新旁边界面" }));
+    expect(
+      board.classList.contains("manual-navigation"),
+      "re-rendering the current Beat must preserve the learner's camera",
+    ).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
+    expect(
+      board.classList.contains("manual-navigation"),
+      "a new Beat with an explicit teaching focus may reclaim the camera once",
+    ).toBe(false);
   });
 
   it("grows an active /learn board when a validated Canonical Step arrives", () => {

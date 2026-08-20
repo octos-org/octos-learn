@@ -51,7 +51,9 @@ const conversationMock = vi.hoisted(() => ({
 const sessionFilesMock = vi.hoisted(() => ({
   getSessionFiles: vi.fn(async () => []),
   invokeSkillAction: vi.fn(async () => ({ action_id: "learning.selection.enhance", ok: true, results: [] })),
+  listSkillActionJobs: vi.fn(async () => []),
 }));
+const sendMessageMock = vi.hoisted(() => vi.fn());
 const narrationTtsMock = vi.hoisted(() => ({
   useOllNarrationTts: vi.fn(() => ({ error: null, preparing: false })),
 }));
@@ -65,8 +67,9 @@ vi.mock("@/api/sessions", () => ({
 }));
 vi.mock("@/api/skill-actions", () => ({
   invokeSkillAction: sessionFilesMock.invokeSkillAction,
+  listSkillActionJobs: sessionFilesMock.listSkillActionJobs,
 }));
-vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: vi.fn() }));
+vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: sendMessageMock }));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
 vi.mock("@/home/voice/camera-preview", () => ({
   CameraPreview: () => <canvas data-testid="camera-preview" />,
@@ -212,6 +215,9 @@ describe("LearningWorkspace", () => {
       ok: true,
       results: [],
     });
+    sessionFilesMock.listSkillActionJobs.mockReset();
+    sessionFilesMock.listSkillActionJobs.mockResolvedValue([]);
+    sendMessageMock.mockReset();
   });
 
   afterEach(() => {
@@ -446,7 +452,178 @@ describe("LearningWorkspace", () => {
     expect(localStorage.getItem(
       "octos-learning-questions:v1:learn-loading-lesson",
     )).toContain("请解释勾股定理");
+    await waitFor(() => expect(localStorage.getItem(
+      "octos-learning-course-regions:v1:learn-loading-lesson",
+    )).toContain("learn-loading-lesson"));
     expect(screen.queryByText(/白板暂未更新/)).toBeNull();
+  });
+
+  it("shows a separate loading block when another lesson is requested on a populated whiteboard", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "lesson-job-follow-up",
+        batch_id: "lesson-batch-follow-up",
+        profile_id: "alan0x",
+        session_id: "learn-follow-up-loading",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-19T00:00:00Z",
+        updated_at: "2026-08-19T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-follow-up-loading"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+        ollFixture="geometry-v2"
+      />,
+    );
+
+    expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请再讲一节二元函数课程" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    expect(await screen.findByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeTruthy();
+    expect(screen.getByText("请再讲一节二元函数课程")).toBeTruthy();
+    const region = await waitFor(() => {
+      const saved = JSON.parse(localStorage.getItem(
+        "octos-learning-course-regions:v1:learn-follow-up-loading",
+      ) ?? "[]") as Array<{ origin?: { x: number; y: number } }>;
+      expect(saved).toHaveLength(1);
+      expect(saved[0]?.origin).toBeTruthy();
+      return saved[0]!;
+    });
+    const oldLessonRight = Math.max(...Array.from(
+      document.querySelectorAll<HTMLElement>(".board-node"),
+    ).map((node) => Number.parseFloat(node.style.left)
+      + Number.parseFloat(node.style.width)));
+    expect(region.origin!.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+  });
+
+  it("sends a composer lesson directly to the background lesson action", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "lesson-job-1",
+        batch_id: "lesson-batch-1",
+        profile_id: "alan0x",
+        session_id: "learn-direct-lesson",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-19T00:00:00Z",
+        updated_at: "2026-08-19T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-direct-lesson"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请解释勾股定理" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-direct-lesson",
+      "learning.lesson.generate",
+      expect.objectContaining({
+        learner_request: "请解释勾股定理",
+        request_source: "self_contained",
+        language: "zh-CN",
+      }),
+    ));
+    expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id)
+      .toEqual(expect.any(String));
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(localStorage.getItem(
+      "octos-learning-lesson-jobs:v1:learn-direct-lesson",
+    )).toContain("lesson-job-1");
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "lesson-job-1",
+          batch_id: "lesson-batch-1",
+          profile_id: "alan0x",
+          session_id: "learn-direct-lesson",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          created_at: "2026-08-19T00:00:00Z",
+          updated_at: "2026-08-19T00:00:05Z",
+        },
+      }));
+    });
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(localStorage.getItem(
+      "octos-learning-lesson-jobs:v1:learn-direct-lesson",
+    )).toBeNull();
+  });
+
+  it("restores a direct lesson job after the page reloads", async () => {
+    localStorage.setItem(
+      "octos-learning-lesson-jobs:v1:learn-restored-job",
+      JSON.stringify([{
+        jobId: "lesson-job-restored",
+        turnId: "lesson-turn-restored",
+        referenceIds: [],
+      }]),
+    );
+    localStorage.setItem(
+      "octos-learning-questions:v1:learn-restored-job",
+      JSON.stringify([{
+        id: "lesson-turn-restored",
+        sessionId: "learn-restored-job",
+        text: "请解释自然对数的由来",
+        origin: "composer",
+        createdAt: "2026-08-19T00:00:00Z",
+        status: "pending",
+      }]),
+    );
+    sessionFilesMock.listSkillActionJobs.mockResolvedValueOnce([{
+      job_id: "lesson-job-restored",
+      batch_id: "lesson-batch-restored",
+      profile_id: "alan0x",
+      session_id: "learn-restored-job",
+      action_id: "learning.lesson.generate",
+      skill_id: "learning-coach",
+      status: "succeeded",
+      created_at: "2026-08-19T00:00:00Z",
+      updated_at: "2026-08-19T00:00:10Z",
+    }]);
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-restored-job"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(sessionFilesMock.listSkillActionJobs).toHaveBeenCalledWith(
+      "learn-restored-job",
+      { actionId: "learning.lesson.generate" },
+    );
+    expect(localStorage.getItem(
+      "octos-learning-lesson-jobs:v1:learn-restored-job",
+    )).toBeNull();
   });
 
   it("does not speak a generic reply for a voice turn with no learner transcript", async () => {
@@ -777,6 +954,92 @@ describe("LearningWorkspace", () => {
           "octos-learning-ink:v1:learn-finished-replay:replay:1",
       }),
     );
+  });
+
+  it("hides selection questions with the ink during replay and restores them together", async () => {
+    const sessionId = "learn-replay-student-additions";
+    localStorage.setItem(
+      `octos-learning-questions:v1:${sessionId}`,
+      JSON.stringify([{
+        id: "selection-question",
+        sessionId,
+        text: "解释我后来圈出的这一部分",
+        origin: "selection",
+        createdAt: "2026-08-17T12:00:00.000Z",
+        status: "answered",
+        source: {
+          sourceId: "selection-source",
+          bounds: { x: 20, y: 30, width: 120, height: 80 },
+        },
+      }, {
+        id: "composer-question",
+        sessionId,
+        text: "最初发起课程的问题",
+        origin: "composer",
+        createdAt: "2026-08-17T11:00:00.000Z",
+        status: "answered",
+        position: { x: 10, y: 10 },
+      }]),
+    );
+    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "1");
+    localStorage.setItem(
+      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      sessionId,
+    );
+    let finishMerge!: () => void;
+    const mergePending = new Promise<void>((resolve) => {
+      finishMerge = resolve;
+    });
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => {
+      const state = {
+        mode: "navigate" as const,
+        component_count: 0,
+        selected_count: 0,
+        pen_color: "#176b62",
+        selection_color: null,
+        selection_input: "unknown" as const,
+        selection_mode: "rectangle" as const,
+        selection_revision: 0,
+        document_version: 0,
+        saved: true,
+      };
+      return {
+        ready: Promise.resolve(),
+        state,
+        subscribe: vi.fn((listener: (next: typeof state) => void) => {
+          listener(state);
+          return () => undefined;
+        }),
+        setMode: vi.fn(),
+        setPenColor: vi.fn(),
+        setSelectionColor: vi.fn(),
+        setSelectionMode: vi.fn(),
+        selectAll: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        mergeSavedDocument: vi.fn(() => mergePending),
+        destroy: vi.fn(async () => undefined),
+      };
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("最初发起课程的问题")).toBeTruthy();
+    expect(screen.queryByText("解释我后来圈出的这一部分")).toBeNull();
+
+    await act(async () => {
+      finishMerge();
+      await mergePending;
+    });
+
+    expect(await screen.findByText("解释我后来圈出的这一部分")).toBeTruthy();
   });
 
   it("recovers ink hidden by the previous replay implementation once", async () => {
@@ -1291,6 +1554,8 @@ describe("LearningWorkspace", () => {
       expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(2);
       expect(screen.getByText("先到达的第一节")).toBeTruthy();
       expect(screen.getByTestId("oll-controls")).toBeTruthy();
+      expect(screen.getByLabelText("课程内容仍在生成")).toBeTruthy();
+      expect(screen.queryByText("正在补充白板内容")).toBeNull();
     });
 
     act(() => {
@@ -1307,6 +1572,20 @@ describe("LearningWorkspace", () => {
       expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(3);
       expect(fetchMock.mock.calls.some(([url]) =>
         String(url).includes("part-001.octos-lesson.json"))).toBe(true);
+    });
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:tool_progress", {
+        detail: {
+          sessionId: "learn-progressive",
+          tool: "oll_generate_lesson",
+          message: "lesson generation completed",
+          terminal: true,
+        },
+      }));
+    });
+    await waitFor(() => {
+      expect(screen.queryByLabelText("课程内容仍在生成")).toBeNull();
     });
   });
 

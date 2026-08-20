@@ -18,6 +18,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -29,6 +30,7 @@ import {
   type BoardTargetCandidate,
   type MountedInfiniteBoard,
   type StudentInputMethod,
+  type RegionLayoutConstraint,
   type ViewportInsets,
   variableControlModels,
 } from "octos-lesson-language/web-runtime";
@@ -68,12 +70,27 @@ import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
 } from "../whiteboard-loading-block";
+import {
+  findNewTopicWhiteboardPosition,
+  findOpenWhiteboardPosition,
+  type WhiteboardRect,
+} from "../whiteboard-placement";
+import {
+  COURSE_PENDING_FOOTPRINT_HEIGHT,
+  COURSE_PENDING_FOOTPRINT_WIDTH,
+  COURSE_REGION_GUTTER,
+  COURSE_RUNTIME_OFFSET_X,
+  courseRegionOccupiedRect,
+  type CourseRegionRecord,
+} from "../course-regions";
 import "octos-lesson-language/web-runtime/styles.css";
 
 type LearningInkState = InkRuntimeState & {
   pen_color: string;
   selection_color: string | null;
   selection_mode: "rectangle" | "lasso";
+  content_bounds: InkSelectionSnapshot["bounds"] | null;
+  content_bounds_list: InkSelectionSnapshot["bounds"][];
 };
 
 type LearningInkRuntime = InkRuntime & {
@@ -177,6 +194,59 @@ const selectionContentKindLabels: Record<SelectionContentKind, string> = {
 };
 
 const boardOcclusionSelector = "[data-learning-board-occlusion]";
+const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
+const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
+
+function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
+  if (rects.length === 0) return null;
+  const x = Math.min(...rects.map((rect) => rect.x));
+  const y = Math.min(...rects.map((rect) => rect.y));
+  const right = Math.max(...rects.map((rect) => rect.x + rect.width));
+  const bottom = Math.max(...rects.map((rect) => rect.y + rect.height));
+  return { x, y, width: right - x, height: bottom - y };
+}
+
+function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
+  const x = Number.parseFloat(element.style.left);
+  const y = Number.parseFloat(element.style.top);
+  const explicitWidth = Number.parseFloat(element.style.width);
+  const explicitHeight = Number.parseFloat(element.style.height);
+  const fallbackWidth = element.classList.contains("learning-whiteboard-loading-block")
+    ? 360
+    : element.classList.contains("learning-selection-enhancement-pin")
+      ? 26
+      : element.classList.contains("learning-selection-enhancement")
+        ? 330
+        : element.classList.contains("learning-whiteboard-question-card")
+          ? WHITEBOARD_QUESTION_CARD_WIDTH
+          : element.classList.contains("learning-variable-controls")
+            ? 360
+            : element.classList.contains("learning-student-tasks")
+              ? 330
+          : 0;
+  const fallbackHeight = element.classList.contains("learning-whiteboard-loading-block")
+    ? 194
+    : element.classList.contains("learning-selection-enhancement-pin")
+      ? 26
+      : element.classList.contains("learning-selection-enhancement")
+        ? 360
+        : element.classList.contains("learning-whiteboard-question-card")
+          ? 130
+          : element.classList.contains("learning-variable-controls")
+            ? 96
+            : element.classList.contains("learning-student-tasks")
+              ? 240
+          : 0;
+  const width = Number.isFinite(explicitWidth)
+    ? explicitWidth
+    : element.offsetWidth || fallbackWidth;
+  const height = Number.isFinite(explicitHeight)
+    ? explicitHeight
+    : element.offsetHeight || fallbackHeight;
+  return Number.isFinite(x) && Number.isFinite(y) && width > 0 && height > 0
+    ? { x, y, width, height }
+    : null;
+}
 
 const emptyInkState: LearningInkState = {
   mode: "navigate",
@@ -187,6 +257,8 @@ const emptyInkState: LearningInkState = {
   selection_input: "unknown",
   selection_mode: "rectangle",
   selection_revision: 0,
+  content_bounds: null,
+  content_bounds_list: [],
   document_version: 0,
   saved: true,
 };
@@ -199,6 +271,10 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     selection_color: enhanced.selection_color ?? null,
     selection_mode: enhanced.selection_mode ?? "rectangle",
     selection_revision: enhanced.selection_revision ?? 0,
+    content_bounds: enhanced.content_bounds ?? null,
+    content_bounds_list: enhanced.content_bounds_list ?? (
+      enhanced.content_bounds ? [enhanced.content_bounds] : []
+    ),
   };
 }
 
@@ -294,7 +370,9 @@ export function LearningWhiteboard({
   onInkMergeComplete,
   loadingState,
   questions = [],
+  courseRegions = [],
   onPlaceQuestion,
+  onUpdateCourseRegion,
   onInkActivity,
   selectionEnhancements = [],
   selectionSources = [],
@@ -311,9 +389,17 @@ export function LearningWhiteboard({
   onInkMergeComplete?: () => void;
   loadingState?: WhiteboardLoadingState | null;
   questions?: WhiteboardQuestionRecord[];
+  courseRegions?: CourseRegionRecord[];
   onPlaceQuestion?: (
     questionId: string,
     position: { x: number; y: number },
+  ) => void;
+  onUpdateCourseRegion?: (
+    courseRegionId: string,
+    patch: Partial<Pick<
+      CourseRegionRecord,
+      "runtimeRegionId" | "bounds" | "reservedWidth"
+    >>,
   ) => void;
   onInkActivity?: () => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
@@ -354,6 +440,12 @@ export function LearningWhiteboard({
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
+  const focusedLoadingTurnRef = useRef<string | null>(null);
+  const availableTaskKeysRef = useRef(new Set<string>());
+  const availableTaskKeysSeededRef = useRef(false);
+  const coursesObservedInProgressRef = useRef(new Set<string>());
+  const measuredCourseBoundsKeyRef = useRef("");
+  const renderedAttentionRef = useRef("");
   const renderedFocusRef = useRef<string[]>([]);
   const renderedCompositionRef = useRef("");
   const renderedCompositionCursorRef = useRef(-1);
@@ -384,6 +476,9 @@ export function LearningWhiteboard({
     left: 120,
     top: 120,
   });
+  const [runtimeRegionBounds, setRuntimeRegionBounds] = useState<
+    Record<string, WhiteboardRect>
+  >({});
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
   const [selectionContentKind, setSelectionContentKind] =
@@ -429,6 +524,139 @@ export function LearningWhiteboard({
         && question.status === "pending"
         && question.source?.sourceId === selectionLoadingSource.sourceId)
     : undefined;
+  const courseRegionByQuestion = useMemo(() => new Map(
+    courseRegions.map((region) => [region.questionId, region]),
+  ), [courseRegions]);
+  const runtimeRegionIdForTopic = useCallback((topicId: string) => {
+    const nodeRegionIds = new Set(Object.values(runtime?.board?.nodes ?? {})
+      .flatMap((node) => node.region_id ? [node.region_id] : []));
+    if (nodeRegionIds.has(topicId)) return topicId;
+    if (
+      (runtime?.outline.length ?? 0) === 1
+      && Object.keys(runtime?.board?.nodes ?? {}).length > 0
+      && nodeRegionIds.size === 0
+    ) return "__legacy__";
+    return topicId;
+  }, [runtime?.board?.nodes, runtime?.outline]);
+  const regionLayoutConstraints = useMemo(() => Object.fromEntries(
+    (runtime?.outline ?? []).flatMap((topic) => {
+      const region = topic.questionId
+        ? courseRegionByQuestion.get(topic.questionId)
+        : undefined;
+      if (!region) return [];
+      return [[runtimeRegionIdForTopic(topic.id), {
+        x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
+        y: region.origin.y,
+        reservedWidth: Math.max(
+          0,
+          region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
+        ),
+      } satisfies RegionLayoutConstraint]];
+    }),
+  ), [courseRegionByQuestion, runtime?.outline, runtimeRegionIdForTopic]);
+  const presentationTopics = (() => {
+    const topics = runtime?.outline ?? [];
+    if (!runtime || topics.length === 0) return [];
+    const explicitVariableAliases = new Set(
+      topics.flatMap((topic) => topic.variableAliases ?? []),
+    );
+    const explicitTaskAliases = new Set(
+      topics.flatMap((topic) => topic.taskAliases ?? []),
+    );
+    const unassignedVariableAliases = variableControls
+      .map((control) => control.alias)
+      .filter((alias) => !explicitVariableAliases.has(alias));
+    const unassignedTaskAliases = availableStudentTasks
+      .map((task) => task.task_id)
+      .filter((alias) => !explicitTaskAliases.has(alias));
+    return topics.map((topic, index) => ({
+      ...topic,
+      // Sessions created before per-course ownership was persisted have one
+      // ungrouped topic. Keep their controls and tasks visible without using
+      // a display label to guess ownership. New sessions always carry the
+      // explicit aliases assembled from their canonical lesson artifact.
+      variableAliases: topic.variableAliases
+        ?? (topics.length === 1 || index === topics.length - 1
+          ? unassignedVariableAliases
+          : []),
+      taskAliases: topic.taskAliases
+        ?? (topics.length === 1 || index === topics.length - 1
+          ? unassignedTaskAliases
+          : []),
+    }));
+  })();
+  const coursePresentations = presentationTopics.flatMap((topic) => {
+    const region = topic.questionId
+      ? courseRegionByQuestion.get(topic.questionId)
+      : undefined;
+    const boardBounds = runtimeRegionBounds[runtimeRegionIdForTopic(topic.id)]
+      ?? (presentationTopics.length === 1
+        ? runtimeRegionBounds.__legacy__
+        : undefined);
+    if (
+      !region
+      && !boardBounds
+      && (courseRegions.length > 0 || presentationTopics.length > 1)
+    ) return [];
+    const controls = variableControls.filter((control) =>
+      topic.variableAliases?.includes(control.alias));
+    const tasks = availableStudentTasks.filter((task) =>
+      topic.taskAliases?.includes(task.task_id));
+    if (controls.length === 0 && tasks.length === 0) return [];
+    const base = boardBounds ?? {
+      x: (region?.origin.x ?? 100) + COURSE_RUNTIME_OFFSET_X,
+      y: region?.origin.y ?? 90,
+      width: 760,
+      height: 300,
+    };
+    const top = base.y + base.height + 42;
+    return [{
+      topic,
+      controls,
+      tasks,
+      controlsPosition: { x: base.x, y: top },
+      tasksPosition: {
+        x: base.x + (controls.length > 0 ? 388 : 0),
+        y: top,
+      },
+    }];
+  });
+
+  const occupiedRectsForQuestion = useCallback((questionId: string) => {
+    const elements: HTMLElement[] = [];
+    const mounted = mountedRef.current;
+    if (mounted) {
+      elements.push(...mounted.elements.nodes.querySelectorAll<HTMLElement>(
+        ".board-node",
+      ));
+    }
+    if (enhancementLayer) {
+      elements.push(...enhancementLayer.querySelectorAll<HTMLElement>([
+        "[data-question-id]",
+        "[data-loading-id]",
+        "[data-course-controls-id]",
+        "[data-course-tasks-id]",
+        ".learning-selection-enhancement",
+        ".learning-selection-enhancement-pin",
+      ].join(",")));
+    }
+    const occupied = elements.flatMap((element) => {
+      if (element.dataset.questionId === questionId) return [];
+      if (loadingStateId && element.dataset.loadingId === loadingStateId) return [];
+      const bounds = renderedWorldRect(element);
+      return bounds ? [bounds] : [];
+    });
+    occupied.push(...courseRegions
+      .filter((region) => region.questionId !== questionId)
+      .map(courseRegionOccupiedRect));
+    occupied.push(...inkState.content_bounds_list);
+    return occupied;
+  }, [
+    courseRegions,
+    enhancementLayer,
+    inkState.content_bounds_list,
+    loadingStateId,
+  ]);
 
   useEffect(() => {
     onInkActivityRef.current = onInkActivity;
@@ -454,6 +682,7 @@ export function LearningWhiteboard({
 
   useEffect(() => {
     if (!enhancementLayer || !onPlaceQuestion) return;
+    if (inkSessionId && !inkAvailable) return;
     const unplaced = composerQuestions.filter((question) => !question.position);
     if (unplaced.length === 0) return;
     const frame = window.requestAnimationFrame(() => {
@@ -464,17 +693,85 @@ export function LearningWhiteboard({
         x: viewport.clientWidth / 2,
         y: viewport.clientHeight / 2,
       });
-      const alreadyPlaced = composerQuestions.length - unplaced.length;
-      unplaced.forEach((question, index) => {
-        const sequence = alreadyPlaced + index;
-        onPlaceQuestion(question.id, {
+      const reserved: WhiteboardRect[] = [];
+      unplaced.forEach((question) => {
+        const preferred = {
           x: center.x - 180 - WHITEBOARD_QUESTION_CARD_WIDTH - 24,
-          y: center.y - 105 + sequence * 150,
-        });
+          y: center.y - 105,
+        };
+        // Every composer question starts a complete lesson. Its placement must
+        // not depend on whether React has already rendered the asynchronous
+        // loading state for that turn.
+        const width = PENDING_QUESTION_FOOTPRINT_WIDTH;
+        const height = PENDING_QUESTION_FOOTPRINT_HEIGHT;
+        const occupied = [...occupiedRectsForQuestion(question.id), ...reserved];
+        const startsNewTopic = occupied.length > 0
+          || courseRegions.some((region) => region.questionId !== question.id)
+          || Boolean(runtime?.board && Object.keys(runtime.board.nodes).length > 0);
+        const position = startsNewTopic
+          ? findNewTopicWhiteboardPosition({
+              width,
+              height,
+              occupied,
+              gutter: COURSE_REGION_GUTTER,
+            })
+          : findOpenWhiteboardPosition({ preferred, width, height, occupied });
+        reserved.push({ ...position, width, height });
+        onPlaceQuestion(question.id, position);
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [composerQuestions, enhancementLayer, onPlaceQuestion]);
+  }, [
+    composerQuestions,
+    courseRegions,
+    enhancementLayer,
+    inkAvailable,
+    inkSessionId,
+    occupiedRectsForQuestion,
+    onPlaceQuestion,
+    runtime?.board,
+  ]);
+
+  useEffect(() => {
+    const position = pendingComposerQuestion?.position;
+    if (
+      !pendingComposerQuestion
+      || !position
+      || focusedLoadingTurnRef.current === pendingComposerQuestion.id
+    ) return;
+    const frame = window.requestAnimationFrame(() => {
+      const view = mountedRef.current?.view;
+      const layer = enhancementLayer;
+      if (!view || !layer) return;
+      const elements = [...layer.querySelectorAll<HTMLElement>(
+        "[data-question-id], [data-loading-id]",
+      )].filter((element) =>
+        element.dataset.questionId === pendingComposerQuestion.id
+        || (loadingStateId === pendingComposerQuestion.id
+          && element.dataset.loadingId === loadingStateId));
+      const currentLoadingIsRendered = loadingStateId === pendingComposerQuestion.id
+        && elements.some((element) =>
+          element.dataset.loadingId === loadingStateId);
+      const actualBounds = unionWhiteboardRects(elements.flatMap((element) => {
+        const bounds = renderedWorldRect(element);
+        return bounds ? [bounds] : [];
+      }));
+      view.focusWorldRect(currentLoadingIsRendered && actualBounds ? actualBounds : {
+        x: position.x,
+        y: position.y,
+        width: PENDING_QUESTION_FOOTPRINT_WIDTH,
+        height: PENDING_QUESTION_FOOTPRINT_HEIGHT,
+      });
+      focusedLoadingTurnRef.current = pendingComposerQuestion.id;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    enhancementLayer,
+    loadingStateId,
+    pendingComposerQuestion,
+    pendingComposerQuestion?.id,
+    pendingComposerQuestion?.position,
+  ]);
 
   const retryDegradedVisual = useCallback(async (
     degraded: DegradedVisualStatus,
@@ -927,6 +1224,7 @@ export function LearningWhiteboard({
     mountedRef.current = mounted;
     const enhancementHost = viewport.ownerDocument.createElement("div");
     enhancementHost.className = "learning-selection-enhancement-layer";
+    enhancementHost.dataset.ollInkInput = "ignore";
     const unmountEnhancementLayer =
       mounted.view.mountWorldLayer(enhancementHost);
     setEnhancementLayer(enhancementHost);
@@ -1049,6 +1347,17 @@ export function LearningWhiteboard({
   }, [inkSessionId]);
 
   useEffect(() => {
+    const view = mountedRef.current?.view;
+    if (!view) return;
+    view.setRegionLayouts(regionLayoutConstraints);
+    const nextRegionBounds = view.getRegionBoundsMap();
+    setRuntimeRegionBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextRegionBounds)
+        ? current
+        : nextRegionBounds);
+  }, [enhancementLayer, regionLayoutConstraints]);
+
+  useEffect(() => {
     const ink = inkRuntimeRef.current;
     if (
       !ink ||
@@ -1086,6 +1395,11 @@ export function LearningWhiteboard({
     const activeRuntime = runtimeRef.current;
     if (!activeRuntime) return;
     const view = mountedRef.current?.view;
+    const attentionTargets = activeRuntime.attentionTargets;
+    const attentionKey = attentionTargets.length > 0
+      ? `${activeRuntime.currentOperation?.operation_id ?? activeRuntime.cursor}\u0000${attentionTargets.join("\u0000")}`
+      : "";
+    const attentionChanged = attentionKey !== renderedAttentionRef.current;
     const boardFocus = activeRuntime.board?.focus ?? [];
     const renderedFocus = renderedFocusRef.current;
     const focusChanged =
@@ -1108,10 +1422,15 @@ export function LearningWhiteboard({
       activeRuntime.cursor !== renderedCompositionCursorRef.current;
     view?.setScene3dViews(activeRuntime.scene3dViews);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
+    const nextRegionBounds = view?.getRegionBoundsMap() ?? {};
+    setRuntimeRegionBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextRegionBounds)
+        ? current
+        : nextRegionBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
-    if (activeRuntime.attentionTargets.length > 0) {
-      view?.focusTargets(activeRuntime.attentionTargets);
+    if (attentionTargets.length > 0 && attentionChanged) {
+      view?.focusTargets(attentionTargets);
     } else if (
       activeRuntime.compositionTargets.length > 0 &&
       (compositionChanged || compositionOperationChanged)
@@ -1127,6 +1446,7 @@ export function LearningWhiteboard({
       // focus, but the view never observed the intermediate board.focus frame.
       view?.focusTargets(boardFocus);
     }
+    renderedAttentionRef.current = attentionKey;
     renderedFocusRef.current = [...boardFocus];
     renderedCompositionRef.current = compositionKey;
     renderedCompositionCursorRef.current = activeRuntime.cursor;
@@ -1141,37 +1461,289 @@ export function LearningWhiteboard({
   ]);
 
   useEffect(() => {
+    if (!enhancementLayer || !onUpdateCourseRegion || courseRegions.length === 0) {
+      return;
+    }
+    const measurementKey = JSON.stringify({
+      courses: courseRegions.map((region) => ({
+        id: region.id,
+        origin: region.origin,
+      })),
+      topics: runtime?.outline.map((topic) => ({
+        id: topic.id,
+        questionId: topic.questionId,
+      })),
+      runtimeRegionBounds,
+      presentations: coursePresentations.map((presentation) => ({
+        topicId: presentation.topic.id,
+        controls: presentation.controls.map((control) => control.alias),
+        tasks: presentation.tasks.map((task) => ({
+          id: task.task_id,
+          status: task.status,
+          attempts: task.attempts.length,
+          hint: task.current_hint,
+        })),
+        controlsPosition: presentation.controlsPosition,
+        tasksPosition: presentation.tasksPosition,
+      })),
+    });
+    if (measuredCourseBoundsKeyRef.current === measurementKey) return;
+    measuredCourseBoundsKeyRef.current = measurementKey;
+    const frame = window.requestAnimationFrame(() => {
+      const worldElements = [
+        ...enhancementLayer.querySelectorAll<HTMLElement>([
+          "[data-question-id]",
+          "[data-loading-id]",
+          "[data-course-controls-id]",
+          "[data-course-tasks-id]",
+        ].join(",")),
+      ];
+      for (const region of courseRegions) {
+        const topic = runtime?.outline.find((candidate) =>
+          candidate.questionId === region.questionId);
+        const rects: WhiteboardRect[] = [];
+        const runtimeRegionId = topic
+          ? runtimeRegionIdForTopic(topic.id)
+          : undefined;
+        if (runtimeRegionId && runtimeRegionBounds[runtimeRegionId]) {
+          rects.push(runtimeRegionBounds[runtimeRegionId]!);
+        }
+        for (const element of worldElements) {
+          const belongs = element.dataset.questionId === region.questionId
+            || element.dataset.loadingId === region.questionId
+            || element.dataset.courseControlsId === region.id
+            || element.dataset.courseTasksId === region.id;
+          if (!belongs) continue;
+          const bounds = renderedWorldRect(element);
+          if (bounds) rects.push(bounds);
+        }
+        const bounds = unionWhiteboardRects(rects);
+        onUpdateCourseRegion(region.id, {
+          ...(runtimeRegionId ? { runtimeRegionId } : {}),
+          ...(bounds ? { bounds } : {}),
+        });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    courseRegions,
+    enhancementLayer,
+    onUpdateCourseRegion,
+    runtime?.outline,
+    runtimeRegionBounds,
+    runtimeRegionIdForTopic,
+    coursePresentations,
+  ]);
+
+  useEffect(() => {
+    const pendingCourseId = pendingComposerQuestion?.id
+      ?? (loadingState?.kind === "lesson" ? loadingStateId : undefined);
+    if (pendingCourseId) {
+      coursesObservedInProgressRef.current.add(pendingCourseId);
+    }
+
+    const topic = presentationTopics.at(-1);
+    if (!runtime || !topic) return;
+    const courseId = topic.questionId ?? topic.id;
+    // While a new composer turn is being prepared, the Runtime still ends in
+    // the previous topic. Do not mistake that restored predecessor for the
+    // course that is currently in progress.
+    if (pendingCourseId && pendingCourseId !== courseId) return;
+    const reachedCourseEnd = runtime.deliverySettled
+      && (runtime.waiting || runtime.completed);
+    if (!reachedCourseEnd) {
+      // A restored, already-closed lesson can briefly report delivery as not
+      // settled while the host hydrates it. That is review state, not a new
+      // course reaching its end, so it must preserve the saved camera.
+      if (!runtime.completed) {
+        coursesObservedInProgressRef.current.add(courseId);
+      }
+      return;
+    }
+    if (!coursesObservedInProgressRef.current.has(courseId)) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const view = mountedRef.current?.view;
+      if (!view) return;
+      const region = topic.questionId
+        ? courseRegionByQuestion.get(topic.questionId)
+        : undefined;
+      const runtimeRegionId = runtimeRegionIdForTopic(topic.id);
+      const rects: WhiteboardRect[] = [];
+      const latestRegionBounds = view.getRegionBoundsMap();
+      const latestRuntimeBounds = latestRegionBounds[runtimeRegionId]
+        ?? (presentationTopics.length === 1
+          ? latestRegionBounds.__legacy__
+          : undefined);
+      if (latestRuntimeBounds) rects.push(latestRuntimeBounds);
+      if (region?.bounds) rects.push(region.bounds);
+
+      if (enhancementLayer) {
+        for (const element of enhancementLayer.querySelectorAll<HTMLElement>([
+          "[data-question-id]",
+          "[data-loading-id]",
+          "[data-course-controls-id]",
+          "[data-course-tasks-id]",
+        ].join(","))) {
+          const belongsToCourse = element.dataset.questionId === topic.questionId
+            || element.dataset.loadingId === topic.questionId
+            || element.dataset.courseControlsId === courseId
+            || element.dataset.courseTasksId === courseId;
+          if (!belongsToCourse) continue;
+          const bounds = renderedWorldRect(element);
+          if (bounds) rects.push(bounds);
+        }
+      }
+
+      const bounds = unionWhiteboardRects(rects);
+      if (!bounds) return;
+      view.focusWorldRect(bounds);
+      coursesObservedInProgressRef.current.delete(courseId);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    courseRegionByQuestion,
+    enhancementLayer,
+    loadingState?.kind,
+    loadingStateId,
+    pendingComposerQuestion?.id,
+    presentationTopics,
+    runtime,
+    runtimeRegionIdForTopic,
+  ]);
+
+  useLayoutEffect(() => {
+    if (availableTaskKeysSeededRef.current) return;
+    availableTaskKeysRef.current = new Set(coursePresentations.flatMap((presentation) =>
+      presentation.tasks.map((task) =>
+        `${presentation.topic.id}\u0000${task.task_id}`)));
+    availableTaskKeysSeededRef.current = true;
+  }, [coursePresentations]);
+
+  useEffect(() => {
+    const currentKeys = new Set(coursePresentations.flatMap((presentation) =>
+      presentation.tasks.map((task) =>
+        `${presentation.topic.id}\u0000${task.task_id}`)));
+    const previousKeys = availableTaskKeysRef.current;
+    availableTaskKeysRef.current = currentKeys;
+    // Restoring an existing whiteboard must not move its camera. Only a task
+    // that becomes available while this board is mounted is a new teaching
+    // event and may adjust the view once.
+    const newlyAvailable = coursePresentations.filter((presentation) =>
+      presentation.tasks.some((task) =>
+        !previousKeys.has(`${presentation.topic.id}\u0000${task.task_id}`)));
+    if (newlyAvailable.length === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      const view = mountedRef.current?.view;
+      const viewport = viewportRef.current;
+      const layer = enhancementLayer;
+      const presentation = newlyAvailable.at(-1);
+      if (!view || !viewport || !layer || !presentation) return;
+      const courseId = presentation.topic.questionId ?? presentation.topic.id;
+      const rects: WhiteboardRect[] = [];
+      const focusIds = new Set(runtime?.board?.focus ?? []);
+      for (const element of viewport.querySelectorAll<HTMLElement>(
+        ".board-node[data-id], .board-group[data-id]",
+      )) {
+        if (!element.dataset.id || !focusIds.has(element.dataset.id)) continue;
+        const bounds = renderedWorldRect(element);
+        if (bounds) rects.push(bounds);
+      }
+      for (const element of layer.querySelectorAll<HTMLElement>(
+        "[data-course-controls-id], [data-course-tasks-id]",
+      )) {
+        if (
+          element.dataset.courseControlsId !== courseId
+          && element.dataset.courseTasksId !== courseId
+        ) continue;
+        const bounds = renderedWorldRect(element);
+        if (bounds) rects.push(bounds);
+      }
+      if (rects.length === 0) {
+        const regionBounds = runtimeRegionBounds[
+          runtimeRegionIdForTopic(presentation.topic.id)
+        ] ?? (presentationTopics.length === 1
+          ? runtimeRegionBounds.__legacy__
+          : undefined);
+        if (regionBounds) rects.push(regionBounds);
+      }
+      if (rects.length === 0) {
+        rects.push({
+          x: Math.min(
+            presentation.controlsPosition.x,
+            presentation.tasksPosition.x,
+          ),
+          y: Math.min(
+            presentation.controlsPosition.y,
+            presentation.tasksPosition.y,
+          ),
+          width: presentation.controls.length > 0 && presentation.tasks.length > 0
+            ? 760
+            : 372,
+          height: 220,
+        });
+      }
+      const bounds = unionWhiteboardRects(rects);
+      if (bounds) view.focusWorldRect(bounds);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [
+    coursePresentations,
+    enhancementLayer,
+    presentationTopics.length,
+    runtime?.board?.focus,
+    runtimeRegionBounds,
+    runtimeRegionIdForTopic,
+  ]);
+
+  useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return;
     let animationFrame = 0;
+    let lastInsets = "";
     const update = () => {
       if (animationFrame) cancelAnimationFrame(animationFrame);
       animationFrame = requestAnimationFrame(() => {
         animationFrame = 0;
         const mounted = mountedRef.current;
-        if (mounted) mounted.view.setViewportInsets(learningBoardInsets(viewport));
+        if (!mounted) return;
+        const insets = learningBoardInsets(viewport);
+        const signature = JSON.stringify(insets);
+        if (signature === lastInsets) return;
+        lastInsets = signature;
+        mounted.view.setViewportInsets(insets);
       });
     };
     const observer = new ResizeObserver(() => {
       update();
     });
-    const observed = new WeakSet<Element>();
-    const observe = (element: Element) => {
-      if (observed.has(element)) return;
-      observed.add(element);
-      observer.observe(element);
-    };
-    const observeOcclusions = () => {
-      observe(viewport);
-      viewport.ownerDocument.querySelectorAll<Element>(boardOcclusionSelector).forEach(observe);
-      update();
+    observer.observe(viewport);
+    let observedOcclusions = new Set<Element>();
+    const syncOcclusions = () => {
+      const next = new Set(
+        viewport.ownerDocument.querySelectorAll<Element>(boardOcclusionSelector),
+      );
+      let changed = next.size !== observedOcclusions.size;
+      for (const element of observedOcclusions) {
+        if (next.has(element)) continue;
+        observer.unobserve(element);
+        changed = true;
+      }
+      for (const element of next) {
+        if (observedOcclusions.has(element)) continue;
+        observer.observe(element);
+        changed = true;
+      }
+      observedOcclusions = next;
+      if (changed) update();
     };
     const mutation = typeof MutationObserver === "undefined" ? null : new MutationObserver(() => {
-      observeOcclusions();
+      syncOcclusions();
     });
     const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
     if (root) mutation?.observe(root, { childList: true, subtree: true });
-    observeOcclusions();
+    syncOcclusions();
+    update();
     return () => {
       if (animationFrame) cancelAnimationFrame(animationFrame);
       mutation?.disconnect();
@@ -1516,167 +2088,6 @@ export function LearningWhiteboard({
           笔迹功能：{inkError}
         </div>
       ) : null}
-      {variableControls.length > 0 ? (
-        <div
-          className="learning-variable-controls"
-          data-learning-board-occlusion=""
-          aria-label="课程变量控制"
-          data-testid="oll-variable-controls"
-        >
-          {variableControls.map((control) => {
-            const inputId = `oll-variable-${control.alias}`;
-            return (
-              <div
-                className={runtime?.activeVariableAnimation?.variable === control.alias
-                  ? "learning-variable-control is-animating"
-                  : "learning-variable-control"}
-                key={control.alias}
-              >
-                <label htmlFor={inputId}>{control.label}</label>
-                <input
-                  id={inputId}
-                  type="range"
-                  min={control.min}
-                  max={control.max}
-                  step={control.step}
-                  value={control.value}
-                  onPointerDown={(event) => {
-                    startSliderOperation(
-                      control.alias,
-                      control.value,
-                      studentInputMethod(event.pointerType),
-                    );
-                  }}
-                  onKeyDown={(event) => {
-                    if ([
-                      "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
-                      "Home", "End", "PageUp", "PageDown",
-                    ].includes(event.key)) {
-                      startSliderOperation(control.alias, control.value, "keyboard");
-                    }
-                  }}
-                  onChange={(event) => {
-                    updateSliderOperation(control.alias, Number(event.target.value));
-                  }}
-                  onPointerUp={(event) => {
-                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
-                  }}
-                  onPointerCancel={(event) => {
-                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
-                  }}
-                  onKeyUp={(event) => {
-                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
-                  }}
-                  onBlur={(event) => {
-                    commitSliderOperation(control.alias, Number(event.currentTarget.value));
-                  }}
-                  aria-label={control.label}
-                />
-                <output>{formatVariableValue(control.value, control.unit)}</output>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const initial = runtime?.board?.variables?.[control.alias]?.initial;
-                    if (runtime && typeof initial === "number") {
-                      const operationId = runtime.handleStudentVariableInput(
-                        control.alias,
-                        control.value,
-                        { phase: "start", control: "reset", input: "unknown" },
-                      );
-                      runtime.handleStudentVariableInput(control.alias, initial, {
-                        phase: "commit",
-                        control: "reset",
-                        input: "unknown",
-                        ...(typeof operationId === "string" ? { operation_id: operationId } : {}),
-                      });
-                    }
-                  }}
-                  aria-label={`复位${control.label}`}
-                >
-                  复位
-                </button>
-              </div>
-            );
-          })}
-          <small>
-            {runtime?.activeVariableAnimation
-              ? "老师正在演示这个变量，结束后即可继续拖动"
-              : "讲解过程中也可以拖动；老师演示同一变量时会暂时接管"}
-          </small>
-        </div>
-      ) : null}
-      {availableStudentTasks.length > 0 ? (
-        <section
-          className="learning-student-tasks"
-          data-learning-board-occlusion=""
-          aria-label="动手试一试"
-          data-testid="oll-student-tasks"
-        >
-          <header>
-            <span>动手试一试</span>
-            <small>直接操作白板上的图形、视角或控制器</small>
-          </header>
-          {availableStudentTasks.map((task) => {
-            const lastAttempt = task.attempts.at(-1);
-            const attempts = task.attempts.length;
-            return (
-              <article
-                key={task.task_id}
-                className={`learning-student-task is-${task.status}`}
-                aria-live="polite"
-              >
-                <p>{task.prompt}</p>
-                {task.status === "succeeded" ? (
-                  <div className="learning-student-task-feedback is-success">
-                    <CheckCircle2 size={17} />
-                    <span>{task.success_message ?? "完成得很好，已经达到目标。"}</span>
-                  </div>
-                ) : lastAttempt ? (
-                  <div className="learning-student-task-feedback">
-                    <span>
-                      {task.status === "needs_hint"
-                        ? "还没达到目标，可以查看提示后再试。"
-                        : "已经记录这次操作，再调整一下试试。"}
-                    </span>
-                    <small>已尝试 {attempts} 次</small>
-                  </div>
-                ) : (
-                  <div className="learning-student-task-feedback">
-                    <span>轮到你操作了，完成后这里会立即反馈。</span>
-                  </div>
-                )}
-                {task.current_hint ? (
-                  <div className="learning-student-task-hint" role="status">
-                    <Lightbulb size={16} />
-                    <span>{task.current_hint}</span>
-                  </div>
-                ) : null}
-                {task.status !== "succeeded" && attempts > 0 ? (
-                  <div className="learning-student-task-actions">
-                    {task.hints_revealed < task.hints.length ? (
-                      <button
-                        type="button"
-                        onClick={() => requestTaskHint(task.task_id)}
-                      >
-                        <Lightbulb size={15} />
-                        {task.current_hint ? "下一个提示" : "给我提示"}
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => retryTask(task.task_id)}
-                    >
-                      <RotateCcw size={15} />
-                      重新开始
-                    </button>
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-          {taskError ? <div className="learning-student-task-error" role="alert">{taskError}</div> : null}
-        </section>
-      ) : null}
       {enhancementLayer
         ? createPortal(
             <>
@@ -1702,6 +2113,232 @@ export function LearningWhiteboard({
                     ?? lessonLoadingPosition.top}
                 />
               ) : null}
+              {coursePresentations.map((presentation) => {
+                const courseId = presentation.topic.questionId
+                  ?? presentation.topic.id;
+                return (
+                  <div key={`course-ui:${presentation.topic.id}`}>
+                    {presentation.controls.length > 0 ? (
+                      <div
+                        className="learning-variable-controls is-world"
+                        style={{
+                          left: presentation.controlsPosition.x,
+                          top: presentation.controlsPosition.y,
+                          width: 360,
+                        }}
+                        data-course-controls-id={courseId}
+                        data-oll-ink-input="ignore"
+                        aria-label={`${presentation.topic.title}的课程变量控制`}
+                        data-testid="oll-variable-controls"
+                      >
+                        {presentation.controls.map((control) => {
+                          const inputId = `oll-variable-${control.alias}`;
+                          return (
+                            <div
+                              className={runtime?.activeVariableAnimation?.variable === control.alias
+                                ? "learning-variable-control is-animating"
+                                : "learning-variable-control"}
+                              key={control.alias}
+                            >
+                              <label htmlFor={inputId}>{control.label}</label>
+                              <input
+                                id={inputId}
+                                type="range"
+                                min={control.min}
+                                max={control.max}
+                                step={control.step}
+                                value={control.value}
+                                onPointerDown={(event) => {
+                                  startSliderOperation(
+                                    control.alias,
+                                    control.value,
+                                    studentInputMethod(event.pointerType),
+                                  );
+                                }}
+                                onKeyDown={(event) => {
+                                  if ([
+                                    "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+                                    "Home", "End", "PageUp", "PageDown",
+                                  ].includes(event.key)) {
+                                    startSliderOperation(
+                                      control.alias,
+                                      control.value,
+                                      "keyboard",
+                                    );
+                                  }
+                                }}
+                                onChange={(event) => {
+                                  updateSliderOperation(
+                                    control.alias,
+                                    Number(event.target.value),
+                                  );
+                                }}
+                                onPointerUp={(event) => {
+                                  commitSliderOperation(
+                                    control.alias,
+                                    Number(event.currentTarget.value),
+                                  );
+                                }}
+                                onPointerCancel={(event) => {
+                                  commitSliderOperation(
+                                    control.alias,
+                                    Number(event.currentTarget.value),
+                                  );
+                                }}
+                                onKeyUp={(event) => {
+                                  commitSliderOperation(
+                                    control.alias,
+                                    Number(event.currentTarget.value),
+                                  );
+                                }}
+                                onBlur={(event) => {
+                                  commitSliderOperation(
+                                    control.alias,
+                                    Number(event.currentTarget.value),
+                                  );
+                                }}
+                                aria-label={control.label}
+                              />
+                              <output>
+                                {formatVariableValue(control.value, control.unit)}
+                              </output>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const initial = runtime?.board
+                                    ?.variables?.[control.alias]?.initial;
+                                  if (runtime && typeof initial === "number") {
+                                    const operationId = runtime.handleStudentVariableInput(
+                                      control.alias,
+                                      control.value,
+                                      {
+                                        phase: "start",
+                                        control: "reset",
+                                        input: "unknown",
+                                      },
+                                    );
+                                    runtime.handleStudentVariableInput(
+                                      control.alias,
+                                      initial,
+                                      {
+                                        phase: "commit",
+                                        control: "reset",
+                                        input: "unknown",
+                                        ...(typeof operationId === "string"
+                                          ? { operation_id: operationId }
+                                          : {}),
+                                      },
+                                    );
+                                  }
+                                }}
+                                aria-label={`复位${control.label}`}
+                              >
+                                复位
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <small>
+                          {runtime?.activeVariableAnimation
+                            ? "老师正在演示这个变量，结束后即可继续拖动"
+                            : "讲解过程中也可以拖动；老师演示同一变量时会暂时接管"}
+                        </small>
+                      </div>
+                    ) : null}
+                    {presentation.tasks.length > 0 ? (
+                      <section
+                        className="learning-student-tasks is-world"
+                        style={{
+                          left: presentation.tasksPosition.x,
+                          top: presentation.tasksPosition.y,
+                          width: 330,
+                        }}
+                        data-course-tasks-id={courseId}
+                        data-oll-ink-input="ignore"
+                        aria-label={`${presentation.topic.title}的动手任务`}
+                        data-testid="oll-student-tasks"
+                      >
+                        <header>
+                          <span>动手试一试</span>
+                          <small>直接操作白板上的图形、视角或控制器</small>
+                        </header>
+                        {presentation.tasks.map((task) => {
+                          const lastAttempt = task.attempts.at(-1);
+                          const attempts = task.attempts.length;
+                          return (
+                            <article
+                              key={task.task_id}
+                              className={`learning-student-task is-${task.status}`}
+                              aria-live="polite"
+                            >
+                              <p>{task.prompt}</p>
+                              {task.status === "succeeded" ? (
+                                <div className="learning-student-task-feedback is-success">
+                                  <CheckCircle2 size={17} />
+                                  <span>
+                                    {task.success_message
+                                      ?? "完成得很好，已经达到目标。"}
+                                  </span>
+                                </div>
+                              ) : lastAttempt ? (
+                                <div className="learning-student-task-feedback">
+                                  <span>
+                                    {task.status === "needs_hint"
+                                      ? "还没达到目标，可以查看提示后再试。"
+                                      : "已经记录这次操作，再调整一下试试。"}
+                                  </span>
+                                  <small>已尝试 {attempts} 次</small>
+                                </div>
+                              ) : (
+                                <div className="learning-student-task-feedback">
+                                  <span>轮到你操作了，完成后这里会立即反馈。</span>
+                                </div>
+                              )}
+                              {task.current_hint ? (
+                                <div
+                                  className="learning-student-task-hint"
+                                  role="status"
+                                >
+                                  <Lightbulb size={16} />
+                                  <span>{task.current_hint}</span>
+                                </div>
+                              ) : null}
+                              {task.status !== "succeeded" && attempts > 0 ? (
+                                <div className="learning-student-task-actions">
+                                  {task.hints_revealed < task.hints.length ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => requestTaskHint(task.task_id)}
+                                    >
+                                      <Lightbulb size={15} />
+                                      {task.current_hint ? "下一个提示" : "给我提示"}
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    onClick={() => retryTask(task.task_id)}
+                                  >
+                                    <RotateCcw size={15} />
+                                    重新开始
+                                  </button>
+                                </div>
+                              ) : null}
+                            </article>
+                          );
+                        })}
+                        {taskError ? (
+                          <div
+                            className="learning-student-task-error"
+                            role="alert"
+                          >
+                            {taskError}
+                          </div>
+                        ) : null}
+                      </section>
+                    ) : null}
+                  </div>
+                );
+              })}
               {selectionQuestionOpen
                 ? preparedSelection?.candidates.map((candidate, index) => (
                     <div

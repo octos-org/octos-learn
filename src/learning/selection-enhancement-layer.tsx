@@ -242,7 +242,12 @@ export function SelectionEnhancementLayer({
   };
   type LayoutItem =
     | { kind: "question"; key: string; question: WhiteboardQuestionRecord }
-    | { kind: "artifact"; key: string; artifact: SelectionEnhancementArtifact }
+    | {
+        kind: "artifact";
+        key: string;
+        artifact: SelectionEnhancementArtifact;
+        question?: WhiteboardQuestionRecord;
+      }
     | { kind: "loading"; key: string; loading: SelectionEnhancementLoading };
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
   const selectionQuestions = questions.filter((question) =>
@@ -266,19 +271,21 @@ export function SelectionEnhancementLayer({
     ]));
     const ordered: LayoutItem[] = [];
     for (const question of sourceQuestions) {
-      ordered.push({
-        kind: "question",
-        key: `question:${question.id}`,
-        question,
-      });
       const matchingArtifact = artifactByTurnId.get(question.id);
       if (matchingArtifact) {
         ordered.push({
           kind: "artifact",
           key: `artifact:${matchingArtifact.turn_id}`,
           artifact: matchingArtifact,
+          question,
         });
         artifactByTurnId.delete(question.id);
+      } else {
+        ordered.push({
+          kind: "question",
+          key: `question:${question.id}`,
+          question,
+        });
       }
       if (loading?.sourceId === sourceId && loading.turnId === question.id) {
         ordered.push({
@@ -354,6 +361,7 @@ export function SelectionEnhancementLayer({
           );
         }
         const artifact = item.artifact;
+        const question = item.question;
         const stale = currentDocumentVersion > artifact.source.document_version;
         const targetInvalid = invalidTargetTurnIds.has(artifact.turn_id);
         const minimized = minimizedTurnIds.has(artifact.turn_id);
@@ -379,7 +387,9 @@ export function SelectionEnhancementLayer({
                   return next;
                 });
               }}
-              aria-label={`展开小章鱼辅助：${artifact.response.title}`}
+              aria-label={question
+                ? `展开问题和小章鱼辅助：${artifact.response.title}`
+                : `展开小章鱼辅助：${artifact.response.title}`}
               title={`展开：${artifact.response.title}`}
             >
               ?
@@ -404,6 +414,19 @@ export function SelectionEnhancementLayer({
             data-card-scale={cardScale.toFixed(2)}
           >
             <div className="learning-selection-source-link" aria-hidden="true" />
+            {question ? (
+              <section className="learning-selection-enhancement-question">
+                <div>
+                  <strong>我的问题</strong>
+                  <span>{question.status === "answered"
+                    ? "已回答"
+                    : question.status === "pending"
+                      ? "正在准备回答"
+                      : "没有生成成功"}</span>
+                </div>
+                <p>{question.text}</p>
+              </section>
+            ) : null}
             <header>
               <div>
                 <span>小章鱼辅助</span>
@@ -425,7 +448,9 @@ export function SelectionEnhancementLayer({
                       return next;
                     });
                   }}
-                  aria-label="最小化这条辅助内容"
+                  aria-label={question
+                    ? "最小化问题和辅助内容"
+                    : "最小化这条辅助内容"}
                   title="最小化"
                 >
                   <Minimize2 size={15} />

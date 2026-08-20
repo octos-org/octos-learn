@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { VoiceState } from "@/home/voice/use-voice-conversation";
 import { OctosSkinArt } from "@/components/octos-skin-art";
+import { MarkdownContent } from "@/components/markdown-renderer";
 import { useTeacherSkin } from "@/hooks/use-teacher-skin";
 
 const STATE_LABEL: Record<VoiceState, string> = {
@@ -54,7 +55,10 @@ export function OctosTeacher({
     <div className="octos-teacher" data-learning-board-occlusion="">
       {speech && (
         <div className="octos-teacher-caption" aria-live="polite">
-          {speech}
+          <MarkdownContent
+            text={speech}
+            className="octos-teacher-caption-content"
+          />
         </div>
       )}
       <button
