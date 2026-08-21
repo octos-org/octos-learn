@@ -574,6 +574,7 @@ export function LearningWhiteboard({
       return [[runtimeRegionIdForTopic(topic.id), {
         x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
         y: region.origin.y,
+        flow: "reading",
         reservedWidth: Math.max(
           0,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,

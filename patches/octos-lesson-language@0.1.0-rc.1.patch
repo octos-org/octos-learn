@@ -1,0 +1,168 @@
+diff --git a/dist/packages/web-runtime/src/layout.d.ts b/dist/packages/web-runtime/src/layout.d.ts
+index 70a9b74083d43d0e42b5f14a0e66ad496ce4c017..076a2ecb402ea9fc18da2e534ede878f2d2b8d80 100644
+--- a/dist/packages/web-runtime/src/layout.d.ts
++++ b/dist/packages/web-runtime/src/layout.d.ts
+@@ -18,6 +18,12 @@ export interface RegionLayoutConstraint {
+     y: number;
+     /** Space reserved for a progressively delivered course before every node exists. */
+     reservedWidth?: number;
++    /**
++     * Arrange top-level lesson cards as a stable visual lane plus a reading
++     * lane. This is computed at render time, so saved semantic boards also
++     * receive the updated course composition.
++     */
++    flow?: "semantic" | "reading";
+ }
+ export interface BoardLayoutOptions {
+     regions?: Record<string, RegionLayoutConstraint>;
+diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime/src/layout.js
+index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..25c2c6bb8676b17be44c724f1835f4f9e4e3c6e6 100644
+--- a/dist/packages/web-runtime/src/layout.js
++++ b/dist/packages/web-runtime/src/layout.js
+@@ -1,5 +1,6 @@
+ const GAP = { compact: 28, normal: 54, spacious: 88 };
+ const TOPIC_GUTTER = 180;
++const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "diagram"]);
+ function visibleContentLength(value) {
+     if (value === null || value === undefined)
+         return 0;
+@@ -67,6 +68,27 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+     const nodes = {};
+     const groups = {};
+     const regionCursors = new Map();
++    const regionFlowProfiles = new Map();
++    for (const node of Object.values(state.nodes)) {
++        const regionId = typeof node.region_id === "string" && node.region_id
++            ? node.region_id
++            : "__legacy__";
++        if (options.regions?.[regionId]?.flow !== "reading")
++            continue;
++        if (["inside", "overlay"].includes(node.placement?.relation ?? ""))
++            continue;
++        const kind = String(node.kind ?? "text");
++        const profile = regionFlowProfiles.get(regionId) ?? {
++            hasVisual: false,
++            visualWidth: 0,
++        };
++        if (VISUAL_LANE_KINDS.has(kind)) {
++            const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
++            profile.hasVisual = true;
++            profile.visualWidth = Math.max(profile.visualWidth, size.width);
++        }
++        regionFlowProfiles.set(regionId, profile);
++    }
+     const endpointId = (endpoint) => {
+         if (typeof endpoint === "string")
+             return endpoint;
+@@ -125,19 +147,82 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+         ];
+     };
+     for (const node of Object.values(state.nodes)) {
+-        const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
++        let size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
+         const placement = node.placement ?? { relation: "new_region" };
+         const anchor = placement.anchor ? nodes[placement.anchor] ?? groupRect(placement.anchor) : undefined;
+         const gap = GAP[placement.gap] ?? GAP.normal;
++        const regionId = typeof node.region_id === "string" && node.region_id
++            ? node.region_id
++            : "__legacy__";
++        const constraint = options.regions?.[regionId];
++        const readingFlow = constraint?.flow === "reading"
++            && !["inside", "overlay"].includes(placement.relation);
++        let flowLane;
++        let flowRegion;
+         let x = 100;
+         let y = 90;
+-        if (!anchor || placement.relation === "new_region") {
+-            const regionId = typeof node.region_id === "string" && node.region_id
+-                ? node.region_id
+-                : "__legacy__";
++        if (readingFlow) {
++            let region = regionCursors.get(regionId);
++            if (!region) {
++                const occupied = collisionRects(node.id);
++                const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
++                const right = occupied.length || reservedRightEdges.length
++                    ? Math.max(...occupied.map((rect) => rect.x + rect.width), ...reservedRightEdges)
++                    : 100 - TOPIC_GUTTER;
++                region = {
++                    x: constraint?.x ?? (regionCursors.size === 0 ? 100 : right + TOPIC_GUTTER),
++                    y: constraint?.y ?? 90,
++                    reservedWidth: Math.max(0, constraint?.reservedWidth ?? 0),
++                    itemIndex: 0,
++                    rowY: constraint?.y ?? 90,
++                    rowHeight: 0,
++                    firstColumnWidth: 0,
++                    visualBottom: undefined,
++                    narrativeBottom: undefined,
++                };
++                regionCursors.set(regionId, region);
++            }
++            const profile = regionFlowProfiles.get(regionId) ?? {
++                hasVisual: false,
++                visualWidth: 0,
++            };
++            flowLane = VISUAL_LANE_KINDS.has(String(node.kind ?? "text"))
++                ? "visual"
++                : "narrative";
++            flowRegion = region;
++            if (
++                flowLane === "narrative"
++                && profile.hasVisual
++                && region.reservedWidth > profile.visualWidth + GAP.normal
++            ) {
++                // The host reserves one logical course region before the
++                // complete lesson has arrived. Keep both reading lanes inside
++                // that reservation so reflowing an older course cannot invade
++                // the next persisted course region on the infinite board.
++                const availableWidth = region.reservedWidth
++                    - profile.visualWidth
++                    - GAP.normal;
++                if (availableWidth >= 280)
++                    size = { ...size, width: Math.min(size.width, availableWidth) };
++            }
++            if (flowLane === "visual") {
++                x = region.x;
++                y = region.visualBottom === undefined
++                    ? region.y
++                    : region.visualBottom + GAP.normal;
++            }
++            else {
++                x = region.x + (profile.hasVisual
++                    ? profile.visualWidth + GAP.normal
++                    : 0);
++                y = region.narrativeBottom === undefined
++                    ? region.y
++                    : region.narrativeBottom + GAP.compact;
++            }
++        }
++        else if (!anchor || placement.relation === "new_region") {
+             let region = regionCursors.get(regionId);
+             if (!region) {
+-                const constraint = options.regions?.[regionId];
+                 const occupied = collisionRects(node.id);
+                 const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
+                 const right = occupied.length || reservedRightEdges.length
+@@ -202,9 +287,9 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+             x = anchor.x + 24;
+             y = anchor.y + 24;
+         }
+-        if (placement.align === "center" && anchor && ["below", "above"].includes(placement.relation))
++        if (!readingFlow && placement.align === "center" && anchor && ["below", "above"].includes(placement.relation))
+             x = anchor.x + (anchor.width - size.width) / 2;
+-        if (placement.align === "end" && anchor && ["below", "above"].includes(placement.relation))
++        if (!readingFlow && placement.align === "end" && anchor && ["below", "above"].includes(placement.relation))
+             x = anchor.x + anchor.width - size.width;
+         let candidate = { x, y, ...size };
+         if (!["inside", "overlay"].includes(placement.relation)) {
+@@ -214,6 +299,10 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+                 guard += 1;
+             }
+         }
++        if (flowRegion && flowLane === "visual")
++            flowRegion.visualBottom = candidate.y + candidate.height;
++        if (flowRegion && flowLane === "narrative")
++            flowRegion.narrativeBottom = candidate.y + candidate.height;
+         nodes[node.id] = candidate;
+     }
+     for (const groupId of Object.keys(state.groups))

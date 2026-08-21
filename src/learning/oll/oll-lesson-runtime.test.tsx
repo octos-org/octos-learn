@@ -919,6 +919,7 @@ describe("OLL lesson Runtime integration", () => {
         __legacy__: {
           x: 2_694,
           y: 160,
+          flow: "reading",
           reservedWidth: 886,
         },
       });
