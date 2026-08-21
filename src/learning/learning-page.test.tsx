@@ -147,6 +147,21 @@ describe("LearningPage", () => {
     ).toBeNull();
   });
 
+  it("opens the unit-circle shared-variable fixture without Skill or device gates", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/learn?oll-fixture=unit-circle-sine",
+    );
+    profileSkillsMock.skills = [];
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props?.ollFixture).toBe("unit-circle-sine");
+    expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
+  });
+
   it("blocks an installed learning coach that predates request-source isolation", async () => {
     profileSkillsMock.skills[0].version = "0.8.3";
 
@@ -542,6 +557,29 @@ describe("LearningPage", () => {
     expect(getLearningSession("learn-903-no-lesson")).toBeNull();
   });
 
+  it("restores a whiteboard session that contains a selection enhancement", async () => {
+    sessionApiMock.listSessions.mockResolvedValue([
+      { id: "learn-903-selection", message_count: 1, title: "生成函数图像" },
+    ]);
+    sessionApiMock.getSessionFiles.mockResolvedValue([{
+      filename: "turn-1.octos-selection-enhancement.json",
+      path: "study/oll/turn-1.octos-selection-enhancement.json",
+      size_bytes: 1,
+      modified_at: "2026-08-17T00:00:00Z",
+    }]);
+
+    render(<LearningPage />);
+
+    await waitFor(() =>
+      expect(learningWorkspaceMock.props?.sessionId).toBe(
+        "learn-903-selection",
+      ),
+    );
+    expect(getLearningSession("learn-903-selection")).toEqual(
+      expect.objectContaining({ title: "生成函数图像" }),
+    );
+  });
+
   it("repairs a provisional local session from its durable server transcript", async () => {
     const { id: sessionId } = createProvisionalLearningSession(900);
     sessionApiMock.listSessions.mockResolvedValue([
@@ -599,6 +637,43 @@ describe("LearningPage", () => {
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
     expect(getLearningSession(staleId)).toBeNull();
     expect(learningWorkspaceMock.props?.sessionId).not.toBe(staleId);
+  });
+
+  it("keeps a local whiteboard with saved ink when the server has no lesson", async () => {
+    const { id: sessionId } = createProvisionalLearningSession(906);
+    promoteLearningSession(sessionId, "手写白板", 907);
+    localStorage.setItem(
+      `octos-learning-ink:v1:${sessionId}`,
+      JSON.stringify({
+        format: "oll.student-ink.svg",
+        document_id: `learning-session:${sessionId}:student-ink`,
+        document_version: 1,
+        svg: "<svg><path /></svg>",
+      }),
+    );
+    sessionApiMock.listSessions.mockResolvedValue([]);
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props?.sessionId).toBe(sessionId);
+    expect(getLearningSession(sessionId)).toEqual(
+      expect.objectContaining({ status: "active", title: "手写白板" }),
+    );
+  });
+
+  it("promotes a new conversation as soon as saved handwriting exists", async () => {
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    const sessionId = learningWorkspaceMock.props?.sessionId as string;
+
+    act(() => learningWorkspaceMock.props?.onWhiteboardActivity?.());
+
+    expect(getLearningSession(sessionId)).toEqual(
+      expect.objectContaining({ status: "active", title: "手写白板" }),
+    );
+    act(() => learningWorkspaceMock.props?.onLearnerInput?.("生成函数图像"));
+    expect(getLearningSession(sessionId)?.title).toBe("生成函数图像");
   });
 
   it("completes the session after a spoken exit review", async () => {

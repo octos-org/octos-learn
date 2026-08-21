@@ -78,11 +78,15 @@ export interface VoiceTurnSendContext {
   turnId: string;
   mediaPaths: string[];
   currentFramePath?: string;
+  /** Application-owned attachments, excluding speech and the live frame. */
+  additionalMediaPaths?: string[];
 }
 
 export interface VoiceConversationOptions {
   /** Build application context after uploads resolve, so frame paths are exact. */
   buildTurnText?: (context: VoiceTurnSendContext) => string;
+  /** Add application-owned files to exactly the next captured voice turn. */
+  getAdditionalTurnFiles?: () => Promise<File[]> | File[];
   /** Start the privacy-visible camera stream when voice capture starts. */
   autoStartCamera?: boolean;
   /** Learning sessions show their recent hydrated history when resumed. */
@@ -360,6 +364,7 @@ export function useVoiceConversation(
   options?: VoiceConversationOptions,
 ): VoiceConversation {
   const buildTurnText = options?.buildTurnText;
+  const getAdditionalTurnFiles = options?.getAdditionalTurnFiles;
   const playReplyAudio = options?.playReplyAudio !== false;
   const externalSpeechActive = options?.externalSpeechActive === true;
   const onTurnStart = options?.onTurnStart;
@@ -563,24 +568,28 @@ export function useVoiceConversation(
         // When the camera is on, attach the current frame so the turn is a
         // video call (audio + image); the server transcribes the audio and the
         // VLM sees the frame. Degrades to audio-only on a failed grab.
-        const files = await assembleTurnFiles(
+        const capturedFiles = await assembleTurnFiles(
           file,
           includeCamera ?? cameraActiveRef.current,
           cameraGrab,
         );
+        const additionalFiles = await getAdditionalTurnFiles?.() ?? [];
+        const files = [...capturedFiles, ...additionalFiles];
         // Surface the exact image sent to the AI (the model's view).
-        const sentFrame = files.find((f) => f.type.startsWith("image/"));
+        const sentFrame = capturedFiles.find((f) => f.type.startsWith("image/"));
         if (sentFrame) showSentFrame(sentFrame);
         const paths = await uploadFiles(files, "recording");
         const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
         const currentFramePath =
           sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
+        const additionalMediaPaths = paths.slice(capturedFiles.length);
         const text =
           buildTurnText?.({
             sessionId,
             turnId,
             mediaPaths: paths,
             currentFramePath,
+            additionalMediaPaths,
           }) ?? "";
         // The server-side STT transcribes the audio in `media` into the prompt.
         // The reply's TTS audio arrives asynchronously and is played by the
@@ -628,6 +637,7 @@ export function useVoiceConversation(
     },
     [
       cameraGrab,
+      getAdditionalTurnFiles,
       historyTopic,
       buildTurnText,
       onTurnStart,

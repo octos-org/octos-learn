@@ -3,6 +3,7 @@ import {
   adoptLearningSession,
   cleanupProvisionalLearningSessions,
   createProvisionalLearningSession,
+  hasDurableLocalWhiteboardContent,
   isSubstantiveLearningText,
   listLearningSessions,
   promoteLearningSession,
@@ -109,5 +110,43 @@ describe("learning session lifecycle", () => {
       }),
     );
     expect(listLearningSessions()).toHaveLength(1);
+  });
+
+  it("recognizes saved ink and selection sources as durable whiteboard content", () => {
+    const sessionId = "learn-901-ink";
+    localStorage.setItem(
+      `octos-learning-ink:v1:${sessionId}`,
+      JSON.stringify({
+        format: "oll.student-ink.svg",
+        document_id: `learning-session:${sessionId}:student-ink`,
+        document_version: 1,
+        svg: "<svg><path /></svg>",
+      }),
+    );
+    expect(hasDurableLocalWhiteboardContent(sessionId)).toBe(true);
+
+    localStorage.removeItem(`octos-learning-ink:v1:${sessionId}`);
+    localStorage.setItem(
+      `learn:selection-enhancements:${sessionId}:v1`,
+      JSON.stringify({ session_id: sessionId, sources: [{ source_id: "source-1" }] }),
+    );
+    expect(hasDurableLocalWhiteboardContent(sessionId)).toBe(true);
+
+    localStorage.removeItem(
+      `learn:selection-enhancements:${sessionId}:v1`,
+    );
+    localStorage.setItem(
+      `octos-learning-questions:v1:${sessionId}`,
+      JSON.stringify([{
+        id: "turn-question",
+        sessionId,
+        text: "为什么会这样？",
+        origin: "composer",
+        createdAt: "2026-08-17T15:00:00.000Z",
+        status: "answered",
+      }]),
+    );
+    expect(hasDurableLocalWhiteboardContent(sessionId)).toBe(true);
+    expect(hasDurableLocalWhiteboardContent("learn-902-empty")).toBe(false);
   });
 });

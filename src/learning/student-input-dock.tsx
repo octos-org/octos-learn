@@ -23,6 +23,8 @@ export function StudentInputDock({
   onToggleCamera,
   onSendText,
   onSendImage,
+  references = [],
+  onRemoveReference,
 }: {
   voiceState: VoiceState;
   cameraActive: boolean;
@@ -32,6 +34,8 @@ export function StudentInputDock({
   onToggleCamera: () => void;
   onSendText: (text: string) => Promise<void> | void;
   onSendImage: (file: File) => Promise<void> | void;
+  references?: Array<{ id: string; label: string }>;
+  onRemoveReference?: (id: string) => void;
 }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -65,7 +69,23 @@ export function StudentInputDock({
   const busy = voiceState === "thinking" || voiceState === "speaking";
 
   return (
-    <form className="learning-input-dock" onSubmit={(event) => void submit(event)}>
+    <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
+      {references.length > 0 ? (
+        <div className="learning-input-references" aria-label="已引用的白板内容">
+          {references.map((reference) => (
+            <span key={reference.id}>
+              已引用：{reference.label}
+              <button
+                type="button"
+                onClick={() => onRemoveReference?.(reference.id)}
+                aria-label={`移除引用：${reference.label}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <input
         ref={fileRef}
         type="file"

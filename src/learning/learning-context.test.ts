@@ -39,6 +39,14 @@ describe("learning context protocol", () => {
     expect(stripLearningContext(text)).toBe("帮我看这道题");
   });
 
+  it("strips the application-owned visual retry contract", () => {
+    const text = `请重新生成这个画面\n[[LEARNING_DEGRADED_VISUAL_RETRY]]
+board_id: board-1
+board_revision: 4
+[[/LEARNING_DEGRADED_VISUAL_RETRY]]`;
+    expect(stripLearningContext(text)).toBe("请重新生成这个画面");
+  });
+
   it("includes board-addressable turn context without exposing newlines", () => {
     const context = buildLearningTurnContext({
       sessionId: "learn-1",

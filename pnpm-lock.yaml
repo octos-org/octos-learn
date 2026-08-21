@@ -48,8 +48,8 @@ importers:
         specifier: ^11.13.0
         version: 11.15.0
       octos-lesson-language:
-        specifier: git+https://github.com/alan0x/octos-lesson-language.git#04b21a64190c7bc955db5ef112a730292d0e2b2d
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/04b21a64190c7bc955db5ef112a730292d0e2b2d
+        specifier: git+https://github.com/alan0x/octos-lesson-language.git#714ad6ec38f0fd42a7d7722a70fd2e5f85d78718
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/714ad6ec38f0fd42a7d7722a70fd2e5f85d78718
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -745,11 +745,17 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@js-draw/math@1.33.0':
+    resolution: {integrity: sha512-Q63U2h6fLp339K73XtcAUraNwP00SQ6SyJc0zzJItU8dIhG7CEENo1XL7hWBoLcgKJvV8yiwmScIOUZ+GmsrpQ==}
+
   '@lit-labs/ssr-dom-shim@1.6.0':
     resolution: {integrity: sha512-VHb0ALPMTlgKjM6yIxxoQNnpKyUKLD04VzeQdsiXkMqkvYlAHxq9glGLmgbb889/1GsohSOAjvQYoiBppXFqrQ==}
 
   '@lit/reactive-element@2.1.2':
     resolution: {integrity: sha512-pbCDiVMnne1lYUIaYNN5wrwQXDtHaYtg7YEFPeW+hws6U47WeFvISGUWekPGKWOP1ygrs0ef0o1VJMk1exos5A==}
+
+  '@melloware/coloris@0.22.0':
+    resolution: {integrity: sha512-i06nJM0xQrgOkLFUi8d+8mrJjvFgPrU/nTM9vtRGip/T6yHUFIrNV7QgCyps3dBkKVRP/CeJzAeAIvJBSTSbFQ==}
 
   '@mermaid-js/parser@1.1.1':
     resolution: {integrity: sha512-VuHdsYMK1bT6X2JbcAaWAhugTRvRBRyuZgd+c22swUeI9g/ntaxF7CY7dYarhZovofCbUNO0G7JesfmNtjYOCw==}
@@ -2128,6 +2134,9 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  bezier-js@6.1.3:
+    resolution: {integrity: sha512-VPFvkyO98oCJ1Tsi+bFBrKEWLdefAj4DJVaWp3xTEsdCbunC7Pt/nTeIgu/UdskBNcmHv8TOfsgdMZb1GsICmg==}
+
   brace-expansion@1.1.15:
     resolution: {integrity: sha512-EwOCDEex4quD37XhqM3omwtMoJjr//isUZz1JopUNWms+4Z2ViyM/k1YIRePpoVNnQhENnxtFjLaxNHrT7xIUg==}
 
@@ -2618,8 +2627,8 @@ packages:
   fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
 
-  fast-uri@3.1.4:
-    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
+  fast-uri@3.1.5:
+    resolution: {integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -2894,6 +2903,9 @@ packages:
     resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
     hasBin: true
 
+  js-draw@1.33.0:
+    resolution: {integrity: sha512-wz+ZiWq3Tc577dEdeXGDWxpdHYWuFLTYY8qg5xv5WpfC/xVu8n0q0OL/yA/pqA/3ToIsPbrbkUeOEgCsjAx0Yw==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -2939,8 +2951,8 @@ packages:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
     hasBin: true
 
-  katex@0.18.1:
-    resolution: {integrity: sha512-Td8GCYSxDAoMhHOlKmCFMJ/hz5qlAAb71n66Dryw9nfCVfumLo7nhuotbvKom/XPADmrYC3O5QR71EPq4DarJQ==}
+  katex@0.18.4:
+    resolution: {integrity: sha512-IMPntbRLOU+eu88XDiFKqQ8Akhr9Tv7jDMXqPhjG9SI1JMA4DIgXk4x9k4skJz2NZJXBRbC+2pYBLj9olqcZow==}
     hasBin: true
 
   keyv@4.5.4:
@@ -3299,8 +3311,8 @@ packages:
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/04b21a64190c7bc955db5ef112a730292d0e2b2d:
-    resolution: {gitHosted: true, integrity: sha512-JJVNtpLBSFiZaDHYTXcglRm2X6jE+2OqW7v3cZIrWm+hN/m4HZAh5rsYFNfALw/o46JgWPC+I6YLAB5hIxr0PQ==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/04b21a64190c7bc955db5ef112a730292d0e2b2d}
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/714ad6ec38f0fd42a7d7722a70fd2e5f85d78718:
+    resolution: {gitHosted: true, integrity: sha512-MGTfzMmRu/JMA5vTFVSo2E605LAYxip9UZnctOmMKhLYaxfuOdT41vTkyEUF6my9Zpj5XvPjn3EfIO7uvlsrlw==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/714ad6ec38f0fd42a7d7722a70fd2e5f85d78718}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -4569,11 +4581,17 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
+  '@js-draw/math@1.33.0':
+    dependencies:
+      bezier-js: 6.1.3
+
   '@lit-labs/ssr-dom-shim@1.6.0': {}
 
   '@lit/reactive-element@2.1.2':
     dependencies:
       '@lit-labs/ssr-dom-shim': 1.6.0
+
+  '@melloware/coloris@0.22.0': {}
 
   '@mermaid-js/parser@1.1.1':
     dependencies:
@@ -5918,7 +5936,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -5975,6 +5993,8 @@ snapshots:
   balanced-match@4.0.4: {}
 
   baseline-browser-mapping@2.10.33: {}
+
+  bezier-js@6.1.3: {}
 
   brace-expansion@1.1.15:
     dependencies:
@@ -6535,7 +6555,7 @@ snapshots:
 
   fast-levenshtein@2.0.6: {}
 
-  fast-uri@3.1.4: {}
+  fast-uri@3.1.5: {}
 
   fdir@6.5.0(picomatch@4.0.4):
     optionalDependencies:
@@ -6835,6 +6855,11 @@ snapshots:
 
   jiti@2.7.0: {}
 
+  js-draw@1.33.0:
+    dependencies:
+      '@js-draw/math': 1.33.0
+      '@melloware/coloris': 0.22.0
+
   js-tokens@4.0.0: {}
 
   js-tokens@9.0.1: {}
@@ -6887,7 +6912,7 @@ snapshots:
     dependencies:
       commander: 8.3.0
 
-  katex@0.18.1:
+  katex@0.18.4:
     dependencies:
       commander: 8.3.0
 
@@ -7464,10 +7489,11 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/04b21a64190c7bc955db5ef112a730292d0e2b2d:
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/714ad6ec38f0fd42a7d7722a70fd2e5f85d78718:
     dependencies:
       ajv: 8.20.0
-      katex: 0.18.1
+      js-draw: 1.33.0
+      katex: 0.18.4
 
   onetime@6.0.0:
     dependencies:
