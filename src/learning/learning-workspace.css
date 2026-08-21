@@ -1467,6 +1467,11 @@
   background: #fff8f1;
 }
 
+.learning-selection-enhancement.is-failed {
+  border-color: rgba(176, 76, 55, 0.38);
+  background: #fff9f4;
+}
+
 .learning-selection-enhancement.is-invalid-target header small {
   color: #a65334;
   font-weight: 650;
@@ -1564,6 +1569,35 @@
 .learning-selection-enhancement-content > strong {
   display: block;
   font-size: 1.08em;
+}
+
+.learning-selection-enhancement-placeholder {
+  position: relative;
+  min-height: 72px;
+  overflow: hidden;
+}
+
+.learning-selection-enhancement-placeholder > p {
+  margin-bottom: 0;
+  color: #60716d;
+  line-height: 1.5;
+}
+
+.learning-selection-enhancement-placeholder > span {
+  display: block;
+  width: 58%;
+  height: 4px;
+  margin-top: 16px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #77bcb1, #d7eee8, #77bcb1);
+  background-size: 200% 100%;
+  animation: learning-selection-placeholder 1.25s linear infinite;
+}
+
+@keyframes learning-selection-placeholder {
+  to {
+    background-position: -200% 0;
+  }
 }
 
 .learning-selection-enhancement-pin {

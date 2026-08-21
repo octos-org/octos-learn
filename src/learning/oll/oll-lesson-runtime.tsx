@@ -487,6 +487,7 @@ export function LearningWhiteboard({
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkSupportsColors, setInkSupportsColors] = useState(false);
+  const [inkColorPaletteOpen, setInkColorPaletteOpen] = useState(false);
   const [inkError, setInkError] = useState("");
   const [taskError, setTaskError] = useState("");
   const [enhancementLayer, setEnhancementLayer] =
@@ -520,6 +521,10 @@ export function LearningWhiteboard({
     useState<string | null>(null);
   const [requestedDegradedNodeIds, setRequestedDegradedNodeIds] =
     useState<Set<string>>(() => new Set());
+  const inkColorPaletteAvailable = inkSupportsColors && (
+    inkState.mode === "draw"
+    || (inkState.mode === "select" && inkState.selected_count > 0)
+  );
 
   useEffect(() => {
     onUpdateCourseRegionRef.current = onUpdateCourseRegion;
@@ -2040,19 +2045,29 @@ export function LearningWhiteboard({
           >
             <LassoSelect size={17} />
           </button>
-          {inkSupportsColors && inkState.mode === "draw" ? (
-            <InkColorControl
-              label="笔色"
-              value={inkState.pen_color}
-              onChange={setPenColor}
-            />
-          ) : null}
-          {inkSupportsColors && inkState.mode === "select" && inkState.selected_count > 0 ? (
-            <InkColorControl
-              label="选区颜色"
-              value={inkState.selection_color ?? inkState.pen_color}
-              onChange={setSelectionColor}
-            />
+          {inkColorPaletteAvailable ? (
+            <>
+              <button
+                type="button"
+                className={inkColorPaletteOpen ? "is-active" : ""}
+                onClick={() => setInkColorPaletteOpen((current) => !current)}
+                aria-label={inkColorPaletteOpen ? "隐藏调色板" : "显示调色板"}
+                aria-expanded={inkColorPaletteOpen}
+              >
+                <Palette size={17} />
+              </button>
+              {inkColorPaletteOpen ? (
+                <InkColorControl
+                  label={inkState.mode === "draw" ? "笔色" : "选区颜色"}
+                  value={inkState.mode === "draw"
+                    ? inkState.pen_color
+                    : inkState.selection_color ?? inkState.pen_color}
+                  onChange={inkState.mode === "draw"
+                    ? setPenColor
+                    : setSelectionColor}
+                />
+              ) : null}
+            </>
           ) : null}
           {inkState.mode === "select"
             && inkState.selected_count > 0

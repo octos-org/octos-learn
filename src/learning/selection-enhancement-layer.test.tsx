@@ -295,6 +295,82 @@ describe("SelectionEnhancementLayer", () => {
     expect(screen.getByText("原来的说明")).toBeTruthy();
   });
 
+  it("keeps a pending selection question and its answer loading state in one card", () => {
+    const question: WhiteboardQuestionRecord = {
+      id: "turn-pending",
+      sessionId: "learn-question-pending",
+      text: "请绘制我圈出的函数。",
+      origin: "selection",
+      createdAt: "2026-08-15T09:59:00.000Z",
+      status: "pending",
+      source: {
+        sourceId: artifact.source.source_id,
+        bounds: artifact.source.bounds,
+      },
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[question]}
+        loading={{
+          turnId: question.id,
+          sourceId: artifact.source.source_id,
+          bounds: artifact.source.bounds,
+          state: {
+            id: "selection:source-1",
+            kind: "selection",
+            title: "正在生成函数图像",
+            detail: "正在识别公式，并把可查看的图像放在选区旁边。",
+          },
+        }}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelectorAll(".learning-selection-enhancement"))
+      .toHaveLength(1);
+    expect(container.querySelector(".learning-whiteboard-question-card"))
+      .toBeNull();
+    expect(container.querySelector(".learning-whiteboard-loading-block"))
+      .toBeNull();
+    expect(screen.getByText("请绘制我圈出的函数。")).toBeTruthy();
+    expect(screen.getByText("正在生成函数图像")).toBeTruthy();
+  });
+
+  it("keeps a failed selection answer in the same question card", () => {
+    const question: WhiteboardQuestionRecord = {
+      id: "turn-failed",
+      sessionId: "learn-question-failed",
+      text: "请解释我圈出的内容。",
+      origin: "selection",
+      createdAt: "2026-08-15T09:59:00.000Z",
+      status: "failed",
+      error: "当前选区无法识别，请重新圈选后再试。",
+      source: {
+        sourceId: artifact.source.source_id,
+        bounds: artifact.source.bounds,
+      },
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[question]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelectorAll(".learning-selection-enhancement"))
+      .toHaveLength(1);
+    expect(screen.getByText("请解释我圈出的内容。")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "当前选区无法识别，请重新圈选后再试。",
+    );
+  });
+
   it("shows unsupported content as a clear result instead of an empty card", () => {
     render(
       <SelectionEnhancementLayer

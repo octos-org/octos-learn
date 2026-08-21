@@ -792,11 +792,14 @@ describe("LearningWorkspace", () => {
     expect(
       screen.getByRole("button", { name: "打开本课目录" }),
     ).toBeTruthy();
+    expect(screen.getByText("课程播放中")).toBeTruthy();
+    expect(screen.queryByText("轻触开始")).toBeNull();
     act(() => vi.advanceTimersByTime(260));
     act(() => {
       screen.getByRole("button", { name: "打开本课目录" }).click();
     });
     expect(screen.getByRole("dialog", { name: "本课目录" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "暂停 OLL 课程" })).toBeTruthy();
     expect(
       screen.getAllByRole("button", { name: /查看步骤：/ }).length,
     ).toBeGreaterThan(0);

@@ -1244,14 +1244,20 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
     fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("draw");
+    expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
+    expect(screen.getByRole("button", { name: "隐藏调色板" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "笔色：蓝色" }));
     expect(ink.setPenColor).toHaveBeenCalledWith("#1769aa");
+    fireEvent.click(screen.getByRole("button", { name: "隐藏调色板" }));
+    expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
     fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
     expect(screen.getByRole("status").textContent).toContain("已选 2");
+    fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
     fireEvent.click(screen.getByRole("button", { name: "选区颜色：红色" }));
     expect(ink.setSelectionColor).toHaveBeenCalledWith("#c75445");
 

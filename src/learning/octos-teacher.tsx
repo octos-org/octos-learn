@@ -17,11 +17,13 @@ export function OctosTeacher({
   state,
   speech,
   preparing = false,
+  stateLabel,
   onClick,
 }: {
   state: VoiceState;
   speech: string;
   preparing?: boolean;
+  stateLabel?: string;
   onClick: () => void;
 }) {
   const { skin } = useTeacherSkin();
@@ -104,7 +106,7 @@ export function OctosTeacher({
           reactionKey={reactionKey}
         />
         <span className="octos-teacher-state">
-          {preparing ? "稍等一下" : STATE_LABEL[state]}
+          {preparing ? "稍等一下" : stateLabel ?? STATE_LABEL[state]}
         </span>
       </button>
     </div>

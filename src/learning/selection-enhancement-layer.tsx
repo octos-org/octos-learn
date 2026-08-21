@@ -15,10 +15,6 @@ import {
 } from "octos-lesson-language/web-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
-import {
-  WhiteboardQuestionCard,
-  WHITEBOARD_QUESTION_CARD_WIDTH,
-} from "./whiteboard-question-card";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 import {
   WhiteboardLoadingBlock,
@@ -42,6 +38,26 @@ export interface SelectionEnhancementLoading {
 
 function clampedCardScale(value: number): number {
   return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
+}
+
+function SelectionQuestionSection({
+  question,
+}: {
+  question: WhiteboardQuestionRecord;
+}) {
+  return (
+    <section className="learning-selection-enhancement-question">
+      <div>
+        <strong>我的问题</strong>
+        <span>{question.status === "answered"
+          ? "已回答"
+          : question.status === "pending"
+            ? "正在准备回答"
+            : "没有生成成功"}</span>
+      </div>
+      <p>{question.text}</p>
+    </section>
+  );
 }
 
 function SelectionPlot({
@@ -306,17 +322,6 @@ export function SelectionEnhancementLayer({
           question,
         });
       }
-      if (
-        loading
-        && groupedSourceIds.has(loading.sourceId)
-        && loading.turnId === question.id
-      ) {
-        ordered.push({
-          kind: "loading",
-          key: `loading:${loading.turnId}`,
-          loading,
-        });
-      }
     }
     for (const artifact of sourceArtifacts) {
       if (!artifactByTurnId.has(artifact.turn_id)) continue;
@@ -329,6 +334,7 @@ export function SelectionEnhancementLayer({
     if (
       loading
       && groupedSourceIds.has(loading.sourceId)
+      && !sourceQuestions.some((question) => question.id === loading.turnId)
       && !ordered.some((item) => item.kind === "loading")
     ) {
       ordered.push({
@@ -351,7 +357,7 @@ export function SelectionEnhancementLayer({
         top: fallbackBounds.y,
       });
       const width = item.kind === "question"
-        ? WHITEBOARD_QUESTION_CARD_WIDTH
+        ? CARD_WIDTH
         : item.kind === "loading"
           ? 330
           : minimizedTurnIds.has(item.artifact.turn_id)
@@ -365,14 +371,48 @@ export function SelectionEnhancementLayer({
     <>
       {layoutItems.map((item) => {
         if (item.kind === "question") {
+          const failed = item.question.status === "failed";
+          const questionLoading = loading?.turnId === item.question.id
+            ? loading
+            : null;
           return (
-            <WhiteboardQuestionCard
+            <article
               key={item.key}
-              question={item.question}
-              left={item.left}
-              top={item.top}
-              linked
-            />
+              className={failed
+                ? "learning-selection-enhancement is-failed"
+                : "learning-selection-enhancement is-pending"}
+              style={{
+                left: item.left,
+                top: item.top,
+                width: CARD_WIDTH,
+                fontSize: CARD_FONT_SIZE,
+              }}
+              data-source-id={item.question.source?.sourceId}
+              data-question-id={item.question.id}
+            >
+              <div className="learning-selection-source-link" aria-hidden="true" />
+              <SelectionQuestionSection question={item.question} />
+              <header>
+                <div>
+                  <span>小章鱼辅助</span>
+                  <small>来自当前选区</small>
+                </div>
+              </header>
+              <div
+                className="learning-selection-enhancement-content learning-selection-enhancement-placeholder"
+                role={failed ? "alert" : "status"}
+                aria-live="polite"
+              >
+                <strong>{failed
+                  ? "回答生成失败"
+                  : questionLoading?.state.title ?? "正在生成选区辅助内容"}</strong>
+                <p>{failed
+                  ? item.question.error ?? "选区辅助内容生成失败，请重试"
+                  : questionLoading?.state.detail
+                    ?? "正在理解这部分内容，并把辅助说明放在选区旁边。"}</p>
+                {!failed ? <span aria-hidden="true" /> : null}
+              </div>
+            </article>
           );
         }
         if (item.kind === "loading") {
@@ -439,19 +479,7 @@ export function SelectionEnhancementLayer({
             data-card-scale={cardScale.toFixed(2)}
           >
             <div className="learning-selection-source-link" aria-hidden="true" />
-            {question ? (
-              <section className="learning-selection-enhancement-question">
-                <div>
-                  <strong>我的问题</strong>
-                  <span>{question.status === "answered"
-                    ? "已回答"
-                    : question.status === "pending"
-                      ? "正在准备回答"
-                      : "没有生成成功"}</span>
-                </div>
-                <p>{question.text}</p>
-              </section>
-            ) : null}
+            {question ? <SelectionQuestionSection question={question} /> : null}
             <header>
               <div>
                 <span>小章鱼辅助</span>

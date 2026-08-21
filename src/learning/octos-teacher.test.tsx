@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { OctosTeacher } from "./octos-teacher";
 
 vi.mock("@/hooks/use-teacher-skin", () => ({
@@ -11,6 +11,8 @@ vi.mock("@/components/octos-skin-art", () => ({
     <span data-testid="teacher-art" data-activity={activity} />
   ),
 }));
+
+afterEach(cleanup);
 
 describe("OctosTeacher", () => {
   it("renders inline LaTeX in lesson narration instead of exposing delimiters", () => {
@@ -52,5 +54,21 @@ describe("OctosTeacher", () => {
 
     fireEvent.click(avatar);
     expect(onClick).toHaveBeenCalledOnce();
+  });
+
+  it("allows the lesson Runtime to describe its current state", () => {
+    render(
+      <OctosTeacher
+        state="speaking"
+        stateLabel="课程播放中"
+        speech="正在讲解"
+        onClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("课程播放中")).toBeTruthy();
+    expect(screen.queryByText("轻触开始")).toBeNull();
+    expect(screen.getByTestId("teacher-art").getAttribute("data-activity"))
+      .toBe("speaking");
   });
 });

@@ -70,10 +70,7 @@ export function OllCourseOutline({
       <button
         type="button"
         className="oll-course-outline-trigger"
-        onClick={() => {
-          if (!open) runtime.pause();
-          setOpen((current) => !current);
-        }}
+        onClick={() => setOpen((current) => !current)}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label="打开本课目录"

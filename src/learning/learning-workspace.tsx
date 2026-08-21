@@ -386,7 +386,10 @@ export function LearningWorkspace({
   }, []);
   const updateWhiteboardQuestion = useCallback((
     questionId: string,
-    patch: Partial<Pick<WhiteboardQuestionRecord, "position" | "status">>,
+    patch: Partial<Pick<
+      WhiteboardQuestionRecord,
+      "position" | "status" | "error"
+    >>,
   ) => {
     setWhiteboardQuestions((current) => {
       let changed = false;
@@ -395,6 +398,7 @@ export function LearningWorkspace({
         const updated = { ...question, ...patch };
         if (
           updated.status === question.status
+          && updated.error === question.error
           && updated.position?.x === question.position?.x
           && updated.position?.y === question.position?.y
         ) return question;
@@ -1359,11 +1363,15 @@ export function LearningWorkspace({
         setWhiteboardQuestionStatus(turnId, "answered");
         handleTurnComplete(turnId);
       } catch (cause) {
+        const message = cause instanceof Error
+          ? cause.message
+          : "选区问题发送失败";
         setTextTurnPending(false);
         setSelectionEnhancementPending(false);
-        setWhiteboardQuestionStatus(turnId, "failed");
-        setSendError(cause instanceof Error ? cause.message : "选区问题发送失败");
-        throw cause;
+        updateWhiteboardQuestion(turnId, { status: "failed", error: message });
+        // Selection failures stay attached to their question on the board.
+        // Resolving here prevents the whiteboard toolbar and the workspace
+        // shell from rendering duplicate error notices outside that card.
       }
     },
     [
@@ -1374,6 +1382,7 @@ export function LearningWorkspace({
       rememberSelectionSource,
       sessionId,
       setWhiteboardQuestionStatus,
+      updateWhiteboardQuestion,
     ],
   );
 
@@ -1767,6 +1776,20 @@ export function LearningWorkspace({
           : conv.state === "thinking"
             ? "我正在准备白板课程。"
             : "");
+  const teacherState = textTurnPending
+    ? "thinking"
+    : lessonOwnsNarration
+      ? "speaking"
+      : conv.state;
+  const teacherStateLabel = textTurnPending
+    ? "正在想"
+    : lessonOwnsNarration
+      ? "课程播放中"
+      : ollLesson
+        ? lessonDeliverySettled
+          ? "课程完成"
+          : "继续播放"
+        : undefined;
   const pendingLessonQuestion = [...whiteboardQuestions].reverse().find(
     (question) => question.origin === "composer" && question.status === "pending",
   );
@@ -1982,9 +2005,10 @@ export function LearningWorkspace({
       )}
 
       <OctosTeacher
-        state={runtime.ready ? conv.state : "error"}
+        state={runtime.ready ? teacherState : "error"}
         speech={teacherSpeech}
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
+        stateLabel={runtime.ready ? teacherStateLabel : undefined}
         onClick={handleTeacherClick}
       />
 

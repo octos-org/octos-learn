@@ -9,6 +9,7 @@ export interface WhiteboardQuestionRecord {
   origin: "composer" | "selection";
   createdAt: string;
   status: WhiteboardQuestionStatus;
+  error?: string;
   source?: {
     sourceId: string;
     bounds: InkSelectionBounds;
@@ -55,6 +56,9 @@ function validQuestion(
     || typeof question.createdAt !== "string"
     || !["pending", "answered", "failed"].includes(String(question.status))
   ) return false;
+  if (question.error !== undefined && typeof question.error !== "string") {
+    return false;
+  }
   if (question.position !== undefined) {
     if (!question.position || typeof question.position !== "object") return false;
     const position = question.position as Record<string, unknown>;

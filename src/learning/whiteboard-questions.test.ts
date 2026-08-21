@@ -18,7 +18,8 @@ describe("whiteboard questions", () => {
       text: "  为什么 y=x² 的图像是这样？\n请结合我圈出的部分。  ",
       origin: "selection",
       createdAt: "2026-08-17T15:00:00.000Z",
-      status: "pending",
+      status: "failed",
+      error: "当前公式暂不支持生成函数图像",
       source: {
         sourceId: "source-1",
         bounds: { x: 10, y: 20, width: 90, height: 40 },
