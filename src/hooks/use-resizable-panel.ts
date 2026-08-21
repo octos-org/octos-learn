@@ -8,6 +8,16 @@ interface ResizablePanelOptions {
   side?: "left" | "right";
 }
 
+const KEYBOARD_STEP = 16;
+
+/**
+ * Resizable side-panel hook.
+ *
+ * - Pointer Events (pointerdown/move/up) so drag works with mouse, touch
+ *   and pen.
+ * - Keyboard support: spread `handleProps` onto the handle element to
+ *   expose an accessible separator with arrow, Home, and End controls.
+ */
 export function useResizablePanel({
   minWidth = 280,
   maxWidth = 900,
@@ -32,7 +42,6 @@ export function useResizablePanel({
   const startWidth = useRef(0);
   const activeDragCleanup = useRef<(() => void) | null>(null);
 
-  // Persist width
   useEffect(() => {
     if (storageKey && !isMaximized) {
       localStorage.setItem(storageKey, String(width));
@@ -40,24 +49,23 @@ export function useResizablePanel({
   }, [width, storageKey, isMaximized]);
 
   const onMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button !== 0) return;
-      e.preventDefault();
+    (event: React.MouseEvent) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
       activeDragCleanup.current?.();
       isDragging.current = true;
-      startX.current = e.clientX;
+      startX.current = event.clientX;
       startWidth.current = width;
       const previousCursor = document.body.style.cursor;
       const previousUserSelect = document.body.style.userSelect;
 
-      const onMouseMove = (ev: MouseEvent) => {
+      const onMouseMove = (moveEvent: MouseEvent) => {
         if (!isDragging.current) return;
         const delta =
           side === "right"
-            ? startX.current - ev.clientX
-            : ev.clientX - startX.current;
-        const newWidth = Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta));
-        setWidth(newWidth);
+            ? startX.current - moveEvent.clientX
+            : moveEvent.clientX - startX.current;
+        setWidth(Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta)));
       };
 
       let finished = false;
@@ -86,17 +94,26 @@ export function useResizablePanel({
   );
 
   const onPointerDown = useCallback(
-    (e: React.PointerEvent) => {
+    (event: React.PointerEvent) => {
       // Some older PointerEvent shims omit isPrimary; only an explicit false
       // identifies an auxiliary pointer.
-      if (e.isPrimary === false || e.button !== 0) return;
-      e.preventDefault();
+      if (event.isPrimary === false || event.button !== 0) return;
+      event.preventDefault();
       activeDragCleanup.current?.();
       isDragging.current = true;
-      startX.current = e.clientX;
+      startX.current = event.clientX;
       startWidth.current = width;
       const previousCursor = document.body.style.cursor;
       const previousUserSelect = document.body.style.userSelect;
+
+      const onPointerMove = (moveEvent: PointerEvent) => {
+        if (!isDragging.current) return;
+        const delta =
+          side === "right"
+            ? startX.current - moveEvent.clientX
+            : moveEvent.clientX - startX.current;
+        setWidth(Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta)));
+      };
 
       let finished = false;
       const finishDragging = () => {
@@ -113,13 +130,6 @@ export function useResizablePanel({
           activeDragCleanup.current = null;
         }
       };
-      const onPointerMove = (ev: PointerEvent) => {
-        if (!isDragging.current) return;
-        const delta = side === "right"
-          ? startX.current - ev.clientX
-          : ev.clientX - startX.current;
-        setWidth(Math.min(maxWidth, Math.max(minWidth, startWidth.current + delta)));
-      };
 
       document.addEventListener("pointermove", onPointerMove);
       document.addEventListener("pointerup", finishDragging);
@@ -132,42 +142,56 @@ export function useResizablePanel({
     [width, minWidth, maxWidth, side],
   );
 
-  useEffect(() => () => {
-    activeDragCleanup.current?.();
-  }, []);
+  useEffect(
+    () => () => {
+      activeDragCleanup.current?.();
+    },
+    [],
+  );
 
   const onKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
+    (event: React.KeyboardEvent) => {
       let next: number | null = null;
-      if (e.key === "Home") next = minWidth;
-      else if (e.key === "End") next = maxWidth;
-      else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-        const physicalDelta = e.key === "ArrowRight" ? 16 : -16;
+      if (event.key === "Home") next = minWidth;
+      else if (event.key === "End") next = maxWidth;
+      else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+        const physicalDelta = event.key === "ArrowRight" ? KEYBOARD_STEP : -KEYBOARD_STEP;
         const widthDelta = side === "left" ? physicalDelta : -physicalDelta;
         next = Math.min(maxWidth, Math.max(minWidth, width + widthDelta));
       }
       if (next === null) return;
-      e.preventDefault();
+      event.preventDefault();
       setWidth(next);
     },
     [maxWidth, minWidth, side, width],
   );
 
   const toggleMaximize = useCallback(() => {
-    setIsMaximized((v) => !v);
+    setIsMaximized((value) => !value);
   }, []);
 
-  // Escape to exit maximized
   useEffect(() => {
     if (!isMaximized) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsMaximized(false);
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsMaximized(false);
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [isMaximized]);
 
   const effectiveWidth = isMaximized ? "100%" : `${width}px`;
+
+  const handleProps = {
+    role: "separator",
+    "aria-orientation": "vertical",
+    "aria-valuenow": Math.round(width),
+    "aria-valuemin": minWidth,
+    "aria-valuemax": maxWidth,
+    "aria-label": storageKey ? `Resize panel (${storageKey})` : "Resize panel",
+    tabIndex: 0,
+    onPointerDown,
+    onKeyDown,
+  } as const;
 
   return {
     width,
@@ -176,6 +200,7 @@ export function useResizablePanel({
     onMouseDown,
     onPointerDown,
     onKeyDown,
+    handleProps,
     toggleMaximize,
   };
 }
