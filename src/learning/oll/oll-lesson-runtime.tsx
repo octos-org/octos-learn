@@ -76,6 +76,10 @@ import {
   type WhiteboardRect,
 } from "../whiteboard-placement";
 import {
+  WhiteboardCameraController,
+  type WhiteboardCameraDecision,
+} from "../whiteboard-camera-controller";
+import {
   COURSE_PENDING_FOOTPRINT_HEIGHT,
   COURSE_PENDING_FOOTPRINT_WIDTH,
   COURSE_REGION_GUTTER,
@@ -371,6 +375,7 @@ export function LearningWhiteboard({
   loadingState,
   questions = [],
   courseRegions = [],
+  playbackCourseTarget,
   onPlaceQuestion,
   onUpdateCourseRegion,
   onInkActivity,
@@ -381,15 +386,23 @@ export function LearningWhiteboard({
   onVoiceInkSelection,
   onReferenceInkSelection,
   onDeleteSelectionEnhancement,
+  onDeleteSelectionSources,
   onRetryDegradedVisual,
 }: {
   runtime?: OllLessonRuntimeController | null;
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
-  onInkMergeComplete?: () => void;
+  onInkMergeComplete?: (
+    sourceSessionId: string,
+    targetSessionId: string,
+  ) => void;
   loadingState?: WhiteboardLoadingState | null;
   questions?: WhiteboardQuestionRecord[];
   courseRegions?: CourseRegionRecord[];
+  playbackCourseTarget?: {
+    courseId: string;
+    sequence: number;
+  } | null;
   onPlaceQuestion?: (
     questionId: string,
     position: { x: number; y: number },
@@ -433,6 +446,7 @@ export function LearningWhiteboard({
     label: string;
   }) => Promise<void> | void;
   onDeleteSelectionEnhancement?: (turnId: string) => void;
+  onDeleteSelectionSources?: (sourceIds: string[]) => void;
   onRetryDegradedVisual?: (
     request: DegradedVisualRetryRequest,
   ) => Promise<void> | void;
@@ -440,10 +454,12 @@ export function LearningWhiteboard({
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
+  const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
   const focusedLoadingTurnRef = useRef<string | null>(null);
   const availableTaskKeysRef = useRef(new Set<string>());
   const availableTaskKeysSeededRef = useRef(false);
   const coursesObservedInProgressRef = useRef(new Set<string>());
+  const restoredCourseFocusRef = useRef<string | null>(null);
   const measuredCourseBoundsKeyRef = useRef("");
   const renderedAttentionRef = useRef("");
   const renderedFocusRef = useRef<string[]>([]);
@@ -451,13 +467,16 @@ export function LearningWhiteboard({
   const renderedCompositionCursorRef = useRef(-1);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
   const inkMergeAttemptRef = useRef<string | null>(null);
+  const inkReplayObservedSourceRef = useRef<string | null>(null);
   const inkActivityReportedRef = useRef(false);
   const onInkActivityRef = useRef(onInkActivity);
+  const onUpdateCourseRegionRef = useRef(onUpdateCourseRegion);
   const inkSelectionVersionRef = useRef({
     documentVersion: 0,
     selectedCount: 0,
     selectionRevision: 0,
   });
+  const missingInkSelectionSourcesRef = useRef(new Set<string>());
   const selectionClassificationRequestRef = useRef(0);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
@@ -501,6 +520,17 @@ export function LearningWhiteboard({
     useState<string | null>(null);
   const [requestedDegradedNodeIds, setRequestedDegradedNodeIds] =
     useState<Set<string>>(() => new Set());
+
+  useEffect(() => {
+    onUpdateCourseRegionRef.current = onUpdateCourseRegion;
+  }, [onUpdateCourseRegion]);
+
+  useEffect(() => {
+    if (!playbackCourseTarget) return;
+    coursesObservedInProgressRef.current.add(playbackCourseTarget.courseId);
+    cameraControllerRef.current?.markCourseActive(playbackCourseTarget.courseId);
+    mountedRef.current?.view.releaseHostCamera();
+  }, [playbackCourseTarget]);
   const variableControls = runtime ? variableControlModels(runtime.board) : [];
   const availableStudentTasks = runtime
     ? runtime.studentTasks.filter((task) => task.available)
@@ -733,6 +763,36 @@ export function LearningWhiteboard({
   ]);
 
   useEffect(() => {
+    const ink = inkRuntimeRef.current;
+    if (
+      !ink
+      || !inkAvailable
+      || typeof ink.hasSelectionSource !== "function"
+      || selectionSources.length === 0
+    ) return;
+    const currentSourceIds = new Set(selectionSources.map((source) => source.source_id));
+    for (const sourceId of missingInkSelectionSourcesRef.current) {
+      if (!currentSourceIds.has(sourceId)) {
+        missingInkSelectionSourcesRef.current.delete(sourceId);
+      }
+    }
+    const missing = selectionSources
+      .filter((source) => (
+        !missingInkSelectionSourcesRef.current.has(source.source_id)
+        && ink.hasSelectionSource(source) === false
+      ))
+      .map((source) => source.source_id);
+    if (missing.length === 0) return;
+    missing.forEach((sourceId) => missingInkSelectionSourcesRef.current.add(sourceId));
+    onDeleteSelectionSources?.(missing);
+  }, [
+    inkAvailable,
+    inkState.document_version,
+    onDeleteSelectionSources,
+    selectionSources,
+  ]);
+
+  useEffect(() => {
     const position = pendingComposerQuestion?.position;
     if (
       !pendingComposerQuestion
@@ -740,9 +800,9 @@ export function LearningWhiteboard({
       || focusedLoadingTurnRef.current === pendingComposerQuestion.id
     ) return;
     const frame = window.requestAnimationFrame(() => {
-      const view = mountedRef.current?.view;
+      const controller = cameraControllerRef.current;
       const layer = enhancementLayer;
-      if (!view || !layer) return;
+      if (!controller || !layer) return;
       const elements = [...layer.querySelectorAll<HTMLElement>(
         "[data-question-id], [data-loading-id]",
       )].filter((element) =>
@@ -756,11 +816,16 @@ export function LearningWhiteboard({
         const bounds = renderedWorldRect(element);
         return bounds ? [bounds] : [];
       }));
-      view.focusWorldRect(currentLoadingIsRendered && actualBounds ? actualBounds : {
-        x: position.x,
-        y: position.y,
-        width: PENDING_QUESTION_FOOTPRINT_WIDTH,
-        height: PENDING_QUESTION_FOOTPRINT_HEIGHT,
+      controller.request({
+        source: "question-loading",
+        key: `question-loading:${pendingComposerQuestion.id}`,
+        courseId: pendingComposerQuestion.id,
+        rect: currentLoadingIsRendered && actualBounds ? actualBounds : {
+          x: position.x,
+          y: position.y,
+          width: PENDING_QUESTION_FOOTPRINT_WIDTH,
+          height: PENDING_QUESTION_FOOTPRINT_HEIGHT,
+        },
       });
       focusedLoadingTurnRef.current = pendingComposerQuestion.id;
     });
@@ -1222,6 +1287,42 @@ export function LearningWhiteboard({
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     mountedRef.current = mounted;
+    const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
+      if (!import.meta.env.DEV || import.meta.env.MODE === "test") return;
+      console.debug("[learn-camera]", {
+        action: decision.action,
+        source: decision.request.source,
+        key: decision.request.key,
+        courseId: decision.request.courseId,
+        rect: decision.request.rect,
+        reason: decision.reason,
+      });
+    };
+    const cameraController = new WhiteboardCameraController(
+      (request) => {
+        const courseFrame = request.source === "course-end"
+          || request.source === "course-restore";
+        const focusedViewport = mounted.view.focusWorldRect(request.rect, {
+          exclusive: true,
+          framing: courseFrame ? "course" : "content",
+        });
+        // A course region's persisted bounds are a placement footprint, not a
+        // camera target. Remember the complete world area exposed by the final
+        // course frame so the next course starts beyond that view instead of
+        // appearing inside it. The completion effect still derives its camera
+        // target from course-owned cards, so this footprint cannot zoom a
+        // completed course back out later.
+        if (courseFrame && focusedViewport) {
+          onUpdateCourseRegionRef.current?.(request.courseId, {
+            bounds: focusedViewport,
+          });
+        }
+      },
+      (callback) => window.requestAnimationFrame(callback),
+      (frame) => window.cancelAnimationFrame(frame),
+      reportCameraDecision,
+    );
+    cameraControllerRef.current = cameraController;
     const enhancementHost = viewport.ownerDocument.createElement("div");
     enhancementHost.className = "learning-selection-enhancement-layer";
     enhancementHost.dataset.ollInkInput = "ignore";
@@ -1328,6 +1429,10 @@ export function LearningWhiteboard({
     }
     return () => {
       active = false;
+      cameraController.destroy();
+      if (cameraControllerRef.current === cameraController) {
+        cameraControllerRef.current = null;
+      }
       setEnhancementLayer(null);
       unmountEnhancementLayer();
       mountedRef.current = null;
@@ -1358,13 +1463,33 @@ export function LearningWhiteboard({
   }, [enhancementLayer, regionLayoutConstraints]);
 
   useEffect(() => {
+    if (!inkMergeSourceSessionId) {
+      inkReplayObservedSourceRef.current = null;
+      return;
+    }
+    // A restored lesson is already settled before the learner presses Replay.
+    // Do not interpret that initial state as this replay having finished. Only
+    // arm restoration after the Runtime has actually entered playback (or an
+    // equivalent unsettled transition) for this source document.
+    if (runtime?.playing || runtime?.deliverySettled === false) {
+      inkReplayObservedSourceRef.current = inkMergeSourceSessionId;
+    }
+  }, [
+    inkMergeSourceSessionId,
+    runtime?.deliverySettled,
+    runtime?.playing,
+  ]);
+
+  useEffect(() => {
     const ink = inkRuntimeRef.current;
     if (
       !ink ||
       !inkAvailable ||
       !inkSessionId ||
       !inkMergeSourceSessionId ||
-      !runtime?.deliverySettled
+      inkReplayObservedSourceRef.current !== inkMergeSourceSessionId ||
+      !runtime?.deliverySettled ||
+      runtime.playing
     ) return;
     const mergeKey = `${inkSessionId}\u0000${inkMergeSourceSessionId}`;
     if (inkMergeAttemptRef.current === mergeKey) return;
@@ -1375,7 +1500,7 @@ export function LearningWhiteboard({
     ).then(
       () => {
         setInkError("");
-        onInkMergeComplete?.();
+        onInkMergeComplete?.(inkMergeSourceSessionId, inkSessionId);
       },
       (cause) => {
         setInkError(cause instanceof Error
@@ -1389,6 +1514,7 @@ export function LearningWhiteboard({
     inkSessionId,
     onInkMergeComplete,
     runtime?.deliverySettled,
+    runtime?.playing,
   ]);
 
   useEffect(() => {
@@ -1542,7 +1668,19 @@ export function LearningWhiteboard({
       coursesObservedInProgressRef.current.add(pendingCourseId);
     }
 
-    const topic = presentationTopics.at(-1);
+    const inferredTopic = presentationTopics.find((candidate) =>
+      candidate.steps.some((step) => step.id === runtime?.currentStepId))
+      ?? presentationTopics.at(-1);
+    const requestedTopic = playbackCourseTarget
+      ? presentationTopics.find((candidate) =>
+          (candidate.questionId ?? candidate.id)
+            === playbackCourseTarget.courseId)
+      : undefined;
+    const requestedTopicIsCurrent = requestedTopic
+      ? !runtime?.currentStepId
+        || requestedTopic.steps.some((step) => step.id === runtime.currentStepId)
+      : false;
+    const topic = requestedTopicIsCurrent ? requestedTopic : inferredTopic;
     if (!runtime || !topic) return;
     const courseId = topic.questionId ?? topic.id;
     // While a new composer turn is being prepared, the Runtime still ends in
@@ -1552,31 +1690,62 @@ export function LearningWhiteboard({
     const reachedCourseEnd = runtime.deliverySettled
       && (runtime.waiting || runtime.completed);
     if (!reachedCourseEnd) {
-      // A restored, already-closed lesson can briefly report delivery as not
-      // settled while the host hydrates it. That is review state, not a new
-      // course reaching its end, so it must preserve the saved camera.
+      // A restored lesson can briefly report delivery as unsettled while the
+      // host hydrates it. Wait for hydration before choosing the last course;
+      // otherwise the initial partial board can produce the wrong footprint.
       if (!runtime.completed) {
+        if (!coursesObservedInProgressRef.current.has(courseId)) {
+          mountedRef.current?.view.releaseHostCamera();
+        }
         coursesObservedInProgressRef.current.add(courseId);
+        cameraControllerRef.current?.markCourseActive(courseId);
       }
       return;
     }
-    if (!coursesObservedInProgressRef.current.has(courseId)) return;
+    const observedInProgress = coursesObservedInProgressRef.current.has(courseId);
+    const restoringLastCourse = runtime.completed
+      && !observedInProgress
+      && restoredCourseFocusRef.current !== courseId
+      && !pendingCourseId;
+    if (!observedInProgress && !restoringLastCourse) return;
 
     const frame = window.requestAnimationFrame(() => {
       const view = mountedRef.current?.view;
-      if (!view) return;
+      const viewport = viewportRef.current;
+      if (!view || !viewport) return;
       const region = topic.questionId
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
       const runtimeRegionId = runtimeRegionIdForTopic(topic.id);
       const rects: WhiteboardRect[] = [];
+      const explicitlyOwnedNodeIds = topic.nodeIds ?? [];
+      const currentCourseNodeIds = new Set(explicitlyOwnedNodeIds.length > 0
+        ? explicitlyOwnedNodeIds
+        : Object.values(runtime.board?.nodes ?? {})
+            .filter((node) => node.region_id === runtimeRegionId)
+            .map((node) => node.id));
+      for (const element of viewport.querySelectorAll<HTMLElement>(
+        ".board-node[data-id]",
+      )) {
+        if (!element.dataset.id || !currentCourseNodeIds.has(element.dataset.id)) {
+          continue;
+        }
+        const bounds = renderedWorldRect(element);
+        if (bounds) rects.push(bounds);
+      }
       const latestRegionBounds = view.getRegionBoundsMap();
       const latestRuntimeBounds = latestRegionBounds[runtimeRegionId]
         ?? (presentationTopics.length === 1
           ? latestRegionBounds.__legacy__
           : undefined);
-      if (latestRuntimeBounds) rects.push(latestRuntimeBounds);
-      if (region?.bounds) rects.push(region.bounds);
+      // New multi-course sessions have explicit region ownership on every
+      // lesson node. Prefer those currently rendered nodes over the persisted
+      // monotonically-growing placement footprint: the latter is useful for
+      // keeping future courses apart, but it is not a camera target and may
+      // contain space reserved earlier in the session.
+      if (currentCourseNodeIds.size === 0 && latestRuntimeBounds) {
+        rects.push(latestRuntimeBounds);
+      }
 
       if (enhancementLayer) {
         for (const element of enhancementLayer.querySelectorAll<HTMLElement>([
@@ -1595,9 +1764,20 @@ export function LearningWhiteboard({
         }
       }
 
+      if (rects.length === 0 && region?.bounds) rects.push(region.bounds);
+
       const bounds = unionWhiteboardRects(rects);
       if (!bounds) return;
-      view.focusWorldRect(bounds);
+      cameraControllerRef.current?.request({
+        source: restoringLastCourse ? "course-restore" : "course-end",
+        key: restoringLastCourse
+          ? `course-restore:${courseId}`
+          : `course-end:${courseId}:${playbackCourseTarget?.sequence
+            ?? runtime.cursor}`,
+        courseId,
+        rect: bounds,
+      });
+      if (restoringLastCourse) restoredCourseFocusRef.current = courseId;
       coursesObservedInProgressRef.current.delete(courseId);
     });
     return () => window.cancelAnimationFrame(frame);
@@ -1607,6 +1787,7 @@ export function LearningWhiteboard({
     loadingState?.kind,
     loadingStateId,
     pendingComposerQuestion?.id,
+    playbackCourseTarget,
     presentationTopics,
     runtime,
     runtimeRegionIdForTopic,
@@ -1684,7 +1865,15 @@ export function LearningWhiteboard({
         });
       }
       const bounds = unionWhiteboardRects(rects);
-      if (bounds) view.focusWorldRect(bounds);
+      if (bounds) {
+        cameraControllerRef.current?.request({
+          source: "student-task",
+          key: `student-task:${courseId}:${presentation.tasks
+            .map((task) => task.task_id).join(",")}`,
+          courseId,
+          rect: bounds,
+        });
+      }
     });
     return () => window.cancelAnimationFrame(frame);
   }, [
@@ -1692,6 +1881,9 @@ export function LearningWhiteboard({
     enhancementLayer,
     presentationTopics.length,
     runtime?.board?.focus,
+    runtime?.completed,
+    runtime?.deliverySettled,
+    runtime?.waiting,
     runtimeRegionBounds,
     runtimeRegionIdForTopic,
   ]);

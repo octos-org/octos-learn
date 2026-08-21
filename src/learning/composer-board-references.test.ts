@@ -28,6 +28,7 @@ function reference(id: string, targetId: string): ComposerBoardReference {
         { x: 20, y: 90 },
       ],
     },
+    component_ids: [`stroke:${id}`],
     checksum: { algorithm: "sha-256", value: "a".repeat(64) },
     svg: `<svg><path data-private-source="${id}" /></svg>`,
   };

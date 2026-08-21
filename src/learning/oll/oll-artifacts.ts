@@ -21,6 +21,9 @@ export interface OllLessonTopic {
   id: string;
   title: string;
   stepIds: string[];
+  /** Nodes created by this lesson's own Steps. This remains reliable even
+   * when an older saved lesson has no per-node region_id metadata. */
+  nodeIds: string[];
   variableAliases: string[];
   taskAliases: string[];
   questionId?: string;
@@ -382,6 +385,16 @@ export function buildOllLessonTopics(
     const stepIds = events.flatMap((event) =>
       event.event === "lesson.step" && event.step ? [event.step.id] : [],
     );
+    const nodeIds = events.flatMap((event) =>
+      event.event === "lesson.step" && event.step
+        ? event.step.beats.flatMap((beat) =>
+            Object.values(beat.stage).flatMap((actions) =>
+              actions.flatMap((action) =>
+                action.op === "board.create" && action.node
+                  ? [action.node.id]
+                  : [])))
+        : [],
+    );
     if (!open || stepIds.length === 0) return [];
     const namespace = index === 0
       ? null
@@ -390,6 +403,7 @@ export function buildOllLessonTopics(
       id: open.board?.region_id ?? open.lesson_id,
       title: open.lesson?.title ?? `课程主题 ${index + 1}`,
       stepIds,
+      nodeIds: [...new Set(nodeIds)],
       variableAliases: (open.lesson?.variables ?? []).map((variable) =>
         namespace ? scopedIdentifier(namespace, variable.as) : variable.as),
       taskAliases: (open.lesson?.tasks ?? []).map((task) =>
@@ -397,4 +411,15 @@ export function buildOllLessonTopics(
       ...(questionIds[index] ? { questionId: questionIds[index] } : {}),
     }];
   });
+}
+
+/** Resolve the first Step of the course that owns the current playback Step. */
+export function courseReplayStartStep(
+  topics: OllLessonTopic[],
+  currentStepId: string | undefined,
+): string | undefined {
+  const currentTopic = topics.find((topic) =>
+    topic.stepIds.includes(currentStepId ?? ""))
+    ?? topics.at(-1);
+  return currentTopic?.stepIds[0];
 }

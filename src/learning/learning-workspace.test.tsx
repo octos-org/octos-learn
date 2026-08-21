@@ -914,6 +914,39 @@ describe("LearningWorkspace", () => {
     );
   });
 
+  it("opens a clean ink document when a saved step is replayed from the course outline", async () => {
+    const sessionId = "learn-outline-step-replay";
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "打开本课目录" }));
+    fireEvent.click(screen.getAllByRole("button", {
+      name: /从步骤开始播放：/,
+    })[0]!);
+
+    expect(localStorage.getItem(
+      `octos-learning-ink-run:v1:${sessionId}`,
+    )).toBe("1");
+    expect(localStorage.getItem(
+      `octos-learning-ink-merge-source:v1:${sessionId}`,
+    )).toBe(sessionId);
+    await waitFor(() => {
+      expect(inkRuntimeMock.mountInkRuntime).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          storageKey: `octos-learning-ink:v1:${sessionId}:replay:1`,
+          documentId:
+            `learning-session:${sessionId}:replay:1:student-ink`,
+        }),
+      );
+    });
+  });
+
   it("restores earlier ink into the current document after replay completes", async () => {
     localStorage.setItem(
       "octos-learning-ink-run:v1:learn-finished-replay",
@@ -1254,6 +1287,7 @@ describe("LearningWorkspace", () => {
         { x: 523, y: 308.77777777777777 },
       ],
     };
+    const componentIds = ["stroke:rounded-bounds"];
     const source = {
       format: INK_SELECTION_FORMAT,
       format_version: INK_SELECTION_FORMAT_VERSION,
@@ -1263,9 +1297,14 @@ describe("LearningWorkspace", () => {
       created_at: "2026-08-17T10:00:00.000Z",
       bounds: { x: 523, y: 189, width: 231, height: 119.77777777777777 },
       region,
+      component_ids: componentIds,
       checksum: {
         algorithm: "sha-256" as const,
-        value: await inkSvgChecksum(JSON.stringify({ svg, region })),
+        value: await inkSvgChecksum(JSON.stringify({
+          svg,
+          region,
+          component_ids: componentIds,
+        })),
       },
       svg,
     } satisfies InkSelectionSnapshot;

@@ -1,5 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  INK_SELECTION_FORMAT,
+  INK_SELECTION_FORMAT_VERSION,
+  type InkSelectionSnapshot,
+} from "octos-lesson-language/ink-runtime";
 import { SelectionEnhancementLayer } from "./selection-enhancement-layer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
@@ -181,6 +186,62 @@ describe("SelectionEnhancementLayer", () => {
       clientY: 210,
     });
 
+    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
+      Number.parseFloat(cards[0]!.style.left)
+        + Number.parseFloat(cards[0]!.style.width) + 24,
+    );
+  });
+
+  it("does not overlap results when the same strokes are selected again", () => {
+    const svg = '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>';
+    const snapshots: InkSelectionSnapshot[] = ["source-1", "source-2"].map(
+      (sourceId, index) => ({
+        format: INK_SELECTION_FORMAT,
+        format_version: INK_SELECTION_FORMAT_VERSION,
+        source_id: sourceId,
+        document_id: "ink-1",
+        document_version: 2 + index,
+        created_at: `2026-08-15T10:0${index}:00.000Z`,
+        bounds: { x: 10 - index * 2, y: 20, width: 120 + index * 4, height: 70 },
+        region: {
+          kind: "rectangle",
+          closed: true,
+          points: [
+            { x: 10 - index * 2, y: 20 },
+            { x: 130 + index * 2, y: 20 },
+            { x: 130 + index * 2, y: 90 },
+            { x: 10 - index * 2, y: 90 },
+          ],
+        },
+        component_ids: ["stroke:shared"],
+        checksum: { algorithm: "sha-256", value: String(index + 1).repeat(64) },
+        svg,
+      }),
+    );
+    const secondArtifact: SelectionEnhancementArtifact = {
+      ...artifact,
+      turn_id: "turn-second-capture",
+      created_at: "2026-08-15T10:01:00.000Z",
+      source: {
+        ...artifact.source,
+        source_id: "source-2",
+        document_version: 3,
+        bounds: snapshots[1]!.bounds,
+        checksum: snapshots[1]!.checksum,
+      },
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact, secondArtifact]}
+        sources={snapshots}
+        currentDocumentVersion={3}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+    expect(cards).toHaveLength(2);
     expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
       Number.parseFloat(cards[0]!.style.left)
         + Number.parseFloat(cards[0]!.style.width) + 24,

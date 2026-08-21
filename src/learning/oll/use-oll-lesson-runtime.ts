@@ -27,6 +27,7 @@ export interface OllLessonTopicDefinition {
   id: string;
   title: string;
   stepIds: string[];
+  nodeIds?: string[];
   variableAliases?: string[];
   taskAliases?: string[];
   questionId?: string;
@@ -36,6 +37,7 @@ export interface OllLessonOutlineTopic {
   id: string;
   title: string;
   steps: PlaybackOutlineStep[];
+  nodeIds?: string[];
   variableAliases?: string[];
   taskAliases?: string[];
   questionId?: string;
@@ -321,6 +323,7 @@ export function useOllLessonRuntime({
             id: topic.id,
             title: topic.title,
             steps: topicSteps,
+            nodeIds: topic.nodeIds,
             variableAliases: topic.variableAliases,
             taskAliases: topic.taskAliases,
             questionId: topic.questionId,

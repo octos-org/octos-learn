@@ -51,6 +51,7 @@ import { isLessonDeliverySettled } from "./oll/lesson-delivery";
 import { useOllNarrationTts } from "./oll/use-oll-narration-tts";
 import {
   buildOllLessonTopics,
+  courseReplayStartStep,
   collectOllLessonArtifacts,
   collectPersistedOllLessonArtifacts,
   composeOllClassroomEvents,
@@ -71,6 +72,7 @@ import {
   collectPersistedSelectionEnhancementArtifacts,
   collectSelectionEnhancementArtifacts,
   hideSelectionEnhancement,
+  removeSelectionSources,
   loadSelectionEnhancementArtifact,
   loadSelectionEnhancementState,
   mergeSelectionEnhancementArtifacts,
@@ -85,6 +87,7 @@ import {
   type SelectionEnhancementState,
 } from "./selection-enhancements";
 import type { SelectionToolId } from "./selection-tools";
+import { isCurrentInkMergeCompletion } from "./ink-replay";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
 import type { WhiteboardLoadingState } from "./whiteboard-loading-block";
@@ -311,6 +314,10 @@ export function LearningWorkspace({
   const [inkMergeSourceSessionId, setInkMergeSourceSessionId] = useState(
     () => readInkMergeSourceSessionId(sessionId, readInkPlaybackRun(sessionId)),
   );
+  const [playbackCourseTarget, setPlaybackCourseTarget] = useState<{
+    courseId: string;
+    sequence: number;
+  } | null>(null);
   const inkSessionId = inkDocumentSessionId(sessionId, inkPlaybackRun);
   const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const [loadedOllArtifacts, setLoadedOllArtifacts] = useState<
@@ -646,29 +653,48 @@ export function LearningWorkspace({
     onVoiceExit ?? onBack,
     voiceConversationOptions,
   );
+  const beginFreshInkPlayback = useCallback(() => {
+    const next = Number.isSafeInteger(inkPlaybackRun + 1)
+      ? inkPlaybackRun + 1
+      : 1;
+    setInkPlaybackRun(next);
+    setInkMergeSourceSessionId(inkSessionId);
+    try {
+      window.localStorage.setItem(
+        inkPlaybackRunStorageKey(sessionId),
+        String(next),
+      );
+      window.localStorage.setItem(
+        inkMergeSourceStorageKey(sessionId),
+        inkSessionId,
+      );
+    } catch {
+      // The new in-memory run still keeps replay clean when storage is unavailable.
+    }
+  }, [inkPlaybackRun, inkSessionId, sessionId]);
+  const markPlaybackCourse = useCallback((stepId?: string) => {
+    const topic = (stepId
+      ? activeOllTopics.find((candidate) => candidate.stepIds.includes(stepId))
+      : activeOllTopics.find((candidate) =>
+          candidate.stepIds.includes(ollLesson?.currentStepId ?? "")))
+      ?? activeOllTopics.at(-1);
+    if (!topic) return;
+    const courseId = topic.questionId ?? topic.id;
+    setPlaybackCourseTarget((current) => ({
+      courseId,
+      sequence: (current?.sequence ?? 0) + 1,
+    }));
+  }, [activeOllTopics, ollLesson?.currentStepId]);
+  const markPlaybackBeatCourse = useCallback((beatId: string) => {
+    const step = ollLesson?.outline
+      .flatMap((topic) => topic.steps)
+      .find((candidate) => candidate.beats.some((beat) => beat.id === beatId));
+    markPlaybackCourse(step?.id);
+  }, [markPlaybackCourse, ollLesson?.outline]);
   const controlledOllLesson = useMemo(() => {
     if (!ollLesson) return null;
     const claim = () => setPausedLessonSource(null);
     const release = () => setPausedLessonSource(ollOpenSource);
-    const beginFreshInkPlayback = () => {
-      const next = Number.isSafeInteger(inkPlaybackRun + 1)
-        ? inkPlaybackRun + 1
-        : 1;
-      setInkPlaybackRun(next);
-      setInkMergeSourceSessionId(inkSessionId);
-      try {
-        window.localStorage.setItem(
-          inkPlaybackRunStorageKey(sessionId),
-          String(next),
-        );
-        window.localStorage.setItem(
-          inkMergeSourceStorageKey(sessionId),
-          inkSessionId,
-        );
-      } catch {
-        // The new in-memory run still keeps replay clean when storage is unavailable.
-      }
-    };
     return {
       ...ollLesson,
       play: () => {
@@ -681,8 +707,18 @@ export function LearningWorkspace({
       },
       restart: () => {
         claim();
+        const firstStepId = courseReplayStartStep(
+          activeOllTopics,
+          ollLesson.currentStepId,
+        );
+        markPlaybackCourse(firstStepId ?? ollLesson.currentStepId);
         beginFreshInkPlayback();
-        ollLesson.restart();
+        // The Runtime contains every course on this infinite whiteboard.
+        // Replaying from the global cursor would restart the first historical
+        // course. The top-bar replay control instead starts at the first Step
+        // of the course the learner is currently viewing.
+        if (firstStepId) ollLesson.playStep(firstStepId);
+        else ollLesson.restart();
       },
       nextBeat: () => {
         claim();
@@ -690,10 +726,18 @@ export function LearningWorkspace({
       },
       playStep: (stepId: string) => {
         claim();
+        markPlaybackCourse(stepId);
+        if (ollLesson.deliverySettled || ollLesson.completed) {
+          beginFreshInkPlayback();
+        }
         ollLesson.playStep(stepId);
       },
       playBeat: (beatId: string) => {
         claim();
+        markPlaybackBeatCourse(beatId);
+        if (ollLesson.deliverySettled || ollLesson.completed) {
+          beginFreshInkPlayback();
+        }
         ollLesson.playBeat(beatId);
       },
       setVariable: (alias: string, value: number) => {
@@ -714,9 +758,32 @@ export function LearningWorkspace({
         return ollLesson.handleStudentScene3dInput(nodeId, view, event);
       },
     };
-  }, [inkPlaybackRun, inkSessionId, ollLesson, ollOpenSource, sessionId]);
-  const handleInkMergeComplete = useCallback(() => {
-    setInkMergeSourceSessionId(null);
+  }, [
+    beginFreshInkPlayback,
+    activeOllTopics,
+    markPlaybackBeatCourse,
+    markPlaybackCourse,
+    ollLesson,
+    ollOpenSource,
+  ]);
+  const handleInkMergeComplete = useCallback((
+    sourceSessionId: string,
+    targetSessionId: string,
+  ) => {
+    // Opening an older saved whiteboard can start a one-time recovery merge.
+    // If the learner presses Replay before that asynchronous merge finishes,
+    // its completion belongs to the old document and must not reveal student
+    // additions inside the newer replay run.
+    setInkMergeSourceSessionId((currentSourceSessionId) =>
+      isCurrentInkMergeCompletion(
+        sourceSessionId,
+        targetSessionId,
+        currentSourceSessionId,
+        inkDocumentSessionId(sessionId, inkPlaybackRun),
+      ) ? null : currentSourceSessionId);
+  }, [inkPlaybackRun, sessionId]);
+  useEffect(() => {
+    if (inkMergeSourceSessionId !== null) return;
     try {
       window.localStorage.removeItem(inkMergeSourceStorageKey(sessionId));
       window.localStorage.setItem(
@@ -726,7 +793,7 @@ export function LearningWorkspace({
     } catch {
       // The in-memory state is sufficient for this page load.
     }
-  }, [inkPlaybackRun, sessionId]);
+  }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
   const [sendError, setSendError] = useState<string | null>(null);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
@@ -1412,6 +1479,31 @@ export function LearningWorkspace({
     });
   }, []);
 
+  const deleteSelectionSources = useCallback((sourceIds: string[]) => {
+    const ids = new Set(sourceIds);
+    if (ids.size === 0) return;
+    const matchingTurnIds = Object.values(loadedSelectionArtifacts)
+      .filter((artifact) => ids.has(artifact.source.source_id))
+      .map((artifact) => artifact.turn_id);
+    setSelectionState((current) => {
+      if (!current) return current;
+      const next = removeSelectionSources(current, ids, matchingTurnIds);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      return next;
+    });
+    setWhiteboardQuestions((current) => current.filter((question) =>
+      question.origin !== "selection"
+      || !question.source
+      || !ids.has(question.source.sourceId)));
+    setComposerBoardReferences((current) => current.filter((reference) =>
+      !ids.has(reference.snapshot.source_id)));
+    const pendingVoice = pendingVoiceSelectionRef.current;
+    if (pendingVoice && ids.has(pendingVoice.snapshot.source_id)) {
+      pendingVoiceSelectionRef.current = null;
+    }
+  }, [loadedSelectionArtifacts]);
+
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
       unlockAudio();
@@ -1833,6 +1925,7 @@ export function LearningWorkspace({
             ? whiteboardQuestions.filter((question) => question.origin !== "selection")
             : whiteboardQuestions}
           courseRegions={courseRegions}
+          playbackCourseTarget={playbackCourseTarget}
           onPlaceQuestion={placeWhiteboardQuestion}
           onUpdateCourseRegion={updateCourseRegion}
           onInkActivity={onWhiteboardActivity}
@@ -1851,6 +1944,7 @@ export function LearningWorkspace({
             : undefined}
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}
+          onDeleteSelectionSources={deleteSelectionSources}
           onRetryDegradedVisual={retryDegradedVisual}
         />
       </main>

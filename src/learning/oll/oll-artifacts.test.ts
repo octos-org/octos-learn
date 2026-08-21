@@ -6,6 +6,7 @@ import {
   collectPersistedOllLessonArtifacts,
   collectOllLessonArtifacts,
   composeOllClassroomEvents,
+  courseReplayStartStep,
   isOllLessonArtifact,
   loadOllLessonArtifact,
   mergeOllLessonArtifacts,
@@ -250,6 +251,9 @@ describe("OLL lesson artifacts", () => {
         id: first[0]?.board?.region_id,
         title: first[0]?.lesson?.title,
         stepIds: [first[1]?.step?.id],
+        nodeIds: first[1]?.step?.beats.flatMap((beat) =>
+          Object.values(beat.stage).flatMap((actions) =>
+            actions.flatMap((action) => action.node?.id ?? []))) ?? [],
         variableAliases: [],
         taskAliases: [],
       },
@@ -257,10 +261,22 @@ describe("OLL lesson artifacts", () => {
         id: second[0]?.board?.region_id,
         title: second[0]?.lesson?.title,
         stepIds: [second[1]?.step?.id],
+        nodeIds: second[1]?.step?.beats.flatMap((beat) =>
+          Object.values(beat.stage).flatMap((actions) =>
+            actions.flatMap((action) => action.node?.id ?? []))) ?? [],
         variableAliases: [],
         taskAliases: [],
       },
     ]);
+    const topics = buildOllLessonTopics([first, second]);
+    expect(courseReplayStartStep(
+      topics,
+      second[1]?.step?.id,
+    )).toBe(second[1]?.step?.id);
+    expect(courseReplayStartStep(
+      topics,
+      first[1]?.step?.id,
+    )).toBe(first[1]?.step?.id);
     const createdRegions = classroom.slice(1).map((event) =>
       event.step?.beats
         .flatMap((beat) => Object.values(beat.stage).flat())

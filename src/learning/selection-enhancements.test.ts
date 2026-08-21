@@ -12,6 +12,7 @@ import {
   buildSelectionEnhancementTurnContext,
   loadSelectionEnhancementState,
   parseSelectionClassificationMetadata,
+  removeSelectionSources,
   saveSelectionEnhancementState,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
@@ -41,6 +42,7 @@ async function source(): Promise<InkSelectionSnapshot> {
       { x: 20, y: 90 },
     ],
   };
+  const componentIds = ["stroke:source-1"];
   return {
     format: INK_SELECTION_FORMAT,
     format_version: INK_SELECTION_FORMAT_VERSION,
@@ -50,15 +52,44 @@ async function source(): Promise<InkSelectionSnapshot> {
     created_at: "2026-08-14T10:00:00.000Z",
     bounds: { x: 20, y: 30, width: 100, height: 60 },
     region,
+    component_ids: componentIds,
     checksum: {
       algorithm: "sha-256",
-      value: await inkSvgChecksum(JSON.stringify({ svg, region })),
+      value: await inkSvgChecksum(JSON.stringify({
+        svg,
+        region,
+        component_ids: componentIds,
+      })),
     },
     svg,
   };
 }
 
 describe("selection enhancement persistence", () => {
+  it("removes erased selection sources and hides every linked result", async () => {
+    const selection = await source();
+    const state = {
+      profile: "octos.selection-enhancement-state" as const,
+      version: "0.1" as const,
+      session_id: "selection-source-removal",
+      sources: [selection],
+      hidden_enhancement_turn_ids: ["already-hidden"],
+    };
+    expect(removeSelectionSources(
+      state,
+      [selection.source_id],
+      ["explanation-turn", "plot-turn"],
+    )).toEqual({
+      ...state,
+      sources: [],
+      hidden_enhancement_turn_ids: [
+        "already-hidden",
+        "explanation-turn",
+        "plot-turn",
+      ],
+    });
+  });
+
   it("builds a bounded selection-classification action and validates its metadata", async () => {
     const selection = await source();
     const argumentsValue = buildSelectionClassificationActionArguments({
@@ -260,6 +291,7 @@ describe("selection enhancement persistence", () => {
           { x: 20, y: 90 },
         ],
       },
+      component_ids: ["stroke:matching-source"],
       checksum: artifact.source.checksum,
       svg: "<svg />",
     } satisfies InkSelectionSnapshot;

@@ -257,13 +257,32 @@ export function SelectionEnhancementLayer({
     ...selectionQuestions.map((question) => question.source!.sourceId),
     ...(loading ? [loading.sourceId] : []),
   ]);
-  const layoutItems: Array<LayoutItem & { left: number; top: number }> = [];
+  const sourceGroups = new Map<string, Set<string>>();
   for (const sourceId of sourceIds) {
+    const source = sourceById.get(sourceId);
+    // A fresh rectangle/lasso capture receives a new source_id even when it
+    // contains the same immutable strokes. Version 3 snapshots carry their
+    // stable component IDs; older snapshots fall back to their captured SVG.
+    // The gesture region is deliberately excluded so drawing a slightly
+    // different rectangle around the same writing does not restart the card
+    // stack at the same coordinates.
+    const sourceIdentity = source?.component_ids?.length
+      ? [...source.component_ids].sort().join("\u0000")
+      : source?.svg;
+    const groupKey = source
+      ? `${source.document_id}\u0000${sourceIdentity}`
+      : `source-id\u0000${sourceId}`;
+    const group = sourceGroups.get(groupKey) ?? new Set<string>();
+    group.add(sourceId);
+    sourceGroups.set(groupKey, group);
+  }
+  const layoutItems: Array<LayoutItem & { left: number; top: number }> = [];
+  for (const groupedSourceIds of sourceGroups.values()) {
     const sourceQuestions = selectionQuestions
-      .filter((question) => question.source?.sourceId === sourceId)
+      .filter((question) => groupedSourceIds.has(question.source!.sourceId))
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     const sourceArtifacts = artifacts
-      .filter((artifact) => artifact.source.source_id === sourceId)
+      .filter((artifact) => groupedSourceIds.has(artifact.source.source_id))
       .sort((left, right) => left.created_at.localeCompare(right.created_at));
     const artifactByTurnId = new Map(sourceArtifacts.map((artifact) => [
       artifact.turn_id,
@@ -287,7 +306,11 @@ export function SelectionEnhancementLayer({
           question,
         });
       }
-      if (loading?.sourceId === sourceId && loading.turnId === question.id) {
+      if (
+        loading
+        && groupedSourceIds.has(loading.sourceId)
+        && loading.turnId === question.id
+      ) {
         ordered.push({
           kind: "loading",
           key: `loading:${loading.turnId}`,
@@ -304,7 +327,8 @@ export function SelectionEnhancementLayer({
       });
     }
     if (
-      loading?.sourceId === sourceId
+      loading
+      && groupedSourceIds.has(loading.sourceId)
       && !ordered.some((item) => item.kind === "loading")
     ) {
       ordered.push({
@@ -313,7 +337,8 @@ export function SelectionEnhancementLayer({
         loading,
       });
     }
-    const fallbackBounds = sourceById.get(sourceId)?.bounds
+    const fallbackBounds = [...groupedSourceIds]
+      .flatMap((sourceId) => sourceById.get(sourceId)?.bounds ?? [])[0]
       ?? sourceQuestions[0]?.source?.bounds
       ?? sourceArtifacts[0]?.source.bounds
       ?? loading?.bounds;

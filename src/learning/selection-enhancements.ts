@@ -929,6 +929,27 @@ export function hideSelectionEnhancement(
   };
 }
 
+export function removeSelectionSources(
+  state: SelectionEnhancementState,
+  sourceIds: Iterable<string>,
+  matchingTurnIds: Iterable<string> = [],
+): SelectionEnhancementState {
+  const ids = new Set(sourceIds);
+  if (ids.size === 0) return state;
+  const sources = state.sources.filter((source) => !ids.has(source.source_id));
+  if (sources.length === state.sources.length) return state;
+  return {
+    ...state,
+    sources,
+    hidden_enhancement_turn_ids: [
+      ...new Set([
+        ...state.hidden_enhancement_turn_ids,
+        ...matchingTurnIds,
+      ]),
+    ],
+  };
+}
+
 export function isSelectionEnhancementArtifact(
   file: { filename?: string; path?: string },
 ): boolean {

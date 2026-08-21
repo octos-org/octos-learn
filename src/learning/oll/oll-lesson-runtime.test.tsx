@@ -24,7 +24,10 @@ import {
   INK_SELECTION_FORMAT_VERSION,
   type InkSelectionSnapshot,
 } from "octos-lesson-language/ink-runtime";
-import { InfiniteBoardView } from "octos-lesson-language/web-runtime";
+import {
+  InfiniteBoardView,
+  type StudentTaskSnapshot,
+} from "octos-lesson-language/web-runtime";
 import { OllLessonBoard } from "./oll-lesson-runtime";
 import { WHITEBOARD_QUESTION_CARD_WIDTH } from "../whiteboard-question-card";
 import { createCourseRegion } from "../course-regions";
@@ -219,15 +222,33 @@ function PendingQuestionFocusProbe({ showLoading = true }: { showLoading?: boole
   );
 }
 
-function CompletedCourseFocusProbe({ restored = false }: { restored?: boolean }) {
+function CompletedCourseFocusProbe({
+  restored = false,
+  legacyNodeMetadata = false,
+  taskAppearsAtEnd = false,
+  completesAtEnd = false,
+  onUpdateCourseRegion,
+}: {
+  restored?: boolean;
+  legacyNodeMetadata?: boolean;
+  taskAppearsAtEnd?: boolean;
+  completesAtEnd?: boolean;
+  onUpdateCourseRegion?: ComponentProps<typeof OllLessonBoard>["onUpdateCourseRegion"];
+}) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "completed-course-focus-runtime-test",
     startAtEnd: true,
   });
   const [settled, setSettled] = useState(false);
+  const [taskAvailable, setTaskAvailable] = useState(false);
+  const [playbackCourseTarget, setPlaybackCourseTarget] = useState<{
+    courseId: string;
+    sequence: number;
+  } | null>(null);
+  const [lateTeachingFocus, setLateTeachingFocus] = useState(false);
   const [, updateHostUi] = useState(0);
-  if (!runtime || runtime.outline.length === 0) return null;
+  if (!runtime || !runtime.board || runtime.outline.length === 0) return null;
   const oldRegion = createCourseRegion(
     "completed-course-focus",
     "old-course",
@@ -242,31 +263,100 @@ function CompletedCourseFocusProbe({ restored = false }: { restored?: boolean })
     { width: 1_180, height: 820 },
     "2026-08-17T00:01:00.000Z",
   );
+  // Placement bounds grow monotonically so later courses can avoid occupied
+  // space. Simulate a stale/corrupted footprint that spans the old course:
+  // the completion camera must use currently rendered course nodes instead.
+  currentRegion.bounds = { x: 100, y: 120, width: 3_480, height: 880 };
+  const currentNodeIds = Object.keys(runtime.board.nodes);
+  const firstCurrentNode = Object.values(runtime.board.nodes)[0]!;
+  const lessonNodes = Object.fromEntries(Object.entries(runtime.board.nodes).map(
+    ([nodeId, node]) => [nodeId, {
+      ...node,
+      region_id: legacyNodeMetadata ? "__legacy__" : runtime.outline[0]!.id,
+    }],
+  ));
+  if (legacyNodeMetadata) {
+    lessonNodes["old-course-node"] = {
+      ...structuredClone(firstCurrentNode),
+      id: "old-course-node",
+      region_id: "__legacy__",
+      placement: {
+        relation: "new_region",
+        region_role: "lesson-origin",
+      },
+    };
+  }
+  const studentTask = {
+    task_id: "current-course-task",
+    status: "not_started",
+    hints_revealed: 0,
+    attempts: [],
+    available: true,
+    prompt: "完成当前课程的动手操作",
+    hints: [],
+  } satisfies StudentTaskSnapshot;
   return (
     <div style={{ width: 1200, height: 800 }}>
-      <button type="button" onClick={() => setSettled(true)}>
+      <button type="button" onClick={() => {
+        if (taskAppearsAtEnd) setTaskAvailable(true);
+        setSettled(true);
+      }}>
         结束当前课程
+      </button>
+      <button type="button" onClick={() => {
+        setPlaybackCourseTarget({ courseId: "current-course", sequence: 1 });
+        setSettled(true);
+      }}>
+        从目录重播当前课程
       </button>
       <button type="button" onClick={() => updateHostUi((value) => value + 1)}>
         更新结束界面
       </button>
+      <button type="button" onClick={() => setLateTeachingFocus(true)}>
+        模拟结束后晚到的板书操作
+      </button>
       <OllLessonBoard
         runtime={{
           ...runtime,
-          completed: restored,
-          waiting: !restored,
+          board: {
+            ...runtime.board,
+            nodes: lessonNodes,
+          },
+          completed: restored || (completesAtEnd && settled),
+          waiting: !(restored || (completesAtEnd && settled)),
           deliverySettled: settled,
+          currentOperation: lateTeachingFocus ? {
+            operation_id: "late-teaching-focus",
+            type: "action.apply",
+            lesson_id: runtime.currentOperation?.lesson_id
+              ?? "lesson-unit-circle-sine-001",
+            event_index: runtime.currentOperation?.event_index ?? 0,
+            action: {
+              action_id: "late-teaching-focus",
+              op: "board.emphasize",
+              target: { node_id: "old-course-node" },
+              focus: { targets: ["old-course-node"], intent: "detail" },
+            },
+          } : runtime.currentOperation,
+          studentTasks: taskAvailable ? [studentTask] : [],
           outline: [{
             id: "old-topic",
             title: "旧课程",
             steps: [],
             questionId: "old-course",
+            ...(legacyNodeMetadata ? { nodeIds: ["old-course-node"] } : {}),
           }, {
             ...runtime.outline[0]!,
             questionId: "current-course",
+            nodeIds: currentNodeIds,
+            ...(taskAppearsAtEnd
+              ? { taskAliases: [studentTask.task_id] }
+              : {}),
           }],
         }}
         courseRegions={[oldRegion, currentRegion]}
+        playbackCourseTarget={playbackCourseTarget}
+        onUpdateCourseRegion={onUpdateCourseRegion}
       />
     </div>
   );
@@ -303,6 +393,31 @@ function SelectionInkRuntimeProbe({
         inkSessionId="learn-selection-1"
         onClassifyInkSelection={onClassify}
         onAskInkSelection={onAsk}
+      />
+    </div>
+  );
+}
+
+function SelectionSourceLifecycleProbe({
+  source,
+  onDeleteSources,
+}: {
+  source: InkSelectionSnapshot;
+  onDeleteSources: (sourceIds: string[]) => void;
+}) {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-selection-source-lifecycle-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard
+        runtime={runtime}
+        inkSessionId="selection-source-lifecycle"
+        selectionSources={[source]}
+        onDeleteSelectionSources={onDeleteSources}
       />
     </div>
   );
@@ -846,7 +961,7 @@ describe("OLL lesson Runtime integration", () => {
       y: 160,
       width: 654,
       height: 194,
-    }));
+    }, { exclusive: true, framing: "content" }));
     expect(focusWorldRect).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "更新旁边界面" }));
@@ -863,7 +978,7 @@ describe("OLL lesson Runtime integration", () => {
       y: 160,
       width: 654,
       height: 220,
-    }));
+    }, { exclusive: true, framing: "content" }));
   });
 
   it("ends inside the current course region instead of fitting every course", async () => {
@@ -875,8 +990,13 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    expect(focusWorldRect.mock.calls[0]?.[1]).toEqual({
+      exclusive: true,
+      framing: "course",
+    });
     const bounds = focusWorldRect.mock.calls[0]?.[0];
-    expect(bounds).toMatchObject({ x: 2_400, y: 180 });
+    expect(bounds!.x).toBeGreaterThan(2_000);
+    expect(bounds!.y).toBeGreaterThanOrEqual(180);
     expect(bounds!.width).toBeLessThan(2_000);
 
     fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
@@ -884,16 +1004,145 @@ describe("OLL lesson Runtime integration", () => {
     expect(focusWorldRect).toHaveBeenCalledTimes(1);
   });
 
-  it("does not move a restored completed course when delivery state hydrates", async () => {
+  it("reserves the final course viewport before placing the next course", async () => {
+    const focusedViewport = {
+      x: 1_760,
+      y: -320,
+      width: 4_140,
+      height: 2_245,
+    };
+    vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect")
+      .mockReturnValue(focusedViewport);
+    const onUpdateCourseRegion = vi.fn();
+    render(<CompletedCourseFocusProbe
+      onUpdateCourseRegion={onUpdateCourseRegion}
+    />);
+
+    await act(async () => undefined);
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+
+    await waitFor(() => expect(onUpdateCourseRegion).toHaveBeenCalledWith(
+      "current-course",
+      { bounds: focusedViewport },
+    ));
+  });
+
+  it("uses one course-end camera request when an after-lesson task appears", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe taskAppearsAtEnd />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+
+    expect(await screen.findByTestId("oll-student-tasks")).toBeTruthy();
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    const bounds = focusWorldRect.mock.calls[0]?.[0];
+    expect(bounds!.x).toBeGreaterThan(2_000);
+    expect(bounds!.width).toBeLessThan(2_000);
+
+    // The task-availability effect runs at the same boundary. It must not
+    // schedule a second, later camera move that overwrites the course target.
+    await act(async () => undefined);
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not run restore focus after naturally completing the same course", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe completesAtEnd />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
+    await act(async () => undefined);
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the completed-course camera when a later OLL operation requests another focus", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    const world = document.querySelector<HTMLElement>(
+      "[data-oll-board-runtime-world]",
+    )!;
+    const completedCourseTransform = world.style.transform;
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "模拟结束后晚到的板书操作",
+    }));
+    await act(async () => undefined);
+
+    expect(world.style.transform).toBe(completedCourseTransform);
+  });
+
+  it("uses Step-owned nodes when older cards share legacy region metadata", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    const bounds = focusWorldRect.mock.calls[0]?.[0];
+    const currentNodes = Array.from(document.querySelectorAll<HTMLElement>(
+      ".board-node[data-id]:not([data-id='old-course-node'])",
+    ));
+    const currentLeft = Math.min(...currentNodes.map((node) =>
+      Number.parseFloat(node.style.left)));
+    const currentRight = Math.max(...currentNodes.map((node) =>
+      Number.parseFloat(node.style.left) + Number.parseFloat(node.style.width)));
+    expect(bounds!.x).toBe(currentLeft);
+    expect(bounds!.width).toBe(currentRight - currentLeft);
+  });
+
+  it("focuses the explicitly replayed course instead of the whole restored board", async () => {
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+
+    await act(async () => undefined);
+    focusWorldRect.mockClear();
+    fireEvent.click(screen.getByRole("button", {
+      name: "从目录重播当前课程",
+    }));
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+    const bounds = focusWorldRect.mock.calls[0]?.[0];
+    const currentNodes = Array.from(document.querySelectorAll<HTMLElement>(
+      ".board-node[data-id]:not([data-id='old-course-node'])",
+    ));
+    const currentLeft = Math.min(...currentNodes.map((node) =>
+      Number.parseFloat(node.style.left)));
+    const currentRight = Math.max(...currentNodes.map((node) =>
+      Number.parseFloat(node.style.left) + Number.parseFloat(node.style.width)));
+    expect(bounds!.x).toBe(currentLeft);
+    expect(bounds!.width).toBe(currentRight - currentLeft);
+  });
+
+  it("restores a completed multi-course board to its last course once", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
     render(<CompletedCourseFocusProbe restored />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
+
+    const bounds = focusWorldRect.mock.calls[0]?.[0];
+    expect(bounds!.x).toBeGreaterThan(2_000);
+    expect(bounds!.width).toBeLessThan(2_000);
+
+    fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
     await act(async () => undefined);
 
-    expect(focusWorldRect).not.toHaveBeenCalled();
+    expect(focusWorldRect).toHaveBeenCalledTimes(1);
   });
 
   it("keeps a newly anchored composer question away from restored student ink", async () => {
@@ -1078,6 +1327,7 @@ describe("OLL lesson Runtime integration", () => {
           { x: -10_000, y: 10_000 },
         ],
       },
+      component_ids: ["stroke:selection-ui-1"],
       checksum: { algorithm: "sha-256", value: "a".repeat(64) },
       svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
     };
@@ -1218,6 +1468,81 @@ describe("OLL lesson Runtime integration", () => {
       expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
     });
     expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
+  });
+
+  it("reports the exact selection source after its ink is erased", async () => {
+    const listeners = new Set<(state: InkRuntimeState) => void>();
+    let sourcePresent = true;
+    let state: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 1,
+      selected_count: 0,
+      selection_input: "mouse",
+      selection_revision: 0,
+      document_version: 3,
+      saved: true,
+    };
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-erased-1",
+      document_id: "learning-session:selection-source-lifecycle:student-ink",
+      document_version: 3,
+      created_at: "2026-08-20T10:00:00.000Z",
+      bounds: { x: 20, y: 30, width: 100, height: 60 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 20, y: 30 },
+          { x: 120, y: 30 },
+          { x: 120, y: 90 },
+          { x: 20, y: 90 },
+        ],
+      },
+      component_ids: ["stroke:erased-1"],
+      checksum: { algorithm: "sha-256", value: "e".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    const ink = {
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn(),
+      selectAll: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      hasSelectionSource: vi.fn(() => sourcePresent),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    const onDeleteSources = vi.fn();
+    mountInkRuntimeMock.mockReturnValue(ink);
+
+    render(
+      <SelectionSourceLifecycleProbe
+        source={source}
+        onDeleteSources={onDeleteSources}
+      />,
+    );
+    await waitFor(() => expect(ink.hasSelectionSource).toHaveBeenCalledWith(source));
+    expect(onDeleteSources).not.toHaveBeenCalled();
+
+    act(() => {
+      sourcePresent = false;
+      state = {
+        ...state,
+        component_count: 0,
+        document_version: 4,
+      };
+      listeners.forEach((listener) => listener(state));
+    });
+
+    await waitFor(() => expect(onDeleteSources).toHaveBeenCalledWith([
+      source.source_id,
+    ]));
   });
 
   it("reports a failed restore and disposes the read-only ink layer", async () => {
