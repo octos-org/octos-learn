@@ -385,8 +385,8 @@ describe("LearningWorkspace", () => {
     });
     expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "擦除笔迹" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "矩形框选笔迹" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "自由圈选笔迹" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "框选多个笔迹" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
   });
 
   it("speaks a completed plain reply without covering the board with a notice", async () => {
