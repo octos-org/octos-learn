@@ -4,7 +4,6 @@ import {
   Eraser,
   Hand,
   Lightbulb,
-  LassoSelect,
   MessageCircle,
   Mic,
   Palette,
@@ -2020,22 +2019,11 @@ export function LearningWhiteboard({
               setSelectionMode("rectangle");
               setInkMode("select");
             }}
-            aria-label="矩形框选笔迹"
+            aria-label="框选多个笔迹"
             aria-pressed={inkState.mode === "select" && inkState.selection_mode === "rectangle"}
+            title="拖动矩形，可一次选中一条或多条笔迹"
           >
             <BoxSelect size={17} />
-          </button>
-          <button
-            type="button"
-            className={inkState.mode === "select" && inkState.selection_mode === "lasso" ? "is-active" : ""}
-            onClick={() => {
-              setSelectionMode("lasso");
-              setInkMode("select");
-            }}
-            aria-label="自由圈选笔迹"
-            aria-pressed={inkState.mode === "select" && inkState.selection_mode === "lasso"}
-          >
-            <LassoSelect size={17} />
           </button>
           {inkColorPaletteAvailable ? (
             <>

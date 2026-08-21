@@ -1263,7 +1263,8 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "隐藏调色板" }));
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
 
-    fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
+    expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
     fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
@@ -1379,7 +1380,7 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "矩形框选笔迹" }));
+    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
     await waitFor(() => expect(onClassify).toHaveBeenCalledWith({
       snapshot,
       boardContext: expect.objectContaining({
