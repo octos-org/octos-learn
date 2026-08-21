@@ -1198,6 +1198,7 @@ describe("OLL lesson Runtime integration", () => {
       saved: true,
     };
     const ink = {
+      options: { style: { penColor: "#176b62" } },
       ready: Promise.resolve(),
       subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
         listeners.add(listener);
@@ -1212,7 +1213,13 @@ describe("OLL lesson Runtime integration", () => {
         state = { ...state, selected_count: 2, selection_color: "#176b62" };
         listeners.forEach((listener) => listener(state));
       }),
-      setPenColor: vi.fn((color: string) => {
+      setPenColor: vi.fn(function (
+        this: { options: { style: { penColor: string } } },
+        color: string,
+      ) {
+        // The real Runtime method reads `this.options.style`. Keeping that
+        // contract in the mock catches accidentally detached method calls.
+        this.options.style.penColor = color;
         state = { ...state, pen_color: color };
         listeners.forEach((listener) => listener(state));
       }),
@@ -1247,8 +1254,12 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
     expect(screen.getByRole("button", { name: "隐藏调色板" })).toBeTruthy();
+    expect(screen.queryByText("笔色")).toBeNull();
+    expect(screen.queryByLabelText("自定义笔色")).toBeNull();
+    expect(document.querySelector('input[type="color"]')).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "笔色：蓝色" }));
     expect(ink.setPenColor).toHaveBeenCalledWith("#1769aa");
+    expect(ink.options.style.penColor).toBe("#1769aa");
     fireEvent.click(screen.getByRole("button", { name: "隐藏调色板" }));
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
 

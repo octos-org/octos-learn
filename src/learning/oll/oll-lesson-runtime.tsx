@@ -301,7 +301,6 @@ function InkColorControl({
 }) {
   return (
     <div className="learning-ink-colors" aria-label={label}>
-      <span>{label}</span>
       {inkColorPresets.map((preset) => (
         <button
           key={preset.color}
@@ -313,15 +312,6 @@ function InkColorControl({
           aria-pressed={value.toLowerCase() === preset.color}
         />
       ))}
-      <label className="learning-ink-custom-color" title={`自定义${label}`}>
-        <Palette size={15} />
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          aria-label={`自定义${label}`}
-        />
-      </label>
     </div>
   );
 }
@@ -964,9 +954,11 @@ export function LearningWhiteboard({
 
   const setPenColor = useCallback((color: string) => {
     try {
-      const setColor = inkRuntimeRef.current?.setPenColor;
-      if (!setColor) throw new Error("当前 Ink Runtime 不支持笔迹颜色");
-      setColor(color);
+      const ink = inkRuntimeRef.current;
+      if (!ink?.setPenColor) {
+        throw new Error("当前 Ink Runtime 不支持笔迹颜色");
+      }
+      ink.setPenColor(color);
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
