@@ -136,6 +136,7 @@ function QuestionPlacementProbe({
   showLoading = pending,
   withCourseRegion = false,
   withTallNarrative = false,
+  recovered = false,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
   inkSessionId?: string;
@@ -143,6 +144,7 @@ function QuestionPlacementProbe({
   showLoading?: boolean;
   withCourseRegion?: boolean;
   withTallNarrative?: boolean;
+  recovered?: boolean;
 }) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
@@ -193,7 +195,9 @@ function QuestionPlacementProbe({
           origin: "composer",
           createdAt: "2026-08-17T00:00:00.000Z",
           status: pending ? "pending" : "answered",
-          ...(pending ? {} : { position: { x: 2_400, y: 160 } }),
+          ...(pending || recovered
+            ? {}
+            : { position: { x: 2_400, y: 160 } }),
         }]}
         courseRegions={withCourseRegion ? [createCourseRegion(
           "question-placement",
@@ -1022,6 +1026,23 @@ describe("OLL lesson Runtime integration", () => {
       + Number.parseFloat(node.style.width)));
     const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
     expect(position.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+  });
+
+  it("restores a missing historical question beside its existing course", async () => {
+    const onPlaceQuestion = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={onPlaceQuestion}
+        recovered
+      />,
+    );
+
+    await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+    const lessonLeft = Math.min(...Array.from(
+      document.querySelectorAll<HTMLElement>(".board-node"),
+    ).map((node) => Number.parseFloat(node.style.left)));
+    const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
+    expect(position.x + 294).toBe(lessonLeft);
   });
 
   it("focuses a new question and loading block once without reclaiming the camera", async () => {

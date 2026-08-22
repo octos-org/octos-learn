@@ -884,6 +884,21 @@ export function LearningWhiteboard({
       });
       const reserved: WhiteboardRect[] = [];
       unplaced.forEach((question) => {
+        const existingTopic = question.status === "answered"
+          ? runtime?.outline.find((topic) => topic.questionId === question.id)
+          : undefined;
+        const existingRuntimeBounds = existingTopic
+          ? runtimeRegionBounds[runtimeRegionIdForTopic(existingTopic.id)]
+            ?? (runtime?.outline.length === 1
+              ? runtimeRegionBounds.__legacy__
+              : undefined)
+          : undefined;
+        // A restored voice/direct lesson can predate persisted question cards.
+        // Wait until its already-rendered course footprint is measurable, then
+        // put the recovered question immediately to its left. The resulting
+        // logical region keeps the existing lesson in place instead of
+        // misclassifying it as a brand-new course after the old board.
+        if (existingTopic && !existingRuntimeBounds) return;
         const preferred = {
           x: center.x - 180 - WHITEBOARD_QUESTION_CARD_WIDTH - 24,
           y: center.y - 105,
@@ -897,14 +912,19 @@ export function LearningWhiteboard({
         const startsNewTopic = occupied.length > 0
           || courseRegions.some((region) => region.questionId !== question.id)
           || Boolean(runtime?.board && Object.keys(runtime.board.nodes).length > 0);
-        const position = startsNewTopic
-          ? findNewTopicWhiteboardPosition({
-              width,
-              height,
-              occupied,
-              gutter: COURSE_REGION_GUTTER,
-            })
-          : findOpenWhiteboardPosition({ preferred, width, height, occupied });
+        const position = existingRuntimeBounds
+          ? {
+              x: existingRuntimeBounds.x - COURSE_RUNTIME_OFFSET_X,
+              y: existingRuntimeBounds.y,
+            }
+          : startsNewTopic
+            ? findNewTopicWhiteboardPosition({
+                width,
+                height,
+                occupied,
+                gutter: COURSE_REGION_GUTTER,
+              })
+            : findOpenWhiteboardPosition({ preferred, width, height, occupied });
         reserved.push({ ...position, width, height });
         onPlaceQuestion(question.id, position);
       });
@@ -919,6 +939,9 @@ export function LearningWhiteboard({
     occupiedRectsForQuestion,
     onPlaceQuestion,
     runtime?.board,
+    runtime?.outline,
+    runtimeRegionBounds,
+    runtimeRegionIdForTopic,
   ]);
 
   useEffect(() => {
