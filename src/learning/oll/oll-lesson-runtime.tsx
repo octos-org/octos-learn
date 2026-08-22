@@ -503,6 +503,7 @@ export function LearningWhiteboard({
     selectionRevision: 0,
   });
   const missingInkSelectionSourcesRef = useRef(new Set<string>());
+  const selectionSourceCheckVersionRef = useRef<number | null>(null);
   const selectionClassificationRequestRef = useRef(0);
   const unsubscribeInkRef = useRef<(() => void) | null>(null);
   const sliderOperationsRef = useRef(new Map<string, {
@@ -956,8 +957,19 @@ export function LearningWhiteboard({
       !ink
       || !inkAvailable
       || typeof ink.hasSelectionSource !== "function"
-      || selectionSources.length === 0
     ) return;
+    // Restoring js-draw from its saved SVG can recreate internal component
+    // identities. The initial readiness transition therefore cannot prove
+    // that the learner erased a source. Only check after a subsequent ink
+    // document change observed during this mounted page.
+    const lastCheckedVersion = selectionSourceCheckVersionRef.current;
+    if (lastCheckedVersion === null) {
+      selectionSourceCheckVersionRef.current = inkState.document_version;
+      return;
+    }
+    if (inkState.document_version <= lastCheckedVersion) return;
+    selectionSourceCheckVersionRef.current = inkState.document_version;
+    if (selectionSources.length === 0) return;
     const currentSourceIds = new Set(selectionSources.map((source) => source.source_id));
     for (const sourceId of missingInkSelectionSourcesRef.current) {
       if (!currentSourceIds.has(sourceId)) {
@@ -1529,6 +1541,7 @@ export function LearningWhiteboard({
       selectedCount: 0,
       selectionRevision: 0,
     };
+    selectionSourceCheckVersionRef.current = null;
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;

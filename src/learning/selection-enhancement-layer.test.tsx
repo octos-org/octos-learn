@@ -63,6 +63,30 @@ function dispatchPointerEvent(
 }
 
 describe("SelectionEnhancementLayer", () => {
+  it("renders LaTeX throughout generated auxiliary card text", () => {
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[{
+          ...artifact,
+          response: {
+            kind: "explanation",
+            title: "函数 $y=x^2$",
+            text: "当 $x=2$ 时，得到 $y=4$。",
+            items: ["横坐标是 $x$。"],
+          },
+        }]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const card = container.querySelector(".learning-selection-enhancement");
+    expect(card?.querySelectorAll(".katex").length).toBeGreaterThanOrEqual(4);
+    expect(card?.textContent).not.toContain("$");
+    expect(card?.textContent).toContain("函数");
+  });
+
   it("keeps an invalidated result visible and labels the missing board target", () => {
     const { container } = render(
       <SelectionEnhancementLayer
@@ -241,6 +265,39 @@ describe("SelectionEnhancementLayer", () => {
     const cards = [...container.querySelectorAll<HTMLElement>(
       ".learning-selection-enhancement",
     )];
+    expect(cards).toHaveLength(2);
+    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
+      Number.parseFloat(cards[0]!.style.left)
+        + Number.parseFloat(cards[0]!.style.width) + 24,
+    );
+  });
+
+  it("keeps restored cards apart when their local source snapshots are missing", () => {
+    const restoredArtifact: SelectionEnhancementArtifact = {
+      ...artifact,
+      turn_id: "turn-restored-second",
+      created_at: "2026-08-15T10:01:00.000Z",
+      source: {
+        ...artifact.source,
+        source_id: "source-restored-second",
+        document_version: 2,
+        bounds: { x: 8, y: 20, width: 124, height: 70 },
+        checksum: { algorithm: "sha-256", value: "b".repeat(64) },
+      },
+    };
+
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact, restoredArtifact]}
+        sources={[]}
+        currentDocumentVersion={2}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+
     expect(cards).toHaveLength(2);
     expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
       Number.parseFloat(cards[0]!.style.left)

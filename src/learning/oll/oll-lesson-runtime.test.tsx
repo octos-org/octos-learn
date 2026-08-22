@@ -1580,9 +1580,9 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
   });
 
-  it("reports the exact selection source after its ink is erased", async () => {
+  it("waits for a post-restore ink change before reporting an erased source", async () => {
     const listeners = new Set<(state: InkRuntimeState) => void>();
-    let sourcePresent = true;
+    const sourcePresent = false;
     let state: InkRuntimeState = {
       mode: "navigate",
       component_count: 1,
@@ -1637,11 +1637,13 @@ describe("OLL lesson Runtime integration", () => {
         onDeleteSources={onDeleteSources}
       />,
     );
-    await waitFor(() => expect(ink.hasSelectionSource).toHaveBeenCalledWith(source));
+    await act(async () => {
+      await ink.ready;
+    });
+    expect(ink.hasSelectionSource).not.toHaveBeenCalled();
     expect(onDeleteSources).not.toHaveBeenCalled();
 
     act(() => {
-      sourcePresent = false;
       state = {
         ...state,
         component_count: 0,
