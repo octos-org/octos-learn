@@ -522,7 +522,10 @@ export function LearningWhiteboard({
   useEffect(() => {
     if (!playbackCourseTarget) return;
     coursesObservedInProgressRef.current.add(playbackCourseTarget.courseId);
-    cameraControllerRef.current?.markCourseActive(playbackCourseTarget.courseId);
+    cameraControllerRef.current?.markCourseActive(
+      playbackCourseTarget.courseId,
+      true,
+    );
     mountedRef.current?.view.releaseHostCamera();
   }, [playbackCourseTarget]);
   const variableControls = runtime ? variableControlModels(runtime.board) : [];
@@ -1686,15 +1689,33 @@ export function LearningWhiteboard({
     const reachedCourseEnd = runtime.deliverySettled
       && (runtime.waiting || runtime.completed);
     if (!reachedCourseEnd) {
+      const currentStepBelongsToCourse = Boolean(
+        runtime.currentStepId
+        && topic.steps.some((step) => step.id === runtime.currentStepId),
+      );
+      // Appending a new course briefly publishes its outline before the
+      // player has entered that course's first Step. Keep the camera on the
+      // new question/loading area during that hand-off; otherwise the last
+      // focus operation from the previous course becomes visible for one
+      // frame before the new course starts.
+      if (!currentStepBelongsToCourse) return;
       // A restored lesson can briefly report delivery as unsettled while the
       // host hydrates it. Wait for hydration before choosing the last course;
       // otherwise the initial partial board can produce the wrong footprint.
       if (!runtime.completed) {
-        if (!coursesObservedInProgressRef.current.has(courseId)) {
+        const cameraController = cameraControllerRef.current;
+        if (cameraController && !cameraController.canActivateCourse(courseId)) {
+          return;
+        }
+        const enteredLoadingCourse = cameraController
+          ?.markCourseActive(courseId) ?? false;
+        if (
+          enteredLoadingCourse
+          || !coursesObservedInProgressRef.current.has(courseId)
+        ) {
           mountedRef.current?.view.releaseHostCamera();
         }
         coursesObservedInProgressRef.current.add(courseId);
-        cameraControllerRef.current?.markCourseActive(courseId);
       }
       return;
     }

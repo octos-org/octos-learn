@@ -70,6 +70,40 @@ describe("WhiteboardCameraController", () => {
     );
   });
 
+  it("keeps an older course from reclaiming the camera after new-course loading was shown", () => {
+    const probe = controllerProbe();
+
+    probe.controller.request(request("question-loading", "loading-2", "course-2"));
+    probe.flush();
+    expect(
+      probe.controller.request(request("course-end", "late-end-1", "course-1")),
+    ).toBe(false);
+    probe.flush();
+
+    expect(probe.apply).toHaveBeenCalledTimes(1);
+    expect(probe.apply).toHaveBeenCalledWith(
+      request("question-loading", "loading-2", "course-2"),
+    );
+    expect(probe.decisions).toContainEqual(expect.objectContaining({
+      action: "ignored",
+      reason: "inactive-course",
+      request: expect.objectContaining({ key: "late-end-1" }),
+    }));
+  });
+
+  it("reports when the loaded course actually enters playback", () => {
+    const probe = controllerProbe();
+
+    probe.controller.request(request("question-loading", "loading-2", "course-2"));
+    probe.flush();
+
+    expect(probe.controller.canActivateCourse("course-1")).toBe(false);
+    expect(probe.controller.canActivateCourse("course-2")).toBe(true);
+    expect(probe.controller.markCourseActive("course-1")).toBe(false);
+    expect(probe.controller.markCourseActive("course-2")).toBe(true);
+    expect(probe.controller.markCourseActive("course-2")).toBe(false);
+  });
+
   it("allows task framing again after replay makes the course active", () => {
     const probe = controllerProbe();
 
