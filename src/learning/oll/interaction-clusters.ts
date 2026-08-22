@@ -81,15 +81,7 @@ export function buildInteractionClusters(
         .filter((node) => (node.region_id ?? "__legacy__") === topic.id)
         .map((node) => node.id))
     .filter((nodeId) => Boolean(board.nodes[nodeId]));
-  if (topicNodeIds.length === 0) {
-    return [{
-      id: `${topic.id}:interaction:pending`,
-      anchorNodeId: "",
-      nodeIds: [],
-      variableAliases: [...controlAliases],
-      taskIds: [...taskIds],
-    }];
-  }
+  if (topicNodeIds.length === 0) return [];
 
   const allowedVariables = new Set(topic.variableAliases ?? controlAliases);
   const activeControls = new Set(
@@ -183,15 +175,33 @@ export function buildInteractionClusters(
   const unassignedControls = controlAliases.filter((alias) =>
     !clusters.some((cluster) => cluster.variableAliases.includes(alias)));
   const unassignedTasks = taskIds.filter((taskId) => !assignedTaskIds.has(taskId));
-  if (unassignedControls.length > 0 || unassignedTasks.length > 0) {
+  const fallbackControls = topic.nodeIds?.length ? [] : unassignedControls;
+  const fallbackTasks = unassignedTasks.filter((taskId) =>
+    !topic.taskTargets?.[taskId]);
+  // Modern lesson outlines identify their future nodes up front. Do not pin a
+  // control to an unrelated card while its actual bound visual has not been
+  // delivered yet. Untargeted legacy tasks may still share an existing visual
+  // interaction cluster instead of becoming a separate floating card.
+  if (fallbackControls.length > 0 || fallbackTasks.length > 0) {
     const visualFallback = [...topicNodeIds].reverse().find((nodeId) =>
       visualNodeKinds.has(String(board.nodes[nodeId]?.kind ?? "")));
+    if (!visualFallback) return clusters;
+    const existing = clusters.find((cluster) =>
+      cluster.anchorNodeId === visualFallback);
+    if (existing) {
+      existing.variableAliases = [...new Set([
+        ...existing.variableAliases,
+        ...fallbackControls,
+      ])];
+      existing.taskIds = [...new Set([...existing.taskIds, ...fallbackTasks])];
+      return clusters;
+    }
     clusters.push({
       id: `${topic.id}:interaction:${clusters.length + 1}`,
-      anchorNodeId: visualFallback ?? topicNodeIds.at(-1)!,
-      nodeIds: visualFallback ? [visualFallback] : [topicNodeIds.at(-1)!],
-      variableAliases: unassignedControls,
-      taskIds: unassignedTasks,
+      anchorNodeId: visualFallback,
+      nodeIds: [visualFallback],
+      variableAliases: fallbackControls,
+      taskIds: fallbackTasks,
     });
   }
 

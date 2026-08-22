@@ -297,4 +297,87 @@ describe("course reading layout", () => {
       height: 72,
     });
   });
+
+  it("preserves authored relationships within and around a visual group", () => {
+    const board = {
+      ...boardWithNodes({
+        circle: {
+          id: "circle",
+          kind: "geometry",
+          region_id: "course",
+          content: {},
+          placement: { relation: "new_region" },
+        },
+        sinePlot: {
+          id: "sinePlot",
+          kind: "plot",
+          region_id: "course",
+          content: {},
+          placement: {
+            relation: "right_of",
+            anchor: "circle",
+            gap: "normal",
+          },
+        },
+        sideFormula: {
+          id: "sideFormula",
+          kind: "math",
+          region_id: "course",
+          content: { latex: "y=\\sin(\\theta)" },
+          placement: {
+            relation: "right_of",
+            anchor: "visualPair",
+            gap: "normal",
+          },
+        },
+        lowerFormula: {
+          id: "lowerFormula",
+          kind: "math",
+          region_id: "course",
+          content: { latex: "y=\\sin x" },
+          placement: {
+            relation: "below",
+            anchor: "visualPair",
+            align: "center",
+            gap: "normal",
+          },
+        },
+      }),
+      groups: {
+        visualPair: {
+          id: "visualPair",
+          members: ["circle", "sinePlot"],
+        },
+      },
+    } as BoardState;
+    const layout = computeBoardLayout(board, {
+      circle: { width: 380, height: 300 },
+      sinePlot: { width: 340, height: 230 },
+      sideFormula: { width: 360, height: 96 },
+      lowerFormula: { width: 360, height: 96 },
+    }, {
+      regions: {
+        course: {
+          x: 394,
+          y: 90,
+          reservedWidth: 1_300,
+          flow: "reading",
+        },
+      },
+    });
+
+    const circle = layout.nodes.circle!;
+    const sinePlot = layout.nodes.sinePlot!;
+    const visualPair = layout.groups.visualPair!;
+    const sideFormula = layout.nodes.sideFormula!;
+    const lowerFormula = layout.nodes.lowerFormula!;
+
+    expect(sinePlot.x).toBe(circle.x + circle.width + 54);
+    expect(sinePlot.y + sinePlot.height / 2)
+      .toBe(circle.y + circle.height / 2);
+    expect(sideFormula.x).toBe(visualPair.x + visualPair.width + 54);
+    expect(lowerFormula.x + lowerFormula.width / 2)
+      .toBe(visualPair.x + visualPair.width / 2);
+    expect(lowerFormula.y).toBe(visualPair.y + visualPair.height + 54);
+  });
 });

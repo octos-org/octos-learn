@@ -17,18 +17,44 @@ function board(nodes: SemanticBoardState["nodes"]): SemanticBoardState {
 }
 
 describe("interaction clusters", () => {
-  it("keeps controls visible while their visual has not arrived yet", () => {
+  it("keeps controls hidden while their visual has not arrived yet", () => {
     expect(buildInteractionClusters(board({}), {
       id: "course",
       nodeIds: ["future-plot"],
       variableAliases: ["n"],
-    }, ["n"], [])).toEqual([{
-      id: "course:interaction:pending",
-      anchorNodeId: "",
-      nodeIds: [],
+    }, ["n"], [])).toEqual([]);
+  });
+
+  it("does not attach controls to an unrelated card before the visual arrives", () => {
+    expect(buildInteractionClusters(board({
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course",
+        content: { latex: "(1+1/n)^n" },
+      },
+    }), {
+      id: "course",
+      nodeIds: ["formula", "future-plot"],
       variableAliases: ["n"],
-      taskIds: [],
-    }]);
+    }, ["n"], [])).toEqual([]);
+  });
+
+  it("keeps a targeted task hidden until its visual arrives", () => {
+    expect(buildInteractionClusters(board({
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course",
+        content: { latex: "x^2" },
+      },
+    }), {
+      id: "course",
+      nodeIds: ["formula", "future-scene"],
+      taskTargets: {
+        inspect: { variableAliases: [], nodeIds: ["future-scene"] },
+      },
+    }, [], ["inspect"])).toEqual([]);
   });
 
   it("joins controls and tasks through visual variable bindings", () => {
@@ -132,6 +158,26 @@ describe("interaction clusters", () => {
       nodeIds: ["scene"],
       variableAliases: [],
       taskIds: ["inspect", "resetView"],
+    }]);
+  });
+
+  it("keeps an untargeted legacy task in the existing control cluster", () => {
+    expect(buildInteractionClusters(board({
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "course",
+        content: { curves: [{ expression: "a*x" }] },
+      },
+    }), {
+      id: "course",
+      variableAliases: ["a"],
+    }, ["a"], ["try-it"])).toEqual([{
+      id: "course:interaction:1",
+      anchorNodeId: "plot",
+      nodeIds: ["plot"],
+      variableAliases: ["a"],
+      taskIds: ["try-it"],
     }]);
   });
 });

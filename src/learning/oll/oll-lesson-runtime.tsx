@@ -575,8 +575,9 @@ export function LearningWhiteboard({
     mountedRef.current?.view.releaseHostCamera();
   }, [playbackCourseTarget]);
   const variableControls = runtime ? variableControlModels(runtime.board) : [];
+  const studentTasks = runtime?.studentTasks ?? [];
   const availableStudentTasks = runtime
-    ? runtime.studentTasks.filter((task) => task.available)
+    ? studentTasks.filter((task) => task.available)
     : [];
   const degradedVisuals = runtime ? degradedVisualStatuses(runtime.board) : [];
   const quickSelectionTools = selectionClassificationStatus === "ready"
@@ -623,7 +624,7 @@ export function LearningWhiteboard({
     const unassignedVariableAliases = variableControls
       .map((control) => control.alias)
       .filter((alias) => !explicitVariableAliases.has(alias));
-    const unassignedTaskAliases = availableStudentTasks
+    const unassignedTaskAliases = studentTasks
       .map((task) => task.task_id)
       .filter((alias) => !explicitTaskAliases.has(alias));
     return topics.map((topic, index) => ({
@@ -646,6 +647,8 @@ export function LearningWhiteboard({
   const interactionPlans = presentationTopics.flatMap((topic) => {
     const topicControls = variableControls.filter((control) =>
       topic.variableAliases?.includes(control.alias));
+    const reservedTopicTasks = studentTasks.filter((task) =>
+      topic.taskAliases?.includes(task.task_id));
     const topicTasks = availableStudentTasks.filter((task) =>
       topic.taskAliases?.includes(task.task_id));
     const clusters = buildInteractionClusters(
@@ -655,7 +658,7 @@ export function LearningWhiteboard({
         id: runtimeRegionIdForTopic(topic.id),
       },
       topicControls.map((control) => control.alias),
-      topicTasks.map((task) => task.task_id),
+      reservedTopicTasks.map((task) => task.task_id),
     );
     return clusters.map((cluster) => {
       const controls = topicControls.filter((control) =>
@@ -663,13 +666,16 @@ export function LearningWhiteboard({
       const tasks = topicTasks.filter((task) =>
         cluster.taskIds.includes(task.task_id));
       const controlsWidth = controls.length > 0 ? 360 : 0;
-      const tasksWidth = tasks.length > 0 ? 330 : 0;
-      const estimatedWidth = controlsWidth + tasksWidth
-        + (controlsWidth > 0 && tasksWidth > 0 ? 28 : 0);
-      const estimatedHeight = Math.max(
-        controls.length > 0 ? Math.max(96, 58 + controls.length * 34) : 0,
-        tasks.length > 0 ? 60 + tasks.length * 220 : 0,
-      );
+      const tasksWidth = cluster.taskIds.length > 0 ? 330 : 0;
+      const controlsHeight = controls.length > 0
+        ? Math.max(96, 58 + controls.length * 34)
+        : 0;
+      const tasksHeight = cluster.taskIds.length > 0
+        ? 60 + cluster.taskIds.length * 220
+        : 0;
+      const estimatedWidth = Math.max(controlsWidth, tasksWidth);
+      const estimatedHeight = controlsHeight + tasksHeight
+        + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0);
       const measured = interactionMeasuredSizes[cluster.id];
       return {
         id: cluster.id,
@@ -677,6 +683,7 @@ export function LearningWhiteboard({
         anchorNodeId: cluster.anchorNodeId,
         controls,
         tasks,
+        controlsHeight,
         width: measured?.width ?? estimatedWidth,
         height: measured?.height ?? estimatedHeight,
       };
@@ -770,8 +777,9 @@ export function LearningWhiteboard({
         y: interactionPosition.y,
       },
       tasksPosition: {
-        x: interactionPosition.x + (controls.length > 0 ? 388 : 0),
-        y: interactionPosition.y,
+        x: interactionPosition.x,
+        y: interactionPosition.y
+          + (controls.length > 0 ? plan.controlsHeight + 28 : 0),
       },
     }];
   });
@@ -795,14 +803,12 @@ export function LearningWhiteboard({
           ? controlsElement.offsetWidth || 360
           : 0;
         const tasksWidth = tasksElement ? tasksElement.offsetWidth || 330 : 0;
+        const controlsHeight = controlsElement?.offsetHeight || 0;
+        const tasksHeight = tasksElement?.offsetHeight || 0;
         return [[presentation.id, {
-          width: controlsWidth + tasksWidth
-            + (controlsWidth > 0 && tasksWidth > 0 ? 28 : 0),
-          height: Math.max(
-            controlsElement?.offsetHeight || 0,
-            tasksElement?.offsetHeight || 0,
-            presentation.height,
-          ),
+          width: Math.max(controlsWidth, tasksWidth, presentation.width),
+          height: Math.max(presentation.height, controlsHeight + tasksHeight
+            + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0)),
         }]];
       }));
       setInteractionMeasuredSizes((current) =>

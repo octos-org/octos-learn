@@ -292,7 +292,7 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
      const endpointId = (endpoint) => {
          if (typeof endpoint === "string")
              return endpoint;
-@@ -119,25 +151,89 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -119,25 +151,93 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              groupRect(groupId);
          return [
              ...Object.values(nodes),
@@ -312,8 +312,12 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
 +            ? node.region_id
 +            : "__legacy__";
 +        const constraint = options.regions?.[regionId];
++        const authoredVisualRelationship = Boolean(anchor) && (Boolean(placement.anchor && state.groups[placement.anchor])
++            || (VISUAL_LANE_KINDS.has(String(node.kind ?? "text"))
++                && Boolean(placement.anchor && VISUAL_LANE_KINDS.has(String(state.nodes[placement.anchor]?.kind ?? "")))));
 +        const readingFlow = constraint?.flow === "reading"
-+            && !["inside", "overlay"].includes(placement.relation);
++            && !["inside", "overlay"].includes(placement.relation)
++            && !authoredVisualRelationship;
 +        let flowLane;
 +        let flowRegion;
          let x = 100;
@@ -388,7 +392,7 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
                  const occupied = collisionRects(node.id);
                  const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
                  const right = occupied.length || reservedRightEdges.length
-@@ -202,9 +298,9 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -202,9 +302,9 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              x = anchor.x + 24;
              y = anchor.y + 24;
          }
@@ -400,7 +404,7 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
              x = anchor.x + anchor.width - size.width;
          let candidate = { x, y, ...size };
          if (!["inside", "overlay"].includes(placement.relation)) {
-@@ -215,15 +311,45 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -215,15 +315,45 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              }
          }
          nodes[node.id] = candidate;
@@ -448,7 +452,7 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
              rect.x += shiftX;
              rect.y += shiftY;
          }
-@@ -268,12 +394,20 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -268,12 +398,20 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
          rects.push(rect);
          regionRects.set(regionId, rects);
      }

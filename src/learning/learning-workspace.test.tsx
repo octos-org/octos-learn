@@ -799,9 +799,15 @@ describe("LearningWorkspace", () => {
         }),
       );
     });
-    const initialNarration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)?.[0];
+    expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
+    const pendingNarration = narrationTtsMock.useOllNarrationTts.mock.calls
+      .at(-1)?.[0];
+    act(() => {
+      pendingNarration?.onPlaybackStart?.(pendingNarration.narrationId!);
+    });
 
     const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    const initialNarration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)?.[0];
     fireEvent.pointerDown(slider, { pointerType: "mouse" });
     fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
     fireEvent.pointerUp(slider, { pointerType: "mouse" });

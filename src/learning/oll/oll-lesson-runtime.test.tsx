@@ -959,17 +959,16 @@ describe("OLL lesson Runtime integration", () => {
     expect(onPlaceQuestion).not.toHaveBeenCalled();
     const controls = await screen.findByTestId("oll-variable-controls");
     const controlTop = Number.parseFloat(controls.style.top);
-    const visualBottom = Math.max(...Array.from(
-      document.querySelectorAll<HTMLElement>(
-        ".board-node:is([data-kind='geometry'], [data-kind='scene3d'], [data-kind='plot'], [data-kind='image'], [data-kind='diagram'])",
-      ),
-    ).map((node) => Number.parseFloat(node.style.top)
-      + Number.parseFloat(node.style.height)));
+    const anchorVisual = document.querySelector<HTMLElement>(
+      "[data-id='lesson-unit-circle-sine-001:node:sine-plot']",
+    )!;
+    const anchorBottom = Number.parseFloat(anchorVisual.style.top)
+      + Number.parseFloat(anchorVisual.style.height);
     const lessonBottom = Math.max(...Array.from(
       document.querySelectorAll<HTMLElement>(".board-node"),
     ).map((node) => Number.parseFloat(node.style.top)
       + Number.parseFloat(node.style.height)));
-    expect(controlTop).toBeGreaterThanOrEqual(visualBottom + 42);
+    expect(controlTop).toBeGreaterThanOrEqual(anchorBottom + 42);
     expect(controlTop).toBeLessThan(lessonBottom + 42);
   });
 
@@ -1839,10 +1838,18 @@ describe("OLL lesson Runtime integration", () => {
   it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
     const duringLesson = render(<StudentTaskRuntimeProbe startAtEnd={false} />);
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+    expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
     duringLesson.unmount();
 
     const first = render(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    expect(screen.getByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
+    const controlsCard = screen.getByTestId("oll-variable-controls");
+    const tasksCard = screen.getByTestId("oll-student-tasks");
+    expect(tasksCard.style.left).toBe(controlsCard.style.left);
+    expect(Number.parseFloat(tasksCard.style.top)).toBeGreaterThan(
+      Number.parseFloat(controlsCard.style.top),
+    );
     expect(screen.getByText("轮到你操作了，完成后这里会立即反馈。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "给我提示" })).toBeNull();
 
