@@ -272,6 +272,39 @@ describe("SelectionEnhancementLayer", () => {
     );
   });
 
+  it("keeps restored cards apart when their local source snapshots are missing", () => {
+    const restoredArtifact: SelectionEnhancementArtifact = {
+      ...artifact,
+      turn_id: "turn-restored-second",
+      created_at: "2026-08-15T10:01:00.000Z",
+      source: {
+        ...artifact.source,
+        source_id: "source-restored-second",
+        document_version: 2,
+        bounds: { x: 8, y: 20, width: 124, height: 70 },
+        checksum: { algorithm: "sha-256", value: "b".repeat(64) },
+      },
+    };
+
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact, restoredArtifact]}
+        sources={[]}
+        currentDocumentVersion={2}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+
+    expect(cards).toHaveLength(2);
+    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
+      Number.parseFloat(cards[0]!.style.left)
+        + Number.parseFloat(cards[0]!.style.width) + 24,
+    );
+  });
+
   it("renders a selection question and its matching result as one collapsible card", () => {
     const question: WhiteboardQuestionRecord = {
       id: artifact.turn_id,

@@ -29,6 +29,7 @@ const CARD_WIDTH = 330;
 const CARD_FONT_SIZE = 13;
 const SCENE3D_HEIGHT = 270;
 const CARD_GAP = 24;
+const RESTORED_SOURCE_OVERLAP_THRESHOLD = .8;
 
 export interface SelectionEnhancementLoading {
   turnId: string;
@@ -39,6 +40,28 @@ export interface SelectionEnhancementLoading {
 
 function clampedCardScale(value: number): number {
   return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
+}
+
+function boundsOverlapRatio(
+  left: InkSelectionSnapshot["bounds"],
+  right: InkSelectionSnapshot["bounds"],
+): number {
+  const intersectionWidth = Math.max(
+    0,
+    Math.min(left.x + left.width, right.x + right.width)
+      - Math.max(left.x, right.x),
+  );
+  const intersectionHeight = Math.max(
+    0,
+    Math.min(left.y + left.height, right.y + right.height)
+      - Math.max(left.y, right.y),
+  );
+  const smallerArea = Math.min(
+    left.width * left.height,
+    right.width * right.height,
+  );
+  if (smallerArea <= 0) return 0;
+  return intersectionWidth * intersectionHeight / smallerArea;
 }
 
 function SelectionQuestionSection({
@@ -277,7 +300,21 @@ export function SelectionEnhancementLayer({
     ...selectionQuestions.map((question) => question.source!.sourceId),
     ...(loading ? [loading.sourceId] : []),
   ]);
-  const sourceGroups = new Map<string, Set<string>>();
+  const artifactSourceById = new Map(artifacts.map((candidate) => [
+    candidate.source.source_id,
+    candidate.source,
+  ]));
+  const questionSourceById = new Map(selectionQuestions.map((question) => [
+    question.source!.sourceId,
+    question.source!.bounds,
+  ]));
+  const sourceGroups: Array<{
+    sourceIds: Set<string>;
+    identity?: string;
+    documentId?: string;
+    bounds: InkSelectionSnapshot["bounds"][];
+    hasLocalSnapshot: boolean;
+  }> = [];
   for (const sourceId of sourceIds) {
     const source = sourceById.get(sourceId);
     // A fresh rectangle/lasso capture receives a new source_id even when it
@@ -289,15 +326,49 @@ export function SelectionEnhancementLayer({
     const sourceIdentity = source?.component_ids?.length
       ? [...source.component_ids].sort().join("\u0000")
       : source?.svg;
-    const groupKey = source
+    const artifactSource = artifactSourceById.get(sourceId);
+    const documentId = source?.document_id ?? artifactSource?.document_id;
+    const bounds = source?.bounds
+      ?? questionSourceById.get(sourceId)
+      ?? artifactSource?.bounds;
+    const identity = source
       ? `${source.document_id}\u0000${sourceIdentity}`
-      : `source-id\u0000${sourceId}`;
-    const group = sourceGroups.get(groupKey) ?? new Set<string>();
-    group.add(sourceId);
-    sourceGroups.set(groupKey, group);
+      : undefined;
+    const group = sourceGroups.find((candidate) => {
+      if (identity && candidate.identity) return identity === candidate.identity;
+      // Durable artifacts intentionally remain visible even when their
+      // browser-local snapshots are unavailable after refresh. In that case,
+      // recover their former stack from the document id and substantially
+      // overlapping persisted bounds instead of treating every source_id as a
+      // new lane at the same coordinates.
+      if (source && candidate.hasLocalSnapshot) return false;
+      if (
+        documentId
+        && candidate.documentId
+        && documentId !== candidate.documentId
+      ) return false;
+      return Boolean(bounds && candidate.bounds.some((candidateBounds) =>
+        boundsOverlapRatio(bounds, candidateBounds)
+          >= RESTORED_SOURCE_OVERLAP_THRESHOLD));
+    });
+    if (group) {
+      group.sourceIds.add(sourceId);
+      if (bounds) group.bounds.push(bounds);
+      group.hasLocalSnapshot ||= Boolean(source);
+      group.identity ??= identity;
+      group.documentId ??= documentId;
+    } else {
+      sourceGroups.push({
+        sourceIds: new Set([sourceId]),
+        identity,
+        documentId,
+        bounds: bounds ? [bounds] : [],
+        hasLocalSnapshot: Boolean(source),
+      });
+    }
   }
   const layoutItems: Array<LayoutItem & { left: number; top: number }> = [];
-  for (const groupedSourceIds of sourceGroups.values()) {
+  for (const { sourceIds: groupedSourceIds } of sourceGroups) {
     const sourceQuestions = selectionQuestions
       .filter((question) => groupedSourceIds.has(question.source!.sourceId))
       .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
