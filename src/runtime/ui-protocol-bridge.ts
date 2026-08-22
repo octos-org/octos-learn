@@ -168,6 +168,8 @@ export const METHODS = {
   SESSION_GOAL_CLEAR: "session/goal/clear",
   TURN_START: "turn/start",
   TURN_INTERRUPT: "turn/interrupt",
+  VOICE_ADMIT: "voice/admit",
+  VOICE_COMMIT_ADMISSION: "voice/commit_admission",
   APPROVAL_RESPOND: "approval/respond",
   USER_QUESTION_RESPOND: "user_question/respond",
   DIFF_PREVIEW_GET: "diff/preview/get",
@@ -300,6 +302,7 @@ export const METHODS = {
  */
 export const UI_PROTOCOL_FEATURES = [
   ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+  "voice.asr_admission.v1",
   "approval.typed.v1",
   "user_question.v1",
   "pane.snapshots.v1",
@@ -486,6 +489,10 @@ export interface UiProtocolBridge {
    *  reconnect (codex web#268 r2 P2: the aux singleton must not be
    *  replaced mid-recovery, which would reject the queued RPCs). */
   isTerminal(): boolean;
+
+  /** Whether the current socket negotiated the optional two-phase voice
+   * admission contract. False means callers must use legacy `turn/start`. */
+  supportsVoiceAdmission(): boolean;
 
   sendTurn(
     turn_id: string,
@@ -1855,6 +1862,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
    * handshake are buffered so a server that replays immediately cannot race
    * the acknowledgement. */
   private projectionV2Active = false;
+  private voiceAdmissionActive = false;
   /** The transport-level capability decision for this particular socket.
    * During a reconnect the existing canonical projection remains rendered,
    * but no inbound frame may enter the ledger until this socket's new
@@ -2247,6 +2255,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     const t = opts.topic?.trim();
     this.topicScope = t && t.length > 0 ? t : null;
     this.projectionV2Active = false;
+    this.voiceAdmissionActive = false;
     this.projectionHandshake = "pending";
     this.pendingProjectionFrames = [];
     this.emittedProjectionTerminals.clear();
@@ -2322,9 +2331,14 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     return this.stopped || this.reconnectAbandoned || this.state === "closed";
   }
 
+  supportsVoiceAdmission(): boolean {
+    return this.voiceAdmissionActive;
+  }
+
   async stop(): Promise<void> {
     if (this.stopped) return;
     this.stopped = true;
+    this.voiceAdmissionActive = false;
     this.cancelReconnectTimer();
     this.rejectStartup(
       new BridgeStartupError("stopped", "UI Protocol startup was cancelled."),
@@ -2947,6 +2961,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
 
   private async onWsOpen(): Promise<void> {
     if (this.stopped) return;
+    this.voiceAdmissionActive = false;
     this.lastInboundAt = this.cfg.now();
     if (!this.sessionId) {
       // Sessionless (auxiliary) mode: there is no session to open — the
@@ -3016,6 +3031,9 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
           ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
         );
       this.setProjectionV2Active(negotiatedProjectionV2);
+      this.voiceAdmissionActive =
+        Array.isArray(supportedFeatures) &&
+        supportedFeatures.includes("voice.asr_admission.v1");
       if (!negotiatedProjectionV2) {
         this.failStartup(
           new BridgeStartupError(

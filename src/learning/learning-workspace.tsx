@@ -655,6 +655,7 @@ export function LearningWorkspace({
     (playbackMode === "live" || ollLesson.playing) &&
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
+  const [textTurnPending, setTextTurnPending] = useState(false);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -718,7 +719,8 @@ export function LearningWorkspace({
       externalSpeechActive:
         voiceEnabled &&
         ((lessonOwnsNarration && narrationAudioEnabled) ||
-          narrationSpeechActive),
+          narrationSpeechActive ||
+          textTurnPending),
       onTurnComplete: handleTurnComplete,
     }),
     [
@@ -729,6 +731,7 @@ export function LearningWorkspace({
       narrationSpeechActive,
       ollLesson,
       sessionId,
+      textTurnPending,
       voiceEnabled,
     ],
   );
@@ -882,7 +885,6 @@ export function LearningWorkspace({
   const [sendError, setSendError] = useState<string | null>(null);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
-  const [textTurnPending, setTextTurnPending] = useState(false);
   const [selectionEnhancementPending, setSelectionEnhancementPending] =
     useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
@@ -2163,6 +2165,11 @@ export function LearningWorkspace({
         }
         cameraActive={conv.cameraActive}
         voiceDisabled={!voiceEnabled || !runtime.ready}
+        sendDisabled={
+          textTurnPending ||
+          (voiceEnabled &&
+            (conv.state === "thinking" || conv.state === "speaking"))
+        }
         onMic={handleTeacherClick}
         onToggleCamera={conv.toggleCamera}
         onSendText={sendText}

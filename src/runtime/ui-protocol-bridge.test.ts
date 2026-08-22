@@ -1180,6 +1180,7 @@ describe("connection lifecycle", () => {
       },
     });
     await start;
+    expect(bridge.supportsVoiceAdmission()).toBe(false);
     expect(ProjectionStore.getEnvelopes(key)).toHaveLength(1);
 
     ws.triggerMessage({
@@ -1219,6 +1220,35 @@ describe("connection lifecycle", () => {
         outcome: "errored",
       }),
     );
+    await bridge.stop();
+  });
+
+  it("records voice admission only when session/open acknowledges it", async () => {
+    const bridge = createUiProtocolBridge(makeBridgeOpts());
+    const start = bridge.start({ sessionId: "sess-voice-admission" });
+    await Promise.resolve();
+    const ws = lastInstance();
+    ws.triggerOpen();
+    await Promise.resolve();
+    const open = findRequest(ws, METHODS.SESSION_OPEN);
+    ws.triggerMessage({
+      jsonrpc: "2.0",
+      id: open.id,
+      result: {
+        opened: {
+          session_id: "sess-voice-admission",
+          capabilities: {
+            supported_features: [
+              ProjectionStore.PROJECTION_ENVELOPE_V2_FEATURE,
+              "voice.asr_admission.v1",
+            ],
+          },
+        },
+      },
+    });
+
+    await start;
+    expect(bridge.supportsVoiceAdmission()).toBe(true);
     await bridge.stop();
   });
 

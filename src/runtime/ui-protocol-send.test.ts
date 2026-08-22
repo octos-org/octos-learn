@@ -5,7 +5,9 @@ import {
 } from "@/store/thinking-store";
 import {
   __resetSendQueueForTest,
+  admitVoiceMessage,
   buildTurnStartExtras,
+  commitAdmittedVoiceMessage,
   interruptActiveTurn,
   sendMessage,
 } from "./ui-protocol-send";
@@ -16,6 +18,7 @@ import {
 import * as UiProtocolRuntime from "./ui-protocol-runtime";
 import {
   BridgeStartupError,
+  BridgeTimeoutError,
   type ProjectionTerminalEvent,
   type UiProtocolBridge,
 } from "./ui-protocol-bridge";
@@ -27,6 +30,7 @@ type TerminalHandler = Parameters<UiProtocolBridge["onProjectionTerminal"]>[0];
 type TestBridge = UiProtocolBridge & {
   sendTurn: ReturnType<typeof vi.fn>;
   interruptTurn: ReturnType<typeof vi.fn>;
+  callMethod: ReturnType<typeof vi.fn>;
   onProjectionTerminal: ReturnType<typeof vi.fn>;
   onTurnLifecycle: ReturnType<typeof vi.fn>;
   onConnectionStateChange: ReturnType<typeof vi.fn>;
@@ -38,6 +42,7 @@ function makeBridge(): TestBridge {
     stop: vi.fn(async () => {}),
     sendTurn: vi.fn(async () => ({ accepted: true })),
     interruptTurn: vi.fn(async () => ({ interrupted: true })),
+    callMethod: vi.fn(),
     onProjectionTerminal: vi.fn(() => () => {}),
     onTurnLifecycle: vi.fn(() => () => {}),
     onConnectionStateChange: vi.fn(() => () => {}),
@@ -321,5 +326,148 @@ describe("sendMessage canonical settlement", () => {
     expect(bridge.sendTurn).toHaveBeenCalledTimes(2);
 
     terminals[1]?.(terminal("cmid-replacement"));
+  });
+});
+
+describe("voice ASR admission", () => {
+  it("returns no_speech without starting a turn", async () => {
+    const bridge = makeBridge();
+    bridge.callMethod.mockResolvedValue({
+      status: "no_speech",
+      turn_id: "voice-1",
+      reject_reasons: ["non_speech_event"],
+    });
+    __setActiveBridgeForTest(SESSION, bridge);
+
+    await expect(
+      admitVoiceMessage({
+        sessionId: SESSION,
+        text: "hidden learn context",
+        media: ["up/utterance.wav", "up/frame.jpg"],
+        clientMessageId: "voice-1",
+      }),
+    ).resolves.toEqual({
+      status: "no_speech",
+      turnId: "voice-1",
+      rejectReasons: ["non_speech_event"],
+    });
+    expect(bridge.callMethod).toHaveBeenCalledWith("voice/admit", {
+      session_id: SESSION,
+      request_id: "voice-1",
+      turn_id: "voice-1",
+      media: [
+        {
+          path: "up/utterance.wav",
+          mime: "application/octet-stream",
+          size_bytes: 0,
+        },
+        {
+          path: "up/frame.jpg",
+          mime: "application/octet-stream",
+          size_bytes: 0,
+        },
+      ],
+    });
+    expect(bridge.sendTurn).not.toHaveBeenCalled();
+  });
+
+  it("commits admitted speech with the old turn and settles on the new terminal", async () => {
+    const bridge = makeBridge();
+    const terminals = captureTerminals(bridge);
+    bridge.callMethod.mockResolvedValue({
+      accepted: true,
+      committed: true,
+      turn_id: "voice-2",
+    });
+    __setActiveBridgeForTest(SESSION, bridge, "learn");
+    const onComplete = vi.fn();
+
+    await expect(
+      commitAdmittedVoiceMessage(
+        {
+          sessionId: SESSION,
+          historyTopic: "learn",
+          text: "[[LEARNING_SESSION]]",
+          media: ["up/utterance.wav", "up/frame.jpg"],
+          clientMessageId: "voice-2",
+          liveVideo: true,
+          onComplete,
+        },
+        "admission-2",
+        "old-turn",
+      ),
+    ).resolves.toMatchObject({ accepted: true, committed: true });
+    expect(bridge.callMethod).toHaveBeenCalledWith(
+      "voice/commit_admission",
+      expect.objectContaining({
+        admission_id: "admission-2",
+        supersedes_turn_id: "old-turn",
+        turn: expect.objectContaining({
+          session_id: SESSION,
+          turn_id: "voice-2",
+          input: [{ kind: "text", text: "[[LEARNING_SESSION]]" }],
+          topic: "learn",
+          live_video: true,
+        }),
+      }),
+    );
+    expect(onComplete).not.toHaveBeenCalled();
+    terminals[0]?.(terminal("voice-2"));
+    expect(onComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries the same admission after a lost commit response", async () => {
+    const bridge = makeBridge();
+    bridge.callMethod
+      .mockRejectedValueOnce(new BridgeTimeoutError("voice/commit_admission", 30_000))
+      .mockResolvedValueOnce({
+        accepted: true,
+        committed: true,
+        idempotent: true,
+        turn_id: "voice-retry",
+      });
+    __setActiveBridgeForTest(SESSION, bridge);
+
+    await expect(
+      commitAdmittedVoiceMessage(
+        {
+          sessionId: SESSION,
+          text: "hello",
+          media: ["up/utterance.wav"],
+          clientMessageId: "voice-retry",
+        },
+        "admission-retry",
+      ),
+    ).resolves.toMatchObject({ accepted: true, idempotent: true });
+    expect(bridge.callMethod).toHaveBeenCalledTimes(2);
+    expect(bridge.callMethod.mock.calls[1]).toEqual(bridge.callMethod.mock.calls[0]);
+  });
+
+  it("rejects a commit response for a different turn", async () => {
+    const bridge = makeBridge();
+    bridge.callMethod.mockResolvedValue({
+      accepted: true,
+      committed: true,
+      turn_id: "different-turn",
+    });
+    __setActiveBridgeForTest(SESSION, bridge);
+    const onError = vi.fn();
+    const onComplete = vi.fn();
+
+    await expect(
+      commitAdmittedVoiceMessage(
+        {
+          sessionId: SESSION,
+          text: "hello",
+          media: ["up/utterance.wav"],
+          clientMessageId: "voice-expected",
+          onError,
+          onComplete,
+        },
+        "admission-mismatch",
+      ),
+    ).rejects.toThrow("rejected this admitted voice turn");
+    expect(onError).toHaveBeenCalledTimes(1);
+    expect(onComplete).toHaveBeenCalledTimes(1);
   });
 });

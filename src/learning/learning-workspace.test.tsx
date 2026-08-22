@@ -844,6 +844,53 @@ describe("LearningWorkspace", () => {
     expect(conversationMock.options?.externalSpeechActive).toBe(true);
   });
 
+  it("suspends voice capture and locks sibling sends while a text turn is pending", async () => {
+    let releaseLessonStart!: () => void;
+    sessionFilesMock.invokeSkillAction.mockImplementationOnce(async () => {
+      await new Promise<void>((resolve) => {
+        releaseLessonStart = resolve;
+      });
+      return {
+        action_id: "learning.lesson.generate",
+        ok: true,
+        results: [],
+        jobs: [],
+      };
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-text-voice-exclusion"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "输入学习问题" });
+    expect(conversationMock.options?.externalSpeechActive).toBe(false);
+
+    fireEvent.change(input, { target: { value: "请讲解单位圆" } });
+    fireEvent.submit(input.closest("form") as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+        "learn-text-voice-exclusion",
+        "learning.lesson.generate",
+        expect.objectContaining({ learner_request: "请讲解单位圆" }),
+      );
+    });
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(conversationMock.options?.externalSpeechActive).toBe(true);
+    expect((input as HTMLInputElement).disabled).toBe(true);
+
+    await act(async () => {
+      releaseLessonStart();
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(conversationMock.options?.externalSpeechActive).toBe(false);
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
+  });
+
   it("feeds the OLL fixture into the real /learn Runtime as incremental events", () => {
     vi.useFakeTimers();
     render(
