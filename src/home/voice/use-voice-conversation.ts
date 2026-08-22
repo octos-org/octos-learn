@@ -34,7 +34,7 @@ export interface VoiceConversation {
   turns: VoiceConversationTurn[];
   error: string | null;
   start: (options?: VoiceConversationStartOptions) => Promise<void>;
-  stop: () => void;
+  stop: (options?: VoiceConversationStopOptions) => void;
   interrupt: () => void;
   /** Whether the camera is on (each spoken turn then attaches a frame). */
   cameraActive: boolean;
@@ -71,6 +71,11 @@ export interface VoiceConversationStartOptions {
   initialAudio?: Blob | null;
   /** Wake audio deliberately excludes the camera frame. */
   includeCamera?: boolean;
+}
+
+export interface VoiceConversationStopOptions {
+  /** Stop microphone/conversation state without turning off the camera. */
+  preserveCamera?: boolean;
 }
 
 export interface VoiceTurnSendContext {
@@ -941,7 +946,7 @@ export function useVoiceConversation(
     sessionId,
   ]);
 
-  const stop = useCallback(() => {
+  const stop = useCallback((stopOptions?: VoiceConversationStopOptions) => {
     // Invalidate any in-flight start() (it re-checks this after each await).
     startGenRef.current++;
     // Supersede any suspended drain loop so it exits without scheduling a
@@ -964,8 +969,10 @@ export function useVoiceConversation(
     setProvisionalTurnIds([]);
     VoiceTranscriptStore.clearScope(sessionId, historyTopic);
     void captureStop();
-    cameraStop();
-    clearSentFrame();
+    if (!stopOptions?.preserveCamera) {
+      cameraStop();
+      clearSentFrame();
+    }
     if (playReplyAudio) releaseAudio();
     stateRef.current = "idle";
     setState("idle");

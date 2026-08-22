@@ -11,7 +11,7 @@
   position: absolute;
   top: 14px;
   right: 14px;
-  left: 72px;
+  left: 116px;
   z-index: 10;
   display: grid;
   grid-template-columns: minmax(180px, 1fr) auto minmax(44px, 1fr);
@@ -58,8 +58,7 @@
   gap: 4px;
 }
 
-.learning-demo-controls > button,
-.learning-exit-button {
+.learning-demo-controls > button {
   display: grid;
   width: 34px;
   height: 34px;
@@ -68,8 +67,7 @@
   color: #665e54;
 }
 
-.learning-demo-controls > button:hover,
-.learning-exit-button:hover {
+.learning-demo-controls > button:hover {
   color: #0f6987;
   background: rgba(17, 106, 137, 0.09);
 }
@@ -405,10 +403,6 @@
   text-align: center;
 }
 
-.learning-exit-button {
-  justify-self: end;
-}
-
 .learning-workspace-actions {
   grid-column: 3;
   display: flex;
@@ -418,8 +412,7 @@
 }
 
 .learning-mode-button,
-.learning-mode-label,
-.learning-camera-calibration-button {
+.learning-mode-label {
   padding: 7px 10px;
   border-radius: 10px;
   color: #507784;
@@ -429,14 +422,15 @@
   letter-spacing: 0.03em;
 }
 
-.learning-camera-calibration-button {
+.learning-mode-button {
   display: flex;
   min-height: 34px;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
 }
 
-.learning-camera-calibration-button span {
+.learning-mode-button span {
   color: inherit;
   font-size: inherit;
   letter-spacing: inherit;
@@ -444,8 +438,7 @@
 }
 
 .learning-mode-button:hover,
-.learning-camera-calibration-button:hover,
-.learning-camera-calibration-button[aria-expanded="true"] {
+.learning-mode-button.is-active {
   color: #0e6987;
   background: rgba(25, 108, 135, 0.14);
 }
@@ -1722,6 +1715,28 @@
   border-radius: 12px;
 }
 
+.learning-camera-frame-settings {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 9px;
+  color: white;
+  background: rgba(24, 35, 38, 0.66);
+  box-shadow: 0 4px 12px rgba(24, 35, 38, 0.18);
+  backdrop-filter: blur(8px);
+}
+
+.learning-camera-frame-settings:hover,
+.learning-camera-frame-settings[aria-expanded="true"] {
+  background: rgba(15, 105, 135, 0.88);
+}
+
 .learning-camera-frame canvas,
 .learning-camera-frame img {
   display: block;
@@ -2397,7 +2412,7 @@
 @media (max-width: 900px) {
   .learning-workspace-topbar {
     grid-template-columns: minmax(0, 1fr) auto auto;
-    left: 72px;
+    left: 116px;
   }
 
   .learning-ink-enable,
@@ -2519,7 +2534,7 @@
 
 @media (max-width: 580px) {
   .learning-workspace-topbar {
-    left: 58px;
+    left: 108px;
     gap: 7px;
     padding-left: 12px;
   }
@@ -2532,13 +2547,13 @@
     display: none;
   }
 
-  .learning-camera-calibration-button {
+  .learning-mode-button {
     width: 36px;
     padding: 7px;
     justify-content: center;
   }
 
-  .learning-camera-calibration-button span {
+  .learning-mode-button span {
     position: absolute;
     width: 1px;
     height: 1px;

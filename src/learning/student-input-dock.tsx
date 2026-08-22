@@ -17,6 +17,7 @@ import type { VoiceState } from "@/home/voice/use-voice-conversation";
 export function StudentInputDock({
   voiceState,
   cameraActive,
+  cameraDisabled,
   voiceDisabled,
   sendDisabled,
   onMic,
@@ -28,6 +29,7 @@ export function StudentInputDock({
 }: {
   voiceState: VoiceState;
   cameraActive: boolean;
+  cameraDisabled?: boolean;
   voiceDisabled?: boolean;
   sendDisabled?: boolean;
   onMic: () => void;
@@ -107,7 +109,7 @@ export function StudentInputDock({
         className={`learning-input-button ${cameraActive ? "is-active" : ""}`}
         onClick={onToggleCamera}
         aria-label={cameraActive ? "关闭摄像头" : "打开摄像头"}
-        disabled={voiceDisabled}
+        disabled={cameraDisabled}
       >
         {cameraActive ? <Camera size={19} /> : <CameraOff size={19} />}
       </button>

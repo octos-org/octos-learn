@@ -32,6 +32,7 @@ const conversationMock = vi.hoisted(() => ({
   stop: vi.fn(),
   startCamera: vi.fn(async () => true),
   stopCamera: vi.fn(),
+  toggleCamera: vi.fn(),
   cameraActive: false,
   cameraStream: null as MediaStream | null,
   lastSentFrameUrl: null as string | null,
@@ -116,7 +117,7 @@ vi.mock("@/home/voice/use-voice-conversation", () => ({
     resetCameraSettings: conversationMock.resetCameraSettings,
     startCamera: conversationMock.startCamera,
     stopCamera: conversationMock.stopCamera,
-    toggleCamera: vi.fn(),
+    toggleCamera: conversationMock.toggleCamera,
     generating: false,
     exiting: false,
     visual: null,
@@ -155,6 +156,7 @@ describe("LearningWorkspace", () => {
     conversationMock.stop.mockClear();
     conversationMock.startCamera.mockClear();
     conversationMock.stopCamera.mockClear();
+    conversationMock.toggleCamera.mockClear();
     conversationMock.cameraActive = false;
     conversationMock.cameraStream = null;
     conversationMock.lastSentFrameUrl = null;
@@ -278,7 +280,7 @@ describe("LearningWorkspace", () => {
     ).toBe("true");
   });
 
-  it("lets text mode request voice and camera without leaving the lesson", async () => {
+  it("lets text mode enable voice without also enabling the camera", async () => {
     const onUseVoiceMode = vi.fn(async () => undefined);
     render(
       <LearningWorkspace
@@ -290,14 +292,15 @@ describe("LearningWorkspace", () => {
     );
 
     await act(async () => {
-      screen.getByRole("button", { name: "启用语音和摄像头" }).click();
+      screen.getByRole("button", { name: "启用语音" }).click();
       await Promise.resolve();
     });
     expect(onUseVoiceMode).toHaveBeenCalledTimes(1);
+    expect(conversationMock.toggleCamera).not.toHaveBeenCalled();
   });
 
-  it("keeps camera calibration available in text mode and releases its temporary preview", async () => {
-    render(
+  it("keeps the camera independent in text mode and opens settings from its preview", async () => {
+    const view = render(
       <LearningWorkspace
         sessionId="learn-camera-settings-in-text-mode"
         voiceEnabled={false}
@@ -305,17 +308,31 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    const adjustButton = screen.getByRole("button", { name: "调整摄像头画面" });
-    expect(adjustButton).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "调整摄像头画面" })).toBeNull();
+    screen.getByRole("button", { name: "启用摄像头" }).click();
+    expect(conversationMock.toggleCamera).toHaveBeenCalledTimes(1);
+
+    conversationMock.cameraActive = true;
+    conversationMock.cameraStream = {
+      getTracks: () => [],
+    } as unknown as MediaStream;
+    view.rerender(
+      <LearningWorkspace
+        sessionId="learn-camera-settings-in-text-mode"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
     await act(async () => {
-      adjustButton.click();
+      screen.getByRole("button", { name: "调整摄像头画面" }).click();
       await Promise.resolve();
     });
 
-    expect(conversationMock.startCamera).toHaveBeenCalledTimes(1);
+    expect(conversationMock.startCamera).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "调整老师看到的画面" })).toBeTruthy();
     screen.getByRole("button", { name: "关闭摄像头画面设置" }).click();
-    expect(conversationMock.stopCamera).toHaveBeenCalledTimes(1);
+    expect(conversationMock.stopCamera).not.toHaveBeenCalled();
   });
 
   it("releases microphone capture when switching from voice to text mode", () => {
@@ -336,7 +353,9 @@ describe("LearningWorkspace", () => {
       />,
     );
 
-    expect(conversationMock.stop).toHaveBeenCalledTimes(1);
+    expect(conversationMock.stop).toHaveBeenCalledWith({
+      preserveCamera: true,
+    });
   });
 
   it("does not project ordinary assistant prose onto the OLL whiteboard", () => {
