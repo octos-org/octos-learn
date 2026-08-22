@@ -943,6 +943,12 @@ describe("OLL lesson Runtime integration", () => {
           y: 160,
           flow: "reading",
           reservedWidth: 886,
+          attachments: expect.arrayContaining([
+            expect.objectContaining({
+              anchorNodeId: "lesson-unit-circle-sine-001:node:sine-plot",
+              width: 360,
+            }),
+          ]),
         },
       });
     });

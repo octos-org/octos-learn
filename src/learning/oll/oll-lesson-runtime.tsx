@@ -65,6 +65,7 @@ import {
 import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
+import { buildInteractionClusters } from "./interaction-clusters";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -527,6 +528,12 @@ export function LearningWhiteboard({
   const [runtimeVisualRegionBounds, setRuntimeVisualRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
+  const [runtimeAttachmentBounds, setRuntimeAttachmentBounds] = useState<
+    Record<string, WhiteboardRect>
+  >({});
+  const [interactionMeasuredSizes, setInteractionMeasuredSizes] = useState<
+    Record<string, { width: number; height: number }>
+  >({});
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
   const [selectionContentKind, setSelectionContentKind] =
@@ -604,23 +611,6 @@ export function LearningWhiteboard({
     ) return "__legacy__";
     return topicId;
   }, [runtime?.board?.nodes, runtime?.outline]);
-  const regionLayoutConstraints = useMemo(() => Object.fromEntries(
-    (runtime?.outline ?? []).flatMap((topic) => {
-      const region = topic.questionId
-        ? courseRegionByQuestion.get(topic.questionId)
-        : undefined;
-      if (!region) return [];
-      return [[runtimeRegionIdForTopic(topic.id), {
-        x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
-        y: region.origin.y,
-        flow: "reading",
-        reservedWidth: Math.max(
-          0,
-          region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
-        ),
-      } satisfies RegionLayoutConstraint]];
-    }),
-  ), [courseRegionByQuestion, runtime?.outline, runtimeRegionIdForTopic]);
   const presentationTopics = (() => {
     const topics = runtime?.outline ?? [];
     if (!runtime || topics.length === 0) return [];
@@ -652,7 +642,83 @@ export function LearningWhiteboard({
           : []),
     }));
   })();
-  const coursePresentations = presentationTopics.flatMap((topic) => {
+
+  const interactionPlans = presentationTopics.flatMap((topic) => {
+    const topicControls = variableControls.filter((control) =>
+      topic.variableAliases?.includes(control.alias));
+    const topicTasks = availableStudentTasks.filter((task) =>
+      topic.taskAliases?.includes(task.task_id));
+    const clusters = buildInteractionClusters(
+      runtime?.board ?? null,
+      {
+        ...topic,
+        id: runtimeRegionIdForTopic(topic.id),
+      },
+      topicControls.map((control) => control.alias),
+      topicTasks.map((task) => task.task_id),
+    );
+    return clusters.map((cluster) => {
+      const controls = topicControls.filter((control) =>
+        cluster.variableAliases.includes(control.alias));
+      const tasks = topicTasks.filter((task) =>
+        cluster.taskIds.includes(task.task_id));
+      const controlsWidth = controls.length > 0 ? 360 : 0;
+      const tasksWidth = tasks.length > 0 ? 330 : 0;
+      const estimatedWidth = controlsWidth + tasksWidth
+        + (controlsWidth > 0 && tasksWidth > 0 ? 28 : 0);
+      const estimatedHeight = Math.max(
+        controls.length > 0 ? Math.max(96, 58 + controls.length * 34) : 0,
+        tasks.length > 0 ? 60 + tasks.length * 220 : 0,
+      );
+      const measured = interactionMeasuredSizes[cluster.id];
+      return {
+        id: cluster.id,
+        topic,
+        anchorNodeId: cluster.anchorNodeId,
+        controls,
+        tasks,
+        width: measured?.width ?? estimatedWidth,
+        height: measured?.height ?? estimatedHeight,
+      };
+    });
+  });
+
+  const regionLayoutConstraints = useMemo(() => Object.fromEntries(
+    (runtime?.outline ?? []).flatMap((topic) => {
+      const region = topic.questionId
+        ? courseRegionByQuestion.get(topic.questionId)
+        : undefined;
+      if (!region) return [];
+      const attachments = interactionPlans
+        .filter((plan) =>
+          plan.topic.id === topic.id && Boolean(plan.anchorNodeId))
+        .map((plan) => ({
+          id: plan.id,
+          anchorNodeId: plan.anchorNodeId,
+          width: plan.width,
+          height: plan.height,
+          gap: 42,
+        }));
+      return [[runtimeRegionIdForTopic(topic.id), {
+        x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
+        y: region.origin.y,
+        flow: "reading",
+        reservedWidth: Math.max(
+          0,
+          region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
+        ),
+        ...(attachments.length > 0 ? { attachments } : {}),
+      } satisfies RegionLayoutConstraint]];
+    }),
+  ), [
+    courseRegionByQuestion,
+    interactionPlans,
+    runtime?.outline,
+    runtimeRegionIdForTopic,
+  ]);
+
+  const coursePresentations = interactionPlans.flatMap((plan) => {
+    const { topic } = plan;
     const region = topic.questionId
       ? courseRegionByQuestion.get(topic.questionId)
       : undefined;
@@ -665,36 +731,85 @@ export function LearningWhiteboard({
       && !boardBounds
       && (courseRegions.length > 0 || presentationTopics.length > 1)
     ) return [];
-    const controls = variableControls.filter((control) =>
-      topic.variableAliases?.includes(control.alias));
-    const tasks = availableStudentTasks.filter((task) =>
-      topic.taskAliases?.includes(task.task_id));
-    if (controls.length === 0 && tasks.length === 0) return [];
+    const { controls, tasks } = plan;
     const base = boardBounds ?? {
       x: (region?.origin.x ?? 100) + COURSE_RUNTIME_OFFSET_X,
       y: region?.origin.y ?? 90,
       width: 760,
       height: 300,
     };
+    const attachmentBounds = runtimeAttachmentBounds[plan.id];
     const visualBounds = runtimeVisualRegionBounds[
       runtimeRegionIdForTopic(topic.id)
     ] ?? (presentationTopics.length === 1
       ? runtimeVisualRegionBounds.__legacy__
       : undefined);
-    const controlsBase = visualBounds ?? base;
-    const controlsTop = controlsBase.y + controlsBase.height + 42;
-    const tasksTop = base.y + base.height + 42;
+    const fallback = visualBounds
+      ? {
+          x: visualBounds.x,
+          y: visualBounds.y + visualBounds.height + 42,
+        }
+      : {
+          x: base.x,
+          y: base.y + base.height + 42,
+        };
+    const interactionPosition = attachmentBounds ?? {
+      ...fallback,
+      width: plan.width,
+      height: plan.height,
+    };
     return [{
+      id: plan.id,
       topic,
       controls,
       tasks,
-      controlsPosition: { x: controlsBase.x, y: controlsTop },
+      width: plan.width,
+      height: plan.height,
+      controlsPosition: {
+        x: interactionPosition.x,
+        y: interactionPosition.y,
+      },
       tasksPosition: {
-        x: base.x + (controls.length > 0 ? 388 : 0),
-        y: tasksTop,
+        x: interactionPosition.x + (controls.length > 0 ? 388 : 0),
+        y: interactionPosition.y,
       },
     }];
   });
+
+  useLayoutEffect(() => {
+    if (!enhancementLayer || coursePresentations.length === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      const controlsElements = [...enhancementLayer.querySelectorAll<HTMLElement>(
+        "[data-interaction-controls-id]",
+      )];
+      const taskElements = [...enhancementLayer.querySelectorAll<HTMLElement>(
+        "[data-interaction-tasks-id]",
+      )];
+      const next = Object.fromEntries(coursePresentations.flatMap((presentation) => {
+        const controlsElement = controlsElements.find((element) =>
+          element.dataset.interactionControlsId === presentation.id);
+        const tasksElement = taskElements.find((element) =>
+          element.dataset.interactionTasksId === presentation.id);
+        if (!controlsElement && !tasksElement) return [];
+        const controlsWidth = controlsElement
+          ? controlsElement.offsetWidth || 360
+          : 0;
+        const tasksWidth = tasksElement ? tasksElement.offsetWidth || 330 : 0;
+        return [[presentation.id, {
+          width: controlsWidth + tasksWidth
+            + (controlsWidth > 0 && tasksWidth > 0 ? 28 : 0),
+          height: Math.max(
+            controlsElement?.offsetHeight || 0,
+            tasksElement?.offsetHeight || 0,
+            presentation.height,
+          ),
+        }]];
+      }));
+      setInteractionMeasuredSizes((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [coursePresentations, enhancementLayer]);
 
   const occupiedRectsForQuestion = useCallback((questionId: string) => {
     const elements: HTMLElement[] = [];
@@ -1507,6 +1622,11 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
         ? current
         : nextRegionBounds);
+    const nextAttachmentBounds = view.getAttachmentBoundsMap();
+    setRuntimeAttachmentBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextAttachmentBounds)
+        ? current
+        : nextAttachmentBounds);
     const nextVisualBounds = measureVisualRegionBounds(
       runtimeRef.current?.board ?? null,
       mounted.elements.nodes,
@@ -1609,6 +1729,11 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
         ? current
         : nextRegionBounds);
+    const nextAttachmentBounds = view?.getAttachmentBoundsMap() ?? {};
+    setRuntimeAttachmentBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextAttachmentBounds)
+        ? current
+        : nextAttachmentBounds);
     const nextVisualBounds = mounted
       ? measureVisualRegionBounds(activeRuntime.board, mounted.elements.nodes)
       : {};
@@ -2389,7 +2514,7 @@ export function LearningWhiteboard({
                 const courseId = presentation.topic.questionId
                   ?? presentation.topic.id;
                 return (
-                  <div key={`course-ui:${presentation.topic.id}`}>
+                  <div key={`course-ui:${presentation.id}`}>
                     {presentation.controls.length > 0 ? (
                       <div
                         className="learning-variable-controls is-world"
@@ -2399,6 +2524,7 @@ export function LearningWhiteboard({
                           width: 360,
                         }}
                         data-course-controls-id={courseId}
+                        data-interaction-controls-id={presentation.id}
                         data-oll-ink-input="ignore"
                         aria-label={`${presentation.topic.title}的课程变量控制`}
                         data-testid="oll-variable-controls"
@@ -2526,6 +2652,7 @@ export function LearningWhiteboard({
                           width: 330,
                         }}
                         data-course-tasks-id={courseId}
+                        data-interaction-tasks-id={presentation.id}
                         data-oll-ink-input="ignore"
                         aria-label={`${presentation.topic.title}的动手任务`}
                         data-testid="oll-student-tasks"
