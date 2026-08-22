@@ -54,6 +54,8 @@ describe("ink camera synchronization", () => {
     updateWorldLayer.call(runtime, { panX: -100, panY: -60, scale: 1 });
 
     expect(runtime.editorRoot.style.transform).toBe("matrix(1, 0, 0, 1, -180, -120)");
+    expect(runtime.editorRoot.style.willChange).toBe("transform");
+    expect(runtime.editorRoot.style.clipPath).toBe("inset(1px)");
     expect(runtime.resetEditorViewport).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(120);
@@ -62,6 +64,7 @@ describe("ink camera synchronization", () => {
     expect(runtime.resetEditorViewport).toHaveBeenCalledOnce();
     expect(runtime.editor.queueRerender).toHaveBeenCalledOnce();
     expect(runtime.editorRoot.style.transform).toBe("");
+    expect(runtime.editorRoot.style.clipPath).toBe("");
   });
 
   it("keeps the ink aligned to the zoom anchor and redraws at screen DPR", async () => {
@@ -77,5 +80,27 @@ describe("ink camera synchronization", () => {
     expect(runtime.renderedCamera).toEqual({ panX: 20, panY: 10, scale: 1.25 });
     expect(runtime.editor.display.setDevicePixelRatio).toHaveBeenCalledWith(window.devicePixelRatio);
     expect(runtime.editorRoot.style.transform).toBe("");
+    expect(runtime.editorRoot.style.clipPath).toBe("");
+  });
+
+  it("does not let an older redraw clear a newer camera transform", async () => {
+    vi.useFakeTimers();
+    let finishFirstRedraw: (() => void) | undefined;
+    const runtime = createHarness({ panX: 0, panY: 0, scale: 1 });
+    runtime.editor.queueRerender.mockImplementationOnce(
+      () => new Promise<void>((resolve) => {
+        finishFirstRedraw = resolve;
+      }),
+    );
+
+    updateWorldLayer.call(runtime, { panX: -40, panY: -20, scale: 1 });
+    await vi.advanceTimersByTimeAsync(120);
+
+    updateWorldLayer.call(runtime, { panX: -80, panY: -40, scale: 1 });
+    finishFirstRedraw?.();
+    await Promise.resolve();
+
+    expect(runtime.editorRoot.style.transform).toBe("matrix(1, 0, 0, 1, -40, -20)");
+    expect(runtime.editorRoot.style.clipPath).toBe("inset(1px)");
   });
 });
