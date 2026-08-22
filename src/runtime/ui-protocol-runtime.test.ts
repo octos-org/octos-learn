@@ -497,6 +497,41 @@ describe("startBridgeForSession race safety", () => {
 // double-hydrate.
 // ---------------------------------------------------------------------------
 describe("reload-bug fix: re-hydrate session on WS reconnect", () => {
+  it("restores deployed-server transcript rows into the canonical projection", async () => {
+    const a = makeDeferredBridge();
+    createBridgeSpy.mockReturnValueOnce(a.bridge);
+    (
+      a.bridge.hydrateSession as unknown as {
+        mockResolvedValueOnce: (value: unknown) => unknown;
+      }
+    ).mockResolvedValueOnce({
+      session_id: "learn-session",
+      cursor: { stream: "learn-session", seq: 12 },
+      messages: [{
+        seq: 0,
+        role: "user",
+        content: "刷新后仍然存在的问题",
+        thread_id: "learn-turn",
+        persisted_at: "2026-08-22T11:29:12Z",
+      }],
+      replayed_envelopes: [],
+      replayed_tool_envelopes: [],
+    });
+
+    const start = startBridgeForSession("learn-session");
+    a.resolveStart();
+    await start;
+    a.setConnected();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const projection = ProjectionStore.getProjection(
+      ProjectionStore.projectionStoreKey("learn-session"),
+    );
+    expect(projection.threads).toHaveLength(1);
+    expect(projection.threads[0].user?.text).toBe("刷新后仍然存在的问题");
+  });
+
   it("does NOT call hydrateSession a second time on the initial bridge start", async () => {
     const a = makeDeferredBridge();
     createBridgeSpy.mockReturnValueOnce(a.bridge);

@@ -437,6 +437,33 @@ describe("type guards (fail-closed)", () => {
     expect(result).not.toHaveProperty("messages");
   });
 
+  it("guardSessionHydrate retains deployed-server transcript rows", () => {
+    const result = guards.guardSessionHydrate({
+      session_id: "learn-session",
+      cursor: { stream: "learn-session", seq: 9 },
+      messages: [{
+        seq: 0,
+        role: "user",
+        content: "真实问题",
+        thread_id: "turn-1",
+        persisted_at: "2026-08-22T11:29:12Z",
+      }],
+      replayed_envelopes: [{ payload: { type: "background/spawn_complete" } }],
+      replayed_tool_envelopes: [{ payload: { type: "tool_start" } }],
+    });
+
+    expect(result).toMatchObject({
+      messages: [{
+        seq: 0,
+        role: "user",
+        content: "真实问题",
+        thread_id: "turn-1",
+      }],
+      replayed_envelopes: [{ payload: { type: "background/spawn_complete" } }],
+      replayed_tool_envelopes: [{ payload: { type: "tool_start" } }],
+    });
+  });
+
   it("guardSessionHydrate rejects a non-object payload", () => {
     expect(guards.guardSessionHydrate(null)).toBeNull();
     expect(guards.guardSessionHydrate("string")).toBeNull();

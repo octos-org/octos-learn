@@ -492,6 +492,37 @@ export function LearningWorkspace({
     updateWhiteboardQuestion,
     whiteboardQuestions,
   ]);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setCourseRegions((current) => {
+        const knownQuestionIds = new Set(
+          current.map((region) => region.questionId),
+        );
+        const missing = whiteboardQuestions.flatMap((question) => {
+          if (
+            question.origin !== "composer"
+            || !question.position
+            || knownQuestionIds.has(question.id)
+          ) return [];
+          knownQuestionIds.add(question.id);
+          return [createCourseRegion(
+            sessionId,
+            question.id,
+            question.position,
+            {
+              width: COURSE_PENDING_FOOTPRINT_WIDTH,
+              height: COURSE_PENDING_FOOTPRINT_HEIGHT,
+            },
+            question.createdAt,
+          )];
+        });
+        if (missing.length === 0) return current;
+        return [...current, ...missing].sort((left, right) =>
+          left.createdAt.localeCompare(right.createdAt));
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [sessionId, whiteboardQuestions]);
   const updateCourseRegion = useCallback((
     regionId: string,
     patch: Partial<Pick<
