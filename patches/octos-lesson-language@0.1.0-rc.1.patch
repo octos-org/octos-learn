@@ -27,7 +27,7 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
      expectedViewportTransform = Mat33.identity;
      activePointers = new Map();
      selectionGesture = [];
-@@ -34,10 +37,10 @@ export class InkRuntime {
+@@ -34,10 +37,11 @@ export class InkRuntime {
      unmountWorldLayer;
      removeInputListeners;
      unsubscribeCamera;
@@ -38,9 +38,10 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
 -        this.layerBounds = layerBounds;
 +        this.renderedCamera = renderedCamera;
          this.editor = this.createEditor();
++        this.disablePageBoundaryRendering();
          this.prepareEditor();
          this.unmountWorldLayer = unmountWorldLayer;
-@@ -55,29 +58,20 @@ export class InkRuntime {
+@@ -55,29 +59,26 @@ export class InkRuntime {
          const host = options.viewport.ownerDocument.createElement("div");
          host.className = "oll-ink-layer";
          host.dataset.ollInkLayer = "";
@@ -74,10 +75,16 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
 -        host.style.width = `${bounds.width}px`;
 -        host.style.height = `${bounds.height}px`;
 -    }
++    disablePageBoundaryRendering() {
++        // Student ink lives on Octos' infinite board. js-draw otherwise paints
++        // its fixed export rectangle as a translucent grey page boundary.
++        const rerender = this.editor.rerender.bind(this.editor);
++        this.editor.rerender = () => rerender(false);
++    }
      createEditor() {
          const documentLocale = this.host.ownerDocument.documentElement.lang;
          const userLocales = this.options.locale
-@@ -142,28 +136,47 @@ export class InkRuntime {
+@@ -142,28 +142,42 @@ export class InkRuntime {
          });
      }
      resetEditorViewport() {
@@ -102,10 +109,6 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
 +        const translateX = camera.panX - scale * this.renderedCamera.panX;
 +        const translateY = camera.panY - scale * this.renderedCamera.panY;
 +        const editorRoot = this.editor.getRootElement();
-+        // Reuse one composited bitmap while the camera is moving. Cropping its
-+        // outermost pixel prevents Chromium from exposing the canvas texture edge.
-+        editorRoot.style.willChange = "transform";
-+        editorRoot.style.clipPath = "inset(1px)";
 +        editorRoot.style.transformOrigin = "0 0";
 +        editorRoot.style.transform = `matrix(${scale}, 0, 0, ${scale}, ${translateX}, ${translateY})`;
 +        this.pendingCamera = { ...camera };
@@ -137,7 +140,6 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
 +                if (revision !== this.cameraRenderRevision)
 +                    return;
 +                editorRoot.style.transform = "";
-+                editorRoot.style.clipPath = "";
 +            });
 +        }, 120);
      }

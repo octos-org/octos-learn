@@ -23,6 +23,14 @@ const updateWorldLayer = (
   }
 ).updateWorldLayer;
 
+const disablePageBoundaryRendering = (
+  InkRuntime.prototype as unknown as {
+    disablePageBoundaryRendering: (this: {
+      editor: { rerender: (...args: unknown[]) => unknown };
+    }) => void;
+  }
+).disablePageBoundaryRendering;
+
 function createHarness(renderedCamera: CameraState): RuntimeHarness & {
   editorRoot: HTMLElement;
 } {
@@ -47,6 +55,17 @@ afterEach(() => {
 });
 
 describe("ink camera synchronization", () => {
+  it("never paints js-draw's fixed page boundary on the infinite board", () => {
+    const rerender = vi.fn();
+    const runtime = { editor: { rerender } };
+
+    disablePageBoundaryRendering.call(runtime);
+    runtime.editor.rerender();
+
+    expect(rerender).toHaveBeenCalledOnce();
+    expect(rerender).toHaveBeenCalledWith(false);
+  });
+
   it("uses the same translation as the board while panning, then redraws in place", async () => {
     vi.useFakeTimers();
     const runtime = createHarness({ panX: 80, panY: 60, scale: 1 });
@@ -54,8 +73,6 @@ describe("ink camera synchronization", () => {
     updateWorldLayer.call(runtime, { panX: -100, panY: -60, scale: 1 });
 
     expect(runtime.editorRoot.style.transform).toBe("matrix(1, 0, 0, 1, -180, -120)");
-    expect(runtime.editorRoot.style.willChange).toBe("transform");
-    expect(runtime.editorRoot.style.clipPath).toBe("inset(1px)");
     expect(runtime.resetEditorViewport).not.toHaveBeenCalled();
 
     await vi.advanceTimersByTimeAsync(120);
@@ -64,7 +81,6 @@ describe("ink camera synchronization", () => {
     expect(runtime.resetEditorViewport).toHaveBeenCalledOnce();
     expect(runtime.editor.queueRerender).toHaveBeenCalledOnce();
     expect(runtime.editorRoot.style.transform).toBe("");
-    expect(runtime.editorRoot.style.clipPath).toBe("");
   });
 
   it("keeps the ink aligned to the zoom anchor and redraws at screen DPR", async () => {
@@ -80,7 +96,6 @@ describe("ink camera synchronization", () => {
     expect(runtime.renderedCamera).toEqual({ panX: 20, panY: 10, scale: 1.25 });
     expect(runtime.editor.display.setDevicePixelRatio).toHaveBeenCalledWith(window.devicePixelRatio);
     expect(runtime.editorRoot.style.transform).toBe("");
-    expect(runtime.editorRoot.style.clipPath).toBe("");
   });
 
   it("does not let an older redraw clear a newer camera transform", async () => {
@@ -101,6 +116,5 @@ describe("ink camera synchronization", () => {
     await Promise.resolve();
 
     expect(runtime.editorRoot.style.transform).toBe("matrix(1, 0, 0, 1, -40, -20)");
-    expect(runtime.editorRoot.style.clipPath).toBe("inset(1px)");
   });
 });
