@@ -262,14 +262,14 @@ describe("useVoiceCapture", () => {
     unmount();
   });
 
-  it("falls back to V5 when the preferred model fails to start", async () => {
-    const err = new Error("legacy not supported");
+  it("prefers V5 and falls back to legacy when V5 fails to start", async () => {
+    const err = new Error("V5 not supported");
     vadNewMock.mockReset();
     vadNewMock.mockImplementation(async (options: Record<string, unknown>) => {
       const vad = {
         options,
         start:
-          options.model === "legacy"
+          options.model === "v5"
             ? vi.fn(async () => {
                 throw err;
               })
@@ -289,8 +289,8 @@ describe("useVoiceCapture", () => {
     });
 
     expect(vadNewMock).toHaveBeenCalledTimes(2);
-    expect(vadInstances[0].options.model).toBe("legacy");
-    expect(vadInstances[1].options.model).toBe("v5");
+    expect(vadInstances[0].options.model).toBe("v5");
+    expect(vadInstances[1].options.model).toBe("legacy");
     expect(result.current.capturing).toBe(true);
     expect(result.current.error).toBeNull();
     expect(vadInstances[1].start).toHaveBeenCalledTimes(1);

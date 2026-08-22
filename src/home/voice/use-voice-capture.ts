@@ -49,7 +49,11 @@ async function getEchoCancelledMicStream(): Promise<MediaStream> {
 }
 
 let vadAssetCheckPromise: Promise<void> | null = null;
-const VAD_MODEL_PREFERENCE: VadModel[] = ["legacy", "v5"];
+// Prefer Silero v5 for actual speech admission. Replay of the same production
+// `/learn` WAVs showed that legacy admitted keyboard/friction noise that v5
+// rejected, while v5 kept every matched Chinese utterance in the corpus. Keep
+// legacy only as an availability fallback for clients that cannot load v5.
+const VAD_MODEL_PREFERENCE: VadModel[] = ["v5", "legacy"];
 
 // Self-hosted VAD assets (scripts/copy-vad-assets.mjs copies them into
 // public/vad/). The library defaults baseAssetPath/onnxWASMBasePath to "./",
