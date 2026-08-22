@@ -14,6 +14,11 @@ import {
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
 import { getSessionFiles } from "@/api/sessions";
+import {
+  invokeSkillAction,
+  listSkillActionJobs,
+  type SkillActionJob,
+} from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -28,19 +33,25 @@ import {
 import { useOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
 import { useRenderThreads } from "@/store/projection-render-adapter";
 import type { Thread } from "@/store/thread-store";
-import { InfiniteBoard } from "./board/infinite-board";
 import { CameraSettingsDialog } from "./camera-settings-dialog";
-import {
-  mergeSessionBoardPackets,
-  type LearningBoardContext,
-} from "./board/session-board";
+import type { LearningBoardContext } from "./board/session-board";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
+import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
-import { OllLessonBoard } from "./oll/oll-lesson-runtime";
+import {
+  LearningWhiteboard,
+  type DegradedVisualRetryRequest,
+} from "./oll/oll-lesson-runtime";
+import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
+import {
+  buildDegradedVisualRetryContext,
+  buildDegradedVisualRetryPrompt,
+} from "./degraded-visual-retry";
 import { isLessonDeliverySettled } from "./oll/lesson-delivery";
 import { useOllNarrationTts } from "./oll/use-oll-narration-tts";
 import {
   buildOllLessonTopics,
+  courseReplayStartStep,
   collectOllLessonArtifacts,
   collectPersistedOllLessonArtifacts,
   composeOllClassroomEvents,
@@ -48,23 +59,149 @@ import {
   mergeOllLessonArtifacts,
   ollArtifactIdentity,
 } from "./oll/oll-artifacts";
-import { ollPlaybackStorageKey } from "./oll/oll-playback-storage";
+import {
+  ollPlaybackStorageKey,
+  type OllFixture,
+} from "./oll/oll-playback-storage";
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
+import {
+  addSelectionSource,
+  buildSelectionClassificationActionArguments,
+  buildSelectionEnhancementActionArguments,
+  buildSelectionEnhancementTurnContext,
+  collectPersistedSelectionEnhancementArtifacts,
+  collectSelectionEnhancementArtifacts,
+  hideSelectionEnhancement,
+  removeSelectionSources,
+  loadSelectionEnhancementArtifact,
+  loadSelectionEnhancementState,
+  mergeSelectionEnhancementArtifacts,
+  parseSelectionClassificationMetadata,
+  saveSelectionEnhancementState,
+  selectionArtifactMatchesSource,
+  selectionBoardContextTargetsExist,
+  type SelectionBoardContext,
+  type SelectionClassification,
+  type SelectionContentKind,
+  type SelectionEnhancementArtifact,
+  type SelectionEnhancementState,
+} from "./selection-enhancements";
+import type { SelectionToolId } from "./selection-tools";
+import { isCurrentInkMergeCompletion } from "./ink-replay";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
+import type { WhiteboardLoadingState } from "./whiteboard-loading-block";
+import {
+  buildComposerBoardReferenceContext,
+  type ComposerBoardReference,
+} from "./composer-board-references";
+import {
+  loadWhiteboardQuestions,
+  saveWhiteboardQuestions,
+  type WhiteboardQuestionRecord,
+  type WhiteboardQuestionStatus,
+} from "./whiteboard-questions";
+import {
+  COURSE_PENDING_FOOTPRINT_HEIGHT,
+  COURSE_PENDING_FOOTPRINT_WIDTH,
+  createCourseRegion,
+  expandCourseRegionBounds,
+  loadCourseRegions,
+  saveCourseRegions,
+  type CourseRegionRecord,
+} from "./course-regions";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
+const unitCircleSineLessonEvents = parseCanonicalJsonl(unitCircleSineLessonSource);
 
-function threadHasOllArtifact(threads: Thread[], turnId: string): boolean {
-  const thread = threads.find((candidate) => candidate.id === turnId);
+const ollFixtureEvents: Record<OllFixture, CanonicalEvent[]> = {
+  "geometry-v2": geometryLessonEvents,
+  "unit-circle-sine": unitCircleSineLessonEvents,
+};
+
+const DELIVERABLE_ARTIFACT_SUFFIXES = [
+  ".octos-lesson.json",
+  ".octos-selection-enhancement.json",
+] as const;
+
+interface PendingLessonJobRecord {
+  jobId: string;
+  turnId: string;
+  referenceIds: string[];
+}
+
+function pendingLessonJobsStorageKey(sessionId: string): string {
+  return `octos-learning-lesson-jobs:v1:${sessionId}`;
+}
+
+function loadPendingLessonJobs(sessionId: string): Map<string, PendingLessonJobRecord> {
+  try {
+    if (typeof window === "undefined") return new Map();
+    const raw = window.localStorage.getItem(pendingLessonJobsStorageKey(sessionId));
+    if (!raw) return new Map();
+    const records = JSON.parse(raw) as unknown;
+    if (!Array.isArray(records)) return new Map();
+    return new Map(records.flatMap((candidate) => {
+      if (
+        !candidate
+        || typeof candidate !== "object"
+        || typeof candidate.jobId !== "string"
+        || typeof candidate.turnId !== "string"
+        || !Array.isArray(candidate.referenceIds)
+      ) return [];
+      return [[candidate.jobId, candidate as PendingLessonJobRecord]];
+    }));
+  } catch {
+    return new Map();
+  }
+}
+
+function savePendingLessonJobs(
+  sessionId: string,
+  jobs: ReadonlyMap<string, PendingLessonJobRecord>,
+): void {
+  try {
+    if (typeof window === "undefined") return;
+    if (jobs.size === 0) {
+      window.localStorage.removeItem(pendingLessonJobsStorageKey(sessionId));
+      return;
+    }
+    window.localStorage.setItem(
+      pendingLessonJobsStorageKey(sessionId),
+      JSON.stringify([...jobs.values()]),
+    );
+  } catch {
+    // The current page still tracks the job when browser storage is unavailable.
+  }
+}
+
+function lessonJobError(job: SkillActionJob): string {
+  const detail = `${job.error ?? ""} ${job.output ?? ""}`.trim();
+  if (/\b429\b|resource exhausted|rate.?limit|quota/iu.test(detail)) {
+    return "课程生成服务当前比较繁忙，请稍后再试。";
+  }
+  if (/timeout|timed out|超时/iu.test(detail)) {
+    return "课程生成超时，请稍后再试。";
+  }
+  return detail || "课程生成失败，请重试。";
+}
+
+function threadHasDeliverableArtifact(
+  threads: Thread[],
+  turnId: string,
+): boolean {
+  const thread = threads.find(
+    (candidate) => candidate.id === turnId || candidate.turnId === turnId,
+  );
   if (!thread) return false;
   return [
     ...thread.responses,
     ...(thread.pendingAssistant ? [thread.pendingAssistant] : []),
-  ].some((message) => message.files.some((file) =>
-    file.path.toLowerCase().endsWith(".octos-lesson.json")
-  ));
+  ].some((message) => message.files.some((file) => {
+    const path = file.path.toLowerCase();
+    return DELIVERABLE_ARTIFACT_SUFFIXES.some((suffix) => path.endsWith(suffix));
+  }));
 }
 
 export interface LearningWorkspaceProps {
@@ -74,13 +211,72 @@ export interface LearningWorkspaceProps {
   onUseTextMode?: () => void;
   onUseVoiceMode?: () => Promise<void> | void;
   onLearnerInput?: (text: string) => void;
+  onWhiteboardActivity?: () => void;
   initialAudio?: Blob | null;
   conversationOptions?: VoiceConversationOptions;
   onTurnsChange?: (turns: VoiceConversationTurn[]) => void;
   onBoardContextChange?: (context: LearningBoardContext) => void;
   onBack: () => void;
   onVoiceExit?: () => void;
-  ollFixture?: "geometry-v2";
+  ollFixture?: OllFixture;
+}
+
+function inkPlaybackRunStorageKey(sessionId: string): string {
+  return `octos-learning-ink-run:v1:${sessionId}`;
+}
+
+function inkMergeSourceStorageKey(sessionId: string): string {
+  return `octos-learning-ink-merge-source:v1:${sessionId}`;
+}
+
+function cumulativeInkRunStorageKey(sessionId: string): string {
+  return `octos-learning-ink-cumulative-run:v1:${sessionId}`;
+}
+
+function inkDocumentSessionId(sessionId: string, run: number): string {
+  return run === 0 ? sessionId : `${sessionId}:replay:${run}`;
+}
+
+function readInkPlaybackRun(sessionId: string): number {
+  try {
+    if (typeof window === "undefined") return 0;
+    const parsed = Number(
+      window.localStorage.getItem(inkPlaybackRunStorageKey(sessionId)),
+    );
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function readInkMergeSourceSessionId(
+  sessionId: string,
+  currentRun: number,
+): string | null {
+  try {
+    if (typeof window === "undefined") return null;
+    const source = window.localStorage.getItem(
+      inkMergeSourceStorageKey(sessionId),
+    );
+    if (source === sessionId || source?.startsWith(`${sessionId}:replay:`)) {
+      return source;
+    }
+    const cumulativeRun = Number(
+      window.localStorage.getItem(cumulativeInkRunStorageKey(sessionId)),
+    );
+    // Versions before cumulative replay restoration created a new document
+    // but never recorded its parent. Recover the original session document
+    // once, then mark this run cumulative after the merge succeeds.
+    if (
+      currentRun > 0 &&
+      (!Number.isSafeInteger(cumulativeRun) || cumulativeRun !== currentRun)
+    ) {
+      return sessionId;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 export function LearningWorkspace({
@@ -90,6 +286,7 @@ export function LearningWorkspace({
   onUseTextMode,
   onUseVoiceMode,
   onLearnerInput,
+  onWhiteboardActivity,
   initialAudio,
   conversationOptions,
   onTurnsChange,
@@ -111,15 +308,191 @@ export function LearningWorkspace({
   } | null>(null);
   const [plainReplySpoken, setPlainReplySpoken] = useState(false);
   const [pausedLessonSource, setPausedLessonSource] = useState<string | null>(null);
+  const [inkPlaybackRun, setInkPlaybackRun] = useState(
+    () => readInkPlaybackRun(sessionId),
+  );
+  const [inkMergeSourceSessionId, setInkMergeSourceSessionId] = useState(
+    () => readInkMergeSourceSessionId(sessionId, readInkPlaybackRun(sessionId)),
+  );
+  const [playbackCourseTarget, setPlaybackCourseTarget] = useState<{
+    courseId: string;
+    sequence: number;
+  } | null>(null);
+  const inkSessionId = inkDocumentSessionId(sessionId, inkPlaybackRun);
+  const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const [loadedOllArtifacts, setLoadedOllArtifacts] = useState<
     Record<string, CanonicalEvent[]>
   >({});
   const [persistedOllArtifacts, setPersistedOllArtifacts] = useState<
     ReturnType<typeof collectPersistedOllLessonArtifacts>
   >([]);
+  const [ollGenerationSessionId, setOllGenerationSessionId] = useState<
+    string | null
+  >(null);
+  const pendingLessonJobsRef = useRef(loadPendingLessonJobs(sessionId));
   const [rejectedOllArtifactIds, setRejectedOllArtifactIds] = useState<
     ReadonlySet<string>
   >(() => new Set());
+  const [selectionState, setSelectionState] =
+    useState<SelectionEnhancementState | null>(null);
+  const [persistedSelectionArtifacts, setPersistedSelectionArtifacts] =
+    useState<ReturnType<typeof collectPersistedSelectionEnhancementArtifacts>>([]);
+  const [loadedSelectionArtifacts, setLoadedSelectionArtifacts] = useState<
+    Record<string, SelectionEnhancementArtifact>
+  >({});
+  const selectionStateRef = useRef<SelectionEnhancementState | null>(null);
+  const selectionArtifacts = useMemo(
+    () => mergeSelectionEnhancementArtifacts(
+      persistedSelectionArtifacts,
+      collectSelectionEnhancementArtifacts(threads),
+    ),
+    [persistedSelectionArtifacts, threads],
+  );
+  const requestedSelectionArtifactsRef = useRef(new Set<string>());
+  const selectionArtifactRequestsRef = useRef(
+    new Map<string, AbortController>(),
+  );
+  const pendingVoiceSelectionRef = useRef<{
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
+    file: File;
+    claimed: boolean;
+  } | null>(null);
+  const [composerBoardReferences, setComposerBoardReferences] =
+    useState<ComposerBoardReference[]>([]);
+  const [whiteboardQuestions, setWhiteboardQuestions] = useState<
+    WhiteboardQuestionRecord[]
+  >(() => loadWhiteboardQuestions(sessionId));
+  const [courseRegions, setCourseRegions] = useState<CourseRegionRecord[]>(
+    () => loadCourseRegions(sessionId),
+  );
+  useEffect(() => {
+    saveWhiteboardQuestions(sessionId, whiteboardQuestions);
+  }, [sessionId, whiteboardQuestions]);
+  useEffect(() => {
+    saveCourseRegions(sessionId, courseRegions);
+  }, [courseRegions, sessionId]);
+  const addWhiteboardQuestion = useCallback((
+    question: WhiteboardQuestionRecord,
+  ) => {
+    setWhiteboardQuestions((current) => {
+      const next = [
+        ...current.filter((candidate) => candidate.id !== question.id),
+        question,
+      ].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+      return next;
+    });
+  }, []);
+  const updateWhiteboardQuestion = useCallback((
+    questionId: string,
+    patch: Partial<Pick<
+      WhiteboardQuestionRecord,
+      "position" | "status" | "error"
+    >>,
+  ) => {
+    setWhiteboardQuestions((current) => {
+      let changed = false;
+      const next = current.map((question) => {
+        if (question.id !== questionId) return question;
+        const updated = { ...question, ...patch };
+        if (
+          updated.status === question.status
+          && updated.error === question.error
+          && updated.position?.x === question.position?.x
+          && updated.position?.y === question.position?.y
+        ) return question;
+        changed = true;
+        return updated;
+      });
+      if (!changed) return current;
+      return next;
+    });
+  }, []);
+  const setWhiteboardQuestionStatus = useCallback((
+    questionId: string,
+    status: WhiteboardQuestionStatus,
+  ) => updateWhiteboardQuestion(questionId, { status }), [
+    updateWhiteboardQuestion,
+  ]);
+  const placeWhiteboardQuestion = useCallback((
+    questionId: string,
+    position: { x: number; y: number },
+  ) => {
+    updateWhiteboardQuestion(questionId, { position });
+    const question = whiteboardQuestions.find((candidate) =>
+      candidate.id === questionId && candidate.origin === "composer");
+    if (!question) return;
+    setCourseRegions((current) => {
+      const existing = current.find((region) => region.questionId === questionId);
+      if (!existing) {
+        return [...current, createCourseRegion(
+          sessionId,
+          questionId,
+          position,
+          {
+            width: COURSE_PENDING_FOOTPRINT_WIDTH,
+            height: COURSE_PENDING_FOOTPRINT_HEIGHT,
+          },
+          question.createdAt,
+        )].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+      }
+      if (existing.origin.x === position.x && existing.origin.y === position.y) {
+        return current;
+      }
+      const offsetX = position.x - existing.origin.x;
+      const offsetY = position.y - existing.origin.y;
+      return current.map((region) => region.id === existing.id ? {
+        ...region,
+        origin: { ...position },
+        bounds: {
+          ...region.bounds,
+          x: region.bounds.x + offsetX,
+          y: region.bounds.y + offsetY,
+        },
+      } : region);
+    });
+  }, [
+    sessionId,
+    updateWhiteboardQuestion,
+    whiteboardQuestions,
+  ]);
+  const updateCourseRegion = useCallback((
+    regionId: string,
+    patch: Partial<Pick<
+      CourseRegionRecord,
+      "runtimeRegionId" | "bounds" | "reservedWidth"
+    >>,
+  ) => {
+    setCourseRegions((current) => current.map((region) => {
+      if (region.id !== regionId) return region;
+      const updated = {
+        ...region,
+        ...patch,
+        ...(patch.bounds ? {
+          bounds: expandCourseRegionBounds(region.bounds, patch.bounds),
+        } : {}),
+      };
+      return JSON.stringify(updated) === JSON.stringify(region)
+        ? region
+        : updated;
+    }));
+  }, []);
+  const visibleSelectionEnhancements = useMemo(() => {
+    const hidden = new Set(selectionState?.hidden_enhancement_turn_ids ?? []);
+    return selectionArtifacts.flatMap((artifact) => {
+      const loaded = loadedSelectionArtifacts[artifact.path];
+      const source = selectionState?.sources.find(
+        (candidate) => candidate.source_id === loaded?.source.source_id,
+      );
+      return loaded
+        && source
+        && selectionArtifactMatchesSource(loaded, source)
+        && !hidden.has(loaded.turn_id)
+        ? [loaded]
+        : [];
+    });
+  }, [loadedSelectionArtifacts, selectionArtifacts, selectionState]);
   const ollArtifacts = useMemo(
     () => mergeOllLessonArtifacts(
       persistedOllArtifacts,
@@ -144,8 +517,16 @@ export function LearningWorkspace({
     const events = composeOllClassroomEvents(deliveredOllLessons, sessionId);
     return events.length > 0 ? events : null;
   }, [deliveredOllLessons, sessionId]);
-  const activeOllEvents = ollFixture === "geometry-v2"
-    ? geometryLessonEvents
+  const deliveredOllQuestionIds = useMemo(
+    () => deliveredOllLessons.map((events) => {
+      const artifact = ollArtifacts.find((candidate) =>
+        loadedOllArtifacts[ollArtifactIdentity(candidate)] === events);
+      return artifact?.turnId;
+    }),
+    [deliveredOllLessons, loadedOllArtifacts, ollArtifacts],
+  );
+  const activeOllEvents = ollFixture
+    ? ollFixtureEvents[ollFixture]
     : deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
   const expectedOllOperationCount = useMemo(
@@ -156,11 +537,12 @@ export function LearningWorkspace({
   );
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
-      ollFixture === "geometry-v2"
-        ? [geometryLessonEvents]
+      ollFixture
+        ? [ollFixtureEvents[ollFixture]]
         : deliveredOllLessons,
+      ollFixture ? [] : deliveredOllQuestionIds,
     ),
-    [deliveredOllLessons, ollFixture],
+    [deliveredOllLessons, deliveredOllQuestionIds, ollFixture],
   );
   const ollOpenSource = activeOllEvents?.[0]
     ? JSON.stringify(activeOllEvents[0])
@@ -173,6 +555,7 @@ export function LearningWorkspace({
     narrationTiming: "external",
     startAtEnd: Boolean(activeOllEvents) && playbackMode === "review",
     topics: activeOllTopics,
+    deliveredProgram: activeOllEvents,
   });
   // Audio ownership follows playback intent, not the current speech sample.
   // A live lesson claims the microphone on its first render and keeps it
@@ -180,19 +563,33 @@ export function LearningWorkspace({
   // every operation compiled from the currently delivered Canonical events.
   const hasUndeliveredOllEvents = Boolean(
     ollLesson &&
-    ollLesson.totalOperations < expectedOllOperationCount,
+    (
+      ollLesson.totalOperations < expectedOllOperationCount ||
+      ollGenerationSessionId === sessionId
+    ),
   );
-  const lessonDeliverySettled = Boolean(
+  const deliveryReachedCurrentEnd = Boolean(
     ollLesson &&
     isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents),
   );
+  const lessonDeliverySettled = Boolean(ollLesson?.deliverySettled);
+  const setOllDeliverySettled = ollLesson?.setDeliverySettled;
+  useEffect(() => {
+    if (hasUndeliveredOllEvents) setOllDeliverySettled?.(false);
+    else if (deliveryReachedCurrentEnd) setOllDeliverySettled?.(true);
+  }, [
+    deliveryReachedCurrentEnd,
+    hasUndeliveredOllEvents,
+    setOllDeliverySettled,
+  ]);
   const lessonOwnsNarration =
-    playbackMode === "live" &&
     ollLesson !== null &&
+    (playbackMode === "live" || ollLesson.playing) &&
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
   const [textTurnPending, setTextTurnPending] = useState(false);
   const handleTurnComplete = useCallback((turnId: string) => {
+    pendingVoiceSelectionRef.current = null;
     setPlainReply(null);
     setPlainReplySpoken(false);
     setCompletedTurnId(turnId);
@@ -201,6 +598,40 @@ export function LearningWorkspace({
   const voiceConversationOptions = useMemo(
     () => ({
       ...conversationOptions,
+      getAdditionalTurnFiles: async () => {
+        const pending = pendingVoiceSelectionRef.current;
+        if (!pending || pending.claimed) return [];
+        pending.claimed = true;
+        return [pending.file];
+      },
+      buildTurnText: (
+        context: Parameters<
+          NonNullable<VoiceConversationOptions["buildTurnText"]>
+        >[0],
+      ) => {
+        const base = conversationOptions?.buildTurnText?.(context) ?? "";
+        const pending = pendingVoiceSelectionRef.current;
+        const selectionPath = context.additionalMediaPaths?.[0];
+        if (!pending || !selectionPath) return base;
+        const selectionContext = [
+          base,
+          buildSelectionEnhancementTurnContext({
+            sessionId,
+            turnId: context.turnId,
+            mediaPath: selectionPath,
+            source: pending.snapshot,
+            contentKind: pending.contentKind,
+            lessonTitle: ollLesson?.title,
+            boardSummary: ollLesson
+              ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+              : undefined,
+            boardContext: pending.boardContext,
+            toolId: "custom-question",
+          }),
+        ].filter(Boolean).join("\n");
+        pendingVoiceSelectionRef.current = null;
+        return selectionContext;
+      },
       // Muted narration does NOT own the mic: with the narration silenced
       // there is nothing external to protect, so the student can barge in
       // naturally (issue #315).
@@ -217,6 +648,8 @@ export function LearningWorkspace({
       lessonOwnsNarration,
       narrationAudioEnabled,
       narrationSpeechActive,
+      ollLesson,
+      sessionId,
       textTurnPending,
       voiceEnabled,
     ],
@@ -227,6 +660,44 @@ export function LearningWorkspace({
     onVoiceExit ?? onBack,
     voiceConversationOptions,
   );
+  const beginFreshInkPlayback = useCallback(() => {
+    const next = Number.isSafeInteger(inkPlaybackRun + 1)
+      ? inkPlaybackRun + 1
+      : 1;
+    setInkPlaybackRun(next);
+    setInkMergeSourceSessionId(inkSessionId);
+    try {
+      window.localStorage.setItem(
+        inkPlaybackRunStorageKey(sessionId),
+        String(next),
+      );
+      window.localStorage.setItem(
+        inkMergeSourceStorageKey(sessionId),
+        inkSessionId,
+      );
+    } catch {
+      // The new in-memory run still keeps replay clean when storage is unavailable.
+    }
+  }, [inkPlaybackRun, inkSessionId, sessionId]);
+  const markPlaybackCourse = useCallback((stepId?: string) => {
+    const topic = (stepId
+      ? activeOllTopics.find((candidate) => candidate.stepIds.includes(stepId))
+      : activeOllTopics.find((candidate) =>
+          candidate.stepIds.includes(ollLesson?.currentStepId ?? "")))
+      ?? activeOllTopics.at(-1);
+    if (!topic) return;
+    const courseId = topic.questionId ?? topic.id;
+    setPlaybackCourseTarget((current) => ({
+      courseId,
+      sequence: (current?.sequence ?? 0) + 1,
+    }));
+  }, [activeOllTopics, ollLesson?.currentStepId]);
+  const markPlaybackBeatCourse = useCallback((beatId: string) => {
+    const step = ollLesson?.outline
+      .flatMap((topic) => topic.steps)
+      .find((candidate) => candidate.beats.some((beat) => beat.id === beatId));
+    markPlaybackCourse(step?.id);
+  }, [markPlaybackCourse, ollLesson?.outline]);
   const controlledOllLesson = useMemo(() => {
     if (!ollLesson) return null;
     const claim = () => setPausedLessonSource(null);
@@ -243,7 +714,18 @@ export function LearningWorkspace({
       },
       restart: () => {
         claim();
-        ollLesson.restart();
+        const firstStepId = courseReplayStartStep(
+          activeOllTopics,
+          ollLesson.currentStepId,
+        );
+        markPlaybackCourse(firstStepId ?? ollLesson.currentStepId);
+        beginFreshInkPlayback();
+        // The Runtime contains every course on this infinite whiteboard.
+        // Replaying from the global cursor would restart the first historical
+        // course. The top-bar replay control instead starts at the first Step
+        // of the course the learner is currently viewing.
+        if (firstStepId) ollLesson.playStep(firstStepId);
+        else ollLesson.restart();
       },
       nextBeat: () => {
         claim();
@@ -251,17 +733,79 @@ export function LearningWorkspace({
       },
       playStep: (stepId: string) => {
         claim();
+        markPlaybackCourse(stepId);
+        if (ollLesson.deliverySettled || ollLesson.completed) {
+          beginFreshInkPlayback();
+        }
         ollLesson.playStep(stepId);
       },
       playBeat: (beatId: string) => {
         claim();
+        markPlaybackBeatCourse(beatId);
+        if (ollLesson.deliverySettled || ollLesson.completed) {
+          beginFreshInkPlayback();
+        }
         ollLesson.playBeat(beatId);
       },
+      setVariable: (alias: string, value: number) => {
+        ollLesson.setVariable(alias, value);
+      },
+      handleStudentVariableInput: (
+        alias: string,
+        value: number,
+        event: Parameters<typeof ollLesson.handleStudentVariableInput>[2],
+      ) => {
+        return ollLesson.handleStudentVariableInput(alias, value, event);
+      },
+      handleStudentScene3dInput: (
+        nodeId: string,
+        view: Parameters<typeof ollLesson.handleStudentScene3dInput>[1],
+        event: Parameters<typeof ollLesson.handleStudentScene3dInput>[2],
+      ) => {
+        return ollLesson.handleStudentScene3dInput(nodeId, view, event);
+      },
     };
-  }, [ollLesson, ollOpenSource]);
+  }, [
+    beginFreshInkPlayback,
+    activeOllTopics,
+    markPlaybackBeatCourse,
+    markPlaybackCourse,
+    ollLesson,
+    ollOpenSource,
+  ]);
+  const handleInkMergeComplete = useCallback((
+    sourceSessionId: string,
+    targetSessionId: string,
+  ) => {
+    // Opening an older saved whiteboard can start a one-time recovery merge.
+    // If the learner presses Replay before that asynchronous merge finishes,
+    // its completion belongs to the old document and must not reveal student
+    // additions inside the newer replay run.
+    setInkMergeSourceSessionId((currentSourceSessionId) =>
+      isCurrentInkMergeCompletion(
+        sourceSessionId,
+        targetSessionId,
+        currentSourceSessionId,
+        inkDocumentSessionId(sessionId, inkPlaybackRun),
+      ) ? null : currentSourceSessionId);
+  }, [inkPlaybackRun, sessionId]);
+  useEffect(() => {
+    if (inkMergeSourceSessionId !== null) return;
+    try {
+      window.localStorage.removeItem(inkMergeSourceStorageKey(sessionId));
+      window.localStorage.setItem(
+        cumulativeInkRunStorageKey(sessionId),
+        String(inkPlaybackRun),
+      );
+    } catch {
+      // The in-memory state is sufficient for this page load.
+    }
+  }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
   const [sendError, setSendError] = useState<string | null>(null);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
+  const [selectionEnhancementPending, setSelectionEnhancementPending] =
+    useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
   const [temporaryCameraPreview, setTemporaryCameraPreview] = useState(false);
   const temporaryCameraPreviewRef = useRef(false);
@@ -269,17 +813,23 @@ export function LearningWorkspace({
   const cameraSettings = conv.cameraSettings ?? DEFAULT_CAMERA_FRAME_SETTINGS;
   const startCamera = conv.startCamera;
   const stopCamera = conv.stopCamera;
-  const completedArtifactFilename = completedTurnId
-    ? `${completedTurnId}.octos-lesson.json`
+  const completedArtifactFilenames = completedTurnId
+    ? new Set([
+        `${completedTurnId}.octos-lesson.json`,
+        `${completedTurnId}.octos-selection-enhancement.json`,
+      ])
     : null;
   const completedThreadHasArtifact = Boolean(
-    completedTurnId && threadHasOllArtifact(threads, completedTurnId),
+    completedTurnId && threadHasDeliverableArtifact(threads, completedTurnId),
   );
   const completedTurnHasArtifact = Boolean(
     completedThreadHasArtifact || (
-      completedArtifactFilename && ollArtifacts.some((artifact) =>
-        artifact.filename.replaceAll("\\", "/").split("/").at(-1) === completedArtifactFilename
-      )
+      completedArtifactFilenames && [
+        ...ollArtifacts,
+        ...selectionArtifacts,
+      ].some((artifact) => completedArtifactFilenames.has(
+        artifact.filename.replaceAll("\\", "/").split("/").at(-1) ?? "",
+      ))
     ),
   );
   const completedTurn = completedTurnId
@@ -316,10 +866,18 @@ export function LearningWorkspace({
 
   useEffect(() => {
     if (!plainReply) return;
-    const artifactFilename = `${plainReply.turnId}.octos-lesson.json`;
-    const threadHasArtifact = threadHasOllArtifact(threads, plainReply.turnId);
-    if (threadHasArtifact || ollArtifacts.some((artifact) =>
-      artifact.filename.replaceAll("\\", "/").split("/").at(-1) === artifactFilename
+    const artifactFilenames = new Set([
+      `${plainReply.turnId}.octos-lesson.json`,
+      `${plainReply.turnId}.octos-selection-enhancement.json`,
+    ]);
+    const threadHasArtifact = threadHasDeliverableArtifact(
+      threads,
+      plainReply.turnId,
+    );
+    if (threadHasArtifact || [...ollArtifacts, ...selectionArtifacts].some(
+      (artifact) => artifactFilenames.has(
+        artifact.filename.replaceAll("\\", "/").split("/").at(-1) ?? "",
+      ),
     )) {
       const timer = window.setTimeout(() => {
         setPlainReply(null);
@@ -328,7 +886,7 @@ export function LearningWorkspace({
       return () => window.clearTimeout(timer);
     }
     return undefined;
-  }, [ollArtifacts, plainReply, threads]);
+  }, [ollArtifacts, plainReply, selectionArtifacts, threads]);
 
   useEffect(() => {
     if (ollFixture) return;
@@ -340,6 +898,9 @@ export function LearningWorkspace({
         const files = await getSessionFiles(sessionId);
         if (cancelled || version !== requestVersion) return;
         setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+        setPersistedSelectionArtifacts(
+          collectPersistedSelectionEnhancementArtifacts(files),
+        );
         setFileListError(null);
       } catch (cause) {
         if (cancelled || version !== requestVersion) return;
@@ -350,19 +911,134 @@ export function LearningWorkspace({
         );
       }
     };
+    const handleToolProgress = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        sessionId?: string;
+        tool?: string;
+        message?: string;
+        terminal?: boolean;
+      }>).detail;
+      if (
+        detail?.sessionId !== sessionId ||
+        detail.tool !== "oll_generate_lesson"
+      ) return;
+      setOllGenerationSessionId(detail.terminal === true ? null : sessionId);
+      if (
+        detail.terminal === true ||
+        detail.message?.includes("[artifact:oll_lesson_part]") ||
+        detail.message?.includes('"stage":"lesson-artifact-ready"')
+      ) {
+        void loadPersistedArtifacts();
+      }
+    };
+    const applyLessonJobUpdate = async (job: SkillActionJob) => {
+      if (
+        !job
+        || job.session_id !== sessionId
+        || job.action_id !== "learning.lesson.generate"
+      ) return;
+      const pending = pendingLessonJobsRef.current.get(job.job_id);
+      if (!pending) return;
+      if (job.status === "queued" || job.status === "running") {
+        setOllGenerationSessionId(sessionId);
+        return;
+      }
+      pendingLessonJobsRef.current.delete(job.job_id);
+      savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
+      const sameTurnStillRunning = [...pendingLessonJobsRef.current.values()]
+        .some((candidate) => candidate.turnId === pending.turnId);
+      if (sameTurnStillRunning) return;
+      setOllGenerationSessionId(null);
+      let artifacts: ReturnType<typeof collectPersistedOllLessonArtifacts> = [];
+      try {
+        const files = await getSessionFiles(sessionId);
+        artifacts = collectPersistedOllLessonArtifacts(files);
+        setPersistedOllArtifacts(artifacts);
+      } catch {
+        // The ordinary session-file refresh path can retry after reconnect.
+      }
+      const keptPartialLesson = artifacts.some(
+        (artifact) => artifact.turnId === pending.turnId,
+      );
+      if (job.status === "succeeded") {
+        setWhiteboardQuestionStatus(pending.turnId, "answered");
+        handleTurnComplete(pending.turnId);
+        return;
+      }
+      if (keptPartialLesson) {
+        setWhiteboardQuestionStatus(pending.turnId, "answered");
+        setSendError("后续课程内容没有生成完成，已经保留并展示成功生成的部分。");
+        handleTurnComplete(pending.turnId);
+        return;
+      }
+      setWhiteboardQuestionStatus(pending.turnId, "failed");
+      setSendError(lessonJobError(job));
+    };
+    const handleLessonJobUpdated = (event: Event) => {
+      const job = (event as CustomEvent<SkillActionJob>).detail;
+      if (job) void applyLessonJobUpdate(job);
+    };
+    const restorePendingLessonJobs = () => {
+      if (pendingLessonJobsRef.current.size === 0) return;
+      setOllGenerationSessionId(sessionId);
+      void listSkillActionJobs(sessionId, {
+        actionId: "learning.lesson.generate",
+      }).then((jobs) => {
+        jobs.forEach((job) => void applyLessonJobUpdate(job));
+      }).catch(() => {
+        // The bridge-connected event retries after reconnect.
+      });
+    };
     const handleBridgeConnected = () => {
       void loadPersistedArtifacts();
+      restorePendingLessonJobs();
     };
     window.addEventListener("crew:bridge_connected", handleBridgeConnected);
+    window.addEventListener("crew:tool_progress", handleToolProgress);
+    window.addEventListener(
+      "crew:skill_action_job_updated",
+      handleLessonJobUpdated,
+    );
     void loadPersistedArtifacts();
+    restorePendingLessonJobs();
     return () => {
       cancelled = true;
       window.removeEventListener(
         "crew:bridge_connected",
         handleBridgeConnected,
       );
+      window.removeEventListener("crew:tool_progress", handleToolProgress);
+      window.removeEventListener(
+        "crew:skill_action_job_updated",
+        handleLessonJobUpdated,
+      );
     };
-  }, [ollFixture, sessionId]);
+  }, [
+    handleTurnComplete,
+    ollFixture,
+    sessionId,
+    setWhiteboardQuestionStatus,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    for (const controller of selectionArtifactRequestsRef.current.values()) {
+      controller.abort();
+    }
+    selectionArtifactRequestsRef.current.clear();
+    requestedSelectionArtifactsRef.current.clear();
+    selectionStateRef.current = null;
+    setSelectionState(null);
+    setLoadedSelectionArtifacts({});
+    void loadSelectionEnhancementState(sessionId).then((state) => {
+      if (cancelled) return;
+      selectionStateRef.current = state;
+      setSelectionState(state);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
   useEffect(() => {
     if (!voiceEnabled) {
@@ -384,31 +1060,46 @@ export function LearningWorkspace({
 
   useEffect(() => {
     const ollArtifactRequests = ollArtifactRequestsRef.current;
+    const selectionArtifactRequests = selectionArtifactRequestsRef.current;
     return () => {
       for (const controller of ollArtifactRequests.values()) {
         controller.abort();
       }
       ollArtifactRequests.clear();
+      for (const controller of selectionArtifactRequests.values()) {
+        controller.abort();
+      }
+      selectionArtifactRequests.clear();
     };
   }, []);
 
   useEffect(() => {
     const pending = ollArtifacts.filter(
       (artifact) =>
-        !requestedOllArtifactsRef.current.has(ollArtifactIdentity(artifact)),
+        !requestedOllArtifactsRef.current.has(artifact.path),
     );
     if (pending.length === 0) return;
     pending.forEach((artifact) => {
       const artifactIdentity = ollArtifactIdentity(artifact);
       const controller = new AbortController();
-      requestedOllArtifactsRef.current.add(artifactIdentity);
+      requestedOllArtifactsRef.current.add(artifact.path);
+      ollArtifactRequestsRef.current.get(artifactIdentity)?.abort();
       ollArtifactRequestsRef.current.set(artifactIdentity, controller);
       loadOllLessonArtifact(artifact, sessionId, controller.signal)
         .then((events) => {
+          if (ollArtifactRequestsRef.current.get(artifactIdentity) !== controller) {
+            return;
+          }
           setLoadedOllArtifacts((current) => ({
             ...current,
             [artifactIdentity]: events,
           }));
+          setRejectedOllArtifactIds((current) => {
+            if (!current.has(artifactIdentity)) return current;
+            const next = new Set(current);
+            next.delete(artifactIdentity);
+            return next;
+          });
         })
         .catch((cause) => {
           if (controller.signal.aborted) return;
@@ -431,11 +1122,56 @@ export function LearningWorkspace({
     });
   }, [ollArtifacts, sessionId]);
 
-  const emptyPacket = useMemo(
-    () => mergeSessionBoardPackets(sessionId, []),
-    [sessionId],
-  );
+  useEffect(() => {
+    if (!selectionState) return;
+    const pending = selectionArtifacts.filter(
+      (artifact) => !requestedSelectionArtifactsRef.current.has(artifact.path),
+    );
+    if (pending.length === 0) return;
+    pending.forEach((artifact) => {
+      const controller = new AbortController();
+      requestedSelectionArtifactsRef.current.add(artifact.path);
+      selectionArtifactRequestsRef.current.set(artifact.path, controller);
+      loadSelectionEnhancementArtifact(artifact, sessionId, controller.signal)
+        .then((loaded) => {
+          const source = selectionState.sources.find(
+            (candidate) => candidate.source_id === loaded.source.source_id,
+          );
+          if (!source || !selectionArtifactMatchesSource(loaded, source)) {
+            throw new Error("选区辅助内容无法对应到已保存的原稿快照");
+          }
+          setLoadedSelectionArtifacts((current) => ({
+            ...current,
+            [artifact.path]: loaded,
+          }));
+        })
+        .catch((cause) => {
+          requestedSelectionArtifactsRef.current.delete(artifact.path);
+          if (controller.signal.aborted) return;
+          setArtifactError(
+            cause instanceof Error ? cause.message : "选区辅助内容读取失败",
+          );
+        })
+        .finally(() => {
+          if (
+            selectionArtifactRequestsRef.current.get(artifact.path)
+              === controller
+          ) {
+            selectionArtifactRequestsRef.current.delete(artifact.path);
+          }
+        });
+    });
+  }, [selectionArtifacts, selectionState, sessionId]);
+
   const appendOllEvents = ollLesson?.appendEvents;
+
+  useEffect(() => {
+    // A changed lesson.open creates a new BrowserLessonSession. Re-submit the
+    // complete delivered prefix: an upgraded checkpoint will deduplicate its
+    // accepted Steps, while a rejected stale checkpoint needs every Step from
+    // sequence 1 again.
+    appendedOllEventCountRef.current = 1;
+  }, [ollOpenSource]);
 
   useEffect(() => {
     if (!activeOllEvents || !appendOllEvents) return;
@@ -482,7 +1218,13 @@ export function LearningWorkspace({
   const plainReplyNarrationId = plainReply && !plainReplySpoken && !lessonOwnsNarration
     ? `plain-reply:${plainReply.turnId}`
     : undefined;
+  const startOllNarration = ollLesson?.startNarration;
   const completeOllNarration = ollLesson?.completeNarration;
+  const handleNarrationStart = useCallback((narrationId: string) => {
+    if (!narrationId.startsWith("plain-reply:")) {
+      startOllNarration?.(narrationId);
+    }
+  }, [startOllNarration]);
   const handleNarrationComplete = useCallback((narrationId: string) => {
     if (narrationId.startsWith("plain-reply:")) {
       setPlainReplySpoken(true);
@@ -501,7 +1243,15 @@ export function LearningWorkspace({
     narrationId: lessonOwnsNarration
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
+    prefetchEnabled: lessonOwnsNarration,
+    upcomingText: lessonOwnsNarration
+      ? ollLesson?.nextNarration?.text
+      : undefined,
+    upcomingNarrationId: lessonOwnsNarration
+      ? ollLesson?.nextNarration?.beatId
+      : undefined,
     onSpeakingChange: setNarrationSpeechActive,
+    onPlaybackStart: handleNarrationStart,
     onPlaybackComplete: handleNarrationComplete,
   });
 
@@ -518,29 +1268,377 @@ export function LearningWorkspace({
     [conversationOptions, sessionId],
   );
 
-  const sendText = useCallback(
-    async (text: string) => {
+  const rememberSelectionSource = useCallback(
+    async (snapshot: InkSelectionSnapshot) => {
+      const current = selectionStateRef.current
+        ?? await loadSelectionEnhancementState(sessionId);
+      const next = addSelectionSource(current, snapshot);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      setSelectionState(next);
+    },
+    [sessionId],
+  );
+
+  const sendSelectionQuestion = useCallback(
+    async ({
+      snapshot,
+      question,
+      contentKind,
+      recognizedContent,
+      recognitionConfidence,
+      toolId,
+      boardContext,
+      contextImage,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      question: string;
+      contentKind: SelectionContentKind;
+      recognizedContent?: string;
+      recognitionConfidence?: "high" | "medium" | "low";
+      toolId: SelectionToolId;
+      boardContext: SelectionBoardContext;
+      contextImage: File;
+    }) => {
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
-      onLearnerInput?.(text);
+      setSelectionEnhancementPending(true);
       const turnId = crypto.randomUUID();
-      sendMessage({
+      addWhiteboardQuestion({
+        id: turnId,
         sessionId,
-        text: buildTurnText(turnId, [], text),
-        media: [],
-        clientMessageId: turnId,
-        onComplete: () => {
-          setTextTurnPending(false);
-          handleTurnComplete(turnId);
-        },
-        onError: (error) => {
-          setTextTurnPending(false);
-          setSendError(error.message || "发送失败");
+        text: question,
+        origin: "selection",
+        createdAt: new Date().toISOString(),
+        status: "pending",
+        source: {
+          sourceId: snapshot.source_id,
+          bounds: { ...snapshot.bounds },
         },
       });
+      onLearnerInput?.(question);
+      try {
+        await rememberSelectionSource(snapshot);
+        const paths = await uploadFiles([contextImage], "upload");
+        const mediaPath = paths[0];
+        if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+        const actionArguments = buildSelectionEnhancementActionArguments({
+          sessionId,
+          turnId,
+          mediaPath,
+          source: snapshot,
+          contentKind,
+          recognizedContent,
+          recognitionConfidence,
+          learnerRequest: question,
+          lessonTitle: ollLesson?.title,
+          boardSummary: ollLesson
+            ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+            : undefined,
+          boardContext,
+          toolId,
+        });
+        const invocation = await invokeSkillAction(
+          sessionId,
+          "learning.selection.enhance",
+          actionArguments,
+        );
+        const failedResult = (invocation.results ?? [])
+          .find((result) => !result.success);
+        if (!invocation.ok || failedResult) {
+          throw new Error(
+            failedResult?.output?.trim()
+              || "选区辅助内容生成失败，请重试",
+          );
+        }
+        const files = await getSessionFiles(sessionId);
+        const artifacts = collectPersistedSelectionEnhancementArtifacts(files);
+        if (!artifacts.some((artifact) => artifact.turnId === turnId)) {
+          throw new Error(
+            "没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。",
+          );
+        }
+        setPersistedSelectionArtifacts(artifacts);
+        setTextTurnPending(false);
+        setSelectionEnhancementPending(false);
+        setWhiteboardQuestionStatus(turnId, "answered");
+        handleTurnComplete(turnId);
+      } catch (cause) {
+        const message = cause instanceof Error
+          ? cause.message
+          : "选区问题发送失败";
+        setTextTurnPending(false);
+        setSelectionEnhancementPending(false);
+        updateWhiteboardQuestion(turnId, { status: "failed", error: message });
+        // Selection failures stay attached to their question on the board.
+        // Resolving here prevents the whiteboard toolbar and the workspace
+        // shell from rendering duplicate error notices outside that card.
+      }
     },
-    [buildTurnText, handleTurnComplete, onLearnerInput, sessionId],
+    [
+      handleTurnComplete,
+      addWhiteboardQuestion,
+      ollLesson,
+      onLearnerInput,
+      rememberSelectionSource,
+      sessionId,
+      setWhiteboardQuestionStatus,
+      updateWhiteboardQuestion,
+    ],
+  );
+
+  const classifyInkSelection = useCallback(
+    async ({
+      snapshot,
+      boardContext,
+      selectionImage,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      boardContext: SelectionBoardContext;
+      selectionImage: File;
+    }): Promise<SelectionClassification> => {
+      const paths = await uploadFiles([selectionImage], "upload");
+      const mediaPath = paths[0];
+      if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+      const invocation = await invokeSkillAction(
+        sessionId,
+        "learning.selection.classify",
+        buildSelectionClassificationActionArguments({
+          turnId: crypto.randomUUID(),
+          mediaPath,
+          source: snapshot,
+          boardContext,
+        }),
+      );
+      if (!invocation.ok || (invocation.results ?? []).some((candidate) => !candidate.success)) {
+        throw new Error("暂时无法识别选区内容");
+      }
+      const result = invocation.results?.find((candidate) =>
+        candidate.success && candidate.structured_metadata !== undefined,
+      );
+      if (!result) throw new Error("选区识别没有返回可用结果");
+      return parseSelectionClassificationMetadata(result.structured_metadata);
+    },
+    [sessionId],
+  );
+
+  const startSelectionVoiceQuestion = useCallback(
+    async ({
+      snapshot,
+      contentKind,
+      boardContext,
+      contextImage,
+    }: {
+      snapshot: InkSelectionSnapshot;
+      contentKind: SelectionContentKind;
+      boardContext: SelectionBoardContext;
+      contextImage: File;
+    }) => {
+      await rememberSelectionSource(snapshot);
+      pendingVoiceSelectionRef.current = {
+        snapshot,
+        contentKind,
+        boardContext,
+        file: contextImage,
+        claimed: false,
+      };
+      if (conv.state === "idle" || conv.state === "error") {
+        await conv.start();
+      }
+    },
+    [conv, rememberSelectionSource],
+  );
+
+  const referenceSelectionForLesson = useCallback(async ({
+    snapshot,
+    contentKind,
+    boardContext,
+    contextImage,
+    label,
+  }: {
+    snapshot: InkSelectionSnapshot;
+    contentKind: SelectionContentKind;
+    boardContext: SelectionBoardContext;
+    contextImage: File;
+    label: string;
+  }) => {
+    await rememberSelectionSource(snapshot);
+    const reference: ComposerBoardReference = {
+      id: `board-selection:${crypto.randomUUID()}`,
+      label,
+      snapshot,
+      contentKind,
+      boardContext,
+      contextImage,
+    };
+    setComposerBoardReferences((current) => [
+      ...current.filter((candidate) =>
+        candidate.snapshot.source_id !== snapshot.source_id,
+      ),
+      reference,
+    ].slice(-4));
+  }, [rememberSelectionSource]);
+
+  const deleteSelectionEnhancement = useCallback((turnId: string) => {
+    setSelectionState((current) => {
+      if (!current) return current;
+      const next = hideSelectionEnhancement(current, turnId);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const deleteSelectionSources = useCallback((sourceIds: string[]) => {
+    const ids = new Set(sourceIds);
+    if (ids.size === 0) return;
+    const matchingTurnIds = Object.values(loadedSelectionArtifacts)
+      .filter((artifact) => ids.has(artifact.source.source_id))
+      .map((artifact) => artifact.turn_id);
+    setSelectionState((current) => {
+      if (!current) return current;
+      const next = removeSelectionSources(current, ids, matchingTurnIds);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      return next;
+    });
+    setWhiteboardQuestions((current) => current.filter((question) =>
+      question.origin !== "selection"
+      || !question.source
+      || !ids.has(question.source.sourceId)));
+    setComposerBoardReferences((current) => current.filter((reference) =>
+      !ids.has(reference.snapshot.source_id)));
+    const pendingVoice = pendingVoiceSelectionRef.current;
+    if (pendingVoice && ids.has(pendingVoice.snapshot.source_id)) {
+      pendingVoiceSelectionRef.current = null;
+    }
+  }, [loadedSelectionArtifacts]);
+
+  const sendText = useCallback(
+    async (text: string, applicationContext?: string) => {
+      unlockAudio();
+      setSendError(null);
+      setTextTurnPending(true);
+      const turnId = crypto.randomUUID();
+      const references = composerBoardReferences;
+      addWhiteboardQuestion({
+        id: turnId,
+        sessionId,
+        text,
+        origin: "composer",
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      });
+      onLearnerInput?.(text);
+      try {
+        if (references.some((reference) =>
+          !selectionBoardContextTargetsExist(
+            reference.boardContext,
+            ollLesson?.board ?? null,
+          ),
+        )) {
+          throw new Error("引用的白板内容已经变化，请重新框选后再发送");
+        }
+        const mediaPaths = references.length > 0
+          ? await uploadFiles(
+              references.map((reference) => reference.contextImage),
+              "upload",
+            )
+          : [];
+        if (mediaPaths.length !== references.length) {
+          throw new Error("白板引用上传不完整");
+        }
+        const referenceContext = buildComposerBoardReferenceContext(
+          references.map((reference, index) => ({
+            reference,
+            mediaPath: mediaPaths[index]!,
+          })),
+        );
+        if (references.length === 0 && !applicationContext?.trim()) {
+          const invocation = await invokeSkillAction(
+            sessionId,
+            "learning.lesson.generate",
+            {
+              turn_id: turnId,
+              learner_request: text,
+              request_source: "self_contained",
+              language: "zh-CN",
+            },
+          );
+          const failedResult = (invocation.results ?? [])
+            .find((result) => !result.success);
+          if (!invocation.ok || failedResult) {
+            throw new Error(
+              failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
+            );
+          }
+          const jobs = invocation.jobs ?? [];
+          if (jobs.length === 0) {
+            await getSessionFiles(sessionId).then((files) => {
+              setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+            });
+            setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "answered");
+            handleTurnComplete(turnId);
+            return;
+          }
+          jobs.forEach((job) => {
+            pendingLessonJobsRef.current.set(job.job_id, {
+              jobId: job.job_id,
+              turnId,
+              referenceIds: [],
+            });
+          });
+          savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
+          setOllGenerationSessionId(sessionId);
+          setTextTurnPending(false);
+          return;
+        }
+        sendMessage({
+          sessionId,
+          text: [
+            buildTurnText(turnId, mediaPaths, text),
+            applicationContext,
+            referenceContext,
+          ]
+            .filter(Boolean)
+            .join("\n"),
+          media: mediaPaths,
+          clientMessageId: turnId,
+          onComplete: () => {
+            setTextTurnPending(false);
+            setComposerBoardReferences((current) => current.filter(
+              (candidate) => !references.some(
+                (reference) => reference.id === candidate.id,
+              ),
+            ));
+            setWhiteboardQuestionStatus(turnId, "answered");
+            handleTurnComplete(turnId);
+          },
+          onError: (error) => {
+            setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "failed");
+            setSendError(error.message || "发送失败");
+          },
+        });
+      } catch (cause) {
+        setTextTurnPending(false);
+        setWhiteboardQuestionStatus(turnId, "failed");
+        setSendError(cause instanceof Error ? cause.message : "发送失败");
+        throw cause;
+      }
+    },
+    [
+      buildTurnText,
+      addWhiteboardQuestion,
+      composerBoardReferences,
+      handleTurnComplete,
+      ollLesson,
+      onLearnerInput,
+      sessionId,
+      setWhiteboardQuestionStatus,
+    ],
   );
 
   const sendImage = useCallback(
@@ -579,8 +1677,22 @@ export function LearningWorkspace({
     [buildTurnText, handleTurnComplete, onLearnerInput, sessionId],
   );
 
+  const retryDegradedVisual = useCallback(async (
+    degraded: DegradedVisualRetryRequest,
+  ) => {
+    await sendText(
+      buildDegradedVisualRetryPrompt(degraded),
+      buildDegradedVisualRetryContext(degraded),
+    );
+  }, [sendText]);
+
   const handleTeacherClick = () => {
     unlockAudio();
+    if (lessonOwnsNarration && controlledOllLesson) {
+      if (controlledOllLesson.playing) controlledOllLesson.pause();
+      else controlledOllLesson.play();
+      return;
+    }
     if (!voiceEnabled) {
       if (controlledOllLesson) {
         if (controlledOllLesson.playing) controlledOllLesson.pause();
@@ -666,13 +1778,65 @@ export function LearningWorkspace({
           : conv.state === "thinking"
             ? "我正在准备白板课程。"
             : "");
+  const teacherState = textTurnPending
+    ? "thinking"
+    : lessonOwnsNarration
+      ? "speaking"
+      : conv.state;
+  const teacherStateLabel = textTurnPending
+    ? "正在想"
+    : lessonOwnsNarration
+      ? "课程播放中"
+      : ollLesson
+        ? lessonDeliverySettled
+          ? "课程完成"
+          : "继续播放"
+        : undefined;
+  const pendingLessonQuestion = [...whiteboardQuestions].reverse().find(
+    (question) => question.origin === "composer" && question.status === "pending",
+  );
+  const pendingLessonHasPlayableArtifact = Boolean(
+    pendingLessonQuestion && ollArtifacts.some((artifact) =>
+      artifact.turnId === pendingLessonQuestion.id
+      && Boolean(loadedOllArtifacts[ollArtifactIdentity(artifact)])),
+  );
+  const pendingLessonAwaitingFirstArtifact = Boolean(
+    pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
+  );
+  const lessonLoading = !selectionEnhancementPending && (
+    pendingLessonAwaitingFirstArtifact
+    || (
+      !plainReply
+      && !completedTurnHasArtifact
+      && (
+        textTurnPending
+        || conv.state === "thinking"
+        || Boolean(completedTurnId)
+        || ollGenerationSessionId === sessionId
+      )
+    )
+  );
+  const lessonGenerationInProgress = Boolean(
+    ollLesson && ollGenerationSessionId === sessionId,
+  );
+  const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
+    && (!ollLesson || Boolean(
+      pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
+    ))
+    ? {
+        id: pendingLessonQuestion?.id ?? completedTurnId ?? `lesson:${sessionId}`,
+        kind: "lesson",
+        title: "正在搭建这节课",
+        detail: "先整理重点，再把讲解和互动画面放到白板上。",
+      }
+    : null;
 
   return (
     <div className="learning-workspace">
       <header className="learning-workspace-topbar">
         <div>
           <span>Octos Learning Canvas</span>
-          <strong>{ollLesson?.title ?? emptyPacket.title}</strong>
+          <strong>{ollLesson?.title ?? "新的学习白板"}</strong>
         </div>
         {ollLesson ? (
           <div className="learning-demo-controls" data-testid="oll-controls">
@@ -726,6 +1890,16 @@ export function LearningWorkspace({
                 ? <Volume2 size={16} />
                 : <VolumeX size={16} />}
             </button>
+            {lessonGenerationInProgress ? (
+              <div
+                className="learning-course-generation-status"
+                role="status"
+                aria-label="课程内容仍在生成"
+              >
+                <i aria-hidden="true" />
+                <span>继续生成中</span>
+              </div>
+            ) : null}
           </div>
         ) : null}
         <div className="learning-workspace-actions">
@@ -768,14 +1942,36 @@ export function LearningWorkspace({
       </header>
 
       <main className="learning-canvas-shell">
-        {ollLesson ? (
-          <OllLessonBoard runtime={ollLesson} />
-        ) : (
-          <InfiniteBoard
-            packet={emptyPacket}
-            segmentIndex={-1}
-          />
-        )}
+        <LearningWhiteboard
+          runtime={controlledOllLesson ?? ollLesson}
+          inkSessionId={inkSessionId}
+          loadingState={whiteboardLoadingState}
+          questions={replayingWithoutStudentAdditions
+            ? whiteboardQuestions.filter((question) => question.origin !== "selection")
+            : whiteboardQuestions}
+          courseRegions={courseRegions}
+          playbackCourseTarget={playbackCourseTarget}
+          onPlaceQuestion={placeWhiteboardQuestion}
+          onUpdateCourseRegion={updateCourseRegion}
+          onInkActivity={onWhiteboardActivity}
+          inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
+          onInkMergeComplete={handleInkMergeComplete}
+          selectionEnhancements={replayingWithoutStudentAdditions
+            ? []
+            : visibleSelectionEnhancements}
+          selectionSources={replayingWithoutStudentAdditions
+            ? []
+            : selectionState?.sources ?? []}
+          onClassifyInkSelection={classifyInkSelection}
+          onAskInkSelection={sendSelectionQuestion}
+          onVoiceInkSelection={voiceEnabled
+            ? startSelectionVoiceQuestion
+            : undefined}
+          onReferenceInkSelection={referenceSelectionForLesson}
+          onDeleteSelectionEnhancement={deleteSelectionEnhancement}
+          onDeleteSelectionSources={deleteSelectionSources}
+          onRetryDegradedVisual={retryDegradedVisual}
+        />
       </main>
 
       {voiceEnabled && (conv.cameraStream || conv.lastSentFrameUrl) && (
@@ -811,23 +2007,12 @@ export function LearningWorkspace({
       )}
 
       <OctosTeacher
-        state={runtime.ready ? conv.state : "error"}
+        state={runtime.ready ? teacherState : "error"}
         speech={teacherSpeech}
+        preparing={lessonOwnsNarration && ollNarrationTts.preparing}
+        stateLabel={runtime.ready ? teacherStateLabel : undefined}
         onClick={handleTeacherClick}
       />
-
-      {plainReply && (
-        <div className="learning-turn-notice" role="status">
-          本轮没有更新白板，当前画面仍是上一节课程。
-        </div>
-      )}
-      {!plainReply && !completedTurnHasArtifact && (
-        textTurnPending || conv.state === "thinking" || Boolean(completedTurnId)
-      ) && (
-        <div className="learning-turn-notice" role="status">
-          正在处理本轮问题，白板暂未更新。
-        </div>
-      )}
 
       {controlledOllLesson
         ? <OllCourseOutline runtime={controlledOllLesson} />
@@ -852,6 +2037,10 @@ export function LearningWorkspace({
         onToggleCamera={conv.toggleCamera}
         onSendText={sendText}
         onSendImage={sendImage}
+        references={composerBoardReferences.map(({ id, label }) => ({ id, label }))}
+        onRemoveReference={(id) => setComposerBoardReferences((current) =>
+          current.filter((reference) => reference.id !== id),
+        )}
       />
 
       {(sendError ||

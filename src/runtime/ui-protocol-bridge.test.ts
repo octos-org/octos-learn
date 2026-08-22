@@ -1391,6 +1391,18 @@ describe("connection lifecycle", () => {
     await bridge.stop();
   });
 
+  it("skill.actions.v1 — negotiates direct skill actions on auxiliary sockets", async () => {
+    const bridge = createUiProtocolBridge(makeBridgeOpts());
+    void bridge.start({}).catch(() => {});
+    await Promise.resolve();
+    const ws = lastInstance();
+    const actionOccurrences = new URL(ws.url).searchParams
+      .getAll("ui_feature")
+      .filter((feature) => feature === "skill.actions.v1").length;
+    expect(actionOccurrences).toBe(1);
+    await bridge.stop();
+  });
+
   it("callMethod() forwards arbitrary JSON-RPC over the open socket", async () => {
     const bridge = createUiProtocolBridge(makeBridgeOpts());
     void bridge.start({ sessionId: "sess-c" });

@@ -6,23 +6,46 @@ import type {
   PlaybackOperation,
   PlaybackProjection,
   PlaybackStatus,
+  PlaybackVariableAnimation,
 } from "octos-lesson-language/player";
 import {
   BrowserLessonSession,
   LocalPlaybackStore,
   parseCanonicalJsonl,
+  type StudentOperation,
+  type StudentInkSelectionOperation,
+  type StudentInkSelectionSource,
+  type StudentInputMethod,
+  type Scene3dViewInputEvent,
+  type Scene3dViewState,
+  type StudentScene3dViewOperation,
+  type StudentTaskSnapshot,
+  type StudentVariableInputEvent,
 } from "octos-lesson-language/web-runtime";
 
 export interface OllLessonTopicDefinition {
   id: string;
   title: string;
   stepIds: string[];
+  nodeIds?: string[];
+  variableAliases?: string[];
+  taskAliases?: string[];
+  questionId?: string;
 }
 
 export interface OllLessonOutlineTopic {
   id: string;
   title: string;
   steps: PlaybackOutlineStep[];
+  nodeIds?: string[];
+  variableAliases?: string[];
+  taskAliases?: string[];
+  questionId?: string;
+}
+
+export interface OllLessonNarration {
+  beatId: string;
+  text: string;
 }
 
 export interface OllLessonRuntimeController {
@@ -37,11 +60,18 @@ export interface OllLessonRuntimeController {
   currentStepId?: string;
   currentBeatId?: string;
   attentionTargets: string[];
+  compositionTargets: string[];
   activeSpeech: string;
+  nextNarration?: OllLessonNarration;
   playing: boolean;
   completed: boolean;
   waiting: boolean;
+  deliverySettled: boolean;
   board: SemanticBoardState | null;
+  activeVariableAnimation?: PlaybackVariableAnimation;
+  studentOperations: StudentOperation[];
+  studentTasks: StudentTaskSnapshot[];
+  scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
   play(): void;
   pause(): void;
@@ -51,7 +81,26 @@ export interface OllLessonRuntimeController {
   playStep(stepId: string): void;
   viewBeat(beatId: string): void;
   playBeat(beatId: string): void;
+  startNarration(beatId: string): void;
   completeNarration(beatId: string): void;
+  setVariable(alias: string, value: number): void;
+  handleStudentVariableInput(
+    alias: string,
+    value: number,
+    event: StudentVariableInputEvent,
+  ): string | void;
+  requestStudentTaskHint(taskId: string): void;
+  retryStudentTask(taskId: string): void;
+  recordStudentInkSelection(
+    source: StudentInkSelectionSource,
+    input: StudentInputMethod,
+  ): StudentInkSelectionOperation;
+  handleStudentScene3dInput(
+    nodeId: string,
+    view: Scene3dViewState,
+    event: Scene3dViewInputEvent,
+  ): string | StudentScene3dViewOperation | void;
+  setDeliverySettled(settled: boolean): void;
   appendEvents(events: CanonicalEvent[]): PlaybackAppendResult;
 }
 
@@ -63,6 +112,7 @@ interface OllLessonRuntimeOptions {
   narrationTiming?: "estimated" | "external";
   startAtEnd?: boolean;
   topics?: OllLessonTopicDefinition[];
+  deliveredProgram?: CanonicalEvent[] | null;
 }
 
 function beatIds(operations: PlaybackOperation[]): string[] {
@@ -92,6 +142,7 @@ export function useOllLessonRuntime({
   narrationTiming = "estimated",
   startAtEnd = false,
   topics = [],
+  deliveredProgram = null,
 }: OllLessonRuntimeOptions): OllLessonRuntimeController | null {
   const events = useMemo(
     () => (source ? parseCanonicalJsonl(source) : null),
@@ -104,9 +155,19 @@ export function useOllLessonRuntime({
             events,
             new LocalPlaybackStore(),
             storageKey,
-            { incremental, narrationTiming },
+            {
+              incremental,
+              narrationTiming,
+              ...(deliveredProgram
+                ? { deliveredProgram: structuredClone(deliveredProgram) }
+                : {}),
+            },
           )
         : null,
+    // `deliveredProgram` is a restore-time guard. A Step-only update must be
+    // appended to the existing Runtime rather than reconstructing it; when
+    // lesson.open changes, `events` changes and the current guard is captured.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, incremental, narrationTiming, storageKey],
   );
   const [, setRevision] = useState(0);
@@ -150,8 +211,65 @@ export function useOllLessonRuntime({
     session.seekToBeat(beatId, "start");
     session.play();
   }, [session]);
+  const startNarration = useCallback(
+    (beatId: string) => session?.startNarration(beatId),
+    [session],
+  );
   const completeNarration = useCallback(
     (beatId: string) => session?.completeNarration(beatId),
+    [session],
+  );
+  const setVariable = useCallback(
+    (alias: string, value: number) => session?.setVariable(alias, value),
+    [session],
+  );
+  const handleStudentVariableInput = useCallback((
+    alias: string,
+    value: number,
+    event: StudentVariableInputEvent,
+  ): string | void => {
+    if (!session) return;
+    if (event.phase === "start") {
+      return session.beginStudentVariableOperation(alias, {
+        control: event.control,
+        input: event.input,
+      });
+    }
+    if (!event.operation_id) return;
+    if (event.phase === "update") {
+      session.updateStudentVariableOperation(event.operation_id, value);
+    } else {
+      session.commitStudentVariableOperation(event.operation_id, value);
+    }
+  }, [session]);
+  const requestStudentTaskHint = useCallback(
+    (taskId: string) => {
+      session?.requestStudentTaskHint(taskId);
+    },
+    [session],
+  );
+  const retryStudentTask = useCallback(
+    (taskId: string) => {
+      session?.retryStudentTask(taskId);
+    },
+    [session],
+  );
+  const recordStudentInkSelection = useCallback((
+    source: StudentInkSelectionSource,
+    input: StudentInputMethod,
+  ): StudentInkSelectionOperation => {
+    if (!session) throw new Error("OLL Runtime 尚未初始化");
+    return session.recordStudentInkSelection(source, input);
+  }, [session]);
+  const handleStudentScene3dInput = useCallback((
+    nodeId: string,
+    view: Scene3dViewState,
+    event: Scene3dViewInputEvent,
+  ): string | StudentScene3dViewOperation | void => {
+    return session?.handleStudentScene3dInput(nodeId, view, event);
+  }, [session]);
+  const setDeliverySettled = useCallback(
+    (settled: boolean) => session?.setDeliverySettled(settled),
     [session],
   );
   const appendEvents = useCallback(
@@ -172,6 +290,20 @@ export function useOllLessonRuntime({
   const currentBeatId =
     projection.current_beat_id ?? session.currentOperation?.beat_id;
   const currentBeatIndex = currentBeatId ? beats.indexOf(currentBeatId) : -1;
+  const nextNarrationOperation = session.operations
+    .slice(projection.cursor)
+    .find((operation) =>
+      operation.type === "narration.begin" &&
+      operation.beat_id !== currentBeatId &&
+      Boolean(operation.beat_id && operation.narration?.text.trim())
+    );
+  const nextNarration =
+    nextNarrationOperation?.beat_id && nextNarrationOperation.narration
+      ? {
+          beatId: nextNarrationOperation.beat_id,
+          text: nextNarrationOperation.narration.text,
+        }
+      : undefined;
   const steps = session.outline;
   const currentStepId =
     projection.current_step_id ??
@@ -186,7 +318,17 @@ export function useOllLessonRuntime({
       return [step];
     });
     return topicSteps.length > 0
-      ? [{ id: topic.id, title: topic.title, steps: topicSteps }]
+      ? [
+          {
+            id: topic.id,
+            title: topic.title,
+            steps: topicSteps,
+            nodeIds: topic.nodeIds,
+            variableAliases: topic.variableAliases,
+            taskAliases: topic.taskAliases,
+            questionId: topic.questionId,
+          },
+        ]
       : [];
   });
   const remainingSteps = steps.filter((step) => ungroupedSteps.has(step.id));
@@ -210,11 +352,18 @@ export function useOllLessonRuntime({
     currentStepId,
     currentBeatId,
     attentionTargets: session.attentionTargets,
+    compositionTargets: session.compositionTargets,
     activeSpeech: projection.current_narration?.text ?? "",
+    nextNarration,
     playing: session.isPlaying,
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
+    deliverySettled: session.isDeliverySettled,
     board: projection.board,
+    activeVariableAnimation: session.activeVariableAnimation,
+    studentOperations: session.studentOperations,
+    studentTasks: session.studentTasks,
+    scene3dViews: session.scene3dViews,
     currentOperation: session.currentOperation,
     play,
     pause,
@@ -224,7 +373,15 @@ export function useOllLessonRuntime({
     playStep,
     viewBeat,
     playBeat,
+    startNarration,
     completeNarration,
+    setVariable,
+    handleStudentVariableInput,
+    requestStudentTaskHint,
+    retryStudentTask,
+    recordStudentInkSelection,
+    handleStudentScene3dInput,
+    setDeliverySettled,
     appendEvents,
   };
 }

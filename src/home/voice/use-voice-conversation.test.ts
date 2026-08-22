@@ -13,6 +13,7 @@ import {
   shouldHandleNoSpeechEvent,
   stripVisualMarker,
   useVoiceConversation,
+  type VoiceTurnSendContext,
 } from "./use-voice-conversation";
 import type { Thread } from "@/store/thread-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
@@ -924,6 +925,55 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     audioMock.stopAudio.mockClear();
     act(() => result.current.stop());
     expect(audioMock.stopAudio).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("keeps application attachments distinct from audio and the live camera frame", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    const selection = new File(["selection"], "selection.png", {
+      type: "image/png",
+    });
+    const getAdditionalTurnFiles = vi.fn(async () => [selection]);
+    uploadFilesMock.mockResolvedValueOnce([
+      "uploads/utterance.wav",
+      "uploads/selection.png",
+    ]);
+    const buildTurnText = vi.fn((context: VoiceTurnSendContext) =>
+      context.additionalMediaPaths?.join(",") ?? "",
+    );
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-selection-voice-test", undefined, undefined, {
+        getAdditionalTurnFiles,
+        buildTurnText,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["voice"], { type: "audio/wav" }),
+        includeCamera: false,
+      });
+    });
+
+    expect(getAdditionalTurnFiles).toHaveBeenCalledOnce();
+    expect(buildTurnText).toHaveBeenCalledWith(expect.objectContaining({
+      currentFramePath: undefined,
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      additionalMediaPaths: ["uploads/selection.png"],
+    }));
+    expect(commitAdmittedVoiceMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: "uploads/selection.png",
+        media: ["uploads/utterance.wav", "uploads/selection.png"],
+        liveVideo: false,
+      }),
+      "admission-1",
+      undefined,
+    );
+    expect(sendMessageMock).not.toHaveBeenCalled();
     unmount();
   });
 });

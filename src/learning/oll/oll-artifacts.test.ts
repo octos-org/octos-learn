@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import { reduceCanonicalEvents } from "octos-lesson-language";
 import type { Thread } from "@/store/thread-store";
 import {
   buildOllLessonTopics,
   collectPersistedOllLessonArtifacts,
   collectOllLessonArtifacts,
   composeOllClassroomEvents,
+  courseReplayStartStep,
   isOllLessonArtifact,
   loadOllLessonArtifact,
   mergeOllLessonArtifacts,
@@ -122,6 +124,64 @@ describe("OLL lesson artifacts", () => {
     ]);
   });
 
+  it("keeps only the newest playable prefix for each turn and lets the final artifact supersede it", () => {
+    const file = (filename: string, modified_at: string) => ({
+      filename,
+      path: `study/oll/${filename}`,
+      size_bytes: 100,
+      modified_at,
+    });
+
+    const partials = collectPersistedOllLessonArtifacts([
+      file("turn-1.part-000.octos-lesson.json", "2026-08-14T10:00:00.000Z"),
+      file("turn-1.part-001.octos-lesson.json", "2026-08-14T10:00:01.000Z"),
+      file("turn-2.part-000.octos-lesson.json", "2026-08-14T10:00:02.000Z"),
+    ]);
+    expect(partials).toEqual([
+      expect.objectContaining({
+        filename: "turn-1.part-001.octos-lesson.json",
+        turnId: "turn-1",
+      }),
+      expect.objectContaining({
+        filename: "turn-2.part-000.octos-lesson.json",
+        turnId: "turn-2",
+      }),
+    ]);
+    expect(ollArtifactIdentity(partials[0]!)).toBe(
+      encodeURIComponent("turn-1.octos-lesson.json"),
+    );
+
+    const [finalArtifact] = collectPersistedOllLessonArtifacts([
+      file("turn-1.part-001.octos-lesson.json", "2026-08-14T10:00:01.000Z"),
+      file("turn-1.octos-lesson.json", "2026-08-14T10:00:03.000Z"),
+    ]);
+    expect(finalArtifact).toEqual(expect.objectContaining({
+      filename: "turn-1.octos-lesson.json",
+      turnId: "turn-1",
+    }));
+  });
+
+  it("replaces a persisted prefix with the delivered final artifact without duplicating the turn", () => {
+    const partial = {
+      id: "partial",
+      filename: "turn-1.part-002.octos-lesson.json",
+      path: "study/oll/turn-1.part-002.octos-lesson.json",
+      threadId: "turn-1",
+      turnId: "turn-1",
+    };
+    const finalArtifact = {
+      id: "final",
+      filename: "turn-1.octos-lesson.json",
+      path: "/workspace/study/oll/turn-1.octos-lesson.json",
+      threadId: "client-turn",
+      turnId: "server-turn",
+    };
+
+    expect(mergeOllLessonArtifacts([partial], [finalArtifact])).toEqual([
+      finalArtifact,
+    ]);
+  });
+
   it("recognizes and collects delivered OLL authoring files", () => {
     expect(isOllLessonArtifact({ filename: "turn.OCTOS-LESSON.JSON" })).toBe(true);
     expect(isOllLessonArtifact({ filename: "turn.octos-board.json" })).toBe(false);
@@ -191,13 +251,32 @@ describe("OLL lesson artifacts", () => {
         id: first[0]?.board?.region_id,
         title: first[0]?.lesson?.title,
         stepIds: [first[1]?.step?.id],
+        nodeIds: first[1]?.step?.beats.flatMap((beat) =>
+          Object.values(beat.stage).flatMap((actions) =>
+            actions.flatMap((action) => action.node?.id ?? []))) ?? [],
+        variableAliases: [],
+        taskAliases: [],
       },
       {
         id: second[0]?.board?.region_id,
         title: second[0]?.lesson?.title,
         stepIds: [second[1]?.step?.id],
+        nodeIds: second[1]?.step?.beats.flatMap((beat) =>
+          Object.values(beat.stage).flatMap((actions) =>
+            actions.flatMap((action) => action.node?.id ?? []))) ?? [],
+        variableAliases: [],
+        taskAliases: [],
       },
     ]);
+    const topics = buildOllLessonTopics([first, second]);
+    expect(courseReplayStartStep(
+      topics,
+      second[1]?.step?.id,
+    )).toBe(second[1]?.step?.id);
+    expect(courseReplayStartStep(
+      topics,
+      first[1]?.step?.id,
+    )).toBe(first[1]?.step?.id);
     const createdRegions = classroom.slice(1).map((event) =>
       event.step?.beats
         .flatMap((beat) => Object.values(beat.stage).flat())
@@ -207,6 +286,191 @@ describe("OLL lesson artifacts", () => {
       `topic-${ollArtifactIdentity(artifact!)}`,
       `topic-${ollArtifactIdentity(secondArtifact)}`,
     ]);
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps variables from independent teaching turns isolated when composing one whiteboard", async () => {
+    const lessonWithVariable = (variable: string, initial: number) => ({
+      ...structuredClone(authoringLesson),
+      lesson: {
+        ...structuredClone(authoringLesson.lesson),
+        variables: [{
+          as: variable,
+          initial,
+          min: -10,
+          max: 10,
+          label: variable,
+          control: { kind: "slider" },
+        }],
+      },
+      steps: [{
+        ...structuredClone(authoringLesson.steps[0]),
+        beats: [{
+          ...structuredClone(authoringLesson.steps[0]!.beats[0]),
+          actions: [
+            {
+              do: "write",
+              as: "graph",
+              kind: "plot",
+              role: "diagram",
+              content: {
+                axes: {
+                  x: { min: -4, max: 4 },
+                  y: { min: -1, max: 10 },
+                },
+                curves: [{ as: "curve", expression: "x^2", label: "y=x²" }],
+                points: [{ as: "moving", x: initial, y: initial ** 2 }],
+                bindings: [
+                  { target: "moving.x", expression: variable },
+                  { target: "moving.y", expression: `${variable}^2` },
+                ],
+              },
+              place: { relation: "new_region" },
+            },
+            { do: "animate", variable, value: initial + 1 },
+          ],
+        }],
+      }],
+      close: { summary: "完成讲解", focus: ["graph"] },
+    });
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => lessonWithVariable("x", 0),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => lessonWithVariable("theta", 1),
+      }));
+    const firstArtifact = {
+      id: "first",
+      filename: "first-turn.octos-lesson.json",
+      path: "study/oll/first-turn.octos-lesson.json",
+      threadId: "first-turn",
+      turnId: "first-turn",
+    };
+    const secondArtifact = {
+      id: "second",
+      filename: "second-turn.octos-lesson.json",
+      path: "study/oll/second-turn.octos-lesson.json",
+      threadId: "second-turn",
+      turnId: "second-turn",
+    };
+    const first = await loadOllLessonArtifact(firstArtifact, "session-1");
+    const second = await loadOllLessonArtifact(secondArtifact, "session-1");
+    const classroom = composeOllClassroomEvents([first, second], "session-1");
+    const variableNames = classroom[0]?.lesson?.variables?.map(({ as }) => as) ?? [];
+    const animationVariables = classroom.flatMap((event) =>
+      event.step?.beats.flatMap((beat) =>
+        Object.values(beat.stage).flatMap((actions) =>
+          actions.flatMap((action) => action.animation?.variable ?? []))) ?? []);
+
+    expect(variableNames).toHaveLength(2);
+    expect(new Set(variableNames).size).toBe(2);
+    expect(variableNames).toContain("x");
+    expect(variableNames).not.toContain("theta");
+    expect(new Set(animationVariables)).toEqual(new Set(variableNames));
+    expect(buildOllLessonTopics([first, second]).map((topic) =>
+      topic.variableAliases)).toEqual([[variableNames[0]], [variableNames[1]]]);
+    const plotContents = classroom.flatMap((event) =>
+      event.step?.beats.flatMap((beat) =>
+        Object.values(beat.stage).flatMap((actions) =>
+          actions.flatMap((action) => action.node?.kind === "plot"
+            ? [action.node.content]
+            : []))) ?? []);
+    expect(plotContents.map((content) =>
+      (content.curves as Array<{ expression: string }>).map(({ expression }) =>
+        expression,
+      ),
+    )).toEqual([["x^2"], ["x^2"]]);
+    const bindingExpressions = plotContents.map((content) =>
+      (content.bindings as Array<{ expression: string }>).map(
+        ({ expression }) => expression,
+      ));
+    expect(bindingExpressions[0]).toEqual(["x", "x^2"]);
+    expect(bindingExpressions[1]?.every((expression) =>
+      !["theta", "theta^2"].includes(expression))).toBe(true);
+    expect(() => reduceCanonicalEvents(classroom)).not.toThrow();
+    vi.unstubAllGlobals();
+  });
+
+  it("resolves an explicit follow-up against a stable node from an earlier lesson", async () => {
+    const firstArtifact = {
+      id: "first",
+      filename: "first.octos-lesson.json",
+      path: "study/oll/first.octos-lesson.json",
+      threadId: "first",
+      turnId: "first",
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => authoringLesson,
+    }));
+    const first = await loadOllLessonArtifact(firstArtifact, "session-1");
+    const firstClassroom = composeOllClassroomEvents([first], "session-1");
+    const firstState = reduceCanonicalEvents(firstClassroom);
+    const priorNodeId = Object.keys(firstState.nodes)[0]!;
+
+    const followUp = {
+      ...structuredClone(authoringLesson),
+      board_context: {
+        board_id: "learning-board-session-1",
+        revision: firstState.revision,
+        references: [{
+          as: "board-ref-1-1",
+          type: "node",
+          target_id: priorNodeId,
+          label: "之前的核心结论",
+          fragments: [],
+        }],
+      },
+      lesson: {
+        ...authoringLesson.lesson,
+        title: "围绕原结论继续讲解",
+      },
+      steps: [{
+        key: "follow-up",
+        purpose: "在原结论旁补充说明",
+        beats: [{
+          key: "write-follow-up",
+          say: "现在看着刚才的结论，补充它成立的原因。",
+          actions: [{
+            do: "write",
+            as: "follow-up-note",
+            kind: "note",
+            role: "explanation",
+            content: { text: "这条说明保留原内容，只在旁边补充。" },
+            place: { relation: "near", anchor: "board-ref-1-1" },
+          }, {
+            do: "focus",
+            when: "after_speech",
+            targets: ["board-ref-1-1", "follow-up-note"],
+            intent: "compare_original_and_enhancement",
+          }],
+        }],
+      }],
+      close: { summary: "完成补充", focus: ["follow-up-note"] },
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => followUp,
+    }));
+    const second = await loadOllLessonArtifact({
+      ...firstArtifact,
+      id: "second",
+      filename: "second.octos-lesson.json",
+      path: "study/oll/second.octos-lesson.json",
+      turnId: "second",
+    }, "session-1");
+    const classroom = composeOllClassroomEvents([first, second], "session-1");
+    const state = reduceCanonicalEvents(classroom);
+    const followUpNode = Object.values(state.nodes).find((node) =>
+      node.content.text === "这条说明保留原内容，只在旁边补充。",
+    );
+
+    expect(followUpNode?.placement?.anchor).toBe(priorNodeId);
+    expect(state.nodes[priorNodeId]).toBeTruthy();
+    expect(state.focus).toContain(priorNodeId);
     vi.unstubAllGlobals();
   });
 
