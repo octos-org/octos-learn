@@ -49,6 +49,7 @@ import type {
   RpcErrorPayload,
   SessionRollbackResult,
   SessionHydrateResult,
+  HydratedMessage,
   SessionOpenedResult,
   SessionOpenResult,
   TaskOutputDeltaEvent,
@@ -1002,6 +1003,51 @@ export function guardSessionHydrate(p: unknown): SessionHydrateResult | null {
     cursor = { stream: "", seq: 0 };
   }
 
+  let messages: HydratedMessage[] | undefined;
+  if (Array.isArray(p.messages)) {
+    messages = p.messages.flatMap((entry) => {
+      if (!isPlainObject(entry)) return [];
+      if (
+        typeof entry.seq !== "number" || !Number.isFinite(entry.seq)
+        || entry.seq < 0
+        || !["system", "user", "assistant", "tool"].includes(String(entry.role))
+        || typeof entry.content !== "string"
+        || typeof entry.persisted_at !== "string"
+      ) return [];
+      const media = Array.isArray(entry.media)
+        ? entry.media.filter((path): path is string =>
+            typeof path === "string" && path.length > 0)
+        : undefined;
+      return [{
+        seq: entry.seq,
+        role: entry.role as HydratedMessage["role"],
+        content: entry.content,
+        persisted_at: entry.persisted_at,
+        ...(typeof entry.turn_id === "string" && entry.turn_id
+          ? { turn_id: entry.turn_id }
+          : {}),
+        ...(typeof entry.thread_id === "string" && entry.thread_id
+          ? { thread_id: entry.thread_id }
+          : {}),
+        ...(typeof entry.client_message_id === "string" && entry.client_message_id
+          ? { client_message_id: entry.client_message_id }
+          : {}),
+        ...(typeof entry.message_id === "string" && entry.message_id
+          ? { message_id: entry.message_id }
+          : {}),
+        ...(typeof entry.source === "string" && entry.source
+          ? { source: entry.source }
+          : {}),
+        ...(media?.length ? { media } : {}),
+      }];
+    });
+  }
+  const replayedEnvelopes = Array.isArray(p.replayed_envelopes)
+    ? p.replayed_envelopes.slice()
+    : undefined;
+  const replayedToolEnvelopes = Array.isArray(p.replayed_tool_envelopes)
+    ? p.replayed_tool_envelopes.slice()
+    : undefined;
   const projectionEnvelopes = Array.isArray(p.projection_envelopes)
     ? p.projection_envelopes.slice()
     : undefined;
@@ -1031,8 +1077,19 @@ export function guardSessionHydrate(p: unknown): SessionHydrateResult | null {
   return {
     session_id: p.session_id,
     cursor,
-    projection_envelopes: projectionEnvelopes,
-    projection_snapshot: projectionSnapshot,
+    ...(messages !== undefined ? { messages } : {}),
+    ...(replayedEnvelopes !== undefined
+      ? { replayed_envelopes: replayedEnvelopes }
+      : {}),
+    ...(replayedToolEnvelopes !== undefined
+      ? { replayed_tool_envelopes: replayedToolEnvelopes }
+      : {}),
+    ...(projectionEnvelopes !== undefined
+      ? { projection_envelopes: projectionEnvelopes }
+      : {}),
+    ...(projectionSnapshot !== undefined
+      ? { projection_snapshot: projectionSnapshot }
+      : {}),
   };
 }
 

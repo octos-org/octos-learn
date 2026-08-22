@@ -12,10 +12,7 @@ import {
   createUiProtocolBridge,
   type UiProtocolBridge,
 } from "./ui-protocol-bridge";
-import {
-  parseProjectionEnvelopeV2,
-  type ProjectionEnvelopeV2,
-} from "./projection-envelope-v2";
+import { hydrateProjectionEnvelopes } from "./hydrate-projection";
 import type {
   ConnectionState,
   SessionOpenedResult,
@@ -434,25 +431,12 @@ function runHydrateFor(
       const hydrate = await bridge.hydrateSession(["messages"]);
       if (capturedGeneration !== generation) return;
       if (!hydrate) return;
-      const rawSnapshot =
-        hydrate.projection_snapshot?.envelopes ?? hydrate.projection_envelopes;
-      if (rawSnapshot === undefined) return;
-      const envelopes = rawSnapshot
-        .map((frame) => parseProjectionEnvelopeV2(frame))
-        .filter(
-          (parsed): parsed is { ok: true; value: ProjectionEnvelopeV2 } =>
-            parsed.ok,
-        )
-        .map((parsed) => parsed.value)
-        .filter((envelope) => {
-          if (envelope.session_id !== sessionId) return false;
-          const snapshotTopic = envelope.topic?.trim() || undefined;
-          const requestedTopic = topic?.trim() || undefined;
-          // Older servers omit `topic` from a snapshot that was already
-          // scoped by the hydrate request. An explicit mismatched topic
-          // is never safe to install into this bucket.
-          return snapshotTopic === undefined || snapshotTopic === requestedTopic;
-        });
+      const envelopes = hydrateProjectionEnvelopes(
+        sessionId,
+        topic,
+        hydrate,
+      );
+      if (envelopes === null) return;
       const cursor = hydrate.projection_snapshot?.cursor ?? hydrate.cursor;
       ProjectionStore.replaceSnapshot(
         projectionKey,

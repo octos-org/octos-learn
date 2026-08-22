@@ -879,10 +879,32 @@ export interface RpcErrorPayload {
   data?: unknown;
 }
 
+/** Durable transcript row returned by the currently deployed server. */
+export interface HydratedMessage {
+  seq: number;
+  role: "system" | "user" | "assistant" | "tool";
+  content: string;
+  turn_id?: string;
+  thread_id?: string;
+  client_message_id?: string;
+  persisted_at: string;
+  message_id?: string;
+  source?: string;
+  media?: string[];
+}
+
 /** Canonical `session/hydrate` result for the v2 projection snapshot. */
 export interface SessionHydrateResult {
   session_id: string;
   cursor: UiCursor;
+  /**
+   * Compatibility carrier used by the deployed Stage-5 server. The web
+   * runtime converts these durable rows into the canonical projection model;
+   * render surfaces still consume ProjectionStore exclusively.
+   */
+  messages?: HydratedMessage[];
+  replayed_envelopes?: unknown[];
+  replayed_tool_envelopes?: unknown[];
   /** Canonical snapshot carrier. */
   projection_envelopes?: unknown[];
   projection_snapshot?: {

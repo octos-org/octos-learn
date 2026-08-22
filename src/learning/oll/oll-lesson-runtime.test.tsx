@@ -136,6 +136,7 @@ function QuestionPlacementProbe({
   showLoading = pending,
   withCourseRegion = false,
   withTallNarrative = false,
+  recovered = false,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
   inkSessionId?: string;
@@ -143,6 +144,7 @@ function QuestionPlacementProbe({
   showLoading?: boolean;
   withCourseRegion?: boolean;
   withTallNarrative?: boolean;
+  recovered?: boolean;
 }) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
@@ -193,7 +195,9 @@ function QuestionPlacementProbe({
           origin: "composer",
           createdAt: "2026-08-17T00:00:00.000Z",
           status: pending ? "pending" : "answered",
-          ...(pending ? {} : { position: { x: 2_400, y: 160 } }),
+          ...(pending || recovered
+            ? {}
+            : { position: { x: 2_400, y: 160 } }),
         }]}
         courseRegions={withCourseRegion ? [createCourseRegion(
           "question-placement",
@@ -943,23 +947,28 @@ describe("OLL lesson Runtime integration", () => {
           y: 160,
           flow: "reading",
           reservedWidth: 886,
+          attachments: expect.arrayContaining([
+            expect.objectContaining({
+              anchorNodeId: "lesson-unit-circle-sine-001:node:sine-plot",
+              width: 360,
+            }),
+          ]),
         },
       });
     });
     expect(onPlaceQuestion).not.toHaveBeenCalled();
     const controls = await screen.findByTestId("oll-variable-controls");
     const controlTop = Number.parseFloat(controls.style.top);
-    const visualBottom = Math.max(...Array.from(
-      document.querySelectorAll<HTMLElement>(
-        ".board-node:is([data-kind='geometry'], [data-kind='scene3d'], [data-kind='plot'], [data-kind='image'], [data-kind='diagram'])",
-      ),
-    ).map((node) => Number.parseFloat(node.style.top)
-      + Number.parseFloat(node.style.height)));
+    const anchorVisual = document.querySelector<HTMLElement>(
+      "[data-id='lesson-unit-circle-sine-001:node:sine-plot']",
+    )!;
+    const anchorBottom = Number.parseFloat(anchorVisual.style.top)
+      + Number.parseFloat(anchorVisual.style.height);
     const lessonBottom = Math.max(...Array.from(
       document.querySelectorAll<HTMLElement>(".board-node"),
     ).map((node) => Number.parseFloat(node.style.top)
       + Number.parseFloat(node.style.height)));
-    expect(controlTop).toBeGreaterThanOrEqual(visualBottom + 42);
+    expect(controlTop).toBeGreaterThanOrEqual(anchorBottom + 42);
     expect(controlTop).toBeLessThan(lessonBottom + 42);
   });
 
@@ -1016,6 +1025,23 @@ describe("OLL lesson Runtime integration", () => {
       + Number.parseFloat(node.style.width)));
     const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
     expect(position.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+  });
+
+  it("restores a missing historical question beside its existing course", async () => {
+    const onPlaceQuestion = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={onPlaceQuestion}
+        recovered
+      />,
+    );
+
+    await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+    const lessonLeft = Math.min(...Array.from(
+      document.querySelectorAll<HTMLElement>(".board-node"),
+    ).map((node) => Number.parseFloat(node.style.left)));
+    const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
+    expect(position.x + 294).toBe(lessonLeft);
   });
 
   it("focuses a new question and loading block once without reclaiming the camera", async () => {
@@ -1812,10 +1838,18 @@ describe("OLL lesson Runtime integration", () => {
   it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
     const duringLesson = render(<StudentTaskRuntimeProbe startAtEnd={false} />);
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+    expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
     duringLesson.unmount();
 
     const first = render(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    expect(screen.getByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
+    const controlsCard = screen.getByTestId("oll-variable-controls");
+    const tasksCard = screen.getByTestId("oll-student-tasks");
+    expect(tasksCard.style.left).toBe(controlsCard.style.left);
+    expect(Number.parseFloat(tasksCard.style.top)).toBeGreaterThan(
+      Number.parseFloat(controlsCard.style.top),
+    );
     expect(screen.getByText("轮到你操作了，完成后这里会立即反馈。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "给我提示" })).toBeNull();
 

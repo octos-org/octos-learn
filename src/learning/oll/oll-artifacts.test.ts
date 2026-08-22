@@ -90,6 +90,80 @@ const threeStepAuthoringLesson = {
 };
 
 describe("OLL lesson artifacts", () => {
+  it("retains machine-readable task targets in lesson topics", () => {
+    const events = [{
+      dsl: "octos.lesson",
+      version: "0.1",
+      profile: "canonical",
+      event: "lesson.open",
+      lesson_id: "course",
+      sequence: 0,
+      board: {
+        board_id: "board",
+        base_revision: 0,
+        region_intent: "new_topic",
+        region_id: "course-region",
+      },
+      lesson: {
+        mode: "explain",
+        language: "zh-CN",
+        title: "交互课程",
+        goals: [],
+        variables: [{
+          as: "theta",
+          initial: 0,
+          min: 0,
+          max: 6.28,
+          control: { kind: "slider" },
+        }],
+        tasks: [{
+          as: "rotate",
+          prompt: "旋转图形",
+          availability: { kind: "after_lesson" },
+          allowed_operations: [{
+            kind: "variable_change",
+            variable: "theta",
+            controls: ["slider"],
+          }],
+          completion: {
+            kind: "expression_target",
+            expression: "theta",
+            value: 1,
+            tolerance: 0.1,
+          },
+          hints: [],
+        }],
+      },
+    }, {
+      dsl: "octos.lesson",
+      version: "0.1",
+      profile: "canonical",
+      event: "lesson.step",
+      lesson_id: "course",
+      sequence: 1,
+      step: {
+        id: "step",
+        purpose: "展示图形",
+        beats: [{
+          id: "beat",
+          stage: {
+            before_speech: [],
+            during_speech: [{
+              action_id: "create",
+              op: "board.create",
+              node: { id: "plot", kind: "plot", content: {} },
+            }],
+            after_speech: [],
+          },
+        }],
+      },
+    }] as Parameters<typeof buildOllLessonTopics>[0][number];
+
+    expect(buildOllLessonTopics([events])[0]?.taskTargets).toEqual({
+      rotate: { variableAliases: ["theta"], nodeIds: [] },
+    });
+  });
+
   it("rebuilds artifact references from durable session files", () => {
     expect(
       collectPersistedOllLessonArtifacts([
@@ -256,6 +330,7 @@ describe("OLL lesson artifacts", () => {
             actions.flatMap((action) => action.node?.id ?? []))) ?? [],
         variableAliases: [],
         taskAliases: [],
+        taskTargets: {},
       },
       {
         id: second[0]?.board?.region_id,
@@ -266,6 +341,7 @@ describe("OLL lesson artifacts", () => {
             actions.flatMap((action) => action.node?.id ?? []))) ?? [],
         variableAliases: [],
         taskAliases: [],
+        taskTargets: {},
       },
     ]);
     const topics = buildOllLessonTopics([first, second]);

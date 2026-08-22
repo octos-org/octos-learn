@@ -359,6 +359,11 @@ export function LearningWorkspace({
     file: File;
     claimed: boolean;
   } | null>(null);
+  const voiceQuestionSourcesRef = useRef(new Map<string, {
+    sourceId: string;
+    bounds: InkSelectionSnapshot["bounds"];
+  } | null>());
+  const completedQuestionTurnIdsRef = useRef(new Set<string>());
   const [composerBoardReferences, setComposerBoardReferences] =
     useState<ComposerBoardReference[]>([]);
   const [whiteboardQuestions, setWhiteboardQuestions] = useState<
@@ -388,7 +393,7 @@ export function LearningWorkspace({
     questionId: string,
     patch: Partial<Pick<
       WhiteboardQuestionRecord,
-      "position" | "status" | "error"
+      "text" | "position" | "status" | "error"
     >>,
   ) => {
     setWhiteboardQuestions((current) => {
@@ -397,7 +402,8 @@ export function LearningWorkspace({
         if (question.id !== questionId) return question;
         const updated = { ...question, ...patch };
         if (
-          updated.status === question.status
+          updated.text === question.text
+          && updated.status === question.status
           && updated.error === question.error
           && updated.position?.x === question.position?.x
           && updated.position?.y === question.position?.y
@@ -415,6 +421,35 @@ export function LearningWorkspace({
   ) => updateWhiteboardQuestion(questionId, { status }), [
     updateWhiteboardQuestion,
   ]);
+  const registerVoiceQuestion = useCallback((
+    questionId: string,
+    text: string,
+    source: {
+      sourceId: string;
+      bounds: InkSelectionSnapshot["bounds"];
+    } | null,
+  ) => {
+    setWhiteboardQuestions((current) => {
+      const existing = current.find((question) => question.id === questionId);
+      if (existing) {
+        if (existing.text === text) return current;
+        return current.map((question) => question.id === questionId
+          ? { ...question, text }
+          : question);
+      }
+      return [...current, {
+        id: questionId,
+        sessionId,
+        text,
+        origin: source ? "selection" as const : "composer" as const,
+        createdAt: new Date().toISOString(),
+        status: completedQuestionTurnIdsRef.current.has(questionId)
+          ? "answered" as const
+          : "pending" as const,
+        ...(source ? { source } : {}),
+      }].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
+    });
+  }, [sessionId]);
   const placeWhiteboardQuestion = useCallback((
     questionId: string,
     position: { x: number; y: number },
@@ -457,6 +492,37 @@ export function LearningWorkspace({
     updateWhiteboardQuestion,
     whiteboardQuestions,
   ]);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      setCourseRegions((current) => {
+        const knownQuestionIds = new Set(
+          current.map((region) => region.questionId),
+        );
+        const missing = whiteboardQuestions.flatMap((question) => {
+          if (
+            question.origin !== "composer"
+            || !question.position
+            || knownQuestionIds.has(question.id)
+          ) return [];
+          knownQuestionIds.add(question.id);
+          return [createCourseRegion(
+            sessionId,
+            question.id,
+            question.position,
+            {
+              width: COURSE_PENDING_FOOTPRINT_WIDTH,
+              height: COURSE_PENDING_FOOTPRINT_HEIGHT,
+            },
+            question.createdAt,
+          )];
+        });
+        if (missing.length === 0) return current;
+        return [...current, ...missing].sort((left, right) =>
+          left.createdAt.localeCompare(right.createdAt));
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [sessionId, whiteboardQuestions]);
   const updateCourseRegion = useCallback((
     regionId: string,
     patch: Partial<Pick<
@@ -589,14 +655,27 @@ export function LearningWorkspace({
     pausedLessonSource !== ollOpenSource;
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
+    const thread = threads.find((candidate) => candidate.id === turnId);
+    const questionId = thread?.turnId ?? turnId;
+    completedQuestionTurnIdsRef.current.add(turnId);
+    completedQuestionTurnIdsRef.current.add(questionId);
+    setWhiteboardQuestionStatus(questionId, "answered");
     setPlainReply(null);
     setPlainReplySpoken(false);
     setCompletedTurnId(turnId);
     conversationOptions?.onTurnComplete?.(turnId);
-  }, [conversationOptions]);
+  }, [conversationOptions, setWhiteboardQuestionStatus, threads]);
   const voiceConversationOptions = useMemo(
     () => ({
       ...conversationOptions,
+      onTurnStart: (turnId: string) => {
+        const pendingSelection = pendingVoiceSelectionRef.current;
+        voiceQuestionSourcesRef.current.set(turnId, pendingSelection ? {
+          sourceId: pendingSelection.snapshot.source_id,
+          bounds: { ...pendingSelection.snapshot.bounds },
+        } : null);
+        conversationOptions?.onTurnStart?.(turnId);
+      },
       getAdditionalTurnFiles: async () => {
         const pending = pendingVoiceSelectionRef.current;
         if (!pending || pending.claimed) return [];
@@ -1053,8 +1132,60 @@ export function LearningWorkspace({
   }, [runtime.ready, voiceEnabled]);
 
   useEffect(() => {
+    for (const turn of conv.turns) {
+      const text = turn.userText.trim();
+      if (!text) continue;
+      if (!voiceQuestionSourcesRef.current.has(turn.id)) continue;
+      const thread = threads.find((candidate) => candidate.id === turn.id);
+      const questionId = thread?.turnId ?? turn.id;
+      registerVoiceQuestion(
+        questionId,
+        text,
+        voiceQuestionSourcesRef.current.get(turn.id) ?? null,
+      );
+    }
     onTurnsChange?.(conv.turns);
-  }, [conv.turns, onTurnsChange]);
+  }, [conv.turns, onTurnsChange, registerVoiceQuestion, threads]);
+
+  useEffect(() => {
+    if (ollFixture || ollArtifacts.length === 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      setWhiteboardQuestions((current) => {
+        const known = new Set(current.map((question) => question.id));
+        const recovered = ollArtifacts.flatMap((artifact, index) => {
+          if (known.has(artifact.turnId)) return [];
+          const thread = threads.find((candidate) =>
+            candidate.id === artifact.threadId
+            || candidate.id === artifact.turnId
+            || candidate.turnId === artifact.turnId);
+          const turn = conv.turns.find((candidate) =>
+            candidate.id === thread?.id
+            || candidate.id === artifact.threadId
+            || candidate.id === artifact.turnId);
+          const text = turn?.userText.trim();
+          if (!text) return [];
+          known.add(artifact.turnId);
+          const threadTimestamp = thread?.userMsg.timestamp;
+          const createdAt = typeof threadTimestamp === "number"
+            && Number.isFinite(threadTimestamp)
+            ? new Date(threadTimestamp).toISOString()
+            : new Date(Date.now() + index).toISOString();
+          return [{
+            id: artifact.turnId,
+            sessionId,
+            text,
+            origin: "composer" as const,
+            createdAt,
+            status: "answered" as const,
+          }];
+        });
+        if (recovered.length === 0) return current;
+        return [...current, ...recovered].sort((left, right) =>
+          left.createdAt.localeCompare(right.createdAt));
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [conv.turns, ollArtifacts, ollFixture, sessionId, threads]);
 
   useEffect(() => {
     const ollArtifactRequests = ollArtifactRequestsRef.current;
@@ -1643,11 +1774,19 @@ export function LearningWorkspace({
     async (file: File) => {
       unlockAudio();
       setSendError(null);
+      const turnId = crypto.randomUUID();
+      const prompt = "请看我上传的题目，把题目和关键步骤整理到白板上。";
+      addWhiteboardQuestion({
+        id: turnId,
+        sessionId,
+        text: prompt,
+        origin: "composer",
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      });
       try {
         setTextTurnPending(true);
         const paths = await uploadFiles([file], "upload");
-        const turnId = crypto.randomUUID();
-        const prompt = "请看我上传的题目，把题目和关键步骤整理到白板上。";
         onLearnerInput?.(prompt);
         sendMessage({
           sessionId,
@@ -1660,19 +1799,29 @@ export function LearningWorkspace({
           clientMessageId: turnId,
           onComplete: () => {
             setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "answered");
             handleTurnComplete(turnId);
           },
           onError: (error) => {
             setTextTurnPending(false);
+            setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "图片发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        setWhiteboardQuestionStatus(turnId, "failed");
         setSendError(cause instanceof Error ? cause.message : "图片发送失败");
       }
     },
-    [buildTurnText, handleTurnComplete, onLearnerInput, sessionId],
+    [
+      addWhiteboardQuestion,
+      buildTurnText,
+      handleTurnComplete,
+      onLearnerInput,
+      sessionId,
+      setWhiteboardQuestionStatus,
+    ],
   );
 
   const retryDegradedVisual = useCallback(async (

@@ -458,6 +458,46 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByText(/白板暂未更新/)).toBeNull();
   });
 
+  it("creates the same question card and logical region for a voice lesson", async () => {
+    const view = render(
+      <LearningWorkspace
+        sessionId="learn-voice-question"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    act(() => {
+      conversationMock.options?.onTurnStart?.("voice-lesson-turn");
+    });
+    expect(screen.queryByText("我的问题")).toBeNull();
+
+    conversationMock.turns = [{
+      id: "voice-lesson-turn",
+      userText: "自然对数的意义是怎么推导的？",
+      assistantText: "",
+      awaitingTranscript: false,
+    }];
+    view.rerender(
+      <LearningWorkspace
+        sessionId="learn-voice-question"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("自然对数的意义是怎么推导的？"))
+      .toBeTruthy();
+    await waitFor(() => expect(localStorage.getItem(
+      "octos-learning-course-regions:v1:learn-voice-question",
+    )).toContain("voice-lesson-turn"));
+
+    act(() => {
+      conversationMock.options?.onTurnComplete?.("voice-lesson-turn");
+    });
+    expect(await screen.findByText("已回答")).toBeTruthy();
+  });
+
   it("shows a separate loading block when another lesson is requested on a populated whiteboard", async () => {
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",
@@ -759,9 +799,15 @@ describe("LearningWorkspace", () => {
         }),
       );
     });
-    const initialNarration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)?.[0];
+    expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
+    const pendingNarration = narrationTtsMock.useOllNarrationTts.mock.calls
+      .at(-1)?.[0];
+    act(() => {
+      pendingNarration?.onPlaybackStart?.(pendingNarration.narrationId!);
+    });
 
     const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    const initialNarration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)?.[0];
     fireEvent.pointerDown(slider, { pointerType: "mouse" });
     fireEvent.change(slider, { target: { value: String(Math.PI / 2) } });
     fireEvent.pointerUp(slider, { pointerType: "mouse" });
@@ -1198,6 +1244,23 @@ describe("LearningWorkspace", () => {
     await waitFor(() => {
       expect(screen.getByText("模型生成的 OLL 课程")).toBeTruthy();
       expect(screen.getByTestId("oll-controls")).toBeTruthy();
+    });
+    await waitFor(() => expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-model-test",
+    )).toContain('"id":"server-turn"'));
+    expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-model-test",
+    )).toContain('"text":"讲解"');
+    await waitFor(() => {
+      const regions = JSON.parse(localStorage.getItem(
+        "octos-learning-course-regions:v1:learn-model-test",
+      ) ?? "[]") as Array<{
+        questionId: string;
+        origin: { x: number; y: number };
+      }>;
+      expect(regions.some((region) => region.questionId === "server-turn"))
+        .toBe(true);
+      return regions;
     });
     act(() => {
       conversationMock.options?.onTurnComplete?.("client-turn");

@@ -26,6 +26,10 @@ export interface OllLessonTopic {
   nodeIds: string[];
   variableAliases: string[];
   taskAliases: string[];
+  taskTargets: Record<string, {
+    variableAliases: string[];
+    nodeIds: string[];
+  }>;
   questionId?: string;
 }
 
@@ -408,6 +412,18 @@ export function buildOllLessonTopics(
         namespace ? scopedIdentifier(namespace, variable.as) : variable.as),
       taskAliases: (open.lesson?.tasks ?? []).map((task) =>
         namespace ? scopedIdentifier(namespace, task.as) : task.as),
+      taskTargets: Object.fromEntries((open.lesson?.tasks ?? []).map((task) => {
+        const taskAlias = namespace ? scopedIdentifier(namespace, task.as) : task.as;
+        const variableAliases = task.allowed_operations.flatMap((operation) =>
+          operation.kind === "variable_change"
+            ? [namespace
+                ? scopedIdentifier(namespace, operation.variable)
+                : operation.variable]
+            : []);
+        const nodeIds = task.allowed_operations.flatMap((operation) =>
+          operation.kind === "scene3d_view" ? [operation.node] : []);
+        return [taskAlias, { variableAliases, nodeIds }];
+      })),
       ...(questionIds[index] ? { questionId: questionIds[index] } : {}),
     }];
   });

@@ -30,6 +30,10 @@ export interface OllLessonTopicDefinition {
   nodeIds?: string[];
   variableAliases?: string[];
   taskAliases?: string[];
+  taskTargets?: Record<string, {
+    variableAliases: string[];
+    nodeIds: string[];
+  }>;
   questionId?: string;
 }
 
@@ -40,6 +44,10 @@ export interface OllLessonOutlineTopic {
   nodeIds?: string[];
   variableAliases?: string[];
   taskAliases?: string[];
+  taskTargets?: Record<string, {
+    variableAliases: string[];
+    nodeIds: string[];
+  }>;
   questionId?: string;
 }
 
@@ -326,6 +334,7 @@ export function useOllLessonRuntime({
             nodeIds: topic.nodeIds,
             variableAliases: topic.variableAliases,
             taskAliases: topic.taskAliases,
+            taskTargets: topic.taskTargets,
             questionId: topic.questionId,
           },
         ]
