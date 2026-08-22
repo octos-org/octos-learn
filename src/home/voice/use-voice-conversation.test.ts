@@ -166,6 +166,14 @@ vi.mock("@/api/client", () => ({
 afterEach(() => {
   supportsVoiceAdmissionMock.mockReset();
   supportsVoiceAdmissionMock.mockReturnValue(true);
+  admitVoiceMessageMock.mockReset();
+  admitVoiceMessageMock.mockResolvedValue({
+    status: "speech",
+    admissionId: "admission-1",
+    transcript: "你好",
+  });
+  commitAdmittedVoiceMessageMock.mockReset();
+  commitAdmittedVoiceMessageMock.mockResolvedValue({ accepted: true });
 });
 
 describe("assembleTurnFiles", () => {
@@ -787,6 +795,80 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("lets Learn consume admitted speech without starting the outer Agent", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    uploadFilesMock.mockResolvedValueOnce(["up/utterance.wav"]);
+    admitVoiceMessageMock.mockResolvedValueOnce({
+      status: "speech",
+      admissionId: "admission-direct",
+      transcript: "请解释自然对数",
+    });
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const onTurnStart = vi.fn();
+
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-direct-voice", undefined, undefined, {
+        onAdmittedSpeech,
+        onTurnStart,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["speech"], { type: "audio/wav" }),
+      });
+    });
+
+    expect(onTurnStart).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      transcript: "请解释自然对数",
+      admissionId: "admission-direct",
+      mediaPaths: ["up/utterance.wav"],
+      currentFramePath: undefined,
+      additionalMediaPaths: [],
+    }));
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("reports a failed Agent voice turn without also reporting completion", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    uploadFilesMock.mockResolvedValueOnce(["up/utterance.wav"]);
+    const onTurnError = vi.fn();
+    const onTurnComplete = vi.fn();
+
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-agent-error", undefined, undefined, {
+        onTurnError,
+        onTurnComplete,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["speech"], { type: "audio/wav" }),
+      });
+    });
+    const request = commitAdmittedVoiceMessageMock.mock.calls.at(-1)?.[0];
+    const failure = new Error("请求有点多，等几秒再说一遍？");
+    act(() => {
+      request?.onError?.(failure);
+      request?.onComplete?.();
+    });
+
+    expect(onTurnError).toHaveBeenCalledWith(expect.any(String), failure);
+    expect(onTurnComplete).not.toHaveBeenCalled();
     unmount();
   });
 

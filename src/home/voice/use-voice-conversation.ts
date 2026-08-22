@@ -90,6 +90,13 @@ export interface VoiceTurnSendContext {
   additionalMediaPaths?: string[];
 }
 
+export interface VoiceAdmittedSpeechContext extends VoiceTurnSendContext {
+  /** Transcript accepted by the server-side ASR admission gate. */
+  transcript: string;
+  /** Short-lived proof associated with this admitted utterance. */
+  admissionId: string;
+}
+
 export interface VoiceConversationOptions {
   /** Build application context after uploads resolve, so frame paths are exact. */
   buildTurnText?: (context: VoiceTurnSendContext) => string;
@@ -113,6 +120,15 @@ export interface VoiceConversationOptions {
   onTurnStart?: (turnId: string) => void;
   /** Reports the exact client turn after the assistant has finished replying. */
   onTurnComplete?: (turnId: string) => void;
+  /** Reports a terminal turn failure separately from successful completion. */
+  onTurnError?: (turnId: string, error: Error) => void;
+  /**
+   * Lets an application consume admitted speech without starting the general
+   * Agent turn. Return true only after the application accepted the request.
+   */
+  onAdmittedSpeech?: (
+    context: VoiceAdmittedSpeechContext,
+  ) => Promise<boolean> | boolean;
 }
 
 export interface VoiceConversationTurn {
@@ -377,6 +393,8 @@ export function useVoiceConversation(
   const externalSpeechActive = options?.externalSpeechActive === true;
   const onTurnStart = options?.onTurnStart;
   const onTurnComplete = options?.onTurnComplete;
+  const onTurnError = options?.onTurnError;
+  const onAdmittedSpeech = options?.onAdmittedSpeech;
   const threads = useRenderThreads(sessionId, historyTopic);
   const capture = useVoiceCapture();
   // Destructure the STABLE function refs (useVoiceCapture returns a fresh
@@ -632,6 +650,11 @@ export function useVoiceConversation(
         const sentFrame = capturedFiles.find((f) => f.type.startsWith("image/"));
         const paths = await uploadFiles(files, "recording");
         const additionalMediaPaths = paths.slice(capturedFiles.length);
+        let turnFailed = false;
+        const onVoiceTurnError = (error: Error) => {
+          turnFailed = true;
+          onTurnError?.(turnId, error);
+        };
         const onVoiceTurnComplete = () => {
           if (activeTurnIdRef.current === turnId) {
             activeTurnIdRef.current = null;
@@ -639,7 +662,7 @@ export function useVoiceConversation(
           if (!playReplyAudio && stateRef.current === "thinking") {
             void beginListeningRef.current();
           }
-          onTurnComplete?.(turnId);
+          if (!turnFailed) onTurnComplete?.(turnId);
         };
         const beginCommittedVoiceTurn = () => {
           setProvisionalTurnIds((current) =>
@@ -701,6 +724,7 @@ export function useVoiceConversation(
             media: paths,
             clientMessageId: turnId,
             liveVideo: sentFrame !== undefined,
+            onError: onVoiceTurnError,
             onComplete: onVoiceTurnComplete,
           });
           armReplyTimeout();
@@ -751,6 +775,36 @@ export function useVoiceConversation(
         audioTurnByPathRef.current.clear();
         speakingTurnIdRef.current = null;
         beginCommittedVoiceTurn();
+        if (onAdmittedSpeech) {
+          try {
+            const handled = await onAdmittedSpeech({
+              sessionId,
+              turnId,
+              transcript: admission.transcript,
+              admissionId: admission.admissionId,
+              mediaPaths: paths,
+              currentFramePath,
+              additionalMediaPaths,
+            });
+            if (handled) {
+              activeTurnIdRef.current = null;
+              if (stateRef.current === "thinking") {
+                void beginListeningRef.current();
+              }
+              return;
+            }
+          } catch (cause) {
+            const error = cause instanceof Error
+              ? cause
+              : new Error(String(cause));
+            onVoiceTurnError(error);
+            activeTurnIdRef.current = null;
+            if (stateRef.current === "thinking") {
+              void beginListeningRef.current();
+            }
+            return;
+          }
+        }
         await commitAdmittedVoiceMessage(
           {
             sessionId,
@@ -762,6 +816,7 @@ export function useVoiceConversation(
             // attached (camera on + grab succeeded) — tell the server so it
             // treats the frame as a real-time view, never inferred from media.
             liveVideo: sentFrame !== undefined,
+            onError: onVoiceTurnError,
             onComplete: onVoiceTurnComplete,
           },
           admission.admissionId,
@@ -789,8 +844,10 @@ export function useVoiceConversation(
       getAdditionalTurnFiles,
       historyTopic,
       buildTurnText,
+      onAdmittedSpeech,
       onTurnStart,
       onTurnComplete,
+      onTurnError,
       playReplyAudio,
       sessionId,
       showSentFrame,
