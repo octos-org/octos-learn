@@ -24,6 +24,7 @@ import {
 } from "./degraded-visual-retry";
 import { LearningWorkspace } from "./learning-workspace";
 import { saveSelectionEnhancementState } from "./selection-enhancements";
+import { saveWhiteboardQuestions } from "./whiteboard-questions";
 
 const conversationMock = vi.hoisted(() => ({
   turns: [] as VoiceConversation["turns"],
@@ -1277,7 +1278,7 @@ describe("LearningWorkspace", () => {
     );
   });
 
-  it("loads a saved selection enhancement when echoed bounds only differ by floating-point rounding", async () => {
+  it("loads a rounded selection enhancement and deletes its whole combined card", async () => {
     const sessionId = "learn-selection-rounded-bounds";
     const svg = '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>';
     const region = {
@@ -1318,6 +1319,18 @@ describe("LearningWorkspace", () => {
       sources: [source],
       hidden_enhancement_turn_ids: [],
     });
+    saveWhiteboardQuestions(sessionId, [{
+      id: "plot-turn",
+      sessionId,
+      text: "请画出 $y=x^2$。",
+      origin: "selection",
+      createdAt: "2026-08-17T10:00:00.500Z",
+      status: "answered",
+      source: {
+        sourceId: source.source_id,
+        bounds: source.bounds,
+      },
+    }]);
     sessionFilesMock.getSessionFiles.mockResolvedValue([{
       filename: "plot-turn.octos-selection-enhancement.json",
       path: "skill-output/study/selections/plot-turn.octos-selection-enhancement.json",
@@ -1374,6 +1387,73 @@ describe("LearningWorkspace", () => {
     await waitFor(() => {
       expect(screen.getByText("二次函数 y = x² 图像")).toBeTruthy();
     });
+    expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
+      .toBeNull();
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "删除这条辅助内容",
+    }));
+    await waitFor(() => {
+      expect(screen.queryByText("二次函数 y = x² 图像")).toBeNull();
+      expect(screen.queryByText(/请画出/)).toBeNull();
+    });
+    expect(screen.queryByText(/正在生成选区辅助内容/)).toBeNull();
+  });
+
+  it("keeps a durable auxiliary card visible when its browser-local source is missing", async () => {
+    const sessionId = "learn-selection-source-missing";
+    sessionFilesMock.getSessionFiles.mockResolvedValue([{
+      filename: "historical-turn.octos-selection-enhancement.json",
+      path: "skill-output/study/selections/historical-turn.octos-selection-enhancement.json",
+      size_bytes: 700,
+      modified_at: "2026-08-17T11:00:01.000Z",
+    }]);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        profile: "octos.selection-enhancement",
+        version: "0.2",
+        turn_id: "historical-turn",
+        created_at: "2026-08-17T11:00:01.000Z",
+        source: {
+          source_id: "missing-local-source",
+          document_id: `learning-session:${sessionId}:student-ink`,
+          document_version: 4,
+          bounds: { x: 120, y: 80, width: 180, height: 90 },
+          checksum: { algorithm: "sha-256", value: "a".repeat(64) },
+        },
+        board: {
+          board_id: `learning-whiteboard:${sessionId}`,
+          revision: 0,
+          targets: [],
+        },
+        tool_id: "explain",
+        interpretation: {
+          kind: "math",
+          content: "y=x^2",
+          confidence: "high",
+        },
+        response: {
+          kind: "explanation",
+          title: "保留下来的历史说明",
+          text: "已经生成的答案仍然可以查看。",
+        },
+      }),
+    }));
+
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("保留下来的历史说明")).toBeTruthy();
+    });
+    expect(screen.getByText("原选区快照已不在本浏览器，保留生成结果"))
+      .toBeTruthy();
     expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
       .toBeNull();
   });

@@ -14,6 +14,7 @@ import {
   samplePlotExpression,
 } from "octos-lesson-language/web-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
+import { MarkdownContent } from "@/components/markdown-renderer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 import {
@@ -55,7 +56,10 @@ function SelectionQuestionSection({
             ? "正在准备回答"
             : "没有生成成功"}</span>
       </div>
-      <p>{question.text}</p>
+      <MarkdownContent
+        text={question.text}
+        className="learning-selection-markdown learning-selection-question-text"
+      />
     </section>
   );
 }
@@ -427,6 +431,7 @@ export function SelectionEnhancementLayer({
         }
         const artifact = item.artifact;
         const question = item.question;
+        const sourceMissing = !sourceById.has(artifact.source.source_id);
         const stale = currentDocumentVersion > artifact.source.document_version;
         const targetInvalid = invalidTargetTurnIds.has(artifact.turn_id);
         const minimized = minimizedTurnIds.has(artifact.turn_id);
@@ -486,6 +491,8 @@ export function SelectionEnhancementLayer({
                 <small>
                   {targetInvalid
                     ? "引用的白板对象已失效，请重新选择"
+                    : sourceMissing
+                      ? "原选区快照已不在本浏览器，保留生成结果"
                     : stale
                       ? "基于较早版本的原稿"
                       : "来自当前选区"}
@@ -519,13 +526,24 @@ export function SelectionEnhancementLayer({
               </div>
             </header>
             <div className="learning-selection-enhancement-content">
-              <strong>{artifact.response.title}</strong>
-              <p>{artifact.response.text}</p>
+              <MarkdownContent
+                text={artifact.response.title}
+                className="learning-selection-markdown learning-selection-result-title"
+              />
+              <MarkdownContent
+                text={artifact.response.text}
+                className="learning-selection-markdown learning-selection-result-text"
+              />
               {artifact.response.kind === "explanation"
                 && artifact.response.items?.length ? (
                   <ul>
                     {artifact.response.items.map((item) => (
-                      <li key={item}>{item}</li>
+                      <li key={item}>
+                        <MarkdownContent
+                          text={item}
+                          className="learning-selection-markdown"
+                        />
+                      </li>
                     ))}
                   </ul>
                 ) : null}
@@ -558,14 +576,23 @@ export function SelectionEnhancementLayer({
                   {artifact.response.alternatives?.length ? (
                     <ul>
                       {artifact.response.alternatives.map((alternative) => (
-                        <li key={alternative}>{alternative}</li>
+                        <li key={alternative}>
+                          <MarkdownContent
+                            text={alternative}
+                            className="learning-selection-markdown"
+                          />
+                        </li>
                       ))}
                     </ul>
                   ) : null}
                 </div>
               ) : null}
               <footer>
-                系统理解：{artifact.interpretation.content || "未能可靠识别"}
+                <span>系统理解：</span>
+                <MarkdownContent
+                  text={artifact.interpretation.content || "未能可靠识别"}
+                  className="learning-selection-markdown"
+                />
               </footer>
             </div>
             <button

@@ -486,9 +486,8 @@ export function LearningWorkspace({
         (candidate) => candidate.source_id === loaded?.source.source_id,
       );
       return loaded
-        && source
-        && selectionArtifactMatchesSource(loaded, source)
         && !hidden.has(loaded.turn_id)
+        && (!source || selectionArtifactMatchesSource(loaded, source))
         ? [loaded]
         : [];
     });
@@ -1135,7 +1134,11 @@ export function LearningWorkspace({
           const source = selectionState.sources.find(
             (candidate) => candidate.source_id === loaded.source.source_id,
           );
-          if (!source || !selectionArtifactMatchesSource(loaded, source)) {
+          // The generated artifact is durable server-side while its source SVG
+          // is browser-local. A missing local source must not make the already
+          // generated result disappear after refresh or on another browser.
+          // When a source is present, keep enforcing its immutable checksum.
+          if (source && !selectionArtifactMatchesSource(loaded, source)) {
             throw new Error("选区辅助内容无法对应到已保存的原稿快照");
           }
           setLoadedSelectionArtifacts((current) => ({
@@ -1486,14 +1489,26 @@ export function LearningWorkspace({
       selectionStateRef.current = next;
       return next;
     });
+    // The question and result are one auxiliary card. Removing only the
+    // artifact leaves an answered question behind, which is then rendered as
+    // a fake loading card.
+    setWhiteboardQuestions((current) => current.filter((question) =>
+      question.id !== turnId));
   }, []);
 
   const deleteSelectionSources = useCallback((sourceIds: string[]) => {
     const ids = new Set(sourceIds);
     if (ids.size === 0) return;
-    const matchingTurnIds = Object.values(loadedSelectionArtifacts)
-      .filter((artifact) => ids.has(artifact.source.source_id))
-      .map((artifact) => artifact.turn_id);
+    const matchingTurnIds = new Set([
+      ...Object.values(loadedSelectionArtifacts)
+        .filter((artifact) => ids.has(artifact.source.source_id))
+        .map((artifact) => artifact.turn_id),
+      ...whiteboardQuestions
+        .filter((question) => question.origin === "selection"
+          && question.source
+          && ids.has(question.source.sourceId))
+        .map((question) => question.id),
+    ]);
     setSelectionState((current) => {
       if (!current) return current;
       const next = removeSelectionSources(current, ids, matchingTurnIds);
@@ -1511,7 +1526,7 @@ export function LearningWorkspace({
     if (pendingVoice && ids.has(pendingVoice.snapshot.source_id)) {
       pendingVoiceSelectionRef.current = null;
     }
-  }, [loadedSelectionArtifacts]);
+  }, [loadedSelectionArtifacts, whiteboardQuestions]);
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {

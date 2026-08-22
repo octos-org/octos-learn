@@ -63,6 +63,30 @@ function dispatchPointerEvent(
 }
 
 describe("SelectionEnhancementLayer", () => {
+  it("renders LaTeX throughout generated auxiliary card text", () => {
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[{
+          ...artifact,
+          response: {
+            kind: "explanation",
+            title: "函数 $y=x^2$",
+            text: "当 $x=2$ 时，得到 $y=4$。",
+            items: ["横坐标是 $x$。"],
+          },
+        }]}
+        sources={[]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const card = container.querySelector(".learning-selection-enhancement");
+    expect(card?.querySelectorAll(".katex").length).toBeGreaterThanOrEqual(4);
+    expect(card?.textContent).not.toContain("$");
+    expect(card?.textContent).toContain("函数");
+  });
+
   it("keeps an invalidated result visible and labels the missing board target", () => {
     const { container } = render(
       <SelectionEnhancementLayer
