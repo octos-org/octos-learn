@@ -3,14 +3,17 @@ import type { CanonicalEvent } from "octos-lesson-language";
 import { compilePlaybackOperations } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import {
+  Camera,
+  CameraOff,
   ChevronRight,
+  Mic,
+  MicOff,
   Pause,
   Play,
   RotateCcw,
   Settings2,
   Volume2,
   VolumeX,
-  X,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
 import { getSessionFiles } from "@/api/sessions";
@@ -883,12 +886,7 @@ export function LearningWorkspace({
   const [selectionEnhancementPending, setSelectionEnhancementPending] =
     useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
-  const [temporaryCameraPreview, setTemporaryCameraPreview] = useState(false);
-  const temporaryCameraPreviewRef = useRef(false);
-  const cameraPreviewRequestRef = useRef(0);
   const cameraSettings = conv.cameraSettings ?? DEFAULT_CAMERA_FRAME_SETTINGS;
-  const startCamera = conv.startCamera;
-  const stopCamera = conv.stopCamera;
   const completedArtifactFilenames = completedTurnId
     ? new Set([
         `${completedTurnId}.octos-lesson.json`,
@@ -1118,7 +1116,7 @@ export function LearningWorkspace({
 
   useEffect(() => {
     if (!voiceEnabled) {
-      conv.stop();
+      conv.stop({ preserveCamera: true });
       return;
     }
     if (!runtime.ready) return;
@@ -1880,33 +1878,18 @@ export function LearningWorkspace({
       setSendError(
         cause instanceof Error
           ? cause.message
-          : "无法启用麦克风和摄像头",
+          : "无法启用语音",
       );
     }
   };
 
   const closeCameraSettings = useCallback(() => {
-    cameraPreviewRequestRef.current += 1;
     setCameraSettingsOpen(false);
-    if (temporaryCameraPreviewRef.current) {
-      temporaryCameraPreviewRef.current = false;
-      setTemporaryCameraPreview(false);
-      stopCamera();
-    }
-  }, [stopCamera]);
+  }, []);
 
-  const openCameraSettings = useCallback(async () => {
+  const openCameraSettings = useCallback(() => {
     setCameraSettingsOpen(true);
-    if (conv.cameraActive || conv.cameraStream) return;
-    const request = ++cameraPreviewRequestRef.current;
-    const started = await startCamera();
-    if (cameraPreviewRequestRef.current !== request) {
-      if (started) stopCamera();
-      return;
-    }
-    temporaryCameraPreviewRef.current = started;
-    setTemporaryCameraPreview(started);
-  }, [conv.cameraActive, conv.cameraStream, startCamera, stopCamera]);
+  }, []);
 
   useEffect(() => {
     if (!cameraSettingsOpen) return;
@@ -1921,11 +1904,6 @@ export function LearningWorkspace({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [cameraSettingsOpen, closeCameraSettings]);
-
-  useEffect(() => () => {
-    cameraPreviewRequestRef.current += 1;
-    if (temporaryCameraPreviewRef.current) stopCamera();
-  }, [stopCamera]);
 
   const teacherSpeech = lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
@@ -2065,40 +2043,25 @@ export function LearningWorkspace({
           </div>
         ) : null}
         <div className="learning-workspace-actions">
-          {voiceEnabled ? (
-            <button
-              type="button"
-              className="learning-mode-button"
-              onClick={onUseTextMode}
-            >
-              切换到文字
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="learning-mode-button"
-              onClick={() => void handleUseVoiceMode()}
-            >
-              启用语音和摄像头
-            </button>
-          )}
           <button
             type="button"
-            className="learning-camera-calibration-button"
-            onClick={() => void openCameraSettings()}
-            aria-label="调整摄像头画面"
-            aria-expanded={cameraSettingsOpen}
+            className={`learning-mode-button ${voiceEnabled ? "is-active" : ""}`}
+            onClick={voiceEnabled ? onUseTextMode : () => void handleUseVoiceMode()}
+            aria-label={voiceEnabled ? "关闭语音" : "启用语音"}
+            aria-pressed={voiceEnabled}
           >
-            <Settings2 size={16} />
-            <span>调整画面</span>
+            {voiceEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+            <span>{voiceEnabled ? "关闭语音" : "启用语音"}</span>
           </button>
           <button
             type="button"
-            className="learning-exit-button"
-            onClick={onBack}
-            aria-label="退出学习"
+            className={`learning-mode-button ${conv.cameraActive ? "is-active" : ""}`}
+            onClick={conv.toggleCamera}
+            aria-label={conv.cameraActive ? "关闭摄像头" : "启用摄像头"}
+            aria-pressed={conv.cameraActive}
           >
-            <X size={20} />
+            {conv.cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
+            <span>{conv.cameraActive ? "关闭摄像头" : "启用摄像头"}</span>
           </button>
         </div>
       </header>
@@ -2136,7 +2099,7 @@ export function LearningWorkspace({
         />
       </main>
 
-      {voiceEnabled && (conv.cameraStream || conv.lastSentFrameUrl) && (
+      {(conv.cameraStream || conv.lastSentFrameUrl) && (
         <div className="learning-camera-monitor" aria-label="摄像头画面">
           {conv.cameraStream && (
             <div className="learning-camera-frame">
@@ -2144,6 +2107,16 @@ export function LearningWorkspace({
                 stream={conv.cameraStream}
                 settings={cameraSettings}
               />
+              <button
+                type="button"
+                className="learning-camera-frame-settings"
+                onClick={openCameraSettings}
+                aria-label="调整摄像头画面"
+                aria-expanded={cameraSettingsOpen}
+                title="调整画面"
+              >
+                <Settings2 size={16} />
+              </button>
               <span>老师看到的画面</span>
             </div>
           )}
@@ -2161,7 +2134,7 @@ export function LearningWorkspace({
           stream={conv.cameraStream}
           settings={cameraSettings}
           error={conv.cameraError}
-          temporaryPreview={temporaryCameraPreview}
+          temporaryPreview={false}
           onChange={conv.updateCameraSettings}
           onReset={conv.resetCameraSettings}
           onClose={closeCameraSettings}
@@ -2204,12 +2177,14 @@ export function LearningWorkspace({
         fileListError ||
         artifactError ||
         conv.error ||
+        conv.cameraError ||
         ollNarrationTts.error) && (
         <div className="learning-error" role="alert">
           {sendError ??
             fileListError ??
             artifactError ??
             conv.error ??
+            conv.cameraError ??
             ollNarrationTts.error}
         </div>
       )}

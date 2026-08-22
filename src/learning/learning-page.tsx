@@ -6,7 +6,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ArrowLeft, BookOpen, Menu, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  House,
+  Menu,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   deleteSession,
@@ -596,13 +604,15 @@ export function LearningPage() {
   );
 
   const useTextMode = useCallback(() => {
-    localStorage.setItem(AUTO_CAMERA_KEY, "false");
     localStorage.setItem(INPUT_MODE_KEY, "text");
-    setDevicePreferences({ autoCamera: false, voiceEnabled: false });
+    setDevicePreferences((current) => ({
+      autoCamera: current?.autoCamera ?? false,
+      voiceEnabled: false,
+    }));
   }, []);
 
-  const useVoiceAndCameraMode = useCallback(async () => {
-    const preferences = await requestLearningDevices(true);
+  const useVoiceMode = useCallback(async () => {
+    const preferences = await requestLearningDevices(false);
     setDevicePreferences(preferences);
   }, []);
 
@@ -894,14 +904,24 @@ export function LearningPage() {
       </aside>
 
       <main className="relative min-w-0 flex-1">
-        <button
-          type="button"
-          aria-label="打开学习会话列表"
-          onClick={() => setSidebarOpen(true)}
-          className="learning-sidebar-toggle absolute left-5 top-6 z-20 flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
-        >
-          <Menu size={20} />
-        </button>
+        <div className="absolute left-3 top-6 z-20 flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="返回主页"
+            onClick={leave}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+          >
+            <House size={19} />
+          </button>
+          <button
+            type="button"
+            aria-label="打开学习会话列表"
+            onClick={() => setSidebarOpen(true)}
+            className="learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+          >
+            <Menu size={20} />
+          </button>
+        </div>
         <LearningSessionScope record={record}>
           {!ollFixture && <LearningServerSync onDone={handleServerSync} />}
           {serverSyncReady ? (
@@ -917,7 +937,7 @@ export function LearningPage() {
               conversationOptions={conversationOptions}
               voiceEnabled={devicePreferences.voiceEnabled}
               onUseTextMode={useTextMode}
-              onUseVoiceMode={useVoiceAndCameraMode}
+              onUseVoiceMode={useVoiceMode}
               onLearnerInput={handleLearnerInput}
               onWhiteboardActivity={handleWhiteboardActivity}
               onTurnsChange={handleTurnsChange}

@@ -162,6 +162,15 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
   });
 
+  it("returns home from the icon beside the session menu", async () => {
+    window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
+
+    render(<LearningPage />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "返回主页" }));
+    expect(navigateMock).toHaveBeenCalledWith("/");
+  });
+
   it("blocks an installed learning coach that predates request-source isolation", async () => {
     profileSkillsMock.skills[0].version = "0.8.3";
 
@@ -337,7 +346,7 @@ describe("LearningPage", () => {
     }
   });
 
-  it("can enable voice and camera from an existing text-only lesson", async () => {
+  it("can enable voice without also enabling the camera in a text-only lesson", async () => {
     localStorage.setItem("octos_learning_auto_camera", "false");
     localStorage.setItem("octos_learning_input_mode", "text");
     const stopTrack = vi.fn();
@@ -367,11 +376,11 @@ describe("LearningPage", () => {
       );
       expect(getUserMedia).toHaveBeenCalledWith({
         audio: true,
-        video: true,
+        video: false,
       });
       expect(stopTrack).toHaveBeenCalledTimes(1);
       expect(localStorage.getItem("octos_learning_input_mode")).toBe("voice");
-      expect(localStorage.getItem("octos_learning_auto_camera")).toBe("true");
+      expect(localStorage.getItem("octos_learning_auto_camera")).toBe("false");
     } finally {
       if (originalMediaDevices) {
         Object.defineProperty(

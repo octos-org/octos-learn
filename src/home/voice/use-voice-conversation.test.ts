@@ -714,6 +714,19 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
+  it("can stop voice capture without turning off an independently enabled camera", () => {
+    cameraMock.stop.mockClear();
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-independent-camera-test"),
+    );
+
+    act(() => result.current.stop({ preserveCamera: true }));
+
+    expect(captureStopMock).toHaveBeenCalled();
+    expect(cameraMock.stop).not.toHaveBeenCalled();
+    unmount();
+  });
+
   it("waits for the auto-start camera attempt before accepting the first utterance", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",
