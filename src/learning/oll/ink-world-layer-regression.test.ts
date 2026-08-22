@@ -4,12 +4,15 @@ import type { CameraState } from "octos-lesson-language/web-runtime";
 
 type RuntimeHarness = {
   options: { viewport: HTMLElement };
-  host: HTMLElement;
-  editor: { display: { setDevicePixelRatio: ReturnType<typeof vi.fn> } };
-  layerBounds: { left: number; top: number; width: number; height: number };
-  compactedScale: number;
-  pixelRatioTimer?: ReturnType<typeof setTimeout>;
+  editor: {
+    getRootElement: () => HTMLElement;
+    display: { setDevicePixelRatio: ReturnType<typeof vi.fn> };
+    queueRerender: ReturnType<typeof vi.fn>;
+  };
+  renderedCamera: CameraState;
   pendingCamera?: CameraState;
+  cameraRenderTimer?: ReturnType<typeof setTimeout>;
+  cameraRenderRevision: number;
   appliedPixelRatio?: number;
   resetEditorViewport: ReturnType<typeof vi.fn>;
 };
@@ -20,18 +23,21 @@ const updateWorldLayer = (
   }
 ).updateWorldLayer;
 
-function createHarness(): RuntimeHarness {
+function createHarness(renderedCamera: CameraState): RuntimeHarness & {
+  editorRoot: HTMLElement;
+} {
   const viewport = document.createElement("div");
-  Object.defineProperties(viewport, {
-    clientWidth: { value: 1200 },
-    clientHeight: { value: 800 },
-  });
+  const editorRoot = document.createElement("div");
   return {
     options: { viewport },
-    host: document.createElement("div"),
-    editor: { display: { setDevicePixelRatio: vi.fn() } },
-    layerBounds: { left: -420, top: -420, width: 2040, height: 1640 },
-    compactedScale: 1,
+    editorRoot,
+    editor: {
+      getRootElement: () => editorRoot,
+      display: { setDevicePixelRatio: vi.fn() },
+      queueRerender: vi.fn(async () => undefined),
+    },
+    renderedCamera,
+    cameraRenderRevision: 0,
     resetEditorViewport: vi.fn(),
   };
 }
@@ -40,35 +46,36 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("ink world-layer camera settlement", () => {
-  it("keeps the existing world layer when the learner only pans the board", () => {
+describe("ink camera synchronization", () => {
+  it("uses the same translation as the board while panning, then redraws in place", async () => {
     vi.useFakeTimers();
-    const runtime = createHarness();
-    const originalBounds = runtime.layerBounds;
+    const runtime = createHarness({ panX: 80, panY: 60, scale: 1 });
 
     updateWorldLayer.call(runtime, { panX: -100, panY: -60, scale: 1 });
-    vi.advanceTimersByTime(120);
 
-    expect(runtime.layerBounds).toBe(originalBounds);
+    expect(runtime.editorRoot.style.transform).toBe("matrix(1, 0, 0, 1, -180, -120)");
     expect(runtime.resetEditorViewport).not.toHaveBeenCalled();
-    expect(runtime.compactedScale).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(120);
+
+    expect(runtime.renderedCamera).toEqual({ panX: -100, panY: -60, scale: 1 });
+    expect(runtime.resetEditorViewport).toHaveBeenCalledOnce();
+    expect(runtime.editor.queueRerender).toHaveBeenCalledOnce();
+    expect(runtime.editorRoot.style.transform).toBe("");
   });
 
-  it("compacts and redraws the world layer after a zoom settles", () => {
+  it("keeps the ink aligned to the zoom anchor and redraws at screen DPR", async () => {
     vi.useFakeTimers();
-    const runtime = createHarness();
+    const runtime = createHarness({ panX: 80, panY: 60, scale: 1 });
 
-    updateWorldLayer.call(runtime, { panX: 0, panY: 0, scale: 1.2 });
-    vi.advanceTimersByTime(120);
+    updateWorldLayer.call(runtime, { panX: 20, panY: 10, scale: 1.25 });
 
-    expect(runtime.layerBounds).toEqual({
-      left: -350,
-      top: -350,
-      width: 1700,
-      height: 1367,
-    });
-    expect(runtime.resetEditorViewport).toHaveBeenCalledOnce();
-    expect(runtime.compactedScale).toBe(1.2);
-    expect(runtime.editor.display.setDevicePixelRatio).toHaveBeenCalledOnce();
+    expect(runtime.editorRoot.style.transform).toBe("matrix(1.25, 0, 0, 1.25, -80, -65)");
+
+    await vi.advanceTimersByTimeAsync(120);
+
+    expect(runtime.renderedCamera).toEqual({ panX: 20, panY: 10, scale: 1.25 });
+    expect(runtime.editor.display.setDevicePixelRatio).toHaveBeenCalledWith(window.devicePixelRatio);
+    expect(runtime.editorRoot.style.transform).toBe("");
   });
 });
