@@ -16,7 +16,7 @@ export interface WhiteboardCameraRequest {
 export interface WhiteboardCameraDecision {
   action: "queued" | "replaced" | "ignored" | "applied";
   request: WhiteboardCameraRequest;
-  reason?: "duplicate" | "course-settled" | "lower-priority";
+  reason?: "duplicate" | "course-settled" | "inactive-course" | "lower-priority";
 }
 
 type ScheduleFrame = (callback: () => void) => number;
@@ -47,6 +47,8 @@ export class WhiteboardCameraController {
   private pending: WhiteboardCameraRequest | null = null;
   private frame: number | null = null;
   private settledCourseId: string | null = null;
+  private activeCourseId: string | null = null;
+  private loadingCourseId: string | null = null;
   private readonly appliedKeys = new Set<string>();
   private readonly apply: (request: WhiteboardCameraRequest) => void;
   private readonly scheduleFrame: ScheduleFrame;
@@ -65,13 +67,37 @@ export class WhiteboardCameraController {
     this.report = report;
   }
 
-  markCourseActive(courseId: string): void {
+  markCourseActive(courseId: string, force = false): boolean {
+    if (
+      !force
+      && this.loadingCourseId !== null
+      && this.loadingCourseId !== courseId
+    ) return false;
+    const enteredLoadingCourse = this.loadingCourseId === courseId;
+    this.activeCourseId = courseId;
+    if (enteredLoadingCourse || force) this.loadingCourseId = null;
     if (this.settledCourseId === courseId) this.settledCourseId = null;
+    return enteredLoadingCourse;
+  }
+
+  canActivateCourse(courseId: string): boolean {
+    return this.loadingCourseId === null || this.loadingCourseId === courseId;
   }
 
   request(request: WhiteboardCameraRequest): boolean {
     if (!validRect(request.rect) || this.appliedKeys.has(request.key)) {
       this.report?.({ action: "ignored", request, reason: "duplicate" });
+      return false;
+    }
+
+    if (request.source === "question-loading") {
+      this.activeCourseId = request.courseId;
+      this.loadingCourseId = request.courseId;
+    } else if (
+      this.activeCourseId !== null
+      && request.courseId !== this.activeCourseId
+    ) {
+      this.report?.({ action: "ignored", request, reason: "inactive-course" });
       return false;
     }
 
