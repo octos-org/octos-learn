@@ -174,28 +174,43 @@ diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtim
      savedChangeRevision = 0;
      saveTimer;
 +    pixelRatioTimer;
-+    pendingPixelRatio;
++    pendingCamera;
 +    appliedPixelRatio;
      saveQueue = Promise.resolve(null);
      destroyPromise;
      restoreFailure;
-@@ -158,8 +161,21 @@ export class InkRuntime {
+@@ -161,8 +164,36 @@ export class InkRuntime {
          }
          const hostWindow = this.options.viewport.ownerDocument.defaultView;
          if (hostWindow) {
 -            const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
 -            void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
-+            const requestedPixelRatio = hostWindow.devicePixelRatio * camera.scale;
-+            const edgeLimitedPixelRatio = Math.min(8192 / this.layerBounds.width, 8192 / this.layerBounds.height);
-+            const areaLimitedPixelRatio = Math.sqrt(16 * 1024 * 1024 / (this.layerBounds.width * this.layerBounds.height));
-+            this.pendingPixelRatio = Math.max(.08, Math.min(4, requestedPixelRatio, edgeLimitedPixelRatio, areaLimitedPixelRatio));
++            this.pendingCamera = { ...camera };
 +            if (this.pixelRatioTimer)
 +                clearTimeout(this.pixelRatioTimer);
 +            this.pixelRatioTimer = setTimeout(() => {
 +                this.pixelRatioTimer = undefined;
-+                const ratio = this.pendingPixelRatio;
-+                if (ratio === undefined
-+                    || (this.appliedPixelRatio !== undefined && Math.abs(ratio - this.appliedPixelRatio) < .02))
++                const settledCamera = this.pendingCamera;
++                if (!settledCamera)
++                    return;
++                const viewport = {
++                    width: this.options.viewport.clientWidth,
++                    height: this.options.viewport.clientHeight,
++                };
++                const settledBounds = planInkWorldLayerBounds({ camera: settledCamera, viewport });
++                if (settledBounds.left !== this.layerBounds.left
++                    || settledBounds.top !== this.layerBounds.top
++                    || settledBounds.width !== this.layerBounds.width
++                    || settledBounds.height !== this.layerBounds.height) {
++                    this.layerBounds = settledBounds;
++                    InkRuntime.applyWorldLayerBounds(this.host, settledBounds);
++                    this.resetEditorViewport();
++                }
++                const requestedPixelRatio = hostWindow.devicePixelRatio * settledCamera.scale;
++                const edgeLimitedPixelRatio = Math.min(8192 / settledBounds.width, 8192 / settledBounds.height);
++                const areaLimitedPixelRatio = Math.sqrt(32 * 1024 * 1024 / (settledBounds.width * settledBounds.height));
++                const ratio = Math.max(.08, Math.min(4, requestedPixelRatio, edgeLimitedPixelRatio, areaLimitedPixelRatio));
++                if (this.appliedPixelRatio !== undefined && Math.abs(ratio - this.appliedPixelRatio) < .02)
 +                    return;
 +                this.appliedPixelRatio = ratio;
 +                void this.editor.display.setDevicePixelRatio(ratio);
@@ -203,7 +218,7 @@ diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtim
          }
      }
      prepareBoardInput() {
-@@ -514,6 +530,8 @@ export class InkRuntime {
+@@ -514,6 +545,8 @@ export class InkRuntime {
              return this.destroyPromise;
          if (this.saveTimer)
              clearTimeout(this.saveTimer);
@@ -212,6 +227,18 @@ diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtim
          this.unsubscribeCamera();
          this.removeInputListeners();
          this.options.board.setInputOwner("runtime");
+diff --git a/dist/packages/ink-runtime/src/world-layer.js b/dist/packages/ink-runtime/src/world-layer.js
+--- a/dist/packages/ink-runtime/src/world-layer.js
++++ b/dist/packages/ink-runtime/src/world-layer.js
+@@ -25,7 +25,7 @@ export function planInkWorldLayerBounds(options) {
+         throw new Error("Ink world layer requires a positive finite camera scale");
+     }
+     const visible = visibleBoardRect(camera, viewport);
+-    const bufferPixels = Math.max(320, Math.min(900, Math.max(viewport.width, viewport.height) * .5));
++    const bufferPixels = Math.max(320, Math.min(520, Math.max(viewport.width, viewport.height) * .35));
+     const buffer = bufferPixels / camera.scale;
+     const guard = Math.min(buffer * .35, 240 / camera.scale);
+     if (current && contains(current, visible, guard))
 diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
 --- a/dist/packages/web-runtime/src/board-view.js
 +++ b/dist/packages/web-runtime/src/board-view.js
@@ -234,9 +261,3 @@ diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-run
              || boardInputTargetsInteractiveUi(event.composedPath()))
              return;
          event.preventDefault();
-diff --git a/packages/ink-runtime/styles.css b/packages/ink-runtime/styles.css
---- a/packages/ink-runtime/styles.css
-+++ b/packages/ink-runtime/styles.css
-@@ -28,1 +28,2 @@
- .oll-ink-layer .imageEditorRenderArea { background: transparent; }
-+.oll-ink-layer .imageEditorRenderArea canvas { background: transparent; }
