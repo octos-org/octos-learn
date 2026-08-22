@@ -86,7 +86,6 @@ import {
   type SelectionEnhancementArtifact,
   type SelectionEnhancementState,
 } from "./selection-enhancements";
-import { pendingVoiceSelectionFiles } from "./voice-selection-context";
 import type { SelectionToolId } from "./selection-tools";
 import { isCurrentInkMergeCompletion } from "./ink-replay";
 import { OctosTeacher } from "./octos-teacher";
@@ -222,9 +221,6 @@ export interface LearningWorkspaceProps {
   ollFixture?: OllFixture;
 }
 
-/** A rejected/no-speech attempt must not consume the selection image. The
- * pending selection is cleared only when buildTurnText runs after ASR admits
- * real speech, so a later real utterance can still reference the same source. */
 function inkPlaybackRunStorageKey(sessionId: string): string {
   return `octos-learning-ink-run:v1:${sessionId}`;
 }
@@ -361,6 +357,7 @@ export function LearningWorkspace({
     contentKind: SelectionContentKind;
     boardContext: SelectionBoardContext;
     file: File;
+    claimed: boolean;
   } | null>(null);
   const [composerBoardReferences, setComposerBoardReferences] =
     useState<ComposerBoardReference[]>([]);
@@ -601,9 +598,11 @@ export function LearningWorkspace({
   const voiceConversationOptions = useMemo(
     () => ({
       ...conversationOptions,
-      surface: "learn" as const,
       getAdditionalTurnFiles: async () => {
-        return pendingVoiceSelectionFiles(pendingVoiceSelectionRef.current);
+        const pending = pendingVoiceSelectionRef.current;
+        if (!pending || pending.claimed) return [];
+        pending.claimed = true;
+        return [pending.file];
       },
       buildTurnText: (
         context: Parameters<
@@ -1442,6 +1441,7 @@ export function LearningWorkspace({
         contentKind,
         boardContext,
         file: contextImage,
+        claimed: false,
       };
       if (conv.state === "idle" || conv.state === "error") {
         await conv.start();

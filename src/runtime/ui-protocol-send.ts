@@ -74,23 +74,6 @@ export interface SendOptions {
   onError?: (error: Error) => void;
 }
 
-/** Privacy-safe client context for diagnosing voice admission. Raw audio,
- * transcripts, prompts, images, and filenames are intentionally excluded. */
-export interface VoiceAdmissionDiagnostics {
-  surface: "voice" | "learn";
-  capture_mode: "initial" | "listening" | "thinking" | "speaking";
-  source: "initial" | "vad";
-  camera_active: boolean;
-  sample_rate_hz?: number;
-  audio_duration_ms?: number;
-  rms?: number;
-  peak?: number;
-}
-
-export interface VoiceAdmissionOptions extends SendOptions {
-  diagnostics?: VoiceAdmissionDiagnostics;
-}
-
 /** Re-validate the stored auth token after a send failure. The api/client
  *  `request()` helper has a built-in 401-interceptor that calls
  *  `clearToken()` + hard-redirects to `/login`, so a successful 401 here
@@ -131,7 +114,7 @@ export function supportsVoiceAdmission(
  * decision: callers must discard every sibling text/image input and return to
  * capture without invoking `voice/commit_admission`. */
 export async function admitVoiceMessage(
-  opts: VoiceAdmissionOptions,
+  opts: SendOptions,
 ): Promise<VoiceAdmissionResult> {
   await startBridgeForSession(opts.sessionId, opts.historyTopic, {
     ownership: "observe",
@@ -153,7 +136,6 @@ export async function admitVoiceMessage(
     turn_id: turnId,
     media: extras?.media ?? [],
     ...(extras?.topic ? { topic: extras.topic } : {}),
-    ...(opts.diagnostics ? { diagnostics: opts.diagnostics } : {}),
   });
   if (raw.turn_id !== turnId) {
     throw new Error("Octos Core returned a mismatched voice admission.");

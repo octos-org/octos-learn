@@ -759,7 +759,6 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
         buildTurnText,
         onTurnStart,
         playReplyAudio: false,
-        surface: "learn",
       }),
     );
 
@@ -770,15 +769,6 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     });
 
     expect(admitVoiceMessageMock).toHaveBeenCalledTimes(1);
-    expect(admitVoiceMessageMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        diagnostics: expect.objectContaining({
-          surface: "learn",
-          capture_mode: "initial",
-          camera_active: false,
-        }),
-      }),
-    );
     expect(buildTurnText).not.toHaveBeenCalled();
     expect(onTurnStart).not.toHaveBeenCalled();
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();

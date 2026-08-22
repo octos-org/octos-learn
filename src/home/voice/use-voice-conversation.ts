@@ -12,7 +12,6 @@ import {
   interruptActiveTurn,
   sendMessage,
   supportsVoiceAdmission,
-  type VoiceAdmissionDiagnostics,
 } from "@/runtime/ui-protocol-send";
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
 import type { Thread, ThreadMessage } from "@/store/thread-store";
@@ -21,10 +20,7 @@ import * as ProjectionStore from "@/store/projection-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 import { buildFileUrl } from "@/api/files";
 import { buildApiHeaders } from "@/api/client";
-import {
-  useVoiceCapture,
-  type VoiceCaptureDiagnostics,
-} from "./use-voice-capture";
+import { useVoiceCapture } from "./use-voice-capture";
 import {
   useCameraFrame,
   type CameraFrameSettings,
@@ -90,8 +86,6 @@ export interface VoiceTurnSendContext {
 }
 
 export interface VoiceConversationOptions {
-  /** Identifies which product surface owns this shared voice pipeline. */
-  surface?: "voice" | "learn";
   /** Build application context after uploads resolve, so frame paths are exact. */
   buildTurnText?: (context: VoiceTurnSendContext) => string;
   /** Add application-owned files to exactly the next captured voice turn. */
@@ -378,7 +372,6 @@ export function useVoiceConversation(
   const externalSpeechActive = options?.externalSpeechActive === true;
   const onTurnStart = options?.onTurnStart;
   const onTurnComplete = options?.onTurnComplete;
-  const surface = options?.surface ?? "voice";
   const threads = useRenderThreads(sessionId, historyTopic);
   const capture = useVoiceCapture();
   // Destructure the STABLE function refs (useVoiceCapture returns a fresh
@@ -522,14 +515,7 @@ export function useVoiceConversation(
   const beginListeningRef = useRef<() => Promise<void>>(async () => {});
   const beginBargeInRef = useRef<() => Promise<void>>(async () => {});
   const sendUtteranceRef = useRef<
-    (
-      wav: Blob,
-      context?: {
-        includeCamera?: boolean;
-        captureMode?: VoiceAdmissionDiagnostics["capture_mode"];
-        capture?: VoiceCaptureDiagnostics;
-      },
-    ) => Promise<void>
+    (wav: Blob, includeCamera?: boolean) => Promise<void>
   >(async () => {});
   const drainQueueRef = useRef<() => Promise<void>>(async () => {});
   const bargeInCandidateRef = useRef<{
@@ -613,22 +599,8 @@ export function useVoiceConversation(
   );
 
   const sendCapturedUtterance = useCallback(
-    async (
-      wav: Blob,
-      context: {
-        includeCamera?: boolean;
-        captureMode?: VoiceAdmissionDiagnostics["capture_mode"];
-        capture?: VoiceCaptureDiagnostics;
-      } = {},
-    ) => {
+    async (wav: Blob, includeCamera?: boolean) => {
       const candidate = bargeInCandidateRef.current;
-      console.debug("[voice-trace] captured utterance ready for admission", {
-        surface,
-        captureMode: context.captureMode ?? "initial",
-        durationMs: context.capture?.durationMs,
-        rms: context.capture?.rms,
-        peak: context.capture?.peak,
-      });
       if (!candidate) {
         // Reserve the local voice surface while upload + ASR admission run.
         // This is not a visible/provisional turn: `onTurnStart` still waits
@@ -645,7 +617,7 @@ export function useVoiceConversation(
         // VLM sees the frame. Degrades to audio-only on a failed grab.
         const capturedFiles = await assembleTurnFiles(
           file,
-          context.includeCamera ?? cameraActiveRef.current,
+          includeCamera ?? cameraActiveRef.current,
           cameraGrab,
         );
         const additionalFiles = await getAdditionalTurnFiles?.() ?? [];
@@ -684,10 +656,6 @@ export function useVoiceConversation(
         };
 
         if (!supportsVoiceAdmission(sessionId, historyTopic)) {
-          console.warn("[voice-trace] ASR admission unavailable; using legacy turn", {
-            surface,
-            captureMode: context.captureMode ?? "initial",
-          });
           const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
           const currentFramePath =
             sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
@@ -741,27 +709,8 @@ export function useVoiceConversation(
           media: paths,
           clientMessageId: turnId,
           liveVideo: sentFrame !== undefined,
-          diagnostics: {
-            surface,
-            capture_mode: context.captureMode ?? "initial",
-            source: context.capture?.source ?? "initial",
-            camera_active: sentFrame !== undefined,
-            ...(context.capture
-              ? {
-                  sample_rate_hz: context.capture.sampleRateHz,
-                  audio_duration_ms: context.capture.durationMs,
-                  rms: context.capture.rms,
-                  peak: context.capture.peak,
-                }
-              : {}),
-          },
         });
         if (admission.status === "no_speech") {
-          console.info("[voice-trace] utterance rejected as no speech", {
-            surface,
-            captureMode: context.captureMode ?? "initial",
-            rejectReasons: admission.rejectReasons ?? [],
-          });
           restoreBargeInCandidate();
           return;
         }
@@ -813,11 +762,6 @@ export function useVoiceConversation(
           admission.admissionId,
           candidate?.supersedesTurnId,
         );
-        console.info("[voice-trace] admitted utterance committed", {
-          surface,
-          captureMode: context.captureMode ?? "initial",
-          transcriptLength: admission.transcript.length,
-        });
         armReplyTimeout();
       } catch (e) {
         console.error("[voice] upload/send failed", e);
@@ -844,7 +788,6 @@ export function useVoiceConversation(
       onTurnComplete,
       playReplyAudio,
       sessionId,
-      surface,
       showSentFrame,
       clearSentFrame,
       releaseAudio,
@@ -864,7 +807,7 @@ export function useVoiceConversation(
         ? SPEAKING_INTERRUPT_VAD_OPTIONS
         : THINKING_INTERRUPT_VAD_OPTIONS;
     await captureStart(
-      (wav: Blob, capture: VoiceCaptureDiagnostics) => {
+      (wav: Blob) => {
         if (
           !speechInterruptArmedRef.current ||
           (stateRef.current !== "thinking" && stateRef.current !== "speaking")
@@ -873,21 +816,11 @@ export function useVoiceConversation(
         }
         captureModeRef.current = null;
         void captureStop();
-        void sendUtteranceRef.current(wav, { captureMode, capture });
+        void sendUtteranceRef.current(wav);
       },
       {
         ...vadOptions,
-        onSpeechStart: () => {
-          console.debug("[voice-trace] VAD candidate started", {
-            surface,
-            captureMode,
-          });
-        },
         onSpeechConfirmed: () => {
-          console.debug("[voice-trace] VAD candidate confirmed", {
-            surface,
-            captureMode,
-          });
           if (
             speechInterruptArmedRef.current ||
             (stateRef.current !== "thinking" && stateRef.current !== "speaking")
@@ -934,10 +867,6 @@ export function useVoiceConversation(
           }
         },
         onVADMisfire: () => {
-          console.debug("[voice-trace] VAD candidate rejected before ASR", {
-            surface,
-            captureMode,
-          });
           if (bargeInCandidateRef.current) {
             restoreBargeInCandidate();
           } else {
@@ -946,7 +875,7 @@ export function useVoiceConversation(
         },
       },
     );
-  }, [captureStart, captureStop, releaseAudio, restoreBargeInCandidate, surface]);
+  }, [captureStart, captureStop, releaseAudio, restoreBargeInCandidate]);
 
   // Define beginListening and playReply with useCallback; each calls the other via its ref.
 
@@ -962,39 +891,16 @@ export function useVoiceConversation(
     setState("listening");
     captureModeRef.current = "listening";
     await captureStart(
-      (wav: Blob, capture: VoiceCaptureDiagnostics) => {
+      (wav: Blob) => {
         // Ignore late utterances that land after we've left listening.
         if (stateRef.current !== "listening") return;
         captureModeRef.current = null;
         void captureStop();
-        void sendUtteranceRef.current(wav, {
-          captureMode: "listening",
-          capture,
-        });
+        void sendUtteranceRef.current(wav);
       },
-      {
-        ...LISTENING_VAD_OPTIONS,
-        onSpeechStart: () => {
-          console.debug("[voice-trace] VAD candidate started", {
-            surface,
-            captureMode: "listening",
-          });
-        },
-        onSpeechConfirmed: () => {
-          console.debug("[voice-trace] VAD candidate confirmed", {
-            surface,
-            captureMode: "listening",
-          });
-        },
-        onVADMisfire: () => {
-          console.debug("[voice-trace] VAD candidate rejected before ASR", {
-            surface,
-            captureMode: "listening",
-          });
-        },
-      },
+      LISTENING_VAD_OPTIONS,
     );
-  }, [captureStart, captureStop, surface]);
+  }, [captureStart, captureStop]);
 
   // Fetch + play ONE reply-audio file, resolving when playback ends. Does NOT
   // return to listening — `drainQueue` orchestrates ordering across sentences.
@@ -1198,10 +1104,7 @@ export function useVoiceConversation(
     if (startOptions?.initialAudio) {
       await sendCapturedUtterance(
         startOptions.initialAudio,
-        {
-          includeCamera: startOptions.includeCamera ?? false,
-          captureMode: "initial",
-        },
+        startOptions.includeCamera ?? false,
       );
       return;
     }
