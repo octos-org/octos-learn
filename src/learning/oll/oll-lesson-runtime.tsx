@@ -197,6 +197,13 @@ const selectionContentKindLabels: Record<SelectionContentKind, string> = {
 };
 
 const boardOcclusionSelector = "[data-learning-board-occlusion]";
+const courseVisualNodeKinds = new Set([
+  "diagram",
+  "geometry",
+  "image",
+  "plot",
+  "scene3d",
+]);
 const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
 const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
 
@@ -249,6 +256,35 @@ function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
   return Number.isFinite(x) && Number.isFinite(y) && width > 0 && height > 0
     ? { x, y, width, height }
     : null;
+}
+
+function measureVisualRegionBounds(
+  board: OllLessonRuntimeController["board"],
+  nodeLayer: HTMLElement,
+): Record<string, WhiteboardRect> {
+  if (!board) return {};
+  const rectsByRegion = new Map<string, WhiteboardRect[]>();
+  for (const element of nodeLayer.querySelectorAll<HTMLElement>(
+    ".board-node[data-id]",
+  )) {
+    const nodeId = element.dataset.id;
+    const node = nodeId ? board.nodes[nodeId] : undefined;
+    if (!node || !courseVisualNodeKinds.has(String(node.kind ?? "text"))) {
+      continue;
+    }
+    const bounds = renderedWorldRect(element);
+    if (!bounds) continue;
+    const regionId = typeof node.region_id === "string" && node.region_id
+      ? node.region_id
+      : "__legacy__";
+    const rects = rectsByRegion.get(regionId) ?? [];
+    rects.push(bounds);
+    rectsByRegion.set(regionId, rects);
+  }
+  return Object.fromEntries([...rectsByRegion].flatMap(([regionId, rects]) => {
+    const bounds = unionWhiteboardRects(rects);
+    return bounds ? [[regionId, bounds]] : [];
+  }));
 }
 
 const emptyInkState: LearningInkState = {
@@ -488,6 +524,9 @@ export function LearningWhiteboard({
   const [runtimeRegionBounds, setRuntimeRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
+  const [runtimeVisualRegionBounds, setRuntimeVisualRegionBounds] = useState<
+    Record<string, WhiteboardRect>
+  >({});
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
   const [selectionContentKind, setSelectionContentKind] =
@@ -637,15 +676,22 @@ export function LearningWhiteboard({
       width: 760,
       height: 300,
     };
-    const top = base.y + base.height + 42;
+    const visualBounds = runtimeVisualRegionBounds[
+      runtimeRegionIdForTopic(topic.id)
+    ] ?? (presentationTopics.length === 1
+      ? runtimeVisualRegionBounds.__legacy__
+      : undefined);
+    const controlsBase = visualBounds ?? base;
+    const controlsTop = controlsBase.y + controlsBase.height + 42;
+    const tasksTop = base.y + base.height + 42;
     return [{
       topic,
       controls,
       tasks,
-      controlsPosition: { x: base.x, y: top },
+      controlsPosition: { x: controlsBase.x, y: controlsTop },
       tasksPosition: {
         x: base.x + (controls.length > 0 ? 388 : 0),
-        y: top,
+        y: tasksTop,
       },
     }];
   });
@@ -1452,14 +1498,23 @@ export function LearningWhiteboard({
   }, [inkSessionId]);
 
   useEffect(() => {
-    const view = mountedRef.current?.view;
-    if (!view) return;
+    const mounted = mountedRef.current;
+    if (!mounted) return;
+    const { view } = mounted;
     view.setRegionLayouts(regionLayoutConstraints);
     const nextRegionBounds = view.getRegionBoundsMap();
     setRuntimeRegionBounds((current) =>
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
         ? current
         : nextRegionBounds);
+    const nextVisualBounds = measureVisualRegionBounds(
+      runtimeRef.current?.board ?? null,
+      mounted.elements.nodes,
+    );
+    setRuntimeVisualRegionBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextVisualBounds)
+        ? current
+        : nextVisualBounds);
   }, [enhancementLayer, regionLayoutConstraints]);
 
   useEffect(() => {
@@ -1520,7 +1575,8 @@ export function LearningWhiteboard({
   useEffect(() => {
     const activeRuntime = runtimeRef.current;
     if (!activeRuntime) return;
-    const view = mountedRef.current?.view;
+    const mounted = mountedRef.current;
+    const view = mounted?.view;
     const attentionTargets = activeRuntime.attentionTargets;
     const attentionKey = attentionTargets.length > 0
       ? `${activeRuntime.currentOperation?.operation_id ?? activeRuntime.cursor}\u0000${attentionTargets.join("\u0000")}`
@@ -1553,6 +1609,13 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
         ? current
         : nextRegionBounds);
+    const nextVisualBounds = mounted
+      ? measureVisualRegionBounds(activeRuntime.board, mounted.elements.nodes)
+      : {};
+    setRuntimeVisualRegionBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextVisualBounds)
+        ? current
+        : nextVisualBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
     if (attentionTargets.length > 0 && attentionChanged) {

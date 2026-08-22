@@ -135,12 +135,14 @@ function QuestionPlacementProbe({
   pending = false,
   showLoading = pending,
   withCourseRegion = false,
+  withTallNarrative = false,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
   inkSessionId?: string;
   pending?: boolean;
   showLoading?: boolean;
   withCourseRegion?: boolean;
+  withTallNarrative?: boolean;
 }) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
@@ -148,11 +150,30 @@ function QuestionPlacementProbe({
     startAtEnd: true,
   });
   if (!runtime) return null;
+  const board = withTallNarrative && runtime.board ? {
+    ...runtime.board,
+    nodes: {
+      ...runtime.board.nodes,
+      ...Object.fromEntries(Array.from({ length: 10 }, (_, index) => [
+        `late-narrative-${index}`,
+        {
+          id: `late-narrative-${index}`,
+          kind: "note",
+          content: {
+            title: `补充讲解 ${index + 1}`,
+            text: "右侧讲解继续增长，但不应推动左侧图形下方的滑块。",
+          },
+          placement: { relation: "new_region" },
+        },
+      ])),
+    },
+  } : runtime.board;
   return (
     <div style={{ width: 1200, height: 800 }}>
       <OllLessonBoard
         runtime={{
           ...runtime,
+          board,
           outline: runtime.outline.map((topic) => ({
             ...topic,
             questionId: "lesson-unit-circle-sine-001",
@@ -911,6 +932,7 @@ describe("OLL lesson Runtime integration", () => {
       <QuestionPlacementProbe
         onPlaceQuestion={onPlaceQuestion}
         withCourseRegion
+        withTallNarrative
       />,
     );
 
@@ -927,11 +949,54 @@ describe("OLL lesson Runtime integration", () => {
     expect(onPlaceQuestion).not.toHaveBeenCalled();
     const controls = await screen.findByTestId("oll-variable-controls");
     const controlTop = Number.parseFloat(controls.style.top);
+    const visualBottom = Math.max(...Array.from(
+      document.querySelectorAll<HTMLElement>(
+        ".board-node:is([data-kind='geometry'], [data-kind='scene3d'], [data-kind='plot'], [data-kind='image'], [data-kind='diagram'])",
+      ),
+    ).map((node) => Number.parseFloat(node.style.top)
+      + Number.parseFloat(node.style.height)));
     const lessonBottom = Math.max(...Array.from(
       document.querySelectorAll<HTMLElement>(".board-node"),
     ).map((node) => Number.parseFloat(node.style.top)
       + Number.parseFloat(node.style.height)));
-    expect(controlTop).toBeGreaterThanOrEqual(lessonBottom + 42);
+    expect(controlTop).toBeGreaterThanOrEqual(visualBottom + 42);
+    expect(controlTop).toBeLessThan(lessonBottom + 42);
+  });
+
+  it("keeps wheel zoom available while ink selection owns pointer input", async () => {
+    const state: InkRuntimeState = {
+      mode: "select",
+      component_count: 1,
+      selected_count: 0,
+      selection_revision: 0,
+      document_version: 1,
+      saved: true,
+    };
+    mountInkRuntimeMock.mockImplementation((options) => ({
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listener(state);
+        return () => undefined;
+      }),
+      setMode: vi.fn((mode: InkMode) => {
+        options.board.setInputOwner(mode === "navigate" ? "runtime" : "ink");
+      }),
+      destroy: vi.fn(() => Promise.resolve()),
+    }));
+    render(<InkRuntimeProbe />);
+
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    const board = screen.getByTestId("oll-lesson-board");
+    const world = board.querySelector<HTMLElement>(
+      "[data-oll-board-runtime-world]",
+    );
+    const transformBefore = world?.style.transform;
+
+    fireEvent.wheel(board, { deltaY: -120, clientX: 400, clientY: 300 });
+
+    expect(world?.style.transform).not.toBe(transformBefore);
+    expect(board.classList.contains("manual-navigation")).toBe(true);
   });
 
   it("reserves a new course area before its loading state renders", async () => {

@@ -166,3 +166,77 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..25c2c6bb8676b17be44c724f1835f4f9
          nodes[node.id] = candidate;
      }
      for (const groupId of Object.keys(state.groups))
+diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
+--- a/dist/packages/ink-runtime/src/runtime.js
++++ b/dist/packages/ink-runtime/src/runtime.js
+@@ -22,6 +22,9 @@ export class InkRuntime {
+     changeRevision = 0;
+     savedChangeRevision = 0;
+     saveTimer;
++    pixelRatioTimer;
++    pendingPixelRatio;
++    appliedPixelRatio;
+     saveQueue = Promise.resolve(null);
+     destroyPromise;
+     restoreFailure;
+@@ -158,8 +161,21 @@ export class InkRuntime {
+         }
+         const hostWindow = this.options.viewport.ownerDocument.defaultView;
+         if (hostWindow) {
+-            const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
+-            void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
++            const requestedPixelRatio = hostWindow.devicePixelRatio * camera.scale;
++            const edgeLimitedPixelRatio = Math.min(8192 / this.layerBounds.width, 8192 / this.layerBounds.height);
++            const areaLimitedPixelRatio = Math.sqrt(16 * 1024 * 1024 / (this.layerBounds.width * this.layerBounds.height));
++            this.pendingPixelRatio = Math.max(.08, Math.min(4, requestedPixelRatio, edgeLimitedPixelRatio, areaLimitedPixelRatio));
++            if (this.pixelRatioTimer)
++                clearTimeout(this.pixelRatioTimer);
++            this.pixelRatioTimer = setTimeout(() => {
++                this.pixelRatioTimer = undefined;
++                const ratio = this.pendingPixelRatio;
++                if (ratio === undefined
++                    || (this.appliedPixelRatio !== undefined && Math.abs(ratio - this.appliedPixelRatio) < .02))
++                    return;
++                this.appliedPixelRatio = ratio;
++                void this.editor.display.setDevicePixelRatio(ratio);
++            }, 120);
+         }
+     }
+     prepareBoardInput() {
+@@ -514,6 +530,8 @@ export class InkRuntime {
+             return this.destroyPromise;
+         if (this.saveTimer)
+             clearTimeout(this.saveTimer);
++        if (this.pixelRatioTimer)
++            clearTimeout(this.pixelRatioTimer);
+         this.unsubscribeCamera();
+         this.removeInputListeners();
+         this.options.board.setInputOwner("runtime");
+diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
+--- a/dist/packages/web-runtime/src/board-view.js
++++ b/dist/packages/web-runtime/src/board-view.js
+@@ -1526,7 +1526,8 @@ export class InfiniteBoardView {
+     scheduleCameraNotifications() {
+         if (this.cameraListeners.size === 0)
+             return;
+-        this.cameraNotifyUntil = Math.max(this.cameraNotifyUntil, this.hostWindow.performance.now() + 760);
++        const transitionDuration = this.viewport.classList.contains("manual-navigation") ? 0 : 760;
++        this.cameraNotifyUntil = Math.max(this.cameraNotifyUntil, this.hostWindow.performance.now() + transitionDuration);
+         if (this.cameraFrame !== undefined)
+             return;
+         const notify = (timestamp) => {
+@@ -1582,7 +1583,7 @@ export class InfiniteBoardView {
+         this.transform();
+     }
+     onWheel(event) {
+-        if (this.inputOwner !== "runtime"
++        if (this.inputOwner === "course-object"
+             || boardInputTargetsInteractiveUi(event.composedPath()))
+             return;
+         event.preventDefault();
+diff --git a/packages/ink-runtime/styles.css b/packages/ink-runtime/styles.css
+--- a/packages/ink-runtime/styles.css
++++ b/packages/ink-runtime/styles.css
+@@ -28,1 +28,2 @@
+ .oll-ink-layer .imageEditorRenderArea { background: transparent; }
++.oll-ink-layer .imageEditorRenderArea canvas { background: transparent; }
