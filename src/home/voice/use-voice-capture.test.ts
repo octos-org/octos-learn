@@ -1,6 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useVoiceCapture } from "./use-voice-capture";
+import {
+  summarizeVoiceCapture,
+  useVoiceCapture,
+} from "./use-voice-capture";
 
 const { getUserMediaMock, vadNewMock, vadInstances } = vi.hoisted(() => ({
   getUserMediaMock: vi.fn(),
@@ -21,6 +24,18 @@ vi.mock("@ricky0123/vad-web", () => ({
 }));
 
 describe("useVoiceCapture", () => {
+  it("summarizes captured audio without retaining its contents", () => {
+    expect(
+      summarizeVoiceCapture(new Float32Array([0.5, -0.5, 0, 1]), 4),
+    ).toEqual({
+      source: "vad",
+      sampleRateHz: 4,
+      durationMs: 1000,
+      rms: 0.612372,
+      peak: 1,
+    });
+  });
+
   beforeEach(() => {
     vadInstances.length = 0;
     vadNewMock.mockReset();
@@ -158,6 +173,15 @@ describe("useVoiceCapture", () => {
     expect(secondConfirmed).toHaveBeenCalledTimes(1);
     expect(firstUtterance).not.toHaveBeenCalled();
     expect(secondUtterance).toHaveBeenCalledTimes(1);
+    expect(secondUtterance).toHaveBeenCalledWith(
+      expect.any(Blob),
+      expect.objectContaining({
+        source: "vad",
+        sampleRateHz: 16000,
+        durationMs: 0.125,
+        peak: 0.2,
+      }),
+    );
     unmount();
   });
 

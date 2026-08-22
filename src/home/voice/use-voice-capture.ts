@@ -5,7 +5,7 @@ import { encodeWav } from "./wav-encode";
 export interface VoiceCapture {
   capturing: boolean;
   start: (
-    onUtterance: (wav: Blob) => void,
+    onUtterance: (wav: Blob, diagnostics: VoiceCaptureDiagnostics) => void,
     options?: VoiceCaptureStartOptions,
   ) => Promise<void>;
   /** Resolves once the VAD is fully torn down. Await before starting reply
@@ -13,6 +13,16 @@ export interface VoiceCapture {
    *  contend with the playback render thread. */
   stop: () => Promise<void>;
   error: string | null;
+}
+
+/** Privacy-safe measurements for diagnosing false VAD triggers. This object
+ * deliberately contains no samples, transcript, filename, or user content. */
+export interface VoiceCaptureDiagnostics {
+  source: "vad";
+  sampleRateHz: number;
+  durationMs: number;
+  rms: number;
+  peak: number;
 }
 
 export interface VoiceCaptureStartOptions {
@@ -81,9 +91,35 @@ const VAD_ASSETS = [
 const noop = () => {};
 
 type CaptureCallbacks = {
-  onUtterance: (wav: Blob) => void;
+  onUtterance: (wav: Blob, diagnostics: VoiceCaptureDiagnostics) => void;
   options: VoiceCaptureStartOptions;
 };
+
+function roundMetric(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+/** Reduce an utterance to the minimum measurements needed to compare quiet,
+ * noise, and real-speech captures. No audio data leaves this function. */
+export function summarizeVoiceCapture(
+  audio: Float32Array,
+  sampleRateHz: number,
+): VoiceCaptureDiagnostics {
+  let sumSquares = 0;
+  let peak = 0;
+  for (const sample of audio) {
+    const magnitude = Math.abs(sample);
+    sumSquares += sample * sample;
+    if (magnitude > peak) peak = magnitude;
+  }
+  return {
+    source: "vad",
+    sampleRateHz,
+    durationMs: roundMetric((audio.length / sampleRateHz) * 1000),
+    rms: roundMetric(Math.sqrt(sumSquares / Math.max(audio.length, 1))),
+    peak: roundMetric(peak),
+  };
+}
 
 function frameProcessorOptions(options: VoiceCaptureStartOptions) {
   return {
@@ -234,7 +270,7 @@ export function useVoiceCapture(): VoiceCapture {
   }, []);
 
   const start = useCallback(async (
-    onUtterance: (wav: Blob) => void,
+    onUtterance: (wav: Blob, diagnostics: VoiceCaptureDiagnostics) => void,
     options: VoiceCaptureStartOptions = {},
   ) => {
     setError(null);
@@ -331,7 +367,10 @@ export function useVoiceCapture(): VoiceCapture {
               if (!current) return;
               runCallbackSafely(
                 "onSpeechEnd",
-                () => current.onUtterance(encodeWav(audio, VAD_SAMPLE_RATE)),
+                () => current.onUtterance(
+                  encodeWav(audio, VAD_SAMPLE_RATE),
+                  summarizeVoiceCapture(audio, VAD_SAMPLE_RATE),
+                ),
                 setError,
               );
             },

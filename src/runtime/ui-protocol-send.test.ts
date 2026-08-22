@@ -345,6 +345,16 @@ describe("voice ASR admission", () => {
         text: "hidden learn context",
         media: ["up/utterance.wav", "up/frame.jpg"],
         clientMessageId: "voice-1",
+        diagnostics: {
+          surface: "learn",
+          capture_mode: "listening",
+          source: "vad",
+          camera_active: true,
+          sample_rate_hz: 16000,
+          audio_duration_ms: 840,
+          rms: 0.08,
+          peak: 0.7,
+        },
       }),
     ).resolves.toEqual({
       status: "no_speech",
@@ -367,6 +377,16 @@ describe("voice ASR admission", () => {
           size_bytes: 0,
         },
       ],
+      diagnostics: {
+        surface: "learn",
+        capture_mode: "listening",
+        source: "vad",
+        camera_active: true,
+        sample_rate_hz: 16000,
+        audio_duration_ms: 840,
+        rms: 0.08,
+        peak: 0.7,
+      },
     });
     expect(bridge.sendTurn).not.toHaveBeenCalled();
   });
