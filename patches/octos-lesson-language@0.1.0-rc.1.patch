@@ -1,5 +1,5 @@
 diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
-index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e55c2d4ee4 100644
+index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..517a15d9609edee0be5a0464a8b671ae19092e4b 100644
 --- a/dist/packages/ink-runtime/src/runtime.js
 +++ b/dist/packages/ink-runtime/src/runtime.js
 @@ -5,7 +5,6 @@ import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
@@ -10,14 +10,11 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
  export class InkRuntime {
      options;
      host;
-@@ -22,11 +21,15 @@ export class InkRuntime {
+@@ -22,11 +21,12 @@ export class InkRuntime {
      changeRevision = 0;
      savedChangeRevision = 0;
      saveTimer;
-+    cameraRenderTimer;
-+    pendingCamera;
 +    appliedPixelRatio;
-+    cameraRenderRevision = 0;
      saveQueue = Promise.resolve(null);
      destroyPromise;
      restoreFailure;
@@ -27,7 +24,7 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
      expectedViewportTransform = Mat33.identity;
      activePointers = new Map();
      selectionGesture = [];
-@@ -34,10 +37,10 @@ export class InkRuntime {
+@@ -34,10 +34,10 @@ export class InkRuntime {
      unmountWorldLayer;
      removeInputListeners;
      unsubscribeCamera;
@@ -40,7 +37,7 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
          this.editor = this.createEditor();
          this.prepareEditor();
          this.unmountWorldLayer = unmountWorldLayer;
-@@ -55,29 +58,20 @@ export class InkRuntime {
+@@ -55,29 +55,20 @@ export class InkRuntime {
          const host = options.viewport.ownerDocument.createElement("div");
          host.className = "oll-ink-layer";
          host.dataset.ollInkLayer = "";
@@ -77,7 +74,7 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
      createEditor() {
          const documentLocale = this.host.ownerDocument.documentElement.lang;
          const userLocales = this.options.locale
-@@ -142,28 +136,42 @@ export class InkRuntime {
+@@ -142,28 +133,26 @@ export class InkRuntime {
          });
      }
      resetEditorViewport() {
@@ -98,47 +95,32 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
 -        if (nextBounds !== this.layerBounds) {
 -            this.layerBounds = nextBounds;
 -            InkRuntime.applyWorldLayerBounds(this.host, nextBounds);
-+        const scale = camera.scale / this.renderedCamera.scale;
-+        const translateX = camera.panX - scale * this.renderedCamera.panX;
-+        const translateY = camera.panY - scale * this.renderedCamera.panY;
-+        const editorRoot = this.editor.getRootElement();
-+        editorRoot.style.transformOrigin = "0 0";
-+        editorRoot.style.transform = `matrix(${scale}, 0, 0, ${scale}, ${translateX}, ${translateY})`;
-+        this.pendingCamera = { ...camera };
-+        if (this.cameraRenderTimer)
-+            clearTimeout(this.cameraRenderTimer);
-+        this.cameraRenderTimer = setTimeout(() => {
-+            this.cameraRenderTimer = undefined;
-+            const settledCamera = this.pendingCamera;
-+            if (!settledCamera)
-+                return;
-+            const revision = ++this.cameraRenderRevision;
-+            this.renderedCamera = { ...settledCamera };
-             this.resetEditorViewport();
+-            this.resetEditorViewport();
 -        }
 -        const hostWindow = this.options.viewport.ownerDocument.defaultView;
 -        if (hostWindow) {
 -            const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
 -            void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
 -        }
-+            const hostWindow = this.options.viewport.ownerDocument.defaultView;
-+            if (hostWindow) {
-+                const ratio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio));
-+                if (this.appliedPixelRatio === undefined || Math.abs(ratio - this.appliedPixelRatio) >= .02) {
-+                    this.appliedPixelRatio = ratio;
-+                    void this.editor.display.setDevicePixelRatio(ratio);
-+                }
++        // Keep the viewport-sized drawing surface fixed. Moving this root with a
++        // temporary CSS transform exposes its physical right/bottom edges while
++        // panning or zooming. js-draw already coalesces queueRerender calls to an
++        // animation frame, so update its camera directly instead.
++        this.renderedCamera = { ...camera };
++        this.resetEditorViewport();
++        const hostWindow = this.options.viewport.ownerDocument.defaultView;
++        if (hostWindow) {
++            const ratio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio));
++            if (this.appliedPixelRatio === undefined || Math.abs(ratio - this.appliedPixelRatio) >= .02) {
++                this.appliedPixelRatio = ratio;
++                void this.editor.display.setDevicePixelRatio(ratio);
 +            }
-+            void this.editor.queueRerender().then(() => {
-+                if (revision !== this.cameraRenderRevision)
-+                    return;
-+                editorRoot.style.transform = "";
-+            });
-+        }, 120);
++        }
++        void this.editor.queueRerender();
      }
      prepareBoardInput() {
          const inputTarget = this.options.viewport;
-@@ -192,10 +200,8 @@ export class InkRuntime {
+@@ -192,10 +181,8 @@ export class InkRuntime {
              return this.options.board.viewportToBoard(point);
          };
          const mappedPointer = (event, down) => {
@@ -150,16 +132,6 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..1d282fb811ee6c273dcd73538d4560e5
          };
          const allPointers = () => [...this.activePointers.values()];
          const onPointerDown = (rawEvent) => {
-@@ -514,6 +520,9 @@ export class InkRuntime {
-             return this.destroyPromise;
-         if (this.saveTimer)
-             clearTimeout(this.saveTimer);
-+        if (this.cameraRenderTimer)
-+            clearTimeout(this.cameraRenderTimer);
-+        this.cameraRenderRevision += 1;
-         this.unsubscribeCamera();
-         this.removeInputListeners();
-         this.options.board.setInputOwner("runtime");
 diff --git a/dist/packages/web-runtime/src/board-view.d.ts b/dist/packages/web-runtime/src/board-view.d.ts
 index 8749a9e3e24126d803e1805fbdf0f4107ddf2de6..aa26eac6f6763fb89774ebac11b7de58c2430dda 100644
 --- a/dist/packages/web-runtime/src/board-view.d.ts
