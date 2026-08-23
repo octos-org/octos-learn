@@ -478,8 +478,24 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByText(/白板暂未更新/)).toBeNull();
   });
 
-  it("creates the same question card and logical region for a voice lesson", async () => {
-    const view = render(
+  it("routes an admitted voice lesson directly to the background lesson action", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "voice-lesson-job",
+        batch_id: "voice-lesson-batch",
+        profile_id: "alan0x",
+        session_id: "learn-voice-question",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-22T00:00:00Z",
+        updated_at: "2026-08-22T00:00:00Z",
+      }],
+    });
+    render(
       <LearningWorkspace
         sessionId="learn-voice-question"
         voiceEnabled
@@ -492,30 +508,123 @@ describe("LearningWorkspace", () => {
     });
     expect(screen.queryByText("我的问题")).toBeNull();
 
-    conversationMock.turns = [{
-      id: "voice-lesson-turn",
-      userText: "自然对数的意义是怎么推导的？",
-      assistantText: "",
-      awaitingTranscript: false,
-    }];
-    view.rerender(
-      <LearningWorkspace
-        sessionId="learn-voice-question"
-        voiceEnabled
-        onBack={vi.fn()}
-      />,
-    );
+    await act(async () => {
+      const handled = await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-voice-question",
+        turnId: "voice-lesson-turn",
+        transcript: "自然对数的意义是怎么推导的？",
+        admissionId: "voice-admission-1",
+        mediaPaths: ["uploads/utterance.wav"],
+        additionalMediaPaths: [],
+      });
+      expect(handled).toBe(true);
+    });
 
     expect(await screen.findByText("自然对数的意义是怎么推导的？"))
       .toBeTruthy();
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-voice-question",
+      "learning.lesson.generate",
+      expect.objectContaining({
+        turn_id: "voice-lesson-turn",
+        learner_request: "自然对数的意义是怎么推导的？",
+        request_source: "self_contained",
+      }),
+    );
+    expect(sendMessageMock).not.toHaveBeenCalled();
     await waitFor(() => expect(localStorage.getItem(
       "octos-learning-course-regions:v1:learn-voice-question",
     )).toContain("voice-lesson-turn"));
 
     act(() => {
-      conversationMock.options?.onTurnComplete?.("voice-lesson-turn");
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "voice-lesson-job",
+          batch_id: "voice-lesson-batch",
+          profile_id: "alan0x",
+          session_id: "learn-voice-question",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          created_at: "2026-08-22T00:00:00Z",
+          updated_at: "2026-08-22T00:00:05Z",
+        },
+      }));
     });
     expect(await screen.findByText("已回答")).toBeTruthy();
+  });
+
+  it("keeps camera and selection voice requests on the context-aware path", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-context-voice"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    const cameraHandled = await conversationMock.options?.onAdmittedSpeech?.({
+      sessionId: "learn-context-voice",
+      turnId: "camera-turn",
+      transcript: "请讲解镜头里的题目",
+      admissionId: "camera-admission",
+      mediaPaths: ["uploads/utterance.wav", "uploads/frame.jpg"],
+      currentFramePath: "uploads/frame.jpg",
+      additionalMediaPaths: [],
+    });
+    const selectionHandled = await conversationMock.options?.onAdmittedSpeech?.({
+      sessionId: "learn-context-voice",
+      turnId: "selection-turn",
+      transcript: "解释我框选的部分",
+      admissionId: "selection-admission",
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      additionalMediaPaths: ["uploads/selection.png"],
+    });
+
+    expect(cameraHandled).toBe(false);
+    expect(selectionHandled).toBe(false);
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+  });
+
+  it("clears the lesson loader and speaks a voice turn failure", async () => {
+    render(
+      <LearningWorkspace
+        sessionId="learn-voice-error"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    act(() => {
+      conversationMock.options?.onTurnStart?.("voice-error-turn");
+    });
+    await act(async () => {
+      const handled = await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-voice-error",
+        turnId: "voice-error-turn",
+        transcript: "请解释自然对数",
+        admissionId: "voice-admission-error",
+        mediaPaths: ["uploads/utterance.wav"],
+        additionalMediaPaths: [],
+      });
+      expect(handled).toBe(true);
+    });
+
+    const failure = new Error("请求有点多，等几秒再试一次。");
+    act(() => {
+      conversationMock.options?.onTurnError?.("voice-error-turn", failure);
+    });
+
+    expect(screen.queryByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeNull();
+    expect(await screen.findByText("没有生成成功")).toBeTruthy();
+    expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        playing: true,
+        text: "请求有点多，等几秒再试一次。",
+      }),
+    );
   });
 
   it("shows a separate loading block when another lesson is requested on a populated whiteboard", async () => {
@@ -842,6 +951,53 @@ describe("LearningWorkspace", () => {
       );
     });
     expect(conversationMock.options?.externalSpeechActive).toBe(true);
+  });
+
+  it("suspends voice capture and locks sibling sends while a text turn is pending", async () => {
+    let releaseLessonStart!: () => void;
+    sessionFilesMock.invokeSkillAction.mockImplementationOnce(async () => {
+      await new Promise<void>((resolve) => {
+        releaseLessonStart = resolve;
+      });
+      return {
+        action_id: "learning.lesson.generate",
+        ok: true,
+        results: [],
+        jobs: [],
+      };
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-text-voice-exclusion"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+    const input = screen.getByRole("textbox", { name: "输入学习问题" });
+    expect(conversationMock.options?.externalSpeechActive).toBe(false);
+
+    fireEvent.change(input, { target: { value: "请讲解单位圆" } });
+    fireEvent.submit(input.closest("form") as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+        "learn-text-voice-exclusion",
+        "learning.lesson.generate",
+        expect.objectContaining({ learner_request: "请讲解单位圆" }),
+      );
+    });
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(conversationMock.options?.externalSpeechActive).toBe(true);
+    expect((input as HTMLInputElement).disabled).toBe(true);
+
+    await act(async () => {
+      releaseLessonStart();
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(conversationMock.options?.externalSpeechActive).toBe(false);
+      expect((input as HTMLInputElement).disabled).toBe(false);
+    });
   });
 
   it("feeds the OLL fixture into the real /learn Runtime as incremental events", () => {

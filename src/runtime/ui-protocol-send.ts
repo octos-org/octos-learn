@@ -27,8 +27,15 @@ import {
   BridgeStartupError,
   BridgeStoppedError,
   BridgeTimeoutError,
+  METHODS,
+  type UiProtocolBridge,
 } from "./ui-protocol-bridge";
-import type { TurnStartExtras, TurnStartMediaRef } from "./ui-protocol-types";
+import type {
+  TurnStartExtras,
+  TurnStartMediaRef,
+  VoiceAdmissionResult,
+  VoiceCommitAdmissionResult,
+} from "./ui-protocol-types";
 import { request } from "@/api/client";
 
 /** Per-turn send options for the canonical WS turn/start path. */
@@ -93,6 +100,180 @@ function probeAuthAfterSendFailure(): void {
 
 export function sendMessage(opts: SendOptions): void {
   void enqueueSendV1(opts);
+}
+
+/** Read the capability acknowledged by the active session socket. */
+export function supportsVoiceAdmission(
+  sessionId: string,
+  historyTopic?: string,
+): boolean {
+  return getActiveBridge(sessionId, historyTopic)?.supportsVoiceAdmission() ?? false;
+}
+
+/** Run ASR without creating a turn. `no_speech` is a terminal admission
+ * decision: callers must discard every sibling text/image input and return to
+ * capture without invoking `voice/commit_admission`. */
+export async function admitVoiceMessage(
+  opts: SendOptions,
+): Promise<VoiceAdmissionResult> {
+  await startBridgeForSession(opts.sessionId, opts.historyTopic, {
+    ownership: "observe",
+  });
+  await whenThinkingSeeded(opts.sessionId, opts.historyTopic);
+  const bridge = getActiveBridge(opts.sessionId, opts.historyTopic);
+  if (!bridge) throw new Error("WebSocket connection is unavailable.");
+  const turnId = opts.clientMessageId ?? crypto.randomUUID();
+  const extras = buildTurnStartExtras({ ...opts, clientMessageId: turnId });
+  const raw = await bridge.callMethod<{
+    status: "speech" | "no_speech";
+    admission_id?: string;
+    transcript?: string;
+    turn_id: string;
+    reject_reasons?: string[];
+  }>(METHODS.VOICE_ADMIT, {
+    session_id: opts.sessionId,
+    request_id: turnId,
+    turn_id: turnId,
+    media: extras?.media ?? [],
+    ...(extras?.topic ? { topic: extras.topic } : {}),
+  });
+  if (raw.turn_id !== turnId) {
+    throw new Error("Octos Core returned a mismatched voice admission.");
+  }
+  if (raw.status === "no_speech") {
+    return {
+      status: "no_speech",
+      turnId: raw.turn_id,
+      rejectReasons: raw.reject_reasons,
+    };
+  }
+  if (
+    raw.status !== "speech" ||
+    !raw.admission_id ||
+    !raw.transcript?.trim()
+  ) {
+    throw new Error("Octos Core returned an invalid voice admission.");
+  }
+  return {
+    status: "speech",
+    admissionId: raw.admission_id,
+    transcript: raw.transcript,
+    turnId: raw.turn_id,
+  };
+}
+
+/** Consume a speech admission and install the same canonical-terminal
+ * lifecycle ownership as an ordinary send. The server performs the optional
+ * old-turn interrupt and new-turn start in this one RPC. */
+export async function commitAdmittedVoiceMessage(
+  opts: SendOptions,
+  admissionId: string,
+  supersedesTurnId?: string,
+): Promise<VoiceCommitAdmissionResult> {
+  await startBridgeForSession(opts.sessionId, opts.historyTopic, {
+    ownership: "observe",
+  });
+  await whenThinkingSeeded(opts.sessionId, opts.historyTopic);
+  let bridge = getActiveBridge(opts.sessionId, opts.historyTopic);
+  if (!bridge) throw new Error("WebSocket connection is unavailable.");
+  const turnId = opts.clientMessageId ?? crypto.randomUUID();
+  const extras = buildTurnStartExtras({ ...opts, clientMessageId: turnId });
+  let completed = false;
+  let offTerminal: (() => void) | null = null;
+  let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+  const finish = (error?: Error) => {
+    if (completed) return;
+    completed = true;
+    if (activeTurnControlsBySession.get(queueKey(opts.sessionId))?.turnId === turnId) {
+      activeTurnControlsBySession.delete(queueKey(opts.sessionId));
+    }
+    offTerminal?.();
+    offTerminal = null;
+    if (safetyTimer !== null) clearTimeout(safetyTimer);
+    safetyTimer = null;
+    try {
+      if (error) opts.onError?.(error);
+    } finally {
+      opts.onComplete?.();
+    }
+  };
+  activeTurnControlsBySession.set(queueKey(opts.sessionId), {
+    turnId,
+    complete: () => finish(),
+  });
+  const attachLifecycle = (targetBridge: UiProtocolBridge) => {
+    offTerminal?.();
+    offTerminal = targetBridge.onProjectionTerminal((event) => {
+      if (event.client_message_id !== turnId && event.turn_id !== turnId) return;
+      finish(
+        event.outcome === "completed"
+          ? undefined
+          : new Error(event.error?.message ?? "Voice turn failed."),
+      );
+    });
+  };
+  attachLifecycle(bridge);
+  safetyTimer = setTimeout(
+    () => finish(new Error("Voice turn timed out.")),
+    15 * 60 * 1000,
+  );
+  const turn: Record<string, unknown> = {
+    session_id: opts.sessionId,
+    turn_id: turnId,
+    input: [{ kind: "text", text: opts.text }],
+  };
+  if (extras?.media?.length) turn.media = extras.media;
+  if (extras?.topic) turn.topic = extras.topic;
+  if (extras?.rewrite_for) turn.rewrite_for = extras.rewrite_for;
+  if (extras?.live_video) turn.live_video = true;
+  if (extras?.reasoning_effort) turn.reasoning_effort = extras.reasoning_effort;
+  const commitParams = {
+    admission_id: admissionId,
+    ...(supersedesTurnId ? { supersedes_turn_id: supersedesTurnId } : {}),
+    turn,
+  };
+  const invokeCommit = (targetBridge: UiProtocolBridge) =>
+    targetBridge.callMethod<VoiceCommitAdmissionResult>(
+      METHODS.VOICE_COMMIT_ADMISSION,
+      commitParams,
+    );
+  try {
+    opts.onSessionActive?.(opts.text);
+    let result: VoiceCommitAdmissionResult;
+    try {
+      result = await invokeCommit(bridge);
+    } catch (firstError) {
+      if (
+        !(firstError instanceof BridgeStoppedError) &&
+        !(firstError instanceof BridgeTimeoutError)
+      ) {
+        throw firstError;
+      }
+      // The server-side admission is single-use but same-turn idempotent. If
+      // the commit response vanished during a reconnect, repeat the SAME RPC:
+      // it either starts a released claim or observes the already-started turn.
+      await startBridgeForSession(opts.sessionId, opts.historyTopic, {
+        ownership: "observe",
+      });
+      const retryBridge = getActiveBridge(opts.sessionId, opts.historyTopic);
+      if (!retryBridge) throw firstError;
+      bridge = retryBridge;
+      attachLifecycle(retryBridge);
+      result = await invokeCommit(retryBridge);
+    }
+    if (
+      !result.accepted ||
+      !result.committed ||
+      result.turn_id !== turnId
+    ) {
+      throw new Error("The server rejected this admitted voice turn.");
+    }
+    return result;
+  } catch (error) {
+    const normalized = error instanceof Error ? error : new Error(String(error));
+    finish(normalized);
+    throw normalized;
+  }
 }
 
 function markSendFailure(

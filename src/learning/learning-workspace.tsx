@@ -367,6 +367,7 @@ export function LearningWorkspace({
     bounds: InkSelectionSnapshot["bounds"];
   } | null>());
   const completedQuestionTurnIdsRef = useRef(new Set<string>());
+  const failedQuestionErrorsRef = useRef(new Map<string, string>());
   const [composerBoardReferences, setComposerBoardReferences] =
     useState<ComposerBoardReference[]>([]);
   const [whiteboardQuestions, setWhiteboardQuestions] = useState<
@@ -440,15 +441,19 @@ export function LearningWorkspace({
           ? { ...question, text }
           : question);
       }
+      const failedError = failedQuestionErrorsRef.current.get(questionId);
       return [...current, {
         id: questionId,
         sessionId,
         text,
         origin: source ? "selection" as const : "composer" as const,
         createdAt: new Date().toISOString(),
-        status: completedQuestionTurnIdsRef.current.has(questionId)
-          ? "answered" as const
-          : "pending" as const,
+        status: failedError
+          ? "failed" as const
+          : completedQuestionTurnIdsRef.current.has(questionId)
+            ? "answered" as const
+            : "pending" as const,
+        ...(failedError ? { error: failedError } : {}),
         ...(source ? { source } : {}),
       }].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     });
@@ -655,6 +660,8 @@ export function LearningWorkspace({
     (playbackMode === "live" || ollLesson.playing) &&
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
+  const [textTurnPending, setTextTurnPending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -667,7 +674,66 @@ export function LearningWorkspace({
     setCompletedTurnId(turnId);
     conversationOptions?.onTurnComplete?.(turnId);
   }, [conversationOptions, setWhiteboardQuestionStatus, threads]);
-  const voiceConversationOptions = useMemo(
+  const startDirectLessonGeneration = useCallback(async (
+    turnId: string,
+    learnerRequest: string,
+  ) => {
+    setTextTurnPending(true);
+    try {
+      const invocation = await invokeSkillAction(
+        sessionId,
+        "learning.lesson.generate",
+        {
+          turn_id: turnId,
+          learner_request: learnerRequest,
+          request_source: "self_contained",
+          language: "zh-CN",
+        },
+      );
+      const failedResult = (invocation.results ?? [])
+        .find((result) => !result.success);
+      if (!invocation.ok || failedResult) {
+        throw new Error(
+          failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
+        );
+      }
+      const jobs = invocation.jobs ?? [];
+      if (jobs.length === 0) {
+        await getSessionFiles(sessionId).then((files) => {
+          setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
+        });
+        setWhiteboardQuestionStatus(turnId, "answered");
+        handleTurnComplete(turnId);
+        return;
+      }
+      jobs.forEach((job) => {
+        pendingLessonJobsRef.current.set(job.job_id, {
+          jobId: job.job_id,
+          turnId,
+          referenceIds: [],
+        });
+      });
+      savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
+      setOllGenerationSessionId(sessionId);
+    } finally {
+      setTextTurnPending(false);
+    }
+  }, [handleTurnComplete, sessionId, setWhiteboardQuestionStatus]);
+  const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
+    const message = error.message.trim() || "课程生成失败，请稍后再试";
+    const thread = threads.find((candidate) => candidate.id === turnId);
+    const questionId = thread?.turnId ?? turnId;
+    failedQuestionErrorsRef.current.set(turnId, message);
+    failedQuestionErrorsRef.current.set(questionId, message);
+    updateWhiteboardQuestion(questionId, { status: "failed", error: message });
+    setTextTurnPending(false);
+    setCompletedTurnId(null);
+    setPlainReply({ turnId: questionId, text: message });
+    setPlainReplySpoken(false);
+    setSendError(message);
+    conversationOptions?.onTurnError?.(turnId, error);
+  }, [conversationOptions, threads, updateWhiteboardQuestion]);
+  const voiceConversationOptions = useMemo<VoiceConversationOptions>(
     () => ({
       ...conversationOptions,
       onTurnStart: (turnId: string) => {
@@ -718,17 +784,34 @@ export function LearningWorkspace({
       externalSpeechActive:
         voiceEnabled &&
         ((lessonOwnsNarration && narrationAudioEnabled) ||
-          narrationSpeechActive),
+          narrationSpeechActive ||
+          textTurnPending),
+      onAdmittedSpeech: async (context) => {
+        if (
+          context.currentFramePath
+          || (context.additionalMediaPaths?.length ?? 0) > 0
+        ) return false;
+        registerVoiceQuestion(context.turnId, context.transcript, null);
+        onLearnerInput?.(context.transcript);
+        await startDirectLessonGeneration(context.turnId, context.transcript);
+        return true;
+      },
+      onTurnError: handleVoiceTurnError,
       onTurnComplete: handleTurnComplete,
     }),
     [
       conversationOptions,
       handleTurnComplete,
+      handleVoiceTurnError,
       lessonOwnsNarration,
       narrationAudioEnabled,
       narrationSpeechActive,
       ollLesson,
+      onLearnerInput,
+      registerVoiceQuestion,
       sessionId,
+      startDirectLessonGeneration,
+      textTurnPending,
       voiceEnabled,
     ],
   );
@@ -879,10 +962,8 @@ export function LearningWorkspace({
       // The in-memory state is sufficient for this page load.
     }
   }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
-  const [sendError, setSendError] = useState<string | null>(null);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
-  const [textTurnPending, setTextTurnPending] = useState(false);
   const [selectionEnhancementPending, setSelectionEnhancementPending] =
     useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
@@ -1045,8 +1126,15 @@ export function LearningWorkspace({
         handleTurnComplete(pending.turnId);
         return;
       }
-      setWhiteboardQuestionStatus(pending.turnId, "failed");
-      setSendError(lessonJobError(job));
+      const message = lessonJobError(job);
+      failedQuestionErrorsRef.current.set(pending.turnId, message);
+      updateWhiteboardQuestion(pending.turnId, {
+        status: "failed",
+        error: message,
+      });
+      setPlainReply({ turnId: pending.turnId, text: message });
+      setPlainReplySpoken(false);
+      setSendError(message);
     };
     const handleLessonJobUpdated = (event: Event) => {
       const job = (event as CustomEvent<SkillActionJob>).detail;
@@ -1092,6 +1180,7 @@ export function LearningWorkspace({
     ollFixture,
     sessionId,
     setWhiteboardQuestionStatus,
+    updateWhiteboardQuestion,
   ]);
 
   useEffect(() => {
@@ -1698,43 +1787,7 @@ export function LearningWorkspace({
           })),
         );
         if (references.length === 0 && !applicationContext?.trim()) {
-          const invocation = await invokeSkillAction(
-            sessionId,
-            "learning.lesson.generate",
-            {
-              turn_id: turnId,
-              learner_request: text,
-              request_source: "self_contained",
-              language: "zh-CN",
-            },
-          );
-          const failedResult = (invocation.results ?? [])
-            .find((result) => !result.success);
-          if (!invocation.ok || failedResult) {
-            throw new Error(
-              failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
-            );
-          }
-          const jobs = invocation.jobs ?? [];
-          if (jobs.length === 0) {
-            await getSessionFiles(sessionId).then((files) => {
-              setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
-            });
-            setTextTurnPending(false);
-            setWhiteboardQuestionStatus(turnId, "answered");
-            handleTurnComplete(turnId);
-            return;
-          }
-          jobs.forEach((job) => {
-            pendingLessonJobsRef.current.set(job.job_id, {
-              jobId: job.job_id,
-              turnId,
-              referenceIds: [],
-            });
-          });
-          savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
-          setOllGenerationSessionId(sessionId);
-          setTextTurnPending(false);
+          await startDirectLessonGeneration(turnId, text);
           return;
         }
         sendMessage({
@@ -1779,6 +1832,7 @@ export function LearningWorkspace({
       ollLesson,
       onLearnerInput,
       sessionId,
+      startDirectLessonGeneration,
       setWhiteboardQuestionStatus,
     ],
   );
@@ -2163,6 +2217,11 @@ export function LearningWorkspace({
         }
         cameraActive={conv.cameraActive}
         voiceDisabled={!voiceEnabled || !runtime.ready}
+        sendDisabled={
+          textTurnPending ||
+          (voiceEnabled &&
+            (conv.state === "thinking" || conv.state === "speaking"))
+        }
         onMic={handleTeacherClick}
         onToggleCamera={conv.toggleCamera}
         onSendText={sendText}
