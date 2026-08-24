@@ -190,6 +190,29 @@ function lessonJobError(job: SkillActionJob): string {
   return detail || "课程生成失败，请重试。";
 }
 
+function lessonJobNonLessonResponse(job: SkillActionJob): {
+  disposition: "clarify" | "ignore";
+  learnerResponse: string;
+} | null {
+  if (!job.result || typeof job.result !== "object" || Array.isArray(job.result)) {
+    return null;
+  }
+  const result = job.result as Record<string, unknown>;
+  const metadata = result.structured_metadata;
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+  const record = metadata as Record<string, unknown>;
+  const disposition = record.lesson_disposition;
+  if (disposition !== "clarify" && disposition !== "ignore") return null;
+  return {
+    disposition,
+    learnerResponse: typeof record.learner_response === "string"
+      ? record.learner_response.trim()
+      : "",
+  };
+}
+
 function threadHasDeliverableArtifact(
   threads: Thread[],
   turnId: string,
@@ -425,6 +448,14 @@ export function LearningWorkspace({
   ) => updateWhiteboardQuestion(questionId, { status }), [
     updateWhiteboardQuestion,
   ]);
+  const discardWhiteboardQuestion = useCallback((questionId: string) => {
+    setWhiteboardQuestions((current) => current.filter(
+      (question) => question.id !== questionId,
+    ));
+    setCourseRegions((current) => current.filter(
+      (region) => region.questionId !== questionId,
+    ));
+  }, []);
   const registerVoiceQuestion = useCallback((
     questionId: string,
     text: string,
@@ -677,6 +708,7 @@ export function LearningWorkspace({
   const startDirectLessonGeneration = useCallback(async (
     turnId: string,
     learnerRequest: string,
+    inputModality: "text" | "voice" = "text",
   ) => {
     setTextTurnPending(true);
     try {
@@ -688,6 +720,7 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: "self_contained",
           language: "zh-CN",
+          input_modality: inputModality,
         },
       );
       const failedResult = (invocation.results ?? [])
@@ -793,7 +826,11 @@ export function LearningWorkspace({
         ) return false;
         registerVoiceQuestion(context.turnId, context.transcript, null);
         onLearnerInput?.(context.transcript);
-        await startDirectLessonGeneration(context.turnId, context.transcript);
+        await startDirectLessonGeneration(
+          context.turnId,
+          context.transcript,
+          "voice",
+        );
         return true;
       },
       onTurnError: handleVoiceTurnError,
@@ -1116,6 +1153,23 @@ export function LearningWorkspace({
         (artifact) => artifact.turnId === pending.turnId,
       );
       if (job.status === "succeeded") {
+        const nonLesson = lessonJobNonLessonResponse(job);
+        if (nonLesson) {
+          handleTurnComplete(pending.turnId);
+          if (nonLesson.disposition === "ignore") {
+            discardWhiteboardQuestion(pending.turnId);
+            setCompletedTurnId(null);
+            return;
+          }
+          if (nonLesson.learnerResponse) {
+            setPlainReply({
+              turnId: pending.turnId,
+              text: nonLesson.learnerResponse,
+            });
+            setPlainReplySpoken(false);
+          }
+          return;
+        }
         setWhiteboardQuestionStatus(pending.turnId, "answered");
         handleTurnComplete(pending.turnId);
         return;
@@ -1176,6 +1230,7 @@ export function LearningWorkspace({
       );
     };
   }, [
+    discardWhiteboardQuestion,
     handleTurnComplete,
     ollFixture,
     sessionId,

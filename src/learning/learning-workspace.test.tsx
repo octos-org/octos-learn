@@ -529,6 +529,7 @@ describe("LearningWorkspace", () => {
         turn_id: "voice-lesson-turn",
         learner_request: "自然对数的意义是怎么推导的？",
         request_source: "self_contained",
+        input_modality: "voice",
       }),
     );
     expect(sendMessageMock).not.toHaveBeenCalled();
@@ -552,6 +553,148 @@ describe("LearningWorkspace", () => {
       }));
     });
     expect(await screen.findByText("已回答")).toBeTruthy();
+  });
+
+  it("shows a clarification instead of a guessed lesson for ambiguous admitted speech", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "voice-clarify-job",
+        batch_id: "voice-clarify-batch",
+        profile_id: "alan0x",
+        session_id: "learn-voice-clarify",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-23T00:00:00Z",
+        updated_at: "2026-08-23T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-voice-clarify"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    await act(async () => {
+      const handled = await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-voice-clarify",
+        turnId: "voice-clarify-turn",
+        transcript: "The book.",
+        admissionId: "voice-clarify-admission",
+        mediaPaths: ["uploads/utterance.wav"],
+        additionalMediaPaths: [],
+      });
+      expect(handled).toBe(true);
+    });
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "voice-clarify-job",
+          batch_id: "voice-clarify-batch",
+          profile_id: "alan0x",
+          session_id: "learn-voice-clarify",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "你想了解这本书的哪一方面？",
+            structured_metadata: {
+              lesson_disposition: "clarify",
+              learner_response: "你想了解这本书的哪一方面？",
+            },
+          },
+          created_at: "2026-08-23T00:00:00Z",
+          updated_at: "2026-08-23T00:00:02Z",
+        },
+      }));
+    });
+
+    expect(await screen.findByText("你想了解这本书的哪一方面？"))
+      .toBeTruthy();
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(screen.queryByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeNull();
+    expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        playing: true,
+        text: "你想了解这本书的哪一方面？",
+      }),
+    );
+  });
+
+  it("drops a filler voice turn when the lesson planner returns ignore", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "voice-ignore-job",
+        batch_id: "voice-ignore-batch",
+        profile_id: "alan0x",
+        session_id: "learn-voice-ignore",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-23T00:00:00Z",
+        updated_at: "2026-08-23T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-voice-ignore"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    await act(async () => {
+      await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-voice-ignore",
+        turnId: "voice-ignore-turn",
+        transcript: "嗯。",
+        admissionId: "voice-ignore-admission",
+        mediaPaths: ["uploads/utterance.wav"],
+        additionalMediaPaths: [],
+      });
+    });
+    expect(await screen.findByText("嗯。")).toBeTruthy();
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "voice-ignore-job",
+          batch_id: "voice-ignore-batch",
+          profile_id: "alan0x",
+          session_id: "learn-voice-ignore",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "",
+            structured_metadata: {
+              lesson_disposition: "ignore",
+              learner_response: "",
+            },
+          },
+          created_at: "2026-08-23T00:00:00Z",
+          updated_at: "2026-08-23T00:00:02Z",
+        },
+      }));
+    });
+
+    await waitFor(() => expect(screen.queryByText("嗯。")).toBeNull());
+    expect(screen.queryByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeNull();
   });
 
   it("keeps camera and selection voice requests on the context-aware path", async () => {
@@ -715,6 +858,7 @@ describe("LearningWorkspace", () => {
         learner_request: "请解释勾股定理",
         request_source: "self_contained",
         language: "zh-CN",
+        input_modality: "text",
       }),
     ));
     expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id)
@@ -743,6 +887,76 @@ describe("LearningWorkspace", () => {
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toBeNull();
+  });
+
+  it("shows clarification for an incomplete composer request instead of a guessed course", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "text-clarify-job",
+        batch_id: "text-clarify-batch",
+        profile_id: "alan0x",
+        session_id: "learn-text-clarify",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-23T00:00:00Z",
+        updated_at: "2026-08-23T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-text-clarify"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "The book." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id;
+    expect(turnId).toEqual(expect.any(String));
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "text-clarify-job",
+          batch_id: "text-clarify-batch",
+          profile_id: "alan0x",
+          session_id: "learn-text-clarify",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "你想了解这本书的哪一方面？",
+            structured_metadata: {
+              lesson_disposition: "clarify",
+              learner_response: "你想了解这本书的哪一方面？",
+            },
+          },
+          created_at: "2026-08-23T00:00:00Z",
+          updated_at: "2026-08-23T00:00:02Z",
+        },
+      }));
+    });
+
+    expect(await screen.findByText("你想了解这本书的哪一方面？"))
+      .toBeTruthy();
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(screen.queryByLabelText(
+      /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
+    )).toBeNull();
+    expect(screen.queryByTestId("oll-controls")).toBeNull();
+    expect(screen.queryByText("这块白板会保存我们的思考过程"))
+      .toBeNull();
+    expect(screen.queryByText("向 Octos 提问，我们从这里开始"))
+      .toBeNull();
   });
 
   it("restores a direct lesson job after the page reloads", async () => {
