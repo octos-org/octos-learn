@@ -2199,7 +2199,10 @@ export function LearningWhiteboard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
-      {!runtime && inkState.component_count === 0 && !loadingState ? (
+      {!runtime
+        && inkState.component_count === 0
+        && composerQuestions.length === 0
+        && !loadingState ? (
         <div className="learning-whiteboard-empty" aria-live="polite">
           <span>这块白板会保存我们的思考过程</span>
           <strong>向 Octos 提问，我们从这里开始</strong>
