@@ -12,6 +12,7 @@ import {
   mergeOllLessonArtifacts,
   ollArtifactIdentity,
 } from "./oll-artifacts";
+import { buildInteractionClusters } from "./interaction-clusters";
 
 function threadWithLesson(path: string): Thread {
   return {
@@ -394,7 +395,11 @@ describe("OLL lesson artifacts", () => {
                   x: { min: -4, max: 4 },
                   y: { min: -1, max: 10 },
                 },
-                curves: [{ as: "curve", expression: "x^2", label: "y=x²" }],
+                curves: [{
+                  as: "curve",
+                  expression: `(x-${variable})^2`,
+                  label: "动态抛物线",
+                }],
                 points: [{ as: "moving", x: initial, y: initial ** 2 }],
                 bindings: [
                   { target: "moving.x", expression: variable },
@@ -412,11 +417,11 @@ describe("OLL lesson artifacts", () => {
     vi.stubGlobal("fetch", vi.fn()
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => lessonWithVariable("x", 0),
+        json: async () => lessonWithVariable("offset", 0),
       })
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => lessonWithVariable("theta", 1),
+        json: async () => lessonWithVariable("offset", 1),
       }));
     const firstArtifact = {
       id: "first",
@@ -443,8 +448,7 @@ describe("OLL lesson artifacts", () => {
 
     expect(variableNames).toHaveLength(2);
     expect(new Set(variableNames).size).toBe(2);
-    expect(variableNames).toContain("x");
-    expect(variableNames).not.toContain("theta");
+    expect(variableNames).toContain("offset");
     expect(new Set(animationVariables)).toEqual(new Set(variableNames));
     expect(buildOllLessonTopics([first, second]).map((topic) =>
       topic.variableAliases)).toEqual([[variableNames[0]], [variableNames[1]]]);
@@ -454,19 +458,31 @@ describe("OLL lesson artifacts", () => {
           actions.flatMap((action) => action.node?.kind === "plot"
             ? [action.node.content]
             : []))) ?? []);
-    expect(plotContents.map((content) =>
+    const curveExpressions = plotContents.map((content) =>
       (content.curves as Array<{ expression: string }>).map(({ expression }) =>
         expression,
-      ),
-    )).toEqual([["x^2"], ["x^2"]]);
+      ));
+    expect(curveExpressions[0]).toEqual(["(x-offset)^2"]);
+    expect(curveExpressions[1]).toEqual([`(x-${variableNames[1]})^2`]);
     const bindingExpressions = plotContents.map((content) =>
       (content.bindings as Array<{ expression: string }>).map(
         ({ expression }) => expression,
       ));
-    expect(bindingExpressions[0]).toEqual(["x", "x^2"]);
+    expect(bindingExpressions[0]).toEqual(["offset", "offset^2"]);
     expect(bindingExpressions[1]?.every((expression) =>
-      !["theta", "theta^2"].includes(expression))).toBe(true);
-    expect(() => reduceCanonicalEvents(classroom)).not.toThrow();
+      !["offset", "offset^2"].includes(expression))).toBe(true);
+    const board = reduceCanonicalEvents(classroom);
+    const secondTopic = buildOllLessonTopics([first, second])[1]!;
+    const secondClusters = buildInteractionClusters(
+      board,
+      secondTopic,
+      variableNames,
+      [],
+    );
+    expect(secondClusters).toEqual([expect.objectContaining({
+      nodeIds: [secondTopic.nodeIds[0]],
+      variableAliases: [variableNames[1]],
+    })]);
     vi.unstubAllGlobals();
   });
 

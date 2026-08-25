@@ -213,13 +213,31 @@ describe("course reading layout", () => {
           y: 90,
           reservedWidth: 1_300,
           flow: "reading",
+          attachments: [{
+            id: "course:interaction:1",
+            anchorNodeId: "plot",
+            anchorNodeIds: ["geometry", "plot"],
+            width: 360,
+            height: 220,
+            gap: 42,
+          }],
         },
       },
     });
 
     const plotRight = layout.nodes.plot!.x + layout.nodes.plot!.width;
+    const visualBottom = Math.max(
+      layout.nodes.geometry!.y + layout.nodes.geometry!.height,
+      layout.nodes.plot!.y + layout.nodes.plot!.height,
+    );
     expect(layout.nodes.formula!.x).toBeGreaterThanOrEqual(plotRight + 54);
     expect(layout.nodes.formula!.y).toBe(90);
+    expect(layout.attachments["course:interaction:1"]).toEqual({
+      x: layout.nodes.geometry!.x,
+      y: visualBottom + 42,
+      width: 360,
+      height: 220,
+    });
   });
 
   it("wraps a long derivation into readable columns instead of one tiny overview", () => {

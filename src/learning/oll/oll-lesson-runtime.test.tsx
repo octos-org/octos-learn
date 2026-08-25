@@ -1056,10 +1056,14 @@ describe("OLL lesson Runtime integration", () => {
           x: 2_694,
           y: 160,
           flow: "reading",
-          reservedWidth: 886,
+          reservedWidth: 1_300,
           attachments: expect.arrayContaining([
             expect.objectContaining({
               anchorNodeId: "lesson-unit-circle-sine-001:node:sine-plot",
+              anchorNodeIds: [
+                "lesson-unit-circle-sine-001:node:unit-circle",
+                "lesson-unit-circle-sine-001:node:sine-plot",
+              ],
               width: 360,
             }),
           ]),

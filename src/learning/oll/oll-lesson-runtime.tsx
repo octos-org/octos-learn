@@ -207,6 +207,7 @@ const courseVisualNodeKinds = new Set([
 ]);
 const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
 const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
+const MINIMUM_COURSE_READING_WIDTH = 1_300;
 
 function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
   if (rects.length === 0) return null;
@@ -697,6 +698,7 @@ export function LearningWhiteboard({
         id: cluster.id,
         topic,
         anchorNodeId: cluster.anchorNodeId,
+        anchorNodeIds: cluster.nodeIds,
         controls,
         tasks,
         controlsHeight,
@@ -718,6 +720,7 @@ export function LearningWhiteboard({
         .map((plan) => ({
           id: plan.id,
           anchorNodeId: plan.anchorNodeId,
+          anchorNodeIds: plan.anchorNodeIds,
           width: plan.width,
           height: plan.height,
           gap: 42,
@@ -727,7 +730,7 @@ export function LearningWhiteboard({
         y: region.origin.y,
         flow: "reading",
         reservedWidth: Math.max(
-          0,
+          MINIMUM_COURSE_READING_WIDTH,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
         ),
         ...(attachments.length > 0 ? { attachments } : {}),
