@@ -28,7 +28,10 @@ import {
   InfiniteBoardView,
   type StudentTaskSnapshot,
 } from "octos-lesson-language/web-runtime";
-import { OllLessonBoard } from "./oll-lesson-runtime";
+import {
+  OllLessonBoard,
+  courseHasRenderedBoardNode,
+} from "./oll-lesson-runtime";
 import { WHITEBOARD_QUESTION_CARD_WIDTH } from "../whiteboard-question-card";
 import { createCourseRegion } from "../course-regions";
 import type { SelectionClassification } from "../selection-enhancements";
@@ -219,14 +222,35 @@ function PendingQuestionFocusProbe({ showLoading = true }: { showLoading?: boole
     startAtEnd: true,
   });
   const [, updateHostUi] = useState(0);
+  const [lateOldCourseFocus, setLateOldCourseFocus] = useState(false);
   if (!runtime) return null;
+  const oldNodeId = Object.keys(runtime.board?.nodes ?? {})[0]!;
   return (
     <div style={{ width: 1200, height: 800 }}>
       <button type="button" onClick={() => updateHostUi((value) => value + 1)}>
         更新旁边界面
       </button>
+      <button type="button" onClick={() => setLateOldCourseFocus(true)}>
+        模拟旧课程晚到的聚焦
+      </button>
       <OllLessonBoard
-        runtime={runtime}
+        runtime={{
+          ...runtime,
+          attentionTargets: lateOldCourseFocus ? [oldNodeId] : runtime.attentionTargets,
+          currentOperation: lateOldCourseFocus ? {
+            operation_id: "late-old-course-focus",
+            type: "action.apply",
+            lesson_id: runtime.currentOperation?.lesson_id
+              ?? "lesson-unit-circle-sine-001",
+            event_index: runtime.currentOperation?.event_index ?? 0,
+            action: {
+              action_id: "late-old-course-focus",
+              op: "board.emphasize",
+              target: { node_id: oldNodeId },
+              focus: { targets: [oldNodeId], intent: "detail" },
+            },
+          } : runtime.currentOperation,
+        }}
         loadingState={showLoading ? {
           id: "turn-new-topic",
           kind: "lesson",
@@ -239,6 +263,71 @@ function PendingQuestionFocusProbe({ showLoading = true }: { showLoading?: boole
           text: "继续讲自然对数",
           origin: "composer",
           createdAt: "2026-08-19T00:00:00.000Z",
+          status: "pending",
+          position: { x: 2_400, y: 160 },
+        }]}
+      />
+    </div>
+  );
+}
+
+function NewCourseNodeHandoffProbe() {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "new-course-node-handoff-test",
+    startAtEnd: true,
+  });
+  const [showFirstNewNode, setShowFirstNewNode] = useState(false);
+  if (!runtime?.board || runtime.outline.length === 0) return null;
+  const originalTopic = runtime.outline[0]!;
+  const originalStep = originalTopic.steps[0]!;
+  const originalNode = Object.values(runtime.board.nodes)[0]!;
+  const newNode = {
+    ...originalNode,
+    id: "first-new-course-node",
+    region_id: "new-course-topic",
+    placement: { relation: "new_region" as const },
+  };
+  const board = showFirstNewNode ? {
+    ...runtime.board,
+    nodes: {
+      ...runtime.board.nodes,
+      [newNode.id]: newNode,
+    },
+  } : runtime.board;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => setShowFirstNewNode(true)}>
+        显示新课程第一张卡片
+      </button>
+      <OllLessonBoard
+        runtime={{
+          ...runtime,
+          board,
+          outline: [originalTopic, {
+            ...originalTopic,
+            id: "new-course-topic",
+            questionId: "turn-new-course",
+            nodeIds: [newNode.id],
+            steps: [{ ...originalStep, id: "new-course-step" }],
+          }],
+          currentStepId: "new-course-step",
+          completed: false,
+          waiting: false,
+          deliverySettled: false,
+        }}
+        loadingState={{
+          id: "turn-new-course",
+          kind: "lesson",
+          title: "正在搭建这节课",
+          detail: "请稍等",
+        }}
+        questions={[{
+          id: "turn-new-course",
+          sessionId: "new-course-node-handoff",
+          text: "开始下一节课",
+          origin: "composer",
+          createdAt: "2026-08-24T00:00:00.000Z",
           status: "pending",
           position: { x: 2_400, y: 160 },
         }]}
@@ -892,6 +981,27 @@ function ReviewToLiveRuntimeProbe() {
 }
 
 describe("OLL lesson Runtime integration", () => {
+  it("keeps the loading camera until the new course owns a rendered card", () => {
+    const board = {
+      nodes: {
+        old: { id: "old", region_id: "old-course" },
+        firstNew: { id: "firstNew", region_id: "new-course" },
+      },
+    } as NonNullable<ComponentProps<typeof OllLessonBoard>["runtime"]["board"]>;
+
+    expect(courseHasRenderedBoardNode(
+      board,
+      ["firstNew", "futureNew"],
+      "new-course",
+      new Set(["old"]),
+    )).toBe(false);
+    expect(courseHasRenderedBoardNode(
+      board,
+      ["firstNew", "futureNew"],
+      "new-course",
+      new Set(["old", "firstNew"]),
+    )).toBe(true);
+  });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
@@ -1071,6 +1181,43 @@ describe("OLL lesson Runtime integration", () => {
       width: 654,
       height: 220,
     }, { exclusive: true, framing: "content" }));
+  });
+
+  it("ignores a previous course focus while a new course is loading", async () => {
+    const focusTargets = vi.spyOn(InfiniteBoardView.prototype, "focusTargets");
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<PendingQuestionFocusProbe />);
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
+      x: 2_400,
+      y: 160,
+      width: 654,
+      height: 194,
+    }, { exclusive: true, framing: "content" }));
+    focusTargets.mockClear();
+    fireEvent.click(screen.getByRole("button", {
+      name: "模拟旧课程晚到的聚焦",
+    }));
+    await act(async () => undefined);
+
+    expect(focusTargets).not.toHaveBeenCalled();
+  });
+
+  it("does not release the loading camera before the first new course card renders", async () => {
+    const releaseHostCamera = vi.spyOn(
+      InfiniteBoardView.prototype,
+      "releaseHostCamera",
+    );
+    const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
+    render(<NewCourseNodeHandoffProbe />);
+
+    await waitFor(() => expect(focusWorldRect).toHaveBeenCalled());
+    expect(releaseHostCamera).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "显示新课程第一张卡片",
+    }));
+    await waitFor(() => expect(releaseHostCamera).toHaveBeenCalledTimes(1));
   });
 
   it("ends inside the current course region instead of fitting every course", async () => {

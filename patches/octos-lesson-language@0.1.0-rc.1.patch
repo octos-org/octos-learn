@@ -1,5 +1,5 @@
 diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
-index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..517a15d9609edee0be5a0464a8b671ae19092e4b 100644
+index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..4b49ca867f672190561a3c7fc0f96eff5b4907df 100644
 --- a/dist/packages/ink-runtime/src/runtime.js
 +++ b/dist/packages/ink-runtime/src/runtime.js
 @@ -5,7 +5,6 @@ import { coalesceInkOccupiedBounds } from "./occupied-bounds.js";
@@ -10,16 +10,12 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..517a15d9609edee0be5a0464a8b671ae
  export class InkRuntime {
      options;
      host;
-@@ -22,11 +21,12 @@ export class InkRuntime {
-     changeRevision = 0;
-     savedChangeRevision = 0;
-     saveTimer;
-+    appliedPixelRatio;
-     saveQueue = Promise.resolve(null);
+@@ -26,7 +25,8 @@ export class InkRuntime {
      destroyPromise;
      restoreFailure;
      suppressSave = false;
 -    layerBounds;
++    appliedPixelRatio;
 +    renderedCamera;
      expectedViewportTransform = Mat33.identity;
      activePointers = new Map();
@@ -74,13 +70,12 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..517a15d9609edee0be5a0464a8b671ae
      createEditor() {
          const documentLocale = this.host.ownerDocument.documentElement.lang;
          const userLocales = this.options.locale
-@@ -142,28 +133,26 @@ export class InkRuntime {
+@@ -142,28 +133,23 @@ export class InkRuntime {
          });
      }
      resetEditorViewport() {
 -        this.expectedViewportTransform = Mat33.translation(Vec2.of(-this.layerBounds.left, -this.layerBounds.top));
-+        this.expectedViewportTransform = Mat33.translation(Vec2.of(this.renderedCamera.panX, this.renderedCamera.panY))
-+            .rightMul(Mat33.scaling2D(this.renderedCamera.scale));
++        this.expectedViewportTransform = Mat33.translation(Vec2.of(this.renderedCamera.panX, this.renderedCamera.panY)).rightMul(Mat33.scaling2D(this.renderedCamera.scale));
          this.editor.viewport.resetTransform(this.expectedViewportTransform);
      }
      updateWorldLayer(camera) {
@@ -97,30 +92,30 @@ index e946f61df2552059f3d9490d5ff95dc5d01a3e8c..517a15d9609edee0be5a0464a8b671ae
 -            InkRuntime.applyWorldLayerBounds(this.host, nextBounds);
 -            this.resetEditorViewport();
 -        }
--        const hostWindow = this.options.viewport.ownerDocument.defaultView;
--        if (hostWindow) {
--            const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
--            void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
--        }
-+        // Keep the viewport-sized drawing surface fixed. Moving this root with a
-+        // temporary CSS transform exposes its physical right/bottom edges while
-+        // panning or zooming. js-draw already coalesces queueRerender calls to an
-+        // animation frame, so update its camera directly instead.
++        // Keep the drawing surface viewport-sized. js-draw owns the ink camera,
++        // while Octos remains the single source of truth for board pan and zoom.
 +        this.renderedCamera = { ...camera };
 +        this.resetEditorViewport();
-+        const hostWindow = this.options.viewport.ownerDocument.defaultView;
-+        if (hostWindow) {
+         const hostWindow = this.options.viewport.ownerDocument.defaultView;
+         if (hostWindow) {
+-            const effectivePixelRatio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio * camera.scale));
+-            void this.editor.display.setDevicePixelRatio(effectivePixelRatio);
 +            const ratio = Math.max(.1, Math.min(4, hostWindow.devicePixelRatio));
 +            if (this.appliedPixelRatio === undefined || Math.abs(ratio - this.appliedPixelRatio) >= .02) {
 +                this.appliedPixelRatio = ratio;
 +                void this.editor.display.setDevicePixelRatio(ratio);
 +            }
-+        }
+         }
 +        void this.editor.queueRerender();
      }
      prepareBoardInput() {
          const inputTarget = this.options.viewport;
-@@ -192,10 +181,8 @@ export class InkRuntime {
+@@ -187,15 +173,12 @@ export class InkRuntime {
+         };
+         const pointerBoardPoint = (event) => {
+             const viewportRect = this.options.viewport.getBoundingClientRect();
+-            const camera = this.options.board.getCameraState();
+             const point = { x: event.clientX - viewportRect.left, y: event.clientY - viewportRect.top };
              return this.options.board.viewportToBoard(point);
          };
          const mappedPointer = (event, down) => {
@@ -145,10 +140,78 @@ index 8749a9e3e24126d803e1805fbdf0f4107ddf2de6..aa26eac6f6763fb89774ebac11b7de58
       * Adds a course-owned layer to the board's world coordinate space.
       *
 diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
-index 08abe438e8b577514727d46e40c7a9322e77d11a..8f772aebebca386a26005b2bc535c14f9dac0e41 100644
+index 08abe438e8b577514727d46e40c7a9322e77d11a..73f1a9cce41eda4db2ceb1bf42994a272d20e383 100644
 --- a/dist/packages/web-runtime/src/board-view.js
 +++ b/dist/packages/web-runtime/src/board-view.js
-@@ -1172,6 +1172,9 @@ export class InfiniteBoardView {
+@@ -636,11 +636,66 @@ function diagramPosition(position, index, total) {
+     const angle = (Math.PI * 2 * index / Math.max(1, total)) - Math.PI / 2;
+     return { x: 150 + Math.cos(angle) * 105, y: 94 + Math.sin(angle) * 68 };
+ }
++function orderedDiagramPath(content) {
++    const elements = Array.isArray(content.elements) ? content.elements : [];
++    const edges = Array.isArray(content.edges) ? content.edges : [];
++    if (elements.length < 2 || elements.length > 8 || edges.length !== elements.length - 1)
++        return undefined;
++    if (elements.some((element) => text(element.semantic_position)))
++        return undefined;
++    const ids = new Set(elements.map((element) => text(element.id)).filter(Boolean));
++    if (ids.size !== elements.length)
++        return undefined;
++    const incoming = new Map([...ids].map((id) => [id, 0]));
++    const outgoing = new Map([...ids].map((id) => [id, []]));
++    for (const edge of edges) {
++        const from = text(edge.from);
++        const to = text(edge.to);
++        if (!ids.has(from) || !ids.has(to) || from === to)
++            return undefined;
++        incoming.set(to, (incoming.get(to) ?? 0) + 1);
++        outgoing.get(from).push(to);
++    }
++    const starts = [...ids].filter((id) => (incoming.get(id) ?? 0) === 0);
++    const ends = [...ids].filter((id) => (outgoing.get(id)?.length ?? 0) === 0);
++    if (starts.length !== 1 || ends.length !== 1)
++        return undefined;
++    if ([...ids].some((id) => (incoming.get(id) ?? 0) > 1 || (outgoing.get(id)?.length ?? 0) > 1))
++        return undefined;
++    const ordered = [];
++    const visited = new Set();
++    let current = starts[0];
++    while (current && !visited.has(current)) {
++        ordered.push(current);
++        visited.add(current);
++        current = outgoing.get(current)?.[0];
++    }
++    return ordered.length === ids.size ? ordered : undefined;
++}
++function orderedDiagramPosition(index, total) {
++    const columns = Math.min(4, total);
++    const row = Math.floor(index / columns);
++    const indexInRow = index % columns;
++    const column = row % 2 === 0 ? indexInRow : columns - 1 - indexInRow;
++    const x = columns === 1 ? 150 : 38 + column * 224 / (columns - 1);
++    const rows = Math.ceil(total / columns);
++    const y = rows === 1 ? 94 : 52 + row * 84;
++    return { x, y };
++}
+ function diagramPoints(content) {
+     const elements = Array.isArray(content.elements) ? content.elements : [];
++    const orderedPath = orderedDiagramPath(content);
++    const orderedIndex = orderedPath
++        ? new Map(orderedPath.map((id, index) => [id, index]))
++        : undefined;
+     return new Map(elements.map((element, index) => [
+         text(element.id),
+-        { ...diagramPosition(text(element.semantic_position), index, elements.length), label: text(element.label) },
++        {
++            ...(orderedIndex
++                ? orderedDiagramPosition(orderedIndex.get(text(element.id)), elements.length)
++                : diagramPosition(text(element.semantic_position), index, elements.length)),
++            label: text(element.label),
++        },
+     ]));
+ }
+ export function connectionDisplayLabel(connection) {
+@@ -1172,6 +1227,9 @@ export class InfiniteBoardView {
      getRegionBoundsMap() {
          return structuredClone(this.layout?.regions ?? {});
      }
@@ -158,7 +221,7 @@ index 08abe438e8b577514727d46e40c7a9322e77d11a..8f772aebebca386a26005b2bc535c14f
      /**
       * Adds a course-owned layer to the board's world coordinate space.
       *
-@@ -1526,7 +1529,8 @@ export class InfiniteBoardView {
+@@ -1526,7 +1584,8 @@ export class InfiniteBoardView {
      scheduleCameraNotifications() {
          if (this.cameraListeners.size === 0)
              return;
@@ -168,7 +231,7 @@ index 08abe438e8b577514727d46e40c7a9322e77d11a..8f772aebebca386a26005b2bc535c14f
          if (this.cameraFrame !== undefined)
              return;
          const notify = (timestamp) => {
-@@ -1582,7 +1586,7 @@ export class InfiniteBoardView {
+@@ -1582,7 +1641,7 @@ export class InfiniteBoardView {
          this.transform();
      }
      onWheel(event) {
@@ -178,7 +241,7 @@ index 08abe438e8b577514727d46e40c7a9322e77d11a..8f772aebebca386a26005b2bc535c14f
              return;
          event.preventDefault();
 diff --git a/dist/packages/web-runtime/src/layout.d.ts b/dist/packages/web-runtime/src/layout.d.ts
-index 70a9b74083d43d0e42b5f14a0e66ad496ce4c017..6d23207db7cfa1a9ac78655d298adeed85bec7fe 100644
+index 70a9b74083d43d0e42b5f14a0e66ad496ce4c017..e5491576e64cd4b1204569805d08f8d62339b576 100644
 --- a/dist/packages/web-runtime/src/layout.d.ts
 +++ b/dist/packages/web-runtime/src/layout.d.ts
 @@ -8,6 +8,8 @@ export interface Rect {
@@ -190,20 +253,13 @@ index 70a9b74083d43d0e42b5f14a0e66ad496ce4c017..6d23207db7cfa1a9ac78655d298adeed
      /** Actual rendered bounds for each logical course region. */
      regions?: Record<string, Rect>;
      bounds: Rect;
-@@ -18,6 +20,23 @@ export interface RegionLayoutConstraint {
+@@ -18,6 +20,16 @@ export interface RegionLayoutConstraint {
      y: number;
      /** Space reserved for a progressively delivered course before every node exists. */
      reservedWidth?: number;
-+    /**
-+     * Arrange top-level lesson cards as a stable visual lane plus a reading
-+     * lane. This is computed at render time, so saved semantic boards also
-+     * receive the updated course composition.
-+     */
++    /** Arrange lesson content as a visual lane beside a reading lane. */
 +    flow?: "semantic" | "reading";
-+    /**
-+     * Host-rendered controls or tasks attached to a semantic lesson node.
-+     * Attachments reserve real board space without becoming lesson content.
-+     */
++    /** Host-rendered controls or tasks anchored to a lesson node. */
 +    attachments?: Array<{
 +        id: string;
 +        anchorNodeId: string;
@@ -215,17 +271,18 @@ index 70a9b74083d43d0e42b5f14a0e66ad496ce4c017..6d23207db7cfa1a9ac78655d298adeed
  export interface BoardLayoutOptions {
      regions?: Record<string, RegionLayoutConstraint>;
 diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime/src/layout.js
-index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f578a6e69be 100644
+index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..99c2e0be5fa8d91a56f7a67c5d7d3f42156633ef 100644
 --- a/dist/packages/web-runtime/src/layout.js
 +++ b/dist/packages/web-runtime/src/layout.js
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  const GAP = { compact: 28, normal: 54, spacious: 88 };
  const TOPIC_GUTTER = 180;
++const MAX_READING_COLUMN_HEIGHT = 1_150;
 +const VISUAL_LANE_KINDS = new Set(["geometry", "scene3d", "plot", "image", "diagram"]);
  function visibleContentLength(value) {
      if (value === null || value === undefined)
          return 0;
-@@ -66,7 +67,38 @@ function union(rects, padding = 0) {
+@@ -66,7 +68,34 @@ function union(rects, padding = 0) {
  export function computeBoardLayout(state, measuredNodeSizes = {}, options = {}) {
      const nodes = {};
      const groups = {};
@@ -249,22 +306,150 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
 +            continue;
 +        if (["inside", "overlay"].includes(node.placement?.relation ?? ""))
 +            continue;
-+        const kind = String(node.kind ?? "text");
-+        const profile = regionFlowProfiles.get(regionId) ?? {
-+            hasVisual: false,
-+            visualWidth: 0,
-+        };
-+        if (VISUAL_LANE_KINDS.has(kind)) {
-+            const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
-+            profile.hasVisual = true;
-+            profile.visualWidth = Math.max(profile.visualWidth, size.width);
-+        }
++        if (!VISUAL_LANE_KINDS.has(String(node.kind ?? "text")))
++            continue;
++        const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
++        const profile = regionFlowProfiles.get(regionId) ?? { hasVisual: false, visualWidth: 0 };
++        profile.hasVisual = true;
++        profile.visualWidth = Math.max(profile.visualWidth, size.width);
 +        regionFlowProfiles.set(regionId, profile);
 +    }
      const endpointId = (endpoint) => {
          if (typeof endpoint === "string")
              return endpoint;
-@@ -119,25 +151,93 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -76,6 +105,131 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+         return [value.node_id, value.group_id, value.connection_id]
+             .find((candidate) => typeof candidate === "string" && candidate.length > 0);
+     };
++    const orderedNodes = () => {
++        const source = Object.values(state.nodes);
++        const sourceIndex = new Map(source.map((node, index) => [node.id, index]));
++        const neighbors = new Map(source.map((node) => [node.id, new Set()]));
++        const dependents = new Map(source.map((node) => [node.id, new Set()]));
++        const prerequisites = new Map(source.map((node) => [node.id, new Set()]));
++        const sameRegion = (left, right) => ((state.nodes[left]?.region_id ?? "__legacy__") === (state.nodes[right]?.region_id ?? "__legacy__"));
++        const relate = (before, after, keepTogether) => {
++            if (!state.nodes[before] || !state.nodes[after] || !sameRegion(before, after))
++                return;
++            if (keepTogether) {
++                neighbors.get(before)?.add(after);
++                neighbors.get(after)?.add(before);
++            }
++            dependents.get(before)?.add(after);
++            prerequisites.get(after)?.add(before);
++        };
++        for (const node of source) {
++            const anchor = node.placement?.anchor;
++            if (typeof anchor === "string" && state.nodes[anchor]) {
++                relate(anchor, node.id, VISUAL_LANE_KINDS.has(String(state.nodes[anchor]?.kind ?? ""))
++                    && VISUAL_LANE_KINDS.has(String(node.kind ?? "")));
++            }
++        }
++        for (const connection of Object.values(state.connections)) {
++            const from = endpointId(connection.from);
++            const to = endpointId(connection.to);
++            if (from && to) {
++                relate(from, to, VISUAL_LANE_KINDS.has(String(state.nodes[from]?.kind ?? ""))
++                    && VISUAL_LANE_KINDS.has(String(state.nodes[to]?.kind ?? "")));
++            }
++        }
++        const components = [];
++        const visited = new Set();
++        for (const node of source) {
++            if (visited.has(node.id))
++                continue;
++            const component = [];
++            const pending = [node.id];
++            visited.add(node.id);
++            while (pending.length > 0) {
++                const current = pending.shift();
++                component.push(current);
++                for (const neighbor of neighbors.get(current) ?? []) {
++                    if (visited.has(neighbor))
++                        continue;
++                    visited.add(neighbor);
++                    pending.push(neighbor);
++                }
++            }
++            components.push(component);
++        }
++        const componentByNode = new Map();
++        components.forEach((component, componentIndex) => {
++            for (const id of component)
++                componentByNode.set(id, componentIndex);
++        });
++        const componentPrerequisites = new Map(components.map((_component, index) => [index, new Set()]));
++        const componentDependents = new Map(components.map((_component, index) => [index, new Set()]));
++        for (const [nodeId, requiredNodes] of prerequisites) {
++            const component = componentByNode.get(nodeId);
++            for (const requiredNode of requiredNodes) {
++                const requiredComponent = componentByNode.get(requiredNode);
++                if (requiredComponent === component)
++                    continue;
++                componentPrerequisites.get(component)?.add(requiredComponent);
++                componentDependents.get(requiredComponent)?.add(component);
++            }
++        }
++        const componentSourceIndex = (componentIndex) => Math.min(...components[componentIndex].map((id) => sourceIndex.get(id) ?? Number.MAX_SAFE_INTEGER));
++        const readyComponents = components
++            .map((_component, index) => index)
++            .filter((index) => componentPrerequisites.get(index)?.size === 0)
++            .sort((left, right) => componentSourceIndex(left) - componentSourceIndex(right));
++        const orderedComponents = [];
++        while (readyComponents.length > 0) {
++            const current = readyComponents.shift();
++            orderedComponents.push(current);
++            for (const dependent of componentDependents.get(current) ?? []) {
++                const required = componentPrerequisites.get(dependent);
++                required.delete(current);
++                if (required.size === 0 && !orderedComponents.includes(dependent) && !readyComponents.includes(dependent)) {
++                    readyComponents.push(dependent);
++                    readyComponents.sort((left, right) => componentSourceIndex(left) - componentSourceIndex(right));
++                }
++            }
++        }
++        for (const componentIndex of components
++            .map((_component, index) => index)
++            .sort((left, right) => componentSourceIndex(left) - componentSourceIndex(right))) {
++            if (!orderedComponents.includes(componentIndex))
++                orderedComponents.push(componentIndex);
++        }
++        return orderedComponents.flatMap((componentIndex) => {
++            const component = components[componentIndex];
++            const componentIds = new Set(component);
++            const remainingPrerequisites = new Map(component.map((id) => [
++                id,
++                new Set([...(prerequisites.get(id) ?? [])].filter((candidate) => componentIds.has(candidate))),
++            ]));
++            const ready = component
++                .filter((id) => remainingPrerequisites.get(id)?.size === 0)
++                .sort((left, right) => (sourceIndex.get(left) ?? 0) - (sourceIndex.get(right) ?? 0));
++            const ordered = [];
++            while (ready.length > 0) {
++                const current = ready.shift();
++                ordered.push(current);
++                for (const dependent of dependents.get(current) ?? []) {
++                    if (!componentIds.has(dependent))
++                        continue;
++                    const required = remainingPrerequisites.get(dependent);
++                    required.delete(current);
++                    if (required.size === 0 && !ordered.includes(dependent) && !ready.includes(dependent)) {
++                        ready.push(dependent);
++                        ready.sort((left, right) => (sourceIndex.get(left) ?? 0) - (sourceIndex.get(right) ?? 0));
++                    }
++                }
++            }
++            for (const id of component.sort((left, right) => (sourceIndex.get(left) ?? 0) - (sourceIndex.get(right) ?? 0))) {
++                if (!ordered.includes(id))
++                    ordered.push(id);
++            }
++            return ordered.map((id) => state.nodes[id]);
++        });
++    };
+     const connectedLaidOutNode = (nodeId, regionId) => {
+         for (const connection of Object.values(state.connections)) {
+             const from = endpointId(connection.from);
+@@ -119,47 +273,100 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              groupRect(groupId);
          return [
              ...Object.values(nodes),
@@ -274,19 +459,49 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
                  .map(([, rect]) => rect),
          ];
      };
-     for (const node of Object.values(state.nodes)) {
+-    for (const node of Object.values(state.nodes)) {
 -        const size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
++    const regionCursor = (regionId, nodeId) => {
++        const existing = regionCursors.get(regionId);
++        if (existing)
++            return existing;
++        const constraint = options.regions?.[regionId];
++        const occupied = collisionRects(nodeId);
++        const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
++        const right = occupied.length || reservedRightEdges.length
++            ? Math.max(...occupied.map((rect) => rect.x + rect.width), ...reservedRightEdges)
++            : 100 - TOPIC_GUTTER;
++        const created = {
++            x: constraint?.x ?? (regionCursors.size === 0 ? 100 : right + TOPIC_GUTTER),
++            y: constraint?.y ?? 90,
++            reservedWidth: Math.max(0, constraint?.reservedWidth ?? 0),
++            itemIndex: 0,
++            rowY: constraint?.y ?? 90,
++            rowHeight: 0,
++            firstColumnWidth: 0,
++        };
++        regionCursors.set(regionId, created);
++        return created;
++    };
++    for (const node of orderedNodes()) {
 +        let size = measuredNodeSizes[node.id] ?? measureSemanticNode(node);
          const placement = node.placement ?? { relation: "new_region" };
-         const anchor = placement.anchor ? nodes[placement.anchor] ?? groupRect(placement.anchor) : undefined;
-         const gap = GAP[placement.gap] ?? GAP.normal;
 +        const regionId = typeof node.region_id === "string" && node.region_id
 +            ? node.region_id
 +            : "__legacy__";
+         const anchor = placement.anchor ? nodes[placement.anchor] ?? groupRect(placement.anchor) : undefined;
++        const connected = connectedLaidOutNode(node.id, regionId);
+         const gap = GAP[placement.gap] ?? GAP.normal;
 +        const constraint = options.regions?.[regionId];
++        const nodeIsVisual = VISUAL_LANE_KINDS.has(String(node.kind ?? "text"));
++        const anchorNode = typeof placement.anchor === "string" ? state.nodes[placement.anchor] : undefined;
++        const connectedNodeId = connected
++            ? Object.entries(nodes).find(([, rect]) => rect === connected)?.[0]
++            : undefined;
++        const connectedNode = connectedNodeId ? state.nodes[connectedNodeId] : undefined;
 +        const authoredVisualRelationship = Boolean(anchor) && (Boolean(placement.anchor && state.groups[placement.anchor])
-+            || (VISUAL_LANE_KINDS.has(String(node.kind ?? "text"))
-+                && Boolean(placement.anchor && VISUAL_LANE_KINDS.has(String(state.nodes[placement.anchor]?.kind ?? "")))));
++            || (nodeIsVisual && VISUAL_LANE_KINDS.has(String(anchorNode?.kind ?? "")))) || Boolean(connected && nodeIsVisual
++            && VISUAL_LANE_KINDS.has(String(connectedNode?.kind ?? "")));
 +        const readingFlow = constraint?.flow === "reading"
 +            && !["inside", "overlay"].includes(placement.relation)
 +            && !authoredVisualRelationship;
@@ -298,73 +513,71 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
 -            const regionId = typeof node.region_id === "string" && node.region_id
 -                ? node.region_id
 -                : "__legacy__";
+-            let region = regionCursors.get(regionId);
+-            if (!region) {
+-                const constraint = options.regions?.[regionId];
+-                const occupied = collisionRects(node.id);
+-                const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
+-                const right = occupied.length || reservedRightEdges.length
+-                    ? Math.max(...occupied.map((rect) => rect.x + rect.width), ...reservedRightEdges)
+-                    : 100 - TOPIC_GUTTER;
+-                region = {
+-                    x: constraint?.x ?? (regionCursors.size === 0 ? 100 : right + TOPIC_GUTTER),
+-                    y: constraint?.y ?? 90,
+-                    reservedWidth: Math.max(0, constraint?.reservedWidth ?? 0),
+-                    itemIndex: 0,
+-                    rowY: constraint?.y ?? 90,
+-                    rowHeight: 0,
+-                    firstColumnWidth: 0,
+-                };
+-                regionCursors.set(regionId, region);
 +        if (readingFlow) {
-+            let region = regionCursors.get(regionId);
-+            if (!region) {
-+                const occupied = collisionRects(node.id);
-+                const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
-+                const right = occupied.length || reservedRightEdges.length
-+                    ? Math.max(...occupied.map((rect) => rect.x + rect.width), ...reservedRightEdges)
-+                    : 100 - TOPIC_GUTTER;
-+                region = {
-+                    x: constraint?.x ?? (regionCursors.size === 0 ? 100 : right + TOPIC_GUTTER),
-+                    y: constraint?.y ?? 90,
-+                    reservedWidth: Math.max(0, constraint?.reservedWidth ?? 0),
-+                    itemIndex: 0,
-+                    rowY: constraint?.y ?? 90,
-+                    rowHeight: 0,
-+                    firstColumnWidth: 0,
-+                    visualBottom: undefined,
-+                    narrativeBottom: undefined,
-+                };
-+                regionCursors.set(regionId, region);
-+            }
-+            const profile = regionFlowProfiles.get(regionId) ?? {
-+                hasVisual: false,
-+                visualWidth: 0,
-+            };
-+            flowLane = VISUAL_LANE_KINDS.has(String(node.kind ?? "text"))
-+                ? "visual"
-+                : "narrative";
++            const region = regionCursor(regionId, node.id);
++            const profile = regionFlowProfiles.get(regionId) ?? { hasVisual: false, visualWidth: 0 };
++            flowLane = nodeIsVisual ? "visual" : "narrative";
 +            flowRegion = region;
-+            if (
-+                flowLane === "narrative"
-+                && profile.hasVisual
-+                && region.reservedWidth > profile.visualWidth + GAP.normal
-+            ) {
-+                // The host reserves one logical course region before the
-+                // complete lesson has arrived. Keep both reading lanes inside
-+                // that reservation so reflowing an older course cannot invade
-+                // the next persisted course region on the infinite board.
-+                const availableWidth = region.reservedWidth
-+                    - profile.visualWidth
-+                    - GAP.normal;
-+                if (availableWidth >= 280)
-+                    size = { ...size, width: Math.min(size.width, availableWidth) };
-+            }
 +            if (flowLane === "visual") {
 +                x = region.x;
 +                y = region.visualBottom === undefined
 +                    ? region.y
 +                    : region.visualBottom + GAP.normal;
-+            }
+             }
+-            const connected = connectedLaidOutNode(node.id, regionId);
+-            if (connected && region.itemIndex % 2 === 1) {
 +            else {
-+                x = region.x + (profile.hasVisual
-+                    ? profile.visualWidth + GAP.normal
-+                    : 0);
++                const visualRight = Object.entries(nodes).reduce((right, [id, rect]) => {
++                    const candidate = state.nodes[id];
++                    if (!candidate || (candidate.region_id ?? "__legacy__") !== regionId)
++                        return right;
++                    return VISUAL_LANE_KINDS.has(String(candidate.kind ?? "text"))
++                        ? Math.max(right, rect.x + rect.width)
++                        : right;
++                }, profile.hasVisual ? region.x + profile.visualWidth : region.x);
++                x = region.narrativeX ?? (profile.hasVisual ? visualRight + GAP.normal : region.x);
++                region.narrativeX ??= x;
++                const usedWidth = x - region.x;
++                const availableWidth = region.reservedWidth > usedWidth
++                    ? region.reservedWidth - usedWidth
++                    : 0;
++                if (availableWidth >= 280)
++                    size = { ...size, width: Math.min(size.width, availableWidth) };
 +                y = region.narrativeBottom === undefined
 +                    ? region.y
 +                    : region.narrativeBottom + GAP.compact;
 +            }
 +        }
 +        else if (!anchor || placement.relation === "new_region") {
-             let region = regionCursors.get(regionId);
-             if (!region) {
--                const constraint = options.regions?.[regionId];
-                 const occupied = collisionRects(node.id);
-                 const reservedRightEdges = [...regionCursors.values()].map((cursor) => cursor.x + cursor.reservedWidth);
-                 const right = occupied.length || reservedRightEdges.length
-@@ -202,9 +302,9 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
++            const region = regionCursor(regionId, node.id);
++            if (connected && nodeIsVisual && VISUAL_LANE_KINDS.has(String(connectedNode?.kind ?? ""))) {
+                 x = connected.x + connected.width + GAP.normal;
+                 y = connected.y + (connected.height - size.height) / 2;
+                 region.rowHeight = Math.max(region.rowHeight, size.height + Math.max(0, y - region.rowY));
+-                region.itemIndex += 1;
++                region.itemIndex = Math.max(2, region.itemIndex + 1);
+             }
+             else {
+                 const column = region.itemIndex % 2;
+@@ -202,10 +409,31 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              x = anchor.x + 24;
              y = anchor.y + 24;
          }
@@ -374,9 +587,31 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
 -        if (placement.align === "end" && anchor && ["below", "above"].includes(placement.relation))
 +        if (!readingFlow && placement.align === "end" && anchor && ["below", "above"].includes(placement.relation))
              x = anchor.x + anchor.width - size.width;
++        if (anchor && placement.relation === "below") {
++            const region = regionCursors.get(regionId);
++            const regionTop = options.regions?.[regionId]?.y
++                ?? region?.y
++                ?? Math.min(anchor.y, ...Object.entries(nodes).flatMap(([id, rect]) => {
++                    const candidate = state.nodes[id];
++                    return candidate && (candidate.region_id ?? "__legacy__") === regionId ? [rect.y] : [];
++                }));
++            if (y + size.height > regionTop + MAX_READING_COLUMN_HEIGHT) {
++                const sameRegionRects = Object.entries(nodes).flatMap(([id, rect]) => {
++                    const candidate = state.nodes[id];
++                    return candidate && (candidate.region_id ?? "__legacy__") === regionId ? [rect] : [];
++                });
++                if (sameRegionRects.length > 0) {
++                    x = Math.max(...sameRegionRects.map((rect) => rect.x + rect.width)) + GAP.spacious;
++                    y = regionTop;
++                    if (flowRegion && flowLane === "narrative")
++                        flowRegion.narrativeX = x;
++                }
++            }
++        }
          let candidate = { x, y, ...size };
          if (!["inside", "overlay"].includes(placement.relation)) {
-@@ -215,15 +315,45 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+             let guard = 0;
+@@ -215,15 +443,59 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
              }
          }
          nodes[node.id] = candidate;
@@ -410,21 +645,37 @@ index 9ecf2c58f2e93f6af42b4054475f4bf5decc2486..d64e18fc49b4c883e15dd9d7b1345f57
 +            flowRegion.visualBottom = attachedBottom;
 +        if (flowRegion && flowLane === "narrative")
 +            flowRegion.narrativeBottom = attachedBottom;
++        const region = regionCursors.get(regionId);
++        if (region
++            && placement.relation !== "new_region"
++            && anchor
++            && candidate.y < region.rowY + region.rowHeight
++            && candidate.y + candidate.height > region.rowY) {
++            region.rowHeight = Math.max(region.rowHeight, candidate.y + candidate.height - region.rowY);
++            if (["right_of", "left_of", "near"].includes(placement.relation)) {
++                // A related visual extends the current teaching row. The next
++                // independent card starts below the complete visual cluster.
++                region.itemIndex = Math.max(2, region.itemIndex);
++            }
++        }
      }
      for (const groupId of Object.keys(state.groups))
          groupRect(groupId);
 -    const all = [...Object.values(nodes), ...Object.values(groups)];
 +    const all = [...Object.values(nodes), ...Object.values(groups), ...Object.values(attachments)];
      const rawBounds = union(all, 100) ?? { x: 0, y: 0, width: 1200, height: 800 };
-     const shiftX = rawBounds.x < 20 ? 20 - rawBounds.x : 0;
-     const shiftY = rawBounds.y < 20 ? 20 - rawBounds.y : 0;
+-    const shiftX = rawBounds.x < 20 ? 20 - rawBounds.x : 0;
+-    const shiftY = rawBounds.y < 20 ? 20 - rawBounds.y : 0;
++    const hostPositioned = Object.keys(options.regions ?? {}).length > 0;
++    const shiftX = !hostPositioned && rawBounds.x < 20 ? 20 - rawBounds.x : 0;
++    const shiftY = !hostPositioned && rawBounds.y < 20 ? 20 - rawBounds.y : 0;
      if (shiftX || shiftY) {
 -        for (const rect of [...Object.values(nodes), ...Object.values(groups)]) {
 +        for (const rect of [...Object.values(nodes), ...Object.values(groups), ...Object.values(attachments)]) {
              rect.x += shiftX;
              rect.y += shiftY;
          }
-@@ -268,12 +398,20 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+@@ -268,12 +540,20 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
          rects.push(rect);
          regionRects.set(regionId, rects);
      }

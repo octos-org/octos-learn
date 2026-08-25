@@ -187,11 +187,11 @@ function lessonJobError(job: SkillActionJob): string {
   if (/timeout|timed out|超时/iu.test(detail)) {
     return "课程生成超时，请稍后再试。";
   }
-  return detail || "课程生成失败，请重试。";
+  return "课程生成失败，请重试。";
 }
 
 function lessonJobNonLessonResponse(job: SkillActionJob): {
-  disposition: "clarify" | "ignore";
+  disposition: "clarify" | "ignore" | "unsupported";
   learnerResponse: string;
 } | null {
   if (!job.result || typeof job.result !== "object" || Array.isArray(job.result)) {
@@ -204,7 +204,9 @@ function lessonJobNonLessonResponse(job: SkillActionJob): {
   }
   const record = metadata as Record<string, unknown>;
   const disposition = record.lesson_disposition;
-  if (disposition !== "clarify" && disposition !== "ignore") return null;
+  if (disposition !== "clarify" && disposition !== "ignore" && disposition !== "unsupported") {
+    return null;
+  }
   return {
     disposition,
     learnerResponse: typeof record.learner_response === "string"

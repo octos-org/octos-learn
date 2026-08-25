@@ -84,6 +84,10 @@ export class WhiteboardCameraController {
     return this.loadingCourseId === null || this.loadingCourseId === courseId;
   }
 
+  allowsTeachingFocus(courseId?: string): boolean {
+    return this.loadingCourseId === null || this.loadingCourseId === courseId;
+  }
+
   request(request: WhiteboardCameraRequest): boolean {
     if (!validRect(request.rect) || this.appliedKeys.has(request.key)) {
       this.report?.({ action: "ignored", request, reason: "duplicate" });
