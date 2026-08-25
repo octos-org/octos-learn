@@ -1784,9 +1784,13 @@ export function LearningWhiteboard({
     const teachingCourseId = teachingTopic
       ? teachingTopic.questionId ?? teachingTopic.id
       : undefined;
+    const teachingRegionId = teachingTopic
+      ? runtimeRegionIdForTopic(teachingTopic.id)
+      : undefined;
     const teachingFocusAllowed = cameraControllerRef.current
       ?.allowsTeachingFocus(teachingCourseId) ?? true;
     view?.setScene3dViews(activeRuntime.scene3dViews);
+    view?.setActiveRegion(teachingRegionId);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
     const nextRegionBounds = view?.getRegionBoundsMap() ?? {};
     setRuntimeRegionBounds((current) =>
@@ -1841,6 +1845,7 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
+    runtimeRegionIdForTopic,
   ]);
 
   useEffect(() => {

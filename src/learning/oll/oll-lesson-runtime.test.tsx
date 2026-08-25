@@ -1220,6 +1220,21 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => expect(releaseHostCamera).toHaveBeenCalledTimes(1));
   });
 
+  it("switches the Runtime camera boundary to the new course before rendering its first card", async () => {
+    const setActiveRegion = vi.spyOn(
+      InfiniteBoardView.prototype,
+      "setActiveRegion",
+    );
+    render(<NewCourseNodeHandoffProbe />);
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "显示新课程第一张卡片",
+    }));
+    await waitFor(() => expect(setActiveRegion).toHaveBeenCalledWith(
+      "new-course-topic",
+    ));
+  });
+
   it("ends inside the current course region instead of fitting every course", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
     render(<CompletedCourseFocusProbe />);
