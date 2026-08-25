@@ -2438,6 +2438,9 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     if (extras?.reasoning_effort) {
       params.reasoning_effort = extras.reasoning_effort;
     }
+    if (extras?.tool_context && extras.tool_context.trim().length > 0) {
+      params.tool_context = extras.tool_context;
+    }
     return this.request<TurnStartResult>(METHODS.TURN_START, params);
   }
 
