@@ -44,6 +44,8 @@ import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
   LearningWhiteboard,
   type DegradedVisualRetryRequest,
+  type VoiceInkSelectionCapture,
+  type VoiceInkSelectionRequest,
 } from "./oll/oll-lesson-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import {
@@ -386,8 +388,25 @@ export function LearningWorkspace({
     contentKind: SelectionContentKind;
     boardContext: SelectionBoardContext;
     file: File;
-    claimed: boolean;
+    recordSelection: () => void;
   } | null>(null);
+  const activeVoiceInkSelectionCaptureRef =
+    useRef<VoiceInkSelectionCapture | null>(null);
+  const sendVoiceSelectionQuestionRef = useRef<((
+    request: VoiceInkSelectionRequest,
+    transcript: string,
+    turnId: string,
+    uploadedMediaPath: string,
+  ) => Promise<void>) | null>(null);
+  const handleVoiceInkSelectionCaptureChange = useCallback(
+    (capture: VoiceInkSelectionCapture | null) => {
+      activeVoiceInkSelectionCaptureRef.current = capture;
+      // A changed or cleared selection invalidates any snapshot prepared for
+      // an earlier utterance. A fresh capture will be taken for the next one.
+      pendingVoiceSelectionRef.current = null;
+    },
+    [],
+  );
   const voiceQuestionSourcesRef = useRef(new Map<string, {
     sourceId: string;
     bounds: InkSelectionSnapshot["bounds"];
@@ -788,11 +807,25 @@ export function LearningWorkspace({
         conversationOptions?.onTurnStart?.(turnId);
       },
       getAdditionalTurnFiles: async () => {
-        const pending = pendingVoiceSelectionRef.current;
-        if (!pending || pending.claimed) return [];
-        pending.claimed = true;
+        let pending = pendingVoiceSelectionRef.current;
+        if (!pending) {
+          const capture = activeVoiceInkSelectionCaptureRef.current;
+          if (!capture) return [];
+          const selection = await capture();
+          pending = {
+            snapshot: selection.snapshot,
+            contentKind: selection.contentKind,
+            boardContext: selection.boardContext,
+            file: selection.contextImage,
+            recordSelection: selection.recordSelection,
+          };
+          pendingVoiceSelectionRef.current = pending;
+        }
         return [pending.file];
       },
+      shouldIncludeCameraFrame: () =>
+        activeVoiceInkSelectionCaptureRef.current === null
+        && pendingVoiceSelectionRef.current === null,
       buildTurnText: (
         context: Parameters<
           NonNullable<VoiceConversationOptions["buildTurnText"]>
@@ -818,7 +851,6 @@ export function LearningWorkspace({
             toolId: "custom-question",
           }),
         ].filter(Boolean).join("\n");
-        pendingVoiceSelectionRef.current = null;
         return selectionContext;
       },
       // Muted narration does NOT own the mic: with the narration silenced
@@ -830,6 +862,29 @@ export function LearningWorkspace({
           narrationSpeechActive ||
           textTurnPending),
       onAdmittedSpeech: async (context) => {
+        const pendingSelection = pendingVoiceSelectionRef.current;
+        const selectionPath = context.additionalMediaPaths?.[0];
+        if (pendingSelection && selectionPath) {
+          pendingVoiceSelectionRef.current = null;
+          pendingSelection.recordSelection();
+          const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
+          if (!sendSelectionQuestion) {
+            throw new Error("选区语音功能尚未就绪");
+          }
+          await sendSelectionQuestion(
+            {
+              snapshot: pendingSelection.snapshot,
+              contentKind: pendingSelection.contentKind,
+              boardContext: pendingSelection.boardContext,
+              contextImage: pendingSelection.file,
+              recordSelection: pendingSelection.recordSelection,
+            },
+            context.transcript,
+            context.turnId,
+            selectionPath,
+          );
+          return true;
+        }
         if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
         registerVoiceQuestion(context.turnId, context.transcript, null);
         if (context.currentFramePath) {
@@ -1589,12 +1644,15 @@ export function LearningWorkspace({
       toolId: SelectionToolId;
       boardContext: SelectionBoardContext;
       contextImage: File;
+    }, delivery?: {
+      turnId: string;
+      uploadedMediaPath: string;
     }) => {
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
       setSelectionEnhancementPending(true);
-      const turnId = crypto.randomUUID();
+      const turnId = delivery?.turnId ?? crypto.randomUUID();
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -1610,8 +1668,8 @@ export function LearningWorkspace({
       onLearnerInput?.(question);
       try {
         await rememberSelectionSource(snapshot);
-        const paths = await uploadFiles([contextImage], "upload");
-        const mediaPath = paths[0];
+        const mediaPath = delivery?.uploadedMediaPath
+          ?? (await uploadFiles([contextImage], "upload"))[0];
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
         const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
@@ -1678,6 +1736,28 @@ export function LearningWorkspace({
     ],
   );
 
+  useEffect(() => {
+    const sendVoiceSelectionQuestion = async (
+      request: VoiceInkSelectionRequest,
+      transcript: string,
+      turnId: string,
+      uploadedMediaPath: string,
+    ) => sendSelectionQuestion({
+      ...request,
+      question: transcript,
+      toolId: "custom-question",
+    }, {
+      turnId,
+      uploadedMediaPath,
+    });
+    sendVoiceSelectionQuestionRef.current = sendVoiceSelectionQuestion;
+    return () => {
+      if (sendVoiceSelectionQuestionRef.current === sendVoiceSelectionQuestion) {
+        sendVoiceSelectionQuestionRef.current = null;
+      }
+    };
+  }, [sendSelectionQuestion]);
+
   const classifyInkSelection = useCallback(
     async ({
       snapshot,
@@ -1731,7 +1811,9 @@ export function LearningWorkspace({
         contentKind,
         boardContext,
         file: contextImage,
-        claimed: false,
+        // The explicit panel action already recorded the selection while
+        // preparing its immutable snapshot.
+        recordSelection: () => undefined,
       };
       if (conv.state === "idle" || conv.state === "error") {
         await conv.start();
@@ -2231,6 +2313,9 @@ export function LearningWorkspace({
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled
             ? startSelectionVoiceQuestion
+            : undefined}
+          onVoiceInkSelectionCaptureChange={voiceEnabled
+            ? handleVoiceInkSelectionCaptureChange
             : undefined}
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}

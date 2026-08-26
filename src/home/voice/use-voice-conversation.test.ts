@@ -1071,6 +1071,55 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(sendMessageMock).not.toHaveBeenCalled();
     unmount();
   });
+
+  it("does not capture or upload a live camera frame when the application selects another visual context", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    cameraMock.active = true;
+    cameraMock.grabFrame.mockResolvedValueOnce(new File(
+      ["camera"],
+      "frame.jpg",
+      { type: "image/jpeg" },
+    ));
+    const selection = new File(["selection"], "selection.png", {
+      type: "image/png",
+    });
+    uploadFilesMock.mockResolvedValueOnce([
+      "uploads/utterance.wav",
+      "uploads/selection.png",
+    ]);
+    const shouldIncludeCameraFrame = vi.fn(() => false);
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-selected-ink-camera-test", undefined, undefined, {
+        getAdditionalTurnFiles: async () => [selection],
+        shouldIncludeCameraFrame,
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["voice"], { type: "audio/wav" }),
+      });
+    });
+
+    expect(shouldIncludeCameraFrame).toHaveBeenCalledOnce();
+    expect(cameraMock.grabFrame).not.toHaveBeenCalled();
+    expect(uploadFilesMock).toHaveBeenCalledWith([
+      expect.objectContaining({ name: "utterance.wav" }),
+      selection,
+    ], "recording");
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      additionalMediaPaths: ["uploads/selection.png"],
+      currentFramePath: undefined,
+    }));
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
 });
 
 describe("interrupt() supersedes the drain loop (stale grace timer)", () => {

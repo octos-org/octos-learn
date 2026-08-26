@@ -104,6 +104,13 @@ export interface VoiceConversationOptions {
   buildTurnText?: (context: VoiceTurnSendContext) => string;
   /** Add application-owned files to exactly the next captured voice turn. */
   getAdditionalTurnFiles?: () => Promise<File[]> | File[];
+  /**
+   * Let the owning surface suppress the live camera frame for a specific
+   * turn. /learn uses this when an ink selection is the learner's explicit
+   * visual context, so a simultaneously enabled camera is never captured or
+   * uploaded for that turn.
+   */
+  shouldIncludeCameraFrame?: () => boolean;
   /** Start the privacy-visible camera stream when voice capture starts. */
   autoStartCamera?: boolean;
   /** Learning sessions show their recent hydrated history when resumed. */
@@ -391,6 +398,7 @@ export function useVoiceConversation(
 ): VoiceConversation {
   const buildTurnText = options?.buildTurnText;
   const getAdditionalTurnFiles = options?.getAdditionalTurnFiles;
+  const shouldIncludeCameraFrame = options?.shouldIncludeCameraFrame;
   const playReplyAudio = options?.playReplyAudio !== false;
   const externalSpeechActive = options?.externalSpeechActive === true;
   const onTurnStart = options?.onTurnStart;
@@ -646,9 +654,11 @@ export function useVoiceConversation(
         // When the camera is on, attach the current frame so the turn is a
         // video call (audio + image); the server transcribes the audio and the
         // VLM sees the frame. Degrades to audio-only on a failed grab.
+        const cameraRequested = includeCamera ?? cameraActiveRef.current;
+        const cameraAllowed = shouldIncludeCameraFrame?.() ?? true;
         const capturedFiles = await assembleTurnFiles(
           file,
-          includeCamera ?? cameraActiveRef.current,
+          cameraRequested && cameraAllowed,
           cameraGrab,
         );
         const additionalFiles = await getAdditionalTurnFiles?.() ?? [];
@@ -850,6 +860,7 @@ export function useVoiceConversation(
     [
       cameraGrab,
       getAdditionalTurnFiles,
+      shouldIncludeCameraFrame,
       historyTopic,
       buildTurnText,
       onAdmittedSpeech,
