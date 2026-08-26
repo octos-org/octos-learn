@@ -125,6 +125,12 @@ export interface VoiceConversationOptions {
    * pauses until that playback ends so the assistant cannot hear itself.
    */
   externalSpeechActive?: boolean;
+  /**
+   * Keep microphone capture paused briefly after external speaker playback
+   * ends. This lets acoustic echo and the final audio frame drain before the
+   * surface resumes listening. Defaults to immediate resume.
+   */
+  externalSpeechReleaseDelayMs?: number;
   /** Reports the exact client turn as soon as a captured utterance is accepted. */
   onTurnStart?: (turnId: string) => void;
   /** Reports the exact client turn after the assistant has finished replying. */
@@ -180,9 +186,13 @@ const REPLY_TIMEOUT_MS = 90000;
 /** How long the "frame sent to the AI" thumbnail lingers before auto-hiding. */
 const SENT_FRAME_TTL_MS = 12000;
 const LISTENING_VAD_OPTIONS = {
-  positiveSpeechThreshold: 0.5,
-  negativeSpeechThreshold: 0.35,
-  minSpeechMs: 220,
+  // Keep normal listening on the capture layer's noise-resistant baseline.
+  // A production `/learn` false trigger contained only seven v5-positive
+  // frames (224ms): the previous 0.5/220ms override admitted it, while the
+  // baseline below rejects it without coming close to rejecting real speech.
+  positiveSpeechThreshold: 0.6,
+  negativeSpeechThreshold: 0.4,
+  minSpeechMs: 300,
   redemptionMs: 700,
 };
 const THINKING_INTERRUPT_VAD_OPTIONS = {
@@ -401,6 +411,10 @@ export function useVoiceConversation(
   const shouldIncludeCameraFrame = options?.shouldIncludeCameraFrame;
   const playReplyAudio = options?.playReplyAudio !== false;
   const externalSpeechActive = options?.externalSpeechActive === true;
+  const externalSpeechReleaseDelayMs = Math.max(
+    0,
+    options?.externalSpeechReleaseDelayMs ?? 0,
+  );
   const onTurnStart = options?.onTurnStart;
   const onTurnComplete = options?.onTurnComplete;
   const onTurnError = options?.onTurnError;
@@ -501,6 +515,10 @@ export function useVoiceConversation(
   stateRef.current = state;
   const externalSpeechActiveRef = useRef(externalSpeechActive);
   const previousExternalSpeechActiveRef = useRef(false);
+  const externalSpeechReleaseTimerRef = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
+  const externalSpeechResumeAtRef = useRef(0);
   // Latest threads, for reading inside stable callbacks without churning deps.
   const threadsRef = useRef(threads);
   threadsRef.current = threads;
@@ -552,6 +570,7 @@ export function useVoiceConversation(
   // Stable refs that break the circular dependency between beginListening ↔
   // drainQueue. Each stores itself into its own ref every render.
   const beginListeningRef = useRef<() => Promise<void>>(async () => {});
+  const requestListeningResumeRef = useRef<() => void>(() => {});
   const beginBargeInRef = useRef<() => Promise<void>>(async () => {});
   const sendUtteranceRef = useRef<
     (wav: Blob, includeCamera?: boolean) => Promise<void>
@@ -678,7 +697,7 @@ export function useVoiceConversation(
             activeTurnIdRef.current = null;
           }
           if (!playReplyAudio && stateRef.current === "thinking") {
-            void beginListeningRef.current();
+            requestListeningResumeRef.current();
           }
           if (!turnFailed) onTurnComplete?.(turnId);
         };
@@ -807,7 +826,7 @@ export function useVoiceConversation(
             if (handled) {
               activeTurnIdRef.current = null;
               if (stateRef.current === "thinking") {
-                void beginListeningRef.current();
+                requestListeningResumeRef.current();
               }
               return;
             }
@@ -818,7 +837,7 @@ export function useVoiceConversation(
             onVoiceTurnError(error);
             activeTurnIdRef.current = null;
             if (stateRef.current === "thinking") {
-              void beginListeningRef.current();
+              requestListeningResumeRef.current();
             }
             return;
           }
@@ -983,6 +1002,30 @@ export function useVoiceConversation(
     );
   }, [captureStart, captureStop]);
 
+  const requestListeningResume = useCallback(() => {
+    clearTimeout(externalSpeechReleaseTimerRef.current);
+    const resume = () => {
+      externalSpeechReleaseTimerRef.current = undefined;
+      if (
+        externalSpeechActiveRef.current ||
+        activeTurnIdRef.current !== null ||
+        (stateRef.current !== "thinking" && stateRef.current !== "speaking")
+      ) {
+        return;
+      }
+      void beginListeningRef.current();
+    };
+    const remainingMs = Math.max(
+      0,
+      externalSpeechResumeAtRef.current - Date.now(),
+    );
+    if (remainingMs > 0) {
+      externalSpeechReleaseTimerRef.current = setTimeout(resume, remainingMs);
+    } else {
+      resume();
+    }
+  }, []);
+
   // Fetch + play ONE reply-audio file, resolving when playback ends. Does NOT
   // return to listening — `drainQueue` orchestrates ordering across sentences.
   const playOne = useCallback(
@@ -1065,6 +1108,7 @@ export function useVoiceConversation(
 
   // Keep refs up to date after every render so closures always call the latest version.
   beginListeningRef.current = beginListening;
+  requestListeningResumeRef.current = requestListeningResume;
   beginBargeInRef.current = beginBargeIn;
   sendUtteranceRef.current = sendCapturedUtterance;
   drainQueueRef.current = drainQueue;
@@ -1073,6 +1117,7 @@ export function useVoiceConversation(
     const wasActive = previousExternalSpeechActiveRef.current;
     externalSpeechActiveRef.current = externalSpeechActive;
     previousExternalSpeechActiveRef.current = externalSpeechActive;
+    clearTimeout(externalSpeechReleaseTimerRef.current);
     if (externalSpeechActive) {
       speechInterruptArmedRef.current = false;
       captureModeRef.current = null;
@@ -1085,14 +1130,18 @@ export function useVoiceConversation(
       }
       return;
     }
+    if (wasActive) {
+      externalSpeechResumeAtRef.current =
+        Date.now() + externalSpeechReleaseDelayMs;
+    }
     if (
       wasActive &&
       (stateRef.current === "thinking" || stateRef.current === "speaking") &&
       activeTurnIdRef.current === null
     ) {
-      void beginListeningRef.current();
+      requestListeningResumeRef.current();
     }
-  }, [captureStop, externalSpeechActive]);
+  }, [captureStop, externalSpeechActive, externalSpeechReleaseDelayMs]);
 
   const start = useCallback(async (
     startOptions?: VoiceConversationStartOptions,
@@ -1144,6 +1193,8 @@ export function useVoiceConversation(
     playingPathRef.current = null;
     playingRef.current = false;
     clearTimeout(graceTimerRef.current);
+    clearTimeout(externalSpeechReleaseTimerRef.current);
+    externalSpeechResumeAtRef.current = 0;
     // UPCR-2026-025: a fresh start clears any prior exit-pending state (e.g. an
     // error-retry re-entry); a real exit unmounts the view so this never undoes
     // an in-flight navigation.
@@ -1209,6 +1260,8 @@ export function useVoiceConversation(
     drainGenRef.current++;
     clearTimeout(replyTimerRef.current);
     clearTimeout(graceTimerRef.current);
+    clearTimeout(externalSpeechReleaseTimerRef.current);
+    externalSpeechResumeAtRef.current = 0;
     activeTurnIdRef.current = null;
     speechInterruptArmedRef.current = false;
     captureModeRef.current = null;

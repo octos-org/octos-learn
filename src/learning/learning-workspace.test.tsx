@@ -1390,6 +1390,7 @@ describe("LearningWorkspace", () => {
     );
 
     expect(conversationMock.options?.externalSpeechActive).toBe(true);
+    expect(conversationMock.options?.externalSpeechReleaseDelayMs).toBe(1200);
     expect(
       conversationMock.optionsHistory.every(
         (options) => options.externalSpeechActive === true,
