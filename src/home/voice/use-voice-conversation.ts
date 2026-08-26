@@ -58,6 +58,8 @@ export interface VoiceConversation {
   stopCamera: () => void;
   /** Toggle the camera on/off. */
   toggleCamera: () => void;
+  /** Capture the exact current frame for a text-originated application turn. */
+  captureCurrentFrame: () => Promise<File | null>;
   /** The latest rich-output artifact (image/HTML) to render, or null. */
   visual: VisualArtifact | null;
   /** True while a visual is being generated (marker seen, artifact not yet in). */
@@ -470,6 +472,12 @@ export function useVoiceConversation(
     },
     [clearSentFrame],
   );
+  const captureCurrentFrame = useCallback(async (): Promise<File | null> => {
+    if (!cameraActiveRef.current) return null;
+    const frame = await cameraGrab();
+    if (frame) showSentFrame(frame);
+    return frame;
+  }, [cameraGrab, showSentFrame]);
 
   const playedPathsRef = useRef<Set<string>>(new Set());
   const ignoredTurnIdsRef = useRef<Set<string>>(new Set());
@@ -1606,6 +1614,7 @@ export function useVoiceConversation(
     startCamera: cameraStart,
     stopCamera: cameraStop,
     toggleCamera,
+    captureCurrentFrame,
     visual,
     generating,
     dismissVisual,

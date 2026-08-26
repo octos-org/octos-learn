@@ -18,6 +18,7 @@ import type {
   VoiceConversationOptions,
 } from "@/home/voice/use-voice-conversation";
 import type { Thread } from "@/store/thread-store";
+import { uploadFiles } from "@/api/chat";
 import {
   buildDegradedVisualRetryContext,
   buildDegradedVisualRetryPrompt,
@@ -34,6 +35,7 @@ const conversationMock = vi.hoisted(() => ({
   startCamera: vi.fn(async () => true),
   stopCamera: vi.fn(),
   toggleCamera: vi.fn(),
+  captureCurrentFrame: vi.fn(async () => null as File | null),
   cameraActive: false,
   cameraStream: null as MediaStream | null,
   lastSentFrameUrl: null as string | null,
@@ -119,6 +121,7 @@ vi.mock("@/home/voice/use-voice-conversation", () => ({
     startCamera: conversationMock.startCamera,
     stopCamera: conversationMock.stopCamera,
     toggleCamera: conversationMock.toggleCamera,
+    captureCurrentFrame: conversationMock.captureCurrentFrame,
     generating: false,
     exiting: false,
     visual: null,
@@ -158,6 +161,8 @@ describe("LearningWorkspace", () => {
     conversationMock.startCamera.mockClear();
     conversationMock.stopCamera.mockClear();
     conversationMock.toggleCamera.mockClear();
+    conversationMock.captureCurrentFrame.mockReset();
+    conversationMock.captureCurrentFrame.mockResolvedValue(null);
     conversationMock.cameraActive = false;
     conversationMock.cameraStream = null;
     conversationMock.lastSentFrameUrl = null;
@@ -697,7 +702,14 @@ describe("LearningWorkspace", () => {
     )).toBeNull();
   });
 
-  it("keeps camera and selection voice requests on the context-aware path", async () => {
+  it("routes a camera voice request directly while keeping selection voice on its own path", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate-from-camera",
+      ok: true,
+      queued: 0,
+      jobs: [],
+      results: [],
+    });
     render(
       <LearningWorkspace
         sessionId="learn-context-voice"
@@ -724,9 +736,73 @@ describe("LearningWorkspace", () => {
       additionalMediaPaths: ["uploads/selection.png"],
     });
 
-    expect(cameraHandled).toBe(false);
+    expect(cameraHandled).toBe(true);
     expect(selectionHandled).toBe(false);
-    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledTimes(1);
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-context-voice",
+      "learning.lesson.generate-from-camera",
+      expect.objectContaining({
+        paths: ["uploads/frame.jpg"],
+        learner_request: "请讲解镜头里的题目",
+        request_source: "current_image",
+        input_modality: "voice",
+      }),
+    );
+  });
+
+  it("captures and displays one current frame for a text question when the camera is active", async () => {
+    conversationMock.cameraActive = true;
+    conversationMock.captureCurrentFrame.mockResolvedValue(new File(
+      ["camera-frame"],
+      "camera-frame.jpg",
+      { type: "image/jpeg" },
+    ));
+    vi.mocked(uploadFiles).mockResolvedValueOnce(["uploads/camera-frame.jpg"]);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate-from-camera",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "camera-text-job",
+        batch_id: "camera-text-batch",
+        profile_id: "alan0x",
+        session_id: "learn-camera-text",
+        action_id: "learning.lesson.generate-from-camera",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-25T00:00:00Z",
+        updated_at: "2026-08-25T00:00:00Z",
+      }],
+      results: [],
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-camera-text"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请解释我手上的这道题" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-camera-text",
+      "learning.lesson.generate-from-camera",
+      expect.objectContaining({
+        paths: ["uploads/camera-frame.jpg"],
+        learner_request: "请解释我手上的这道题",
+        request_source: "current_image",
+        input_modality: "text",
+      }),
+    ));
+    expect(conversationMock.captureCurrentFrame).toHaveBeenCalledTimes(1);
+    expect(screen.getByAltText("本次问题随附的摄像头画面").getAttribute("src"))
+      .toContain("uploads%2Fcamera-frame.jpg");
+    expect(sendMessageMock).not.toHaveBeenCalled();
   });
 
   it("clears the lesson loader and speaks a voice turn failure", async () => {
