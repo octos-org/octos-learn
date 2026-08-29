@@ -30,6 +30,7 @@ import {
 } from "@/home/voice/use-camera-frame";
 import {
   useVoiceConversation,
+  type LearningClientTiming,
   type VoiceConversationOptions,
   type VoiceConversationTurn,
 } from "@/home/voice/use-voice-conversation";
@@ -733,6 +734,7 @@ export function LearningWorkspace({
     learnerRequest: string,
     inputModality: "text" | "voice" = "text",
     cameraMediaPath?: string,
+    clientTiming?: LearningClientTiming,
   ) => {
     setTextTurnPending(true);
     try {
@@ -749,6 +751,12 @@ export function LearningWorkspace({
           request_source: cameraMediaPath ? "current_image" : "self_contained",
           language: "zh-CN",
           input_modality: inputModality,
+          ...(clientTiming ? {
+            client_timing: {
+              ...clientTiming,
+              skill_invocation_started_at_epoch_ms: Date.now(),
+            },
+          } : {}),
         },
       );
       const failedResult = (invocation.results ?? [])
@@ -901,6 +909,7 @@ export function LearningWorkspace({
           context.transcript,
           "voice",
           context.currentFramePath,
+          context.clientTiming,
         );
         return true;
       },
@@ -1905,6 +1914,9 @@ export function LearningWorkspace({
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
       unlockAudio();
+      const clientTiming: LearningClientTiming = {
+        submitted_at_epoch_ms: Date.now(),
+      };
       setSendError(null);
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
@@ -1945,17 +1957,28 @@ export function LearningWorkspace({
         if (references.length === 0 && !applicationContext?.trim()) {
           let cameraMediaPath: string | undefined;
           if (conv.cameraActive) {
+            clientTiming.camera_capture_started_at_epoch_ms = Date.now();
             const frame = await conv.captureCurrentFrame();
+            clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
             if (!frame) {
               throw new Error("摄像头画面没有截取成功，请确认预览正常后重试");
             }
+            clientTiming.camera_media_bytes = frame.size;
+            clientTiming.media_upload_started_at_epoch_ms = Date.now();
             [cameraMediaPath] = await uploadFiles([frame], "upload");
+            clientTiming.media_upload_completed_at_epoch_ms = Date.now();
             if (!cameraMediaPath) {
               throw new Error("摄像头画面上传失败，请重试");
             }
             updateWhiteboardQuestion(turnId, { imagePath: cameraMediaPath });
           }
-          await startDirectLessonGeneration(turnId, text, "text", cameraMediaPath);
+          await startDirectLessonGeneration(
+            turnId,
+            text,
+            "text",
+            cameraMediaPath,
+            clientTiming,
+          );
           return;
         }
         sendMessage({

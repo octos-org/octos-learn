@@ -92,11 +92,27 @@ export interface VoiceTurnSendContext {
   additionalMediaPaths?: string[];
 }
 
+export interface LearningClientTiming {
+  submitted_at_epoch_ms?: number;
+  camera_capture_started_at_epoch_ms?: number;
+  camera_capture_completed_at_epoch_ms?: number;
+  audio_upload_started_at_epoch_ms?: number;
+  audio_upload_completed_at_epoch_ms?: number;
+  media_upload_started_at_epoch_ms?: number;
+  media_upload_completed_at_epoch_ms?: number;
+  voice_admission_started_at_epoch_ms?: number;
+  voice_admission_completed_at_epoch_ms?: number;
+  skill_invocation_started_at_epoch_ms?: number;
+  camera_media_bytes?: number;
+}
+
 export interface VoiceAdmittedSpeechContext extends VoiceTurnSendContext {
   /** Transcript accepted by the server-side ASR admission gate. */
   transcript: string;
   /** Short-lived proof associated with this admitted utterance. */
   admissionId: string;
+  /** Diagnostic timestamps forwarded to the direct lesson generator. */
+  clientTiming: LearningClientTiming;
 }
 
 export interface VoiceConversationOptions {
@@ -670,22 +686,96 @@ export function useVoiceConversation(
       try {
         const turnId = crypto.randomUUID();
         const file = new File([wav], "utterance.wav", { type: "audio/wav" });
+        const clientTiming: LearningClientTiming = {
+          submitted_at_epoch_ms: Date.now(),
+        };
         // When the camera is on, attach the current frame so the turn is a
         // video call (audio + image); the server transcribes the audio and the
         // VLM sees the frame. Degrades to audio-only on a failed grab.
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = shouldIncludeCameraFrame?.() ?? true;
-        const capturedFiles = await assembleTurnFiles(
-          file,
-          cameraRequested && cameraAllowed,
-          cameraGrab,
-        );
-        const additionalFiles = await getAdditionalTurnFiles?.() ?? [];
-        const files = [...capturedFiles, ...additionalFiles];
+        const admissionSupported = supportsVoiceAdmission(sessionId, historyTopic);
+        const directAdmission = admissionSupported && Boolean(onAdmittedSpeech);
+        let admission: Awaited<ReturnType<typeof admitVoiceMessage>> | undefined;
+        let capturedFiles: File[];
+        let additionalFiles: File[];
+        let files: File[];
+        let paths: string[];
+
+        if (directAdmission) {
+          // Camera capture and selection snapshot preparation can run while
+          // the server uploads/transcribes audio. Neither is needed by ASR.
+          const framePromise = cameraRequested && cameraAllowed
+            ? (() => {
+                clientTiming.camera_capture_started_at_epoch_ms = Date.now();
+                return cameraGrab().finally(() => {
+                  clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
+                });
+              })()
+            : Promise.resolve<File | null>(null);
+          const additionalFilesPromise = Promise.resolve(
+            getAdditionalTurnFiles?.() ?? [],
+          );
+          clientTiming.audio_upload_started_at_epoch_ms = Date.now();
+          const [audioPath] = await uploadFiles([file], "recording");
+          clientTiming.audio_upload_completed_at_epoch_ms = Date.now();
+          if (!audioPath) throw new Error("Voice audio upload returned no path");
+          clientTiming.voice_admission_started_at_epoch_ms = Date.now();
+          admission = await admitVoiceMessage({
+            sessionId,
+            historyTopic,
+            text: "",
+            media: [audioPath],
+            clientMessageId: turnId,
+            liveVideo: false,
+          });
+          clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
+          if (admission.status === "no_speech") {
+            // Capture may already be in flight, but a rejected utterance must
+            // never upload an otherwise unused camera/selection image.
+            void Promise.allSettled([framePromise, additionalFilesPromise]);
+            restoreBargeInCandidate();
+            return;
+          }
+          const [frame, preparedAdditionalFiles] = await Promise.all([
+            framePromise,
+            additionalFilesPromise,
+          ]);
+          capturedFiles = frame ? [file, frame] : [file];
+          additionalFiles = preparedAdditionalFiles;
+          const contextFiles = [...(frame ? [frame] : []), ...additionalFiles];
+          clientTiming.camera_media_bytes = frame?.size;
+          clientTiming.media_upload_started_at_epoch_ms = Date.now();
+          const contextPaths = contextFiles.length > 0
+            ? await uploadFiles(contextFiles, "recording")
+            : [];
+          clientTiming.media_upload_completed_at_epoch_ms = Date.now();
+          files = [...capturedFiles, ...additionalFiles];
+          paths = [audioPath, ...contextPaths];
+        } else {
+          if (cameraRequested && cameraAllowed) {
+            clientTiming.camera_capture_started_at_epoch_ms = Date.now();
+          }
+          capturedFiles = await assembleTurnFiles(
+            file,
+            cameraRequested && cameraAllowed,
+            cameraGrab,
+          );
+          if (cameraRequested && cameraAllowed) {
+            clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
+          }
+          additionalFiles = await getAdditionalTurnFiles?.() ?? [];
+          files = [...capturedFiles, ...additionalFiles];
+          clientTiming.camera_media_bytes = capturedFiles.find(
+            (candidateFile) => candidateFile.type.startsWith("image/"),
+          )?.size;
+          clientTiming.media_upload_started_at_epoch_ms = Date.now();
+          paths = await uploadFiles(files, "recording");
+          clientTiming.media_upload_completed_at_epoch_ms = Date.now();
+        }
         // Only an actual camera capture is a live frame. A selection snapshot
         // supplied by /learn is additional context, not a camera image.
         const sentFrame = capturedFiles.find((f) => f.type.startsWith("image/"));
-        const paths = await uploadFiles(files, "recording");
         const additionalMediaPaths = paths.slice(capturedFiles.length);
         let turnFailed = false;
         const onVoiceTurnError = (error: Error) => {
@@ -720,7 +810,7 @@ export function useVoiceConversation(
           }, REPLY_TIMEOUT_MS);
         };
 
-        if (!supportsVoiceAdmission(sessionId, historyTopic)) {
+        if (!admissionSupported) {
           const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
           const currentFramePath =
             sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
@@ -768,14 +858,18 @@ export function useVoiceConversation(
           return;
         }
 
-        const admission = await admitVoiceMessage({
-          sessionId,
-          historyTopic,
-          text: "",
-          media: paths,
-          clientMessageId: turnId,
-          liveVideo: sentFrame !== undefined,
-        });
+        if (!admission) {
+          clientTiming.voice_admission_started_at_epoch_ms = Date.now();
+          admission = await admitVoiceMessage({
+            sessionId,
+            historyTopic,
+            text: "",
+            media: paths,
+            clientMessageId: turnId,
+            liveVideo: sentFrame !== undefined,
+          });
+          clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
+        }
         if (admission.status === "no_speech") {
           restoreBargeInCandidate();
           return;
@@ -822,6 +916,7 @@ export function useVoiceConversation(
               mediaPaths: paths,
               currentFramePath,
               additionalMediaPaths,
+              clientTiming,
             });
             if (handled) {
               activeTurnIdRef.current = null;
