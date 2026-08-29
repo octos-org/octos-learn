@@ -30,6 +30,7 @@ import {
 } from "@/home/voice/use-camera-frame";
 import {
   useVoiceConversation,
+  type LearningClientTiming,
   type VoiceConversationOptions,
   type VoiceConversationTurn,
 } from "@/home/voice/use-voice-conversation";
@@ -44,6 +45,8 @@ import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
   LearningWhiteboard,
   type DegradedVisualRetryRequest,
+  type VoiceInkSelectionCapture,
+  type VoiceInkSelectionRequest,
 } from "./oll/oll-lesson-runtime";
 import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import {
@@ -386,8 +389,25 @@ export function LearningWorkspace({
     contentKind: SelectionContentKind;
     boardContext: SelectionBoardContext;
     file: File;
-    claimed: boolean;
+    recordSelection: () => void;
   } | null>(null);
+  const activeVoiceInkSelectionCaptureRef =
+    useRef<VoiceInkSelectionCapture | null>(null);
+  const sendVoiceSelectionQuestionRef = useRef<((
+    request: VoiceInkSelectionRequest,
+    transcript: string,
+    turnId: string,
+    uploadedMediaPath: string,
+  ) => Promise<void>) | null>(null);
+  const handleVoiceInkSelectionCaptureChange = useCallback(
+    (capture: VoiceInkSelectionCapture | null) => {
+      activeVoiceInkSelectionCaptureRef.current = capture;
+      // A changed or cleared selection invalidates any snapshot prepared for
+      // an earlier utterance. A fresh capture will be taken for the next one.
+      pendingVoiceSelectionRef.current = null;
+    },
+    [],
+  );
   const voiceQuestionSourcesRef = useRef(new Map<string, {
     sourceId: string;
     bounds: InkSelectionSnapshot["bounds"];
@@ -714,6 +734,7 @@ export function LearningWorkspace({
     learnerRequest: string,
     inputModality: "text" | "voice" = "text",
     cameraMediaPath?: string,
+    clientTiming?: LearningClientTiming,
   ) => {
     setTextTurnPending(true);
     try {
@@ -730,6 +751,12 @@ export function LearningWorkspace({
           request_source: cameraMediaPath ? "current_image" : "self_contained",
           language: "zh-CN",
           input_modality: inputModality,
+          ...(clientTiming ? {
+            client_timing: {
+              ...clientTiming,
+              skill_invocation_started_at_epoch_ms: Date.now(),
+            },
+          } : {}),
         },
       );
       const failedResult = (invocation.results ?? [])
@@ -788,11 +815,25 @@ export function LearningWorkspace({
         conversationOptions?.onTurnStart?.(turnId);
       },
       getAdditionalTurnFiles: async () => {
-        const pending = pendingVoiceSelectionRef.current;
-        if (!pending || pending.claimed) return [];
-        pending.claimed = true;
+        let pending = pendingVoiceSelectionRef.current;
+        if (!pending) {
+          const capture = activeVoiceInkSelectionCaptureRef.current;
+          if (!capture) return [];
+          const selection = await capture();
+          pending = {
+            snapshot: selection.snapshot,
+            contentKind: selection.contentKind,
+            boardContext: selection.boardContext,
+            file: selection.contextImage,
+            recordSelection: selection.recordSelection,
+          };
+          pendingVoiceSelectionRef.current = pending;
+        }
         return [pending.file];
       },
+      shouldIncludeCameraFrame: () =>
+        activeVoiceInkSelectionCaptureRef.current === null
+        && pendingVoiceSelectionRef.current === null,
       buildTurnText: (
         context: Parameters<
           NonNullable<VoiceConversationOptions["buildTurnText"]>
@@ -818,7 +859,6 @@ export function LearningWorkspace({
             toolId: "custom-question",
           }),
         ].filter(Boolean).join("\n");
-        pendingVoiceSelectionRef.current = null;
         return selectionContext;
       },
       // Muted narration does NOT own the mic: with the narration silenced
@@ -829,7 +869,33 @@ export function LearningWorkspace({
         ((lessonOwnsNarration && narrationAudioEnabled) ||
           narrationSpeechActive ||
           textTurnPending),
+      // Do not feed the final speaker frame / acoustic echo back into ASR when
+      // a lesson or plain spoken reply releases the microphone.
+      externalSpeechReleaseDelayMs: 1200,
       onAdmittedSpeech: async (context) => {
+        const pendingSelection = pendingVoiceSelectionRef.current;
+        const selectionPath = context.additionalMediaPaths?.[0];
+        if (pendingSelection && selectionPath) {
+          pendingVoiceSelectionRef.current = null;
+          pendingSelection.recordSelection();
+          const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
+          if (!sendSelectionQuestion) {
+            throw new Error("选区语音功能尚未就绪");
+          }
+          await sendSelectionQuestion(
+            {
+              snapshot: pendingSelection.snapshot,
+              contentKind: pendingSelection.contentKind,
+              boardContext: pendingSelection.boardContext,
+              contextImage: pendingSelection.file,
+              recordSelection: pendingSelection.recordSelection,
+            },
+            context.transcript,
+            context.turnId,
+            selectionPath,
+          );
+          return true;
+        }
         if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
         registerVoiceQuestion(context.turnId, context.transcript, null);
         if (context.currentFramePath) {
@@ -843,6 +909,7 @@ export function LearningWorkspace({
           context.transcript,
           "voice",
           context.currentFramePath,
+          context.clientTiming,
         );
         return true;
       },
@@ -1589,12 +1656,15 @@ export function LearningWorkspace({
       toolId: SelectionToolId;
       boardContext: SelectionBoardContext;
       contextImage: File;
+    }, delivery?: {
+      turnId: string;
+      uploadedMediaPath: string;
     }) => {
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
       setSelectionEnhancementPending(true);
-      const turnId = crypto.randomUUID();
+      const turnId = delivery?.turnId ?? crypto.randomUUID();
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -1610,8 +1680,8 @@ export function LearningWorkspace({
       onLearnerInput?.(question);
       try {
         await rememberSelectionSource(snapshot);
-        const paths = await uploadFiles([contextImage], "upload");
-        const mediaPath = paths[0];
+        const mediaPath = delivery?.uploadedMediaPath
+          ?? (await uploadFiles([contextImage], "upload"))[0];
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
         const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
@@ -1678,6 +1748,28 @@ export function LearningWorkspace({
     ],
   );
 
+  useEffect(() => {
+    const sendVoiceSelectionQuestion = async (
+      request: VoiceInkSelectionRequest,
+      transcript: string,
+      turnId: string,
+      uploadedMediaPath: string,
+    ) => sendSelectionQuestion({
+      ...request,
+      question: transcript,
+      toolId: "custom-question",
+    }, {
+      turnId,
+      uploadedMediaPath,
+    });
+    sendVoiceSelectionQuestionRef.current = sendVoiceSelectionQuestion;
+    return () => {
+      if (sendVoiceSelectionQuestionRef.current === sendVoiceSelectionQuestion) {
+        sendVoiceSelectionQuestionRef.current = null;
+      }
+    };
+  }, [sendSelectionQuestion]);
+
   const classifyInkSelection = useCallback(
     async ({
       snapshot,
@@ -1731,7 +1823,9 @@ export function LearningWorkspace({
         contentKind,
         boardContext,
         file: contextImage,
-        claimed: false,
+        // The explicit panel action already recorded the selection while
+        // preparing its immutable snapshot.
+        recordSelection: () => undefined,
       };
       if (conv.state === "idle" || conv.state === "error") {
         await conv.start();
@@ -1820,6 +1914,9 @@ export function LearningWorkspace({
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
       unlockAudio();
+      const clientTiming: LearningClientTiming = {
+        submitted_at_epoch_ms: Date.now(),
+      };
       setSendError(null);
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
@@ -1860,17 +1957,28 @@ export function LearningWorkspace({
         if (references.length === 0 && !applicationContext?.trim()) {
           let cameraMediaPath: string | undefined;
           if (conv.cameraActive) {
+            clientTiming.camera_capture_started_at_epoch_ms = Date.now();
             const frame = await conv.captureCurrentFrame();
+            clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
             if (!frame) {
               throw new Error("摄像头画面没有截取成功，请确认预览正常后重试");
             }
+            clientTiming.camera_media_bytes = frame.size;
+            clientTiming.media_upload_started_at_epoch_ms = Date.now();
             [cameraMediaPath] = await uploadFiles([frame], "upload");
+            clientTiming.media_upload_completed_at_epoch_ms = Date.now();
             if (!cameraMediaPath) {
               throw new Error("摄像头画面上传失败，请重试");
             }
             updateWhiteboardQuestion(turnId, { imagePath: cameraMediaPath });
           }
-          await startDirectLessonGeneration(turnId, text, "text", cameraMediaPath);
+          await startDirectLessonGeneration(
+            turnId,
+            text,
+            "text",
+            cameraMediaPath,
+            clientTiming,
+          );
           return;
         }
         sendMessage({
@@ -2231,6 +2339,9 @@ export function LearningWorkspace({
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled
             ? startSelectionVoiceQuestion
+            : undefined}
+          onVoiceInkSelectionCaptureChange={voiceEnabled
+            ? handleVoiceInkSelectionCaptureChange
             : undefined}
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}

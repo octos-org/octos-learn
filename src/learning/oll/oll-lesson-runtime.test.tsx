@@ -479,6 +479,7 @@ function CompletedCourseFocusProbe({
 function SelectionInkRuntimeProbe({
   onAsk,
   onClassify,
+  onVoiceCaptureChange,
 }: {
   onAsk: (request: {
     snapshot: InkSelectionSnapshot;
@@ -488,6 +489,9 @@ function SelectionInkRuntimeProbe({
     snapshot: InkSelectionSnapshot;
     selectionImage: File;
   }) => Promise<SelectionClassification>;
+  onVoiceCaptureChange?: ComponentProps<
+    typeof OllLessonBoard
+  >["onVoiceInkSelectionCaptureChange"];
 }) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -507,6 +511,7 @@ function SelectionInkRuntimeProbe({
         inkSessionId="learn-selection-1"
         onClassifyInkSelection={onClassify}
         onAskInkSelection={onAsk}
+        onVoiceInkSelectionCaptureChange={onVoiceCaptureChange}
       />
     </div>
   );
@@ -1632,13 +1637,38 @@ describe("OLL lesson Runtime integration", () => {
       content: "y=x^2",
       confidence: "high",
     }));
+    const onVoiceCaptureChange = vi.fn();
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(<SelectionInkRuntimeProbe onAsk={onAsk} onClassify={onClassify} />);
+    render(
+      <SelectionInkRuntimeProbe
+        onAsk={onAsk}
+        onClassify={onClassify}
+        onVoiceCaptureChange={onVoiceCaptureChange}
+      />,
+    );
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(selectionContextToPngFileMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    await waitFor(() => expect(onVoiceCaptureChange).toHaveBeenCalledWith(
+      expect.any(Function),
+    ));
+    const captureForVoice = [...onVoiceCaptureChange.mock.calls]
+      .reverse()
+      .find(([capture]) => typeof capture === "function")?.[0];
+    const voiceSelection = await captureForVoice();
+    expect(voiceSelection).toEqual({
+      snapshot,
+      contentKind: "unknown",
+      boardContext: expect.objectContaining({
+        boardId: expect.any(String),
+        boardRevision: expect.any(Number),
+        targets: expect.any(Array),
+      }),
+      contextImage: expect.any(File),
+      recordSelection: expect.any(Function),
+    });
     await waitFor(() => expect(onClassify).toHaveBeenCalledWith({
       snapshot,
       boardContext: expect.objectContaining({
@@ -1724,8 +1754,8 @@ describe("OLL lesson Runtime integration", () => {
       );
     });
     expect(screen.queryByText("正在生成函数图像…")).toBeNull();
-    expect(ink.captureSelectionSnapshot).toHaveBeenCalledTimes(2);
-    expect(selectionContextToPngFileMock).toHaveBeenCalledTimes(2);
+    expect(ink.captureSelectionSnapshot).toHaveBeenCalledTimes(3);
+    expect(selectionContextToPngFileMock).toHaveBeenCalledTimes(3);
     expect(ink.setSelectionColor).not.toHaveBeenCalled();
     expect(ink.undo).not.toHaveBeenCalled();
     expect(ink.redo).not.toHaveBeenCalled();
@@ -1744,6 +1774,17 @@ describe("OLL lesson Runtime integration", () => {
       expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
     });
     expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
+
+    act(() => {
+      state = {
+        ...state,
+        mode: "navigate",
+        selected_count: 0,
+        selection_revision: 3,
+      };
+      listeners.forEach((listener) => listener(state));
+    });
+    await waitFor(() => expect(onVoiceCaptureChange).toHaveBeenLastCalledWith(null));
   });
 
   it("waits for a post-restore ink change before reporting an erased source", async () => {

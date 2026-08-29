@@ -702,7 +702,8 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     cameraMock.active = false;
     cameraMock.start.mockClear();
     cameraMock.start.mockResolvedValue(true);
-    cameraMock.grabFrame.mockClear();
+    cameraMock.grabFrame.mockReset();
+    cameraMock.grabFrame.mockResolvedValue(null);
     getActiveBridgeMock.mockReset();
     getActiveBridgeMock.mockReturnValue(undefined);
   });
@@ -750,6 +751,14 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     });
 
     expect(captureStartMock).toHaveBeenCalledTimes(1);
+    expect(captureStartMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        positiveSpeechThreshold: 0.6,
+        negativeSpeechThreshold: 0.4,
+        minSpeechMs: 300,
+        redemptionMs: 700,
+      }),
+    );
     unmount();
   });
 
@@ -836,6 +845,63 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("does not bypass the external-speech cooldown when Learn handles the turn", async () => {
+    vi.useFakeTimers();
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    uploadFilesMock.mockResolvedValueOnce(["up/utterance.wav"]);
+    admitVoiceMessageMock.mockResolvedValueOnce({
+      status: "speech",
+      admissionId: "admission-selection",
+      transcript: "解释这个选区",
+    });
+    let finishHandled!: (handled: boolean) => void;
+    const onAdmittedSpeech = vi.fn(() => new Promise<boolean>((resolve) => {
+      finishHandled = resolve;
+    }));
+    const { result, rerender, unmount } = renderHook(
+      ({ externalSpeechActive }) =>
+        useVoiceConversation("learn-selection-cooldown", undefined, undefined, {
+          onAdmittedSpeech,
+          playReplyAudio: false,
+          externalSpeechActive,
+          externalSpeechReleaseDelayMs: 1200,
+        }),
+      { initialProps: { externalSpeechActive: false } },
+    );
+
+    let startPromise!: Promise<void>;
+    act(() => {
+      startPromise = result.current.start({
+        initialAudio: new Blob(["speech"], { type: "audio/wav" }),
+      });
+    });
+    await vi.waitFor(() => expect(onAdmittedSpeech).toHaveBeenCalledOnce());
+
+    await act(async () => {
+      rerender({ externalSpeechActive: true });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      rerender({ externalSpeechActive: false });
+      await Promise.resolve();
+      finishHandled(true);
+      await startPromise;
+    });
+
+    expect(captureStartMock).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1199);
+    });
+    expect(captureStartMock).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(captureStartMock).toHaveBeenCalledOnce();
     unmount();
   });
 
@@ -1023,6 +1089,48 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
+  it("waits for external speaker echo to drain before resuming capture", async () => {
+    vi.useFakeTimers();
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    const { result, rerender, unmount } = renderHook(
+      ({ externalSpeechActive }) =>
+        useVoiceConversation("learn-speaker-tail-test", undefined, undefined, {
+          playReplyAudio: false,
+          externalSpeechActive,
+          externalSpeechReleaseDelayMs: 1200,
+        }),
+      { initialProps: { externalSpeechActive: false } },
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(captureStartMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rerender({ externalSpeechActive: true });
+      await Promise.resolve();
+    });
+    expect(captureStopMock).toHaveBeenCalled();
+
+    await act(async () => {
+      rerender({ externalSpeechActive: false });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1199);
+    });
+    expect(captureStartMock).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(captureStartMock).toHaveBeenCalledTimes(2);
+    unmount();
+  });
+
   it("keeps application attachments distinct from audio and the live camera frame", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",
@@ -1069,6 +1177,149 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
       undefined,
     );
     expect(sendMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("does not capture or upload a live camera frame when the application selects another visual context", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    cameraMock.active = true;
+    cameraMock.grabFrame.mockResolvedValueOnce(new File(
+      ["camera"],
+      "frame.jpg",
+      { type: "image/jpeg" },
+    ));
+    const selection = new File(["selection"], "selection.png", {
+      type: "image/png",
+    });
+    uploadFilesMock
+      .mockResolvedValueOnce(["uploads/utterance.wav"])
+      .mockResolvedValueOnce(["uploads/selection.png"]);
+    const shouldIncludeCameraFrame = vi.fn(() => false);
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-selected-ink-camera-test", undefined, undefined, {
+        getAdditionalTurnFiles: async () => [selection],
+        shouldIncludeCameraFrame,
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["voice"], { type: "audio/wav" }),
+      });
+    });
+
+    expect(shouldIncludeCameraFrame).toHaveBeenCalledOnce();
+    expect(cameraMock.grabFrame).not.toHaveBeenCalled();
+    expect(uploadFilesMock.mock.calls).toEqual([
+      [[expect.objectContaining({ name: "utterance.wav" })], "recording"],
+      [[selection], "recording"],
+    ]);
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      additionalMediaPaths: ["uploads/selection.png"],
+      currentFramePath: undefined,
+    }));
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("transcribes direct Learn speech while its camera frame is still being captured", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    let finishFrame!: (frame: File) => void;
+    cameraMock.grabFrame.mockReset();
+    cameraMock.grabFrame.mockImplementationOnce(() => new Promise<File>((resolve) => {
+      finishFrame = resolve;
+    }));
+    uploadFilesMock
+      .mockResolvedValueOnce(["uploads/utterance.wav"])
+      .mockResolvedValueOnce(["uploads/frame.jpg"]);
+    admitVoiceMessageMock.mockResolvedValueOnce({
+      status: "speech",
+      admissionId: "admission-camera",
+      transcript: "请解释纸上的函数",
+    });
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-direct-camera-overlap", undefined, undefined, {
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    let startPromise!: Promise<void>;
+    act(() => {
+      startPromise = result.current.start({
+        initialAudio: new Blob(["voice"], { type: "audio/wav" }),
+        includeCamera: true,
+      });
+    });
+    await vi.waitFor(() => expect(admitVoiceMessageMock).toHaveBeenCalledOnce());
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(admitVoiceMessageMock).toHaveBeenCalledWith(expect.objectContaining({
+      media: ["uploads/utterance.wav"],
+      liveVideo: false,
+    }));
+
+    await act(async () => {
+      finishFrame(new File(["camera"], "frame.jpg", { type: "image/jpeg" }));
+      await startPromise;
+    });
+
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      mediaPaths: ["uploads/utterance.wav", "uploads/frame.jpg"],
+      currentFramePath: "uploads/frame.jpg",
+      clientTiming: expect.objectContaining({
+        submitted_at_epoch_ms: expect.any(Number),
+        camera_capture_started_at_epoch_ms: expect.any(Number),
+        camera_capture_completed_at_epoch_ms: expect.any(Number),
+        audio_upload_started_at_epoch_ms: expect.any(Number),
+        audio_upload_completed_at_epoch_ms: expect.any(Number),
+        voice_admission_started_at_epoch_ms: expect.any(Number),
+        voice_admission_completed_at_epoch_ms: expect.any(Number),
+        camera_media_bytes: 6,
+      }),
+    }));
+    unmount();
+  });
+
+  it("does not upload a captured frame when direct Learn admission rejects the audio", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    cameraMock.grabFrame.mockResolvedValueOnce(new File(
+      ["camera"],
+      "frame.jpg",
+      { type: "image/jpeg" },
+    ));
+    uploadFilesMock.mockResolvedValueOnce(["uploads/utterance.wav"]);
+    admitVoiceMessageMock.mockResolvedValueOnce({ status: "no_speech" });
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-direct-camera-no-speech", undefined, undefined, {
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start({
+        initialAudio: new Blob(["noise"], { type: "audio/wav" }),
+        includeCamera: true,
+      });
+    });
+
+    expect(uploadFilesMock).toHaveBeenCalledTimes(1);
+    expect(uploadFilesMock).toHaveBeenCalledWith([
+      expect.objectContaining({ name: "utterance.wav" }),
+    ], "recording");
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
     unmount();
   });
 });

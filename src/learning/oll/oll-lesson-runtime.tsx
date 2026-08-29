@@ -111,6 +111,16 @@ interface PreparedSelectionContext {
   recorded: boolean;
 }
 
+export interface VoiceInkSelectionRequest {
+  snapshot: InkSelectionSnapshot;
+  contentKind: SelectionContentKind;
+  boardContext: SelectionBoardContext;
+  contextImage: File;
+  recordSelection: () => void;
+}
+
+export type VoiceInkSelectionCapture = () => Promise<VoiceInkSelectionRequest>;
+
 export interface DegradedVisualRetryRequest {
   boardId: string;
   boardRevision: number;
@@ -426,6 +436,7 @@ export function LearningWhiteboard({
   onClassifyInkSelection,
   onAskInkSelection,
   onVoiceInkSelection,
+  onVoiceInkSelectionCaptureChange,
   onReferenceInkSelection,
   onDeleteSelectionEnhancement,
   onDeleteSelectionSources,
@@ -480,6 +491,9 @@ export function LearningWhiteboard({
     boardContext: SelectionBoardContext;
     contextImage: File;
   }) => Promise<void> | void;
+  onVoiceInkSelectionCaptureChange?: (
+    capture: VoiceInkSelectionCapture | null,
+  ) => void;
   onReferenceInkSelection?: (request: {
     snapshot: InkSelectionSnapshot;
     contentKind: SelectionContentKind;
@@ -1247,6 +1261,53 @@ export function LearningWhiteboard({
     const prepared = await readSelectionContext();
     return recordSelectionContext(prepared);
   }, [readSelectionContext, recordSelectionContext]);
+
+  const captureActiveVoiceSelection = useCallback(
+    async (): Promise<VoiceInkSelectionRequest> => {
+      const prepared = await readSelectionContext();
+      const mounted = mountedRef.current;
+      if (!mounted) throw new Error("白板尚未就绪");
+      const contextImage = await selectionContextToPngFile(
+        prepared.snapshot,
+        mounted,
+        prepared.candidates,
+      );
+      return {
+        snapshot: prepared.snapshot,
+        // Voice already states the learner's intent. Classification may keep
+        // running for toolbar suggestions, but it must not gate this path.
+        contentKind: "unknown",
+        boardContext: {
+          boardId: prepared.boardId,
+          boardRevision: prepared.boardRevision,
+          targets: prepared.candidates,
+        },
+        contextImage,
+        recordSelection: () => {
+          recordSelectionContext(prepared);
+        },
+      };
+    },
+    [readSelectionContext, recordSelectionContext],
+  );
+
+  useEffect(() => {
+    if (!onVoiceInkSelectionCaptureChange) return;
+    const active = inkState.mode === "select" && inkState.selected_count > 0;
+    onVoiceInkSelectionCaptureChange(
+      active ? captureActiveVoiceSelection : null,
+    );
+  }, [
+    captureActiveVoiceSelection,
+    inkState.mode,
+    inkState.selected_count,
+    inkState.selection_revision,
+    onVoiceInkSelectionCaptureChange,
+  ]);
+
+  useEffect(() => () => {
+    onVoiceInkSelectionCaptureChange?.(null);
+  }, [onVoiceInkSelectionCaptureChange]);
 
   useEffect(() => {
     const requestId = ++selectionClassificationRequestRef.current;

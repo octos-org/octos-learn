@@ -84,6 +84,12 @@ vi.mock("./oll/use-oll-narration-tts", () => ({
 vi.mock("./oll/oll-ink-runtime", () => ({
   mountInkRuntime: inkRuntimeMock.mountInkRuntime,
 }));
+vi.mock("./selection-enhancements", async (importOriginal) => ({
+  ...await importOriginal<typeof import("./selection-enhancements")>(),
+  selectionContextToPngFile: vi.fn(async () =>
+    new File(["selection"], "selection.png", { type: "image/png" }),
+  ),
+}));
 vi.mock("@/store/projection-render-adapter", () => ({
   useRenderThreads: () => conversationMock.threads,
 }));
@@ -751,6 +757,135 @@ describe("LearningWorkspace", () => {
     );
   });
 
+  it("treats direct speech as an Ask Octos request while an ink selection is active", async () => {
+    const listeners = new Set<(state: {
+      mode: "select" | "navigate";
+      component_count: number;
+      selected_count: number;
+      pen_color: string;
+      selection_color: string | null;
+      selection_input: "pen";
+      selection_mode: "rectangle";
+      selection_revision: number;
+      document_version: number;
+      saved: boolean;
+    }) => void>();
+    let state = {
+      mode: "select" as "select" | "navigate",
+      component_count: 1,
+      selected_count: 1,
+      pen_color: "#176b62",
+      selection_color: "#176b62",
+      selection_input: "pen" as const,
+      selection_mode: "rectangle" as const,
+      selection_revision: 1,
+      document_version: 2,
+      saved: true,
+    };
+    const snapshot: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-direct-selection-voice",
+      document_id: "learning-session:learn-direct-selection-voice:student-ink",
+      document_version: 2,
+      created_at: "2026-08-25T12:00:00.000Z",
+      bounds: { x: 120, y: 160, width: 240, height: 120 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 120, y: 160 },
+          { x: 360, y: 160 },
+          { x: 360, y: 280 },
+          { x: 120, y: 280 },
+        ],
+      },
+      component_ids: ["stroke:direct-selection-voice"],
+      checksum: { algorithm: "sha-256", value: "d".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => ({
+      ready: Promise.resolve(),
+      state,
+      subscribe: vi.fn((listener: (next: typeof state) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn(),
+      setPenColor: vi.fn(),
+      setSelectionColor: vi.fn(),
+      setSelectionMode: vi.fn(),
+      selectAll: vi.fn(),
+      captureSelectionSnapshot: vi.fn(async () => snapshot),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      mergeSavedDocument: vi.fn(async () => null),
+      destroy: vi.fn(async () => undefined),
+    }));
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-direct-selection-voice"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(
+      conversationMock.options?.shouldIncludeCameraFrame?.(),
+    ).toBe(false));
+    const additionalFiles = await conversationMock.options
+      ?.getAdditionalTurnFiles?.();
+    expect(additionalFiles).toEqual([expect.objectContaining({
+      name: "selection.png",
+      type: "image/png",
+    })]);
+
+    conversationMock.options?.onTurnStart?.("selection-voice-turn");
+    const handled = await conversationMock.options?.onAdmittedSpeech?.({
+      sessionId: "learn-direct-selection-voice",
+      turnId: "selection-voice-turn",
+      transcript: "为什么它的顶点正好在原点？",
+      admissionId: "selection-voice-admission",
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      currentFramePath: undefined,
+      additionalMediaPaths: ["uploads/selection.png"],
+    });
+
+    expect(handled).toBe(true);
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledTimes(1);
+    expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-direct-selection-voice",
+      "learning.selection.enhance",
+      expect.objectContaining({
+        paths: ["uploads/selection.png"],
+        learner_request: "为什么它的顶点正好在原点？",
+        content_hint: "unknown",
+        tool_id: "custom-question",
+      }),
+    );
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalledWith(
+      expect.anything(),
+      "learning.lesson.generate",
+      expect.anything(),
+    );
+
+    act(() => {
+      state = {
+        ...state,
+        mode: "navigate",
+        selected_count: 0,
+        selection_revision: 2,
+      };
+      listeners.forEach((listener) => listener(state));
+    });
+    await waitFor(() => expect(
+      conversationMock.options?.shouldIncludeCameraFrame?.(),
+    ).toBe(true));
+    expect(await conversationMock.options?.getAdditionalTurnFiles?.()).toEqual([]);
+  });
+
   it("captures and displays one current frame for a text question when the camera is active", async () => {
     conversationMock.cameraActive = true;
     conversationMock.captureCurrentFrame.mockResolvedValue(new File(
@@ -1255,6 +1390,7 @@ describe("LearningWorkspace", () => {
     );
 
     expect(conversationMock.options?.externalSpeechActive).toBe(true);
+    expect(conversationMock.options?.externalSpeechReleaseDelayMs).toBe(1200);
     expect(
       conversationMock.optionsHistory.every(
         (options) => options.externalSpeechActive === true,
