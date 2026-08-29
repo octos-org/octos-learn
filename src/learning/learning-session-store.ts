@@ -1,4 +1,8 @@
 import { hasSavedWhiteboardQuestion } from "./whiteboard-questions";
+import {
+  loadRecoverableJson,
+  writeRecoverableJson,
+} from "./recoverable-storage";
 
 export type LearningSessionStatus =
   | "provisional"
@@ -85,28 +89,39 @@ export function hasDurableLocalWhiteboardContent(
   ) || hasSavedWhiteboardQuestion(sessionId, storage);
 }
 
-function readRecords(): LearningSessionRecord[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(STORE_KEY) ?? "[]");
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (item): item is LearningSessionRecord =>
-        item !== null &&
-        typeof item === "object" &&
-        typeof item.id === "string" &&
-        item.id.startsWith("learn-") &&
-        ["provisional", "active", "paused", "completed"].includes(item.status) &&
-        typeof item.title === "string" &&
-        typeof item.createdAt === "number" &&
-        typeof item.updatedAt === "number",
-    );
-  } catch {
-    return [];
-  }
+function validLearningSessionRecord(
+  item: unknown,
+): item is LearningSessionRecord {
+  return item !== null &&
+    typeof item === "object" &&
+    typeof (item as Record<string, unknown>).id === "string" &&
+    String((item as Record<string, unknown>).id).startsWith("learn-") &&
+    ["provisional", "active", "paused", "completed"].includes(
+      String((item as Record<string, unknown>).status),
+    ) &&
+    typeof (item as Record<string, unknown>).title === "string" &&
+    typeof (item as Record<string, unknown>).createdAt === "number" &&
+    typeof (item as Record<string, unknown>).updatedAt === "number";
 }
 
-function writeRecords(records: LearningSessionRecord[]): void {
-  localStorage.setItem(STORE_KEY, JSON.stringify(records));
+function readRecords(): LearningSessionRecord[] {
+  return loadRecoverableJson({
+    storage: localStorage,
+    key: STORE_KEY,
+    fallback: () => [],
+    decode: (parsed) => {
+      if (!Array.isArray(parsed)
+        || parsed.some((item) => !validLearningSessionRecord(item))) {
+        throw new Error("invalid learning session index");
+      }
+      return parsed as LearningSessionRecord[];
+    },
+  });
+}
+
+function writeRecords(records: LearningSessionRecord[]): boolean {
+  if (records.some((record) => !validLearningSessionRecord(record))) return false;
+  return writeRecoverableJson(localStorage, STORE_KEY, records);
 }
 
 function generateSessionId(now: number): string {
@@ -136,8 +151,9 @@ export function createProvisionalLearningSession(
     createdAt: now,
     updatedAt: now,
   };
-  writeRecords([record, ...readRecords()]);
-  localStorage.setItem(CURRENT_KEY, record.id);
+  if (writeRecords([record, ...readRecords()])) {
+    localStorage.setItem(CURRENT_KEY, record.id);
+  }
   return record;
 }
 
@@ -187,7 +203,7 @@ export function updateLearningSession(
     return updated;
   });
   if (!updated) return null;
-  writeRecords(records);
+  if (!writeRecords(records)) return null;
   localStorage.setItem(CURRENT_KEY, id);
   return updated;
 }
@@ -196,7 +212,7 @@ export function removeLearningSession(id: string): LearningSessionRecord | null 
   const records = readRecords();
   const removed = records.find((record) => record.id === id) ?? null;
   if (!removed) return null;
-  writeRecords(records.filter((record) => record.id !== id));
+  if (!writeRecords(records.filter((record) => record.id !== id))) return null;
   if (localStorage.getItem(CURRENT_KEY) === id) {
     localStorage.removeItem(CURRENT_KEY);
   }
@@ -268,7 +284,9 @@ export function cleanupProvisionalLearningSessions(): string[] {
     .filter((record) => record.status === "provisional")
     .map((record) => record.id);
   if (removed.length === 0) return [];
-  writeRecords(records.filter((record) => record.status !== "provisional"));
+  if (!writeRecords(records.filter((record) => record.status !== "provisional"))) {
+    return [];
+  }
   const current = localStorage.getItem(CURRENT_KEY);
   if (current && removed.includes(current)) localStorage.removeItem(CURRENT_KEY);
   return removed;

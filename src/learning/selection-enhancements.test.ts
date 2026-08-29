@@ -14,11 +14,13 @@ import {
   parseSelectionClassificationMetadata,
   removeSelectionSources,
   saveSelectionEnhancementState,
+  selectionEnhancementStorageKey,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
   selectionBoardContextTargetsExist,
   validateSelectionEnhancementArtifact,
 } from "./selection-enhancements";
+import { isRecoverableStorageLocked } from "./recoverable-storage";
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -189,7 +191,7 @@ describe("selection enhancement persistence", () => {
       .resolves.toEqual(state);
   });
 
-  it("drops a corrupted local snapshot but leaves validation deterministic", async () => {
+  it("isolates a corrupted local snapshot without destroying its recoverable value", async () => {
     const storage = new MemoryStorage();
     const selection = await source();
     selection.svg = selection.svg.replace("10 10", "9 9");
@@ -201,8 +203,20 @@ describe("selection enhancement persistence", () => {
       hidden_enhancement_turn_ids: [],
     }, storage);
 
+    const key = selectionEnhancementStorageKey("session-1");
+    const raw = storage.getItem(key);
     await expect(loadSelectionEnhancementState("session-1", storage))
       .resolves.toMatchObject({ sources: [] });
+    expect(storage.getItem(key)).toBe(raw);
+    expect(isRecoverableStorageLocked(storage, key)).toBe(true);
+    saveSelectionEnhancementState({
+      profile: "octos.selection-enhancement-state",
+      version: "0.1",
+      session_id: "session-1",
+      sources: [],
+      hidden_enhancement_turn_ids: [],
+    }, storage);
+    expect(storage.getItem(key)).toBe(raw);
   });
 
   it("accepts source-linked plot and explicit unsupported artifacts", () => {

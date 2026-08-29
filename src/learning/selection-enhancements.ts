@@ -14,6 +14,10 @@ import type {
 } from "octos-lesson-language/web-runtime";
 import type { SemanticBoardState } from "octos-lesson-language";
 import type { SelectionToolId } from "./selection-tools";
+import {
+  loadRecoverableJsonAsync,
+  writeRecoverableJson,
+} from "./recoverable-storage";
 
 const ARTIFACT_SUFFIX = ".octos-selection-enhancement.json";
 const STATE_PROFILE = "octos.selection-enhancement-state";
@@ -850,51 +854,54 @@ export async function loadSelectionEnhancementState(
     sources: [],
     hidden_enhancement_turn_ids: [],
   };
-  const raw = storage.getItem(selectionEnhancementStorageKey(sessionId));
-  if (!raw) return empty;
-  try {
-    const parsed = JSON.parse(raw) as Partial<SelectionEnhancementState>;
-    if (
-      parsed.profile !== STATE_PROFILE
-      || parsed.version !== STATE_VERSION
-      || parsed.session_id !== sessionId
-      || !Array.isArray(parsed.sources)
-      || !Array.isArray(parsed.hidden_enhancement_turn_ids)
-      || parsed.hidden_enhancement_turn_ids.some(
-        (id) => typeof id !== "string" || !id,
-      )
-    ) {
-      throw new Error("invalid selection enhancement state");
-    }
-    const sources: InkSelectionSnapshot[] = [];
-    const ids = new Set<string>();
-    for (const candidate of parsed.sources) {
-      const source = validateInkSelectionSnapshot(candidate);
-      await assertInkSelectionIntegrity(source);
-      if (ids.has(source.source_id)) throw new Error("duplicate selection source");
-      ids.add(source.source_id);
-      sources.push(source);
-    }
-    return {
-      ...empty,
-      sources,
-      hidden_enhancement_turn_ids: [
-        ...new Set(parsed.hidden_enhancement_turn_ids),
-      ],
-    };
-  } catch {
-    storage.removeItem(selectionEnhancementStorageKey(sessionId));
-    return empty;
-  }
+  return loadRecoverableJsonAsync({
+    storage,
+    key: selectionEnhancementStorageKey(sessionId),
+    fallback: () => empty,
+    decode: async (value) => {
+      const parsed = value as Partial<SelectionEnhancementState>;
+      if (
+        !parsed
+        || typeof parsed !== "object"
+        || parsed.profile !== STATE_PROFILE
+        || parsed.version !== STATE_VERSION
+        || parsed.session_id !== sessionId
+        || !Array.isArray(parsed.sources)
+        || !Array.isArray(parsed.hidden_enhancement_turn_ids)
+        || parsed.hidden_enhancement_turn_ids.some(
+          (id) => typeof id !== "string" || !id,
+        )
+      ) {
+        throw new Error("invalid selection enhancement state");
+      }
+      const sources: InkSelectionSnapshot[] = [];
+      const ids = new Set<string>();
+      for (const candidate of parsed.sources) {
+        const source = validateInkSelectionSnapshot(candidate);
+        await assertInkSelectionIntegrity(source);
+        if (ids.has(source.source_id)) throw new Error("duplicate selection source");
+        ids.add(source.source_id);
+        sources.push(source);
+      }
+      return {
+        ...empty,
+        sources,
+        hidden_enhancement_turn_ids: [
+          ...new Set(parsed.hidden_enhancement_turn_ids),
+        ],
+      };
+    },
+  });
 }
 
 export function saveSelectionEnhancementState(
   state: SelectionEnhancementState,
   storage: Storage = localStorage,
 ): void {
-  storage.setItem(
+  writeRecoverableJson(
+    storage,
     selectionEnhancementStorageKey(state.session_id),
-    JSON.stringify(state),
+    state,
   );
 }
 

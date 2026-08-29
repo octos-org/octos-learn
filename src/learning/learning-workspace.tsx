@@ -45,6 +45,7 @@ import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
   LearningWhiteboard,
   type DegradedVisualRetryRequest,
+  type LearningCourseRenderEvent,
   type VoiceInkSelectionCapture,
   type VoiceInkSelectionRequest,
 } from "./oll/oll-lesson-runtime";
@@ -116,6 +117,13 @@ import {
   saveCourseRegions,
   type CourseRegionRecord,
 } from "./course-regions";
+import { LearnTraceRecorder } from "./learn-trace";
+import { LearningTraceInspector } from "./learning-trace-inspector";
+import {
+  loadRecoverableJson,
+  removeRecoverableValue,
+  writeRecoverableJson,
+} from "./recoverable-storage";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -143,25 +151,29 @@ function pendingLessonJobsStorageKey(sessionId: string): string {
 }
 
 function loadPendingLessonJobs(sessionId: string): Map<string, PendingLessonJobRecord> {
-  try {
-    if (typeof window === "undefined") return new Map();
-    const raw = window.localStorage.getItem(pendingLessonJobsStorageKey(sessionId));
-    if (!raw) return new Map();
-    const records = JSON.parse(raw) as unknown;
-    if (!Array.isArray(records)) return new Map();
-    return new Map(records.flatMap((candidate) => {
-      if (
+  if (typeof window === "undefined") return new Map();
+  return loadRecoverableJson({
+    storage: window.localStorage,
+    key: pendingLessonJobsStorageKey(sessionId),
+    fallback: () => new Map(),
+    decode: (records) => {
+      if (!Array.isArray(records) || records.some((candidate) => (
         !candidate
         || typeof candidate !== "object"
         || typeof candidate.jobId !== "string"
         || typeof candidate.turnId !== "string"
         || !Array.isArray(candidate.referenceIds)
-      ) return [];
-      return [[candidate.jobId, candidate as PendingLessonJobRecord]];
-    }));
-  } catch {
-    return new Map();
-  }
+        || candidate.referenceIds.some((id: unknown) => typeof id !== "string")
+        || (candidate.actionId !== undefined
+          && candidate.actionId !== "learning.lesson.generate"
+          && candidate.actionId !== "learning.lesson.generate-from-camera")
+      ))) {
+        throw new Error("invalid pending lesson job state");
+      }
+      return new Map((records as PendingLessonJobRecord[]).map((candidate) =>
+        [candidate.jobId, candidate]));
+    },
+  });
 }
 
 function savePendingLessonJobs(
@@ -171,12 +183,16 @@ function savePendingLessonJobs(
   try {
     if (typeof window === "undefined") return;
     if (jobs.size === 0) {
-      window.localStorage.removeItem(pendingLessonJobsStorageKey(sessionId));
+      removeRecoverableValue(
+        window.localStorage,
+        pendingLessonJobsStorageKey(sessionId),
+      );
       return;
     }
-    window.localStorage.setItem(
+    writeRecoverableJson(
+      window.localStorage,
       pendingLessonJobsStorageKey(sessionId),
-      JSON.stringify([...jobs.values()]),
+      [...jobs.values()],
     );
   } catch {
     // The current page still tracks the job when browser storage is unavailable.
@@ -329,6 +345,10 @@ export function LearningWorkspace({
 }: LearningWorkspaceProps) {
   const runtime = useOminixRuntimeSummary();
   const threads = useRenderThreads(sessionId);
+  const learnTrace = useMemo(
+    () => new LearnTraceRecorder(sessionId),
+    [sessionId],
+  );
   const [narrationSpeechActive, setNarrationSpeechActive] = useState(false);
   // Declared early: `externalSpeechActive` (below) consults it to decide
   // whether muted narration still owns the microphone (issue #315).
@@ -653,6 +673,19 @@ export function LearningWorkspace({
     }),
     [deliveredOllLessons, loadedOllArtifacts, ollArtifacts],
   );
+  useEffect(() => {
+    deliveredOllLessons.forEach((events, index) => {
+      const turnId = deliveredOllQuestionIds[index];
+      if (!turnId) return;
+      learnTrace.recordOnce(`${turnId}:lesson-playable-loaded`, {
+        turnId,
+        source: "octos-web",
+        stage: "lesson-playable-loaded",
+        status: "completed",
+        data: { canonical_events: events.length },
+      });
+    });
+  }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
   const activeOllEvents = ollFixture
     ? ollFixtureEvents[ollFixture]
     : deliveredOllEvents;
@@ -727,8 +760,14 @@ export function LearningWorkspace({
     setPlainReply(null);
     setPlainReplySpoken(false);
     setCompletedTurnId(turnId);
+    learnTrace.recordOnce(`${turnId}:turn-completed`, {
+      turnId,
+      source: "octos-web",
+      stage: "turn-completed",
+      status: "completed",
+    });
     conversationOptions?.onTurnComplete?.(turnId);
-  }, [conversationOptions, setWhiteboardQuestionStatus, threads]);
+  }, [conversationOptions, learnTrace, setWhiteboardQuestionStatus, threads]);
   const startDirectLessonGeneration = useCallback(async (
     turnId: string,
     learnerRequest: string,
@@ -737,10 +776,23 @@ export function LearningWorkspace({
     clientTiming?: LearningClientTiming,
   ) => {
     setTextTurnPending(true);
+    const actionId = cameraMediaPath
+      ? "learning.lesson.generate-from-camera"
+      : "learning.lesson.generate";
+    const invocationStartedAt = Date.now();
+    learnTrace.recordOnce(`${turnId}:skill-invocation-started`, {
+      turnId,
+      source: "octos-web",
+      stage: "skill-invocation",
+      status: "started",
+      recordedAtEpochMs: invocationStartedAt,
+      data: {
+        action_id: actionId,
+        input_modality: inputModality,
+        request_source: cameraMediaPath ? "current_image" : "self_contained",
+      },
+    });
     try {
-      const actionId = cameraMediaPath
-        ? "learning.lesson.generate-from-camera"
-        : "learning.lesson.generate";
       const invocation = await invokeSkillAction(
         sessionId,
         actionId,
@@ -754,7 +806,7 @@ export function LearningWorkspace({
           ...(clientTiming ? {
             client_timing: {
               ...clientTiming,
-              skill_invocation_started_at_epoch_ms: Date.now(),
+              skill_invocation_started_at_epoch_ms: invocationStartedAt,
             },
           } : {}),
         },
@@ -767,6 +819,17 @@ export function LearningWorkspace({
         );
       }
       const jobs = invocation.jobs ?? [];
+      learnTrace.recordOnce(`${turnId}:skill-invocation-accepted`, {
+        turnId,
+        source: "octos-web",
+        stage: "skill-invocation",
+        status: "accepted",
+        elapsedMs: Date.now() - invocationStartedAt,
+        data: {
+          action_id: actionId,
+          background_jobs: jobs.length,
+        },
+      });
       if (jobs.length === 0) {
         await getSessionFiles(sessionId).then((files) => {
           setPersistedOllArtifacts(collectPersistedOllLessonArtifacts(files));
@@ -785,10 +848,20 @@ export function LearningWorkspace({
       });
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
       setOllGenerationSessionId(sessionId);
+    } catch (cause) {
+      learnTrace.recordOnce(`${turnId}:skill-invocation-failed`, {
+        turnId,
+        source: "octos-web",
+        stage: "skill-invocation",
+        status: "failed",
+        elapsedMs: Date.now() - invocationStartedAt,
+        data: { action_id: actionId },
+      });
+      throw cause;
     } finally {
       setTextTurnPending(false);
     }
-  }, [handleTurnComplete, sessionId, setWhiteboardQuestionStatus]);
+  }, [handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -873,6 +946,39 @@ export function LearningWorkspace({
       // a lesson or plain spoken reply releases the microphone.
       externalSpeechReleaseDelayMs: 1200,
       onAdmittedSpeech: async (context) => {
+        const clientTiming = context.clientTiming ?? {};
+        learnTrace.recordOnce(`${context.turnId}:request-submitted`, {
+          turnId: context.turnId,
+          source: "octos-web",
+          stage: "request-submitted",
+          status: "started",
+          recordedAtEpochMs:
+            clientTiming.submitted_at_epoch_ms ?? Date.now(),
+          data: { input_modality: "voice" },
+        });
+        const admissionCompletedAt =
+          clientTiming.voice_admission_completed_at_epoch_ms;
+        const admissionStartedAt =
+          clientTiming.voice_admission_started_at_epoch_ms;
+        learnTrace.recordOnce(`${context.turnId}:voice-admission-completed`, {
+          turnId: context.turnId,
+          source: "octos-web",
+          stage: "voice-admission",
+          status: "completed",
+          ...(admissionCompletedAt === undefined
+            ? {}
+            : { recordedAtEpochMs: admissionCompletedAt }),
+          ...(admissionStartedAt === undefined || admissionCompletedAt === undefined
+            ? {}
+            : { elapsedMs: admissionCompletedAt - admissionStartedAt }),
+          data: {
+            request_source: context.currentFramePath
+              ? "current_image"
+              : context.additionalMediaPaths?.length
+                ? "selection"
+                : "self_contained",
+          },
+        });
         const pendingSelection = pendingVoiceSelectionRef.current;
         const selectionPath = context.additionalMediaPaths?.[0];
         if (pendingSelection && selectionPath) {
@@ -909,7 +1015,7 @@ export function LearningWorkspace({
           context.transcript,
           "voice",
           context.currentFramePath,
-          context.clientTiming,
+          clientTiming,
         );
         return true;
       },
@@ -921,6 +1027,7 @@ export function LearningWorkspace({
       handleTurnComplete,
       handleVoiceTurnError,
       lessonOwnsNarration,
+      learnTrace,
       narrationAudioEnabled,
       narrationSpeechActive,
       ollLesson,
@@ -971,6 +1078,15 @@ export function LearningWorkspace({
       sequence: (current?.sequence ?? 0) + 1,
     }));
   }, [activeOllTopics, ollLesson?.currentStepId]);
+  const courseTopicForBeat = useCallback((beatId: string) =>
+    activeOllTopics.find((candidate) => candidate.stepIds.some((stepId) =>
+      ollLesson?.outline
+        .flatMap((topic) => topic.steps)
+        .find((step) => step.id === stepId)
+        ?.beats.some((beat) => beat.id === beatId))), [
+    activeOllTopics,
+    ollLesson?.outline,
+  ]);
   const markPlaybackBeatCourse = useCallback((beatId: string) => {
     const step = ollLesson?.outline
       .flatMap((topic) => topic.steps)
@@ -1195,6 +1311,7 @@ export function LearningWorkspace({
         detail?.sessionId !== sessionId ||
         detail.tool !== "oll_generate_lesson"
       ) return;
+      learnTrace.ingestLearningCoachMessage(detail.message);
       setOllGenerationSessionId(detail.terminal === true ? null : sessionId);
       if (
         detail.terminal === true ||
@@ -1213,6 +1330,21 @@ export function LearningWorkspace({
       ) return;
       const pending = pendingLessonJobsRef.current.get(job.job_id);
       if (!pending) return;
+      const updatedAt = Date.parse(job.updated_at);
+      learnTrace.recordOnce(
+        `${pending.turnId}:job:${job.job_id}:${job.status}`,
+        {
+          turnId: pending.turnId,
+          source: "octos-web",
+          stage: "lesson-job",
+          status: job.status,
+          ...(Number.isFinite(updatedAt) ? { recordedAtEpochMs: updatedAt } : {}),
+          data: {
+            action_id: job.action_id,
+            job_id: job.job_id,
+          },
+        },
+      );
       if (job.status === "queued" || job.status === "running") {
         setOllGenerationSessionId(sessionId);
         return;
@@ -1315,6 +1447,7 @@ export function LearningWorkspace({
   }, [
     discardWhiteboardQuestion,
     handleTurnComplete,
+    learnTrace,
     ollFixture,
     sessionId,
     setWhiteboardQuestionStatus,
@@ -1579,9 +1712,19 @@ export function LearningWorkspace({
   const completeOllNarration = ollLesson?.completeNarration;
   const handleNarrationStart = useCallback((narrationId: string) => {
     if (!narrationId.startsWith("plain-reply:")) {
+      const turnId = courseTopicForBeat(narrationId)?.questionId;
+      if (turnId) {
+        learnTrace.recordOnce(`${turnId}:lesson-first-narration-started`, {
+          turnId,
+          source: "octos-web",
+          stage: "lesson-first-narration-started",
+          status: "started",
+          data: { beat_id: narrationId },
+        });
+      }
       startOllNarration?.(narrationId);
     }
-  }, [startOllNarration]);
+  }, [courseTopicForBeat, learnTrace, startOllNarration]);
   const handleNarrationComplete = useCallback((narrationId: string) => {
     if (narrationId.startsWith("plain-reply:")) {
       setPlainReplySpoken(true);
@@ -1920,6 +2063,14 @@ export function LearningWorkspace({
       setSendError(null);
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
+      learnTrace.recordOnce(`${turnId}:request-submitted`, {
+        turnId,
+        source: "octos-web",
+        stage: "request-submitted",
+        status: "started",
+        recordedAtEpochMs: clientTiming.submitted_at_epoch_ms,
+        data: { input_modality: "text" },
+      });
       const references = composerBoardReferences;
       addWhiteboardQuestion({
         id: turnId,
@@ -2022,6 +2173,7 @@ export function LearningWorkspace({
       conv.cameraActive,
       conv.captureCurrentFrame,
       handleTurnComplete,
+      learnTrace,
       ollLesson,
       onLearnerInput,
       sessionId,
@@ -2134,6 +2286,19 @@ export function LearningWorkspace({
   const closeCameraSettings = useCallback(() => {
     setCameraSettingsOpen(false);
   }, []);
+  const handleCourseRendered = useCallback((event: LearningCourseRenderEvent) => {
+    learnTrace.recordOnce(`${event.turnId}:lesson-first-rendered`, {
+      turnId: event.turnId,
+      source: "octos-web",
+      stage: "lesson-first-rendered",
+      status: "completed",
+      data: {
+        beat_id: event.beatId,
+        operation_type: event.operationType,
+        cursor: event.cursor,
+      },
+    });
+  }, [learnTrace]);
 
   const openCameraSettings = useCallback(() => {
     setCameraSettingsOpen(true);
@@ -2327,6 +2492,7 @@ export function LearningWorkspace({
           onPlaceQuestion={placeWhiteboardQuestion}
           onUpdateCourseRegion={updateCourseRegion}
           onInkActivity={onWhiteboardActivity}
+          onCourseRendered={handleCourseRendered}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
           selectionEnhancements={replayingWithoutStudentAdditions
@@ -2449,6 +2615,9 @@ export function LearningWorkspace({
           语音引擎尚未就绪，白板示范仍可使用。
         </div>
       )}
+      {import.meta.env.DEV && import.meta.env.MODE !== "test" ? (
+        <LearningTraceInspector recorder={learnTrace} />
+      ) : null}
     </div>
   );
 }

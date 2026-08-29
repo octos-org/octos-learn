@@ -1,4 +1,8 @@
 import type { InkSelectionBounds } from "octos-lesson-language/ink-runtime";
+import {
+  loadRecoverableJson,
+  writeRecoverableJson,
+} from "./recoverable-storage";
 
 export type WhiteboardQuestionStatus = "pending" | "answered" | "failed";
 
@@ -83,18 +87,19 @@ export function loadWhiteboardQuestions(
   sessionId: string,
   storage: Storage = localStorage,
 ): WhiteboardQuestionRecord[] {
-  try {
-    const parsed = JSON.parse(
-      storage.getItem(whiteboardQuestionsStorageKey(sessionId)) ?? "[]",
-    );
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((value): value is WhiteboardQuestionRecord =>
-        validQuestion(value, sessionId))
-      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-  } catch {
-    return [];
-  }
+  return loadRecoverableJson({
+    storage,
+    key: whiteboardQuestionsStorageKey(sessionId),
+    fallback: () => [],
+    decode: (parsed) => {
+      if (!Array.isArray(parsed)
+        || parsed.some((value) => !validQuestion(value, sessionId))) {
+        throw new Error("invalid whiteboard question state");
+      }
+      return [...parsed as WhiteboardQuestionRecord[]].sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt));
+    },
+  });
 }
 
 export function saveWhiteboardQuestions(
@@ -102,16 +107,12 @@ export function saveWhiteboardQuestions(
   questions: WhiteboardQuestionRecord[],
   storage: Storage = localStorage,
 ): void {
-  try {
-    storage.setItem(
-      whiteboardQuestionsStorageKey(sessionId),
-      JSON.stringify(questions.filter((question) =>
-        validQuestion(question, sessionId))),
-    );
-  } catch {
-    // The in-memory copy still keeps the current whiteboard usable when the
-    // browser refuses local storage (for example in private browsing).
-  }
+  if (questions.some((question) => !validQuestion(question, sessionId))) return;
+  writeRecoverableJson(
+    storage,
+    whiteboardQuestionsStorageKey(sessionId),
+    questions,
+  );
 }
 
 export function hasSavedWhiteboardQuestion(
