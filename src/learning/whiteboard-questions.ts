@@ -10,6 +10,8 @@ export interface WhiteboardQuestionRecord {
   createdAt: string;
   status: WhiteboardQuestionStatus;
   error?: string;
+  /** Exact session-scoped camera frame submitted with this question. */
+  imagePath?: string;
   source?: {
     sourceId: string;
     bounds: InkSelectionBounds;
@@ -57,6 +59,9 @@ function validQuestion(
     || !["pending", "answered", "failed"].includes(String(question.status))
   ) return false;
   if (question.error !== undefined && typeof question.error !== "string") {
+    return false;
+  }
+  if (question.imagePath !== undefined && typeof question.imagePath !== "string") {
     return false;
   }
   if (question.position !== undefined) {

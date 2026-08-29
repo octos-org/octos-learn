@@ -132,6 +132,7 @@ interface PendingLessonJobRecord {
   jobId: string;
   turnId: string;
   referenceIds: string[];
+  actionId?: "learning.lesson.generate" | "learning.lesson.generate-from-camera";
 }
 
 function pendingLessonJobsStorageKey(sessionId: string): string {
@@ -422,7 +423,7 @@ export function LearningWorkspace({
     questionId: string,
     patch: Partial<Pick<
       WhiteboardQuestionRecord,
-      "text" | "position" | "status" | "error"
+      "text" | "position" | "status" | "error" | "imagePath"
     >>,
   ) => {
     setWhiteboardQuestions((current) => {
@@ -434,6 +435,7 @@ export function LearningWorkspace({
           updated.text === question.text
           && updated.status === question.status
           && updated.error === question.error
+          && updated.imagePath === question.imagePath
           && updated.position?.x === question.position?.x
           && updated.position?.y === question.position?.y
         ) return question;
@@ -711,16 +713,21 @@ export function LearningWorkspace({
     turnId: string,
     learnerRequest: string,
     inputModality: "text" | "voice" = "text",
+    cameraMediaPath?: string,
   ) => {
     setTextTurnPending(true);
     try {
+      const actionId = cameraMediaPath
+        ? "learning.lesson.generate-from-camera"
+        : "learning.lesson.generate";
       const invocation = await invokeSkillAction(
         sessionId,
-        "learning.lesson.generate",
+        actionId,
         {
+          ...(cameraMediaPath ? { paths: [cameraMediaPath] } : {}),
           turn_id: turnId,
           learner_request: learnerRequest,
-          request_source: "self_contained",
+          request_source: cameraMediaPath ? "current_image" : "self_contained",
           language: "zh-CN",
           input_modality: inputModality,
         },
@@ -746,6 +753,7 @@ export function LearningWorkspace({
           jobId: job.job_id,
           turnId,
           referenceIds: [],
+          actionId,
         });
       });
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
@@ -822,16 +830,19 @@ export function LearningWorkspace({
           narrationSpeechActive ||
           textTurnPending),
       onAdmittedSpeech: async (context) => {
-        if (
-          context.currentFramePath
-          || (context.additionalMediaPaths?.length ?? 0) > 0
-        ) return false;
+        if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
         registerVoiceQuestion(context.turnId, context.transcript, null);
+        if (context.currentFramePath) {
+          updateWhiteboardQuestion(context.turnId, {
+            imagePath: context.currentFramePath,
+          });
+        }
         onLearnerInput?.(context.transcript);
         await startDirectLessonGeneration(
           context.turnId,
           context.transcript,
           "voice",
+          context.currentFramePath,
         );
         return true;
       },
@@ -852,6 +863,7 @@ export function LearningWorkspace({
       startDirectLessonGeneration,
       textTurnPending,
       voiceEnabled,
+      updateWhiteboardQuestion,
     ],
   );
   const conv = useVoiceConversation(
@@ -1129,7 +1141,8 @@ export function LearningWorkspace({
       if (
         !job
         || job.session_id !== sessionId
-        || job.action_id !== "learning.lesson.generate"
+        || (job.action_id !== "learning.lesson.generate"
+          && job.action_id !== "learning.lesson.generate-from-camera")
       ) return;
       const pending = pendingLessonJobsRef.current.get(job.job_id);
       if (!pending) return;
@@ -1199,10 +1212,11 @@ export function LearningWorkspace({
     const restorePendingLessonJobs = () => {
       if (pendingLessonJobsRef.current.size === 0) return;
       setOllGenerationSessionId(sessionId);
-      void listSkillActionJobs(sessionId, {
-        actionId: "learning.lesson.generate",
-      }).then((jobs) => {
-        jobs.forEach((job) => void applyLessonJobUpdate(job));
+      void Promise.all([
+        listSkillActionJobs(sessionId, { actionId: "learning.lesson.generate" }),
+        listSkillActionJobs(sessionId, { actionId: "learning.lesson.generate-from-camera" }),
+      ]).then((jobGroups) => {
+        jobGroups.flat().forEach((job) => void applyLessonJobUpdate(job));
       }).catch(() => {
         // The bridge-connected event retries after reconnect.
       });
@@ -1844,7 +1858,19 @@ export function LearningWorkspace({
           })),
         );
         if (references.length === 0 && !applicationContext?.trim()) {
-          await startDirectLessonGeneration(turnId, text);
+          let cameraMediaPath: string | undefined;
+          if (conv.cameraActive) {
+            const frame = await conv.captureCurrentFrame();
+            if (!frame) {
+              throw new Error("摄像头画面没有截取成功，请确认预览正常后重试");
+            }
+            [cameraMediaPath] = await uploadFiles([frame], "upload");
+            if (!cameraMediaPath) {
+              throw new Error("摄像头画面上传失败，请重试");
+            }
+            updateWhiteboardQuestion(turnId, { imagePath: cameraMediaPath });
+          }
+          await startDirectLessonGeneration(turnId, text, "text", cameraMediaPath);
           return;
         }
         sendMessage({
@@ -1885,12 +1911,15 @@ export function LearningWorkspace({
       buildTurnText,
       addWhiteboardQuestion,
       composerBoardReferences,
+      conv.cameraActive,
+      conv.captureCurrentFrame,
       handleTurnComplete,
       ollLesson,
       onLearnerInput,
       sessionId,
       startDirectLessonGeneration,
       setWhiteboardQuestionStatus,
+      updateWhiteboardQuestion,
     ],
   );
 

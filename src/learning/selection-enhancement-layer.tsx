@@ -17,6 +17,7 @@ import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
 import { MarkdownContent } from "@/components/markdown-renderer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
+import { buildAuthenticatedFileUrl } from "@/api/files";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -83,6 +84,15 @@ function SelectionQuestionSection({
         text={question.text}
         className="learning-selection-markdown learning-selection-question-text"
       />
+      {question.imagePath ? (
+        <img
+          className="learning-whiteboard-question-camera-frame"
+          src={buildAuthenticatedFileUrl(question.imagePath, {
+            sessionId: question.sessionId,
+          })}
+          alt="本次问题随附的摄像头画面"
+        />
+      ) : null}
     </section>
   );
 }

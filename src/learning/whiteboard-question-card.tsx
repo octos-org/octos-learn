@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { buildAuthenticatedFileUrl } from "@/api/files";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 
 export const WHITEBOARD_QUESTION_CARD_WIDTH = 270;
@@ -36,6 +37,15 @@ export function WhiteboardQuestionCard({
         </span>
       </header>
       <p className={expanded ? "is-expanded" : undefined}>{question.text}</p>
+      {question.imagePath ? (
+        <img
+          className="learning-whiteboard-question-camera-frame"
+          src={buildAuthenticatedFileUrl(question.imagePath, {
+            sessionId: question.sessionId,
+          })}
+          alt="本次问题随附的摄像头画面"
+        />
+      ) : null}
       {question.text.length > 72 ? (
         <button
           type="button"

@@ -1466,6 +1466,17 @@
   overflow-wrap: anywhere;
 }
 
+.learning-whiteboard-question-camera-frame {
+  display: block;
+  width: 100%;
+  max-height: 150px;
+  margin-top: 10px;
+  border: 1px solid rgba(30, 111, 102, 0.16);
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(238, 247, 244, 0.72);
+}
+
 .learning-selection-source-link {
   position: absolute;
   right: 100%;
