@@ -158,7 +158,7 @@ describe("course reading layout", () => {
 
     expect(layout.nodes.circle).toEqual({
       x: 394,
-      y: 120,
+      y: 90,
       width: 380,
       height: 300,
     });
@@ -171,11 +171,105 @@ describe("course reading layout", () => {
       layout.nodes.arcFormula?.y,
       layout.nodes.circumference?.y,
       layout.nodes.result?.y,
-    ]).toEqual([120, 244, 368]);
+    ]).toEqual([90, 214, 338]);
     expect(layout.nodes.arcFormula?.width).toBe(452);
     expect(
       Math.max(...Object.values(layout.nodes).map((node) => node.x + node.width)),
     ).toBeLessThanOrEqual(394 + 886);
+  });
+
+  it("places narrative cards beside the union of linked Geometry and Plot cards", () => {
+    const board = boardWithNodes({
+      geometry: {
+        id: "geometry",
+        kind: "geometry",
+        region_id: "course",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "course",
+        content: {},
+        placement: { relation: "right_of", anchor: "geometry", gap: "normal" },
+      },
+      formula: {
+        id: "formula",
+        kind: "math",
+        region_id: "course",
+        content: { latex: "y=\\sin\\theta" },
+        placement: { relation: "new_region" },
+      },
+    });
+    const layout = computeBoardLayout(board, {
+      geometry: { width: 420, height: 320 },
+      plot: { width: 360, height: 280 },
+      formula: { width: 300, height: 100 },
+    }, {
+      regions: {
+        course: {
+          x: 394,
+          y: 90,
+          reservedWidth: 1_300,
+          flow: "reading",
+          attachments: [{
+            id: "course:interaction:1",
+            anchorNodeId: "plot",
+            anchorNodeIds: ["geometry", "plot"],
+            width: 360,
+            height: 220,
+            gap: 42,
+          }],
+        },
+      },
+    });
+
+    const plotRight = layout.nodes.plot!.x + layout.nodes.plot!.width;
+    const visualBottom = Math.max(
+      layout.nodes.geometry!.y + layout.nodes.geometry!.height,
+      layout.nodes.plot!.y + layout.nodes.plot!.height,
+    );
+    expect(layout.nodes.formula!.x).toBeGreaterThanOrEqual(plotRight + 54);
+    expect(layout.nodes.formula!.y).toBe(90);
+    expect(layout.attachments["course:interaction:1"]).toEqual({
+      x: layout.nodes.geometry!.x,
+      y: visualBottom + 42,
+      width: 360,
+      height: 220,
+    });
+  });
+
+  it("wraps a long derivation into readable columns instead of one tiny overview", () => {
+    const ids = Array.from({ length: 14 }, (_unused, index) => `formula-${index + 1}`);
+    const board = boardWithNodes(Object.fromEntries(ids.map((id, index) => [id, {
+      id,
+      kind: "math",
+      region_id: "course",
+      content: { latex: `S_${index + 1}=a_1+\\cdots+a_n` },
+      placement: index === 0
+        ? { relation: "new_region" }
+        : { relation: "below", anchor: ids[index - 1] },
+    }])));
+    const layout = computeBoardLayout(
+      board,
+      Object.fromEntries(ids.map((id) => [id, { width: 440, height: 96 }])),
+      {
+        regions: {
+          course: {
+            x: 394,
+            y: 90,
+            reservedWidth: 886,
+            flow: "reading",
+          },
+        },
+      },
+    );
+
+    const columns = new Set(ids.map((id) => layout.nodes[id]!.x));
+    expect(columns.size).toBeGreaterThan(1);
+    expect(layout.regions.course!.height).toBeLessThanOrEqual(1_150);
+    expect(layout.nodes[ids.at(-1)!]!.x).toBeGreaterThan(layout.nodes[ids[0]!]!.x);
   });
 
   it("keeps independently persisted course regions separated after reflow", () => {
@@ -292,7 +386,7 @@ describe("course reading layout", () => {
 
     expect(layout.nodes.annotation).toEqual({
       x: 418,
-      y: 144,
+      y: 114,
       width: 120,
       height: 72,
     });

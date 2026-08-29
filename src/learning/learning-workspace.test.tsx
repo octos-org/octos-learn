@@ -959,6 +959,69 @@ describe("LearningWorkspace", () => {
       .toBeNull();
   });
 
+  it("shows an unsupported lesson result once without a technical error banner", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "text-unsupported-job",
+        batch_id: "text-unsupported-batch",
+        profile_id: "alan0x",
+        session_id: "learn-text-unsupported",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-08-23T00:00:00Z",
+        updated_at: "2026-08-23T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-text-unsupported"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请让我拖动任意三角形顶点并实时重算外接圆" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "text-unsupported-job",
+          batch_id: "text-unsupported-batch",
+          profile_id: "alan0x",
+          session_id: "learn-text-unsupported",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "目前还不能完整生成这节课：当前还不能自由拖动三角形顶点并实时重算外接圆。",
+            structured_metadata: {
+              lesson_disposition: "unsupported",
+              learner_response: "目前还不能完整生成这节课：当前还不能自由拖动三角形顶点并实时重算外接圆。",
+            },
+          },
+          created_at: "2026-08-23T00:00:00Z",
+          updated_at: "2026-08-23T00:00:02Z",
+        },
+      }));
+    });
+
+    expect(await screen.findByText(
+      "目前还不能完整生成这节课：当前还不能自由拖动三角形顶点并实时重算外接圆。",
+    )).toBeTruthy();
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByText(/Lesson generation already exhausted/iu)).toBeNull();
+  });
+
   it("restores a direct lesson job after the page reloads", async () => {
     localStorage.setItem(
       "octos-learning-lesson-jobs:v1:learn-restored-job",

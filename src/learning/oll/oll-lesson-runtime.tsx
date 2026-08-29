@@ -207,6 +207,7 @@ const courseVisualNodeKinds = new Set([
 ]);
 const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
 const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
+const MINIMUM_COURSE_READING_WIDTH = 1_300;
 
 function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
   if (rects.length === 0) return null;
@@ -286,6 +287,21 @@ function measureVisualRegionBounds(
     const bounds = unionWhiteboardRects(rects);
     return bounds ? [[regionId, bounds]] : [];
   }));
+}
+
+export function courseHasRenderedBoardNode(
+  board: OllLessonRuntimeController["board"],
+  explicitNodeIds: readonly string[] | undefined,
+  regionId: string,
+  renderedNodeIds: ReadonlySet<string>,
+): boolean {
+  if (!board) return false;
+  const ownedNodeIds = explicitNodeIds && explicitNodeIds.length > 0
+    ? explicitNodeIds.filter((nodeId) => Boolean(board.nodes[nodeId]))
+    : Object.values(board.nodes)
+        .filter((node) => (node.region_id ?? "__legacy__") === regionId)
+        .map((node) => node.id);
+  return ownedNodeIds.some((nodeId) => renderedNodeIds.has(nodeId));
 }
 
 const emptyInkState: LearningInkState = {
@@ -682,6 +698,7 @@ export function LearningWhiteboard({
         id: cluster.id,
         topic,
         anchorNodeId: cluster.anchorNodeId,
+        anchorNodeIds: cluster.nodeIds,
         controls,
         tasks,
         controlsHeight,
@@ -703,6 +720,7 @@ export function LearningWhiteboard({
         .map((plan) => ({
           id: plan.id,
           anchorNodeId: plan.anchorNodeId,
+          anchorNodeIds: plan.anchorNodeIds,
           width: plan.width,
           height: plan.height,
           gap: 42,
@@ -712,7 +730,7 @@ export function LearningWhiteboard({
         y: region.origin.y,
         flow: "reading",
         reservedWidth: Math.max(
-          0,
+          MINIMUM_COURSE_READING_WIDTH,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
         ),
         ...(attachments.length > 0 ? { attachments } : {}),
@@ -1764,7 +1782,18 @@ export function LearningWhiteboard({
     const compositionOperationChanged =
       compositionContentChanged &&
       activeRuntime.cursor !== renderedCompositionCursorRef.current;
+    const teachingTopic = activeRuntime.outline.find((candidate) =>
+      candidate.steps.some((step) => step.id === activeRuntime.currentStepId));
+    const teachingCourseId = teachingTopic
+      ? teachingTopic.questionId ?? teachingTopic.id
+      : undefined;
+    const teachingRegionId = teachingTopic
+      ? runtimeRegionIdForTopic(teachingTopic.id)
+      : undefined;
+    const teachingFocusAllowed = cameraControllerRef.current
+      ?.allowsTeachingFocus(teachingCourseId) ?? true;
     view?.setScene3dViews(activeRuntime.scene3dViews);
+    view?.setActiveRegion(teachingRegionId);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
     const nextRegionBounds = view?.getRegionBoundsMap() ?? {};
     setRuntimeRegionBounds((current) =>
@@ -1785,9 +1814,14 @@ export function LearningWhiteboard({
         : nextVisualBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
-    if (attentionTargets.length > 0 && attentionChanged) {
+    if (
+      teachingFocusAllowed
+      && attentionTargets.length > 0
+      && attentionChanged
+    ) {
       view?.focusTargets(attentionTargets);
     } else if (
+      teachingFocusAllowed &&
       activeRuntime.compositionTargets.length > 0 &&
       (compositionChanged || compositionOperationChanged)
     ) {
@@ -1796,7 +1830,7 @@ export function LearningWhiteboard({
       // formula does not replace the diagram it is explaining. This reuses the
       // existing focus action and does not add a playback delay.
       view?.focusTargets(activeRuntime.compositionTargets);
-    } else if (atPlaybackBoundary && focusChanged) {
+    } else if (teachingFocusAllowed && atPlaybackBoundary && focusChanged) {
       // React can batch every operation produced by advanceBeat() into the
       // boundary render. In that case the board already contains the new Beat
       // focus, but the view never observed the intermediate board.focus frame.
@@ -1814,6 +1848,7 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
+    runtimeRegionIdForTopic,
   ]);
 
   useEffect(() => {
@@ -1934,6 +1969,18 @@ export function LearningWhiteboard({
       // host hydrates it. Wait for hydration before choosing the last course;
       // otherwise the initial partial board can produce the wrong footprint.
       if (!runtime.completed) {
+        const runtimeRegionId = runtimeRegionIdForTopic(topic.id);
+        const renderedNodeIds = new Set(Array.from(
+          viewportRef.current?.querySelectorAll<HTMLElement>(
+            ".board-node[data-id]",
+          ) ?? [],
+        ).flatMap((element) => element.dataset.id ? [element.dataset.id] : []));
+        if (!courseHasRenderedBoardNode(
+          runtime.board,
+          topic.nodeIds,
+          runtimeRegionId,
+          renderedNodeIds,
+        )) return;
         const cameraController = cameraControllerRef.current;
         if (cameraController && !cameraController.canActivateCourse(courseId)) {
           return;

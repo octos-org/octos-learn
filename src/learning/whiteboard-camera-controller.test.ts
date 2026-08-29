@@ -104,6 +104,15 @@ describe("WhiteboardCameraController", () => {
     expect(probe.controller.markCourseActive("course-2")).toBe(false);
   });
 
+  it("blocks teaching focus until it belongs to the loading course", () => {
+    const probe = controllerProbe();
+    probe.controller.request(request("question-loading", "loading-2", "course-2"));
+
+    expect(probe.controller.allowsTeachingFocus()).toBe(false);
+    expect(probe.controller.allowsTeachingFocus("course-1")).toBe(false);
+    expect(probe.controller.allowsTeachingFocus("course-2")).toBe(true);
+  });
+
   it("allows task framing again after replay makes the course active", () => {
     const probe = controllerProbe();
 

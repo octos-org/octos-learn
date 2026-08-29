@@ -78,20 +78,13 @@ function namespaceContentVariables(
     record.variable = variables.get(record.variable.toLocaleLowerCase())
       ?? record.variable;
   }
-  if (Array.isArray(record.bindings)) {
-    for (const binding of record.bindings) {
-      if (!binding || typeof binding !== "object") continue;
-      const bindingRecord = binding as JsonRecord;
-      if (typeof bindingRecord.expression === "string") {
-        bindingRecord.expression = replaceExpressionVariables(
-          bindingRecord.expression,
-          variables,
-        );
-      }
-    }
+  if (typeof record.expression === "string") {
+    record.expression = replaceExpressionVariables(
+      record.expression,
+      variables,
+    );
   }
-  for (const [key, child] of Object.entries(record)) {
-    if (key === "bindings") continue;
+  for (const child of Object.values(record)) {
     namespaceContentVariables(child, variables);
   }
 }
