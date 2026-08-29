@@ -93,6 +93,38 @@ describe("useOllNarrationTts", () => {
     expect(onPlaybackStart).toHaveBeenCalledWith("beat-preparing");
   });
 
+  it("does not restart synthesis when callback identities change during playback", async () => {
+    let finishPlayback: (() => void) | undefined;
+    mocks.playAudioBlob.mockImplementation(
+      (_audio: Blob, onEnded: () => void) => {
+        finishPlayback = onEnded;
+        return Promise.resolve(true);
+      },
+    );
+    const starts: string[] = [];
+    const completions: string[] = [];
+    const { result } = renderHook(() =>
+      useOllNarrationTts({
+        enabled: true,
+        playing: true,
+        text: "只合成一次。",
+        narrationId: "beat-stable",
+        onSpeakingChange: () => undefined,
+        onPlaybackStart: (beatId) => starts.push(beatId),
+        onPlaybackComplete: (beatId) => completions.push(beatId),
+      }),
+    );
+
+    await waitFor(() => expect(result.current.preparing).toBe(false));
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(1);
+    expect(mocks.playAudioBlob).toHaveBeenCalledTimes(1);
+    expect(starts).toEqual(["beat-stable"]);
+
+    act(() => finishPlayback?.());
+    expect(completions).toEqual(["beat-stable"]);
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(1);
+  });
+
   it("prefetches the next Beat once and reuses it for playback", async () => {
     const firstAudio = new Blob(["first"]);
     const secondAudio = new Blob(["second"]);
