@@ -1,6 +1,6 @@
 {
   "schema": "octos.learning-stack.release-bom.v1",
-  "release_train": "learn-trace-v1",
+  "release_train": "learn-magic-blackboard-integration-v1",
   "status": "development",
   "components": {
     "octos_web": {
