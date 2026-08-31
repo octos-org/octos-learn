@@ -1,6 +1,42 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import type { LearnTraceEvent, LearnTraceRecorder } from "./learn-trace";
 
+function TraceIdentifier({
+  field,
+  value,
+}: {
+  field: "trace_id" | "turn_id";
+  value: string;
+}) {
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const copyIdentifier = async () => {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyState("copied");
+    } catch {
+      setCopyState("failed");
+    }
+  };
+
+  return (
+    <div className="learning-trace-identifier">
+      <dt>{field}</dt>
+      <dd>
+        <code>{value}</code>
+        <button
+          type="button"
+          aria-label={`复制 ${field} ${value}`}
+          onClick={() => void copyIdentifier()}
+        >
+          <span aria-live="polite">
+            {copyState === "copied" ? "已复制" : copyState === "failed" ? "复制失败" : "复制"}
+          </span>
+        </button>
+      </dd>
+    </div>
+  );
+}
+
 function eventOffset(
   event: LearnTraceEvent,
   firstByTurn: ReadonlyMap<string, number>,
@@ -33,6 +69,28 @@ export function LearningTraceInspector({
     return first;
   }, [events]);
 
+  const turns = useMemo(() => {
+    const groups = new Map<string, {
+      traceId: string;
+      turnId: string;
+      events: LearnTraceEvent[];
+    }>();
+    for (const event of [...events].reverse()) {
+      const key = JSON.stringify([event.trace_id, event.turn_id]);
+      const group = groups.get(key);
+      if (group) {
+        group.events.push(event);
+      } else {
+        groups.set(key, {
+          traceId: event.trace_id,
+          turnId: event.turn_id,
+          events: [event],
+        });
+      }
+    }
+    return [...groups.entries()];
+  }, [events]);
+
   const copyTrace = async () => {
     try {
       await navigator.clipboard.writeText(recorder.toJsonl());
@@ -57,7 +115,7 @@ export function LearningTraceInspector({
           <header>
             <div>
               <strong>Learn Trace</strong>
-              <small>{recorder.sessionId}</small>
+              <small title={recorder.sessionId}>session_id: {recorder.sessionId}</small>
             </div>
             <div>
               <button type="button" onClick={() => void copyTrace()}>
@@ -66,19 +124,39 @@ export function LearningTraceInspector({
               <button type="button" onClick={() => recorder.clear()}>清空</button>
             </div>
           </header>
-          <ol>
-            {[...events].reverse().map((event) => (
-              <li key={event.sequence}>
-                <span>{eventOffset(event, firstByTurn)}</span>
-                <div>
-                  <strong>{event.stage}</strong>
-                  <small>
-                    {event.source}{event.status ? ` · ${event.status}` : ""}
-                  </small>
-                  {event.data ? (
-                    <code>{JSON.stringify(event.data)}</code>
-                  ) : null}
-                </div>
+          <p className="learning-trace-grouping-hint">按 turn 分组 · 最新事件优先</p>
+          <ol className="learning-trace-turns">
+            {turns.map(([key, turn]) => (
+              <li key={key}>
+                <section aria-label={`Turn ${turn.turnId}`}>
+                  <header className="learning-trace-turn-header">
+                    <dl>
+                      <TraceIdentifier field="trace_id" value={turn.traceId} />
+                      <TraceIdentifier field="turn_id" value={turn.turnId} />
+                    </dl>
+                    <small>{turn.events.length} 条事件</small>
+                  </header>
+                  <ol className="learning-trace-events">
+                    {turn.events.map((event) => (
+                      <li className="learning-trace-event" key={event.sequence}>
+                        <span>{eventOffset(event, firstByTurn)}</span>
+                        <div>
+                          <strong>{event.stage}</strong>
+                          <small>
+                            {event.source}{event.status ? ` · ${event.status}` : ""}
+                          </small>
+                          {event.data ? (
+                            <code className="learning-trace-data-preview">{JSON.stringify(event.data)}</code>
+                          ) : null}
+                          <details className="learning-trace-event-details">
+                            <summary>完整事件 JSON</summary>
+                            <pre>{JSON.stringify(event, null, 2)}</pre>
+                          </details>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
               </li>
             ))}
           </ol>
