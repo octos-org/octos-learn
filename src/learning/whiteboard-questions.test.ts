@@ -6,6 +6,7 @@ import {
   whiteboardQuestionsStorageKey,
   type WhiteboardQuestionRecord,
 } from "./whiteboard-questions";
+import { isRecoverableStorageLocked } from "./recoverable-storage";
 
 describe("whiteboard questions", () => {
   beforeEach(() => localStorage.clear());
@@ -33,18 +34,21 @@ describe("whiteboard questions", () => {
   });
 
   it("ignores records belonging to another session", () => {
-    localStorage.setItem(
-      whiteboardQuestionsStorageKey("learn-a"),
-      JSON.stringify([{
+    const key = whiteboardQuestionsStorageKey("learn-a");
+    const raw = JSON.stringify([{
         id: "turn-1",
         sessionId: "learn-b",
         text: "不应串到另一块白板",
         origin: "composer",
         createdAt: "2026-08-17T15:00:00.000Z",
         status: "answered",
-      }]),
-    );
+      }]);
+    localStorage.setItem(key, raw);
 
     expect(loadWhiteboardQuestions("learn-a")).toEqual([]);
+    expect(localStorage.getItem(key)).toBe(raw);
+    expect(isRecoverableStorageLocked(localStorage, key)).toBe(true);
+    saveWhiteboardQuestions("learn-a", []);
+    expect(localStorage.getItem(key)).toBe(raw);
   });
 });

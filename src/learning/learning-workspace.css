@@ -7,6 +7,243 @@
   background: #e6dfd2;
 }
 
+.learning-trace-inspector {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 80;
+  color: #dfeee9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.learning-trace-trigger {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border: 1px solid rgba(174, 222, 208, 0.3);
+  border-radius: 10px;
+  color: #dff3ed;
+  background: rgba(22, 31, 30, 0.9);
+  box-shadow: 0 10px 30px rgba(24, 32, 29, 0.22);
+  font: inherit;
+  font-size: 11px;
+}
+
+.learning-trace-trigger > span {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 999px;
+  color: #bfe4d7;
+  background: rgba(112, 183, 158, 0.2);
+  font-size: 9px;
+}
+
+.learning-trace-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 9px);
+  display: flex;
+  width: min(520px, calc(100vw - 36px));
+  max-height: min(640px, calc(100vh - 110px));
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(174, 222, 208, 0.24);
+  border-radius: 14px;
+  background: rgba(18, 25, 24, 0.96);
+  box-shadow: 0 24px 70px rgba(18, 25, 24, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.learning-trace-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(174, 222, 208, 0.14);
+}
+
+.learning-trace-panel > header > div:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.learning-trace-panel > header strong {
+  color: #effaf6;
+  font-size: 12px;
+}
+
+.learning-trace-panel > header small {
+  overflow: hidden;
+  color: #8eb1a5;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-trace-panel > header > div:last-child {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.learning-trace-panel > header button,
+.learning-trace-identifier button {
+  padding: 5px 7px;
+  border-radius: 7px;
+  color: #c8e5dc;
+  background: rgba(104, 164, 145, 0.14);
+  font: inherit;
+  font-size: 9px;
+}
+
+.learning-trace-grouping-hint {
+  margin: 0;
+  padding: 8px 14px;
+  color: #8eb1a5;
+  font-size: 9px;
+}
+
+.learning-trace-turns {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.learning-trace-turn-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(174, 222, 208, 0.14);
+  border-bottom: 1px solid rgba(174, 222, 208, 0.14);
+  background: #1b2925;
+}
+
+.learning-trace-turn-header dl {
+  display: flex;
+  margin: 0 0 6px;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.learning-trace-turn-header > small {
+  color: #8eb1a5;
+  font-size: 9px;
+}
+
+.learning-trace-identifier {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 8px;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.learning-trace-identifier dt {
+  color: #8eb1a5;
+}
+
+.learning-trace-identifier dd {
+  display: flex;
+  min-width: 0;
+  margin: 0;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.learning-trace-identifier code {
+  min-width: 0;
+  flex: 1;
+  color: #d6efe5;
+  font: inherit;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.learning-trace-identifier button {
+  flex-shrink: 0;
+  padding: 2px 5px;
+}
+
+.learning-trace-events {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-trace-event {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  padding: 7px 14px;
+  border-bottom: 1px solid rgba(174, 222, 208, 0.07);
+}
+
+.learning-trace-event > span {
+  color: #79a797;
+  font-size: 9px;
+  text-align: right;
+}
+
+.learning-trace-event > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.learning-trace-event strong {
+  color: #def1eb;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.learning-trace-event small {
+  color: #83a89c;
+  font-size: 9px;
+}
+
+.learning-trace-data-preview {
+  overflow: hidden;
+  color: #afc9c0;
+  font: inherit;
+  font-size: 9px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.learning-trace-event-details {
+  color: #afc9c0;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.learning-trace-event-details summary {
+  width: fit-content;
+  cursor: pointer;
+}
+
+.learning-trace-event-details pre {
+  margin: 6px 0 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  font: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
 .learning-workspace-topbar {
   position: absolute;
   top: 14px;

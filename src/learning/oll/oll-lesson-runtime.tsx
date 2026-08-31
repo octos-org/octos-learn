@@ -131,6 +131,13 @@ export interface DegradedVisualRetryRequest {
   title: string;
 }
 
+export interface LearningCourseRenderEvent {
+  turnId: string;
+  beatId?: string;
+  operationType: string;
+  cursor: number;
+}
+
 type DegradedVisualStatus = DegradedVisualRetryRequest;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -431,6 +438,7 @@ export function LearningWhiteboard({
   onPlaceQuestion,
   onUpdateCourseRegion,
   onInkActivity,
+  onCourseRendered,
   selectionEnhancements = [],
   selectionSources = [],
   onClassifyInkSelection,
@@ -468,6 +476,7 @@ export function LearningWhiteboard({
     >>,
   ) => void;
   onInkActivity?: () => void;
+  onCourseRendered?: (event: LearningCourseRenderEvent) => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   selectionSources?: InkSelectionSnapshot[];
   onClassifyInkSelection?: (request: {
@@ -1856,6 +1865,16 @@ export function LearningWhiteboard({
     view?.setScene3dViews(activeRuntime.scene3dViews);
     view?.setActiveRegion(teachingRegionId);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
+    if (teachingTopic?.questionId) {
+      onCourseRendered?.({
+        turnId: teachingTopic.questionId,
+        ...(activeRuntime.currentBeatId
+          ? { beatId: activeRuntime.currentBeatId }
+          : {}),
+        operationType: activeRuntime.currentOperation?.type ?? "projection",
+        cursor: activeRuntime.cursor,
+      });
+    }
     const nextRegionBounds = view?.getRegionBoundsMap() ?? {};
     setRuntimeRegionBounds((current) =>
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
@@ -1909,6 +1928,7 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
+    onCourseRendered,
     runtimeRegionIdForTopic,
   ]);
 

@@ -60,6 +60,19 @@ export function useOllNarrationTts({
   const [preparing, setPreparing] = useState(false);
   const [startedKey, setStartedKey] = useState<string | null>(null);
   const prefetchedSpeechRef = useRef<PrefetchedSpeech | null>(null);
+  const callbacksRef = useRef({
+    onSpeakingChange,
+    onPlaybackStart,
+    onPlaybackComplete,
+  });
+
+  useEffect(() => {
+    callbacksRef.current = {
+      onSpeakingChange,
+      onPlaybackStart,
+      onPlaybackComplete,
+    };
+  }, [onPlaybackComplete, onPlaybackStart, onSpeakingChange]);
 
   useEffect(() => {
     const request = new AbortController();
@@ -68,7 +81,7 @@ export function useOllNarrationTts({
     const completePlayback = () => {
       if (!current || completed || !narrationId) return;
       completed = true;
-      onPlaybackComplete?.(narrationId);
+      callbacksRef.current.onPlaybackComplete?.(narrationId);
     };
 
     if (!enabled || !playing || !normalizedText) {
@@ -77,7 +90,7 @@ export function useOllNarrationTts({
         setPreparing(false);
         setStartedKey(null);
       });
-      onSpeakingChange?.(false);
+      callbacksRef.current.onSpeakingChange?.(false);
       stopAudio();
       if (!enabled && playing && normalizedText) completePlayback();
       return () => {
@@ -115,7 +128,7 @@ export function useOllNarrationTts({
           audio,
           () => {
             if (!current) return;
-            onSpeakingChange?.(false);
+            callbacksRef.current.onSpeakingChange?.(false);
             completePlayback();
           },
           audioRequest.signal,
@@ -123,14 +136,14 @@ export function useOllNarrationTts({
         if (!current || audioRequest.signal.aborted) return;
         setPreparing(false);
         if (started) {
-          onSpeakingChange?.(true);
+          callbacksRef.current.onSpeakingChange?.(true);
           setStartedKey(currentKey);
-          if (narrationId) onPlaybackStart?.(narrationId);
+          if (narrationId) callbacksRef.current.onPlaybackStart?.(narrationId);
           return;
         }
         if (!started && current) {
           setStartedKey(null);
-          onSpeakingChange?.(false);
+          callbacksRef.current.onSpeakingChange?.(false);
           setFailure("当前设备无法播放课程语音，旁白仍会显示。");
           completePlayback();
         }
@@ -145,7 +158,7 @@ export function useOllNarrationTts({
         }
         setPreparing(false);
         setStartedKey(null);
-        onSpeakingChange?.(false);
+        callbacksRef.current.onSpeakingChange?.(false);
         setFailure("课程语音暂时不可用，旁白仍会显示。");
         completePlayback();
       });
@@ -154,7 +167,7 @@ export function useOllNarrationTts({
       current = false;
       request.abort();
       if (cached) cached.controller.abort();
-      onSpeakingChange?.(false);
+      callbacksRef.current.onSpeakingChange?.(false);
       stopAudio();
     };
   }, [
@@ -162,9 +175,6 @@ export function useOllNarrationTts({
     narrationId,
     normalizedText,
     currentKey,
-    onPlaybackComplete,
-    onPlaybackStart,
-    onSpeakingChange,
     playing,
   ]);
 

@@ -1,4 +1,8 @@
 import type { WhiteboardRect } from "./whiteboard-placement";
+import {
+  loadRecoverableJson,
+  writeRecoverableJson,
+} from "./recoverable-storage";
 
 export const COURSE_REGION_RESERVED_WIDTH = 1_180;
 export const COURSE_REGION_GUTTER = 180;
@@ -129,18 +133,19 @@ export function loadCourseRegions(
   sessionId: string,
   storage: Storage = localStorage,
 ): CourseRegionRecord[] {
-  try {
-    const parsed = JSON.parse(
-      storage.getItem(courseRegionsStorageKey(sessionId)) ?? "[]",
-    );
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((value): value is CourseRegionRecord =>
-        validCourseRegion(value, sessionId))
-      .sort((left, right) => left.createdAt.localeCompare(right.createdAt));
-  } catch {
-    return [];
-  }
+  return loadRecoverableJson({
+    storage,
+    key: courseRegionsStorageKey(sessionId),
+    fallback: () => [],
+    decode: (parsed) => {
+      if (!Array.isArray(parsed)
+        || parsed.some((value) => !validCourseRegion(value, sessionId))) {
+        throw new Error("invalid course region state");
+      }
+      return [...parsed as CourseRegionRecord[]].sort((left, right) =>
+        left.createdAt.localeCompare(right.createdAt));
+    },
+  });
 }
 
 export function saveCourseRegions(
@@ -148,13 +153,6 @@ export function saveCourseRegions(
   regions: CourseRegionRecord[],
   storage: Storage = localStorage,
 ): void {
-  try {
-    storage.setItem(
-      courseRegionsStorageKey(sessionId),
-      JSON.stringify(regions.filter((region) =>
-        validCourseRegion(region, sessionId))),
-    );
-  } catch {
-    // In-memory layout remains usable when browser storage is unavailable.
-  }
+  if (regions.some((region) => !validCourseRegion(region, sessionId))) return;
+  writeRecoverableJson(storage, courseRegionsStorageKey(sessionId), regions);
 }

@@ -11,6 +11,7 @@ import {
   resolveLearningEntrySession,
   updateLearningSession,
 } from "./learning-session-store";
+import { isRecoverableStorageLocked } from "./recoverable-storage";
 
 describe("learning session lifecycle", () => {
   beforeEach(() => {
@@ -110,6 +111,20 @@ describe("learning session lifecycle", () => {
       }),
     );
     expect(listLearningSessions()).toHaveLength(1);
+  });
+
+  it("does not overwrite a corrupted learning session index", () => {
+    const key = "octos_learning_sessions_v1";
+    const raw = "{corrupted-session-index";
+    localStorage.setItem(key, raw);
+
+    const provisional = createProvisionalLearningSession(1_000);
+
+    expect(provisional.id).toMatch(/^learn-1000-/u);
+    expect(localStorage.getItem(key)).toBe(raw);
+    expect(isRecoverableStorageLocked(localStorage, key)).toBe(true);
+    expect(localStorage.getItem("octos_learning_current_session")).toBeNull();
+    expect(listLearningSessions({ includeProvisional: true })).toEqual([]);
   });
 
   it("recognizes saved ink and selection sources as durable whiteboard content", () => {

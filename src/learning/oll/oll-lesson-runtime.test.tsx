@@ -140,6 +140,7 @@ function QuestionPlacementProbe({
   withCourseRegion = false,
   withTallNarrative = false,
   recovered = false,
+  onCourseRendered,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
   inkSessionId?: string;
@@ -148,6 +149,7 @@ function QuestionPlacementProbe({
   withCourseRegion?: boolean;
   withTallNarrative?: boolean;
   recovered?: boolean;
+  onCourseRendered?: ComponentProps<typeof OllLessonBoard>["onCourseRendered"];
 }) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
@@ -210,6 +212,7 @@ function QuestionPlacementProbe({
           "2026-08-17T00:00:00.000Z",
         )] : []}
         onPlaceQuestion={onPlaceQuestion}
+        onCourseRendered={onCourseRendered}
       />
     </div>
   );
@@ -1006,6 +1009,23 @@ describe("OLL lesson Runtime integration", () => {
       "new-course",
       new Set(["old", "firstNew"]),
     )).toBe(true);
+  });
+  it("reports the owning turn after a course frame is rendered", async () => {
+    const onCourseRendered = vi.fn();
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={vi.fn()}
+        onCourseRendered={onCourseRendered}
+      />,
+    );
+
+    await waitFor(() => expect(onCourseRendered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        turnId: "lesson-unit-circle-sine-001",
+        cursor: expect.any(Number),
+        operationType: expect.any(String),
+      }),
+    ));
   });
   afterEach(() => {
     cleanup();
