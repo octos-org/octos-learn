@@ -45,6 +45,8 @@ pnpm lint
 pnpm build
 ```
 
+Before a release, run the [standalone product E2E checklist](docs/RELEASE_E2E_CHECKLIST.md) against a real Octos server and learning-coach installation.
+
 ## Production hosting
 
 `pnpm build` creates the static frontend in `dist/`. A live deployment must route the frontend, `/api`, and the Octos WebSocket endpoint through the same public origin. The GitHub Pages workflow is useful for reviewing the static UI, but it does not provide the Octos backend required to generate lessons.
