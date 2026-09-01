@@ -176,6 +176,17 @@ describe("LearningPage", () => {
     ).toBeTruthy();
   });
 
+  it("keeps settings directly accessible from the learning canvas", async () => {
+    window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
+
+    render(<LearningPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "打开设置" }),
+    );
+    expect(navigateMock).toHaveBeenCalledWith("/settings");
+  });
+
   it("blocks an installed learning coach that predates request-source isolation", async () => {
     profileSkillsMock.skills[0].version = "0.8.3";
 

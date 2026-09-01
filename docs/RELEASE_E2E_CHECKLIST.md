@@ -110,6 +110,23 @@ Pass when:
 - the empty-whiteboard placeholder is not shown once the question card exists;
 - no stuck loading card remains.
 
+## 9. Settings access and standalone persistence
+
+From the learning canvas, open Settings with the visible settings button. Then
+return to the canvas, create a titled course, and add a pen stroke. Refresh the
+page and restart the frontend once.
+
+Pass when:
+
+- Settings opens directly from the learning canvas;
+- returning from Settings returns to Octos Learn rather than an unrelated Octos page;
+- the new course title and pen stroke remain after refresh and frontend restart.
+
+Legacy browser-local metadata created by `octos-web` is not migrated as part of
+the initial standalone release. Missing titles or handwriting from those legacy
+sessions is an accepted migration limitation; persistence of content created in
+Octos Learn is still required.
+
 ## Release decision
 
-Record the tested Octos commit, learning-coach revision, OLL revision, Octos Learn commit, model, and provider. Merge the standalone PR only after all eight cases pass or every accepted exception is written down with an owner and follow-up issue.
+Record the tested Octos commit, learning-coach revision, OLL revision, Octos Learn commit, model, and provider. Merge the standalone PR only after all nine cases pass or every accepted exception is written down with an owner and follow-up issue.

@@ -12,6 +12,7 @@ import {
   Menu,
   Pencil,
   Plus,
+  Settings,
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -905,6 +906,15 @@ export function LearningPage() {
             className="learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Menu size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="打开设置"
+            title="设置"
+            onClick={() => navigate("/settings")}
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+          >
+            <Settings size={19} />
           </button>
         </div>
         <LearningSessionScope record={record}>
