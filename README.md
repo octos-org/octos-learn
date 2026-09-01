@@ -35,7 +35,7 @@ pnpm setup:https
 pnpm dev:https
 ```
 
-The Vite development server proxies `/api` and WebSocket requests to the Octos server configured in `vite.config.ts`. The default target is `http://127.0.0.1:50080`.
+The Vite development server proxies `/api` and WebSocket requests to the Octos server. The default target is `http://127.0.0.1:50080`. To use a different server, copy `.env.example` to `.env.local` and change `OCTOS_API_TARGET`.
 
 ## Verify changes
 

@@ -45,7 +45,7 @@ import {
   stripLearningContext,
 } from "./learning-context";
 import { LearningWorkspace } from "./learning-workspace";
-import type { LearningBoardContext } from "./board/session-board";
+import type { LearningBoardContext } from "./learning-board-context";
 import {
   createProvisionalLearningSession,
   adoptLearningSession,

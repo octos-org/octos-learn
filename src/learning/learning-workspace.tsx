@@ -38,7 +38,7 @@ import { useOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
 import { useRenderThreads } from "@/store/projection-render-adapter";
 import type { Thread } from "@/store/thread-store";
 import { CameraSettingsDialog } from "./camera-settings-dialog";
-import type { LearningBoardContext } from "./board/session-board";
+import type { LearningBoardContext } from "./learning-board-context";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";

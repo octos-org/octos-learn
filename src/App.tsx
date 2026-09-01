@@ -1,9 +1,20 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./auth/auth-context";
 import { AuthGuard } from "./auth/auth-guard";
 import { LoginPage } from "./auth/login-page";
 import { LearningPage } from "./learning/learning-page";
 import { AdminSettingsPage } from "./settings/settings-page";
+
+function LegacyLearningRedirect() {
+  const { search } = useLocation();
+  return <Navigate to={{ pathname: "/", search }} replace />;
+}
 
 export function AppRoutes() {
   return (
@@ -11,7 +22,7 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route element={<AuthGuard />}>
         <Route path="/" element={<LearningPage />} />
-        <Route path="/learn" element={<Navigate to="/" replace />} />
+        <Route path="/learn" element={<LegacyLearningRedirect />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

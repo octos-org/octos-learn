@@ -24,7 +24,11 @@ vi.mock("./settings/settings-page", () => ({
 
 function LocationProbe() {
   const location = useLocation();
-  return <output data-testid="location">{location.pathname}</output>;
+  return (
+    <output data-testid="location">
+      {location.pathname}{location.search}
+    </output>
+  );
 }
 
 function renderRoute(path: string) {
@@ -43,9 +47,11 @@ describe("Octos Learn routes", () => {
   });
 
   it("keeps old /learn links working through the product root", async () => {
-    renderRoute("/learn");
+    renderRoute("/learn?oll-fixture=geometry-v2");
     await waitFor(() => {
-      expect(screen.getByTestId("location").textContent).toBe("/");
+      expect(screen.getByTestId("location").textContent).toBe(
+        "/?oll-fixture=geometry-v2",
+      );
     });
     expect(screen.getByText("learning-page")).toBeTruthy();
   });

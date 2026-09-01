@@ -1,14 +1,17 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
 
-const localCertificate = path.resolve(__dirname, ".cert/octos-web.pem");
-const localCertificateKey = path.resolve(__dirname, ".cert/octos-web-key.pem");
+const localCertificate = path.resolve(__dirname, ".cert/octos-learn.pem");
+const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem");
 
 export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), "");
   const useLocalHttps = mode === "local-https";
+  const octosApiTarget =
+    env.OCTOS_API_TARGET?.trim() || "http://127.0.0.1:50080";
   if (
     useLocalHttps &&
     (!existsSync(localCertificate) || !existsSync(localCertificateKey))
@@ -54,7 +57,7 @@ export default defineConfig(({ mode }) => {
         : undefined,
       proxy: {
         "/api": {
-          target: "http://localhost:50080",
+          target: octosApiTarget,
           changeOrigin: true,
           ws: true,
           configure: (proxy) => {

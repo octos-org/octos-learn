@@ -2,6 +2,18 @@
 
 This document defines the controlled extraction of the learning canvas from `octos-web` into the standalone `octos-learn` product. The first release preserves the working lesson behavior. It does not change the OLL language, lesson-generation prompts, model routing, mathematics capabilities, or Octos server APIs.
 
+## Implementation status
+
+As of 2026-09-01:
+
+- Slices 0-4 are implemented on `codex/standalone-product`.
+- Slice 5 automated verification is complete: 745 unit tests, lint with no errors, a production build, and two browser smoke tests pass.
+- The local Octos server's real `/api/auth/status` endpoint responds successfully.
+- The manual release checklist against the real learning-coach service is still required before retiring `/learn` from `octos-web`.
+- Slice 6 has not started. The stable `octos-web` implementation remains unchanged.
+
+The pre-pruning entry bundle was 3,945.97 kB (1,103.80 kB gzip) with 390.17 kB of CSS (73.55 kB gzip). The current entry bundle is 3,256.95 kB (917.26 kB gzip) with 330.09 kB of CSS (58.59 kB gzip).
+
 ## Release rule
 
 Every slice below must keep the repository buildable and must pass the relevant automated tests before it is committed. A later slice may remove code only after imports and user flows prove that the code is not required by Octos Learn.
