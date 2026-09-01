@@ -1810,13 +1810,14 @@ describe("OLL lesson Runtime integration", () => {
   it("waits for a post-restore ink change before reporting an erased source", async () => {
     const listeners = new Set<(state: InkRuntimeState) => void>();
     const sourcePresent = false;
+    let resolveReady: (() => void) | undefined;
     let state: InkRuntimeState = {
       mode: "navigate",
-      component_count: 1,
+      component_count: 0,
       selected_count: 0,
       selection_input: "mouse",
       selection_revision: 0,
-      document_version: 3,
+      document_version: 0,
       saved: true,
     };
     const source: InkSelectionSnapshot = {
@@ -1842,7 +1843,9 @@ describe("OLL lesson Runtime integration", () => {
       svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
     };
     const ink = {
-      ready: Promise.resolve(),
+      ready: new Promise<void>((resolve) => {
+        resolveReady = resolve;
+      }),
       subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
         listeners.add(listener);
         listener(state);
@@ -1865,6 +1868,13 @@ describe("OLL lesson Runtime integration", () => {
       />,
     );
     await act(async () => {
+      state = {
+        ...state,
+        component_count: 1,
+        document_version: 3,
+      };
+      listeners.forEach((listener) => listener(state));
+      resolveReady?.();
       await ink.ready;
     });
     expect(ink.hasSelectionSource).not.toHaveBeenCalled();

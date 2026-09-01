@@ -34,6 +34,7 @@ vi.mock("./settings-api", async (importOriginal) => {
 describe("AdminSettingsPage", () => {
   beforeEach(() => {
     cleanup();
+    localStorage.clear();
     apiMocks.getMyProfile.mockReset();
     apiMocks.getMyProfile.mockResolvedValue(null);
     authMocks.portal.can_access_admin_portal = true;
@@ -104,12 +105,34 @@ describe("AdminSettingsPage", () => {
     expect(screen.getByText("Learning")).toBeTruthy();
     expect(screen.getByText("Access")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Learning Companion" }),
+    ).toBeTruthy();
     expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "API Keys" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Skills" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Smart Home" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Channels" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
+  });
+
+  it("restores the learning companion picker without requiring profile data", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=companion"]}>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Learning Companion" })).toBeTruthy();
+    });
+    expect(screen.getByTestId("teacher-skin-ocean")).toBeTruthy();
+    expect(screen.getByTestId("teacher-skin-bee-3d")).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId("teacher-skin-bee-3d"));
+    expect(screen.getByTestId("teacher-skin-bee-3d").getAttribute("aria-pressed"))
+      .toBe("true");
+    expect(localStorage.getItem("octos-teacher-skin")).toBe("bee-3d");
   });
 
   it("filters tabs by the search box", async () => {

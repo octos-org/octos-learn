@@ -46,6 +46,7 @@ Pass when:
 - the selection image is uploaded successfully;
 - the answer and generated visual avoid existing content;
 - the assistant card remains associated with the selected handwriting;
+- adding an unrelated pen stroke and refreshing keeps the assistant card;
 - erasing the source handwriting also removes its associated assistant content.
 
 ## 4. Voice question
@@ -119,6 +120,8 @@ page and restart the frontend once.
 Pass when:
 
 - Settings opens directly from the learning canvas;
+- Settings contains “Learning Companion”, changing it updates the teacher in
+  the lower-right corner, and the choice survives refresh;
 - returning from Settings returns to Octos Learn rather than an unrelated Octos page;
 - the new course title and pen stroke remain after refresh and frontend restart.
 

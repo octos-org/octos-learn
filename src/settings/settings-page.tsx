@@ -10,6 +10,7 @@ import {
   Volume2,
   ShieldCheck,
   KeyRound,
+  GraduationCap,
   Search,
   Moon,
   Sun,
@@ -23,12 +24,14 @@ import { ApiKeysTab } from "./api-keys-tab";
 import { SkillsTab } from "./skills-tab";
 import { VoiceTab } from "./voice-tab";
 import { AuthenticationTab } from "./authentication-tab";
+import { LearningCompanionTab } from "./learning-companion-tab";
 
 type TabId =
   | "profile"
   | "llm"
   | "api-keys"
   | "voice"
+  | "companion"
   | "skills"
   | "authentication";
 
@@ -51,6 +54,12 @@ const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = [
 const TABS: TabDef[] = [
   { id: "profile", label: "Profile", icon: User, group: "personal" },
   { id: "voice", label: "Voice", icon: Volume2, group: "personal" },
+  {
+    id: "companion",
+    label: "Learning Companion",
+    icon: GraduationCap,
+    group: "personal",
+  },
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
   { id: "skills", label: "Skills", icon: Puzzle, group: "learning" },
@@ -183,7 +192,7 @@ export function AdminSettingsPage() {
         icon={SettingsIcon}
         context="Octos Learn"
         title="Settings"
-        subtitle="Profile, models, voice, skills, and access"
+        subtitle="Profile, companion, models, voice, skills, and access"
         actions={
           <SettingsThemeButton />
         }
@@ -244,7 +253,9 @@ export function AdminSettingsPage() {
             <div className={`mx-auto ${isAdminOnlyTab ? "max-w-4xl" : "max-w-3xl"}`}>
               {activeTab === "authentication" && portal?.can_access_admin_portal && <AuthenticationTab />}
 
-              {!isAdminOnlyTab && profile ? (
+              {activeTab === "companion" ? (
+                <LearningCompanionTab />
+              ) : !isAdminOnlyTab && profile ? (
                 <>
                   {activeTab === "profile" && (
                     <ProfileTab
