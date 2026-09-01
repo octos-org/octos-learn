@@ -162,13 +162,29 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
   });
 
-  it("returns home from the icon beside the session menu", async () => {
+  it("uses the session menu as the standalone navigation", async () => {
     window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
 
     render(<LearningPage />);
 
-    fireEvent.click(await screen.findByRole("button", { name: "返回主页" }));
-    expect(navigateMock).toHaveBeenCalledWith("/");
+    expect(screen.queryByRole("button", { name: "返回主页" })).toBeNull();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "打开学习会话列表" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "关闭学习会话列表" }),
+    ).toBeTruthy();
+  });
+
+  it("keeps settings directly accessible from the learning canvas", async () => {
+    window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
+
+    render(<LearningPage />);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "打开设置" }),
+    );
+    expect(navigateMock).toHaveBeenCalledWith("/settings");
   });
 
   it("blocks an installed learning coach that predates request-source isolation", async () => {
@@ -703,6 +719,8 @@ describe("LearningPage", () => {
       learningWorkspaceMock.props?.onVoiceExit?.();
     });
     expect(getLearningSession(sessionId)?.status).toBe("completed");
-    expect(navigateMock).toHaveBeenCalledWith("/");
+    expect(
+      screen.getByRole("button", { name: "关闭学习会话列表" }),
+    ).toBeTruthy();
   });
 });

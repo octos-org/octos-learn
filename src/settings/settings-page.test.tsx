@@ -1,5 +1,4 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,11 +22,8 @@ vi.mock("@/auth/auth-context", () => ({
   }),
 }));
 
-vi.mock("@/components/workbench-shell", () => ({
-  WorkbenchStatusPill: ({ children }: { children: ReactNode }) => (
-    <span>{children}</span>
-  ),
-  WorkbenchThemeButton: () => null,
+vi.mock("@/hooks/use-theme", () => ({
+  useTheme: () => ({ theme: "light", toggleTheme: vi.fn() }),
 }));
 
 vi.mock("./settings-api", async (importOriginal) => {
@@ -38,6 +34,7 @@ vi.mock("./settings-api", async (importOriginal) => {
 describe("AdminSettingsPage", () => {
   beforeEach(() => {
     cleanup();
+    localStorage.clear();
     apiMocks.getMyProfile.mockReset();
     apiMocks.getMyProfile.mockResolvedValue(null);
     authMocks.portal.can_access_admin_portal = true;
@@ -95,7 +92,7 @@ describe("AdminSettingsPage", () => {
     ).toBeNull();
   });
 
-  it("groups the rail into Personal / Agent / Connections / System & Runtime", async () => {
+  it("exposes only settings required by Octos Learn", async () => {
     render(
       <MemoryRouter>
         <AdminSettingsPage />
@@ -105,9 +102,37 @@ describe("AdminSettingsPage", () => {
     await waitFor(() => {
       expect(screen.getByText("Personal")).toBeTruthy();
     });
-    expect(screen.getByText("Agent")).toBeTruthy();
-    expect(screen.getByText("Connections")).toBeTruthy();
-    expect(screen.getByText("System & Runtime")).toBeTruthy();
+    expect(screen.getByText("Learning")).toBeTruthy();
+    expect(screen.getByText("Access")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Learning Companion" }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "API Keys" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Skills" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Smart Home" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Channels" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
+  });
+
+  it("restores the learning companion picker without requiring profile data", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=companion"]}>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Learning Companion" })).toBeTruthy();
+    });
+    expect(screen.getByTestId("teacher-skin-ocean")).toBeTruthy();
+    expect(screen.getByTestId("teacher-skin-bee-3d")).toBeTruthy();
+
+    fireEvent.click(screen.getByTestId("teacher-skin-bee-3d"));
+    expect(screen.getByTestId("teacher-skin-bee-3d").getAttribute("aria-pressed"))
+      .toBe("true");
+    expect(localStorage.getItem("octos-teacher-skin")).toBe("bee-3d");
   });
 
   it("filters tabs by the search box", async () => {

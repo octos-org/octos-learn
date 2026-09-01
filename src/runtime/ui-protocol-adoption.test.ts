@@ -1,5 +1,5 @@
 /**
- * UI Protocol adoption guard for the production web chat surface.
+ * UI Protocol adoption guard for the production Octos Learn surface.
  *
  * Issue octos-org/octos#573 is an incremental migration contract: chat
  * turns, session/task state, approvals, task output, and future diff review
@@ -29,25 +29,8 @@ function expectNoLegacyChatTransport(path: string): void {
 }
 
 describe("UI Protocol v1 production adoption", () => {
-  it("keeps chat send surfaces on the WS turn/start bridge", () => {
-    for (const path of [
-      "src/components/chat-thread.tsx",
-      "src/slides/components/slides-chat.tsx",
-      "src/sites/components/sites-chat.tsx",
-      "src/runtime/ui-protocol-send.ts",
-    ]) {
-      expectNoLegacyChatTransport(path);
-    }
-
-    expect(source("src/components/chat-thread.tsx")).toContain(
-      'sendMessage as bridgeSend',
-    );
-    expect(source("src/slides/components/slides-chat.tsx")).toContain(
-      'sendMessage as bridgeSend',
-    );
-    expect(source("src/sites/components/sites-chat.tsx")).toContain(
-      'sendMessage as bridgeSend',
-    );
+  it("keeps learning turns on the WS turn/start bridge", () => {
+    expectNoLegacyChatTransport("src/runtime/ui-protocol-send.ts");
     expect(source("src/runtime/ui-protocol-send.ts")).toContain(
       "bridge.sendTurn",
     );

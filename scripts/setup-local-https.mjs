@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const certificateDirectory = resolve(projectRoot, ".cert");
-const certificatePath = resolve(certificateDirectory, "octos-web.pem");
-const keyPath = resolve(certificateDirectory, "octos-web-key.pem");
+const certificatePath = resolve(certificateDirectory, "octos-learn.pem");
+const keyPath = resolve(certificateDirectory, "octos-learn-key.pem");
 
 function privateIpv4Addresses() {
   const addresses = [];
@@ -64,6 +64,6 @@ runMkcert([
 console.log("\nLocal HTTPS is ready for:");
 for (const name of names) {
   const address = name.includes(":") ? `[${name}]` : name;
-  console.log(`  https://${address}:5173/learn`);
+  console.log(`  https://${address}:5173/`);
 }
 console.log("\nStart the development server with: pnpm dev:https");

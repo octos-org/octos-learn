@@ -1699,7 +1699,13 @@ export function LearningWhiteboard({
         setInkError("");
         void ink.ready.then(
           () => {
-            if (active) setInkAvailable(true);
+            if (!active) return;
+            // The subscription can observe both the empty editor and the
+            // restored SVG while `ready` is pending. Treat the final restored
+            // version as the baseline: hydration is not a learner erase.
+            selectionSourceCheckVersionRef.current =
+              inkSelectionVersionRef.current.documentVersion;
+            setInkAvailable(true);
           },
           (cause) => {
             if (!active) return;

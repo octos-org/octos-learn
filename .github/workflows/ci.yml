@@ -32,12 +32,11 @@ jobs:
       - run: pnpm test:unit
       - run: pnpm run build
 
-  # UI-redesign smoke gate (#303). These specs run against a fully mocked
-  # backend (page.route + routeWebSocket) — no live octos core needed, so
-  # they can gate every PR cheaply. Without this job the spec directory
-  # drifted silently from 3 red (2026-08-15) to 6 red (2026-08-26).
+  # Standalone product smoke gate. The fixture bypasses model generation,
+  # while auth is mocked, so this checks routing and the real learning canvas
+  # without requiring a live Octos server.
   e2e-smoke:
-    name: e2e ui-redesign smoke (mocked backend)
+    name: e2e Octos Learn smoke
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -60,7 +59,7 @@ jobs:
             sleep 1
           done
           curl -sf http://localhost:5174/ >/dev/null || (echo "vite failed to start" && exit 1)
-      - run: pnpm exec playwright test tests/ui-redesign-smoke.spec.ts
+      - run: pnpm test:e2e:smoke
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
