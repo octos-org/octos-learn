@@ -9,7 +9,6 @@ import {
 import {
   ArrowLeft,
   BookOpen,
-  House,
   Menu,
   Pencil,
   Plus,
@@ -666,25 +665,19 @@ export function LearningPage() {
     [handleLearnerInput],
   );
 
-  const leave = useCallback(() => {
-    if (record.status === "provisional") {
-      void deleteSession(record.id).catch(() => undefined);
-      removeLearningSession(record.id);
-    } else if (record.status === "active") {
-      updateLearningSession(record.id, { status: "paused" });
-    }
-    navigate("/");
-  }, [navigate, record.id, record.status]);
+  const openSessionList = useCallback(() => {
+    setSidebarOpen(true);
+  }, []);
 
   const finishAndLeave = useCallback(() => {
-    if (record.status === "provisional") {
-      void deleteSession(record.id).catch(() => undefined);
-      removeLearningSession(record.id);
-    } else {
-      updateLearningSession(record.id, { status: "completed" });
+    const completed = updateLearningSession(record.id, { status: "completed" });
+    if (completed) {
+      recordRef.current = completed;
+      setRecord(completed);
+      refreshLocalSessions();
     }
-    navigate("/");
-  }, [navigate, record.id, record.status]);
+    setSidebarOpen(true);
+  }, [record.id, refreshLocalSessions]);
 
   const switchTo = useCallback((next: LearningSessionRecord) => {
     if (record.status === "active") {
@@ -907,14 +900,6 @@ export function LearningPage() {
         <div className="absolute left-3 top-6 z-20 flex items-center gap-2">
           <button
             type="button"
-            aria-label="返回主页"
-            onClick={leave}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
-          >
-            <House size={19} />
-          </button>
-          <button
-            type="button"
             aria-label="打开学习会话列表"
             onClick={() => setSidebarOpen(true)}
             className="learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
@@ -942,7 +927,7 @@ export function LearningPage() {
               onWhiteboardActivity={handleWhiteboardActivity}
               onTurnsChange={handleTurnsChange}
               onBoardContextChange={handleBoardContextChange}
-              onBack={leave}
+              onBack={openSessionList}
               onVoiceExit={finishAndLeave}
               ollFixture={ollFixture}
             />
