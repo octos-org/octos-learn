@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWav } from "./wav-encode";
+import { getEchoCancelledMicStream } from "./microphone";
 
 export interface VoiceCapture {
   capturing: boolean;
@@ -24,29 +25,13 @@ export interface VoiceCaptureStartOptions {
   onSpeechConfirmed?: () => void;
   onSpeechRealStart?: () => void;
   onVADMisfire?: () => void;
+  /** Supply a cloned stream when another transport owns the physical mic. */
+  getStream?: () => Promise<MediaStream>;
 }
 
 const VAD_SAMPLE_RATE = 16000;
 const VAD_ASSET_TIMEOUT_MS = 5000;
 type VadModel = "legacy" | "v5";
-
-// `all` is the standards-defined mode that asks the browser to remove every
-// system-played source from the microphone signal, including our local Web
-// Audio TTS. TypeScript's current lib.dom still models echoCancellation as a
-// boolean-only constraint, so keep the standards-compatible runtime value in
-// this narrowly cast object until that declaration catches up.
-const MIC_CONSTRAINTS_WITH_ALL_SYSTEM_AEC = {
-  channelCount: 1,
-  echoCancellation: "all",
-  autoGainControl: true,
-  noiseSuppression: true,
-} as unknown as MediaTrackConstraints;
-
-async function getEchoCancelledMicStream(): Promise<MediaStream> {
-  return navigator.mediaDevices.getUserMedia({
-    audio: MIC_CONSTRAINTS_WITH_ALL_SYSTEM_AEC,
-  });
-}
 
 let vadAssetCheckPromise: Promise<void> | null = null;
 // Prefer Silero v5 for actual speech admission. Replay of the same production
@@ -294,8 +279,8 @@ export function useVoiceCapture(): VoiceCapture {
           vad = await createVadWithModel(model, {
             baseAssetPath: VAD_BASE_ASSET_PATH,
             onnxWASMBasePath: VAD_ONNX_WASM_BASE_PATH,
-            getStream: getEchoCancelledMicStream,
-            resumeStream: getEchoCancelledMicStream,
+            getStream: options.getStream ?? getEchoCancelledMicStream,
+            resumeStream: options.getStream ?? getEchoCancelledMicStream,
             // Less trigger-happy than the defaults so transient noise (keyboard
             // clicks, taps) doesn't register as speech and kick off a turn:
             //  - require a higher speech probability to START,

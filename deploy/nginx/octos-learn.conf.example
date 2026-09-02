@@ -59,8 +59,8 @@ server {
     }
 
     # The trailing slash deliberately strips /private-asr/ before forwarding.
-    # Replace the upstream only after the ASR control plane accepts short-lived
-    # Octos-issued browser grants. Do not place its shared operator token here.
+    # The control plane accepts one-time Octos-issued browser grants. Never put
+    # its long-lived Octos service token or operator token in this public proxy.
     location /private-asr/ {
         proxy_pass https://asr.example.com/;
         proxy_ssl_server_name on;
@@ -69,6 +69,11 @@ server {
         proxy_set_header Connection $octos_connection_upgrade;
         proxy_set_header Host asr.example.com;
         proxy_set_header X-Forwarded-Proto $scheme;
+        # The upstream protects session control and event WebSockets with two
+        # path-scoped HttpOnly cookies. Rewrite their paths to the same-origin
+        # proxy prefix or the browser will not send them back.
+        proxy_cookie_path ~^/api/v1/sessions/(.*)$ /private-asr/api/v1/sessions/$1;
+        proxy_cookie_path ~^/ws/client/(.*)$ /private-asr/ws/client/$1;
         proxy_read_timeout 3600s;
         proxy_buffering off;
     }

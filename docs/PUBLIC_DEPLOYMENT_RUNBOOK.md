@@ -1,8 +1,8 @@
 # Octos Learn public deployment runbook
 
-This runbook deploys the controlled BYOK release on a dedicated Linux VPS. It
-does not deploy the private ASR integration; the `/private-asr` route remains a
-disabled placeholder until short-lived service authorization is implemented.
+This runbook deploys the controlled BYOK release on a dedicated Linux VPS and
+connects it to the separately operated private ASR service through short-lived
+browser grants.
 
 ## 1. Server layout
 
@@ -47,7 +47,8 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    `/etc/octos-learn/config.json`.
 2. Copy `deploy/octos/octos-learn.env.example` to
    `/etc/octos-learn/octos-learn.env`.
-3. Replace `learn.example.com`, SMTP fields, and the SMTP password.
+3. Replace `learn.example.com`, SMTP fields, the SMTP password, the private-ASR
+   control URL, and its server-to-server service token.
 4. Keep `allow_self_registration` set to `false` and do not add `--solo`.
 5. Set ownership to the Octos Learn service account for persistent data. Keep
    the environment file root-owned and mode `0600`.
@@ -82,6 +83,11 @@ Then verify in a private browser window:
    generate a lesson.
 4. Refreshing the page preserves the current whiteboard and course history.
 5. A second user cannot see the first user's courses, files, or model settings.
+6. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
+   produces a lesson from the returned final transcript without exposing the
+   long-lived service token in browser storage or network responses.
+7. During lesson narration the private-ASR publisher is disabled; after the
+   lesson the first intentional utterance is handled exactly once.
 
 ## 5. Upgrade and rollback
 
@@ -102,4 +108,6 @@ documented data migration explicitly requires it.
   session tokens, OTP codes, and SMTP passwords must not appear.
 - Keep ports other than SSH, HTTP, and HTTPS closed at the firewall.
 - Keep the existing Agora service independent. Do not copy its App Certificate,
-  Bridge secret, or shared operator token into the public frontend.
+  Bridge secret, service token, or shared operator token into the public
+  frontend. The service token belongs only in Octos's root-owned environment
+  file.

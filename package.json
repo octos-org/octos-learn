@@ -26,6 +26,7 @@
     "@google/model-viewer": "^4.3.1",
     "@ricky0123/vad-web": "^0.0.30",
     "@tailwindcss/typography": "^0.5.19",
+    "agora-rtc-sdk-ng": "4.24.8",
     "clsx": "^2.1.1",
     "dompurify": "^3.3.3",
     "katex": "^0.16.38",
