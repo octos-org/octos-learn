@@ -611,7 +611,8 @@ describe("canonical reply-audio delivery", () => {
     getActiveBridgeMock.mockReturnValue(undefined);
     privateAsrEnabledMock.mockReset();
     privateAsrEnabledMock.mockReturnValue(false);
-    privateAsrInstance.start.mockClear();
+    privateAsrInstance.start.mockReset();
+    privateAsrInstance.start.mockResolvedValue(undefined);
     privateAsrInstance.stop.mockClear();
     privateAsrInstance.setListening.mockClear();
     privateAsrInstance.commit.mockReset();
@@ -909,6 +910,30 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
       mediaPaths: [],
       additionalMediaPaths: [],
     }));
+    unmount();
+  });
+
+  it("surfaces a busy private-ASR service while keeping the fallback capture", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    privateAsrInstance.start.mockRejectedValueOnce(
+      new Error("ASR service is busy"),
+    );
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-busy", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.error).toBe("语音服务正在被使用，请稍后重试。");
+    expect(captureStartMock).toHaveBeenCalledOnce();
     unmount();
   });
 

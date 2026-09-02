@@ -34,6 +34,24 @@ import {
 
 export type VoiceState = "idle" | "listening" | "thinking" | "speaking" | "error";
 
+function privateAsrErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  if (normalized.includes("busy") || normalized.includes("in use")) {
+    return "语音服务正在被使用，请稍后重试。";
+  }
+  if (normalized.includes("bridge") || normalized.includes("offline")) {
+    return "本地语音服务暂时离线，已尝试使用备用识别。";
+  }
+  if (normalized.includes("expired")) {
+    return "语音识别会话已过期，请重新开启语音。";
+  }
+  if (normalized.includes("disconnect") || normalized.includes("closed")) {
+    return "语音识别连接已断开，请重新开启语音。";
+  }
+  return `私有语音识别暂不可用：${message}`;
+}
+
 export interface VoiceConversation {
   state: VoiceState;
   lastUserText: string;
@@ -460,6 +478,7 @@ export function useVoiceConversation(
   const updateCameraSettings = camera.updateSettings;
   const resetCameraSettings = camera.resetSettings;
   const [state, setState] = useState<VoiceState>("idle");
+  const [privateAsrError, setPrivateAsrError] = useState<string | null>(null);
   const [lastAssistantText, setLastAssistantText] = useState("");
   const [provisionalTurnIds, setProvisionalTurnIds] = useState<readonly string[]>(
     [],
@@ -1035,11 +1054,13 @@ export function useVoiceConversation(
       try {
         await privateAsr.setListening(false);
         const transcript = await privateAsr.commit();
+        setPrivateAsrError(null);
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         // Private ASR is an optional public-deployment transport. Preserve the
         // existing Octos audio admission as a per-utterance fallback.
         console.warn("[voice] private ASR failed; using Octos ASR fallback", error);
+        setPrivateAsrError(privateAsrErrorMessage(error));
         await sendUtteranceRef.current(wav, includeCamera);
       }
     },
@@ -1322,6 +1343,7 @@ export function useVoiceConversation(
     // newer start() bumps the counter; every await below re-checks it and
     // abandons, so a stale start can never re-acquire the microphone.
     const gen = ++startGenRef.current;
+    setPrivateAsrError(null);
     // Unlock audio playback now, while we're still close to the user's entry
     // gesture (the click that mounted the voice view). Replies arrive tens of
     // seconds later and would otherwise be blocked by the autoplay policy.
@@ -1399,7 +1421,9 @@ export function useVoiceConversation(
       onAdmittedSpeech &&
       !privateAsrRef.current
     ) {
-      const privateAsr = new PrivateAsrClient();
+      const privateAsr = new PrivateAsrClient((error) => {
+        setPrivateAsrError(privateAsrErrorMessage(error));
+      });
       try {
         await privateAsr.start();
         if (startGenRef.current !== gen) {
@@ -1412,6 +1436,7 @@ export function useVoiceConversation(
           "[voice] private ASR unavailable; keeping Octos ASR fallback",
           error,
         );
+        setPrivateAsrError(privateAsrErrorMessage(error));
       }
     }
     if (startGenRef.current !== gen) return;
@@ -1864,7 +1889,7 @@ export function useVoiceConversation(
     lastUserText,
     lastAssistantText,
     turns,
-    error: capture.error,
+    error: capture.error ?? privateAsrError,
     start,
     stop,
     interrupt,

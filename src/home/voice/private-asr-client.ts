@@ -104,6 +104,11 @@ export class PrivateAsrClient {
   private finalQueue: string[] = [];
   private finalWaiter: TranscriptWaiter | null = null;
   private closed = false;
+  private readonly onConnectionError?: (error: Error) => void;
+
+  constructor(onConnectionError?: (error: Error) => void) {
+    this.onConnectionError = onConnectionError;
+  }
 
   async start(): Promise<void> {
     if (this.session) return;
@@ -230,7 +235,11 @@ export class PrivateAsrClient {
       }
     });
     socket.addEventListener("close", () => {
-      if (!this.closed) this.rejectWaiter(new Error("Private ASR connection closed"));
+      if (!this.closed) {
+        const error = new Error("Private ASR connection closed");
+        this.rejectWaiter(error);
+        this.onConnectionError?.(error);
+      }
     });
   }
 
@@ -239,6 +248,11 @@ export class PrivateAsrClient {
     AgoraRTC.setLogLevel(2);
     const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
     this.rtcClient = client;
+    client.on("connection-state-change", (currentState) => {
+      if (currentState === "DISCONNECTED" && !this.closed) {
+        this.onConnectionError?.(new Error("Private ASR RTC disconnected"));
+      }
+    });
     await client.setClientRole("host");
     await client.join(
       session.agora.appId,
@@ -283,7 +297,19 @@ export class PrivateAsrClient {
       return;
     }
     if (event.type === "asr.error") {
-      this.rejectWaiter(new Error(event.message || "Private ASR failed"));
+      const error = new Error(event.message || "Private ASR failed");
+      this.rejectWaiter(error);
+      this.onConnectionError?.(error);
+      return;
+    }
+    if (event.type === "session.expired" || event.type === "session.closed") {
+      const error = new Error(
+        event.type === "session.expired"
+          ? "Private ASR session expired"
+          : "Private ASR session closed",
+      );
+      this.rejectWaiter(error);
+      this.onConnectionError?.(error);
     }
   }
 
