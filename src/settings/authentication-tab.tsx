@@ -8,14 +8,19 @@ import {
   Mail,
   Send,
   ShieldCheck,
+  Trash2,
   UserPlus,
 } from "lucide-react";
 
 import {
+  addAllowedEmail,
   fetchAuthenticationSettings,
   formatSettingsError,
+  getAllowedEmails,
+  removeAllowedEmail,
   saveAuthenticationSettings,
   sendAuthenticationTestEmail,
+  type AllowedEmail,
 } from "./settings-api";
 
 type RegistrationMode = "open" | "restricted";
@@ -63,6 +68,13 @@ export function AuthenticationTab() {
   const [testing, setTesting] = useState(false);
   const [testMessage, setTestMessage] = useState<string | null>(null);
   const [testError, setTestError] = useState<string | null>(null);
+  const [allowedEmails, setAllowedEmails] = useState<AllowedEmail[]>([]);
+  const [allowedEmailsLoading, setAllowedEmailsLoading] = useState(true);
+  const [allowedEmailsError, setAllowedEmailsError] = useState<string | null>(null);
+  const [allowedEmail, setAllowedEmail] = useState("");
+  const [allowedEmailNote, setAllowedEmailNote] = useState("");
+  const [allowedEmailSaving, setAllowedEmailSaving] = useState(false);
+  const [removingAllowedEmail, setRemovingAllowedEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +102,32 @@ export function AuthenticationTab() {
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const reloadAllowedEmails = async () => {
+    const entries = await getAllowedEmails();
+    setAllowedEmails(entries);
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    void getAllowedEmails()
+      .then((entries) => {
+        if (!cancelled) setAllowedEmails(entries);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setAllowedEmailsError(
+            formatSettingsError(err, "Failed to load allowed emails."),
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAllowedEmailsLoading(false);
       });
     return () => {
       cancelled = true;
@@ -162,6 +200,45 @@ export function AuthenticationTab() {
       setTestError(formatSettingsError(err, "Failed to send the test email."));
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleAddAllowedEmail = async (event: FormEvent) => {
+    event.preventDefault();
+    const email = allowedEmail.trim().toLowerCase();
+    if (!email.includes("@")) {
+      setAllowedEmailsError("Enter a valid allowed email address.");
+      return;
+    }
+
+    setAllowedEmailSaving(true);
+    setAllowedEmailsError(null);
+    try {
+      await addAllowedEmail(email, allowedEmailNote);
+      await reloadAllowedEmails();
+      setAllowedEmail("");
+      setAllowedEmailNote("");
+    } catch (err) {
+      setAllowedEmailsError(
+        formatSettingsError(err, "Failed to add the allowed email."),
+      );
+    } finally {
+      setAllowedEmailSaving(false);
+    }
+  };
+
+  const handleRemoveAllowedEmail = async (email: string) => {
+    setRemovingAllowedEmail(email);
+    setAllowedEmailsError(null);
+    try {
+      await removeAllowedEmail(email);
+      await reloadAllowedEmails();
+    } catch (err) {
+      setAllowedEmailsError(
+        formatSettingsError(err, "Failed to remove the allowed email."),
+      );
+    } finally {
+      setRemovingAllowedEmail(null);
     }
   };
 
@@ -398,6 +475,127 @@ export function AuthenticationTab() {
           </div>
         </section>
       </form>
+
+      <section className="glass-section rounded-lg p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+            <UserPlus size={20} />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-text-strong">
+              Allowed Emails
+            </h3>
+            <p className="text-xs text-muted">
+              Invite specific people when registration is restricted
+            </p>
+          </div>
+        </div>
+
+        <form
+          onSubmit={(event) => void handleAddAllowedEmail(event)}
+          className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end"
+        >
+          <label className="space-y-1.5 text-xs text-muted">
+            Allowed email
+            <input
+              aria-label="Allowed email"
+              type="email"
+              value={allowedEmail}
+              onChange={(event) => setAllowedEmail(event.target.value)}
+              placeholder="learner@example.com"
+              className="workbench-input w-full px-3 py-2.5 text-sm text-text-strong"
+            />
+          </label>
+          <label className="space-y-1.5 text-xs text-muted">
+            Invitation note
+            <input
+              aria-label="Invitation note"
+              value={allowedEmailNote}
+              onChange={(event) => setAllowedEmailNote(event.target.value)}
+              placeholder="Optional context"
+              className="workbench-input w-full px-3 py-2.5 text-sm text-text-strong"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={allowedEmailSaving}
+            className="flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {allowedEmailSaving ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : (
+              <UserPlus size={15} />
+            )}
+            Add allowed email
+          </button>
+        </form>
+
+        {allowedEmailsError && (
+          <div
+            role="alert"
+            className="mt-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs [background:var(--workbench-danger-bg)] [border-color:var(--workbench-danger-border)] [color:var(--workbench-danger-text)]"
+          >
+            <AlertCircle size={15} />
+            {allowedEmailsError}
+          </div>
+        )}
+
+        <div className="mt-5 overflow-hidden rounded-xl border border-border/50">
+          {allowedEmailsLoading ? (
+            <div className="flex items-center justify-center gap-2 px-4 py-8 text-xs text-muted">
+              <Loader2 size={14} className="animate-spin" />
+              Loading allowed emails...
+            </div>
+          ) : allowedEmails.length === 0 ? (
+            <div className="px-4 py-8 text-center text-xs text-muted">
+              No email addresses have been invited yet.
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {allowedEmails.map((entry) => {
+                const registered = Boolean(entry.registered || entry.claimed_user_id);
+                return (
+                  <div
+                    key={entry.email}
+                    className="flex items-center gap-4 px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium text-text-strong">
+                        {entry.email}
+                      </div>
+                      <div className="mt-0.5 text-xs text-muted">
+                        {registered
+                          ? `Registered${entry.registered_name ? ` as ${entry.registered_name}` : ""}`
+                          : entry.note || "Invitation not claimed"}
+                      </div>
+                    </div>
+                    {registered ? (
+                      <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent">
+                        Registered
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${entry.email}`}
+                        title={`Remove ${entry.email}`}
+                        disabled={removingAllowedEmail === entry.email}
+                        onClick={() => void handleRemoveAllowedEmail(entry.email)}
+                        className="glass-icon-button p-2 text-muted hover:text-red-400 disabled:opacity-50"
+                      >
+                        {removingAllowedEmail === entry.email ? (
+                          <Loader2 size={15} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={15} />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
 
       <section className="glass-section rounded-lg p-6">
         <div className="mb-5 flex items-center gap-3">

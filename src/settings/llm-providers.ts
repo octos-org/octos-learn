@@ -115,6 +115,17 @@ export const LLM_PROVIDERS: LlmProvider[] = [
   { id: "__custom_family__", name: "Custom Provider", envKey: "", models: [] },
 ];
 
+/**
+ * Public Linux hosts cannot persist Vertex service-account JSON with the
+ * current macOS Keychain-backed implementation. Keep local/macOS behavior
+ * unchanged while removing the unusable choice from that deployment build.
+ */
+export function providersForDeployment(publicLinux: boolean): LlmProvider[] {
+  return publicLinux
+    ? LLM_PROVIDERS.filter((provider) => provider.id !== "vertex")
+    : LLM_PROVIDERS;
+}
+
 /** Find provider by ID, falling back to custom */
 export function findProvider(id: string): LlmProvider | undefined {
   return LLM_PROVIDERS.find((p) => p.id === id);

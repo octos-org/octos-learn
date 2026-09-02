@@ -659,10 +659,10 @@ export async function getAllowedEmails(): Promise<AllowedEmail[]> {
   return Array.isArray(resp) ? resp : (resp.entries ?? resp.emails ?? []);
 }
 
-export async function addAllowedEmail(email: string): Promise<void> {
+export async function addAllowedEmail(email: string, note?: string): Promise<void> {
   await request<void>("/api/admin/allowed-emails", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ email, ...(note?.trim() ? { note: note.trim() } : {}) }),
   });
 }
 

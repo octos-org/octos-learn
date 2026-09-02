@@ -26,9 +26,9 @@ import {
   type LlmPrimary,
 } from "./settings-api";
 import {
-  LLM_PROVIDERS,
   buildCredentialEnvPatch,
   findProvider,
+  providersForDeployment,
   showsBaseUrl,
   usesJsonCredential,
   type LlmProvider,
@@ -73,10 +73,14 @@ interface LlmFormState {
 
 type TestStatus = "idle" | "testing" | "connected" | "failed";
 
+const AVAILABLE_LLM_PROVIDERS = providersForDeployment(
+  import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true",
+);
+
 /* ─── Helpers ─── */
 
 function resolveProviderFromProfile(familyId: string): LlmProvider | undefined {
-  return LLM_PROVIDERS.find((p) => p.id === familyId);
+  return AVAILABLE_LLM_PROVIDERS.find((p) => p.id === familyId);
 }
 
 function profileToForm(profile: Profile): LlmFormState {
@@ -431,7 +435,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
               className={selectClass}
             >
               <option value="">Select a provider...</option>
-              {LLM_PROVIDERS.map((p) => (
+              {AVAILABLE_LLM_PROVIDERS.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -690,7 +694,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                     className={selectClass}
                   >
                     <option value="">Select provider...</option>
-                    {LLM_PROVIDERS.filter(
+                    {AVAILABLE_LLM_PROVIDERS.filter(
                       (p) => p.id !== "__custom_family__",
                     ).map((p) => (
                       <option key={p.id} value={p.id}>

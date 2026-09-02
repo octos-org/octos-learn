@@ -5,6 +5,9 @@ import { AuthenticationTab } from "./authentication-tab";
 
 const apiMocks = vi.hoisted(() => ({
   fetchAuthenticationSettings: vi.fn(),
+  getAllowedEmails: vi.fn(),
+  addAllowedEmail: vi.fn(),
+  removeAllowedEmail: vi.fn(),
   saveAuthenticationSettings: vi.fn(),
   sendAuthenticationTestEmail: vi.fn(),
   formatSettingsError: vi.fn((err: unknown, fallback = "Request failed.") =>
@@ -30,6 +33,20 @@ describe("AuthenticationTab", () => {
       password_configured: true,
       allow_self_registration: false,
     });
+    apiMocks.getAllowedEmails.mockResolvedValue([
+      {
+        email: "invited@example.com",
+        note: "GOSIM reviewer",
+        registered: false,
+      },
+      {
+        email: "member@example.com",
+        registered: true,
+        registered_name: "Member",
+      },
+    ]);
+    apiMocks.addAllowedEmail.mockResolvedValue(undefined);
+    apiMocks.removeAllowedEmail.mockResolvedValue(undefined);
     apiMocks.saveAuthenticationSettings.mockResolvedValue(undefined);
     apiMocks.sendAuthenticationTestEmail.mockResolvedValue({
       ok: true,
@@ -113,5 +130,41 @@ describe("AuthenticationTab", () => {
       );
     });
     expect(await screen.findByText("Test email sent.")).toBeTruthy();
+  });
+
+  it("manages invited emails without presenting registered users as removable invites", async () => {
+    render(<AuthenticationTab />);
+
+    expect(await screen.findByText("invited@example.com")).toBeTruthy();
+    expect(screen.getByText("GOSIM reviewer")).toBeTruthy();
+    expect(screen.getByText("member@example.com")).toBeTruthy();
+    expect(screen.getByText("Registered as Member")).toBeTruthy();
+    expect(
+      screen.queryByRole("button", { name: "Remove member@example.com" }),
+    ).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Allowed email"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Invitation note"), {
+      target: { value: "Pilot learner" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add allowed email" }));
+
+    await waitFor(() => {
+      expect(apiMocks.addAllowedEmail).toHaveBeenCalledWith(
+        "new@example.com",
+        "Pilot learner",
+      );
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Remove invited@example.com" }),
+    );
+    await waitFor(() => {
+      expect(apiMocks.removeAllowedEmail).toHaveBeenCalledWith(
+        "invited@example.com",
+      );
+    });
   });
 });
