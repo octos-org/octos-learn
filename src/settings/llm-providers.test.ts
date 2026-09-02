@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildCredentialEnvPatch,
   findProvider,
+  providersForDeployment,
   showsBaseUrl,
   usesJsonCredential,
 } from "./llm-providers";
@@ -12,6 +13,13 @@ describe("vertex provider entry", () => {
     expect(vertex).toBeDefined();
     expect(vertex?.envKey).toBe("VERTEX_SA_JSON");
     expect(usesJsonCredential(vertex)).toBe(true);
+  });
+
+  it("is hidden from public Linux builds without removing local Vertex support", () => {
+    expect(providersForDeployment(false).some((provider) => provider.id === "vertex"))
+      .toBe(true);
+    expect(providersForDeployment(true).some((provider) => provider.id === "vertex"))
+      .toBe(false);
   });
 
   it("treats normal providers as single-line API keys", () => {

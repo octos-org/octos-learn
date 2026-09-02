@@ -28,6 +28,7 @@ Build the web application from a clean `octos-learn` checkout:
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
+cp .env.production.example .env.production
 pnpm build
 ```
 
