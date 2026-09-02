@@ -27,6 +27,10 @@ import {
 } from "./use-camera-frame";
 import { playAudioBlob, stopAudio, unlockAudio } from "./audio-playback";
 import { stripLearningContext } from "@/learning/learning-context";
+import {
+  PrivateAsrClient,
+  privateAsrEnabled,
+} from "./private-asr-client";
 
 export type VoiceState = "idle" | "listening" | "thinking" | "speaking" | "error";
 
@@ -582,6 +586,7 @@ export function useVoiceConversation(
   // beginListening() after teardown — that re-acquired the microphone under
   // a fresh VAD generation nothing tears down (post-unmount mic leak).
   const startGenRef = useRef(0);
+  const privateAsrRef = useRef<PrivateAsrClient | null>(null);
 
   // Stable refs that break the circular dependency between beginListening ↔
   // drainQueue. Each stores itself into its own ref every render.
@@ -589,7 +594,11 @@ export function useVoiceConversation(
   const requestListeningResumeRef = useRef<() => void>(() => {});
   const beginBargeInRef = useRef<() => Promise<void>>(async () => {});
   const sendUtteranceRef = useRef<
-    (wav: Blob, includeCamera?: boolean) => Promise<void>
+    (
+      wav: Blob,
+      includeCamera?: boolean,
+      privateTranscript?: string,
+    ) => Promise<void>
   >(async () => {});
   const drainQueueRef = useRef<() => Promise<void>>(async () => {});
   const bargeInCandidateRef = useRef<{
@@ -673,7 +682,11 @@ export function useVoiceConversation(
   );
 
   const sendCapturedUtterance = useCallback(
-    async (wav: Blob, includeCamera?: boolean) => {
+    async (
+      wav: Blob,
+      includeCamera?: boolean,
+      privateTranscript?: string,
+    ) => {
       const candidate = bargeInCandidateRef.current;
       if (!candidate) {
         // Reserve the local voice surface while upload + ASR admission run.
@@ -694,7 +707,10 @@ export function useVoiceConversation(
         // VLM sees the frame. Degrades to audio-only on a failed grab.
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = shouldIncludeCameraFrame?.() ?? true;
-        const admissionSupported = supportsVoiceAdmission(sessionId, historyTopic);
+        const applicationTranscript = privateTranscript?.trim();
+        const applicationAdmission = Boolean(applicationTranscript && onAdmittedSpeech);
+        const admissionSupported =
+          applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
         const directAdmission = admissionSupported && Boolean(onAdmittedSpeech);
         let admission: Awaited<ReturnType<typeof admitVoiceMessage>> | undefined;
         let capturedFiles: File[];
@@ -716,20 +732,30 @@ export function useVoiceConversation(
           const additionalFilesPromise = Promise.resolve(
             getAdditionalTurnFiles?.() ?? [],
           );
-          clientTiming.audio_upload_started_at_epoch_ms = Date.now();
-          const [audioPath] = await uploadFiles([file], "recording");
-          clientTiming.audio_upload_completed_at_epoch_ms = Date.now();
-          if (!audioPath) throw new Error("Voice audio upload returned no path");
-          clientTiming.voice_admission_started_at_epoch_ms = Date.now();
-          admission = await admitVoiceMessage({
-            sessionId,
-            historyTopic,
-            text: "",
-            media: [audioPath],
-            clientMessageId: turnId,
-            liveVideo: false,
-          });
-          clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
+          let audioPath: string | undefined;
+          if (applicationTranscript) {
+            admission = {
+              status: "speech",
+              admissionId: `private-asr:${turnId}`,
+              transcript: applicationTranscript,
+              turnId,
+            };
+          } else {
+            clientTiming.audio_upload_started_at_epoch_ms = Date.now();
+            [audioPath] = await uploadFiles([file], "recording");
+            clientTiming.audio_upload_completed_at_epoch_ms = Date.now();
+            if (!audioPath) throw new Error("Voice audio upload returned no path");
+            clientTiming.voice_admission_started_at_epoch_ms = Date.now();
+            admission = await admitVoiceMessage({
+              sessionId,
+              historyTopic,
+              text: "",
+              media: [audioPath],
+              clientMessageId: turnId,
+              liveVideo: false,
+            });
+            clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
+          }
           if (admission.status === "no_speech") {
             // Capture may already be in flight, but a rejected utterance must
             // never upload an otherwise unused camera/selection image.
@@ -741,7 +767,9 @@ export function useVoiceConversation(
             framePromise,
             additionalFilesPromise,
           ]);
-          capturedFiles = frame ? [file, frame] : [file];
+          capturedFiles = applicationTranscript
+            ? (frame ? [frame] : [])
+            : (frame ? [file, frame] : [file]);
           additionalFiles = preparedAdditionalFiles;
           const contextFiles = [...(frame ? [frame] : []), ...additionalFiles];
           clientTiming.camera_media_bytes = frame?.size;
@@ -751,7 +779,7 @@ export function useVoiceConversation(
             : [];
           clientTiming.media_upload_completed_at_epoch_ms = Date.now();
           files = [...capturedFiles, ...additionalFiles];
-          paths = [audioPath, ...contextPaths];
+          paths = audioPath ? [audioPath, ...contextPaths] : contextPaths;
         } else {
           if (cameraRequested && cameraAllowed) {
             clientTiming.camera_capture_started_at_epoch_ms = Date.now();
@@ -925,6 +953,9 @@ export function useVoiceConversation(
               }
               return;
             }
+            if (applicationTranscript) {
+              throw new Error("Private ASR transcript was not handled by /learn");
+            }
           } catch (cause) {
             const error = cause instanceof Error
               ? cause
@@ -990,6 +1021,31 @@ export function useVoiceConversation(
     ],
   );
 
+  const finishCapturedUtterance = useCallback(
+    async (wav: Blob, includeCamera?: boolean) => {
+      const privateAsr = privateAsrRef.current;
+      if (!privateAsr) {
+        await sendUtteranceRef.current(wav, includeCamera);
+        return;
+      }
+      if (!bargeInCandidateRef.current) {
+        stateRef.current = "thinking";
+        setState("thinking");
+      }
+      try {
+        await privateAsr.setListening(false);
+        const transcript = await privateAsr.commit();
+        await sendUtteranceRef.current(wav, includeCamera, transcript);
+      } catch (error) {
+        // Private ASR is an optional public-deployment transport. Preserve the
+        // existing Octos audio admission as a per-utterance fallback.
+        console.warn("[voice] private ASR failed; using Octos ASR fallback", error);
+        await sendUtteranceRef.current(wav, includeCamera);
+      }
+    },
+    [],
+  );
+
   const beginBargeIn = useCallback(async () => {
     if (externalSpeechActiveRef.current) return;
     if (stateRef.current !== "thinking" && stateRef.current !== "speaking") return;
@@ -1001,6 +1057,10 @@ export function useVoiceConversation(
       captureMode === "speaking"
         ? SPEAKING_INTERRUPT_VAD_OPTIONS
         : THINKING_INTERRUPT_VAD_OPTIONS;
+    const privateAsr = privateAsrRef.current;
+    await privateAsr?.setListening(true).catch((error) => {
+      console.warn("[voice] private ASR could not resume", error);
+    });
     await captureStart(
       (wav: Blob) => {
         if (
@@ -1011,10 +1071,11 @@ export function useVoiceConversation(
         }
         captureModeRef.current = null;
         void captureStop();
-        void sendUtteranceRef.current(wav);
+        void finishCapturedUtterance(wav);
       },
       {
         ...vadOptions,
+        ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
         onSpeechConfirmed: () => {
           if (
             speechInterruptArmedRef.current ||
@@ -1070,7 +1131,13 @@ export function useVoiceConversation(
         },
       },
     );
-  }, [captureStart, captureStop, releaseAudio, restoreBargeInCandidate]);
+  }, [
+    captureStart,
+    captureStop,
+    finishCapturedUtterance,
+    releaseAudio,
+    restoreBargeInCandidate,
+  ]);
 
   // Define beginListening and playReply with useCallback; each calls the other via its ref.
 
@@ -1085,17 +1152,24 @@ export function useVoiceConversation(
     stateRef.current = "listening";
     setState("listening");
     captureModeRef.current = "listening";
+    const privateAsr = privateAsrRef.current;
+    await privateAsr?.setListening(true).catch((error) => {
+      console.warn("[voice] private ASR could not resume", error);
+    });
     await captureStart(
       (wav: Blob) => {
         // Ignore late utterances that land after we've left listening.
         if (stateRef.current !== "listening") return;
         captureModeRef.current = null;
         void captureStop();
-        void sendUtteranceRef.current(wav);
+        void finishCapturedUtterance(wav);
       },
-      LISTENING_VAD_OPTIONS,
+      {
+        ...LISTENING_VAD_OPTIONS,
+        ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
+      },
     );
-  }, [captureStart, captureStop]);
+  }, [captureStart, captureStop, finishCapturedUtterance]);
 
   const requestListeningResume = useCallback(() => {
     clearTimeout(externalSpeechReleaseTimerRef.current);
@@ -1217,6 +1291,9 @@ export function useVoiceConversation(
       speechInterruptArmedRef.current = false;
       captureModeRef.current = null;
       void captureStop();
+      void privateAsrRef.current?.setListening(false).catch((error) => {
+        console.warn("[voice] private ASR could not pause", error);
+      });
       if (stateRef.current === "listening") {
         // External narration took over the audio channel — show
         // "speaking" rather than "thinking" (issue #315).
@@ -1314,8 +1391,29 @@ export function useVoiceConversation(
     }
     if (startGenRef.current !== gen) return;
     // Let StrictMode's effect cleanup/replay invalidate the first development
-    // start before a one-shot wake clip can be sent twice.
+    // start before it can reserve the single private-ASR worker.
     await Promise.resolve();
+    if (startGenRef.current !== gen) return;
+    if (
+      privateAsrEnabled() &&
+      onAdmittedSpeech &&
+      !privateAsrRef.current
+    ) {
+      const privateAsr = new PrivateAsrClient();
+      try {
+        await privateAsr.start();
+        if (startGenRef.current !== gen) {
+          await privateAsr.stop();
+          return;
+        }
+        privateAsrRef.current = privateAsr;
+      } catch (error) {
+        console.warn(
+          "[voice] private ASR unavailable; keeping Octos ASR fallback",
+          error,
+        );
+      }
+    }
     if (startGenRef.current !== gen) return;
     if (options?.autoStartCamera) {
       // A Learn turn must know whether a camera frame is available before it
@@ -1345,6 +1443,7 @@ export function useVoiceConversation(
     options?.showExistingTurns,
     sendCapturedUtterance,
     sessionId,
+    onAdmittedSpeech,
   ]);
 
   const stop = useCallback((stopOptions?: VoiceConversationStopOptions) => {
@@ -1374,6 +1473,9 @@ export function useVoiceConversation(
     setProvisionalTurnIds([]);
     VoiceTranscriptStore.clearScope(sessionId, historyTopic);
     void captureStop();
+    const privateAsr = privateAsrRef.current;
+    privateAsrRef.current = null;
+    void privateAsr?.stop();
     if (!stopOptions?.preserveCamera) {
       cameraStop();
       clearSentFrame();
@@ -1444,6 +1546,9 @@ export function useVoiceConversation(
       requestTurnInterrupt("user tapped orb while thinking");
       captureModeRef.current = null;
       void captureStop();
+      void privateAsrRef.current?.setListening(false).catch((error) => {
+        console.warn("[voice] private ASR could not pause", error);
+      });
       void beginListeningRef.current();
     }
   }, [captureStop, releaseAudio, requestTurnInterrupt]);

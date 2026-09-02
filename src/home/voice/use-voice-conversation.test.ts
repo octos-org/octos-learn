@@ -33,6 +33,8 @@ const {
   commitAdmittedVoiceMessageMock,
   interruptActiveTurnMock,
   uploadFilesMock,
+  privateAsrEnabledMock,
+  privateAsrInstance,
 } = vi.hoisted(() => ({
   captureStartMock: vi.fn(async () => {}),
   captureStopMock: vi.fn(async () => {}),
@@ -47,6 +49,21 @@ const {
   commitAdmittedVoiceMessageMock: vi.fn(async () => ({ accepted: true })),
   interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
+  privateAsrEnabledMock: vi.fn(() => false),
+  privateAsrInstance: {
+    start: vi.fn(async () => {}),
+    stop: vi.fn(async () => {}),
+    setListening: vi.fn(async () => {}),
+    commit: vi.fn(async () => "请比较两条函数曲线"),
+    getVadStream: vi.fn(async () => ({} as MediaStream)),
+  },
+}));
+
+vi.mock("./private-asr-client", () => ({
+  privateAsrEnabled: privateAsrEnabledMock,
+  PrivateAsrClient: vi.fn(function PrivateAsrClientMock() {
+    return privateAsrInstance;
+  }),
 }));
 
 vi.mock("./use-voice-capture", () => ({
@@ -592,6 +609,14 @@ describe("canonical reply-audio delivery", () => {
     supportsVoiceAdmissionMock.mockReturnValue(true);
     getActiveBridgeMock.mockReset();
     getActiveBridgeMock.mockReturnValue(undefined);
+    privateAsrEnabledMock.mockReset();
+    privateAsrEnabledMock.mockReturnValue(false);
+    privateAsrInstance.start.mockClear();
+    privateAsrInstance.stop.mockClear();
+    privateAsrInstance.setListening.mockClear();
+    privateAsrInstance.commit.mockReset();
+    privateAsrInstance.commit.mockResolvedValue("请比较两条函数曲线");
+    privateAsrInstance.getVadStream.mockClear();
   });
 
   it("plays every observed sentence file even when consecutive files reuse a seq", async () => {
@@ -845,6 +870,45 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("uses private ASR final text directly and does not upload the WAV", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr", undefined, undefined, {
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    const onUtterance = captureStartMock.mock.calls.at(-1)?.[0] as
+      | ((wav: Blob) => void)
+      | undefined;
+    expect(onUtterance).toBeTypeOf("function");
+
+    await act(async () => {
+      onUtterance?.(new Blob(["speech"], { type: "audio/wav" }));
+      await vi.waitFor(() => expect(onAdmittedSpeech).toHaveBeenCalledOnce());
+    });
+
+    expect(privateAsrInstance.start).toHaveBeenCalledOnce();
+    expect(privateAsrInstance.commit).toHaveBeenCalledOnce();
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      transcript: "请比较两条函数曲线",
+      admissionId: expect.stringMatching(/^private-asr:/),
+      mediaPaths: [],
+      additionalMediaPaths: [],
+    }));
     unmount();
   });
 

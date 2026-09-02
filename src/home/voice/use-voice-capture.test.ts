@@ -75,6 +75,26 @@ describe("useVoiceCapture", () => {
     unmount();
   });
 
+  it("uses a caller-supplied cloned stream for both VAD acquisition paths", async () => {
+    const clonedStream = {} as MediaStream;
+    const getStream = vi.fn().mockResolvedValue(clonedStream);
+    const { result, unmount } = renderHook(() => useVoiceCapture());
+
+    await act(async () => {
+      await result.current.start(vi.fn(), { getStream });
+    });
+
+    const options = vadInstances[0].options as {
+      getStream: () => Promise<MediaStream>;
+      resumeStream: () => Promise<MediaStream>;
+    };
+    await expect(options.getStream()).resolves.toBe(clonedStream);
+    await expect(options.resumeStream()).resolves.toBe(clonedStream);
+    expect(getStream).toHaveBeenCalledTimes(2);
+    expect(getUserMediaMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
   it("always passes a callable onSpeechRealStart to MicVAD", async () => {
     const { result, unmount } = renderHook(() => useVoiceCapture());
 
