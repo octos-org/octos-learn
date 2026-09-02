@@ -1,0 +1,22 @@
+{
+  "mode": "cloud",
+  "allow_admin_shell": false,
+  "dashboard_auth": {
+    "smtp": {
+      "host": "smtp.example.com",
+      "port": 465,
+      "username": "learn@example.com",
+      "password_env": "SMTP_PASSWORD",
+      "from_address": "learn@example.com"
+    },
+    "session_expiry_hours": 24,
+    "allow_self_registration": false
+  },
+  "appui": {
+    "allowed_origins": [
+      "https://learn.example.com"
+    ],
+    "default_session_cwd": "/var/lib/octos-learn/workspace",
+    "sessions_in_cwd": false
+  }
+}
