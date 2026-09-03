@@ -1479,14 +1479,14 @@ export function LearningWorkspace({
       conv.stop({ preserveCamera: true });
       return;
     }
-    if (!runtime.ready) return;
+    if (!runtime.inputReady) return;
     unlockAudio();
     void conv.start(
       initialAudio ? { initialAudio, includeCamera: false } : undefined,
     );
     // The conversation hook owns unmount cleanup and exposes stable controls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runtime.ready, voiceEnabled]);
+  }, [runtime.inputReady, voiceEnabled]);
 
   useEffect(() => {
     for (const turn of conv.turns) {
@@ -1733,7 +1733,9 @@ export function LearningWorkspace({
     completeOllNarration?.(narrationId);
   }, [completeOllNarration]);
   const ollNarrationTts = useOllNarrationTts({
-    enabled: narrationAudioEnabled && (Boolean(ollLesson) || Boolean(plainReply)),
+    enabled: runtime.ttsReady
+      && narrationAudioEnabled
+      && (Boolean(ollLesson) || Boolean(plainReply)),
     playing: lessonOwnsNarration
       ? ollNarrationActive
       : Boolean(plainReplyNarrationId),
@@ -2559,10 +2561,10 @@ export function LearningWorkspace({
       )}
 
       <OctosTeacher
-        state={runtime.ready ? teacherState : "error"}
+        state={runtime.inputReady ? teacherState : "error"}
         speech={teacherSpeech}
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
-        stateLabel={runtime.ready ? teacherStateLabel : undefined}
+        stateLabel={runtime.inputReady ? teacherStateLabel : undefined}
         onClick={handleTeacherClick}
       />
 
@@ -2574,12 +2576,12 @@ export function LearningWorkspace({
         voiceState={
           textTurnPending
             ? "thinking"
-            : runtime.ready
+            : runtime.inputReady
               ? conv.state
               : "error"
         }
         cameraActive={conv.cameraActive}
-        voiceDisabled={!voiceEnabled || !runtime.ready}
+        voiceDisabled={!voiceEnabled || !runtime.inputReady}
         sendDisabled={
           textTurnPending ||
           (voiceEnabled &&
@@ -2610,7 +2612,7 @@ export function LearningWorkspace({
             ollNarrationTts.error}
         </div>
       )}
-      {voiceEnabled && !runtime.ready && !runtime.loading && (
+      {voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning">
           语音引擎尚未就绪，白板示范仍可使用。
         </div>

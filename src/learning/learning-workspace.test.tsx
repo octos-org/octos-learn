@@ -96,6 +96,8 @@ vi.mock("@/store/projection-render-adapter", () => ({
 vi.mock("@/home/use-ominix-runtime-summary", () => ({
   useOminixRuntimeSummary: () => ({
     ready: true,
+    inputReady: true,
+    ttsReady: true,
     loading: false,
   }),
 }));

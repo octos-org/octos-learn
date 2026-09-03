@@ -10,6 +10,10 @@ export interface OminixRuntimeSummary {
   label: string;
   tone: OminixRuntimeTone;
   ready: boolean;
+  /** ASR + LLM are ready, so spoken input can be submitted. */
+  inputReady: boolean;
+  /** Narration audio can be synthesized by the configured TTS route. */
+  ttsReady: boolean;
   loading: boolean;
   canRepair: boolean;
   state: string;
@@ -34,6 +38,8 @@ const INITIAL_SUMMARY: OminixRuntimeSnapshot = {
   label: "Checking voice engine",
   tone: "default",
   ready: false,
+  inputReady: false,
+  ttsReady: false,
   loading: true,
   canRepair: false,
   state: "checking",
@@ -66,6 +72,8 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       label: "Voice engine ready",
       tone: "success",
       ready: true,
+      inputReady: true,
+      ttsReady: true,
       loading: false,
       canRepair: false,
       state: "ready",
@@ -79,6 +87,8 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       label: readiness.asr.detail,
       tone: "warning",
       ready: false,
+      inputReady: false,
+      ttsReady: readiness.tts.ready,
       loading: false,
       canRepair: localAsr,
       state: `asr_not_ready_${readiness.asr.mode}`,
@@ -90,6 +100,8 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       label: readiness.llm.detail,
       tone: "warning",
       ready: false,
+      inputReady: false,
+      ttsReady: readiness.tts.ready,
       loading: false,
       canRepair: false,
       state: "llm_not_ready",
@@ -101,6 +113,8 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
     label: readiness.tts.detail,
     tone: "warning",
     ready: false,
+    inputReady: true,
+    ttsReady: false,
     loading: false,
     canRepair: localTts,
     state: `tts_not_ready_${readiness.tts.mode}`,
@@ -118,6 +132,8 @@ export function refreshOminixRuntimeSummary(): Promise<void> {
         label: "Voice engine check unavailable",
         tone: "warning",
         ready: false,
+        inputReady: false,
+        ttsReady: false,
         loading: false,
         canRepair: false,
         state: "unknown",
