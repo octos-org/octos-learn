@@ -607,6 +607,18 @@ export function useVoiceConversation(
   const startGenRef = useRef(0);
   const privateAsrRef = useRef<PrivateAsrClient | null>(null);
 
+  // Private ASR reserves the single remote worker before the browser VAD is
+  // initialized. If VAD/ONNX startup fails, release that reservation
+  // immediately; otherwise a failed browser can leave the only worker busy
+  // until the session TTL expires.
+  useEffect(() => {
+    if (!captureError) return;
+    const privateAsr = privateAsrRef.current;
+    if (!privateAsr) return;
+    privateAsrRef.current = null;
+    void privateAsr.stop();
+  }, [captureError]);
+
   // Stable refs that break the circular dependency between beginListening ↔
   // drainQueue. Each stores itself into its own ref every render.
   const beginListeningRef = useRef<() => Promise<void>>(async () => {});
