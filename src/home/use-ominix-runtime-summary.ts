@@ -51,8 +51,8 @@ function emit(summary: OminixRuntimeSnapshot) {
 /**
  * Collapse the three-leg pipeline readiness into the UI snapshot. The check
  * confirms the WHOLE voice path is usable under the caller's current config —
- * ASR (always on-device), LLM, and TTS validated per its effective route
- * (cloud credentials for Volcano, or the on-device GPT-SoVITS engine). When a
+ * ASR (private, external, or on-device), LLM, and TTS validated per their
+ * effective routes. When a
  * leg blocks, its `detail` becomes the label so the UI names the exact gap
  * instead of a generic "models not ready".
  *
@@ -74,13 +74,14 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
 
   // Report the first failing leg, in pipeline order: ASR → LLM → TTS.
   if (!readiness.asr.ready) {
+    const localAsr = readiness.asr.mode === "ominix";
     return {
       label: readiness.asr.detail,
       tone: "warning",
       ready: false,
       loading: false,
-      canRepair: true,
-      state: "asr_not_ready",
+      canRepair: localAsr,
+      state: `asr_not_ready_${readiness.asr.mode}`,
     };
   }
 

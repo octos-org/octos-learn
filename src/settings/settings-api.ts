@@ -1002,6 +1002,11 @@ export interface VoiceLeg {
   detail: string;
 }
 
+export interface VoiceAsrLeg extends VoiceLeg {
+  /** The route Octos actually checked for speech recognition. */
+  mode: "private" | "external" | "ominix" | string;
+}
+
 /** Readiness of the TTS leg, plus the effective route for this profile. */
 export interface VoiceTtsLeg {
   ready: boolean;
@@ -1017,7 +1022,7 @@ export interface VoiceTtsLeg {
  */
 export interface VoiceReadiness {
   ready: boolean;
-  asr: VoiceLeg;
+  asr: VoiceAsrLeg;
   llm: VoiceLeg;
   tts: VoiceTtsLeg;
 }
