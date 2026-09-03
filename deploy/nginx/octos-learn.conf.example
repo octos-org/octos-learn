@@ -82,6 +82,15 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
+    # onnxruntime-web loads its ESM glue with dynamic import(). Browsers reject
+    # the module when older Nginx mime.types files serve .mjs as octet-stream.
+    location ~* \.mjs$ {
+        default_type application/javascript;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, immutable";
+        try_files $uri =404;
+    }
+
     location ~* \.(?:js|css|wasm|onnx|png|jpg|jpeg|gif|svg|webp|woff2?)$ {
         expires 7d;
         add_header Cache-Control "public, max-age=604800, immutable";
