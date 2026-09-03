@@ -16,7 +16,7 @@
     "allowed_origins": [
       "https://learn.example.com"
     ],
-    "default_session_cwd": "/var/lib/octos-learn/workspace",
+    "default_session_cwd": "/srv/octos-learn/workspace",
     "sessions_in_cwd": false
   }
 }

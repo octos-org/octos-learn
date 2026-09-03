@@ -7,7 +7,7 @@ Wants=network-online.target
 Type=simple
 User=octos-learn
 Group=octos-learn
-WorkingDirectory=/var/lib/octos-learn/workspace
+WorkingDirectory=/srv/octos-learn/workspace
 EnvironmentFile=/etc/octos-learn/octos-learn.env
 ExecStart=/opt/octos-learn/bin/octos serve --host 127.0.0.1 --port 50080 --data-dir /var/lib/octos-learn/octos --config /etc/octos-learn/config.json
 Restart=on-failure
@@ -17,7 +17,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/octos-learn
+ReadWritePaths=/var/lib/octos-learn /srv/octos-learn
 UMask=0077
 LimitNOFILE=65536
 

@@ -15,7 +15,7 @@ persistent data separate:
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
 /var/lib/octos-learn/octos/         users, profiles, sessions, whiteboards
-/var/lib/octos-learn/workspace/     runtime workspace
+/srv/octos-learn/workspace/         runtime workspace
 ```
 
 The Octos process listens only on `127.0.0.1:50080`. Nginx is the only public
@@ -49,10 +49,16 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    `/etc/octos-learn/octos-learn.env`.
 3. Replace `learn.example.com`, SMTP fields, the SMTP password, the private-ASR
    control URL, and its server-to-server service token.
-4. Keep `allow_self_registration` set to `false` and do not add `--solo`.
-5. Set ownership to the Octos Learn service account for persistent data. Keep
+4. Set `OLL_PROVIDER` and `OLL_MODEL` to the provider and model exposed by this
+   deployment. User API keys remain profile-scoped and must not be copied into
+   the server environment file.
+5. Keep `allow_self_registration` set to `false` and do not add `--solo`.
+6. Create `/srv/octos-learn/workspace`, owned by the Octos Learn service
+   account with mode `0700`. Do not place the session workspace under `/var`:
+   Octos rejects system-rooted workspace hints before a skill action starts.
+7. Set ownership to the Octos Learn service account for persistent data. Keep
    the environment file root-owned and mode `0600`.
-6. Copy the systemd unit and Nginx configuration, update hostnames and TLS
+8. Copy the systemd unit and Nginx configuration, update hostnames and TLS
    paths, then validate them before reload.
 
 The first administrator must already exist in the Octos data directory. After
@@ -79,8 +85,9 @@ Then verify in a private browser window:
    but cannot finish login.
 2. An invited email can finish OTP login exactly once and receives its own
    profile.
-3. Gemini or Ark credentials saved in Settings can be tested and used to
-   generate a lesson.
+3. Credentials for the deployment's configured model provider can be saved and
+   tested in Settings, then used to generate a lesson. Confirm that
+   `OLL_PROVIDER` and `OLL_MODEL` match that Settings option.
 4. Refreshing the page preserves the current whiteboard and course history.
 5. A second user cannot see the first user's courses, files, or model settings.
 6. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
