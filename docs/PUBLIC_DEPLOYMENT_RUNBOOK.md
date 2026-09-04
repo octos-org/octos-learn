@@ -28,8 +28,7 @@ Build the web application from a clean `octos-learn` checkout:
 ```bash
 corepack enable
 pnpm install --frozen-lockfile
-cp .env.production.example .env.production
-pnpm build
+pnpm build:public
 ```
 
 Build Octos from a clean `octos` checkout. The `api` feature is required for
