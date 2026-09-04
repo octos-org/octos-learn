@@ -25,7 +25,10 @@ export function WhiteboardQuestionImage({
     let objectUrl: string | null = null;
     void fetchAuthenticatedFileBlob(
       path,
-      { sessionId: question.sessionId },
+      {
+        sessionId: question.sessionId,
+        profileId: question.imageProfileId,
+      },
       controller.signal,
     ).then((blob) => {
       if (controller.signal.aborted) return;
@@ -40,7 +43,7 @@ export function WhiteboardQuestionImage({
       controller.abort();
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [question.imagePath, question.sessionId]);
+  }, [question.imagePath, question.imageProfileId, question.sessionId]);
 
   const currentImage = loadedImage?.path === question.imagePath
     ? loadedImage

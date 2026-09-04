@@ -648,6 +648,78 @@
   gap: 4px;
 }
 
+.learning-voice-startup {
+  position: absolute;
+  top: 84px;
+  left: 50%;
+  z-index: 32;
+  display: grid;
+  width: min(420px, calc(100vw - 32px));
+  grid-template-columns: 28px 1fr;
+  gap: 12px;
+  overflow: hidden;
+  padding: 14px 17px 16px;
+  border: 1px solid rgba(20, 119, 137, 0.25);
+  border-radius: 16px;
+  color: #315f68;
+  background: rgba(250, 253, 250, 0.96);
+  box-shadow: 0 12px 34px rgba(45, 71, 68, 0.16);
+  transform: translateX(-50%);
+  backdrop-filter: blur(16px);
+}
+
+.learning-voice-startup-spinner {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border: 3px solid rgba(24, 133, 148, 0.18);
+  border-top-color: #188594;
+  border-radius: 50%;
+  animation: learning-voice-startup-spin 0.9s linear infinite;
+}
+
+.learning-voice-startup-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.learning-voice-startup-copy strong {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 720;
+}
+
+.learning-voice-startup-copy small {
+  color: #698087;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.learning-voice-startup-progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(29, 151, 161, 0.85) 48%,
+    transparent 100%
+  );
+  animation: learning-voice-startup-progress 1.4s ease-in-out infinite;
+  transform: translateX(-100%);
+}
+
+@keyframes learning-voice-startup-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes learning-voice-startup-progress {
+  to { transform: translateX(100%); }
+}
+
 .learning-mode-button,
 .learning-mode-label {
   padding: 7px 10px;

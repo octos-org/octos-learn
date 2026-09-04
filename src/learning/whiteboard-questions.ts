@@ -16,6 +16,8 @@ export interface WhiteboardQuestionRecord {
   error?: string;
   /** Exact session-scoped camera frame submitted with this question. */
   imagePath?: string;
+  /** Profile that owned imagePath at upload time. */
+  imageProfileId?: string;
   source?: {
     sourceId: string;
     bounds: InkSelectionBounds;
@@ -66,6 +68,12 @@ function validQuestion(
     return false;
   }
   if (question.imagePath !== undefined && typeof question.imagePath !== "string") {
+    return false;
+  }
+  if (
+    question.imageProfileId !== undefined
+    && typeof question.imageProfileId !== "string"
+  ) {
     return false;
   }
   if (question.position !== undefined) {

@@ -19,7 +19,7 @@ import { useRenderThreads } from "@/store/projection-render-adapter";
 import * as ProjectionStore from "@/store/projection-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 import { buildFileUrl } from "@/api/files";
-import { buildApiHeaders } from "@/api/client";
+import { buildApiHeaders, ensureSelectedProfileId } from "@/api/client";
 import {
   preloadVoiceCaptureRuntime,
   useVoiceCapture,
@@ -64,6 +64,8 @@ function privateAsrErrorMessage(error: unknown): string {
 
 export interface VoiceConversation {
   state: VoiceState;
+  /** Human-readable detail while the voice runtime is starting. */
+  startupDetail: string | null;
   lastUserText: string;
   lastAssistantText: string;
   turns: VoiceConversationTurn[];
@@ -120,6 +122,8 @@ export interface VoiceTurnSendContext {
   turnId: string;
   mediaPaths: string[];
   currentFramePath?: string;
+  /** Profile used for this media upload. */
+  mediaProfileId?: string;
   /** Application-owned attachments, excluding speech and the live frame. */
   additionalMediaPaths?: string[];
 }
@@ -476,6 +480,7 @@ export function useVoiceConversation(
   const captureStart = capture.start;
   const captureStop = capture.stop;
   const captureError = capture.error;
+  const captureActive = capture.capturing;
   const camera = useCameraFrame();
   // Stable fns (useCallback([])); the object identity churns each render.
   const cameraStart = camera.start;
@@ -488,6 +493,7 @@ export function useVoiceConversation(
   const updateCameraSettings = camera.updateSettings;
   const resetCameraSettings = camera.resetSettings;
   const [state, setState] = useState<VoiceState>("idle");
+  const [startupDetail, setStartupDetail] = useState<string | null>(null);
   const [privateAsrError, setPrivateAsrError] = useState<string | null>(null);
   const [lastAssistantText, setLastAssistantText] = useState("");
   const [provisionalTurnIds, setProvisionalTurnIds] = useState<readonly string[]>(
@@ -622,16 +628,18 @@ export function useVoiceConversation(
   // immediately; otherwise a failed browser can leave the only worker busy
   // until the session TTL expires.
   useEffect(() => {
-    if (!captureError) return;
+    if (!captureError || captureActive) return;
     const privateAsr = privateAsrRef.current;
     if (!privateAsr) return;
     privateAsrRef.current = null;
     void privateAsr.stop();
-  }, [captureError]);
+  }, [captureActive, captureError]);
 
   // Stable refs that break the circular dependency between beginListening ↔
   // drainQueue. Each stores itself into its own ref every render.
-  const beginListeningRef = useRef<() => Promise<void>>(async () => {});
+  const beginListeningRef = useRef<(
+    options?: { deferReady?: boolean },
+  ) => Promise<void>>(async () => {});
   const requestListeningResumeRef = useRef<() => void>(() => {});
   const beginBargeInRef = useRef<() => Promise<void>>(async () => {});
   const sendUtteranceRef = useRef<
@@ -758,6 +766,10 @@ export function useVoiceConversation(
         let additionalFiles: File[];
         let files: File[];
         let paths: string[];
+        // Snapshot the routing profile once for the complete upload. The
+        // question card must later fetch a camera frame from this same owner,
+        // even if the globally selected profile changes meanwhile.
+        const mediaProfileId = await ensureSelectedProfileId() ?? undefined;
 
         if (directAdmission) {
           // Camera capture and selection snapshot preparation can run while
@@ -889,6 +901,7 @@ export function useVoiceConversation(
               turnId,
               mediaPaths: paths,
               currentFramePath,
+              mediaProfileId,
               additionalMediaPaths,
             }) ?? "";
 
@@ -952,6 +965,7 @@ export function useVoiceConversation(
             turnId,
             mediaPaths: paths,
             currentFramePath,
+            mediaProfileId,
             additionalMediaPaths,
           }) ?? "";
         // Admission is the hard boundary: only proven speech becomes visible
@@ -984,6 +998,7 @@ export function useVoiceConversation(
               admissionId: admission.admissionId,
               mediaPaths: paths,
               currentFramePath,
+              mediaProfileId,
               additionalMediaPaths,
               clientTiming,
             });
@@ -1184,7 +1199,9 @@ export function useVoiceConversation(
 
   // Define beginListening and playReply with useCallback; each calls the other via its ref.
 
-  const beginListening = useCallback(async () => {
+  const beginListening = useCallback(async (
+    listeningOptions?: { deferReady?: boolean },
+  ) => {
     const listeningGen = startGenRef.current;
     if (externalSpeechActiveRef.current) {
       // External narration (the teacher) is speaking — surface it as
@@ -1209,6 +1226,7 @@ export function useVoiceConversation(
       },
     );
     if (listeningGen !== startGenRef.current) return;
+    if (listeningOptions?.deferReady) return;
     // Do not claim that the microphone is listening while the VAD model and
     // WASM runtime are still loading. Also keep the Agora track muted until
     // local speech admission is actually ready.
@@ -1373,6 +1391,7 @@ export function useVoiceConversation(
     setPrivateAsrError(null);
     stateRef.current = "starting";
     setState("starting");
+    setStartupDetail("正在加载语音组件…");
     // These two downloads used to begin one after the other: first Agora,
     // then Silero/ONNX. Start both immediately; their consumers reuse the
     // same promises and browser cache below.
@@ -1442,6 +1461,7 @@ export function useVoiceConversation(
     // refresh" footgun. Poll the runtime's active-bridge connection state;
     // proceed anyway after a ceiling so a missing bridge can't wedge us.
     const deadline = Date.now() + 12000;
+    setStartupDetail("正在连接白板服务…");
     while (Date.now() < deadline) {
       const b = getActiveBridge(sessionId, historyTopic);
       if (b?.getConnectionState?.() === "connected") break;
@@ -1456,27 +1476,48 @@ export function useVoiceConversation(
     // start before it can reserve the single private-ASR worker.
     await Promise.resolve();
     if (startGenRef.current !== gen) return;
+    let listeningPrepared = false;
     if (
       privateAsrEnabled() &&
       onAdmittedSpeech &&
       !privateAsrRef.current
     ) {
       const privateAsr = new PrivateAsrClient((error) => {
+        if (privateAsrRef.current === privateAsr) {
+          privateAsrRef.current = null;
+          void privateAsr.stop();
+        }
         setPrivateAsrError(privateAsrErrorMessage(error));
       });
-      try {
-        await privateAsr.start();
-        if (startGenRef.current !== gen) {
-          await privateAsr.stop();
-          return;
+      // The private transport and local VAD share one microphone stream but
+      // otherwise initialize independently. Starting them together removes
+      // the previous 40–50 second serial gap seen on the public deployment.
+      privateAsrRef.current = privateAsr;
+      setStartupDetail("正在连接语音识别服务并启动人声检测…");
+      const shouldPrepareListening = !startOptions?.initialAudio;
+      const [privateResult] = await Promise.allSettled(
+        shouldPrepareListening
+          ? [privateAsr.start(), beginListening({ deferReady: true })]
+          : [privateAsr.start()],
+      );
+      listeningPrepared = shouldPrepareListening;
+      if (startGenRef.current !== gen) {
+        if (privateAsrRef.current === privateAsr) {
+          privateAsrRef.current = null;
         }
-        privateAsrRef.current = privateAsr;
-      } catch (error) {
+        await privateAsr.stop();
+        return;
+      }
+      if (privateResult.status === "rejected") {
         console.warn(
           "[voice] private ASR unavailable; keeping Octos ASR fallback",
-          error,
+          privateResult.reason,
         );
-        setPrivateAsrError(privateAsrErrorMessage(error));
+        if (privateAsrRef.current === privateAsr) {
+          privateAsrRef.current = null;
+        }
+        await privateAsr.stop();
+        setPrivateAsrError(privateAsrErrorMessage(privateResult.reason));
       }
     }
     if (startGenRef.current !== gen) return;
@@ -1492,13 +1533,26 @@ export function useVoiceConversation(
       }
     }
     if (startOptions?.initialAudio) {
+      setStartupDetail(null);
       await sendCapturedUtterance(
         startOptions.initialAudio,
         startOptions.includeCamera ?? false,
       );
       return;
     }
+    if (listeningPrepared) {
+      const activePrivateAsr = privateAsrRef.current;
+      stateRef.current = "listening";
+      setState("listening");
+      setStartupDetail(null);
+      await activePrivateAsr?.setListening(true).catch((error) => {
+        console.warn("[voice] private ASR could not begin listening", error);
+      });
+      return;
+    }
+    setStartupDetail("正在启动麦克风和人声检测…");
     await beginListening();
+    setStartupDetail(null);
   }, [
     beginListening,
     cameraStart,
@@ -1548,6 +1602,7 @@ export function useVoiceConversation(
     if (playReplyAudio) releaseAudio();
     stateRef.current = "idle";
     setState("idle");
+    setStartupDetail(null);
   }, [
     captureStop,
     cameraStop,
@@ -1658,6 +1713,7 @@ export function useVoiceConversation(
   useEffect(() => {
     if (captureError) {
       captureModeRef.current = null;
+      setStartupDetail(null);
       setState("error");
     }
   }, [captureError]);
@@ -1926,6 +1982,7 @@ export function useVoiceConversation(
 
   return {
     state,
+    startupDetail,
     lastUserText,
     lastAssistantText,
     turns,

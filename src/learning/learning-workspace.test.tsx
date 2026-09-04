@@ -28,6 +28,8 @@ import { saveSelectionEnhancementState } from "./selection-enhancements";
 import { saveWhiteboardQuestions } from "./whiteboard-questions";
 
 const conversationMock = vi.hoisted(() => ({
+  state: "idle" as "idle" | "starting",
+  startupDetail: null as string | null,
   turns: [] as VoiceConversation["turns"],
   threads: [] as Thread[],
   start: vi.fn(async () => undefined),
@@ -111,7 +113,8 @@ vi.mock("@/home/voice/use-voice-conversation", () => ({
     conversationMock.options = options;
     conversationMock.optionsHistory.push(options);
     return {
-    state: "idle",
+    state: conversationMock.state,
+    startupDetail: conversationMock.startupDetail,
     lastUserText: "",
     lastAssistantText: conversationMock.turns.at(-1)?.assistantText ?? "",
     turns: conversationMock.turns,
@@ -164,6 +167,8 @@ describe("LearningWorkspace", () => {
     cleanup();
     conversationMock.turns = [];
     conversationMock.threads = [];
+    conversationMock.state = "idle";
+    conversationMock.startupDetail = null;
     conversationMock.start.mockClear();
     conversationMock.stop.mockClear();
     conversationMock.startCamera.mockClear();
@@ -265,6 +270,24 @@ describe("LearningWorkspace", () => {
       screen.getByAltText("本轮已发送给老师的画面").getAttribute("src"),
     ).toBe("blob:sent-frame");
     expect(screen.getByText("本轮已发送")).toBeTruthy();
+  });
+
+  it("shows an explicit startup panel while voice dependencies are loading", () => {
+    conversationMock.state = "starting";
+    conversationMock.startupDetail = "正在连接语音识别服务并启动人声检测…";
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-voice-starting"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("status", {
+      name: "正在准备语音识别",
+    }).textContent).toContain("正在连接语音识别服务并启动人声检测");
+    expect(screen.getByText(/首次使用需要加载约 17 MB/)).toBeTruthy();
   });
 
   it("lets the learner calibrate the exact camera frame sent to the teacher", async () => {

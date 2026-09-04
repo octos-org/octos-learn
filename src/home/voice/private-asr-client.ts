@@ -132,6 +132,7 @@ export class PrivateAsrClient {
   private rtcClient: IAgoraRTCClient | null = null;
   private audioTrack: ILocalAudioTrack | null = null;
   private microphoneStream: MediaStream | null = null;
+  private microphonePromise: Promise<MediaStream> | null = null;
   private finalQueue: string[] = [];
   private finalWaiter: TranscriptWaiter | null = null;
   private closed = false;
@@ -144,6 +145,10 @@ export class PrivateAsrClient {
   async start(): Promise<void> {
     if (this.session) return;
     this.closed = false;
+    // Permission acquisition and device setup are independent of the control
+    // plane / Agora join. Start them immediately so public voice startup is
+    // bounded by the slower branch instead of paying both costs serially.
+    const microphonePromise = this.ensureMicrophoneStream();
     const { grant } = await requestPrivateAsrGrant();
     const response = await fetch(`${PRIVATE_ASR_PREFIX}/api/v1/sessions`, {
       method: "POST",
@@ -159,8 +164,12 @@ export class PrivateAsrClient {
     this.session = session;
 
     try {
-      await this.openEventSocket(session);
-      if (!session.demoMode) await this.joinAgora(session);
+      await Promise.all([
+        this.openEventSocket(session),
+        session.demoMode
+          ? Promise.resolve()
+          : this.joinAgora(session, microphonePromise),
+      ]);
     } catch (error) {
       await this.stop();
       throw error;
@@ -168,10 +177,8 @@ export class PrivateAsrClient {
   }
 
   getVadStream = async (): Promise<MediaStream> => {
-    if (!this.microphoneStream) {
-      throw new Error("Private ASR microphone is not ready");
-    }
-    return this.microphoneStream.clone();
+    const stream = await this.ensureMicrophoneStream();
+    return stream.clone();
   };
 
   async setListening(listening: boolean): Promise<void> {
@@ -233,6 +240,9 @@ export class PrivateAsrClient {
     this.audioTrack = null;
     this.microphoneStream?.getTracks().forEach((track) => track.stop());
     this.microphoneStream = null;
+    const pendingMicrophone = this.microphonePromise;
+    this.microphonePromise = null;
+    await pendingMicrophone?.catch(() => undefined);
     if (this.rtcClient) await this.rtcClient.leave().catch(() => undefined);
     this.rtcClient = null;
     this.session = null;
@@ -277,7 +287,31 @@ export class PrivateAsrClient {
     });
   }
 
-  private async joinAgora(session: PrivateAsrSessionResponse): Promise<void> {
+  private async ensureMicrophoneStream(): Promise<MediaStream> {
+    const current = this.microphoneStream;
+    if (current?.getAudioTracks().some((track) => track.readyState === "live")) {
+      return current;
+    }
+    if (this.closed) throw new Error("Private ASR has stopped");
+    if (!this.microphonePromise) {
+      this.microphonePromise = getEchoCancelledMicStream().then((stream) => {
+        if (this.closed) {
+          stream.getTracks().forEach((track) => track.stop());
+          throw new Error("Private ASR stopped during microphone startup");
+        }
+        this.microphoneStream = stream;
+        return stream;
+      }).finally(() => {
+        this.microphonePromise = null;
+      });
+    }
+    return this.microphonePromise;
+  }
+
+  private async joinAgora(
+    session: PrivateAsrSessionResponse,
+    microphonePromise: Promise<MediaStream>,
+  ): Promise<void> {
     const { default: AgoraRTC } = await getAgoraRuntime();
     AgoraRTC.setLogLevel(2);
     const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
@@ -288,14 +322,15 @@ export class PrivateAsrClient {
       }
     });
     await client.setClientRole("host");
-    await client.join(
-      session.agora.appId,
-      session.agora.channel,
-      session.agora.token,
-      session.agora.uid,
-    );
-    const stream = await getEchoCancelledMicStream();
-    this.microphoneStream = stream;
+    const [, stream] = await Promise.all([
+      client.join(
+        session.agora.appId,
+        session.agora.channel,
+        session.agora.token,
+        session.agora.uid,
+      ),
+      microphonePromise,
+    ]);
     const sourceTrack = stream.getAudioTracks()[0];
     if (!sourceTrack) throw new Error("Microphone did not provide an audio track");
     // Agora owns a clone, not the source used to create Silero's VAD clones.

@@ -238,7 +238,12 @@ export function useVoiceCapture(): VoiceCapture {
 
     const gen = startGenRef.current;
     const initialize = (async () => {
-      await preloadVoiceCaptureRuntime();
+      // Conversation startup already begins a best-effort preload. Do not
+      // serialize MicVAD initialization behind a second full download wait:
+      // MicVAD can consume the browser cache/coalesced requests directly.
+      void preloadVoiceCaptureRuntime().catch((error) => {
+        console.warn("[voice] VAD runtime preload failed", error);
+      });
       let vad: MicVAD | null = null;
       let initError: unknown = null;
       for (const model of VAD_MODEL_PREFERENCE) {

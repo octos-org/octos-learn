@@ -55,7 +55,10 @@ const {
   privateAsrEnabledMock: vi.fn(() => false),
   preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
   preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
-  captureState: { error: null as string | null },
+  captureState: {
+    error: null as string | null,
+    capturing: false,
+  },
   privateAsrInstance: {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
@@ -79,7 +82,7 @@ vi.mock("./use-voice-capture", () => ({
   // identity staying constant across renders (mirrors the real hook's
   // useCallback([])-stable fns).
   useVoiceCapture: () => ({
-    capturing: false,
+    capturing: captureState.capturing,
     start: captureStartMock,
     stop: captureStopMock,
     error: captureState.error,
@@ -186,6 +189,7 @@ vi.mock("@/api/files", () => ({
 
 vi.mock("@/api/client", () => ({
   buildApiHeaders: () => ({}),
+  ensureSelectedProfileId: vi.fn(async () => "voice-profile"),
 }));
 
 afterEach(() => {
@@ -741,6 +745,7 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     getActiveBridgeMock.mockReset();
     getActiveBridgeMock.mockReturnValue(undefined);
     captureState.error = null;
+    captureState.capturing = false;
     privateAsrEnabledMock.mockReset();
     privateAsrEnabledMock.mockReturnValue(false);
     privateAsrInstance.start.mockReset();
@@ -978,6 +983,34 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(result.current.error).toBe("no available backend found");
 
     captureState.error = null;
+    unmount();
+  });
+
+  it("keeps private ASR alive when an utterance callback fails after VAD is ready", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const { result, rerender, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-callback-failure", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    privateAsrInstance.stop.mockClear();
+    captureState.capturing = true;
+    captureState.error = "utterance callback failed";
+    rerender();
+
+    expect(privateAsrInstance.stop).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("utterance callback failed");
+
+    captureState.error = null;
+    captureState.capturing = false;
     unmount();
   });
 

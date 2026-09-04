@@ -16,6 +16,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
+import { ensureSelectedProfileId } from "@/api/client";
 import { getSessionFiles } from "@/api/sessions";
 import {
   invokeSkillAction,
@@ -500,7 +501,12 @@ export function LearningWorkspace({
     questionId: string,
     patch: Partial<Pick<
       WhiteboardQuestionRecord,
-      "text" | "position" | "status" | "error" | "imagePath"
+      | "text"
+      | "position"
+      | "status"
+      | "error"
+      | "imagePath"
+      | "imageProfileId"
     >>,
   ) => {
     setWhiteboardQuestions((current) => {
@@ -513,6 +519,7 @@ export function LearningWorkspace({
           && updated.status === question.status
           && updated.error === question.error
           && updated.imagePath === question.imagePath
+          && updated.imageProfileId === question.imageProfileId
           && updated.position?.x === question.position?.x
           && updated.position?.y === question.position?.y
         ) return question;
@@ -1044,6 +1051,7 @@ export function LearningWorkspace({
         if (context.currentFramePath) {
           updateWhiteboardQuestion(context.turnId, {
             imagePath: context.currentFramePath,
+            imageProfileId: context.mediaProfileId,
           });
         }
         onLearnerInput?.(context.transcript);
@@ -2173,6 +2181,7 @@ export function LearningWorkspace({
         if (references.length === 0 && !applicationContext?.trim()) {
           let cameraMediaPath: string | undefined;
           if (conv.cameraActive) {
+            const cameraProfileId = await ensureSelectedProfileId();
             clientTiming.camera_capture_started_at_epoch_ms = Date.now();
             const frame = await conv.captureCurrentFrame();
             clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
@@ -2186,7 +2195,10 @@ export function LearningWorkspace({
             if (!cameraMediaPath) {
               throw new Error("摄像头画面上传失败，请重试");
             }
-            updateWhiteboardQuestion(turnId, { imagePath: cameraMediaPath });
+            updateWhiteboardQuestion(turnId, {
+              imagePath: cameraMediaPath,
+              imageProfileId: cameraProfileId ?? undefined,
+            });
           }
           await startDirectLessonGeneration(
             turnId,
@@ -2552,6 +2564,23 @@ export function LearningWorkspace({
           </button>
         </div>
       </header>
+
+      {voiceEnabled && conv.state === "starting" ? (
+        <div
+          className="learning-voice-startup"
+          role="status"
+          aria-live="polite"
+          aria-label="正在准备语音识别"
+        >
+          <span className="learning-voice-startup-spinner" aria-hidden="true" />
+          <span className="learning-voice-startup-copy">
+            <strong>正在准备语音识别</strong>
+            <small>{conv.startupDetail ?? "正在初始化语音组件…"}</small>
+            <small>首次使用需要加载约 17 MB，请保持页面打开。</small>
+          </span>
+          <span className="learning-voice-startup-progress" aria-hidden="true" />
+        </div>
+      ) : null}
 
       <main className="learning-canvas-shell">
         <LearningWhiteboard

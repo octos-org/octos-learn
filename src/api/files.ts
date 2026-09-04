@@ -7,6 +7,11 @@ export interface BuildFileUrlOptions {
   workspaceScoped?: boolean;
 }
 
+export interface FetchAuthenticatedFileOptions extends BuildFileUrlOptions {
+  /** Profile that owned the file when it was uploaded. */
+  profileId?: string | null;
+}
+
 function shouldUseSessionScopedFileUrl(filePath: string, sessionId?: string): boolean {
   return Boolean(
     sessionId &&
@@ -54,11 +59,12 @@ export function buildAuthenticatedFileUrl(
  * cannot send that header and therefore receives 403/404 for valid files. */
 export async function fetchAuthenticatedFileBlob(
   filePath: string,
-  options: BuildFileUrlOptions = {},
+  options: FetchAuthenticatedFileOptions = {},
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const response = await fetch(buildFileUrl(filePath, options), {
-    headers: buildApiHeaders(),
+  const { profileId, ...urlOptions } = options;
+  const response = await fetch(buildFileUrl(filePath, urlOptions), {
+    headers: buildApiHeaders({}, profileId),
     signal,
   });
   if (!response.ok) {

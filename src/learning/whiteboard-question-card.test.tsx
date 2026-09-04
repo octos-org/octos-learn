@@ -37,6 +37,7 @@ const cameraQuestion: WhiteboardQuestionRecord = {
   createdAt: "2026-08-26T08:00:00.000Z",
   status: "answered",
   imagePath: "uploads/camera-question.jpg",
+  imageProfileId: "upload-owner",
 };
 
 describe("WhiteboardQuestionCard", () => {
@@ -57,7 +58,7 @@ describe("WhiteboardQuestionCard", () => {
       expect.objectContaining({
         headers: {
           Authorization: "Bearer camera-token",
-          "X-Profile-Id": "admin",
+          "X-Profile-Id": "upload-owner",
         },
       }),
     );
