@@ -1,4 +1,8 @@
-import { buildApiHeaders, getToken } from "@/api/client";
+import {
+  buildApiHeaders,
+  getToken,
+  refreshSelectedProfileId,
+} from "@/api/client";
 import { API_BASE } from "@/lib/constants";
 
 export interface BuildFileUrlOptions {
@@ -63,10 +67,21 @@ export async function fetchAuthenticatedFileBlob(
   signal?: AbortSignal,
 ): Promise<Blob> {
   const { profileId, ...urlOptions } = options;
-  const response = await fetch(buildFileUrl(filePath, urlOptions), {
-    headers: buildApiHeaders({}, profileId),
+  const url = buildFileUrl(filePath, urlOptions);
+  const fetchWithProfile = (ownerProfileId?: string | null) => fetch(url, {
+    headers: buildApiHeaders({}, ownerProfileId),
     signal,
   });
+  let response = await fetchWithProfile(profileId);
+  // Records created before imageProfileId was persisted only know the opaque
+  // file handle. If the browser's selected profile became stale, refresh the
+  // authenticated home profile once and retry without weakening file auth.
+  if (response.status === 404 && profileId === undefined) {
+    const refreshedProfileId = await refreshSelectedProfileId();
+    if (refreshedProfileId) {
+      response = await fetchWithProfile(refreshedProfileId);
+    }
+  }
   if (!response.ok) {
     throw new Error(`File request failed (${response.status})`);
   }
