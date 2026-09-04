@@ -1,4 +1,4 @@
-import { getToken } from "@/api/client";
+import { buildApiHeaders, getToken } from "@/api/client";
 import { API_BASE } from "@/lib/constants";
 
 export interface BuildFileUrlOptions {
@@ -47,4 +47,22 @@ export function buildAuthenticatedFileUrl(
   const base = buildFileUrl(filePath, options);
   const separator = base.includes("?") ? "&" : "?";
   return token ? `${base}${separator}token=${encodeURIComponent(token)}` : base;
+}
+
+/** Read a protected file through fetch rather than an <img src>. Hosted
+ * profiles require X-Profile-Id as well as the bearer token; an image element
+ * cannot send that header and therefore receives 403/404 for valid files. */
+export async function fetchAuthenticatedFileBlob(
+  filePath: string,
+  options: BuildFileUrlOptions = {},
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const response = await fetch(buildFileUrl(filePath, options), {
+    headers: buildApiHeaders(),
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(`File request failed (${response.status})`);
+  }
+  return response.blob();
 }

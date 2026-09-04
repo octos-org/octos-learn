@@ -889,6 +889,16 @@ describe("LearningWorkspace", () => {
   });
 
   it("captures and displays one current frame for a text question when the camera is active", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["camera-frame"], { type: "image/jpeg" }),
+    }));
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:camera-frame"),
+      revokeObjectURL: vi.fn(),
+    });
     conversationMock.cameraActive = true;
     conversationMock.captureCurrentFrame.mockResolvedValue(new File(
       ["camera-frame"],
@@ -937,9 +947,11 @@ describe("LearningWorkspace", () => {
       }),
     ));
     expect(conversationMock.captureCurrentFrame).toHaveBeenCalledTimes(1);
-    expect(screen.getByAltText("本次问题随附的摄像头画面").getAttribute("src"))
-      .toContain("uploads%2Fcamera-frame.jpg");
+    expect((await screen.findByAltText(
+      "本次问题随附的摄像头画面",
+    )).getAttribute("src")).toBe("blob:camera-frame");
     expect(sendMessageMock).not.toHaveBeenCalled();
+    cleanup();
   });
 
   it("clears the lesson loader and speaks a voice turn failure", async () => {

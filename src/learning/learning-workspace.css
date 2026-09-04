@@ -1712,6 +1712,21 @@
   background: rgba(238, 247, 244, 0.72);
 }
 
+.learning-whiteboard-question-camera.is-loading,
+.learning-whiteboard-question-camera.is-error {
+  display: grid;
+  min-height: 72px;
+  padding: 12px;
+  place-items: center;
+  color: #64736f;
+  font-size: 12px;
+}
+
+.learning-whiteboard-question-camera.is-error {
+  color: #9b5148;
+  background: rgba(250, 239, 235, 0.8);
+}
+
 .learning-whiteboard-question-camera-frame {
   display: block;
   width: 100%;

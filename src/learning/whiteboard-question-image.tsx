@@ -1,7 +1,7 @@
 import { Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { buildAuthenticatedFileUrl } from "@/api/files";
+import { fetchAuthenticatedFileBlob } from "@/api/files";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 
 export function WhiteboardQuestionImage({
@@ -10,13 +10,43 @@ export function WhiteboardQuestionImage({
   question: WhiteboardQuestionRecord;
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [loadedImage, setLoadedImage] = useState<{
+    path: string;
+    url: string | null;
+    failed: boolean;
+  } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const imageUrl = question.imagePath
-    ? buildAuthenticatedFileUrl(question.imagePath, {
-        sessionId: question.sessionId,
-      })
+
+  useEffect(() => {
+    const path = question.imagePath;
+    if (!path) return;
+    const controller = new AbortController();
+    let objectUrl: string | null = null;
+    void fetchAuthenticatedFileBlob(
+      path,
+      { sessionId: question.sessionId },
+      controller.signal,
+    ).then((blob) => {
+      if (controller.signal.aborted) return;
+      objectUrl = URL.createObjectURL(blob);
+      setLoadedImage({ path, url: objectUrl, failed: false });
+    }).catch((error) => {
+      if (controller.signal.aborted) return;
+      console.error("[learn] failed to load question image", error);
+      setLoadedImage({ path, url: null, failed: true });
+    });
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [question.imagePath, question.sessionId]);
+
+  const currentImage = loadedImage?.path === question.imagePath
+    ? loadedImage
     : null;
+  const imageUrl = currentImage?.url ?? null;
+  const loadFailed = currentImage?.failed ?? false;
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -32,7 +62,28 @@ export function WhiteboardQuestionImage({
     };
   }, [previewOpen]);
 
-  if (!imageUrl) return null;
+  if (!question.imagePath) return null;
+  if (loadFailed) {
+    return (
+      <div
+        className="learning-whiteboard-question-camera is-error"
+        role="img"
+        aria-label="本次问题随附的摄像头画面暂时无法显示"
+      >
+        图片暂时无法显示
+      </div>
+    );
+  }
+  if (!imageUrl) {
+    return (
+      <div
+        className="learning-whiteboard-question-camera is-loading"
+        role="status"
+      >
+        正在加载图片…
+      </div>
+    );
+  }
 
   return (
     <>
