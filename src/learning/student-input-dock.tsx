@@ -69,6 +69,7 @@ export function StudentInputDock({
   };
 
   const busy = voiceState === "thinking" || voiceState === "speaking";
+  const voiceStarting = voiceState === "starting";
 
   return (
     <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
@@ -117,8 +118,10 @@ export function StudentInputDock({
         type="button"
         className={`learning-mic-button is-${voiceState}`}
         onClick={onMic}
-        aria-label={busy ? "打断 Octos" : "语音提问"}
-        disabled={voiceDisabled}
+        aria-label={
+          voiceStarting ? "语音准备中" : busy ? "打断 Octos" : "语音提问"
+        }
+        disabled={voiceDisabled || voiceStarting}
       >
         {busy ? <Square size={16} /> : <Mic size={21} />}
       </button>

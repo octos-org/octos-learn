@@ -34,6 +34,8 @@ const {
   interruptActiveTurnMock,
   uploadFilesMock,
   privateAsrEnabledMock,
+  preloadPrivateAsrRuntimeMock,
+  preloadVoiceCaptureRuntimeMock,
   privateAsrInstance,
   captureState,
 } = vi.hoisted(() => ({
@@ -51,6 +53,8 @@ const {
   interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
   privateAsrEnabledMock: vi.fn(() => false),
+  preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
+  preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
   captureState: { error: null as string | null },
   privateAsrInstance: {
     start: vi.fn(async () => {}),
@@ -63,12 +67,14 @@ const {
 
 vi.mock("./private-asr-client", () => ({
   privateAsrEnabled: privateAsrEnabledMock,
+  preloadPrivateAsrRuntime: preloadPrivateAsrRuntimeMock,
   PrivateAsrClient: vi.fn(function PrivateAsrClientMock() {
     return privateAsrInstance;
   }),
 }));
 
 vi.mock("./use-voice-capture", () => ({
+  preloadVoiceCaptureRuntime: preloadVoiceCaptureRuntimeMock,
   // Stable object — the hook destructures start/stop and depends on their
   // identity staying constant across renders (mirrors the real hook's
   // useCallback([])-stable fns).

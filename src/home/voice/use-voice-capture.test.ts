@@ -40,7 +40,10 @@ describe("useVoiceCapture", () => {
     vi.stubGlobal("navigator", {
       mediaDevices: { getUserMedia: getUserMediaMock },
     });
-    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true }) as Response));
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => new ArrayBuffer(1),
+    }) as Response));
   });
 
   it("requests all-system echo cancellation for initial and resumed capture", async () => {

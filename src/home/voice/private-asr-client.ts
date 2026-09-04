@@ -8,6 +8,26 @@ import { getEchoCancelledMicStream } from "./microphone";
 const PRIVATE_ASR_PREFIX = "/private-asr";
 const FINAL_TIMEOUT_MS = 12_000;
 
+let agoraRuntimePromise: Promise<typeof import("agora-rtc-sdk-ng")> | null = null;
+
+/** Start downloading the Agora runtime before a private-ASR session is ready.
+ * The same promise is consumed by joinAgora(), so preloading never downloads
+ * or initialises a second SDK instance. */
+export function preloadPrivateAsrRuntime(): Promise<void> {
+  if (!agoraRuntimePromise) {
+    agoraRuntimePromise = import("agora-rtc-sdk-ng").catch((error) => {
+      agoraRuntimePromise = null;
+      throw error;
+    });
+  }
+  return agoraRuntimePromise.then(() => undefined);
+}
+
+async function getAgoraRuntime(): Promise<typeof import("agora-rtc-sdk-ng")> {
+  await preloadPrivateAsrRuntime();
+  return agoraRuntimePromise!;
+}
+
 interface PrivateAsrSessionResponse {
   sessionId: string;
   state: string;
@@ -258,7 +278,7 @@ export class PrivateAsrClient {
   }
 
   private async joinAgora(session: PrivateAsrSessionResponse): Promise<void> {
-    const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
+    const { default: AgoraRTC } = await getAgoraRuntime();
     AgoraRTC.setLogLevel(2);
     const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
     this.rtcClient = client;

@@ -31,6 +31,11 @@ import {
   type QueueMode,
 } from "@/runtime/session-context";
 import { unlockAudio } from "@/home/voice/audio-playback";
+import {
+  privateAsrEnabled,
+  preloadPrivateAsrRuntime,
+} from "@/home/voice/private-asr-client";
+import { preloadVoiceCaptureRuntime } from "@/home/voice/use-voice-capture";
 import { useWakeLock } from "@/home/use-wake-lock";
 import {
   getMyProfileSkills,
@@ -99,6 +104,17 @@ function detectLearningMediaCapability(): LearningMediaCapability {
   return { available: true };
 }
 
+function preloadLearningVoiceRuntime(): void {
+  void preloadVoiceCaptureRuntime().catch((error) => {
+    console.warn("[learn] VAD runtime preload failed", error);
+  });
+  if (privateAsrEnabled()) {
+    void preloadPrivateAsrRuntime().catch((error) => {
+      console.warn("[learn] private ASR runtime preload failed", error);
+    });
+  }
+}
+
 function describeLearningDeviceError(cause: unknown): string {
   if (cause instanceof DOMException) {
     if (cause.name === "NotAllowedError" || cause.name === "SecurityError") {
@@ -121,6 +137,10 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
   const capability = detectLearningMediaCapability();
   if (!capability.available) throw new Error(capability.message);
   unlockAudio();
+  // Permission acquisition, Agora loading, and Silero/ONNX downloads are
+  // independent. Begin the network work inside the user's activation gesture
+  // instead of waiting for getUserMedia and the ASR session sequentially.
+  preloadLearningVoiceRuntime();
   const stream = await navigator.mediaDevices.getUserMedia({
     audio: true,
     video: autoCamera,
@@ -183,6 +203,8 @@ function LearningPermissionGate({
         <button
           type="button"
           onClick={() => void activate(true)}
+          onPointerEnter={preloadLearningVoiceRuntime}
+          onFocus={preloadLearningVoiceRuntime}
           disabled={!capability.available}
           className="mt-7 w-full rounded-full bg-cyan-300 px-5 py-3 font-medium text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -191,6 +213,8 @@ function LearningPermissionGate({
         <button
           type="button"
           onClick={() => void activate(false)}
+          onPointerEnter={preloadLearningVoiceRuntime}
+          onFocus={preloadLearningVoiceRuntime}
           disabled={!capability.available}
           className="mt-3 w-full rounded-full border border-white/15 px-5 py-3 text-white/75 disabled:cursor-not-allowed disabled:opacity-40"
         >

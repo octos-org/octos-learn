@@ -20,7 +20,10 @@ import * as ProjectionStore from "@/store/projection-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
 import { buildFileUrl } from "@/api/files";
 import { buildApiHeaders } from "@/api/client";
-import { useVoiceCapture } from "./use-voice-capture";
+import {
+  preloadVoiceCaptureRuntime,
+  useVoiceCapture,
+} from "./use-voice-capture";
 import {
   useCameraFrame,
   type CameraFrameSettings,
@@ -30,9 +33,16 @@ import { stripLearningContext } from "@/learning/learning-context";
 import {
   PrivateAsrClient,
   privateAsrEnabled,
+  preloadPrivateAsrRuntime,
 } from "./private-asr-client";
 
-export type VoiceState = "idle" | "listening" | "thinking" | "speaking" | "error";
+export type VoiceState =
+  | "idle"
+  | "starting"
+  | "listening"
+  | "thinking"
+  | "speaking"
+  | "error";
 
 function privateAsrErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -1175,6 +1185,7 @@ export function useVoiceConversation(
   // Define beginListening and playReply with useCallback; each calls the other via its ref.
 
   const beginListening = useCallback(async () => {
+    const listeningGen = startGenRef.current;
     if (externalSpeechActiveRef.current) {
       // External narration (the teacher) is speaking — surface it as
       // "speaking", not "thinking" (issue #315).
@@ -1182,13 +1193,8 @@ export function useVoiceConversation(
       setState("speaking");
       return;
     }
-    stateRef.current = "listening";
-    setState("listening");
     captureModeRef.current = "listening";
     const privateAsr = privateAsrRef.current;
-    await privateAsr?.setListening(true).catch((error) => {
-      console.warn("[voice] private ASR could not resume", error);
-    });
     await captureStart(
       (wav: Blob) => {
         // Ignore late utterances that land after we've left listening.
@@ -1202,6 +1208,15 @@ export function useVoiceConversation(
         ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
       },
     );
+    if (listeningGen !== startGenRef.current) return;
+    // Do not claim that the microphone is listening while the VAD model and
+    // WASM runtime are still loading. Also keep the Agora track muted until
+    // local speech admission is actually ready.
+    stateRef.current = "listening";
+    setState("listening");
+    await privateAsr?.setListening(true).catch((error) => {
+      console.warn("[voice] private ASR could not resume", error);
+    });
   }, [captureStart, captureStop, finishCapturedUtterance]);
 
   const requestListeningResume = useCallback(() => {
@@ -1356,6 +1371,19 @@ export function useVoiceConversation(
     // abandons, so a stale start can never re-acquire the microphone.
     const gen = ++startGenRef.current;
     setPrivateAsrError(null);
+    stateRef.current = "starting";
+    setState("starting");
+    // These two downloads used to begin one after the other: first Agora,
+    // then Silero/ONNX. Start both immediately; their consumers reuse the
+    // same promises and browser cache below.
+    void preloadVoiceCaptureRuntime().catch((error) => {
+      console.warn("[voice] VAD runtime preload failed", error);
+    });
+    if (privateAsrEnabled() && onAdmittedSpeech) {
+      void preloadPrivateAsrRuntime().catch((error) => {
+        console.warn("[voice] private ASR runtime preload failed", error);
+      });
+    }
     // Unlock audio playback now, while we're still close to the user's entry
     // gesture (the click that mounted the voice view). Replies arrive tens of
     // seconds later and would otherwise be blocked by the autoplay policy.

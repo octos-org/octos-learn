@@ -2525,11 +2525,20 @@ export function LearningWorkspace({
             type="button"
             className={`learning-mode-button ${voiceEnabled ? "is-active" : ""}`}
             onClick={voiceEnabled ? onUseTextMode : () => void handleUseVoiceMode()}
-            aria-label={voiceEnabled ? "关闭语音" : "启用语音"}
+            aria-label={
+              voiceEnabled && conv.state === "starting"
+                ? "语音准备中，点击关闭"
+                : voiceEnabled ? "关闭语音" : "启用语音"
+            }
             aria-pressed={voiceEnabled}
+            aria-busy={voiceEnabled && conv.state === "starting"}
           >
             {voiceEnabled ? <Mic size={16} /> : <MicOff size={16} />}
-            <span>{voiceEnabled ? "关闭语音" : "启用语音"}</span>
+            <span>
+              {voiceEnabled && conv.state === "starting"
+                ? "语音准备中"
+                : voiceEnabled ? "关闭语音" : "启用语音"}
+            </span>
           </button>
           <button
             type="button"
