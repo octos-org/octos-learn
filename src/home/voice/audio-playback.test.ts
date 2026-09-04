@@ -11,7 +11,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { playAudioBlob, stopAudio } from "./audio-playback";
+import { playAudioBlob, stopAudio, unlockAudio } from "./audio-playback";
 
 class FakeSource {
   buffer: unknown = null;
@@ -28,6 +28,7 @@ class FakeAudioContext {
   state = "running";
   destination = {};
   resume = vi.fn(async () => {});
+  setSinkId = vi.fn(async () => {});
   decodeAudioData = vi.fn(async () => ({}) as AudioBuffer);
   constructor() {
     contexts.push(this);
@@ -59,9 +60,19 @@ beforeEach(() => {
   // Drain any clip a previous test left playing, THEN forget its source.
   stopAudio();
   sources.length = 0;
+  contexts[0]?.setSinkId.mockClear();
 });
 
 describe("playAudioBlob / stopAudio", () => {
+  it("rebinds the long-lived AudioContext to the current default output", async () => {
+    unlockAudio();
+    expect(contexts[0].setSinkId).toHaveBeenCalledWith("");
+
+    contexts[0].setSinkId.mockClear();
+    await playAudioBlob(makeBlob(), vi.fn());
+    expect(contexts[0].setSinkId).toHaveBeenCalledWith("");
+  });
+
   it("fires onEnded when the clip ends naturally, and a later stopAudio does not re-fire it", async () => {
     const onEnded = vi.fn();
     await expect(playAudioBlob(makeBlob(), onEnded)).resolves.toBe(true);

@@ -175,7 +175,7 @@ export function VoiceTab({
         throw new Error("TTS 已返回音频，但当前浏览器无法播放。");
       }
       setTestStatus("connected");
-      setTestMessage("TTS 可用，已播放试听。");
+      setTestMessage("TTS 可用，试听已发送到当前默认扬声器。");
     } catch (err) {
       setTestStatus("failed");
       setTestMessage(formatSettingsError(err, "TTS 测试失败。"));
