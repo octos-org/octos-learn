@@ -62,6 +62,7 @@ import {
   collectOllLessonArtifacts,
   collectPersistedOllLessonArtifacts,
   composeOllClassroomEvents,
+  isOllLessonArtifact,
   loadOllLessonArtifact,
   mergeOllLessonArtifacts,
   ollArtifactIdentity,
@@ -233,6 +234,42 @@ function lessonJobNonLessonResponse(job: SkillActionJob): {
       ? record.learner_response.trim()
       : "",
   };
+}
+
+function lessonJobArtifacts(
+  job: SkillActionJob,
+  turnId: string,
+): ReturnType<typeof collectPersistedOllLessonArtifacts> {
+  if (!job.result || typeof job.result !== "object" || Array.isArray(job.result)) {
+    return [];
+  }
+  const result = job.result as Record<string, unknown>;
+  if (!Array.isArray(result.artifacts)) return [];
+  return result.artifacts.flatMap((candidate, index) => {
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      return [];
+    }
+    const artifact = candidate as Record<string, unknown>;
+    const filename = typeof artifact.display_name === "string"
+      ? artifact.display_name.trim()
+      : "";
+    const path = typeof artifact.handle === "string"
+      ? artifact.handle.trim()
+      : "";
+    const leaf = filename.replaceAll("\\", "/").split("/").at(-1) ?? filename;
+    const belongsToTurn = leaf === `${turnId}.octos-lesson.json`
+      || leaf.startsWith(`${turnId}.part-`);
+    if (!path || !belongsToTurn || !isOllLessonArtifact({ filename, path })) {
+      return [];
+    }
+    return [{
+      id: `lesson-job:${job.job_id}:${index}:${path}`,
+      filename,
+      path,
+      threadId: turnId,
+      turnId,
+    }];
+  });
 }
 
 function threadHasDeliverableArtifact(
@@ -1355,15 +1392,24 @@ export function LearningWorkspace({
         .some((candidate) => candidate.turnId === pending.turnId);
       if (sameTurnStillRunning) return;
       setOllGenerationSessionId(null);
-      let artifacts: ReturnType<typeof collectPersistedOllLessonArtifacts> = [];
+      const projectedArtifacts = lessonJobArtifacts(job, pending.turnId);
+      let artifacts = projectedArtifacts;
       try {
         const files = await getSessionFiles(sessionId);
-        artifacts = collectPersistedOllLessonArtifacts(files);
-        setPersistedOllArtifacts(artifacts);
+        artifacts = mergeOllLessonArtifacts(
+          collectPersistedOllLessonArtifacts(files),
+          projectedArtifacts,
+        );
       } catch {
-        // The ordinary session-file refresh path can retry after reconnect.
+        // A successful job carries an opaque artifact handle, so the live
+        // lesson can still load while the ordinary session-file refresh path
+        // waits for a reconnect.
       }
-      const keptPartialLesson = artifacts.some(
+      if (artifacts.length > 0) {
+        setPersistedOllArtifacts((current) =>
+          mergeOllLessonArtifacts(current, artifacts));
+      }
+      const hasLessonArtifact = artifacts.some(
         (artifact) => artifact.turnId === pending.turnId,
       );
       if (job.status === "succeeded") {
@@ -1384,11 +1430,28 @@ export function LearningWorkspace({
           }
           return;
         }
+        // Current servers always project a structured result. Treat a
+        // successful lesson result with no lesson artifact as a failed
+        // delivery instead of displaying the previous lesson's completion
+        // message. Jobs without a result are kept as a legacy-server fallback.
+        if (job.result && !hasLessonArtifact) {
+          const message = "课程已经生成，但白板没有收到课程内容，请重试。";
+          failedQuestionErrorsRef.current.set(pending.turnId, message);
+          updateWhiteboardQuestion(pending.turnId, {
+            status: "failed",
+            error: message,
+          });
+          setCompletedTurnId(null);
+          setPlainReply({ turnId: pending.turnId, text: message });
+          setPlainReplySpoken(false);
+          setSendError(message);
+          return;
+        }
         setWhiteboardQuestionStatus(pending.turnId, "answered");
         handleTurnComplete(pending.turnId);
         return;
       }
-      if (keptPartialLesson) {
+      if (hasLessonArtifact) {
         setWhiteboardQuestionStatus(pending.turnId, "answered");
         setSendError("后续课程内容没有生成完成，已经保留并展示成功生成的部分。");
         handleTurnComplete(pending.turnId);

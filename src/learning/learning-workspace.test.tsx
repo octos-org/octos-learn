@@ -1074,12 +1074,44 @@ describe("LearningWorkspace", () => {
         input_modality: "text",
       }),
     ));
-    expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id)
-      .toEqual(expect.any(String));
+    const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id;
+    expect(turnId).toEqual(expect.any(String));
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toContain("lesson-job-1");
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        dsl: "octos.lesson",
+        version: "0.1",
+        profile: "authoring",
+        lesson: {
+          mode: "explain",
+          language: "zh-CN",
+          title: "勾股定理",
+          goals: ["理解勾股定理"],
+        },
+        steps: [{
+          key: "explain",
+          purpose: "解释定理",
+          beats: [{
+            key: "statement",
+            say: "我们来看勾股定理。",
+            actions: [{
+              do: "write",
+              as: "theorem-card",
+              kind: "math",
+              role: "concept",
+              content: { latex: "a^2+b^2=c^2" },
+              place: { relation: "new_region" },
+            }],
+          }],
+        }],
+        close: { summary: "定理讲解完成", focus: ["theorem-card"] },
+      }),
+    }));
 
     act(() => {
       window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
@@ -1091,14 +1123,86 @@ describe("LearningWorkspace", () => {
           action_id: "learning.lesson.generate",
           skill_id: "learning-coach",
           status: "succeeded",
+          result: {
+            success: true,
+            output: "Validated OLL lesson generated.",
+            artifacts: [{
+              handle: "ws/generated-lesson",
+              display_name: `${turnId}.octos-lesson.json`,
+              media_type: "application/json",
+              size: 512,
+            }],
+          },
           created_at: "2026-08-19T00:00:00Z",
           updated_at: "2026-08-19T00:00:05Z",
         },
       }));
     });
     expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText("勾股定理")).toBeTruthy();
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
+    )).toBeNull();
+  });
+
+  it("does not finish a successful job when no lesson artifact was delivered", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "lesson-job-without-artifact",
+        batch_id: "lesson-batch-without-artifact",
+        profile_id: "alan0x",
+        session_id: "learn-missing-lesson-artifact",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-09-04T00:00:00Z",
+        updated_at: "2026-09-04T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-missing-lesson-artifact"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请解释等比数列求和公式" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "lesson-job-without-artifact",
+          batch_id: "lesson-batch-without-artifact",
+          profile_id: "alan0x",
+          session_id: "learn-missing-lesson-artifact",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "Validated OLL lesson generated.",
+            artifacts: [],
+          },
+          created_at: "2026-09-04T00:00:00Z",
+          updated_at: "2026-09-04T00:00:05Z",
+        },
+      }));
+    });
+
+    expect(await screen.findAllByText(
+      "课程已经生成，但白板没有收到课程内容，请重试。",
+    )).not.toHaveLength(0);
+    expect(screen.queryByText("已回答")).toBeNull();
+    expect(screen.queryByText(
+      "这节课讲完了，你可以缩放白板回顾刚才的内容。",
     )).toBeNull();
   });
 

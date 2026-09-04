@@ -15,7 +15,7 @@ persistent data separate:
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
 /var/lib/octos-learn/octos/         users, profiles, sessions, whiteboards
-/srv/octos-learn/workspace/         runtime workspace
+/var/lib/octos-learn/runtime/       process working directory only
 ```
 
 The Octos process listens only on `127.0.0.1:50080`. Nginx is the only public
@@ -53,9 +53,11 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    deployment. User API keys remain profile-scoped and must not be copied into
    the server environment file.
 5. Keep `allow_self_registration` set to `false` and do not add `--solo`.
-6. Create `/srv/octos-learn/workspace`, owned by the Octos Learn service
-   account with mode `0700`. Do not place the session workspace under `/var`:
-   Octos rejects system-rooted workspace hints before a skill action starts.
+6. Create `/var/lib/octos-learn/runtime`, owned by the Octos Learn service
+   account with mode `0700`. Do not configure `appui.default_session_cwd` for
+   this multi-user deployment. Octos must derive a separate workspace under
+   each profile and session so generated lessons remain visible to
+   `session/files.list` and isolated from other users.
 7. Set ownership to the Octos Learn service account for persistent data. Keep
    the environment file root-owned and mode `0600`.
 8. Copy the systemd unit and Nginx configuration, update hostnames and TLS
