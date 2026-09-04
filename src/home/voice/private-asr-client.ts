@@ -86,6 +86,17 @@ export function privateAsrWebSocketUrl(
   return `${scheme}//${locationLike.host}${privateAsrHttpPath(upstreamPath)}`;
 }
 
+/** Keep the track publishable without sending microphone media before VAD
+ * opens the speech window. Exported so the Agora ordering contract can be
+ * regression-tested without starting a real RTC session. */
+export async function publishPrivateAsrTrackMuted(
+  client: Pick<IAgoraRTCClient, "publish">,
+  audioTrack: ILocalAudioTrack,
+): Promise<void> {
+  await audioTrack.setMuted(true);
+  await client.publish([audioTrack]);
+}
+
 async function responseError(response: Response): Promise<Error> {
   const body = await response.json().catch(() => null) as
     | { error?: { message?: string } }
@@ -145,7 +156,10 @@ export class PrivateAsrClient {
 
   async setListening(listening: boolean): Promise<void> {
     if (listening) this.finalQueue = [];
-    await this.audioTrack?.setEnabled(listening);
+    // Keep the Agora track enabled (and therefore publishable) for the whole
+    // session. VAD controls whether media is sent by muting/unmuting it.
+    // Agora 4.24 rejects publish() for a disabled track.
+    await this.audioTrack?.setMuted(!listening);
   }
 
   async commit(): Promise<string> {
@@ -190,7 +204,7 @@ export class PrivateAsrClient {
     this.socket?.close();
     this.socket = null;
     try {
-      await this.audioTrack?.setEnabled(false);
+      await this.audioTrack?.setMuted(true);
     } catch {
       // The RTC client may already have disconnected.
     }
@@ -272,8 +286,9 @@ export class PrivateAsrClient {
       encoderConfig: "speech_standard",
     });
     this.audioTrack = audioTrack;
-    await audioTrack.setEnabled(false);
-    await client.publish([audioTrack]);
+    // A muted track remains enabled, so Agora accepts it in publish(), while
+    // no microphone media is sent before Silero VAD opens the speech window.
+    await publishPrivateAsrTrackMuted(client, audioTrack);
   }
 
   private handleEvent(event: PrivateAsrEvent): void {
