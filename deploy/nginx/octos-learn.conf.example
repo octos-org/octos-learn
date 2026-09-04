@@ -47,7 +47,9 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
-    location /api/ {
+    # File handles end in .jpg/.png/etc. Keep all API requests on the
+    # authenticated backend, ahead of the static-asset regex locations.
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:50080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -69,7 +71,7 @@ server {
     # The trailing slash deliberately strips /private-asr/ before forwarding.
     # The control plane accepts one-time Octos-issued browser grants. Never put
     # its long-lived Octos service token or operator token in this public proxy.
-    location /private-asr/ {
+    location ^~ /private-asr/ {
         proxy_pass https://asr.example.com/;
         proxy_ssl_server_name on;
         proxy_http_version 1.1;

@@ -103,6 +103,14 @@ Then verify in a private browser window:
    was not sent to the WebSocket path.
 7. During lesson narration the private-ASR publisher is disabled; after the
    lesson the first intentional utterance is handled exactly once.
+8. Send a camera image, confirm its question-card preview and enlarged view
+   load, then refresh and check again. The `/api/` and `/private-asr/` proxy
+   locations must use `^~`: otherwise the static-asset regex intercepts API
+   file URLs ending in `.jpg` or `.png`, returning an Nginx 404 even when the
+   uploaded file exists. Confirm an image response is `200 image/jpeg` (or
+   `image/png`) and does not receive the static assets' public cache policy.
+   Keep configuration backups outside `sites-enabled/`; Nginx may load every
+   file there, including `.orig` backups.
 
 ## 5. Upgrade and rollback
 
