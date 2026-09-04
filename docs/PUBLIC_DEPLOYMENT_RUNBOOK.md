@@ -95,6 +95,13 @@ Then verify in a private browser window:
 6. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
    produces a lesson from the returned final transcript without exposing the
    long-lived service token in browser storage or network responses.
+   Confirm the session response sets its HttpOnly cookie with
+   `Path=/private-asr/` and the subsequent
+   `/private-asr/ws/client/<session-id>` request upgrades with HTTP `101`.
+   HTTP `201` from session creation alone is not sufficient: HTTP `403` on the
+   event WebSocket usually means the proxy did not translate the trusted Learn
+   origin to the ASR control plane origin; HTTP `401` means the session cookie
+   was not sent to the WebSocket path.
 7. During lesson narration the private-ASR publisher is disabled; after the
    lesson the first intentional utterance is handled exactly once.
 

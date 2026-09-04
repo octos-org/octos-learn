@@ -3,6 +3,14 @@ map $http_upgrade $octos_connection_upgrade {
     '' close;
 }
 
+# The ASR control plane validates browser WebSocket origins against its own
+# public origin. Translate only this application's trusted origin; all other
+# origins remain unchanged and are still rejected by the upstream allowlist.
+map $http_origin $octos_private_asr_origin {
+    default $http_origin;
+    "https://learn.example.com" "https://asr.example.com";
+}
+
 limit_req_zone $binary_remote_addr zone=octos_otp_send:10m rate=3r/m;
 
 server {
@@ -69,11 +77,12 @@ server {
         proxy_set_header Connection $octos_connection_upgrade;
         proxy_set_header Host asr.example.com;
         proxy_set_header X-Forwarded-Proto $scheme;
-        # The upstream protects session control and event WebSockets with two
-        # path-scoped HttpOnly cookies. Rewrite their paths to the same-origin
-        # proxy prefix or the browser will not send them back.
-        proxy_cookie_path ~^/api/v1/sessions/(.*)$ /private-asr/api/v1/sessions/$1;
-        proxy_cookie_path ~^/ws/client/(.*)$ /private-asr/ws/client/$1;
+        proxy_set_header Origin $octos_private_asr_origin;
+        # Keep the HttpOnly session cookie isolated under this proxy prefix,
+        # while making it available to both session HTTP calls and the event
+        # WebSocket. Some upstream frameworks retain only one of two cookies
+        # when both have the same name but different paths.
+        proxy_cookie_path ~^/(?:api/v1/sessions|ws/client)/.*$ /private-asr/;
         proxy_read_timeout 3600s;
         proxy_buffering off;
     }
