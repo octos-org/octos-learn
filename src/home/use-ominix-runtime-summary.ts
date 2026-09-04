@@ -12,6 +12,8 @@ export interface OminixRuntimeSummary {
   ready: boolean;
   /** ASR + LLM are ready, so spoken input can be submitted. */
   inputReady: boolean;
+  /** Independent of microphone/ASR availability. Unknown during failed probes. */
+  llmReady?: boolean;
   /** Narration audio can be synthesized by the configured TTS route. */
   ttsReady: boolean;
   loading: boolean;
@@ -73,6 +75,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       tone: "success",
       ready: true,
       inputReady: true,
+      llmReady: readiness.llm.ready,
       ttsReady: true,
       loading: false,
       canRepair: false,
@@ -88,6 +91,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       tone: "warning",
       ready: false,
       inputReady: false,
+      llmReady: readiness.llm.ready,
       ttsReady: readiness.tts.ready,
       loading: false,
       canRepair: localAsr,
@@ -101,6 +105,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       tone: "warning",
       ready: false,
       inputReady: false,
+      llmReady: false,
       ttsReady: readiness.tts.ready,
       loading: false,
       canRepair: false,
@@ -114,6 +119,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
     tone: "warning",
     ready: false,
     inputReady: true,
+    llmReady: true,
     ttsReady: false,
     loading: false,
     canRepair: localTts,

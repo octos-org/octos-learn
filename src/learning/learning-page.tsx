@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -51,6 +52,7 @@ import {
   stripLearningContext,
 } from "./learning-context";
 import { LearningWorkspace } from "./learning-workspace";
+import { LearningModelContext } from "./setup-state";
 import type { LearningBoardContext } from "./learning-board-context";
 import {
   createProvisionalLearningSession,
@@ -371,6 +373,7 @@ function LearningServerSync({
 
 export function LearningPage() {
   const navigate = useNavigate();
+  const modelConfigured = useContext(LearningModelContext);
   // Keep the screen on during lessons (long narration + no interaction;
   // audit L7 — only /home held a wake lock before).
   useWakeLock();
@@ -797,7 +800,7 @@ export function LearningPage() {
     );
   }
 
-  if (skillState !== "ready") {
+  if (skillState !== "ready" && modelConfigured) {
     return (
       <div className="relative flex h-screen w-screen items-center justify-center bg-black px-6 text-white">
         <button

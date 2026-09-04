@@ -1005,7 +1005,7 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
-  it("surfaces a busy private-ASR service while keeping the fallback capture", async () => {
+  it("releases capture when private ASR is busy so the user can keep typing", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",
     });
@@ -1024,8 +1024,10 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
       await result.current.start();
     });
 
-    expect(result.current.error).toBe("语音服务正在被使用，请稍后重试。");
+    expect(result.current.error).toBe("语音服务正在使用中，你可以继续打字");
     expect(captureStartMock).toHaveBeenCalledOnce();
+    expect(captureStopMock).toHaveBeenCalled();
+    expect(result.current.state).toBe("idle");
     unmount();
   });
 

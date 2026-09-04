@@ -194,7 +194,7 @@ export function AdminSettingsPage() {
         title="Settings"
         subtitle="Profile, companion, models, voice, skills, and access"
         actions={
-          <SettingsThemeButton />
+          <><button className="text-sm text-accent" onClick={()=>navigate("/setup")}>新手设置白板</button><SettingsThemeButton /></>
         }
       />
 

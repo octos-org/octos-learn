@@ -51,7 +51,8 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
 4. Set `OLL_PROVIDER` and `OLL_MODEL` to the provider and model exposed by this
    deployment. User API keys remain profile-scoped and must not be copied into
    the server environment file.
-5. Keep `allow_self_registration` set to `false` and do not add `--solo`.
+5. Set `allow_self_registration` to `true` for public email-verified signup.
+   Set it to `false` to return to invite-only access. Never add `--solo` on a public server.
 6. Create `/var/lib/octos-learn/runtime`, owned by the Octos Learn service
    account with mode `0700`. Do not configure `appui.default_session_cwd` for
    this multi-user deployment. Octos must derive a separate workspace under
@@ -63,9 +64,11 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    paths, then validate them before reload.
 
 The first administrator must already exist in the Octos data directory. After
-login, manage invitations at **Settings → Access → Authentication → Allowed
-Emails**. Adding an email authorizes its first OTP login; it does not store a
-password or a model key.
+login, public registration admits a new user after email verification; it does
+not grant administrator privileges or copy model credentials. In invite-only
+mode, manage invitations at **Settings → Access → Authentication → Allowed
+Emails**. See [Public onboarding and platform TTS](PUBLIC_ONBOARDING_AND_TTS.md)
+for setup cards, optional services, shared voice budgets, and migration.
 
 ## 4. Start and verify
 

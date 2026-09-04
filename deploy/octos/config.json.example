@@ -10,7 +10,7 @@
       "from_address": "learn@example.com"
     },
     "session_expiry_hours": 24,
-    "allow_self_registration": false
+    "allow_self_registration": true
   },
   "appui": {
     "allowed_origins": [

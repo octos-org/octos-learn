@@ -47,8 +47,8 @@ export type VoiceState =
 function privateAsrErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
-  if (normalized.includes("busy") || normalized.includes("in use")) {
-    return "语音服务正在被使用，请稍后重试。";
+  if (message === "语音服务正在使用中，你可以继续打字" || normalized.includes("busy") || normalized.includes("in use") || normalized.includes("single-session capacity")) {
+    return "语音服务正在使用中，你可以继续打字";
   }
   if (normalized.includes("bridge") || normalized.includes("offline")) {
     return "本地语音服务暂时离线，已尝试使用备用识别。";
@@ -1519,15 +1519,23 @@ export function useVoiceConversation(
       }
       if (privateResult.status === "rejected") {
         privateStartFailed = true;
-        console.warn(
-          "[voice] private ASR unavailable; keeping Octos ASR fallback",
-          privateResult.reason,
-        );
         if (privateAsrRef.current === privateAsr) {
           privateAsrRef.current = null;
         }
         await privateAsr.stop();
-        setPrivateAsrError(privateAsrErrorMessage(privateResult.reason));
+        const message = privateAsrErrorMessage(privateResult.reason);
+        setPrivateAsrError(message);
+        if (message === "语音服务正在使用中，你可以继续打字") {
+          // Capacity is not a transport failure: don't keep recording into an
+          // unavailable service or silently send the audio through another ASR.
+          stateRef.current = "idle";
+          captureModeRef.current = null;
+          void captureStop();
+          setState("idle");
+          setStartupDetail(null);
+          return;
+        }
+        console.warn("[voice] private ASR unavailable; keeping Octos ASR fallback", privateResult.reason);
       } else {
         listeningPrepared = await preparedListening;
       }
@@ -1590,6 +1598,7 @@ export function useVoiceConversation(
     setStartupDetail(null);
   }, [
     beginListening,
+    captureStop,
     cameraStart,
     cameraStop,
     historyTopic,

@@ -117,10 +117,13 @@ export async function publishPrivateAsrTrackMuted(
   await client.publish([audioTrack]);
 }
 
-async function responseError(response: Response): Promise<Error> {
+export async function responseError(response: Response): Promise<Error> {
   const body = await response.json().catch(() => null) as
-    | { error?: { message?: string } }
+    | { error?: { code?: string; message?: string } }
     | null;
+  if (body?.error?.code === "session_busy") {
+    return new Error("语音服务正在使用中，你可以继续打字");
+  }
   return new Error(
     body?.error?.message || `Private ASR request failed (${response.status})`,
   );
