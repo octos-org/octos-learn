@@ -13,12 +13,24 @@ const apiMocks = vi.hoisted(() => ({
     e instanceof Error ? e.message : fb,
   ),
 }));
+const voiceMocks = vi.hoisted(() => ({
+  synthesizeSpeech: vi.fn(),
+  playAudioBlob: vi.fn(),
+  unlockAudio: vi.fn(),
+}));
 // Keep the real module (normalizeProfileConfig etc.) and only spy the two
 // functions VoiceTab calls at runtime.
 vi.mock("./settings-api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./settings-api")>();
   return { ...actual, ...apiMocks };
 });
+vi.mock("@/api/voice", () => ({
+  synthesizeSpeech: voiceMocks.synthesizeSpeech,
+}));
+vi.mock("@/home/voice/audio-playback", () => ({
+  playAudioBlob: voiceMocks.playAudioBlob,
+  unlockAudio: voiceMocks.unlockAudio,
+}));
 
 /** Build a fully-typed Profile from a partial config (no `as any`). */
 function makeProfile(config: Partial<ProfileConfig>): Profile {
@@ -45,6 +57,11 @@ describe("VoiceTab", () => {
     cleanup();
     apiMocks.updateMyProfileConfig.mockReset();
     apiMocks.updateMyProfileConfig.mockResolvedValue(baseProfile);
+    voiceMocks.synthesizeSpeech.mockReset();
+    voiceMocks.synthesizeSpeech.mockResolvedValue(new Blob(["audio"]));
+    voiceMocks.playAudioBlob.mockReset();
+    voiceMocks.playAudioBlob.mockResolvedValue(true);
+    voiceMocks.unlockAudio.mockReset();
   });
 
   it("should show cloud fields and render the appid in cleartext", () => {
@@ -151,5 +168,36 @@ describe("VoiceTab", () => {
     render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
     fireEvent.click(screen.getByRole("button", { name: /advanced/i }));
     expect(screen.queryByLabelText(/Endpoint/i)).toBeNull();
+  });
+
+  it("saves the visible config, synthesizes real audio, and plays the TTS test", async () => {
+    const prefixedAppId = makeProfile({
+      tts_provider: "cloud",
+      tts_cloud: { appid: "APP ID: 123", voice: "BV700" },
+      env_vars: { VOLC_TTS_TOKEN: "ab***yz" },
+    });
+    apiMocks.updateMyProfileConfig.mockResolvedValue(prefixedAppId);
+    render(<VoiceTab profile={prefixedAppId} onProfileUpdated={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /test tts/i }));
+
+    expect(voiceMocks.unlockAudio).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
+    expect(apiMocks.updateMyProfileConfig.mock.calls[0][1].tts_cloud.appid).toBe("123");
+    await waitFor(() => expect(voiceMocks.synthesizeSpeech).toHaveBeenCalledWith(
+      "你好，这是一段课程语音测试。",
+    ));
+    expect(voiceMocks.playAudioBlob).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText(/TTS 可用/)).toBeTruthy();
+  });
+
+  it("shows an actionable failure when real synthesis fails", async () => {
+    voiceMocks.synthesizeSpeech.mockRejectedValue(new Error("configured TTS provider failed"));
+    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /test tts/i }));
+
+    expect(await screen.findByText("configured TTS provider failed")).toBeTruthy();
+    expect(voiceMocks.playAudioBlob).not.toHaveBeenCalled();
   });
 });
