@@ -1180,6 +1180,77 @@ describe("LearningWorkspace", () => {
     )).toBeNull();
   });
 
+  it("does not announce the previous lesson's end while the new lesson file is loading", async () => {
+    const sessionId = "learn-delivery-handoff";
+    const makeFile = (id: string) => ({
+      filename: `${id}.octos-lesson.json`,
+      path: `study/oll/${id}.octos-lesson.json`,
+      size_bytes: 100,
+      modified_at: id === "old-turn" ? "2026-09-04T10:00:00Z" : "2026-09-04T11:00:00Z",
+    });
+    const makeLesson = (id: string) => ({
+      dsl: "octos.lesson", version: "0.1", profile: "authoring",
+      lesson: { mode: "explain", language: "zh-CN", title: id, goals: ["理解公式"] },
+      steps: [{ key: "explain", purpose: "解释", beats: [{
+        key: "intro", say: `${id}的第一段旁白`, actions: [{
+          do: "write", as: "formula", kind: "math", role: "concept",
+          content: { latex: "y=x^2" }, place: { relation: "new_region" },
+        }],
+      }] }],
+      close: { summary: "总结", focus: ["formula"] },
+    });
+    sessionFilesMock.getSessionFiles.mockResolvedValue([makeFile("old-turn")]);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
+      ok: true, json: async () => makeLesson(url.includes("old-turn") ? "旧课程" : "新课程"),
+    })));
+    const view = render(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
+      playbackMode="review" onBack={vi.fn()} />);
+    const finishText = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
+    await screen.findByText(finishText);
+    view.rerender(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
+      playbackMode="live" onBack={vi.fn()} />);
+
+    const job = {
+      job_id: "handoff-job", batch_id: "handoff-batch", profile_id: "alan0x",
+      session_id: sessionId, action_id: "learning.lesson.generate", skill_id: "learning-coach",
+      status: "queued", created_at: "2026-09-04T11:00:00Z", updated_at: "2026-09-04T11:00:00Z",
+    };
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: job.action_id, ok: true, queued: 1, jobs: [job],
+    });
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请讲一节新课" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText(finishText)).toBeNull());
+    const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
+    let resolveFiles!: (files: ReturnType<typeof makeFile>[]) => void;
+    sessionFilesMock.getSessionFiles.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveFiles = resolve;
+    }));
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail: {
+        ...job, status: "succeeded", result: { success: true, artifacts: [{
+          handle: "ws/new-lesson", display_name: `${turnId}.octos-lesson.json`,
+          media_type: "application/json", size: 100,
+        }] },
+      } }));
+    });
+    expect(screen.queryByText(finishText)).toBeNull();
+    expect(screen.queryByText("课程完成")).toBeNull();
+    await act(async () => resolveFiles([makeFile("old-turn"), makeFile(turnId)]));
+    expect(screen.queryByText(finishText)).toBeNull();
+    await waitFor(() => expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playing: true, text: "新课程的第一段旁白" }),
+    ), { timeout: 4000 });
+    const narration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)![0]!;
+    act(() => {
+      narration.onPlaybackStart?.(narration.narrationId!);
+      narration.onPlaybackComplete?.(narration.narrationId!);
+    });
+    // Completing the actual new narration still produces the normal ending.
+    await waitFor(() => expect(screen.getByText(finishText)).toBeTruthy(), { timeout: 4000 });
+  });
+
   it("does not finish a successful job when no lesson artifact was delivered", async () => {
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",

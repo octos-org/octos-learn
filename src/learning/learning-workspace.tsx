@@ -770,14 +770,26 @@ export function LearningWorkspace({
     ollLesson &&
     (
       ollLesson.totalOperations < expectedOllOperationCount ||
-      ollGenerationSessionId === sessionId
+      ollGenerationSessionId === sessionId ||
+      whiteboardQuestions.some((question) =>
+        question.origin === "composer" && question.status === "pending") ||
+      ollArtifacts.some((artifact) => {
+        const identity = ollArtifactIdentity(artifact);
+        return !loadedOllArtifacts[identity] && !rejectedOllArtifactIds.has(identity);
+      })
     ),
   );
   const deliveryReachedCurrentEnd = Boolean(
     ollLesson &&
     isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents),
   );
-  const lessonDeliverySettled = Boolean(ollLesson?.deliverySettled);
+  // Job completion precedes artifact loading and incremental append. A
+  // Runtime still at the previous lesson's end must not announce completion
+  // (or release narration ownership) during that handoff. Derive this in the
+  // same render; waiting for setDeliverySettled(false) leaves a stale frame.
+  const lessonDeliverySettled = Boolean(
+    ollLesson?.deliverySettled && !hasUndeliveredOllEvents && deliveryReachedCurrentEnd,
+  );
   const setOllDeliverySettled = ollLesson?.setDeliverySettled;
   useEffect(() => {
     if (hasUndeliveredOllEvents) setOllDeliverySettled?.(false);
