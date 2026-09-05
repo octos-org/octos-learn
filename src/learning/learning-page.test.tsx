@@ -21,6 +21,7 @@ import { LearningPage } from "./learning-page";
 const navigateMock = vi.hoisted(() => vi.fn());
 const setTitleMock = vi.hoisted(() => vi.fn(async () => ({})));
 const deleteSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
+const logoutMock = vi.hoisted(() => vi.fn(async () => undefined));
 const sessionApiMock = vi.hoisted(() => ({
   listSessions: vi.fn(async () => [] as unknown[]),
   getSessionFiles: vi.fn(async (sessionId: string) => [
@@ -48,6 +49,10 @@ const profileSkillsMock = vi.hoisted(() => ({
 
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
+}));
+
+vi.mock("@/auth/auth-context", () => ({
+  useAuth: () => ({ logout: logoutMock }),
 }));
 
 vi.mock("@/api/sessions", () => ({
@@ -115,6 +120,7 @@ describe("LearningPage", () => {
     navigateMock.mockReset();
     setTitleMock.mockClear();
     deleteSessionMock.mockClear();
+    logoutMock.mockClear();
     sessionApiMock.listSessions.mockReset();
     sessionApiMock.listSessions.mockResolvedValue([]);
     sessionApiMock.getSessionFiles.mockReset();
@@ -135,6 +141,18 @@ describe("LearningPage", () => {
         version: "0.8.4",
       },
     ];
+  });
+
+  it("logs out from the bottom of the learning sidebar", async () => {
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开学习会话列表" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
+
+    await waitFor(() => expect(logoutMock).toHaveBeenCalledTimes(1));
   });
 
   it("opens the opt-in OLL fixture without Skill or device gates", async () => {

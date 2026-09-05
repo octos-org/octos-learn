@@ -10,6 +10,7 @@ import {
 import {
   ArrowLeft,
   BookOpen,
+  LogOut,
   Menu,
   Pencil,
   Plus,
@@ -17,6 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/auth/auth-context";
 import {
   deleteSession,
   getSessionFiles,
@@ -372,6 +374,7 @@ function LearningServerSync({
 }
 
 export function LearningPage() {
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const modelConfigured = useContext(LearningModelContext);
   // Keep the screen on during lessons (long narration + no interaction;
@@ -465,6 +468,7 @@ export function LearningPage() {
   const [skillCheckTick, setSkillCheckTick] = useState(0);
   const [serverSyncReady, setServerSyncReady] = useState(Boolean(ollFixture));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const markerSentRef = useRef(false);
   const [wakeSessionId, setWakeSessionId] = useState<string | null>(
     wakeAudio ? record.id : null,
@@ -919,8 +923,25 @@ export function LearningPage() {
             </div>
           ))}
         </div>
-        <div className="truncate border-t border-white/10 pt-3 text-xs text-white/40">
-          {record.title}
+        <div className="space-y-2 border-t border-white/10 pt-3">
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => {
+              setLoggingOut(true);
+              void logout().finally(() => {
+                setSidebarOpen(false);
+                setLoggingOut(false);
+              });
+            }}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm text-white/65 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+          >
+            <LogOut size={16} />
+            {loggingOut ? "正在退出…" : "退出登录"}
+          </button>
+          <div className="truncate px-3 text-xs text-white/40">
+            {record.title}
+          </div>
         </div>
       </aside>
 
