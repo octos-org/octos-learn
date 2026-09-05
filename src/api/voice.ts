@@ -40,7 +40,10 @@ export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  return requestBlob("/api/voice/synthesize", {
+  const endpoint = import.meta.env.VITE_HOSTED_TTS_ENABLED === "true"
+    ? "/api/learn/tts/synthesize"
+    : "/api/voice/synthesize";
+  return requestBlob(endpoint, {
     method: "POST",
     body: JSON.stringify({ text }),
     signal,

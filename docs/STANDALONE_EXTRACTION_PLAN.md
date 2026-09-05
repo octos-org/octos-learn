@@ -9,7 +9,7 @@ As of 2026-09-05, this is a historical implementation plan:
 - Slices 0–5 are complete and merged into `octos-learn/main`.
 - The standalone product is deployed at `https://learn.pitun.cc`; its current
   release includes public registration, first-run setup, built-in
-  `learning-coach`, shared TTS, private ASR, account-isolated whiteboards, and
+  `learning-coach`, product-scoped hosted TTS, private ASR, account-isolated whiteboards, and
   persisted image access.
 - The final closeout revision passed 780 unit tests, the public production
   build, and the CI browser smoke test.

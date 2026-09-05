@@ -18,9 +18,9 @@ export interface SharedTtsStatus {
   can_manage: boolean;
 }
 export const fetchSharedTts = () =>
-  request<SharedTtsStatus>("/api/voice/shared-tts");
+  request<SharedTtsStatus>("/api/learn/tts/status");
 
-export function SharedTtsPanel() {
+function HostedTtsPanel() {
   const [status, setStatus] = useState<SharedTtsStatus | null>(null);
   const [limits, setLimits] = useState<SharedTtsLimits | null>(null);
   const [message, setMessage] = useState("");
@@ -51,7 +51,7 @@ export function SharedTtsPanel() {
     setSaving(true);
     setMessage("");
     try {
-      await request("/api/voice/shared-tts", {
+      await request("/api/learn/tts/limits", {
         method: "PUT",
         body: JSON.stringify(limits),
       });
@@ -167,4 +167,10 @@ export function SharedTtsPanel() {
       )}
     </section>
   );
+}
+
+export function SharedTtsPanel() {
+  return import.meta.env.VITE_HOSTED_TTS_ENABLED === "true"
+    ? <HostedTtsPanel />
+    : null;
 }
