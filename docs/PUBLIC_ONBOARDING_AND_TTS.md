@@ -48,7 +48,7 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 平台代付语音属于 Octos Learn 公网产品，不属于通用 Octos 后端。公网部署额外运行 `services/hosted-tts`，仅监听 `127.0.0.1:50081`；Nginx 只把 `/api/learn/tts/` 转给它。该服务使用现有 Octos 登录令牌确认用户身份，但独立持有平台凭据、额度和用量数据库。
 
-1. 将 `deploy/hosted-tts/hosted-tts.env.example` 安装为 `/etc/octos-learn/hosted-tts.env`，写入专用于平台代付的火山 App ID、Token 和音色，文件保持 `root:root 0600`。
+1. 将 `deploy/hosted-tts/hosted-tts.env.example` 安装为 `/etc/octos-learn/hosted-tts.env`，写入专用于平台代付的火山 App ID、Token 和音色，文件保持 `root:root 0600`。从旧版管理员档案迁移时可由 root 运行同目录的 `migrate-from-octos-profile.mjs`；脚本直接写目标文件，不在终端输出凭据。
 2. 安装并启动 `deploy/systemd/octos-learn-hosted-tts.service.example`，确认 `http://127.0.0.1:50081/health` 正常。
 3. 公网前端以 `VITE_HOSTED_TTS_ENABLED=true` 构建；本地开发和普通自托管版本不要设置该变量。
 4. 管理员打开 **Settings → Voice → 平台提供的旁白语音 → 管理员额度设置**，启用并保存上表额度。上线前数据库默认关闭，避免仅配置凭据就开始计费。
