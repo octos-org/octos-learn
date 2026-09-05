@@ -162,7 +162,7 @@ export function LoginPage() {
                 ? "Sign in with your admin auth token."
                 : "" // no methods — the warning box below says so
             : authStatus.allow_self_registration
-              ? "Verify your email to create an account and sign in."
+              ? "输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。"
               : "Use an allowed or registered email to sign in.";
 
   const emailSection = (

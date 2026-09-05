@@ -58,7 +58,7 @@ describe("LoginPage registration guidance", () => {
     renderLogin(true);
 
     expect(
-      screen.getByText(/verify your email to create an account and sign in/i),
+      screen.getByText(/新邮箱验证后会自动注册/),
     ).toBeTruthy();
     expect(
       screen.queryByText(/use an allowed or registered email/i),
@@ -100,7 +100,7 @@ describe("LoginPage registration guidance", () => {
     await waitFor(() => expect(apiMocks.status).toHaveBeenCalledOnce());
     expect(
       await screen.findByText(
-        /verify your email to create an account and sign in/i,
+        /新邮箱验证后会自动注册/,
       ),
     ).toBeTruthy();
     expect(
@@ -159,7 +159,7 @@ describe("LoginPage registration guidance", () => {
 
     expect(
       await screen.findByText(
-        /verify your email to create an account and sign in/i,
+        /新邮箱验证后会自动注册/,
       ),
     ).toBeTruthy();
     expect(apiMocks.status).toHaveBeenCalledTimes(2);

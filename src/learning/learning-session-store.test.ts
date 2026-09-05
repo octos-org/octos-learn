@@ -114,7 +114,7 @@ describe("learning session lifecycle", () => {
   });
 
   it("does not overwrite a corrupted learning session index", () => {
-    const key = "octos_learning_sessions_v1";
+    const key = "octos_learning_sessions_v2:anonymous";
     const raw = "{corrupted-session-index";
     localStorage.setItem(key, raw);
 
@@ -123,8 +123,48 @@ describe("learning session lifecycle", () => {
     expect(provisional.id).toMatch(/^learn-1000-/u);
     expect(localStorage.getItem(key)).toBe(raw);
     expect(isRecoverableStorageLocked(localStorage, key)).toBe(true);
-    expect(localStorage.getItem("octos_learning_current_session")).toBeNull();
+    expect(
+      localStorage.getItem("octos_learning_current_session_v2:anonymous"),
+    ).toBeNull();
     expect(listLearningSessions({ includeProvisional: true })).toEqual([]);
+  });
+
+  it("isolates the local course index between authenticated profiles", () => {
+    localStorage.setItem("selected_profile", "profile-alice");
+    const alice = createProvisionalLearningSession(1_000);
+    promoteLearningSession(alice.id, "Alice 的课程", 1_100);
+
+    localStorage.setItem("selected_profile", "profile-bob");
+    expect(listLearningSessions({ includeProvisional: true })).toEqual([]);
+    const bob = createProvisionalLearningSession(2_000);
+    promoteLearningSession(bob.id, "Bob 的课程", 2_100);
+
+    expect(listLearningSessions()).toEqual([
+      expect.objectContaining({ id: bob.id, title: "Bob 的课程" }),
+    ]);
+
+    localStorage.setItem("selected_profile", "profile-alice");
+    expect(listLearningSessions()).toEqual([
+      expect.objectContaining({ id: alice.id, title: "Alice 的课程" }),
+    ]);
+  });
+
+  it("never adopts the legacy global course index into a new account", () => {
+    localStorage.setItem(
+      "octos_learning_sessions_v1",
+      JSON.stringify([{
+        id: "learn-900-legacy",
+        status: "completed",
+        title: "其他用户的旧课程",
+        createdAt: 900,
+        updatedAt: 950,
+      }]),
+    );
+    localStorage.setItem("octos_learning_current_session", "learn-900-legacy");
+    localStorage.setItem("selected_profile", "profile-new-user");
+
+    expect(listLearningSessions({ includeProvisional: true })).toEqual([]);
+    expect(resolveLearningEntrySession(1_000).id).not.toBe("learn-900-legacy");
   });
 
   it("recognizes saved ink and selection sources as durable whiteboard content", () => {

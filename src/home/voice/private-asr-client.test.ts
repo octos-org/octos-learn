@@ -5,6 +5,7 @@ import {
   privateAsrHttpPath,
   privateAsrWebSocketUrl,
   publishPrivateAsrTrackMuted,
+  responseError,
 } from "./private-asr-client";
 
 const { microphoneMock, requestGrantMock } = vi.hoisted(() => ({
@@ -27,6 +28,17 @@ describe("private ASR same-origin routing", () => {
     requestGrantMock.mockClear();
   });
 
+  it("explains a busy slot without disabling text input", async () => {
+    const response = new Response(JSON.stringify({
+      error: {
+        code: "session_busy",
+        message: "The ASR worker is at its single-session capacity",
+      },
+    }), { status: 409 });
+    expect((await responseError(response)).message).toBe(
+      "语音服务正在使用中，你可以继续打字",
+    );
+  });
   it("prefixes upstream HTTP paths exactly once", () => {
     expect(privateAsrHttpPath("/api/v1/sessions/abc/commit")).toBe(
       "/private-asr/api/v1/sessions/abc/commit",

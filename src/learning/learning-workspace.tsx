@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { LearningModelContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
 import { compilePlaybackOperations } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
@@ -382,6 +383,8 @@ export function LearningWorkspace({
   ollFixture,
 }: LearningWorkspaceProps) {
   const runtime = useOminixRuntimeSummary();
+  const modelConfigured = useContext(LearningModelContext);
+  const aiUnavailable = !modelConfigured || (runtime.llmReady === false && !runtime.loading);
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
     () => new LearnTraceRecorder(sessionId),
@@ -1888,6 +1891,7 @@ export function LearningWorkspace({
       turnId: string;
       uploadedMediaPath: string;
     }) => {
+      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
@@ -1966,6 +1970,7 @@ export function LearningWorkspace({
     },
     [
       handleTurnComplete,
+      aiUnavailable,
       addWhiteboardQuestion,
       ollLesson,
       onLearnerInput,
@@ -2141,6 +2146,7 @@ export function LearningWorkspace({
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
+      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
       unlockAudio();
       const clientTiming: LearningClientTiming = {
         submitted_at_epoch_ms: Date.now(),
@@ -2257,6 +2263,7 @@ export function LearningWorkspace({
     },
     [
       buildTurnText,
+      aiUnavailable,
       addWhiteboardQuestion,
       composerBoardReferences,
       conv.cameraActive,
@@ -2274,6 +2281,7 @@ export function LearningWorkspace({
 
   const sendImage = useCallback(
     async (file: File) => {
+      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
       unlockAudio();
       setSendError(null);
       const turnId = crypto.randomUUID();
@@ -2319,6 +2327,7 @@ export function LearningWorkspace({
     [
       addWhiteboardQuestion,
       buildTurnText,
+      aiUnavailable,
       handleTurnComplete,
       onLearnerInput,
       sessionId,
@@ -2674,10 +2683,10 @@ export function LearningWorkspace({
       )}
 
       <OctosTeacher
-        state={runtime.inputReady ? teacherState : "error"}
+        state={teacherState}
         speech={teacherSpeech}
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
-        stateLabel={runtime.inputReady ? teacherStateLabel : undefined}
+        stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
       />
 
@@ -2696,7 +2705,7 @@ export function LearningWorkspace({
         cameraActive={conv.cameraActive}
         voiceDisabled={!voiceEnabled || !runtime.inputReady}
         sendDisabled={
-          textTurnPending ||
+          aiUnavailable || textTurnPending ||
           (voiceEnabled &&
             (conv.state === "thinking" || conv.state === "speaking"))
         }
@@ -2725,9 +2734,10 @@ export function LearningWorkspace({
             ollNarrationTts.error}
         </div>
       )}
-      {voiceEnabled && !runtime.inputReady && !runtime.loading && (
+      {aiUnavailable && <div className="learning-runtime-warning">连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a></div>}
+      {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning">
-          语音引擎尚未就绪，白板示范仍可使用。
+          语音暂不可用，你可以继续打字、上传题目和阅读课程。
         </div>
       )}
       {import.meta.env.DEV && import.meta.env.MODE !== "test" ? (

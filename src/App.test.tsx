@@ -3,6 +3,7 @@ import { MemoryRouter, Outlet, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { AppRoutes } from "./App";
+vi.mock("./settings/settings-api", () => ({ getMyProfile:vi.fn(async()=>({id:"configured",config:{llm:{primary:{family_id:"google",model_id:"test"}}}})) }));
 
 afterEach(() => cleanup());
 
@@ -41,9 +42,9 @@ function renderRoute(path: string) {
 }
 
 describe("Octos Learn routes", () => {
-  it("opens the learning canvas at the product root", () => {
+  it("opens the learning canvas at the product root", async () => {
     renderRoute("/");
-    expect(screen.getByText("learning-page")).toBeTruthy();
+    expect(await screen.findByText("learning-page")).toBeTruthy();
   });
 
   it("keeps old /learn links working through the product root", async () => {

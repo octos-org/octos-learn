@@ -12,6 +12,7 @@ persistent data separate:
 ```text
 /opt/octos-learn/bin/octos          Octos binary
 /opt/octos-learn/web/               contents of octos-learn/dist
+/opt/octos-learn/skills/learning-coach/  product-owned learning runtime
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
 /var/lib/octos-learn/octos/         users, profiles, sessions, whiteboards
@@ -48,24 +49,35 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    `/etc/octos-learn/octos-learn.env`.
 3. Replace `learn.example.com`, SMTP fields, the SMTP password, the private-ASR
    control URL, and its server-to-server service token.
-4. Set `OLL_PROVIDER` and `OLL_MODEL` to the provider and model exposed by this
+4. Deploy the tested `learning-coach` package to
+   `/opt/octos-learn/skills/learning-coach`, keep it root-owned and executable,
+   and set `OCTOS_SKILLS_PATH=/opt/octos-learn/skills`. Do not install a copy in
+   each user's profile: this is a product runtime dependency, not a user-managed
+   extension.
+5. Set `OLL_PROVIDER` and `OLL_MODEL` to the provider and model exposed by this
    deployment. User API keys remain profile-scoped and must not be copied into
    the server environment file.
-5. Keep `allow_self_registration` set to `false` and do not add `--solo`.
-6. Create `/var/lib/octos-learn/runtime`, owned by the Octos Learn service
+6. Set `allow_self_registration` to `true` for public email-verified signup.
+   Set it to `false` to return to invite-only access. Never add `--solo` on a public server.
+7. Create `/var/lib/octos-learn/runtime`, owned by the Octos Learn service
    account with mode `0700`. Do not configure `appui.default_session_cwd` for
    this multi-user deployment. Octos must derive a separate workspace under
    each profile and session so generated lessons remain visible to
    `session/files.list` and isolated from other users.
-7. Set ownership to the Octos Learn service account for persistent data. Keep
+8. Set ownership to the Octos Learn service account for persistent data. Keep
    the environment file root-owned and mode `0600`.
-8. Copy the systemd unit and Nginx configuration, update hostnames and TLS
-   paths, then validate them before reload.
+9. Copy the systemd unit and Nginx configuration, update hostnames and TLS
+   paths, then validate them before reload. The hosted Learn proxy should return
+   `404` for `/api/my/profile/skills` and `/api/my/profile/skills/*`; the generic
+   Octos backend retains those routes for other products, but Octos Learn does
+   not expose user Skill installation.
 
 The first administrator must already exist in the Octos data directory. After
-login, manage invitations at **Settings → Access → Authentication → Allowed
-Emails**. Adding an email authorizes its first OTP login; it does not store a
-password or a model key.
+login, public registration admits a new user after email verification; it does
+not grant administrator privileges or copy model credentials. In invite-only
+mode, manage invitations at **Settings → Access → Authentication → Allowed
+Emails**. See [Public onboarding and platform TTS](PUBLIC_ONBOARDING_AND_TTS.md)
+for setup cards, optional services, shared voice budgets, and migration.
 
 ## 4. Start and verify
 
@@ -89,9 +101,12 @@ Then verify in a private browser window:
 3. Credentials for the deployment's configured model provider can be saved and
    tested in Settings, then used to generate a lesson. Confirm that
    `OLL_PROVIDER` and `OLL_MODEL` match that Settings option.
-4. Refreshing the page preserves the current whiteboard and course history.
-5. A second user cannot see the first user's courses, files, or model settings.
-6. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
+4. A newly registered user can generate a lesson without installing
+   `learning-coach`; Settings has no Skills page and the hosted user Skill API
+   returns `404`.
+5. Refreshing the page preserves the current whiteboard and course history.
+6. A second user cannot see the first user's courses, files, or model settings.
+7. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
    produces a lesson from the returned final transcript without exposing the
    long-lived service token in browser storage or network responses.
    Confirm the session response sets its HttpOnly cookie with
@@ -101,9 +116,9 @@ Then verify in a private browser window:
    event WebSocket usually means the proxy did not translate the trusted Learn
    origin to the ASR control plane origin; HTTP `401` means the session cookie
    was not sent to the WebSocket path.
-7. During lesson narration the private-ASR publisher is disabled; after the
+8. During lesson narration the private-ASR publisher is disabled; after the
    lesson the first intentional utterance is handled exactly once.
-8. Send a camera image, confirm its question-card preview and enlarged view
+9. Send a camera image, confirm its question-card preview and enlarged view
    load, then refresh and check again. The `/api/` and `/private-asr/` proxy
    locations must use `^~`: otherwise the static-asset regex intercepts API
    file URLs ending in `.jpg` or `.png`, returning an Nginx 404 even when the

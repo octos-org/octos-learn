@@ -12,6 +12,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { synthesizeSpeech } from "@/api/voice";
+import { SharedTtsPanel } from "./shared-tts";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 import {
   updateMyProfileConfig,
@@ -24,7 +25,7 @@ const TOKEN_ENV = "VOLC_TTS_TOKEN";
 // `inherit` maps to a null `tts_provider` (no per-profile override → use the
 // server-level default). The other ids are explicit overrides.
 const ROUTES: { id: string; label: string; hint: string }[] = [
-  { id: "inherit", label: "Inherit (server default)", hint: "Use the server-level TTS route." },
+  { id: "inherit", label: "平台提供 / 服务器默认", hint: "未配置个人凭据时使用平台语音，受平台额度限制。" },
   { id: "auto", label: "Auto", hint: "Cloud when credentials are set, else on-device." },
   { id: "local", label: "Local (on-device)", hint: "Local ominix-api engine." },
   { id: "cloud", label: "Cloud (Volcano)", hint: "Volcano Engine cloud TTS (requires App ID + token)." },
@@ -184,6 +185,7 @@ export function VoiceTab({
 
   return (
     <div className="space-y-6">
+      <SharedTtsPanel />
       <div className="glass-section rounded-lg p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">

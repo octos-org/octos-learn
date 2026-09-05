@@ -9,6 +9,7 @@ import {
 import {
   ArrowLeft,
   BookOpen,
+  LogOut,
   Menu,
   Pencil,
   Plus,
@@ -16,6 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/auth/auth-context";
 import {
   deleteSession,
   getSessionFiles,
@@ -37,10 +39,6 @@ import {
 } from "@/home/voice/private-asr-client";
 import { preloadVoiceCaptureRuntime } from "@/home/voice/use-voice-capture";
 import { useWakeLock } from "@/home/use-wake-lock";
-import {
-  getMyProfileSkills,
-  type SkillInfo,
-} from "@/settings/settings-api";
 import type {
   VoiceConversationOptions,
   VoiceConversationTurn,
@@ -77,9 +75,6 @@ import {
 
 const AUTO_CAMERA_KEY = "octos_learning_auto_camera";
 const INPUT_MODE_KEY = "octos_learning_input_mode";
-// 0.8.4 isolates standalone, current-image, and explicit board-follow-up
-// requests so prior board content cannot fill a different or ambiguous task.
-const MINIMUM_WHITEBOARD_SKILL_VERSION = [0, 8, 4] as const;
 const LEARNING_TAB_ID = getLearningTabOwner();
 
 type LearningMediaCapability =
@@ -149,22 +144,6 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
   localStorage.setItem(AUTO_CAMERA_KEY, String(autoCamera));
   localStorage.setItem(INPUT_MODE_KEY, "voice");
   return { autoCamera, voiceEnabled: true };
-}
-
-function supportsWhiteboardProtocol(skill: SkillInfo): boolean {
-  if (skill.name !== "learning-coach" || !skill.version) return false;
-  const version = skill.version
-    .split("-", 1)[0]
-    .split(".")
-    .map((part) => Number.parseInt(part, 10));
-  if (version.length < 3 || version.some((part) => !Number.isFinite(part))) {
-    return false;
-  }
-  for (let index = 0; index < MINIMUM_WHITEBOARD_SKILL_VERSION.length; index += 1) {
-    if (version[index] > MINIMUM_WHITEBOARD_SKILL_VERSION[index]) return true;
-    if (version[index] < MINIMUM_WHITEBOARD_SKILL_VERSION[index]) return false;
-  }
-  return true;
 }
 
 function LearningPermissionGate({
@@ -370,6 +349,7 @@ function LearningServerSync({
 }
 
 export function LearningPage() {
+  const { logout } = useAuth();
   const navigate = useNavigate();
   // Keep the screen on during lessons (long narration + no interaction;
   // audit L7 — only /home held a wake lock before).
@@ -454,14 +434,9 @@ export function LearningPage() {
       voiceEnabled,
     };
   });
-  const [skillState, setSkillState] = useState<
-    "checking" | "ready" | "missing" | "outdated" | "error"
-  >(ollFixture ? "ready" : "checking");
-  // Bumped by the gate's "重新检查" button to re-run the skill probe without
-  // a full page reload.
-  const [skillCheckTick, setSkillCheckTick] = useState(0);
   const [serverSyncReady, setServerSyncReady] = useState(Boolean(ollFixture));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const markerSentRef = useRef(false);
   const [wakeSessionId, setWakeSessionId] = useState<string | null>(
     wakeAudio ? record.id : null,
@@ -548,34 +523,6 @@ export function LearningPage() {
       releaseLearningTabLease(LEARNING_TAB_ID);
     };
   }, [hasTabLease]);
-
-  useEffect(() => {
-    if (!hasTabLease || ollFixture) return;
-    let cancelled = false;
-    getMyProfileSkills()
-      .then((skills) => {
-        if (cancelled) return;
-        const coach = skills.find((skill) => skill.name === "learning-coach");
-        setSkillState(
-          !coach
-            ? "missing"
-            : supportsWhiteboardProtocol(coach)
-              ? "ready"
-              : "outdated",
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setSkillState("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [hasTabLease, ollFixture, skillCheckTick]);
-
-  const recheckSkill = useCallback(() => {
-    setSkillState("checking");
-    setSkillCheckTick((tick) => tick + 1);
-  }, []);
 
   const buildTurnText = useCallback<NonNullable<VoiceConversationOptions["buildTurnText"]>>(
     (context) => {
@@ -797,62 +744,6 @@ export function LearningPage() {
     );
   }
 
-  if (skillState !== "ready") {
-    return (
-      <div className="relative flex h-screen w-screen items-center justify-center bg-black px-6 text-white">
-        <button
-          type="button"
-          onClick={() => navigate("/")}
-          className="absolute left-5 top-6 flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/60 transition hover:border-white/30 hover:text-white"
-        >
-          <ArrowLeft size={16} />
-          返回首页
-        </button>
-        <div className="w-full max-w-md text-center">
-          <BookOpen className="mx-auto mb-5 text-cyan-300" size={36} />
-          <h1 className="text-xl font-semibold">
-            {skillState === "checking"
-              ? "正在检查学习教练…"
-              : skillState === "missing"
-                ? "需要安装 learning-coach Skill"
-                : skillState === "outdated"
-                  ? "learning-coach 版本过旧"
-                  : "暂时无法确认 learning-coach Skill"}
-          </h1>
-          {skillState !== "checking" && (
-            <>
-              <p className="mt-3 text-sm leading-6 text-white/55">
-                {skillState === "outdated"
-                  ? "学习课堂需要 learning-coach 0.8.4 或更高版本。更新后回到这里重新检查；如提示需重启 Gateway，按提示操作即可。"
-                  : skillState === "missing"
-                    ? "学习课堂由 learning-coach 教学技能驱动。前往 设置 → Skills 安装后回到这里重新检查；如提示需重启 Gateway，按提示操作即可。"
-                    : "可能是网络或服务暂时不可用，请稍后重新检查。"}
-              </p>
-              <div className="mt-6 flex items-center justify-center gap-3">
-                {(skillState === "missing" || skillState === "outdated") && (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/settings?tab=skills")}
-                    className="rounded-full bg-white px-5 py-3 text-sm font-medium text-black"
-                  >
-                    打开 Skill 设置
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={recheckSkill}
-                  className="rounded-full border border-white/20 px-5 py-3 text-sm font-medium text-white/80 transition hover:border-white/40 hover:text-white"
-                >
-                  重新检查
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   if (devicePreferences === null) {
     return <LearningPermissionGate onReady={setDevicePreferences} />;
   }
@@ -916,8 +807,25 @@ export function LearningPage() {
             </div>
           ))}
         </div>
-        <div className="truncate border-t border-white/10 pt-3 text-xs text-white/40">
-          {record.title}
+        <div className="space-y-2 border-t border-white/10 pt-3">
+          <button
+            type="button"
+            disabled={loggingOut}
+            onClick={() => {
+              setLoggingOut(true);
+              void logout().finally(() => {
+                setSidebarOpen(false);
+                setLoggingOut(false);
+              });
+            }}
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm text-white/65 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
+          >
+            <LogOut size={16} />
+            {loggingOut ? "正在退出…" : "退出登录"}
+          </button>
+          <div className="truncate px-3 text-xs text-white/40">
+            {record.title}
+          </div>
         </div>
       </aside>
 

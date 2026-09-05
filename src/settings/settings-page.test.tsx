@@ -110,10 +110,26 @@ describe("AdminSettingsPage", () => {
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "API Keys" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Skills" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Skills" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Smart Home" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Channels" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Schedule" })).toBeNull();
+  });
+
+  it("does not expose the removed Skills page through its old deep link", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=skills"]}>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/no profile available/i)).toBeTruthy();
+    });
+    expect(
+      screen.getByRole("button", { name: "Profile" }).getAttribute("data-active"),
+    ).toBe("true");
+    expect(screen.queryByRole("button", { name: "Skills" })).toBeNull();
   });
 
   it("restores the learning companion picker without requiring profile data", async () => {
