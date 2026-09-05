@@ -118,18 +118,20 @@
   transform: rotate(-1deg);
 }
 .setup-handwritten {
-  max-width: 1440px;
-  margin: 16px auto;
+  margin: -10px 0 -2px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-start;
+  gap: 4px;
   color: #8b7450;
   font-family: cursive;
-  font-size: 19px;
+  font-size: 16px;
+  transform: rotate(-1deg);
 }
 .setup-handwritten svg {
-  width: 190px;
-  height: 45px;
+  flex: 0 0 auto;
+  width: 58px;
+  height: 38px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -173,6 +175,7 @@
     width: 100%;
   }
   .setup-handwritten {
+    justify-content: flex-start;
     font-size: 15px;
   }
   .setup-header {

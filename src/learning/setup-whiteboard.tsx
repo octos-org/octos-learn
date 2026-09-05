@@ -125,12 +125,6 @@ export function SetupWhiteboard() {
               <Link to="/settings?tab=companion">选择右下角的老师形象 →</Link>
             </section>
           </div>
-          <div className="setup-handwritten" aria-hidden="true">
-            <svg viewBox="0 0 260 50">
-              <path d="M5 5 Q110 60 239 15 M221 11 L239 15 L230 32" />
-            </svg>
-            <span>先连模型，其他的以后再说也行</span>
-          </div>
           <footer className="setup-footer">
             <button onClick={enter}>
               {hasLearningModel(profile)
@@ -243,6 +237,12 @@ function ModelCard({
           Key；普通聊天模型连接成功不等于课程生成服务已配置。
         </p>
       )}
+      <div className="setup-handwritten" aria-hidden="true">
+        <span>先连模型，其他的以后再说也行</span>
+        <svg viewBox="0 0 72 42">
+          <path d="M4 5 Q38 8 56 30 M44 24 L56 30 L50 18" />
+        </svg>
+      </div>
       <label>
         模型平台
         <select
