@@ -106,6 +106,27 @@ describe("summarizeVoiceReadiness", () => {
     });
   });
 
+  it("accepts the public hosted TTS route when personal TTS is not configured", () => {
+    const summary = summarizeVoiceReadiness(
+      readiness({
+        ready: false,
+        tts: {
+          ready: false,
+          mode: "cloud",
+          detail: "Cloud TTS credentials are not configured",
+        },
+      }),
+      true,
+    );
+    expect(stripRefresh(summary)).toMatchObject({
+      label: "Voice engine ready",
+      ready: true,
+      inputReady: true,
+      ttsReady: true,
+      state: "ready",
+    });
+  });
+
   it("offers repair when the on-device TTS engine is the gap", () => {
     const summary = summarizeVoiceReadiness(
       readiness({

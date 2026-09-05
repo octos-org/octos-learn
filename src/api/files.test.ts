@@ -86,6 +86,24 @@ describe("buildFileUrl", () => {
     ).toBe("/api/files?path=uploads%2Fvideo.webm&session=web-1&token=abc%20123");
   });
 
+  it("loads a consumed upload handle from its materialized session path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("jpeg", {
+      status: 200,
+      headers: { "Content-Type": "image/jpeg" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchAuthenticatedFileBlob(
+      "up/opaque/frame.jpg",
+      { sessionId: "learn-camera", profileId: "yy" },
+    )).resolves.toMatchObject({ type: "image/jpeg" });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/files?path=uploads%2Fframe.jpg&session=learn-camera",
+    );
+  });
+
   it("recovers a legacy image after refreshing a stale selected profile", async () => {
     localStorage.setItem(TOKEN_KEY, "camera-token");
     localStorage.setItem("selected_profile", "stale-profile");
@@ -104,7 +122,7 @@ describe("buildFileUrl", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const blob = await fetchAuthenticatedFileBlob(
-      "up/opaque/frame.jpg",
+      "skill-output/legacy-frame.jpg",
       { sessionId: "learn-camera" },
     );
 
