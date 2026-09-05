@@ -13,14 +13,17 @@ persistent data separate:
 /opt/octos-learn/bin/octos          Octos binary
 /opt/octos-learn/web/               contents of octos-learn/dist
 /opt/octos-learn/skills/learning-coach/  product-owned learning runtime
+/opt/octos-learn/services/hosted-tts/    optional public hosted-TTS service
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
+/etc/octos-learn/hosted-tts.env     platform TTS credential (0600)
 /var/lib/octos-learn/octos/         users, profiles, sessions, whiteboards
+/var/lib/octos-learn/hosted-tts/    hosted-TTS quota and usage database
 /var/lib/octos-learn/runtime/       process working directory only
 ```
 
-The Octos process listens only on `127.0.0.1:50080`. Nginx is the only public
-listener.
+The Octos process listens only on `127.0.0.1:50080`; the optional hosted-TTS
+service listens only on `127.0.0.1:50081`. Nginx is the only public listener.
 
 ## 2. Build artifacts
 
@@ -39,7 +42,10 @@ Build Octos from a clean `octos` checkout. The `api` feature is required for
 cargo build --release -p octos-cli --features api
 ```
 
-Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
+Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS. For a
+public release with platform-funded narration, also deploy
+`services/hosted-tts/` unchanged. It uses only Node.js built-ins and does not
+require `npm install`.
 
 ## 3. Install configuration
 
@@ -71,6 +77,12 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS.
    `404` for `/api/my/profile/skills` and `/api/my/profile/skills/*`; the generic
    Octos backend retains those routes for other products, but Octos Learn does
    not expose user Skill installation.
+10. Optional hosted narration: copy `deploy/hosted-tts/hosted-tts.env.example`
+    to `/etc/octos-learn/hosted-tts.env`, fill the dedicated platform TTS
+    credential, and keep it root-owned mode `0600`. Install
+    `deploy/systemd/octos-learn-hosted-tts.service.example`; create
+    `/var/lib/octos-learn/hosted-tts` owned by the service account. Do not place
+    this credential in the Octos environment or an administrator profile.
 
 The first administrator must already exist in the Octos data directory. After
 login, public registration admits a new user after email verification; it does
@@ -87,6 +99,8 @@ After installing the unit:
 sudo systemctl daemon-reload
 sudo systemctl enable --now octos-learn
 curl --fail http://127.0.0.1:50080/health
+sudo systemctl enable --now octos-learn-hosted-tts
+curl --fail http://127.0.0.1:50081/health
 sudo nginx -t
 sudo systemctl reload nginx
 curl --fail https://learn.example.com/health
@@ -109,7 +123,11 @@ Then verify in a private browser window:
    returns `404`.
 5. Refreshing the page preserves the current whiteboard and course history.
 6. A second user cannot see the first user's courses, files, or model settings.
-7. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
+7. Without personal TTS, narration uses the hosted pool and increments only
+   that user's usage. With personal TTS configured, narration uses the personal
+   route and hosted usage does not increase. A normal user cannot update limits
+   or read platform-wide usage.
+8. Enabling voice obtains a one-time ASR grant, creates an Agora session, and
    produces a lesson from the returned final transcript without exposing the
    long-lived service token in browser storage or network responses.
    Confirm the session response sets its HttpOnly cookie with
@@ -119,9 +137,9 @@ Then verify in a private browser window:
    event WebSocket usually means the proxy did not translate the trusted Learn
    origin to the ASR control plane origin; HTTP `401` means the session cookie
    was not sent to the WebSocket path.
-8. During lesson narration the private-ASR publisher is disabled; after the
+9. During lesson narration the private-ASR publisher is disabled; after the
    lesson the first intentional utterance is handled exactly once.
-9. Send a camera image, confirm its question-card preview and enlarged view
+10. Send a camera image, confirm its question-card preview and enlarged view
    load, then refresh and check again. The `/api/` and `/private-asr/` proxy
    locations must use `^~`: otherwise the static-asset regex intercepts API
    file URLs ending in `.jpg` or `.png`, returning an Nginx 404 even when the
@@ -132,10 +150,13 @@ Then verify in a private browser window:
 
 ## 5. Upgrade and rollback
 
-Before every upgrade, back up `/var/lib/octos-learn/octos` with encryption.
+Before every upgrade, back up `/var/lib/octos-learn/octos` and
+`/var/lib/octos-learn/hosted-tts` with encryption. Back up the root-only
+hosted-TTS environment separately; never place it in source control.
 Keep the previous Octos binary and previous web directory next to the new
-artifacts. Upgrade the binary and static files without replacing the data
-directory, restart Octos, check `/health`, then reload Nginx.
+artifacts. Upgrade the binary, static files and hosted-TTS service source
+without replacing either data directory. Restart both services, check both
+loopback health endpoints, then reload Nginx.
 
 If verification fails, restore the previous binary and web directory and
 restart the service. Do not roll back or overwrite the data directory unless a

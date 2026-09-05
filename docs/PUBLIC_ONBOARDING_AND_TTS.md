@@ -46,23 +46,24 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 ## 如何配置和修改
 
-1. 管理员在自己的 **Settings → Voice** 中配置火山 TTS 并成功试听。
-2. 在服务端 systemd 环境文件中设置 `OCTOS_SHARED_TTS_PROFILE=admin`（实际管理员档案 ID 以服务器为准），然后重启 Octos。这不是密钥，只指定共享语音的来源。
-3. 管理员打开 **Settings → Voice → 平台提供的旁白语音 → 管理员额度设置**，启用并保存上表额度。上线前默认关闭，避免仅设置来源就产生无上限费用。
-4. 同一位置可以修改平台和个人月限额，立即生效，不需要重新编译或重启。设为 0 或取消启用即可停止平台代付。
-5. 普通用户在同一页只看到自己的用量、上限及平台是否可用；不能改变限额或读取其他用户用量。管理员额外看到平台总用量。
+平台代付语音属于 Octos Learn 公网产品，不属于通用 Octos 后端。公网部署额外运行 `services/hosted-tts`，仅监听 `127.0.0.1:50081`；Nginx 只把 `/api/learn/tts/` 转给它。该服务使用现有 Octos 登录令牌确认用户身份，但独立持有平台凭据、额度和用量数据库。
 
-用户已配置个人云端 TTS 时继续使用个人凭据；明确选择本地 TTS 也不会消耗平台额度。没有个人 TTS 覆盖的用户才采用平台默认。平台密钥不复制进新用户档案，也不注入全局 `VOLC_TTS_TOKEN`，因此其他技能、网关或旧语音接口不能绕过本接口的额度使用这份平台密钥。共享语音目前服务于 Learn 调用的 `/api/voice/synthesize` 接口。
+1. 将 `deploy/hosted-tts/hosted-tts.env.example` 安装为 `/etc/octos-learn/hosted-tts.env`，写入专用于平台代付的火山 App ID、Token 和音色，文件保持 `root:root 0600`。
+2. 安装并启动 `deploy/systemd/octos-learn-hosted-tts.service.example`，确认 `http://127.0.0.1:50081/health` 正常。
+3. 公网前端以 `VITE_HOSTED_TTS_ENABLED=true` 构建；本地开发和普通自托管版本不要设置该变量。
+4. 管理员打开 **Settings → Voice → 平台提供的旁白语音 → 管理员额度设置**，启用并保存上表额度。上线前数据库默认关闭，避免仅配置凭据就开始计费。
+5. 同一位置可以修改平台和个人月限额，立即生效，不需要重新编译或重启。设为 0 或取消启用即可停止平台代付。
+6. 普通用户在同一页只看到自己的用量、上限及平台是否可用；不能改变限额或读取其他用户用量。管理员额外看到平台总用量。
 
-管理员自己的 TTS 配置仍是个人配置，不会计入这份共享池。需要测试共享池时应使用普通测试用户，避免把管理员试听误当作共享计量验证。
+用户已配置个人云端 TTS 或明确选择本地 TTS 时，公网服务把合成请求转交给该用户自己的 Octos TTS，不消耗平台额度。没有个人 TTS 覆盖的用户才调用平台凭据。平台密钥不属于管理员档案，不复制进新用户档案，不进入 Octos 进程、技能环境或模型上下文，也不能被通用 `/api/voice/synthesize` 绕过额度使用。
 
 ## 部署、迁移与回退
 
-- 后端和前端必须一起部署；旧后端没有 `/api/voice/shared-tts`，新前端会提示无法查询用量，不应当成已启用共享语音。
-- 持久用量及额度保存在 Octos 数据目录的 `shared-tts.sqlite`（此 VPS 为 `/var/lib/octos-learn/octos/shared-tts.sqlite`）。迁移时连同用户、管理员 TTS 配置及凭据存储一起备份；停服复制数据库，避免遗漏事务。
+- 公网前端和 hosted-TTS 服务必须一起部署；通用 Octos 不提供这些产品接口。没有 sidecar 的构建不得设置 `VITE_HOSTED_TTS_ENABLED=true`。
+- 持久用量及额度保存在 `/var/lib/octos-learn/hosted-tts/usage.sqlite`。迁移时停服复制数据库，并单独安全迁移 `/etc/octos-learn/hosted-tts.env`；二者都不属于 Octos 数据目录。
 - 不要删除数据库来重置额度。月度重置按新月份自然生效，历史用量保留。
-- 本地开发不设置 `OCTOS_SHARED_TTS_PROFILE` 时不启用共享池，继续使用原来的个人/本机语音配置。无需 SMTP、VPS 或 Agora 才能开发文字白板。
-- 回退版本时先关闭平台 TTS、将注册改回邀请制，然后恢复上一份前后端构建；保留数据库和用户数据，不删除新用户档案。
+- 本地开发不设置 `VITE_HOSTED_TTS_ENABLED`，继续使用通用 Octos 的个人/本机语音配置。无需 hosted-TTS、SMTP、VPS 或 Agora 才能开发文字白板。
+- 回退版本时先在额度设置中关闭平台 TTS，再恢复上一份前端和 sidecar；保留用量数据库和用户数据。停止 sidecar 只会取消默认语音，课程和文字旁白仍可使用。
 
 ## 上线验收
 
@@ -70,12 +71,12 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 - 当前公网前端对应 `octos-learn` 提交 `d2a7dd4`，地址为 `https://learn.pitun.cc`。
 - 公网已确认 `allow_self_registration=true`，邮件登录开启，后端健康检查正常。
-- 平台 TTS 使用 `admin` 档案中已有的火山凭据；额度已启用为平台 100,000 / 用户 10,000 字符每月，服务重启后设置保留。
-- 最终合并前端完整测试 85 个文件、780 项通过，CI 的公网构建与 E2E smoke 均通过；后端新增 7 项共享 TTS 测试全部通过。
+- 平台 TTS 凭据和额度已从 Octos 管理员档案依赖迁移到 Octos Learn hosted-TTS 服务；额度保持平台 100,000 / 用户 10,000 字符每月。
+- hosted-TTS 的用量、鉴权、个人 TTS 优先路径由独立测试覆盖；通用 Octos 不再包含平台代付业务逻辑。
 - 后端全量测试结果为 3,203 项通过、2 项失败、10 项忽略。两项失败是原有模型运行时测试，比较已释放对象与新对象的地址；地址可能被分配器复用。本次没有改动这些测试或对应逻辑，不将全量测试报告为全绿。
 - 设置白板完成桌面及窄屏渲染检查。真实新邮箱收码注册、普通用户实际合成与多人麦克风竞争，仍需按下方清单人工验收；接口检查不能代替这些体验测试。
 - 本次后端回退文件：`/opt/octos-learn/bin/octos.pre-public-onboarding-20260905`；最终前端部署前的回退目录：`/opt/octos-learn/web.rollback-pre-d2a7dd4`；原配置：`/etc/octos-learn/config.pre-public-onboarding-20260905.json`。
-- 平台凭据来源通过 `/etc/systemd/system/octos-learn.service.d/shared-tts.conf` 设置。回退后端之前应先移除此新增 drop-in，并按前面的步骤关闭共享语音及公开注册；不删除用量数据库。
+- hosted-TTS 的 systemd 单元、root-only 环境文件和独立数据库均在上述固定路径；Octos 服务不再需要 `shared-tts.conf` drop-in。
 
 ### 人工验收清单
 

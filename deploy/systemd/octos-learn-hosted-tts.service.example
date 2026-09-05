@@ -1,0 +1,24 @@
+[Unit]
+Description=Octos Learn hosted TTS
+After=network-online.target octos-learn.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=octos-learn
+Group=octos-learn
+WorkingDirectory=/opt/octos-learn/services/hosted-tts
+EnvironmentFile=/etc/octos-learn/hosted-tts.env
+Environment=NODE_NO_WARNINGS=1
+ExecStart=/usr/bin/env node server.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/octos-learn/hosted-tts
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
