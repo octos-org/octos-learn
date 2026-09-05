@@ -8,13 +8,16 @@ import {
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { normalizeProfile, type Profile } from "@/settings/settings-api";
-import { SetupWhiteboard } from "./setup-whiteboard";
+import { LearningSetupGate, SetupWhiteboard } from "./setup-whiteboard";
 import { needsLearningSetup } from "./setup-state";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   save: vi.fn(),
   request: vi.fn(),
+  selectProfile: vi.fn((profileId: string) => {
+    localStorage.setItem("selected_profile", profileId);
+  }),
 }));
 vi.mock("@/settings/settings-api", async () => {
   const real = await vi.importActual<typeof import("@/settings/settings-api")>(
@@ -26,7 +29,10 @@ vi.mock("@/settings/settings-api", async () => {
     updateMyProfileConfig: mocks.save,
   };
 });
-vi.mock("@/api/client", () => ({ request: mocks.request }));
+vi.mock("@/api/client", () => ({
+  request: mocks.request,
+  setSelectedProfileId: mocks.selectProfile,
+}));
 vi.mock("@/home/voice/audio-playback", () => ({
   unlockAudio: vi.fn(),
   playAudioBlob: vi.fn(async () => true),
@@ -52,6 +58,27 @@ afterEach(() => {
 });
 
 describe("first-run setup whiteboard", () => {
+  it("establishes the authenticated storage scope before opening the board", async () => {
+    const profile = blank();
+    profile.config.llm.primary = {
+      family_id: "google",
+      model_id: "gemini-test",
+    };
+    mocks.get.mockResolvedValue(profile);
+
+    render(
+      <MemoryRouter>
+        <LearningSetupGate>
+          <p>learning-board</p>
+        </LearningSetupGate>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText("learning-board");
+    expect(mocks.selectProfile).toHaveBeenCalledWith("alice");
+    expect(localStorage.getItem("selected_profile")).toBe("alice");
+  });
+
   it("does not interrupt configured users and scopes skipping to one account", () => {
     const p = blank();
     expect(needsLearningSetup(p)).toBe(true);

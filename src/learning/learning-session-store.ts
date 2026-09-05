@@ -3,6 +3,7 @@ import {
   loadRecoverableJson,
   writeRecoverableJson,
 } from "./recoverable-storage";
+import { getSelectedProfileId } from "../api/client";
 
 export type LearningSessionStatus =
   | "provisional"
@@ -18,11 +19,23 @@ export interface LearningSessionRecord {
   updatedAt: number;
 }
 
-const STORE_KEY = "octos_learning_sessions_v1";
-const CURRENT_KEY = "octos_learning_current_session";
+const STORE_KEY_PREFIX = "octos_learning_sessions_v2:";
+const CURRENT_KEY_PREFIX = "octos_learning_current_session_v2:";
 const WAKE_ONLY = /^(你好[,，\s]*小章鱼|你好小章鱼)[。！!,.，\s]*$/;
 const INK_STORAGE_PREFIX = "octos-learning-ink:v1:";
 const SELECTION_STORAGE_PREFIX = "learn:selection-enhancements:";
+
+function accountStorageScope(): string {
+  return encodeURIComponent(getSelectedProfileId() ?? "anonymous");
+}
+
+function sessionStoreKey(): string {
+  return `${STORE_KEY_PREFIX}${accountStorageScope()}`;
+}
+
+function currentSessionKey(): string {
+  return `${CURRENT_KEY_PREFIX}${accountStorageScope()}`;
+}
 
 function isSavedInkDocumentForSession(
   raw: string | null,
@@ -107,7 +120,7 @@ function validLearningSessionRecord(
 function readRecords(): LearningSessionRecord[] {
   return loadRecoverableJson({
     storage: localStorage,
-    key: STORE_KEY,
+    key: sessionStoreKey(),
     fallback: () => [],
     decode: (parsed) => {
       if (!Array.isArray(parsed)
@@ -121,7 +134,7 @@ function readRecords(): LearningSessionRecord[] {
 
 function writeRecords(records: LearningSessionRecord[]): boolean {
   if (records.some((record) => !validLearningSessionRecord(record))) return false;
-  return writeRecoverableJson(localStorage, STORE_KEY, records);
+  return writeRecoverableJson(localStorage, sessionStoreKey(), records);
 }
 
 function generateSessionId(now: number): string {
@@ -152,7 +165,7 @@ export function createProvisionalLearningSession(
     updatedAt: now,
   };
   if (writeRecords([record, ...readRecords()])) {
-    localStorage.setItem(CURRENT_KEY, record.id);
+    localStorage.setItem(currentSessionKey(), record.id);
   }
   return record;
 }
@@ -165,7 +178,7 @@ export function resolveLearningEntrySession(
   now = Date.now(),
 ): LearningSessionRecord {
   const records = readRecords();
-  const currentId = localStorage.getItem(CURRENT_KEY);
+  const currentId = localStorage.getItem(currentSessionKey());
   const current = records.find((record) => record.id === currentId);
   // A provisional session is a real in-progress whiteboard entry, even before
   // it has enough content to appear in the sidebar. Preserve it across refresh
@@ -185,7 +198,7 @@ export function resolveLearningEntrySession(
     .filter((record) => record.status === "active" || record.status === "paused")
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
   if (resumable) {
-    localStorage.setItem(CURRENT_KEY, resumable.id);
+    localStorage.setItem(currentSessionKey(), resumable.id);
     return resumable;
   }
   return createProvisionalLearningSession(now);
@@ -204,7 +217,7 @@ export function updateLearningSession(
   });
   if (!updated) return null;
   if (!writeRecords(records)) return null;
-  localStorage.setItem(CURRENT_KEY, id);
+  localStorage.setItem(currentSessionKey(), id);
   return updated;
 }
 
@@ -213,8 +226,9 @@ export function removeLearningSession(id: string): LearningSessionRecord | null 
   const removed = records.find((record) => record.id === id) ?? null;
   if (!removed) return null;
   if (!writeRecords(records.filter((record) => record.id !== id))) return null;
-  if (localStorage.getItem(CURRENT_KEY) === id) {
-    localStorage.removeItem(CURRENT_KEY);
+  const currentKey = currentSessionKey();
+  if (localStorage.getItem(currentKey) === id) {
+    localStorage.removeItem(currentKey);
   }
   return removed;
 }
@@ -287,7 +301,8 @@ export function cleanupProvisionalLearningSessions(): string[] {
   if (!writeRecords(records.filter((record) => record.status !== "provisional"))) {
     return [];
   }
-  const current = localStorage.getItem(CURRENT_KEY);
-  if (current && removed.includes(current)) localStorage.removeItem(CURRENT_KEY);
+  const currentKey = currentSessionKey();
+  const current = localStorage.getItem(currentKey);
+  if (current && removed.includes(current)) localStorage.removeItem(currentKey);
   return removed;
 }

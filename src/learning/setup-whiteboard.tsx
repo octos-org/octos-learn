@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { request } from "@/api/client";
+import { request, setSelectedProfileId } from "@/api/client";
 import { synthesizeSpeech } from "@/api/voice";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 import { refreshOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
@@ -30,6 +30,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
     getMyProfile()
       .then((p) => {
         if (active) {
+          if (p?.id) setSelectedProfileId(p.id);
           setRequired(p ? needsLearningSetup(p) : false);
           setModelConfigured(p ? hasLearningModel(p) : true);
         }
