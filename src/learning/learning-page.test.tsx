@@ -36,17 +36,6 @@ const sessionApiMock = vi.hoisted(() => ({
 const learningWorkspaceMock = vi.hoisted(() => ({
   props: null as LearningWorkspaceProps | null,
 }));
-const profileSkillsMock = vi.hoisted(() => ({
-  skills: [
-    {
-      name: "learning-coach",
-      source_repo: "alan0x/learning-coach",
-      tool_count: 0,
-      version: "0.8.4",
-    },
-  ],
-}));
-
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
 }));
@@ -90,10 +79,6 @@ vi.mock("@/home/voice/use-voice-capture", () => ({
   preloadVoiceCaptureRuntime: vi.fn(async () => {}),
 }));
 
-vi.mock("@/settings/settings-api", () => ({
-  getMyProfileSkills: vi.fn(async () => profileSkillsMock.skills),
-}));
-
 vi.mock("./learning-workspace", () => ({
   LearningWorkspace: (props: LearningWorkspaceProps) => {
     learningWorkspaceMock.props = props;
@@ -133,14 +118,6 @@ describe("LearningPage", () => {
       },
     ]);
     learningWorkspaceMock.props = null;
-    profileSkillsMock.skills = [
-      {
-        name: "learning-coach",
-        source_repo: "alan0x/learning-coach",
-        tool_count: 0,
-        version: "0.8.4",
-      },
-    ];
   });
 
   it("logs out from the bottom of the learning sidebar", async () => {
@@ -161,7 +138,6 @@ describe("LearningPage", () => {
       "",
       "/learn?oll-fixture=geometry-v2",
     );
-    profileSkillsMock.skills = [];
     localStorage.clear();
 
     render(<LearningPage />);
@@ -180,8 +156,6 @@ describe("LearningPage", () => {
       "",
       "/learn?oll-fixture=unit-circle-sine",
     );
-    profileSkillsMock.skills = [];
-
     render(<LearningPage />);
 
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
@@ -214,18 +188,10 @@ describe("LearningPage", () => {
     expect(navigateMock).toHaveBeenCalledWith("/settings");
   });
 
-  it("blocks an installed learning coach that predates request-source isolation", async () => {
-    profileSkillsMock.skills[0].version = "0.8.3";
-
+  it("treats learning-coach as a built-in product capability", async () => {
     render(<LearningPage />);
-
-    expect(
-      await screen.findByRole("heading", {
-        name: "learning-coach 版本过旧",
-      }),
-    ).toBeTruthy();
-    expect(screen.getByText(/需要 learning-coach 0.8.4/)).toBeTruthy();
-    expect(learningWorkspaceMock.props).toBeNull();
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(screen.queryByText(/安装 learning-coach/)).toBeNull();
   });
 
   it("hands wake audio to a hidden provisional learning session", async () => {

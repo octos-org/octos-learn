@@ -10,6 +10,8 @@
 
 设置卡片是普通受认证表单，不是 OLL 课程块。密钥不会进入白板快照、导出、手写数据、课程内容或模型上下文。以后从 **Settings → 新手设置白板** 重新打开。高级模型、个人 TTS 和老师形象设置仍保留。
 
+`learning-coach` 是 Octos Learn 的内置运行能力，由服务端通过 `OCTOS_SKILLS_PATH=/opt/octos-learn/skills` 提供给所有账户。用户不需要安装、升级或管理它；Octos Learn 的 Settings 不显示通用 Skills 页面。未来的学科能力包属于学习产品内容，不通过面向用户的 Skill 安装入口分发。
+
 ## 不同功能各自降级
 
 | 缺少的服务 | 仍可使用 | 暂不可用 |

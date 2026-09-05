@@ -4,7 +4,6 @@ import { useAuth } from "@/auth/auth-context";
 import {
   User,
   Cpu,
-  Puzzle,
   Loader2,
   Settings as SettingsIcon,
   Volume2,
@@ -21,7 +20,6 @@ import { getMyProfile, type Profile } from "./settings-api";
 import { ProfileTab } from "./profile-tab";
 import { LlmTab } from "./llm-tab";
 import { ApiKeysTab } from "./api-keys-tab";
-import { SkillsTab } from "./skills-tab";
 import { VoiceTab } from "./voice-tab";
 import { AuthenticationTab } from "./authentication-tab";
 import { LearningCompanionTab } from "./learning-companion-tab";
@@ -32,7 +30,6 @@ type TabId =
   | "api-keys"
   | "voice"
   | "companion"
-  | "skills"
   | "authentication";
 
 type TabGroup = "personal" | "learning" | "system";
@@ -62,7 +59,6 @@ const TABS: TabDef[] = [
   },
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
-  { id: "skills", label: "Skills", icon: Puzzle, group: "learning" },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true, group: "system" },
 ];
 
@@ -192,7 +188,7 @@ export function AdminSettingsPage() {
         icon={SettingsIcon}
         context="Octos Learn"
         title="Settings"
-        subtitle="Profile, companion, models, voice, skills, and access"
+        subtitle="Profile, companion, models, voice, and access"
         actions={
           <><button className="text-sm text-accent" onClick={()=>navigate("/setup")}>新手设置白板</button><SettingsThemeButton /></>
         }
@@ -281,7 +277,6 @@ export function AdminSettingsPage() {
                       onProfileUpdated={setProfile}
                     />
                   )}
-                  {activeTab === "skills" && <SkillsTab />}
                 </>
               ) : !isAdminOnlyTab ? (
                 <div className="flex flex-col items-center justify-center py-20">
