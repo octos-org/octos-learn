@@ -1,10 +1,19 @@
-import { getToken } from "@/api/client";
+import {
+  buildApiHeaders,
+  getToken,
+  refreshSelectedProfileId,
+} from "@/api/client";
 import { API_BASE } from "@/lib/constants";
 
 export interface BuildFileUrlOptions {
   sessionId?: string;
   /** Resolve a relative path inside the current session workspace. */
   workspaceScoped?: boolean;
+}
+
+export interface FetchAuthenticatedFileOptions extends BuildFileUrlOptions {
+  /** Profile that owned the file when it was uploaded. */
+  profileId?: string | null;
 }
 
 function shouldUseSessionScopedFileUrl(filePath: string, sessionId?: string): boolean {
@@ -47,4 +56,34 @@ export function buildAuthenticatedFileUrl(
   const base = buildFileUrl(filePath, options);
   const separator = base.includes("?") ? "&" : "?";
   return token ? `${base}${separator}token=${encodeURIComponent(token)}` : base;
+}
+
+/** Read a protected file through fetch rather than an <img src>. Hosted
+ * profiles require X-Profile-Id as well as the bearer token; an image element
+ * cannot send that header and therefore receives 403/404 for valid files. */
+export async function fetchAuthenticatedFileBlob(
+  filePath: string,
+  options: FetchAuthenticatedFileOptions = {},
+  signal?: AbortSignal,
+): Promise<Blob> {
+  const { profileId, ...urlOptions } = options;
+  const url = buildFileUrl(filePath, urlOptions);
+  const fetchWithProfile = (ownerProfileId?: string | null) => fetch(url, {
+    headers: buildApiHeaders({}, ownerProfileId),
+    signal,
+  });
+  let response = await fetchWithProfile(profileId);
+  // Records created before imageProfileId was persisted only know the opaque
+  // file handle. If the browser's selected profile became stale, refresh the
+  // authenticated home profile once and retry without weakening file auth.
+  if (response.status === 404 && profileId === undefined) {
+    const refreshedProfileId = await refreshSelectedProfileId();
+    if (refreshedProfileId) {
+      response = await fetchWithProfile(refreshedProfileId);
+    }
+  }
+  if (!response.ok) {
+    throw new Error(`File request failed (${response.status})`);
+  }
+  return response.blob();
 }

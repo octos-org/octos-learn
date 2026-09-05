@@ -12,6 +12,8 @@
     "dev:https": "vite --mode local-https --host 0.0.0.0",
     "prebuild": "node scripts/copy-vad-assets.mjs",
     "build": "tsc -b && vite build",
+    "prebuild:public": "node scripts/copy-vad-assets.mjs",
+    "build:public": "tsc -b && vite build --mode public",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "playwright test",

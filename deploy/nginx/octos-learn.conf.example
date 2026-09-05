@@ -3,6 +3,14 @@ map $http_upgrade $octos_connection_upgrade {
     '' close;
 }
 
+# The ASR control plane validates browser WebSocket origins against its own
+# public origin. Translate only this application's trusted origin; all other
+# origins remain unchanged and are still rejected by the upstream allowlist.
+map $http_origin $octos_private_asr_origin {
+    default $http_origin;
+    "https://learn.example.com" "https://asr.example.com";
+}
+
 limit_req_zone $binary_remote_addr zone=octos_otp_send:10m rate=3r/m;
 
 server {
@@ -39,7 +47,9 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
-    location /api/ {
+    # File handles end in .jpg/.png/etc. Keep all API requests on the
+    # authenticated backend, ahead of the static-asset regex locations.
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:50080;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -61,7 +71,7 @@ server {
     # The trailing slash deliberately strips /private-asr/ before forwarding.
     # The control plane accepts one-time Octos-issued browser grants. Never put
     # its long-lived Octos service token or operator token in this public proxy.
-    location /private-asr/ {
+    location ^~ /private-asr/ {
         proxy_pass https://asr.example.com/;
         proxy_ssl_server_name on;
         proxy_http_version 1.1;
@@ -69,17 +79,27 @@ server {
         proxy_set_header Connection $octos_connection_upgrade;
         proxy_set_header Host asr.example.com;
         proxy_set_header X-Forwarded-Proto $scheme;
-        # The upstream protects session control and event WebSockets with two
-        # path-scoped HttpOnly cookies. Rewrite their paths to the same-origin
-        # proxy prefix or the browser will not send them back.
-        proxy_cookie_path ~^/api/v1/sessions/(.*)$ /private-asr/api/v1/sessions/$1;
-        proxy_cookie_path ~^/ws/client/(.*)$ /private-asr/ws/client/$1;
+        proxy_set_header Origin $octos_private_asr_origin;
+        # Keep the HttpOnly session cookie isolated under this proxy prefix,
+        # while making it available to both session HTTP calls and the event
+        # WebSocket. Some upstream frameworks retain only one of two cookies
+        # when both have the same name but different paths.
+        proxy_cookie_path ~^/(?:api/v1/sessions|ws/client)/.*$ /private-asr/;
         proxy_read_timeout 3600s;
         proxy_buffering off;
     }
 
     location / {
         try_files $uri $uri/ /index.html;
+    }
+
+    # onnxruntime-web loads its ESM glue with dynamic import(). Browsers reject
+    # the module when older Nginx mime.types files serve .mjs as octet-stream.
+    location ~* \.mjs$ {
+        default_type application/javascript;
+        expires 7d;
+        add_header Cache-Control "public, max-age=604800, immutable";
+        try_files $uri =404;
     }
 
     location ~* \.(?:js|css|wasm|onnx|png|jpg|jpeg|gif|svg|webp|woff2?)$ {

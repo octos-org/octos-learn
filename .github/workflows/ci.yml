@@ -31,6 +31,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm test:unit
       - run: pnpm run build
+      # Public deployments load feature flags from .env.public. Exercise that
+      # exact mode so voice/VAD configuration cannot silently drift from CI.
+      - run: pnpm run build:public
 
   # Standalone product smoke gate. The fixture bypasses model generation,
   # while auth is mocked, so this checks routing and the real learning canvas

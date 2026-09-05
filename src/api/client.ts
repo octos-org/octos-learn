@@ -129,9 +129,7 @@ export function extractProfileIdFromPayload(payload: unknown): string | null {
 
 let selectedProfilePromise: Promise<string | null> | null = null;
 
-export async function ensureSelectedProfileId(): Promise<string | null> {
-  const existing = getSelectedProfileId();
-  if (existing) return existing;
+async function requestCurrentProfileId(): Promise<string | null> {
   if (selectedProfilePromise) return selectedProfilePromise;
 
   selectedProfilePromise = (async () => {
@@ -156,6 +154,19 @@ export async function ensureSelectedProfileId(): Promise<string | null> {
   })();
 
   return selectedProfilePromise;
+}
+
+export async function ensureSelectedProfileId(): Promise<string | null> {
+  const existing = getSelectedProfileId();
+  if (existing) return existing;
+  return requestCurrentProfileId();
+}
+
+/** Re-resolve the authenticated user's current profile instead of trusting a
+ * possibly stale browser selection. Used only as a recovery path for legacy
+ * persisted file references that predate owner snapshots. */
+export function refreshSelectedProfileId(): Promise<string | null> {
+  return requestCurrentProfileId();
 }
 
 export function buildApiHeaders(

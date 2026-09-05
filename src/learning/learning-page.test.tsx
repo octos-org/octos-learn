@@ -76,6 +76,15 @@ vi.mock("@/home/voice/audio-playback", () => ({
   unlockAudio: vi.fn(),
 }));
 
+vi.mock("@/home/voice/private-asr-client", () => ({
+  privateAsrEnabled: () => false,
+  preloadPrivateAsrRuntime: vi.fn(async () => {}),
+}));
+
+vi.mock("@/home/voice/use-voice-capture", () => ({
+  preloadVoiceCaptureRuntime: vi.fn(async () => {}),
+}));
+
 vi.mock("@/settings/settings-api", () => ({
   getMyProfileSkills: vi.fn(async () => profileSkillsMock.skills),
 }));

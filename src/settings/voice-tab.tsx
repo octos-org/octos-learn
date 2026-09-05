@@ -4,10 +4,15 @@ import {
   Loader2,
   Check,
   AlertCircle,
+  CheckCircle2,
+  XCircle,
+  Plug,
   Volume2,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { synthesizeSpeech } from "@/api/voice";
+import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 import {
   updateMyProfileConfig,
   formatSettingsError,
@@ -51,6 +56,13 @@ function isMasked(v: string | undefined): boolean {
   return !!v && (v.includes("***") || v.includes("\u{1f511}"));
 }
 
+function normalizeVolcanoAppId(value: string | undefined): string | null {
+  const match = value?.trim().match(/^(?:app\s*id\s*[:：]\s*)?(\d+)$/i);
+  return match?.[1] ?? null;
+}
+
+type TestStatus = "idle" | "testing" | "connected" | "failed";
+
 export function VoiceTab({
   profile,
   onProfileUpdated,
@@ -77,11 +89,14 @@ export function VoiceTab({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [testStatus, setTestStatus] = useState<TestStatus>("idle");
+  const [testMessage, setTestMessage] = useState<string | null>(null);
 
   const showCloud = route === "auto" || route === "cloud";
   const tokenSet = isMasked(storedToken) || storedToken.length > 0;
   const tokenAvailable = tokenSet || tokenInput.length > 0;
-  const appidSet = !!cloud.appid?.trim();
+  const normalizedAppId = normalizeVolcanoAppId(cloud.appid);
+  const appidSet = normalizedAppId != null;
   // Cloud is an explicit choice → enforce complete creds (the backend would
   // otherwise silently fall back to on-device). Auto may fall back, so it only
   // gets a soft hint.
@@ -93,34 +108,77 @@ export function VoiceTab({
     setCloud((c) => ({ ...c, [k]: v }));
   };
 
+  async function persistVoiceConfig(): Promise<Profile> {
+    const envVars = { ...(cfg.env_vars ?? {}) };
+    // Only overwrite the token when the user typed a new value; otherwise
+    // re-send the stored masked value so the backend restores the real one.
+    if (tokenInput) envVars[TOKEN_ENV] = tokenInput;
+    // Only persist a cloud override when one already existed or the user
+    // actually edited cloud fields — otherwise send `null` so we don't create
+    // an empty `{}` that would override the inherited server-level config.
+    const ttsCloud = hadCloud || cloudEdited
+      ? {
+          ...cloud,
+          ...(cloud.appid != null && normalizedAppId != null
+            ? { appid: normalizedAppId }
+            : {}),
+        }
+      : null;
+    const updated = await updateMyProfileConfig(profile, {
+      // `inherit` → null clears the override so the server default applies.
+      tts_provider: route === "inherit" ? null : route,
+      tts_cloud: ttsCloud,
+      asr_language: asrLanguage === "inherit" ? null : asrLanguage,
+      env_vars: envVars,
+    });
+    onProfileUpdated(updated);
+    setTokenInput("");
+    if (ttsCloud?.appid && ttsCloud.appid !== cloud.appid) {
+      setCloud((current) => ({ ...current, appid: ttsCloud.appid }));
+    }
+    return updated;
+  }
+
   async function save() {
     setSaving(true);
     setSaved(false);
     setError(null);
+    setTestStatus("idle");
+    setTestMessage(null);
     try {
-      const envVars = { ...(cfg.env_vars ?? {}) };
-      // Only overwrite the token when the user typed a new value; otherwise
-      // re-send the stored masked value so the backend restores the real one.
-      if (tokenInput) envVars[TOKEN_ENV] = tokenInput;
-      // Only persist a cloud override when one already existed or the user
-      // actually edited cloud fields — otherwise send `null` so we don't create
-      // an empty `{}` that would override the inherited server-level config.
-      const ttsCloud = hadCloud || cloudEdited ? cloud : null;
-      const updated = await updateMyProfileConfig(profile, {
-        // `inherit` → null clears the override so the server default applies.
-        tts_provider: route === "inherit" ? null : route,
-        tts_cloud: ttsCloud,
-        asr_language: asrLanguage === "inherit" ? null : asrLanguage,
-        env_vars: envVars,
-      });
-      onProfileUpdated(updated);
-      setTokenInput("");
+      await persistVoiceConfig();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError(formatSettingsError(err, "Failed to update voice config."));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function testTts() {
+    // Unlock Web Audio while this click is still a user gesture. The actual
+    // audio arrives after two network requests and would otherwise be blocked
+    // by browser autoplay policy.
+    unlockAudio();
+    setTestStatus("testing");
+    setTestMessage(null);
+    setError(null);
+    try {
+      // Test exactly what is visible in the form. Persisting first also forces
+      // the server to rebuild the profile runtime with the latest secret and
+      // route before the real synthesis request.
+      await persistVoiceConfig();
+      const audio = await synthesizeSpeech("你好，这是一段课程语音测试。");
+      const started = await playAudioBlob(audio, () => {});
+      if (!started) {
+        throw new Error("TTS 已返回音频，但当前浏览器无法播放。");
+      }
+      setTestStatus("connected");
+      setTestMessage("TTS 可用，试听已发送到当前默认扬声器。");
+    } catch (err) {
+      setTestStatus("failed");
+      setTestMessage(formatSettingsError(err, "TTS 测试失败。"));
     }
   }
 
@@ -285,7 +343,7 @@ export function VoiceTab({
 
             {cloudIncomplete && (
               <p role="alert" className="flex items-center gap-1.5 text-xs text-red-400">
-                <AlertCircle size={13} /> Cloud 模式需要同时填写 App ID 和 Token
+                <AlertCircle size={13} /> Cloud 模式需要纯数字 App ID 和 Token；不要填写“APP ID:”前缀
               </p>
             )}
             {autoTokenHint && (
@@ -315,6 +373,31 @@ export function VoiceTab({
           )}
           {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
+        <button
+          type="button"
+          onClick={testTts}
+          disabled={saving || testStatus === "testing" || cloudIncomplete}
+          className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted hover:text-text-strong hover:border-accent/30 disabled:opacity-30 transition"
+        >
+          {testStatus === "testing" ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Plug size={14} />
+          )}
+          {testStatus === "testing" ? "Testing…" : "Test TTS"}
+        </button>
+        {testStatus === "connected" && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-green-400">
+            <CheckCircle2 size={14} />
+            {testMessage}
+          </span>
+        )}
+        {testStatus === "failed" && (
+          <span role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-400">
+            <XCircle size={14} />
+            {testMessage}
+          </span>
+        )}
         {error && (
           <span role="alert" className="text-xs text-red-400">
             {error}

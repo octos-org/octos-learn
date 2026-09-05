@@ -8,6 +8,26 @@ import { getEchoCancelledMicStream } from "./microphone";
 const PRIVATE_ASR_PREFIX = "/private-asr";
 const FINAL_TIMEOUT_MS = 12_000;
 
+let agoraRuntimePromise: Promise<typeof import("agora-rtc-sdk-ng")> | null = null;
+
+/** Start downloading the Agora runtime before a private-ASR session is ready.
+ * The same promise is consumed by joinAgora(), so preloading never downloads
+ * or initialises a second SDK instance. */
+export function preloadPrivateAsrRuntime(): Promise<void> {
+  if (!agoraRuntimePromise) {
+    agoraRuntimePromise = import("agora-rtc-sdk-ng").catch((error) => {
+      agoraRuntimePromise = null;
+      throw error;
+    });
+  }
+  return agoraRuntimePromise.then(() => undefined);
+}
+
+async function getAgoraRuntime(): Promise<typeof import("agora-rtc-sdk-ng")> {
+  await preloadPrivateAsrRuntime();
+  return agoraRuntimePromise!;
+}
+
 interface PrivateAsrSessionResponse {
   sessionId: string;
   state: string;
@@ -86,6 +106,17 @@ export function privateAsrWebSocketUrl(
   return `${scheme}//${locationLike.host}${privateAsrHttpPath(upstreamPath)}`;
 }
 
+/** Keep the track publishable without sending microphone media before VAD
+ * opens the speech window. Exported so the Agora ordering contract can be
+ * regression-tested without starting a real RTC session. */
+export async function publishPrivateAsrTrackMuted(
+  client: Pick<IAgoraRTCClient, "publish">,
+  audioTrack: ILocalAudioTrack,
+): Promise<void> {
+  await audioTrack.setMuted(true);
+  await client.publish([audioTrack]);
+}
+
 async function responseError(response: Response): Promise<Error> {
   const body = await response.json().catch(() => null) as
     | { error?: { message?: string } }
@@ -101,6 +132,7 @@ export class PrivateAsrClient {
   private rtcClient: IAgoraRTCClient | null = null;
   private audioTrack: ILocalAudioTrack | null = null;
   private microphoneStream: MediaStream | null = null;
+  private microphonePromise: Promise<MediaStream> | null = null;
   private finalQueue: string[] = [];
   private finalWaiter: TranscriptWaiter | null = null;
   private closed = false;
@@ -113,6 +145,10 @@ export class PrivateAsrClient {
   async start(): Promise<void> {
     if (this.session) return;
     this.closed = false;
+    // Permission acquisition and device setup are independent of the control
+    // plane / Agora join. Start them immediately so public voice startup is
+    // bounded by the slower branch instead of paying both costs serially.
+    const microphonePromise = this.ensureMicrophoneStream();
     const { grant } = await requestPrivateAsrGrant();
     const response = await fetch(`${PRIVATE_ASR_PREFIX}/api/v1/sessions`, {
       method: "POST",
@@ -125,11 +161,22 @@ export class PrivateAsrClient {
     });
     if (!response.ok) throw await responseError(response);
     const session = parseSession(await response.json());
+    // stop() may have won while the session POST was in flight. The server
+    // has already reserved its worker at this point, so release that exact
+    // session instead of publishing it into an already-closed client.
+    if (this.closed) {
+      await this.releaseSession(session);
+      throw new Error("Private ASR stopped during session startup");
+    }
     this.session = session;
 
     try {
-      await this.openEventSocket(session);
-      if (!session.demoMode) await this.joinAgora(session);
+      await Promise.all([
+        this.openEventSocket(session),
+        session.demoMode
+          ? Promise.resolve()
+          : this.joinAgora(session, microphonePromise),
+      ]);
     } catch (error) {
       await this.stop();
       throw error;
@@ -137,15 +184,16 @@ export class PrivateAsrClient {
   }
 
   getVadStream = async (): Promise<MediaStream> => {
-    if (!this.microphoneStream) {
-      throw new Error("Private ASR microphone is not ready");
-    }
-    return this.microphoneStream.clone();
+    const stream = await this.ensureMicrophoneStream();
+    return stream.clone();
   };
 
   async setListening(listening: boolean): Promise<void> {
     if (listening) this.finalQueue = [];
-    await this.audioTrack?.setEnabled(listening);
+    // Keep the Agora track enabled (and therefore publishable) for the whole
+    // session. VAD controls whether media is sent by muting/unmuting it.
+    // Agora 4.24 rejects publish() for a disabled track.
+    await this.audioTrack?.setMuted(!listening);
   }
 
   async commit(): Promise<string> {
@@ -190,7 +238,7 @@ export class PrivateAsrClient {
     this.socket?.close();
     this.socket = null;
     try {
-      await this.audioTrack?.setEnabled(false);
+      await this.audioTrack?.setMuted(true);
     } catch {
       // The RTC client may already have disconnected.
     }
@@ -199,15 +247,18 @@ export class PrivateAsrClient {
     this.audioTrack = null;
     this.microphoneStream?.getTracks().forEach((track) => track.stop());
     this.microphoneStream = null;
+    const pendingMicrophone = this.microphonePromise;
+    this.microphonePromise = null;
+    // A browser permission prompt can remain unanswered indefinitely. Do not
+    // make transport teardown wait for it; ensureMicrophoneStream() and this
+    // detached handler stop any stream that arrives after closure.
+    void pendingMicrophone?.then((stream) => {
+      stream.getTracks().forEach((track) => track.stop());
+    }).catch(() => undefined);
     if (this.rtcClient) await this.rtcClient.leave().catch(() => undefined);
     this.rtcClient = null;
     this.session = null;
-    if (session) {
-      await fetch(
-        privateAsrHttpPath(`/api/v1/sessions/${session.sessionId}`),
-        { method: "DELETE", credentials: "same-origin" },
-      ).catch(() => undefined);
-    }
+    if (session) await this.releaseSession(session);
   }
 
   private async openEventSocket(session: PrivateAsrSessionResponse): Promise<void> {
@@ -243,8 +294,44 @@ export class PrivateAsrClient {
     });
   }
 
-  private async joinAgora(session: PrivateAsrSessionResponse): Promise<void> {
-    const { default: AgoraRTC } = await import("agora-rtc-sdk-ng");
+  private async ensureMicrophoneStream(): Promise<MediaStream> {
+    const current = this.microphoneStream;
+    if (current?.getAudioTracks().some((track) => track.readyState === "live")) {
+      return current;
+    }
+    if (this.closed) throw new Error("Private ASR has stopped");
+    if (!this.microphonePromise) {
+      const microphonePromise = getEchoCancelledMicStream().then((stream) => {
+        if (this.closed) {
+          stream.getTracks().forEach((track) => track.stop());
+          throw new Error("Private ASR stopped during microphone startup");
+        }
+        this.microphoneStream = stream;
+        return stream;
+      }).finally(() => {
+        if (this.microphonePromise === microphonePromise) {
+          this.microphonePromise = null;
+        }
+      });
+      this.microphonePromise = microphonePromise;
+    }
+    return this.microphonePromise;
+  }
+
+  private async releaseSession(
+    session: PrivateAsrSessionResponse,
+  ): Promise<void> {
+    await fetch(
+      privateAsrHttpPath(`/api/v1/sessions/${session.sessionId}`),
+      { method: "DELETE", credentials: "same-origin" },
+    ).catch(() => undefined);
+  }
+
+  private async joinAgora(
+    session: PrivateAsrSessionResponse,
+    microphonePromise: Promise<MediaStream>,
+  ): Promise<void> {
+    const { default: AgoraRTC } = await getAgoraRuntime();
     AgoraRTC.setLogLevel(2);
     const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
     this.rtcClient = client;
@@ -254,14 +341,15 @@ export class PrivateAsrClient {
       }
     });
     await client.setClientRole("host");
-    await client.join(
-      session.agora.appId,
-      session.agora.channel,
-      session.agora.token,
-      session.agora.uid,
-    );
-    const stream = await getEchoCancelledMicStream();
-    this.microphoneStream = stream;
+    const [, stream] = await Promise.all([
+      client.join(
+        session.agora.appId,
+        session.agora.channel,
+        session.agora.token,
+        session.agora.uid,
+      ),
+      microphonePromise,
+    ]);
     const sourceTrack = stream.getAudioTracks()[0];
     if (!sourceTrack) throw new Error("Microphone did not provide an audio track");
     // Agora owns a clone, not the source used to create Silero's VAD clones.
@@ -272,8 +360,9 @@ export class PrivateAsrClient {
       encoderConfig: "speech_standard",
     });
     this.audioTrack = audioTrack;
-    await audioTrack.setEnabled(false);
-    await client.publish([audioTrack]);
+    // A muted track remains enabled, so Agora accepts it in publish(), while
+    // no microphone media is sent before Silero VAD opens the speech window.
+    await publishPrivateAsrTrackMuted(client, audioTrack);
   }
 
   private handleEvent(event: PrivateAsrEvent): void {

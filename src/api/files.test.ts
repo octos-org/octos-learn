@@ -1,10 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { buildAuthenticatedFileUrl, buildFileUrl } from "@/api/files";
+import {
+  buildAuthenticatedFileUrl,
+  buildFileUrl,
+  fetchAuthenticatedFileBlob,
+} from "@/api/files";
 import { TOKEN_KEY } from "@/lib/constants";
 
 afterEach(() => {
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem("selected_profile");
+  vi.unstubAllGlobals();
 });
 
 describe("buildFileUrl", () => {
@@ -78,5 +84,36 @@ describe("buildFileUrl", () => {
         sessionId: "web-1",
       }),
     ).toBe("/api/files?path=uploads%2Fvideo.webm&session=web-1&token=abc%20123");
+  });
+
+  it("recovers a legacy image after refreshing a stale selected profile", async () => {
+    localStorage.setItem(TOKEN_KEY, "camera-token");
+    localStorage.setItem("selected_profile", "stale-profile");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        profile: { id: "admin" },
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }))
+      .mockResolvedValueOnce(new Response("jpeg", {
+        status: 200,
+        headers: { "Content-Type": "image/jpeg" },
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const blob = await fetchAuthenticatedFileBlob(
+      "up/opaque/frame.jpg",
+      { sessionId: "learn-camera" },
+    );
+
+    expect(blob.type).toBe("image/jpeg");
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(expect.objectContaining({
+      headers: expect.objectContaining({ "X-Profile-Id": "stale-profile" }),
+    }));
+    expect(fetchMock.mock.calls[2]?.[1]).toEqual(expect.objectContaining({
+      headers: expect.objectContaining({ "X-Profile-Id": "admin" }),
+    }));
   });
 });

@@ -8,7 +8,7 @@ export interface VoiceCapture {
   start: (
     onUtterance: (wav: Blob) => void,
     options?: VoiceCaptureStartOptions,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   /** Resolves once the VAD is fully torn down. Await before starting reply
    *  playback so the Silero ONNX/WASM + mic AudioContext shutdown doesn't
    *  contend with the playback render thread. */
@@ -30,10 +30,9 @@ export interface VoiceCaptureStartOptions {
 }
 
 const VAD_SAMPLE_RATE = 16000;
-const VAD_ASSET_TIMEOUT_MS = 5000;
 type VadModel = "legacy" | "v5";
 
-let vadAssetCheckPromise: Promise<void> | null = null;
+let vadRuntimePreloadPromise: Promise<void> | null = null;
 // Prefer Silero v5 for actual speech admission. Replay of the same production
 // `/learn` WAVs showed that legacy admitted keyboard/friction noise that v5
 // rejected, while v5 kept every matched Chinese utterance in the corpus. Keep
@@ -58,14 +57,11 @@ const VAD_ONNX_WASM_BASE_PATH =
   typeof window !== "undefined"
     ? `${window.location.origin}/vad/`
     : "/vad/";
-const VAD_ASSETS = [
+const VAD_RUNTIME_ASSETS = [
   `${VAD_BASE_ASSET_PATH}vad.worklet.bundle.min.js`,
-  `${VAD_BASE_ASSET_PATH}silero_vad_legacy.onnx`,
   `${VAD_BASE_ASSET_PATH}silero_vad_v5.onnx`,
   `${VAD_BASE_ASSET_PATH}ort-wasm-simd-threaded.wasm`,
   `${VAD_BASE_ASSET_PATH}ort-wasm-simd-threaded.mjs`,
-  `${VAD_BASE_ASSET_PATH}ort-wasm-simd-threaded.jsep.wasm`,
-  `${VAD_BASE_ASSET_PATH}ort-wasm-simd-threaded.jsep.mjs`,
 ] as const;
 const noop = () => {};
 
@@ -83,58 +79,29 @@ function frameProcessorOptions(options: VoiceCaptureStartOptions) {
   };
 }
 
-async function checkAsset(url: string): Promise<void> {
-  const request = async (opts: {
-    method: "HEAD" | "GET";
-    headers?: Record<string, string>;
-  }) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      controller.abort();
-    }, VAD_ASSET_TIMEOUT_MS);
-    try {
-      const response = await fetch(url, {
-        ...opts,
-        cache: "no-store",
-        signal: controller.signal,
-      });
-      return response;
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-
-  let response: Response | null = null;
-  try {
-    response = await request({ method: "HEAD" });
-  } catch (error) {
-    console.warn(`[voice] HEAD failed for ${url}, fallback GET`, error);
-  }
-  if (!response || !response.ok) {
-    response = await request({
-      method: "GET",
-      headers: { Range: "bytes=0-0" },
-    });
-  }
+async function fetchVadRuntimeAsset(url: string): Promise<void> {
+  const response = await fetch(url, { cache: "force-cache" });
   if (!response.ok) {
     throw new Error(`VAD asset unavailable: ${url} (${response.status})`);
   }
+  // Consume the body so the browser's HTTP cache contains the complete model
+  // or WASM file before MicVAD starts its own loader.
+  await response.arrayBuffer();
 }
 
-async function ensureVadAssets(): Promise<void> {
-  const checks = VAD_ASSETS.map((assetUrl) => checkAsset(assetUrl));
-
-  await Promise.all(checks);
-}
-
-function getVADAssetPromise(): Promise<void> {
-  if (!vadAssetCheckPromise) {
-    vadAssetCheckPromise = ensureVadAssets().catch((err) => {
-      vadAssetCheckPromise = null;
+/** Download the production VAD runtime in parallel. This is safe to call from
+ * pointer intent, permission acquisition, and conversation startup: every
+ * caller shares one promise and MicVAD subsequently reuses the HTTP cache. */
+export function preloadVoiceCaptureRuntime(): Promise<void> {
+  if (!vadRuntimePreloadPromise) {
+    vadRuntimePreloadPromise = Promise.all(
+      VAD_RUNTIME_ASSETS.map(fetchVadRuntimeAsset),
+    ).then(() => undefined).catch((err) => {
+      vadRuntimePreloadPromise = null;
       throw err;
     });
   }
-  return vadAssetCheckPromise;
+  return vadRuntimePreloadPromise;
 }
 
 function runCallbackSafely(
@@ -172,7 +139,7 @@ export function useVoiceCapture(): VoiceCapture {
   // windows. MicVAD supports live frame-processor option updates, and these
   // refs let its stable callbacks always dispatch to the latest voice mode.
   const callbacksRef = useRef<CaptureCallbacks | null>(null);
-  const initializationRef = useRef<Promise<void> | null>(null);
+  const initializationRef = useRef<Promise<boolean> | null>(null);
   const teardownRef = useRef<Promise<void> | null>(null);
   // Monotonic cancellation token. Only stop() invalidates an in-flight
   // initialization. Repeated start() calls share that initialization and
@@ -235,13 +202,13 @@ export function useVoiceCapture(): VoiceCapture {
     // stop() may have won while this start() was waiting for the previous VAD
     // to finish tearing down. Do not reacquire the microphone after that.
     const latestAfterTeardown = callbacksRef.current;
-    if (!latestAfterTeardown) return;
+    if (!latestAfterTeardown) return false;
 
     const active = vadRef.current;
     if (active) {
       active.setOptions(frameProcessorOptions(latestAfterTeardown.options));
       setCapturing(true);
-      return;
+      return true;
     }
 
     // thinking→speaking can happen while the first MicVAD.new() is still
@@ -254,7 +221,7 @@ export function useVoiceCapture(): VoiceCapture {
       } catch {
         // The initializer owner surfaces the capture error. Joining callers
         // must not leak a second rejection from the same failed MicVAD.new().
-        return;
+        return false;
       }
       if (initializationRef.current === pendingInitialization) {
         initializationRef.current = null;
@@ -265,13 +232,19 @@ export function useVoiceCapture(): VoiceCapture {
           frameProcessorOptions(callbacksRef.current.options),
         );
         setCapturing(true);
-        return;
+        return true;
       }
+      return false;
     }
 
     const gen = startGenRef.current;
     const initialize = (async () => {
-      await getVADAssetPromise();
+      // Conversation startup already begins a best-effort preload. Do not
+      // serialize MicVAD initialization behind a second full download wait:
+      // MicVAD can consume the browser cache/coalesced requests directly.
+      void preloadVoiceCaptureRuntime().catch((error) => {
+        console.warn("[voice] VAD runtime preload failed", error);
+      });
       let vad: MicVAD | null = null;
       let initError: unknown = null;
       for (const model of VAD_MODEL_PREFERENCE) {
@@ -328,7 +301,7 @@ export function useVoiceCapture(): VoiceCapture {
           await vad.start();
           if (gen !== startGenRef.current) {
             await vad.destroy().catch(() => undefined);
-            return;
+            return false;
           }
           break;
         } catch (err) {
@@ -349,19 +322,21 @@ export function useVoiceCapture(): VoiceCapture {
       const latest = callbacksRef.current;
       if (!latest || gen !== startGenRef.current) {
         await vad.destroy().catch(() => undefined);
-        return;
+        return false;
       }
       vad.setOptions(frameProcessorOptions(latest.options));
       vadRef.current = vad;
       setCapturing(true);
+      return true;
     })();
     initializationRef.current = initialize;
     try {
-      await initialize;
+      return await initialize;
     } catch (e) {
       console.error("[voice] capture init failed", e);
       setError(e instanceof Error ? e.message : "microphone unavailable");
       setCapturing(false);
+      return false;
     } finally {
       if (initializationRef.current === initialize) {
         initializationRef.current = null;

@@ -21,6 +21,7 @@ let current: AudioBufferSourceNode | null = null;
 let currentOnEnded: (() => void) | null = null;
 
 function getCtx(): AudioContext | null {
+  if (ctx?.state === "closed") ctx = null;
   if (ctx) return ctx;
   const Ctor =
     window.AudioContext ||
@@ -31,11 +32,31 @@ function getCtx(): AudioContext | null {
   return ctx;
 }
 
+async function routeToCurrentDefaultOutput(c: AudioContext): Promise<void> {
+  const sinkable = c as AudioContext & {
+    setSinkId?: (sinkId: string) => Promise<void>;
+  };
+  if (typeof sinkable.setSinkId !== "function") return;
+  try {
+    // Re-apply the browser's current default output before playback. A long-
+    // lived AudioContext can remain attached to the device that was default
+    // when the whiteboard tab first opened (for example laptop speakers before
+    // a headset was connected), while a newly opened video tab uses the new
+    // default. Chrome accepts an empty sink id as "current system default".
+    await sinkable.setSinkId("");
+  } catch {
+    // Not all browsers implement speaker selection. The ordinary destination
+    // remains usable, so lack of this optional API must not block playback.
+  }
+}
+
 /** Call from inside a user-gesture handler (the entry click / orb tap) to
  *  unlock playback for the rest of the session. */
 export function unlockAudio(): void {
   const c = getCtx();
-  if (c && c.state === "suspended") void c.resume();
+  if (!c) return;
+  void routeToCurrentDefaultOutput(c);
+  if (c.state === "suspended") void c.resume();
 }
 
 /** Stop whatever is currently playing. Fires the interrupted clip's
@@ -73,6 +94,7 @@ export async function playAudioBlob(
   if (signal?.aborted) return false;
   const c = getCtx();
   if (!c) return false;
+  await routeToCurrentDefaultOutput(c);
   if (c.state === "suspended") {
     try {
       await c.resume();

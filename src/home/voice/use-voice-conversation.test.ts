@@ -34,7 +34,10 @@ const {
   interruptActiveTurnMock,
   uploadFilesMock,
   privateAsrEnabledMock,
+  preloadPrivateAsrRuntimeMock,
+  preloadVoiceCaptureRuntimeMock,
   privateAsrInstance,
+  captureState,
 } = vi.hoisted(() => ({
   captureStartMock: vi.fn(async () => {}),
   captureStopMock: vi.fn(async () => {}),
@@ -50,6 +53,12 @@ const {
   interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
   privateAsrEnabledMock: vi.fn(() => false),
+  preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
+  preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
+  captureState: {
+    error: null as string | null,
+    capturing: false,
+  },
   privateAsrInstance: {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
@@ -61,20 +70,22 @@ const {
 
 vi.mock("./private-asr-client", () => ({
   privateAsrEnabled: privateAsrEnabledMock,
+  preloadPrivateAsrRuntime: preloadPrivateAsrRuntimeMock,
   PrivateAsrClient: vi.fn(function PrivateAsrClientMock() {
     return privateAsrInstance;
   }),
 }));
 
 vi.mock("./use-voice-capture", () => ({
+  preloadVoiceCaptureRuntime: preloadVoiceCaptureRuntimeMock,
   // Stable object — the hook destructures start/stop and depends on their
   // identity staying constant across renders (mirrors the real hook's
   // useCallback([])-stable fns).
   useVoiceCapture: () => ({
-    capturing: false,
+    capturing: captureState.capturing,
     start: captureStartMock,
     stop: captureStopMock,
-    error: null,
+    error: captureState.error,
   }),
 }));
 
@@ -178,6 +189,7 @@ vi.mock("@/api/files", () => ({
 
 vi.mock("@/api/client", () => ({
   buildApiHeaders: () => ({}),
+  ensureSelectedProfileId: vi.fn(async () => "voice-profile"),
 }));
 
 afterEach(() => {
@@ -732,6 +744,16 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     cameraMock.grabFrame.mockResolvedValue(null);
     getActiveBridgeMock.mockReset();
     getActiveBridgeMock.mockReturnValue(undefined);
+    captureState.error = null;
+    captureState.capturing = false;
+    privateAsrEnabledMock.mockReset();
+    privateAsrEnabledMock.mockReturnValue(false);
+    privateAsrInstance.start.mockReset();
+    privateAsrInstance.start.mockResolvedValue(undefined);
+    privateAsrInstance.stop.mockClear();
+    privateAsrInstance.setListening.mockClear();
+    privateAsrInstance.commit.mockReset();
+    privateAsrInstance.commit.mockResolvedValue("请比较两条函数曲线");
   });
 
   it("does NOT re-acquire the microphone when the hook unmounts during the bridge-connect wait", async () => {
@@ -913,6 +935,76 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
+  it("does not claim private ASR is listening while external narration is active", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-narrating", undefined, undefined, {
+        externalSpeechActive: true,
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(captureStartMock).not.toHaveBeenCalled();
+    expect(privateAsrInstance.setListening).not.toHaveBeenCalledWith(true);
+    expect(result.current.state).toBe("speaking");
+    unmount();
+  });
+
+  it("does not claim private ASR is listening when VAD did not start", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    captureStartMock.mockResolvedValueOnce(false);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-vad-not-ready", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(privateAsrInstance.setListening).not.toHaveBeenCalledWith(true);
+    expect(result.current.state).not.toBe("listening");
+    unmount();
+  });
+
+  it("surfaces a private ASR failure without waiting for a pending microphone prompt", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    captureStartMock.mockReturnValueOnce(new Promise<boolean>(() => {}));
+    privateAsrInstance.start.mockRejectedValueOnce(
+      new Error("private ASR proxy unavailable"),
+    );
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-permission-pending", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.error).toContain("private ASR proxy unavailable");
+    expect(result.current.state).not.toBe("listening");
+    unmount();
+  });
+
   it("surfaces a busy private-ASR service while keeping the fallback capture", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",
@@ -934,6 +1026,61 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
 
     expect(result.current.error).toBe("语音服务正在被使用，请稍后重试。");
     expect(captureStartMock).toHaveBeenCalledOnce();
+    unmount();
+  });
+
+  it("releases the private ASR worker when browser VAD initialization fails", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const { result, rerender, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-vad-failure", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    expect(privateAsrInstance.start).toHaveBeenCalledOnce();
+    expect(privateAsrInstance.stop).not.toHaveBeenCalled();
+
+    captureState.error = "no available backend found";
+    rerender();
+    await vi.waitFor(() => expect(privateAsrInstance.stop).toHaveBeenCalledOnce());
+    expect(result.current.error).toBe("no available backend found");
+
+    captureState.error = null;
+    unmount();
+  });
+
+  it("keeps private ASR alive when an utterance callback fails after VAD is ready", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const { result, rerender, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-callback-failure", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    privateAsrInstance.stop.mockClear();
+    captureState.capturing = true;
+    captureState.error = "utterance callback failed";
+    rerender();
+
+    expect(privateAsrInstance.stop).not.toHaveBeenCalled();
+    expect(result.current.error).toBe("utterance callback failed");
+
+    captureState.error = null;
+    captureState.capturing = false;
     unmount();
   });
 

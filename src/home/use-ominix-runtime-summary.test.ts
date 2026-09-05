@@ -8,7 +8,7 @@ import type { VoiceReadiness } from "@/settings/settings-api";
 function readiness(overrides: Partial<VoiceReadiness> = {}): VoiceReadiness {
   return {
     ready: true,
-    asr: { ready: true, detail: "On-device ASR ready" },
+    asr: { ready: true, mode: "ominix", detail: "On-device ASR ready" },
     llm: { ready: true, detail: "LLM provider: openai" },
     tts: { ready: true, mode: "local", detail: "On-device GPT-SoVITS ready" },
     ...overrides,
@@ -29,11 +29,15 @@ describe("summarizeVoiceReadiness", () => {
     });
   });
 
-  it("blocks on ASR first and offers repair (ASR is always on-device)", () => {
+  it("blocks on OMiniX ASR first and offers an on-device repair", () => {
     const summary = summarizeVoiceReadiness(
       readiness({
         ready: false,
-        asr: { ready: false, detail: "On-device ASR model not ready" },
+        asr: {
+          ready: false,
+          mode: "ominix",
+          detail: "On-device ASR model not ready",
+        },
         // Even with a downstream TTS failure, ASR is reported first.
         tts: { ready: false, mode: "local", detail: "No on-device voice available" },
       }),
@@ -43,7 +47,26 @@ describe("summarizeVoiceReadiness", () => {
       tone: "warning",
       ready: false,
       canRepair: true,
-      state: "asr_not_ready",
+      state: "asr_not_ready_ominix",
+    });
+  });
+
+  it("does not offer an on-device repair for a private ASR failure", () => {
+    const summary = summarizeVoiceReadiness(
+      readiness({
+        ready: false,
+        asr: {
+          ready: false,
+          mode: "private",
+          detail: "Private ASR is unreachable",
+        },
+      }),
+    );
+    expect(stripRefresh(summary)).toMatchObject({
+      label: "Private ASR is unreachable",
+      ready: false,
+      canRepair: false,
+      state: "asr_not_ready_private",
     });
   });
 

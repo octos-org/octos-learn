@@ -28,6 +28,8 @@ import { saveSelectionEnhancementState } from "./selection-enhancements";
 import { saveWhiteboardQuestions } from "./whiteboard-questions";
 
 const conversationMock = vi.hoisted(() => ({
+  state: "idle" as "idle" | "starting",
+  startupDetail: null as string | null,
   turns: [] as VoiceConversation["turns"],
   threads: [] as Thread[],
   start: vi.fn(async () => undefined),
@@ -96,6 +98,8 @@ vi.mock("@/store/projection-render-adapter", () => ({
 vi.mock("@/home/use-ominix-runtime-summary", () => ({
   useOminixRuntimeSummary: () => ({
     ready: true,
+    inputReady: true,
+    ttsReady: true,
     loading: false,
   }),
 }));
@@ -109,7 +113,8 @@ vi.mock("@/home/voice/use-voice-conversation", () => ({
     conversationMock.options = options;
     conversationMock.optionsHistory.push(options);
     return {
-    state: "idle",
+    state: conversationMock.state,
+    startupDetail: conversationMock.startupDetail,
     lastUserText: "",
     lastAssistantText: conversationMock.turns.at(-1)?.assistantText ?? "",
     turns: conversationMock.turns,
@@ -162,6 +167,8 @@ describe("LearningWorkspace", () => {
     cleanup();
     conversationMock.turns = [];
     conversationMock.threads = [];
+    conversationMock.state = "idle";
+    conversationMock.startupDetail = null;
     conversationMock.start.mockClear();
     conversationMock.stop.mockClear();
     conversationMock.startCamera.mockClear();
@@ -263,6 +270,24 @@ describe("LearningWorkspace", () => {
       screen.getByAltText("本轮已发送给老师的画面").getAttribute("src"),
     ).toBe("blob:sent-frame");
     expect(screen.getByText("本轮已发送")).toBeTruthy();
+  });
+
+  it("shows an explicit startup panel while voice dependencies are loading", () => {
+    conversationMock.state = "starting";
+    conversationMock.startupDetail = "正在连接语音识别服务并启动人声检测…";
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-voice-starting"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("status", {
+      name: "正在准备语音识别",
+    }).textContent).toContain("正在连接语音识别服务并启动人声检测");
+    expect(screen.getByText(/首次使用需要加载约 17 MB/)).toBeTruthy();
   });
 
   it("lets the learner calibrate the exact camera frame sent to the teacher", async () => {
@@ -887,6 +912,16 @@ describe("LearningWorkspace", () => {
   });
 
   it("captures and displays one current frame for a text question when the camera is active", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["camera-frame"], { type: "image/jpeg" }),
+    }));
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:camera-frame"),
+      revokeObjectURL: vi.fn(),
+    });
     conversationMock.cameraActive = true;
     conversationMock.captureCurrentFrame.mockResolvedValue(new File(
       ["camera-frame"],
@@ -935,9 +970,11 @@ describe("LearningWorkspace", () => {
       }),
     ));
     expect(conversationMock.captureCurrentFrame).toHaveBeenCalledTimes(1);
-    expect(screen.getByAltText("本次问题随附的摄像头画面").getAttribute("src"))
-      .toContain("uploads%2Fcamera-frame.jpg");
+    expect((await screen.findByAltText(
+      "本次问题随附的摄像头画面",
+    )).getAttribute("src")).toBe("blob:camera-frame");
     expect(sendMessageMock).not.toHaveBeenCalled();
+    cleanup();
   });
 
   it("clears the lesson loader and speaks a voice turn failure", async () => {
@@ -1072,12 +1109,44 @@ describe("LearningWorkspace", () => {
         input_modality: "text",
       }),
     ));
-    expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id)
-      .toEqual(expect.any(String));
+    const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id;
+    expect(turnId).toEqual(expect.any(String));
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toContain("lesson-job-1");
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        dsl: "octos.lesson",
+        version: "0.1",
+        profile: "authoring",
+        lesson: {
+          mode: "explain",
+          language: "zh-CN",
+          title: "勾股定理",
+          goals: ["理解勾股定理"],
+        },
+        steps: [{
+          key: "explain",
+          purpose: "解释定理",
+          beats: [{
+            key: "statement",
+            say: "我们来看勾股定理。",
+            actions: [{
+              do: "write",
+              as: "theorem-card",
+              kind: "math",
+              role: "concept",
+              content: { latex: "a^2+b^2=c^2" },
+              place: { relation: "new_region" },
+            }],
+          }],
+        }],
+        close: { summary: "定理讲解完成", focus: ["theorem-card"] },
+      }),
+    }));
 
     act(() => {
       window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
@@ -1089,14 +1158,157 @@ describe("LearningWorkspace", () => {
           action_id: "learning.lesson.generate",
           skill_id: "learning-coach",
           status: "succeeded",
+          result: {
+            success: true,
+            output: "Validated OLL lesson generated.",
+            artifacts: [{
+              handle: "ws/generated-lesson",
+              display_name: `${turnId}.octos-lesson.json`,
+              media_type: "application/json",
+              size: 512,
+            }],
+          },
           created_at: "2026-08-19T00:00:00Z",
           updated_at: "2026-08-19T00:00:05Z",
         },
       }));
     });
     expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(await screen.findByText("勾股定理")).toBeTruthy();
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
+    )).toBeNull();
+  });
+
+  it("does not announce the previous lesson's end while the new lesson file is loading", async () => {
+    const sessionId = "learn-delivery-handoff";
+    const makeFile = (id: string) => ({
+      filename: `${id}.octos-lesson.json`,
+      path: `study/oll/${id}.octos-lesson.json`,
+      size_bytes: 100,
+      modified_at: id === "old-turn" ? "2026-09-04T10:00:00Z" : "2026-09-04T11:00:00Z",
+    });
+    const makeLesson = (id: string) => ({
+      dsl: "octos.lesson", version: "0.1", profile: "authoring",
+      lesson: { mode: "explain", language: "zh-CN", title: id, goals: ["理解公式"] },
+      steps: [{ key: "explain", purpose: "解释", beats: [{
+        key: "intro", say: `${id}的第一段旁白`, actions: [{
+          do: "write", as: "formula", kind: "math", role: "concept",
+          content: { latex: "y=x^2" }, place: { relation: "new_region" },
+        }],
+      }] }],
+      close: { summary: "总结", focus: ["formula"] },
+    });
+    sessionFilesMock.getSessionFiles.mockResolvedValue([makeFile("old-turn")]);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
+      ok: true, json: async () => makeLesson(url.includes("old-turn") ? "旧课程" : "新课程"),
+    })));
+    const view = render(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
+      playbackMode="review" onBack={vi.fn()} />);
+    const finishText = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
+    await screen.findByText(finishText);
+    view.rerender(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
+      playbackMode="live" onBack={vi.fn()} />);
+
+    const job = {
+      job_id: "handoff-job", batch_id: "handoff-batch", profile_id: "alan0x",
+      session_id: sessionId, action_id: "learning.lesson.generate", skill_id: "learning-coach",
+      status: "queued", created_at: "2026-09-04T11:00:00Z", updated_at: "2026-09-04T11:00:00Z",
+    };
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: job.action_id, ok: true, queued: 1, jobs: [job],
+    });
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请讲一节新课" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    await waitFor(() => expect(screen.queryByText(finishText)).toBeNull());
+    const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
+    let resolveFiles!: (files: ReturnType<typeof makeFile>[]) => void;
+    sessionFilesMock.getSessionFiles.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveFiles = resolve;
+    }));
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail: {
+        ...job, status: "succeeded", result: { success: true, artifacts: [{
+          handle: "ws/new-lesson", display_name: `${turnId}.octos-lesson.json`,
+          media_type: "application/json", size: 100,
+        }] },
+      } }));
+    });
+    expect(screen.queryByText(finishText)).toBeNull();
+    expect(screen.queryByText("课程完成")).toBeNull();
+    await act(async () => resolveFiles([makeFile("old-turn"), makeFile(turnId)]));
+    expect(screen.queryByText(finishText)).toBeNull();
+    await waitFor(() => expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
+      expect.objectContaining({ playing: true, text: "新课程的第一段旁白" }),
+    ), { timeout: 4000 });
+    const narration = narrationTtsMock.useOllNarrationTts.mock.calls.at(-1)![0]!;
+    act(() => {
+      narration.onPlaybackStart?.(narration.narrationId!);
+      narration.onPlaybackComplete?.(narration.narrationId!);
+    });
+    // Completing the actual new narration still produces the normal ending.
+    await waitFor(() => expect(screen.getByText(finishText)).toBeTruthy(), { timeout: 4000 });
+  });
+
+  it("does not finish a successful job when no lesson artifact was delivered", async () => {
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
+      action_id: "learning.lesson.generate",
+      ok: true,
+      queued: 1,
+      jobs: [{
+        job_id: "lesson-job-without-artifact",
+        batch_id: "lesson-batch-without-artifact",
+        profile_id: "alan0x",
+        session_id: "learn-missing-lesson-artifact",
+        action_id: "learning.lesson.generate",
+        skill_id: "learning-coach",
+        status: "queued",
+        created_at: "2026-09-04T00:00:00Z",
+        updated_at: "2026-09-04T00:00:00Z",
+      }],
+    });
+    render(
+      <LearningWorkspace
+        sessionId="learn-missing-lesson-artifact"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "请解释等比数列求和公式" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", {
+        detail: {
+          job_id: "lesson-job-without-artifact",
+          batch_id: "lesson-batch-without-artifact",
+          profile_id: "alan0x",
+          session_id: "learn-missing-lesson-artifact",
+          action_id: "learning.lesson.generate",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          result: {
+            success: true,
+            output: "Validated OLL lesson generated.",
+            artifacts: [],
+          },
+          created_at: "2026-09-04T00:00:00Z",
+          updated_at: "2026-09-04T00:00:05Z",
+        },
+      }));
+    });
+
+    expect(await screen.findAllByText(
+      "课程已经生成，但白板没有收到课程内容，请重试。",
+    )).not.toHaveLength(0);
+    expect(screen.queryByText("已回答")).toBeNull();
+    expect(screen.queryByText(
+      "这节课讲完了，你可以缩放白板回顾刚才的内容。",
     )).toBeNull();
   });
 

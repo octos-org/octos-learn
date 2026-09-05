@@ -7,6 +7,7 @@ import { useTeacherSkin } from "@/hooks/use-teacher-skin";
 
 const STATE_LABEL: Record<VoiceState, string> = {
   idle: "轻触开始",
+  starting: "语音准备中",
   listening: "我在听",
   thinking: "正在想",
   speaking: "正在讲",
@@ -102,7 +103,9 @@ export function OctosTeacher({
           skin={skin}
           className="octos-teacher-avatar-art"
           eager
-          activity={preparing ? "thinking" : state}
+          activity={
+            preparing ? "thinking" : state === "starting" ? "idle" : state
+          }
           reactionKey={reactionKey}
         />
         <span className="octos-teacher-state">
