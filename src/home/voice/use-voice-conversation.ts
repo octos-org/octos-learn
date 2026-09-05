@@ -639,7 +639,7 @@ export function useVoiceConversation(
   // drainQueue. Each stores itself into its own ref every render.
   const beginListeningRef = useRef<(
     options?: { deferReady?: boolean },
-  ) => Promise<void>>(async () => {});
+  ) => Promise<boolean>>(async () => false);
   const requestListeningResumeRef = useRef<() => void>(() => {});
   const beginBargeInRef = useRef<() => Promise<void>>(async () => {});
   const sendUtteranceRef = useRef<
@@ -1208,11 +1208,11 @@ export function useVoiceConversation(
       // "speaking", not "thinking" (issue #315).
       stateRef.current = "speaking";
       setState("speaking");
-      return;
+      return false;
     }
     captureModeRef.current = "listening";
     const privateAsr = privateAsrRef.current;
-    await captureStart(
+    const captureReady = await captureStart(
       (wav: Blob) => {
         // Ignore late utterances that land after we've left listening.
         if (stateRef.current !== "listening") return;
@@ -1225,8 +1225,10 @@ export function useVoiceConversation(
         ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
       },
     );
-    if (listeningGen !== startGenRef.current) return;
-    if (listeningOptions?.deferReady) return;
+    if (listeningGen !== startGenRef.current || captureReady === false) {
+      return false;
+    }
+    if (listeningOptions?.deferReady) return true;
     // Do not claim that the microphone is listening while the VAD model and
     // WASM runtime are still loading. Also keep the Agora track muted until
     // local speech admission is actually ready.
@@ -1235,6 +1237,7 @@ export function useVoiceConversation(
     await privateAsr?.setListening(true).catch((error) => {
       console.warn("[voice] private ASR could not resume", error);
     });
+    return true;
   }, [captureStart, captureStop, finishCapturedUtterance]);
 
   const requestListeningResume = useCallback(() => {
@@ -1477,6 +1480,9 @@ export function useVoiceConversation(
     await Promise.resolve();
     if (startGenRef.current !== gen) return;
     let listeningPrepared = false;
+    let listeningAttempted = false;
+    let listeningPreparation: Promise<boolean> | null = null;
+    let privateStartFailed = false;
     if (
       privateAsrEnabled() &&
       onAdmittedSpeech &&
@@ -1495,12 +1501,15 @@ export function useVoiceConversation(
       privateAsrRef.current = privateAsr;
       setStartupDetail("正在连接语音识别服务并启动人声检测…");
       const shouldPrepareListening = !startOptions?.initialAudio;
-      const [privateResult] = await Promise.allSettled(
-        shouldPrepareListening
-          ? [privateAsr.start(), beginListening({ deferReady: true })]
-          : [privateAsr.start()],
+      listeningAttempted = shouldPrepareListening;
+      const preparedListening = shouldPrepareListening
+        ? beginListening({ deferReady: true })
+        : Promise.resolve(false);
+      listeningPreparation = preparedListening;
+      const privateResult = await privateAsr.start().then(
+        () => ({ status: "fulfilled" as const }),
+        (reason: unknown) => ({ status: "rejected" as const, reason }),
       );
-      listeningPrepared = shouldPrepareListening;
       if (startGenRef.current !== gen) {
         if (privateAsrRef.current === privateAsr) {
           privateAsrRef.current = null;
@@ -1509,6 +1518,7 @@ export function useVoiceConversation(
         return;
       }
       if (privateResult.status === "rejected") {
+        privateStartFailed = true;
         console.warn(
           "[voice] private ASR unavailable; keeping Octos ASR fallback",
           privateResult.reason,
@@ -1518,6 +1528,8 @@ export function useVoiceConversation(
         }
         await privateAsr.stop();
         setPrivateAsrError(privateAsrErrorMessage(privateResult.reason));
+      } else {
+        listeningPrepared = await preparedListening;
       }
     }
     if (startGenRef.current !== gen) return;
@@ -1540,14 +1552,37 @@ export function useVoiceConversation(
       );
       return;
     }
-    if (listeningPrepared) {
-      const activePrivateAsr = privateAsrRef.current;
-      stateRef.current = "listening";
-      setState("listening");
-      setStartupDetail(null);
-      await activePrivateAsr?.setListening(true).catch((error) => {
-        console.warn("[voice] private ASR could not begin listening", error);
+    if (listeningAttempted && privateStartFailed && listeningPreparation) {
+      // The private control plane failed before the browser answered its
+      // microphone prompt. Surface that failure now and let the already-started
+      // local VAD become the fallback asynchronously; start() must not remain
+      // blocked behind an unanswered permission dialog.
+      setStartupDetail("正在启动麦克风和人声检测…");
+      void listeningPreparation.then((ready) => {
+        if (startGenRef.current !== gen) return;
+        setStartupDetail(null);
+        if (!ready) return;
+        stateRef.current = "listening";
+        setState("listening");
+      }).catch((error) => {
+        if (startGenRef.current !== gen) return;
+        setStartupDetail(null);
+        setPrivateAsrError(
+          error instanceof Error ? error.message : "microphone unavailable",
+        );
       });
+      return;
+    }
+    if (listeningAttempted) {
+      setStartupDetail(null);
+      if (listeningPrepared) {
+        const activePrivateAsr = privateAsrRef.current;
+        stateRef.current = "listening";
+        setState("listening");
+        await activePrivateAsr?.setListening(true).catch((error) => {
+          console.warn("[voice] private ASR could not begin listening", error);
+        });
+      }
       return;
     }
     setStartupDetail("正在启动麦克风和人声检测…");

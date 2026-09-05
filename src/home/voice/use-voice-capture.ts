@@ -8,7 +8,7 @@ export interface VoiceCapture {
   start: (
     onUtterance: (wav: Blob) => void,
     options?: VoiceCaptureStartOptions,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   /** Resolves once the VAD is fully torn down. Await before starting reply
    *  playback so the Silero ONNX/WASM + mic AudioContext shutdown doesn't
    *  contend with the playback render thread. */
@@ -139,7 +139,7 @@ export function useVoiceCapture(): VoiceCapture {
   // windows. MicVAD supports live frame-processor option updates, and these
   // refs let its stable callbacks always dispatch to the latest voice mode.
   const callbacksRef = useRef<CaptureCallbacks | null>(null);
-  const initializationRef = useRef<Promise<void> | null>(null);
+  const initializationRef = useRef<Promise<boolean> | null>(null);
   const teardownRef = useRef<Promise<void> | null>(null);
   // Monotonic cancellation token. Only stop() invalidates an in-flight
   // initialization. Repeated start() calls share that initialization and
@@ -202,13 +202,13 @@ export function useVoiceCapture(): VoiceCapture {
     // stop() may have won while this start() was waiting for the previous VAD
     // to finish tearing down. Do not reacquire the microphone after that.
     const latestAfterTeardown = callbacksRef.current;
-    if (!latestAfterTeardown) return;
+    if (!latestAfterTeardown) return false;
 
     const active = vadRef.current;
     if (active) {
       active.setOptions(frameProcessorOptions(latestAfterTeardown.options));
       setCapturing(true);
-      return;
+      return true;
     }
 
     // thinking→speaking can happen while the first MicVAD.new() is still
@@ -221,7 +221,7 @@ export function useVoiceCapture(): VoiceCapture {
       } catch {
         // The initializer owner surfaces the capture error. Joining callers
         // must not leak a second rejection from the same failed MicVAD.new().
-        return;
+        return false;
       }
       if (initializationRef.current === pendingInitialization) {
         initializationRef.current = null;
@@ -232,8 +232,9 @@ export function useVoiceCapture(): VoiceCapture {
           frameProcessorOptions(callbacksRef.current.options),
         );
         setCapturing(true);
-        return;
+        return true;
       }
+      return false;
     }
 
     const gen = startGenRef.current;
@@ -300,7 +301,7 @@ export function useVoiceCapture(): VoiceCapture {
           await vad.start();
           if (gen !== startGenRef.current) {
             await vad.destroy().catch(() => undefined);
-            return;
+            return false;
           }
           break;
         } catch (err) {
@@ -321,19 +322,21 @@ export function useVoiceCapture(): VoiceCapture {
       const latest = callbacksRef.current;
       if (!latest || gen !== startGenRef.current) {
         await vad.destroy().catch(() => undefined);
-        return;
+        return false;
       }
       vad.setOptions(frameProcessorOptions(latest.options));
       vadRef.current = vad;
       setCapturing(true);
+      return true;
     })();
     initializationRef.current = initialize;
     try {
-      await initialize;
+      return await initialize;
     } catch (e) {
       console.error("[voice] capture init failed", e);
       setError(e instanceof Error ? e.message : "microphone unavailable");
       setCapturing(false);
+      return false;
     } finally {
       if (initializationRef.current === initialize) {
         initializationRef.current = null;

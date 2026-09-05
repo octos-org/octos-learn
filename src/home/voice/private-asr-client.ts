@@ -161,6 +161,13 @@ export class PrivateAsrClient {
     });
     if (!response.ok) throw await responseError(response);
     const session = parseSession(await response.json());
+    // stop() may have won while the session POST was in flight. The server
+    // has already reserved its worker at this point, so release that exact
+    // session instead of publishing it into an already-closed client.
+    if (this.closed) {
+      await this.releaseSession(session);
+      throw new Error("Private ASR stopped during session startup");
+    }
     this.session = session;
 
     try {
@@ -242,16 +249,16 @@ export class PrivateAsrClient {
     this.microphoneStream = null;
     const pendingMicrophone = this.microphonePromise;
     this.microphonePromise = null;
-    await pendingMicrophone?.catch(() => undefined);
+    // A browser permission prompt can remain unanswered indefinitely. Do not
+    // make transport teardown wait for it; ensureMicrophoneStream() and this
+    // detached handler stop any stream that arrives after closure.
+    void pendingMicrophone?.then((stream) => {
+      stream.getTracks().forEach((track) => track.stop());
+    }).catch(() => undefined);
     if (this.rtcClient) await this.rtcClient.leave().catch(() => undefined);
     this.rtcClient = null;
     this.session = null;
-    if (session) {
-      await fetch(
-        privateAsrHttpPath(`/api/v1/sessions/${session.sessionId}`),
-        { method: "DELETE", credentials: "same-origin" },
-      ).catch(() => undefined);
-    }
+    if (session) await this.releaseSession(session);
   }
 
   private async openEventSocket(session: PrivateAsrSessionResponse): Promise<void> {
@@ -294,7 +301,7 @@ export class PrivateAsrClient {
     }
     if (this.closed) throw new Error("Private ASR has stopped");
     if (!this.microphonePromise) {
-      this.microphonePromise = getEchoCancelledMicStream().then((stream) => {
+      const microphonePromise = getEchoCancelledMicStream().then((stream) => {
         if (this.closed) {
           stream.getTracks().forEach((track) => track.stop());
           throw new Error("Private ASR stopped during microphone startup");
@@ -302,10 +309,22 @@ export class PrivateAsrClient {
         this.microphoneStream = stream;
         return stream;
       }).finally(() => {
-        this.microphonePromise = null;
+        if (this.microphonePromise === microphonePromise) {
+          this.microphonePromise = null;
+        }
       });
+      this.microphonePromise = microphonePromise;
     }
     return this.microphonePromise;
+  }
+
+  private async releaseSession(
+    session: PrivateAsrSessionResponse,
+  ): Promise<void> {
+    await fetch(
+      privateAsrHttpPath(`/api/v1/sessions/${session.sessionId}`),
+      { method: "DELETE", credentials: "same-origin" },
+    ).catch(() => undefined);
   }
 
   private async joinAgora(

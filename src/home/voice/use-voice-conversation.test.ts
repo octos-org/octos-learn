@@ -935,6 +935,76 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
+  it("does not claim private ASR is listening while external narration is active", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-narrating", undefined, undefined, {
+        externalSpeechActive: true,
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(captureStartMock).not.toHaveBeenCalled();
+    expect(privateAsrInstance.setListening).not.toHaveBeenCalledWith(true);
+    expect(result.current.state).toBe("speaking");
+    unmount();
+  });
+
+  it("does not claim private ASR is listening when VAD did not start", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    captureStartMock.mockResolvedValueOnce(false);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-vad-not-ready", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(privateAsrInstance.setListening).not.toHaveBeenCalledWith(true);
+    expect(result.current.state).not.toBe("listening");
+    unmount();
+  });
+
+  it("surfaces a private ASR failure without waiting for a pending microphone prompt", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    captureStartMock.mockReturnValueOnce(new Promise<boolean>(() => {}));
+    privateAsrInstance.start.mockRejectedValueOnce(
+      new Error("private ASR proxy unavailable"),
+    );
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-permission-pending", undefined, undefined, {
+        onAdmittedSpeech: vi.fn(async () => true),
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+
+    expect(result.current.error).toContain("private ASR proxy unavailable");
+    expect(result.current.state).not.toBe("listening");
+    unmount();
+  });
+
   it("surfaces a busy private-ASR service while keeping the fallback capture", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",
