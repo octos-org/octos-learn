@@ -68,12 +68,13 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 ### 本次部署记录（2026-09-05）
 
+- 当前公网前端对应 `octos-learn` 提交 `d2a7dd4`，地址为 `https://learn.pitun.cc`。
 - 公网已确认 `allow_self_registration=true`，邮件登录开启，后端健康检查正常。
 - 平台 TTS 使用 `admin` 档案中已有的火山凭据；额度已启用为平台 100,000 / 用户 10,000 字符每月，服务重启后设置保留。
-- 前端完整测试 85 个文件、771 项通过，类型检查及公网构建通过；后端新增 7 项共享 TTS 测试全部通过。
+- 最终合并前端完整测试 85 个文件、780 项通过，CI 的公网构建与 E2E smoke 均通过；后端新增 7 项共享 TTS 测试全部通过。
 - 后端全量测试结果为 3,203 项通过、2 项失败、10 项忽略。两项失败是原有模型运行时测试，比较已释放对象与新对象的地址；地址可能被分配器复用。本次没有改动这些测试或对应逻辑，不将全量测试报告为全绿。
 - 设置白板完成桌面及窄屏渲染检查。真实新邮箱收码注册、普通用户实际合成与多人麦克风竞争，仍需按下方清单人工验收；接口检查不能代替这些体验测试。
-- 本次后端回退文件：`/opt/octos-learn/bin/octos.pre-public-onboarding-20260905`；前端回退目录：`/opt/octos-learn/web.rollback-pre-public-onboarding-20260905`；原配置：`/etc/octos-learn/config.pre-public-onboarding-20260905.json`。
+- 本次后端回退文件：`/opt/octos-learn/bin/octos.pre-public-onboarding-20260905`；最终前端部署前的回退目录：`/opt/octos-learn/web.rollback-pre-d2a7dd4`；原配置：`/etc/octos-learn/config.pre-public-onboarding-20260905.json`。
 - 平台凭据来源通过 `/etc/systemd/system/octos-learn.service.d/shared-tts.conf` 设置。回退后端之前应先移除此新增 drop-in，并按前面的步骤关闭共享语音及公开注册；不删除用量数据库。
 
 ### 人工验收清单

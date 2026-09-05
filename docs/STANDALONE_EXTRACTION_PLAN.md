@@ -4,15 +4,21 @@ This document defines the controlled extraction of the learning canvas from `oct
 
 ## Implementation status
 
-As of 2026-09-01:
+As of 2026-09-05, this is a historical implementation plan:
 
-- Slices 0-4 are implemented on `codex/standalone-product`.
-- Slice 5 automated verification is complete: 745 unit tests, lint with no errors, a production build, and two browser smoke tests pass.
-- The local Octos server's real `/api/auth/status` endpoint responds successfully.
-- The manual release checklist against the real learning-coach service is still required before retiring `/learn` from `octos-web`.
-- Slice 6 has not started. The stable `octos-web` implementation remains unchanged.
+- Slices 0–5 are complete and merged into `octos-learn/main`.
+- The standalone product is deployed at `https://learn.pitun.cc`; its current
+  release includes public registration, first-run setup, built-in
+  `learning-coach`, shared TTS, private ASR, account-isolated whiteboards, and
+  persisted image access.
+- The final closeout revision passed 780 unit tests, the public production
+  build, and the CI browser smoke test.
+- Slice 6 has not been performed. The old `/learn` entry in `octos-web` is a
+  separate transition decision and does not block development in this repo.
 
-The pre-pruning entry bundle was 3,945.97 kB (1,103.80 kB gzip) with 390.17 kB of CSS (73.55 kB gzip). The current entry bundle is 3,256.95 kB (917.26 kB gzip) with 330.09 kB of CSS (58.59 kB gzip).
+The pre-pruning entry bundle was 3,945.97 kB (1,103.80 kB gzip) with 390.17 kB
+of CSS (73.55 kB gzip). The current public build entry is 3,277.13 kB (925.36
+kB gzip) with 334.08 kB of CSS (59.53 kB gzip).
 
 ## Release rule
 
