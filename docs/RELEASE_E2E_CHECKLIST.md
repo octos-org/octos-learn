@@ -1,10 +1,13 @@
-# Octos Learn standalone release E2E checklist
+# Octos Learn release E2E checklist
 
-Use this checklist before merging the standalone extraction and before changing the old `/learn` entry in `octos-web`.
+Use this checklist before an Octos Learn release. The standalone extraction is
+already complete; changes to the old `/learn` entry in `octos-web` remain a
+separate transition task.
 
 ## Preconditions
 
-- Run the Octos server with the learning-coach skill installed.
+- Run the Octos server with the product-owned `learning-coach` runtime available
+  through `OCTOS_SKILLS_PATH`. Users must not be asked to install it.
 - Start Octos Learn from this repository with `pnpm dev:https`.
 - Confirm the selected model and API credentials in Octos Learn settings.
 - Use a new learning whiteboard for the first case, then keep the same whiteboard for the multi-course case.
@@ -132,4 +135,4 @@ Octos Learn is still required.
 
 ## Release decision
 
-Record the tested Octos commit, learning-coach revision, OLL revision, Octos Learn commit, model, and provider. Merge the standalone PR only after all nine cases pass or every accepted exception is written down with an owner and follow-up issue.
+Record the tested Octos commit, learning-coach revision, OLL revision, Octos Learn commit, model, and provider. Release the tested `main` revision only after all nine cases pass or every accepted exception is written down with an owner and follow-up issue.

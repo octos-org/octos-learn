@@ -1,8 +1,8 @@
 # Octos Learn public deployment runbook
 
-This runbook deploys the controlled BYOK release on a dedicated Linux VPS and
-connects it to the separately operated private ASR service through short-lived
-browser grants.
+This runbook deploys the public BYOK release on a dedicated Linux VPS. It uses
+email-verified self-registration and connects to the separately operated
+private ASR service through short-lived browser grants.
 
 ## 1. Server layout
 
@@ -94,10 +94,13 @@ curl --fail https://learn.example.com/health
 
 Then verify in a private browser window:
 
-1. An uninvited email receives the same public response as an invited email,
-   but cannot finish login.
-2. An invited email can finish OTP login exactly once and receives its own
-   profile.
+1. With `allow_self_registration=true`, a new email can complete OTP login and
+   receives one normal user account and one isolated profile. It must not gain
+   administrator access or inherit another user's credentials.
+2. A second new email receives a different profile and cannot see the first
+   user's courses, files, handwriting, images, or model settings. If the server
+   is deliberately returned to invite-only mode, separately verify that an
+   uninvited email cannot finish registration.
 3. Credentials for the deployment's configured model provider can be saved and
    tested in Settings, then used to generate a lesson. Confirm that
    `OLL_PROVIDER` and `OLL_MODEL` match that Settings option.
