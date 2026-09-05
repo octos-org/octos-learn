@@ -1,34 +1,21 @@
 import { useEffect, useState } from "react";
 import { request } from "@/api/client";
+import {
+  fetchHostedTtsStatus,
+  type HostedTtsLimits,
+  type HostedTtsStatus,
+} from "@/api/voice";
 import { formatSettingsError } from "./settings-api";
 
-export interface SharedTtsLimits {
-  enabled: boolean;
-  platform_monthly_chars: number;
-  user_monthly_chars: number;
-}
-export interface SharedTtsStatus {
-  configured: boolean;
-  available: boolean;
-  uses_platform: boolean;
-  month: string;
-  limits: SharedTtsLimits;
-  user_used_chars: number;
-  platform_used_chars?: number;
-  can_manage: boolean;
-}
-export const fetchSharedTts = () =>
-  request<SharedTtsStatus>("/api/learn/tts/status");
-
 function HostedTtsPanel() {
-  const [status, setStatus] = useState<SharedTtsStatus | null>(null);
-  const [limits, setLimits] = useState<SharedTtsLimits | null>(null);
+  const [status, setStatus] = useState<HostedTtsStatus | null>(null);
+  const [limits, setLimits] = useState<HostedTtsLimits | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     let cancelled = false;
     const refresh = () =>
-      fetchSharedTts()
+      fetchHostedTtsStatus()
         .then((s) => {
           if (!cancelled) {
             setStatus(s);
@@ -55,7 +42,7 @@ function HostedTtsPanel() {
         method: "PUT",
         body: JSON.stringify(limits),
       });
-      setStatus(await fetchSharedTts());
+      setStatus(await fetchHostedTtsStatus());
       setMessage("平台语音额度已更新，即刻生效。");
     } catch (e) {
       setMessage(formatSettingsError(e));

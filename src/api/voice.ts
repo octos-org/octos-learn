@@ -22,6 +22,31 @@ export interface SetVoiceResponse {
   voice: string;
 }
 
+export interface HostedTtsLimits {
+  enabled: boolean;
+  platform_monthly_chars: number;
+  user_monthly_chars: number;
+}
+
+export interface HostedTtsStatus {
+  configured: boolean;
+  available: boolean;
+  uses_platform: boolean;
+  month: string;
+  limits: HostedTtsLimits;
+  user_used_chars: number;
+  platform_used_chars?: number;
+  can_manage: boolean;
+}
+
+export function isHostedTtsEnabled(): boolean {
+  return import.meta.env.VITE_HOSTED_TTS_ENABLED === "true";
+}
+
+export function fetchHostedTtsStatus(): Promise<HostedTtsStatus> {
+  return request<HostedTtsStatus>("/api/learn/tts/status");
+}
+
 /** List synthesizable voices and the caller's current reply voice. */
 export async function getVoices(): Promise<VoicesResponse> {
   return request<VoicesResponse>("/api/voices");
@@ -40,7 +65,7 @@ export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const endpoint = import.meta.env.VITE_HOSTED_TTS_ENABLED === "true"
+  const endpoint = isHostedTtsEnabled()
     ? "/api/learn/tts/synthesize"
     : "/api/voice/synthesize";
   return requestBlob(endpoint, {

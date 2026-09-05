@@ -3,6 +3,10 @@ import {
   fetchVoiceReadiness,
   type VoiceReadiness,
 } from "@/settings/settings-api";
+import {
+  fetchHostedTtsStatus,
+  isHostedTtsEnabled,
+} from "@/api/voice";
 
 export type OminixRuntimeTone = "default" | "success" | "warning" | "danger";
 
@@ -68,15 +72,22 @@ function emit(summary: OminixRuntimeSnapshot) {
  * which the OMiniX repair flow can fix; LLM and cloud-credential gaps are a
  * settings task, not a repair, so they report `canRepair: false`.
  */
-export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntimeSnapshot {
-  if (readiness.ready) {
+export function summarizeVoiceReadiness(
+  readiness: VoiceReadiness,
+  hostedTtsAvailable = false,
+): OminixRuntimeSnapshot {
+  const ttsReady = readiness.tts.ready || hostedTtsAvailable;
+  const pipelineReady = readiness.ready || (
+    readiness.asr.ready && readiness.llm.ready && ttsReady
+  );
+  if (pipelineReady) {
     return {
       label: "Voice engine ready",
       tone: "success",
       ready: true,
       inputReady: true,
       llmReady: readiness.llm.ready,
-      ttsReady: true,
+      ttsReady,
       loading: false,
       canRepair: false,
       state: "ready",
@@ -92,7 +103,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       ready: false,
       inputReady: false,
       llmReady: readiness.llm.ready,
-      ttsReady: readiness.tts.ready,
+      ttsReady,
       loading: false,
       canRepair: localAsr,
       state: `asr_not_ready_${readiness.asr.mode}`,
@@ -106,7 +117,7 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
       ready: false,
       inputReady: false,
       llmReady: false,
-      ttsReady: readiness.tts.ready,
+      ttsReady,
       loading: false,
       canRepair: false,
       state: "llm_not_ready",
@@ -130,8 +141,18 @@ export function summarizeVoiceReadiness(readiness: VoiceReadiness): OminixRuntim
 export function refreshOminixRuntimeSummary(): Promise<void> {
   if (inFlight) return inFlight;
   inFlight = fetchVoiceReadiness()
-    .then((readiness) => {
-      emit(summarizeVoiceReadiness(readiness));
+    .then(async (readiness) => {
+      let hostedTtsAvailable = false;
+      if (isHostedTtsEnabled()) {
+        try {
+          const status = await fetchHostedTtsStatus();
+          hostedTtsAvailable = status.uses_platform && status.available;
+        } catch {
+          // The generic personal-TTS result remains authoritative when the
+          // optional product service cannot be reached.
+        }
+      }
+      emit(summarizeVoiceReadiness(readiness, hostedTtsAvailable));
     })
     .catch(() => {
       emit({

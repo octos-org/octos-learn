@@ -33,6 +33,13 @@ function shouldUseQueryFileUrl(
     || isAbsolute;
 }
 
+function materializedUploadPath(filePath: string, sessionId?: string): string | null {
+  if (!sessionId || !filePath.startsWith("up/")) return null;
+  const filename = filePath.split("/").at(-1);
+  if (!filename || filename === "." || filename === "..") return null;
+  return `uploads/${filename}`;
+}
+
 export function buildFileUrl(
   filePath: string,
   options: BuildFileUrlOptions = {},
@@ -67,19 +74,28 @@ export async function fetchAuthenticatedFileBlob(
   signal?: AbortSignal,
 ): Promise<Blob> {
   const { profileId, ...urlOptions } = options;
-  const url = buildFileUrl(filePath, urlOptions);
-  const fetchWithProfile = (ownerProfileId?: string | null) => fetch(url, {
-    headers: buildApiHeaders({}, ownerProfileId),
-    signal,
-  });
-  let response = await fetchWithProfile(profileId);
+  const materializedPath = materializedUploadPath(filePath, options.sessionId);
+  const candidatePaths = materializedPath ? [materializedPath, filePath] : [filePath];
+  const fetchCandidates = async (ownerProfileId?: string | null) => {
+    let lastResponse: Response | null = null;
+    for (const candidatePath of candidatePaths) {
+      const response = await fetch(buildFileUrl(candidatePath, urlOptions), {
+        headers: buildApiHeaders({}, ownerProfileId),
+        signal,
+      });
+      if (response.ok || response.status === 401) return response;
+      lastResponse = response;
+    }
+    return lastResponse!;
+  };
+  let response = await fetchCandidates(profileId);
   // Records created before imageProfileId was persisted only know the opaque
   // file handle. If the browser's selected profile became stale, refresh the
   // authenticated home profile once and retry without weakening file auth.
   if (response.status === 404 && profileId === undefined) {
     const refreshedProfileId = await refreshSelectedProfileId();
     if (refreshedProfileId) {
-      response = await fetchWithProfile(refreshedProfileId);
+      response = await fetchCandidates(refreshedProfileId);
     }
   }
   if (!response.ok) {
