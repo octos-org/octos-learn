@@ -2,9 +2,8 @@
 
 更新日期：2026-09-06。
 
-数学质量专题已经完成开发收尾。当前精确依赖为 OLL `c87fe9f`；Learning Coach 和
-Octos Learn 均位于 `codex/math-quality`，已推送开发分支。三个 PR 均可合并且 CI 全部通过，
-尚未合并或部署。详细结果见
+数学质量专题已经完成收尾。当前精确依赖为 OLL `c87fe9f`；OLL #7、Learning Coach #14 和
+Octos Learn #9 已按依赖顺序合并且 CI 全部通过，尚未部署。详细结果见
 [数学质量实施状态](MATH_QUALITY_IMPLEMENTATION_STATUS.md)。
 
 ## 已恢复
