@@ -2,8 +2,8 @@
 
 更新日期：2026-09-06。
 
-数学质量实现已经完成本地验证。当前精确依赖为 OLL `783617e`；Learning Coach 和
-Octos Learn 均位于 `codex/math-quality`，尚未推送或部署。详细结果见
+数学质量实现已经完成本地验证。当前精确依赖为 OLL `c87fe9f`；Learning Coach 和
+Octos Learn 均位于 `codex/math-quality`，已推送开发分支，尚未合并或部署。详细结果见
 [数学质量实施状态](MATH_QUALITY_IMPLEMENTATION_STATUS.md)。
 
 ## 已恢复
@@ -36,7 +36,7 @@ OLL_MODEL=gemini-3.6-flash \
 | octos-learn | `4f361c3` 基线，当前 `codex/math-quality`；本地实现数学交互、精确 OLL 依赖与评测记录 |
 | octos | `99f43d6a`，新建 `codex/local-macos-build`；仅补 macOS 所需 trait 导入 |
 | learning-coach | `c329f72` 基线，当前 `codex/math-quality`；生成器、编译器与 67 案例评测已更新 |
-| OLL | `codex/math-quality` 的 `783617e`；前端与 Coach authoring/runtime 均精确锁定该提交 |
+| OLL | `codex/math-quality` 的 `c87fe9f`；前端与 Coach authoring/runtime 均精确锁定该提交 |
 
 已 fetch Octos Learn、Octos、Learning Coach。Octos #2227 仍 OPEN，未切回上游 main。
 Learning Coach #13 已 MERGED，远端 main `c329f72` 与本地 HEAD 文件树一致。
