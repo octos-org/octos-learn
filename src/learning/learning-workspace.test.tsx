@@ -666,7 +666,7 @@ describe("LearningWorkspace", () => {
     );
   });
 
-  it("drops a filler voice turn when the lesson planner returns ignore", async () => {
+  it("keeps a filler voice question and explains why no lesson was generated", async () => {
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",
       ok: true,
@@ -727,10 +727,23 @@ describe("LearningWorkspace", () => {
       }));
     });
 
-    await waitFor(() => expect(screen.queryByText("嗯。")).toBeNull());
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(screen.getByText("嗯。")).toBeTruthy();
+    expect(await screen.findByText(
+      "提问信息不足，无法生成课程。请告诉我你想学习的具体内容。",
+    )).toBeTruthy();
     expect(screen.queryByLabelText(
       /正在搭建这节课。先整理重点，再把讲解和互动画面放到白板上/,
     )).toBeNull();
+    expect(screen.queryByText(
+      "这节课讲完了，你可以缩放白板回顾刚才的内容。",
+    )).toBeNull();
+    expect(narrationTtsMock.useOllNarrationTts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        playing: true,
+        text: "提问信息不足，无法生成课程。请告诉我你想学习的具体内容。",
+      }),
+    );
   });
 
   it("routes a camera voice request directly while keeping selection voice on its own path", async () => {
