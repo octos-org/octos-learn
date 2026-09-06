@@ -3095,3 +3095,22 @@
     animation-duration: 1ms;
   }
 }
+
+.learning-input-suggestions {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.learning-input-suggestions button {
+  padding: 6px 10px;
+  border: 1px solid rgba(73, 61, 47, 0.15);
+  border-radius: 14px;
+  background: #fffdf8;
+  color: #594a39;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}

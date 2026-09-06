@@ -8,7 +8,7 @@ describe("learning stack release BOM", () => {
       readFile(resolve(process.cwd(), "learning-stack-bom.json"), "utf8").then(JSON.parse),
       readFile(resolve(process.cwd(), "package.json"), "utf8").then(JSON.parse),
     ]);
-    const web = bom.components.octos_web;
+    const web = bom.components.octos_learn;
     const coach = bom.components.learning_coach;
     const oll = bom.components.octos_lesson_language;
     const dependency = packageJson.dependencies["octos-lesson-language"];

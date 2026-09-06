@@ -1,0 +1,418 @@
+{
+  "measured_at": "2026-09-06T08:09:48.069Z",
+  "workload": "3 short natural math prompts × 5 alternating baseline/candidate pairs",
+  "by_variant": {
+    "baseline": {
+      "runs": 15,
+      "successes": 15,
+      "first_playable_ms": {
+        "p50": 6396,
+        "p90": 8975.4
+      },
+      "total_ms": {
+        "p50": 6950,
+        "p90": 11614.199999999999
+      },
+      "bootstrap_tokens": {
+        "p50": 1529,
+        "max": 1536
+      },
+      "model_calls": {
+        "p50": 1,
+        "max": 2
+      },
+      "repairs": 0
+    },
+    "candidate": {
+      "runs": 15,
+      "successes": 15,
+      "first_playable_ms": {
+        "p50": 6466,
+        "p90": 10697
+      },
+      "total_ms": {
+        "p50": 6471,
+        "p90": 10701.2
+      },
+      "bootstrap_tokens": {
+        "p50": 1505,
+        "max": 1512
+      },
+      "model_calls": {
+        "p50": 1,
+        "max": 2
+      },
+      "repairs": 1
+    }
+  },
+  "paired_delta": {
+    "first_playable_ms_p50": 332,
+    "total_ms_p50": -305,
+    "bootstrap_tokens_p50": -24,
+    "candidate_faster_first_playable_pairs": 7,
+    "candidate_faster_total_pairs": 8,
+    "pairs": 15
+  },
+  "rows": [
+    {
+      "id": "paired-v5-circle-1-baseline",
+      "session": "web-math-quality-1788681873029",
+      "success": true,
+      "first_playable_ms": 6054,
+      "total_ms": 6057,
+      "model_calls": 1,
+      "bootstrap_tokens": 1536,
+      "prompt_tokens": 1536,
+      "output_tokens": 655,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-1-candidate",
+      "session": "web-math-quality-1788681881184",
+      "success": true,
+      "first_playable_ms": 6582,
+      "total_ms": 6587,
+      "model_calls": 1,
+      "bootstrap_tokens": 1512,
+      "prompt_tokens": 1512,
+      "output_tokens": 766,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-2-baseline",
+      "session": "web-math-quality-1788681943778",
+      "success": true,
+      "first_playable_ms": 5522,
+      "total_ms": 5524,
+      "model_calls": 1,
+      "bootstrap_tokens": 1536,
+      "prompt_tokens": 1536,
+      "output_tokens": 713,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-2-candidate",
+      "session": "web-math-quality-1788681931669",
+      "success": true,
+      "first_playable_ms": 10891,
+      "total_ms": 10896,
+      "model_calls": 1,
+      "bootstrap_tokens": 1512,
+      "prompt_tokens": 1512,
+      "output_tokens": 776,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-3-baseline",
+      "session": "web-math-quality-1788681982280",
+      "success": true,
+      "first_playable_ms": 5645,
+      "total_ms": 5648,
+      "model_calls": 1,
+      "bootstrap_tokens": 1536,
+      "prompt_tokens": 1536,
+      "output_tokens": 661,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-3-candidate",
+      "session": "web-math-quality-1788681988376",
+      "success": true,
+      "first_playable_ms": 7358,
+      "total_ms": 7362,
+      "model_calls": 1,
+      "bootstrap_tokens": 1512,
+      "prompt_tokens": 1512,
+      "output_tokens": 763,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-4-baseline",
+      "session": "web-math-quality-1788682040957",
+      "success": true,
+      "first_playable_ms": 5969,
+      "total_ms": 5971,
+      "model_calls": 1,
+      "bootstrap_tokens": 1536,
+      "prompt_tokens": 1536,
+      "output_tokens": 574,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-4-candidate",
+      "session": "web-math-quality-1788682032856",
+      "success": true,
+      "first_playable_ms": 6466,
+      "total_ms": 6471,
+      "model_calls": 1,
+      "bootstrap_tokens": 1512,
+      "prompt_tokens": 1512,
+      "output_tokens": 787,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-5-baseline",
+      "session": "web-math-quality-1788682091463",
+      "success": true,
+      "first_playable_ms": 6292,
+      "total_ms": 10050,
+      "model_calls": 2,
+      "bootstrap_tokens": 1536,
+      "prompt_tokens": 2233,
+      "output_tokens": 1259,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-circle-5-candidate",
+      "session": "web-math-quality-1788682103565",
+      "success": true,
+      "first_playable_ms": 6072,
+      "total_ms": 6077,
+      "model_calls": 1,
+      "bootstrap_tokens": 1512,
+      "prompt_tokens": 1512,
+      "output_tokens": 736,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-1-baseline",
+      "session": "web-math-quality-1788681907464",
+      "success": true,
+      "first_playable_ms": 8327,
+      "total_ms": 8331,
+      "model_calls": 1,
+      "bootstrap_tokens": 1528,
+      "prompt_tokens": 1528,
+      "output_tokens": 911,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-1-candidate",
+      "session": "web-math-quality-1788681917569",
+      "success": true,
+      "first_playable_ms": 12678,
+      "total_ms": 12681,
+      "model_calls": 2,
+      "bootstrap_tokens": 1504,
+      "prompt_tokens": 2281,
+      "output_tokens": 1897,
+      "repairs": 1
+    },
+    {
+      "id": "paired-v5-quadratic-2-baseline",
+      "session": "web-math-quality-1788681974177",
+      "success": true,
+      "first_playable_ms": 5970,
+      "total_ms": 5973,
+      "model_calls": 1,
+      "bootstrap_tokens": 1528,
+      "prompt_tokens": 1528,
+      "output_tokens": 779,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-2-candidate",
+      "session": "web-math-quality-1788681966074",
+      "success": true,
+      "first_playable_ms": 6302,
+      "total_ms": 6304,
+      "model_calls": 1,
+      "bootstrap_tokens": 1504,
+      "prompt_tokens": 1504,
+      "output_tokens": 887,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-3-baseline",
+      "session": "web-math-quality-1788682012658",
+      "success": true,
+      "first_playable_ms": 6946,
+      "total_ms": 6950,
+      "model_calls": 1,
+      "bootstrap_tokens": 1528,
+      "prompt_tokens": 1528,
+      "output_tokens": 821,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-3-candidate",
+      "session": "web-math-quality-1788682020751",
+      "success": true,
+      "first_playable_ms": 10406,
+      "total_ms": 10409,
+      "model_calls": 1,
+      "bootstrap_tokens": 1504,
+      "prompt_tokens": 1504,
+      "output_tokens": 1506,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-4-baseline",
+      "session": "web-math-quality-1788682079361",
+      "success": true,
+      "first_playable_ms": 6470,
+      "total_ms": 10191,
+      "model_calls": 2,
+      "bootstrap_tokens": 1528,
+      "prompt_tokens": 2268,
+      "output_tokens": 1307,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-4-candidate",
+      "session": "web-math-quality-1788682071262",
+      "success": true,
+      "first_playable_ms": 5933,
+      "total_ms": 5935,
+      "model_calls": 1,
+      "bootstrap_tokens": 1504,
+      "prompt_tokens": 1504,
+      "output_tokens": 793,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-5-baseline",
+      "session": "web-math-quality-1788682131859",
+      "success": true,
+      "first_playable_ms": 6511,
+      "total_ms": 6516,
+      "model_calls": 1,
+      "bootstrap_tokens": 1528,
+      "prompt_tokens": 1528,
+      "output_tokens": 858,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-quadratic-5-candidate",
+      "session": "web-math-quality-1788682139959",
+      "success": true,
+      "first_playable_ms": 5886,
+      "total_ms": 5889,
+      "model_calls": 1,
+      "bootstrap_tokens": 1504,
+      "prompt_tokens": 1504,
+      "output_tokens": 788,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-1-baseline",
+      "session": "web-math-quality-1788681889277",
+      "success": true,
+      "first_playable_ms": 9601,
+      "total_ms": 9604,
+      "model_calls": 1,
+      "bootstrap_tokens": 1529,
+      "prompt_tokens": 1529,
+      "output_tokens": 1356,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-1-candidate",
+      "session": "web-math-quality-1788681899372",
+      "success": true,
+      "first_playable_ms": 6422,
+      "total_ms": 6424,
+      "model_calls": 1,
+      "bootstrap_tokens": 1505,
+      "prompt_tokens": 1505,
+      "output_tokens": 686,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-2-baseline",
+      "session": "web-math-quality-1788681957976",
+      "success": true,
+      "first_playable_ms": 6396,
+      "total_ms": 6398,
+      "model_calls": 1,
+      "bootstrap_tokens": 1529,
+      "prompt_tokens": 1529,
+      "output_tokens": 794,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-2-candidate",
+      "session": "web-math-quality-1788681949874",
+      "success": true,
+      "first_playable_ms": 6090,
+      "total_ms": 6093,
+      "model_calls": 1,
+      "bootstrap_tokens": 1505,
+      "prompt_tokens": 1505,
+      "output_tokens": 823,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-3-baseline",
+      "session": "web-math-quality-1788681996473",
+      "success": true,
+      "first_playable_ms": 5286,
+      "total_ms": 7869,
+      "model_calls": 2,
+      "bootstrap_tokens": 1529,
+      "prompt_tokens": 2254,
+      "output_tokens": 1043,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-3-candidate",
+      "session": "web-math-quality-1788682004567",
+      "success": true,
+      "first_playable_ms": 6603,
+      "total_ms": 6607,
+      "model_calls": 1,
+      "bootstrap_tokens": 1505,
+      "prompt_tokens": 1505,
+      "output_tokens": 766,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-4-baseline",
+      "session": "web-math-quality-1788682057151",
+      "success": true,
+      "first_playable_ms": 8967,
+      "total_ms": 12563,
+      "model_calls": 2,
+      "bootstrap_tokens": 1529,
+      "prompt_tokens": 2255,
+      "output_tokens": 1807,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-4-candidate",
+      "session": "web-math-quality-1788682049052",
+      "success": true,
+      "first_playable_ms": 7671,
+      "total_ms": 7673,
+      "model_calls": 1,
+      "bootstrap_tokens": 1505,
+      "prompt_tokens": 1505,
+      "output_tokens": 947,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-5-baseline",
+      "session": "web-math-quality-1788682111662",
+      "success": true,
+      "first_playable_ms": 8981,
+      "total_ms": 13115,
+      "model_calls": 2,
+      "bootstrap_tokens": 1529,
+      "prompt_tokens": 2324,
+      "output_tokens": 1971,
+      "repairs": 0
+    },
+    {
+      "id": "paired-v5-slope-5-candidate",
+      "session": "web-math-quality-1788682125763",
+      "success": true,
+      "first_playable_ms": 5699,
+      "total_ms": 5702,
+      "model_calls": 1,
+      "bootstrap_tokens": 1505,
+      "prompt_tokens": 1505,
+      "output_tokens": 677,
+      "repairs": 0
+    }
+  ]
+}

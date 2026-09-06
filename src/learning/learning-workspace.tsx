@@ -42,6 +42,8 @@ import type { Thread } from "@/store/thread-store";
 import { CameraSettingsDialog } from "./camera-settings-dialog";
 import type { LearningBoardContext } from "./learning-board-context";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
+import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
+import mathCircleAreaSource from "./oll/fixtures/math-circle-area.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
@@ -133,6 +135,8 @@ const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
 const unitCircleSineLessonEvents = parseCanonicalJsonl(unitCircleSineLessonSource);
 
 const ollFixtureEvents: Record<OllFixture, CanonicalEvent[]> = {
+  "math-two-points": parseCanonicalJsonl(mathTwoPointsSource),
+  "math-circle-area": parseCanonicalJsonl(mathCircleAreaSource),
   "geometry-v2": geometryLessonEvents,
   "unit-circle-sine": unitCircleSineLessonEvents,
 };
@@ -2695,6 +2699,9 @@ export function LearningWorkspace({
         : null}
 
       <StudentInputDock
+        suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
+          ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
+          : []}
         voiceState={
           textTurnPending
             ? "thinking"
