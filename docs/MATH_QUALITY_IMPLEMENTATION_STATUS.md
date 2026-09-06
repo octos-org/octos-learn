@@ -1,6 +1,21 @@
 # 数学质量实施状态
 
-更新日期：2026-09-06。状态：本地实现与验证完成，尚未合并或部署。
+更新日期：2026-09-06。状态：专题开发完成，三个开发 PR 均可合并且 CI 全部通过；尚未合并或部署。
+
+## 收尾结论
+
+本专题已达到冻结和评审条件。最初提出的函数图视窗与坐标轴、错误教学图表、简短输入退化、
+双点斜率交互、函数图卡片尺寸与大图操作问题均已有实现和回归验证。后续发现的问题按独立缺陷
+处理，不再扩大本专题范围。
+
+| 仓库 | PR | 收尾状态 |
+| --- | --- | --- |
+| octos-lesson-language | [#7](https://github.com/alan0x/octos-lesson-language/pull/7) | OPEN；MERGEABLE；conformance 通过 |
+| learning-coach | [#14](https://github.com/alan0x/learning-coach/pull/14) | OPEN；MERGEABLE；两项 OLL contract 检查通过 |
+| octos-learn | [#9](https://github.com/octos-org/octos-learn/pull/9) | OPEN；MERGEABLE；单元测试、生产构建和 E2E smoke 通过 |
+
+以上状态于 2026-09-06 收尾时从 GitHub 读取。依赖方向为 OLL → Learning Coach / Octos Learn，
+合并时应按此顺序执行。
 
 ## 实施结果
 
@@ -47,8 +62,8 @@
 
 三个仓库的 `git diff --check` 均通过。公网没有改动；相关提交只更新开发分支，尚未合并或部署。
 
-## 发布前仍需做
+## 合并与发布仍需做
 
-1. 审阅 Learning Coach 与 Octos Learn 的本地提交并分别建立开发分支 PR。
+1. 依次合并 OLL #7、Learning Coach #14 和 Octos Learn #9。
 2. 在合并后的精确提交上重复一次常用短问题冒烟生成，确认部署环境模型配置一致。
 3. 按发布清单执行公开环境回归；本次实现没有执行公网发布。

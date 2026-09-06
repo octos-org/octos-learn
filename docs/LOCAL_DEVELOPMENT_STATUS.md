@@ -2,13 +2,15 @@
 
 更新日期：2026-09-06。
 
-数学质量实现已经完成本地验证。当前精确依赖为 OLL `c87fe9f`；Learning Coach 和
-Octos Learn 均位于 `codex/math-quality`，已推送开发分支，尚未合并或部署。详细结果见
+数学质量专题已经完成开发收尾。当前精确依赖为 OLL `c87fe9f`；Learning Coach 和
+Octos Learn 均位于 `codex/math-quality`，已推送开发分支。三个 PR 均可合并且 CI 全部通过，
+尚未合并或部署。详细结果见
 [数学质量实施状态](MATH_QUALITY_IMPLEMENTATION_STATUS.md)。
 
 ## 已恢复
 
-- 前端：<https://localhost:5173>，Vite `local-https` 模式，现有 HTTPS 证书和进程可用。
+- 前端：<https://localhost:5173>，Vite `local-https` 模式和现有 HTTPS 证书已验证；
+  收尾时已按用户要求停止由 Codex 启动的 5173 进程，后续由用户自己的终端启动。
 - 实际服务模块中的 `VITE_HOSTED_TTS_ENABLED` 未设置，平台 TTS 关闭；未加载 `.env.public`。
 - 后端：`http://127.0.0.1:50080`，已替换旧进程，启用 `--solo`，仅绑定回环。
 - `/health` 返回 healthy，版本 `2.0.3-rc.10+99f43d6a`。
@@ -74,10 +76,10 @@ use eyre::WrapErr;
 Rust 测试阻塞：`api/admin.rs:5597`、`api/auth_handlers.rs:6134` 引用了只在 Linux test cfg 下导出的
 `test_override_secrets_root`，产生 E0425。没有为恢复本地运行扩大修改范围。
 
-当前 solo 账户在界面上未连接可用模型，提问输入按预期禁用，可先手写。
-下一次真实生成评测前，需要在本地设置页连接用户自己的模型；不把密钥放进仓库或命令。
+本轮真实生成评测已使用本地设置页连接的 `gemini-3.6-flash` 完成。后续重新创建本地账户或
+更换 profile 时，需要在设置页重新确认模型连接；不把密钥放进仓库或命令。
 此账户的个人技能清单仍列有旧 `learning-coach 0.4.0`，该 API 只枚举 profile 安装目录，
-不是实际 Runtime action 清单。已准备环境级 `0.14.0` 技能根目录；模型连接后还需通过 action 清单和
-首节课程 trace 验证运行时实际使用版本，不能把个人技能列表当作版本验收。
+不是实际 Runtime action 清单。本轮 67 个真实生成任务使用环境级 `0.14.0` 技能完成；
+不能把个人技能列表当作运行时版本验收。
 
 本次不访问公网用户数据，也没有发布或修改公网服务。
