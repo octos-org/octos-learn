@@ -39,3 +39,9 @@ research/
 
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/
+
+# Raw local math evaluation artifacts; curated summaries remain tracked.
+/docs/math-quality-results/natural-eval/
+/docs/math-quality-results/postfix-eval/
+/docs/math-quality-results/final-eval*/
+/docs/math-quality-results/paired-metrics.json

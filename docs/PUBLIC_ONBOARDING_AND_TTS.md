@@ -69,7 +69,7 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 ### 本次部署记录（2026-09-05）
 
-- 当前公网前端与 hosted-TTS 服务对应 `octos-learn` 提交 `c423778`，地址为 `https://learn.pitun.cc`。
+- 当前公网前端对应 `octos-learn` 提交 `4f361c3`，hosted-TTS 服务来自已合并的 PR #7；地址为 `https://learn.pitun.cc`。
 - 公网 Octos 后端已替换为不含平台代付 TTS 业务逻辑的提交 `99f43d6a`；原 `/api/voice/shared-tts/*` 路由返回 `404`，产品接口固定为 `/api/learn/tts/*`。
 - 公网已确认 `allow_self_registration=true`，邮件登录开启，后端健康检查正常。
 - 平台 TTS 凭据和额度已从 Octos 管理员档案依赖迁移到 Octos Learn hosted-TTS 服务；额度保持平台 100,000 / 用户 10,000 字符每月。
@@ -78,7 +78,7 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 - 设置白板完成桌面及窄屏渲染检查。真实新邮箱收码注册、普通用户实际合成与多人麦克风竞争，仍需按下方清单人工验收；接口检查不能代替这些体验测试。
 - 本次后端回退文件：`/opt/octos-learn/bin/octos.pre-hosted-tts-extraction-c423778`；前端回退目录：`/opt/octos-learn/web.rollback-pre-c423778`；Nginx 回退文件位于 `/etc/nginx/config-backups/`。
 - hosted-TTS 的 systemd 单元、root-only 环境文件和独立数据库均在上述固定路径；旧 `shared-tts.conf` 已移到 `/etc/systemd/system/octos-learn.service.d-backups/`，不再进入 Octos 运行环境。
-- 部署后已验证两个 loopback 健康检查、新接口的未登录保护、旧接口消失，以及服务替换前普通用户的真实 MP3 合成。替换后仍需由已登录普通用户执行一次试听，确认浏览器端完整链路。
+- 部署后已验证两个 loopback 健康检查、新接口的未登录保护、旧接口消失，以及已登录用户的真实旁白播放、课程回放和摄像头图片刷新链路。
 
 ### 人工验收清单
 
