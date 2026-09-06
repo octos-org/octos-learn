@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { StudentInputDock } from "./student-input-dock";
 
@@ -22,5 +22,28 @@ describe("StudentInputDock board references", () => {
       .toContain("已引用：截面公式");
     fireEvent.click(screen.getByRole("button", { name: "移除引用：截面公式" }));
     expect(remove).toHaveBeenCalledWith("ref-1");
+  });
+
+  it("prefills a short-topic suggestion without starting generation", () => {
+    const send = vi.fn();
+    const view = render(
+      <StudentInputDock
+        voiceState="idle"
+        cameraActive={false}
+        onMic={vi.fn()}
+        onToggleCamera={vi.fn()}
+        onSendText={send}
+        onSendImage={vi.fn()}
+        suggestions={["斜率是什么？", "圆的面积为什么是 πr²？"]}
+      />,
+    );
+
+    const dock = within(view.container);
+    fireEvent.click(dock.getByRole("button", { name: "斜率是什么？" }));
+
+    expect((dock.getByRole("textbox", { name: "输入学习问题" }) as HTMLInputElement).value)
+      .toBe("斜率是什么？");
+    expect(send).not.toHaveBeenCalled();
+    expect(dock.queryByLabelText("试着从一个主题开始")).toBeNull();
   });
 });

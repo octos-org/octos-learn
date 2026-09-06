@@ -1,6 +1,6 @@
 const OLL_PLAYBACK_STORAGE_VERSION = "v4";
 
-export type OllFixture = "geometry-v2" | "unit-circle-sine";
+export type OllFixture = "geometry-v2" | "unit-circle-sine" | "math-two-points" | "math-circle-area";
 
 export function ollPlaybackStorageKey(
   sessionId: string,

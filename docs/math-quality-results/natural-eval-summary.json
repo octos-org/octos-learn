@@ -1,0 +1,38 @@
+{
+  "measured_at": "2026-09-06",
+  "model": "gemini-3.6-flash",
+  "workload": "12 math topics x 5 natural-input variants plus 7 special cases",
+  "overall": {
+    "cases": 67,
+    "jobs_succeeded": 67,
+    "lessons_generated": 65,
+    "no_lesson": 2,
+    "model_calls": 75,
+    "repairs": 5,
+    "input_tokens": 108760,
+    "first_playable_p50_ms": 6989,
+    "first_playable_p95_ms": 11681,
+    "total_p50_ms": 6976,
+    "total_p95_ms": 11684
+  },
+  "by_variant": {
+    "detailed": {"cases": 12, "lessons_generated": 12, "model_calls": 16, "repairs": 1, "first_playable_p50_ms": 7284, "total_p50_ms": 7286},
+    "question": {"cases": 12, "lessons_generated": 12, "model_calls": 13, "repairs": 1, "first_playable_p50_ms": 6292, "total_p50_ms": 6295},
+    "topic": {"cases": 12, "lessons_generated": 12, "model_calls": 14, "repairs": 2, "first_playable_p50_ms": 6431, "total_p50_ms": 6434},
+    "confused": {"cases": 12, "lessons_generated": 12, "model_calls": 13, "repairs": 1, "first_playable_p50_ms": 6972, "total_p50_ms": 6976},
+    "context": {"cases": 12, "lessons_generated": 12, "model_calls": 12, "repairs": 0, "first_playable_p50_ms": 6794, "total_p50_ms": 6795},
+    "special": {"cases": 7, "lessons_generated": 5, "model_calls": 7, "repairs": 0, "first_playable_p50_ms": 6534, "total_p50_ms": 6507}
+  },
+  "repair_cases": [
+    {"id": "M01-linear-system-confused-1", "repairs": 1},
+    {"id": "M01-linear-system-detailed-1", "repairs": 1},
+    {"id": "M01-linear-system-topic-1", "repairs": 2},
+    {"id": "M03-exp-log-inverse-question-1", "repairs": 1}
+  ],
+  "expected_no_lesson": ["noise-1", "vague-1"],
+  "post_matrix_fixes": [
+    "unsupported exact 4D rotation now exits locally with zero model calls",
+    "explicit two-point slope requests now guarantee two independent slider variables and point bindings",
+    "fixed-line slope narration and activity feedback now preserve constant slope"
+  ]
+}

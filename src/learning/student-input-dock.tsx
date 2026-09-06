@@ -25,6 +25,7 @@ export function StudentInputDock({
   onSendText,
   onSendImage,
   references = [],
+  suggestions = [],
   onRemoveReference,
 }: {
   voiceState: VoiceState;
@@ -37,11 +38,13 @@ export function StudentInputDock({
   onSendText: (text: string) => Promise<void> | void;
   onSendImage: (file: File) => Promise<void> | void;
   references?: Array<{ id: string; label: string }>;
+  suggestions?: string[];
   onRemoveReference?: (id: string) => void;
 }) {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLInputElement>(null);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -73,6 +76,16 @@ export function StudentInputDock({
 
   return (
     <form className="learning-input-dock" data-learning-board-occlusion="" onSubmit={(event) => void submit(event)}>
+      {suggestions.length > 0 && !text && !sending && !sendDisabled && references.length === 0 ? (
+        <div className="learning-input-suggestions" aria-label="试着从一个主题开始">
+          {suggestions.map((suggestion) => (
+            <button key={suggestion} type="button" onClick={() => {
+              setText(suggestion);
+              textRef.current?.focus();
+            }}>{suggestion}</button>
+          ))}
+        </div>
+      ) : null}
       {references.length > 0 ? (
         <div className="learning-input-references" aria-label="已引用的白板内容">
           {references.map((reference) => (
@@ -126,6 +139,7 @@ export function StudentInputDock({
         {busy ? <Square size={16} /> : <Mic size={21} />}
       </button>
       <input
+        ref={textRef}
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder="问一个问题，或告诉 Octos 你卡在哪里…"

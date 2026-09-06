@@ -42,6 +42,8 @@ import type { Thread } from "@/store/thread-store";
 import { CameraSettingsDialog } from "./camera-settings-dialog";
 import type { LearningBoardContext } from "./learning-board-context";
 import geometryLessonSource from "./oll/fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
+import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
+import mathCircleAreaSource from "./oll/fixtures/math-circle-area.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./oll/fixtures/unit-circle-sine.canonical.jsonl?raw";
 import { OllCourseOutline } from "./oll/oll-course-outline";
 import {
@@ -133,6 +135,8 @@ const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
 const unitCircleSineLessonEvents = parseCanonicalJsonl(unitCircleSineLessonSource);
 
 const ollFixtureEvents: Record<OllFixture, CanonicalEvent[]> = {
+  "math-two-points": parseCanonicalJsonl(mathTwoPointsSource),
+  "math-circle-area": parseCanonicalJsonl(mathCircleAreaSource),
   "geometry-v2": geometryLessonEvents,
   "unit-circle-sine": unitCircleSineLessonEvents,
 };
@@ -237,6 +241,9 @@ function lessonJobNonLessonResponse(job: SkillActionJob): {
       : "",
   };
 }
+
+const INSUFFICIENT_LESSON_REQUEST_MESSAGE =
+  "提问信息不足，无法生成课程。请告诉我你想学习的具体内容。";
 
 function lessonJobArtifacts(
   job: SkillActionJob,
@@ -539,14 +546,6 @@ export function LearningWorkspace({
   ) => updateWhiteboardQuestion(questionId, { status }), [
     updateWhiteboardQuestion,
   ]);
-  const discardWhiteboardQuestion = useCallback((questionId: string) => {
-    setWhiteboardQuestions((current) => current.filter(
-      (question) => question.id !== questionId,
-    ));
-    setCourseRegions((current) => current.filter(
-      (region) => region.questionId !== questionId,
-    ));
-  }, []);
   const registerVoiceQuestion = useCallback((
     questionId: string,
     text: string,
@@ -1439,18 +1438,19 @@ export function LearningWorkspace({
         const nonLesson = lessonJobNonLessonResponse(job);
         if (nonLesson) {
           handleTurnComplete(pending.turnId);
-          if (nonLesson.disposition === "ignore") {
-            discardWhiteboardQuestion(pending.turnId);
-            setCompletedTurnId(null);
-            return;
-          }
-          if (nonLesson.learnerResponse) {
+          const learnerResponse = nonLesson.learnerResponse || (
+            nonLesson.disposition === "ignore"
+              ? INSUFFICIENT_LESSON_REQUEST_MESSAGE
+              : ""
+          );
+          if (learnerResponse) {
             setPlainReply({
               turnId: pending.turnId,
-              text: nonLesson.learnerResponse,
+              text: learnerResponse,
             });
             setPlainReplySpoken(false);
           }
+          setCompletedTurnId(null);
           return;
         }
         // Current servers always project a structured result. Treat a
@@ -1531,7 +1531,6 @@ export function LearningWorkspace({
       );
     };
   }, [
-    discardWhiteboardQuestion,
     handleTurnComplete,
     learnTrace,
     ollFixture,
@@ -2438,6 +2437,8 @@ export function LearningWorkspace({
     ? "正在想"
     : lessonOwnsNarration
       ? "课程播放中"
+      : plainReply
+        ? "老师回复"
       : ollLesson
         ? lessonDeliverySettled
           ? "课程完成"
@@ -2695,6 +2696,9 @@ export function LearningWorkspace({
         : null}
 
       <StudentInputDock
+        suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
+          ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
+          : []}
         voiceState={
           textTurnPending
             ? "thinking"

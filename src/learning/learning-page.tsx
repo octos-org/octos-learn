@@ -354,11 +354,12 @@ export function LearningPage() {
   // Keep the screen on during lessons (long narration + no interaction;
   // audit L7 — only /home held a wake lock before).
   useWakeLock();
-  const ollFixture = useMemo<"geometry-v2" | "unit-circle-sine" | undefined>(() => {
+  const ollFixture = useMemo<"geometry-v2" | "unit-circle-sine" | "math-two-points" | "math-circle-area" | undefined>(() => {
     const requested = new URLSearchParams(window.location.search).get(
       "oll-fixture",
     );
     return requested === "geometry-v2" || requested === "unit-circle-sine"
+      || requested === "math-two-points" || requested === "math-circle-area"
       ? requested
       : undefined;
   }, []);

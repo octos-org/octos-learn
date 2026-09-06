@@ -1,0 +1,1074 @@
+[
+  {
+    "id": "M01-linear-system-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1904,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 2010,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M01-linear-system-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1684,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1790,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M01-linear-system-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1657,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1763,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M01-linear-system-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1666,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1772,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M01-linear-system-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1689,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1795,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M02-quadratic-translation-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1861,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1967,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M02-quadratic-translation-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1657,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1763,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M02-quadratic-translation-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1654,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1760,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M02-quadratic-translation-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1665,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1771,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M02-quadratic-translation-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1686,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1792,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M03-exp-log-inverse-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1888,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1994,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M03-exp-log-inverse-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1666,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1772,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M03-exp-log-inverse-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M03-exp-log-inverse-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1669,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1775,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M03-exp-log-inverse-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1693,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1799,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M04-unit-circle-sine-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1883,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1989,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M04-unit-circle-sine-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M04-unit-circle-sine-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1654,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1760,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M04-unit-circle-sine-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1669,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1775,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M04-unit-circle-sine-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1709,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1815,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M05-pythagorean-rearrangement-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1863,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1969,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M05-pythagorean-rearrangement-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M05-pythagorean-rearrangement-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1648,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1754,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M05-pythagorean-rearrangement-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1666,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1772,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M05-pythagorean-rearrangement-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1705,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1811,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M06-arc-length-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1854,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1960,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M06-arc-length-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M06-arc-length-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1648,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1754,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M06-arc-length-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1672,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1778,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M06-arc-length-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1698,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1804,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M07-euclidean-algorithm-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1853,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1959,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M07-euclidean-algorithm-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1660,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1766,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M07-euclidean-algorithm-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1654,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1760,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M07-euclidean-algorithm-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M07-euclidean-algorithm-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1688,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1794,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M08-arithmetic-series-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1831,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1937,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M08-arithmetic-series-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1675,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1781,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M08-arithmetic-series-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1654,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1760,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M08-arithmetic-series-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M08-arithmetic-series-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1686,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1792,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M09-derivative-tangent-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1894,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 2000,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M09-derivative-tangent-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1666,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1772,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M09-derivative-tangent-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M09-derivative-tangent-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M09-derivative-tangent-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1704,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1810,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M10-binomial-probability-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1899,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 2005,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M10-binomial-probability-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1681,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1787,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M10-binomial-probability-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1648,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1754,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M10-binomial-probability-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1672,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1778,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M10-binomial-probability-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1719,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1825,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M11-paraboloid-section-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1861,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1967,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M11-paraboloid-section-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1669,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1775,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M11-paraboloid-section-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M11-paraboloid-section-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M11-paraboloid-section-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1702,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1808,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M12-sphere-section-detailed",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1857,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1963,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M12-sphere-section-question",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1663,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1769,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M12-sphere-section-topic",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1648,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1754,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M12-sphere-section-confused",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1672,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1778,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "M12-sphere-section-context",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1700,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1806,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "circle-area",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1665,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1771,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "slope",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1651,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1757,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "two-points",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1681,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1787,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "vague",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1648,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1754,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "noise",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1639,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1745,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "wrong-premise",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1675,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 4319,
+      "prompt_bytes": 1781,
+      "schema_bytes": 6697,
+      "model_calls": 1
+    },
+    "delta_bytes": -215
+  },
+  {
+    "id": "unsupported",
+    "baseline": {
+      "system_bytes": 4668,
+      "prompt_bytes": 1681,
+      "schema_bytes": 6669,
+      "model_calls": 1
+    },
+    "candidate": {
+      "system_bytes": 0,
+      "prompt_bytes": 0,
+      "schema_bytes": 0,
+      "model_calls": 0
+    },
+    "delta_bytes": -13019
+  }
+]

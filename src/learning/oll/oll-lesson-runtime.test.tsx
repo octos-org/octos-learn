@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react";
 import { useEffect, useState, type ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import twoPointsSource from "./fixtures/math-two-points.canonical.jsonl?raw";
 import geometryLessonSource from "./fixtures/geometry-auxiliary-line-v2.canonical.jsonl?raw";
 import unitCircleSineLessonSource from "./fixtures/unit-circle-sine.canonical.jsonl?raw";
 import {
@@ -1108,7 +1109,9 @@ describe("OLL lesson Runtime integration", () => {
     ).map((node) => Number.parseFloat(node.style.top)
       + Number.parseFloat(node.style.height)));
     expect(controlTop).toBeGreaterThanOrEqual(anchorBottom + 42);
-    expect(controlTop).toBeLessThan(lessonBottom + 42);
+    // The taller plot can now be the bottommost lesson node itself.
+    // Its attached controls may share the full lesson's bottom boundary.
+    expect(controlTop).toBeLessThanOrEqual(lessonBottom + 42);
   });
 
   it("keeps wheel zoom available while ink selection owns pointer input", async () => {
@@ -2304,5 +2307,49 @@ describe("OLL lesson Runtime integration", () => {
         "现在连接 A 和 D",
       );
     });
+  });
+});
+
+
+function TwoPointProbe() {
+  const runtime = useOllLessonRuntime({source:twoPointsSource,storageKey:"two-point-math-regression",startAtEnd:true});
+  return runtime ? <OllLessonBoard runtime={runtime} /> : null;
+}
+
+describe("mathematical plot interaction", () => {
+  it("closes a plot's enlarged view when its lesson is unmounted", async () => {
+    const prototype = HTMLDialogElement.prototype;
+    const show = Object.getOwnPropertyDescriptor(prototype, "showModal");
+    const close = Object.getOwnPropertyDescriptor(prototype, "close");
+    Object.defineProperty(prototype,"showModal",{configurable:true,value:function(this:HTMLDialogElement){this.setAttribute("open","");}});
+    Object.defineProperty(prototype,"close",{configurable:true,value:function(this:HTMLDialogElement){this.removeAttribute("open");this.dispatchEvent(new Event("close"));}});
+    try {
+      const mounted = render(<TwoPointProbe />);
+      fireEvent.click(await screen.findByRole("button",{name:"放大查看函数图"}));
+      expect(document.querySelector("dialog[open]")).not.toBeNull();
+      mounted.unmount();
+      expect(document.querySelector("dialog")).toBeNull();
+    } finally {
+      if(show)Object.defineProperty(prototype,"showModal",show);else Reflect.deleteProperty(prototype,"showModal");
+      if(close)Object.defineProperty(prototype,"close",close);else Reflect.deleteProperty(prototype,"close");
+    }
+  });
+
+  it("moves the two samples independently and protects division by zero", async () => {
+    render(<TwoPointProbe />);
+    const a = await screen.findByRole("slider", {name:"点A横坐标 x1"});
+    const b = screen.getByRole("slider", {name:"点B横坐标 x2"});
+    fireEvent.input(a, {target:{value:"0"}});
+    await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("Δx = 2"));
+    expect((b as HTMLInputElement).value).toBe("2");
+    fireEvent.input(b, {target:{value:"3"}});
+    await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("Δx = 3"));
+    expect((a as HTMLInputElement).value).toBe("0");
+    expect(document.querySelector(".plot-measurement")?.textContent).toContain("斜率 ≈ 1");
+    fireEvent.click(screen.getByRole("button", {name:"放大坐标范围中的局部"}));
+    fireEvent.click(screen.getByRole("button", {name:"恢复课程视窗和图层，保留参数"}));
+    expect((b as HTMLInputElement).value).toBe("3");
+    fireEvent.input(b, {target:{value:"0"}});
+    await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("不能用"));
   });
 });
