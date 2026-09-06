@@ -2,6 +2,7 @@
 
 ## 当前使用
 
+- [本地开发交接](DEVELOPMENT_HANDOFF.md)：当前稳定基线、仓库边界、本地启动方式、与公网的差异及后续开发约束。
 - [公网部署手册](PUBLIC_DEPLOYMENT_RUNBOOK.md)：构建、安装、升级、回滚和上线核验。
 - [公开注册、新手设置与平台旁白语音](PUBLIC_ONBOARDING_AND_TTS.md)：当前用户入口、功能降级、共享 TTS 额度和本次上线记录。
 - [发布前 E2E 清单](RELEASE_E2E_CHECKLIST.md)：文字、图片、语音、摄像头、局部辅助、回放和多用户隔离的人工验收。
