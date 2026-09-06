@@ -1,6 +1,6 @@
 # 数学质量实施状态
 
-更新日期：2026-09-06。状态：专题开发完成，三个开发 PR 均可合并且 CI 全部通过；尚未合并或部署。
+更新日期：2026-09-06。状态：专题完成，三个开发 PR 均已合并且 CI 全部通过；尚未部署。
 
 ## 收尾结论
 
@@ -10,12 +10,11 @@
 
 | 仓库 | PR | 收尾状态 |
 | --- | --- | --- |
-| octos-lesson-language | [#7](https://github.com/alan0x/octos-lesson-language/pull/7) | OPEN；MERGEABLE；conformance 通过 |
-| learning-coach | [#14](https://github.com/alan0x/learning-coach/pull/14) | OPEN；MERGEABLE；两项 OLL contract 检查通过 |
-| octos-learn | [#9](https://github.com/octos-org/octos-learn/pull/9) | OPEN；MERGEABLE；单元测试、生产构建和 E2E smoke 通过 |
+| octos-lesson-language | [#7](https://github.com/alan0x/octos-lesson-language/pull/7) | MERGED；`b0209f8`；conformance 通过 |
+| learning-coach | [#14](https://github.com/alan0x/learning-coach/pull/14) | MERGED；`b26e49d`；两项 OLL contract 检查通过 |
+| octos-learn | [#9](https://github.com/octos-org/octos-learn/pull/9) | MERGED；`c3790b4`；单元测试、生产构建和 E2E smoke 通过 |
 
-以上状态于 2026-09-06 收尾时从 GitHub 读取。依赖方向为 OLL → Learning Coach / Octos Learn，
-合并时应按此顺序执行。
+以上 PR 已于 2026-09-06 按 OLL → Learning Coach → Octos Learn 的依赖顺序完成合并。
 
 ## 实施结果
 
@@ -60,10 +59,9 @@
 | octos-learn | 85 个文件、787 项单元测试通过；lint 0 errors（25 个既有 warnings）；生产 build 通过 |
 | 浏览器 | 两点独立调节、斜率重合保护、刷新后视窗与参数保留、390×844 大图、8/16 扇形重排均通过 |
 
-三个仓库的 `git diff --check` 均通过。公网没有改动；相关提交只更新开发分支，尚未合并或部署。
+三个仓库的 `git diff --check` 均通过。相关提交已合并到各仓库 main；公网没有改动，尚未部署。
 
-## 合并与发布仍需做
+## 发布仍需做
 
-1. 依次合并 OLL #7、Learning Coach #14 和 Octos Learn #9。
-2. 在合并后的精确提交上重复一次常用短问题冒烟生成，确认部署环境模型配置一致。
-3. 按发布清单执行公开环境回归；本次实现没有执行公网发布。
+1. 在准备发布的精确提交上重复一次常用短问题冒烟生成，确认部署环境模型配置一致。
+2. 按发布清单执行公开环境回归；本次专题没有执行公网发布。
