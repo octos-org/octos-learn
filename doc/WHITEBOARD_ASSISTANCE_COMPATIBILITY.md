@@ -1,6 +1,6 @@
 # 板书兼容与本地验收
 
-此功能已完成本地功能与性能验收；生产构建仍默认不声明新输出能力，等待精确远端依赖 pin。
+此功能已完成本地功能、性能与远端精确依赖安装验收。生产构建仍默认不声明新输出能力，以便按兼容顺序分阶段发布。
 
 | 消费端 | 数据 | 行为 |
 | --- | --- | --- |
@@ -12,13 +12,13 @@
 | 新前端 + 旧 Ink Runtime | 已存在的板书 artifact | 明确提示需要更新，不静默丢失内容 |
 | 已启用的新前端 + 字体正在准备 | 新请求或已返回板书 | 能力由构建与 Runtime API 协商；结果排队等待 Worker，失败时显示重试错误，不改成卡片 |
 
-正式启用需要先发布支持 v0.3/v2/v5 的最低客户端，再开启输出；目前最低 OLL 实现为本地提交 `6c5cfb983a825216af7f96f20d9969e7d4a4496c`。最终客户端最低提交待固定。回滚保留该读取器，只关闭新输出，不能回滚到会丢失消费记录的旧实现。现有已生成板书在关闭新输出后仍按普通笔迹恢复。
+正式启用需要先发布支持 v0.3/v2/v5 的最低客户端，再开启输出；最低 OLL 实现已固定为远端提交 `6c5cfb983a825216af7f96f20d9969e7d4a4496c`，两个消费端的 lock、contract 与 BOM 均指向该提交。最终客户端最低提交以本分支合并后的 release SHA 为准。回滚保留该读取器，只关闭新输出，不能回滚到会丢失消费记录的旧实现。现有已生成板书在关闭新输出后仍按普通笔迹恢复。
 
 超时屏障保存在本浏览器、按 session+turn 分隔。旧历史请求若没有可靠超时记录无法推断其终态；清除浏览器存储或跨设备不会携带本机屏障。正式验收不得宣称支持跨设备持久终态，目前需求覆盖同浏览器刷新、重连和重新枚举。
 
 ## 本地浏览器验证
 
-启动开发服务器时设置 `OCTOS_LOCAL_OLL_PATH` 指向本地 OLL 仓库，并设置 `VITE_ENABLE_BOARD_WRITING=true`。先构建该 OLL，再运行 `scripts/check-board-writing-browser.mjs`。脚本通过隔离浏览器页面加载 `scripts/whiteboard-assistance-probe.tsx`，不会向真实会话发消息。可用 `OLL_BROWSER_EXECUTABLE` 指定本机 Chromium，`BOARD_PROBE_URL` 指定 Vite 地址。
+本地 OLL 开发时可设置 `OCTOS_LOCAL_OLL_PATH` 指向工作树；最终安装态验收不设置该变量，使 Vite 使用 package/lock 中的远端精确提交，并设置 `VITE_ENABLE_BOARD_WRITING=true`。运行 `scripts/check-board-writing-browser.mjs` 后，脚本通过隔离浏览器页面加载 `scripts/whiteboard-assistance-probe.tsx`，不会向真实会话发消息。可用 `OLL_BROWSER_EXECUTABLE` 指定本机 Chromium，`BOARD_PROBE_URL` 指定 Vite 地址。浏览器驱动可来自相邻 OLL 开发工作树，不改变页面实际加载的安装态依赖。
 
 `eval-selection-assistance.mjs` 要求明确提供 LEARNING_COACH_DIR、SELECTION_BASELINE_EXECUTABLE 和模型所需环境配置。凭据不写入结果；输出包含模型正文、实际 token 和时延。基线须从实施前提交构建，不能拿当前文件冒充基线。
 

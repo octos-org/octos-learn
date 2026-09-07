@@ -331,6 +331,7 @@ const emptyInkState: LearningInkState = {
   selection_color: null,
   selection_input: "unknown",
   selection_mode: "rectangle",
+  selection_transform_enabled: false,
   selection_revision: 0,
   content_bounds: null,
   content_bounds_list: [],
