@@ -1,0 +1,926 @@
+{
+  "provider": "vertex",
+  "model": "gemini-3.6-flash",
+  "runs": [
+    {
+      "id": "correct",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 5314,
+      "success": true,
+      "kind": "board_writing",
+      "text": "计算完全正确。\n2+3=5",
+      "response": {
+        "kind": "board_writing",
+        "title": "检查结果",
+        "text": "计算完全正确。\n2+3=5",
+        "lines": [
+          "计算完全正确。",
+          "2+3=5"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-correct-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 309,
+          "candidate_tokens": 41,
+          "total_tokens": 350,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 949,
+          "elapsed_ms": 3599,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-correct-0",
+          "invocation_elapsed_ms": 5240,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:00.064Z",
+          "recorded_at_epoch_ms": 1788786720064
+        }
+      ]
+    },
+    {
+      "id": "incorrect",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 30008,
+      "success": false,
+      "error_code": "process-failed",
+      "error": "No protocol response",
+      "metrics": []
+    },
+    {
+      "id": "uncertain",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 4990,
+      "success": true,
+      "kind": "board_writing",
+      "text": "原公式中存在模糊字符，无法确认指数或符号，请重新选择清晰区域。\ny=x?+z?",
+      "response": {
+        "kind": "board_writing",
+        "title": "公式检查与批注",
+        "text": "原公式中存在模糊字符，无法确认指数或符号，请重新选择清晰区域。\ny=x?+z?",
+        "lines": [
+          "原公式中存在模糊字符，无法确认指数或符号，请重新选择清晰区域。",
+          "y=x?+z?"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-uncertain-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 436,
+          "candidate_tokens": 94,
+          "total_tokens": 530,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1157,
+          "elapsed_ms": 4091,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-uncertain-0",
+          "invocation_elapsed_ms": 4889,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:35.068Z",
+          "recorded_at_epoch_ms": 1788786755068
+        }
+      ]
+    },
+    {
+      "id": "transcribe",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 3438,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将原句改写得更加严谨、清楚：\n函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+      "response": {
+        "kind": "board_writing",
+        "title": "语句改写与优化建议",
+        "text": "将原句改写得更加严谨、清楚：\n函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+        "lines": [
+          "将原句改写得更加严谨、清楚：",
+          "函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-transcribe-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 674,
+          "candidate_tokens": 67,
+          "total_tokens": 741,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1070,
+          "elapsed_ms": 2349,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-transcribe-0",
+          "invocation_elapsed_ms": 3352,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:38.516Z",
+          "recorded_at_epoch_ms": 1788786758516
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 4090,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三变量方程移项整理为 F(x, y, z) = 0 的标准隐式曲面形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为适合三维绘图的表达式",
+        "text": "将三变量方程移项整理为 F(x, y, z) = 0 的标准隐式曲面形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将三变量方程移项整理为 F(x, y, z) = 0 的标准隐式曲面形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 673,
+          "candidate_tokens": 104,
+          "total_tokens": 777,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1103,
+          "elapsed_ms": 2912,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-0",
+          "invocation_elapsed_ms": 3998,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:42.584Z",
+          "recorded_at_epoch_ms": 1788786762584
+        }
+      ]
+    },
+    {
+      "id": "explicit-plot",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 6281,
+      "success": true,
+      "kind": "plot",
+      "text": "已为您绘制函数 y=x^2 的图像。",
+      "response": {
+        "kind": "plot",
+        "plot_kind": "explicit",
+        "title": "绘制函数图像",
+        "text": "已为您绘制函数 y=x^2 的图像。",
+        "expression": "x^2",
+        "x_range": {
+          "min": -4,
+          "max": 4
+        },
+        "y_range": {
+          "min": -1.8611,
+          "max": 17.4736
+        }
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explicit-plot-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 34,
+          "total_tokens": 700,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 963,
+          "elapsed_ms": 4948,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explicit-plot-0",
+          "invocation_elapsed_ms": 6110,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:48.885Z",
+          "recorded_at_epoch_ms": 1788786768885
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 3893,
+      "success": true,
+      "kind": "explanation",
+      "text": "公式 y = x^2 表示一个二次函数关系。其中 x 是自变量，y 是因变量，y 的值等于 x 的平方。在平面直角坐标系中，它的函数图像是一条开口向上、顶点位于原点 (0, 0) 且关于 y 轴对称的抛物线。",
+      "response": {
+        "kind": "explanation",
+        "title": "公式含义解释",
+        "text": "公式 y = x^2 表示一个二次函数关系。其中 x 是自变量，y 是因变量，y 的值等于 x 的平方。在平面直角坐标系中，它的函数图像是一条开口向上、顶点位于原点 (0, 0) 且关于 y 轴对称的抛物线。"
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explain-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 98,
+          "total_tokens": 764,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1176,
+          "elapsed_ms": 3071,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explain-0",
+          "invocation_elapsed_ms": 3793,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:52.782Z",
+          "recorded_at_epoch_ms": 1788786772782
+        }
+      ]
+    },
+    {
+      "id": "correct",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 4741,
+      "success": true,
+      "kind": "board_writing",
+      "text": "计算完全正确。\n2+3=5",
+      "response": {
+        "kind": "board_writing",
+        "title": "检查结果与建议",
+        "text": "计算完全正确。\n2+3=5",
+        "lines": [
+          "计算完全正确。",
+          "2+3=5"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-correct-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 309,
+          "candidate_tokens": 43,
+          "total_tokens": 352,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 958,
+          "elapsed_ms": 2465,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-correct-1",
+          "invocation_elapsed_ms": 4646,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:12:57.524Z",
+          "recorded_at_epoch_ms": 1788786777524
+        }
+      ]
+    },
+    {
+      "id": "incorrect",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 3437,
+      "success": true,
+      "kind": "board_writing",
+      "text": "加法计算有误，请重新计算：\n2+3=5",
+      "response": {
+        "kind": "board_writing",
+        "title": "计算检查建议",
+        "text": "加法计算有误，请重新计算：\n2+3=5",
+        "lines": [
+          "加法计算有误，请重新计算：",
+          "2+3=5"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-incorrect-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 309,
+          "candidate_tokens": 49,
+          "total_tokens": 358,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 973,
+          "elapsed_ms": 2164,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-incorrect-1",
+          "invocation_elapsed_ms": 3340,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:00.964Z",
+          "recorded_at_epoch_ms": 1788786780964
+        }
+      ]
+    },
+    {
+      "id": "uncertain",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 5160,
+      "success": true,
+      "kind": "board_writing",
+      "text": "原稿中存在模糊字符，无法确认问号处的具体指数或符号，请重新选择清晰区域。\ny=x?+z?",
+      "response": {
+        "kind": "board_writing",
+        "title": "公式检查与确认说明",
+        "text": "原稿中存在模糊字符，无法确认问号处的具体指数或符号，请重新选择清晰区域。\ny=x?+z?",
+        "lines": [
+          "原稿中存在模糊字符，无法确认问号处的具体指数或符号，请重新选择清晰区域。",
+          "y=x?+z?"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-uncertain-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 436,
+          "candidate_tokens": 98,
+          "total_tokens": 534,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1178,
+          "elapsed_ms": 3245,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-uncertain-1",
+          "invocation_elapsed_ms": 5062,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:06.124Z",
+          "recorded_at_epoch_ms": 1788786786124
+        }
+      ]
+    },
+    {
+      "id": "transcribe",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 3460,
+      "success": true,
+      "kind": "board_writing",
+      "text": "修改建议如下：\n函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+      "response": {
+        "kind": "board_writing",
+        "title": "修改建议",
+        "text": "修改建议如下：\n函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+        "lines": [
+          "修改建议如下：",
+          "函数的定义域是指使函数有意义的自变量 x 的所有可能取值的集合。"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-transcribe-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 674,
+          "candidate_tokens": 85,
+          "total_tokens": 759,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1160,
+          "elapsed_ms": 2537,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-transcribe-1",
+          "invocation_elapsed_ms": 3364,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:09.584Z",
+          "recorded_at_epoch_ms": 1788786789584
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 6701,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z)=0 的标准形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式绘图形式",
+        "text": "将方程移项整理为 F(x,y,z)=0 的标准形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z)=0 的标准形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 673,
+          "candidate_tokens": 112,
+          "total_tokens": 785,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1101,
+          "elapsed_ms": 2386,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-1",
+          "invocation_elapsed_ms": 6607,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:16.286Z",
+          "recorded_at_epoch_ms": 1788786796286
+        }
+      ]
+    },
+    {
+      "id": "explicit-plot",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 4163,
+      "success": true,
+      "kind": "plot",
+      "text": "函数 y = x^2 的图像如下：",
+      "response": {
+        "kind": "plot",
+        "plot_kind": "explicit",
+        "title": "绘制函数图像",
+        "text": "函数 y = x^2 的图像如下：",
+        "expression": "x^2",
+        "x_range": {
+          "min": -4,
+          "max": 4
+        },
+        "y_range": {
+          "min": -1.8611,
+          "max": 17.4736
+        }
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explicit-plot-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 32,
+          "total_tokens": 698,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 956,
+          "elapsed_ms": 2390,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explicit-plot-1",
+          "invocation_elapsed_ms": 4064,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:20.451Z",
+          "recorded_at_epoch_ms": 1788786800451
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 4649,
+      "success": true,
+      "kind": "explanation",
+      "text": "y=x^2 表示一个二次函数。其中 x 是自变量，y 是因变量。它的几何意义是在平面直角坐标系中一条开口向上、顶点位于原点 (0,0) 的抛物线。对于任意实数 x，y 的值均为 x 的平方（非负数），且关于 y 轴对称。",
+      "response": {
+        "kind": "explanation",
+        "title": "公式含义解释",
+        "text": "y=x^2 表示一个二次函数。其中 x 是自变量，y 是因变量。它的几何意义是在平面直角坐标系中一条开口向上、顶点位于原点 (0,0) 的抛物线。对于任意实数 x，y 的值均为 x 的平方（非负数），且关于 y 轴对称。"
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explain-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 90,
+          "total_tokens": 756,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1181,
+          "elapsed_ms": 3101,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explain-1",
+          "invocation_elapsed_ms": 4556,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:25.103Z",
+          "recorded_at_epoch_ms": 1788786805103
+        }
+      ]
+    },
+    {
+      "id": "correct",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 3170,
+      "success": true,
+      "kind": "board_writing",
+      "text": "计算正确。\n2 + 3 = 5",
+      "response": {
+        "kind": "board_writing",
+        "title": "检查计算是否正确",
+        "text": "计算正确。\n2 + 3 = 5",
+        "lines": [
+          "计算正确。",
+          "2 + 3 = 5"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-correct-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 309,
+          "candidate_tokens": 44,
+          "total_tokens": 353,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 959,
+          "elapsed_ms": 1774,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-correct-2",
+          "invocation_elapsed_ms": 3076,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:28.274Z",
+          "recorded_at_epoch_ms": 1788786808274
+        }
+      ]
+    },
+    {
+      "id": "incorrect",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 3591,
+      "success": true,
+      "kind": "board_writing",
+      "text": "计算有误，2加3应等于5。\n2 + 3 = 5",
+      "response": {
+        "kind": "board_writing",
+        "title": "检查计算",
+        "text": "计算有误，2加3应等于5。\n2 + 3 = 5",
+        "lines": [
+          "计算有误，2加3应等于5。",
+          "2 + 3 = 5"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-incorrect-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 309,
+          "candidate_tokens": 50,
+          "total_tokens": 359,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 965,
+          "elapsed_ms": 1926,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-incorrect-2",
+          "invocation_elapsed_ms": 3497,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:31.865Z",
+          "recorded_at_epoch_ms": 1788786811865
+        }
+      ]
+    },
+    {
+      "id": "uncertain",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 3072,
+      "success": true,
+      "kind": "board_writing",
+      "text": "原稿字符模糊，无法确认问号处的具体指数或运算符号，请重新选择或提供清晰图像。\ny = x? + z?",
+      "response": {
+        "kind": "board_writing",
+        "title": "检查说明",
+        "text": "原稿字符模糊，无法确认问号处的具体指数或运算符号，请重新选择或提供清晰图像。\ny = x? + z?",
+        "lines": [
+          "原稿字符模糊，无法确认问号处的具体指数或运算符号，请重新选择或提供清晰图像。",
+          "y = x? + z?"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-uncertain-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 436,
+          "candidate_tokens": 97,
+          "total_tokens": 533,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1173,
+          "elapsed_ms": 2232,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-uncertain-2",
+          "invocation_elapsed_ms": 2978,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:34.937Z",
+          "recorded_at_epoch_ms": 1788786814937
+        }
+      ]
+    },
+    {
+      "id": "transcribe",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 4029,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将定义表达得更加严谨、清晰：\n定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+      "response": {
+        "kind": "board_writing",
+        "title": "改写说明",
+        "text": "将定义表达得更加严谨、清晰：\n定义域是指使函数有意义的自变量 x 的所有可能取值的集合。",
+        "lines": [
+          "将定义表达得更加严谨、清晰：",
+          "定义域是指使函数有意义的自变量 x 的所有可能取值的集合。"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-transcribe-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 674,
+          "candidate_tokens": 61,
+          "total_tokens": 735,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1046,
+          "elapsed_ms": 2028,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-transcribe-2",
+          "invocation_elapsed_ms": 3945,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:38.976Z",
+          "recorded_at_epoch_ms": 1788786818976
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 3968,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三变量方程整理为 F(x,y,z) = 0 的标准形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为绘图形式",
+        "text": "将三变量方程整理为 F(x,y,z) = 0 的标准形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将三变量方程整理为 F(x,y,z) = 0 的标准形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 673,
+          "candidate_tokens": 70,
+          "total_tokens": 743,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1032,
+          "elapsed_ms": 2780,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-2",
+          "invocation_elapsed_ms": 3885,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:42.935Z",
+          "recorded_at_epoch_ms": 1788786822935
+        }
+      ]
+    },
+    {
+      "id": "explicit-plot",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 2624,
+      "success": true,
+      "kind": "plot",
+      "text": "函数 y=x^2 的图像如下：",
+      "response": {
+        "kind": "plot",
+        "plot_kind": "explicit",
+        "title": "绘制二次函数图像",
+        "text": "函数 y=x^2 的图像如下：",
+        "expression": "x^2",
+        "x_range": {
+          "min": -4,
+          "max": 4
+        },
+        "y_range": {
+          "min": -1.8611,
+          "max": 17.4736
+        }
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explicit-plot-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 51,
+          "total_tokens": 717,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 982,
+          "elapsed_ms": 1755,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explicit-plot-2",
+          "invocation_elapsed_ms": 2528,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:45.560Z",
+          "recorded_at_epoch_ms": 1788786825560
+        }
+      ]
+    },
+    {
+      "id": "explain",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 3478,
+      "success": true,
+      "kind": "explanation",
+      "text": "公式 y=x^2 表示一个二次函数关系，其中 y 是 x 的平方。在平面直角坐标系中，它的函数图像是一条开口向上、顶点位于原点 (0,0) 的抛物线。对于任意实数 x，y 的值总是非负的（即 y >= 0），并且图像关于 y 轴对称。",
+      "response": {
+        "kind": "explanation",
+        "title": "公式含义解释",
+        "text": "公式 y=x^2 表示一个二次函数关系，其中 y 是 x 的平方。在平面直角坐标系中，它的函数图像是一条开口向上、顶点位于原点 (0,0) 的抛物线。对于任意实数 x，y 的值总是非负的（即 y >= 0），并且图像关于 y 轴对称。"
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-explain-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 666,
+          "candidate_tokens": 93,
+          "total_tokens": 759,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1195,
+          "elapsed_ms": 2513,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-explain-2",
+          "invocation_elapsed_ms": 3385,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:13:49.041Z",
+          "recorded_at_epoch_ms": 1788786829041
+        }
+      ]
+    }
+  ],
+  "candidate_configuration": {
+    "OLL_SELECTION_THINKING_LEVEL": "MINIMAL",
+    "frozen_executable": "selection-candidate-v5"
+  }
+}

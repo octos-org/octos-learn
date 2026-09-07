@@ -25,6 +25,8 @@ import {
 } from "./degraded-visual-retry";
 import { LearningWorkspace } from "./learning-workspace";
 import { saveSelectionEnhancementState } from "./selection-enhancements";
+import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
+import { SelectionRequestState } from "./selection-request-state";
 import { saveWhiteboardQuestions } from "./whiteboard-questions";
 
 const conversationMock = vi.hoisted(() => ({
@@ -873,15 +875,20 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(
       conversationMock.options?.shouldIncludeCameraFrame?.(),
     ).toBe(false));
-    const additionalFiles = await conversationMock.options
-      ?.getAdditionalTurnFiles?.();
+    const frozenOptions = conversationMock.options!.captureUtteranceOptions!();
+    const additionalFiles = await frozenOptions.getAdditionalTurnFiles?.();
+    act(() => {
+      state = { ...state, mode: "navigate", selected_count: 0, selection_revision: 2 };
+      listeners.forEach((listener) => listener(state));
+    });
+    expect(frozenOptions.shouldIncludeCameraFrame?.()).toBe(false);
     expect(additionalFiles).toEqual([expect.objectContaining({
       name: "selection.png",
       type: "image/png",
     })]);
 
-    conversationMock.options?.onTurnStart?.("selection-voice-turn");
-    const handled = await conversationMock.options?.onAdmittedSpeech?.({
+    frozenOptions.onTurnStart?.("selection-voice-turn");
+    const handled = await frozenOptions.onAdmittedSpeech?.({
       sessionId: "learn-direct-selection-voice",
       turnId: "selection-voice-turn",
       transcript: "为什么它的顶点正好在原点？",
@@ -922,6 +929,137 @@ describe("LearningWorkspace", () => {
       conversationMock.options?.shouldIncludeCameraFrame?.(),
     ).toBe(true));
     expect(await conversationMock.options?.getAdditionalTurnFiles?.()).toEqual([]);
+  });
+
+  it("discards a timed out voice result when the next request discovers both files", async () => {
+    const listeners = new Set<(state: {
+      mode: "select" | "navigate";
+      component_count: number;
+      selected_count: number;
+      pen_color: string;
+      selection_color: string | null;
+      selection_input: "pen";
+      selection_mode: "rectangle";
+      selection_revision: number;
+      document_version: number;
+      saved: boolean;
+    }) => void>();
+    let state = {
+      mode: "select" as "select" | "navigate",
+      component_count: 1,
+      selected_count: 1,
+      pen_color: "#176b62",
+      selection_color: "#176b62",
+      selection_input: "pen" as const,
+      selection_mode: "rectangle" as const,
+      selection_revision: 1,
+      document_version: 2,
+      saved: true,
+    };
+    const snapshot: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-direct-selection-voice",
+      document_id: "learning-session:learn-direct-selection-voice:student-ink",
+      document_version: 2,
+      created_at: "2026-08-25T12:00:00.000Z",
+      bounds: { x: 120, y: 160, width: 240, height: 120 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 120, y: 160 },
+          { x: 360, y: 160 },
+          { x: 360, y: 280 },
+          { x: 120, y: 280 },
+        ],
+      },
+      component_ids: ["stroke:direct-selection-voice"],
+      checksum: { algorithm: "sha-256", value: "d".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => ({
+      ready: Promise.resolve(),
+      state,
+      subscribe: vi.fn((listener: (next: typeof state) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn(),
+      setPenColor: vi.fn(),
+      setSelectionColor: vi.fn(),
+      setSelectionMode: vi.fn(),
+      selectAll: vi.fn(),
+      captureSelectionSnapshot: vi.fn(async () => snapshot),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      mergeSavedDocument: vi.fn(async () => null),
+      destroy: vi.fn(async () => undefined),
+    }));
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-direct-selection-voice"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(
+      conversationMock.options?.shouldIncludeCameraFrame?.(),
+    ).toBe(false));
+    const frozenOptions = conversationMock.options!.captureUtteranceOptions!();
+    const additionalFiles = await frozenOptions.getAdditionalTurnFiles?.();
+    act(() => {
+      state = { ...state, mode: "navigate", selected_count: 0, selection_revision: 2 };
+      listeners.forEach((listener) => listener(state));
+    });
+    expect(frozenOptions.shouldIncludeCameraFrame?.()).toBe(false);
+    expect(additionalFiles).toEqual([expect.objectContaining({
+      name: "selection.png",
+      type: "image/png",
+    })]);
+
+    let rejectFirst!: (cause: Error) => void;
+    sessionFilesMock.invokeSkillAction.mockImplementationOnce(() => new Promise((_resolve, reject) => { rejectFirst = reject; }));
+    const send = (turnId: string) => frozenOptions.onAdmittedSpeech!({
+      sessionId: "learn-direct-selection-voice", turnId,
+      transcript: "请解释这个式子", admissionId: `admission-${turnId}`,
+      mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
+      additionalMediaPaths: ["uploads/selection.png"],
+    });
+    let first!: Promise<boolean | void>;
+    act(() => { first = Promise.resolve(send("expired-turn")); });
+    await waitFor(() => expect(rejectFirst).toBeTypeOf("function"));
+    expect(screen.queryByText("正在准备课程")).toBeNull();
+    await act(async () => { rejectFirst(new BridgeTimeoutError("skill.action.invoke", 30000)); await first; });
+    const files = ["expired-turn", "success-turn"].map((turn) => ({
+      filename: `${turn}.octos-selection-enhancement.json`,
+      path: `skill-output/study/selections/${turn}.octos-selection-enhancement.json`,
+      size_bytes: 700, modified_at: "2026-09-07T00:00:00Z",
+    }));
+    sessionFilesMock.getSessionFiles.mockResolvedValue(files as never);
+    const fetched: string[] = [];
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      const turn = String(url).includes("expired-turn") ? "expired-turn" : "success-turn";
+      fetched.push(turn);
+      return { ok: true, json: async () => ({
+        profile: "octos.selection-enhancement", version: "0.2", turn_id: turn,
+        created_at: "2026-09-07T00:00:00Z", source: snapshot,
+        board: { board_id: "learning-whiteboard:learn-direct-selection-voice", revision: 0, targets: [] },
+        tool_id: "custom-question", interpretation: { kind: "math", content: "y=x^2", confidence: "high" },
+        response: { kind: "explanation", title: turn === "expired-turn" ? "迟到的旧答案" : "第二次独立答案", text: "式子说明" },
+      }) };
+    }));
+    await act(async () => { await send("success-turn"); });
+    await waitFor(() => expect(screen.getByText("第二次独立答案")).toBeTruthy());
+    act(() => window.dispatchEvent(new Event("crew:bridge_connected")));
+    await waitFor(() => expect(sessionFilesMock.getSessionFiles.mock.calls.length).toBeGreaterThan(2));
+    expect(fetched).not.toContain("expired-turn");
+    expect(screen.queryByText("迟到的旧答案")).toBeNull();
+    expect(new SelectionRequestState("learn-direct-selection-voice").status("expired-turn")).toBe("timed-out");
+    expect(new SelectionRequestState("learn-direct-selection-voice").status("success-turn")).toBe("accepted");
   });
 
   it("captures and displays one current frame for a text question when the camera is active", async () => {
@@ -2408,6 +2546,65 @@ describe("LearningWorkspace", () => {
       .toBeTruthy();
     expect(screen.queryByText("选区辅助内容无法对应到已保存的原稿快照"))
       .toBeNull();
+  });
+
+  it.each(["pending", "timed-out"] as const)("discards %s artifacts on reload and reconnect", async (status) => {
+    const sessionId = "learn-selection-source-missing";
+    sessionFilesMock.getSessionFiles.mockResolvedValue([{
+      filename: "historical-turn.octos-selection-enhancement.json",
+      path: "skill-output/study/selections/historical-turn.octos-selection-enhancement.json",
+      size_bytes: 700,
+      modified_at: "2026-08-17T11:00:01.000Z",
+    }]);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        profile: "octos.selection-enhancement",
+        version: "0.2",
+        turn_id: "historical-turn",
+        created_at: "2026-08-17T11:00:01.000Z",
+        source: {
+          source_id: "missing-local-source",
+          document_id: `learning-session:${sessionId}:student-ink`,
+          document_version: 4,
+          bounds: { x: 120, y: 80, width: 180, height: 90 },
+          checksum: { algorithm: "sha-256", value: "a".repeat(64) },
+        },
+        board: {
+          board_id: `learning-whiteboard:${sessionId}`,
+          revision: 0,
+          targets: [],
+        },
+        tool_id: "explain",
+        interpretation: {
+          kind: "math",
+          content: "y=x^2",
+          confidence: "high",
+        },
+        response: {
+          kind: "explanation",
+          title: "保留下来的历史说明",
+          text: "已经生成的答案仍然可以查看。",
+        },
+      }),
+    }));
+
+    const requests = new SelectionRequestState(sessionId);
+    requests.begin("historical-turn");
+    if (status === "timed-out") requests.timeout("historical-turn");
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(sessionFilesMock.getSessionFiles).toHaveBeenCalled());
+    act(() => { window.dispatchEvent(new Event("crew:bridge_connected")); });
+    await waitFor(() => expect(sessionFilesMock.getSessionFiles).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText("保留下来的历史说明")).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it("restores an OLL lesson from durable session files after refresh", async () => {

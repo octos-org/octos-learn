@@ -10,6 +10,10 @@ const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem")
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const useLocalHttps = mode === "local-https";
+  // Local integration only: exercise an unmerged Runtime without changing the
+  // production dependency pin or publishing intermediate commits.
+  const localOll = mode === "development" || useLocalHttps
+    ? env.OCTOS_LOCAL_OLL_PATH?.trim() : undefined;
   const octosApiTarget =
     env.OCTOS_API_TARGET?.trim() || "http://127.0.0.1:50080";
   if (
@@ -42,9 +46,14 @@ export default defineConfig(({ mode }) => {
     },
     base: process.env.BASE_URL || "/",
     plugins: [react(), tailwindcss()],
+    worker: { format: "es" },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        ...(localOll ? {
+          "octos-lesson-language/ink-runtime/styles.css": path.resolve(localOll, "packages/ink-runtime/styles.css"),
+          "octos-lesson-language/ink-runtime": path.resolve(localOll, "dist/packages/ink-runtime/src/index.js"),
+        } : {}),
       },
     },
     server: {

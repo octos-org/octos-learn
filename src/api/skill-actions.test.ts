@@ -16,7 +16,7 @@ import {
   skillActionScopeId,
   type SkillActionJob,
 } from "./skill-actions";
-import { METHODS } from "@/runtime/ui-protocol-bridge";
+import { METHODS, BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
 
 const JOB: SkillActionJob = {
   job_id: "job-1",
@@ -39,6 +39,13 @@ beforeEach(() => {
 });
 
 describe("skill action API", () => {
+  it("preserves the timeout type so selection delivery can reject late files", async () => {
+    const timeout = new BridgeTimeoutError(METHODS.SKILL_ACTION_INVOKE, 30_000);
+    callMethodMock.mockRejectedValueOnce(timeout);
+    await expect(invokeSkillAction("web-abc", "learning.selection.enhance", {}))
+      .rejects.toBe(timeout);
+  });
+
   it("preserves background jobs returned by skill/action/invoke", async () => {
     callMethodMock.mockResolvedValueOnce({
       action_id: "source.import",

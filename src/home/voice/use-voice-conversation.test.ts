@@ -1369,6 +1369,52 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     unmount();
   });
 
+  it("freezes application context at speech onset and releases misfires", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    let selected = "A";
+    const admitted = vi.fn(async () => true);
+    const captureUtteranceOptions = vi.fn(() => {
+      const source = selected;
+      return {
+        shouldIncludeCameraFrame: () => false,
+        getAdditionalTurnFiles: async () => [new File([source], `${source}.png`, { type: "image/png" })],
+        onAdmittedSpeech: async () => admitted(source),
+      };
+    });
+    uploadFilesMock.mockResolvedValue(["uploaded"]);
+    const { result, unmount } = renderHook(() => useVoiceConversation(
+      "frozen-utterance", undefined, undefined,
+      { captureUtteranceOptions, playReplyAudio: false },
+    ));
+    await act(async () => { await result.current.start(); });
+    const [utterance, callbacks] = captureStartMock.mock.calls.at(-1)! as unknown as [
+      (wav: Blob) => void,
+      { onSpeechStart: () => void; onVADMisfire: () => void },
+    ];
+    expect(captureUtteranceOptions).not.toHaveBeenCalled();
+    act(() => { callbacks.onSpeechStart(); });
+    selected = "B";
+    await act(async () => {
+      utterance(new Blob(["speech"]));
+      await vi.waitFor(() => expect(admitted).toHaveBeenCalledWith("A"));
+    });
+    expect(uploadFilesMock.mock.calls.some(([files]) =>
+      files.some((file: File) => file.name === "A.png"))).toBe(true);
+    expect(captureUtteranceOptions).toHaveBeenCalledTimes(1);
+    const [nextUtterance, nextCallbacks] = captureStartMock.mock.calls.at(-1)! as unknown as [
+      (wav: Blob) => void,
+      { onSpeechStart: () => void; onVADMisfire: () => void },
+    ];
+    act(() => { nextCallbacks.onSpeechStart(); nextCallbacks.onVADMisfire(); });
+    selected = "C";
+    act(() => { nextCallbacks.onSpeechStart(); });
+    await act(async () => {
+      nextUtterance(new Blob(["speech"]));
+      await vi.waitFor(() => expect(admitted).toHaveBeenLastCalledWith("C"));
+    });
+    unmount();
+  });
+
   it("keeps application attachments distinct from audio and the live camera frame", async () => {
     getActiveBridgeMock.mockReturnValue({
       getConnectionState: () => "connected",

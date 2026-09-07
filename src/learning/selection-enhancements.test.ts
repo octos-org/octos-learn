@@ -510,3 +510,21 @@ describe("selection enhancement persistence", () => {
     } as never)).toBe(false);
   });
 });
+
+
+describe("versioned board writing", () => {
+  it("requires v0.3 and rejects ambiguous content versions", async () => {
+    const selection = await source();
+    const artifact = {
+      profile: "octos.selection-enhancement", version: "0.3", turn_id: "board-writing",
+      created_at: "2026-09-07T00:00:00Z", source: selection,
+      board: { board_id: "board", revision: 1, targets: [] }, tool_id: "custom-question",
+      interpretation: { kind: "math", content: "y=x^2+z^3", confidence: "high" },
+      response: { kind: "board_writing", title: "等价整理", text: "等价整理为：\nx^2+z^3-y=0", lines: ["等价整理为：", "x^2+z^3-y=0"] },
+    };
+    expect(validateSelectionEnhancementArtifact(artifact)).toEqual(artifact);
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, response: { ...artifact.response, lines: ["另一份公式"] } })).toThrow();
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, version: "0.2" })).toThrow();
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, response: { kind: "explanation", title: "说明", text: "说明" } })).toThrow();
+  });
+});

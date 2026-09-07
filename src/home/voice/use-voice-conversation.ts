@@ -63,6 +63,7 @@ function privateAsrErrorMessage(error: unknown): string {
 }
 
 export interface VoiceConversation {
+  selectionTurnPending?: boolean;
   state: VoiceState;
   /** Human-readable detail while the voice runtime is starting. */
   startupDetail: string | null;
@@ -151,7 +152,13 @@ export interface VoiceAdmittedSpeechContext extends VoiceTurnSendContext {
   clientTiming: LearningClientTiming;
 }
 
+export type VoiceUtteranceOptions = Pick<VoiceConversationOptions,
+  "getAdditionalTurnFiles" | "shouldIncludeCameraFrame" | "buildTurnText"
+  | "onAdmittedSpeech" | "onTurnStart"> & { contextKind?: "selection" };
+
 export interface VoiceConversationOptions {
+  /** Freeze application context at speech onset, before upload/admission. */
+  captureUtteranceOptions?: () => VoiceUtteranceOptions;
   /** Build application context after uploads resolve, so frame paths are exact. */
   buildTurnText?: (context: VoiceTurnSendContext) => string;
   /** Add application-owned files to exactly the next captured voice turn. */
@@ -460,6 +467,16 @@ export function useVoiceConversation(
 ): VoiceConversation {
   const buildTurnText = options?.buildTurnText;
   const getAdditionalTurnFiles = options?.getAdditionalTurnFiles;
+  const captureUtteranceOptionsRef = useRef(options?.captureUtteranceOptions);
+  useEffect(() => {
+    captureUtteranceOptionsRef.current = options?.captureUtteranceOptions;
+  }, [options?.captureUtteranceOptions]);
+  const utteranceOptionsRef = useRef<VoiceUtteranceOptions | null>(null);
+  const [selectionTurnPending, setSelectionTurnPending] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const captureUtteranceContext = useCallback(() => {
+    utteranceOptionsRef.current = captureUtteranceOptionsRef.current?.() ?? null;
+  }, []);
   const shouldIncludeCameraFrame = options?.shouldIncludeCameraFrame;
   const playReplyAudio = options?.playReplyAudio !== false;
   const externalSpeechActive = options?.externalSpeechActive === true;
@@ -736,6 +753,16 @@ export function useVoiceConversation(
       includeCamera?: boolean,
       privateTranscript?: string,
     ) => {
+      const generation = startGenRef.current;
+      setSubmissionError(null);
+      const context = utteranceOptionsRef.current ?? captureUtteranceOptionsRef.current?.();
+      utteranceOptionsRef.current = null;
+      setSelectionTurnPending(context?.contextKind === "selection");
+      const getFiles = context?.getAdditionalTurnFiles ?? getAdditionalTurnFiles;
+      const includeFrame = context?.shouldIncludeCameraFrame ?? shouldIncludeCameraFrame;
+      const buildText = context?.buildTurnText ?? buildTurnText;
+      const admitSpeech = context?.onAdmittedSpeech ?? onAdmittedSpeech;
+      const turnStart = context?.onTurnStart ?? onTurnStart;
       const candidate = bargeInCandidateRef.current;
       if (!candidate) {
         // Reserve the local voice surface while upload + ASR admission run.
@@ -755,12 +782,12 @@ export function useVoiceConversation(
         // video call (audio + image); the server transcribes the audio and the
         // VLM sees the frame. Degrades to audio-only on a failed grab.
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
-        const cameraAllowed = shouldIncludeCameraFrame?.() ?? true;
+        const cameraAllowed = includeFrame?.() ?? true;
         const applicationTranscript = privateTranscript?.trim();
-        const applicationAdmission = Boolean(applicationTranscript && onAdmittedSpeech);
+        const applicationAdmission = Boolean(applicationTranscript && admitSpeech);
         const admissionSupported =
           applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
-        const directAdmission = admissionSupported && Boolean(onAdmittedSpeech);
+        const directAdmission = admissionSupported && Boolean(admitSpeech);
         let admission: Awaited<ReturnType<typeof admitVoiceMessage>> | undefined;
         let capturedFiles: File[];
         let additionalFiles: File[];
@@ -783,7 +810,7 @@ export function useVoiceConversation(
               })()
             : Promise.resolve<File | null>(null);
           const additionalFilesPromise = Promise.resolve(
-            getAdditionalTurnFiles?.() ?? [],
+            getFiles?.() ?? [],
           );
           let audioPath: string | undefined;
           if (applicationTranscript) {
@@ -845,7 +872,7 @@ export function useVoiceConversation(
           if (cameraRequested && cameraAllowed) {
             clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
           }
-          additionalFiles = await getAdditionalTurnFiles?.() ?? [];
+          additionalFiles = await getFiles?.() ?? [];
           files = [...capturedFiles, ...additionalFiles];
           clientTiming.camera_media_bytes = capturedFiles.find(
             (candidateFile) => candidateFile.type.startsWith("image/"),
@@ -854,6 +881,7 @@ export function useVoiceConversation(
           paths = await uploadFiles(files, "recording");
           clientTiming.media_upload_completed_at_epoch_ms = Date.now();
         }
+        if (generation !== startGenRef.current) return;
         // Only an actual camera capture is a live frame. A selection snapshot
         // supplied by /learn is additional context, not a camera image.
         const sentFrame = capturedFiles.find((f) => f.type.startsWith("image/"));
@@ -879,7 +907,7 @@ export function useVoiceConversation(
           activeTurnIdRef.current = turnId;
           stateRef.current = "thinking";
           setState("thinking");
-          onTurnStart?.(turnId);
+          turnStart?.(turnId);
         };
         const armReplyTimeout = () => {
           void beginBargeInRef.current();
@@ -892,11 +920,12 @@ export function useVoiceConversation(
         };
 
         if (!admissionSupported) {
+          if (generation !== startGenRef.current) return;
           const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
           const currentFramePath =
             sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
           const text =
-            buildTurnText?.({
+            buildText?.({
               sessionId,
               turnId,
               mediaPaths: paths,
@@ -956,11 +985,12 @@ export function useVoiceConversation(
           restoreBargeInCandidate();
           return;
         }
+        if (generation !== startGenRef.current) return;
         const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
         const currentFramePath =
           sentFrameIndex >= 0 ? paths[sentFrameIndex] : undefined;
         const text =
-          buildTurnText?.({
+          buildText?.({
             sessionId,
             turnId,
             mediaPaths: paths,
@@ -989,9 +1019,9 @@ export function useVoiceConversation(
         audioTurnByPathRef.current.clear();
         speakingTurnIdRef.current = null;
         beginCommittedVoiceTurn();
-        if (onAdmittedSpeech) {
+        if (admitSpeech) {
           try {
-            const handled = await onAdmittedSpeech({
+            const handled = await admitSpeech({
               sessionId,
               turnId,
               transcript: admission.transcript,
@@ -1043,7 +1073,9 @@ export function useVoiceConversation(
         );
         armReplyTimeout();
       } catch (e) {
+        if (generation !== startGenRef.current) return;
         console.error("[voice] upload/send failed", e);
+        setSubmissionError(e instanceof Error ? e.message : "语音问题发送失败，请重试。");
         const failedTurnId = activeTurnIdRef.current;
         if (failedTurnId) {
           setProvisionalTurnIds((current) =>
@@ -1056,6 +1088,8 @@ export function useVoiceConversation(
           clearSentFrame();
           setState("error");
         }
+      } finally {
+        if (generation === startGenRef.current) setSelectionTurnPending(false);
       }
     },
     [
@@ -1079,6 +1113,8 @@ export function useVoiceConversation(
 
   const finishCapturedUtterance = useCallback(
     async (wav: Blob, includeCamera?: boolean) => {
+      const generation = startGenRef.current;
+      setSelectionTurnPending(utteranceOptionsRef.current?.contextKind === "selection");
       const privateAsr = privateAsrRef.current;
       if (!privateAsr) {
         await sendUtteranceRef.current(wav, includeCamera);
@@ -1091,9 +1127,11 @@ export function useVoiceConversation(
       try {
         await privateAsr.setListening(false);
         const transcript = await privateAsr.commit();
+        if (generation !== startGenRef.current) return;
         setPrivateAsrError(null);
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
+        if (generation !== startGenRef.current) return;
         // Private ASR is an optional public-deployment transport. Preserve the
         // existing Octos audio admission as a per-utterance fallback.
         console.warn("[voice] private ASR failed; using Octos ASR fallback", error);
@@ -1133,6 +1171,7 @@ export function useVoiceConversation(
       },
       {
         ...vadOptions,
+        onSpeechStart: captureUtteranceContext,
         ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
         onSpeechConfirmed: () => {
           if (
@@ -1181,6 +1220,7 @@ export function useVoiceConversation(
           }
         },
         onVADMisfire: () => {
+          utteranceOptionsRef.current = null;
           if (bargeInCandidateRef.current) {
             restoreBargeInCandidate();
           } else {
@@ -1193,6 +1233,7 @@ export function useVoiceConversation(
     captureStart,
     captureStop,
     finishCapturedUtterance,
+    captureUtteranceContext,
     releaseAudio,
     restoreBargeInCandidate,
   ]);
@@ -1222,6 +1263,8 @@ export function useVoiceConversation(
       },
       {
         ...LISTENING_VAD_OPTIONS,
+        onSpeechStart: captureUtteranceContext,
+        onVADMisfire: () => { utteranceOptionsRef.current = null; },
         ...(privateAsr ? { getStream: privateAsr.getVadStream } : {}),
       },
     );
@@ -1238,7 +1281,7 @@ export function useVoiceConversation(
       console.warn("[voice] private ASR could not resume", error);
     });
     return true;
-  }, [captureStart, captureStop, finishCapturedUtterance]);
+  }, [captureStart, captureStop, finishCapturedUtterance, captureUtteranceContext]);
 
   const requestListeningResume = useCallback(() => {
     clearTimeout(externalSpeechReleaseTimerRef.current);
@@ -1610,6 +1653,8 @@ export function useVoiceConversation(
   ]);
 
   const stop = useCallback((stopOptions?: VoiceConversationStopOptions) => {
+    utteranceOptionsRef.current = null;
+    setSelectionTurnPending(false);
     // Invalidate any in-flight start() (it re-checks this after each await).
     startGenRef.current++;
     // Supersede any suspended drain loop so it exits without scheduling a
@@ -2025,12 +2070,13 @@ export function useVoiceConversation(
   const dismissVisual = useCallback(() => setVisual(null), []);
 
   return {
+    selectionTurnPending,
     state,
     startupDetail,
     lastUserText,
     lastAssistantText,
     turns,
-    error: capture.error ?? privateAsrError,
+    error: capture.error ?? submissionError ?? privateAsrError,
     start,
     stop,
     interrupt,

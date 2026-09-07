@@ -65,7 +65,7 @@ export interface SelectionEnhancementBoardRef {
 
 export interface SelectionEnhancementArtifact {
   profile: "octos.selection-enhancement";
-  version: "0.1" | "0.2";
+  version: "0.1" | "0.2" | "0.3";
   turn_id: string;
   created_at: string;
   source: SelectionEnhancementSourceRef;
@@ -77,6 +77,7 @@ export interface SelectionEnhancementArtifact {
     confidence: "high" | "medium" | "low";
   };
   response:
+    | { kind: "board_writing"; title: string; text: string; lines: string[] }
     | {
         kind: "explanation";
         title: string;
@@ -677,8 +678,8 @@ export function validateSelectionEnhancementArtifact(
   const artifact = value as Partial<SelectionEnhancementArtifact>;
   const interpretation = artifact.interpretation;
   const response = artifact.response;
-  const validVersion = artifact.version === "0.1" || artifact.version === "0.2";
-  const validV2Context = artifact.version !== "0.2"
+  const validVersion = ["0.1", "0.2", "0.3"].includes(artifact.version ?? "");
+  const validV2Context = artifact.version === "0.1"
     || (validBoardRef(artifact.board)
       && typeof artifact.tool_id === "string"
       && ["explain", "check-and-suggest", "generate-plot", "custom-question"]
@@ -705,7 +706,17 @@ export function validateSelectionEnhancementArtifact(
   ) {
     throw new Error("选区辅助内容的来源或说明字段无效");
   }
-  if (response.kind === "unsupported") {
+  if (response.kind === "board_writing") {
+    if (artifact.version !== "0.3" || !Array.isArray(response.lines) || !response.lines.length || response.lines.length > 8
+      || response.lines.some((line) => typeof line !== "string" || !line.trim() || line.length > 160
+        || [...line].some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127))
+      || response.lines.join("\n").length > 500
+      || response.lines.join("\n") !== response.text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean).join("\n")) {
+      throw new Error("手写板书内容无效或过长");
+    }
+  } else if (artifact.version === "0.3") {
+    throw new Error("板书版本与内容类型不匹配");
+  } else if (response.kind === "unsupported") {
     if (
       ![
         "unreadable_expression",
