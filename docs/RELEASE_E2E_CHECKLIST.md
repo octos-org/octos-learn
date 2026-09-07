@@ -8,7 +8,9 @@ separate transition task.
 
 - Run the Octos server with the product-owned `learning-coach` runtime available
   through `OCTOS_SKILLS_PATH`. Users must not be asked to install it.
-- Start Octos Learn from this repository with `pnpm dev:https`.
+- Start Octos Learn from this repository with `pnpm dev:https`. For the
+  whiteboard-assistance run, enable the capability explicitly with
+  `VITE_ENABLE_BOARD_WRITING=true`.
 - Confirm the selected model and API credentials in Octos Learn settings.
 - Use a new learning whiteboard for the first case, then keep the same whiteboard for the multi-course case.
 
@@ -38,19 +40,22 @@ Pass when:
 - the h and k controls affect the full parabola correctly;
 - the course ends focused on the second course region.
 
-## 3. Handwriting selection assistance
+## 3. Handwriting selection writes to the board
 
-Write `y=x²` on the whiteboard, select only that handwriting, and use “问小章鱼” to ask:
+Write `y=x²+z³` on the whiteboard, select only that handwriting, and use “问小章鱼” to ask:
 
-> 检查这个函数，并在旁边画出它的图像。
+> 检查这个函数，并将其更改为可以绘制函数图像的形式。
 
 Pass when:
 
 - the selection image is uploaded successfully;
-- the answer and generated visual avoid existing content;
-- the assistant card remains associated with the selected handwriting;
-- adding an unrelated pen stroke and refreshing keeps the assistant card;
-- erasing the source handwriting also removes its associated assistant content.
+- the assistant writes a short explanation and an equivalent equation beside the
+  selected handwriting, for example `x²+z³-y=0`;
+- no assistant card or plot is created for this correction request;
+- the original and AI writing are ordinary whiteboard ink: each can be selected,
+  moved after explicitly entering move mode, erased, undone, redone, saved, and
+  restored after refresh;
+- erasing the source handwriting does not erase the AI writing.
 
 ## 4. Voice question
 
@@ -88,16 +93,23 @@ Pass when:
 
 - the utterance follows the selection-assistance path rather than creating a full new course;
 - no camera frame is attached, even if the camera is enabled;
-- exactly one assistant card is created for the active selection.
+- exactly one result is created for the active selection, using the direct-board
+  path when the request is a check, correction, rewrite, or transcription;
+- if selection A is frozen when valid speech starts, clearing the selection or
+  selecting B while speaking, uploading, or waiting still answers A;
+- the selection path never shows course-preparation loading or teacher course
+  wording.
 
-## 7. Replay isolation
+## 7. Replay and ordinary ink behavior
 
-Add a visible pen stroke and one selection-assistance card around the latest course, then replay that course.
+Add a visible pen stroke and AI writing around the latest course, then replay that course.
 
 Pass when:
 
-- user strokes and selection-assistance cards are hidden during replay;
-- replay shows only the selected course's generated content;
+- AI writing follows the same persistence and layer rules as ordinary ink; it is
+  not hidden or deleted by card-specific selection logic;
+- replay shows the selected course content without corrupting or duplicating the
+  existing AI and student strokes;
 - finishing replay restores the expected whiteboard state and focuses the selected course region;
 - no invalid-reference warning appears for a valid selection.
 
