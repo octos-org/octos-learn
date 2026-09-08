@@ -102,7 +102,6 @@ type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
   setSelectionMode?: (mode: "rectangle" | "lasso") => void;
-  setSelectionTransformEnabled?: (enabled: boolean) => void;
 };
 
 interface PreparedSelectionContext {
@@ -675,11 +674,6 @@ export function LearningWhiteboard({
   const [selectionContentKind, setSelectionContentKind] =
     useState<SelectionContentKind>("unknown");
   const [selectionRequestPending, setSelectionRequestPending] = useState(false);
-  const [selectionRequestStatus, setSelectionRequestStatus] = useState("");
-  const [selectionLoadingSource, setSelectionLoadingSource] = useState<{
-    sourceId: string;
-    bounds: InkSelectionSnapshot["bounds"];
-  } | null>(null);
   const [preparedSelection, setPreparedSelection] =
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
@@ -728,12 +722,6 @@ export function LearningWhiteboard({
   const pendingComposerQuestion = [...composerQuestions].reverse().find(
     (question) => question.status === "pending",
   );
-  const selectionLoadingQuestion = selectionLoadingSource
-    ? [...questions].reverse().find((question) =>
-        question.origin === "selection"
-        && question.status === "pending"
-        && question.source?.sourceId === selectionLoadingSource.sourceId)
-    : undefined;
   const courseRegionByQuestion = useMemo(() => new Map(
     courseRegions.map((region) => [region.questionId, region]),
   ), [courseRegions]);
@@ -1525,18 +1513,9 @@ export function LearningWhiteboard({
     const value = question.trim();
     if (!value || !onAskInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
-    setSelectionRequestStatus(
-      toolId === "generate-plot"
-        ? "正在生成函数图像…"
-        : "正在生成选区辅助内容…",
-    );
     try {
       const candidate = preparedSelection ?? await captureSelection();
       const prepared = recordSelectionContext(candidate);
-      setSelectionLoadingSource({
-        sourceId: prepared.snapshot.source_id,
-        bounds: prepared.snapshot.bounds,
-      });
       const requestedBoardTargetIds = boardTargetIds ?? selectedBoardTargetIds;
       const targets = prepared.candidates.filter((candidate) =>
         requestedBoardTargetIds.includes(candidate.target_id),
@@ -1571,8 +1550,6 @@ export function LearningWhiteboard({
       setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
     } finally {
       setSelectionRequestPending(false);
-      setSelectionRequestStatus("");
-      setSelectionLoadingSource(null);
     }
   }, [setInkError,
     captureSelection,
@@ -2518,15 +2495,6 @@ export function LearningWhiteboard({
           >
             <BoxSelect size={17} />
           </button>
-          {inkState.mode === "select" && inkState.selected_count > 0 ? (
-            <button type="button"
-              className={inkState.selection_transform_enabled ? "is-active" : ""}
-              aria-pressed={inkState.selection_transform_enabled ?? false}
-              title="拖动选中笔迹"
-              onClick={() => inkRuntimeRef.current?.setSelectionTransformEnabled?.(!inkState.selection_transform_enabled)}>
-              {inkState.selection_transform_enabled ? "完成移动" : "移动笔迹"}
-            </button>
-          ) : null}
           {inkColorPaletteAvailable ? (
             <>
               <button
@@ -2555,19 +2523,6 @@ export function LearningWhiteboard({
             && inkState.selected_count > 0
             && onAskInkSelection ? (
               <>
-                {selectionClassificationStatus === "loading" ? (
-                  <span className="learning-ink-classification-status">
-                    正在识别选区…
-                  </span>
-                ) : null}
-                {selectionRequestStatus ? (
-                  <span
-                    className="learning-ink-classification-status"
-                    role="status"
-                  >
-                    {selectionRequestStatus}
-                  </span>
-                ) : null}
                 {quickSelectionTools.map((tool) => (
                   <button
                     key={tool.id}
@@ -3060,22 +3015,6 @@ export function LearningWhiteboard({
                 sources={selectionSources}
                 questions={questions.filter((question) => !selectionEnhancements.some((artifact) =>
                   artifact.turn_id === question.id && artifact.response.kind === "board_writing"))}
-                loading={selectionRequestStatus && selectionLoadingSource
-                  ? {
-                      turnId: selectionLoadingQuestion?.id
-                        ?? `selection:${selectionLoadingSource.sourceId}`,
-                      sourceId: selectionLoadingSource.sourceId,
-                      bounds: selectionLoadingSource.bounds,
-                      state: {
-                        id: `selection:${selectionLoadingSource.sourceId}`,
-                        kind: "selection",
-                        title: selectionRequestStatus.replace(/…$/, ""),
-                        detail: selectionRequestStatus.includes("函数图像")
-                          ? "正在识别公式，并把可查看的图像放在选区旁边。"
-                          : "正在理解这部分内容，并把辅助说明放在选区旁边。",
-                      },
-                    }
-                  : null}
                 currentDocumentVersion={inkState.document_version}
                 invalidTargetTurnIds={new Set(selectionEnhancements
                   .filter((artifact) =>

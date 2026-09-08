@@ -2556,14 +2556,7 @@ export function LearningWorkspace({
   const lessonGenerationInProgress = Boolean(
     ollLesson && ollGenerationSessionId === sessionId,
   );
-  const whiteboardLoadingState: WhiteboardLoadingState | null = selectionPending && !pendingLessonQuestion
-    ? {
-        id: pendingSelectionQuestion?.id ?? `selection-voice:${sessionId}`,
-        kind: "selection",
-        title: "正在看你框选的内容",
-        detail: "小章鱼正在根据你的问题整理回答。",
-      }
-    : lessonLoading
+  const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
     && (!ollLesson || Boolean(
       pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
     ))

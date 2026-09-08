@@ -17,9 +17,8 @@ try {
  if(await page.locator('.learning-selection-enhancement-card').count()) throw new Error('unexpected card');
  await page.screenshot({path:process.env.BOARD_PROBE_SCREENSHOT || '/private/tmp/product-board-preview.png'});
  await page.getByRole('button',{name:'选择全部笔迹'}).click();
- await page.getByRole('button',{name:'移动笔迹',exact:true}).click();
- if(!await page.evaluate(()=>window.ink.state.selection_transform_enabled)) throw new Error('move toolbar not wired');
- await page.getByRole('button',{name:'完成移动',exact:true}).click();
+ if(await page.getByRole('button',{name:'移动笔迹',exact:true}).count()) throw new Error('redundant move mode is still visible');
+ if(!await page.evaluate(()=>window.ink.state.selection_transform_enabled)) throw new Error('selected ink is not directly draggable');
  await page.getByRole('button',{name:'撤销笔迹',exact:true}).click();
  await page.waitForFunction((count)=>window.ink.state.component_count===count,originalCount);
  await page.evaluate(()=>window.ink.saveNow());
@@ -27,5 +26,5 @@ try {
  await page.waitForFunction(()=>window.ink?.state.saved && window.renderWriting);
  await page.evaluate(()=>window.ink.ready);await page.waitForTimeout(500);
  if(await page.evaluate(()=>window.ink.state.component_count)!==originalCount) throw new Error('undo resurrected on React reload');
- console.log(JSON.stringify({passed:['React writes AI strokes','no card','toolbar movement','undo','reload without resurrection'],components:before.count}));
+ console.log(JSON.stringify({passed:['React writes AI strokes','no card','direct selection movement','undo','reload without resurrection'],components:before.count}));
 }finally{await browser.close();}

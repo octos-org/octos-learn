@@ -1754,10 +1754,6 @@ describe("OLL lesson Runtime integration", () => {
       rejectSelectionRequest = reject;
     }));
     fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
-    expect(await screen.findByText("正在生成函数图像…")).toBeTruthy();
-    expect(screen.getByLabelText(
-      /正在生成函数图像。正在识别公式，并把可查看的图像放在选区旁边/,
-    )).toBeTruthy();
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
         snapshot,
@@ -1768,6 +1764,9 @@ describe("OLL lesson Runtime integration", () => {
         contextImage: expect.any(File),
       }));
     });
+    expect(screen.queryByText("正在生成函数图像…")).toBeNull();
+    expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
+    expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
     await act(async () => {
       rejectSelectionRequest?.(new Error("当前公式暂不支持生成函数图像"));
     });

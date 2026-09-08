@@ -18,10 +18,6 @@ import { MarkdownContent } from "@/components/markdown-renderer";
 import type { SelectionEnhancementArtifact } from "./selection-enhancements";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 import { WhiteboardQuestionImage } from "./whiteboard-question-image";
-import {
-  WhiteboardLoadingBlock,
-  type WhiteboardLoadingState,
-} from "./whiteboard-loading-block";
 
 const DEFAULT_CARD_SCALE = 1;
 const MIN_CARD_SCALE = .85;
@@ -31,13 +27,6 @@ const CARD_FONT_SIZE = 13;
 const SCENE3D_HEIGHT = 270;
 const CARD_GAP = 24;
 const RESTORED_SOURCE_OVERLAP_THRESHOLD = .8;
-
-export interface SelectionEnhancementLoading {
-  turnId: string;
-  sourceId: string;
-  bounds: InkSelectionSnapshot["bounds"];
-  state: WhiteboardLoadingState;
-}
 
 function clampedCardScale(value: number): number {
   return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
@@ -193,7 +182,6 @@ export function SelectionEnhancementLayer({
   artifacts,
   sources,
   questions = [],
-  loading = null,
   currentDocumentVersion,
   invalidTargetTurnIds = new Set(),
   onDelete,
@@ -201,7 +189,6 @@ export function SelectionEnhancementLayer({
   artifacts: SelectionEnhancementArtifact[];
   sources: InkSelectionSnapshot[];
   questions?: WhiteboardQuestionRecord[];
-  loading?: SelectionEnhancementLoading | null;
   currentDocumentVersion: number;
   invalidTargetTurnIds?: ReadonlySet<string>;
   onDelete: (turnId: string) => void;
@@ -292,15 +279,15 @@ export function SelectionEnhancementLayer({
         key: string;
         artifact: SelectionEnhancementArtifact;
         question?: WhiteboardQuestionRecord;
-      }
-    | { kind: "loading"; key: string; loading: SelectionEnhancementLoading };
+      };
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
   const selectionQuestions = questions.filter((question) =>
-    question.origin === "selection" && question.source);
+    question.origin === "selection"
+    && question.source
+    && question.status !== "pending");
   const sourceIds = new Set([
     ...artifacts.map((artifact) => artifact.source.source_id),
     ...selectionQuestions.map((question) => question.source!.sourceId),
-    ...(loading ? [loading.sourceId] : []),
   ]);
   const artifactSourceById = new Map(artifacts.map((candidate) => [
     candidate.source.source_id,
@@ -408,23 +395,10 @@ export function SelectionEnhancementLayer({
         artifact,
       });
     }
-    if (
-      loading
-      && groupedSourceIds.has(loading.sourceId)
-      && !sourceQuestions.some((question) => question.id === loading.turnId)
-      && !ordered.some((item) => item.kind === "loading")
-    ) {
-      ordered.push({
-        kind: "loading",
-        key: `loading:${loading.turnId}`,
-        loading,
-      });
-    }
     const fallbackBounds = [...groupedSourceIds]
       .flatMap((sourceId) => sourceById.get(sourceId)?.bounds ?? [])[0]
       ?? sourceQuestions[0]?.source?.bounds
-      ?? sourceArtifacts[0]?.source.bounds
-      ?? loading?.bounds;
+      ?? sourceArtifacts[0]?.source.bounds;
     if (!fallbackBounds) continue;
     let cursor = fallbackBounds.x + fallbackBounds.width + 30;
     for (const item of ordered) {
@@ -435,9 +409,7 @@ export function SelectionEnhancementLayer({
       });
       const width = item.kind === "question"
         ? CARD_WIDTH
-        : item.kind === "loading"
-          ? 330
-          : minimizedTurnIds.has(item.artifact.turn_id)
+        : minimizedTurnIds.has(item.artifact.turn_id)
             ? 26
             : CARD_WIDTH * (cardScaleByTurnId[item.artifact.turn_id]
               ?? DEFAULT_CARD_SCALE);
@@ -449,15 +421,12 @@ export function SelectionEnhancementLayer({
       {layoutItems.map((item) => {
         if (item.kind === "question") {
           const failed = item.question.status === "failed";
-          const questionLoading = loading?.turnId === item.question.id
-            ? loading
-            : null;
           return (
             <article
               key={item.key}
               className={failed
                 ? "learning-selection-enhancement is-failed"
-                : "learning-selection-enhancement is-pending"}
+                : "learning-selection-enhancement is-question-only"}
               style={{
                 left: item.left,
                 top: item.top,
@@ -469,37 +438,25 @@ export function SelectionEnhancementLayer({
             >
               <div className="learning-selection-source-link" aria-hidden="true" />
               <SelectionQuestionSection question={item.question} />
-              <header>
-                <div>
-                  <span>小章鱼辅助</span>
-                  <small>来自当前选区</small>
-                </div>
-              </header>
-              <div
-                className="learning-selection-enhancement-content learning-selection-enhancement-placeholder"
-                role={failed ? "alert" : "status"}
-                aria-live="polite"
-              >
-                <strong>{failed
-                  ? "回答生成失败"
-                  : questionLoading?.state.title ?? "正在生成选区辅助内容"}</strong>
-                <p>{failed
-                  ? item.question.error ?? "选区辅助内容生成失败，请重试"
-                  : questionLoading?.state.detail
-                    ?? "正在理解这部分内容，并把辅助说明放在选区旁边。"}</p>
-                {!failed ? <span aria-hidden="true" /> : null}
-              </div>
+              {failed ? (
+                <>
+                  <header>
+                    <div>
+                      <span>小章鱼辅助</span>
+                      <small>来自当前选区</small>
+                    </div>
+                  </header>
+                  <div
+                    className="learning-selection-enhancement-content learning-selection-enhancement-placeholder"
+                    role="alert"
+                    aria-live="polite"
+                  >
+                    <strong>回答生成失败</strong>
+                    <p>{item.question.error ?? "选区辅助内容生成失败，请重试"}</p>
+                  </div>
+                </>
+              ) : null}
             </article>
-          );
-        }
-        if (item.kind === "loading") {
-          return (
-            <WhiteboardLoadingBlock
-              key={item.key}
-              state={item.loading.state}
-              left={item.left}
-              top={item.top}
-            />
           );
         }
         const artifact = item.artifact;

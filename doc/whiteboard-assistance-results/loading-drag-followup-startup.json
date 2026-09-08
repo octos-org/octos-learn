@@ -1,0 +1,24 @@
+{
+  "profile": "octos.whiteboard-assistance.followup-startup",
+  "version": "0.1",
+  "date": "2026-09-07",
+  "repeats": 100,
+  "baseline": {
+    "commit": "73405602246f5f2b8e282617b4f9293a2bec7d85",
+    "wall_ms": { "p50": 185.94491600000038, "p95": 195.13424999999552 },
+    "dom_content_loaded_ms": { "p50": 149.10000002384186, "p95": 154.80000001192093 },
+    "load_ms": { "p50": 149.60000002384186, "p95": 155.4000000357628 }
+  },
+  "candidate": {
+    "oll_ref": "a767735f453b4b4b35244075e36b7dff01f4cdd3",
+    "wall_ms": { "p50": 183.9830409999995, "p95": 196.61370799999986 },
+    "dom_content_loaded_ms": { "p50": 149.19999998807907, "p95": 156.19999998807907 },
+    "load_ms": { "p50": 149.60000002384186, "p95": 156.5999999642372 }
+  },
+  "paired": {
+    "wall_ms": { "delta_p50": -0.2665000000015425, "delta_p95": 11.75499999999738, "candidate_faster": 52 },
+    "dom_content_loaded_ms": { "delta_p50": -0.19999998807907104, "delta_p95": 6.599999964237213, "candidate_faster": 52 },
+    "load_ms": { "delta_p50": -0.09999996423721313, "delta_p95": 6.499999940395355, "candidate_faster": 51 }
+  },
+  "interpretation": "The median paired deltas are effectively zero and the faster split is even; no repeatable startup regression was observed."
+}
