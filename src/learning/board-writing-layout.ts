@@ -1,4 +1,6 @@
 
+import { findOpenWhiteboardPosition } from "./whiteboard-placement";
+
 export interface WritingBounds { x: number; y: number; width: number; height: number }
 interface OutlinePath { toPathData(decimalPlaces?: number): string }
 interface OutlineGlyph {
@@ -25,18 +27,16 @@ export function prepareBoardWritingFont(): Promise<OutlineFont> {
 /** Place complete writing beside its source, without changing existing strokes. */
 export function findWritingPosition(source: WritingBounds, width: number, height: number,
   occupied: WritingBounds[]): { x: number; y: number } {
-  const obstacles = [source, ...occupied];
-  const x = source.x + source.width + 32;
-  let y = source.y;
-  // Each collision moves below an obstacle; at most N+1 passes are needed.
-  for (let pass = 0; pass <= obstacles.length; pass++) {
-    const hits = obstacles.filter((box) => x < box.x + box.width + 16
-      && x + width + 16 > box.x && y < box.y + box.height + 16
-      && y + height + 16 > box.y);
-    if (!hits.length) return { x, y };
-    y = Math.max(...hits.map((box) => box.y + box.height + 24));
-  }
-  throw new Error("没有找到可用的板书位置。");
+  return findOpenWhiteboardPosition({
+    preferred: {
+      x: source.x + source.width + 32,
+      y: source.y,
+    },
+    width,
+    height,
+    occupied: [source, ...occupied],
+    gap: 16,
+  });
 }
 
 export async function layoutBoardWriting(lines: string[], source: WritingBounds,

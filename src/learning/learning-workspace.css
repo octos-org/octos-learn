@@ -1723,6 +1723,22 @@
   box-shadow: 0 9px 26px rgba(33, 52, 48, 0.13);
   color: #263936;
   pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.learning-selection-enhancement:active {
+  cursor: grabbing;
+}
+
+.learning-selection-enhancement button,
+.learning-selection-enhancement a,
+.learning-selection-enhancement input,
+.learning-selection-enhancement textarea,
+.learning-selection-enhancement select,
+.learning-selection-enhancement model-viewer {
+  cursor: auto;
+  touch-action: auto;
 }
 
 .learning-selection-enhancement.is-invalid-target {
@@ -1889,10 +1905,20 @@
 
 .learning-selection-source-link {
   position: absolute;
-  right: 100%;
-  top: 24px;
-  width: 30px;
-  border-top: 2px dashed rgba(36, 112, 104, 0.42);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.learning-selection-source-link line {
+  stroke: rgba(36, 112, 104, 0.68);
+  stroke-width: 3px;
+  stroke-dasharray: 8 6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.learning-selection-source-link marker path {
+  fill: rgba(36, 112, 104, 0.82);
 }
 
 .learning-selection-enhancement > header {

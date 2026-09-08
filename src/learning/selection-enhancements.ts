@@ -127,12 +127,22 @@ export interface SelectionEnhancementArtifactRef {
   turnId: string;
 }
 
+export interface SelectionEnhancementCardLayout {
+  x: number;
+  y: number;
+  scale: number;
+  minimized: boolean;
+  /** User-positioned cards are never moved again by automatic collision checks. */
+  manually_positioned: boolean;
+}
+
 export interface SelectionEnhancementState {
   profile: typeof STATE_PROFILE;
   version: typeof STATE_VERSION;
   session_id: string;
   sources: InkSelectionSnapshot[];
   hidden_enhancement_turn_ids: string[];
+  card_layouts?: Record<string, SelectionEnhancementCardLayout>;
 }
 
 export interface SelectionEnhancementTurnContext {
@@ -866,6 +876,7 @@ export async function loadSelectionEnhancementState(
     session_id: sessionId,
     sources: [],
     hidden_enhancement_turn_ids: [],
+    card_layouts: {},
   };
   return loadRecoverableJsonAsync({
     storage,
@@ -896,12 +907,41 @@ export async function loadSelectionEnhancementState(
         ids.add(source.source_id);
         sources.push(source);
       }
+      const cardLayoutsValue = parsed.card_layouts;
+      if (
+        cardLayoutsValue !== undefined
+        && (!cardLayoutsValue
+          || typeof cardLayoutsValue !== "object"
+          || Array.isArray(cardLayoutsValue))
+      ) {
+        throw new Error("invalid selection card layouts");
+      }
+      const cardLayouts: Record<string, SelectionEnhancementCardLayout> = {};
+      for (const [turnId, candidate] of Object.entries(cardLayoutsValue ?? {})) {
+        if (!turnId || !candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+          throw new Error("invalid selection card layout");
+        }
+        const layout = candidate as Partial<SelectionEnhancementCardLayout>;
+        if (
+          !Number.isFinite(layout.x)
+          || !Number.isFinite(layout.y)
+          || !Number.isFinite(layout.scale)
+          || (layout.scale ?? 0) < .85
+          || (layout.scale ?? 0) > 2.25
+          || typeof layout.minimized !== "boolean"
+          || typeof layout.manually_positioned !== "boolean"
+        ) {
+          throw new Error("invalid selection card layout");
+        }
+        cardLayouts[turnId] = { ...layout } as SelectionEnhancementCardLayout;
+      }
       return {
         ...empty,
         sources,
         hidden_enhancement_turn_ids: [
           ...new Set(parsed.hidden_enhancement_turn_ids),
         ],
+        card_layouts: cardLayouts,
       };
     },
   });
@@ -946,13 +986,44 @@ export function hideSelectionEnhancement(
       ...state.hidden_enhancement_turn_ids,
       turnId,
     ],
+    card_layouts: Object.fromEntries(Object.entries(state.card_layouts ?? {})
+      .filter(([candidateTurnId]) => candidateTurnId !== turnId)),
+  };
+}
+
+export function setSelectionEnhancementCardLayout(
+  state: SelectionEnhancementState,
+  turnId: string,
+  layout: SelectionEnhancementCardLayout,
+): SelectionEnhancementState {
+  if (
+    !turnId
+    || !Number.isFinite(layout.x)
+    || !Number.isFinite(layout.y)
+    || !Number.isFinite(layout.scale)
+    || layout.scale < .85
+    || layout.scale > 2.25
+  ) return state;
+  const current = state.card_layouts?.[turnId];
+  if (
+    current?.x === layout.x
+    && current.y === layout.y
+    && current.scale === layout.scale
+    && current.minimized === layout.minimized
+    && current.manually_positioned === layout.manually_positioned
+  ) return state;
+  return {
+    ...state,
+    card_layouts: {
+      ...state.card_layouts,
+      [turnId]: { ...layout },
+    },
   };
 }
 
 export function removeSelectionSources(
   state: SelectionEnhancementState,
   sourceIds: Iterable<string>,
-  matchingTurnIds: Iterable<string> = [],
 ): SelectionEnhancementState {
   const ids = new Set(sourceIds);
   if (ids.size === 0) return state;
@@ -961,12 +1032,9 @@ export function removeSelectionSources(
   return {
     ...state,
     sources,
-    hidden_enhancement_turn_ids: [
-      ...new Set([
-        ...state.hidden_enhancement_turn_ids,
-        ...matchingTurnIds,
-      ]),
-    ],
+    // Source snapshots only drive attribution and connector geometry. Cards
+    // and AI writing are independent whiteboard content once created.
+    hidden_enhancement_turn_ids: state.hidden_enhancement_turn_ids,
   };
 }
 

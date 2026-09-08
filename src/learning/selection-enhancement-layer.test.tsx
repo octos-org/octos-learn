@@ -58,11 +58,138 @@ function dispatchPointerEvent(
     pointerId: { value: pointerId },
     clientX: { value: clientX },
     clientY: { value: clientY },
+    button: { value: 0 },
   });
   fireEvent(target, event);
 }
 
+function expectCardsApart(left: HTMLElement, right: HTMLElement): void {
+  const leftRect = {
+    x: Number.parseFloat(left.style.left),
+    y: Number.parseFloat(left.style.top),
+    width: Number.parseFloat(left.style.width),
+    height: 300 * Number(left.dataset.cardScale ?? 1),
+  };
+  const rightRect = {
+    x: Number.parseFloat(right.style.left),
+    y: Number.parseFloat(right.style.top),
+    width: Number.parseFloat(right.style.width),
+    height: 300 * Number(right.dataset.cardScale ?? 1),
+  };
+  const overlaps = leftRect.x < rightRect.x + rightRect.width + 24
+    && leftRect.x + leftRect.width + 24 > rightRect.x
+    && leftRect.y < rightRect.y + rightRect.height + 24
+    && leftRect.y + leftRect.height + 24 > rightRect.y;
+  expect(overlaps).toBe(false);
+}
+
 describe("SelectionEnhancementLayer", () => {
+  it("draws a thick arrow that follows the live source and a dragged card", () => {
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: artifact.source.document_version,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: artifact.source.bounds,
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 10, y: 20 },
+          { x: 130, y: 20 },
+          { x: 130, y: 90 },
+          { x: 10, y: 90 },
+        ],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path d="M10 20L130 90"/></svg>',
+    };
+    const onLayoutChange = vi.fn();
+    const layout = {
+      x: 160,
+      y: 20,
+      scale: 1,
+      minimized: false,
+      manually_positioned: false,
+    };
+    const { container, rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{ [artifact.turn_id]: layout }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        clientToBoardPoint={(point) => point}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const line = container.querySelector<SVGLineElement>(
+      ".learning-selection-source-link line",
+    );
+    expect(line?.getAttribute("stroke-width")).toBe("3");
+    expect(line?.getAttribute("marker-end"))
+      .toMatch(/^url\(#selection-source-arrow-/);
+
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    dispatchPointerEvent(card, "pointerdown", {
+      pointerId: 7,
+      clientX: 200,
+      clientY: 100,
+    });
+    dispatchPointerEvent(card, "pointermove", {
+      pointerId: 7,
+      clientX: 260,
+      clientY: 140,
+    });
+    expect(card.dataset.cardX).toBe("220");
+    expect(card.dataset.cardY).toBe("60");
+    dispatchPointerEvent(card, "pointerup", {
+      pointerId: 7,
+      clientX: 260,
+      clientY: 140,
+    });
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      ...layout,
+      x: 220,
+      y: 60,
+      manually_positioned: true,
+    });
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: {
+            ...layout,
+            x: 220,
+            y: 60,
+            manually_positioned: true,
+          },
+        }}
+        currentSourceBoundsById={new Map([[
+          source.source_id,
+          { ...source.bounds, x: 90, y: 60 },
+        ]])}
+        clientToBoardPoint={(point) => point}
+        currentDocumentVersion={2}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const movedLink = container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(movedLink?.dataset.sourceX).toBe("150");
+    expect(movedLink?.dataset.sourceY).toBe("95");
+  });
+
   it("reserves a loading card only for card-bound selection answers", () => {
     const pending = {
       id: "pending-card",
@@ -215,7 +342,7 @@ describe("SelectionEnhancementLayer", () => {
     expect(card?.dataset.cardScale).toBe("1.00");
   });
 
-  it("places repeated results after the real width of the previous card", () => {
+  it("places repeated results in separate open whiteboard areas", () => {
     const { container } = render(
       <SelectionEnhancementLayer
         artifacts={[
@@ -231,10 +358,7 @@ describe("SelectionEnhancementLayer", () => {
       ".learning-selection-enhancement",
     )];
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
 
     const firstResize = screen.getAllByRole("button", {
       name: "调整辅助卡片大小，当前 100%",
@@ -250,10 +374,7 @@ describe("SelectionEnhancementLayer", () => {
       clientY: 210,
     });
 
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("does not overlap results when the same strokes are selected again", () => {
@@ -306,10 +427,7 @@ describe("SelectionEnhancementLayer", () => {
       ".learning-selection-enhancement",
     )];
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("keeps restored cards apart when their local source snapshots are missing", () => {
@@ -339,10 +457,7 @@ describe("SelectionEnhancementLayer", () => {
     )];
 
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("renders a selection question and its matching result as one collapsible card", () => {

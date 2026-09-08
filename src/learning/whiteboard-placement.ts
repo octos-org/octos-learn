@@ -81,10 +81,17 @@ export function findOpenWhiteboardPosition({
     .map((candidate, index) => ({
       ...candidate,
       index,
+      // Keep the reading flow below the source before using space above it.
+      // This still permits an upper position on a dense board, but avoids a
+      // visually surprising jump over the learner's work when lower space is
+      // available.
+      directionPenalty: candidate.y < preferred.y ? 1 : 0,
       distance: (candidate.x - preferred.x) ** 2
         + (candidate.y - preferred.y) ** 2,
     }))
-    .sort((left, right) => left.distance - right.distance || left.index - right.index);
+    .sort((left, right) => left.directionPenalty - right.directionPenalty
+      || left.distance - right.distance
+      || left.index - right.index);
   const open = ordered.find((candidate) => {
     const bounds = { x: candidate.x, y: candidate.y, width, height };
     return finiteOccupied.every((rect) => !overlaps(bounds, rect, gap));

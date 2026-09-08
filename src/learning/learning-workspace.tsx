@@ -93,12 +93,14 @@ import {
   mergeSelectionEnhancementArtifacts,
   parseSelectionClassificationMetadata,
   saveSelectionEnhancementState,
+  setSelectionEnhancementCardLayout,
   selectionArtifactMatchesSource,
   selectionBoardContextTargetsExist,
   type SelectionBoardContext,
   type SelectionClassification,
   type SelectionContentKind,
   type SelectionEnhancementArtifact,
+  type SelectionEnhancementCardLayout,
   type SelectionEnhancementState,
 } from "./selection-enhancements";
 import {
@@ -2193,43 +2195,37 @@ export function LearningWorkspace({
       question.id !== turnId));
   }, [setWhiteboardQuestions]);
 
-  const deleteSelectionSources = useCallback((sourceIds: string[]) => {
-    const ids = new Set(sourceIds);
-    if (ids.size === 0) return;
-    const writingTurnIds = new Set(Object.values(loadedSelectionArtifacts)
-      .filter((artifact) => artifact.response.kind === "board_writing")
-      .map((artifact) => artifact.turn_id));
-    const matchingTurnIds = new Set([
-      ...Object.values(loadedSelectionArtifacts)
-        .filter((artifact) => artifact.response.kind !== "board_writing" && ids.has(artifact.source.source_id))
-        .map((artifact) => artifact.turn_id),
-      ...whiteboardQuestions
-        .filter((question) => question.origin === "selection"
-          && question.status !== "pending"
-          && !writingTurnIds.has(question.id)
-          && question.source
-          && ids.has(question.source.sourceId))
-        .map((question) => question.id),
-    ]);
+  const updateSelectionCardLayout = useCallback((
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+  ) => {
     setSelectionState((current) => {
       if (!current) return current;
-      const next = removeSelectionSources(current, ids, matchingTurnIds);
+      const next = setSelectionEnhancementCardLayout(current, turnId, layout);
+      if (next === current) return current;
       saveSelectionEnhancementState(next);
       selectionStateRef.current = next;
       return next;
     });
-    setWhiteboardQuestions((current) => current.filter((question) =>
-      question.origin !== "selection"
-      || question.status === "pending"
-      || !question.source
-      || !ids.has(question.source.sourceId)));
+  }, []);
+
+  const deleteSelectionSources = useCallback((sourceIds: string[]) => {
+    const ids = new Set(sourceIds);
+    if (ids.size === 0) return;
+    setSelectionState((current) => {
+      if (!current) return current;
+      const next = removeSelectionSources(current, ids);
+      saveSelectionEnhancementState(next);
+      selectionStateRef.current = next;
+      return next;
+    });
     setComposerBoardReferences((current) => current.filter((reference) =>
       !ids.has(reference.snapshot.source_id)));
     const pendingVoice = pendingVoiceSelectionRef.current;
     if (pendingVoice && ids.has(pendingVoice.snapshot.source_id)) {
       pendingVoiceSelectionRef.current = null;
     }
-  }, [setWhiteboardQuestions, setComposerBoardReferences, loadedSelectionArtifacts, whiteboardQuestions]);
+  }, [setComposerBoardReferences]);
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
@@ -2722,6 +2718,9 @@ export function LearningWorkspace({
           selectionSources={replayingWithoutStudentAdditions
             ? []
             : selectionState?.sources ?? []}
+          selectionCardLayouts={replayingWithoutStudentAdditions
+            ? {}
+            : selectionState?.card_layouts ?? {}}
           onClassifyInkSelection={classifyInkSelection}
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled
@@ -2733,6 +2732,7 @@ export function LearningWorkspace({
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}
           onDeleteSelectionSources={deleteSelectionSources}
+          onSelectionCardLayoutChange={updateSelectionCardLayout}
           onRetryDegradedVisual={retryDegradedVisual}
         />
       </main>

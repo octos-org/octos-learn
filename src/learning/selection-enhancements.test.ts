@@ -14,6 +14,7 @@ import {
   parseSelectionClassificationMetadata,
   removeSelectionSources,
   saveSelectionEnhancementState,
+  setSelectionEnhancementCardLayout,
   selectionEnhancementStorageKey,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
@@ -68,7 +69,7 @@ async function source(): Promise<InkSelectionSnapshot> {
 }
 
 describe("selection enhancement persistence", () => {
-  it("removes erased selection sources and hides every linked result", async () => {
+  it("removes erased selection sources without deleting independent answers", async () => {
     const selection = await source();
     const state = {
       profile: "octos.selection-enhancement-state" as const,
@@ -84,12 +85,39 @@ describe("selection enhancement persistence", () => {
     )).toEqual({
       ...state,
       sources: [],
-      hidden_enhancement_turn_ids: [
-        "already-hidden",
-        "explanation-turn",
-        "plot-turn",
-      ],
+      hidden_enhancement_turn_ids: ["already-hidden"],
     });
+  });
+
+  it("persists card position, scale, minimized state, and manual placement", async () => {
+    const storage = new MemoryStorage();
+    const state = setSelectionEnhancementCardLayout({
+      profile: "octos.selection-enhancement-state",
+      version: "0.1",
+      session_id: "layout-session",
+      sources: [],
+      hidden_enhancement_turn_ids: [],
+      card_layouts: {},
+    }, "turn-1", {
+      x: 280,
+      y: 140,
+      scale: 1.2,
+      minimized: true,
+      manually_positioned: true,
+    });
+    saveSelectionEnhancementState(state, storage);
+    await expect(loadSelectionEnhancementState("layout-session", storage))
+      .resolves.toMatchObject({
+        card_layouts: {
+          "turn-1": {
+            x: 280,
+            y: 140,
+            scale: 1.2,
+            minimized: true,
+            manually_positioned: true,
+          },
+        },
+      });
   });
 
   it("builds a bounded selection-classification action and validates its metadata", async () => {
@@ -190,7 +218,7 @@ describe("selection enhancement persistence", () => {
     saveSelectionEnhancementState(state, storage);
 
     await expect(loadSelectionEnhancementState("session-1", storage))
-      .resolves.toEqual(state);
+      .resolves.toEqual({ ...state, card_layouts: {} });
   });
 
   it("isolates a corrupted local snapshot without destroying its recoverable value", async () => {

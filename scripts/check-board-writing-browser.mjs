@@ -16,6 +16,14 @@ try {
  if(!before.svg.includes('data-octos-ink-origin="ai"')) throw new Error('missing AI origin');
  const cards=await page.locator('.learning-selection-enhancement').count();
  if(cards!==2) throw new Error(`expected two existing assistance cards, found ${cards}`);
+ const links=page.locator('.learning-selection-source-link');
+ if(await links.count()!==2) throw new Error('expected each assistance card to keep a source connector');
+ const connectorStyle=await links.first().locator('line').evaluate(line=>({
+   width:line.getAttribute('stroke-width'),marker:line.getAttribute('marker-end'),
+ }));
+ if(connectorStyle.width!=='3'||!connectorStyle.marker?.startsWith('url(#selection-source-arrow-')) {
+   throw new Error('source connector is missing its thicker arrow styling');
+ }
  const overlap=await page.evaluate(()=>{
    const boxes=[...document.querySelectorAll('[data-enhancement-id^="probe-card"]')].map(card=>({x:Number.parseFloat(card.style.left),y:Number.parseFloat(card.style.top),width:card.offsetWidth,height:card.offsetHeight}));
    const writing=window.ink.editor.image.getAllComponents().filter(component=>(component.getLoadSaveData().svgAttrs??[]).some(([name,value])=>name==='data-octos-ink-origin'&&value==='ai'));
@@ -27,10 +35,83 @@ try {
    return boxes.some(box=>box.x<ink.x+ink.width&&box.x+box.width>ink.x&&box.y<ink.y+ink.height&&box.y+box.height>ink.y);
  });
  if(overlap) throw new Error('board writing overlaps an existing assistance card');
+ const firstCard=page.locator('[data-enhancement-id="probe-card"]');
+ const cardBox=await firstCard.boundingBox();
+ if(!cardBox) throw new Error('cannot measure assistance card');
+ const cardBefore=await firstCard.evaluate(card=>({x:Number(card.dataset.cardX),y:Number(card.dataset.cardY)}));
+ await page.mouse.move(cardBox.x+40,cardBox.y+90);
+ await page.mouse.down();
+ await page.mouse.move(cardBox.x+110,cardBox.y+135,{steps:5});
+ await page.waitForFunction(({x,y})=>{
+   const card=document.querySelector('[data-enhancement-id="probe-card"]');
+   return Number(card?.dataset.cardX)!==x||Number(card?.dataset.cardY)!==y;
+ },cardBefore);
+ await page.mouse.up();
+ const movedCard=await firstCard.evaluate(card=>({x:Number(card.dataset.cardX),y:Number(card.dataset.cardY)}));
+ if(movedCard.x-cardBefore.x<60||movedCard.y-cardBefore.y<35) throw new Error('card did not follow direct drag');
+
  await page.screenshot({path:process.env.BOARD_PROBE_SCREENSHOT || '/private/tmp/product-board-preview.png'});
- await page.getByRole('button',{name:'选择全部笔迹'}).click();
+ await page.getByRole('button',{name:'框选多个笔迹'}).click();
+ const sourceScreen=await page.evaluate(()=>{
+   const source=window.source.bounds,camera=window.ink.renderedCamera;
+   return {
+     left:(source.x-10)*camera.scale+camera.panX,
+     top:(source.y-10)*camera.scale+camera.panY,
+     right:(source.x+source.width+10)*camera.scale+camera.panX,
+     bottom:(source.y+source.height+10)*camera.scale+camera.panY,
+   };
+ });
+ await page.mouse.move(sourceScreen.left,sourceScreen.top);
+ await page.mouse.down();
+ await page.mouse.move(sourceScreen.right,sourceScreen.bottom,{steps:8});
+ await page.mouse.up();
+ await page.waitForFunction(()=>window.ink.state.selected_count>0);
  if(await page.getByRole('button',{name:'移动笔迹',exact:true}).count()) throw new Error('redundant move mode is still visible');
  if(!await page.evaluate(()=>window.ink.state.selection_transform_enabled)) throw new Error('selected ink is not directly draggable');
+ const selection=page.locator('.selection-tool-selection-background').last();
+ const selectionBox=await selection.boundingBox();
+ if(!selectionBox) throw new Error('cannot measure selected ink');
+ const sourceBefore=await links.first().evaluate(link=>({x:Number(link.dataset.sourceX),y:Number(link.dataset.sourceY)}));
+ // Drag from the center of the original selected source. The full selection
+ // also contains AI writing and can span across card-sized gaps; js-draw's
+ // transform hit target is most reliable over an actual selected component.
+ const selectionX=selectionBox.x+selectionBox.width/2;
+ const selectionY=selectionBox.y+selectionBox.height/2;
+ await page.mouse.move(selectionX,selectionY);
+ await page.mouse.down();
+ await page.mouse.move(selectionX+70,selectionY+40,{steps:6});
+ await page.waitForTimeout(80);
+ const sourceDuringDrag=await links.first().evaluate(link=>({x:Number(link.dataset.sourceX),y:Number(link.dataset.sourceY)}));
+ if(sourceDuringDrag.x-sourceBefore.x<55||sourceDuringDrag.y-sourceBefore.y<25) {
+   const dragDebug=await page.evaluate(({x,y})=>({
+     hit:document.elementFromPoint(x,y)?.className,
+     state:window.ink.state,
+     source:window.ink.getSelectionSourceBounds(window.source),
+     camera:window.ink.renderedCamera,
+     viewport:window.ink.options.viewport.getBoundingClientRect().toJSON(),
+   }),{x:selectionX,y:selectionY});
+   dragDebug.selectionBox=selectionBox;
+   throw new Error('source connector did not update before pointer release: '+JSON.stringify(dragDebug));
+ }
+ await page.mouse.up();
+ await page.getByRole('button',{name:'撤销笔迹',exact:true}).click();
+ await page.waitForFunction(({x,y})=>{
+   const link=document.querySelector('.learning-selection-source-link');
+   return Math.abs(Number(link?.dataset.sourceX)-x)<1&&Math.abs(Number(link?.dataset.sourceY)-y)<1;
+ },sourceBefore);
+
+ const resize=firstCard.getByRole('button',{name:/调整辅助卡片大小/});
+ const resizeBox=await resize.boundingBox();
+ if(!resizeBox) throw new Error('cannot measure card resize handle');
+ await page.mouse.move(resizeBox.x+resizeBox.width/2,resizeBox.y+resizeBox.height/2);
+ await page.mouse.down();
+ await page.mouse.move(resizeBox.x+65,resizeBox.y+65,{steps:4});
+ await page.mouse.up();
+ const resizedScale=Number(await firstCard.getAttribute('data-card-scale'));
+ if(resizedScale<=1.2) throw new Error('card size was not changed');
+ await firstCard.getByRole('button',{name:'最小化这条辅助内容'}).click();
+ if(!await page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'}).count()) throw new Error('card did not minimize');
+
  await page.getByRole('button',{name:'撤销笔迹',exact:true}).click();
  await page.waitForFunction((count)=>window.ink.state.component_count===count,originalCount);
  await page.evaluate(()=>window.ink.saveNow());
@@ -38,5 +119,10 @@ try {
  await page.waitForFunction(()=>window.ink?.state.saved && window.renderWriting);
  await page.evaluate(()=>window.ink.ready);await page.waitForTimeout(500);
  if(await page.evaluate(()=>window.ink.state.component_count)!==originalCount) throw new Error('undo resurrected on React reload');
- console.log(JSON.stringify({passed:['React writes AI strokes','avoids existing assistance card','direct selection movement','undo','reload without resurrection'],components:before.count}));
+ const restoredLayout=await page.evaluate(()=>window.layouts?.['probe-card']);
+ if(!restoredLayout?.minimized||!restoredLayout.manually_positioned||Math.abs(restoredLayout.x-movedCard.x)>1||Math.abs(restoredLayout.y-movedCard.y)>1||Math.abs(restoredLayout.scale-resizedScale)>.02) {
+   throw new Error('card position, size, or minimized state did not survive reload');
+ }
+ if(!await page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'}).count()) throw new Error('minimized card was not restored');
+ console.log(JSON.stringify({passed:['React writes AI strokes','shared collision avoidance','direct card movement','persistent card state','thick arrow connector','live connector during ink drag','direct selection movement','independent undo','reload without resurrection'],components:before.count}));
 }finally{await browser.close();}

@@ -10,6 +10,6 @@ describe("board writing placement", () => {
     expect(findWritingPosition(source, 200, 100, [
       { x: 140, y: 0, width: 250, height: 100 },
       { x: 130, y: 120, width: 250, height: 100 },
-    ])).toEqual({ x: 142, y: 244 });
+    ])).toEqual({ x: 130, y: 236 });
   });
 });

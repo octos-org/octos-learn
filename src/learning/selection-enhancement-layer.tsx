@@ -1,6 +1,8 @@
 import { Minimize2, Trash2 } from "lucide-react";
 import {
   useEffect,
+  useId,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -13,11 +15,21 @@ import {
   sampleImplicitPlotExpression,
   samplePlotExpression,
 } from "octos-lesson-language/web-runtime";
-import type { InkSelectionSnapshot } from "octos-lesson-language/ink-runtime";
+import type {
+  InkSelectionBounds,
+  InkSelectionSnapshot,
+} from "octos-lesson-language/ink-runtime";
 import { MarkdownContent } from "@/components/markdown-renderer";
-import type { SelectionEnhancementArtifact } from "./selection-enhancements";
+import type {
+  SelectionEnhancementArtifact,
+  SelectionEnhancementCardLayout,
+} from "./selection-enhancements";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 import { WhiteboardQuestionImage } from "./whiteboard-question-image";
+import {
+  findOpenWhiteboardPosition,
+  type WhiteboardRect,
+} from "./whiteboard-placement";
 
 const DEFAULT_CARD_SCALE = 1;
 const MIN_CARD_SCALE = .85;
@@ -27,6 +39,74 @@ const CARD_FONT_SIZE = 13;
 const SCENE3D_HEIGHT = 270;
 const CARD_GAP = 24;
 const RESTORED_SOURCE_OVERLAP_THRESHOLD = .8;
+
+function SelectionSourceLink({
+  sourceId,
+  sourceBounds,
+  cardLeft,
+  cardTop,
+  cardWidth,
+}: {
+  sourceId: string;
+  sourceBounds: InkSelectionBounds;
+  cardLeft: number;
+  cardTop: number;
+  cardWidth: number;
+}) {
+  const markerId = `selection-source-arrow-${useId().replaceAll(":", "")}`;
+  const sourceCenterX = sourceBounds.x + sourceBounds.width / 2;
+  const sourceCenterY = sourceBounds.y + sourceBounds.height / 2;
+  const cardCenterX = cardLeft + cardWidth / 2;
+  const sourceIsLeft = sourceCenterX <= cardCenterX;
+  const sourceX = sourceIsLeft
+    ? sourceBounds.x + sourceBounds.width
+    : sourceBounds.x;
+  const cardX = sourceIsLeft ? cardLeft : cardLeft + cardWidth;
+  const cardY = cardTop + 28;
+  const padding = 16;
+  const left = Math.min(sourceX, cardX) - padding;
+  const top = Math.min(sourceCenterY, cardY) - padding;
+  const width = Math.max(1, Math.abs(cardX - sourceX) + padding * 2);
+  const height = Math.max(1, Math.abs(cardY - sourceCenterY) + padding * 2);
+  return (
+    <svg
+      className="learning-selection-source-link"
+      style={{
+        left: left - cardLeft,
+        top: top - cardTop,
+        width,
+        height,
+      }}
+      viewBox={`0 0 ${width} ${height}`}
+      data-source-id={sourceId}
+      data-source-x={sourceCenterX}
+      data-source-y={sourceCenterY}
+      aria-hidden="true"
+    >
+      <defs>
+        <marker
+          id={markerId}
+          viewBox="0 0 10 8"
+          refX="9"
+          refY="4"
+          markerWidth="10"
+          markerHeight="8"
+          orient="auto"
+        >
+          <path d="M 0 0 L 10 4 L 0 8 z" />
+        </marker>
+      </defs>
+      <line
+        x1={sourceX - left}
+        y1={sourceCenterY - top}
+        x2={cardX - left}
+        y2={cardY - top}
+        strokeWidth="3"
+        markerEnd={`url(#${markerId})`}
+      />
+    </svg>
+  );
+}
 
 function clampedCardScale(value: number): number {
   return Math.min(MAX_CARD_SCALE, Math.max(MIN_CARD_SCALE, value));
@@ -183,39 +263,88 @@ export function SelectionEnhancementLayer({
   sources,
   questions = [],
   currentDocumentVersion,
+  cardLayouts = {},
+  occupiedRects = [],
+  currentSourceBoundsById,
+  clientToBoardPoint,
   invalidTargetTurnIds = new Set(),
+  onCardLayoutChange,
   onDelete,
 }: {
   artifacts: SelectionEnhancementArtifact[];
   sources: InkSelectionSnapshot[];
   questions?: WhiteboardQuestionRecord[];
   currentDocumentVersion: number;
+  cardLayouts?: Readonly<Record<string, SelectionEnhancementCardLayout>>;
+  occupiedRects?: readonly WhiteboardRect[];
+  currentSourceBoundsById?: ReadonlyMap<string, InkSelectionBounds>;
+  clientToBoardPoint?: (point: { x: number; y: number }) => { x: number; y: number };
   invalidTargetTurnIds?: ReadonlySet<string>;
+  onCardLayoutChange?: (
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+  ) => void;
   onDelete: (turnId: string) => void;
 }) {
-  const [minimizedTurnIds, setMinimizedTurnIds] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
-  const [cardScaleByTurnId, setCardScaleByTurnId] = useState<
+  const [transientPositions, setTransientPositions] = useState<
+    Readonly<Record<string, { x: number; y: number }>>
+  >({});
+  const [transientScales, setTransientScales] = useState<
     Readonly<Record<string, number>>
   >({});
+  const [localLayouts, setLocalLayouts] = useState<
+    Readonly<Record<string, SelectionEnhancementCardLayout>>
+  >({});
+  const cardElementsRef = useRef(new Map<string, HTMLElement>());
+  const draggingCardRef = useRef<{
+    turnId: string;
+    pointerId: number;
+    startPointer: { x: number; y: number };
+    startPosition: { x: number; y: number };
+    layout: SelectionEnhancementCardLayout;
+  } | null>(null);
   const resizingCardRef = useRef<{
     turnId: string;
     pointerId: number;
     startX: number;
     startY: number;
     startScale: number;
+    layout: SelectionEnhancementCardLayout;
   } | null>(null);
-  const updateCardScale = (turnId: string, scale: number) => {
-    setCardScaleByTurnId((current) => ({
-      ...current,
-      [turnId]: clampedCardScale(scale),
-    }));
+  const layoutFor = (
+    turnId: string,
+    fallback: { x: number; y: number },
+  ): SelectionEnhancementCardLayout => {
+    const persisted = localLayouts[turnId] ?? cardLayouts[turnId];
+    return {
+      x: transientPositions[turnId]?.x ?? persisted?.x ?? fallback.x,
+      y: transientPositions[turnId]?.y ?? persisted?.y ?? fallback.y,
+      scale: transientScales[turnId] ?? persisted?.scale ?? DEFAULT_CARD_SCALE,
+      minimized: persisted?.minimized ?? false,
+      manually_positioned: persisted?.manually_positioned ?? false,
+    };
+  };
+  const persistLayout = (turnId: string, layout: SelectionEnhancementCardLayout) => {
+    const next = {
+      ...layout,
+      scale: clampedCardScale(layout.scale),
+    };
+    setLocalLayouts((current) => ({ ...current, [turnId]: next }));
+    onCardLayoutChange?.(turnId, next);
+  };
+  const updateCardScale = (
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+    scale: number,
+  ) => {
+    const nextScale = clampedCardScale(scale);
+    setTransientScales((current) => ({ ...current, [turnId]: nextScale }));
+    persistLayout(turnId, { ...layout, scale: nextScale });
   };
   const beginCardResize = (
     event: ReactPointerEvent<HTMLButtonElement>,
     turnId: string,
-    startScale: number,
+    layout: SelectionEnhancementCardLayout,
   ) => {
     event.preventDefault();
     event.stopPropagation();
@@ -227,7 +356,8 @@ export function SelectionEnhancementLayer({
       pointerId: event.pointerId,
       startX: event.clientX,
       startY: event.clientY,
-      startScale,
+      startScale: layout.scale,
+      layout,
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
@@ -243,14 +373,19 @@ export function SelectionEnhancementLayer({
     const diagonalMovement = (
       event.clientX - resize.startX + event.clientY - resize.startY
     ) / 2;
-    updateCardScale(
-      resize.turnId,
+    const nextScale = clampedCardScale(
       resize.startScale + diagonalMovement / 220,
     );
+    setTransientScales((current) => ({
+      ...current,
+      [resize.turnId]: nextScale,
+    }));
   };
   const finishCardResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const resize = resizingCardRef.current;
     if (!resize || resize.pointerId !== event.pointerId) return;
+    const scale = transientScales[resize.turnId] ?? resize.startScale;
+    persistLayout(resize.turnId, { ...resize.layout, scale });
     resizingCardRef.current = null;
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -259,17 +394,64 @@ export function SelectionEnhancementLayer({
   const resizeCardWithKeyboard = (
     event: ReactKeyboardEvent<HTMLButtonElement>,
     turnId: string,
-    currentScale: number,
+    layout: SelectionEnhancementCardLayout,
   ) => {
     if (["ArrowUp", "ArrowRight"].includes(event.key)) {
       event.preventDefault();
-      updateCardScale(turnId, currentScale + .1);
+      updateCardScale(turnId, layout, layout.scale + .1);
     } else if (["ArrowDown", "ArrowLeft"].includes(event.key)) {
       event.preventDefault();
-      updateCardScale(turnId, currentScale - .1);
+      updateCardScale(turnId, layout, layout.scale - .1);
     } else if (event.key === "Home") {
       event.preventDefault();
-      updateCardScale(turnId, DEFAULT_CARD_SCALE);
+      updateCardScale(turnId, layout, DEFAULT_CARD_SCALE);
+    }
+  };
+  const beginCardDrag = (
+    event: ReactPointerEvent<HTMLElement>,
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+  ) => {
+    if (!clientToBoardPoint || event.button !== 0) return;
+    const target = event.target as Element;
+    if (target.closest("button, a, input, textarea, select, model-viewer")) return;
+    event.preventDefault();
+    event.stopPropagation();
+    draggingCardRef.current = {
+      turnId,
+      pointerId: event.pointerId,
+      startPointer: clientToBoardPoint({ x: event.clientX, y: event.clientY }),
+      startPosition: { x: layout.x, y: layout.y },
+      layout,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const continueCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = draggingCardRef.current;
+    if (!drag || drag.pointerId !== event.pointerId || !clientToBoardPoint) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const point = clientToBoardPoint({ x: event.clientX, y: event.clientY });
+    setTransientPositions((current) => ({
+      ...current,
+      [drag.turnId]: {
+        x: drag.startPosition.x + point.x - drag.startPointer.x,
+        y: drag.startPosition.y + point.y - drag.startPointer.y,
+      },
+    }));
+  };
+  const finishCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = draggingCardRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const position = transientPositions[drag.turnId] ?? drag.startPosition;
+    persistLayout(drag.turnId, {
+      ...drag.layout,
+      ...position,
+      manually_positioned: true,
+    });
+    draggingCardRef.current = null;
+    if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
   type LayoutItem =
@@ -281,6 +463,9 @@ export function SelectionEnhancementLayer({
         question?: WhiteboardQuestionRecord;
       };
   const sourceById = new Map(sources.map((source) => [source.source_id, source]));
+  const sourceBoundsFor = (sourceId: string | undefined) => sourceId
+    ? currentSourceBoundsById?.get(sourceId) ?? sourceById.get(sourceId)?.bounds
+    : undefined;
   const selectionQuestions = questions.filter((question) =>
     question.origin === "selection"
     && question.source
@@ -359,7 +544,16 @@ export function SelectionEnhancementLayer({
       });
     }
   }
-  const layoutItems: Array<LayoutItem & { left: number; top: number }> = [];
+  const layoutItems: Array<LayoutItem & {
+    turnId: string;
+    sourceId: string;
+    sourceBounds: InkSelectionBounds;
+    sourceConnected: boolean;
+    layout: SelectionEnhancementCardLayout;
+    width: number;
+    estimatedHeight: number;
+  }> = [];
+  const reserved: WhiteboardRect[] = [...occupiedRects];
   for (const { sourceIds: groupedSourceIds } of sourceGroups) {
     const sourceQuestions = selectionQuestions
       .filter((question) => groupedSourceIds.has(question.source!.sourceId))
@@ -403,22 +597,118 @@ export function SelectionEnhancementLayer({
       ?? sourceQuestions[0]?.source?.bounds
       ?? sourceArtifacts[0]?.source.bounds;
     if (!fallbackBounds) continue;
-    let cursor = fallbackBounds.x + fallbackBounds.width + 30;
     for (const item of ordered) {
+      const turnId = item.kind === "question"
+        ? item.question.id
+        : item.artifact.turn_id;
+      const sourceId = item.kind === "question"
+        ? item.question.source!.sourceId
+        : item.artifact.source.source_id;
+      const currentSourceBounds = sourceBoundsFor(sourceId);
+      const sourceBounds = currentSourceBounds ?? fallbackBounds;
+      const persisted = localLayouts[turnId] ?? cardLayouts[turnId];
+      const scale = transientScales[turnId]
+        ?? persisted?.scale
+        ?? DEFAULT_CARD_SCALE;
+      const minimized = persisted?.minimized ?? false;
+      const width = minimized ? 26 : CARD_WIDTH * scale;
+      const estimatedHeight = minimized
+        ? 26
+        : item.kind === "question"
+          ? 210
+          : (item.question ? 116 : 0) + (
+              item.artifact.response.kind === "scene3d"
+                ? 520
+                : item.artifact.response.kind === "plot"
+                  ? 410
+                  : 300
+            ) * scale;
+      const preferred = {
+        x: sourceBounds.x + sourceBounds.width + 30,
+        y: sourceBounds.y,
+      };
+      const initialPosition = persisted
+        ? { x: persisted.x, y: persisted.y }
+        : findOpenWhiteboardPosition({
+            preferred,
+            width,
+            height: estimatedHeight,
+            occupied: reserved,
+            gap: CARD_GAP,
+          });
+      const layout = layoutFor(turnId, initialPosition);
       layoutItems.push({
         ...item,
-        left: cursor,
-        top: fallbackBounds.y,
+        turnId,
+        sourceId,
+        sourceBounds,
+        sourceConnected: Boolean(currentSourceBounds),
+        layout,
+        width,
+        estimatedHeight,
       });
-      const width = item.kind === "question"
-        ? CARD_WIDTH
-        : minimizedTurnIds.has(item.artifact.turn_id)
-            ? 26
-            : CARD_WIDTH * (cardScaleByTurnId[item.artifact.turn_id]
-              ?? DEFAULT_CARD_SCALE);
-      cursor += width + CARD_GAP;
+      reserved.push({
+        x: layout.x,
+        y: layout.y,
+        width,
+        height: estimatedHeight,
+      });
     }
   }
+  const initializationKey = layoutItems
+    .filter((item) => !localLayouts[item.turnId] && !cardLayouts[item.turnId])
+    .map((item) => `${item.turnId}:${item.layout.x}:${item.layout.y}`)
+    .join("|");
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      for (const item of layoutItems) {
+        if (localLayouts[item.turnId] || cardLayouts[item.turnId]) continue;
+        persistLayout(item.turnId, item.layout);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // The compact key changes only when an unpersisted card is added or its
+    // deterministic initial position changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initializationKey, localLayouts, cardLayouts, onCardLayoutChange]);
+
+  const recheckKey = layoutItems.map((item) => {
+    const artifactKind = item.kind === "artifact"
+      ? item.artifact.response.kind
+      : item.question.status;
+    return `${item.turnId}:${artifactKind}:${item.layout.scale}:${item.layout.minimized}`;
+  }).join("|");
+  useLayoutEffect(() => {
+    for (const item of layoutItems) {
+      const persisted = localLayouts[item.turnId] ?? cardLayouts[item.turnId];
+      const element = cardElementsRef.current.get(item.turnId);
+      if (!persisted || persisted.manually_positioned || !element || persisted.minimized) {
+        continue;
+      }
+      const width = element.offsetWidth || item.width;
+      const height = element.offsetHeight || item.estimatedHeight;
+      const otherCards = layoutItems.flatMap((candidate) => candidate.turnId === item.turnId
+        ? []
+        : [{
+            x: candidate.layout.x,
+            y: candidate.layout.y,
+            width: candidate.width,
+            height: candidate.estimatedHeight,
+          }]);
+      const next = findOpenWhiteboardPosition({
+        preferred: { x: persisted.x, y: persisted.y },
+        width,
+        height,
+        occupied: [...occupiedRects, ...otherCards],
+        gap: CARD_GAP,
+      });
+      if (next.x !== persisted.x || next.y !== persisted.y) {
+        persistLayout(item.turnId, { ...persisted, ...next });
+      }
+    }
+    // Recheck when pending content becomes its final card or its size changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recheckKey, localLayouts, cardLayouts, occupiedRects, onCardLayoutChange]);
   return (
     <>
       {layoutItems.map((item) => {
@@ -427,19 +717,41 @@ export function SelectionEnhancementLayer({
           return (
             <article
               key={item.key}
+              ref={(element) => {
+                if (element) cardElementsRef.current.set(item.turnId, element);
+                else cardElementsRef.current.delete(item.turnId);
+              }}
               className={failed
                 ? "learning-selection-enhancement is-failed"
                 : "learning-selection-enhancement is-question-only"}
               style={{
-                left: item.left,
-                top: item.top,
+                left: item.layout.x,
+                top: item.layout.y,
                 width: CARD_WIDTH,
                 fontSize: CARD_FONT_SIZE,
               }}
+              onPointerDown={(event) => beginCardDrag(
+                event,
+                item.turnId,
+                item.layout,
+              )}
+              onPointerMove={continueCardDrag}
+              onPointerUp={finishCardDrag}
+              onPointerCancel={finishCardDrag}
               data-source-id={item.question.source?.sourceId}
               data-question-id={item.question.id}
+              data-card-x={item.layout.x}
+              data-card-y={item.layout.y}
             >
-              <div className="learning-selection-source-link" aria-hidden="true" />
+              {item.sourceConnected ? (
+                <SelectionSourceLink
+                  sourceId={item.sourceId}
+                  sourceBounds={item.sourceBounds}
+                  cardLeft={item.layout.x}
+                  cardTop={item.layout.y}
+                  cardWidth={CARD_WIDTH}
+                />
+              ) : null}
               <SelectionQuestionSection question={item.question} />
               {failed || item.question.status === "pending" ? (
                 <>
@@ -472,9 +784,8 @@ export function SelectionEnhancementLayer({
         const sourceMissing = !sourceById.has(artifact.source.source_id);
         const stale = currentDocumentVersion > artifact.source.document_version;
         const targetInvalid = invalidTargetTurnIds.has(artifact.turn_id);
-        const minimized = minimizedTurnIds.has(artifact.turn_id);
-        const cardScale = cardScaleByTurnId[artifact.turn_id]
-          ?? DEFAULT_CARD_SCALE;
+        const minimized = item.layout.minimized;
+        const cardScale = item.layout.scale;
         if (minimized) {
           return (
             <button
@@ -484,16 +795,17 @@ export function SelectionEnhancementLayer({
                 ? "learning-selection-enhancement-pin is-invalid-target"
                 : "learning-selection-enhancement-pin"}
               style={{
-                left: item.left,
-                top: item.top + 8,
+                left: item.layout.x,
+                top: item.layout.y + 8,
               }}
               data-source-id={artifact.source.source_id}
               data-enhancement-id={artifact.turn_id}
+              data-card-x={item.layout.x}
+              data-card-y={item.layout.y}
               onClick={() => {
-                setMinimizedTurnIds((current) => {
-                  const next = new Set(current);
-                  next.delete(artifact.turn_id);
-                  return next;
+                persistLayout(artifact.turn_id, {
+                  ...item.layout,
+                  minimized: false,
                 });
               }}
               aria-label={question
@@ -501,6 +813,15 @@ export function SelectionEnhancementLayer({
                 : `展开小章鱼辅助：${artifact.response.title}`}
               title={`展开：${artifact.response.title}`}
             >
+              {item.sourceConnected ? (
+                <SelectionSourceLink
+                  sourceId={item.sourceId}
+                  sourceBounds={item.sourceBounds}
+                  cardLeft={item.layout.x}
+                  cardTop={item.layout.y + 8}
+                  cardWidth={26}
+                />
+              ) : null}
               ?
             </button>
           );
@@ -508,12 +829,16 @@ export function SelectionEnhancementLayer({
         return (
           <article
             key={artifact.turn_id}
+            ref={(element) => {
+              if (element) cardElementsRef.current.set(item.turnId, element);
+              else cardElementsRef.current.delete(item.turnId);
+            }}
             className={targetInvalid
               ? "learning-selection-enhancement is-invalid-target"
               : "learning-selection-enhancement"}
             style={{
-              left: item.left,
-              top: item.top,
+              left: item.layout.x,
+              top: item.layout.y,
               width: CARD_WIDTH * cardScale,
               fontSize: CARD_FONT_SIZE * cardScale,
               "--learning-selection-scene3d-height":
@@ -523,8 +848,26 @@ export function SelectionEnhancementLayer({
             data-question-id={question?.id}
             data-enhancement-id={artifact.turn_id}
             data-card-scale={cardScale.toFixed(2)}
+            data-card-x={item.layout.x}
+            data-card-y={item.layout.y}
+            onPointerDown={(event) => beginCardDrag(
+              event,
+              item.turnId,
+              item.layout,
+            )}
+            onPointerMove={continueCardDrag}
+            onPointerUp={finishCardDrag}
+            onPointerCancel={finishCardDrag}
           >
-            <div className="learning-selection-source-link" aria-hidden="true" />
+            {item.sourceConnected ? (
+              <SelectionSourceLink
+                sourceId={item.sourceId}
+                sourceBounds={item.sourceBounds}
+                cardLeft={item.layout.x}
+                cardTop={item.layout.y}
+                cardWidth={CARD_WIDTH * cardScale}
+              />
+            ) : null}
             {question ? <SelectionQuestionSection question={question} /> : null}
             <header>
               <div>
@@ -543,10 +886,9 @@ export function SelectionEnhancementLayer({
                 <button
                   type="button"
                   onClick={() => {
-                    setMinimizedTurnIds((current) => {
-                      const next = new Set(current);
-                      next.add(artifact.turn_id);
-                      return next;
+                    persistLayout(artifact.turn_id, {
+                      ...item.layout,
+                      minimized: true,
                     });
                   }}
                   aria-label={question
@@ -642,7 +984,7 @@ export function SelectionEnhancementLayer({
               onPointerDown={(event) => beginCardResize(
                 event,
                 artifact.turn_id,
-                cardScale,
+                item.layout,
               )}
               onPointerMove={continueCardResize}
               onPointerUp={finishCardResize}
@@ -654,12 +996,13 @@ export function SelectionEnhancementLayer({
               }}
               onDoubleClick={() => updateCardScale(
                 artifact.turn_id,
+                item.layout,
                 DEFAULT_CARD_SCALE,
               )}
               onKeyDown={(event) => resizeCardWithKeyboard(
                 event,
                 artifact.turn_id,
-                cardScale,
+                item.layout,
               )}
               aria-label={`调整辅助卡片大小，当前 ${Math.round(cardScale * 100)}%`}
               title="拖动放大或缩小；双击恢复原始大小"
