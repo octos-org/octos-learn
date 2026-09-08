@@ -1,0 +1,24 @@
+{
+  "profile": "octos.whiteboard-assistance.spatial-integration-final-startup",
+  "version": "0.1",
+  "date": "2026-09-08",
+  "repeats": 30,
+  "baseline": {
+    "commit": "73405602246f5f2b8e282617b4f9293a2bec7d85",
+    "wall_ms": { "p50": 149.97012499999994, "p95": 158.31320419999992 },
+    "dom_content_loaded_ms": { "p50": 145.75, "p95": 153.5849999576807 },
+    "load_ms": { "p50": 146.25, "p95": 153.9749999642372 }
+  },
+  "candidate": {
+    "oll_ref": "35d797dea9336f79165b6069807304b42c3c8cab",
+    "wall_ms": { "p50": 150.18812550000018, "p95": 155.79392704999972 },
+    "dom_content_loaded_ms": { "p50": 145.9500000178814, "p95": 151.41500002145767 },
+    "load_ms": { "p50": 146.40000000596046, "p95": 151.8149999976158 }
+  },
+  "paired": {
+    "wall_ms": { "delta_p50": -0.8118125000000873, "delta_p95": 5.583274699999854, "candidate_faster": 19 },
+    "dom_content_loaded_ms": { "delta_p50": -0.19999998807907104, "delta_p95": 5.5550000131130215, "candidate_faster": 17 },
+    "load_ms": { "delta_p50": -0.050000011920928955, "delta_p95": 5.454999989271164, "candidate_faster": 15 }
+  },
+  "interpretation": "The paired median deltas are -0.81 to -0.05 ms and the candidate is at least evenly split in every metric; no repeatable startup regression was observed after the complete spatial integration and final OLL pin."
+}

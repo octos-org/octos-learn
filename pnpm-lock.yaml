@@ -36,8 +36,8 @@ importers:
         specifier: ^11.13.0
         version: 11.15.0
       octos-lesson-language:
-        specifier: git+https://github.com/alan0x/octos-lesson-language.git#5bc24423a845c13b644c2e31cd6b661caed2d61c
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/5bc24423a845c13b644c2e31cd6b661caed2d61c
+        specifier: git+https://github.com/alan0x/octos-lesson-language.git#35d797dea9336f79165b6069807304b42c3c8cab
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/35d797dea9336f79165b6069807304b42c3c8cab
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -2466,8 +2466,8 @@ packages:
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/5bc24423a845c13b644c2e31cd6b661caed2d61c:
-    resolution: {gitHosted: true, integrity: sha512-yAKyRWkUqUOVX2hCTsGsI/pB/bp4qeflyuFlX0oyebtSUHa9T8zEcorl/Qaowa24UdjnOIAHja77Pver6GWJIQ==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/5bc24423a845c13b644c2e31cd6b661caed2d61c}
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/35d797dea9336f79165b6069807304b42c3c8cab:
+    resolution: {gitHosted: true, integrity: sha512-9dNlDIcdKjDW/G2zoM+RUzXO1n3hR88beFDSOwb0/PWPuqQmuUHEKYwuZufyORxxw0130KLc7vVVBeZ+9NMXLA==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/35d797dea9336f79165b6069807304b42c3c8cab}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -5679,7 +5679,7 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/5bc24423a845c13b644c2e31cd6b661caed2d61c:
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/35d797dea9336f79165b6069807304b42c3c8cab:
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0
