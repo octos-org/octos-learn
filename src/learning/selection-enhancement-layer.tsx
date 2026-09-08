@@ -394,6 +394,7 @@ export function SelectionEnhancementLayer({
     Readonly<Record<string, SelectionEnhancementCardLayout>>
   >({});
   const cardElementsRef = useRef(new Map<string, HTMLElement>());
+  const completedLayoutRecheckRef = useRef("");
   const draggingCardRef = useRef<{
     turnId: string;
     pointerId: number;
@@ -786,7 +787,17 @@ export function SelectionEnhancementLayer({
       : item.question.status;
     return `${item.turnId}:${artifactKind}:${item.layout.scale}:${item.layout.minimized}`;
   }).join("|");
+  const layoutRecheckPass = JSON.stringify({
+    cards: recheckKey,
+    occupied: occupiedRects,
+    visible: visibleBoardBounds,
+  });
   useLayoutEffect(() => {
+    // Persisting an automatic adjustment renders this component again. Run
+    // exactly once for the same measured board state so two cards cannot keep
+    // displacing one another forever.
+    if (completedLayoutRecheckRef.current === layoutRecheckPass) return;
+    completedLayoutRecheckRef.current = layoutRecheckPass;
     for (const item of layoutItems) {
       const persisted = localLayouts[item.turnId] ?? cardLayouts[item.turnId];
       const element = cardElementsRef.current.get(item.turnId);
@@ -817,7 +828,7 @@ export function SelectionEnhancementLayer({
     }
     // Recheck when pending content becomes its final card or its size changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recheckKey, localLayouts, cardLayouts, occupiedRects, visibleBoardBounds, onCardLayoutChange]);
+  }, [layoutRecheckPass, localLayouts, cardLayouts, onCardLayoutChange]);
   return (
     <>
       {layoutItems.map((item) => {
