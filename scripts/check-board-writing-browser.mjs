@@ -18,11 +18,12 @@ try {
  if(cards!==2) throw new Error(`expected two existing assistance cards, found ${cards}`);
  const links=page.locator('.learning-selection-source-link');
  if(await links.count()!==2) throw new Error('expected each assistance card to keep a source connector');
- const connectorStyle=await links.first().locator('line').evaluate(line=>({
-   width:line.getAttribute('stroke-width'),marker:line.getAttribute('marker-end'),
+ const connectorStyle=await links.first().locator('.learning-selection-source-path').evaluate(path=>({
+   width:path.getAttribute('stroke-width'),marker:path.getAttribute('marker-end'),route:path.getAttribute('d'),
+   arrow:path.closest('svg')?.querySelector('marker polyline')?.getAttribute('points'),
  }));
- if(connectorStyle.width!=='3'||!connectorStyle.marker?.startsWith('url(#selection-source-arrow-')) {
-   throw new Error('source connector is missing its thicker arrow styling');
+ if(connectorStyle.width!=='3'||!connectorStyle.marker?.startsWith('url(#selection-source-arrow-')||connectorStyle.arrow!=='2,1 10,5 2,9'||!/^M .* H .* Q .* V .* Q .* H /.test(connectorStyle.route??'')) {
+   throw new Error('source connector is missing its orthogonal route or open arrow styling');
  }
  const overlap=await page.evaluate(()=>{
    const boxes=[...document.querySelectorAll('[data-enhancement-id^="probe-card"]')].map(card=>({x:Number.parseFloat(card.style.left),y:Number.parseFloat(card.style.top),width:card.offsetWidth,height:card.offsetHeight}));
@@ -110,7 +111,10 @@ try {
  const resizedScale=Number(await firstCard.getAttribute('data-card-scale'));
  if(resizedScale<=1.2) throw new Error('card size was not changed');
  await firstCard.getByRole('button',{name:'最小化这条辅助内容'}).click();
- if(!await page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'}).count()) throw new Error('card did not minimize');
+ const minimizedPin=page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'});
+ if(!await minimizedPin.count()) throw new Error('card did not minimize');
+ await minimizedPin.hover();
+ if(await minimizedPin.evaluate(pin=>getComputedStyle(pin).transform)!=='none') throw new Error('minimized card grows on hover');
 
  await page.getByRole('button',{name:'撤销笔迹',exact:true}).click();
  await page.waitForFunction((count)=>window.ink.state.component_count===count,originalCount);
@@ -124,5 +128,5 @@ try {
    throw new Error('card position, size, or minimized state did not survive reload');
  }
  if(!await page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'}).count()) throw new Error('minimized card was not restored');
- console.log(JSON.stringify({passed:['React writes AI strokes','shared collision avoidance','direct card movement','persistent card state','thick arrow connector','live connector during ink drag','direct selection movement','independent undo','reload without resurrection'],components:before.count}));
+ console.log(JSON.stringify({passed:['React writes AI strokes','shared collision avoidance','direct card movement','persistent card state','orthogonal open-arrow connector','no hover enlargement','live connector during ink drag','direct selection movement','independent undo','reload without resurrection'],components:before.count}));
 }finally{await browser.close();}

@@ -63,7 +63,25 @@ function SelectionSourceLink({
     : sourceBounds.x;
   const cardX = sourceIsLeft ? cardLeft : cardLeft + cardWidth;
   const cardY = cardTop + 28;
-  const padding = 16;
+  const horizontalDirection = Math.sign(cardX - sourceX) || 1;
+  const verticalDirection = Math.sign(cardY - sourceCenterY);
+  const middleX = sourceX + (cardX - sourceX) / 2;
+  const cornerRadius = Math.min(
+    10,
+    Math.abs(cardX - sourceX) / 4,
+    Math.abs(cardY - sourceCenterY) / 2,
+  );
+  const path = verticalDirection === 0 || cornerRadius === 0
+    ? `M ${sourceX} ${sourceCenterY} H ${cardX}`
+    : [
+        `M ${sourceX} ${sourceCenterY}`,
+        `H ${middleX - horizontalDirection * cornerRadius}`,
+        `Q ${middleX} ${sourceCenterY} ${middleX} ${sourceCenterY + verticalDirection * cornerRadius}`,
+        `V ${cardY - verticalDirection * cornerRadius}`,
+        `Q ${middleX} ${cardY} ${middleX + horizontalDirection * cornerRadius} ${cardY}`,
+        `H ${cardX}`,
+      ].join(" ");
+  const padding = 20;
   const left = Math.min(sourceX, cardX) - padding;
   const top = Math.min(sourceCenterY, cardY) - padding;
   const width = Math.max(1, Math.abs(cardX - sourceX) + padding * 2);
@@ -86,21 +104,21 @@ function SelectionSourceLink({
       <defs>
         <marker
           id={markerId}
-          viewBox="0 0 10 8"
-          refX="9"
-          refY="4"
-          markerWidth="10"
-          markerHeight="8"
+          viewBox="0 0 12 10"
+          refX="10"
+          refY="5"
+          markerWidth="12"
+          markerHeight="10"
+          markerUnits="userSpaceOnUse"
           orient="auto"
         >
-          <path d="M 0 0 L 10 4 L 0 8 z" />
+          <polyline points="2,1 10,5 2,9" />
         </marker>
       </defs>
-      <line
-        x1={sourceX - left}
-        y1={sourceCenterY - top}
-        x2={cardX - left}
-        y2={cardY - top}
+      <path
+        className="learning-selection-source-path"
+        d={path}
+        transform={`translate(${-left} ${-top})`}
         strokeWidth="3"
         markerEnd={`url(#${markerId})`}
       />

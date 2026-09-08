@@ -127,12 +127,15 @@ describe("SelectionEnhancementLayer", () => {
         onDelete={vi.fn()}
       />,
     );
-    const line = container.querySelector<SVGLineElement>(
-      ".learning-selection-source-link line",
+    const path = container.querySelector<SVGPathElement>(
+      ".learning-selection-source-path",
     );
-    expect(line?.getAttribute("stroke-width")).toBe("3");
-    expect(line?.getAttribute("marker-end"))
+    expect(path?.getAttribute("stroke-width")).toBe("3");
+    expect(path?.getAttribute("d")).toMatch(/^M .* H .* Q .* V .* Q .* H /);
+    expect(path?.getAttribute("marker-end"))
       .toMatch(/^url\(#selection-source-arrow-/);
+    expect(container.querySelector("marker polyline")?.getAttribute("points"))
+      .toBe("2,1 10,5 2,9");
 
     const card = container.querySelector<HTMLElement>(
       ".learning-selection-enhancement",

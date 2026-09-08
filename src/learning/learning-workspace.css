@@ -1909,16 +1909,22 @@
   pointer-events: none;
 }
 
-.learning-selection-source-link line {
+.learning-selection-source-path {
+  fill: none;
   stroke: rgba(36, 112, 104, 0.68);
   stroke-width: 3px;
   stroke-dasharray: 8 6;
   stroke-linecap: round;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 }
 
-.learning-selection-source-link marker path {
-  fill: rgba(36, 112, 104, 0.82);
+.learning-selection-source-link marker polyline {
+  fill: none;
+  stroke: rgba(36, 112, 104, 0.86);
+  stroke-width: 1.8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .learning-selection-enhancement > header {
@@ -2040,16 +2046,7 @@
   font: 750 15px/1 ui-rounded, "SF Pro Rounded", sans-serif;
   cursor: pointer;
   pointer-events: auto;
-  transform-origin: center;
-  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
-}
-
-.learning-selection-enhancement-pin::before {
-  position: absolute;
-  right: 100%;
-  width: 12px;
-  border-top: 2px dashed rgba(36, 112, 104, 0.42);
-  content: "";
+  transition: box-shadow 150ms ease, background 150ms ease;
 }
 
 .learning-selection-enhancement-pin:hover,
@@ -2057,7 +2054,6 @@
   background: #f0fbf8;
   box-shadow: 0 10px 24px rgba(33, 52, 48, 0.2);
   outline: none;
-  transform: scale(1.42);
 }
 
 .learning-selection-enhancement-pin.is-invalid-target {
