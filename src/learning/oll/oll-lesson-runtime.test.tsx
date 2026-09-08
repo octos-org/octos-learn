@@ -1655,10 +1655,9 @@ describe("OLL lesson Runtime integration", () => {
       destroy: vi.fn(() => Promise.resolve()),
     };
     const onAsk = vi.fn(async () => undefined);
-    const onClassify = vi.fn(async (): Promise<SelectionClassification> => ({
-      kind: "math",
-      content: "y=x^2",
-      confidence: "high",
+    let resolveClassification!: (value: SelectionClassification) => void;
+    const onClassify = vi.fn(() => new Promise<SelectionClassification>((resolve) => {
+      resolveClassification = resolve;
     }));
     const onVoiceCaptureChange = vi.fn();
     mountInkRuntimeMock.mockReturnValue(ink);
@@ -1700,6 +1699,12 @@ describe("OLL lesson Runtime integration", () => {
         targets: expect.any(Array),
       }),
       selectionImage: expect.any(File),
+    }));
+    expect(screen.getByText("正在识别选区…")).toBeTruthy();
+    await act(async () => resolveClassification({
+      kind: "math",
+      content: "y=x^2",
+      confidence: "high",
     }));
     expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));

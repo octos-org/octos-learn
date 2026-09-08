@@ -14,7 +14,19 @@ try {
  const before=await page.evaluate(()=>({count:window.ink.state.component_count,svg:window.ink.serialize()}));
  const originalCount = await page.evaluate(() => { const doc=new DOMParser().parseFromString(window.ink.serialize(),"image/svg+xml");return doc.querySelectorAll("path:not([data-octos-ink-origin])").length; });
  if(!before.svg.includes('data-octos-ink-origin="ai"')) throw new Error('missing AI origin');
- if(await page.locator('.learning-selection-enhancement-card').count()) throw new Error('unexpected card');
+ const cards=await page.locator('.learning-selection-enhancement').count();
+ if(cards!==2) throw new Error(`expected two existing assistance cards, found ${cards}`);
+ const overlap=await page.evaluate(()=>{
+   const boxes=[...document.querySelectorAll('[data-enhancement-id^="probe-card"]')].map(card=>({x:Number.parseFloat(card.style.left),y:Number.parseFloat(card.style.top),width:card.offsetWidth,height:card.offsetHeight}));
+   const writing=window.ink.editor.image.getAllComponents().filter(component=>(component.getLoadSaveData().svgAttrs??[]).some(([name,value])=>name==='data-octos-ink-origin'&&value==='ai'));
+   const ink=writing.map(component=>component.getExactBBox()).reduce((union,next)=>union?{
+     x:Math.min(union.x,next.x),y:Math.min(union.y,next.y),
+     width:Math.max(union.x+union.width,next.x+next.width)-Math.min(union.x,next.x),
+     height:Math.max(union.y+union.height,next.y+next.height)-Math.min(union.y,next.y),
+   }:{x:next.x,y:next.y,width:next.width,height:next.height},null);
+   return boxes.some(box=>box.x<ink.x+ink.width&&box.x+box.width>ink.x&&box.y<ink.y+ink.height&&box.y+box.height>ink.y);
+ });
+ if(overlap) throw new Error('board writing overlaps an existing assistance card');
  await page.screenshot({path:process.env.BOARD_PROBE_SCREENSHOT || '/private/tmp/product-board-preview.png'});
  await page.getByRole('button',{name:'选择全部笔迹'}).click();
  if(await page.getByRole('button',{name:'移动笔迹',exact:true}).count()) throw new Error('redundant move mode is still visible');
@@ -26,5 +38,5 @@ try {
  await page.waitForFunction(()=>window.ink?.state.saved && window.renderWriting);
  await page.evaluate(()=>window.ink.ready);await page.waitForTimeout(500);
  if(await page.evaluate(()=>window.ink.state.component_count)!==originalCount) throw new Error('undo resurrected on React reload');
- console.log(JSON.stringify({passed:['React writes AI strokes','no card','direct selection movement','undo','reload without resurrection'],components:before.count}));
+ console.log(JSON.stringify({passed:['React writes AI strokes','avoids existing assistance card','direct selection movement','undo','reload without resurrection'],components:before.count}));
 }finally{await browser.close();}

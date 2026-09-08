@@ -101,7 +101,10 @@ import {
   type SelectionEnhancementArtifact,
   type SelectionEnhancementState,
 } from "./selection-enhancements";
-import type { SelectionToolId } from "./selection-tools";
+import {
+  selectionAnswerPresentation,
+  type SelectionToolId,
+} from "./selection-tools";
 import { isCurrentInkMergeCompletion } from "./ink-replay";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
@@ -1948,6 +1951,11 @@ export function LearningWorkspace({
       setSendError(null);
       setTextTurnPending(true);
       const turnId = delivery?.turnId ?? crypto.randomUUID();
+      const answerPresentation = selectionAnswerPresentation(
+        toolId,
+        question,
+        boardWritingReady,
+      );
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -1955,6 +1963,7 @@ export function LearningWorkspace({
         origin: "selection",
         createdAt: new Date().toISOString(),
         status: "pending",
+        answerPresentation,
         source: {
           sourceId: snapshot.source_id,
           bounds: { ...snapshot.bounds },
@@ -1984,6 +1993,7 @@ export function LearningWorkspace({
             : undefined,
           boardContext,
           toolId,
+          deliveryMode: answerPresentation,
         });
         const invocation = await invokeSkillAction(
           sessionId,

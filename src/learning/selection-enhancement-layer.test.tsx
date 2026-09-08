@@ -63,6 +63,45 @@ function dispatchPointerEvent(
 }
 
 describe("SelectionEnhancementLayer", () => {
+  it("reserves a loading card only for card-bound selection answers", () => {
+    const pending = {
+      id: "pending-card",
+      sessionId: "learn-1",
+      text: "请画出函数图像",
+      origin: "selection" as const,
+      createdAt: "2026-09-07T10:00:00.000Z",
+      status: "pending" as const,
+      source: {
+        sourceId: "source-1",
+        bounds: { x: 10, y: 20, width: 120, height: 70 },
+      },
+      answerPresentation: "card" as const,
+    };
+    const { rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[pending]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent)
+      .toContain("正在生成小章鱼辅助");
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[{ ...pending, answerPresentation: "board-writing" }]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+  });
+
   it("renders LaTeX throughout generated auxiliary card text", () => {
     const { container } = render(
       <SelectionEnhancementLayer
@@ -82,6 +121,7 @@ describe("SelectionEnhancementLayer", () => {
     );
 
     const card = container.querySelector(".learning-selection-enhancement");
+    expect(card?.getAttribute("data-enhancement-id")).toBe(artifact.turn_id);
     expect(card?.querySelectorAll(".katex").length).toBeGreaterThanOrEqual(4);
     expect(card?.textContent).not.toContain("$");
     expect(card?.textContent).toContain("函数");
@@ -352,7 +392,7 @@ describe("SelectionEnhancementLayer", () => {
     expect(screen.getByText("原来的说明")).toBeTruthy();
   });
 
-  it("does not render a pending selection card while the teacher bubble is loading", () => {
+  it("does not resurrect a loading card for legacy pending records without a surface", () => {
     const question: WhiteboardQuestionRecord = {
       id: "turn-pending",
       sessionId: "learn-question-pending",

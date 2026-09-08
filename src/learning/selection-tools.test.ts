@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { availableSelectionTools, selectionToolRegistry } from "./selection-tools";
+import {
+  availableSelectionTools,
+  selectionAnswerPresentation,
+  selectionToolRegistry,
+} from "./selection-tools";
 
 describe("selection tool registry", () => {
   it("is finite, auditable, and never claims it can change the learner source", () => {
@@ -12,6 +16,24 @@ describe("selection tool registry", () => {
     expect(selectionToolRegistry.filter((tool) =>
       tool.action === "local-enhancement",
     ).every((tool) => tool.changesSource === false)).toBe(true);
+  });
+
+  it("chooses and freezes the answer surface before generation", () => {
+    expect(selectionAnswerPresentation("check-and-suggest", "检查一下", true))
+      .toBe("board-writing");
+    expect(selectionAnswerPresentation("generate-plot", "生成函数图像", true))
+      .toBe("card");
+    expect(selectionAnswerPresentation("explain", "解释这部分", true))
+      .toBe("card");
+    expect(selectionAnswerPresentation(
+      "custom-question",
+      "将其更改为可以绘制函数图像的形式",
+      true,
+    )).toBe("board-writing");
+    expect(selectionAnswerPresentation("custom-question", "现在画出函数图像", true))
+      .toBe("card");
+    expect(selectionAnswerPresentation("check-and-suggest", "检查一下", false))
+      .toBe("card");
   });
 
   it("offers plotting only for recognized math or an explicitly selected math fragment", () => {

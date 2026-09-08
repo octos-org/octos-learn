@@ -284,7 +284,10 @@ export function SelectionEnhancementLayer({
   const selectionQuestions = questions.filter((question) =>
     question.origin === "selection"
     && question.source
-    && question.status !== "pending");
+    && (
+      question.status !== "pending"
+      || question.answerPresentation === "card"
+    ));
   const sourceIds = new Set([
     ...artifacts.map((artifact) => artifact.source.source_id),
     ...selectionQuestions.map((question) => question.source!.sourceId),
@@ -438,7 +441,7 @@ export function SelectionEnhancementLayer({
             >
               <div className="learning-selection-source-link" aria-hidden="true" />
               <SelectionQuestionSection question={item.question} />
-              {failed ? (
+              {failed || item.question.status === "pending" ? (
                 <>
                   <header>
                     <div>
@@ -448,11 +451,16 @@ export function SelectionEnhancementLayer({
                   </header>
                   <div
                     className="learning-selection-enhancement-content learning-selection-enhancement-placeholder"
-                    role="alert"
+                    role={failed ? "alert" : "status"}
                     aria-live="polite"
                   >
-                    <strong>回答生成失败</strong>
-                    <p>{item.question.error ?? "选区辅助内容生成失败，请重试"}</p>
+                    <strong>{failed
+                      ? "回答生成失败"
+                      : "正在生成小章鱼辅助"}</strong>
+                    <p>{failed
+                      ? item.question.error ?? "选区辅助内容生成失败，请重试"
+                      : "正在理解这部分内容，完成后会在这里展示。"}</p>
+                    {!failed ? <span aria-hidden="true" /> : null}
                   </div>
                 </>
               ) : null}
@@ -480,6 +488,7 @@ export function SelectionEnhancementLayer({
                 top: item.top + 8,
               }}
               data-source-id={artifact.source.source_id}
+              data-enhancement-id={artifact.turn_id}
               onClick={() => {
                 setMinimizedTurnIds((current) => {
                   const next = new Set(current);
@@ -511,6 +520,8 @@ export function SelectionEnhancementLayer({
                 `${SCENE3D_HEIGHT * cardScale}px`,
             } as CSSProperties}
             data-source-id={artifact.source.source_id}
+            data-question-id={question?.id}
+            data-enhancement-id={artifact.turn_id}
             data-card-scale={cardScale.toFixed(2)}
           >
             <div className="learning-selection-source-link" aria-hidden="true" />

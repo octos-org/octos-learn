@@ -145,6 +145,7 @@ describe("selection enhancement persistence", () => {
       recognitionConfidence: "high",
       learnerRequest: "解释这部分",
       toolId: "explain",
+      deliveryMode: "card",
       boardContext: {
         boardId: "board-1",
         boardRevision: 8,
@@ -163,6 +164,7 @@ describe("selection enhancement persistence", () => {
       },
     });
     expect(argumentsValue).toMatchObject({
+      delivery_mode: "card",
       paths: ["turn_media/selection.png"],
       recognized_content: "y = sin(x)",
       recognition_confidence: "high",

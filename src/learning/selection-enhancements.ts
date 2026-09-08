@@ -148,6 +148,7 @@ export interface SelectionEnhancementTurnContext {
   boardSummary?: string;
   boardContext?: SelectionBoardContext;
   toolId?: SelectionToolId;
+  deliveryMode?: "card" | "board-writing";
 }
 
 export interface SelectionClassificationTurnContext {
@@ -253,6 +254,7 @@ export function buildSelectionEnhancementActionArguments(
       ? { recognition_confidence: context.recognitionConfidence }
       : {}),
     tool_id: context.toolId ?? "custom-question",
+    ...(context.deliveryMode ? { delivery_mode: context.deliveryMode } : {}),
     board: selectionBoardArgument(context.boardContext ?? {
       boardId: context.sessionId,
       boardRevision: 0,

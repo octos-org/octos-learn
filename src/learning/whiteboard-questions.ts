@@ -13,6 +13,8 @@ export interface WhiteboardQuestionRecord {
   origin: "composer" | "selection";
   createdAt: string;
   status: WhiteboardQuestionStatus;
+  /** Surface reserved while a selection answer is being generated. */
+  answerPresentation?: "card" | "board-writing";
   error?: string;
   /** Exact session-scoped camera frame submitted with this question. */
   imagePath?: string;
@@ -67,6 +69,11 @@ function validQuestion(
   if (question.error !== undefined && typeof question.error !== "string") {
     return false;
   }
+  if (
+    question.answerPresentation !== undefined
+    && question.answerPresentation !== "card"
+    && question.answerPresentation !== "board-writing"
+  ) return false;
   if (question.imagePath !== undefined && typeof question.imagePath !== "string") {
     return false;
   }

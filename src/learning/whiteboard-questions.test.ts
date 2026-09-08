@@ -20,6 +20,7 @@ describe("whiteboard questions", () => {
       origin: "selection",
       createdAt: "2026-08-17T15:00:00.000Z",
       status: "failed",
+      answerPresentation: "card",
       error: "当前公式暂不支持生成函数图像",
       source: {
         sourceId: "source-1",

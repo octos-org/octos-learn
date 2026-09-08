@@ -21,9 +21,24 @@ const artifact: SelectionEnhancementArtifact = {
   interpretation: { kind: "math", content: "y=x^2+z^3", confidence: "high" },
   response: { kind: "board_writing", title: "等价整理", text: "原式可表示三维曲面，等价整理为：\nx^2+z^3-y=0", lines: ["原式可表示三维曲面，等价整理为：", "x^2+z^3-y=0"] },
 };
+const cardArtifact: SelectionEnhancementArtifact = {
+  profile: "octos.selection-enhancement", version: "0.2", turn_id: "probe-card",
+  created_at: "2026-09-06T23:59:00Z", tool_id: "explain",
+  source: { ...artifact.source, source_id: "probe-card-source" },
+  board: { board_id: "probe", revision: 0, targets: [] },
+  interpretation: { kind: "math", content: "y=x^2+z^3", confidence: "high" },
+  response: { kind: "explanation", title: "已有辅助卡片", text: "板书必须避开这张卡片。" },
+};
+const secondCardArtifact: SelectionEnhancementArtifact = {
+  ...cardArtifact,
+  turn_id: "probe-card-2",
+  created_at: "2026-09-06T23:59:30Z",
+  source: { ...cardArtifact.source, source_id: "probe-card-source-2" },
+  response: { kind: "explanation", title: "第二张辅助卡片", text: "板书也必须避开这张卡片。" },
+};
 host.renderWriting = (show, session = "probe") => root.render(
   <div style={{ width: "100vw", height: "100vh" }}>
-    <OllLessonBoard runtime={null} inkSessionId={session} selectionEnhancements={show ? [artifact] : []} />
+    <OllLessonBoard runtime={null} inkSessionId={session} selectionEnhancements={show ? [cardArtifact, secondCardArtifact, artifact] : []} />
   </div>,
 );
 async function start() {

@@ -1034,7 +1034,8 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(rejectFirst).toBeTypeOf("function"));
     expect(screen.getByText("小章鱼正在看你框选的这部分。")).toBeTruthy();
     expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
-    expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
+    expect(document.querySelector(".learning-selection-enhancement")).toBeTruthy();
+    expect(screen.getByText("正在生成小章鱼辅助")).toBeTruthy();
     expect(screen.queryByText("正在准备课程")).toBeNull();
     await act(async () => { rejectFirst(new BridgeTimeoutError("skill.action.invoke", 30000)); await first; });
     const files = ["expired-turn", "success-turn"].map((turn) => ({

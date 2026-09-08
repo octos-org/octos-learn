@@ -2523,6 +2523,11 @@ export function LearningWhiteboard({
             && inkState.selected_count > 0
             && onAskInkSelection ? (
               <>
+                {selectionClassificationStatus === "loading" ? (
+                  <span className="learning-ink-classification-status" role="status">
+                    正在识别选区…
+                  </span>
+                ) : null}
                 {quickSelectionTools.map((tool) => (
                   <button
                     key={tool.id}

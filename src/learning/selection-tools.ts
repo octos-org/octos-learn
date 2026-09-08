@@ -7,6 +7,32 @@ export type SelectionToolId =
   | "generate-plot"
   | "custom-question";
 
+export type SelectionAnswerPresentation = "card" | "board-writing";
+
+const BOARD_FORM_REQUEST = /(改|更改|修改|整理|转换|转成|变成|写成).{0,24}(形式|表达式|方程|可绘|可以绘)/iu;
+const BOARD_EDIT_REQUEST = /(检查|建议|批改|纠错|纠正|改写|修改|更改|整理|转换|转写|誊写|抄写|板书|写在.{0,8}(白板|旁边)|check|correct|rewrite|transcribe)/iu;
+const VISUAL_REQUEST = /(画|绘制|生成|展示|显示).{0,12}(图|图像|曲线|曲面)|(plot|graph|visuali[sz]e)/iu;
+
+/**
+ * Decide the answer surface before generation starts. The same value is sent
+ * to the skill as a contract, so the pending UI cannot predict one surface
+ * and receive another one after the model finishes.
+ */
+export function selectionAnswerPresentation(
+  toolId: SelectionToolId,
+  learnerRequest: string,
+  boardWritingAvailable: boolean,
+): SelectionAnswerPresentation {
+  if (!boardWritingAvailable) return "card";
+  if (toolId === "check-and-suggest") return "board-writing";
+  if (toolId === "explain" || toolId === "generate-plot") return "card";
+
+  const request = learnerRequest.trim();
+  if (BOARD_FORM_REQUEST.test(request)) return "board-writing";
+  if (VISUAL_REQUEST.test(request)) return "card";
+  return BOARD_EDIT_REQUEST.test(request) ? "board-writing" : "card";
+}
+
 export interface SelectionToolDefinition {
   id: SelectionToolId;
   label: string;
