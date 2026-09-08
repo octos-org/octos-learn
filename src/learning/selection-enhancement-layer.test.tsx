@@ -134,6 +134,12 @@ describe("SelectionEnhancementLayer", () => {
     expect(path?.getAttribute("d")).toMatch(/^M .* H .* Q .* V .* Q .* H /);
     expect(path?.getAttribute("marker-end"))
       .toMatch(/^url\(#selection-source-arrow-/);
+    expect(container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    )?.dataset.sourceSide).toBe("right");
+    expect(container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    )?.dataset.cardSide).toBe("left");
     expect(container.querySelector("marker polyline")?.getAttribute("points"))
       .toBe("2,1 10,5 2,9");
 
@@ -189,8 +195,83 @@ describe("SelectionEnhancementLayer", () => {
     const movedLink = container.querySelector<SVGElement>(
       ".learning-selection-source-link",
     );
-    expect(movedLink?.dataset.sourceX).toBe("150");
-    expect(movedLink?.dataset.sourceY).toBe("95");
+    expect(movedLink?.dataset.sourceX).toBe("210");
+    expect(Number(movedLink?.dataset.sourceY)).toBeGreaterThanOrEqual(60);
+  });
+
+  it("moves connector endpoints to the nearest sides as relative positions change", () => {
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: 1,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: { x: 100, y: 100, width: 120, height: 70 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [{ x: 100, y: 100 }, { x: 220, y: 100 }, { x: 220, y: 170 }, { x: 100, y: 170 }],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path/></svg>',
+    };
+    const renderAt = (x: number, y: number) => (
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: { x, y, scale: 1, minimized: false, manually_positioned: true },
+        }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />
+    );
+    const { container, rerender } = render(renderAt(260, 100));
+    const link = () => container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(link()?.dataset.sourceSide).toBe("right");
+    expect(link()?.dataset.cardSide).toBe("left");
+
+    rerender(renderAt(-270, 100));
+    expect(link()?.dataset.sourceSide).toBe("left");
+    expect(link()?.dataset.cardSide).toBe("right");
+
+    rerender(renderAt(90, -320));
+    expect(link()?.dataset.sourceSide).toBe("top");
+    expect(link()?.dataset.cardSide).toBe("bottom");
+
+    rerender(renderAt(90, 220));
+    expect(link()?.dataset.sourceSide).toBe("bottom");
+    expect(link()?.dataset.cardSide).toBe("top");
+  });
+
+  it("lets text selection start in card content without dragging the card", () => {
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    const text = screen.getByText("这条说明不会被悄悄重新指向别的对象。");
+    dispatchPointerEvent(text, "pointerdown", { pointerId: 8, clientX: 100, clientY: 100 });
+    dispatchPointerEvent(text, "pointermove", { pointerId: 8, clientX: 180, clientY: 140 });
+    dispatchPointerEvent(text, "pointerup", { pointerId: 8, clientX: 180, clientY: 140 });
+
+    expect(card.dataset.cardX).toBe("160");
+    expect(card.dataset.cardY).toBe("20");
+    expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
   it("reserves a loading card only for card-bound selection answers", () => {

@@ -1723,11 +1723,18 @@
   box-shadow: 0 9px 26px rgba(33, 52, 48, 0.13);
   color: #263936;
   pointer-events: auto;
-  cursor: grab;
-  touch-action: none;
+  cursor: auto;
+  touch-action: auto;
+  user-select: text;
 }
 
-.learning-selection-enhancement:active {
+.learning-selection-enhancement > header {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.learning-selection-enhancement > header:active {
   cursor: grabbing;
 }
 

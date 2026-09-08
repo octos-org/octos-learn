@@ -40,52 +40,128 @@ const SCENE3D_HEIGHT = 270;
 const CARD_GAP = 24;
 const RESTORED_SOURCE_OVERLAP_THRESHOLD = .8;
 
+type LinkSide = "left" | "right" | "top" | "bottom";
+
+function clampToEdge(value: number, start: number, length: number): number {
+  const inset = Math.min(14, length / 2);
+  return Math.min(start + length - inset, Math.max(start + inset, value));
+}
+
+function selectionLinkAnchors(
+  source: InkSelectionBounds,
+  card: InkSelectionBounds,
+): {
+  source: { x: number; y: number; side: LinkSide };
+  card: { x: number; y: number; side: LinkSide };
+  axis: "horizontal" | "vertical";
+} {
+  const sourceCenter = {
+    x: source.x + source.width / 2,
+    y: source.y + source.height / 2,
+  };
+  const cardCenter = {
+    x: card.x + card.width / 2,
+    y: card.y + card.height / 2,
+  };
+  const cardIsRight = cardCenter.x >= sourceCenter.x;
+  const cardIsBelow = cardCenter.y >= sourceCenter.y;
+  const horizontal = {
+    source: {
+      x: cardIsRight ? source.x + source.width : source.x,
+      y: clampToEdge(cardCenter.y, source.y, source.height),
+      side: (cardIsRight ? "right" : "left") as LinkSide,
+    },
+    card: {
+      x: cardIsRight ? card.x : card.x + card.width,
+      y: clampToEdge(sourceCenter.y, card.y, card.height),
+      side: (cardIsRight ? "left" : "right") as LinkSide,
+    },
+    axis: "horizontal" as const,
+  };
+  const vertical = {
+    source: {
+      x: clampToEdge(cardCenter.x, source.x, source.width),
+      y: cardIsBelow ? source.y + source.height : source.y,
+      side: (cardIsBelow ? "bottom" : "top") as LinkSide,
+    },
+    card: {
+      x: clampToEdge(sourceCenter.x, card.x, card.width),
+      y: cardIsBelow ? card.y : card.y + card.height,
+      side: (cardIsBelow ? "top" : "bottom") as LinkSide,
+    },
+    axis: "vertical" as const,
+  };
+  const distanceSquared = (candidate: typeof horizontal | typeof vertical) =>
+    (candidate.card.x - candidate.source.x) ** 2
+      + (candidate.card.y - candidate.source.y) ** 2;
+  return distanceSquared(horizontal) <= distanceSquared(vertical)
+    ? horizontal
+    : vertical;
+}
+
+function roundedOrthogonalPath(
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+  axis: "horizontal" | "vertical",
+): string {
+  if (axis === "horizontal") {
+    const directionX = Math.sign(end.x - start.x) || 1;
+    const directionY = Math.sign(end.y - start.y);
+    const middleX = start.x + (end.x - start.x) / 2;
+    const radius = Math.min(10, Math.abs(end.x - start.x) / 4, Math.abs(end.y - start.y) / 2);
+    if (directionY === 0 || radius === 0) return `M ${start.x} ${start.y} H ${end.x}`;
+    return [
+      `M ${start.x} ${start.y}`,
+      `H ${middleX - directionX * radius}`,
+      `Q ${middleX} ${start.y} ${middleX} ${start.y + directionY * radius}`,
+      `V ${end.y - directionY * radius}`,
+      `Q ${middleX} ${end.y} ${middleX + directionX * radius} ${end.y}`,
+      `H ${end.x}`,
+    ].join(" ");
+  }
+  const directionX = Math.sign(end.x - start.x);
+  const directionY = Math.sign(end.y - start.y) || 1;
+  const middleY = start.y + (end.y - start.y) / 2;
+  const radius = Math.min(10, Math.abs(end.y - start.y) / 4, Math.abs(end.x - start.x) / 2);
+  if (directionX === 0 || radius === 0) return `M ${start.x} ${start.y} V ${end.y}`;
+  return [
+    `M ${start.x} ${start.y}`,
+    `V ${middleY - directionY * radius}`,
+    `Q ${start.x} ${middleY} ${start.x + directionX * radius} ${middleY}`,
+    `H ${end.x - directionX * radius}`,
+    `Q ${end.x} ${middleY} ${end.x} ${middleY + directionY * radius}`,
+    `V ${end.y}`,
+  ].join(" ");
+}
+
 function SelectionSourceLink({
   sourceId,
   sourceBounds,
   cardLeft,
   cardTop,
   cardWidth,
+  cardHeight,
 }: {
   sourceId: string;
   sourceBounds: InkSelectionBounds;
   cardLeft: number;
   cardTop: number;
   cardWidth: number;
+  cardHeight: number;
 }) {
   const markerId = `selection-source-arrow-${useId().replaceAll(":", "")}`;
-  const sourceCenterX = sourceBounds.x + sourceBounds.width / 2;
-  const sourceCenterY = sourceBounds.y + sourceBounds.height / 2;
-  const cardCenterX = cardLeft + cardWidth / 2;
-  const sourceIsLeft = sourceCenterX <= cardCenterX;
-  const sourceX = sourceIsLeft
-    ? sourceBounds.x + sourceBounds.width
-    : sourceBounds.x;
-  const cardX = sourceIsLeft ? cardLeft : cardLeft + cardWidth;
-  const cardY = cardTop + 28;
-  const horizontalDirection = Math.sign(cardX - sourceX) || 1;
-  const verticalDirection = Math.sign(cardY - sourceCenterY);
-  const middleX = sourceX + (cardX - sourceX) / 2;
-  const cornerRadius = Math.min(
-    10,
-    Math.abs(cardX - sourceX) / 4,
-    Math.abs(cardY - sourceCenterY) / 2,
-  );
-  const path = verticalDirection === 0 || cornerRadius === 0
-    ? `M ${sourceX} ${sourceCenterY} H ${cardX}`
-    : [
-        `M ${sourceX} ${sourceCenterY}`,
-        `H ${middleX - horizontalDirection * cornerRadius}`,
-        `Q ${middleX} ${sourceCenterY} ${middleX} ${sourceCenterY + verticalDirection * cornerRadius}`,
-        `V ${cardY - verticalDirection * cornerRadius}`,
-        `Q ${middleX} ${cardY} ${middleX + horizontalDirection * cornerRadius} ${cardY}`,
-        `H ${cardX}`,
-      ].join(" ");
+  const anchors = selectionLinkAnchors(sourceBounds, {
+    x: cardLeft,
+    y: cardTop,
+    width: cardWidth,
+    height: cardHeight,
+  });
+  const path = roundedOrthogonalPath(anchors.source, anchors.card, anchors.axis);
   const padding = 20;
-  const left = Math.min(sourceX, cardX) - padding;
-  const top = Math.min(sourceCenterY, cardY) - padding;
-  const width = Math.max(1, Math.abs(cardX - sourceX) + padding * 2);
-  const height = Math.max(1, Math.abs(cardY - sourceCenterY) + padding * 2);
+  const left = Math.min(anchors.source.x, anchors.card.x) - padding;
+  const top = Math.min(anchors.source.y, anchors.card.y) - padding;
+  const width = Math.max(1, Math.abs(anchors.card.x - anchors.source.x) + padding * 2);
+  const height = Math.max(1, Math.abs(anchors.card.y - anchors.source.y) + padding * 2);
   return (
     <svg
       className="learning-selection-source-link"
@@ -97,8 +173,10 @@ function SelectionSourceLink({
       }}
       viewBox={`0 0 ${width} ${height}`}
       data-source-id={sourceId}
-      data-source-x={sourceCenterX}
-      data-source-y={sourceCenterY}
+      data-source-x={anchors.source.x}
+      data-source-y={anchors.source.y}
+      data-source-side={anchors.source.side}
+      data-card-side={anchors.card.side}
       aria-hidden="true"
     >
       <defs>
@@ -283,6 +361,7 @@ export function SelectionEnhancementLayer({
   currentDocumentVersion,
   cardLayouts = {},
   occupiedRects = [],
+  visibleBoardBounds,
   currentSourceBoundsById,
   clientToBoardPoint,
   invalidTargetTurnIds = new Set(),
@@ -295,6 +374,7 @@ export function SelectionEnhancementLayer({
   currentDocumentVersion: number;
   cardLayouts?: Readonly<Record<string, SelectionEnhancementCardLayout>>;
   occupiedRects?: readonly WhiteboardRect[];
+  visibleBoardBounds?: WhiteboardRect;
   currentSourceBoundsById?: ReadonlyMap<string, InkSelectionBounds>;
   clientToBoardPoint?: (point: { x: number; y: number }) => { x: number; y: number };
   invalidTargetTurnIds?: ReadonlySet<string>;
@@ -432,7 +512,16 @@ export function SelectionEnhancementLayer({
   ) => {
     if (!clientToBoardPoint || event.button !== 0) return;
     const target = event.target as Element;
-    if (target.closest("button, a, input, textarea, select, model-viewer")) return;
+    if (target.closest([
+      "button",
+      "a",
+      "input",
+      "textarea",
+      "select",
+      "model-viewer",
+      ".learning-selection-enhancement-question",
+      ".learning-selection-enhancement-content",
+    ].join(","))) return;
     event.preventDefault();
     event.stopPropagation();
     draggingCardRef.current = {
@@ -653,6 +742,7 @@ export function SelectionEnhancementLayer({
             height: estimatedHeight,
             occupied: reserved,
             gap: CARD_GAP,
+            visibleBounds: visibleBoardBounds,
           });
       const layout = layoutFor(turnId, initialPosition);
       layoutItems.push({
@@ -719,6 +809,7 @@ export function SelectionEnhancementLayer({
         height,
         occupied: [...occupiedRects, ...otherCards],
         gap: CARD_GAP,
+        visibleBounds: visibleBoardBounds,
       });
       if (next.x !== persisted.x || next.y !== persisted.y) {
         persistLayout(item.turnId, { ...persisted, ...next });
@@ -726,7 +817,7 @@ export function SelectionEnhancementLayer({
     }
     // Recheck when pending content becomes its final card or its size changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recheckKey, localLayouts, cardLayouts, occupiedRects, onCardLayoutChange]);
+  }, [recheckKey, localLayouts, cardLayouts, occupiedRects, visibleBoardBounds, onCardLayoutChange]);
   return (
     <>
       {layoutItems.map((item) => {
@@ -768,6 +859,7 @@ export function SelectionEnhancementLayer({
                   cardLeft={item.layout.x}
                   cardTop={item.layout.y}
                   cardWidth={CARD_WIDTH}
+                  cardHeight={item.estimatedHeight}
                 />
               ) : null}
               <SelectionQuestionSection question={item.question} />
@@ -838,6 +930,7 @@ export function SelectionEnhancementLayer({
                   cardLeft={item.layout.x}
                   cardTop={item.layout.y + 8}
                   cardWidth={26}
+                  cardHeight={26}
                 />
               ) : null}
               ?
@@ -884,6 +977,7 @@ export function SelectionEnhancementLayer({
                 cardLeft={item.layout.x}
                 cardTop={item.layout.y}
                 cardWidth={CARD_WIDTH * cardScale}
+                cardHeight={item.estimatedHeight}
               />
             ) : null}
             {question ? <SelectionQuestionSection question={question} /> : null}

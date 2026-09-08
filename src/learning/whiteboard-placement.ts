@@ -11,6 +11,7 @@ interface OpenPositionOptions {
   height: number;
   occupied: WhiteboardRect[];
   gap?: number;
+  visibleBounds?: WhiteboardRect;
 }
 
 interface NewTopicPositionOptions {
@@ -44,6 +45,7 @@ export function findOpenWhiteboardPosition({
   height,
   occupied,
   gap = 24,
+  visibleBounds,
 }: OpenPositionOptions): { x: number; y: number } {
   const finiteOccupied = occupied.filter((rect) =>
     Number.isFinite(rect.x)
@@ -81,16 +83,19 @@ export function findOpenWhiteboardPosition({
     .map((candidate, index) => ({
       ...candidate,
       index,
-      // Keep the reading flow below the source before using space above it.
-      // This still permits an upper position on a dense board, but avoids a
-      // visually surprising jump over the learner's work when lower space is
-      // available.
+      outsideVisible: visibleBounds && (
+        candidate.x < visibleBounds.x
+        || candidate.y < visibleBounds.y
+        || candidate.x + width > visibleBounds.x + visibleBounds.width
+        || candidate.y + height > visibleBounds.y + visibleBounds.height
+      ) ? 1 : 0,
       directionPenalty: candidate.y < preferred.y ? 1 : 0,
       distance: (candidate.x - preferred.x) ** 2
         + (candidate.y - preferred.y) ** 2,
     }))
-    .sort((left, right) => left.directionPenalty - right.directionPenalty
+    .sort((left, right) => left.outsideVisible - right.outsideVisible
       || left.distance - right.distance
+      || left.directionPenalty - right.directionPenalty
       || left.index - right.index);
   const open = ordered.find((candidate) => {
     const bounds = { x: candidate.x, y: candidate.y, width, height };

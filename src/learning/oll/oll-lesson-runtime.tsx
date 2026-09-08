@@ -680,6 +680,8 @@ export function LearningWhiteboard({
   const [taskError, setTaskError] = useState("");
   const [enhancementLayer, setEnhancementLayer] =
     useState<HTMLDivElement | null>(null);
+  const [visibleBoardBounds, setVisibleBoardBounds] =
+    useState<WhiteboardRect | undefined>();
   const [lessonLoadingPosition, setLessonLoadingPosition] = useState({
     left: 120,
     top: 120,
@@ -742,6 +744,44 @@ export function LearningWhiteboard({
       unsubscribe?.();
     };
   }, [inkAvailable, inkSessionId, selectionSources]);
+
+  useEffect(() => {
+    if (!enhancementLayer) return;
+    const viewport = viewportRef.current;
+    const view = mountedRef.current?.view;
+    if (!viewport || !view) return;
+    const update = () => {
+      const topLeft = view.viewportToBoard({ x: 0, y: 0 });
+      const bottomRight = view.viewportToBoard({
+        x: viewport.clientWidth,
+        y: viewport.clientHeight,
+      });
+      const next = {
+        x: topLeft.x,
+        y: topLeft.y,
+        width: bottomRight.x - topLeft.x,
+        height: bottomRight.y - topLeft.y,
+      };
+      setVisibleBoardBounds((current) =>
+        current
+        && current.x === next.x
+        && current.y === next.y
+        && current.width === next.width
+        && current.height === next.height
+          ? current
+          : next);
+    };
+    update();
+    const unsubscribe = view.subscribeCamera(update);
+    const observer = typeof ResizeObserver === "undefined"
+      ? undefined
+      : new ResizeObserver(update);
+    observer?.observe(viewport);
+    return () => {
+      unsubscribe();
+      observer?.disconnect();
+    };
+  }, [enhancementLayer]);
 
   useEffect(() => {
     if (!playbackCourseTarget) return;
@@ -1030,7 +1070,6 @@ export function LearningWhiteboard({
   const selectionCardOccupiedRects = useMemo<WhiteboardRect[]>(() => {
     const rects: WhiteboardRect[] = [
       ...inkState.content_bounds_list,
-      ...courseRegions.map(courseRegionOccupiedRect),
       ...Object.values(runtimeRegionBounds),
       ...Object.values(runtimeAttachmentBounds),
     ];
@@ -1045,7 +1084,6 @@ export function LearningWhiteboard({
     }
     return rects;
   }, [
-    courseRegions,
     inkState.content_bounds_list,
     questions,
     runtimeAttachmentBounds,
@@ -3096,6 +3134,7 @@ export function LearningWhiteboard({
                 currentDocumentVersion={inkState.document_version}
                 cardLayouts={selectionCardLayouts}
                 occupiedRects={selectionCardOccupiedRects}
+                visibleBoardBounds={visibleBoardBounds}
                 currentSourceBoundsById={currentSelectionSourceBoundsById}
                 clientToBoardPoint={(point) => {
                   const viewport = viewportRef.current;
