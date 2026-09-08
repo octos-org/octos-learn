@@ -5,20 +5,20 @@
   "repeats": 30,
   "baseline": {
     "commit": "73405602246f5f2b8e282617b4f9293a2bec7d85",
-    "wall_ms": { "p50": 149.52908349999962, "p95": 154.96797339999966 },
-    "dom_content_loaded_ms": { "p50": 144, "p95": 149.22000001966953 },
-    "load_ms": { "p50": 144.5499999821186, "p95": 149.6750000357628 }
+    "wall_ms": { "p50": 132.85993700000017, "p95": 148.34558779999995 },
+    "dom_content_loaded_ms": { "p50": 129.90000000596046, "p95": 142.8449999988079 },
+    "load_ms": { "p50": 130.2000000178814, "p95": 143.18999999463557 }
   },
   "candidate": {
-    "oll_ref": "35d797dea9336f79165b6069807304b42c3c8cab",
-    "wall_ms": { "p50": 148.89872900000046, "p95": 162.66225014999995 },
-    "dom_content_loaded_ms": { "p50": 144.14999997615814, "p95": 157.59499999582764 },
-    "load_ms": { "p50": 144.64999997615814, "p95": 158.05000001192087 }
+    "oll_ref": "0e5ea7f39670e687e700b3402cab0ff2b1a6a3bc",
+    "wall_ms": { "p50": 132.31947899999977, "p95": 145.45339595000027 },
+    "dom_content_loaded_ms": { "p50": 128.85000002384186, "p95": 139.3749999910593 },
+    "load_ms": { "p50": 129.2000000178814, "p95": 139.8749999910593 }
   },
   "paired": {
-    "wall_ms": { "delta_p50": -0.027811999999357795, "delta_p95": 12.394083400000078, "candidate_faster": 15 },
-    "dom_content_loaded_ms": { "delta_p50": -0.20000001788139343, "delta_p95": 12.230000013112997, "candidate_faster": 17 },
-    "load_ms": { "delta_p50": -0.20000001788139343, "delta_p95": 12.285000026226019, "candidate_faster": 17 }
+    "wall_ms": { "delta_p50": -1.0571870000001127, "delta_p95": 13.91135710000023, "candidate_faster": 17 },
+    "dom_content_loaded_ms": { "delta_p50": -0.9000000059604645, "delta_p95": 12.11999996304512, "candidate_faster": 17 },
+    "load_ms": { "delta_p50": -0.8499999940395355, "delta_p95": 12.17500000298023, "candidate_faster": 17 }
   },
-  "interpretation": "The paired median deltas are -0.20 to -0.03 ms and the candidate is at least evenly split in every metric; no repeatable startup regression was observed after the final orthogonal connector styling."
+  "interpretation": "The paired median deltas are -1.06 to -0.85 ms and the candidate is faster in 17 of 30 pairs for every metric; no repeatable startup regression was observed after restricting ink movement to the active selection."
 }

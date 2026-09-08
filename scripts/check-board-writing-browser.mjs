@@ -70,9 +70,24 @@ try {
  if(await page.getByRole('button',{name:'移动笔迹',exact:true}).count()) throw new Error('redundant move mode is still visible');
  if(!await page.evaluate(()=>window.ink.state.selection_transform_enabled)) throw new Error('selected ink is not directly draggable');
  const selection=page.locator('.selection-tool-selection-background').last();
- const selectionBox=await selection.boundingBox();
+ let selectionBox=await selection.boundingBox();
  if(!selectionBox) throw new Error('cannot measure selected ink');
  const sourceBefore=await links.first().evaluate(link=>({x:Number(link.dataset.sourceX),y:Number(link.dataset.sourceY)}));
+ // Empty whiteboard space is still a selection surface. Dragging there must
+ // begin a fresh selection gesture instead of moving the existing selection.
+ await page.mouse.move(1120,720);await page.mouse.down();
+ await page.mouse.move(1180,770,{steps:5});await page.mouse.up();
+ await page.waitForTimeout(80);
+ const sourceAfterOutsideDrag=await links.first().evaluate(link=>({x:Number(link.dataset.sourceX),y:Number(link.dataset.sourceY)}));
+ if(Math.abs(sourceAfterOutsideDrag.x-sourceBefore.x)>1||Math.abs(sourceAfterOutsideDrag.y-sourceBefore.y)>1) {
+   throw new Error('dragging outside the selection moved its ink');
+ }
+ // Restore the original selection, then exercise the intended direct drag.
+ await page.mouse.move(sourceScreen.left,sourceScreen.top);await page.mouse.down();
+ await page.mouse.move(sourceScreen.right,sourceScreen.bottom,{steps:8});await page.mouse.up();
+ await page.waitForFunction(()=>window.ink.state.selected_count>0);
+ selectionBox=await selection.boundingBox();
+ if(!selectionBox) throw new Error('cannot measure recreated selection');
  // Drag from the center of the original selected source. The full selection
  // also contains AI writing and can span across card-sized gaps; js-draw's
  // transform hit target is most reliable over an actual selected component.
@@ -128,5 +143,5 @@ try {
    throw new Error('card position, size, or minimized state did not survive reload');
  }
  if(!await page.getByRole('button',{name:'展开小章鱼辅助：已有辅助卡片'}).count()) throw new Error('minimized card was not restored');
- console.log(JSON.stringify({passed:['React writes AI strokes','shared collision avoidance','direct card movement','persistent card state','orthogonal open-arrow connector','no hover enlargement','live connector during ink drag','direct selection movement','independent undo','reload without resurrection'],components:before.count}));
+ console.log(JSON.stringify({passed:['React writes AI strokes','shared collision avoidance','direct card movement','persistent card state','orthogonal open-arrow connector','no hover enlargement','selection-only drag boundary','live connector during ink drag','direct selection movement','independent undo','reload without resurrection'],components:before.count}));
 }finally{await browser.close();}
