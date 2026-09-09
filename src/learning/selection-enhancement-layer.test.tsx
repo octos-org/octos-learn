@@ -20,7 +20,10 @@ vi.mock("octos-lesson-language/web-runtime", () => ({
   samplePlotExpression: vi.fn(() => []),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const artifact: SelectionEnhancementArtifact = {
   profile: "octos.selection-enhancement",
@@ -247,6 +250,54 @@ describe("SelectionEnhancementLayer", () => {
     rerender(renderAt(90, 220));
     expect(link()?.dataset.sourceSide).toBe("bottom");
     expect(link()?.dataset.cardSide).toBe("top");
+  });
+
+  it("connects to the measured bottom edge of a card above its source", () => {
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains("learning-selection-enhancement") ? 420 : 0;
+      });
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: 1,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: { x: 100, y: 100, width: 120, height: 70 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [{ x: 100, y: 100 }, { x: 220, y: 100 }, { x: 220, y: 170 }, { x: 100, y: 170 }],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path/></svg>',
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: {
+            x: 0,
+            y: -350,
+            scale: 1,
+            minimized: false,
+            manually_positioned: true,
+          },
+        }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const link = container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(link?.dataset.cardSide).toBe("bottom");
+    expect(link?.dataset.cardY).toBe("70");
   });
 
   it("lets text selection start in card content without dragging the card", () => {

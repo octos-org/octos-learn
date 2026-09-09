@@ -175,6 +175,8 @@ function SelectionSourceLink({
       data-source-id={sourceId}
       data-source-x={anchors.source.x}
       data-source-y={anchors.source.y}
+      data-card-x={anchors.card.x}
+      data-card-y={anchors.card.y}
       data-source-side={anchors.source.side}
       data-card-side={anchors.card.side}
       aria-hidden="true"
@@ -392,6 +394,9 @@ export function SelectionEnhancementLayer({
   >({});
   const [localLayouts, setLocalLayouts] = useState<
     Readonly<Record<string, SelectionEnhancementCardLayout>>
+  >({});
+  const [measuredCardHeights, setMeasuredCardHeights] = useState<
+    Readonly<Record<string, number>>
   >({});
   const cardElementsRef = useRef(new Map<string, HTMLElement>());
   const completedLayoutRecheckRef = useRef("");
@@ -720,7 +725,7 @@ export function SelectionEnhancementLayer({
         ?? DEFAULT_CARD_SCALE;
       const minimized = persisted?.minimized ?? false;
       const width = minimized ? 26 : CARD_WIDTH * scale;
-      const estimatedHeight = minimized
+      const fallbackHeight = minimized
         ? 26
         : item.kind === "question"
           ? 210
@@ -731,6 +736,9 @@ export function SelectionEnhancementLayer({
                   ? 410
                   : 300
             ) * scale;
+      const estimatedHeight = minimized
+        ? 26
+        : measuredCardHeights[turnId] ?? fallbackHeight;
       const preferred = {
         x: sourceBounds.x + sourceBounds.width + 30,
         y: sourceBounds.y,
@@ -764,6 +772,41 @@ export function SelectionEnhancementLayer({
       });
     }
   }
+  const measurementTargetsKey = layoutItems
+    .map((item) => `${item.kind}:${item.turnId}:${item.layout.minimized}`)
+    .join("|");
+  useLayoutEffect(() => {
+    const measure = () => {
+      const heights: Record<string, number> = {};
+      for (const item of layoutItems) {
+        if (item.layout.minimized) continue;
+        const height = cardElementsRef.current.get(item.turnId)?.offsetHeight ?? 0;
+        if (height > 0 && Number.isFinite(height)) heights[item.turnId] = height;
+      }
+      if (Object.keys(heights).length === 0) return;
+      setMeasuredCardHeights((current) => {
+        let changed = false;
+        const next = { ...current };
+        for (const [turnId, height] of Object.entries(heights)) {
+          if (current[turnId] === height) continue;
+          next[turnId] = height;
+          changed = true;
+        }
+        return changed ? next : current;
+      });
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    for (const item of layoutItems) {
+      const element = cardElementsRef.current.get(item.turnId);
+      if (element) observer.observe(element);
+    }
+    return () => observer.disconnect();
+    // Rebind only when a question card is replaced by its result card or a
+    // card is minimized/restored. ResizeObserver handles content growth.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [measurementTargetsKey]);
   const initializationKey = layoutItems
     .filter((item) => !localLayouts[item.turnId] && !cardLayouts[item.turnId])
     .map((item) => `${item.turnId}:${item.layout.x}:${item.layout.y}`)

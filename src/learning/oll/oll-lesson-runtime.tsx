@@ -745,43 +745,39 @@ export function LearningWhiteboard({
     };
   }, [inkAvailable, inkSessionId, selectionSources]);
 
+  const selectionPlacementRequestKey = [
+    ...questions.map((question) => `${question.id}:${question.status}`),
+    ...selectionEnhancements.map((artifact) =>
+      `${artifact.turn_id}:${artifact.response.kind}`),
+  ].join("|");
   useEffect(() => {
     if (!enhancementLayer) return;
     const viewport = viewportRef.current;
     const view = mountedRef.current?.view;
     if (!viewport || !view) return;
-    const update = () => {
-      const topLeft = view.viewportToBoard({ x: 0, y: 0 });
-      const bottomRight = view.viewportToBoard({
-        x: viewport.clientWidth,
-        y: viewport.clientHeight,
-      });
-      const next = {
-        x: topLeft.x,
-        y: topLeft.y,
-        width: bottomRight.x - topLeft.x,
-        height: bottomRight.y - topLeft.y,
-      };
-      setVisibleBoardBounds((current) =>
-        current
-        && current.x === next.x
-        && current.y === next.y
-        && current.width === next.width
-        && current.height === next.height
-          ? current
-          : next);
+    const topLeft = view.viewportToBoard({ x: 0, y: 0 });
+    const bottomRight = view.viewportToBoard({
+      x: viewport.clientWidth,
+      y: viewport.clientHeight,
+    });
+    const next = {
+      x: topLeft.x,
+      y: topLeft.y,
+      width: bottomRight.x - topLeft.x,
+      height: bottomRight.y - topLeft.y,
     };
-    update();
-    const unsubscribe = view.subscribeCamera(update);
-    const observer = typeof ResizeObserver === "undefined"
-      ? undefined
-      : new ResizeObserver(update);
-    observer?.observe(viewport);
-    return () => {
-      unsubscribe();
-      observer?.disconnect();
-    };
-  }, [enhancementLayer]);
+    if (!Object.values(next).every(Number.isFinite)) return;
+    setVisibleBoardBounds((current) =>
+      current
+      && current.x === next.x
+      && current.y === next.y
+      && current.width === next.width
+      && current.height === next.height
+        ? current
+        : next);
+    // Existing cards must not move just because the learner pans or zooms.
+    // Capture the viewport only when a card is added or changes phase.
+  }, [enhancementLayer, selectionPlacementRequestKey]);
 
   useEffect(() => {
     if (!playbackCourseTarget) return;
@@ -1808,6 +1804,7 @@ export function LearningWhiteboard({
     const enhancementHost = viewport.ownerDocument.createElement("div");
     enhancementHost.className = "learning-selection-enhancement-layer";
     enhancementHost.dataset.ollInkInput = "ignore";
+    enhancementHost.dataset.ollBoardWheel = "pass";
     const unmountEnhancementLayer =
       mounted.view.mountWorldLayer(enhancementHost);
     setEnhancementLayer(enhancementHost);

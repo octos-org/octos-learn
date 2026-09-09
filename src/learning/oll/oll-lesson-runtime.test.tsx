@@ -1525,6 +1525,8 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(document.querySelector(".learning-selection-enhancement-layer")
       ?.getAttribute("data-oll-ink-input")).toBe("ignore");
+    expect(document.querySelector(".learning-selection-enhancement-layer")
+      ?.getAttribute("data-oll-board-wheel")).toBe("pass");
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
       storageKey: "octos-learning-ink:v1:learn-ink-1",
       documentId: "learning-session:learn-ink-1:student-ink",
