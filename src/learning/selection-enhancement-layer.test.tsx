@@ -653,6 +653,40 @@ describe("SelectionEnhancementLayer", () => {
     expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
   });
 
+  it("allows a question-only auxiliary card to be deleted", () => {
+    const onDelete = vi.fn();
+    const failed: WhiteboardQuestionRecord = {
+      id: "failed-card",
+      sessionId: "learn-1",
+      text: "请按我选中的公式生成函数图像。",
+      origin: "selection",
+      createdAt: "2026-09-07T10:00:00.000Z",
+      status: "failed",
+      error: "回答生成失败",
+      source: {
+        sourceId: "source-1",
+        bounds: { x: 10, y: 20, width: 120, height: 70 },
+      },
+      answerPresentation: "card",
+    };
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[failed]}
+        currentDocumentVersion={1}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "删除这条辅助内容",
+    }));
+
+    expect(onDelete).toHaveBeenCalledOnce();
+    expect(onDelete).toHaveBeenCalledWith(failed.id);
+  });
+
   it("renders LaTeX throughout generated auxiliary card text", () => {
     const { container } = render(
       <SelectionEnhancementLayer

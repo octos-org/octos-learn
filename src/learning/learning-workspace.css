@@ -1791,12 +1791,34 @@
 }
 
 .learning-selection-enhancement-question > div > span {
+  margin-left: auto;
   padding: 3px 7px;
   border-radius: 999px;
   color: #66736f;
   background: rgba(82, 112, 104, 0.08);
   font-size: .78em;
   white-space: nowrap;
+}
+
+.learning-selection-enhancement .learning-selection-enhancement-question-delete {
+  display: grid;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #6d7c79;
+  background: transparent;
+  cursor: pointer;
+}
+
+.learning-selection-enhancement-question-delete:hover,
+.learning-selection-enhancement-question-delete:focus-visible {
+  color: #9a4c38;
+  background: rgba(172, 76, 51, .1);
+  outline: none;
 }
 
 .learning-selection-question-text {

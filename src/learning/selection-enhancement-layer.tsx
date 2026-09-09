@@ -245,8 +245,10 @@ function cardRectsOverlap(
 
 function SelectionQuestionSection({
   question,
+  onDelete,
 }: {
   question: WhiteboardQuestionRecord;
+  onDelete?: () => void;
 }) {
   return (
     <section className="learning-selection-enhancement-question">
@@ -257,6 +259,17 @@ function SelectionQuestionSection({
           : question.status === "pending"
             ? "正在准备回答"
             : "没有生成成功"}</span>
+        {onDelete ? (
+          <button
+            type="button"
+            className="learning-selection-enhancement-question-delete"
+            onClick={onDelete}
+            aria-label="删除这条辅助内容"
+            title="删除"
+          >
+            <Trash2 size={14} />
+          </button>
+        ) : null}
       </div>
       <MarkdownContent
         text={question.text}
@@ -913,7 +926,10 @@ export function SelectionEnhancementLayer({
                   cardHeight={item.estimatedHeight}
                 />
               ) : null}
-              <SelectionQuestionSection question={item.question} />
+              <SelectionQuestionSection
+                question={item.question}
+                onDelete={() => onDelete(item.turnId)}
+              />
               {failed || item.question.status === "pending" ? (
                 <>
                   <header>
