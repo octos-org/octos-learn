@@ -409,6 +409,7 @@ export function SelectionEnhancementLayer({
   const [measuredCardHeights, setMeasuredCardHeights] = useState<
     Readonly<Record<string, number>>
   >({});
+  const [draggingTurnId, setDraggingTurnId] = useState<string | null>(null);
   const cardElementsRef = useRef(new Map<string, HTMLElement>());
   const draggingCardRef = useRef<{
     turnId: string;
@@ -535,6 +536,7 @@ export function SelectionEnhancementLayer({
       currentPosition: { x: layout.x, y: layout.y },
       layout,
     };
+    setDraggingTurnId(turnId);
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
   const continueCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
@@ -574,6 +576,7 @@ export function SelectionEnhancementLayer({
       manually_positioned: true,
     });
     draggingCardRef.current = null;
+    setDraggingTurnId(null);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
@@ -679,7 +682,8 @@ export function SelectionEnhancementLayer({
     needsPersistence: boolean;
   }> = [];
   const reserved: WhiteboardRect[] = [...occupiedRects];
-  const placedCards: WhiteboardRect[] = [];
+  const placedCards: Array<WhiteboardRect & { automatic: boolean }> = [];
+  const cardDragActive = draggingTurnId !== null;
   for (const { sourceIds: groupedSourceIds } of sourceGroups) {
     const sourceQuestions = selectionQuestions
       .filter((question) => groupedSourceIds.has(question.source!.sourceId))
@@ -766,8 +770,10 @@ export function SelectionEnhancementLayer({
       const repairAutomaticOverlap = Boolean(
         persistedRect
         && !transientPosition
+        && !cardDragActive
         && !persisted?.manually_positioned
-        && placedCards.some((card) => cardRectsOverlap(persistedRect, card)),
+        && placedCards.some((card) =>
+          card.automatic && cardRectsOverlap(persistedRect, card)),
       );
       const initialPosition = transientPosition
         ?? (persisted && !repairAutomaticOverlap
@@ -805,7 +811,10 @@ export function SelectionEnhancementLayer({
         height: estimatedHeight,
       };
       reserved.push(cardRect);
-      placedCards.push(cardRect);
+      placedCards.push({
+        ...cardRect,
+        automatic: !layout.manually_positioned,
+      });
     }
   }
   const measurementTargetsKey = layoutItems

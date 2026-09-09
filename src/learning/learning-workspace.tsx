@@ -443,6 +443,7 @@ export function LearningWorkspace({
   >(() => new Set());
   const [selectionState, setSelectionState] =
     useState<SelectionEnhancementState | null>(null);
+  const selectionStateReady = selectionState?.session_id === sessionId;
   const [persistedSelectionArtifacts, setPersistedSelectionArtifacts] =
     useState<ReturnType<typeof collectPersistedSelectionEnhancementArtifacts>>([]);
   const [loadedSelectionArtifacts, setLoadedSelectionArtifacts] = useState<
@@ -2199,14 +2200,16 @@ export function LearningWorkspace({
     turnId: string,
     layout: SelectionEnhancementCardLayout,
   ) => {
-    setSelectionState((current) => {
-      if (!current) return current;
-      const next = setSelectionEnhancementCardLayout(current, turnId, layout);
-      if (next === current) return current;
-      saveSelectionEnhancementState(next);
-      selectionStateRef.current = next;
-      return next;
-    });
+    const current = selectionStateRef.current;
+    if (!current) return;
+    const next = setSelectionEnhancementCardLayout(current, turnId, layout);
+    if (next === current) return;
+    // Persist synchronously from the authoritative ref. Saving inside a React
+    // state updater can be deferred until after the pointer event, or skipped
+    // entirely if the page reloads first.
+    saveSelectionEnhancementState(next);
+    selectionStateRef.current = next;
+    setSelectionState(next);
   }, []);
 
   const deleteSelectionSources = useCallback((sourceIds: string[]) => {
@@ -2700,7 +2703,7 @@ export function LearningWorkspace({
           runtime={controlledOllLesson ?? ollLesson}
           inkSessionId={inkSessionId}
           loadingState={whiteboardLoadingState}
-          questions={replayingWithoutStudentAdditions
+          questions={replayingWithoutStudentAdditions || !selectionStateReady
             ? whiteboardQuestions.filter((question) => question.origin !== "selection")
             : whiteboardQuestions}
           courseRegions={courseRegions}
@@ -2717,10 +2720,10 @@ export function LearningWorkspace({
             : visibleSelectionEnhancements}
           selectionSources={replayingWithoutStudentAdditions
             ? []
-            : selectionState?.sources ?? []}
+            : selectionStateReady ? selectionState.sources : []}
           selectionCardLayouts={replayingWithoutStudentAdditions
             ? {}
-            : selectionState?.card_layouts ?? {}}
+            : selectionStateReady ? selectionState.card_layouts ?? {} : {}}
           onClassifyInkSelection={classifyInkSelection}
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled

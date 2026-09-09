@@ -460,6 +460,72 @@ describe("SelectionEnhancementLayer", () => {
     });
   });
 
+  it("never moves another card while or after one card is dragged", () => {
+    const first = { ...artifact, turn_id: "drag-first" };
+    const second = {
+      ...artifact,
+      turn_id: "drag-second",
+      created_at: "2026-08-15T10:01:00.000Z",
+    };
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[first, second]}
+        sources={[]}
+        cardLayouts={{
+          [first.turn_id]: {
+            x: 160,
+            y: 20,
+            scale: 1,
+            minimized: false,
+            manually_positioned: false,
+          },
+          [second.turn_id]: {
+            x: 514,
+            y: 20,
+            scale: 1,
+            minimized: false,
+            manually_positioned: false,
+          },
+        }}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+
+    dispatchPointerEvent(cards[0]!, "pointerdown", {
+      pointerId: 11,
+      clientX: 180,
+      clientY: 50,
+    });
+    dispatchPointerEvent(cards[0]!, "pointermove", {
+      pointerId: 11,
+      clientX: 520,
+      clientY: 50,
+    });
+    expect(cards[1]!.dataset.cardX).toBe("514");
+    expect(cards[1]!.dataset.cardY).toBe("20");
+
+    dispatchPointerEvent(cards[0]!, "pointerup", {
+      pointerId: 11,
+      clientX: 520,
+      clientY: 50,
+    });
+    expect(cards[1]!.dataset.cardX).toBe("514");
+    expect(cards[1]!.dataset.cardY).toBe("20");
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(onLayoutChange).toHaveBeenCalledWith(first.turn_id, expect.objectContaining({
+      x: 500,
+      y: 20,
+      manually_positioned: true,
+    }));
+  });
+
   it("never reflows a persisted automatic position after refresh", () => {
     const onLayoutChange = vi.fn();
     const persisted = {

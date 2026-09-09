@@ -15,6 +15,7 @@ import {
   removeSelectionSources,
   saveSelectionEnhancementState,
   setSelectionEnhancementCardLayout,
+  selectionEnhancementCardLayoutsStorageKey,
   selectionEnhancementStorageKey,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
@@ -114,6 +115,37 @@ describe("selection enhancement persistence", () => {
             y: 140,
             scale: 1.2,
             minimized: true,
+            manually_positioned: true,
+          },
+        },
+      });
+  });
+
+  it("persists card layouts even when historical selection state is locked", async () => {
+    const storage = new MemoryStorage();
+    const sessionId = "locked-layout-session";
+    const stateKey = selectionEnhancementStorageKey(sessionId);
+    storage.setItem(stateKey, "{");
+    const recovered = await loadSelectionEnhancementState(sessionId, storage);
+    expect(isRecoverableStorageLocked(storage, stateKey)).toBe(true);
+
+    const next = setSelectionEnhancementCardLayout(recovered, "turn-locked", {
+      x: 410,
+      y: 260,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+    expect(saveSelectionEnhancementState(next, storage)).toBe(false);
+    expect(storage.getItem(selectionEnhancementCardLayoutsStorageKey(sessionId)))
+      .not.toBeNull();
+
+    await expect(loadSelectionEnhancementState(sessionId, storage))
+      .resolves.toMatchObject({
+        card_layouts: {
+          "turn-locked": {
+            x: 410,
+            y: 260,
             manually_positioned: true,
           },
         },

@@ -15,6 +15,7 @@ import type {
 import type { SemanticBoardState } from "octos-lesson-language";
 import type { SelectionToolId } from "./selection-tools";
 import {
+  loadRecoverableJson,
   loadRecoverableJsonAsync,
   writeRecoverableJson,
 } from "./recoverable-storage";
@@ -866,6 +867,40 @@ export function selectionEnhancementStorageKey(sessionId: string): string {
   return "learn:selection-enhancements:" + sessionId + ":v1";
 }
 
+export function selectionEnhancementCardLayoutsStorageKey(
+  sessionId: string,
+): string {
+  return "learn:selection-card-layouts:" + sessionId + ":v1";
+}
+
+function decodeSelectionCardLayouts(
+  value: unknown,
+): Record<string, SelectionEnhancementCardLayout> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("invalid selection card layouts");
+  }
+  const cardLayouts: Record<string, SelectionEnhancementCardLayout> = {};
+  for (const [turnId, candidate] of Object.entries(value)) {
+    if (!turnId || !candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      throw new Error("invalid selection card layout");
+    }
+    const layout = candidate as Partial<SelectionEnhancementCardLayout>;
+    if (
+      !Number.isFinite(layout.x)
+      || !Number.isFinite(layout.y)
+      || !Number.isFinite(layout.scale)
+      || (layout.scale ?? 0) < .85
+      || (layout.scale ?? 0) > 2.25
+      || typeof layout.minimized !== "boolean"
+      || typeof layout.manually_positioned !== "boolean"
+    ) {
+      throw new Error("invalid selection card layout");
+    }
+    cardLayouts[turnId] = { ...layout } as SelectionEnhancementCardLayout;
+  }
+  return cardLayouts;
+}
+
 export async function loadSelectionEnhancementState(
   sessionId: string,
   storage: Storage = localStorage,
@@ -878,7 +913,7 @@ export async function loadSelectionEnhancementState(
     hidden_enhancement_turn_ids: [],
     card_layouts: {},
   };
-  return loadRecoverableJsonAsync({
+  const state = await loadRecoverableJsonAsync({
     storage,
     key: selectionEnhancementStorageKey(sessionId),
     fallback: () => empty,
@@ -907,34 +942,9 @@ export async function loadSelectionEnhancementState(
         ids.add(source.source_id);
         sources.push(source);
       }
-      const cardLayoutsValue = parsed.card_layouts;
-      if (
-        cardLayoutsValue !== undefined
-        && (!cardLayoutsValue
-          || typeof cardLayoutsValue !== "object"
-          || Array.isArray(cardLayoutsValue))
-      ) {
-        throw new Error("invalid selection card layouts");
-      }
-      const cardLayouts: Record<string, SelectionEnhancementCardLayout> = {};
-      for (const [turnId, candidate] of Object.entries(cardLayoutsValue ?? {})) {
-        if (!turnId || !candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
-          throw new Error("invalid selection card layout");
-        }
-        const layout = candidate as Partial<SelectionEnhancementCardLayout>;
-        if (
-          !Number.isFinite(layout.x)
-          || !Number.isFinite(layout.y)
-          || !Number.isFinite(layout.scale)
-          || (layout.scale ?? 0) < .85
-          || (layout.scale ?? 0) > 2.25
-          || typeof layout.minimized !== "boolean"
-          || typeof layout.manually_positioned !== "boolean"
-        ) {
-          throw new Error("invalid selection card layout");
-        }
-        cardLayouts[turnId] = { ...layout } as SelectionEnhancementCardLayout;
-      }
+      const cardLayouts = parsed.card_layouts === undefined
+        ? {}
+        : decodeSelectionCardLayouts(parsed.card_layouts);
       return {
         ...empty,
         sources,
@@ -945,17 +955,30 @@ export async function loadSelectionEnhancementState(
       };
     },
   });
+  const cardLayouts = loadRecoverableJson({
+    storage,
+    key: selectionEnhancementCardLayoutsStorageKey(sessionId),
+    fallback: () => state.card_layouts ?? {},
+    decode: decodeSelectionCardLayouts,
+  });
+  return { ...state, card_layouts: cardLayouts };
 }
 
 export function saveSelectionEnhancementState(
   state: SelectionEnhancementState,
   storage: Storage = localStorage,
-): void {
-  writeRecoverableJson(
+): boolean {
+  const stateSaved = writeRecoverableJson(
     storage,
     selectionEnhancementStorageKey(state.session_id),
     state,
   );
+  const layoutsSaved = writeRecoverableJson(
+    storage,
+    selectionEnhancementCardLayoutsStorageKey(state.session_id),
+    state.card_layouts ?? {},
+  );
+  return stateSaved && layoutsSaved;
 }
 
 export function addSelectionSource(
