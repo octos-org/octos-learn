@@ -34,6 +34,10 @@ import {
   variableControlModels,
 } from "octos-lesson-language/web-runtime";
 import {
+  evaluateMathExpression,
+  type AuthoringVariableStudentTask,
+} from "octos-lesson-language";
+import {
   mountInkRuntime,
   type InkSelectionSnapshot,
   type InkMode,
@@ -442,6 +446,150 @@ function ensureScene3dInteractionHints(viewport: HTMLElement): void {
   });
 }
 
+const TASK_SNAP_RADIUS_PX = 12;
+const MAX_TASK_SNAP_RANGE_RATIO = 0.04;
+const MAX_TASK_SNAP_SAMPLES = 20_000;
+
+function snapValueToActiveTask(
+  runtime: OllLessonRuntimeController | null,
+  alias: string,
+  value: number,
+  snapDistance: number,
+  control: "slider" | "geometry_point",
+): number {
+  if (!runtime?.board || !Number.isFinite(snapDistance) || snapDistance <= 0) {
+    return value;
+  }
+  const task = runtime.studentTasks
+    .filter((progress) => progress.available && progress.status !== "succeeded")
+    .map((progress) => runtime.studentTaskDefinitions.find((definition) =>
+      definition.as === progress.task_id))
+    .find((definition): definition is AuthoringVariableStudentTask =>
+      definition?.completion.kind === "expression_target"
+      && definition.allowed_operations.some((operation) =>
+        operation.variable === alias && operation.controls.includes(control)));
+  if (!task) return value;
+  const allowed = task.allowed_operations.find((operation) =>
+    operation.variable === alias && operation.controls.includes(control));
+  const variable = runtime.board.variables?.[alias];
+  if (!allowed || !variable) return value;
+  const range = variable.max - variable.min;
+  const step = variable.control?.step ?? range / 100;
+  if (!Number.isFinite(step) || step <= 0 || range <= 0) return value;
+  const values = Object.fromEntries(Object.entries(runtime.board.variables ?? {})
+    .map(([variableAlias, model]) => [variableAlias, model.value]));
+  const succeeds = (candidate: number): boolean => {
+    try {
+      const actual = evaluateMathExpression(task.completion.expression, {
+        ...values,
+        [alias]: candidate,
+      });
+      return Number.isFinite(actual)
+        && Math.abs(actual - task.completion.value) <= task.completion.tolerance;
+    } catch {
+      return false;
+    }
+  };
+  if (succeeds(value)) return value;
+
+  const firstStep = Math.max(
+    0,
+    Math.floor((value - snapDistance - variable.min) / step),
+  );
+  const lastStep = Math.min(
+    Math.floor(range / step + 1e-12),
+    Math.ceil((value + snapDistance - variable.min) / step),
+  );
+  if (lastStep < firstStep) return value;
+  const candidateSteps: number[] = [];
+  const stepCount = lastStep - firstStep + 1;
+  if (stepCount <= MAX_TASK_SNAP_SAMPLES) {
+    for (let index = firstStep; index <= lastStep; index += 1) {
+      candidateSteps.push(index);
+    }
+  } else {
+    for (let sample = 0; sample < MAX_TASK_SNAP_SAMPLES; sample += 1) {
+      candidateSteps.push(Math.round(
+        firstStep + (lastStep - firstStep) * sample
+          / (MAX_TASK_SNAP_SAMPLES - 1),
+      ));
+    }
+    candidateSteps.push(Math.round((value - variable.min) / step));
+  }
+  let snapped = value;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const index of new Set(candidateSteps)) {
+    const candidate = Number((variable.min + index * step).toPrecision(15));
+    const distance = Math.abs(candidate - value);
+    if (
+      candidate < variable.min
+      || candidate > variable.max
+      || distance > snapDistance
+      || distance >= nearestDistance
+      || !succeeds(candidate)
+    ) continue;
+    snapped = candidate;
+    nearestDistance = distance;
+  }
+  return snapped;
+}
+
+function sliderTaskSnapDistance(
+  runtime: OllLessonRuntimeController | null,
+  alias: string,
+  trackWidth: number,
+): number {
+  const variable = runtime?.board?.variables?.[alias];
+  if (!variable || !Number.isFinite(trackWidth) || trackWidth <= 0) return 0;
+  const range = variable.max - variable.min;
+  return Math.min(
+    range * TASK_SNAP_RADIUS_PX / trackWidth,
+    range * MAX_TASK_SNAP_RANGE_RATIO,
+  );
+}
+
+function geometryTaskSnapDistance(
+  viewport: HTMLElement,
+  runtime: OllLessonRuntimeController | null,
+  alias: string,
+): number {
+  const variable = runtime?.board?.variables?.[alias];
+  if (!variable) return 0;
+  const control = [...viewport.querySelectorAll<SVGCircleElement>(
+    "circle[data-oll-variable-control]",
+  )].find((candidate) => candidate.dataset.ollVariableControl === alias);
+  const svg = control?.closest<SVGSVGElement>("svg");
+  const viewBox = svg?.viewBox?.baseVal;
+  const rect = svg?.getBoundingClientRect();
+  const centerX = Number(control?.dataset.angleCenterX);
+  const centerY = Number(control?.dataset.angleCenterY);
+  const pointX = Number(control?.getAttribute("cx"));
+  const pointY = Number(control?.getAttribute("cy"));
+  if (
+    !control
+    || !viewBox
+    || !rect
+    || viewBox.width <= 0
+    || viewBox.height <= 0
+    || rect.width <= 0
+    || rect.height <= 0
+    || ![centerX, centerY, pointX, pointY].every(Number.isFinite)
+  ) return 0;
+  const radiusPx = Math.hypot(
+    (pointX - centerX) * rect.width / viewBox.width,
+    (pointY - centerY) * rect.height / viewBox.height,
+  );
+  if (!Number.isFinite(radiusPx) || radiusPx <= 0) return 0;
+  const normalizedUnit = variable.unit?.trim().toLowerCase() ?? "";
+  const usesDegrees = !/弧度|radian|rad/u.test(normalizedUnit)
+    && /角度|度|°|degree|deg/u.test(normalizedUnit);
+  const turn = usesDegrees ? 360 : Math.PI * 2;
+  return Math.min(
+    TASK_SNAP_RADIUS_PX * turn / (Math.PI * 2 * radiusPx),
+    (variable.max - variable.min) * MAX_TASK_SNAP_RANGE_RATIO,
+  );
+}
+
 export function LearningWhiteboard({
   runtime,
   inkSessionId,
@@ -575,6 +723,15 @@ export function LearningWhiteboard({
     value: number;
     operationId?: string;
   }>());
+  const pendingSliderUpdatesRef = useRef(new Map<string, number>());
+  const sliderUpdateFrameRef = useRef<number | null>(null);
+  const pendingBoardVariableUpdatesRef = useRef(new Map<string, {
+    value: number;
+    event: Parameters<
+      OllLessonRuntimeController["handleStudentVariableInput"]
+    >[2];
+  }>());
+  const boardVariableUpdateFrameRef = useRef<number | null>(null);
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkError, setInkError] = useState("");
@@ -886,7 +1043,7 @@ export function LearningWhiteboard({
       const controlsWidth = controls.length > 0 ? 360 : 0;
       const tasksWidth = cluster.taskIds.length > 0 ? 330 : 0;
       const controlsHeight = controls.length > 0
-        ? Math.max(96, 58 + controls.length * 34)
+        ? Math.max(112, 58 + controls.length * 52)
         : 0;
       const tasksHeight = cluster.taskIds.length > 0
         ? 60 + cluster.taskIds.length * 220
@@ -1342,6 +1499,22 @@ export function LearningWhiteboard({
     });
   }, []);
 
+  const flushSliderUpdates = useCallback(() => {
+    sliderUpdateFrameRef.current = null;
+    const updates = [...pendingSliderUpdatesRef.current];
+    pendingSliderUpdatesRef.current.clear();
+    for (const [alias, value] of updates) {
+      const active = sliderOperationsRef.current.get(alias);
+      if (!active) continue;
+      runtimeRef.current?.handleStudentVariableInput(alias, value, {
+        phase: "update",
+        control: "slider",
+        input: active.input,
+        ...(active.operationId ? { operation_id: active.operationId } : {}),
+      });
+    }
+  }, []);
+
   const updateSliderOperation = useCallback((alias: string, value: number) => {
     if (!sliderOperationsRef.current.has(alias)) {
       startSliderOperation(alias, value, "unknown");
@@ -1349,24 +1522,62 @@ export function LearningWhiteboard({
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
     active.value = value;
-    runtimeRef.current?.handleStudentVariableInput(alias, value, {
-      phase: "update",
-      control: "slider",
-      input: active.input,
-      ...(active.operationId ? { operation_id: active.operationId } : {}),
-    });
-  }, [startSliderOperation]);
+    pendingSliderUpdatesRef.current.set(alias, value);
+    if (sliderUpdateFrameRef.current === null) {
+      sliderUpdateFrameRef.current = window.requestAnimationFrame(
+        flushSliderUpdates,
+      );
+    }
+  }, [flushSliderUpdates, startSliderOperation]);
 
-  const commitSliderOperation = useCallback((alias: string, value: number) => {
+  const commitSliderOperation = useCallback((
+    alias: string,
+    value: number,
+    trackWidth = 0,
+  ) => {
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
+    const pendingValue = pendingSliderUpdatesRef.current.get(alias)
+      ?? active.value
+      ?? value;
+    const committedValue = active.input === "keyboard"
+      ? pendingValue
+      : snapValueToActiveTask(
+          runtimeRef.current,
+          alias,
+          pendingValue,
+          sliderTaskSnapDistance(runtimeRef.current, alias, trackWidth),
+          "slider",
+        );
+    active.value = committedValue;
+    pendingSliderUpdatesRef.current.delete(alias);
+    if (
+      pendingSliderUpdatesRef.current.size === 0
+      && sliderUpdateFrameRef.current !== null
+    ) {
+      window.cancelAnimationFrame(sliderUpdateFrameRef.current);
+      sliderUpdateFrameRef.current = null;
+    }
     sliderOperationsRef.current.delete(alias);
-    runtimeRef.current?.handleStudentVariableInput(alias, value, {
+    runtimeRef.current?.handleStudentVariableInput(alias, committedValue, {
       phase: "commit",
       control: "slider",
       input: active.input,
       ...(active.operationId ? { operation_id: active.operationId } : {}),
     });
+  }, []);
+
+  const flushBoardVariableUpdates = useCallback(() => {
+    boardVariableUpdateFrameRef.current = null;
+    const updates = [...pendingBoardVariableUpdatesRef.current];
+    pendingBoardVariableUpdatesRef.current.clear();
+    for (const [alias, update] of updates) {
+      runtimeRef.current?.handleStudentVariableInput(
+        alias,
+        update.value,
+        update.event,
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -1822,6 +2033,8 @@ export function LearningWhiteboard({
       mounted.view.mountWorldLayer(enhancementHost);
     setEnhancementLayer(enhancementHost);
     const sliderOperations = sliderOperationsRef.current;
+    const pendingSliderUpdates = pendingSliderUpdatesRef.current;
+    const pendingBoardVariableUpdates = pendingBoardVariableUpdatesRef.current;
     inkActivityReportedRef.current = false;
     setInkAvailable(false);
     setInkSupportsColors(false);
@@ -1846,7 +2059,42 @@ export function LearningWhiteboard({
     try {
       mounted.view.setViewportInsets(learningBoardInsets(viewport));
       mounted.view.setVariableInputHandler((alias, value, event) => {
-        return runtimeRef.current?.handleStudentVariableInput(alias, value, event);
+        if (event.phase === "start") {
+          return runtimeRef.current?.handleStudentVariableInput(alias, value, event);
+        }
+        if (event.phase === "update") {
+          pendingBoardVariableUpdatesRef.current.set(alias, { value, event });
+          if (boardVariableUpdateFrameRef.current === null) {
+            boardVariableUpdateFrameRef.current = window.requestAnimationFrame(
+              flushBoardVariableUpdates,
+            );
+          }
+          return;
+        }
+        const pending = pendingBoardVariableUpdatesRef.current.get(alias);
+        pendingBoardVariableUpdatesRef.current.delete(alias);
+        if (
+          pendingBoardVariableUpdatesRef.current.size === 0
+          && boardVariableUpdateFrameRef.current !== null
+        ) {
+          window.cancelAnimationFrame(boardVariableUpdateFrameRef.current);
+          boardVariableUpdateFrameRef.current = null;
+        }
+        return runtimeRef.current?.handleStudentVariableInput(
+          alias,
+          snapValueToActiveTask(
+            runtimeRef.current,
+            alias,
+            pending?.value ?? value,
+            geometryTaskSnapDistance(
+              viewport,
+              runtimeRef.current,
+              alias,
+            ),
+            "geometry_point",
+          ),
+          event,
+        );
       });
       mounted.view.setScene3dInputHandler((nodeId, view, event) => {
         const result = runtimeRef.current?.handleStudentScene3dInput(
@@ -1935,6 +2183,16 @@ export function LearningWhiteboard({
       setEnhancementLayer(null);
       unmountEnhancementLayer();
       mountedRef.current = null;
+      if (sliderUpdateFrameRef.current !== null) {
+        window.cancelAnimationFrame(sliderUpdateFrameRef.current);
+        sliderUpdateFrameRef.current = null;
+      }
+      pendingSliderUpdates.clear();
+      if (boardVariableUpdateFrameRef.current !== null) {
+        window.cancelAnimationFrame(boardVariableUpdateFrameRef.current);
+        boardVariableUpdateFrameRef.current = null;
+      }
+      pendingBoardVariableUpdates.clear();
       for (const [alias, operation] of sliderOperations) {
         runtimeRef.current?.handleStudentVariableInput(alias, operation.value, {
           phase: "commit",
@@ -1948,7 +2206,7 @@ export function LearningWhiteboard({
       mounted.destroy();
       if (destruction) void destruction.catch(() => undefined);
     };
-  }, [inkSessionId]);
+  }, [flushBoardVariableUpdates, inkSessionId]);
 
   useEffect(() => {
     const mounted = mountedRef.current;
@@ -2966,24 +3224,28 @@ export function LearningWhiteboard({
                                   commitSliderOperation(
                                     control.alias,
                                     Number(event.currentTarget.value),
+                                    event.currentTarget.getBoundingClientRect().width,
                                   );
                                 }}
                                 onPointerCancel={(event) => {
                                   commitSliderOperation(
                                     control.alias,
                                     Number(event.currentTarget.value),
+                                    event.currentTarget.getBoundingClientRect().width,
                                   );
                                 }}
                                 onKeyUp={(event) => {
                                   commitSliderOperation(
                                     control.alias,
                                     Number(event.currentTarget.value),
+                                    event.currentTarget.getBoundingClientRect().width,
                                   );
                                 }}
                                 onBlur={(event) => {
                                   commitSliderOperation(
                                     control.alias,
                                     Number(event.currentTarget.value),
+                                    event.currentTarget.getBoundingClientRect().width,
                                   );
                                 }}
                                 aria-label={control.label}
@@ -2991,46 +3253,91 @@ export function LearningWhiteboard({
                               <output>
                                 {formatVariableValue(control.value, control.unit)}
                               </output>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const initial = runtime?.board
-                                    ?.variables?.[control.alias]?.initial;
-                                  if (runtime && typeof initial === "number") {
-                                    const operationId = runtime.handleStudentVariableInput(
-                                      control.alias,
-                                      control.value,
-                                      {
-                                        phase: "start",
-                                        control: "reset",
-                                        input: "unknown",
-                                      },
-                                    );
-                                    runtime.handleStudentVariableInput(
-                                      control.alias,
-                                      initial,
-                                      {
-                                        phase: "commit",
-                                        control: "reset",
-                                        input: "unknown",
-                                        ...(typeof operationId === "string"
-                                          ? { operation_id: operationId }
-                                          : {}),
-                                      },
-                                    );
-                                  }
-                                }}
-                                aria-label={`复位${control.label}`}
-                              >
-                                复位
-                              </button>
+                              <div className="learning-variable-control-actions">
+                                {([-1, 1] as const).map((direction) => (
+                                  <button
+                                    key={direction}
+                                    type="button"
+                                    onClick={() => {
+                                      if (!runtime) return;
+                                      const stepIndex = Math.round(
+                                        (control.value - control.min) / control.step,
+                                      ) + direction;
+                                      const nextValue = Math.min(
+                                        control.max,
+                                        Math.max(
+                                          control.min,
+                                          control.min + stepIndex * control.step,
+                                        ),
+                                      );
+                                      const operationId = runtime.handleStudentVariableInput(
+                                        control.alias,
+                                        control.value,
+                                        {
+                                          phase: "start",
+                                          control: "slider",
+                                          input: "keyboard",
+                                        },
+                                      );
+                                      runtime.handleStudentVariableInput(
+                                        control.alias,
+                                        Number(nextValue.toPrecision(15)),
+                                        {
+                                          phase: "commit",
+                                          control: "slider",
+                                          input: "keyboard",
+                                          ...(typeof operationId === "string"
+                                            ? { operation_id: operationId }
+                                            : {}),
+                                        },
+                                      );
+                                    }}
+                                    aria-label={`${direction < 0 ? "减小" : "增大"}${control.label}`}
+                                  >
+                                    {direction < 0 ? "−" : "+"}
+                                  </button>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const initial = runtime?.board
+                                      ?.variables?.[control.alias]?.initial;
+                                    if (runtime && typeof initial === "number") {
+                                      const operationId = runtime.handleStudentVariableInput(
+                                        control.alias,
+                                        control.value,
+                                        {
+                                          phase: "start",
+                                          control: "reset",
+                                          input: "unknown",
+                                        },
+                                      );
+                                      runtime.handleStudentVariableInput(
+                                        control.alias,
+                                        initial,
+                                        {
+                                          phase: "commit",
+                                          control: "reset",
+                                          input: "unknown",
+                                          ...(typeof operationId === "string"
+                                            ? { operation_id: operationId }
+                                            : {}),
+                                        },
+                                      );
+                                    }
+                                  }}
+                                  aria-label={`复位${control.label}`}
+                                >
+                                  复位
+                                </button>
+                              </div>
                             </div>
                           );
                         })}
                         <small>
                           {runtime?.activeVariableAnimation
                             ? "老师正在演示这个变量，结束后即可继续拖动"
-                            : "讲解过程中也可以拖动；老师演示同一变量时会暂时接管"}
+                            : "可拖动滑块，也可用 −、+ 或方向键精细调整"}
                         </small>
                       </div>
                     ) : null}
