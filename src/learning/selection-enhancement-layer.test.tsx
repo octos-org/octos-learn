@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   INK_SELECTION_FORMAT,
@@ -56,6 +63,21 @@ function dispatchPointerEvent(
     clientY: number;
   },
 ): void {
+  fireEvent(target, createPointerEvent(type, {
+    pointerId,
+    clientX,
+    clientY,
+  }));
+}
+
+function createPointerEvent(
+  type: string,
+  { pointerId, clientX, clientY }: {
+    pointerId: number;
+    clientX: number;
+    clientY: number;
+  },
+): Event {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperties(event, {
     pointerId: { value: pointerId },
@@ -63,7 +85,7 @@ function dispatchPointerEvent(
     clientY: { value: clientY },
     button: { value: 0 },
   });
-  fireEvent(target, event);
+  return event;
 }
 
 function expectCardsApart(left: HTMLElement, right: HTMLElement): void {
@@ -84,6 +106,17 @@ function expectCardsApart(left: HTMLElement, right: HTMLElement): void {
     && leftRect.y < rightRect.y + rightRect.height + 24
     && leftRect.y + leftRect.height + 24 > rightRect.y;
   expect(overlaps).toBe(false);
+}
+
+function cardRectsOverlapForTest(
+  left: { x: number; y: number; width: number; height: number },
+  right: { x: number; y: number; width: number; height: number },
+  gap: number,
+): boolean {
+  return left.x < right.x + right.width + gap
+    && left.x + left.width + gap > right.x
+    && left.y < right.y + right.height + gap
+    && left.y + left.height + gap > right.y;
 }
 
 describe("SelectionEnhancementLayer", () => {
@@ -384,6 +417,49 @@ describe("SelectionEnhancementLayer", () => {
     });
   });
 
+  it("persists the last drag position when move and release are batched", () => {
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+
+    act(() => {
+      card.dispatchEvent(createPointerEvent("pointerdown", {
+        pointerId: 10,
+        clientX: 180,
+        clientY: 50,
+      }));
+      card.dispatchEvent(createPointerEvent("pointermove", {
+        pointerId: 10,
+        clientX: 260,
+        clientY: 100,
+      }));
+      card.dispatchEvent(createPointerEvent("pointerup", {
+        pointerId: 10,
+        clientX: 270,
+        clientY: 110,
+      }));
+    });
+
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      x: 250,
+      y: 80,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+  });
+
   it("never reflows a persisted automatic position after refresh", () => {
     const onLayoutChange = vi.fn();
     const persisted = {
@@ -424,6 +500,52 @@ describe("SelectionEnhancementLayer", () => {
     expect(card.dataset.cardX).toBe("160");
     expect(card.dataset.cardY).toBe("20");
     expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  it("repairs overlapping automatic cards once and persists the arrangement", async () => {
+    const onLayoutChange = vi.fn();
+    const artifacts = Array.from({ length: 3 }, (_, index) => ({
+      ...artifact,
+      turn_id: `overlap-${index + 1}`,
+      created_at: `2026-08-15T10:0${index}:00.000Z`,
+    }));
+    const overlappingLayouts = Object.fromEntries(artifacts.map((item) => [
+      item.turn_id,
+      {
+        x: 160,
+        y: 20,
+        scale: 1,
+        minimized: false,
+        manually_positioned: false,
+      },
+    ]));
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={artifacts}
+        sources={[]}
+        cardLayouts={overlappingLayouts}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+    const rects = cards.map((card) => ({
+      x: Number(card.dataset.cardX),
+      y: Number(card.dataset.cardY),
+      width: Number.parseFloat(card.style.width),
+      height: 300,
+    }));
+    for (let left = 0; left < rects.length; left += 1) {
+      for (let right = left + 1; right < rects.length; right += 1) {
+        expect(cardRectsOverlapForTest(rects[left]!, rects[right]!, 24))
+          .toBe(false);
+      }
+    }
+    await waitFor(() => expect(onLayoutChange).toHaveBeenCalledTimes(2));
   });
 
   it("reserves a loading card only for card-bound selection answers", () => {

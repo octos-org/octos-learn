@@ -232,6 +232,17 @@ function boundsOverlapRatio(
   return intersectionWidth * intersectionHeight / smallerArea;
 }
 
+function cardRectsOverlap(
+  left: WhiteboardRect,
+  right: WhiteboardRect,
+  gap = CARD_GAP,
+): boolean {
+  return left.x < right.x + right.width + gap
+    && left.x + left.width + gap > right.x
+    && left.y < right.y + right.height + gap
+    && left.y + left.height + gap > right.y;
+}
+
 function SelectionQuestionSection({
   question,
 }: {
@@ -404,6 +415,7 @@ export function SelectionEnhancementLayer({
     pointerId: number;
     startPointer: { x: number; y: number };
     startPosition: { x: number; y: number };
+    currentPosition: { x: number; y: number };
     layout: SelectionEnhancementCardLayout;
   } | null>(null);
   const resizingCardRef = useRef<{
@@ -414,19 +426,6 @@ export function SelectionEnhancementLayer({
     startScale: number;
     layout: SelectionEnhancementCardLayout;
   } | null>(null);
-  const layoutFor = (
-    turnId: string,
-    fallback: { x: number; y: number },
-  ): SelectionEnhancementCardLayout => {
-    const persisted = localLayouts[turnId] ?? cardLayouts[turnId];
-    return {
-      x: transientPositions[turnId]?.x ?? persisted?.x ?? fallback.x,
-      y: transientPositions[turnId]?.y ?? persisted?.y ?? fallback.y,
-      scale: transientScales[turnId] ?? persisted?.scale ?? DEFAULT_CARD_SCALE,
-      minimized: persisted?.minimized ?? false,
-      manually_positioned: persisted?.manually_positioned ?? false,
-    };
-  };
   const persistLayout = (turnId: string, layout: SelectionEnhancementCardLayout) => {
     const next = {
       ...layout,
@@ -533,6 +532,7 @@ export function SelectionEnhancementLayer({
       pointerId: event.pointerId,
       startPointer: clientToBoardPoint({ x: event.clientX, y: event.clientY }),
       startPosition: { x: layout.x, y: layout.y },
+      currentPosition: { x: layout.x, y: layout.y },
       layout,
     };
     event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -543,21 +543,34 @@ export function SelectionEnhancementLayer({
     event.preventDefault();
     event.stopPropagation();
     const point = clientToBoardPoint({ x: event.clientX, y: event.clientY });
+    const nextPosition = {
+      x: drag.startPosition.x + point.x - drag.startPointer.x,
+      y: drag.startPosition.y + point.y - drag.startPointer.y,
+    };
+    drag.currentPosition = nextPosition;
     setTransientPositions((current) => ({
       ...current,
-      [drag.turnId]: {
-        x: drag.startPosition.x + point.x - drag.startPointer.x,
-        y: drag.startPosition.y + point.y - drag.startPointer.y,
-      },
+      [drag.turnId]: nextPosition,
     }));
   };
   const finishCardDrag = (event: ReactPointerEvent<HTMLElement>) => {
     const drag = draggingCardRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    const position = transientPositions[drag.turnId] ?? drag.startPosition;
+    if (
+      event.type === "pointerup"
+      && clientToBoardPoint
+      && Number.isFinite(event.clientX)
+      && Number.isFinite(event.clientY)
+    ) {
+      const point = clientToBoardPoint({ x: event.clientX, y: event.clientY });
+      drag.currentPosition = {
+        x: drag.startPosition.x + point.x - drag.startPointer.x,
+        y: drag.startPosition.y + point.y - drag.startPointer.y,
+      };
+    }
     persistLayout(drag.turnId, {
       ...drag.layout,
-      ...position,
+      ...drag.currentPosition,
       manually_positioned: true,
     });
     draggingCardRef.current = null;
@@ -663,8 +676,10 @@ export function SelectionEnhancementLayer({
     layout: SelectionEnhancementCardLayout;
     width: number;
     estimatedHeight: number;
+    needsPersistence: boolean;
   }> = [];
   const reserved: WhiteboardRect[] = [...occupiedRects];
+  const placedCards: WhiteboardRect[] = [];
   for (const { sourceIds: groupedSourceIds } of sourceGroups) {
     const sourceQuestions = selectionQuestions
       .filter((question) => groupedSourceIds.has(question.source!.sourceId))
@@ -741,17 +756,37 @@ export function SelectionEnhancementLayer({
         x: sourceBounds.x + sourceBounds.width + 30,
         y: sourceBounds.y,
       };
-      const initialPosition = persisted
-        ? { x: persisted.x, y: persisted.y }
-        : findOpenWhiteboardPosition({
-            preferred,
-            width,
-            height: estimatedHeight,
-            occupied: reserved,
-            gap: CARD_GAP,
-            visibleBounds: visibleBoardBounds,
-          });
-      const layout = layoutFor(turnId, initialPosition);
+      const transientPosition = transientPositions[turnId];
+      const persistedRect = persisted ? {
+        x: persisted.x,
+        y: persisted.y,
+        width,
+        height: estimatedHeight,
+      } : undefined;
+      const repairAutomaticOverlap = Boolean(
+        persistedRect
+        && !transientPosition
+        && !persisted?.manually_positioned
+        && placedCards.some((card) => cardRectsOverlap(persistedRect, card)),
+      );
+      const initialPosition = transientPosition
+        ?? (persisted && !repairAutomaticOverlap
+          ? { x: persisted.x, y: persisted.y }
+          : findOpenWhiteboardPosition({
+              preferred,
+              width,
+              height: estimatedHeight,
+              occupied: reserved,
+              gap: CARD_GAP,
+              visibleBounds: visibleBoardBounds,
+            }));
+      const layout: SelectionEnhancementCardLayout = {
+        x: initialPosition.x,
+        y: initialPosition.y,
+        scale,
+        minimized,
+        manually_positioned: persisted?.manually_positioned ?? false,
+      };
       layoutItems.push({
         ...item,
         turnId,
@@ -761,13 +796,16 @@ export function SelectionEnhancementLayer({
         layout,
         width,
         estimatedHeight,
+        needsPersistence: !persisted || repairAutomaticOverlap,
       });
-      reserved.push({
+      const cardRect = {
         x: layout.x,
         y: layout.y,
         width,
         height: estimatedHeight,
-      });
+      };
+      reserved.push(cardRect);
+      placedCards.push(cardRect);
     }
   }
   const measurementTargetsKey = layoutItems
@@ -806,19 +844,19 @@ export function SelectionEnhancementLayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [measurementTargetsKey]);
   const initializationKey = layoutItems
-    .filter((item) => !localLayouts[item.turnId] && !cardLayouts[item.turnId])
+    .filter((item) => item.needsPersistence)
     .map((item) => `${item.turnId}:${item.layout.x}:${item.layout.y}`)
     .join("|");
   useEffect(() => {
     const timer = window.setTimeout(() => {
       for (const item of layoutItems) {
-        if (localLayouts[item.turnId] || cardLayouts[item.turnId]) continue;
+        if (!item.needsPersistence) continue;
         persistLayout(item.turnId, item.layout);
       }
     }, 0);
     return () => window.clearTimeout(timer);
-    // The compact key changes only when an unpersisted card is added or its
-    // deterministic initial position changes.
+    // The compact key changes only when a card needs its first saved position
+    // or an old automatic overlap needs one saved repair.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initializationKey, localLayouts, cardLayouts, onCardLayoutChange]);
 
