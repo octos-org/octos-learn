@@ -926,7 +926,7 @@
 
 .learning-variable-control {
   display: grid;
-  grid-template-columns: auto minmax(120px, 1fr) minmax(42px, auto) auto;
+  grid-template-columns: auto minmax(120px, 1fr) 8ch;
   align-items: center;
   gap: 10px;
   color: #5d5952;
@@ -939,12 +939,15 @@
 }
 
 .learning-variable-control > input {
+  min-width: 0;
   width: 100%;
   accent-color: #168398;
   cursor: ew-resize;
 }
 
 .learning-variable-control > output {
+  width: 8ch;
+  overflow: hidden;
   color: #0d7082;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
@@ -952,7 +955,15 @@
   white-space: nowrap;
 }
 
-.learning-variable-control > button {
+.learning-variable-control-actions {
+  display: flex;
+  grid-column: 2 / -1;
+  justify-self: end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.learning-variable-control-actions > button {
   padding: 4px 7px;
   border: 1px solid rgba(13, 112, 130, 0.2);
   border-radius: 8px;
@@ -961,7 +972,7 @@
   font-size: 10px;
 }
 
-.learning-variable-control > button:hover {
+.learning-variable-control-actions > button:hover {
   background: rgba(22, 131, 152, 0.15);
 }
 

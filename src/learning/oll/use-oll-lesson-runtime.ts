@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { CanonicalEvent, SemanticBoardState } from "octos-lesson-language";
+import type {
+  AuthoringStudentTask,
+  CanonicalEvent,
+  SemanticBoardState,
+} from "octos-lesson-language";
 import type {
   PlaybackAppendResult,
   PlaybackOutlineStep,
@@ -79,6 +83,7 @@ export interface OllLessonRuntimeController {
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
   studentTasks: StudentTaskSnapshot[];
+  studentTaskDefinitions: AuthoringStudentTask[];
   scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
   play(): void;
@@ -372,6 +377,7 @@ export function useOllLessonRuntime({
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,
     studentTasks: session.studentTasks,
+    studentTaskDefinitions: events[0]?.lesson?.tasks ?? [],
     scene3dViews: session.scene3dViews,
     currentOperation: session.currentOperation,
     play,

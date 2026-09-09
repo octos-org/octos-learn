@@ -27,6 +27,7 @@ import {
 } from "octos-lesson-language/ink-runtime";
 import {
   InfiniteBoardView,
+  type StudentVariableInputEvent,
   type StudentTaskSnapshot,
 } from "octos-lesson-language/web-runtime";
 import {
@@ -566,8 +567,14 @@ function ReviewRuntimeProbe() {
 
 function VariableRuntimeProbe({
   onVariable,
+  onInputEvent,
 }: {
   onVariable?: (value: number) => void;
+  onInputEvent?: (
+    alias: string,
+    value: number,
+    event: StudentVariableInputEvent,
+  ) => void;
 } = {}) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
@@ -584,12 +591,13 @@ function VariableRuntimeProbe({
         {runtime.studentOperations.map((operation) => operation.control).join(",")}
       </span>
       <OllLessonBoard
-        runtime={onVariable
+        runtime={onVariable || onInputEvent
           ? {
               ...runtime,
               handleStudentVariableInput: (alias, value, event) => {
+                onInputEvent?.(alias, value, event);
                 if (event.control === "geometry_point" && event.phase === "update") {
-                  onVariable(value);
+                  onVariable?.(value);
                 }
                 return runtime.handleStudentVariableInput(alias, value, event);
               },
@@ -2021,7 +2029,7 @@ describe("OLL lesson Runtime integration", () => {
       clientX: centerX - 70,
       clientY: centerY,
     }));
-    expect(directValues.at(-1)).toBeCloseTo(Math.PI);
+    await waitFor(() => expect(directValues.at(-1)).toBeCloseTo(Math.PI));
     fireEvent.pointerUp(window);
     await waitFor(() => {
       expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
@@ -2046,6 +2054,143 @@ describe("OLL lesson Runtime integration", () => {
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
     expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
+  });
+
+  it("coalesces rapid slider changes into one update per animation frame", async () => {
+    const inputEvents: Array<{
+      value: number;
+      phase: StudentVariableInputEvent["phase"];
+    }> = [];
+    render(<VariableRuntimeProbe onInputEvent={(_alias, value, event) => {
+      if (event.control === "slider") {
+        inputEvents.push({ value, phase: event.phase });
+      }
+    }} />);
+    const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    const frames = new Map<number, FrameRequestCallback>();
+    let frameSequence = 0;
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      frameSequence += 1;
+      frames.set(frameSequence, callback);
+      return frameSequence;
+    });
+    vi.spyOn(window, "cancelAnimationFrame").mockImplementation((frame) => {
+      frames.delete(frame);
+    });
+
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: "0.1" } });
+    fireEvent.change(slider, { target: { value: "0.2" } });
+    fireEvent.change(slider, { target: { value: "0.3" } });
+
+    expect(inputEvents.filter((event) => event.phase === "update")).toEqual([]);
+    expect(frames.size).toBe(1);
+    await act(async () => {
+      const pending = [...frames.values()];
+      frames.clear();
+      pending.forEach((callback) => callback(16));
+    });
+    expect(inputEvents.filter((event) => event.phase === "update"))
+      .toEqual([{ value: 0.3, phase: "update" }]);
+
+    fireEvent.change(slider, { target: { value: "0.4" } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+
+    expect(inputEvents.at(-1)).toEqual({ value: 0.4, phase: "commit" });
+    await waitFor(() => {
+      expect((screen.getByRole("slider", {
+        name: "旋转角 θ",
+      }) as HTMLInputElement).value).toBe("0.4");
+    });
+  });
+
+  it("offers exact one-step nudge controls for fine adjustment", async () => {
+    render(<VariableRuntimeProbe />);
+    let slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    fireEvent.click(screen.getByRole("button", { name: "复位旋转角 θ" }));
+    slider = screen.getByRole("slider", { name: "旋转角 θ" });
+    expect((slider as HTMLInputElement).value).toBe("0");
+
+    fireEvent.click(screen.getByRole("button", { name: "增大旋转角 θ" }));
+    await waitFor(() => {
+      expect((screen.getByRole("slider", {
+        name: "旋转角 θ",
+      }) as HTMLInputElement).value).toBe("0.01");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "减小旋转角 θ" }));
+    await waitFor(() => {
+      expect((screen.getByRole("slider", {
+        name: "旋转角 θ",
+      }) as HTMLInputElement).value).toBe("0");
+    });
+  });
+
+  it("snaps a pointer release near the active task's accepted range", async () => {
+    render(<VariableRuntimeProbe />);
+    const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
+    vi.spyOn(slider, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 240,
+      bottom: 20,
+      width: 240,
+      height: 20,
+      toJSON: () => ({}),
+    } as DOMRect);
+
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: "1.4" } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+
+    await waitFor(() => {
+      expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
+      expect((screen.getByRole("slider", {
+        name: "旋转角 θ",
+      }) as HTMLInputElement).value).toBe("1.43");
+    });
+  });
+
+  it("snaps a dragged geometry point near the active task's accepted range", async () => {
+    vi.spyOn(SVGSVGElement.prototype, "getBoundingClientRect").mockReturnValue({
+      x: 0,
+      y: 0,
+      top: 0,
+      left: 0,
+      right: 300,
+      bottom: 210,
+      width: 300,
+      height: 210,
+      toJSON: () => ({}),
+    } as DOMRect);
+    render(<VariableRuntimeProbe />);
+    const board = screen.getByTestId("oll-lesson-board");
+    const controlPoint = await waitFor(() => {
+      const point = board.querySelector<SVGCircleElement>(
+        "[data-oll-variable-control='theta']",
+      );
+      expect(point).toBeTruthy();
+      return point!;
+    });
+    const controlSvg = controlPoint.closest("svg")!;
+    Object.defineProperty(controlSvg, "viewBox", {
+      configurable: true,
+      value: { baseVal: { width: 300, height: 210 } },
+    });
+    const centerX = Number(controlPoint.dataset.angleCenterX);
+    const centerY = Number(controlPoint.dataset.angleCenterY);
+    const nearbyAngle = 1.4;
+    controlPoint.dispatchEvent(new MouseEvent("pointerdown", {
+      bubbles: true,
+      clientX: centerX + Math.cos(nearbyAngle) * 70,
+      clientY: centerY - Math.sin(nearbyAngle) * 70,
+    }));
+    fireEvent.pointerUp(window);
+
+    await waitFor(() => {
+      expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
+    });
   });
 
   it("shows only the current lesson's controls on a multi-lesson whiteboard", async () => {
