@@ -26,6 +26,22 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Keep this watchdog ES5-only: it must run even when an old, vendor-
+      // frozen Android WebView cannot parse the application bundle.
+      (function () {
+        window.setTimeout(function () {
+          var root = document.getElementById("root");
+          if (!root || root.getAttribute("data-octos-booted") === "true") return;
+          root.innerHTML =
+            '<div style="box-sizing:border-box;min-height:100vh;padding:48px;background:#171512;color:#f5eee4;font:20px/1.6 sans-serif">' +
+            '<h1 style="margin:0 0 16px;font-size:30px">Octos Learn 启动失败</h1>' +
+            '<p>当前浏览器内核可能过旧，或应用资源未能加载。请使用大屏专用 APK，或更新 Android System WebView 后重试。</p>' +
+            '<button onclick="location.reload()" style="margin-top:12px;padding:12px 24px;font-size:18px">重新加载</button>' +
+            '</div>';
+        }, 20000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

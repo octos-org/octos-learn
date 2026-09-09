@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import legacy from "@vitejs/plugin-legacy";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
@@ -7,9 +8,56 @@ import { existsSync, readFileSync } from "node:fs";
 const localCertificate = path.resolve(__dirname, ".cert/octos-learn.pem");
 const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem");
 
+/**
+ * OLL scopes its board internals with CSS `@scope`, which is only available in
+ * recent Chromium/WebView releases. Android 8 devices frequently cannot update
+ * that far and would discard the whole block — including every node/layer
+ * position. The scoped source is intentionally flat, so prefixing its selectors
+ * produces equivalent CSS for the packaged legacy build.
+ */
+function downlevelOllBoardScope(source: string): string {
+  const scopeMarker = "@scope (.oll-board-runtime)";
+  const scopeStart = source.indexOf(scopeMarker);
+  if (scopeStart < 0) return source;
+  const openingBrace = source.indexOf("{", scopeStart + scopeMarker.length);
+  if (openingBrace < 0) return source;
+
+  let depth = 1;
+  let closingBrace = openingBrace + 1;
+  for (; closingBrace < source.length && depth > 0; closingBrace += 1) {
+    if (source[closingBrace] === "{") depth += 1;
+    else if (source[closingBrace] === "}") depth -= 1;
+  }
+  if (depth !== 0) return source;
+
+  const body = source.slice(openingBrace + 1, closingBrace - 1);
+  const prefixed = body.replace(
+    /([^{}]+)\{([^{}]*)\}/g,
+    (_rule, selectorSource: string, declarations: string) => {
+      const selector = selectorSource
+        .split(",")
+        .map((part) => {
+          const trimmed = part.trim();
+          return trimmed.startsWith(":scope")
+            ? trimmed.replace(/:scope/g, ".oll-board-runtime")
+            : `.oll-board-runtime ${trimmed}`;
+        })
+        .join(", ");
+      const legacyDeclarations = declarations.replace(
+        /(^|;)\s*inset\s*:\s*0\s*;/g,
+        "$1 top: 0; right: 0; bottom: 0; left: 0;",
+      );
+      return `${selector} {${legacyDeclarations}}`;
+    },
+  );
+
+  return source.slice(0, scopeStart) + prefixed + source.slice(closingBrace);
+}
+
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const useLocalHttps = mode === "local-https";
+  const useAndroidLegacyBuild = mode === "android";
   // Local integration only: exercise an unmerged Runtime without changing the
   // production dependency pin or publishing intermediate commits.
   const localOll = mode === "development" || useLocalHttps
@@ -45,7 +93,31 @@ export default defineConfig(({ mode }) => {
       ],
     },
     base: process.env.BASE_URL || "/",
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      ...(useAndroidLegacyBuild
+        ? [{
+            name: "android-downlevel-oll-board-css",
+            enforce: "pre" as const,
+            transform(code: string, id: string) {
+              const cleanId = id.split("?", 1)[0].replaceAll("\\", "/");
+              if (!cleanId.endsWith("/web-runtime/styles.css")) return null;
+              return { code: downlevelOllBoardScope(code), map: null };
+            },
+          }]
+        : []),
+      react(),
+      tailwindcss(),
+      ...(useAndroidLegacyBuild
+        ? [legacy({
+            // Android 8 devices often ship a Chromium 60/61-era WebView and
+            // may not have a working system-WebView updater. Those engines
+            // receive the SystemJS legacy bundle; newer WebViews keep the
+            // faster native-ESM bundle.
+            targets: ["Chrome >= 55"],
+            modernTargets: ["Chrome >= 64"],
+          })]
+        : []),
+    ],
     worker: { format: "es" },
     resolve: {
       alias: {
@@ -80,6 +152,12 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist",
       emptyOutDir: true,
+      ...(useAndroidLegacyBuild
+        ? {
+            target: "chrome64",
+            cssTarget: "chrome61",
+          }
+        : {}),
     },
   };
 });

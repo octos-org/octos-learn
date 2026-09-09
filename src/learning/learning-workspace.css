@@ -7,6 +7,161 @@
   background: #e6dfd2;
 }
 
+/* The 55M3's Android 8 WebView has a small GPU budget. Keep translucent
+   presentation effects out of the full-screen pan/pinch rendering path. */
+[data-runtime-platform="android"] .learning-workspace-topbar,
+[data-runtime-platform="android"] .learning-ink-toolbar,
+[data-runtime-platform="android"] .learning-variable-controls,
+[data-runtime-platform="android"] .learning-input-dock,
+[data-runtime-platform="android"] .octos-teacher-caption {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-runtime-platform="android"] .oll-board-runtime .world {
+  transition: none !important;
+}
+
+[data-runtime-platform="android"] .oll-board-runtime .board-node,
+[data-runtime-platform="android"] .oll-board-runtime .board-group,
+[data-runtime-platform="android"] .oll-board-runtime .teacher-pointer {
+  animation: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/* A 55-inch Android panel reports desktop-like CSS dimensions, but every CSS
+   pixel is physically much larger than on a laptop. Compact only the persistent
+   chrome; the whiteboard itself stays at 1:1 CSS geometry so touch coordinates,
+   course framing, and ink remain exact. */
+[data-runtime-platform="android"] .learning-workspace-topbar {
+  top: 8px;
+  right: 8px;
+  left: 88px;
+  min-height: 44px;
+  gap: 10px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 14px;
+}
+
+[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child span {
+  display: none;
+}
+
+[data-runtime-platform="android"] .learning-workspace-topbar strong {
+  font-size: 16px;
+}
+
+[data-runtime-platform="android"] .learning-demo-controls > button {
+  width: 30px;
+  height: 30px;
+}
+
+[data-runtime-platform="android"] .learning-mode-button {
+  min-height: 30px;
+  padding: 6px 8px;
+}
+
+[data-runtime-platform="android"] .learning-workspace-actions .learning-mode-button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar {
+  top: 62px;
+  left: 12px;
+  min-height: 40px;
+  padding: 4px;
+  border-radius: 13px;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > button {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-select-all,
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-quick-action,
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-ask {
+  padding-right: 7px;
+  padding-left: 7px;
+}
+
+[data-runtime-platform="android"] .learning-input-dock {
+  bottom: 12px;
+  width: min(600px, calc(100vw - 220px));
+  min-width: 320px;
+  padding: 4px;
+  border-radius: 17px;
+}
+
+[data-runtime-platform="android"] .learning-input-button,
+[data-runtime-platform="android"] .learning-send-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+[data-runtime-platform="android"] .learning-mic-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+
+[data-runtime-platform="android"] .learning-input-dock input[type="text"],
+[data-runtime-platform="android"] .learning-input-dock > input:not([type]) {
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+[data-runtime-platform="android"] .octos-teacher {
+  right: 14px;
+  bottom: 70px;
+  gap: 8px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-caption {
+  width: min(280px, calc(100vw - 200px));
+  margin-bottom: 18px;
+  padding: 9px 12px;
+  border-radius: 15px 15px 4px 15px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar {
+  width: 70px;
+  height: 70px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar-art {
+  width: 48px;
+  height: 48px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-state {
+  right: 7px;
+  bottom: 5px;
+  left: 7px;
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline {
+  right: 24px;
+  bottom: 146px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-trigger {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+}
+
 .learning-trace-inspector {
   position: absolute;
   right: 18px;

@@ -1,4 +1,5 @@
 .setup-board {
+  height: 100vh;
   height: 100dvh;
   overflow: auto;
   padding: 32px clamp(20px, 4vw, 80px) 48px;

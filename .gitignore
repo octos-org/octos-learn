@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.pnpm-store/
 dist
 dist-ssr
 playwright-report
@@ -46,3 +47,10 @@ public/vad/
 /docs/math-quality-results/postfix-eval/
 /docs/math-quality-results/final-eval*/
 /docs/math-quality-results/paired-metrics.json
+
+# Generated Android build state and packaged web assets.
+Octos-Learn-android8-test*.apk
+android/.gradle/
+android/local.properties
+android/app/build/
+android/app/src/main/assets/

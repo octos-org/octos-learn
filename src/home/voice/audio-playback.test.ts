@@ -10,7 +10,7 @@
  * until the user leaves /voice.
  */
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { playAudioBlob, stopAudio, unlockAudio } from "./audio-playback";
 
 class FakeSource {
@@ -23,6 +23,22 @@ class FakeSource {
 
 const sources: FakeSource[] = [];
 const contexts: FakeAudioContext[] = [];
+const mediaElements: FakeMediaElement[] = [];
+const OriginalAudio = globalThis.Audio;
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
+
+class FakeMediaElement {
+  preload = "";
+  src = "";
+  onended: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  play = vi.fn(async () => {});
+  pause = vi.fn();
+  constructor() {
+    mediaElements.push(this);
+  }
+}
 
 class FakeAudioContext {
   state = "running";
@@ -60,7 +76,23 @@ beforeEach(() => {
   // Drain any clip a previous test left playing, THEN forget its source.
   stopAudio();
   sources.length = 0;
+  mediaElements.length = 0;
   contexts[0]?.setSinkId.mockClear();
+  contexts[0]?.decodeAudioData.mockClear();
+  delete document.documentElement.dataset.runtimePlatform;
+});
+
+afterEach(() => {
+  delete document.documentElement.dataset.runtimePlatform;
+  vi.stubGlobal("Audio", OriginalAudio);
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    value: originalCreateObjectURL,
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    value: originalRevokeObjectURL,
+  });
 });
 
 describe("playAudioBlob / stopAudio", () => {
@@ -147,5 +179,30 @@ describe("playAudioBlob / stopAudio", () => {
 
     await expect(playback).resolves.toBe(false);
     expect(sources).toHaveLength(0);
+  });
+
+  it("uses Android's media pipeline without Web Audio decoding in the APK", async () => {
+    document.documentElement.dataset.runtimePlatform = "android";
+    const createObjectURL = vi.fn(() => "blob:lesson-audio");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("Audio", FakeMediaElement);
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: revokeObjectURL,
+    });
+
+    const onEnded = vi.fn();
+    await expect(playAudioBlob(makeBlob(), onEnded)).resolves.toBe(true);
+    expect(mediaElements).toHaveLength(1);
+    expect(mediaElements[0].play).toHaveBeenCalledOnce();
+    expect(contexts[0].decodeAudioData).not.toHaveBeenCalled();
+
+    mediaElements[0].onended?.();
+    expect(onEnded).toHaveBeenCalledOnce();
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:lesson-audio");
   });
 });

@@ -1,0 +1,46 @@
+diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
+index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..e6bf1019d5095fdcb03fd9ea29b20b031c12e45c 100644
+--- a/dist/packages/ink-runtime/src/runtime.js
++++ b/dist/packages/ink-runtime/src/runtime.js
+@@ -10,6 +10,30 @@ import { ensurePersistentInkComponentIds, hasPersistentInkComponentId, markAiInk
+ import { INK_SELECTION_FORMAT_VERSION, AI_INK_SELECTION_FORMAT_VERSION, inkSelectionPathRegion, inkSelectionRectangleRegion, inkSelectionSourceExists, } from "./selection-record.js";
+ import { restrictSelectionToTranslation, } from "./selection-lock.js";
+ import { readAiWritingRecords, writeAiWritingRecords } from "./ai-writing-record.js";
++function samePointerSample(left, right) {
++    return left.pointerId === right.pointerId
++        && left.timeStamp === right.timeStamp
++        && left.clientX === right.clientX
++        && left.clientY === right.clientY
++        && left.pressure === right.pressure;
++}
++function coalescedPointerSamples(event) {
++    let coalesced;
++    try {
++        coalesced = typeof event.getCoalescedEvents === "function"
++            ? event.getCoalescedEvents()
++            : [];
++    }
++    catch {
++        return [event];
++    }
++    if (coalesced.length === 0)
++        return [event];
++    const last = coalesced.at(-1);
++    if (last && samePointerSample(last, event))
++        return coalesced;
++    return [...coalesced, event];
++}
+ export class InkRuntime {
+     options;
+     host;
+@@ -395,7 +419,9 @@ export class InkRuntime {
+                 return;
+             event.preventDefault();
+             event.stopPropagation();
+-            dispatchMove(event);
++            for (const sample of coalescedPointerSamples(event)) {
++                dispatchMove(sample);
++            }
+         };
+         const onPointerUp = (rawEvent) => {
+             const event = rawEvent;

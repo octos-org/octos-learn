@@ -44,6 +44,7 @@ import {
   type InkRuntime,
   type InkRuntimeState,
 } from "./oll-ink-runtime";
+import { capAndroidInkPixelDensity } from "./android-ink-performance";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -2146,6 +2147,9 @@ export function LearningWhiteboard({
           documentId: `learning-session:${inkSessionId}:student-ink`,
           locale: "zh-CN",
         }) as LearningInkRuntime;
+        if (import.meta.env.MODE === "android") {
+          capAndroidInkPixelDensity(ink, viewport);
+        }
         inkRuntimeRef.current = ink;
         ink.setMode("navigate");
         setInkSupportsColors(

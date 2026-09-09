@@ -15,6 +15,7 @@ import {
   Plus,
   Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -756,14 +757,22 @@ export function LearningPage() {
           type="button"
           aria-label="关闭学习会话列表"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-20 bg-black/35 backdrop-blur-[2px]"
+          className="learning-sidebar-scrim"
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-72 shrink-0 flex-col border-r border-white/10 bg-zinc-950 p-4 shadow-2xl transition-transform ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="learning-session-sidebar"
+        data-open={sidebarOpen ? "true" : "false"}
+        aria-hidden={!sidebarOpen}
       >
+        <button
+          type="button"
+          className="learning-sidebar-close"
+          aria-label="关闭侧栏"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <X size={20} />
+        </button>
         <button
           type="button"
           onClick={newSession}
