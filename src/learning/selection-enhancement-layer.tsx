@@ -399,7 +399,6 @@ export function SelectionEnhancementLayer({
     Readonly<Record<string, number>>
   >({});
   const cardElementsRef = useRef(new Map<string, HTMLElement>());
-  const completedLayoutRecheckRef = useRef("");
   const draggingCardRef = useRef<{
     turnId: string;
     pointerId: number;
@@ -525,8 +524,7 @@ export function SelectionEnhancementLayer({
       "textarea",
       "select",
       "model-viewer",
-      ".learning-selection-enhancement-question",
-      ".learning-selection-enhancement-content",
+      ".learning-selection-markdown",
     ].join(","))) return;
     event.preventDefault();
     event.stopPropagation();
@@ -824,54 +822,6 @@ export function SelectionEnhancementLayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initializationKey, localLayouts, cardLayouts, onCardLayoutChange]);
 
-  const recheckKey = layoutItems.map((item) => {
-    const artifactKind = item.kind === "artifact"
-      ? item.artifact.response.kind
-      : item.question.status;
-    return `${item.turnId}:${artifactKind}:${item.layout.scale}:${item.layout.minimized}`;
-  }).join("|");
-  const layoutRecheckPass = JSON.stringify({
-    cards: recheckKey,
-    occupied: occupiedRects,
-    visible: visibleBoardBounds,
-  });
-  useLayoutEffect(() => {
-    // Persisting an automatic adjustment renders this component again. Run
-    // exactly once for the same measured board state so two cards cannot keep
-    // displacing one another forever.
-    if (completedLayoutRecheckRef.current === layoutRecheckPass) return;
-    completedLayoutRecheckRef.current = layoutRecheckPass;
-    for (const item of layoutItems) {
-      const persisted = localLayouts[item.turnId] ?? cardLayouts[item.turnId];
-      const element = cardElementsRef.current.get(item.turnId);
-      if (!persisted || persisted.manually_positioned || !element || persisted.minimized) {
-        continue;
-      }
-      const width = element.offsetWidth || item.width;
-      const height = element.offsetHeight || item.estimatedHeight;
-      const otherCards = layoutItems.flatMap((candidate) => candidate.turnId === item.turnId
-        ? []
-        : [{
-            x: candidate.layout.x,
-            y: candidate.layout.y,
-            width: candidate.width,
-            height: candidate.estimatedHeight,
-          }]);
-      const next = findOpenWhiteboardPosition({
-        preferred: { x: persisted.x, y: persisted.y },
-        width,
-        height,
-        occupied: [...occupiedRects, ...otherCards],
-        gap: CARD_GAP,
-        visibleBounds: visibleBoardBounds,
-      });
-      if (next.x !== persisted.x || next.y !== persisted.y) {
-        persistLayout(item.turnId, { ...persisted, ...next });
-      }
-    }
-    // Recheck when pending content becomes its final card or its size changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [layoutRecheckPass, localLayouts, cardLayouts, onCardLayoutChange]);
   return (
     <>
       {layoutItems.map((item) => {

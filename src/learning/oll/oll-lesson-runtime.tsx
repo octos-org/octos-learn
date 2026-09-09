@@ -312,6 +312,14 @@ function measureVisualRegionBounds(
   }));
 }
 
+function measureBoardNodeBounds(nodeLayer: HTMLElement): WhiteboardRect[] {
+  return [...nodeLayer.querySelectorAll<HTMLElement>(".board-node[data-id]")]
+    .flatMap((element) => {
+      const bounds = renderedWorldRect(element);
+      return bounds ? [bounds] : [];
+    });
+}
+
 export function courseHasRenderedBoardNode(
   board: OllLessonRuntimeController["board"],
   explicitNodeIds: readonly string[] | undefined,
@@ -692,6 +700,8 @@ export function LearningWhiteboard({
   const [runtimeVisualRegionBounds, setRuntimeVisualRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
+  const [runtimeNodeBounds, setRuntimeNodeBounds] =
+    useState<WhiteboardRect[]>([]);
   const [runtimeAttachmentBounds, setRuntimeAttachmentBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
@@ -1066,7 +1076,9 @@ export function LearningWhiteboard({
   const selectionCardOccupiedRects = useMemo<WhiteboardRect[]>(() => {
     const rects: WhiteboardRect[] = [
       ...inkState.content_bounds_list,
-      ...Object.values(runtimeRegionBounds),
+      ...(runtimeNodeBounds.length > 0
+        ? runtimeNodeBounds
+        : Object.values(runtimeRegionBounds)),
       ...Object.values(runtimeAttachmentBounds),
     ];
     for (const question of questions) {
@@ -1083,6 +1095,7 @@ export function LearningWhiteboard({
     inkState.content_bounds_list,
     questions,
     runtimeAttachmentBounds,
+    runtimeNodeBounds,
     runtimeRegionBounds,
   ]);
 
@@ -1960,6 +1973,11 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextVisualBounds)
         ? current
         : nextVisualBounds);
+    const nextNodeBounds = measureBoardNodeBounds(mounted.elements.nodes);
+    setRuntimeNodeBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextNodeBounds)
+        ? current
+        : nextNodeBounds);
   }, [enhancementLayer, regionLayoutConstraints]);
 
   useEffect(() => {
@@ -2087,6 +2105,13 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextVisualBounds)
         ? current
         : nextVisualBounds);
+    const nextNodeBounds = mounted
+      ? measureBoardNodeBounds(mounted.elements.nodes)
+      : [];
+    setRuntimeNodeBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextNodeBounds)
+        ? current
+        : nextNodeBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
     if (

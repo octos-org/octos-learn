@@ -325,6 +325,107 @@ describe("SelectionEnhancementLayer", () => {
     expect(onLayoutChange).not.toHaveBeenCalled();
   });
 
+  it("drags the whole card from the question area", () => {
+    const question: WhiteboardQuestionRecord = {
+      id: artifact.turn_id,
+      sessionId: "question-drag",
+      text: "请解释我圈出的这一部分。",
+      origin: "selection",
+      createdAt: "2026-08-15T09:59:00.000Z",
+      status: "answered",
+      source: {
+        sourceId: artifact.source.source_id,
+        bounds: artifact.source.bounds,
+      },
+    };
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        questions={[question]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    const questionArea = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement-question",
+    )!;
+
+    dispatchPointerEvent(questionArea, "pointerdown", {
+      pointerId: 9,
+      clientX: 180,
+      clientY: 50,
+    });
+    dispatchPointerEvent(questionArea, "pointermove", {
+      pointerId: 9,
+      clientX: 240,
+      clientY: 90,
+    });
+    dispatchPointerEvent(questionArea, "pointerup", {
+      pointerId: 9,
+      clientX: 240,
+      clientY: 90,
+    });
+
+    expect(card.dataset.cardX).toBe("220");
+    expect(card.dataset.cardY).toBe("60");
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      x: 220,
+      y: 60,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+  });
+
+  it("never reflows a persisted automatic position after refresh", () => {
+    const onLayoutChange = vi.fn();
+    const persisted = {
+      x: 160,
+      y: 20,
+      scale: 1,
+      minimized: false,
+      manually_positioned: false,
+    };
+    const { container, rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        cardLayouts={{ [artifact.turn_id]: persisted }}
+        occupiedRects={[]}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        cardLayouts={{ [artifact.turn_id]: persisted }}
+        occupiedRects={[{ x: 150, y: 10, width: 500, height: 500 }]}
+        visibleBoardBounds={{ x: 0, y: 0, width: 1_200, height: 800 }}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    expect(card.dataset.cardX).toBe("160");
+    expect(card.dataset.cardY).toBe("20");
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
   it("reserves a loading card only for card-bound selection answers", () => {
     const pending = {
       id: "pending-card",

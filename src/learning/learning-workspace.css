@@ -1723,9 +1723,13 @@
   box-shadow: 0 9px 26px rgba(33, 52, 48, 0.13);
   color: #263936;
   pointer-events: auto;
-  cursor: auto;
+  cursor: grab;
   touch-action: auto;
   user-select: text;
+}
+
+.learning-selection-enhancement:active {
+  cursor: grabbing;
 }
 
 .learning-selection-enhancement > header {
@@ -1746,6 +1750,11 @@
 .learning-selection-enhancement model-viewer {
   cursor: auto;
   touch-action: auto;
+}
+
+.learning-selection-enhancement .learning-selection-markdown,
+.learning-selection-enhancement:active .learning-selection-markdown {
+  cursor: text;
 }
 
 .learning-selection-enhancement.is-invalid-target {

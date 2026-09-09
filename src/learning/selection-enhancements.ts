@@ -132,7 +132,7 @@ export interface SelectionEnhancementCardLayout {
   y: number;
   scale: number;
   minimized: boolean;
-  /** User-positioned cards are never moved again by automatic collision checks. */
+  /** Records whether the learner has dragged this otherwise stable position. */
   manually_positioned: boolean;
 }
 
