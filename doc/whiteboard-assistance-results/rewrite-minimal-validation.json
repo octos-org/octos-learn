@@ -1,0 +1,1854 @@
+{
+  "provider": "vertex",
+  "model": "gemini-3.6-flash",
+  "runs": [
+    {
+      "id": "rewrite",
+      "repeat": 0,
+      "version": "baseline",
+      "elapsed_ms": 4892,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 137,
+          "total_tokens": 1028,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1262,
+          "elapsed_ms": 3789,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-0",
+          "invocation_elapsed_ms": 4818,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:22.785Z",
+          "recorded_at_epoch_ms": 1788786442785
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 0,
+      "version": "candidate",
+      "elapsed_ms": 2744,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三变量方程整理为隐式曲面方程 F(x,y,z)=0 的形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为可绘图形式",
+        "text": "将三变量方程整理为隐式曲面方程 F(x,y,z)=0 的形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将三变量方程整理为隐式曲面方程 F(x,y,z)=0 的形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-0",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 71,
+          "total_tokens": 731,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1021,
+          "elapsed_ms": 1707,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-0",
+          "invocation_elapsed_ms": 2652,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:25.533Z",
+          "recorded_at_epoch_ms": 1788786445533
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 1,
+      "version": "candidate",
+      "elapsed_ms": 3970,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达形式，以便于三维图像绘制：\nx^2-y+z^3=0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐曲面方程形式",
+        "text": "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达形式，以便于三维图像绘制：\nx^2-y+z^3=0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达形式，以便于三维图像绘制：",
+          "x^2-y+z^3=0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 106,
+          "total_tokens": 766,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1109,
+          "elapsed_ms": 2424,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-1",
+          "invocation_elapsed_ms": 3874,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:29.503Z",
+          "recorded_at_epoch_ms": 1788786449503
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 1,
+      "version": "baseline",
+      "elapsed_ms": 3654,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-1",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 160,
+          "total_tokens": 1051,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1301,
+          "elapsed_ms": 2502,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-1",
+          "invocation_elapsed_ms": 3561,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:33.160Z",
+          "recorded_at_epoch_ms": 1788786453160
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 2,
+      "version": "baseline",
+      "elapsed_ms": 4276,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 160,
+          "total_tokens": 1051,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1294,
+          "elapsed_ms": 2931,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-2",
+          "invocation_elapsed_ms": 4183,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:37.438Z",
+          "recorded_at_epoch_ms": 1788786457438
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 2,
+      "version": "candidate",
+      "elapsed_ms": 5466,
+      "success": true,
+      "kind": "board_writing",
+      "text": "整理为 F(x,y,z) = 0 的形式，可用于绘制三维曲面：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "整理为 F(x,y,z) = 0 的形式，可用于绘制三维曲面：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "整理为 F(x,y,z) = 0 的形式，可用于绘制三维曲面：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-2",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 77,
+          "total_tokens": 737,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1032,
+          "elapsed_ms": 3440,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-2",
+          "invocation_elapsed_ms": 5373,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:42.910Z",
+          "recorded_at_epoch_ms": 1788786462910
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 3,
+      "version": "candidate",
+      "elapsed_ms": 4965,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程变形为 F(x,y,z)=0 的标准形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "将方程变形为 F(x,y,z)=0 的标准形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程变形为 F(x,y,z)=0 的标准形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-3",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 112,
+          "total_tokens": 772,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1100,
+          "elapsed_ms": 3591,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-3",
+          "invocation_elapsed_ms": 4877,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:47.872Z",
+          "recorded_at_epoch_ms": 1788786467872
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 3,
+      "version": "baseline",
+      "elapsed_ms": 3288,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_representation",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-3",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 119,
+          "total_tokens": 1010,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1228,
+          "elapsed_ms": 2378,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-3",
+          "invocation_elapsed_ms": 3202,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:51.171Z",
+          "recorded_at_epoch_ms": 1788786471171
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 4,
+      "version": "baseline",
+      "elapsed_ms": 3394,
+      "success": true,
+      "kind": "scene3d",
+      "text": "识别到方程为 z 的函数形式，已生成对应的三维曲面图像。",
+      "response": {
+        "kind": "scene3d",
+        "title": "三维曲面图像",
+        "text": "识别到方程为 z 的函数形式，已生成对应的三维曲面图像。",
+        "content": {
+          "title": "三维曲面图像",
+          "fallback": "识别到方程为 z 的函数形式，已生成对应的三维曲面图像。",
+          "axes": true,
+          "camera": {
+            "yaw": 0.65,
+            "pitch": 0.45,
+            "zoom": 1
+          },
+          "objects": [
+            {
+              "as": "selected-function",
+              "kind": "surface",
+              "expression": "y-x^2",
+              "x": {
+                "min": -2,
+                "max": 2
+              },
+              "y": {
+                "min": -2,
+                "max": 2
+              },
+              "samples": 12,
+              "color": "teal"
+            }
+          ]
+        }
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-4",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 102,
+          "total_tokens": 993,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1216,
+          "elapsed_ms": 2548,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-4",
+          "invocation_elapsed_ms": 3319,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:54.561Z",
+          "recorded_at_epoch_ms": 1788786474561
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 4,
+      "version": "candidate",
+      "elapsed_ms": 3066,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式，以便于三维绘图软件渲染：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式，以便于三维绘图软件渲染：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式，以便于三维绘图软件渲染：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-4",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 88,
+          "total_tokens": 748,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1076,
+          "elapsed_ms": 2141,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-4",
+          "invocation_elapsed_ms": 2989,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:07:57.631Z",
+          "recorded_at_epoch_ms": 1788786477631
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 5,
+      "version": "candidate",
+      "elapsed_ms": 3467,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程统一移项至左侧，整理为 F(x,y,z) = 0 的三维隐式曲面绘图形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面方程",
+        "text": "将方程统一移项至左侧，整理为 F(x,y,z) = 0 的三维隐式曲面绘图形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程统一移项至左侧，整理为 F(x,y,z) = 0 的三维隐式曲面绘图形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-5",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 110,
+          "total_tokens": 770,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1111,
+          "elapsed_ms": 2522,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-5",
+          "invocation_elapsed_ms": 3388,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:01.089Z",
+          "recorded_at_epoch_ms": 1788786481089
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 5,
+      "version": "baseline",
+      "elapsed_ms": 2856,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-5",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 115,
+          "total_tokens": 1006,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1224,
+          "elapsed_ms": 1964,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-5",
+          "invocation_elapsed_ms": 2760,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:03.947Z",
+          "recorded_at_epoch_ms": 1788786483947
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 6,
+      "version": "baseline",
+      "elapsed_ms": 4157,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-6",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 215,
+          "total_tokens": 1106,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1451,
+          "elapsed_ms": 2552,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-6",
+          "invocation_elapsed_ms": 4068,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:08.111Z",
+          "recorded_at_epoch_ms": 1788786488111
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 6,
+      "version": "candidate",
+      "elapsed_ms": 3070,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z) = 0 的隐式曲面标准形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "将方程移项整理为 F(x,y,z) = 0 的隐式曲面标准形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z) = 0 的隐式曲面标准形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-6",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 78,
+          "total_tokens": 738,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1035,
+          "elapsed_ms": 2178,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-6",
+          "invocation_elapsed_ms": 2984,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:11.177Z",
+          "recorded_at_epoch_ms": 1788786491177
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 7,
+      "version": "candidate",
+      "elapsed_ms": 4833,
+      "success": true,
+      "kind": "board_writing",
+      "text": "整理为 F(x,y,z)=0 的标准三维曲面表达式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "整理为 F(x,y,z)=0 的标准三维曲面表达式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "整理为 F(x,y,z)=0 的标准三维曲面表达式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-7",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 72,
+          "total_tokens": 732,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1021,
+          "elapsed_ms": 2124,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-7",
+          "invocation_elapsed_ms": 4740,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:16.011Z",
+          "recorded_at_epoch_ms": 1788786496011
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 7,
+      "version": "baseline",
+      "elapsed_ms": 3937,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-7",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 120,
+          "total_tokens": 1011,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1211,
+          "elapsed_ms": 2269,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-7",
+          "invocation_elapsed_ms": 3831,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:19.949Z",
+          "recorded_at_epoch_ms": 1788786499949
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 8,
+      "version": "baseline",
+      "elapsed_ms": 7997,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-8",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 206,
+          "total_tokens": 1097,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1463,
+          "elapsed_ms": 4023,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-8",
+          "invocation_elapsed_ms": 7909,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:27.953Z",
+          "recorded_at_epoch_ms": 1788786507953
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 8,
+      "version": "candidate",
+      "elapsed_ms": 2878,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三元方程移项整理为标准的隐式曲面方程形式 F(x,y,z)=0：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐曲面绘图形式",
+        "text": "将三元方程移项整理为标准的隐式曲面方程形式 F(x,y,z)=0：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将三元方程移项整理为标准的隐式曲面方程形式 F(x,y,z)=0：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-8",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 77,
+          "total_tokens": 737,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1041,
+          "elapsed_ms": 2057,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-8",
+          "invocation_elapsed_ms": 2779,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:30.827Z",
+          "recorded_at_epoch_ms": 1788786510827
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 9,
+      "version": "candidate",
+      "elapsed_ms": 3328,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z) = 0 的标准隐式曲面表达形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-9",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 79,
+          "total_tokens": 739,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1041,
+          "elapsed_ms": 2468,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-9",
+          "invocation_elapsed_ms": 3229,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:34.155Z",
+          "recorded_at_epoch_ms": 1788786514155
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 9,
+      "version": "baseline",
+      "elapsed_ms": 4803,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_representation",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-9",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 182,
+          "total_tokens": 1073,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1357,
+          "elapsed_ms": 3933,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-9",
+          "invocation_elapsed_ms": 4717,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:38.968Z",
+          "recorded_at_epoch_ms": 1788786518968
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 10,
+      "version": "baseline",
+      "elapsed_ms": 5549,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-10",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 167,
+          "total_tokens": 1058,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1306,
+          "elapsed_ms": 4666,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-10",
+          "invocation_elapsed_ms": 5472,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:44.515Z",
+          "recorded_at_epoch_ms": 1788786524515
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 10,
+      "version": "candidate",
+      "elapsed_ms": 3202,
+      "success": true,
+      "kind": "board_writing",
+      "text": "整理为以 z 为因变量的函数表示形式：\nz = (y - x^2)^(1/3)\n\n或整理为隐式曲面方程形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维曲面绘图形式",
+        "text": "整理为以 z 为因变量的函数表示形式：\nz = (y - x^2)^(1/3)\n\n或整理为隐式曲面方程形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "整理为以 z 为因变量的函数表示形式：",
+          "z = (y - x^2)^(1/3)",
+          "或整理为隐式曲面方程形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-10",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 106,
+          "total_tokens": 766,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1129,
+          "elapsed_ms": 2193,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-10",
+          "invocation_elapsed_ms": 3111,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:47.710Z",
+          "recorded_at_epoch_ms": 1788786527710
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 11,
+      "version": "candidate",
+      "elapsed_ms": 4490,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项为 F(x,y,z) = 0 的标准隐曲面形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐曲面绘图形式",
+        "text": "将方程移项为 F(x,y,z) = 0 的标准隐曲面形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项为 F(x,y,z) = 0 的标准隐曲面形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-11",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 61,
+          "total_tokens": 721,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1005,
+          "elapsed_ms": 3485,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-11",
+          "invocation_elapsed_ms": 4399,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:52.208Z",
+          "recorded_at_epoch_ms": 1788786532208
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 11,
+      "version": "baseline",
+      "elapsed_ms": 5183,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_representation",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-11",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 151,
+          "total_tokens": 1042,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1310,
+          "elapsed_ms": 3218,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-11",
+          "invocation_elapsed_ms": 5087,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:08:57.387Z",
+          "recorded_at_epoch_ms": 1788786537387
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 12,
+      "version": "baseline",
+      "elapsed_ms": 3996,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-12",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 186,
+          "total_tokens": 1077,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1353,
+          "elapsed_ms": 2545,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-12",
+          "invocation_elapsed_ms": 3901,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:01.385Z",
+          "recorded_at_epoch_ms": 1788786541385
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 12,
+      "version": "candidate",
+      "elapsed_ms": 6122,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程整理为可以用三维隐式曲面绘制的形式：\nx^2-y+z^3=0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维曲面绘图形式",
+        "text": "将方程整理为可以用三维隐式曲面绘制的形式：\nx^2-y+z^3=0",
+        "lines": [
+          "将方程整理为可以用三维隐式曲面绘制的形式：",
+          "x^2-y+z^3=0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-12",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 77,
+          "total_tokens": 737,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1052,
+          "elapsed_ms": 4852,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-12",
+          "invocation_elapsed_ms": 6027,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:07.509Z",
+          "recorded_at_epoch_ms": 1788786547509
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 13,
+      "version": "candidate",
+      "elapsed_ms": 3869,
+      "success": true,
+      "kind": "board_writing",
+      "text": "整理为 F(x,y,z)=0 的隐式曲面标准方程形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐式曲面绘图形式",
+        "text": "整理为 F(x,y,z)=0 的隐式曲面标准方程形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "整理为 F(x,y,z)=0 的隐式曲面标准方程形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-13",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 99,
+          "total_tokens": 759,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1080,
+          "elapsed_ms": 2189,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-13",
+          "invocation_elapsed_ms": 3773,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:11.378Z",
+          "recorded_at_epoch_ms": 1788786551378
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 13,
+      "version": "baseline",
+      "elapsed_ms": 4658,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-13",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 124,
+          "total_tokens": 1015,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1262,
+          "elapsed_ms": 3758,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-13",
+          "invocation_elapsed_ms": 4564,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:16.038Z",
+          "recorded_at_epoch_ms": 1788786556038
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 14,
+      "version": "baseline",
+      "elapsed_ms": 3801,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-14",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 161,
+          "total_tokens": 1052,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1326,
+          "elapsed_ms": 2878,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-14",
+          "invocation_elapsed_ms": 3707,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:19.844Z",
+          "recorded_at_epoch_ms": 1788786559844
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 14,
+      "version": "candidate",
+      "elapsed_ms": 4346,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三元方程移项整理为 F(x, y, z) = 0 的形式：\ny - x^2 - z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为可绘图的三维隐式方程形式",
+        "text": "将三元方程移项整理为 F(x, y, z) = 0 的形式：\ny - x^2 - z^3 = 0",
+        "lines": [
+          "将三元方程移项整理为 F(x, y, z) = 0 的形式：",
+          "y - x^2 - z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-14",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 75,
+          "total_tokens": 735,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1031,
+          "elapsed_ms": 2657,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-14",
+          "invocation_elapsed_ms": 4255,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:24.188Z",
+          "recorded_at_epoch_ms": 1788786564188
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 15,
+      "version": "candidate",
+      "elapsed_ms": 3147,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z)=0 的形式，适合进行三维隐曲面绘制：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐曲面绘图形式",
+        "text": "将方程移项整理为 F(x,y,z)=0 的形式，适合进行三维隐曲面绘制：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z)=0 的形式，适合进行三维隐曲面绘制：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-15",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 65,
+          "total_tokens": 725,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1031,
+          "elapsed_ms": 2331,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-15",
+          "invocation_elapsed_ms": 3054,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:27.337Z",
+          "recorded_at_epoch_ms": 1788786567337
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 15,
+      "version": "baseline",
+      "elapsed_ms": 4795,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-15",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 114,
+          "total_tokens": 1005,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1219,
+          "elapsed_ms": 2878,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-15",
+          "invocation_elapsed_ms": 4711,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:32.142Z",
+          "recorded_at_epoch_ms": 1788786572142
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 16,
+      "version": "baseline",
+      "elapsed_ms": 4532,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_representation",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-16",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 154,
+          "total_tokens": 1045,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1336,
+          "elapsed_ms": 3028,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-16",
+          "invocation_elapsed_ms": 4455,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:36.664Z",
+          "recorded_at_epoch_ms": 1788786576664
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 16,
+      "version": "candidate",
+      "elapsed_ms": 2842,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为三维隐曲面绘图形式",
+        "text": "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将方程移项整理为 F(x,y,z)=0 的标准隐曲面表达式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-16",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 60,
+          "total_tokens": 720,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1012,
+          "elapsed_ms": 1961,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-16",
+          "invocation_elapsed_ms": 2744,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:39.509Z",
+          "recorded_at_epoch_ms": 1788786579509
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 17,
+      "version": "candidate",
+      "elapsed_ms": 2879,
+      "success": true,
+      "kind": "board_writing",
+      "text": "三变量方程整理为 F(x,y,z)=0 的形式如下：\ny - x^2 - z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为绘图形式",
+        "text": "三变量方程整理为 F(x,y,z)=0 的形式如下：\ny - x^2 - z^3 = 0",
+        "lines": [
+          "三变量方程整理为 F(x,y,z)=0 的形式如下：",
+          "y - x^2 - z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-17",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 51,
+          "total_tokens": 711,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 986,
+          "elapsed_ms": 1978,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-17",
+          "invocation_elapsed_ms": 2783,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:42.388Z",
+          "recorded_at_epoch_ms": 1788786582388
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 17,
+      "version": "baseline",
+      "elapsed_ms": 3827,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-17",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 121,
+          "total_tokens": 1012,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1247,
+          "elapsed_ms": 2563,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-17",
+          "invocation_elapsed_ms": 3730,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:46.218Z",
+          "recorded_at_epoch_ms": 1788786586218
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 18,
+      "version": "baseline",
+      "elapsed_ms": 4783,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-18",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 163,
+          "total_tokens": 1054,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1361,
+          "elapsed_ms": 3245,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-18",
+          "invocation_elapsed_ms": 4621,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:51.001Z",
+          "recorded_at_epoch_ms": 1788786591001
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 18,
+      "version": "candidate",
+      "elapsed_ms": 2991,
+      "success": true,
+      "kind": "board_writing",
+      "text": "整理为三元方程的标准隐式绘图形式：\nx^2 + z^3 - y = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为绘图形式",
+        "text": "整理为三元方程的标准隐式绘图形式：\nx^2 + z^3 - y = 0",
+        "lines": [
+          "整理为三元方程的标准隐式绘图形式：",
+          "x^2 + z^3 - y = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-18",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 60,
+          "total_tokens": 720,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1000,
+          "elapsed_ms": 1695,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-18",
+          "invocation_elapsed_ms": 2894,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:53.993Z",
+          "recorded_at_epoch_ms": 1788786593993
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 19,
+      "version": "candidate",
+      "elapsed_ms": 3117,
+      "success": true,
+      "kind": "board_writing",
+      "text": "将三元方程整理为隐式曲面方程 F(x,y,z)=0 的形式：\nx^2 - y + z^3 = 0",
+      "response": {
+        "kind": "board_writing",
+        "title": "整理为适合绘图的三维方程形式",
+        "text": "将三元方程整理为隐式曲面方程 F(x,y,z)=0 的形式：\nx^2 - y + z^3 = 0",
+        "lines": [
+          "将三元方程整理为隐式曲面方程 F(x,y,z)=0 的形式：",
+          "x^2 - y + z^3 = 0"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "candidate-rewrite-19",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 660,
+          "candidate_tokens": 74,
+          "total_tokens": 734,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1036,
+          "elapsed_ms": 2227,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "candidate-rewrite-19",
+          "invocation_elapsed_ms": 3025,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:09:57.119Z",
+          "recorded_at_epoch_ms": 1788786597119
+        }
+      ]
+    },
+    {
+      "id": "rewrite",
+      "repeat": 19,
+      "version": "baseline",
+      "elapsed_ms": 3884,
+      "success": true,
+      "kind": "unsupported",
+      "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+      "response": {
+        "kind": "unsupported",
+        "title": "当前无法生成这个函数图像",
+        "text": "已经识别到“y=x^2+z^3”，但当前无法安全地生成它的图像。",
+        "reason_code": "unsupported_variables",
+        "alternatives": [
+          "确认框选范围只包含一个完整公式",
+          "使用“问小章鱼”让它解释或改写为可绘制形式"
+        ]
+      },
+      "metrics": [
+        {
+          "stage": "model-call",
+          "turn_id": "baseline-rewrite-19",
+          "label": "selection-enhancement",
+          "status": "completed",
+          "provider": "vertex",
+          "http_status": 200,
+          "vertex_paygo_mode": "standard",
+          "request_attempts": 1,
+          "finish_reason": "STOP",
+          "prompt_tokens": 891,
+          "candidate_tokens": 122,
+          "total_tokens": 1013,
+          "traffic_type": "ON_DEMAND",
+          "response_bytes": 1260,
+          "elapsed_ms": 2853,
+          "schema": "octos.learn.trace.v1",
+          "source": "learning-coach",
+          "sequence": 5,
+          "trace_id": "baseline-rewrite-19",
+          "invocation_elapsed_ms": 3807,
+          "tool": "oll_enhance_selection",
+          "recorded_at": "2026-09-07T13:10:01.000Z",
+          "recorded_at_epoch_ms": 1788786601000
+        }
+      ]
+    }
+  ],
+  "candidate_configuration": {
+    "OLL_SELECTION_THINKING_LEVEL": "MINIMAL",
+    "scope": "evaluation only; production default unchanged"
+  }
+}

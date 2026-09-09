@@ -1525,6 +1525,8 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(document.querySelector(".learning-selection-enhancement-layer")
       ?.getAttribute("data-oll-ink-input")).toBe("ignore");
+    expect(document.querySelector(".learning-selection-enhancement-layer")
+      ?.getAttribute("data-oll-board-wheel")).toBe("pass");
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
       storageKey: "octos-learning-ink:v1:learn-ink-1",
       documentId: "learning-session:learn-ink-1:student-ink",
@@ -1655,10 +1657,9 @@ describe("OLL lesson Runtime integration", () => {
       destroy: vi.fn(() => Promise.resolve()),
     };
     const onAsk = vi.fn(async () => undefined);
-    const onClassify = vi.fn(async (): Promise<SelectionClassification> => ({
-      kind: "math",
-      content: "y=x^2",
-      confidence: "high",
+    let resolveClassification!: (value: SelectionClassification) => void;
+    const onClassify = vi.fn(() => new Promise<SelectionClassification>((resolve) => {
+      resolveClassification = resolve;
     }));
     const onVoiceCaptureChange = vi.fn();
     mountInkRuntimeMock.mockReturnValue(ink);
@@ -1700,6 +1701,12 @@ describe("OLL lesson Runtime integration", () => {
         targets: expect.any(Array),
       }),
       selectionImage: expect.any(File),
+    }));
+    expect(screen.getByText("正在识别选区…")).toBeTruthy();
+    await act(async () => resolveClassification({
+      kind: "math",
+      content: "y=x^2",
+      confidence: "high",
     }));
     expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
@@ -1754,10 +1761,6 @@ describe("OLL lesson Runtime integration", () => {
       rejectSelectionRequest = reject;
     }));
     fireEvent.click(screen.getByRole("button", { name: "生成函数图像" }));
-    expect(await screen.findByText("正在生成函数图像…")).toBeTruthy();
-    expect(screen.getByLabelText(
-      /正在生成函数图像。正在识别公式，并把可查看的图像放在选区旁边/,
-    )).toBeTruthy();
     await waitFor(() => {
       expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
         snapshot,
@@ -1768,6 +1771,9 @@ describe("OLL lesson Runtime integration", () => {
         contextImage: expect.any(File),
       }));
     });
+    expect(screen.queryByText("正在生成函数图像…")).toBeNull();
+    expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
+    expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
     await act(async () => {
       rejectSelectionRequest?.(new Error("当前公式暂不支持生成函数图像"));
     });

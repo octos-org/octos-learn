@@ -25,6 +25,8 @@ import {
   type SkillActionJob,
 } from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
+import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
+import { SelectionRequestState } from "./selection-request-state";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
 import {
@@ -34,6 +36,7 @@ import {
   useVoiceConversation,
   type LearningClientTiming,
   type VoiceConversationOptions,
+  type VoiceUtteranceOptions,
   type VoiceConversationTurn,
 } from "@/home/voice/use-voice-conversation";
 import { useOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
@@ -90,15 +93,20 @@ import {
   mergeSelectionEnhancementArtifacts,
   parseSelectionClassificationMetadata,
   saveSelectionEnhancementState,
+  setSelectionEnhancementCardLayout,
   selectionArtifactMatchesSource,
   selectionBoardContextTargetsExist,
   type SelectionBoardContext,
   type SelectionClassification,
   type SelectionContentKind,
   type SelectionEnhancementArtifact,
+  type SelectionEnhancementCardLayout,
   type SelectionEnhancementState,
 } from "./selection-enhancements";
-import type { SelectionToolId } from "./selection-tools";
+import {
+  selectionAnswerPresentation,
+  type SelectionToolId,
+} from "./selection-tools";
 import { isCurrentInkMergeCompletion } from "./ink-replay";
 import { OctosTeacher } from "./octos-teacher";
 import { StudentInputDock } from "./student-input-dock";
@@ -435,6 +443,7 @@ export function LearningWorkspace({
   >(() => new Set());
   const [selectionState, setSelectionState] =
     useState<SelectionEnhancementState | null>(null);
+  const selectionStateReady = selectionState?.session_id === sessionId;
   const [persistedSelectionArtifacts, setPersistedSelectionArtifacts] =
     useState<ReturnType<typeof collectPersistedSelectionEnhancementArtifacts>>([]);
   const [loadedSelectionArtifacts, setLoadedSelectionArtifacts] = useState<
@@ -448,6 +457,20 @@ export function LearningWorkspace({
     ),
     [persistedSelectionArtifacts, threads],
   );
+  // The build flag is the capability contract: it is enabled only alongside
+  // an OLL runtime that supports AI ink. Font preparation happens in the
+  // whiteboard worker and must not make an immediate question silently fall
+  // back to an assistance card during the first paint.
+  const [boardWritingReady, setBoardWritingReady] = useState(
+    () => import.meta.env.VITE_ENABLE_BOARD_WRITING === "true",
+  );
+  const selectionRequests = useMemo(() => new SelectionRequestState(sessionId), [sessionId]);
+  const selectionScopeRef = useRef<{ sessionId: string; active: boolean } | null>(null);
+  useEffect(() => {
+    const scope = { sessionId, active: true };
+    selectionScopeRef.current = scope;
+    return () => { scope.active = false; };
+  }, [sessionId]);
   const requestedSelectionArtifactsRef = useRef(new Set<string>());
   const selectionArtifactRequestsRef = useRef(
     new Map<string, AbortController>(),
@@ -506,7 +529,7 @@ export function LearningWorkspace({
       ].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
       return next;
     });
-  }, []);
+  }, [setWhiteboardQuestions]);
   const updateWhiteboardQuestion = useCallback((
     questionId: string,
     patch: Partial<Pick<
@@ -539,7 +562,7 @@ export function LearningWorkspace({
       if (!changed) return current;
       return next;
     });
-  }, []);
+  }, [setWhiteboardQuestions]);
   const setWhiteboardQuestionStatus = useCallback((
     questionId: string,
     status: WhiteboardQuestionStatus,
@@ -578,7 +601,7 @@ export function LearningWorkspace({
         ...(source ? { source } : {}),
       }].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     });
-  }, [sessionId]);
+  }, [setWhiteboardQuestions, sessionId]);
   const placeWhiteboardQuestion = useCallback((
     questionId: string,
     position: { x: number; y: number },
@@ -681,12 +704,13 @@ export function LearningWorkspace({
         (candidate) => candidate.source_id === loaded?.source.source_id,
       );
       return loaded
+        && selectionRequests.canConsume(loaded.turn_id)
         && !hidden.has(loaded.turn_id)
         && (!source || selectionArtifactMatchesSource(loaded, source))
         ? [loaded]
         : [];
     });
-  }, [loadedSelectionArtifacts, selectionArtifacts, selectionState]);
+  }, [loadedSelectionArtifacts, selectionArtifacts, selectionState, selectionRequests]);
   const ollArtifacts = useMemo(
     () => mergeOllLessonArtifacts(
       persistedOllArtifacts,
@@ -919,7 +943,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -933,154 +957,186 @@ export function LearningWorkspace({
     setPlainReplySpoken(false);
     setSendError(message);
     conversationOptions?.onTurnError?.(turnId, error);
-  }, [conversationOptions, threads, updateWhiteboardQuestion]);
+  }, [setTextTurnPending, setSendError, conversationOptions, threads, updateWhiteboardQuestion]);
   const voiceConversationOptions = useMemo<VoiceConversationOptions>(
-    () => ({
-      ...conversationOptions,
-      onTurnStart: (turnId: string) => {
-        const pendingSelection = pendingVoiceSelectionRef.current;
-        voiceQuestionSourcesRef.current.set(turnId, pendingSelection ? {
-          sourceId: pendingSelection.snapshot.source_id,
-          bounds: { ...pendingSelection.snapshot.bounds },
-        } : null);
-        conversationOptions?.onTurnStart?.(turnId);
-      },
-      getAdditionalTurnFiles: async () => {
-        let pending = pendingVoiceSelectionRef.current;
-        if (!pending) {
-          const capture = activeVoiceInkSelectionCaptureRef.current;
-          if (!capture) return [];
-          const selection = await capture();
-          pending = {
-            snapshot: selection.snapshot,
-            contentKind: selection.contentKind,
-            boardContext: selection.boardContext,
-            file: selection.contextImage,
-            recordSelection: selection.recordSelection,
-          };
-          pendingVoiceSelectionRef.current = pending;
-        }
-        return [pending.file];
-      },
-      shouldIncludeCameraFrame: () =>
-        activeVoiceInkSelectionCaptureRef.current === null
-        && pendingVoiceSelectionRef.current === null,
-      buildTurnText: (
-        context: Parameters<
-          NonNullable<VoiceConversationOptions["buildTurnText"]>
-        >[0],
-      ) => {
-        const base = conversationOptions?.buildTurnText?.(context) ?? "";
-        const pending = pendingVoiceSelectionRef.current;
-        const selectionPath = context.additionalMediaPaths?.[0];
-        if (!pending || !selectionPath) return base;
-        const selectionContext = [
-          base,
-          buildSelectionEnhancementTurnContext({
-            sessionId,
-            turnId: context.turnId,
-            mediaPath: selectionPath,
-            source: pending.snapshot,
-            contentKind: pending.contentKind,
-            lessonTitle: ollLesson?.title,
-            boardSummary: ollLesson
-              ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
-              : undefined,
-            boardContext: pending.boardContext,
-            toolId: "custom-question",
-          }),
-        ].filter(Boolean).join("\n");
-        return selectionContext;
-      },
-      // Muted narration does NOT own the mic: with the narration silenced
-      // there is nothing external to protect, so the student can barge in
-      // naturally (issue #315).
-      externalSpeechActive:
-        voiceEnabled &&
-        ((lessonOwnsNarration && narrationAudioEnabled) ||
-          narrationSpeechActive ||
-          textTurnPending),
-      // Do not feed the final speaker frame / acoustic echo back into ASR when
-      // a lesson or plain spoken reply releases the microphone.
-      externalSpeechReleaseDelayMs: 1200,
-      onAdmittedSpeech: async (context) => {
-        const clientTiming = context.clientTiming ?? {};
-        learnTrace.recordOnce(`${context.turnId}:request-submitted`, {
-          turnId: context.turnId,
-          source: "octos-web",
-          stage: "request-submitted",
-          status: "started",
-          recordedAtEpochMs:
-            clientTiming.submitted_at_epoch_ms ?? Date.now(),
-          data: { input_modality: "voice" },
-        });
-        const admissionCompletedAt =
-          clientTiming.voice_admission_completed_at_epoch_ms;
-        const admissionStartedAt =
-          clientTiming.voice_admission_started_at_epoch_ms;
-        learnTrace.recordOnce(`${context.turnId}:voice-admission-completed`, {
-          turnId: context.turnId,
-          source: "octos-web",
-          stage: "voice-admission",
-          status: "completed",
-          ...(admissionCompletedAt === undefined
-            ? {}
-            : { recordedAtEpochMs: admissionCompletedAt }),
-          ...(admissionStartedAt === undefined || admissionCompletedAt === undefined
-            ? {}
-            : { elapsedMs: admissionCompletedAt - admissionStartedAt }),
-          data: {
-            request_source: context.currentFramePath
-              ? "current_image"
-              : context.additionalMediaPaths?.length
-                ? "selection"
-                : "self_contained",
+    () => {
+      type PendingSelection = NonNullable<typeof pendingVoiceSelectionRef.current>;
+      const createOptions = (
+        captured?: Promise<PendingSelection | null>,
+        hasSelection = false,
+      ): VoiceConversationOptions & VoiceUtteranceOptions => {
+        let frozen: PendingSelection | null = null;
+        return ({
+          contextKind: hasSelection ? "selection" : undefined,
+          ...conversationOptions,
+          onTurnStart: (turnId: string) => {
+            const pendingSelection = captured ? frozen : pendingVoiceSelectionRef.current;
+            voiceQuestionSourcesRef.current.set(turnId, pendingSelection ? {
+              sourceId: pendingSelection.snapshot.source_id,
+              bounds: { ...pendingSelection.snapshot.bounds },
+            } : null);
+            conversationOptions?.onTurnStart?.(turnId);
           },
+          getAdditionalTurnFiles: async () => {
+            let pending = captured ? await captured : pendingVoiceSelectionRef.current;
+            if (!captured && !pending) {
+              const capture = activeVoiceInkSelectionCaptureRef.current;
+              if (!capture) return [];
+              const selection = await capture();
+              pending = {
+                snapshot: selection.snapshot,
+                contentKind: selection.contentKind,
+                boardContext: selection.boardContext,
+                file: selection.contextImage,
+                recordSelection: selection.recordSelection,
+              };
+              pendingVoiceSelectionRef.current = pending;
+            }
+            frozen = pending;
+            return pending ? [pending.file] : [];
+          },
+          shouldIncludeCameraFrame: () =>
+            captured ? !hasSelection : activeVoiceInkSelectionCaptureRef.current === null
+            && pendingVoiceSelectionRef.current === null,
+          buildTurnText: (
+            context: Parameters<
+              NonNullable<VoiceConversationOptions["buildTurnText"]>
+            >[0],
+          ) => {
+            const base = conversationOptions?.buildTurnText?.(context) ?? "";
+            const pending = captured ? frozen : pendingVoiceSelectionRef.current;
+            const selectionPath = context.additionalMediaPaths?.[0];
+            if (!pending || !selectionPath) return base;
+            const selectionContext = [
+              base,
+              buildSelectionEnhancementTurnContext({
+                sessionId,
+                turnId: context.turnId,
+                mediaPath: selectionPath,
+                source: pending.snapshot,
+                contentKind: pending.contentKind,
+                lessonTitle: ollLesson?.title,
+                boardSummary: ollLesson
+                  ? `${ollLesson.title}；进度 ${ollLesson.cursor}/${ollLesson.totalOperations}`
+                  : undefined,
+                boardContext: pending.boardContext,
+                toolId: "custom-question",
+              }),
+            ].filter(Boolean).join("\n");
+            return selectionContext;
+          },
+          // Muted narration does NOT own the mic: with the narration silenced
+          // there is nothing external to protect, so the student can barge in
+          // naturally (issue #315).
+          externalSpeechActive:
+            voiceEnabled &&
+            ((lessonOwnsNarration && narrationAudioEnabled) ||
+              narrationSpeechActive ||
+              textTurnPending),
+          // Do not feed the final speaker frame / acoustic echo back into ASR when
+          // a lesson or plain spoken reply releases the microphone.
+          externalSpeechReleaseDelayMs: 1200,
+          onAdmittedSpeech: async (context) => {
+            const clientTiming = context.clientTiming ?? {};
+            learnTrace.recordOnce(`${context.turnId}:request-submitted`, {
+              turnId: context.turnId,
+              source: "octos-web",
+              stage: "request-submitted",
+              status: "started",
+              recordedAtEpochMs:
+                clientTiming.submitted_at_epoch_ms ?? Date.now(),
+              data: { input_modality: "voice" },
+            });
+            const admissionCompletedAt =
+              clientTiming.voice_admission_completed_at_epoch_ms;
+            const admissionStartedAt =
+              clientTiming.voice_admission_started_at_epoch_ms;
+            learnTrace.recordOnce(`${context.turnId}:voice-admission-completed`, {
+              turnId: context.turnId,
+              source: "octos-web",
+              stage: "voice-admission",
+              status: "completed",
+              ...(admissionCompletedAt === undefined
+                ? {}
+                : { recordedAtEpochMs: admissionCompletedAt }),
+              ...(admissionStartedAt === undefined || admissionCompletedAt === undefined
+                ? {}
+                : { elapsedMs: admissionCompletedAt - admissionStartedAt }),
+              data: {
+                request_source: context.currentFramePath
+                  ? "current_image"
+                  : context.additionalMediaPaths?.length
+                    ? "selection"
+                    : "self_contained",
+              },
+            });
+            const pendingSelection = captured ? frozen : pendingVoiceSelectionRef.current;
+            const selectionPath = context.additionalMediaPaths?.[0];
+            if (pendingSelection && selectionPath) {
+              pendingVoiceSelectionRef.current = null;
+              pendingSelection.recordSelection();
+              const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
+              if (!sendSelectionQuestion) {
+                throw new Error("选区语音功能尚未就绪");
+              }
+              await sendSelectionQuestion(
+                {
+                  snapshot: pendingSelection.snapshot,
+                  contentKind: pendingSelection.contentKind,
+                  boardContext: pendingSelection.boardContext,
+                  contextImage: pendingSelection.file,
+                  recordSelection: pendingSelection.recordSelection,
+                },
+                context.transcript,
+                context.turnId,
+                selectionPath,
+              );
+              return true;
+            }
+            if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+            registerVoiceQuestion(context.turnId, context.transcript, null);
+            if (context.currentFramePath) {
+              updateWhiteboardQuestion(context.turnId, {
+                imagePath: context.currentFramePath,
+                imageProfileId: context.mediaProfileId,
+              });
+            }
+            onLearnerInput?.(context.transcript);
+            await startDirectLessonGeneration(
+              context.turnId,
+              context.transcript,
+              "voice",
+              context.currentFramePath,
+              clientTiming,
+            );
+            return true;
+          },
+          onTurnError: handleVoiceTurnError,
+          onTurnComplete: handleTurnComplete,
         });
-        const pendingSelection = pendingVoiceSelectionRef.current;
-        const selectionPath = context.additionalMediaPaths?.[0];
-        if (pendingSelection && selectionPath) {
+      };
+      return {
+        ...createOptions(),
+        captureUtteranceOptions: () => {
+          const prepared = pendingVoiceSelectionRef.current;
           pendingVoiceSelectionRef.current = null;
-          pendingSelection.recordSelection();
-          const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
-          if (!sendSelectionQuestion) {
-            throw new Error("选区语音功能尚未就绪");
-          }
-          await sendSelectionQuestion(
-            {
-              snapshot: pendingSelection.snapshot,
-              contentKind: pendingSelection.contentKind,
-              boardContext: pendingSelection.boardContext,
-              contextImage: pendingSelection.file,
-              recordSelection: pendingSelection.recordSelection,
-            },
-            context.transcript,
-            context.turnId,
-            selectionPath,
-          );
-          return true;
-        }
-        if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
-        registerVoiceQuestion(context.turnId, context.transcript, null);
-        if (context.currentFramePath) {
-          updateWhiteboardQuestion(context.turnId, {
-            imagePath: context.currentFramePath,
-            imageProfileId: context.mediaProfileId,
-          });
-        }
-        onLearnerInput?.(context.transcript);
-        await startDirectLessonGeneration(
-          context.turnId,
-          context.transcript,
-          "voice",
-          context.currentFramePath,
-          clientTiming,
-        );
-        return true;
-      },
-      onTurnError: handleVoiceTurnError,
-      onTurnComplete: handleTurnComplete,
-    }),
+          const capture = activeVoiceInkSelectionCaptureRef.current;
+          const captured = prepared ? Promise.resolve(prepared) : capture
+            ? capture().then((selection) => ({
+                snapshot: selection.snapshot,
+                contentKind: selection.contentKind,
+                boardContext: selection.boardContext,
+                file: selection.contextImage,
+                recordSelection: selection.recordSelection,
+              }))
+            : Promise.resolve(null);
+          // Capture can reject before the utterance ends. Keep the rejection for
+          // getAdditionalTurnFiles without creating an unhandled promise rejection.
+          void captured.catch(() => undefined);
+          return createOptions(captured, Boolean(prepared || capture));
+        },
+      };
+    },
     [
       conversationOptions,
       handleTurnComplete,
@@ -1257,8 +1313,6 @@ export function LearningWorkspace({
   }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
-  const [selectionEnhancementPending, setSelectionEnhancementPending] =
-    useState(false);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
   const cameraSettings = conv.cameraSettings ?? DEFAULT_CAMERA_FRAME_SETTINGS;
   const completedArtifactFilenames = completedTurnId
@@ -1547,6 +1601,7 @@ export function LearningWorkspace({
     selectionArtifactRequestsRef.current.clear();
     requestedSelectionArtifactsRef.current.clear();
     selectionStateRef.current = null;
+    setTextTurnPending(false);
     setSelectionState(null);
     setLoadedSelectionArtifacts({});
     void loadSelectionEnhancementState(sessionId).then((state) => {
@@ -1696,7 +1751,8 @@ export function LearningWorkspace({
   useEffect(() => {
     if (!selectionState) return;
     const pending = selectionArtifacts.filter(
-      (artifact) => !requestedSelectionArtifactsRef.current.has(artifact.path),
+      (artifact) => selectionRequests.canConsume(artifact.turnId)
+        && !requestedSelectionArtifactsRef.current.has(artifact.path),
     );
     if (pending.length === 0) return;
     pending.forEach((artifact) => {
@@ -1705,6 +1761,7 @@ export function LearningWorkspace({
       selectionArtifactRequestsRef.current.set(artifact.path, controller);
       loadSelectionEnhancementArtifact(artifact, sessionId, controller.signal)
         .then((loaded) => {
+          if (controller.signal.aborted || !selectionRequests.canConsume(loaded.turn_id)) return;
           const source = selectionState.sources.find(
             (candidate) => candidate.source_id === loaded.source.source_id,
           );
@@ -1736,7 +1793,7 @@ export function LearningWorkspace({
           }
         });
     });
-  }, [selectionArtifacts, selectionState, sessionId]);
+  }, [selectionArtifacts, selectionState, sessionId, selectionRequests]);
 
   const appendOllEvents = ollLesson?.appendEvents;
 
@@ -1891,11 +1948,17 @@ export function LearningWorkspace({
       uploadedMediaPath: string;
     }) => {
       if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      const selectionScope = selectionScopeRef.current;
+      if (!selectionScope?.active || selectionScope.sessionId !== sessionId) return;
       unlockAudio();
       setSendError(null);
       setTextTurnPending(true);
-      setSelectionEnhancementPending(true);
       const turnId = delivery?.turnId ?? crypto.randomUUID();
+      const answerPresentation = selectionAnswerPresentation(
+        toolId,
+        question,
+        boardWritingReady,
+      );
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -1903,6 +1966,7 @@ export function LearningWorkspace({
         origin: "selection",
         createdAt: new Date().toISOString(),
         status: "pending",
+        answerPresentation,
         source: {
           sourceId: snapshot.source_id,
           bounds: { ...snapshot.bounds },
@@ -1910,9 +1974,12 @@ export function LearningWorkspace({
       });
       onLearnerInput?.(question);
       try {
+        selectionRequests.begin(turnId);
         await rememberSelectionSource(snapshot);
+        if (!selectionScope.active) return;
         const mediaPath = delivery?.uploadedMediaPath
           ?? (await uploadFiles([contextImage], "upload"))[0];
+        if (!selectionScope.active) return;
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
         const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
@@ -1929,12 +1996,14 @@ export function LearningWorkspace({
             : undefined,
           boardContext,
           toolId,
+          deliveryMode: answerPresentation,
         });
         const invocation = await invokeSkillAction(
           sessionId,
           "learning.selection.enhance",
-          actionArguments,
+          boardWritingReady ? { ...actionArguments, capabilities: ["board_writing"] } : actionArguments,
         );
+        if (!selectionScope.active) return;
         const failedResult = (invocation.results ?? [])
           .find((result) => !result.success);
         if (!invocation.ok || failedResult) {
@@ -1944,30 +2013,44 @@ export function LearningWorkspace({
           );
         }
         const files = await getSessionFiles(sessionId);
+        if (!selectionScope.active) return;
         const artifacts = collectPersistedSelectionEnhancementArtifacts(files);
-        if (!artifacts.some((artifact) => artifact.turnId === turnId)) {
+        const resultArtifact = artifacts.find((artifact) => artifact.turnId === turnId);
+        if (!resultArtifact) {
           throw new Error(
             "没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。",
           );
         }
+        const loaded = await loadSelectionEnhancementArtifact(resultArtifact, sessionId);
+        if (!selectionScope.active) return;
+        if (!selectionArtifactMatchesSource(loaded, snapshot)) {
+          throw new Error("选区辅助内容无法对应到已保存的原稿快照");
+        }
+        if (!selectionRequests.accept(turnId)) return;
+        requestedSelectionArtifactsRef.current.add(resultArtifact.path);
+        setLoadedSelectionArtifacts((current) => ({ ...current, [resultArtifact.path]: loaded }));
         setPersistedSelectionArtifacts(artifacts);
         setTextTurnPending(false);
-        setSelectionEnhancementPending(false);
         setWhiteboardQuestionStatus(turnId, "answered");
         handleTurnComplete(turnId);
       } catch (cause) {
+        if (cause instanceof BridgeTimeoutError) {
+          try { selectionRequests.timeout(turnId); } catch {
+            // The persisted pending barrier still prevents delivery after reload.
+          }
+        }
+        if (!selectionScope.active) return;
         const message = cause instanceof Error
           ? cause.message
           : "选区问题发送失败";
         setTextTurnPending(false);
-        setSelectionEnhancementPending(false);
         updateWhiteboardQuestion(turnId, { status: "failed", error: message });
         // Selection failures stay attached to their question on the board.
         // Resolving here prevents the whiteboard toolbar and the workspace
         // shell from rendering duplicate error notices outside that card.
       }
     },
-    [
+    [setSendError, setTextTurnPending,
       handleTurnComplete,
       aiUnavailable,
       addWhiteboardQuestion,
@@ -1975,6 +2058,8 @@ export function LearningWorkspace({
       onLearnerInput,
       rememberSelectionSource,
       sessionId,
+      selectionRequests,
+      boardWritingReady,
       setWhiteboardQuestionStatus,
       updateWhiteboardQuestion,
     ],
@@ -2094,7 +2179,7 @@ export function LearningWorkspace({
       ),
       reference,
     ].slice(-4));
-  }, [rememberSelectionSource]);
+  }, [setComposerBoardReferences, rememberSelectionSource]);
 
   const deleteSelectionEnhancement = useCallback((turnId: string) => {
     setSelectionState((current) => {
@@ -2109,39 +2194,41 @@ export function LearningWorkspace({
     // a fake loading card.
     setWhiteboardQuestions((current) => current.filter((question) =>
       question.id !== turnId));
+  }, [setWhiteboardQuestions]);
+
+  const updateSelectionCardLayout = useCallback((
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+  ) => {
+    const current = selectionStateRef.current;
+    if (!current) return;
+    const next = setSelectionEnhancementCardLayout(current, turnId, layout);
+    if (next === current) return;
+    // Persist synchronously from the authoritative ref. Saving inside a React
+    // state updater can be deferred until after the pointer event, or skipped
+    // entirely if the page reloads first.
+    saveSelectionEnhancementState(next);
+    selectionStateRef.current = next;
+    setSelectionState(next);
   }, []);
 
   const deleteSelectionSources = useCallback((sourceIds: string[]) => {
     const ids = new Set(sourceIds);
     if (ids.size === 0) return;
-    const matchingTurnIds = new Set([
-      ...Object.values(loadedSelectionArtifacts)
-        .filter((artifact) => ids.has(artifact.source.source_id))
-        .map((artifact) => artifact.turn_id),
-      ...whiteboardQuestions
-        .filter((question) => question.origin === "selection"
-          && question.source
-          && ids.has(question.source.sourceId))
-        .map((question) => question.id),
-    ]);
     setSelectionState((current) => {
       if (!current) return current;
-      const next = removeSelectionSources(current, ids, matchingTurnIds);
+      const next = removeSelectionSources(current, ids);
       saveSelectionEnhancementState(next);
       selectionStateRef.current = next;
       return next;
     });
-    setWhiteboardQuestions((current) => current.filter((question) =>
-      question.origin !== "selection"
-      || !question.source
-      || !ids.has(question.source.sourceId)));
     setComposerBoardReferences((current) => current.filter((reference) =>
       !ids.has(reference.snapshot.source_id)));
     const pendingVoice = pendingVoiceSelectionRef.current;
     if (pendingVoice && ids.has(pendingVoice.snapshot.source_id)) {
       pendingVoiceSelectionRef.current = null;
     }
-  }, [loadedSelectionArtifacts, whiteboardQuestions]);
+  }, [setComposerBoardReferences]);
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
@@ -2323,7 +2410,7 @@ export function LearningWorkspace({
         setSendError(cause instanceof Error ? cause.message : "图片发送失败");
       }
     },
-    [
+    [setSendError, setTextTurnPending,
       addWhiteboardQuestion,
       buildTurnText,
       aiUnavailable,
@@ -2415,7 +2502,12 @@ export function LearningWorkspace({
     };
   }, [cameraSettingsOpen, closeCameraSettings]);
 
-  const teacherSpeech = lessonOwnsNarration
+  const pendingSelectionQuestion = whiteboardQuestions.find((question) =>
+    question.origin === "selection" && question.status === "pending");
+  const selectionPending = Boolean(pendingSelectionQuestion) || Boolean(conv.selectionTurnPending);
+  const teacherSpeech = selectionPending
+    ? "小章鱼正在看你框选的这部分。"
+    : lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
     : plainReply?.text ??
       (textTurnPending
@@ -2428,12 +2520,14 @@ export function LearningWorkspace({
           : conv.state === "thinking"
             ? "我正在准备白板课程。"
             : "");
-  const teacherState = textTurnPending
+  const teacherState = selectionPending || textTurnPending
     ? "thinking"
     : lessonOwnsNarration
       ? "speaking"
       : conv.state;
-  const teacherStateLabel = textTurnPending
+  const teacherStateLabel = selectionPending
+    ? "正在看选区"
+    : textTurnPending
     ? "正在想"
     : lessonOwnsNarration
       ? "课程播放中"
@@ -2455,7 +2549,7 @@ export function LearningWorkspace({
   const pendingLessonAwaitingFirstArtifact = Boolean(
     pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
   );
-  const lessonLoading = !selectionEnhancementPending && (
+  const lessonLoading = !selectionPending && (
     pendingLessonAwaitingFirstArtifact
     || (
       !plainReply
@@ -2609,7 +2703,7 @@ export function LearningWorkspace({
           runtime={controlledOllLesson ?? ollLesson}
           inkSessionId={inkSessionId}
           loadingState={whiteboardLoadingState}
-          questions={replayingWithoutStudentAdditions
+          questions={replayingWithoutStudentAdditions || !selectionStateReady
             ? whiteboardQuestions.filter((question) => question.origin !== "selection")
             : whiteboardQuestions}
           courseRegions={courseRegions}
@@ -2620,12 +2714,16 @@ export function LearningWorkspace({
           onCourseRendered={handleCourseRendered}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
+          onBoardWritingReady={setBoardWritingReady}
           selectionEnhancements={replayingWithoutStudentAdditions
             ? []
             : visibleSelectionEnhancements}
           selectionSources={replayingWithoutStudentAdditions
             ? []
-            : selectionState?.sources ?? []}
+            : selectionStateReady ? selectionState.sources : []}
+          selectionCardLayouts={replayingWithoutStudentAdditions
+            ? {}
+            : selectionStateReady ? selectionState.card_layouts ?? {} : {}}
           onClassifyInkSelection={classifyInkSelection}
           onAskInkSelection={sendSelectionQuestion}
           onVoiceInkSelection={voiceEnabled
@@ -2637,6 +2735,7 @@ export function LearningWorkspace({
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}
           onDeleteSelectionSources={deleteSelectionSources}
+          onSelectionCardLayoutChange={updateSelectionCardLayout}
           onRetryDegradedVisual={retryDegradedVisual}
         />
       </main>

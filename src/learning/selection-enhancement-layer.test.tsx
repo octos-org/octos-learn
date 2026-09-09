@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   INK_SELECTION_FORMAT,
@@ -20,7 +27,10 @@ vi.mock("octos-lesson-language/web-runtime", () => ({
   samplePlotExpression: vi.fn(() => []),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const artifact: SelectionEnhancementArtifact = {
   profile: "octos.selection-enhancement",
@@ -53,16 +63,630 @@ function dispatchPointerEvent(
     clientY: number;
   },
 ): void {
+  fireEvent(target, createPointerEvent(type, {
+    pointerId,
+    clientX,
+    clientY,
+  }));
+}
+
+function createPointerEvent(
+  type: string,
+  { pointerId, clientX, clientY }: {
+    pointerId: number;
+    clientX: number;
+    clientY: number;
+  },
+): Event {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperties(event, {
     pointerId: { value: pointerId },
     clientX: { value: clientX },
     clientY: { value: clientY },
+    button: { value: 0 },
   });
-  fireEvent(target, event);
+  return event;
+}
+
+function expectCardsApart(left: HTMLElement, right: HTMLElement): void {
+  const leftRect = {
+    x: Number.parseFloat(left.style.left),
+    y: Number.parseFloat(left.style.top),
+    width: Number.parseFloat(left.style.width),
+    height: 300 * Number(left.dataset.cardScale ?? 1),
+  };
+  const rightRect = {
+    x: Number.parseFloat(right.style.left),
+    y: Number.parseFloat(right.style.top),
+    width: Number.parseFloat(right.style.width),
+    height: 300 * Number(right.dataset.cardScale ?? 1),
+  };
+  const overlaps = leftRect.x < rightRect.x + rightRect.width + 24
+    && leftRect.x + leftRect.width + 24 > rightRect.x
+    && leftRect.y < rightRect.y + rightRect.height + 24
+    && leftRect.y + leftRect.height + 24 > rightRect.y;
+  expect(overlaps).toBe(false);
+}
+
+function cardRectsOverlapForTest(
+  left: { x: number; y: number; width: number; height: number },
+  right: { x: number; y: number; width: number; height: number },
+  gap: number,
+): boolean {
+  return left.x < right.x + right.width + gap
+    && left.x + left.width + gap > right.x
+    && left.y < right.y + right.height + gap
+    && left.y + left.height + gap > right.y;
 }
 
 describe("SelectionEnhancementLayer", () => {
+  it("draws a thick arrow that follows the live source and a dragged card", () => {
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: artifact.source.document_version,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: artifact.source.bounds,
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 10, y: 20 },
+          { x: 130, y: 20 },
+          { x: 130, y: 90 },
+          { x: 10, y: 90 },
+        ],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path d="M10 20L130 90"/></svg>',
+    };
+    const onLayoutChange = vi.fn();
+    const layout = {
+      x: 160,
+      y: 20,
+      scale: 1,
+      minimized: false,
+      manually_positioned: false,
+    };
+    const { container, rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{ [artifact.turn_id]: layout }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        clientToBoardPoint={(point) => point}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const path = container.querySelector<SVGPathElement>(
+      ".learning-selection-source-path",
+    );
+    expect(path?.getAttribute("stroke-width")).toBe("3");
+    expect(path?.getAttribute("d")).toMatch(/^M .* H .* Q .* V .* Q .* H /);
+    expect(path?.getAttribute("marker-end"))
+      .toMatch(/^url\(#selection-source-arrow-/);
+    expect(container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    )?.dataset.sourceSide).toBe("right");
+    expect(container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    )?.dataset.cardSide).toBe("left");
+    expect(container.querySelector("marker polyline")?.getAttribute("points"))
+      .toBe("2,1 10,5 2,9");
+
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    dispatchPointerEvent(card, "pointerdown", {
+      pointerId: 7,
+      clientX: 200,
+      clientY: 100,
+    });
+    dispatchPointerEvent(card, "pointermove", {
+      pointerId: 7,
+      clientX: 260,
+      clientY: 140,
+    });
+    expect(card.dataset.cardX).toBe("220");
+    expect(card.dataset.cardY).toBe("60");
+    dispatchPointerEvent(card, "pointerup", {
+      pointerId: 7,
+      clientX: 260,
+      clientY: 140,
+    });
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      ...layout,
+      x: 220,
+      y: 60,
+      manually_positioned: true,
+    });
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: {
+            ...layout,
+            x: 220,
+            y: 60,
+            manually_positioned: true,
+          },
+        }}
+        currentSourceBoundsById={new Map([[
+          source.source_id,
+          { ...source.bounds, x: 90, y: 60 },
+        ]])}
+        clientToBoardPoint={(point) => point}
+        currentDocumentVersion={2}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const movedLink = container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(movedLink?.dataset.sourceX).toBe("210");
+    expect(Number(movedLink?.dataset.sourceY)).toBeGreaterThanOrEqual(60);
+  });
+
+  it("moves connector endpoints to the nearest sides as relative positions change", () => {
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: 1,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: { x: 100, y: 100, width: 120, height: 70 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [{ x: 100, y: 100 }, { x: 220, y: 100 }, { x: 220, y: 170 }, { x: 100, y: 170 }],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path/></svg>',
+    };
+    const renderAt = (x: number, y: number) => (
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: { x, y, scale: 1, minimized: false, manually_positioned: true },
+        }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />
+    );
+    const { container, rerender } = render(renderAt(260, 100));
+    const link = () => container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(link()?.dataset.sourceSide).toBe("right");
+    expect(link()?.dataset.cardSide).toBe("left");
+
+    rerender(renderAt(-270, 100));
+    expect(link()?.dataset.sourceSide).toBe("left");
+    expect(link()?.dataset.cardSide).toBe("right");
+
+    rerender(renderAt(90, -320));
+    expect(link()?.dataset.sourceSide).toBe("top");
+    expect(link()?.dataset.cardSide).toBe("bottom");
+
+    rerender(renderAt(90, 220));
+    expect(link()?.dataset.sourceSide).toBe("bottom");
+    expect(link()?.dataset.cardSide).toBe("top");
+  });
+
+  it("connects to the measured bottom edge of a card above its source", () => {
+    vi.spyOn(HTMLElement.prototype, "offsetHeight", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains("learning-selection-enhancement") ? 420 : 0;
+      });
+    const source: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: artifact.source.source_id,
+      document_id: artifact.source.document_id,
+      document_version: 1,
+      created_at: "2026-09-08T12:00:00.000Z",
+      bounds: { x: 100, y: 100, width: 120, height: 70 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [{ x: 100, y: 100 }, { x: 220, y: 100 }, { x: 220, y: 170 }, { x: 100, y: 170 }],
+      },
+      component_ids: ["stroke:source-1"],
+      checksum: artifact.source.checksum,
+      svg: '<svg data-oll-ink-selection="1"><path/></svg>',
+    };
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[source]}
+        cardLayouts={{
+          [artifact.turn_id]: {
+            x: 0,
+            y: -350,
+            scale: 1,
+            minimized: false,
+            manually_positioned: true,
+          },
+        }}
+        currentSourceBoundsById={new Map([[source.source_id, source.bounds]])}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const link = container.querySelector<SVGElement>(
+      ".learning-selection-source-link",
+    );
+    expect(link?.dataset.cardSide).toBe("bottom");
+    expect(link?.dataset.cardY).toBe("70");
+  });
+
+  it("lets text selection start in card content without dragging the card", () => {
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    const text = screen.getByText("这条说明不会被悄悄重新指向别的对象。");
+    dispatchPointerEvent(text, "pointerdown", { pointerId: 8, clientX: 100, clientY: 100 });
+    dispatchPointerEvent(text, "pointermove", { pointerId: 8, clientX: 180, clientY: 140 });
+    dispatchPointerEvent(text, "pointerup", { pointerId: 8, clientX: 180, clientY: 140 });
+
+    expect(card.dataset.cardX).toBe("160");
+    expect(card.dataset.cardY).toBe("20");
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  it("drags the whole card from the question area", () => {
+    const question: WhiteboardQuestionRecord = {
+      id: artifact.turn_id,
+      sessionId: "question-drag",
+      text: "请解释我圈出的这一部分。",
+      origin: "selection",
+      createdAt: "2026-08-15T09:59:00.000Z",
+      status: "answered",
+      source: {
+        sourceId: artifact.source.source_id,
+        bounds: artifact.source.bounds,
+      },
+    };
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        questions={[question]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    const questionArea = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement-question",
+    )!;
+
+    dispatchPointerEvent(questionArea, "pointerdown", {
+      pointerId: 9,
+      clientX: 180,
+      clientY: 50,
+    });
+    dispatchPointerEvent(questionArea, "pointermove", {
+      pointerId: 9,
+      clientX: 240,
+      clientY: 90,
+    });
+    dispatchPointerEvent(questionArea, "pointerup", {
+      pointerId: 9,
+      clientX: 240,
+      clientY: 90,
+    });
+
+    expect(card.dataset.cardX).toBe("220");
+    expect(card.dataset.cardY).toBe("60");
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      x: 220,
+      y: 60,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+  });
+
+  it("persists the last drag position when move and release are batched", () => {
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+
+    act(() => {
+      card.dispatchEvent(createPointerEvent("pointerdown", {
+        pointerId: 10,
+        clientX: 180,
+        clientY: 50,
+      }));
+      card.dispatchEvent(createPointerEvent("pointermove", {
+        pointerId: 10,
+        clientX: 260,
+        clientY: 100,
+      }));
+      card.dispatchEvent(createPointerEvent("pointerup", {
+        pointerId: 10,
+        clientX: 270,
+        clientY: 110,
+      }));
+    });
+
+    expect(onLayoutChange).toHaveBeenLastCalledWith(artifact.turn_id, {
+      x: 250,
+      y: 80,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+  });
+
+  it("never moves another card while or after one card is dragged", () => {
+    const first = { ...artifact, turn_id: "drag-first" };
+    const second = {
+      ...artifact,
+      turn_id: "drag-second",
+      created_at: "2026-08-15T10:01:00.000Z",
+    };
+    const onLayoutChange = vi.fn();
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={[first, second]}
+        sources={[]}
+        cardLayouts={{
+          [first.turn_id]: {
+            x: 160,
+            y: 20,
+            scale: 1,
+            minimized: false,
+            manually_positioned: false,
+          },
+          [second.turn_id]: {
+            x: 514,
+            y: 20,
+            scale: 1,
+            minimized: false,
+            manually_positioned: false,
+          },
+        }}
+        currentDocumentVersion={1}
+        clientToBoardPoint={(point) => point}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+
+    dispatchPointerEvent(cards[0]!, "pointerdown", {
+      pointerId: 11,
+      clientX: 180,
+      clientY: 50,
+    });
+    dispatchPointerEvent(cards[0]!, "pointermove", {
+      pointerId: 11,
+      clientX: 520,
+      clientY: 50,
+    });
+    expect(cards[1]!.dataset.cardX).toBe("514");
+    expect(cards[1]!.dataset.cardY).toBe("20");
+
+    dispatchPointerEvent(cards[0]!, "pointerup", {
+      pointerId: 11,
+      clientX: 520,
+      clientY: 50,
+    });
+    expect(cards[1]!.dataset.cardX).toBe("514");
+    expect(cards[1]!.dataset.cardY).toBe("20");
+    expect(onLayoutChange).toHaveBeenCalledTimes(1);
+    expect(onLayoutChange).toHaveBeenCalledWith(first.turn_id, expect.objectContaining({
+      x: 500,
+      y: 20,
+      manually_positioned: true,
+    }));
+  });
+
+  it("never reflows a persisted automatic position after refresh", () => {
+    const onLayoutChange = vi.fn();
+    const persisted = {
+      x: 160,
+      y: 20,
+      scale: 1,
+      minimized: false,
+      manually_positioned: false,
+    };
+    const { container, rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        cardLayouts={{ [artifact.turn_id]: persisted }}
+        occupiedRects={[]}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[artifact]}
+        sources={[]}
+        cardLayouts={{ [artifact.turn_id]: persisted }}
+        occupiedRects={[{ x: 150, y: 10, width: 500, height: 500 }]}
+        visibleBoardBounds={{ x: 0, y: 0, width: 1_200, height: 800 }}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const card = container.querySelector<HTMLElement>(
+      ".learning-selection-enhancement",
+    )!;
+    expect(card.dataset.cardX).toBe("160");
+    expect(card.dataset.cardY).toBe("20");
+    expect(onLayoutChange).not.toHaveBeenCalled();
+  });
+
+  it("repairs overlapping automatic cards once and persists the arrangement", async () => {
+    const onLayoutChange = vi.fn();
+    const artifacts = Array.from({ length: 3 }, (_, index) => ({
+      ...artifact,
+      turn_id: `overlap-${index + 1}`,
+      created_at: `2026-08-15T10:0${index}:00.000Z`,
+    }));
+    const overlappingLayouts = Object.fromEntries(artifacts.map((item) => [
+      item.turn_id,
+      {
+        x: 160,
+        y: 20,
+        scale: 1,
+        minimized: false,
+        manually_positioned: false,
+      },
+    ]));
+    const { container } = render(
+      <SelectionEnhancementLayer
+        artifacts={artifacts}
+        sources={[]}
+        cardLayouts={overlappingLayouts}
+        currentDocumentVersion={1}
+        onCardLayoutChange={onLayoutChange}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const cards = [...container.querySelectorAll<HTMLElement>(
+      ".learning-selection-enhancement",
+    )];
+    const rects = cards.map((card) => ({
+      x: Number(card.dataset.cardX),
+      y: Number(card.dataset.cardY),
+      width: Number.parseFloat(card.style.width),
+      height: 300,
+    }));
+    for (let left = 0; left < rects.length; left += 1) {
+      for (let right = left + 1; right < rects.length; right += 1) {
+        expect(cardRectsOverlapForTest(rects[left]!, rects[right]!, 24))
+          .toBe(false);
+      }
+    }
+    await waitFor(() => expect(onLayoutChange).toHaveBeenCalledTimes(2));
+  });
+
+  it("reserves a loading card only for card-bound selection answers", () => {
+    const pending = {
+      id: "pending-card",
+      sessionId: "learn-1",
+      text: "请画出函数图像",
+      origin: "selection" as const,
+      createdAt: "2026-09-07T10:00:00.000Z",
+      status: "pending" as const,
+      source: {
+        sourceId: "source-1",
+        bounds: { x: 10, y: 20, width: 120, height: 70 },
+      },
+      answerPresentation: "card" as const,
+    };
+    const { rerender } = render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[pending]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("status").textContent)
+      .toContain("正在生成小章鱼辅助");
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[{ ...pending, answerPresentation: "board-writing" }]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+  });
+
+  it("allows a question-only auxiliary card to be deleted", () => {
+    const onDelete = vi.fn();
+    const failed: WhiteboardQuestionRecord = {
+      id: "failed-card",
+      sessionId: "learn-1",
+      text: "请按我选中的公式生成函数图像。",
+      origin: "selection",
+      createdAt: "2026-09-07T10:00:00.000Z",
+      status: "failed",
+      error: "回答生成失败",
+      source: {
+        sourceId: "source-1",
+        bounds: { x: 10, y: 20, width: 120, height: 70 },
+      },
+      answerPresentation: "card",
+    };
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[failed]}
+        currentDocumentVersion={1}
+        onDelete={onDelete}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", {
+      name: "删除这条辅助内容",
+    }));
+
+    expect(onDelete).toHaveBeenCalledOnce();
+    expect(onDelete).toHaveBeenCalledWith(failed.id);
+  });
+
   it("renders LaTeX throughout generated auxiliary card text", () => {
     const { container } = render(
       <SelectionEnhancementLayer
@@ -82,6 +706,7 @@ describe("SelectionEnhancementLayer", () => {
     );
 
     const card = container.querySelector(".learning-selection-enhancement");
+    expect(card?.getAttribute("data-enhancement-id")).toBe(artifact.turn_id);
     expect(card?.querySelectorAll(".katex").length).toBeGreaterThanOrEqual(4);
     expect(card?.textContent).not.toContain("$");
     expect(card?.textContent).toContain("函数");
@@ -175,7 +800,7 @@ describe("SelectionEnhancementLayer", () => {
     expect(card?.dataset.cardScale).toBe("1.00");
   });
 
-  it("places repeated results after the real width of the previous card", () => {
+  it("places repeated results in separate open whiteboard areas", () => {
     const { container } = render(
       <SelectionEnhancementLayer
         artifacts={[
@@ -191,10 +816,7 @@ describe("SelectionEnhancementLayer", () => {
       ".learning-selection-enhancement",
     )];
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
 
     const firstResize = screen.getAllByRole("button", {
       name: "调整辅助卡片大小，当前 100%",
@@ -210,10 +832,7 @@ describe("SelectionEnhancementLayer", () => {
       clientY: 210,
     });
 
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("does not overlap results when the same strokes are selected again", () => {
@@ -266,10 +885,7 @@ describe("SelectionEnhancementLayer", () => {
       ".learning-selection-enhancement",
     )];
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("keeps restored cards apart when their local source snapshots are missing", () => {
@@ -299,10 +915,7 @@ describe("SelectionEnhancementLayer", () => {
     )];
 
     expect(cards).toHaveLength(2);
-    expect(Number.parseFloat(cards[1]!.style.left)).toBeGreaterThanOrEqual(
-      Number.parseFloat(cards[0]!.style.left)
-        + Number.parseFloat(cards[0]!.style.width) + 24,
-    );
+    expectCardsApart(cards[0]!, cards[1]!);
   });
 
   it("renders a selection question and its matching result as one collapsible card", () => {
@@ -352,7 +965,7 @@ describe("SelectionEnhancementLayer", () => {
     expect(screen.getByText("原来的说明")).toBeTruthy();
   });
 
-  it("keeps a pending selection question and its answer loading state in one card", () => {
+  it("does not resurrect a loading card for legacy pending records without a surface", () => {
     const question: WhiteboardQuestionRecord = {
       id: "turn-pending",
       sessionId: "learn-question-pending",
@@ -370,30 +983,19 @@ describe("SelectionEnhancementLayer", () => {
         artifacts={[]}
         sources={[]}
         questions={[question]}
-        loading={{
-          turnId: question.id,
-          sourceId: artifact.source.source_id,
-          bounds: artifact.source.bounds,
-          state: {
-            id: "selection:source-1",
-            kind: "selection",
-            title: "正在生成函数图像",
-            detail: "正在识别公式，并把可查看的图像放在选区旁边。",
-          },
-        }}
         currentDocumentVersion={1}
         onDelete={vi.fn()}
       />,
     );
 
     expect(container.querySelectorAll(".learning-selection-enhancement"))
-      .toHaveLength(1);
+      .toHaveLength(0);
     expect(container.querySelector(".learning-whiteboard-question-card"))
       .toBeNull();
     expect(container.querySelector(".learning-whiteboard-loading-block"))
       .toBeNull();
-    expect(screen.getByText("请绘制我圈出的函数。")).toBeTruthy();
-    expect(screen.getByText("正在生成函数图像")).toBeTruthy();
+    expect(screen.queryByText("请绘制我圈出的函数。")).toBeNull();
+    expect(screen.queryByText("正在生成函数图像")).toBeNull();
   });
 
   it("keeps a failed selection answer in the same question card", () => {

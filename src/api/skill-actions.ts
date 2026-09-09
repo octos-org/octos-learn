@@ -56,7 +56,7 @@ export interface SkillActionJobListOptions {
 
 function translateBridgeError(err: unknown): Error {
   if (err instanceof BridgeRpcError) return new Error(err.message);
-  if (err instanceof BridgeTimeoutError) return new Error(err.message);
+  if (err instanceof BridgeTimeoutError) return err;
   if (err instanceof BridgeStoppedError) return new Error(err.message);
   if (err instanceof Error) return err;
   return new Error(String(err));

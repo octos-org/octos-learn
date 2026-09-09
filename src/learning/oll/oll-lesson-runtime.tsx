@@ -51,6 +51,7 @@ import type {
   SelectionClassification,
   SelectionContentKind,
   SelectionEnhancementArtifact,
+  SelectionEnhancementCardLayout,
 } from "../selection-enhancements";
 import {
   selectionArtifactTargetsExist,
@@ -93,6 +94,7 @@ type LearningInkState = InkRuntimeState & {
   pen_color: string;
   selection_color: string | null;
   selection_mode: "rectangle" | "lasso";
+  selection_transform_enabled?: boolean;
   content_bounds: InkSelectionSnapshot["bounds"] | null;
   content_bounds_list: InkSelectionSnapshot["bounds"][];
 };
@@ -101,6 +103,10 @@ type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
   setSelectionMode?: (mode: "rectangle" | "lasso") => void;
+  getSelectionSourceBounds?: (
+    snapshot: InkSelectionSnapshot,
+  ) => InkSelectionSnapshot["bounds"] | null;
+  subscribeGeometry?: (listener: () => void) => () => void;
 };
 
 interface PreparedSelectionContext {
@@ -306,6 +312,14 @@ function measureVisualRegionBounds(
   }));
 }
 
+function measureBoardNodeBounds(nodeLayer: HTMLElement): WhiteboardRect[] {
+  return [...nodeLayer.querySelectorAll<HTMLElement>(".board-node[data-id]")]
+    .flatMap((element) => {
+      const bounds = renderedWorldRect(element);
+      return bounds ? [bounds] : [];
+    });
+}
+
 export function courseHasRenderedBoardNode(
   board: OllLessonRuntimeController["board"],
   explicitNodeIds: readonly string[] | undefined,
@@ -329,6 +343,7 @@ const emptyInkState: LearningInkState = {
   selection_color: null,
   selection_input: "unknown",
   selection_mode: "rectangle",
+  selection_transform_enabled: false,
   selection_revision: 0,
   content_bounds: null,
   content_bounds_list: [],
@@ -343,6 +358,7 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     pen_color: enhanced.pen_color ?? "#176b62",
     selection_color: enhanced.selection_color ?? null,
     selection_mode: enhanced.selection_mode ?? "rectangle",
+    selection_transform_enabled: enhanced.selection_transform_enabled ?? false,
     selection_revision: enhanced.selection_revision ?? 0,
     content_bounds: enhanced.content_bounds ?? null,
     content_bounds_list: enhanced.content_bounds_list ?? (
@@ -441,13 +457,16 @@ export function LearningWhiteboard({
   onCourseRendered,
   selectionEnhancements = [],
   selectionSources = [],
+  selectionCardLayouts = {},
   onClassifyInkSelection,
   onAskInkSelection,
   onVoiceInkSelection,
   onVoiceInkSelectionCaptureChange,
   onReferenceInkSelection,
+  onBoardWritingReady,
   onDeleteSelectionEnhancement,
   onDeleteSelectionSources,
+  onSelectionCardLayoutChange,
   onRetryDegradedVisual,
 }: {
   runtime?: OllLessonRuntimeController | null;
@@ -478,7 +497,9 @@ export function LearningWhiteboard({
   onInkActivity?: () => void;
   onCourseRendered?: (event: LearningCourseRenderEvent) => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
+  onBoardWritingReady?: (ready: boolean) => void;
   selectionSources?: InkSelectionSnapshot[];
+  selectionCardLayouts?: Readonly<Record<string, SelectionEnhancementCardLayout>>;
   onClassifyInkSelection?: (request: {
     snapshot: InkSelectionSnapshot;
     boardContext: SelectionBoardContext;
@@ -512,6 +533,10 @@ export function LearningWhiteboard({
   }) => Promise<void> | void;
   onDeleteSelectionEnhancement?: (turnId: string) => void;
   onDeleteSelectionSources?: (sourceIds: string[]) => void;
+  onSelectionCardLayoutChange?: (
+    turnId: string,
+    layout: SelectionEnhancementCardLayout,
+  ) => void;
   onRetryDegradedVisual?: (
     request: DegradedVisualRetryRequest,
   ) => Promise<void> | void;
@@ -552,12 +577,119 @@ export function LearningWhiteboard({
   }>());
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
   const [inkAvailable, setInkAvailable] = useState(false);
-  const [inkSupportsColors, setInkSupportsColors] = useState(false);
-  const [inkColorPaletteOpen, setInkColorPaletteOpen] = useState(false);
   const [inkError, setInkError] = useState("");
+  const [writingRetry, setWritingRetry] = useState(0);
+  const [writingError, setWritingError] = useState("");
+  const writingInFlightRef = useRef(new Set<string>());
+  const writingQueueRef = useRef<Promise<void>>(Promise.resolve());
+  useEffect(() => {
+    let active = true;
+    const ink = inkRuntimeRef.current as (InkRuntime & {
+      writeAiPaths?: (id: string, paths: string[]) => Promise<boolean>;
+    }) | null;
+    if (import.meta.env.VITE_ENABLE_BOARD_WRITING !== "true") {
+      onBoardWritingReady?.(false);
+      return;
+    }
+    if (!inkAvailable) return;
+    if (!ink?.writeAiPaths) {
+      onBoardWritingReady?.(false);
+      return;
+    }
+    // Advertise the negotiated ink API immediately. The artifact writer
+    // already waits for the worker-owned font preparation below, so model
+    // routing never needs to degrade to a card while the font is warming.
+    onBoardWritingReady?.(true);
+    void import("../board-writing").then(({ prepareBoardWritingFont }) =>
+      prepareBoardWritingFont()).catch(() => {
+      if (active) {
+        onBoardWritingReady?.(false);
+        setWritingError("手写字体加载失败，请重试。");
+      }
+    });
+    return () => { active = false; onBoardWritingReady?.(false); };
+  }, [inkAvailable, onBoardWritingReady, writingRetry]);
+  useEffect(() => {
+    const ink = inkRuntimeRef.current as (InkRuntime & {
+      writeAiPaths?: (id: string, paths: string[]) => Promise<boolean>;
+      getSelectionSourceBounds?: (
+        snapshot: InkSelectionSnapshot,
+      ) => InkSelectionSnapshot["bounds"] | null;
+    }) | null;
+    if (!inkAvailable || inkMergeSourceSessionId) return;
+    if (!ink?.writeAiPaths) {
+      if (selectionEnhancements.some((artifact) => artifact.response.kind === "board_writing")) {
+        const timer = window.setTimeout(() => {
+          setWritingError("当前笔迹组件不支持恢复这份板书，请更新客户端。");
+        }, 0);
+        return () => window.clearTimeout(timer);
+      }
+      return;
+    }
+    for (const artifact of selectionEnhancements) {
+      if (artifact.response.kind !== "board_writing") continue;
+      const id = `${inkSessionId}:${artifact.turn_id}`;
+      if (writingInFlightRef.current.has(id)) continue;
+      writingInFlightRef.current.add(id);
+      const lines = artifact.response.lines;
+      const sourceSnapshot = selectionSources.find(
+        (source) => source.source_id === artifact.source.source_id,
+      );
+      writingQueueRef.current = writingQueueRef.current.then(async () => {
+        const { layoutBoardWriting, prepareBoardWritingFont } = await import("../board-writing");
+        await prepareBoardWritingFont();
+        if (inkRuntimeRef.current !== ink) { writingInFlightRef.current.delete(id); return; }
+        const occupiedSpace = (): WhiteboardRect[] => {
+          const viewport = viewportRef.current;
+          const view = mountedRef.current?.view;
+          const occupied = [...ink.state.content_bounds_list ?? []];
+          if (!viewport || !view) return occupied;
+          for (const element of viewport.querySelectorAll<HTMLElement>(".board-node[data-id], [data-question-id], [data-enhancement-id]")) {
+            const bounds = renderedWorldRect(element);
+            if (bounds) occupied.push(bounds);
+          }
+          const frame = viewport.getBoundingClientRect();
+          for (const element of viewport.parentElement?.querySelectorAll<HTMLElement>("[data-learning-board-occlusion]") ?? []) {
+            const box = element.getBoundingClientRect();
+            const topLeft = view.viewportToBoard({ x: box.left - frame.left, y: box.top - frame.top });
+            const bottomRight = view.viewportToBoard({ x: box.right - frame.left, y: box.bottom - frame.top });
+            occupied.push({ x: topLeft.x, y: topLeft.y, width: bottomRight.x - topLeft.x, height: bottomRight.y - topLeft.y });
+          }
+          return occupied;
+        };
+        const currentSourceBounds = () => sourceSnapshot
+          ? ink.getSelectionSourceBounds?.(sourceSnapshot) ?? artifact.source.bounds
+          : artifact.source.bounds;
+        for (let attempt = 0; attempt < 4; attempt++) {
+          const occupied = occupiedSpace();
+          const sourceBounds = currentSourceBounds();
+          const { paths } = await layoutBoardWriting(lines, sourceBounds, occupied);
+          if (inkRuntimeRef.current !== ink) { writingInFlightRef.current.delete(id); return; }
+          // Worker layout yields. Recheck space before committing if the learner
+          // drew or moved strokes while outlines were being prepared.
+          if (
+            JSON.stringify(occupied) !== JSON.stringify(occupiedSpace())
+            || JSON.stringify(sourceBounds) !== JSON.stringify(currentSourceBounds())
+          ) continue;
+          await ink.writeAiPaths!(artifact.turn_id, paths);
+          return;
+        }
+        throw new Error("白板内容正在变化，请稍后重试板书。");
+      }).catch((cause: unknown) => {
+        writingInFlightRef.current.delete(id);
+        if (inkRuntimeRef.current === ink) setWritingError(cause instanceof Error ? cause.message : "板书写入失败");
+      });
+    }
+  }, [inkAvailable, inkMergeSourceSessionId, inkSessionId, selectionEnhancements, selectionSources, writingRetry]);
+  const [inkSupportsColors, setInkSupportsColors] = useState(false);
+  const [currentSelectionSourceBoundsById, setCurrentSelectionSourceBoundsById] =
+    useState<ReadonlyMap<string, InkSelectionSnapshot["bounds"]>>(() => new Map());
+  const [inkColorPaletteOpen, setInkColorPaletteOpen] = useState(false);
   const [taskError, setTaskError] = useState("");
   const [enhancementLayer, setEnhancementLayer] =
     useState<HTMLDivElement | null>(null);
+  const [visibleBoardBounds, setVisibleBoardBounds] =
+    useState<WhiteboardRect | undefined>();
   const [lessonLoadingPosition, setLessonLoadingPosition] = useState({
     left: 120,
     top: 120,
@@ -568,6 +700,8 @@ export function LearningWhiteboard({
   const [runtimeVisualRegionBounds, setRuntimeVisualRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
+  const [runtimeNodeBounds, setRuntimeNodeBounds] =
+    useState<WhiteboardRect[]>([]);
   const [runtimeAttachmentBounds, setRuntimeAttachmentBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
@@ -579,11 +713,6 @@ export function LearningWhiteboard({
   const [selectionContentKind, setSelectionContentKind] =
     useState<SelectionContentKind>("unknown");
   const [selectionRequestPending, setSelectionRequestPending] = useState(false);
-  const [selectionRequestStatus, setSelectionRequestStatus] = useState("");
-  const [selectionLoadingSource, setSelectionLoadingSource] = useState<{
-    sourceId: string;
-    bounds: InkSelectionSnapshot["bounds"];
-  } | null>(null);
   const [preparedSelection, setPreparedSelection] =
     useState<PreparedSelectionContext | null>(null);
   const [selectedBoardTargetIds, setSelectedBoardTargetIds] =
@@ -604,6 +733,61 @@ export function LearningWhiteboard({
   useEffect(() => {
     onUpdateCourseRegionRef.current = onUpdateCourseRegion;
   }, [onUpdateCourseRegion]);
+
+  useEffect(() => {
+    const ink = inkRuntimeRef.current;
+    if (!inkAvailable) return;
+    let frame = 0;
+    const update = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        setCurrentSelectionSourceBoundsById(new Map(selectionSources.flatMap((source) => {
+          const bounds = ink?.getSelectionSourceBounds?.(source);
+          return bounds ? [[source.source_id, bounds]] : [];
+        })));
+      });
+    };
+    update();
+    const unsubscribe = ink?.subscribeGeometry?.(update);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      unsubscribe?.();
+    };
+  }, [inkAvailable, inkSessionId, selectionSources]);
+
+  const selectionPlacementRequestKey = [
+    ...questions.map((question) => `${question.id}:${question.status}`),
+    ...selectionEnhancements.map((artifact) =>
+      `${artifact.turn_id}:${artifact.response.kind}`),
+  ].join("|");
+  useEffect(() => {
+    if (!enhancementLayer) return;
+    const viewport = viewportRef.current;
+    const view = mountedRef.current?.view;
+    if (!viewport || !view) return;
+    const topLeft = view.viewportToBoard({ x: 0, y: 0 });
+    const bottomRight = view.viewportToBoard({
+      x: viewport.clientWidth,
+      y: viewport.clientHeight,
+    });
+    const next = {
+      x: topLeft.x,
+      y: topLeft.y,
+      width: bottomRight.x - topLeft.x,
+      height: bottomRight.y - topLeft.y,
+    };
+    if (!Object.values(next).every(Number.isFinite)) return;
+    setVisibleBoardBounds((current) =>
+      current
+      && current.x === next.x
+      && current.y === next.y
+      && current.width === next.width
+      && current.height === next.height
+        ? current
+        : next);
+    // Existing cards must not move just because the learner pans or zooms.
+    // Capture the viewport only when a card is added or changes phase.
+  }, [enhancementLayer, selectionPlacementRequestKey]);
 
   useEffect(() => {
     if (!playbackCourseTarget) return;
@@ -632,12 +816,6 @@ export function LearningWhiteboard({
   const pendingComposerQuestion = [...composerQuestions].reverse().find(
     (question) => question.status === "pending",
   );
-  const selectionLoadingQuestion = selectionLoadingSource
-    ? [...questions].reverse().find((question) =>
-        question.origin === "selection"
-        && question.status === "pending"
-        && question.source?.sourceId === selectionLoadingSource.sourceId)
-    : undefined;
   const courseRegionByQuestion = useMemo(() => new Map(
     courseRegions.map((region) => [region.questionId, region]),
   ), [courseRegions]);
@@ -893,6 +1071,32 @@ export function LearningWhiteboard({
     enhancementLayer,
     inkState.content_bounds_list,
     loadingStateId,
+  ]);
+
+  const selectionCardOccupiedRects = useMemo<WhiteboardRect[]>(() => {
+    const rects: WhiteboardRect[] = [
+      ...inkState.content_bounds_list,
+      ...(runtimeNodeBounds.length > 0
+        ? runtimeNodeBounds
+        : Object.values(runtimeRegionBounds)),
+      ...Object.values(runtimeAttachmentBounds),
+    ];
+    for (const question of questions) {
+      if (question.origin !== "composer" || !question.position) continue;
+      rects.push({
+        x: question.position.x,
+        y: question.position.y,
+        width: WHITEBOARD_QUESTION_CARD_WIDTH,
+        height: 210,
+      });
+    }
+    return rects;
+  }, [
+    inkState.content_bounds_list,
+    questions,
+    runtimeAttachmentBounds,
+    runtimeNodeBounds,
+    runtimeRegionBounds,
   ]);
 
   useEffect(() => {
@@ -1176,7 +1380,7 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法切换书写工具");
     }
-  }, []);
+  }, [setInkError]);
 
   const runInkHistory = useCallback((action: "undo" | "redo") => {
     const ink = inkRuntimeRef.current;
@@ -1184,7 +1388,7 @@ export function LearningWhiteboard({
     void Promise.resolve(action === "undo" ? ink.undo() : ink.redo()).catch(
       (cause) => setInkError(cause instanceof Error ? cause.message : "笔迹历史操作失败"),
     );
-  }, []);
+  }, [setInkError]);
 
   const selectAllInk = useCallback(() => {
     try {
@@ -1196,7 +1400,7 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法选择笔迹");
     }
-  }, []);
+  }, [setInkError]);
 
   const setPenColor = useCallback((color: string) => {
     try {
@@ -1209,7 +1413,7 @@ export function LearningWhiteboard({
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
     }
-  }, []);
+  }, [setInkError]);
 
   const setSelectionColor = useCallback((color: string) => {
     const ink = inkRuntimeRef.current;
@@ -1222,7 +1426,7 @@ export function LearningWhiteboard({
       () => setInkError(""),
       (cause) => setInkError(cause instanceof Error ? cause.message : "无法修改选中笔迹的颜色"),
     );
-  }, []);
+  }, [setInkError]);
 
   const setSelectionMode = useCallback((mode: "rectangle" | "lasso") => {
     inkRuntimeRef.current?.setSelectionMode?.(mode);
@@ -1231,31 +1435,39 @@ export function LearningWhiteboard({
   const readSelectionContext = useCallback(async (): Promise<PreparedSelectionContext> => {
     const ink = inkRuntimeRef.current;
     if (!ink) throw new Error("笔迹功能尚未就绪");
-    await ink.ready;
-    const snapshot = await ink.captureSelectionSnapshot();
-    const mounted = mountedRef.current;
-    const candidates = mounted
-      ? visibleBoardTargetCandidates(mounted.view.queryBoardTargets({
-          bounds: snapshot.bounds,
-          ...(snapshot.region?.points ? { path: snapshot.region.points } : {}),
+    if (!inkAvailable) await ink.ready;
+    let captured: { candidates: BoardTargetCandidate[]; boardId: string; boardRevision: number } | undefined;
+    const captureContext = (selection: Pick<InkSelectionSnapshot, "bounds" | "region">) => {
+      const mounted = mountedRef.current;
+      captured = {
+        candidates: mounted ? structuredClone(visibleBoardTargetCandidates(mounted.view.queryBoardTargets({
+          bounds: selection.bounds,
+          ...(selection.region?.points ? { path: selection.region.points } : {}),
           limit: 12,
-        }))
-      : [];
-    return {
-      snapshot,
-      candidates,
-      boardId: runtimeRef.current?.board?.board_id
-        ?? `learning-whiteboard:${inkSessionId ?? "unsaved"}`,
-      boardRevision: runtimeRef.current?.board?.revision ?? 0,
-      recorded: false,
+        }))) : [],
+        boardId: runtimeRef.current?.board?.board_id ?? `learning-whiteboard:${inkSessionId ?? "unsaved"}`,
+        boardRevision: runtimeRef.current?.board?.revision ?? 0,
+      };
     };
-  }, [inkSessionId]);
+    const capture = ink.captureSelectionSnapshot.bind(ink) as (
+      onCaptured: typeof captureContext,
+    ) => Promise<InkSelectionSnapshot>;
+    const snapshot = await capture(captureContext);
+    if (inkRuntimeRef.current !== ink) throw new Error("本次选区所属白板已关闭。");
+    // Compatibility with the previous Runtime, before the synchronous callback.
+    if (!captured) captureContext(snapshot);
+    return { snapshot, ...captured!, recorded: false };
+  }, [inkSessionId, inkAvailable]);
 
   const recordSelectionContext = useCallback((
     prepared: PreparedSelectionContext,
   ): PreparedSelectionContext => {
     if (prepared.recorded) return prepared;
     const { snapshot } = prepared;
+    // AI and mixed selections remain usable for assistance, but their complete
+    // SVG must not be submitted as evidence of the student's own work.
+    const origins = (snapshot as InkSelectionSnapshot & { component_origins?: string[] }).component_origins;
+    if (origins?.some((origin) => origin !== "student")) return { ...prepared, recorded: true };
     runtimeRef.current?.recordStudentInkSelection({
       source_id: snapshot.source_id,
       document_id: snapshot.document_id,
@@ -1405,7 +1617,7 @@ export function LearningWhiteboard({
     } finally {
       setSelectionRequestPending(false);
     }
-  }, [
+  }, [setInkError,
     captureSelection,
     preparedSelection,
     recordSelectionContext,
@@ -1421,18 +1633,9 @@ export function LearningWhiteboard({
     const value = question.trim();
     if (!value || !onAskInkSelection || selectionRequestPending) return;
     setSelectionRequestPending(true);
-    setSelectionRequestStatus(
-      toolId === "generate-plot"
-        ? "正在生成函数图像…"
-        : "正在生成选区辅助内容…",
-    );
     try {
       const candidate = preparedSelection ?? await captureSelection();
       const prepared = recordSelectionContext(candidate);
-      setSelectionLoadingSource({
-        sourceId: prepared.snapshot.source_id,
-        bounds: prepared.snapshot.bounds,
-      });
       const requestedBoardTargetIds = boardTargetIds ?? selectedBoardTargetIds;
       const targets = prepared.candidates.filter((candidate) =>
         requestedBoardTargetIds.includes(candidate.target_id),
@@ -1467,10 +1670,8 @@ export function LearningWhiteboard({
       setInkError(cause instanceof Error ? cause.message : "无法发送当前选区");
     } finally {
       setSelectionRequestPending(false);
-      setSelectionRequestStatus("");
-      setSelectionLoadingSource(null);
     }
-  }, [
+  }, [setInkError,
     captureSelection,
     onAskInkSelection,
     preparedSelection,
@@ -1516,7 +1717,7 @@ export function LearningWhiteboard({
     } finally {
       setSelectionRequestPending(false);
     }
-  }, [
+  }, [setInkError,
     captureSelection,
     onVoiceInkSelection,
     preparedSelection,
@@ -1562,7 +1763,7 @@ export function LearningWhiteboard({
     } finally {
       setSelectionRequestPending(false);
     }
-  }, [
+  }, [setInkError,
     captureSelection,
     onReferenceInkSelection,
     preparedSelection,
@@ -1616,6 +1817,7 @@ export function LearningWhiteboard({
     const enhancementHost = viewport.ownerDocument.createElement("div");
     enhancementHost.className = "learning-selection-enhancement-layer";
     enhancementHost.dataset.ollInkInput = "ignore";
+    enhancementHost.dataset.ollBoardWheel = "pass";
     const unmountEnhancementLayer =
       mounted.view.mountWorldLayer(enhancementHost);
     setEnhancementLayer(enhancementHost);
@@ -1771,6 +1973,11 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextVisualBounds)
         ? current
         : nextVisualBounds);
+    const nextNodeBounds = measureBoardNodeBounds(mounted.elements.nodes);
+    setRuntimeNodeBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextNodeBounds)
+        ? current
+        : nextNodeBounds);
   }, [enhancementLayer, regionLayoutConstraints]);
 
   useEffect(() => {
@@ -1898,6 +2105,13 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextVisualBounds)
         ? current
         : nextVisualBounds);
+    const nextNodeBounds = mounted
+      ? measureBoardNodeBounds(mounted.elements.nodes)
+      : [];
+    setRuntimeNodeBounds((current) =>
+      JSON.stringify(current) === JSON.stringify(nextNodeBounds)
+        ? current
+        : nextNodeBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
     if (
@@ -2443,16 +2657,8 @@ export function LearningWhiteboard({
             && onAskInkSelection ? (
               <>
                 {selectionClassificationStatus === "loading" ? (
-                  <span className="learning-ink-classification-status">
+                  <span className="learning-ink-classification-status" role="status">
                     正在识别选区…
-                  </span>
-                ) : null}
-                {selectionRequestStatus ? (
-                  <span
-                    className="learning-ink-classification-status"
-                    role="status"
-                  >
-                    {selectionRequestStatus}
                   </span>
                 ) : null}
                 {quickSelectionTools.map((tool) => (
@@ -2658,6 +2864,12 @@ export function LearningWhiteboard({
             </button>
           </div>
         </form>
+      ) : null}
+      {writingError ? (
+        <div className="learning-ink-error" role="alert">
+          {writingError}
+          <button type="button" onClick={() => { setWritingError(""); setWritingRetry((value) => value + 1); }}>重试板书</button>
+        </div>
       ) : null}
       {inkError ? (
         <div className="learning-ink-error" role="alert">
@@ -2937,26 +3149,25 @@ export function LearningWhiteboard({
                   ))
                 : null}
               <SelectionEnhancementLayer
-                artifacts={selectionEnhancements}
+                artifacts={selectionEnhancements.filter((artifact) => artifact.response.kind !== "board_writing")}
                 sources={selectionSources}
-                questions={questions}
-                loading={selectionRequestStatus && selectionLoadingSource
-                  ? {
-                      turnId: selectionLoadingQuestion?.id
-                        ?? `selection:${selectionLoadingSource.sourceId}`,
-                      sourceId: selectionLoadingSource.sourceId,
-                      bounds: selectionLoadingSource.bounds,
-                      state: {
-                        id: `selection:${selectionLoadingSource.sourceId}`,
-                        kind: "selection",
-                        title: selectionRequestStatus.replace(/…$/, ""),
-                        detail: selectionRequestStatus.includes("函数图像")
-                          ? "正在识别公式，并把可查看的图像放在选区旁边。"
-                          : "正在理解这部分内容，并把辅助说明放在选区旁边。",
-                      },
-                    }
-                  : null}
+                questions={questions.filter((question) => !selectionEnhancements.some((artifact) =>
+                  artifact.turn_id === question.id && artifact.response.kind === "board_writing"))}
                 currentDocumentVersion={inkState.document_version}
+                cardLayouts={selectionCardLayouts}
+                occupiedRects={selectionCardOccupiedRects}
+                visibleBoardBounds={visibleBoardBounds}
+                currentSourceBoundsById={currentSelectionSourceBoundsById}
+                clientToBoardPoint={(point) => {
+                  const viewport = viewportRef.current;
+                  const view = mountedRef.current?.view;
+                  if (!viewport || !view) return point;
+                  const rect = viewport.getBoundingClientRect();
+                  return view.viewportToBoard({
+                    x: point.x - rect.left,
+                    y: point.y - rect.top,
+                  });
+                }}
                 invalidTargetTurnIds={new Set(selectionEnhancements
                   .filter((artifact) =>
                     Boolean(artifact.board?.targets.length)
@@ -2968,6 +3179,7 @@ export function LearningWhiteboard({
                   .map((artifact) => artifact.turn_id))}
                 onDelete={(turnId) =>
                   onDeleteSelectionEnhancement?.(turnId)}
+                onCardLayoutChange={onSelectionCardLayoutChange}
               />
             </>,
             enhancementLayer,

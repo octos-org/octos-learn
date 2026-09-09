@@ -15,6 +15,7 @@ import type {
 import type { SemanticBoardState } from "octos-lesson-language";
 import type { SelectionToolId } from "./selection-tools";
 import {
+  loadRecoverableJson,
   loadRecoverableJsonAsync,
   writeRecoverableJson,
 } from "./recoverable-storage";
@@ -65,7 +66,7 @@ export interface SelectionEnhancementBoardRef {
 
 export interface SelectionEnhancementArtifact {
   profile: "octos.selection-enhancement";
-  version: "0.1" | "0.2";
+  version: "0.1" | "0.2" | "0.3";
   turn_id: string;
   created_at: string;
   source: SelectionEnhancementSourceRef;
@@ -77,6 +78,7 @@ export interface SelectionEnhancementArtifact {
     confidence: "high" | "medium" | "low";
   };
   response:
+    | { kind: "board_writing"; title: string; text: string; lines: string[] }
     | {
         kind: "explanation";
         title: string;
@@ -126,12 +128,22 @@ export interface SelectionEnhancementArtifactRef {
   turnId: string;
 }
 
+export interface SelectionEnhancementCardLayout {
+  x: number;
+  y: number;
+  scale: number;
+  minimized: boolean;
+  /** Records whether the learner has dragged this otherwise stable position. */
+  manually_positioned: boolean;
+}
+
 export interface SelectionEnhancementState {
   profile: typeof STATE_PROFILE;
   version: typeof STATE_VERSION;
   session_id: string;
   sources: InkSelectionSnapshot[];
   hidden_enhancement_turn_ids: string[];
+  card_layouts?: Record<string, SelectionEnhancementCardLayout>;
 }
 
 export interface SelectionEnhancementTurnContext {
@@ -147,6 +159,7 @@ export interface SelectionEnhancementTurnContext {
   boardSummary?: string;
   boardContext?: SelectionBoardContext;
   toolId?: SelectionToolId;
+  deliveryMode?: "card" | "board-writing";
 }
 
 export interface SelectionClassificationTurnContext {
@@ -252,6 +265,7 @@ export function buildSelectionEnhancementActionArguments(
       ? { recognition_confidence: context.recognitionConfidence }
       : {}),
     tool_id: context.toolId ?? "custom-question",
+    ...(context.deliveryMode ? { delivery_mode: context.deliveryMode } : {}),
     board: selectionBoardArgument(context.boardContext ?? {
       boardId: context.sessionId,
       boardRevision: 0,
@@ -677,8 +691,8 @@ export function validateSelectionEnhancementArtifact(
   const artifact = value as Partial<SelectionEnhancementArtifact>;
   const interpretation = artifact.interpretation;
   const response = artifact.response;
-  const validVersion = artifact.version === "0.1" || artifact.version === "0.2";
-  const validV2Context = artifact.version !== "0.2"
+  const validVersion = ["0.1", "0.2", "0.3"].includes(artifact.version ?? "");
+  const validV2Context = artifact.version === "0.1"
     || (validBoardRef(artifact.board)
       && typeof artifact.tool_id === "string"
       && ["explain", "check-and-suggest", "generate-plot", "custom-question"]
@@ -705,7 +719,17 @@ export function validateSelectionEnhancementArtifact(
   ) {
     throw new Error("选区辅助内容的来源或说明字段无效");
   }
-  if (response.kind === "unsupported") {
+  if (response.kind === "board_writing") {
+    if (artifact.version !== "0.3" || !Array.isArray(response.lines) || !response.lines.length || response.lines.length > 8
+      || response.lines.some((line) => typeof line !== "string" || !line.trim() || line.length > 160
+        || [...line].some((character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127))
+      || response.lines.join("\n").length > 500
+      || response.lines.join("\n") !== response.text.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean).join("\n")) {
+      throw new Error("手写板书内容无效或过长");
+    }
+  } else if (artifact.version === "0.3") {
+    throw new Error("板书版本与内容类型不匹配");
+  } else if (response.kind === "unsupported") {
     if (
       ![
         "unreadable_expression",
@@ -843,6 +867,40 @@ export function selectionEnhancementStorageKey(sessionId: string): string {
   return "learn:selection-enhancements:" + sessionId + ":v1";
 }
 
+export function selectionEnhancementCardLayoutsStorageKey(
+  sessionId: string,
+): string {
+  return "learn:selection-card-layouts:" + sessionId + ":v1";
+}
+
+function decodeSelectionCardLayouts(
+  value: unknown,
+): Record<string, SelectionEnhancementCardLayout> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("invalid selection card layouts");
+  }
+  const cardLayouts: Record<string, SelectionEnhancementCardLayout> = {};
+  for (const [turnId, candidate] of Object.entries(value)) {
+    if (!turnId || !candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+      throw new Error("invalid selection card layout");
+    }
+    const layout = candidate as Partial<SelectionEnhancementCardLayout>;
+    if (
+      !Number.isFinite(layout.x)
+      || !Number.isFinite(layout.y)
+      || !Number.isFinite(layout.scale)
+      || (layout.scale ?? 0) < .85
+      || (layout.scale ?? 0) > 2.25
+      || typeof layout.minimized !== "boolean"
+      || typeof layout.manually_positioned !== "boolean"
+    ) {
+      throw new Error("invalid selection card layout");
+    }
+    cardLayouts[turnId] = { ...layout } as SelectionEnhancementCardLayout;
+  }
+  return cardLayouts;
+}
+
 export async function loadSelectionEnhancementState(
   sessionId: string,
   storage: Storage = localStorage,
@@ -853,8 +911,9 @@ export async function loadSelectionEnhancementState(
     session_id: sessionId,
     sources: [],
     hidden_enhancement_turn_ids: [],
+    card_layouts: {},
   };
-  return loadRecoverableJsonAsync({
+  const state = await loadRecoverableJsonAsync({
     storage,
     key: selectionEnhancementStorageKey(sessionId),
     fallback: () => empty,
@@ -883,26 +942,43 @@ export async function loadSelectionEnhancementState(
         ids.add(source.source_id);
         sources.push(source);
       }
+      const cardLayouts = parsed.card_layouts === undefined
+        ? {}
+        : decodeSelectionCardLayouts(parsed.card_layouts);
       return {
         ...empty,
         sources,
         hidden_enhancement_turn_ids: [
           ...new Set(parsed.hidden_enhancement_turn_ids),
         ],
+        card_layouts: cardLayouts,
       };
     },
   });
+  const cardLayouts = loadRecoverableJson({
+    storage,
+    key: selectionEnhancementCardLayoutsStorageKey(sessionId),
+    fallback: () => state.card_layouts ?? {},
+    decode: decodeSelectionCardLayouts,
+  });
+  return { ...state, card_layouts: cardLayouts };
 }
 
 export function saveSelectionEnhancementState(
   state: SelectionEnhancementState,
   storage: Storage = localStorage,
-): void {
-  writeRecoverableJson(
+): boolean {
+  const stateSaved = writeRecoverableJson(
     storage,
     selectionEnhancementStorageKey(state.session_id),
     state,
   );
+  const layoutsSaved = writeRecoverableJson(
+    storage,
+    selectionEnhancementCardLayoutsStorageKey(state.session_id),
+    state.card_layouts ?? {},
+  );
+  return stateSaved && layoutsSaved;
 }
 
 export function addSelectionSource(
@@ -933,13 +1009,44 @@ export function hideSelectionEnhancement(
       ...state.hidden_enhancement_turn_ids,
       turnId,
     ],
+    card_layouts: Object.fromEntries(Object.entries(state.card_layouts ?? {})
+      .filter(([candidateTurnId]) => candidateTurnId !== turnId)),
+  };
+}
+
+export function setSelectionEnhancementCardLayout(
+  state: SelectionEnhancementState,
+  turnId: string,
+  layout: SelectionEnhancementCardLayout,
+): SelectionEnhancementState {
+  if (
+    !turnId
+    || !Number.isFinite(layout.x)
+    || !Number.isFinite(layout.y)
+    || !Number.isFinite(layout.scale)
+    || layout.scale < .85
+    || layout.scale > 2.25
+  ) return state;
+  const current = state.card_layouts?.[turnId];
+  if (
+    current?.x === layout.x
+    && current.y === layout.y
+    && current.scale === layout.scale
+    && current.minimized === layout.minimized
+    && current.manually_positioned === layout.manually_positioned
+  ) return state;
+  return {
+    ...state,
+    card_layouts: {
+      ...state.card_layouts,
+      [turnId]: { ...layout },
+    },
   };
 }
 
 export function removeSelectionSources(
   state: SelectionEnhancementState,
   sourceIds: Iterable<string>,
-  matchingTurnIds: Iterable<string> = [],
 ): SelectionEnhancementState {
   const ids = new Set(sourceIds);
   if (ids.size === 0) return state;
@@ -948,12 +1055,9 @@ export function removeSelectionSources(
   return {
     ...state,
     sources,
-    hidden_enhancement_turn_ids: [
-      ...new Set([
-        ...state.hidden_enhancement_turn_ids,
-        ...matchingTurnIds,
-      ]),
-    ],
+    // Source snapshots only drive attribution and connector geometry. Cards
+    // and AI writing are independent whiteboard content once created.
+    hidden_enhancement_turn_ids: state.hidden_enhancement_turn_ids,
   };
 }
 

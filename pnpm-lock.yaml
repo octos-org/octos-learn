@@ -36,11 +36,14 @@ importers:
         specifier: ^11.13.0
         version: 11.15.0
       octos-lesson-language:
-        specifier: git+https://github.com/alan0x/octos-lesson-language.git#c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc
+        specifier: github:alan0x/octos-lesson-language#baa75d29ce517ce0bd78ba11d50171e08dc61136
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/baa75d29ce517ce0bd78ba11d50171e08dc61136
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
+      opentype.js:
+        specifier: 1.3.4
+        version: 1.3.4
       react:
         specifier: ^19.2.0
         version: 19.2.7
@@ -2463,8 +2466,8 @@ packages:
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc:
-    resolution: {gitHosted: true, integrity: sha512-19lJXr4Mri0I76zqA8jbRR1IjMEIedS0smQ4lOCfkXw87YI5xjbiwroJURspFPaN0EAmU3zemXRX6KpWasajhg==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc}
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/baa75d29ce517ce0bd78ba11d50171e08dc61136:
+    resolution: {gitHosted: true, integrity: sha512-L3Q5TRxC6T4pM4mUYMES0Pnf9+2j84INL0Rci4Wa+37kEIE0TfYNJQjwEnspYDedT9OrJ+1OdKbIcC1vdvOZMQ==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/baa75d29ce517ce0bd78ba11d50171e08dc61136}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -2477,6 +2480,11 @@ packages:
 
   onnxruntime-web@1.26.0:
     resolution: {integrity: sha512-LbRr/8zZt2xilI2smrVQGGKINo0U46i8qJp+UXyMBGfqN7KjnH1BiwCwLwyNIVV4i9CKFv7Sf4PwLKWnT8/bEA==}
+
+  opentype.js@1.3.4:
+    resolution: {integrity: sha512-d2JE9RP/6uagpQAVtJoF0pJJA/fgai89Cc50Yp0EJHk+eLp6QQ7gBoblsnubRULNY132I0J1QKMJ+JTbMqz4sw==}
+    engines: {node: '>= 8.0.0'}
+    hasBin: true
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -2749,6 +2757,9 @@ packages:
   std-env@3.10.0:
     resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
 
+  string.prototype.codepointat@0.2.1:
+    resolution: {integrity: sha512-2cBVCj6I4IOvEnjgO/hWqXjqBGsY+zwPmHl12Srk9IXSZ56Jwwmy+66XO5Iut/oQVR7t5ihYdLB0GMa4alEUcg==}
+
   stringify-entities@4.0.4:
     resolution: {integrity: sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==}
 
@@ -2795,6 +2806,9 @@ packages:
 
   three@0.183.2:
     resolution: {integrity: sha512-di3BsL2FEQ1PA7Hcvn4fyJOlxRRgFYBpMTcyOgkwJIaDOdJMebEFPA+t98EvjuljDx4hNulAGwF6KIjtwI5jgQ==}
+
+  tiny-inflate@1.0.3:
+    resolution: {integrity: sha512-pkY1fj1cKHb2seWDy0B16HeWyczlJA9/WW3u3c4z/NiWDsO3DOU5D7nhTLE9CF0yXv/QZFY7sEJmj24dK+Rrqw==}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -5665,7 +5679,7 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc:
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/baa75d29ce517ce0bd78ba11d50171e08dc61136:
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0
@@ -5685,6 +5699,11 @@ snapshots:
       onnxruntime-common: 1.26.0
       platform: 1.3.6
       protobufjs: 7.6.3
+
+  opentype.js@1.3.4:
+    dependencies:
+      string.prototype.codepointat: 0.2.1
+      tiny-inflate: 1.0.3
 
   optionator@0.9.4:
     dependencies:
@@ -6010,6 +6029,8 @@ snapshots:
 
   std-env@3.10.0: {}
 
+  string.prototype.codepointat@0.2.1: {}
+
   stringify-entities@4.0.4:
     dependencies:
       character-entities-html4: 2.1.0
@@ -6050,6 +6071,8 @@ snapshots:
   tapable@2.3.3: {}
 
   three@0.183.2: {}
+
+  tiny-inflate@1.0.3: {}
 
   tinybench@2.9.0: {}
 

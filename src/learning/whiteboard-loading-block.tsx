@@ -30,7 +30,7 @@ export function WhiteboardLoadingBlock({
       </div>
       <div className="learning-whiteboard-loading-beam" aria-hidden="true" />
       <div className="learning-whiteboard-loading-copy">
-        <span>Octos 正在准备</span>
+        <span>{state.kind === "selection" ? "小章鱼正在看" : "Octos 正在准备"}</span>
         <strong>{state.title}</strong>
         <p>{state.detail}</p>
       </div>

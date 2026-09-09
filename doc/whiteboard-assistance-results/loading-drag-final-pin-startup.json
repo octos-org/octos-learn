@@ -1,0 +1,24 @@
+{
+  "profile": "octos.whiteboard-assistance.loading-drag-final-pin-startup",
+  "version": "0.1",
+  "date": "2026-09-07",
+  "repeats": 30,
+  "baseline": {
+    "commit": "73405602246f5f2b8e282617b4f9293a2bec7d85",
+    "wall_ms": { "p50": 174.25254200000018, "p95": 186.6819170000017 },
+    "dom_content_loaded_ms": { "p50": 143.5, "p95": 151.10000002384186 },
+    "load_ms": { "p50": 143.80000001192093, "p95": 151.60000002384186 }
+  },
+  "candidate": {
+    "oll_ref": "5bc24423a845c13b644c2e31cd6b661caed2d61c",
+    "wall_ms": { "p50": 174.5855419999998, "p95": 189.77675 },
+    "dom_content_loaded_ms": { "p50": 143.69999998807907, "p95": 149.5999999642372 },
+    "load_ms": { "p50": 144.0999999642372, "p95": 150.0 }
+  },
+  "paired": {
+    "wall_ms": { "delta_p50": 0.2749569999996311, "delta_p95": 15.700416999998197, "candidate_faster": 14 },
+    "dom_content_loaded_ms": { "delta_p50": 0.0, "delta_p95": 8.899999976158142, "candidate_faster": 14 },
+    "load_ms": { "delta_p50": 0.09999996423721313, "delta_p95": 8.900000035762787, "candidate_faster": 14 }
+  },
+  "interpretation": "Median deltas are 0-0.3 ms and the faster direction is nearly even; no repeatable startup regression was observed after pinning OLL 5bc24423."
+}

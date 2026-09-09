@@ -1,0 +1,24 @@
+{
+  "profile": "octos.whiteboard-assistance.spatial-integration-final-startup",
+  "version": "0.1",
+  "date": "2026-09-08",
+  "repeats": 30,
+  "baseline": {
+    "commit": "73405602246f5f2b8e282617b4f9293a2bec7d85",
+    "wall_ms": { "p50": 129.72506199999953, "p95": 136.62403969999997 },
+    "dom_content_loaded_ms": { "p50": 126.60000002384186, "p95": 130.67000002264976 },
+    "load_ms": { "p50": 127, "p95": 131.0699999988079 }
+  },
+  "candidate": {
+    "oll_ref": "ac109ef0a494a99524191c42f348c06376256d75",
+    "wall_ms": { "p50": 130.465146, "p95": 133.7134902500002 },
+    "dom_content_loaded_ms": { "p50": 126.59999999403954, "p95": 130.19000002145768 },
+    "load_ms": { "p50": 126.90000003576279, "p95": 130.58999999761582 }
+  },
+  "paired": {
+    "wall_ms": { "delta_p50": 0.21983350000016344, "delta_p95": 4.423693649999905, "candidate_faster": 14 },
+    "dom_content_loaded_ms": { "delta_p50": -0.4000000059604645, "delta_p95": 4.240000045299528, "candidate_faster": 17 },
+    "load_ms": { "delta_p50": -0.3999999463558197, "delta_p95": 4.239999985694883, "candidate_faster": 17 }
+  },
+  "interpretation": "Browser-reported DOM and load medians improved by 0.40 ms in the paired run. The external wall median varied by +0.22 to +0.41 ms across two runs while candidate raw p95 remained lower, so no repeatable browser startup regression was observed after switching drag hit testing to the visible selection box."
+}

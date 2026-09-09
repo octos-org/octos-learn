@@ -1723,6 +1723,38 @@
   box-shadow: 0 9px 26px rgba(33, 52, 48, 0.13);
   color: #263936;
   pointer-events: auto;
+  cursor: grab;
+  touch-action: auto;
+  user-select: text;
+}
+
+.learning-selection-enhancement:active {
+  cursor: grabbing;
+}
+
+.learning-selection-enhancement > header {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.learning-selection-enhancement > header:active {
+  cursor: grabbing;
+}
+
+.learning-selection-enhancement button,
+.learning-selection-enhancement a,
+.learning-selection-enhancement input,
+.learning-selection-enhancement textarea,
+.learning-selection-enhancement select,
+.learning-selection-enhancement model-viewer {
+  cursor: auto;
+  touch-action: auto;
+}
+
+.learning-selection-enhancement .learning-selection-markdown,
+.learning-selection-enhancement:active .learning-selection-markdown {
+  cursor: text;
 }
 
 .learning-selection-enhancement.is-invalid-target {
@@ -1759,12 +1791,34 @@
 }
 
 .learning-selection-enhancement-question > div > span {
+  margin-left: auto;
   padding: 3px 7px;
   border-radius: 999px;
   color: #66736f;
   background: rgba(82, 112, 104, 0.08);
   font-size: .78em;
   white-space: nowrap;
+}
+
+.learning-selection-enhancement .learning-selection-enhancement-question-delete {
+  display: grid;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: #6d7c79;
+  background: transparent;
+  cursor: pointer;
+}
+
+.learning-selection-enhancement-question-delete:hover,
+.learning-selection-enhancement-question-delete:focus-visible {
+  color: #9a4c38;
+  background: rgba(172, 76, 51, .1);
+  outline: none;
 }
 
 .learning-selection-question-text {
@@ -1889,10 +1943,26 @@
 
 .learning-selection-source-link {
   position: absolute;
-  right: 100%;
-  top: 24px;
-  width: 30px;
-  border-top: 2px dashed rgba(36, 112, 104, 0.42);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.learning-selection-source-path {
+  fill: none;
+  stroke: rgba(36, 112, 104, 0.68);
+  stroke-width: 3px;
+  stroke-dasharray: 8 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.learning-selection-source-link marker polyline {
+  fill: none;
+  stroke: rgba(36, 112, 104, 0.86);
+  stroke-width: 1.8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .learning-selection-enhancement > header {
@@ -2014,16 +2084,7 @@
   font: 750 15px/1 ui-rounded, "SF Pro Rounded", sans-serif;
   cursor: pointer;
   pointer-events: auto;
-  transform-origin: center;
-  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
-}
-
-.learning-selection-enhancement-pin::before {
-  position: absolute;
-  right: 100%;
-  width: 12px;
-  border-top: 2px dashed rgba(36, 112, 104, 0.42);
-  content: "";
+  transition: box-shadow 150ms ease, background 150ms ease;
 }
 
 .learning-selection-enhancement-pin:hover,
@@ -2031,7 +2092,6 @@
   background: #f0fbf8;
   box-shadow: 0 10px 24px rgba(33, 52, 48, 0.2);
   outline: none;
-  transform: scale(1.42);
 }
 
 .learning-selection-enhancement-pin.is-invalid-target {

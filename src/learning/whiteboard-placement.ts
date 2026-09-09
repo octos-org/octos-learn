@@ -11,6 +11,8 @@ interface OpenPositionOptions {
   height: number;
   occupied: WhiteboardRect[];
   gap?: number;
+  visibleBounds?: WhiteboardRect;
+  preferBelow?: boolean;
 }
 
 interface NewTopicPositionOptions {
@@ -44,6 +46,8 @@ export function findOpenWhiteboardPosition({
   height,
   occupied,
   gap = 24,
+  visibleBounds,
+  preferBelow = false,
 }: OpenPositionOptions): { x: number; y: number } {
   const finiteOccupied = occupied.filter((rect) =>
     Number.isFinite(rect.x)
@@ -81,10 +85,23 @@ export function findOpenWhiteboardPosition({
     .map((candidate, index) => ({
       ...candidate,
       index,
+      outsideVisible: visibleBounds && (
+        candidate.x < visibleBounds.x
+        || candidate.y < visibleBounds.y
+        || candidate.x + width > visibleBounds.x + visibleBounds.width
+        || candidate.y + height > visibleBounds.y + visibleBounds.height
+      ) ? 1 : 0,
+      directionPenalty: candidate.y < preferred.y ? 1 : 0,
       distance: (candidate.x - preferred.x) ** 2
         + (candidate.y - preferred.y) ** 2,
     }))
-    .sort((left, right) => left.distance - right.distance || left.index - right.index);
+    .sort((left, right) => left.outsideVisible - right.outsideVisible
+      || (preferBelow
+        ? left.directionPenalty - right.directionPenalty
+        : 0)
+      || left.distance - right.distance
+      || left.directionPenalty - right.directionPenalty
+      || left.index - right.index);
   const open = ordered.find((candidate) => {
     const bounds = { x: candidate.x, y: candidate.y, width, height };
     return finiteOccupied.every((rect) => !overlaps(bounds, rect, gap));

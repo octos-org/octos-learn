@@ -36,6 +36,7 @@ research/
 !.octos/AGENTS.md
 !README.md
 !docs/**/*.md
+!doc/**/*.md
 
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/

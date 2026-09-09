@@ -50,6 +50,18 @@ describe("whiteboard placement", () => {
     })).toEqual({ x: 100, y: 200 });
   });
 
+  it("prefers an open position inside the current viewport", () => {
+    const position = findOpenWhiteboardPosition({
+      preferred: { x: 100, y: 100 },
+      width: 100,
+      height: 100,
+      occupied: [{ x: 100, y: 100, width: 100, height: 100 }],
+      visibleBounds: { x: -100, y: -100, width: 600, height: 320 },
+    });
+
+    expect(position).toEqual({ x: 224, y: 100 });
+  });
+
   it("starts a new lesson beyond the complete occupied whiteboard instead of filling a nearby hole", () => {
     const occupied = [
       { x: 100, y: 90, width: 460, height: 360 },

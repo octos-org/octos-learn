@@ -14,6 +14,8 @@ import {
   parseSelectionClassificationMetadata,
   removeSelectionSources,
   saveSelectionEnhancementState,
+  setSelectionEnhancementCardLayout,
+  selectionEnhancementCardLayoutsStorageKey,
   selectionEnhancementStorageKey,
   selectionArtifactMatchesSource,
   selectionArtifactTargetsExist,
@@ -68,7 +70,7 @@ async function source(): Promise<InkSelectionSnapshot> {
 }
 
 describe("selection enhancement persistence", () => {
-  it("removes erased selection sources and hides every linked result", async () => {
+  it("removes erased selection sources without deleting independent answers", async () => {
     const selection = await source();
     const state = {
       profile: "octos.selection-enhancement-state" as const,
@@ -84,12 +86,70 @@ describe("selection enhancement persistence", () => {
     )).toEqual({
       ...state,
       sources: [],
-      hidden_enhancement_turn_ids: [
-        "already-hidden",
-        "explanation-turn",
-        "plot-turn",
-      ],
+      hidden_enhancement_turn_ids: ["already-hidden"],
     });
+  });
+
+  it("persists card position, scale, minimized state, and manual placement", async () => {
+    const storage = new MemoryStorage();
+    const state = setSelectionEnhancementCardLayout({
+      profile: "octos.selection-enhancement-state",
+      version: "0.1",
+      session_id: "layout-session",
+      sources: [],
+      hidden_enhancement_turn_ids: [],
+      card_layouts: {},
+    }, "turn-1", {
+      x: 280,
+      y: 140,
+      scale: 1.2,
+      minimized: true,
+      manually_positioned: true,
+    });
+    saveSelectionEnhancementState(state, storage);
+    await expect(loadSelectionEnhancementState("layout-session", storage))
+      .resolves.toMatchObject({
+        card_layouts: {
+          "turn-1": {
+            x: 280,
+            y: 140,
+            scale: 1.2,
+            minimized: true,
+            manually_positioned: true,
+          },
+        },
+      });
+  });
+
+  it("persists card layouts even when historical selection state is locked", async () => {
+    const storage = new MemoryStorage();
+    const sessionId = "locked-layout-session";
+    const stateKey = selectionEnhancementStorageKey(sessionId);
+    storage.setItem(stateKey, "{");
+    const recovered = await loadSelectionEnhancementState(sessionId, storage);
+    expect(isRecoverableStorageLocked(storage, stateKey)).toBe(true);
+
+    const next = setSelectionEnhancementCardLayout(recovered, "turn-locked", {
+      x: 410,
+      y: 260,
+      scale: 1,
+      minimized: false,
+      manually_positioned: true,
+    });
+    expect(saveSelectionEnhancementState(next, storage)).toBe(false);
+    expect(storage.getItem(selectionEnhancementCardLayoutsStorageKey(sessionId)))
+      .not.toBeNull();
+
+    await expect(loadSelectionEnhancementState(sessionId, storage))
+      .resolves.toMatchObject({
+        card_layouts: {
+          "turn-locked": {
+            x: 410,
+            y: 260,
+            manually_positioned: true,
+          },
+        },
+      });
   });
 
   it("builds a bounded selection-classification action and validates its metadata", async () => {
@@ -145,6 +205,7 @@ describe("selection enhancement persistence", () => {
       recognitionConfidence: "high",
       learnerRequest: "解释这部分",
       toolId: "explain",
+      deliveryMode: "card",
       boardContext: {
         boardId: "board-1",
         boardRevision: 8,
@@ -163,6 +224,7 @@ describe("selection enhancement persistence", () => {
       },
     });
     expect(argumentsValue).toMatchObject({
+      delivery_mode: "card",
       paths: ["turn_media/selection.png"],
       recognized_content: "y = sin(x)",
       recognition_confidence: "high",
@@ -188,7 +250,7 @@ describe("selection enhancement persistence", () => {
     saveSelectionEnhancementState(state, storage);
 
     await expect(loadSelectionEnhancementState("session-1", storage))
-      .resolves.toEqual(state);
+      .resolves.toEqual({ ...state, card_layouts: {} });
   });
 
   it("isolates a corrupted local snapshot without destroying its recoverable value", async () => {
@@ -508,5 +570,23 @@ describe("selection enhancement persistence", () => {
         },
       },
     } as never)).toBe(false);
+  });
+});
+
+
+describe("versioned board writing", () => {
+  it("requires v0.3 and rejects ambiguous content versions", async () => {
+    const selection = await source();
+    const artifact = {
+      profile: "octos.selection-enhancement", version: "0.3", turn_id: "board-writing",
+      created_at: "2026-09-07T00:00:00Z", source: selection,
+      board: { board_id: "board", revision: 1, targets: [] }, tool_id: "custom-question",
+      interpretation: { kind: "math", content: "y=x^2+z^3", confidence: "high" },
+      response: { kind: "board_writing", title: "等价整理", text: "等价整理为：\nx^2+z^3-y=0", lines: ["等价整理为：", "x^2+z^3-y=0"] },
+    };
+    expect(validateSelectionEnhancementArtifact(artifact)).toEqual(artifact);
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, response: { ...artifact.response, lines: ["另一份公式"] } })).toThrow();
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, version: "0.2" })).toThrow();
+    expect(() => validateSelectionEnhancementArtifact({ ...artifact, response: { kind: "explanation", title: "说明", text: "说明" } })).toThrow();
   });
 });

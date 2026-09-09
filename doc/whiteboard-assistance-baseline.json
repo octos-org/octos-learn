@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-07",
+  "commits": {
+    "octos-learn": "73405602246f5f2b8e282617b4f9293a2bec7d85",
+    "learning-coach": "b26e49d",
+    "octos-lesson-language": "b0209f8",
+    "octos": "25ff2734"
+  },
+  "installed_oll_pin": "c87fe9f7907ca4d7a5c43ab33aeb46bf4c0e6abc",
+  "pre_change_targeted_tests": {
+    "files": 3,
+    "tests": 113,
+    "status": "passed"
+  },
+  "performance_status": "not_measured",
+  "selection_visualization_prompt": "const SELECTION_VISUALIZATION_SYSTEM_PROMPT = `当 tool_id 为 generate-plot 或 custom-question 且用户要求生成函数图像时，先把识别到的公式规范化为只能使用数字、x/y/z、pi、e、+ - * / ^、括号和 abs/acos/asin/atan/ceil/cos/exp/floor/ln/log/round/sin/sqrt/tan 的表达式；必须显式写乘号。然后选择：\n- 单变量 y=f(x)：response_kind=plot，expression 只写 f(x)。\n- 二变量隐式方程 F(x,y)=c：response_kind=implicit_plot，expression 写 F(x,y)，level 写 c。\n- 显式曲面 z=f(x,y)：response_kind=scene3d，scene_kind=surface，expression 只写 f(x,y)。\n- 三变量隐式方程 F(x,y,z)=c：response_kind=scene3d，scene_kind=implicit_surface，expression 写 F(x,y,z)，level 写 c。\n- 超过三个独立变量、无法可靠识别、无法转为上述安全表达式或在合理有限范围内无法绘制：response_kind=unsupported，给出准确原因和可操作的 alternatives，不能假装已经绘制。\n坐标范围和三维网格精度由程序根据表达式按统一预算计算，不要填写坐标范围或采样密度。代码会再次校验表达式，无法在安全有限范围内找到图形时不会绘制。非绘图请求使用 explanation。`;"
+}
