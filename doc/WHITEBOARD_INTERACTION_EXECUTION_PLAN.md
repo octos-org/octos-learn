@@ -51,7 +51,8 @@
 - js-draw 1.33.0（精确版本锁定）可配置点：
   - `EditorSettings.keyboardShortcutOverrides`（`Editor.d.ts:60`）：shortcut id 覆盖为空数组 = 等效禁用
   - 选区键盘变换（方向键/R/I/O/Ctrl+D/End）全部走 shortcut id（`SelectionTool.mjs:242-347` + `keybindings.mjs`），可配置
-  - **例外**：`Delete`/`Backspace` 删除是 `SelectionTool.mjs:341-345` 硬编码，不可配置；保留（标准行为），在 keyboard-policy 注释中注明
+  - **例外**：`Delete`/`Backspace` 删除是 `SelectionTool.mjs:341-345` 硬编码，不可配置
+  - **实施后发现的事实**（a9aea9a 已修正相关注释）：js-draw 的整条键盘通道端到端不可达——keydown 只挂在 js-draw 自己的渲染区，而 `.oll-ink-layer` 是 `pointer-events: none` 且无代码 focus() 该区域，焦点永远进不去。因此方向键/Delete 虽在配置层保留，实际均不触发；撤销/重做/全选唯一生效的通道是 P6 的 window 级快捷键。P1 的禁用属于防御性治理（防止未来笔迹层可变焦后后门暴露）
   - 三个默认启用的键盘工具需禁用：`UndoRedoShortcut`、`ToolSwitcherShortcut`（数字键 1-9 绕过 setMode 直接切工具，与四模式模型冲突）、`SelectAllShortcutHandler`
   - js-draw keydown 挂在 renderingRegion（`Editor.mjs:277`）与选区 handleOverlay——这就是 Ctrl+Z 目前只在笔迹层聚焦时生效的原因
 - octos-learn 宿主侧：
@@ -77,11 +78,11 @@ P7 收尾：README 同步、pin 更新、全量验证
 - 新建 `packages/ink-runtime/src/keyboard-policy.ts`：
   - `INK_DISABLED_SHORTCUT_IDS`：R/Shift+R 旋转、I/O/,/. 键盘缩放、Ctrl+D 复制、End 置底、对齐网格
   - `applyInkKeyboardPolicy(editor)`：对上述 id `overrideShortcut(id, [])`；并 `setEnabled(false)` 三个键盘工具（UndoRedoShortcut / ToolSwitcherShortcut / SelectAllShortcutHandler——P6 由宿主应用层统一接管，避免双触发）
-  - 保留：方向键平移、Delete/Backspace（硬编码例外，注释注明出处 `SelectionTool.mjs:341`）
+  - 配置层保留：方向键平移、Delete/Backspace（硬编码例外，注释注明出处 `SelectionTool.mjs:341`；实际行为见第 2 节"实施后发现的事实"）
   - 文件内留"js-draw 升级检查清单"注释（依赖的内部 API：overrideShortcut、shortcut id 清单、SelectionTool 硬编码删除）
 - `runtime.ts` `prepareEditor`（~195）中调用 `applyInkKeyboardPolicy`
 - `selection-lock.ts` 不动
-- 验证：新增 `packages/ink-runtime/test/keyboard-policy.test.ts`（假 editor 断言 overrideShortcut 集合，仿 `runtime.test.ts:11-43` 风格）；`npm test`；harness 确认 R/I/O/数字键无反应、方向键/Delete 可用
+- 验证：新增 `packages/ink-runtime/test/keyboard-policy.test.ts`（假 editor 断言 overrideShortcut 集合，仿 `runtime.test.ts:11-43` 风格）；`npm test`；harness 确认 R/I/O/数字键无反应（方向键/Delete 因键盘通道不可达同样不触发，属预期）
 
 ### P2 手势状态机重构【web-runtime】
 
