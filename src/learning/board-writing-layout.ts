@@ -36,6 +36,7 @@ export function findWritingPosition(source: WritingBounds, width: number, height
     height,
     occupied: [source, ...occupied],
     gap: 16,
+    preferBelow: true,
   });
 }
 

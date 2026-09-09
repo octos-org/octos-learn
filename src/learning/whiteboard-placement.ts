@@ -12,6 +12,7 @@ interface OpenPositionOptions {
   occupied: WhiteboardRect[];
   gap?: number;
   visibleBounds?: WhiteboardRect;
+  preferBelow?: boolean;
 }
 
 interface NewTopicPositionOptions {
@@ -46,6 +47,7 @@ export function findOpenWhiteboardPosition({
   occupied,
   gap = 24,
   visibleBounds,
+  preferBelow = false,
 }: OpenPositionOptions): { x: number; y: number } {
   const finiteOccupied = occupied.filter((rect) =>
     Number.isFinite(rect.x)
@@ -94,6 +96,9 @@ export function findOpenWhiteboardPosition({
         + (candidate.y - preferred.y) ** 2,
     }))
     .sort((left, right) => left.outsideVisible - right.outsideVisible
+      || (preferBelow
+        ? left.directionPenalty - right.directionPenalty
+        : 0)
       || left.distance - right.distance
       || left.directionPenalty - right.directionPenalty
       || left.index - right.index);
