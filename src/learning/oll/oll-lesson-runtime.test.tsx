@@ -114,6 +114,20 @@ function InkRuntimeProbe({
   );
 }
 
+function InkShortcutProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-ink-shortcut-runtime-test",
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <input aria-label="旁注输入框" />
+      <OllLessonBoard runtime={runtime} inkSessionId="learn-ink-shortcut" />
+    </div>
+  );
+}
+
 function BlankToLessonWhiteboardProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -1574,6 +1588,73 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
     expect(screen.getByRole("button", { name: "书写笔迹" })).toBeTruthy();
     expect(ink.destroy).not.toHaveBeenCalled();
+  });
+
+  it("routes ink undo/redo/select-all keyboard shortcuts through the host", async () => {
+    const listeners = new Set<(state: InkRuntimeState) => void>();
+    let state: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 3,
+      selected_count: 0,
+      selection_revision: 0,
+      document_version: 3,
+      saved: true,
+    };
+    const ink = {
+      ready: Promise.resolve(),
+      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+        listeners.add(listener);
+        listener(state);
+        return () => listeners.delete(listener);
+      }),
+      setMode: vi.fn((mode: InkMode) => {
+        state = { ...state, mode };
+        listeners.forEach((listener) => listener(state));
+      }),
+      selectAll: vi.fn(),
+      undo: vi.fn(),
+      redo: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    };
+    mountInkRuntimeMock.mockReturnValue(ink);
+
+    const view = render(<InkShortcutProbe />);
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+
+    fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+    expect(ink.undo).toHaveBeenCalledOnce();
+    expect(ink.redo).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(window, { key: "z", metaKey: true });
+    expect(ink.undo).toHaveBeenCalledTimes(2);
+
+    fireEvent.keyDown(window, { key: "z", ctrlKey: true, shiftKey: true });
+    expect(ink.redo).toHaveBeenCalledOnce();
+
+    fireEvent.keyDown(window, { key: "y", ctrlKey: true });
+    expect(ink.redo).toHaveBeenCalledTimes(2);
+
+    // Editable targets keep their native undo behavior.
+    const input = screen.getByLabelText("旁注输入框");
+    fireEvent.keyDown(input, { key: "z", ctrlKey: true });
+    expect(ink.undo).toHaveBeenCalledTimes(2);
+    expect(ink.redo).toHaveBeenCalledTimes(2);
+
+    // Select-all only applies while the select tool is active.
+    fireEvent.keyDown(window, { key: "a", ctrlKey: true });
+    expect(ink.selectAll).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
+    fireEvent.keyDown(window, { key: "a", metaKey: true });
+    expect(ink.selectAll).toHaveBeenCalledOnce();
+
+    fireEvent.keyDown(input, { key: "a", ctrlKey: true });
+    expect(ink.selectAll).toHaveBeenCalledOnce();
+
+    // Unmounting removes the global listener.
+    view.unmount();
+    fireEvent.keyDown(window, { key: "z", ctrlKey: true });
+    expect(ink.undo).toHaveBeenCalledTimes(2);
   });
 
   it("keeps the same ink document when course content enters a blank whiteboard", async () => {

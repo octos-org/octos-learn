@@ -464,9 +464,10 @@ function snapValueToActiveTask(
     .filter((progress) => progress.available && progress.status !== "succeeded")
     .map((progress) => runtime.studentTaskDefinitions.find((definition) =>
       definition.as === progress.task_id))
-    .find((definition): definition is AuthoringVariableStudentTask =>
-      definition?.completion.kind === "expression_target"
-      && definition.allowed_operations.some((operation) =>
+    .filter((definition): definition is AuthoringVariableStudentTask =>
+      definition?.completion.kind === "expression_target")
+    .find((definition) =>
+      definition.allowed_operations.some((operation) =>
         operation.variable === alias && operation.controls.includes(control)));
   if (!task) return value;
   const allowed = task.allowed_operations.find((operation) =>
@@ -1612,6 +1613,39 @@ export function LearningWhiteboard({
       setInkError(cause instanceof Error ? cause.message : "无法选择笔迹");
     }
   }, [setInkError]);
+
+  const inkModeRef = useRef(inkState.mode);
+  useEffect(() => {
+    inkModeRef.current = inkState.mode;
+  }, [inkState.mode]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        target instanceof HTMLElement
+        && (target.tagName === "INPUT"
+          || target.tagName === "TEXTAREA"
+          || target.isContentEditable)
+      ) {
+        return;
+      }
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      const key = event.key.toLowerCase();
+      if (key === "z") {
+        event.preventDefault();
+        runInkHistory(event.shiftKey ? "redo" : "undo");
+      } else if (key === "y" && !event.metaKey) {
+        event.preventDefault();
+        runInkHistory("redo");
+      } else if (key === "a" && !event.shiftKey && inkModeRef.current === "select") {
+        event.preventDefault();
+        selectAllInk();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [runInkHistory, selectAllInk]);
 
   const setPenColor = useCallback((color: string) => {
     try {
