@@ -158,6 +158,19 @@ artifacts. Upgrade the binary, static files and hosted-TTS service source
 without replacing either data directory. Restart both services, check both
 loopback health endpoints, then reload Nginx.
 
+Keep skill rollback copies outside every directory named by
+`OCTOS_SKILLS_PATH`. Each immediate child containing `manifest.json` is scanned
+as an active skill, regardless of suffixes such as `.rollback` or `.backup`.
+Two children declaring the same manifest ID make Octos reject that skill
+entirely. For this deployment, store Learning Coach rollback copies under
+`/opt/octos-learn/backups/skills/`, never alongside the active
+`/opt/octos-learn/skills/learning-coach/` directory. Before restarting, verify
+that the active root contains exactly one Learning Coach manifest:
+
+```bash
+find /opt/octos-learn/skills -mindepth 2 -maxdepth 2 -name manifest.json -print
+```
+
 If verification fails, restore the previous binary and web directory and
 restart the service. Do not roll back or overwrite the data directory unless a
 documented data migration explicitly requires it.
