@@ -1,0 +1,56 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+const bridge = readFileSync(
+  "android/app/src/main/java/cc/pitun/learn/NativeInkBridge.java",
+  "utf8",
+);
+const overlay = readFileSync(
+  "android/app/src/main/java/cc/pitun/learn/NativeInkOverlayView.java",
+  "utf8",
+);
+const activity = readFileSync(
+  "android/app/src/main/java/cc/pitun/learn/MainActivity.java",
+  "utf8",
+);
+const ollPatch = readFileSync(
+  "patches/octos-lesson-language@0.1.0-rc.1.patch",
+  "utf8",
+);
+
+describe("Android native ink pipeline", () => {
+  it("reads every historical MotionEvent sample before the current sample", () => {
+    const historyLoop = bridge.indexOf("event.getHistorySize()");
+    const historicalX = bridge.indexOf("event.getHistoricalX", historyLoop);
+    const currentX = bridge.indexOf("event.getX(pointerIndex)", historicalX);
+
+    expect(historyLoop).toBeGreaterThan(0);
+    expect(historicalX).toBeGreaterThan(historyLoop);
+    expect(currentX).toBeGreaterThan(historicalX);
+    expect(bridge).toContain("event.getHistoricalEventTime(history)");
+    expect(bridge).toContain("event.getHistoricalPressure(pointerIndex, history)");
+  });
+
+  it("renders live ink natively without consuming ordinary WebView input", () => {
+    expect(activity).toContain('addJavascriptInterface(nativeInkBridge, "OctosNativeInk")');
+    expect(activity).toContain("nativeInkBridge.onMotionEvent(event)");
+    expect(activity).toContain("return super.dispatchTouchEvent(event)");
+    expect(overlay).toContain("View.LAYER_TYPE_HARDWARE");
+    expect(overlay).toContain("canvas.drawPath(activePath, paint)");
+  });
+
+  it("commits one unsmoothed polyline and acknowledges the native overlay", () => {
+    expect(ollPatch).toContain("handleNativeInkBatch(batch)");
+    expect(ollPatch).toContain('index === 0 ? "M" : "L"');
+    expect(ollPatch).toContain("Stroke.fromStroked(path");
+    expect(ollPatch).toContain("this.editor.dispatch(this.editor.image.addComponent(stroke))");
+    expect(ollPatch).toContain("bridge.acknowledge(pointerId)");
+  });
+
+  it("uses per-stroke ids so a late acknowledgement cannot clear the next stroke", () => {
+    expect(bridge).toContain("activeMotionPointerId");
+    expect(bridge).toContain("activeStrokeId = nextStrokeId++");
+    expect(bridge).toContain("overlay.begin(activeStrokeId");
+    expect(bridge).toContain('batch.put("pointerId", strokeId)');
+  });
+});

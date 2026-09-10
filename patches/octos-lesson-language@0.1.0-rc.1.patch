@@ -1,5 +1,5 @@
 diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
-index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..e6bf1019d5095fdcb03fd9ea29b20b031c12e45c 100644
+index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7b33edabf 100644
 --- a/dist/packages/ink-runtime/src/runtime.js
 +++ b/dist/packages/ink-runtime/src/runtime.js
 @@ -10,6 +10,30 @@ import { ensurePersistentInkComponentIds, hasPersistentInkComponentId, markAiInk
@@ -33,7 +33,170 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..e6bf1019d5095fdcb03fd9ea29b20b03
  export class InkRuntime {
      options;
      host;
-@@ -395,7 +419,9 @@ export class InkRuntime {
+@@ -37,6 +61,9 @@ export class InkRuntime {
+     renderedCamera;
+     expectedViewportTransform = Mat33.identity;
+     activePointers = new Map();
++    nativeInkBridge = null;
++    nativeInkPointers = new Map();
++    nativeDomPointers = new Set();
+     /** Timestamp of the most recent pen down/move, for palm rejection. */
+     lastPenActiveAt;
+     selectionGesture = [];
+@@ -183,10 +210,126 @@ export class InkRuntime {
+             }
+         }
+         void this.editor.queueRerender();
++        this.syncNativeInkCapture?.();
++    }
++    syncNativeInkCapture() {
++        const bridge = this.nativeInkBridge;
++        const hostWindow = this.options.viewport.ownerDocument.defaultView;
++        if (!bridge || !hostWindow || typeof bridge.configure !== "function")
++            return;
++        const rect = this.options.viewport.getBoundingClientRect();
++        const pen = this.getTool(PenTool);
++        try {
++            bridge.configure(this.modeValue === "draw", rect.left, rect.top, rect.right, rect.bottom, hostWindow.devicePixelRatio || 1, this.penColor, Math.max(1.5, pen.getThickness() * .5));
++        }
++        catch { /* The Android bridge may disappear while the Activity closes. */ }
++    }
++    nativeInputPathAt(x, y) {
++        const document = this.options.viewport.ownerDocument;
++        const result = [];
++        let current = document.elementFromPoint(x, y);
++        while (current) {
++            result.push(current);
++            current = current.parentElement;
++        }
++        result.push(document);
++        if (document.defaultView)
++            result.push(document.defaultView);
++        return result;
++    }
++    appendNativeInkPoints(pointer, samples) {
++        const viewportRect = this.options.viewport.getBoundingClientRect();
++        const minimumBoardDistance = .2 / Math.max(.01, this.renderedCamera.scale);
++        for (const sample of samples) {
++            if (!sample || !Number.isFinite(sample.x) || !Number.isFinite(sample.y))
++                continue;
++            const boardPoint = this.options.board.viewportToBoard({
++                x: sample.x - viewportRect.left,
++                y: sample.y - viewportRect.top,
++            });
++            const previous = pointer.points.at(-1);
++            if (previous && Math.hypot(boardPoint.x - previous.x, boardPoint.y - previous.y) < minimumBoardDistance)
++                continue;
++            pointer.points.push({
++                x: boardPoint.x,
++                y: boardPoint.y,
++                pressure: Number.isFinite(sample.pressure) ? sample.pressure : .5,
++                time: Number.isFinite(sample.time) ? sample.time : 0,
++            });
++        }
++    }
++    handleNativeInkBatch(batch) {
++        const bridge = this.nativeInkBridge;
++        const pointerId = Number(batch?.pointerId);
++        if (!bridge || !Number.isInteger(pointerId))
++            return;
++        const cancel = () => {
++            this.nativeInkPointers.delete(pointerId);
++            try {
++                bridge.cancel(pointerId);
++            }
++            catch { }
++        };
++        if (this.modeValue !== "draw") {
++            cancel();
++            return;
++        }
++        const samples = Array.isArray(batch?.points) ? batch.points : [];
++        if (batch.action === "down") {
++            const first = samples[0];
++            if (!first || inkInputTargetsInteractiveUi(this.nativeInputPathAt(first.x, first.y))) {
++                cancel();
++                return;
++            }
++            const pointer = { points: [], pointerType: batch.pointerType === "pen" ? "pen" : "touch" };
++            this.nativeInkPointers.set(pointerId, pointer);
++            this.appendNativeInkPoints(pointer, samples);
++            return;
++        }
++        const pointer = this.nativeInkPointers.get(pointerId);
++        if (!pointer) {
++            cancel();
++            return;
++        }
++        this.appendNativeInkPoints(pointer, samples);
++        if (batch.action === "cancel") {
++            cancel();
++            return;
++        }
++        if (batch.action !== "up")
++            return;
++        this.nativeInkPointers.delete(pointerId);
++        const points = pointer.points;
++        if (points.length > 0) {
++            const pathPoints = points.length === 1
++                ? [points[0], { x: points[0].x + .01, y: points[0].y }]
++                : points;
++            const path = pathPoints.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(3)} ${point.y.toFixed(3)}`).join(" ");
++            // The meeting display reports noisy pressure values. Keep native preview
++            // and the committed whiteboard stroke at the same, stable thickness.
++            const pressure = .5;
++            const width = this.getTool(PenTool).getThickness() * pressure / Math.max(.01, this.renderedCamera.scale);
++            const stroke = Stroke.fromStroked(path, { color: Color4.fromHex(this.penColor), width });
++            this.editor.dispatch(this.editor.image.addComponent(stroke));
++        }
++        try {
++            bridge.acknowledge(pointerId);
++        }
++        catch { }
+     }
+     prepareBoardInput() {
+         const inputTarget = this.options.viewport;
+         const listeners = [];
++        const hostWindow = inputTarget.ownerDocument.defaultView;
++        const candidateBridge = hostWindow?.OctosNativeInk;
++        if (candidateBridge && typeof candidateBridge.configure === "function") {
++            this.nativeInkBridge = candidateBridge;
++            const callback = (batch) => this.handleNativeInkBatch(batch);
++            hostWindow.__octosNativeInkBatch = callback;
++            const resize = () => this.syncNativeInkCapture();
++            hostWindow.addEventListener("resize", resize);
++            listeners.push(["__native_resize__", resize]);
++        }
+         const add = (name, listener) => {
+             // js-draw's materialized selection overlay can stop pointer events
+             // before they bubble to the host viewport. Capture them first so direct
+@@ -331,6 +474,13 @@ export class InkRuntime {
+                 return;
+             if (inkInputTargetsInteractiveUi(rawEvent.composedPath()))
+                 return;
++            if (this.nativeInkBridge && this.modeValue === "draw"
++                && (event.pointerType === "touch" || event.pointerType === "pen")) {
++                this.nativeDomPointers.add(event.pointerId);
++                event.preventDefault();
++                event.stopPropagation();
++                return;
++            }
+             // Pan-override protocol (capture here, bubble at the board): right and
+             // middle button drags, and left-button drags while the board's space-pan
+             // override is held, pan the board camera in every tool mode. They are
+@@ -377,6 +527,11 @@ export class InkRuntime {
+         };
+         const onPointerMove = (rawEvent) => {
+             const event = rawEvent;
++            if (this.nativeDomPointers.has(event.pointerId)) {
++                event.preventDefault();
++                event.stopPropagation();
++                return;
++            }
+             // Pen hovers/moves keep the palm-rejection window open even for pens
+             // whose driver reports hover moves; only tracked (button-down) pen
+             // pointers reach the dispatch path below.
+@@ -395,10 +550,17 @@ export class InkRuntime {
                  return;
              event.preventDefault();
              event.stopPropagation();
@@ -44,3 +207,61 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..e6bf1019d5095fdcb03fd9ea29b20b03
          };
          const onPointerUp = (rawEvent) => {
              const event = rawEvent;
++            if (this.nativeDomPointers.delete(event.pointerId)) {
++                event.preventDefault();
++                event.stopPropagation();
++                return;
++            }
+             if (pendingMarquee && event.pointerId === pendingMarquee.pointerId) {
+                 const tapped = pendingMarquee.arbiter.end() === "tap";
+                 const pendingEvents = pendingMarquee.events;
+@@ -429,8 +591,22 @@ export class InkRuntime {
+         });
+         return () => {
+             for (const [name, listener] of listeners) {
+-                inputTarget.removeEventListener(name, listener, { capture: true });
++                if (name === "__native_resize__")
++                    inputTarget.ownerDocument.defaultView?.removeEventListener("resize", listener);
++                else
++                    inputTarget.removeEventListener(name, listener, { capture: true });
++            }
++            if (this.nativeInkBridge) {
++                try {
++                    this.nativeInkBridge.configure(false, 0, 0, 0, 0, 1, this.penColor, 1);
++                }
++                catch { }
++                const hostWindow = inputTarget.ownerDocument.defaultView;
++                if (hostWindow)
++                    delete hostWindow.__octosNativeInkBatch;
+             }
++            this.nativeInkPointers.clear();
++            this.nativeDomPointers.clear();
+             this.activePointers.clear();
+             discardPendingMarquee();
+         };
+@@ -558,6 +734,17 @@ export class InkRuntime {
+             selection.setEnabled(true);
+             restrictSelectionToTranslation(selection);
+         }
++        if (mode !== "draw") {
++            for (const pointerId of this.nativeInkPointers.keys()) {
++                try {
++                    this.nativeInkBridge?.cancel(pointerId);
++                }
++                catch { }
++            }
++            this.nativeInkPointers.clear();
++            this.nativeDomPointers.clear();
++        }
++        this.syncNativeInkCapture();
+         this.emit();
+     }
+     undo() { return this.editor.history.undo(); }
+@@ -583,6 +770,7 @@ export class InkRuntime {
+         const parsed = Color4.fromHex(color);
+         this.penColor = parsed.toHexString().slice(0, 7);
+         this.getTool(PenTool).setColor(parsed);
++        this.syncNativeInkCapture();
+         this.emit();
+     }
+     setSelectionColor(color) {

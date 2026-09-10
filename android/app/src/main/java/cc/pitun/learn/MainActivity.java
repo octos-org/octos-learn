@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
@@ -17,6 +18,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,6 +33,8 @@ public final class MainActivity extends Activity {
     private static final int MEDIA_PERMISSION_REQUEST = 1001;
 
     private WebView webView;
+    private NativeInkOverlayView nativeInkOverlay;
+    private NativeInkBridge nativeInkBridge;
     private PermissionRequest pendingWebPermission;
 
     @Override
@@ -39,10 +43,20 @@ public final class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         enterImmersiveMode();
 
+        FrameLayout root = new FrameLayout(this);
         webView = new WebView(this);
         webView.setBackgroundColor(Color.rgb(17, 16, 14));
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
-        setContentView(webView);
+        nativeInkOverlay = new NativeInkOverlayView(this);
+        root.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        root.addView(nativeInkOverlay, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        setContentView(root);
 
         configureWebView();
         if (savedInstanceState == null) {
@@ -69,6 +83,9 @@ public final class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
 
+        nativeInkBridge = new NativeInkBridge(webView, nativeInkOverlay);
+        webView.addJavascriptInterface(nativeInkBridge, "OctosNativeInk");
+
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, false);
@@ -85,6 +102,15 @@ public final class MainActivity extends Activity {
 
         webView.setWebViewClient(new LocalFirstWebViewClient(assetLoader));
         webView.setWebChromeClient(new TrustedWebChromeClient());
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+        if (nativeInkBridge != null) nativeInkBridge.onMotionEvent(event);
+        // The WebView still receives the event so toolbar controls and non-ink
+        // gestures remain ordinary DOM input. OLL suppresses only the duplicate
+        // drawing event while native ink capture is active.
+        return super.dispatchTouchEvent(event);
     }
 
     private final class LocalFirstWebViewClient extends WebViewClient {
