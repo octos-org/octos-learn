@@ -10,8 +10,8 @@ android {
         applicationId "cc.pitun.learn"
         minSdk 26
         targetSdk 35
-        versionCode 7
-        versionName "0.1.0-test7"
+        versionCode 17
+        versionName "0.1.0-test17"
     }
 
     buildTypes {
@@ -37,4 +37,5 @@ android {
 
 dependencies {
     implementation "androidx.webkit:webkit:1.12.1"
+    implementation "io.agora.rtc:full-rtc-basic:4.5.2"
 }

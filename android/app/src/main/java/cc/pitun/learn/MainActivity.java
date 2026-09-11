@@ -35,6 +35,7 @@ public final class MainActivity extends Activity {
     private WebView webView;
     private NativeInkOverlayView nativeInkOverlay;
     private NativeInkBridge nativeInkBridge;
+    private NativeAudioBridge nativeAudioBridge;
     private PermissionRequest pendingWebPermission;
 
     @Override
@@ -85,6 +86,8 @@ public final class MainActivity extends Activity {
 
         nativeInkBridge = new NativeInkBridge(webView, nativeInkOverlay);
         webView.addJavascriptInterface(nativeInkBridge, "OctosNativeInk");
+        nativeAudioBridge = new NativeAudioBridge(this, webView);
+        webView.addJavascriptInterface(nativeAudioBridge, "OctosNativeAudio");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -314,6 +317,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         if (pendingWebPermission != null) pendingWebPermission.deny();
+        if (nativeAudioBridge != null) nativeAudioBridge.release();
         webView.stopLoading();
         webView.destroy();
         super.onDestroy();

@@ -35,6 +35,11 @@ import {
 } from "@/runtime/session-context";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import {
+  getEchoCancelledMicStream,
+  nativeAudioCaptureAvailable,
+  prepareNativeAudioCapture,
+} from "@/home/voice/microphone";
+import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "@/home/voice/private-asr-client";
@@ -83,6 +88,7 @@ type LearningMediaCapability =
   | { available: false; message: string };
 
 function detectLearningMediaCapability(): LearningMediaCapability {
+  if (nativeAudioCaptureAvailable()) return { available: true };
   if (window.isSecureContext === false) {
     return {
       available: false,
@@ -137,11 +143,29 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
   // independent. Begin the network work inside the user's activation gesture
   // instead of waiting for getUserMedia and the ASR session sequentially.
   preloadLearningVoiceRuntime();
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: autoCamera,
-  });
-  stream.getTracks().forEach((track) => track.stop());
+  let microphoneStream: MediaStream | null = null;
+  let cameraStream: MediaStream | null = null;
+  try {
+    // Use the same Android-compatible acquisition path as the live voice
+    // capture. Requesting audio+video directly here used to fail at the
+    // permission gate before the USB-input fallbacks could run.
+    if (nativeAudioCaptureAvailable()) {
+      // AudioRecord is opened by the voice capture hook. Preparing here keeps
+      // this permission gate independent of the broken Android 8 WebView mic.
+      prepareNativeAudioCapture();
+    } else {
+      microphoneStream = await getEchoCancelledMicStream();
+    }
+    if (autoCamera) {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: true,
+      });
+    }
+  } finally {
+    microphoneStream?.getTracks().forEach((track) => track.stop());
+    cameraStream?.getTracks().forEach((track) => track.stop());
+  }
   localStorage.setItem(AUTO_CAMERA_KEY, String(autoCamera));
   localStorage.setItem(INPUT_MODE_KEY, "voice");
   return { autoCamera, voiceEnabled: true };
@@ -776,7 +800,7 @@ export function LearningPage() {
         <button
           type="button"
           onClick={newSession}
-          className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
+          className="learning-sidebar-new flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
         >
           <Plus size={16} />
           新对话
@@ -840,12 +864,12 @@ export function LearningPage() {
       </aside>
 
       <main className="relative min-w-0 flex-1">
-        <div className="absolute left-3 top-6 z-20 flex items-center gap-2">
+        <div className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2">
           <button
             type="button"
             aria-label="打开学习会话列表"
             onClick={() => setSidebarOpen(true)}
-            className="learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+            className="learning-top-action-button learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Menu size={20} />
           </button>
@@ -854,7 +878,7 @@ export function LearningPage() {
             aria-label="打开设置"
             title="设置"
             onClick={() => navigate("/settings")}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+            className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Settings size={19} />
           </button>

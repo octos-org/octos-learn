@@ -32,7 +32,9 @@ import {
 } from "./whiteboard-placement";
 
 const DEFAULT_CARD_SCALE = 1;
-const MIN_CARD_SCALE = .85;
+const PREVIOUS_ANDROID_DEFAULT_CARD_SCALE = .76;
+const ANDROID_DEFAULT_CARD_SCALE = 1;
+const MIN_CARD_SCALE = .68;
 const MAX_CARD_SCALE = 2.25;
 const CARD_WIDTH = 330;
 const CARD_FONT_SIZE = 13;
@@ -410,6 +412,10 @@ export function SelectionEnhancementLayer({
   ) => void;
   onDelete: (turnId: string) => void;
 }) {
+  const androidRuntime = document.documentElement.dataset.runtimePlatform === "android";
+  const defaultCardScale = androidRuntime
+    ? ANDROID_DEFAULT_CARD_SCALE
+    : DEFAULT_CARD_SCALE;
   const [transientPositions, setTransientPositions] = useState<
     Readonly<Record<string, { x: number; y: number }>>
   >({});
@@ -520,7 +526,7 @@ export function SelectionEnhancementLayer({
       updateCardScale(turnId, layout, layout.scale - .1);
     } else if (event.key === "Home") {
       event.preventDefault();
-      updateCardScale(turnId, layout, DEFAULT_CARD_SCALE);
+      updateCardScale(turnId, layout, defaultCardScale);
     }
   };
   const beginCardDrag = (
@@ -750,15 +756,18 @@ export function SelectionEnhancementLayer({
       const currentSourceBounds = sourceBoundsFor(sourceId);
       const sourceBounds = currentSourceBounds ?? fallbackBounds;
       const persisted = localLayouts[turnId] ?? cardLayouts[turnId];
+      const compactLegacyDefault = androidRuntime
+        && persisted?.scale === PREVIOUS_ANDROID_DEFAULT_CARD_SCALE
+        && !persisted.manually_positioned;
       const scale = transientScales[turnId]
-        ?? persisted?.scale
-        ?? DEFAULT_CARD_SCALE;
+        ?? (compactLegacyDefault ? defaultCardScale : persisted?.scale)
+        ?? defaultCardScale;
       const minimized = persisted?.minimized ?? false;
       const width = minimized ? 26 : CARD_WIDTH * scale;
       const fallbackHeight = minimized
         ? 26
         : item.kind === "question"
-          ? 210
+          ? 210 * scale
           : (item.question ? 116 : 0) + (
               item.artifact.response.kind === "scene3d"
                 ? 520
@@ -815,7 +824,7 @@ export function SelectionEnhancementLayer({
         layout,
         width,
         estimatedHeight,
-        needsPersistence: !persisted || repairAutomaticOverlap,
+        needsPersistence: !persisted || repairAutomaticOverlap || compactLegacyDefault,
       });
       const cardRect = {
         x: layout.x,
@@ -900,8 +909,8 @@ export function SelectionEnhancementLayer({
               style={{
                 left: item.layout.x,
                 top: item.layout.y,
-                width: CARD_WIDTH,
-                fontSize: CARD_FONT_SIZE,
+                width: CARD_WIDTH * item.layout.scale,
+                fontSize: CARD_FONT_SIZE * item.layout.scale,
               }}
               onPointerDown={(event) => beginCardDrag(
                 event,
@@ -922,7 +931,7 @@ export function SelectionEnhancementLayer({
                   sourceBounds={item.sourceBounds}
                   cardLeft={item.layout.x}
                   cardTop={item.layout.y}
-                  cardWidth={CARD_WIDTH}
+                  cardWidth={CARD_WIDTH * item.layout.scale}
                   cardHeight={item.estimatedHeight}
                 />
               ) : null}
@@ -1176,7 +1185,7 @@ export function SelectionEnhancementLayer({
               onDoubleClick={() => updateCardScale(
                 artifact.turn_id,
                 item.layout,
-                DEFAULT_CARD_SCALE,
+                defaultCardScale,
               )}
               onKeyDown={(event) => resizeCardWithKeyboard(
                 event,

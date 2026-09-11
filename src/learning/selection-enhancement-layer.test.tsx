@@ -120,6 +120,69 @@ function cardRectsOverlapForTest(
 }
 
 describe("SelectionEnhancementLayer", () => {
+  it("starts assistance cards at a readable Android display scale", async () => {
+    document.documentElement.dataset.runtimePlatform = "android";
+    const onLayoutChange = vi.fn();
+    try {
+      const { container } = render(
+        <SelectionEnhancementLayer
+          artifacts={[artifact]}
+          sources={[]}
+          currentDocumentVersion={1}
+          onCardLayoutChange={onLayoutChange}
+          onDelete={vi.fn()}
+        />,
+      );
+
+      const card = container.querySelector<HTMLElement>(
+        ".learning-selection-enhancement",
+      )!;
+      expect(card.dataset.cardScale).toBe("1.00");
+      expect(card.style.width).toBe("330px");
+      await waitFor(() => expect(onLayoutChange).toHaveBeenCalledWith(
+        artifact.turn_id,
+        expect.objectContaining({ scale: 1 }),
+      ));
+    } finally {
+      delete document.documentElement.dataset.runtimePlatform;
+    }
+  });
+
+  it("upgrades the old automatic Android card scale without overriding manual sizing", async () => {
+    document.documentElement.dataset.runtimePlatform = "android";
+    const onLayoutChange = vi.fn();
+    try {
+      const { container } = render(
+        <SelectionEnhancementLayer
+          artifacts={[artifact]}
+          sources={[]}
+          currentDocumentVersion={1}
+          cardLayouts={{
+            [artifact.turn_id]: {
+              x: 160,
+              y: 20,
+              scale: .76,
+              minimized: false,
+              manually_positioned: false,
+            },
+          }}
+          onCardLayoutChange={onLayoutChange}
+          onDelete={vi.fn()}
+        />,
+      );
+
+      expect(container.querySelector<HTMLElement>(
+        ".learning-selection-enhancement",
+      )?.dataset.cardScale).toBe("1.00");
+      await waitFor(() => expect(onLayoutChange).toHaveBeenCalledWith(
+        artifact.turn_id,
+        expect.objectContaining({ scale: 1 }),
+      ));
+    } finally {
+      delete document.documentElement.dataset.runtimePlatform;
+    }
+  });
+
   it("draws a thick arrow that follows the live source and a dragged card", () => {
     const source: InkSelectionSnapshot = {
       format: INK_SELECTION_FORMAT,

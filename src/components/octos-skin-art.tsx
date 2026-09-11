@@ -19,12 +19,14 @@ export function OctosSkinArt({
   skin,
   className = "",
   eager = false,
+  staticPreview = false,
   activity = "idle",
   reactionKey = 0,
 }: {
   skin: TeacherSkin;
   className?: string;
   eager?: boolean;
+  staticPreview?: boolean;
   activity?: TeacherActivity;
   reactionKey?: number;
 }) {
@@ -32,6 +34,20 @@ export function OctosSkinArt({
 
   if (definition.kind === "svg") {
     return <OctosAvatar skin={definition.id} className={className} />;
+  }
+
+  if (staticPreview) {
+    return (
+      <img
+        src={publicAsset(definition.thumbnailPath)}
+        alt=""
+        aria-hidden="true"
+        className={`octos-model-thumbnail ${className}`}
+        draggable={false}
+        loading="lazy"
+        decoding="async"
+      />
+    );
   }
 
   return (

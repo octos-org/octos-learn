@@ -44,7 +44,7 @@ import {
   type InkRuntime,
   type InkRuntimeState,
 } from "./oll-ink-runtime";
-import { capAndroidInkPixelDensity } from "./android-ink-performance";
+import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -65,7 +65,6 @@ import {
 } from "../selection-enhancements";
 import {
   availableSelectionTools,
-  selectionLessonTool,
   type SelectionToolId,
 } from "../selection-tools";
 import type {
@@ -106,6 +105,7 @@ type LearningInkState = InkRuntimeState & {
 
 type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
+  setPenWidth?: (width: number) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
   setSelectionMode?: (mode: "rectangle" | "lasso") => void;
   getSelectionSourceBounds?: (
@@ -380,6 +380,20 @@ const inkColorPresets = [
   { color: "#202b2a", label: "黑色" },
 ];
 
+const INK_PEN_WIDTH_KEY = "octos-learning-pen-width:v1";
+const inkWidthPresets = [
+  { width: 1.25, label: "极细" },
+  { width: 2, label: "细" },
+  { width: 3.25, label: "标准" },
+  { width: 5, label: "粗" },
+];
+
+function initialInkPenWidth(): number {
+  const stored = Number(localStorage.getItem(INK_PEN_WIDTH_KEY));
+  if (Number.isFinite(stored) && stored >= 1 && stored <= 16) return stored;
+  return import.meta.env.MODE === "android" ? 2 : 3.25;
+}
+
 function InkColorControl({
   label,
   value,
@@ -612,7 +626,6 @@ export function LearningWhiteboard({
   onAskInkSelection,
   onVoiceInkSelection,
   onVoiceInkSelectionCaptureChange,
-  onReferenceInkSelection,
   onBoardWritingReady,
   onDeleteSelectionEnhancement,
   onDeleteSelectionSources,
@@ -735,6 +748,9 @@ export function LearningWhiteboard({
   }>());
   const boardVariableUpdateFrameRef = useRef<number | null>(null);
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
+  const [inkPenWidth, setInkPenWidthState] = useState(initialInkPenWidth);
+  const inkPenWidthRef = useRef(inkPenWidth);
+  const [inkWidthMenuOpen, setInkWidthMenuOpen] = useState(false);
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkError, setInkError] = useState("");
   const [writingRetry, setWritingRetry] = useState(0);
@@ -1589,6 +1605,7 @@ export function LearningWhiteboard({
   const setInkMode = useCallback((mode: InkMode) => {
     try {
       inkRuntimeRef.current?.setMode(mode);
+      if (mode !== "draw") setInkWidthMenuOpen(false);
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法切换书写工具");
@@ -1658,6 +1675,23 @@ export function LearningWhiteboard({
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
+    }
+  }, [setInkError]);
+
+  const setPenWidth = useCallback((width: number) => {
+    try {
+      const ink = inkRuntimeRef.current;
+      if (!ink?.setPenWidth) {
+        throw new Error("当前 Ink Runtime 不支持笔触粗细");
+      }
+      ink.setPenWidth(width);
+      inkPenWidthRef.current = width;
+      setInkPenWidthState(width);
+      localStorage.setItem(INK_PEN_WIDTH_KEY, String(width));
+      setInkWidthMenuOpen(false);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法设置笔触粗细");
     }
   }, [setInkError]);
 
@@ -1973,56 +2007,16 @@ export function LearningWhiteboard({
     selectionRequestPending,
   ]);
 
-  const referenceSelectionForLesson = useCallback(async () => {
-    if (!onReferenceInkSelection || selectionRequestPending) return;
-    setSelectionRequestPending(true);
-    try {
-      const candidate = preparedSelection ?? await captureSelection();
-      const prepared = recordSelectionContext(candidate);
-      const targets = prepared.candidates.filter((candidate) =>
-        selectedBoardTargetIds.includes(candidate.target_id),
-      );
-      const mounted = mountedRef.current;
-      if (!mounted) throw new Error("白板尚未就绪");
-      const contextImage = await selectionContextToPngFile(
-        prepared.snapshot,
-        mounted,
-        targets,
-      );
-      await onReferenceInkSelection({
-        snapshot: prepared.snapshot,
-        contentKind: selectionContentKind,
-        boardContext: {
-          boardId: prepared.boardId,
-          boardRevision: prepared.boardRevision,
-          targets,
-        },
-        contextImage,
-        label: targets[0]?.label ?? "选中的笔迹",
-      });
-      setSelectionQuestionOpen(false);
-      setPreparedSelection(null);
-      setSelectedBoardTargetIds([]);
-      setInkError("");
-    } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法引用当前选区");
-    } finally {
-      setSelectionRequestPending(false);
-    }
-  }, [setInkError,
-    captureSelection,
-    onReferenceInkSelection,
-    preparedSelection,
-    recordSelectionContext,
-    selectedBoardTargetIds,
-    selectionContentKind,
-    selectionRequestPending,
-  ]);
-
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
+    if (document.documentElement.dataset.runtimePlatform === "android") {
+      // Meeting displays are viewed from much farther away than laptops.
+      // Large compositions may be cropped, but automatic framing must not
+      // reduce teaching cards to an unreadable whole-course thumbnail.
+      mounted.view.setAutomaticCameraMinimumScale(.55);
+    }
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
       if (!import.meta.env.DEV || import.meta.env.MODE === "test") return;
@@ -2083,9 +2077,12 @@ export function LearningWhiteboard({
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
+    let destroyAndroidInkDensity: (() => void) | null = null;
     const destroyInk = (): Promise<void> | undefined => {
       if (!ink || inkDestroyed) return undefined;
       inkDestroyed = true;
+      destroyAndroidInkDensity?.();
+      destroyAndroidInkDensity = null;
       unsubscribeInkRef.current?.();
       unsubscribeInkRef.current = null;
       if (inkRuntimeRef.current === ink) inkRuntimeRef.current = null;
@@ -2148,9 +2145,14 @@ export function LearningWhiteboard({
           locale: "zh-CN",
         }) as LearningInkRuntime;
         if (import.meta.env.MODE === "android") {
-          capAndroidInkPixelDensity(ink, viewport);
+          destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
+            ink,
+            viewport,
+            mounted.view,
+          );
         }
         inkRuntimeRef.current = ink;
+        ink.setPenWidth?.(inkPenWidthRef.current);
         ink.setMode("navigate");
         setInkSupportsColors(
           typeof ink.setPenColor === "function" &&
@@ -2896,9 +2898,19 @@ export function LearningWhiteboard({
           <button
             type="button"
             className={inkState.mode === "draw" ? "is-active" : ""}
-            onClick={() => setInkMode("draw")}
+            onClick={() => {
+              if (inkState.mode === "draw") {
+                setInkColorPaletteOpen(false);
+                setInkWidthMenuOpen((current) => !current);
+              } else {
+                setInkMode("draw");
+                setInkWidthMenuOpen(false);
+              }
+            }}
             aria-label="书写笔迹"
             aria-pressed={inkState.mode === "draw"}
+            aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
+            title={inkState.mode === "draw" ? "再次点击选择笔触粗细" : "书写笔迹"}
           >
             <PenLine size={17} />
           </button>
@@ -2929,7 +2941,10 @@ export function LearningWhiteboard({
               <button
                 type="button"
                 className={inkColorPaletteOpen ? "is-active" : ""}
-                onClick={() => setInkColorPaletteOpen((current) => !current)}
+                onClick={() => {
+                  setInkWidthMenuOpen(false);
+                  setInkColorPaletteOpen((current) => !current);
+                }}
                 aria-label={inkColorPaletteOpen ? "隐藏调色板" : "显示调色板"}
                 aria-expanded={inkColorPaletteOpen}
               >
@@ -3017,6 +3032,32 @@ export function LearningWhiteboard({
               : ""}
             {inkState.saved ? " · 已保存" : " · 保存中"}
           </span>
+        </div>
+      ) : null}
+      {inkWidthMenuOpen && inkState.mode === "draw" ? (
+        <div
+          className="learning-ink-width-menu"
+          data-learning-board-occlusion=""
+          aria-label="笔触粗细"
+        >
+          {inkWidthPresets.map((preset) => (
+            <button
+              key={preset.width}
+              type="button"
+              className={inkPenWidth === preset.width ? "is-active" : ""}
+              onClick={() => setPenWidth(preset.width)}
+              aria-label={`笔触粗细：${preset.label}`}
+              aria-pressed={inkPenWidth === preset.width}
+            >
+              <span className="learning-ink-width-preview" aria-hidden="true">
+                <i style={{ width: preset.width * 3, height: preset.width * 3 }} />
+                <b style={{ height: Math.max(1, preset.width * .8) }} />
+              </span>
+              <small>
+                {preset.width.toFixed(preset.width % 1 === 0 ? 0 : 1)} px
+              </small>
+            </button>
+          ))}
         </div>
       ) : null}
       {selectionQuestionOpen && inkState.selected_count > 0 ? (
@@ -3122,15 +3163,6 @@ export function LearningWhiteboard({
                 {tool.label}
               </button>
             ))}
-            {onReferenceInkSelection ? (
-              <button
-                type="button"
-                onClick={() => void referenceSelectionForLesson()}
-                disabled={selectionRequestPending}
-              >
-                {selectionLessonTool.label}
-              </button>
-            ) : null}
           </div>
           <div className="learning-selection-question-input">
             <input

@@ -1,9 +1,13 @@
-import { defineConfig, loadEnv } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
+import {
+  addLegacySupportsForSrgbColorMixes,
+  downlevelOklchColors,
+} from "./build/android-legacy-css";
 
 const localCertificate = path.resolve(__dirname, ".cert/octos-learn.pem");
 const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem");
@@ -54,9 +58,34 @@ function downlevelOllBoardScope(source: string): string {
   return source.slice(0, scopeStart) + prefixed + source.slice(closingBrace);
 }
 
-export default defineConfig(({ mode }) => {
+function androidLegacyColorPlugin(): Plugin {
+  return {
+    name: "android-legacy-css-colors",
+    generateBundle(_options, bundle) {
+      for (const output of Object.values(bundle)) {
+        if (
+          output.type !== "asset"
+          || !output.fileName.endsWith(".css")
+        ) continue;
+        const source = typeof output.source === "string"
+          ? output.source
+          : Buffer.from(output.source).toString("utf8");
+        output.source = downlevelOklchColors(
+          addLegacySupportsForSrgbColorMixes(source),
+        );
+      }
+    },
+  };
+}
+
+export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const useLocalHttps = mode === "local-https";
+  // Android-mode browser verification must retain MODE=android so all APK
+  // compatibility/UI branches execute, while still using a secure origin for
+  // microphone, selection capture, and Web Crypto. Only the dev server needs
+  // the local certificate; `vite build --mode android` remains portable.
+  const useLocalHttps = mode === "local-https"
+    || (mode === "android" && command === "serve");
   const useAndroidLegacyBuild = mode === "android";
   // Local integration only: exercise an unmerged Runtime without changing the
   // production dependency pin or publishing intermediate commits.
@@ -107,6 +136,7 @@ export default defineConfig(({ mode }) => {
         : []),
       react(),
       tailwindcss(),
+      ...(useAndroidLegacyBuild ? [androidLegacyColorPlugin()] : []),
       ...(useAndroidLegacyBuild
         ? [legacy({
             // Android 8 devices often ship a Chromium 60/61-era WebView and

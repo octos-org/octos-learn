@@ -100,4 +100,28 @@ describe("WhiteboardQuestionCard", () => {
       name: "本次问题图片预览",
     })).toBeNull();
   });
+
+  it("identifies a selected whiteboard snapshot as the question context", async () => {
+    render(
+      <WhiteboardQuestionCard
+        question={{
+          ...cameraQuestion,
+          id: "selection-question",
+          origin: "selection",
+          imagePath: "uploads/selected-formula.png",
+          source: {
+            sourceId: "selected-formula",
+            bounds: { x: 80, y: 120, width: 240, height: 90 },
+          },
+        }}
+        left={100}
+        top={120}
+      />,
+    );
+
+    expect(await screen.findByText("引用的白板选区")).toBeTruthy();
+    expect(screen.getByRole("img", {
+      name: "本次问题引用的白板选区",
+    })).toBeTruthy();
+  });
 });

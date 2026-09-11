@@ -27,15 +27,40 @@ export function prepareBoardWritingFont(): Promise<OutlineFont> {
 /** Place complete writing beside its source, without changing existing strokes. */
 export function findWritingPosition(source: WritingBounds, width: number, height: number,
   occupied: WritingBounds[]): { x: number; y: number } {
+  const clearance = 16;
+  const edgeOffset = 32;
+  const allOccupied = [source, ...occupied].filter((rect) =>
+    Number.isFinite(rect.x)
+    && Number.isFinite(rect.y)
+    && Number.isFinite(rect.width)
+    && Number.isFinite(rect.height)
+    && rect.width > 0
+    && rect.height > 0);
+  const isOpen = (position: { x: number; y: number }) => {
+    const candidate = { ...position, width, height };
+    return allOccupied.every((rect) => !(
+      candidate.x < rect.x + rect.width + clearance
+      && candidate.x + candidate.width + clearance > rect.x
+      && candidate.y < rect.y + rect.height + clearance
+      && candidate.y + candidate.height + clearance > rect.y
+    ));
+  };
+  // Keep feedback attached to the learner's work. If the ideal right-hand
+  // position is blocked, prefer the immediately adjacent space below before
+  // a global search drifts along the original row and lands much farther away.
+  const adjacentPositions = [
+    { x: source.x + source.width + edgeOffset, y: source.y },
+    { x: source.x, y: source.y + source.height + edgeOffset },
+  ];
+  const adjacent = adjacentPositions.find(isOpen);
+  if (adjacent) return adjacent;
+
   return findOpenWhiteboardPosition({
-    preferred: {
-      x: source.x + source.width + 32,
-      y: source.y,
-    },
+    preferred: adjacentPositions[0],
     width,
     height,
-    occupied: [source, ...occupied],
-    gap: 16,
+    occupied: allOccupied,
+    gap: clearance,
     preferBelow: true,
   });
 }

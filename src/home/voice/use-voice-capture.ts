@@ -1,7 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWav } from "./wav-encode";
-import { getEchoCancelledMicStream } from "./microphone";
+import {
+  decodeNativeWav,
+  getEchoCancelledMicStream,
+  nativeAudioCaptureAvailable,
+  NATIVE_AUDIO_EVENT,
+  startNativeAudioCapture,
+  stopNativeAudioCapture,
+  type NativeAudioEventDetail,
+} from "./microphone";
 
 export interface VoiceCapture {
   capturing: boolean;
@@ -133,6 +141,7 @@ async function createVadWithModel(
 
 export function useVoiceCapture(): VoiceCapture {
   const vadRef = useRef<MicVAD | null>(null);
+  const nativeCaptureActiveRef = useRef(false);
   // The callbacks/configuration are mutable while one MicVAD remains alive.
   // Voice replies can contain dozens of sentence clips; rebuilding ONNX,
   // AudioContext, and getUserMedia for every clip creates repeated deaf
@@ -148,9 +157,55 @@ export function useVoiceCapture(): VoiceCapture {
   const [capturing, setCapturing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const onNativeAudio = (event: Event) => {
+      if (!nativeCaptureActiveRef.current) return;
+      const detail = (event as CustomEvent<NativeAudioEventDetail>).detail;
+      if (!detail || typeof detail.type !== "string") return;
+      const current = callbacksRef.current;
+      if (!current) return;
+
+      if (detail.type === "speech-start") {
+        runCallbackSafely("native speech start", async () => {
+          await current.options.onSpeechStart?.();
+          await current.options.onSpeechConfirmed?.();
+          await current.options.onSpeechRealStart?.();
+        }, setError);
+        return;
+      }
+      if (detail.type === "misfire") {
+        runCallbackSafely(
+          "native VAD misfire",
+          () => current.options.onVADMisfire?.(),
+          setError,
+        );
+        return;
+      }
+      if (detail.type === "error") {
+        setError(detail.message || "Android 原生麦克风读取失败");
+        setCapturing(false);
+        nativeCaptureActiveRef.current = false;
+        return;
+      }
+      if (detail.type === "utterance" && detail.wavBase64) {
+        runCallbackSafely(
+          "native utterance",
+          () => current.onUtterance(decodeNativeWav(detail.wavBase64 as string)),
+          setError,
+        );
+      }
+    };
+    window.addEventListener(NATIVE_AUDIO_EVENT, onNativeAudio);
+    return () => window.removeEventListener(NATIVE_AUDIO_EVENT, onNativeAudio);
+  }, []);
+
   const stop = useCallback((): Promise<void> => {
     startGenRef.current++;
     callbacksRef.current = null;
+    if (nativeCaptureActiveRef.current) {
+      nativeCaptureActiveRef.current = false;
+      stopNativeAudioCapture();
+    }
     const vad = vadRef.current;
     vadRef.current = null;
     setCapturing(false);
@@ -203,6 +258,24 @@ export function useVoiceCapture(): VoiceCapture {
     // to finish tearing down. Do not reacquire the microphone after that.
     const latestAfterTeardown = callbacksRef.current;
     if (!latestAfterTeardown) return false;
+
+    // Android 8 vendor WebViews can expose a working camera while every
+    // getUserMedia({audio}) call fails. The APK therefore captures through
+    // AudioRecord and sends complete WAV utterances through this event bridge.
+    if (nativeAudioCaptureAvailable()) {
+      if (!nativeCaptureActiveRef.current) {
+        const result = startNativeAudioCapture();
+        if (!result.ok) {
+          const message = result.error || "Android 原生麦克风无法启动";
+          setError(message);
+          setCapturing(false);
+          return false;
+        }
+        nativeCaptureActiveRef.current = true;
+      }
+      setCapturing(true);
+      return true;
+    }
 
     const active = vadRef.current;
     if (active) {

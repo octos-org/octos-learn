@@ -53,4 +53,11 @@ describe("Android native ink pipeline", () => {
     expect(bridge).toContain("overlay.begin(activeStrokeId");
     expect(bridge).toContain('batch.put("pointerId", strokeId)');
   });
+
+  it("keeps the selected brush width identical in native preview and committed ink", () => {
+    expect(ollPatch).toContain("setPenWidth(width)");
+    expect(ollPatch).toContain("this.getTool(PenTool).setThickness");
+    expect(ollPatch).toContain("this.syncNativeInkCapture()");
+    expect(bridge).toContain("overlay.configure(color, (float) widthCss * cssPixelRatio)");
+  });
 });

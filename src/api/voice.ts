@@ -40,7 +40,10 @@ export interface HostedTtsStatus {
 }
 
 export function isHostedTtsEnabled(): boolean {
-  return import.meta.env.VITE_HOSTED_TTS_ENABLED === "true";
+  const localAndroidPreview = import.meta.env.MODE === "android"
+    && import.meta.env.DEV;
+  return import.meta.env.VITE_HOSTED_TTS_ENABLED === "true"
+    && !localAndroidPreview;
 }
 
 export function fetchHostedTtsStatus(): Promise<HostedTtsStatus> {

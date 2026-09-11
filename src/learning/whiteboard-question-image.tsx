@@ -9,6 +9,10 @@ export function WhiteboardQuestionImage({
 }: {
   question: WhiteboardQuestionRecord;
 }) {
+  const isSelectionContext = Boolean(question.source);
+  const imageDescription = isSelectionContext
+    ? "本次问题引用的白板选区"
+    : "本次问题随附的摄像头画面";
   const [previewOpen, setPreviewOpen] = useState(false);
   const [loadedImage, setLoadedImage] = useState<{
     path: string;
@@ -71,7 +75,7 @@ export function WhiteboardQuestionImage({
       <div
         className="learning-whiteboard-question-camera is-error"
         role="img"
-        aria-label="本次问题随附的摄像头画面暂时无法显示"
+        aria-label={`${imageDescription}暂时无法显示`}
       >
         图片暂时无法显示
       </div>
@@ -91,10 +95,15 @@ export function WhiteboardQuestionImage({
   return (
     <>
       <div className="learning-whiteboard-question-camera">
+        {isSelectionContext ? (
+          <span className="learning-whiteboard-question-context-label">
+            引用的白板选区
+          </span>
+        ) : null}
         <img
           className="learning-whiteboard-question-camera-frame"
           src={imageUrl}
-          alt="本次问题随附的摄像头画面"
+          alt={imageDescription}
         />
         <button
           ref={triggerRef}
@@ -130,7 +139,12 @@ export function WhiteboardQuestionImage({
               }}
             >
               <div className="learning-question-image-preview">
-                <img src={imageUrl} alt="放大的本次问题随附摄像头画面" />
+                <img
+                  src={imageUrl}
+                  alt={isSelectionContext
+                    ? "放大的本次问题引用白板选区"
+                    : "放大的本次问题随附摄像头画面"}
+                />
                 <button
                   ref={closeRef}
                   type="button"

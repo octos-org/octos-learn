@@ -85,4 +85,42 @@ describe("voice api", () => {
       },
     );
   });
+
+  it("routes a local Android-mode preview through the profile TTS service", async () => {
+    vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
+    vi.stubEnv("MODE", "android");
+    vi.stubEnv("DEV", true);
+    const audio = new Blob(["audio"], { type: "audio/wav" });
+    mockRequestBlob.mockResolvedValue(audio);
+
+    await expect(synthesizeSpeech("本机预览旁白。"))
+      .resolves.toBe(audio);
+    expect(mockRequestBlob).toHaveBeenCalledWith(
+      "/api/voice/synthesize",
+      {
+        method: "POST",
+        body: JSON.stringify({ text: "本机预览旁白。" }),
+        signal: undefined,
+      },
+    );
+  });
+
+  it("keeps hosted TTS enabled in the packaged Android build", async () => {
+    vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
+    vi.stubEnv("MODE", "android");
+    vi.stubEnv("DEV", false);
+    const audio = new Blob(["audio"], { type: "audio/mpeg" });
+    mockRequestBlob.mockResolvedValue(audio);
+
+    await expect(synthesizeSpeech("APK 公网旁白。"))
+      .resolves.toBe(audio);
+    expect(mockRequestBlob).toHaveBeenCalledWith(
+      "/api/learn/tts/synthesize",
+      {
+        method: "POST",
+        body: JSON.stringify({ text: "APK 公网旁白。" }),
+        signal: undefined,
+      },
+    );
+  });
 });

@@ -3,6 +3,8 @@
 This wrapper targets Android 8.0 (API 26). It serves the Vite build from the
 APK under the virtual HTTPS origin `https://learn.pitun.cc/`; `/api/`,
 `/private-asr/`, WebSocket, and health traffic continue to use the live server.
+The Android Vite mode reads `.env.android`, which deliberately enables the same
+private-ASR and hosted-TTS services as the public web build.
 
 ## Build
 

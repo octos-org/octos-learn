@@ -3,7 +3,15 @@ import type {
   ILocalAudioTrack,
 } from "agora-rtc-sdk-ng";
 import { requestPrivateAsrGrant } from "@/api/private-asr";
-import { getEchoCancelledMicStream } from "./microphone";
+import {
+  getEchoCancelledMicStream,
+  nativePrivateAsrAvailable,
+  NATIVE_AUDIO_EVENT,
+  setNativePrivateAsrListening,
+  startNativePrivateAsr,
+  stopNativePrivateAsr,
+  type NativeAudioEventDetail,
+} from "./microphone";
 
 const PRIVATE_ASR_PREFIX = "/private-asr";
 const FINAL_TIMEOUT_MS = 12_000;
@@ -14,6 +22,9 @@ let agoraRuntimePromise: Promise<typeof import("agora-rtc-sdk-ng")> | null = nul
  * The same promise is consumed by joinAgora(), so preloading never downloads
  * or initialises a second SDK instance. */
 export function preloadPrivateAsrRuntime(): Promise<void> {
+  // The APK owns Agora natively. Loading the 4 MB browser runtime on its old
+  // WebView is both unnecessary and the source of the failed synthetic track.
+  if (nativePrivateAsrAvailable()) return Promise.resolve();
   if (!agoraRuntimePromise) {
     agoraRuntimePromise = import("agora-rtc-sdk-ng").catch((error) => {
       agoraRuntimePromise = null;
@@ -136,6 +147,7 @@ export class PrivateAsrClient {
   private audioTrack: ILocalAudioTrack | null = null;
   private microphoneStream: MediaStream | null = null;
   private microphonePromise: Promise<MediaStream> | null = null;
+  private nativeRtcActive = false;
   private finalQueue: string[] = [];
   private finalWaiter: TranscriptWaiter | null = null;
   private closed = false;
@@ -151,7 +163,10 @@ export class PrivateAsrClient {
     // Permission acquisition and device setup are independent of the control
     // plane / Agora join. Start them immediately so public voice startup is
     // bounded by the slower branch instead of paying both costs serially.
-    const microphonePromise = this.ensureMicrophoneStream();
+    const useNativeRtc = nativePrivateAsrAvailable();
+    const microphonePromise = useNativeRtc
+      ? null
+      : this.ensureMicrophoneStream();
     const { grant } = await requestPrivateAsrGrant();
     const response = await fetch(`${PRIVATE_ASR_PREFIX}/api/v1/sessions`, {
       method: "POST",
@@ -178,7 +193,9 @@ export class PrivateAsrClient {
         this.openEventSocket(session),
         session.demoMode
           ? Promise.resolve()
-          : this.joinAgora(session, microphonePromise),
+          : useNativeRtc
+            ? this.joinNativeAgora(session)
+            : this.joinAgora(session, microphonePromise!),
       ]);
     } catch (error) {
       await this.stop();
@@ -193,6 +210,13 @@ export class PrivateAsrClient {
 
   async setListening(listening: boolean): Promise<void> {
     if (listening) this.finalQueue = [];
+    if (this.nativeRtcActive) {
+      const result = setNativePrivateAsrListening(listening);
+      if (!result.ok) {
+        throw new Error(result.error || "Android Agora 原生音频状态切换失败");
+      }
+      return;
+    }
     // Keep the Agora track enabled (and therefore publishable) for the whole
     // session. VAD controls whether media is sent by muting/unmuting it.
     // Agora 4.24 rejects publish() for a disabled track.
@@ -240,6 +264,11 @@ export class PrivateAsrClient {
     this.finalQueue = [];
     this.socket?.close();
     this.socket = null;
+    if (this.nativeRtcActive) {
+      window.removeEventListener(NATIVE_AUDIO_EVENT, this.onNativeAudioEvent);
+      stopNativePrivateAsr();
+      this.nativeRtcActive = false;
+    }
     try {
       await this.audioTrack?.setMuted(true);
     } catch {
@@ -367,6 +396,25 @@ export class PrivateAsrClient {
     // no microphone media is sent before Silero VAD opens the speech window.
     await publishPrivateAsrTrackMuted(client, audioTrack);
   }
+
+  private async joinNativeAgora(
+    session: PrivateAsrSessionResponse,
+  ): Promise<void> {
+    const result = startNativePrivateAsr(session.agora);
+    if (!result.ok || !result.joined) {
+      throw new Error(result.error || "Android Agora 原生音频频道未连接");
+    }
+    this.nativeRtcActive = true;
+    window.addEventListener(NATIVE_AUDIO_EVENT, this.onNativeAudioEvent);
+  }
+
+  private readonly onNativeAudioEvent = (event: Event): void => {
+    const detail = (event as CustomEvent<NativeAudioEventDetail>).detail;
+    if (detail?.type !== "private-asr-error") return;
+    const error = new Error(detail.message || "Android Agora 原生音频推送失败");
+    this.rejectWaiter(error);
+    this.onConnectionError?.(error);
+  };
 
   private handleEvent(event: PrivateAsrEvent): void {
     if (event.type === "asr.final") {

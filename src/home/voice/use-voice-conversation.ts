@@ -35,6 +35,7 @@ import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "./private-asr-client";
+import { nativePrivateAsrAvailable } from "./microphone";
 
 export type VoiceState =
   | "idle"
@@ -1132,14 +1133,29 @@ export function useVoiceConversation(
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         if (generation !== startGenRef.current) return;
+        const message = privateAsrErrorMessage(error);
+        setPrivateAsrError(message);
+        if (nativePrivateAsrAvailable()) {
+          // In the APK the private transport is the direct native Agora path.
+          // Falling through to batch ASR hides the actual transport failure
+          // behind the server's generic preflight error and adds ~1 minute.
+          if (privateAsrRef.current === privateAsr) {
+            privateAsrRef.current = null;
+          }
+          await privateAsr.stop();
+          void captureStop();
+          stateRef.current = "error";
+          setState("error");
+          setSelectionTurnPending(false);
+          return;
+        }
         // Private ASR is an optional public-deployment transport. Preserve the
         // existing Octos audio admission as a per-utterance fallback.
         console.warn("[voice] private ASR failed; using Octos ASR fallback", error);
-        setPrivateAsrError(privateAsrErrorMessage(error));
         await sendUtteranceRef.current(wav, includeCamera);
       }
     },
-    [],
+    [captureStop],
   );
 
   const beginBargeIn = useCallback(async () => {
@@ -1568,6 +1584,17 @@ export function useVoiceConversation(
         await privateAsr.stop();
         const message = privateAsrErrorMessage(privateResult.reason);
         setPrivateAsrError(message);
+        if (nativePrivateAsrAvailable()) {
+          // There is no useful WebView microphone fallback on this device.
+          // Surface the native Agora join error immediately and keep the
+          // server's batch-ASR preflight from masking it.
+          stateRef.current = "error";
+          captureModeRef.current = null;
+          void captureStop();
+          setState("error");
+          setStartupDetail(null);
+          return;
+        }
         if (message === "语音服务正在使用中，你可以继续打字") {
           // Capacity is not a transport failure: don't keep recording into an
           // unavailable service or silently send the audio through another ASR.

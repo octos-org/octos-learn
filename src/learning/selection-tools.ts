@@ -12,6 +12,16 @@ export type SelectionAnswerPresentation = "card" | "board-writing";
 const BOARD_FORM_REQUEST = /(改|更改|修改|整理|转换|转成|变成|写成).{0,24}(形式|表达式|方程|可绘|可以绘)/iu;
 const BOARD_EDIT_REQUEST = /(检查|建议|批改|纠错|纠正|改写|修改|更改|整理|转换|转写|誊写|抄写|板书|写在.{0,8}(白板|旁边)|check|correct|rewrite|transcribe)/iu;
 const VISUAL_REQUEST = /(画|绘制|生成|展示|显示).{0,12}(图|图像|曲线|曲面)|(plot|graph|visuali[sz]e)/iu;
+const SELECTION_LESSON_REQUEST = /(?:(?:请|麻烦|老师|小章鱼|结合|围绕|根据|用|给我|为我|帮我|来)?[，,。\s]*(?:结合|围绕|根据|用)?[^，,。！？!?]{0,16}(?:上|讲|生成|创建|开始|来)[^，,。！？!?]{0,8}(?:一|这|本|个)?(?:节|堂|门)?(?:课|课程)|(?:做成|变成|生成)[^，,。！？!?]{0,8}(?:课|课程))/iu;
+
+/**
+ * Speech starts before ASR has produced text, so selection voice capture can
+ * only freeze the pixels at that point. Classify the requested outcome after
+ * transcription, when phrases such as “结合这个公式给我上一课” are known.
+ */
+export function isSelectionLessonRequest(request: string): boolean {
+  return SELECTION_LESSON_REQUEST.test(request.trim());
+}
 
 /**
  * Decide the answer surface before generation starts. The same value is sent
@@ -48,21 +58,12 @@ export interface SelectionToolDefinition {
   action: "local-enhancement";
 }
 
-export interface SelectionLessonToolDefinition {
-  id: "teach-lesson";
-  label: string;
-  contentKinds: SelectionContentKind[];
-  action: "composer-reference";
-}
-
 /**
  * The model does not invent selection tools. The UI exposes this finite list,
  * and the learning-coach validates the selected id before producing an
  * enhancement artifact.
  */
-export const selectionToolRegistry: Array<
-  SelectionToolDefinition | SelectionLessonToolDefinition
-> = [
+export const selectionToolRegistry: SelectionToolDefinition[] = [
   {
     id: "explain",
     label: "解释这部分",
@@ -101,12 +102,6 @@ export const selectionToolRegistry: Array<
     changesSource: false,
     action: "local-enhancement",
   },
-  {
-    id: "teach-lesson",
-    label: "围绕这部分讲一课",
-    contentKinds: ["text", "math", "geometry", "data", "unknown"],
-    action: "composer-reference",
-  },
 ];
 
 export function availableSelectionTools(
@@ -119,10 +114,6 @@ export function availableSelectionTools(
         || tool.targetKinds?.some((kind) => targetKinds.includes(kind)) === true),
   );
 }
-
-export const selectionLessonTool = selectionToolRegistry.find(
-  (tool): tool is SelectionLessonToolDefinition => tool.id === "teach-lesson",
-)!;
 
 export function isSelectionToolId(value: string): value is SelectionToolId {
   return value === "explain"

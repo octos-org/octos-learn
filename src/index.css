@@ -62,6 +62,15 @@
   transition: none;
 }
 
+[data-runtime-platform="android"] .learning-sidebar-close {
+  top: 1rem;
+  height: 2.75rem;
+}
+
+[data-runtime-platform="android"] .learning-sidebar-new {
+  height: 2.75rem;
+}
+
 /* ── Self-hosted variable fonts (Ivory Obsidian type stack) ── */
 @font-face {
   font-family: "Hanken Grotesk Variable";

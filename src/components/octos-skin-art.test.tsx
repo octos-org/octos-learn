@@ -94,6 +94,18 @@ describe("OctosSkinArt", () => {
     expect(container.querySelector("model-viewer")).toBeNull();
   });
 
+  it("renders a static thumbnail without creating WebGL for model previews", () => {
+    enableWebGl();
+    const { container } = render(
+      <OctosSkinArt skin="panda-3d" staticPreview />,
+    );
+
+    expect(
+      container.querySelector<HTMLImageElement>("img")?.getAttribute("src"),
+    ).toBe("/models/companions/panda-thumbnail.png");
+    expect(container.querySelector("model-viewer")).toBeNull();
+  });
+
   it("does not replay a reaction that happened before the model loaded", () => {
     enableWebGl();
     installReducedMotionQuery();

@@ -15,6 +15,11 @@ const { microphoneMock, requestGrantMock } = vi.hoisted(() => ({
 
 vi.mock("./microphone", () => ({
   getEchoCancelledMicStream: microphoneMock,
+  nativePrivateAsrAvailable: vi.fn(() => false),
+  NATIVE_AUDIO_EVENT: "octos-native-audio",
+  setNativePrivateAsrListening: vi.fn(() => ({ ok: true })),
+  startNativePrivateAsr: vi.fn(() => ({ ok: true, joined: true })),
+  stopNativePrivateAsr: vi.fn(),
 }));
 
 vi.mock("@/api/private-asr", () => ({

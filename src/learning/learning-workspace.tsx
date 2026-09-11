@@ -105,6 +105,7 @@ import {
 } from "./selection-enhancements";
 import {
   selectionAnswerPresentation,
+  isSelectionLessonRequest,
   type SelectionToolId,
 } from "./selection-tools";
 import { isCurrentInkMergeCompletion } from "./ink-replay";
@@ -158,7 +159,9 @@ interface PendingLessonJobRecord {
   jobId: string;
   turnId: string;
   referenceIds: string[];
-  actionId?: "learning.lesson.generate" | "learning.lesson.generate-from-camera";
+  actionId?: "learning.lesson.generate"
+    | "learning.lesson.generate-from-camera"
+    | "learning.lesson.generate-from-selection";
 }
 
 function pendingLessonJobsStorageKey(sessionId: string): string {
@@ -181,7 +184,8 @@ function loadPendingLessonJobs(sessionId: string): Map<string, PendingLessonJobR
         || candidate.referenceIds.some((id: unknown) => typeof id !== "string")
         || (candidate.actionId !== undefined
           && candidate.actionId !== "learning.lesson.generate"
-          && candidate.actionId !== "learning.lesson.generate-from-camera")
+          && candidate.actionId !== "learning.lesson.generate-from-camera"
+          && candidate.actionId !== "learning.lesson.generate-from-selection")
       ))) {
         throw new Error("invalid pending lesson job state");
       }
@@ -481,6 +485,7 @@ export function LearningWorkspace({
     boardContext: SelectionBoardContext;
     file: File;
     recordSelection: () => void;
+    intent: "question";
   } | null>(null);
   const activeVoiceInkSelectionCaptureRef =
     useRef<VoiceInkSelectionCapture | null>(null);
@@ -540,6 +545,7 @@ export function LearningWorkspace({
       | "error"
       | "imagePath"
       | "imageProfileId"
+      | "source"
     >>,
   ) => {
     setWhiteboardQuestions((current) => {
@@ -553,6 +559,11 @@ export function LearningWorkspace({
           && updated.error === question.error
           && updated.imagePath === question.imagePath
           && updated.imageProfileId === question.imageProfileId
+          && updated.source?.sourceId === question.source?.sourceId
+          && updated.source?.bounds.x === question.source?.bounds.x
+          && updated.source?.bounds.y === question.source?.bounds.y
+          && updated.source?.bounds.width === question.source?.bounds.width
+          && updated.source?.bounds.height === question.source?.bounds.height
           && updated.position?.x === question.position?.x
           && updated.position?.y === question.position?.y
         ) return question;
@@ -576,13 +587,39 @@ export function LearningWorkspace({
       sourceId: string;
       bounds: InkSelectionSnapshot["bounds"];
     } | null,
+    image?: {
+      path: string;
+      profileId?: string;
+    },
   ) => {
     setWhiteboardQuestions((current) => {
       const existing = current.find((question) => question.id === questionId);
       if (existing) {
-        if (existing.text === text) return current;
+        const sourceUnchanged = source === null
+          ? existing.source === undefined
+          : existing.source?.sourceId === source.sourceId
+            && existing.source.bounds.x === source.bounds.x
+            && existing.source.bounds.y === source.bounds.y
+            && existing.source.bounds.width === source.bounds.width
+            && existing.source.bounds.height === source.bounds.height;
+        if (
+          existing.text === text
+          && sourceUnchanged
+          && (!image || (
+            existing.imagePath === image.path
+            && existing.imageProfileId === image.profileId
+          ))
+        ) return current;
         return current.map((question) => question.id === questionId
-          ? { ...question, text }
+          ? {
+              ...question,
+              text,
+              ...(source ? { source } : {}),
+              ...(image ? {
+                imagePath: image.path,
+                imageProfileId: image.profileId,
+              } : {}),
+            }
           : question);
       }
       const failedError = failedQuestionErrorsRef.current.get(questionId);
@@ -599,6 +636,10 @@ export function LearningWorkspace({
             : "pending" as const,
         ...(failedError ? { error: failedError } : {}),
         ...(source ? { source } : {}),
+        ...(image ? {
+          imagePath: image.path,
+          imageProfileId: image.profileId,
+        } : {}),
       }].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     });
   }, [setWhiteboardQuestions, sessionId]);
@@ -854,13 +895,19 @@ export function LearningWorkspace({
     turnId: string,
     learnerRequest: string,
     inputModality: "text" | "voice" = "text",
-    cameraMediaPath?: string,
+    visualContext?: {
+      kind: "camera" | "ink_selection";
+      mediaPath: string;
+    },
     clientTiming?: LearningClientTiming,
   ) => {
     setTextTurnPending(true);
-    const actionId = cameraMediaPath
+    const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
-      : "learning.lesson.generate";
+      : visualContext?.kind === "ink_selection"
+        ? "learning.lesson.generate-from-selection"
+        : "learning.lesson.generate";
+    const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
     learnTrace.recordOnce(`${turnId}:skill-invocation-started`, {
       turnId,
@@ -871,7 +918,7 @@ export function LearningWorkspace({
       data: {
         action_id: actionId,
         input_modality: inputModality,
-        request_source: cameraMediaPath ? "current_image" : "self_contained",
+        request_source: requestSource === "camera" ? "current_image" : requestSource,
       },
     });
     try {
@@ -879,10 +926,10 @@ export function LearningWorkspace({
         sessionId,
         actionId,
         {
-          ...(cameraMediaPath ? { paths: [cameraMediaPath] } : {}),
+          ...(visualContext ? { paths: [visualContext.mediaPath] } : {}),
           turn_id: turnId,
           learner_request: learnerRequest,
-          request_source: cameraMediaPath ? "current_image" : "self_contained",
+          request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: "zh-CN",
           input_modality: inputModality,
           ...(clientTiming ? {
@@ -989,6 +1036,7 @@ export function LearningWorkspace({
                 boardContext: selection.boardContext,
                 file: selection.contextImage,
                 recordSelection: selection.recordSelection,
+                intent: "question",
               };
               pendingVoiceSelectionRef.current = pending;
             }
@@ -1075,6 +1123,29 @@ export function LearningWorkspace({
             if (pendingSelection && selectionPath) {
               pendingVoiceSelectionRef.current = null;
               pendingSelection.recordSelection();
+              if (isSelectionLessonRequest(context.transcript)) {
+                registerVoiceQuestion(
+                  context.turnId,
+                  context.transcript,
+                  {
+                    sourceId: pendingSelection.snapshot.source_id,
+                    bounds: { ...pendingSelection.snapshot.bounds },
+                  },
+                  {
+                    path: selectionPath,
+                    profileId: context.mediaProfileId,
+                  },
+                );
+                onLearnerInput?.(context.transcript);
+                await startDirectLessonGeneration(
+                  context.turnId,
+                  context.transcript,
+                  "voice",
+                  { kind: "ink_selection", mediaPath: selectionPath },
+                  clientTiming,
+                );
+                return true;
+              }
               const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
               if (!sendSelectionQuestion) {
                 throw new Error("选区语音功能尚未就绪");
@@ -1106,7 +1177,9 @@ export function LearningWorkspace({
               context.turnId,
               context.transcript,
               "voice",
-              context.currentFramePath,
+              context.currentFramePath
+                ? { kind: "camera", mediaPath: context.currentFramePath }
+                : undefined,
               clientTiming,
             );
             return true;
@@ -1128,6 +1201,7 @@ export function LearningWorkspace({
                 boardContext: selection.boardContext,
                 file: selection.contextImage,
                 recordSelection: selection.recordSelection,
+                intent: "question" as const,
               }))
             : Promise.resolve(null);
           // Capture can reject before the utterance ends. Keep the rejection for
@@ -1439,7 +1513,8 @@ export function LearningWorkspace({
         !job
         || job.session_id !== sessionId
         || (job.action_id !== "learning.lesson.generate"
-          && job.action_id !== "learning.lesson.generate-from-camera")
+          && job.action_id !== "learning.lesson.generate-from-camera"
+          && job.action_id !== "learning.lesson.generate-from-selection")
       ) return;
       const pending = pendingLessonJobsRef.current.get(job.job_id);
       if (!pending) return;
@@ -1554,6 +1629,7 @@ export function LearningWorkspace({
       void Promise.all([
         listSkillActionJobs(sessionId, { actionId: "learning.lesson.generate" }),
         listSkillActionJobs(sessionId, { actionId: "learning.lesson.generate-from-camera" }),
+        listSkillActionJobs(sessionId, { actionId: "learning.lesson.generate-from-selection" }),
       ]).then((jobGroups) => {
         jobGroups.flat().forEach((job) => void applyLessonJobUpdate(job));
       }).catch(() => {
@@ -2143,6 +2219,7 @@ export function LearningWorkspace({
         // The explicit panel action already recorded the selection while
         // preparing its immutable snapshot.
         recordSelection: () => undefined,
+        intent: "question",
       };
       if (conv.state === "idle" || conv.state === "error") {
         await conv.start();
@@ -2259,8 +2336,75 @@ export function LearningWorkspace({
       });
       onLearnerInput?.(text);
       try {
+        // The bottom composer is also the text equivalent of the selection
+        // voice path. If the learner leaves an ink selection active, capture
+        // that immutable selection now and generate the lesson from it. This
+        // must not depend on voice being enabled: Android meeting displays may
+        // have no usable microphone at all.
+        const activeSelection = references.length === 0
+          && !applicationContext?.trim()
+          && activeVoiceInkSelectionCaptureRef.current
+          ? await activeVoiceInkSelectionCaptureRef.current()
+          : null;
+        const lessonSelection = references.length === 1
+          && !applicationContext?.trim()
+          ? {
+              snapshot: references[0]!.snapshot,
+              boardContext: references[0]!.boardContext,
+              contextImage: references[0]!.contextImage,
+              recordSelection: () => undefined,
+              referenceId: references[0]!.id,
+            }
+          : activeSelection
+            ? { ...activeSelection, referenceId: undefined }
+            : null;
+
+        if (lessonSelection) {
+          if (lessonSelection.boardContext.targets.length > 0
+            && !selectionBoardContextTargetsExist(
+            lessonSelection.boardContext,
+            ollLesson?.board ?? null,
+          )) {
+            throw new Error("引用的白板内容已经变化，请重新框选后再发送");
+          }
+          lessonSelection.recordSelection();
+          await rememberSelectionSource(lessonSelection.snapshot);
+          const selectionProfileId = await ensureSelectedProfileId();
+          clientTiming.media_upload_started_at_epoch_ms = Date.now();
+          const [selectionMediaPath] = await uploadFiles(
+            [lessonSelection.contextImage],
+            "upload",
+          );
+          clientTiming.media_upload_completed_at_epoch_ms = Date.now();
+          if (!selectionMediaPath) {
+            throw new Error("选区图片上传失败，请重新框选后再试");
+          }
+          updateWhiteboardQuestion(turnId, {
+            imagePath: selectionMediaPath,
+            imageProfileId: selectionProfileId ?? undefined,
+            source: {
+              sourceId: lessonSelection.snapshot.source_id,
+              bounds: { ...lessonSelection.snapshot.bounds },
+            },
+          });
+          await startDirectLessonGeneration(
+            turnId,
+            text,
+            "text",
+            { kind: "ink_selection", mediaPath: selectionMediaPath },
+            clientTiming,
+          );
+          if (lessonSelection.referenceId) {
+            setComposerBoardReferences((current) => current.filter(
+              (candidate) => candidate.id !== lessonSelection.referenceId,
+            ));
+          }
+          return;
+        }
+
         if (references.some((reference) =>
-          !selectionBoardContextTargetsExist(
+          reference.boardContext.targets.length > 0
+          && !selectionBoardContextTargetsExist(
             reference.boardContext,
             ollLesson?.board ?? null,
           ),
@@ -2308,7 +2452,9 @@ export function LearningWorkspace({
             turnId,
             text,
             "text",
-            cameraMediaPath,
+            cameraMediaPath
+              ? { kind: "camera", mediaPath: cameraMediaPath }
+              : undefined,
             clientTiming,
           );
           return;
@@ -2352,14 +2498,17 @@ export function LearningWorkspace({
       aiUnavailable,
       addWhiteboardQuestion,
       composerBoardReferences,
-      conv.cameraActive,
-      conv.captureCurrentFrame,
+      conv,
       handleTurnComplete,
       learnTrace,
       ollLesson,
       onLearnerInput,
+      rememberSelectionSource,
       sessionId,
       startDirectLessonGeneration,
+      setComposerBoardReferences,
+      setSendError,
+      setTextTurnPending,
       setWhiteboardQuestionStatus,
       updateWhiteboardQuestion,
     ],
@@ -2729,9 +2878,7 @@ export function LearningWorkspace({
           onVoiceInkSelection={voiceEnabled
             ? startSelectionVoiceQuestion
             : undefined}
-          onVoiceInkSelectionCaptureChange={voiceEnabled
-            ? handleVoiceInkSelectionCaptureChange
-            : undefined}
+          onVoiceInkSelectionCaptureChange={handleVoiceInkSelectionCaptureChange}
           onReferenceInkSelection={referenceSelectionForLesson}
           onDeleteSelectionEnhancement={deleteSelectionEnhancement}
           onDeleteSelectionSources={deleteSelectionSources}

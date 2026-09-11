@@ -117,4 +117,34 @@ describe("first-run setup whiteboard", () => {
     );
     expect(screen.getByText("进入我的白板")).toBeTruthy();
   });
+
+  it("lets the learner choose the whiteboard teacher without leaving onboarding", async () => {
+    mocks.get.mockResolvedValue(blank());
+
+    render(
+      <MemoryRouter>
+        <SetupWhiteboard />
+      </MemoryRouter>,
+    );
+
+    await screen.findByRole("heading", { name: "选择右下角老师形象" });
+    expect(screen.queryByRole("link", {
+      name: /选择右下角的老师形象/,
+    })).toBeNull();
+    expect(screen.getByTestId("teacher-skin-ocean")).toBeTruthy();
+    expect(screen.getByTestId("teacher-skin-bee-3d")).toBeTruthy();
+    expect(
+      screen.getByTestId("teacher-skin-bee-3d").querySelector("img")
+        ?.getAttribute("src"),
+    ).toBe("/models/companions/bee-thumbnail.png");
+    expect(
+      screen.getByTestId("teacher-skin-bee-3d").querySelector("model-viewer"),
+    ).toBeNull();
+
+    fireEvent.click(screen.getByTestId("teacher-skin-bee-3d"));
+
+    expect(screen.getByTestId("teacher-skin-bee-3d").getAttribute("aria-pressed"))
+      .toBe("true");
+    expect(localStorage.getItem("octos-teacher-skin")).toBe("bee-3d");
+  });
 });

@@ -384,8 +384,11 @@ describe("LearningPage", () => {
         expect(learningWorkspaceMock.props?.voiceEnabled).toBe(true),
       );
       expect(getUserMedia).toHaveBeenCalledWith({
-        audio: true,
-        video: false,
+        audio: expect.objectContaining({
+          channelCount: 1,
+          autoGainControl: true,
+          noiseSuppression: true,
+        }),
       });
       expect(stopTrack).toHaveBeenCalledTimes(1);
       expect(localStorage.getItem("octos_learning_input_mode")).toBe("voice");

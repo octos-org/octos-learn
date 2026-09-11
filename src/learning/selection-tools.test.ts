@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   availableSelectionTools,
+  isSelectionLessonRequest,
   selectionAnswerPresentation,
   selectionToolRegistry,
 } from "./selection-tools";
@@ -11,7 +12,6 @@ describe("selection tool registry", () => {
       "explain",
       "check-and-suggest",
       "generate-plot",
-      "teach-lesson",
     ]);
     expect(selectionToolRegistry.filter((tool) =>
       tool.action === "local-enhancement",
@@ -51,5 +51,13 @@ describe("selection tool registry", () => {
       .toMatchObject({
         requestContentKind: "math",
       });
+  });
+
+  it("classifies a transcribed request to teach the selected content as a lesson", () => {
+    expect(isSelectionLessonRequest("老师，请结合这个公式给我上一课")).toBe(true);
+    expect(isSelectionLessonRequest("围绕这部分讲一节课")).toBe(true);
+    expect(isSelectionLessonRequest("把它做成一门课程")).toBe(true);
+    expect(isSelectionLessonRequest("请解释这个公式为什么成立")).toBe(false);
+    expect(isSelectionLessonRequest("这节课刚才讲了什么？")).toBe(false);
   });
 });

@@ -24,6 +24,7 @@ export type TeacherSkinDefinition =
       label: string;
       description: string;
       modelPath: string;
+      thumbnailPath: string;
       fallbackSkin: SvgTeacherSkin;
       cameraOrbit: string;
       animationByActivity: Partial<Record<TeacherActivity, string>>;
@@ -61,6 +62,7 @@ export const TEACHER_SKINS: readonly TeacherSkinDefinition[] = [
     label: "Panda Pal",
     description: "A round little study buddy who nods, dances, and jumps.",
     modelPath: "models/companions/panda.glb",
+    thumbnailPath: "models/companions/panda-thumbnail.png",
     fallbackSkin: "scholar",
     cameraOrbit: "0deg 82deg 112%",
     animationByActivity: {
@@ -78,6 +80,7 @@ export const TEACHER_SKINS: readonly TeacherSkinDefinition[] = [
     label: "Pocket Penguin",
     description: "A tiny, bright-eyed penguin with a gentle breathing idle.",
     modelPath: "models/companions/penguin.glb",
+    thumbnailPath: "models/companions/penguin-thumbnail.png",
     fallbackSkin: "ocean",
     cameraOrbit: "0deg 82deg 110%",
     animationByActivity: {
@@ -94,6 +97,7 @@ export const TEACHER_SKINS: readonly TeacherSkinDefinition[] = [
     label: "Bumble Buddy",
     description: "A cheerful flying helper who hovers beside each lesson.",
     modelPath: "models/companions/bee.glb",
+    thumbnailPath: "models/companions/bee-thumbnail.png",
     fallbackSkin: "coral",
     cameraOrbit: "0deg 80deg 118%",
     animationByActivity: {
