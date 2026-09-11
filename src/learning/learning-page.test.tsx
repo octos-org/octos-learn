@@ -205,7 +205,7 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.initialAudio).toBe(wake);
     expect(
       learningWorkspaceMock.props?.conversationOptions?.autoStartCamera,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       learningWorkspaceMock.props?.conversationOptions?.playReplyAudio,
     ).toBe(false);
@@ -219,20 +219,21 @@ describe("LearningPage", () => {
     ).toContain("entry: wake-word");
   });
 
-  it("enters the whiteboard in text-only mode without requesting devices", async () => {
-    localStorage.clear();
+  it("enters the whiteboard directly in text-only mode on every launch", async () => {
+    localStorage.setItem("octos_learning_auto_camera", "true");
+    localStorage.setItem("octos_learning_input_mode", "voice");
 
     render(<LearningPage />);
-
-    const textOnly = await screen.findByRole("button", {
-      name: "仅用文字进入白板",
-    });
-    fireEvent.click(textOnly);
 
     await waitFor(() =>
       expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false),
     );
+    expect(
+      learningWorkspaceMock.props?.conversationOptions?.autoStartCamera,
+    ).toBe(false);
     expect(localStorage.getItem("octos_learning_input_mode")).toBe("text");
+    expect(localStorage.getItem("octos_learning_auto_camera")).toBe("false");
+    expect(screen.queryByText("启用小章鱼学习助手")).toBeNull();
 
     const sessionId = learningWorkspaceMock.props?.sessionId as string;
     await act(async () => {
@@ -249,110 +250,6 @@ describe("LearningPage", () => {
         name: "请在白板上讲解一个新的二次函数问题",
       }),
     ).toBeTruthy();
-  });
-
-  it("explains that LAN microphone access requires a secure context", async () => {
-    localStorage.setItem("octos_learning_auto_camera", "true");
-    localStorage.setItem("octos_learning_input_mode", "voice");
-    const originalSecureContext = Object.getOwnPropertyDescriptor(
-      window,
-      "isSecureContext",
-    );
-    Object.defineProperty(window, "isSecureContext", {
-      configurable: true,
-      value: false,
-    });
-
-    try {
-      render(<LearningPage />);
-
-      expect((await screen.findByRole("alert")).textContent).toContain(
-        "当前页面不是安全连接",
-      );
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "启用语音和摄像头",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(true);
-      expect(
-        (screen.getByRole("button", {
-          name: "仅启用语音",
-        }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-
-      fireEvent.click(
-        screen.getByRole("button", { name: "仅用文字进入白板" }),
-      );
-      await waitFor(() =>
-        expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false),
-      );
-    } finally {
-      if (originalSecureContext) {
-        Object.defineProperty(
-          window,
-          "isSecureContext",
-          originalSecureContext,
-        );
-      } else {
-        Reflect.deleteProperty(window, "isSecureContext");
-      }
-    }
-  });
-
-  it("reports a denied device permission with an actionable message", async () => {
-    localStorage.clear();
-    const originalSecureContext = Object.getOwnPropertyDescriptor(
-      window,
-      "isSecureContext",
-    );
-    const originalMediaDevices = Object.getOwnPropertyDescriptor(
-      navigator,
-      "mediaDevices",
-    );
-    Object.defineProperty(window, "isSecureContext", {
-      configurable: true,
-      value: true,
-    });
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        getUserMedia: vi.fn(async () => {
-          throw new DOMException("denied", "NotAllowedError");
-        }),
-      },
-    });
-
-    try {
-      render(<LearningPage />);
-      fireEvent.click(
-        await screen.findByRole("button", { name: "启用语音和摄像头" }),
-      );
-
-      expect((await screen.findByRole("alert")).textContent).toContain(
-        "麦克风或摄像头权限被拒绝",
-      );
-    } finally {
-      if (originalSecureContext) {
-        Object.defineProperty(
-          window,
-          "isSecureContext",
-          originalSecureContext,
-        );
-      } else {
-        Reflect.deleteProperty(window, "isSecureContext");
-      }
-      if (originalMediaDevices) {
-        Object.defineProperty(
-          navigator,
-          "mediaDevices",
-          originalMediaDevices,
-        );
-      } else {
-        Reflect.deleteProperty(navigator, "mediaDevices");
-      }
-    }
   });
 
   it("can enable voice without also enabling the camera in a text-only lesson", async () => {

@@ -4,6 +4,12 @@ import {
   playAudioBlob,
   stopAudio,
 } from "@/home/voice/audio-playback";
+import {
+  nativeTtsAvailable,
+  playNativeTts,
+  prefetchNativeTts,
+  stopNativeTts,
+} from "@/home/voice/native-tts";
 
 export interface OllNarrationTtsOptions {
   enabled: boolean;
@@ -11,6 +17,8 @@ export interface OllNarrationTtsOptions {
   text: string;
   narrationId?: string;
   prefetchEnabled?: boolean;
+  prewarmText?: string;
+  prewarmNarrationId?: string;
   upcomingText?: string;
   upcomingNarrationId?: string;
   onSpeakingChange?: (speaking: boolean) => void;
@@ -46,6 +54,8 @@ export function useOllNarrationTts({
   text,
   narrationId,
   prefetchEnabled = false,
+  prewarmText = "",
+  prewarmNarrationId,
   upcomingText = "",
   upcomingNarrationId,
   onSpeakingChange,
@@ -53,13 +63,19 @@ export function useOllNarrationTts({
   onPlaybackComplete,
 }: OllNarrationTtsOptions): OllNarrationTtsState {
   const normalizedText = text.trim();
+  const normalizedPrewarmText = prewarmText.trim();
   const normalizedUpcomingText = upcomingText.trim();
   const currentKey = speechKey(narrationId, normalizedText);
+  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText);
   const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText);
   const [failure, setFailure] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [startedKey, setStartedKey] = useState<string | null>(null);
   const prefetchedSpeechRef = useRef<PrefetchedSpeech | null>(null);
+  const nativePrefetchRef = useRef<{
+    key: string;
+    cancel: () => void;
+  } | null>(null);
   const callbacksRef = useRef({
     onSpeakingChange,
     onPlaybackStart,
@@ -92,6 +108,7 @@ export function useOllNarrationTts({
       });
       callbacksRef.current.onSpeakingChange?.(false);
       stopAudio();
+      stopNativeTts();
       if (!enabled && playing && normalizedText) completePlayback();
       return () => {
         current = false;
@@ -104,7 +121,9 @@ export function useOllNarrationTts({
       setPreparing(true);
       setStartedKey(null);
     });
-    const cached = currentKey && prefetchedSpeechRef.current?.key === currentKey
+    const useNativeTts = nativeTtsAvailable();
+    const cached = !useNativeTts
+      && currentKey && prefetchedSpeechRef.current?.key === currentKey
       ? prefetchedSpeechRef.current
       : null;
     if (cached) {
@@ -112,19 +131,20 @@ export function useOllNarrationTts({
       prefetchedSpeechRef.current = null;
     }
     const audioRequest = cached?.controller ?? request;
-    const audioPromise = cached?.promise ?? synthesizeSpeech(
-      normalizedText,
-      audioRequest.signal,
-    ).then((audio) => audio as Blob | null);
-
-    void audioPromise
-      .then((audio) =>
-        audio ?? synthesizeSpeech(normalizedText, audioRequest.signal)
-      )
-      .then(async (audio) => {
-        if (!current || audioRequest.signal.aborted) return;
-        setFailure(null);
-        const started = await playAudioBlob(
+    const playback = useNativeTts
+      ? playNativeTts(normalizedText, () => {
+          if (!current) return;
+          callbacksRef.current.onSpeakingChange?.(false);
+          completePlayback();
+        }, audioRequest.signal)
+      : (cached?.promise ?? synthesizeSpeech(
+          normalizedText,
+          audioRequest.signal,
+        ).then((audio) => audio as Blob | null))
+        .then((audio) =>
+          audio ?? synthesizeSpeech(normalizedText, audioRequest.signal)
+        )
+        .then((audio) => playAudioBlob(
           audio,
           () => {
             if (!current) return;
@@ -132,8 +152,12 @@ export function useOllNarrationTts({
             completePlayback();
           },
           audioRequest.signal,
-        );
+        ));
+
+    void playback
+      .then((started) => {
         if (!current || audioRequest.signal.aborted) return;
+        setFailure(null);
         setPreparing(false);
         if (started) {
           callbacksRef.current.onSpeakingChange?.(true);
@@ -169,6 +193,7 @@ export function useOllNarrationTts({
       if (cached) cached.controller.abort();
       callbacksRef.current.onSpeakingChange?.(false);
       stopAudio();
+      stopNativeTts();
     };
   }, [
     enabled,
@@ -180,28 +205,56 @@ export function useOllNarrationTts({
 
   useEffect(() => {
     const existing = prefetchedSpeechRef.current;
-    if (
-      !enabled ||
-      !prefetchEnabled ||
-      !currentKey ||
-      startedKey !== currentKey
-    ) {
+    const nativeExisting = nativePrefetchRef.current;
+    if (!enabled || !prefetchEnabled) {
       if ((!enabled || !prefetchEnabled) && existing && !existing.claimed) {
         existing.controller.abort();
         prefetchedSpeechRef.current = null;
       }
+      if ((!enabled || !prefetchEnabled) && nativeExisting) {
+        nativeExisting.cancel();
+        nativePrefetchRef.current = null;
+      }
       return;
     }
-    if (!upcomingKey || upcomingKey === currentKey) return;
-    if (existing?.key === upcomingKey) return;
+    const currentHasStarted = Boolean(currentKey && startedKey === currentKey);
+    const candidateKey = currentHasStarted ? upcomingKey : prewarmKey;
+    const candidateText = currentHasStarted
+      ? normalizedUpcomingText
+      : normalizedPrewarmText;
+    if (!candidateKey || !candidateText) return;
+    // The playback effect above claims a web prefetch before this effect runs.
+    // Do not immediately recreate the same request while audio startup is
+    // still pending (and before `startedKey` can be published).
+    if (playing && candidateKey === currentKey) return;
+    if (nativeTtsAvailable()) {
+      if (nativeExisting?.key === candidateKey) return;
+      nativeExisting?.cancel();
+      const controller = new AbortController();
+      const cancelNative = prefetchNativeTts(
+        candidateText,
+        controller.signal,
+      );
+      nativePrefetchRef.current = cancelNative
+        ? {
+            key: candidateKey,
+            cancel: () => {
+              controller.abort();
+              cancelNative();
+            },
+          }
+        : null;
+      return;
+    }
+    if (existing?.key === candidateKey) return;
     if (existing && !existing.claimed) existing.controller.abort();
 
     const controller = new AbortController();
     const entry: PrefetchedSpeech = {
-      key: upcomingKey,
+      key: candidateKey,
       controller,
       claimed: false,
-      promise: synthesizeSpeech(normalizedUpcomingText, controller.signal)
+      promise: synthesizeSpeech(candidateText, controller.signal)
         .then((audio) => audio)
         .catch(() => null),
     };
@@ -209,8 +262,11 @@ export function useOllNarrationTts({
   }, [
     currentKey,
     enabled,
+    normalizedPrewarmText,
     normalizedUpcomingText,
     prefetchEnabled,
+    prewarmKey,
+    playing,
     startedKey,
     upcomingKey,
   ]);
@@ -219,6 +275,8 @@ export function useOllNarrationTts({
     const pending = prefetchedSpeechRef.current;
     if (pending && !pending.claimed) pending.controller.abort();
     prefetchedSpeechRef.current = null;
+    nativePrefetchRef.current?.cancel();
+    nativePrefetchRef.current = null;
   }, []);
 
   return {

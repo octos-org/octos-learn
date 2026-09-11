@@ -46,9 +46,12 @@ final class NativeAudioBridge {
             MediaRecorder.AudioSource.DEFAULT
     };
     private static final int PRE_ROLL_MS = 300;
-    private static final int SPEECH_START_MS = 80;
+    // Meeting-room fans, touch sounds and the display speakers produced many
+    // 80 ms false starts. Require a short, continuous voiced onset while still
+    // keeping normal Chinese commands responsive.
+    private static final int SPEECH_START_MS = 180;
     private static final int SPEECH_END_MS = 780;
-    private static final int MIN_UTTERANCE_MS = 280;
+    private static final int MIN_UTTERANCE_MS = 480;
     private static final int MAX_UTTERANCE_MS = 20000;
 
     private final Activity activity;

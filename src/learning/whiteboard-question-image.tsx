@@ -96,32 +96,34 @@ export function WhiteboardQuestionImage({
     <>
       <div className="learning-whiteboard-question-camera">
         {isSelectionContext ? (
-          <span className="learning-whiteboard-question-context-label">
+          <div className="learning-whiteboard-question-context-label">
             引用的白板选区
-          </span>
+          </div>
         ) : null}
-        <img
-          className="learning-whiteboard-question-camera-frame"
-          src={imageUrl}
-          alt={imageDescription}
-        />
-        <button
-          ref={triggerRef}
-          type="button"
-          className="learning-whiteboard-question-camera-expand"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-            setPreviewOpen(true);
-          }}
-          aria-label="放大查看本次问题图片"
-          title="放大查看"
-        >
-          <Maximize2 size={16} aria-hidden="true" />
-        </button>
+        <div className="learning-whiteboard-question-camera-preview">
+          <img
+            className="learning-whiteboard-question-camera-frame"
+            src={imageUrl}
+            alt={imageDescription}
+          />
+          <button
+            ref={triggerRef}
+            type="button"
+            className="learning-whiteboard-question-camera-expand"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              setPreviewOpen(true);
+            }}
+            aria-label="放大查看本次问题图片"
+            title="放大查看"
+          >
+            <Maximize2 size={16} aria-hidden="true" />
+          </button>
+        </div>
       </div>
       {previewOpen
         ? createPortal(

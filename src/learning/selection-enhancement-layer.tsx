@@ -614,6 +614,7 @@ export function SelectionEnhancementLayer({
     : undefined;
   const selectionQuestions = questions.filter((question) =>
     question.origin === "selection"
+    && question.answerPresentation !== "lesson"
     && question.source
     && (
       question.status !== "pending"

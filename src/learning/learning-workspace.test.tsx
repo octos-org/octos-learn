@@ -929,6 +929,9 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(localStorage.getItem(
       "octos-learning-questions:v1:learn-direct-selection-voice",
     )).toContain('"imagePath":"uploads/selection.png"'));
+    expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-direct-selection-voice",
+    )).toContain('"answerPresentation":"lesson"');
 
     act(() => {
       state = {

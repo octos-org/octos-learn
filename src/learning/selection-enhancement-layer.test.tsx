@@ -714,6 +714,18 @@ describe("SelectionEnhancementLayer", () => {
       />,
     );
     expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+
+    rerender(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[{ ...pending, answerPresentation: "lesson" }]}
+        currentDocumentVersion={1}
+        onDelete={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText("正在生成小章鱼辅助")).toBeNull();
+    expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
   });
 
   it("allows a question-only auxiliary card to be deleted", () => {

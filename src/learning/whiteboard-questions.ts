@@ -14,7 +14,7 @@ export interface WhiteboardQuestionRecord {
   createdAt: string;
   status: WhiteboardQuestionStatus;
   /** Surface reserved while a selection answer is being generated. */
-  answerPresentation?: "card" | "board-writing";
+  answerPresentation?: "card" | "board-writing" | "lesson";
   error?: string;
   /** Exact session-scoped camera frame submitted with this question. */
   imagePath?: string;
@@ -73,6 +73,7 @@ function validQuestion(
     question.answerPresentation !== undefined
     && question.answerPresentation !== "card"
     && question.answerPresentation !== "board-writing"
+    && question.answerPresentation !== "lesson"
   ) return false;
   if (question.imagePath !== undefined && typeof question.imagePath !== "string") {
     return false;
@@ -96,6 +97,13 @@ function validQuestion(
     }
   }
   return true;
+}
+
+export function isCourseWhiteboardQuestion(
+  question: WhiteboardQuestionRecord,
+): boolean {
+  return question.origin === "composer"
+    || question.answerPresentation === "lesson";
 }
 
 export function loadWhiteboardQuestions(

@@ -72,6 +72,20 @@ describe("Android meeting-display density", () => {
     );
   });
 
+  it("does not depend on device cursive fonts in learning chrome", () => {
+    expect(styles).toMatch(
+      /\.learning-workspace-topbar strong\s*\{[^}]*font-family:\s*var\(--font-body\)/s,
+    );
+    expect(styles).toMatch(
+      /\.oll-course-outline-trigger-copy b\s*\{[^}]*font-family:\s*var\(--font-body\)/s,
+    );
+    expect(styles).toMatch(
+      /\.oll-course-outline-heading h2\s*\{[^}]*font-family:\s*var\(--font-body\)/s,
+    );
+    expect(styles).not.toMatch(/font-family:[^;}]*(?:Kaiti|KaiTi|cursive)/i);
+    expect(styles).not.toContain("var(--font-ui)");
+  });
+
   it("uses a compact three-column onboarding layout on the Android display", () => {
     expect(setupStyles).toMatch(
       /\[data-runtime-platform="android"\] \.setup-board\s*\{[^}]*padding:\s*14px 28px 20px/s,

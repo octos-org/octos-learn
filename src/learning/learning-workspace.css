@@ -38,8 +38,28 @@
  */
 [data-runtime-platform="android"]
   .oll-ink-layer[data-android-vector-ink]
-  .imageEditorRenderArea canvas {
+  .imageEditorRenderArea canvas.dryInkCanvas,
+[data-runtime-platform="android"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas {
   opacity: 0;
+}
+
+/*
+ * js-draw renders only transient tool feedback on wetInkCanvas: the marquee
+ * while a rectangle/lasso is being dragged and the live eraser footprint.
+ * Keep that inexpensive surface visible for editing tools while the durable
+ * dry canvas remains replaced by the crisp SVG mirror above.
+ */
+[data-runtime-platform="android"]
+  .learning-oll-board[data-android-ink-mode="select"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas,
+[data-runtime-platform="android"]
+  .learning-oll-board[data-android-ink-mode="erase"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas {
+  opacity: 1;
 }
 
 .oll-android-vector-ink {
@@ -630,7 +650,7 @@
 .learning-workspace-topbar strong {
   overflow: hidden;
   color: #332e28;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 20px;
   font-weight: 650;
   text-overflow: ellipsis;
@@ -686,7 +706,7 @@
 
 .learning-course-generation-status > span {
   color: inherit;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0;
@@ -742,7 +762,7 @@
 .oll-course-outline-trigger-copy b {
   overflow: hidden;
   color: #31545d;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 650;
   text-overflow: ellipsis;
@@ -788,7 +808,7 @@
 .oll-course-outline-heading h2 {
   margin: 2px 0 0;
   color: #2e2a25;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 21px;
   font-weight: 700;
 }
@@ -1034,14 +1054,14 @@
 }
 
 .learning-voice-startup-copy strong {
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 720;
 }
 
 .learning-voice-startup-copy small {
   color: #698087;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -2251,7 +2271,10 @@
 }
 
 .learning-whiteboard-question-camera {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
   margin-top: 10px;
   overflow: hidden;
   border: 1px solid rgba(30, 111, 102, 0.16);
@@ -2277,12 +2300,24 @@
 .learning-whiteboard-question-camera-frame {
   display: block;
   width: 100%;
+  height: auto;
   max-height: 150px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+}
+
+.learning-whiteboard-question-camera-preview {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .learning-whiteboard-question-context-label {
   display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
   padding: 6px 8px 5px;
   color: #54706a;
   font-size: 10px;

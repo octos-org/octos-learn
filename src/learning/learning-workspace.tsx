@@ -104,8 +104,8 @@ import {
   type SelectionEnhancementState,
 } from "./selection-enhancements";
 import {
-  selectionAnswerPresentation,
   isSelectionLessonRequest,
+  selectionAnswerPresentation,
   type SelectionToolId,
 } from "./selection-tools";
 import { isCurrentInkMergeCompletion } from "./ink-replay";
@@ -117,6 +117,7 @@ import {
   type ComposerBoardReference,
 } from "./composer-board-references";
 import {
+  isCourseWhiteboardQuestion,
   loadWhiteboardQuestions,
   saveWhiteboardQuestions,
   type WhiteboardQuestionRecord,
@@ -413,6 +414,12 @@ export function LearningWorkspace({
   // Declared early: `externalSpeechActive` (below) consults it to decide
   // whether muted narration still owns the microphone (issue #315).
   const [narrationAudioEnabled, setNarrationAudioEnabled] = useState(true);
+  const [renderedCourseTurnIds, setRenderedCourseTurnIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const [startedNarrationTurnIds, setStartedNarrationTurnIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
   const [completedTurnId, setCompletedTurnId] = useState<string | null>(null);
   const [plainReply, setPlainReply] = useState<{
     turnId: string;
@@ -591,6 +598,7 @@ export function LearningWorkspace({
       path: string;
       profileId?: string;
     },
+    answerPresentation?: WhiteboardQuestionRecord["answerPresentation"],
   ) => {
     setWhiteboardQuestions((current) => {
       const existing = current.find((question) => question.id === questionId);
@@ -609,6 +617,8 @@ export function LearningWorkspace({
             existing.imagePath === image.path
             && existing.imageProfileId === image.profileId
           ))
+          && (!answerPresentation
+            || existing.answerPresentation === answerPresentation)
         ) return current;
         return current.map((question) => question.id === questionId
           ? {
@@ -619,6 +629,7 @@ export function LearningWorkspace({
                 imagePath: image.path,
                 imageProfileId: image.profileId,
               } : {}),
+              ...(answerPresentation ? { answerPresentation } : {}),
             }
           : question);
       }
@@ -640,6 +651,7 @@ export function LearningWorkspace({
           imagePath: image.path,
           imageProfileId: image.profileId,
         } : {}),
+        ...(answerPresentation ? { answerPresentation } : {}),
       }].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
     });
   }, [setWhiteboardQuestions, sessionId]);
@@ -649,7 +661,7 @@ export function LearningWorkspace({
   ) => {
     updateWhiteboardQuestion(questionId, { position });
     const question = whiteboardQuestions.find((candidate) =>
-      candidate.id === questionId && candidate.origin === "composer");
+      candidate.id === questionId && isCourseWhiteboardQuestion(candidate));
     if (!question) return;
     setCourseRegions((current) => {
       const existing = current.find((region) => region.questionId === questionId);
@@ -693,7 +705,7 @@ export function LearningWorkspace({
         );
         const missing = whiteboardQuestions.flatMap((question) => {
           if (
-            question.origin !== "composer"
+            !isCourseWhiteboardQuestion(question)
             || !question.position
             || knownQuestionIds.has(question.id)
           ) return [];
@@ -801,12 +813,13 @@ export function LearningWorkspace({
     ? ollFixtureEvents[ollFixture]
     : deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
-  const expectedOllOperationCount = useMemo(
+  const activeOllOperations = useMemo(
     () => activeOllEvents
-      ? compilePlaybackOperations(activeOllEvents, { allowIncomplete: true }).length
-      : 0,
+      ? compilePlaybackOperations(activeOllEvents, { allowIncomplete: true })
+      : [],
     [activeOllEvents],
   );
+  const expectedOllOperationCount = activeOllOperations.length;
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
       ollFixture
@@ -816,6 +829,30 @@ export function LearningWorkspace({
     ),
     [deliveredOllLessons, deliveredOllQuestionIds, ollFixture],
   );
+  const startupNarration = useMemo(() => {
+    if (playbackMode !== "live") return null;
+    const topic = [...activeOllTopics].reverse().find((candidate) =>
+      candidate.questionId
+      && !startedNarrationTurnIds.has(candidate.questionId));
+    if (!topic) return null;
+    const stepIds = new Set(topic.stepIds);
+    const operation = activeOllOperations.find((candidate) =>
+      candidate.type === "narration.begin"
+      && Boolean(candidate.step_id && stepIds.has(candidate.step_id))
+      && Boolean(candidate.beat_id && candidate.narration?.text.trim()));
+    return operation?.beat_id && operation.narration
+      ? {
+          turnId: topic.questionId,
+          beatId: operation.beat_id,
+          text: operation.narration.text,
+        }
+      : null;
+  }, [
+    activeOllOperations,
+    activeOllTopics,
+    playbackMode,
+    startedNarrationTurnIds,
+  ]);
   const ollOpenSource = activeOllEvents?.[0]
     ? JSON.stringify(activeOllEvents[0])
     : null;
@@ -825,6 +862,8 @@ export function LearningWorkspace({
     autoPlay: Boolean(activeOllEvents) && playbackMode === "live",
     incremental: Boolean(activeOllEvents),
     narrationTiming: "external",
+    startupSpeed: 6,
+    startupNarrationId: startupNarration?.beatId,
     startAtEnd: Boolean(activeOllEvents) && playbackMode === "review",
     topics: activeOllTopics,
     deliveredProgram: activeOllEvents,
@@ -839,7 +878,7 @@ export function LearningWorkspace({
       ollLesson.totalOperations < expectedOllOperationCount ||
       ollGenerationSessionId === sessionId ||
       whiteboardQuestions.some((question) =>
-        question.origin === "composer" && question.status === "pending") ||
+        isCourseWhiteboardQuestion(question) && question.status === "pending") ||
       ollArtifacts.some((artifact) => {
         const identity = ollArtifactIdentity(artifact);
         return !loadedOllArtifacts[identity] && !rejectedOllArtifactIds.has(identity);
@@ -1135,6 +1174,7 @@ export function LearningWorkspace({
                     path: selectionPath,
                     profileId: context.mediaProfileId,
                   },
+                  "lesson",
                 );
                 onLearnerInput?.(context.transcript);
                 await startDirectLessonGeneration(
@@ -1904,7 +1944,7 @@ export function LearningWorkspace({
         timer = window.setTimeout(appendNext, 240);
       }
     };
-    timer = window.setTimeout(appendNext, 240);
+    appendNext();
     return () => {
       if (timer !== undefined) window.clearTimeout(timer);
     };
@@ -1930,8 +1970,17 @@ export function LearningWorkspace({
   const completeOllNarration = ollLesson?.completeNarration;
   const handleNarrationStart = useCallback((narrationId: string) => {
     if (!narrationId.startsWith("plain-reply:")) {
-      const turnId = courseTopicForBeat(narrationId)?.questionId;
+      const turnId = courseTopicForBeat(narrationId)?.questionId
+        ?? (startupNarration?.beatId === narrationId
+          ? startupNarration.turnId
+          : undefined);
       if (turnId) {
+        setStartedNarrationTurnIds((current) => {
+          if (current.has(turnId)) return current;
+          const next = new Set(current);
+          next.add(turnId);
+          return next;
+        });
         learnTrace.recordOnce(`${turnId}:lesson-first-narration-started`, {
           turnId,
           source: "octos-web",
@@ -1942,7 +1991,7 @@ export function LearningWorkspace({
       }
       startOllNarration?.(narrationId);
     }
-  }, [courseTopicForBeat, learnTrace, startOllNarration]);
+  }, [courseTopicForBeat, learnTrace, startOllNarration, startupNarration]);
   const handleNarrationComplete = useCallback((narrationId: string) => {
     if (narrationId.startsWith("plain-reply:")) {
       setPlainReplySpoken(true);
@@ -1964,6 +2013,8 @@ export function LearningWorkspace({
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
     prefetchEnabled: lessonOwnsNarration,
+    prewarmText: startupNarration?.text,
+    prewarmNarrationId: startupNarration?.beatId,
     upcomingText: lessonOwnsNarration
       ? ollLesson?.nextNarration?.text
       : undefined,
@@ -2050,13 +2101,38 @@ export function LearningWorkspace({
       });
       onLearnerInput?.(question);
       try {
-        selectionRequests.begin(turnId);
         await rememberSelectionSource(snapshot);
         if (!selectionScope.active) return;
+        const selectionProfileId = await ensureSelectedProfileId();
         const mediaPath = delivery?.uploadedMediaPath
           ?? (await uploadFiles([contextImage], "upload"))[0];
         if (!selectionScope.active) return;
         if (!mediaPath) throw new Error("选区图片上传后没有可用路径");
+        if (toolId === "explain") {
+          // “解释这部分” is the one-tap equivalent of typing this exact
+          // request into the bottom composer while the selection is active.
+          // It therefore uses the same selection-to-lesson action and keeps
+          // the selected pixels visible in “我的问题”.
+          updateWhiteboardQuestion(turnId, {
+            imagePath: mediaPath,
+            imageProfileId: selectionProfileId ?? undefined,
+            source: {
+              sourceId: snapshot.source_id,
+              bounds: { ...snapshot.bounds },
+            },
+          });
+          await startDirectLessonGeneration(
+            turnId,
+            question,
+            "text",
+            { kind: "ink_selection", mediaPath },
+          );
+          return;
+        }
+        if (answerPresentation === "lesson") {
+          throw new Error("课程请求没有进入课程生成流程");
+        }
+        selectionRequests.begin(turnId);
         const actionArguments = buildSelectionEnhancementActionArguments({
           sessionId,
           turnId,
@@ -2136,6 +2212,7 @@ export function LearningWorkspace({
       sessionId,
       selectionRequests,
       boardWritingReady,
+      startDirectLessonGeneration,
       setWhiteboardQuestionStatus,
       updateWhiteboardQuestion,
     ],
@@ -2620,6 +2697,12 @@ export function LearningWorkspace({
     setCameraSettingsOpen(false);
   }, []);
   const handleCourseRendered = useCallback((event: LearningCourseRenderEvent) => {
+    setRenderedCourseTurnIds((current) => {
+      if (current.has(event.turnId)) return current;
+      const next = new Set(current);
+      next.add(event.turnId);
+      return next;
+    });
     learnTrace.recordOnce(`${event.turnId}:lesson-first-rendered`, {
       turnId: event.turnId,
       source: "octos-web",
@@ -2688,7 +2771,8 @@ export function LearningWorkspace({
           : "继续播放"
         : undefined;
   const pendingLessonQuestion = [...whiteboardQuestions].reverse().find(
-    (question) => question.origin === "composer" && question.status === "pending",
+    (question) => isCourseWhiteboardQuestion(question)
+      && question.status === "pending",
   );
   const pendingLessonHasPlayableArtifact = Boolean(
     pendingLessonQuestion && ollArtifacts.some((artifact) =>
@@ -2698,8 +2782,33 @@ export function LearningWorkspace({
   const pendingLessonAwaitingFirstArtifact = Boolean(
     pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
   );
+  const completedQuestionId = completedTurnId
+    ? threads.find((thread) => thread.id === completedTurnId)?.turnId
+      ?? completedTurnId
+    : null;
+  const startupCourseTurnId = pendingLessonQuestion?.id ?? completedQuestionId;
+  const startupCourseHasPlayableArtifact = Boolean(
+    startupCourseTurnId && ollArtifacts.some((artifact) =>
+      artifact.turnId === startupCourseTurnId
+      && Boolean(loadedOllArtifacts[ollArtifactIdentity(artifact)])),
+  );
+  const pendingLessonAwaitingFirstRender = Boolean(
+    startupCourseTurnId
+    && startupCourseHasPlayableArtifact
+    && !renderedCourseTurnIds.has(startupCourseTurnId),
+  );
+  const pendingLessonAwaitingFirstNarration = Boolean(
+    startupCourseTurnId
+    && startupCourseHasPlayableArtifact
+    && startupNarration?.turnId === startupCourseTurnId
+    && runtime.ttsReady
+    && narrationAudioEnabled
+    && !ollNarrationTts.error,
+  );
   const lessonLoading = !selectionPending && (
     pendingLessonAwaitingFirstArtifact
+    || pendingLessonAwaitingFirstRender
+    || pendingLessonAwaitingFirstNarration
     || (
       !plainReply
       && !completedTurnHasArtifact
@@ -2715,14 +2824,21 @@ export function LearningWorkspace({
     ollLesson && ollGenerationSessionId === sessionId,
   );
   const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
-    && (!ollLesson || Boolean(
+    && (!ollLesson
+      || pendingLessonAwaitingFirstRender
+      || pendingLessonAwaitingFirstNarration
+      || Boolean(
       pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
     ))
     ? {
-        id: pendingLessonQuestion?.id ?? completedTurnId ?? `lesson:${sessionId}`,
+        id: startupCourseTurnId ?? `lesson:${sessionId}`,
         kind: "lesson",
-        title: "正在搭建这节课",
-        detail: "先整理重点，再把讲解和互动画面放到白板上。",
+        title: pendingLessonAwaitingFirstNarration
+          ? "正在准备课程语音"
+          : "正在搭建这节课",
+        detail: pendingLessonAwaitingFirstNarration
+          ? "画面已经就绪，马上开始讲解。"
+          : "先整理重点，再把讲解和互动画面放到白板上。",
       }
     : null;
 
@@ -2942,6 +3058,7 @@ export function LearningWorkspace({
         : null}
 
       <StudentInputDock
+        textOnly={import.meta.env.MODE === "android"}
         suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
           ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
           : []}

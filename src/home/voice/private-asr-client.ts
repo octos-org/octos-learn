@@ -151,14 +151,31 @@ export class PrivateAsrClient {
   private finalQueue: string[] = [];
   private finalWaiter: TranscriptWaiter | null = null;
   private closed = false;
-  private readonly onConnectionError?: (error: Error) => void;
+  private onConnectionError?: (error: Error) => void;
 
   constructor(onConnectionError?: (error: Error) => void) {
     this.onConnectionError = onConnectionError;
   }
 
+  setConnectionErrorHandler(
+    onConnectionError?: (error: Error) => void,
+  ): void {
+    this.onConnectionError = onConnectionError;
+  }
+
+  /** Whether an already-started transport can be handed to another Learn view. */
+  isReusable(): boolean {
+    return Boolean(
+      !this.closed
+      && this.session
+      && this.socket?.readyState === WebSocket.OPEN
+      && (this.session.demoMode || this.nativeRtcActive || this.rtcClient),
+    );
+  }
+
   async start(): Promise<void> {
-    if (this.session) return;
+    if (this.isReusable()) return;
+    if (this.session) await this.stop();
     this.closed = false;
     // Permission acquisition and device setup are independent of the control
     // plane / Agora join. Start them immediately so public voice startup is

@@ -119,9 +119,18 @@ describe("WhiteboardQuestionCard", () => {
       />,
     );
 
-    expect(await screen.findByText("引用的白板选区")).toBeTruthy();
-    expect(screen.getByRole("img", {
+    const label = await screen.findByText("引用的白板选区");
+    const image = screen.getByRole("img", {
       name: "本次问题引用的白板选区",
-    })).toBeTruthy();
+    });
+    const preview = image.closest(
+      ".learning-whiteboard-question-camera-preview",
+    );
+    const camera = label.closest(".learning-whiteboard-question-camera");
+    expect(preview).toBeTruthy();
+    expect(camera).toBeTruthy();
+    expect(label.parentElement).toBe(camera);
+    expect(preview?.parentElement).toBe(camera);
+    expect(label.nextElementSibling).toBe(preview);
   });
 });

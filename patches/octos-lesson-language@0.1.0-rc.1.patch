@@ -409,3 +409,50 @@ diff --git a/dist/packages/web-runtime/src/index.d.ts b/dist/packages/web-runtim
  export { boundaryPoint, computeConnectionRoute, connectionLabelWidth, routePath, stackConnectionLabel, type ConnectionRoute, type Point, } from "./connection-layout.js";
  export { computeBoardLayout, measureSemanticNode, targetRect, type BoardLayout, type BoardLayoutOptions, type MeasuredNodeSizes, type Rect, type RegionLayoutConstraint, } from "./layout.js";
  export { boardInputTargetsInteractiveUi, boardKeyboardTargetsTextInput, boardWheelTargetsInteractiveUi, isAuxiliaryPanButton, } from "./input-routing.js";
+diff --git a/dist/packages/web-runtime/src/layout.d.ts b/dist/packages/web-runtime/src/layout.d.ts
+--- a/dist/packages/web-runtime/src/layout.d.ts
++++ b/dist/packages/web-runtime/src/layout.d.ts
+@@ -18,6 +18,8 @@ export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
+ export interface RegionLayoutConstraint {
+     x: number;
+     y: number;
++    /** Host-owned world-space rectangles that lesson cards must avoid. */
++    obstacles?: Rect[];
+     /** Space reserved for a progressively delivered course before every node exists. */
+     reservedWidth?: number;
+     /** Arrange lesson content as a visual lane beside a reading lane. */
+diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime/src/layout.js
+--- a/dist/packages/web-runtime/src/layout.js
++++ b/dist/packages/web-runtime/src/layout.js
+@@ -279,9 +279,14 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {}) {
+     const collisionRects = (nodeId) => {
+         for (const groupId of Object.keys(state.groups))
+             groupRect(groupId);
++        const node = state.nodes[nodeId];
++        const regionId = typeof node?.region_id === "string" && node.region_id
++            ? node.region_id
++            : "__legacy__";
+         return [
+             ...Object.values(nodes),
+             ...Object.values(attachments),
++            ...(options.regions?.[regionId]?.obstacles ?? []),
+             ...Object.entries(groups)
+                 .filter(([groupId]) => !groupContains(groupId, nodeId))
+                 .map(([, rect]) => rect),
+@@ -456,6 +461,16 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {}) {
+         let candidate = { x, y, ...size };
+         if (!["inside", "overlay"].includes(placement.relation)) {
++            const externalObstacles = constraint?.obstacles ?? [];
++            const blockingRightEdges = externalObstacles
++                .filter((rect) => intersects(candidate, rect))
++                .map((rect) => rect.x + rect.width);
++            if (blockingRightEdges.length > 0) {
++                candidate = {
++                    ...candidate,
++                    x: Math.max(candidate.x, ...blockingRightEdges) + GAP.compact,
++                };
++            }
+             let guard = 0;
+             while (collisionRects(node.id).some((rect) => intersects(candidate, rect)) && guard < 40) {
+                 candidate = { ...candidate, y: candidate.y + 36 };
+                 guard += 1;

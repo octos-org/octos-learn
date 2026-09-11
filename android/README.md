@@ -6,6 +6,32 @@ APK under the virtual HTTPS origin `https://learn.pitun.cc/`; `/api/`,
 The Android Vite mode reads `.env.android`, which deliberately enables the same
 private-ASR and hosted-TTS services as the public web build.
 
+## Direct Android narration TTS
+
+The APK can synthesize lesson narration directly with Volcengine and play the
+downloaded MP3 through Android `MediaPlayer`, without sending the audio through
+the old System WebView. Put these values in the ignored
+`android/local.properties` file before building:
+
+```properties
+octos.tts.appId=YOUR_APP_ID
+octos.tts.accessToken=YOUR_ACCESS_TOKEN
+octos.tts.cluster=volcano_tts
+octos.tts.voiceType=zh_female_xiaohe_uranus_bigtts
+```
+
+The same values can instead be supplied as
+`OCTOS_ANDROID_TTS_APP_ID`, `OCTOS_ANDROID_TTS_ACCESS_TOKEN`,
+`OCTOS_ANDROID_TTS_CLUSTER`, and `OCTOS_ANDROID_TTS_VOICE_TYPE` environment
+variables. Gradle writes them into `BuildConfig`, so they are intentionally
+recoverable from this demo APK. Do not distribute that APK outside the demo
+device. When the values are absent, the web layer keeps using the existing
+hosted TTS route.
+
+The native bridge shares in-flight downloads, prefetches the next narration,
+keeps a bounded 64-clip cache, and applies 15-second connect / 45-second read
+timeouts. Cancelling or advancing a lesson also stops native playback.
+
 ## Build
 
 ```bash

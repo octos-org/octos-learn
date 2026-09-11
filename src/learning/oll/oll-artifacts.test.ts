@@ -11,6 +11,7 @@ import {
   loadOllLessonArtifact,
   mergeOllLessonArtifacts,
   ollArtifactIdentity,
+  removeRedundantStandaloneMath,
 } from "./oll-artifacts";
 import { buildInteractionClusters } from "./interaction-clusters";
 
@@ -91,6 +92,143 @@ const threeStepAuthoringLesson = {
 };
 
 describe("OLL lesson artifacts", () => {
+  it("deterministically removes an unreferenced formula duplicated by a plot", () => {
+    const lesson = {
+      ...structuredClone(authoringLesson),
+      steps: [{
+        key: "graph",
+        purpose: "讲解余弦函数",
+        beats: [{
+          key: "show",
+          say: "观察图像。",
+          actions: [{
+            do: "write",
+            as: "cosine-plot",
+            kind: "plot",
+            role: "diagram",
+            content: {
+              axes: {
+                x: { min: 0, max: 6.28 },
+                y: { min: -1, max: 1 },
+              },
+              curves: [{
+                as: "curve",
+                expression: "cos(x)",
+                label: "y = cos(x)",
+              }],
+            },
+            place: { relation: "new_region" },
+          }, {
+            do: "write",
+            as: "duplicate-formula",
+            kind: "math",
+            role: "concept",
+            content: { latex: "y = \\cos(x)" },
+            place: { relation: "left_of", anchor: "cosine-plot" },
+          }, {
+            do: "write",
+            as: "range-formula",
+            kind: "math",
+            role: "conclusion",
+            content: { latex: "-1 \\le y \\le 1" },
+            place: { relation: "below", anchor: "cosine-plot" },
+          }],
+        }],
+      }],
+      close: { summary: "完成讲解", focus: ["cosine-plot"] },
+    } as unknown as typeof authoringLesson;
+
+    const cleaned = removeRedundantStandaloneMath(lesson);
+    const aliases = cleaned.steps[0]!.beats[0]!.actions.flatMap((action) =>
+      action.do === "write" ? [action.as] : []);
+    expect(aliases).toEqual(["cosine-plot", "range-formula"]);
+  });
+
+  it("preserves a duplicated formula when another action references it", () => {
+    const lesson = {
+      ...structuredClone(authoringLesson),
+      steps: [{
+        key: "graph",
+        purpose: "讲解余弦函数",
+        beats: [{
+          key: "show",
+          say: "观察图像。",
+          actions: [{
+            do: "write",
+            as: "cosine-plot",
+            kind: "plot",
+            role: "diagram",
+            content: {
+              curves: [{ expression: "cos(x)", label: "y=cos(x)" }],
+            },
+            place: { relation: "new_region" },
+          }, {
+            do: "write",
+            as: "formula",
+            kind: "math",
+            role: "concept",
+            content: { latex: "y=\\cos(x)" },
+            place: { relation: "below", anchor: "cosine-plot" },
+          }, {
+            do: "focus",
+            when: "after_speech",
+            targets: ["formula"],
+            intent: "emphasize_formula",
+          }],
+        }],
+      }],
+      close: { summary: "完成讲解", focus: ["formula"] },
+    } as unknown as typeof authoringLesson;
+
+    const cleaned = removeRedundantStandaloneMath(lesson);
+    expect(cleaned.steps[0]!.beats[0]!.actions.some((action) =>
+      action.do === "write" && action.as === "formula")).toBe(true);
+  });
+
+  it("never leaves a beat with an empty action array after deterministic dedupe", () => {
+    const lesson = {
+      ...structuredClone(authoringLesson),
+      steps: [{
+        key: "sine",
+        purpose: "讲解正弦函数",
+        beats: [{
+          key: "show-plot",
+          say: "先看图像。",
+          actions: [{
+            do: "write",
+            as: "sine-plot",
+            kind: "plot",
+            role: "diagram",
+            content: {
+              curves: [{ expression: "sin(x)", label: "y=sin(x)" }],
+            },
+            place: { relation: "new_region" },
+          }],
+        }, {
+          key: "name-formula",
+          say: "这个图像对应正弦函数。",
+          actions: [{
+            do: "write",
+            as: "sine-formula",
+            kind: "math",
+            role: "concept",
+            content: { latex: "y=\\sin(x)" },
+            place: { relation: "below", anchor: "sine-plot" },
+          }],
+        }],
+      }],
+      close: { summary: "完成讲解", focus: ["sine-plot"] },
+    } as unknown as typeof authoringLesson;
+
+    const cleaned = removeRedundantStandaloneMath(lesson);
+
+    expect(cleaned.steps[0]!.beats[1]!.actions).toHaveLength(1);
+    expect(cleaned.steps[0]!.beats[1]!.actions[0]).toMatchObject({
+      do: "write",
+      as: "sine-formula",
+    });
+  });
+
   it("retains machine-readable task targets in lesson topics", () => {
     const events = [{
       dsl: "octos.lesson",
