@@ -1,7 +1,7 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { OctosSkinArt } from "./octos-skin-art";
+import { OctosSkinArt, useStaticModelPreview } from "./octos-skin-art";
 
 class FakeModelViewerElement extends HTMLElement {
   loaded = false;
@@ -73,6 +73,12 @@ describe("OctosSkinArt", () => {
     } else {
       Reflect.deleteProperty(window, "WebGLRenderingContext");
     }
+  });
+
+  it("forces model thumbnails in Android builds", () => {
+    expect(useStaticModelPreview(false, "android")).toBe(true);
+    expect(useStaticModelPreview(false, "production")).toBe(false);
+    expect(useStaticModelPreview(true, "production")).toBe(true);
   });
 
   it("keeps a matching SVG fallback when WebGL is unavailable", () => {

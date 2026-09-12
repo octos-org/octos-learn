@@ -15,6 +15,13 @@ function publicAsset(path: string): string {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
+export function useStaticModelPreview(
+  requested: boolean,
+  mode: string,
+): boolean {
+  return requested || mode === "android";
+}
+
 export function OctosSkinArt({
   skin,
   className = "",
@@ -36,7 +43,7 @@ export function OctosSkinArt({
     return <OctosAvatar skin={definition.id} className={className} />;
   }
 
-  if (staticPreview) {
+  if (useStaticModelPreview(staticPreview, import.meta.env.MODE)) {
     return (
       <img
         src={publicAsset(definition.thumbnailPath)}
