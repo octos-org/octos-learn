@@ -10,8 +10,8 @@ android {
         applicationId "cc.pitun.learn"
         minSdk 26
         targetSdk 35
-        versionCode 19
-        versionName "0.1.0-test19"
+        versionCode 20
+        versionName "0.1.0-test20"
         // The meeting display is ARM. Keep both 32-bit and 64-bit ARM because
         // vendor Android 8 firmware can run a 32-bit userspace on 64-bit CPUs,
         // but do not ship the two emulator-only x86 Agora runtimes.
