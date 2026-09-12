@@ -1,39 +1,20 @@
+diff --git a/dist/packages/ink-runtime/src/runtime.d.ts b/dist/packages/ink-runtime/src/runtime.d.ts
+index 82d2a47..774ea4f 100644
+--- a/dist/packages/ink-runtime/src/runtime.d.ts
++++ b/dist/packages/ink-runtime/src/runtime.d.ts
+@@ -117,6 +117,7 @@ export declare class InkRuntime {
+     clearSelection(): void;
+     setSelectionMode(mode: InkSelectionMode): void;
+     setPenColor(color: string): void;
++    setPenWidth(width: number): void;
+     setSelectionColor(color: string): void | Promise<void>;
+     private exportSvg;
+     /** One artifact is one undoable addition; consumption survives user edits. */
 diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
-index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7b33edabf 100644
+index fd7938b..c4ecdb7 100644
 --- a/dist/packages/ink-runtime/src/runtime.js
 +++ b/dist/packages/ink-runtime/src/runtime.js
-@@ -10,6 +10,30 @@ import { ensurePersistentInkComponentIds, hasPersistentInkComponentId, markAiInk
- import { INK_SELECTION_FORMAT_VERSION, AI_INK_SELECTION_FORMAT_VERSION, inkSelectionPathRegion, inkSelectionRectangleRegion, inkSelectionSourceExists, } from "./selection-record.js";
- import { restrictSelectionToTranslation, } from "./selection-lock.js";
- import { readAiWritingRecords, writeAiWritingRecords } from "./ai-writing-record.js";
-+function samePointerSample(left, right) {
-+    return left.pointerId === right.pointerId
-+        && left.timeStamp === right.timeStamp
-+        && left.clientX === right.clientX
-+        && left.clientY === right.clientY
-+        && left.pressure === right.pressure;
-+}
-+function coalescedPointerSamples(event) {
-+    let coalesced;
-+    try {
-+        coalesced = typeof event.getCoalescedEvents === "function"
-+            ? event.getCoalescedEvents()
-+            : [];
-+    }
-+    catch {
-+        return [event];
-+    }
-+    if (coalesced.length === 0)
-+        return [event];
-+    const last = coalesced.at(-1);
-+    if (last && samePointerSample(last, event))
-+        return coalesced;
-+    return [...coalesced, event];
-+}
- export class InkRuntime {
-     options;
-     host;
-@@ -37,6 +61,9 @@ export class InkRuntime {
+@@ -41,6 +41,9 @@ export class InkRuntime {
      renderedCamera;
      expectedViewportTransform = Mat33.identity;
      activePointers = new Map();
@@ -43,7 +24,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
      /** Timestamp of the most recent pen down/move, for palm rejection. */
      lastPenActiveAt;
      selectionGesture = [];
-@@ -183,10 +210,136 @@ export class InkRuntime {
+@@ -187,10 +190,136 @@ export class InkRuntime {
              }
          }
          void this.editor.queueRerender();
@@ -180,7 +161,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
          const add = (name, listener) => {
              // js-draw's materialized selection overlay can stop pointer events
              // before they bubble to the host viewport. Capture them first so direct
-@@ -331,6 +484,13 @@ export class InkRuntime {
+@@ -335,6 +464,13 @@ export class InkRuntime {
                  return;
              if (inkInputTargetsInteractiveUi(rawEvent.composedPath()))
                  return;
@@ -194,7 +175,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              // Pan-override protocol (capture here, bubble at the board): right and
              // middle button drags, and left-button drags while the board's space-pan
              // override is held, pan the board camera in every tool mode. They are
-@@ -377,6 +537,11 @@ export class InkRuntime {
+@@ -381,6 +517,11 @@ export class InkRuntime {
          };
          const onPointerMove = (rawEvent) => {
              const event = rawEvent;
@@ -206,14 +187,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              // Pen hovers/moves keep the palm-rejection window open even for pens
              // whose driver reports hover moves; only tracked (button-down) pen
              // pointers reach the dispatch path below.
-@@ -395,10 +560,17 @@ export class InkRuntime {
-                 return;
-             event.preventDefault();
-             event.stopPropagation();
--            dispatchMove(event);
-+            for (const sample of coalescedPointerSamples(event)) {
-+                dispatchMove(sample);
-+            }
+@@ -405,6 +546,11 @@ export class InkRuntime {
          };
          const onPointerUp = (rawEvent) => {
              const event = rawEvent;
@@ -225,7 +199,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              if (pendingMarquee && event.pointerId === pendingMarquee.pointerId) {
                  const tapped = pendingMarquee.arbiter.end() === "tap";
                  const pendingEvents = pendingMarquee.events;
-@@ -429,8 +601,22 @@ export class InkRuntime {
+@@ -435,8 +581,22 @@ export class InkRuntime {
          });
          return () => {
              for (const [name, listener] of listeners) {
@@ -249,7 +223,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              this.activePointers.clear();
              discardPendingMarquee();
          };
-@@ -558,6 +744,17 @@ export class InkRuntime {
+@@ -615,6 +775,17 @@ export class InkRuntime {
              selection.setEnabled(true);
              restrictSelectionToTranslation(selection);
          }
@@ -267,34 +241,98 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
          this.emit();
      }
      undo() { return this.editor.history.undo(); }
-@@ -583,6 +780,14 @@ export class InkRuntime {
+@@ -640,6 +811,14 @@ export class InkRuntime {
          const parsed = Color4.fromHex(color);
          this.penColor = parsed.toHexString().slice(0, 7);
          this.getTool(PenTool).setColor(parsed);
 +        this.syncNativeInkCapture();
-         this.emit();
-     }
++        this.emit();
++    }
 +    setPenWidth(width) {
 +        if (!Number.isFinite(width))
 +            return;
 +        this.getTool(PenTool).setThickness(Math.min(16, Math.max(1, width)));
 +        this.syncNativeInkCapture();
-+        this.emit();
-+    }
+         this.emit();
+     }
      setSelectionColor(color) {
-diff --git a/dist/packages/ink-runtime/src/runtime.d.ts b/dist/packages/ink-runtime/src/runtime.d.ts
-index 139880a..8dcc0c1 100644
---- a/dist/packages/ink-runtime/src/runtime.d.ts
-+++ b/dist/packages/ink-runtime/src/runtime.d.ts
-@@ -92,6 +92,7 @@ export declare class InkRuntime {
-     clearSelection(): void;
-     setSelectionMode(mode: InkSelectionMode): void;
-     setPenColor(color: string): void;
-+    setPenWidth(width: number): void;
-     setSelectionColor(color: string): void | Promise<void>;
-     private exportSvg;
-     /** One artifact is one undoable addition; consumption survives user edits. */
+diff --git a/dist/packages/web-runtime/src/board-view.d.ts b/dist/packages/web-runtime/src/board-view.d.ts
+index 7f36929..b1b21a9 100644
+--- a/dist/packages/web-runtime/src/board-view.d.ts
++++ b/dist/packages/web-runtime/src/board-view.d.ts
+@@ -127,6 +127,7 @@ export declare class InfiniteBoardView {
+     private cameraNotifyUntil;
+     private inputOwner;
+     private viewportInsets;
++    private automaticCameraMinimumScale;
+     private readonly cameraListeners;
+     private readonly nodeElements;
+     private readonly nodeContentSignatures;
+@@ -187,6 +188,8 @@ export declare class InfiniteBoardView {
+     setRegionLayouts(layouts: Record<string, RegionLayoutConstraint>): void;
+     /** Limits automatic teaching-camera decisions to the currently playing course. */
+     setActiveRegion(regionId: string | undefined): void;
++    /** Sets a readability floor for automatic teaching and host camera moves. */
++    setAutomaticCameraMinimumScale(scale: number): void;
+     getRegionBounds(regionId: string): Rect | undefined;
+     getRegionBoundsMap(): Record<string, Rect>;
+     getAttachmentBoundsMap(): Record<string, Rect>;
+diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
+index 65ce380..faf83d2 100644
+--- a/dist/packages/web-runtime/src/board-view.js
++++ b/dist/packages/web-runtime/src/board-view.js
+@@ -1172,6 +1172,7 @@ export class InfiniteBoardView {
+     cameraNotifyUntil = 0;
+     inputOwner = "runtime";
+     viewportInsets = {};
++    automaticCameraMinimumScale = .18;
+     cameraListeners = new Set();
+     nodeElements = new Map();
+     nodeContentSignatures = new Map();
+@@ -1478,6 +1479,12 @@ export class InfiniteBoardView {
+         this.activeRegionId = regionId;
+         this.lastAttentionTargets = [];
+     }
++    /** Sets a readability floor for automatic teaching and host camera moves. */
++    setAutomaticCameraMinimumScale(scale) {
++        if (!Number.isFinite(scale))
++            return;
++        this.automaticCameraMinimumScale = Math.min(1, Math.max(.18, scale));
++    }
+     getRegionBounds(regionId) {
+         const bounds = this.layout?.regions?.[regionId];
+         return bounds ? { ...bounds } : undefined;
+@@ -1531,7 +1538,7 @@ export class InfiniteBoardView {
+             || rect.width <= 0 || rect.height <= 0)
+             return undefined;
+         const viewport = this.viewport.getBoundingClientRect();
+-        const camera = planFocusCamera([rect], { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, options.framing === "course" ? "course" : "detail", this.viewportInsets);
++        const camera = planFocusCamera([rect], { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, options.framing === "course" ? "course" : "detail", this.viewportInsets, this.automaticCameraMinimumScale);
+         this.cameraAuthority.holdHostCamera(options.exclusive === true);
+         this.panX = camera.panX;
+         this.panY = camera.panY;
+@@ -1938,7 +1945,7 @@ export class InfiniteBoardView {
+             : targetIds.some((id) => Boolean(board.groups[id]))
+                 ? "overview"
+                 : "detail";
+-        const camera = planFocusCamera(rects, { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, mode, this.viewportInsets);
++        const camera = planFocusCamera(rects, { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, mode, this.viewportInsets, this.automaticCameraMinimumScale);
+         this.panX = camera.panX;
+         this.panY = camera.panY;
+         this.scale = camera.scale;
+diff --git a/dist/packages/web-runtime/src/camera.d.ts b/dist/packages/web-runtime/src/camera.d.ts
+index 6587510..f262954 100644
+--- a/dist/packages/web-runtime/src/camera.d.ts
++++ b/dist/packages/web-runtime/src/camera.d.ts
+@@ -59,5 +59,5 @@ export type AttentionMode = "detail" | "relationship" | "overview" | "course";
+  * it is derived from the target geometry and current viewport so the complete
+  * teaching scene stays readable and occupies a deliberate share of the view.
+  */
+-export declare function planFocusCamera(targets: Rect[], current: CameraState, viewport: ViewportSize, mode: AttentionMode, insets?: ViewportInsets): CameraState;
++export declare function planFocusCamera(targets: Rect[], current: CameraState, viewport: ViewportSize, mode: AttentionMode, insets?: ViewportInsets, minimumScale?: number): CameraState;
+ export declare function planRevealCamera(rect: Rect, current: CameraState, viewport: ViewportSize, insets?: ViewportInsets): CameraState;
 diff --git a/dist/packages/web-runtime/src/camera.js b/dist/packages/web-runtime/src/camera.js
+index 51e6547..7a306f6 100644
 --- a/dist/packages/web-runtime/src/camera.js
 +++ b/dist/packages/web-runtime/src/camera.js
 @@ -162,18 +162,19 @@ function composedAt(rect, camera, viewport, insets) {
@@ -320,82 +358,21 @@ diff --git a/dist/packages/web-runtime/src/camera.js b/dist/packages/web-runtime
      if (Math.abs(scale - current.scale) < .000_001
          && visibleAt(scene, current, viewport, FOCUS_MARGIN, insets)
          && composedAt(scene, current, viewport, insets))
-diff --git a/dist/packages/web-runtime/src/camera.d.ts b/dist/packages/web-runtime/src/camera.d.ts
---- a/dist/packages/web-runtime/src/camera.d.ts
-+++ b/dist/packages/web-runtime/src/camera.d.ts
-@@ -59,5 +59,5 @@ export type AttentionMode = "detail" | "relationship" | "overview" | "course";
-  * it is derived from the target geometry and current viewport so the complete
-  * teaching scene stays readable and occupies a deliberate share of the view.
-  */
--export declare function planFocusCamera(targets: Rect[], current: CameraState, viewport: ViewportSize, mode: AttentionMode, insets?: ViewportInsets): CameraState;
-+export declare function planFocusCamera(targets: Rect[], current: CameraState, viewport: ViewportSize, mode: AttentionMode, insets?: ViewportInsets, minimumScale?: number): CameraState;
- export declare function planRevealCamera(rect: Rect, current: CameraState, viewport: ViewportSize, insets?: ViewportInsets): CameraState;
-diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
---- a/dist/packages/web-runtime/src/board-view.js
-+++ b/dist/packages/web-runtime/src/board-view.js
-@@ -1171,6 +1171,7 @@ export class InfiniteBoardView {
-     cameraNotifyUntil = 0;
-     inputOwner = "runtime";
-     viewportInsets = {};
-+    automaticCameraMinimumScale = .18;
-     cameraListeners = new Set();
-     nodeElements = new Map();
-     nodeContentSignatures = new Map();
-@@ -1478,6 +1479,12 @@ export class InfiniteBoardView {
-         this.activeRegionId = regionId;
-         this.lastAttentionTargets = [];
-     }
-+    /** Sets a readability floor for automatic teaching and host camera moves. */
-+    setAutomaticCameraMinimumScale(scale) {
-+        if (!Number.isFinite(scale))
-+            return;
-+        this.automaticCameraMinimumScale = Math.min(1, Math.max(.18, scale));
-+    }
-     getRegionBounds(regionId) {
-         const bounds = this.layout?.regions?.[regionId];
-         return bounds ? { ...bounds } : undefined;
-@@ -1531,8 +1538,8 @@ export class InfiniteBoardView {
-         if (![rect.x, rect.y, rect.width, rect.height].every(Number.isFinite)
-             || rect.width <= 0 || rect.height <= 0)
-             return undefined;
-         const viewport = this.viewport.getBoundingClientRect();
--        const camera = planFocusCamera([rect], { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, options.framing === "course" ? "course" : "detail", this.viewportInsets);
-+        const camera = planFocusCamera([rect], { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, options.framing === "course" ? "course" : "detail", this.viewportInsets, this.automaticCameraMinimumScale);
-         this.cameraAuthority.holdHostCamera(options.exclusive === true);
-         this.panX = camera.panX;
-         this.panY = camera.panY;
-@@ -1938,9 +1945,9 @@ export class InfiniteBoardView {
-         const mode = rects.length > 1 || targetIds.some((id) => Boolean(board.connections[id]))
-             ? "relationship"
-             : targetIds.some((id) => Boolean(board.groups[id]))
-                 ? "overview"
-                 : "detail";
--        const camera = planFocusCamera(rects, { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, mode, this.viewportInsets);
-+        const camera = planFocusCamera(rects, { panX: this.panX, panY: this.panY, scale: this.scale }, viewport, mode, this.viewportInsets, this.automaticCameraMinimumScale);
-         this.panX = camera.panX;
-         this.panY = camera.panY;
-         this.scale = camera.scale;
-diff --git a/dist/packages/web-runtime/src/board-view.d.ts b/dist/packages/web-runtime/src/board-view.d.ts
---- a/dist/packages/web-runtime/src/board-view.d.ts
-+++ b/dist/packages/web-runtime/src/board-view.d.ts
-@@ -128,6 +128,7 @@ export declare class InfiniteBoardView {
-     private cameraNotifyUntil;
-     private inputOwner;
-     private viewportInsets;
-+    private automaticCameraMinimumScale;
-     private readonly cameraListeners;
-     private readonly nodeElements;
-     private readonly nodeContentSignatures;
-@@ -194,6 +195,8 @@ export declare class InfiniteBoardView {
-     setRegionLayouts(layouts: Record<string, RegionLayoutConstraint>): void;
-     /** Limits automatic teaching-camera decisions to the currently playing course. */
-     setActiveRegion(regionId: string | undefined): void;
-+    /** Sets a readability floor for automatic teaching and host camera moves. */
-+    setAutomaticCameraMinimumScale(scale: number): void;
-     getRegionBounds(regionId: string): Rect | undefined;
-     getRegionBoundsMap(): Record<string, Rect>;
-     getAttachmentBoundsMap(): Record<string, Rect>;
+diff --git a/dist/packages/web-runtime/src/index.d.ts b/dist/packages/web-runtime/src/index.d.ts
+index a316551..a80c16e 100644
+--- a/dist/packages/web-runtime/src/index.d.ts
++++ b/dist/packages/web-runtime/src/index.d.ts
+@@ -2,7 +2,7 @@ export type { ImageAssetResolver, ImageRegionBounds, ResolvedImageAsset } from "
+ export { describeBoardTarget, pointInPolygon, rankBoardTargets, rectIntersection, targetQueryScore, type BoardTargetCandidate, type BoardTargetDescription, type BoardTargetKind, type BoardTargetPoint, type BoardTargetQuery, } from "./board-targets.js";
+ export { InfiniteBoardView, angleControlValue, diagramLayout, diagramConnectionGeometry, focusTargetsInRegion, wrapDiagramLabel, mathSource, mountInfiniteBoard, variableAnimationFocusTargets, type BoardInputOwner, type CameraListener, type DiagramLayout, type DiagramPointLayout, type DiagramConnectionGeometry, type InfiniteBoardElements, type MountedInfiniteBoard, type VariableInputHandler, } from "./board-view.js";
+ export { normalizeScene3dView, projectScene3dPoint, renderScene3d, scene3dSectionIntersections, type Point3d, type Scene3dSectionPath, type Scene3dViewControl, type Scene3dViewInputEvent, type Scene3dViewInputHandler, type Scene3dViewPhase, type Scene3dViewState, } from "./scene3d.js";
+-export { boardToViewportPoint, viewportToBoardPoint, type BoardPoint, type CameraState, type ViewportInsets, type ViewportOcclusion, type ViewportSize, } from "./camera.js";
++export { boardToViewportPoint, planFocusCamera, viewportToBoardPoint, type BoardPoint, type CameraState, type ViewportInsets, type ViewportOcclusion, type ViewportSize, } from "./camera.js";
+ export { boundaryPoint, computeConnectionRoute, connectionLabelWidth, routePath, stackConnectionLabel, type ConnectionRoute, type Point, } from "./connection-layout.js";
+ export { computeBoardLayout, measureSemanticNode, targetRect, type BoardLayout, type BoardLayoutOptions, type MeasuredNodeSizes, type Rect, type RegionLayoutConstraint, } from "./layout.js";
+ export { boardInputTargetsInteractiveUi, boardKeyboardTargetsTextInput, boardWheelTargetsInteractiveUi, isAuxiliaryPanButton, } from "./input-routing.js";
 diff --git a/dist/packages/web-runtime/src/index.js b/dist/packages/web-runtime/src/index.js
+index 2504328..87fc3fb 100644
 --- a/dist/packages/web-runtime/src/index.js
 +++ b/dist/packages/web-runtime/src/index.js
 @@ -1,7 +1,7 @@
@@ -407,19 +384,8 @@ diff --git a/dist/packages/web-runtime/src/index.js b/dist/packages/web-runtime/
  export { boundaryPoint, computeConnectionRoute, connectionLabelWidth, routePath, stackConnectionLabel, } from "./connection-layout.js";
  export { computeBoardLayout, measureSemanticNode, targetRect, } from "./layout.js";
  export { boardInputTargetsInteractiveUi, boardKeyboardTargetsTextInput, boardWheelTargetsInteractiveUi, isAuxiliaryPanButton, } from "./input-routing.js";
-diff --git a/dist/packages/web-runtime/src/index.d.ts b/dist/packages/web-runtime/src/index.d.ts
---- a/dist/packages/web-runtime/src/index.d.ts
-+++ b/dist/packages/web-runtime/src/index.d.ts
-@@ -2,7 +2,7 @@ export type { ImageAssetResolver, ImageRegionBounds, ResolvedImageAsset } from "./assets.js";
- export { describeBoardTarget, pointInPolygon, rankBoardTargets, rectIntersection, targetQueryScore, type BoardTargetCandidate, type BoardTargetDescription, type BoardTargetKind, type BoardTargetPoint, type BoardTargetQuery, } from "./board-targets.js";
- export { InfiniteBoardView, angleControlValue, diagramLayout, diagramConnectionGeometry, focusTargetsInRegion, wrapDiagramLabel, mathSource, mountInfiniteBoard, variableAnimationFocusTargets, type BoardInputOwner, type CameraListener, type DiagramLayout, type DiagramPointLayout, type DiagramConnectionGeometry, type InfiniteBoardElements, type MountedInfiniteBoard, type VariableInputHandler, } from "./board-view.js";
- export { normalizeScene3dView, projectScene3dPoint, renderScene3d, scene3dSectionIntersections, type Point3d, type Scene3dSectionPath, type Scene3dViewControl, type Scene3dViewInputEvent, type Scene3dViewInputHandler, type Scene3dViewPhase, type Scene3dViewState, } from "./scene3d.js";
--export { boardToViewportPoint, viewportToBoardPoint, type BoardPoint, type CameraState, type ViewportInsets, type ViewportOcclusion, type ViewportSize, } from "./camera.js";
-+export { boardToViewportPoint, planFocusCamera, viewportToBoardPoint, type BoardPoint, type CameraState, type ViewportInsets, type ViewportOcclusion, type ViewportSize, } from "./camera.js";
- export { boundaryPoint, computeConnectionRoute, connectionLabelWidth, routePath, stackConnectionLabel, type ConnectionRoute, type Point, } from "./connection-layout.js";
- export { computeBoardLayout, measureSemanticNode, targetRect, type BoardLayout, type BoardLayoutOptions, type MeasuredNodeSizes, type Rect, type RegionLayoutConstraint, } from "./layout.js";
- export { boardInputTargetsInteractiveUi, boardKeyboardTargetsTextInput, boardWheelTargetsInteractiveUi, isAuxiliaryPanButton, } from "./input-routing.js";
 diff --git a/dist/packages/web-runtime/src/layout.d.ts b/dist/packages/web-runtime/src/layout.d.ts
+index 027ac01..c2da2c1 100644
 --- a/dist/packages/web-runtime/src/layout.d.ts
 +++ b/dist/packages/web-runtime/src/layout.d.ts
 @@ -18,6 +18,8 @@ export type MeasuredNodeSizes = Record<string, Pick<Rect, "width" | "height">>;
@@ -432,9 +398,10 @@ diff --git a/dist/packages/web-runtime/src/layout.d.ts b/dist/packages/web-runti
      reservedWidth?: number;
      /** Arrange lesson content as a visual lane beside a reading lane. */
 diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime/src/layout.js
+index 50a495f..1674d45 100644
 --- a/dist/packages/web-runtime/src/layout.js
 +++ b/dist/packages/web-runtime/src/layout.js
-@@ -279,9 +279,14 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {}) {
+@@ -279,9 +279,14 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
      const collisionRects = (nodeId) => {
          for (const groupId of Object.keys(state.groups))
              groupRect(groupId);
@@ -449,7 +416,8 @@ diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime
              ...Object.entries(groups)
                  .filter(([groupId]) => !groupContains(groupId, nodeId))
                  .map(([, rect]) => rect),
-@@ -456,6 +461,16 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {}) {
+@@ -456,6 +461,16 @@ export function computeBoardLayout(state, measuredNodeSizes = {}, options = {})
+         }
          let candidate = { x, y, ...size };
          if (!["inside", "overlay"].includes(placement.relation)) {
 +            const externalObstacles = constraint?.obstacles ?? [];
@@ -465,21 +433,3 @@ diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime
              let guard = 0;
              while (collisionRects(node.id).some((rect) => intersects(candidate, rect)) && guard < 40) {
                  candidate = { ...candidate, y: candidate.y + 36 };
-                 guard += 1;
-diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
---- a/dist/packages/ink-runtime/src/runtime.js
-+++ b/dist/packages/ink-runtime/src/runtime.js
-@@ -701,3 +701,4 @@
-             selected_count: this.selectedComponents.length,
-             selection_revision: this.selectionRevision,
-+            content_revision: this.changeRevision,
-             content_bounds: bounds
-diff --git a/dist/packages/ink-runtime/src/runtime.d.ts b/dist/packages/ink-runtime/src/runtime.d.ts
---- a/dist/packages/ink-runtime/src/runtime.d.ts
-+++ b/dist/packages/ink-runtime/src/runtime.d.ts
-@@ -9,3 +9,5 @@
-     /** Changes whenever the selected components change, even when the count is unchanged. */
-     selection_revision: number;
-+    /** Changes only when durable ink content changes. */
-+    content_revision: number;
-     /** Board-coordinate bounds occupied by all student ink. */
