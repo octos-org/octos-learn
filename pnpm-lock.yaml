@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  octos-lesson-language@0.1.0-rc.1: 9d33d3754a34cf3a327efb02f600469c9310932ca39a00069a28e547bf0efeec
+  octos-lesson-language@0.1.0-rc.1: 0b43fffcc5c581cc9869e1c7bde529141cf57e4a8cdd7e45ea30efd24dfd9e9a
 
 importers:
 
@@ -40,7 +40,7 @@ importers:
         version: 11.15.0
       octos-lesson-language:
         specifier: github:alan0x/octos-lesson-language#be73b3cd4377f19818e5579880f96470f8d119f0
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0(patch_hash=9d33d3754a34cf3a327efb02f600469c9310932ca39a00069a28e547bf0efeec)
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0(patch_hash=0b43fffcc5c581cc9869e1c7bde529141cf57e4a8cdd7e45ea30efd24dfd9e9a)
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -2997,7 +2997,7 @@ packages:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
   octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0:
-    resolution: {gitHosted: true, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0}
+    resolution: {gitHosted: true, integrity: sha512-z5WaAKp5ZaUqzJ2CzWtPWUd89V8CWqMDWp2QFjY3czFV3qxLR36FxNNe/uLNlK1xSBAt9gXwBvrnv8G1sHzFBw==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -6962,7 +6962,7 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0(patch_hash=9d33d3754a34cf3a327efb02f600469c9310932ca39a00069a28e547bf0efeec):
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/be73b3cd4377f19818e5579880f96470f8d119f0(patch_hash=0b43fffcc5c581cc9869e1c7bde529141cf57e4a8cdd7e45ea30efd24dfd9e9a):
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0
