@@ -43,7 +43,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
      /** Timestamp of the most recent pen down/move, for palm rejection. */
      lastPenActiveAt;
      selectionGesture = [];
-@@ -183,10 +210,126 @@ export class InkRuntime {
+@@ -183,10 +210,136 @@ export class InkRuntime {
              }
          }
          void this.editor.queueRerender();
@@ -149,10 +149,20 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
 +            const stroke = Stroke.fromStroked(path, { color: Color4.fromHex(this.penColor), width });
 +            this.editor.dispatch(this.editor.image.addComponent(stroke));
 +        }
-+        try {
-+            bridge.acknowledge(pointerId);
-+        }
-+        catch { }
++        const acknowledge = () => {
++            try {
++                bridge.acknowledge(pointerId);
++            }
++            catch { }
++        };
++        // Do not clear Android's native preview until the committed SVG has
++        // reached the browser's next paint. Clearing synchronously exposes one
++        // empty/compositing frame on older WebViews and makes the stroke flash.
++        const hostWindow = this.options.viewport.ownerDocument.defaultView;
++        if (hostWindow?.requestAnimationFrame)
++            hostWindow.requestAnimationFrame(acknowledge);
++        else
++            setTimeout(acknowledge, 16);
      }
      prepareBoardInput() {
          const inputTarget = this.options.viewport;
@@ -170,7 +180,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
          const add = (name, listener) => {
              // js-draw's materialized selection overlay can stop pointer events
              // before they bubble to the host viewport. Capture them first so direct
-@@ -331,6 +474,13 @@ export class InkRuntime {
+@@ -331,6 +484,13 @@ export class InkRuntime {
                  return;
              if (inkInputTargetsInteractiveUi(rawEvent.composedPath()))
                  return;
@@ -184,7 +194,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              // Pan-override protocol (capture here, bubble at the board): right and
              // middle button drags, and left-button drags while the board's space-pan
              // override is held, pan the board camera in every tool mode. They are
-@@ -377,6 +527,11 @@ export class InkRuntime {
+@@ -377,6 +537,11 @@ export class InkRuntime {
          };
          const onPointerMove = (rawEvent) => {
              const event = rawEvent;
@@ -196,7 +206,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              // Pen hovers/moves keep the palm-rejection window open even for pens
              // whose driver reports hover moves; only tracked (button-down) pen
              // pointers reach the dispatch path below.
-@@ -395,10 +550,17 @@ export class InkRuntime {
+@@ -395,10 +560,17 @@ export class InkRuntime {
                  return;
              event.preventDefault();
              event.stopPropagation();
@@ -215,7 +225,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              if (pendingMarquee && event.pointerId === pendingMarquee.pointerId) {
                  const tapped = pendingMarquee.arbiter.end() === "tap";
                  const pendingEvents = pendingMarquee.events;
-@@ -429,8 +591,22 @@ export class InkRuntime {
+@@ -429,8 +601,22 @@ export class InkRuntime {
          });
          return () => {
              for (const [name, listener] of listeners) {
@@ -239,7 +249,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
              this.activePointers.clear();
              discardPendingMarquee();
          };
-@@ -558,6 +734,17 @@ export class InkRuntime {
+@@ -558,6 +744,17 @@ export class InkRuntime {
              selection.setEnabled(true);
              restrictSelectionToTranslation(selection);
          }
@@ -257,7 +267,7 @@ index 0b74a2a3c081fbaf3f8b1a51f2aed270ee661cb9..0f626a38e17c2e068a899bcfe8c57be7
          this.emit();
      }
      undo() { return this.editor.history.undo(); }
-@@ -583,6 +770,14 @@ export class InkRuntime {
+@@ -583,6 +780,14 @@ export class InkRuntime {
          const parsed = Color4.fromHex(color);
          this.penColor = parsed.toHexString().slice(0, 7);
          this.getTool(PenTool).setColor(parsed);

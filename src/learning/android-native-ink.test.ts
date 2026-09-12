@@ -31,6 +31,13 @@ describe("Android native ink pipeline", () => {
     expect(bridge).toContain("event.getHistoricalPressure(pointerIndex, history)");
   });
 
+  it("rejects replayed and out-of-bounds Android driver samples", () => {
+    expect(bridge).toContain("time <= lastAcceptedEventTime");
+    expect(bridge).toContain("final float edgeTolerance = 24f * cssPixelRatio");
+    expect(bridge).toContain("addPointIfValid(");
+    expect(bridge).toContain("if (appendOverlay) overlay.append(strokeId, xPx, yPx)");
+  });
+
   it("renders live ink natively without consuming ordinary WebView input", () => {
     expect(activity).toContain('addJavascriptInterface(nativeInkBridge, "OctosNativeInk")');
     expect(activity).toContain("nativeInkBridge.onMotionEvent(event)");
@@ -39,12 +46,13 @@ describe("Android native ink pipeline", () => {
     expect(overlay).toContain("canvas.drawPath(activePath, paint)");
   });
 
-  it("commits one unsmoothed polyline and acknowledges the native overlay", () => {
+  it("commits one polyline and clears the native overlay after the next paint", () => {
     expect(ollPatch).toContain("handleNativeInkBatch(batch)");
     expect(ollPatch).toContain('index === 0 ? "M" : "L"');
     expect(ollPatch).toContain("Stroke.fromStroked(path");
     expect(ollPatch).toContain("this.editor.dispatch(this.editor.image.addComponent(stroke))");
     expect(ollPatch).toContain("bridge.acknowledge(pointerId)");
+    expect(ollPatch).toContain("hostWindow.requestAnimationFrame(acknowledge)");
   });
 
   it("uses per-stroke ids so a late acknowledgement cannot clear the next stroke", () => {

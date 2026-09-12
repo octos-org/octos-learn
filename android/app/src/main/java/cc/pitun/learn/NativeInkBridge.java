@@ -20,6 +20,10 @@ final class NativeInkBridge {
     private int activeMotionPointerId = -1;
     private int activeStrokeId = -1;
     private int nextStrokeId = 1;
+    private long lastAcceptedEventTime = Long.MIN_VALUE;
+    private float lastAcceptedX;
+    private float lastAcceptedY;
+    private boolean hasAcceptedPoint;
 
     NativeInkBridge(WebView webView, NativeInkOverlayView overlay) {
         this.webView = webView;
@@ -84,6 +88,7 @@ final class NativeInkBridge {
             activeMotionPointerId = event.getPointerId(index);
             activeStrokeId = nextStrokeId++;
             if (nextStrokeId == Integer.MAX_VALUE) nextStrokeId = 1;
+            resetSampleFilter();
             overlay.begin(activeStrokeId, x, y);
             emit("down", event, index, false);
             return;
@@ -116,21 +121,29 @@ final class NativeInkBridge {
                 for (int history = 0; history < event.getHistorySize(); history++) {
                     final float x = event.getHistoricalX(pointerIndex, history);
                     final float y = event.getHistoricalY(pointerIndex, history);
-                    addPoint(
+                    addPointIfValid(
                             points,
+                            strokeId,
                             x,
                             y,
                             event.getHistoricalPressure(pointerIndex, history),
-                            event.getHistoricalEventTime(history)
+                            event.getHistoricalEventTime(history),
+                            true
                     );
-                    overlay.append(strokeId, x, y);
                 }
             }
 
             final float x = event.getX(pointerIndex);
             final float y = event.getY(pointerIndex);
-            addPoint(points, x, y, event.getPressure(pointerIndex), event.getEventTime());
-            if (!"down".equals(action)) overlay.append(strokeId, x, y);
+            addPointIfValid(
+                    points,
+                    strokeId,
+                    x,
+                    y,
+                    event.getPressure(pointerIndex),
+                    event.getEventTime(),
+                    !"down".equals(action)
+            );
 
             final JSONObject batch = new JSONObject();
             batch.put("action", action);
@@ -147,13 +160,57 @@ final class NativeInkBridge {
         }
     }
 
-    private void addPoint(JSONArray points, float xPx, float yPx, float pressure, long time) throws JSONException {
+    private void addPointIfValid(
+            JSONArray points,
+            int strokeId,
+            float xPx,
+            float yPx,
+            float pressure,
+            long time,
+            boolean appendOverlay
+    ) throws JSONException {
+        if (!Float.isFinite(xPx) || !Float.isFinite(yPx)) return;
+
+        // Some Android 8 meeting-panel drivers repeat samples from the previous
+        // MotionEvent history. Appending those older positions again makes a live
+        // stroke double back even though the pointer never changed direction.
+        if (hasAcceptedPoint && time <= lastAcceptedEventTime) return;
+
+        // Permit a small overrun at the whiteboard edge, but discard vendor-driver
+        // sentinel coordinates (commonly 0,0) that would create a long diagonal.
+        final float edgeTolerance = 24f * cssPixelRatio;
+        if (xPx < inkBoundsPx.left - edgeTolerance
+                || xPx > inkBoundsPx.right + edgeTolerance
+                || yPx < inkBoundsPx.top - edgeTolerance
+                || yPx > inkBoundsPx.bottom + edgeTolerance) {
+            return;
+        }
+
+        if (hasAcceptedPoint
+                && Math.abs(xPx - lastAcceptedX) < 0.01f
+                && Math.abs(yPx - lastAcceptedY) < 0.01f) {
+            lastAcceptedEventTime = time;
+            return;
+        }
+
         final JSONObject point = new JSONObject();
         point.put("x", xPx / cssPixelRatio);
         point.put("y", yPx / cssPixelRatio);
         point.put("pressure", Float.isFinite(pressure) ? pressure : 0.5f);
         point.put("time", time);
         points.put(point);
+        if (appendOverlay) overlay.append(strokeId, xPx, yPx);
+        lastAcceptedEventTime = time;
+        lastAcceptedX = xPx;
+        lastAcceptedY = yPx;
+        hasAcceptedPoint = true;
+    }
+
+    private void resetSampleFilter() {
+        lastAcceptedEventTime = Long.MIN_VALUE;
+        lastAcceptedX = 0f;
+        lastAcceptedY = 0f;
+        hasAcceptedPoint = false;
     }
 
     private static String pointerType(int toolType) {
