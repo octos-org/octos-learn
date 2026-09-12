@@ -54,6 +54,21 @@ describe("Android meeting-display density", () => {
     expect(camera.scale).toBe(.55);
   });
 
+  it("keeps the Android course outline compact as well as its trigger", () => {
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.oll-course-outline-panel\s*\{[^}]*width:\s*min\(260px[^}]*max-height:\s*min\(460px[^}]*border-radius:\s*14px/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.oll-course-outline-heading\s*\{[^}]*padding:\s*11px 13px 8px/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.oll-course-step-row\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 24px 24px[^}]*min-height:\s*34px/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.oll-course-step-main > span:last-child\s*\{[^}]*font-size:\s*10px/s,
+    );
+  });
+
   it("aligns the Android sidebar close control with the new-conversation control", () => {
     expect(appStyles).toMatch(
       /\[data-runtime-platform="android"\] \.learning-sidebar-close\s*\{[^}]*top:\s*1rem[^}]*height:\s*2\.75rem/s,

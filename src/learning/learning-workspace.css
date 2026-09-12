@@ -377,6 +377,106 @@
   border-radius: 10px;
 }
 
+[data-runtime-platform="android"] .oll-course-outline-panel {
+  right: -8px;
+  bottom: calc(100% + 8px);
+  width: min(260px, calc(100vw - 28px));
+  max-height: min(460px, calc(100vh - 154px));
+  border-radius: 14px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-heading {
+  padding: 11px 13px 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-heading small {
+  font-size: 7px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-heading h2 {
+  margin-top: 1px;
+  font-size: 15px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-heading > span {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-scroll {
+  padding: 5px 7px 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-topic {
+  padding: 6px 3px 3px;
+}
+
+[data-runtime-platform="android"] .oll-course-topic + .oll-course-topic {
+  margin-top: 3px;
+}
+
+[data-runtime-platform="android"] .oll-course-topic > header {
+  gap: 6px;
+  padding: 0 5px 4px;
+}
+
+[data-runtime-platform="android"] .oll-course-topic > header > span {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-topic h3 {
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .oll-course-step {
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .oll-course-step-row {
+  grid-template-columns: minmax(0, 1fr) 24px 24px;
+  min-height: 34px;
+  padding: 2px 3px;
+}
+
+[data-runtime-platform="android"] .oll-course-step-main {
+  gap: 7px;
+  padding: 4px;
+}
+
+[data-runtime-platform="android"] .oll-course-step-main > span:last-child {
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .oll-course-step-status {
+  width: 17px;
+  height: 17px;
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-beats {
+  margin: 0 5px 5px 31px !important;
+  padding: 1px 0 2px 8px !important;
+}
+
+[data-runtime-platform="android"] .oll-course-beats li {
+  grid-template-columns: minmax(0, 1fr) 22px;
+}
+
+[data-runtime-platform="android"] .oll-course-beat-main {
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 4px;
+  padding: 4px 3px;
+}
+
+[data-runtime-platform="android"] .oll-course-beat-main > span,
+[data-runtime-platform="android"] .oll-course-beat-main b {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-help {
+  padding: 7px 12px 8px;
+  font-size: 8px;
+}
+
 .learning-trace-inspector {
   position: absolute;
   right: 18px;
