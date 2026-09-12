@@ -2,25 +2,6 @@ plugins {
     id "com.android.application"
 }
 
-def androidLocalProperties = new Properties()
-def androidLocalPropertiesFile = rootProject.file("local.properties")
-if (androidLocalPropertiesFile.exists()) {
-    androidLocalPropertiesFile.withInputStream {
-        androidLocalProperties.load(it)
-    }
-}
-
-def androidTtsSetting = { String propertyName, String environmentName, String fallback ->
-    def propertyValue = androidLocalProperties.getProperty(propertyName)?.trim()
-    if (propertyValue) return propertyValue
-    def environmentValue = System.getenv(environmentName)?.trim()
-    return environmentValue ?: fallback
-}
-
-def buildConfigString = { String value ->
-    return '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
-}
-
 android {
     namespace "cc.pitun.learn"
     compileSdk 35
@@ -29,16 +10,8 @@ android {
         applicationId "cc.pitun.learn"
         minSdk 26
         targetSdk 35
-        versionCode 18
-        versionName "0.1.0-test18"
-        buildConfigField "String", "VOLC_TTS_APP_ID", buildConfigString(
-                androidTtsSetting("octos.tts.appId", "OCTOS_ANDROID_TTS_APP_ID", ""))
-        buildConfigField "String", "VOLC_TTS_ACCESS_TOKEN", buildConfigString(
-                androidTtsSetting("octos.tts.accessToken", "OCTOS_ANDROID_TTS_ACCESS_TOKEN", ""))
-        buildConfigField "String", "VOLC_TTS_CLUSTER", buildConfigString(
-                androidTtsSetting("octos.tts.cluster", "OCTOS_ANDROID_TTS_CLUSTER", "volcano_tts"))
-        buildConfigField "String", "VOLC_TTS_VOICE_TYPE", buildConfigString(
-                androidTtsSetting("octos.tts.voiceType", "OCTOS_ANDROID_TTS_VOICE_TYPE", "zh_female_xiaohe_uranus_bigtts"))
+        versionCode 19
+        versionName "0.1.0-test19"
     }
 
     buildTypes {

@@ -39,6 +39,17 @@ export interface HostedTtsStatus {
   can_manage: boolean;
 }
 
+export type NativeTtsConfig =
+  | { version: 1; enabled: false }
+  | {
+      version: 1;
+      enabled: true;
+      app_id: string;
+      access_token: string;
+      cluster: string;
+      voice_type: string;
+    };
+
 export function isHostedTtsEnabled(): boolean {
   const localAndroidPreview = import.meta.env.MODE === "android"
     && import.meta.env.DEV;
@@ -48,6 +59,11 @@ export function isHostedTtsEnabled(): boolean {
 
 export function fetchHostedTtsStatus(): Promise<HostedTtsStatus> {
   return request<HostedTtsStatus>("/api/learn/tts/status");
+}
+
+/** Fetch the direct-Android TTS configuration over the authenticated origin. */
+export function fetchNativeTtsConfig(): Promise<NativeTtsConfig> {
+  return request<NativeTtsConfig>("/api/learn/tts/native-config");
 }
 
 /** List synthesizable voices and the caller's current reply voice. */

@@ -8,6 +8,7 @@ vi.mock("@/api/client", () => ({
 import { request, requestBlob } from "@/api/client";
 import {
   fetchHostedTtsStatus,
+  fetchNativeTtsConfig,
   getVoices,
   setVoice,
   synthesizeSpeech,
@@ -68,6 +69,21 @@ describe("voice api", () => {
 
     await expect(fetchHostedTtsStatus()).resolves.toBe(status);
     expect(mockRequest).toHaveBeenCalledWith("/api/learn/tts/status");
+  });
+
+  it("fetches the authenticated Android native TTS configuration", async () => {
+    const config = {
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    } as const;
+    mockRequest.mockResolvedValue(config);
+
+    await expect(fetchNativeTtsConfig()).resolves.toBe(config);
+    expect(mockRequest).toHaveBeenCalledWith("/api/learn/tts/native-config");
   });
 
   it("routes public synthesis through the product-hosted service", async () => {

@@ -1903,6 +1903,8 @@ describe("LearningWorkspace", () => {
         }),
       );
     });
+    expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
+    expect(screen.queryByText("正在准备课程语音")).toBeNull();
     expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
     const pendingNarration = narrationTtsMock.useOllNarrationTts.mock.calls
       .at(-1)?.[0];

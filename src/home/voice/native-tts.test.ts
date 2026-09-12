@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  configureNativeTts,
+  nativeTtsBridgeAvailable,
   nativeTtsAvailable,
   playNativeTts,
 } from "./native-tts";
@@ -50,5 +52,32 @@ describe("Android native TTS bridge", () => {
     controller.abort();
     await expect(started).resolves.toBe(false);
     expect(cancel).toHaveBeenCalledWith(requestId);
+  });
+
+  it("hands the authenticated server configuration to native secure storage", () => {
+    const configure = vi.fn(() => JSON.stringify({ ok: true }));
+    window.OctosNativeTts = {
+      configure,
+      isConfigured: () => true,
+      play: () => JSON.stringify({ ok: true }),
+    };
+
+    expect(nativeTtsBridgeAvailable()).toBe(true);
+    expect(configureNativeTts({
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    })).toBe(true);
+    expect(JSON.parse(configure.mock.calls[0][0])).toEqual({
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    });
   });
 });

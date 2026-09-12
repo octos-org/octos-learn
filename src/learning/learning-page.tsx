@@ -44,6 +44,11 @@ import {
 } from "@/home/voice/private-asr-client";
 import { preloadVoiceCaptureRuntime } from "@/home/voice/use-voice-capture";
 import { useWakeLock } from "@/home/use-wake-lock";
+import { fetchNativeTtsConfig } from "@/api/voice";
+import {
+  configureNativeTts,
+  nativeTtsBridgeAvailable,
+} from "@/home/voice/native-tts";
 import type {
   VoiceConversationOptions,
   VoiceConversationTurn,
@@ -297,6 +302,22 @@ export function LearningPage() {
       || requested === "math-two-points" || requested === "math-circle-area"
       ? requested
       : undefined;
+  }, []);
+  useEffect(() => {
+    if (!nativeTtsBridgeAvailable()) return;
+    let cancelled = false;
+    void fetchNativeTtsConfig()
+      .then((config) => {
+        if (!cancelled) configureNativeTts(config);
+      })
+      .catch((error) => {
+        // A previously encrypted configuration remains available during a
+        // temporary network outage; never log the configuration itself.
+        console.warn("[learn] native TTS configuration refresh failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),

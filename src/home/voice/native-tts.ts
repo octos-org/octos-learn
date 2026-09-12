@@ -1,4 +1,7 @@
+import type { NativeTtsConfig } from "@/api/voice";
+
 type AndroidTtsBridge = {
+  configure?: (config: string) => string;
   isConfigured?: () => boolean;
   prefetch?: (requestId: string, text: string) => string;
   play?: (requestId: string, text: string) => string;
@@ -89,6 +92,21 @@ export function nativeTtsAvailable(): boolean {
   ) return false;
   try {
     return candidate.isConfigured();
+  } catch {
+    return false;
+  }
+}
+
+export function nativeTtsBridgeAvailable(): boolean {
+  return typeof bridge()?.configure === "function";
+}
+
+/** Persist a server-delivered configuration inside the native app sandbox. */
+export function configureNativeTts(config: NativeTtsConfig): boolean {
+  const candidate = bridge();
+  if (typeof candidate?.configure !== "function") return false;
+  try {
+    return parseBridgeResult(candidate.configure(JSON.stringify(config))).ok;
   } catch {
     return false;
   }

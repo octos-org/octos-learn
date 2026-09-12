@@ -78,3 +78,80 @@ test("a personal TTS configuration bypasses platform metering", async () => {
     assert.deepEqual(ledger.usage("alice"), { total: 0, user: 0 });
   } finally { server.close(); cleanup(); }
 });
+
+test("native config is authenticated, non-cacheable, and contains the active platform voice", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    appid: "app-from-server",
+    token: "token-from-server",
+    cluster: "volcano_tts",
+    voice: "zh_female_xiaohe_uranus_bigtts",
+    maxConcurrent: 2,
+    queueWaitMs: 10,
+    requestsPerMinute: 60,
+  };
+  const fetchImpl = async (url, options) => {
+    assert.equal(url, "http://octos.test/api/auth/me");
+    assert.equal(options.headers.authorization, "Bearer session");
+    return new Response(JSON.stringify({
+      user: { id: "alice", role: "user" },
+      profile: { profile: { config: {} } },
+    }), { status: 200 });
+  };
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/learn/tts/native-config`,
+      { headers: { authorization: "Bearer session" } },
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store, max-age=0");
+    assert.deepEqual(await response.json(), {
+      version: 1,
+      enabled: true,
+      app_id: "app-from-server",
+      access_token: "token-from-server",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    });
+  } finally { server.close(); cleanup(); }
+});
+
+test("native config disables direct TTS for a personal voice profile", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    appid: "platform-app",
+    token: "platform-token",
+    cluster: "volcano_tts",
+    voice: "platform-voice",
+    maxConcurrent: 2,
+    queueWaitMs: 10,
+    requestsPerMinute: 60,
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({
+    user: { id: "alice", role: "user" },
+    profile: {
+      profile: {
+        config: {
+          tts_provider: "cloud",
+          tts_cloud: { appid: "personal-app" },
+          env_vars: { VOLC_TTS_TOKEN: "masked" },
+        },
+      },
+    },
+  }), { status: 200 });
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/learn/tts/native-config`,
+      { headers: { authorization: "Bearer session" } },
+    );
+    assert.deepEqual(await response.json(), { version: 1, enabled: false });
+  } finally { server.close(); cleanup(); }
+});

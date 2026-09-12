@@ -2826,19 +2826,14 @@ export function LearningWorkspace({
   const whiteboardLoadingState: WhiteboardLoadingState | null = lessonLoading
     && (!ollLesson
       || pendingLessonAwaitingFirstRender
-      || pendingLessonAwaitingFirstNarration
       || Boolean(
       pendingLessonQuestion && !pendingLessonHasPlayableArtifact,
     ))
     ? {
         id: startupCourseTurnId ?? `lesson:${sessionId}`,
         kind: "lesson",
-        title: pendingLessonAwaitingFirstNarration
-          ? "正在准备课程语音"
-          : "正在搭建这节课",
-        detail: pendingLessonAwaitingFirstNarration
-          ? "画面已经就绪，马上开始讲解。"
-          : "先整理重点，再把讲解和互动画面放到白板上。",
+        title: "正在搭建这节课",
+        detail: "先整理重点，再把讲解和互动画面放到白板上。",
       }
     : null;
 

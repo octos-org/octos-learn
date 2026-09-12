@@ -8,25 +8,18 @@ private-ASR and hosted-TTS services as the public web build.
 
 ## Direct Android narration TTS
 
-The APK can synthesize lesson narration directly with Volcengine and play the
-downloaded MP3 through Android `MediaPlayer`, without sending the audio through
-the old System WebView. Put these values in the ignored
-`android/local.properties` file before building:
+The APK does not contain the Volcengine App ID or access token. After the user
+is authenticated, the packaged web app fetches `/api/learn/tts/native-config`
+over the trusted HTTPS origin and hands the response to the native bridge. The
+bridge encrypts the configuration with an app-owned Android Keystore AES key
+before saving it to private preferences. A temporary refresh failure keeps the
+last valid encrypted configuration; an explicit disabled response clears it.
 
-```properties
-octos.tts.appId=YOUR_APP_ID
-octos.tts.accessToken=YOUR_ACCESS_TOKEN
-octos.tts.cluster=volcano_tts
-octos.tts.voiceType=zh_female_xiaohe_uranus_bigtts
-```
-
-The same values can instead be supplied as
-`OCTOS_ANDROID_TTS_APP_ID`, `OCTOS_ANDROID_TTS_ACCESS_TOKEN`,
-`OCTOS_ANDROID_TTS_CLUSTER`, and `OCTOS_ANDROID_TTS_VOICE_TYPE` environment
-variables. Gradle writes them into `BuildConfig`, so they are intentionally
-recoverable from this demo APK. Do not distribute that APK outside the demo
-device. When the values are absent, the web layer keeps using the existing
-hosted TTS route.
+The hosted-TTS service remains the source of truth for `VOLC_TTS_APPID`,
+`VOLC_TTS_TOKEN`, `VOLC_TTS_CLUSTER`, and `VOLC_TTS_VOICE`. The native config
+endpoint requires the same authenticated Octos session as synthesis, sends
+`Cache-Control: no-store`, and is enabled only for profiles using the platform
+voice while platform TTS is enabled.
 
 The native bridge shares in-flight downloads, prefetches the next narration,
 keeps a bounded 64-clip cache, and applies 15-second connect / 45-second read

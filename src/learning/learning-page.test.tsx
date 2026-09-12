@@ -36,6 +36,11 @@ const sessionApiMock = vi.hoisted(() => ({
 const learningWorkspaceMock = vi.hoisted(() => ({
   props: null as LearningWorkspaceProps | null,
 }));
+const nativeTtsConfigMock = vi.hoisted(() => ({
+  available: false,
+  fetch: vi.fn(),
+  configure: vi.fn(),
+}));
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
 }));
@@ -79,6 +84,15 @@ vi.mock("@/home/voice/use-voice-capture", () => ({
   preloadVoiceCaptureRuntime: vi.fn(async () => {}),
 }));
 
+vi.mock("@/api/voice", () => ({
+  fetchNativeTtsConfig: nativeTtsConfigMock.fetch,
+}));
+
+vi.mock("@/home/voice/native-tts", () => ({
+  nativeTtsBridgeAvailable: () => nativeTtsConfigMock.available,
+  configureNativeTts: nativeTtsConfigMock.configure,
+}));
+
 vi.mock("./learning-workspace", () => ({
   LearningWorkspace: (props: LearningWorkspaceProps) => {
     learningWorkspaceMock.props = props;
@@ -118,6 +132,9 @@ describe("LearningPage", () => {
       },
     ]);
     learningWorkspaceMock.props = null;
+    nativeTtsConfigMock.available = false;
+    nativeTtsConfigMock.fetch.mockReset();
+    nativeTtsConfigMock.configure.mockReset();
   });
 
   it("logs out from the bottom of the learning sidebar", async () => {
@@ -250,6 +267,25 @@ describe("LearningPage", () => {
         name: "请在白板上讲解一个新的二次函数问题",
       }),
     ).toBeTruthy();
+  });
+
+  it("refreshes Android native TTS configuration after authenticated startup", async () => {
+    const config = {
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    } as const;
+    nativeTtsConfigMock.available = true;
+    nativeTtsConfigMock.fetch.mockResolvedValue(config);
+
+    render(<LearningPage />);
+
+    await waitFor(() => {
+      expect(nativeTtsConfigMock.configure).toHaveBeenCalledWith(config);
+    });
   });
 
   it("can enable voice without also enabling the camera in a text-only lesson", async () => {

@@ -1,7 +1,11 @@
 package cc.pitun.learn;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
@@ -16,6 +20,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.KeyStore;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Locale;
@@ -25,13 +30,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+
 /** Downloads and plays lesson narration without routing audio through WebView. */
 final class NativeTtsBridge {
     private static final String ENDPOINT = "https://openspeech.bytedance.com/api/v1/tts";
     private static final int MAX_CACHE_FILES = 64;
+    private static final String PREFERENCES_NAME = "octos_native_tts";
+    private static final String CONFIG_PREFERENCE = "encrypted_config";
+    private static final String KEY_ALIAS = "octos_native_tts_config_key";
 
     private final WebView webView;
     private final File cacheDirectory;
+    private final SharedPreferences preferences;
     private final ExecutorService executor = Executors.newFixedThreadPool(2);
     private final ConcurrentHashMap<String, CompletableFuture<File>> downloads =
             new ConcurrentHashMap<>();
@@ -39,19 +53,50 @@ final class NativeTtsBridge {
 
     private MediaPlayer player;
     private String currentRequestId;
+    private volatile TtsConfig config;
     private volatile boolean released;
 
     NativeTtsBridge(WebView webView) {
         this.webView = webView;
         this.cacheDirectory = new File(webView.getContext().getCacheDir(), "octos-native-tts");
+        this.preferences = webView.getContext().getApplicationContext()
+                .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
+        this.config = loadConfig();
         //noinspection ResultOfMethodCallIgnored
         this.cacheDirectory.mkdirs();
     }
 
     @JavascriptInterface
     public boolean isConfigured() {
-        return !BuildConfig.VOLC_TTS_APP_ID.isEmpty()
-                && !BuildConfig.VOLC_TTS_ACCESS_TOKEN.isEmpty();
+        return config != null;
+    }
+
+    @JavascriptInterface
+    public String configure(String rawConfig) {
+        try {
+            JSONObject payload = new JSONObject(rawConfig == null ? "{}" : rawConfig);
+            if (payload.optInt("version", -1) != 1) {
+                return result(false, "TTS 配置版本不受支持");
+            }
+            if (!payload.optBoolean("enabled", false)) {
+                clearConfig();
+                return result(true, null);
+            }
+            TtsConfig next = new TtsConfig(
+                    required(payload, "app_id"),
+                    required(payload, "access_token"),
+                    required(payload, "cluster"),
+                    required(payload, "voice_type")
+            );
+            String encrypted = encrypt(next.toJson().toString());
+            if (!preferences.edit().putString(CONFIG_PREFERENCE, encrypted).commit()) {
+                return result(false, "无法保存 TTS 配置");
+            }
+            config = next;
+            return result(true, null);
+        } catch (Exception error) {
+            return result(false, rootMessage(error));
+        }
     }
 
     @JavascriptInterface
@@ -65,14 +110,15 @@ final class NativeTtsBridge {
     }
 
     private String request(String requestId, String text, boolean playWhenReady) {
-        if (!isConfigured()) return result(false, "APK 未配置火山 TTS 凭据");
+        final TtsConfig activeConfig = config;
+        if (activeConfig == null) return result(false, "尚未从服务端取得火山 TTS 配置");
         if (released) return result(false, "TTS 已关闭");
         final String normalized = text == null ? "" : text.trim();
         if (requestId == null || requestId.trim().isEmpty() || normalized.isEmpty()) {
             return result(false, "TTS 请求缺少文本或请求编号");
         }
         cancelled.remove(requestId);
-        final String cacheKey = sha256(BuildConfig.VOLC_TTS_VOICE_TYPE + "\u0000" + normalized);
+        final String cacheKey = sha256(activeConfig.voiceType + "\u0000" + normalized);
         final File cached = new File(cacheDirectory, cacheKey + ".mp3");
         CompletableFuture<File> download;
         if (cached.isFile() && cached.length() > 0) {
@@ -80,7 +126,7 @@ final class NativeTtsBridge {
         } else {
             download = downloads.computeIfAbsent(cacheKey, ignored ->
                     CompletableFuture.supplyAsync(
-                            () -> synthesize(normalized, cached),
+                            () -> synthesize(normalized, cached, activeConfig),
                             executor
                     ).whenComplete((file, error) -> downloads.remove(cacheKey)));
         }
@@ -119,7 +165,7 @@ final class NativeTtsBridge {
         cancelled.clear();
     }
 
-    private File synthesize(String text, File destination) {
+    private File synthesize(String text, File destination, TtsConfig activeConfig) {
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(ENDPOINT).openConnection();
@@ -128,17 +174,17 @@ final class NativeTtsBridge {
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
             connection.setRequestProperty("Authorization",
-                    "Bearer;" + BuildConfig.VOLC_TTS_ACCESS_TOKEN);
+                    "Bearer;" + activeConfig.accessToken);
             connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
 
             JSONObject body = new JSONObject();
             body.put("app", new JSONObject()
-                    .put("appid", BuildConfig.VOLC_TTS_APP_ID)
-                    .put("token", BuildConfig.VOLC_TTS_ACCESS_TOKEN)
-                    .put("cluster", BuildConfig.VOLC_TTS_CLUSTER));
+                    .put("appid", activeConfig.appId)
+                    .put("token", activeConfig.accessToken)
+                    .put("cluster", activeConfig.cluster));
             body.put("user", new JSONObject().put("uid", "octos-android-demo"));
             body.put("audio", new JSONObject()
-                    .put("voice_type", BuildConfig.VOLC_TTS_VOICE_TYPE)
+                    .put("voice_type", activeConfig.voiceType)
                     .put("encoding", "mp3")
                     .put("speed_ratio", 1.0));
             body.put("request", new JSONObject()
@@ -252,6 +298,102 @@ final class NativeTtsBridge {
         for (int index = 0; index < files.length - MAX_CACHE_FILES; index++) {
             //noinspection ResultOfMethodCallIgnored
             files[index].delete();
+        }
+    }
+
+    private TtsConfig loadConfig() {
+        String encrypted = preferences.getString(CONFIG_PREFERENCE, null);
+        if (encrypted == null || encrypted.isEmpty()) return null;
+        try {
+            return TtsConfig.fromJson(new JSONObject(decrypt(encrypted)));
+        } catch (Exception error) {
+            preferences.edit().remove(CONFIG_PREFERENCE).apply();
+            return null;
+        }
+    }
+
+    private void clearConfig() {
+        config = null;
+        preferences.edit().remove(CONFIG_PREFERENCE).apply();
+        webView.post(() -> stopPlayer("stopped"));
+    }
+
+    private String encrypt(String plaintext) throws Exception {
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+        String initializationVector = Base64.encodeToString(
+                cipher.getIV(), Base64.NO_WRAP);
+        String ciphertext = Base64.encodeToString(
+                cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8)),
+                Base64.NO_WRAP);
+        return initializationVector + "." + ciphertext;
+    }
+
+    private String decrypt(String encrypted) throws Exception {
+        String[] parts = encrypted.split("\\.", 2);
+        if (parts.length != 2) throw new IllegalStateException("TTS 配置格式无效");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(
+                Cipher.DECRYPT_MODE,
+                getOrCreateKey(),
+                new GCMParameterSpec(128, Base64.decode(parts[0], Base64.NO_WRAP))
+        );
+        return new String(
+                cipher.doFinal(Base64.decode(parts[1], Base64.NO_WRAP)),
+                StandardCharsets.UTF_8);
+    }
+
+    private SecretKey getOrCreateKey() throws Exception {
+        KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+        keyStore.load(null);
+        SecretKey existing = (SecretKey) keyStore.getKey(KEY_ALIAS, null);
+        if (existing != null) return existing;
+        KeyGenerator generator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                "AndroidKeyStore");
+        generator.init(new KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .build());
+        return generator.generateKey();
+    }
+
+    private static String required(JSONObject payload, String name) {
+        String value = payload.optString(name, "").trim();
+        if (value.isEmpty()) throw new IllegalArgumentException("TTS 配置缺少 " + name);
+        return value;
+    }
+
+    private static final class TtsConfig {
+        final String appId;
+        final String accessToken;
+        final String cluster;
+        final String voiceType;
+
+        TtsConfig(String appId, String accessToken, String cluster, String voiceType) {
+            this.appId = appId;
+            this.accessToken = accessToken;
+            this.cluster = cluster;
+            this.voiceType = voiceType;
+        }
+
+        JSONObject toJson() throws Exception {
+            return new JSONObject()
+                    .put("app_id", appId)
+                    .put("access_token", accessToken)
+                    .put("cluster", cluster)
+                    .put("voice_type", voiceType);
+        }
+
+        static TtsConfig fromJson(JSONObject payload) {
+            return new TtsConfig(
+                    required(payload, "app_id"),
+                    required(payload, "access_token"),
+                    required(payload, "cluster"),
+                    required(payload, "voice_type")
+            );
         }
     }
 
