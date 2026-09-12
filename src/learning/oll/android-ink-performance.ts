@@ -12,7 +12,9 @@ interface InkRuntimeWithDisplay {
     toSVG?: () => SVGElement;
   };
   host?: HTMLElement;
-  subscribe?: (listener: () => void) => () => void;
+  subscribe?: (
+    listener: (state: { content_revision?: number }) => void,
+  ) => () => void;
 }
 
 interface CameraState {
@@ -87,6 +89,9 @@ function configureAndroidVectorInkMirror(
 
   let camera: CameraState = { panX: 0, panY: 0, scale: 1 };
   let vector: SVGElement | null = null;
+  let renderedRevision: number | undefined;
+  let pendingRevision: number | undefined;
+  let renderFrame: number | undefined;
 
   const applyCamera = (target: SVGElement) => {
     const scale = Math.max(0.01, camera.scale);
@@ -114,13 +119,35 @@ function configureAndroidVectorInkMirror(
     host.dataset.androidVectorInk = "";
   };
 
-  const unsubscribe = runtime.subscribe(render);
+  const onRuntimeState = (state: { content_revision?: number }) => {
+    const revision = state.content_revision;
+    if (revision !== undefined && revision === renderedRevision) return;
+    pendingRevision = revision;
+
+    // Render the initial document immediately. Later content mutations are
+    // coalesced to one full SVG export per display frame; save/selection/mode
+    // notifications carrying the same revision do no work at all.
+    if (!vector) {
+      render();
+      renderedRevision = revision;
+      return;
+    }
+    if (renderFrame !== undefined) return;
+    renderFrame = hostWindow.requestAnimationFrame(() => {
+      renderFrame = undefined;
+      render();
+      renderedRevision = pendingRevision;
+    });
+  };
+
+  const unsubscribe = runtime.subscribe(onRuntimeState);
   return {
     updateCamera(nextCamera) {
       camera = { ...nextCamera };
       if (vector) applyCamera(vector);
     },
     destroy() {
+      if (renderFrame !== undefined) hostWindow.cancelAnimationFrame(renderFrame);
       unsubscribe();
       vector?.remove();
       delete host.dataset.androidVectorInk;

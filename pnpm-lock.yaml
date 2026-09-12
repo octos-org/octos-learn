@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  octos-lesson-language@0.1.0-rc.1: 19d5fc1e4833c51c5febbc25870e4a61f2c5444119bfe36ba3ae194b6e736591
+  octos-lesson-language@0.1.0-rc.1: 52937ead912dddd8a86d4f8cc74c1a54fc99d4c241903934ed41eb9c03291dfb
 
 importers:
 
@@ -40,7 +40,7 @@ importers:
         version: 11.15.0
       octos-lesson-language:
         specifier: github:alan0x/octos-lesson-language#010feee55d1188142d0b427bc053f24200720c9f
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/010feee55d1188142d0b427bc053f24200720c9f(patch_hash=19d5fc1e4833c51c5febbc25870e4a61f2c5444119bfe36ba3ae194b6e736591)
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/010feee55d1188142d0b427bc053f24200720c9f(patch_hash=52937ead912dddd8a86d4f8cc74c1a54fc99d4c241903934ed41eb9c03291dfb)
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -6962,7 +6962,7 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/010feee55d1188142d0b427bc053f24200720c9f(patch_hash=19d5fc1e4833c51c5febbc25870e4a61f2c5444119bfe36ba3ae194b6e736591):
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/010feee55d1188142d0b427bc053f24200720c9f(patch_hash=52937ead912dddd8a86d4f8cc74c1a54fc99d4c241903934ed41eb9c03291dfb):
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0

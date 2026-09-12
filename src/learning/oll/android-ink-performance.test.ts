@@ -104,15 +104,15 @@ describe("Android dynamic ink pixel budget", () => {
       svg.append(document.createElementNS("http://www.w3.org/2000/svg", "path"));
       return svg;
     });
-    let inkListener: (() => void) | undefined;
+    let inkListener: ((state: { content_revision?: number }) => void) | undefined;
     const unsubscribeInk = vi.fn();
     const host = document.createElement("div");
     const runtime = {
       host,
       editor: { display: { setDevicePixelRatio }, toSVG },
-      subscribe: vi.fn((listener: () => void) => {
+      subscribe: vi.fn((listener: NonNullable<typeof inkListener>) => {
         inkListener = listener;
-        listener();
+        listener({ content_revision: 7 });
         return unsubscribeInk;
       }),
     };
@@ -146,7 +146,12 @@ describe("Android dynamic ink pixel budget", () => {
     expect(host.dataset.androidVectorInk).toBe("");
     expect(host.querySelector(".oll-android-vector-ink")?.getAttribute("viewBox"))
       .toBe("-50 -20 960 540");
-    inkListener?.();
+    inkListener?.({ content_revision: 7 });
+    expect(toSVG).toHaveBeenCalledTimes(1);
+
+    inkListener?.({ content_revision: 8 });
+    inkListener?.({ content_revision: 9 });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(toSVG).toHaveBeenCalledTimes(2);
     expect(host.querySelectorAll(".oll-android-vector-ink")).toHaveLength(1);
 

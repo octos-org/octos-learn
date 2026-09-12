@@ -42,8 +42,28 @@ describe("Android native ink pipeline", () => {
     expect(activity).toContain('addJavascriptInterface(nativeInkBridge, "OctosNativeInk")');
     expect(activity).toContain("nativeInkBridge.onMotionEvent(event)");
     expect(activity).toContain("return super.dispatchTouchEvent(event)");
-    expect(overlay).toContain("View.LAYER_TYPE_HARDWARE");
+    expect(overlay).toContain("View.LAYER_TYPE_NONE");
+    expect(overlay).toContain("setVisibility(View.INVISIBLE)");
+    expect(overlay).toContain("setVisibility(View.VISIBLE)");
+    expect(overlay).toContain("invalidate(left, top, right, bottom)");
     expect(overlay).toContain("canvas.drawPath(activePath, paint)");
+  });
+
+  it("batches WebView delivery until pointer-up while retaining native live feedback", () => {
+    const moveBranch = bridge.slice(
+      bridge.indexOf("if (action == MotionEvent.ACTION_MOVE)"),
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
+    );
+    const upBranch = bridge.slice(
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_CANCEL)"),
+    );
+
+    expect(moveBranch).toContain("collectPoints(event, index, true, pendingPoints, true)");
+    expect(moveBranch).not.toContain("evaluateJavascript");
+    expect(upBranch).toContain("dispatchBatch(");
+    expect(upBranch).toContain('"up",');
+    expect(bridge).toContain("private JSONArray pendingPoints = new JSONArray()");
   });
 
   it("commits one polyline and clears the native overlay after the next paint", () => {

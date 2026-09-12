@@ -354,6 +354,7 @@ const emptyInkState: LearningInkState = {
   selection_mode: "rectangle",
   selection_transform_enabled: false,
   selection_revision: 0,
+  content_revision: 0,
   content_bounds: null,
   content_bounds_list: [],
   document_version: 0,
@@ -369,6 +370,7 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     selection_mode: enhanced.selection_mode ?? "rectangle",
     selection_transform_enabled: enhanced.selection_transform_enabled ?? false,
     selection_revision: enhanced.selection_revision ?? 0,
+    content_revision: enhanced.content_revision ?? 0,
     content_bounds: enhanced.content_bounds ?? null,
     content_bounds_list: enhanced.content_bounds_list ?? (
       enhanced.content_bounds ? [enhanced.content_bounds] : []

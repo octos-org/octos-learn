@@ -466,3 +466,20 @@ diff --git a/dist/packages/web-runtime/src/layout.js b/dist/packages/web-runtime
              while (collisionRects(node.id).some((rect) => intersects(candidate, rect)) && guard < 40) {
                  candidate = { ...candidate, y: candidate.y + 36 };
                  guard += 1;
+diff --git a/dist/packages/ink-runtime/src/runtime.js b/dist/packages/ink-runtime/src/runtime.js
+--- a/dist/packages/ink-runtime/src/runtime.js
++++ b/dist/packages/ink-runtime/src/runtime.js
+@@ -701,3 +701,4 @@
+             selected_count: this.selectedComponents.length,
+             selection_revision: this.selectionRevision,
++            content_revision: this.changeRevision,
+             content_bounds: bounds
+diff --git a/dist/packages/ink-runtime/src/runtime.d.ts b/dist/packages/ink-runtime/src/runtime.d.ts
+--- a/dist/packages/ink-runtime/src/runtime.d.ts
++++ b/dist/packages/ink-runtime/src/runtime.d.ts
+@@ -9,3 +9,5 @@
+     /** Changes whenever the selected components change, even when the count is unchanged. */
+     selection_revision: number;
++    /** Changes only when durable ink content changes. */
++    content_revision: number;
+     /** Board-coordinate bounds occupied by all student ink. */

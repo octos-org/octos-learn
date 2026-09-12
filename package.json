@@ -14,7 +14,7 @@
     "build": "tsc -b && vite build",
     "prebuild:public": "node scripts/copy-vad-assets.mjs",
     "build:public": "tsc -b && vite build --mode public",
-    "prebuild:android": "node scripts/copy-vad-assets.mjs",
+    "prebuild:android": "node scripts/prepare-android-assets.mjs",
     "build:android": "tsc -b && vite build --mode android --outDir android/app/src/main/assets",
     "build:apk:debug": "pnpm build:android && ./android/gradlew -p android assembleDebug",
     "lint": "eslint .",

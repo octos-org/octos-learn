@@ -87,6 +87,7 @@ export default defineConfig(({ mode, command }) => {
   const useLocalHttps = mode === "local-https"
     || (mode === "android" && command === "serve");
   const useAndroidLegacyBuild = mode === "android";
+  const usePackagedAndroidRuntime = mode === "android" && command === "build";
   // Local integration only: exercise an unmerged Runtime without changing the
   // production dependency pin or publishing intermediate commits.
   const localOll = mode === "development" || useLocalHttps
@@ -152,6 +153,16 @@ export default defineConfig(({ mode, command }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        ...(usePackagedAndroidRuntime ? {
+          "@ricky0123/vad-web": path.resolve(
+            __dirname,
+            "./build/android-native-runtime-stub.ts",
+          ),
+          "agora-rtc-sdk-ng": path.resolve(
+            __dirname,
+            "./build/android-native-runtime-stub.ts",
+          ),
+        } : {}),
         ...(localOll ? {
           "octos-lesson-language/ink-runtime/styles.css": path.resolve(localOll, "packages/ink-runtime/styles.css"),
           "octos-lesson-language/ink-runtime": path.resolve(localOll, "dist/packages/ink-runtime/src/index.js"),
