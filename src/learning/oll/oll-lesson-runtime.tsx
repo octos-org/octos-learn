@@ -45,6 +45,7 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import { planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
   mutationsTouchBoardOcclusion,
@@ -2192,6 +2193,8 @@ export function LearningWhiteboard({
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
           documentId: `learning-session:${inkSessionId}:student-ink`,
           locale: "zh-CN",
+          touchMarqueeActivation:
+            import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
         if (import.meta.env.MODE === "android") {
           destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
@@ -2474,34 +2477,26 @@ export function LearningWhiteboard({
         : nextNodeBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
-    if (
-      teachingFocusAllowed
-      && attentionTargets.length > 0
-      && attentionChanged
-    ) {
-      view?.focusTargets(attentionTargets);
-    } else if (
-      teachingFocusAllowed &&
-      activeRuntime.compositionTargets.length > 0 &&
-      (compositionChanged || compositionOperationChanged)
-    ) {
-      // A Beat's declared focus describes the visual composition needed for
-      // its narration. Apply it while the Beat is unfolding so a newly written
-      // formula does not replace the diagram it is explaining. This reuses the
-      // existing focus action and does not add a playback delay.
-      view?.focusTargets(activeRuntime.compositionTargets);
-    } else if (teachingFocusAllowed && atPlaybackBoundary && focusChanged) {
-      // React can batch every operation produced by advanceBeat() into the
-      // boundary render. In that case the board already contains the new Beat
-      // focus, but the view never observed the intermediate board.focus frame.
-      view?.focusTargets(boardFocus);
-    }
+    const hostFocus = planHostTeachingFocus({
+      teachingFocusAllowed,
+      attentionTargets,
+      attentionChanged,
+      compositionTargets: activeRuntime.compositionTargets,
+      compositionChanged,
+      compositionOperationChanged,
+      atPlaybackBoundary,
+      boardFocus,
+      focusChanged,
+      variableAnimationActive: Boolean(activeRuntime.activeVariableAnimation),
+    });
+    if (hostFocus) view?.focusTargets(hostFocus.targets);
     renderedAttentionRef.current = attentionKey;
     renderedFocusRef.current = [...boardFocus];
     renderedCompositionRef.current = compositionKey;
     renderedCompositionCursorRef.current = activeRuntime.cursor;
   }, [
     runtime?.attentionTargets,
+    runtime?.activeVariableAnimation,
     runtime?.board,
     runtime?.compositionTargets,
     runtime?.currentOperation,

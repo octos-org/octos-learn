@@ -10,7 +10,6 @@ export function hasLearningModel(profile: Profile): boolean {
   );
 }
 export function needsLearningSetup(profile: Profile): boolean {
-  if (hasLearningModel(profile)) return false;
   try {
     return localStorage.getItem(setupSkipKey(profile.id)) !== "yes";
   } catch {

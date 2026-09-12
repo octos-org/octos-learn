@@ -64,6 +64,7 @@ describe("first-run setup whiteboard", () => {
       family_id: "google",
       model_id: "gemini-test",
     };
+    localStorage.setItem("octos-learn:setup-skipped:alice", "yes");
     mocks.get.mockResolvedValue(profile);
 
     render(
@@ -79,13 +80,15 @@ describe("first-run setup whiteboard", () => {
     expect(localStorage.getItem("selected_profile")).toBe("alice");
   });
 
-  it("does not interrupt configured users and scopes skipping to one account", () => {
+  it("records onboarding completion independently for every account", () => {
     const p = blank();
     expect(needsLearningSetup(p)).toBe(true);
     localStorage.setItem("octos-learn:setup-skipped:alice", "yes");
     expect(needsLearningSetup(p)).toBe(false);
     expect(needsLearningSetup({ ...p, id: "bob" })).toBe(true);
     p.config.llm.primary = { family_id: "google", model_id: "gemini-test" };
+    expect(needsLearningSetup({ ...p, id: "bob" })).toBe(true);
+    localStorage.setItem("octos-learn:setup-skipped:bob", "yes");
     expect(needsLearningSetup({ ...p, id: "bob" })).toBe(false);
   });
   it("offers manual use and saves credentials only through the authenticated profile API", async () => {
