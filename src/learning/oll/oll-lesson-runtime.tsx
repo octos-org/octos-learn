@@ -45,6 +45,10 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import {
+  BOARD_OCCLUSION_SELECTOR,
+  mutationsTouchBoardOcclusion,
+} from "./board-occlusion-observer";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -228,7 +232,7 @@ const selectionContentKindLabels: Record<SelectionContentKind, string> = {
   unknown: "暂不确定",
 };
 
-const boardOcclusionSelector = "[data-learning-board-occlusion]";
+const boardOcclusionSelector = BOARD_OCCLUSION_SELECTOR;
 const courseVisualNodeKinds = new Set([
   "diagram",
   "geometry",
@@ -2843,6 +2847,7 @@ export function LearningWhiteboard({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return;
+    const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
     let animationFrame = 0;
     let lastInsets = "";
     const update = () => {
@@ -2865,7 +2870,7 @@ export function LearningWhiteboard({
     let observedOcclusions = new Set<Element>();
     const syncOcclusions = () => {
       const next = new Set(
-        viewport.ownerDocument.querySelectorAll<Element>(boardOcclusionSelector),
+        root?.querySelectorAll<Element>(boardOcclusionSelector) ?? [],
       );
       let changed = next.size !== observedOcclusions.size;
       for (const element of observedOcclusions) {
@@ -2881,10 +2886,11 @@ export function LearningWhiteboard({
       observedOcclusions = next;
       if (changed) update();
     };
-    const mutation = typeof MutationObserver === "undefined" ? null : new MutationObserver(() => {
-      syncOcclusions();
-    });
-    const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
+    const mutation = typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver((records) => {
+          if (mutationsTouchBoardOcclusion(records)) syncOcclusions();
+        });
     if (root) mutation?.observe(root, { childList: true, subtree: true });
     syncOcclusions();
     update();
