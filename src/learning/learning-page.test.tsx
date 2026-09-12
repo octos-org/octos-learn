@@ -36,6 +36,11 @@ const sessionApiMock = vi.hoisted(() => ({
 const learningWorkspaceMock = vi.hoisted(() => ({
   props: null as LearningWorkspaceProps | null,
 }));
+const nativeTtsConfigMock = vi.hoisted(() => ({
+  available: false,
+  fetch: vi.fn(),
+  configure: vi.fn(),
+}));
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
 }));
@@ -79,6 +84,15 @@ vi.mock("@/home/voice/use-voice-capture", () => ({
   preloadVoiceCaptureRuntime: vi.fn(async () => {}),
 }));
 
+vi.mock("@/api/voice", () => ({
+  fetchNativeTtsConfig: nativeTtsConfigMock.fetch,
+}));
+
+vi.mock("@/home/voice/native-tts", () => ({
+  nativeTtsBridgeAvailable: () => nativeTtsConfigMock.available,
+  configureNativeTts: nativeTtsConfigMock.configure,
+}));
+
 vi.mock("./learning-workspace", () => ({
   LearningWorkspace: (props: LearningWorkspaceProps) => {
     learningWorkspaceMock.props = props;
@@ -118,6 +132,9 @@ describe("LearningPage", () => {
       },
     ]);
     learningWorkspaceMock.props = null;
+    nativeTtsConfigMock.available = false;
+    nativeTtsConfigMock.fetch.mockReset();
+    nativeTtsConfigMock.configure.mockReset();
   });
 
   it("logs out from the bottom of the learning sidebar", async () => {
@@ -205,7 +222,7 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.initialAudio).toBe(wake);
     expect(
       learningWorkspaceMock.props?.conversationOptions?.autoStartCamera,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       learningWorkspaceMock.props?.conversationOptions?.playReplyAudio,
     ).toBe(false);
@@ -219,20 +236,21 @@ describe("LearningPage", () => {
     ).toContain("entry: wake-word");
   });
 
-  it("enters the whiteboard in text-only mode without requesting devices", async () => {
-    localStorage.clear();
+  it("enters the whiteboard directly in text-only mode on every launch", async () => {
+    localStorage.setItem("octos_learning_auto_camera", "true");
+    localStorage.setItem("octos_learning_input_mode", "voice");
 
     render(<LearningPage />);
-
-    const textOnly = await screen.findByRole("button", {
-      name: "仅用文字进入白板",
-    });
-    fireEvent.click(textOnly);
 
     await waitFor(() =>
       expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false),
     );
+    expect(
+      learningWorkspaceMock.props?.conversationOptions?.autoStartCamera,
+    ).toBe(false);
     expect(localStorage.getItem("octos_learning_input_mode")).toBe("text");
+    expect(localStorage.getItem("octos_learning_auto_camera")).toBe("false");
+    expect(screen.queryByText("启用小章鱼学习助手")).toBeNull();
 
     const sessionId = learningWorkspaceMock.props?.sessionId as string;
     await act(async () => {
@@ -251,108 +269,23 @@ describe("LearningPage", () => {
     ).toBeTruthy();
   });
 
-  it("explains that LAN microphone access requires a secure context", async () => {
-    localStorage.setItem("octos_learning_auto_camera", "true");
-    localStorage.setItem("octos_learning_input_mode", "voice");
-    const originalSecureContext = Object.getOwnPropertyDescriptor(
-      window,
-      "isSecureContext",
-    );
-    Object.defineProperty(window, "isSecureContext", {
-      configurable: true,
-      value: false,
+  it("refreshes Android native TTS configuration after authenticated startup", async () => {
+    const config = {
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    } as const;
+    nativeTtsConfigMock.available = true;
+    nativeTtsConfigMock.fetch.mockResolvedValue(config);
+
+    render(<LearningPage />);
+
+    await waitFor(() => {
+      expect(nativeTtsConfigMock.configure).toHaveBeenCalledWith(config);
     });
-
-    try {
-      render(<LearningPage />);
-
-      expect((await screen.findByRole("alert")).textContent).toContain(
-        "当前页面不是安全连接",
-      );
-      expect(
-        (
-          screen.getByRole("button", {
-            name: "启用语音和摄像头",
-          }) as HTMLButtonElement
-        ).disabled,
-      ).toBe(true);
-      expect(
-        (screen.getByRole("button", {
-          name: "仅启用语音",
-        }) as HTMLButtonElement).disabled,
-      ).toBe(true);
-
-      fireEvent.click(
-        screen.getByRole("button", { name: "仅用文字进入白板" }),
-      );
-      await waitFor(() =>
-        expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false),
-      );
-    } finally {
-      if (originalSecureContext) {
-        Object.defineProperty(
-          window,
-          "isSecureContext",
-          originalSecureContext,
-        );
-      } else {
-        Reflect.deleteProperty(window, "isSecureContext");
-      }
-    }
-  });
-
-  it("reports a denied device permission with an actionable message", async () => {
-    localStorage.clear();
-    const originalSecureContext = Object.getOwnPropertyDescriptor(
-      window,
-      "isSecureContext",
-    );
-    const originalMediaDevices = Object.getOwnPropertyDescriptor(
-      navigator,
-      "mediaDevices",
-    );
-    Object.defineProperty(window, "isSecureContext", {
-      configurable: true,
-      value: true,
-    });
-    Object.defineProperty(navigator, "mediaDevices", {
-      configurable: true,
-      value: {
-        getUserMedia: vi.fn(async () => {
-          throw new DOMException("denied", "NotAllowedError");
-        }),
-      },
-    });
-
-    try {
-      render(<LearningPage />);
-      fireEvent.click(
-        await screen.findByRole("button", { name: "启用语音和摄像头" }),
-      );
-
-      expect((await screen.findByRole("alert")).textContent).toContain(
-        "麦克风或摄像头权限被拒绝",
-      );
-    } finally {
-      if (originalSecureContext) {
-        Object.defineProperty(
-          window,
-          "isSecureContext",
-          originalSecureContext,
-        );
-      } else {
-        Reflect.deleteProperty(window, "isSecureContext");
-      }
-      if (originalMediaDevices) {
-        Object.defineProperty(
-          navigator,
-          "mediaDevices",
-          originalMediaDevices,
-        );
-      } else {
-        Reflect.deleteProperty(navigator, "mediaDevices");
-      }
-    }
   });
 
   it("can enable voice without also enabling the camera in a text-only lesson", async () => {
@@ -384,8 +317,11 @@ describe("LearningPage", () => {
         expect(learningWorkspaceMock.props?.voiceEnabled).toBe(true),
       );
       expect(getUserMedia).toHaveBeenCalledWith({
-        audio: true,
-        video: false,
+        audio: expect.objectContaining({
+          channelCount: 1,
+          autoGainControl: true,
+          noiseSuppression: true,
+        }),
       });
       expect(stopTrack).toHaveBeenCalledTimes(1);
       expect(localStorage.getItem("octos_learning_input_mode")).toBe("voice");

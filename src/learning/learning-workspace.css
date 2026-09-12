@@ -7,6 +7,376 @@
   background: #e6dfd2;
 }
 
+/* The 55M3's Android 8 WebView has a small GPU budget. Keep translucent
+   presentation effects out of the full-screen pan/pinch rendering path. */
+[data-runtime-platform="android"] .learning-workspace-topbar,
+[data-runtime-platform="android"] .learning-ink-toolbar,
+[data-runtime-platform="android"] .learning-variable-controls,
+[data-runtime-platform="android"] .learning-input-dock,
+[data-runtime-platform="android"] .octos-teacher-caption {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+[data-runtime-platform="android"] .oll-board-runtime .world {
+  transition: none !important;
+}
+
+[data-runtime-platform="android"] .oll-board-runtime .board-node,
+[data-runtime-platform="android"] .oll-board-runtime .board-group,
+[data-runtime-platform="android"] .oll-board-runtime .teacher-pointer {
+  animation: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+/*
+ * Android 8's WebView eventually demotes the viewport-sized 4K js-draw
+ * textures after several commits. In the APK, native Canvas owns the active
+ * stroke and this SVG owns committed vector ink; js-draw remains mounted for
+ * hit-testing, selection, erasing, persistence, and undo/redo.
+ */
+[data-runtime-platform="android"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.dryInkCanvas,
+[data-runtime-platform="android"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas {
+  opacity: 0;
+}
+
+/*
+ * js-draw renders only transient tool feedback on wetInkCanvas: the marquee
+ * while a rectangle/lasso is being dragged and the live eraser footprint.
+ * Keep that inexpensive surface visible for editing tools while the durable
+ * dry canvas remains replaced by the crisp SVG mirror above.
+ */
+[data-runtime-platform="android"]
+  .learning-oll-board[data-android-ink-mode="select"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas,
+[data-runtime-platform="android"]
+  .learning-oll-board[data-android-ink-mode="erase"]
+  .oll-ink-layer[data-android-vector-ink]
+  .imageEditorRenderArea canvas.wetInkCanvas {
+  opacity: 1;
+}
+
+.oll-android-vector-ink {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* A 55-inch Android panel reports desktop-like CSS dimensions, but every CSS
+   pixel is physically much larger than on a laptop. Compact only the persistent
+   chrome; the whiteboard itself stays at 1:1 CSS geometry so touch coordinates,
+   course framing, and ink remain exact. */
+[data-runtime-platform="android"] .learning-workspace-topbar {
+  top: 6px;
+  right: 6px;
+  left: 74px;
+  min-height: 36px;
+  gap: 7px;
+  padding: 3px 5px 3px 9px;
+  border-radius: 11px;
+}
+
+[data-runtime-platform="android"] .learning-top-action-group {
+  top: 9px;
+  left: 6px;
+  display: flex;
+  height: 30px;
+  align-items: center;
+  gap: 0;
+}
+
+[data-runtime-platform="android"] .learning-top-action-button {
+  display: flex !important;
+  width: 30px !important;
+  height: 30px !important;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+  color: #57534e !important;
+  background: #fffdf8 !important;
+}
+
+[data-runtime-platform="android"] .learning-top-action-button + .learning-top-action-button {
+  margin-left: 5px;
+}
+
+[data-runtime-platform="android"] .learning-top-action-button svg {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  flex: 0 0 auto;
+  stroke: currentColor !important;
+}
+
+[data-runtime-platform="android"] .learning-workspace-topbar > div:first-child span {
+  display: none;
+}
+
+[data-runtime-platform="android"] .learning-workspace-topbar strong {
+  font-size: 13px;
+}
+
+[data-runtime-platform="android"] .learning-demo-controls > button {
+  width: 25px;
+  height: 25px;
+}
+
+[data-runtime-platform="android"] .learning-mode-button {
+  min-height: 26px;
+  padding: 4px 6px;
+}
+
+[data-runtime-platform="android"] .learning-workspace-actions .learning-mode-button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar {
+  top: 48px;
+  left: 8px;
+  max-width: calc(100vw - 16px);
+  min-height: 34px;
+  padding: 3px;
+  border-radius: 10px;
+  gap: 0;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > button {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > button + button {
+  margin-left: 2px;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-quick-action,
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-ask {
+  display: inline-flex;
+  width: auto;
+  min-width: max-content;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 6px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-ask svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+[data-runtime-platform="android"] .learning-ink-toolbar > .learning-ink-select-all {
+  width: auto;
+  min-width: 33px;
+  padding: 0 5px;
+}
+
+[data-runtime-platform="android"] .learning-ink-width-menu {
+  top: 86px;
+  left: 36px;
+  padding: 3px;
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .learning-ink-width-menu > button {
+  width: 48px;
+  min-height: 32px;
+  padding: 4px 5px;
+}
+
+[data-runtime-platform="android"] .learning-ink-width-menu small {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .learning-selection-question {
+  top: 88px;
+  left: 8px;
+  width: min(300px, calc(100vw - 16px));
+  max-height: calc(100vh - 150px);
+  padding: 8px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .learning-selection-question header {
+  margin-bottom: 7px;
+}
+
+[data-runtime-platform="android"] .learning-selection-question header span,
+[data-runtime-platform="android"] .learning-selection-question label,
+[data-runtime-platform="android"] .learning-selection-question button,
+[data-runtime-platform="android"] .learning-selection-question input,
+[data-runtime-platform="android"] .learning-selection-question select {
+  font-size: 9px;
+}
+
+[data-runtime-platform="android"] .learning-selection-question input,
+[data-runtime-platform="android"] .learning-selection-question select,
+[data-runtime-platform="android"] .learning-selection-question button {
+  padding: 5px 7px;
+}
+
+[data-runtime-platform="android"] .learning-selection-suggestions,
+[data-runtime-platform="android"] .learning-selection-question-input {
+  gap: 0;
+}
+
+[data-runtime-platform="android"] .learning-selection-suggestions button {
+  margin: 0 6px 6px 0;
+}
+
+[data-runtime-platform="android"] .learning-selection-question-input > * + * {
+  margin-left: 6px;
+}
+
+/* Assistance cards live on the zoomable board, but their chrome does not.
+   Tighten that chrome independently on the 4K Android display; lesson/course
+   cards intentionally keep their existing dimensions. */
+[data-runtime-platform="android"] .learning-selection-enhancement {
+  min-width: 210px;
+  padding: 10px;
+  padding-bottom: 17px;
+  border-radius: 11px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement-question {
+  margin: -2px -2px 9px;
+  padding: 1px 2px 8px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement-question > div {
+  gap: 6px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement-question > div > span {
+  padding: 2px 5px;
+}
+
+[data-runtime-platform="android"] .learning-selection-question-text {
+  margin-top: 5px;
+  line-height: 1.42;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement > header {
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement header button,
+[data-runtime-platform="android"] .learning-selection-enhancement .learning-selection-enhancement-question-delete {
+  width: 21px;
+  height: 21px;
+  border-radius: 6px;
+}
+
+[data-runtime-platform="android"] .learning-selection-result-text {
+  margin-top: 4px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement-content footer,
+[data-runtime-platform="android"] .learning-selection-enhancement footer {
+  margin-top: 6px;
+  padding-top: 5px;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement p,
+[data-runtime-platform="android"] .learning-selection-enhancement li {
+  line-height: 1.42;
+}
+
+[data-runtime-platform="android"] .learning-selection-enhancement-resize {
+  width: 23px;
+  height: 23px;
+}
+
+[data-runtime-platform="android"] .learning-input-dock {
+  bottom: 8px;
+  width: min(520px, calc(100vw - 190px));
+  min-width: 280px;
+  padding: 3px;
+  border-radius: 14px;
+}
+
+[data-runtime-platform="android"] .learning-input-button,
+[data-runtime-platform="android"] .learning-send-button {
+  width: 29px;
+  height: 29px;
+  border-radius: 8px;
+}
+
+[data-runtime-platform="android"] .learning-mic-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .learning-input-dock input[type="text"],
+[data-runtime-platform="android"] .learning-input-dock > input:not([type]) {
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .octos-teacher {
+  right: 10px;
+  bottom: 54px;
+  gap: 6px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-caption {
+  width: min(230px, calc(100vw - 170px));
+  margin-bottom: 13px;
+  padding: 7px 9px;
+  border-radius: 12px 12px 4px 12px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar {
+  width: 56px;
+  height: 56px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar-art {
+  width: 39px;
+  height: 39px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-state {
+  right: 7px;
+  bottom: 5px;
+  left: 7px;
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline {
+  right: 17px;
+  bottom: 116px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline-trigger {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
 .learning-trace-inspector {
   position: absolute;
   right: 18px;
@@ -280,7 +650,7 @@
 .learning-workspace-topbar strong {
   overflow: hidden;
   color: #332e28;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 20px;
   font-weight: 650;
   text-overflow: ellipsis;
@@ -336,7 +706,7 @@
 
 .learning-course-generation-status > span {
   color: inherit;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0;
@@ -392,7 +762,7 @@
 .oll-course-outline-trigger-copy b {
   overflow: hidden;
   color: #31545d;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 650;
   text-overflow: ellipsis;
@@ -438,7 +808,7 @@
 .oll-course-outline-heading h2 {
   margin: 2px 0 0;
   color: #2e2a25;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 21px;
   font-weight: 700;
 }
@@ -684,14 +1054,14 @@
 }
 
 .learning-voice-startup-copy strong {
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 720;
 }
 
 .learning-voice-startup-copy small {
   color: #698087;
-  font-family: var(--font-ui);
+  font-family: var(--font-body);
   font-size: 11px;
   line-height: 1.4;
 }
@@ -790,7 +1160,7 @@
 
 .learning-whiteboard-empty strong {
   color: #514a42;
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", cursive;
+  font-family: var(--font-body);
   font-size: 24px;
   font-weight: 500;
 }
@@ -1158,6 +1528,66 @@
   padding: 0 9px;
   font-size: 10px;
   white-space: nowrap;
+}
+
+.learning-ink-width-menu {
+  position: absolute;
+  z-index: 35;
+  top: 140px;
+  left: 58px;
+  display: flex;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid rgba(63, 73, 67, 0.14);
+  border-radius: 12px;
+  background: #fffdf8;
+  box-shadow: 0 10px 28px rgba(54, 45, 34, 0.16);
+}
+
+.learning-ink-width-menu > button {
+  display: grid;
+  width: 58px;
+  min-height: 38px;
+  place-items: center;
+  gap: 4px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  color: #686158;
+}
+
+.learning-ink-width-menu > button:hover,
+.learning-ink-width-menu > button.is-active {
+  color: #0c7085;
+  background: rgba(24, 128, 146, 0.12);
+}
+
+.learning-ink-width-preview {
+  display: flex;
+  width: 36px;
+  height: 19px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.learning-ink-width-preview > i {
+  display: block;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.learning-ink-width-preview > b {
+  display: block;
+  width: 21px;
+  min-height: 1px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.learning-ink-width-menu small {
+  font-size: 9px;
+  line-height: 1;
 }
 
 .learning-ink-classification-status {
@@ -1841,7 +2271,10 @@
 }
 
 .learning-whiteboard-question-camera {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
   margin-top: 10px;
   overflow: hidden;
   border: 1px solid rgba(30, 111, 102, 0.16);
@@ -1867,8 +2300,28 @@
 .learning-whiteboard-question-camera-frame {
   display: block;
   width: 100%;
+  height: auto;
   max-height: 150px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+}
+
+.learning-whiteboard-question-camera-preview {
+  position: relative;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.learning-whiteboard-question-context-label {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px 5px;
+  color: #54706a;
+  font-size: 10px;
+  font-weight: 650;
 }
 
 .learning-whiteboard-question-camera-expand {
@@ -2566,7 +3019,7 @@
   color: #3c3832;
   background: rgba(255, 253, 248, 0.93);
   box-shadow: 0 14px 38px rgba(54, 45, 34, 0.12);
-  font-family: "Kaiti SC", "STKaiti", "KaiTi", "PingFang SC", cursive;
+  font-family: var(--font-body);
   font-size: 17px;
   line-height: 1.55;
   animation: learning-caption-in 300ms ease-out both;

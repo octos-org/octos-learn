@@ -9,6 +9,7 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import * as authApi from "@/api/auth";
 import {
+  ApiError,
   clearToken,
   extractProfileIdFromPayload,
   getToken,
@@ -36,12 +37,17 @@ interface AuthState {
   /** Re-validate the stored token against `/api/auth/me`. Call this from
    *  any code path that sees an authenticated request rejected (e.g. the
    *  WS bridge's close-with-1008, a 401 from a long-lived poll). On
-   *  rejection it wipes localStorage + redirects the user to `/login`,
-   *  same as the initial-mount syncMe failure path. */
+   *  an explicit 401/403 it wipes localStorage + redirects the user to
+   *  `/login`. Network failures and server errors preserve the session. */
   revalidate: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
+
+function isCredentialRejection(error: unknown): boolean {
+  return error instanceof ApiError
+    && (error.status === 401 || error.status === 403);
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -79,7 +85,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // token alive. Genuine auth rejections (401/403) are already
       // handled by the request() function's token reaper.
       const msg = err instanceof Error ? err.message : String(err);
-      if (msg.includes("404") || msg.includes("not_found")) {
+      if ((err instanceof ApiError && err.status === 404)
+        || msg.includes("404")
+        || msg.includes("not_found")) {
         return undefined;
       }
       throw err;
@@ -121,8 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     syncMe()
-      .catch(() => {
-        failAuthAndRedirect();
+      .catch((error: unknown) => {
+        // A meeting-room VPN can briefly drop while video/audio is loading.
+        // Keep the stored credential unless the auth endpoint explicitly says
+        // it is invalid; a fetch failure, timeout, proxy 5xx, or captive portal
+        // response must not eject the user into the sign-in flow.
+        if (isCredentialRejection(error)) failAuthAndRedirect();
       })
       .finally(() => setLoading(false));
   }, [token, user, syncMe, failAuthAndRedirect]);
@@ -135,8 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // race) and we leave the session intact.
     try {
       await syncMe();
-    } catch {
-      failAuthAndRedirect();
+    } catch (error: unknown) {
+      if (isCredentialRejection(error)) failAuthAndRedirect();
     }
   }, [syncMe, failAuthAndRedirect]);
 

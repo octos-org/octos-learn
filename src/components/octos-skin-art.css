@@ -6,8 +6,17 @@
   isolation: isolate;
 }
 
+.octos-model-thumbnail {
+  display: block;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
 .octos-model-art.octos-skin-card-art,
-.octos-avatar-art.octos-skin-card-art {
+.octos-avatar-art.octos-skin-card-art,
+.octos-model-thumbnail.octos-skin-card-art {
   width: 80px;
   height: 80px;
 }

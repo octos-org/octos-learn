@@ -8,6 +8,7 @@ import {
   collectFreshVisuals,
   farewellAudioActive,
   hasVisualMarker,
+  isMeaningfulVoiceTranscript,
   pickFreshAudio,
   shouldHandleExitEvent,
   shouldHandleNoSpeechEvent,
@@ -17,6 +18,16 @@ import {
 } from "./use-voice-conversation";
 import type { Thread } from "@/store/thread-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
+
+describe("voice transcript admission", () => {
+  it("drops punctuation and hesitation-only results without rejecting real commands", () => {
+    expect(isMeaningfulVoiceTranscript("嗯。")).toBe(false);
+    expect(isMeaningfulVoiceTranscript("呃，嗯……")).toBe(false);
+    expect(isMeaningfulVoiceTranscript("   ")).toBe(false);
+    expect(isMeaningfulVoiceTranscript("嗯，请讲解这个公式")).toBe(true);
+    expect(isMeaningfulVoiceTranscript("开始")).toBe(true);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Hook-level harness (start() cancellation — post-unmount mic re-acquire).
@@ -34,8 +45,10 @@ const {
   interruptActiveTurnMock,
   uploadFilesMock,
   privateAsrEnabledMock,
+  nativePrivateAsrAvailableMock,
   preloadPrivateAsrRuntimeMock,
   preloadVoiceCaptureRuntimeMock,
+  privateAsrConstructorMock,
   privateAsrInstance,
   captureState,
 } = vi.hoisted(() => ({
@@ -53,8 +66,10 @@ const {
   interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
   privateAsrEnabledMock: vi.fn(() => false),
+  nativePrivateAsrAvailableMock: vi.fn(() => false),
   preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
   preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
+  privateAsrConstructorMock: vi.fn(),
   captureState: {
     error: null as string | null,
     capturing: false,
@@ -62,6 +77,8 @@ const {
   privateAsrInstance: {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
+    isReusable: vi.fn(() => false),
+    setConnectionErrorHandler: vi.fn(),
     setListening: vi.fn(async () => {}),
     commit: vi.fn(async () => "请比较两条函数曲线"),
     getVadStream: vi.fn(async () => ({} as MediaStream)),
@@ -72,8 +89,13 @@ vi.mock("./private-asr-client", () => ({
   privateAsrEnabled: privateAsrEnabledMock,
   preloadPrivateAsrRuntime: preloadPrivateAsrRuntimeMock,
   PrivateAsrClient: vi.fn(function PrivateAsrClientMock() {
+    privateAsrConstructorMock();
     return privateAsrInstance;
   }),
+}));
+
+vi.mock("./microphone", () => ({
+  nativePrivateAsrAvailable: nativePrivateAsrAvailableMock,
 }));
 
 vi.mock("./use-voice-capture", () => ({
@@ -623,9 +645,15 @@ describe("canonical reply-audio delivery", () => {
     getActiveBridgeMock.mockReturnValue(undefined);
     privateAsrEnabledMock.mockReset();
     privateAsrEnabledMock.mockReturnValue(false);
+    nativePrivateAsrAvailableMock.mockReset();
+    nativePrivateAsrAvailableMock.mockReturnValue(false);
+    privateAsrConstructorMock.mockClear();
     privateAsrInstance.start.mockReset();
     privateAsrInstance.start.mockResolvedValue(undefined);
     privateAsrInstance.stop.mockClear();
+    privateAsrInstance.isReusable.mockReset();
+    privateAsrInstance.isReusable.mockReturnValue(false);
+    privateAsrInstance.setConnectionErrorHandler.mockClear();
     privateAsrInstance.setListening.mockClear();
     privateAsrInstance.commit.mockReset();
     privateAsrInstance.commit.mockResolvedValue("请比较两条函数曲线");
@@ -748,9 +776,15 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     captureState.capturing = false;
     privateAsrEnabledMock.mockReset();
     privateAsrEnabledMock.mockReturnValue(false);
+    nativePrivateAsrAvailableMock.mockReset();
+    nativePrivateAsrAvailableMock.mockReturnValue(false);
+    privateAsrConstructorMock.mockClear();
     privateAsrInstance.start.mockReset();
     privateAsrInstance.start.mockResolvedValue(undefined);
     privateAsrInstance.stop.mockClear();
+    privateAsrInstance.isReusable.mockReset();
+    privateAsrInstance.isReusable.mockReturnValue(false);
+    privateAsrInstance.setConnectionErrorHandler.mockClear();
     privateAsrInstance.setListening.mockClear();
     privateAsrInstance.commit.mockReset();
     privateAsrInstance.commit.mockResolvedValue("请比较两条函数曲线");
@@ -933,6 +967,107 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
       additionalMediaPaths: [],
     }));
     unmount();
+  });
+
+  it("does not admit a hesitation-only private ASR result", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    privateAsrInstance.commit.mockResolvedValueOnce("嗯。");
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-private-asr-filler", undefined, undefined, {
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    const onUtterance = captureStartMock.mock.calls.at(-1)?.[0] as
+      | ((wav: Blob) => void)
+      | undefined;
+    await act(async () => {
+      onUtterance?.(new Blob(["speech"], { type: "audio/wav" }));
+      await vi.waitFor(() => expect(privateAsrInstance.commit).toHaveBeenCalledOnce());
+    });
+
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("rebuilds Android private ASR after a transcript timeout and resumes listening", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    nativePrivateAsrAvailableMock.mockReturnValue(true);
+    privateAsrInstance.commit.mockRejectedValueOnce(
+      new Error("Private ASR transcript timed out"),
+    );
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() =>
+      useVoiceConversation("learn-native-asr-recovery", undefined, undefined, {
+        onAdmittedSpeech,
+        playReplyAudio: false,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.start();
+    });
+    const onUtterance = captureStartMock.mock.calls.at(-1)?.[0] as
+      | ((wav: Blob) => void)
+      | undefined;
+    await act(async () => {
+      onUtterance?.(new Blob(["speech"], { type: "audio/wav" }));
+      await vi.waitFor(() => expect(privateAsrInstance.start).toHaveBeenCalledTimes(2));
+    });
+
+    expect(privateAsrInstance.stop).toHaveBeenCalled();
+    expect(captureStartMock).toHaveBeenCalledTimes(2);
+    expect(result.current.state).toBe("listening");
+    expect(result.current.error).toContain("已自动恢复");
+    unmount();
+  });
+
+  it("reuses a healthy Android private ASR session across Learn conversations", async () => {
+    getActiveBridgeMock.mockReturnValue({
+      getConnectionState: () => "connected",
+    });
+    privateAsrEnabledMock.mockReturnValue(true);
+    nativePrivateAsrAvailableMock.mockReturnValue(true);
+    privateAsrInstance.isReusable.mockReturnValue(true);
+    const options = {
+      onAdmittedSpeech: vi.fn(async () => true),
+      playReplyAudio: false,
+    };
+
+    const first = renderHook(() =>
+      useVoiceConversation("learn-native-asr-first", undefined, undefined, options),
+    );
+    await act(async () => {
+      await first.result.current.start();
+    });
+    act(() => first.result.current.stop());
+    first.unmount();
+    expect(privateAsrInstance.stop).not.toHaveBeenCalled();
+
+    const second = renderHook(() =>
+      useVoiceConversation("learn-native-asr-second", undefined, undefined, options),
+    );
+    await act(async () => {
+      await second.result.current.start();
+    });
+    expect(privateAsrConstructorMock).toHaveBeenCalledTimes(1);
+
+    privateAsrInstance.isReusable.mockReturnValue(false);
+    second.unmount();
+    expect(privateAsrInstance.stop).toHaveBeenCalled();
   });
 
   it("does not claim private ASR is listening while external narration is active", async () => {

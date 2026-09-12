@@ -35,6 +35,7 @@ import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "./private-asr-client";
+import { nativePrivateAsrAvailable } from "./microphone";
 
 export type VoiceState =
   | "idle"
@@ -60,6 +61,46 @@ function privateAsrErrorMessage(error: unknown): string {
     return "语音识别连接已断开，请重新开启语音。";
   }
   return `私有语音识别暂不可用：${message}`;
+}
+
+const RETAINED_NATIVE_ASR_MS = 2 * 60_000;
+let retainedNativePrivateAsr: PrivateAsrClient | null = null;
+let retainedNativePrivateAsrTimer: ReturnType<typeof setTimeout> | undefined;
+
+function takeRetainedNativePrivateAsr(): PrivateAsrClient | null {
+  clearTimeout(retainedNativePrivateAsrTimer);
+  retainedNativePrivateAsrTimer = undefined;
+  const retained = retainedNativePrivateAsr;
+  retainedNativePrivateAsr = null;
+  if (!retained) return null;
+  if (retained.isReusable()) return retained;
+  void retained.stop();
+  return null;
+}
+
+function retainNativePrivateAsr(client: PrivateAsrClient): void {
+  clearTimeout(retainedNativePrivateAsrTimer);
+  const previous = retainedNativePrivateAsr;
+  retainedNativePrivateAsr = client;
+  client.setConnectionErrorHandler(undefined);
+  void client.setListening(false).catch(() => {
+    if (retainedNativePrivateAsr === client) retainedNativePrivateAsr = null;
+    void client.stop();
+  });
+  if (previous && previous !== client) void previous.stop();
+  retainedNativePrivateAsrTimer = setTimeout(() => {
+    if (retainedNativePrivateAsr === client) retainedNativePrivateAsr = null;
+    void client.stop();
+  }, RETAINED_NATIVE_ASR_MS);
+}
+
+/** Reject punctuation and short hesitation-only ASR results before admission. */
+export function isMeaningfulVoiceTranscript(transcript: string): boolean {
+  const spoken = transcript
+    .trim()
+    .replace(/[\s，。！？、,.!?；;：:“”‘’'"（）()—…-]+/g, "");
+  if (!spoken) return false;
+  return !/^[嗯呃额啊哦噢唔诶欸哎唉哼]+$/u.test(spoken);
 }
 
 export interface VoiceConversation {
@@ -639,6 +680,12 @@ export function useVoiceConversation(
   // a fresh VAD generation nothing tears down (post-unmount mic leak).
   const startGenRef = useRef(0);
   const privateAsrRef = useRef<PrivateAsrClient | null>(null);
+  const privateAsrRecoveryRef = useRef<Promise<boolean> | null>(null);
+  const recoverPrivateAsrRef = useRef<(
+    failed: PrivateAsrClient,
+    error: unknown,
+    generation: number,
+  ) => Promise<boolean>>(async () => false);
 
   // Private ASR reserves the single remote worker before the browser VAD is
   // initialized. If VAD/ONNX startup fails, release that reservation
@@ -649,6 +696,7 @@ export function useVoiceConversation(
     const privateAsr = privateAsrRef.current;
     if (!privateAsr) return;
     privateAsrRef.current = null;
+    privateAsr.setConnectionErrorHandler(undefined);
     void privateAsr.stop();
   }, [captureActive, captureError]);
 
@@ -784,6 +832,10 @@ export function useVoiceConversation(
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = includeFrame?.() ?? true;
         const applicationTranscript = privateTranscript?.trim();
+        if (applicationTranscript && !isMeaningfulVoiceTranscript(applicationTranscript)) {
+          restoreBargeInCandidate();
+          return;
+        }
         const applicationAdmission = Boolean(applicationTranscript && admitSpeech);
         const admissionSupported =
           applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
@@ -985,6 +1037,10 @@ export function useVoiceConversation(
           restoreBargeInCandidate();
           return;
         }
+        if (!isMeaningfulVoiceTranscript(admission.transcript)) {
+          restoreBargeInCandidate();
+          return;
+        }
         if (generation !== startGenRef.current) return;
         const sentFrameIndex = sentFrame ? files.indexOf(sentFrame) : -1;
         const currentFramePath =
@@ -1132,10 +1188,19 @@ export function useVoiceConversation(
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         if (generation !== startGenRef.current) return;
+        if (nativePrivateAsrAvailable()) {
+          // The native stream cannot replay an utterance after its Agora
+          // session fails. Rebuild it immediately and resume listening so the
+          // next utterance works without toggling the microphone off and on.
+          await recoverPrivateAsrRef.current(privateAsr, error, generation);
+          setSelectionTurnPending(false);
+          return;
+        }
+        const message = privateAsrErrorMessage(error);
+        setPrivateAsrError(message);
         // Private ASR is an optional public-deployment transport. Preserve the
         // existing Octos audio admission as a per-utterance fallback.
         console.warn("[voice] private ASR failed; using Octos ASR fallback", error);
-        setPrivateAsrError(privateAsrErrorMessage(error));
         await sendUtteranceRef.current(wav, includeCamera);
       }
     },
@@ -1283,6 +1348,72 @@ export function useVoiceConversation(
     return true;
   }, [captureStart, captureStop, finishCapturedUtterance, captureUtteranceContext]);
 
+  const recoverPrivateAsr = useCallback(async (
+    failed: PrivateAsrClient,
+    error: unknown,
+    generation: number,
+  ): Promise<boolean> => {
+    if (!nativePrivateAsrAvailable() || generation !== startGenRef.current) {
+      return false;
+    }
+    if (privateAsrRecoveryRef.current) return privateAsrRecoveryRef.current;
+
+    const recovery = (async () => {
+      const current = privateAsrRef.current;
+      if (current && current !== failed && current.isReusable()) return true;
+      if (current === failed) privateAsrRef.current = null;
+      failed.setConnectionErrorHandler(undefined);
+      void captureStop();
+      await failed.stop();
+      if (generation !== startGenRef.current) return false;
+
+      setStartupDetail("正在恢复语音识别…");
+      const replacement = new PrivateAsrClient((nextError: Error) => {
+        void recoverPrivateAsrRef.current(
+          replacement,
+          nextError,
+          startGenRef.current,
+        );
+      });
+      privateAsrRef.current = replacement;
+      try {
+        await replacement.start();
+        if (
+          generation !== startGenRef.current
+          || privateAsrRef.current !== replacement
+        ) {
+          await replacement.stop();
+          return false;
+        }
+        setStartupDetail(null);
+        setPrivateAsrError("刚才没有识别清楚，语音识别已自动恢复，请再说一次。");
+        if (bargeInCandidateRef.current) {
+          restoreBargeInCandidate();
+          return true;
+        }
+        return beginListeningRef.current();
+      } catch (recoveryError) {
+        if (privateAsrRef.current === replacement) privateAsrRef.current = null;
+        replacement.setConnectionErrorHandler(undefined);
+        await replacement.stop();
+        if (generation !== startGenRef.current) return false;
+        setStartupDetail(null);
+        setPrivateAsrError(privateAsrErrorMessage(recoveryError ?? error));
+        stateRef.current = "error";
+        setState("error");
+        return false;
+      }
+    })();
+    privateAsrRecoveryRef.current = recovery;
+    try {
+      return await recovery;
+    } finally {
+      if (privateAsrRecoveryRef.current === recovery) {
+        privateAsrRecoveryRef.current = null;
+      }
+    }
+  }, [captureStop, restoreBargeInCandidate]);
+
   const requestListeningResume = useCallback(() => {
     clearTimeout(externalSpeechReleaseTimerRef.current);
     const resume = () => {
@@ -1389,6 +1520,7 @@ export function useVoiceConversation(
 
   // Keep refs up to date after every render so closures always call the latest version.
   beginListeningRef.current = beginListening;
+  recoverPrivateAsrRef.current = recoverPrivateAsr;
   requestListeningResumeRef.current = requestListeningResume;
   beginBargeInRef.current = beginBargeIn;
   sendUtteranceRef.current = sendCapturedUtterance;
@@ -1531,13 +1663,24 @@ export function useVoiceConversation(
       onAdmittedSpeech &&
       !privateAsrRef.current
     ) {
-      const privateAsr = new PrivateAsrClient((error) => {
-        if (privateAsrRef.current === privateAsr) {
-          privateAsrRef.current = null;
+      const privateAsr = nativePrivateAsrAvailable()
+        ? takeRetainedNativePrivateAsr() ?? new PrivateAsrClient()
+        : new PrivateAsrClient();
+      const handlePrivateAsrError = (error: Error) => {
+        if (!nativePrivateAsrAvailable()) {
+          if (privateAsrRef.current === privateAsr) privateAsrRef.current = null;
+          privateAsr.setConnectionErrorHandler(undefined);
           void privateAsr.stop();
+          setPrivateAsrError(privateAsrErrorMessage(error));
+          return;
         }
-        setPrivateAsrError(privateAsrErrorMessage(error));
-      });
+        void recoverPrivateAsrRef.current(
+          privateAsr,
+          error,
+          startGenRef.current,
+        );
+      };
+      privateAsr.setConnectionErrorHandler(handlePrivateAsrError);
       // The private transport and local VAD share one microphone stream but
       // otherwise initialize independently. Starting them together removes
       // the previous 40–50 second serial gap seen on the public deployment.
@@ -1568,6 +1711,17 @@ export function useVoiceConversation(
         await privateAsr.stop();
         const message = privateAsrErrorMessage(privateResult.reason);
         setPrivateAsrError(message);
+        if (nativePrivateAsrAvailable()) {
+          // There is no useful WebView microphone fallback on this device.
+          // Surface the native Agora join error immediately and keep the
+          // server's batch-ASR preflight from masking it.
+          stateRef.current = "error";
+          captureModeRef.current = null;
+          void captureStop();
+          setState("error");
+          setStartupDetail(null);
+          return;
+        }
         if (message === "语音服务正在使用中，你可以继续打字") {
           // Capacity is not a transport failure: don't keep recording into an
           // unavailable service or silently send the audio through another ASR.
@@ -1580,6 +1734,7 @@ export function useVoiceConversation(
         }
         console.warn("[voice] private ASR unavailable; keeping Octos ASR fallback", privateResult.reason);
       } else {
+        setPrivateAsrError(null);
         listeningPrepared = await preparedListening;
       }
     }
@@ -1683,7 +1838,19 @@ export function useVoiceConversation(
     void captureStop();
     const privateAsr = privateAsrRef.current;
     privateAsrRef.current = null;
-    void privateAsr?.stop();
+    if (
+      privateAsr
+      && nativePrivateAsrAvailable()
+      && privateAsr.isReusable()
+    ) {
+      // Keep the native Agora/session pair warm briefly. Switching Learn
+      // conversations then only rebinds the listener and VAD instead of
+      // reserving a new worker and showing the full startup sequence again.
+      retainNativePrivateAsr(privateAsr);
+    } else {
+      privateAsr?.setConnectionErrorHandler(undefined);
+      void privateAsr?.stop();
+    }
     if (!stopOptions?.preserveCamera) {
       cameraStop();
       clearSentFrame();

@@ -46,4 +46,25 @@ describe("StudentInputDock board references", () => {
     expect(send).not.toHaveBeenCalled();
     expect(dock.queryByLabelText("试着从一个主题开始")).toBeNull();
   });
+
+  it("keeps only text and send controls in meeting-display mode", () => {
+    const view = render(
+      <StudentInputDock
+        textOnly
+        voiceState="idle"
+        cameraActive={false}
+        onMic={vi.fn()}
+        onToggleCamera={vi.fn()}
+        onSendText={vi.fn()}
+        onSendImage={vi.fn()}
+      />,
+    );
+
+    const dock = within(view.container);
+    expect(dock.queryByRole("button", { name: "上传题目图片" })).toBeNull();
+    expect(dock.queryByRole("button", { name: "打开摄像头" })).toBeNull();
+    expect(dock.queryByRole("button", { name: "语音提问" })).toBeNull();
+    expect(dock.getByRole("textbox", { name: "输入学习问题" })).toBeTruthy();
+    expect(dock.getByRole("button", { name: "发送问题" })).toBeTruthy();
+  });
 });

@@ -28,6 +28,7 @@ describe("useOllNarrationTts", () => {
   });
 
   afterEach(() => {
+    delete window.OctosNativeTts;
     vi.restoreAllMocks();
   });
 
@@ -91,6 +92,94 @@ describe("useOllNarrationTts", () => {
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     await waitFor(() => expect(result.current.preparing).toBe(false));
     expect(onPlaybackStart).toHaveBeenCalledWith("beat-preparing");
+  });
+
+  it("prewarms the first narration before the Runtime reaches its speech boundary", async () => {
+    const firstAudio = new Blob(["prewarmed-first"]);
+    mocks.synthesizeSpeech.mockResolvedValue(firstAudio);
+    const { rerender } = renderHook(
+      ({ playing, text, narrationId }) => useOllNarrationTts({
+        enabled: true,
+        playing,
+        text,
+        narrationId,
+        prefetchEnabled: true,
+        prewarmText: "第一段旁白。",
+        prewarmNarrationId: "beat-1",
+      }),
+      {
+        initialProps: {
+          playing: false,
+          text: "",
+          narrationId: undefined as string | undefined,
+        },
+      },
+    );
+
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
+      "第一段旁白。",
+      expect.any(AbortSignal),
+    ));
+    expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+
+    rerender({
+      playing: true,
+      text: "第一段旁白。",
+      narrationId: "beat-1",
+    });
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
+      firstAudio,
+      expect.any(Function),
+      expect.any(AbortSignal),
+    ));
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(1);
+  });
+
+  it("prewarms the first narration through the Android bridge", async () => {
+    const prefetch = vi.fn(() => JSON.stringify({ ok: true }));
+    const play = vi.fn(() => JSON.stringify({ ok: true }));
+    window.OctosNativeTts = {
+      isConfigured: () => true,
+      prefetch,
+      play,
+      cancel: vi.fn(),
+      stop: vi.fn(),
+    };
+    const { rerender } = renderHook(
+      ({ playing, text, narrationId }) => useOllNarrationTts({
+        enabled: true,
+        playing,
+        text,
+        narrationId,
+        prefetchEnabled: true,
+        prewarmText: "安卓首段旁白。",
+        prewarmNarrationId: "android-beat-1",
+      }),
+      {
+        initialProps: {
+          playing: false,
+          text: "",
+          narrationId: undefined as string | undefined,
+        },
+      },
+    );
+
+    await waitFor(() => expect(prefetch).toHaveBeenCalledWith(
+      expect.any(String),
+      "安卓首段旁白。",
+    ));
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+
+    rerender({
+      playing: true,
+      text: "安卓首段旁白。",
+      narrationId: "android-beat-1",
+    });
+    await waitFor(() => expect(play).toHaveBeenCalledWith(
+      expect.any(String),
+      "安卓首段旁白。",
+    ));
+    expect(prefetch).toHaveBeenCalledTimes(1);
   });
 
   it("does not restart synthesis when callback identities change during playback", async () => {

@@ -244,6 +244,7 @@ describe("LearningWorkspace", () => {
   });
 
   afterEach(() => {
+    cleanup();
     vi.useRealTimers();
     localStorage.clear();
     vi.unstubAllGlobals();
@@ -797,7 +798,17 @@ describe("LearningWorkspace", () => {
     );
   });
 
-  it("treats direct speech as an Ask Octos request while an ink selection is active", async () => {
+  it("routes a spoken lesson request with an active ink selection to course generation", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["selection"], { type: "image/png" }),
+    }));
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:selection-question"),
+      revokeObjectURL: vi.fn(),
+    });
     const listeners = new Set<(state: {
       mode: "select" | "navigate";
       component_count: number;
@@ -891,7 +902,7 @@ describe("LearningWorkspace", () => {
     const handled = await frozenOptions.onAdmittedSpeech?.({
       sessionId: "learn-direct-selection-voice",
       turnId: "selection-voice-turn",
-      transcript: "为什么它的顶点正好在原点？",
+      transcript: "老师，请结合这个公式给我上一课",
       admissionId: "selection-voice-admission",
       mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
       currentFramePath: undefined,
@@ -902,19 +913,25 @@ describe("LearningWorkspace", () => {
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledTimes(1);
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-direct-selection-voice",
-      "learning.selection.enhance",
+      "learning.lesson.generate-from-selection",
       expect.objectContaining({
         paths: ["uploads/selection.png"],
-        learner_request: "为什么它的顶点正好在原点？",
-        content_hint: "unknown",
-        tool_id: "custom-question",
+        learner_request: "老师，请结合这个公式给我上一课",
+        request_source: "ink_selection",
+        input_modality: "voice",
       }),
     );
     expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalledWith(
       expect.anything(),
-      "learning.lesson.generate",
+      "learning.selection.enhance",
       expect.anything(),
     );
+    await waitFor(() => expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-direct-selection-voice",
+    )).toContain('"imagePath":"uploads/selection.png"'));
+    expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-direct-selection-voice",
+    )).toContain('"answerPresentation":"lesson"');
 
     act(() => {
       state = {
@@ -1064,6 +1081,108 @@ describe("LearningWorkspace", () => {
     expect(screen.queryByText("迟到的旧答案")).toBeNull();
     expect(new SelectionRequestState("learn-direct-selection-voice").status("expired-turn")).toBe("timed-out");
     expect(new SelectionRequestState("learn-direct-selection-voice").status("success-turn")).toBe("accepted");
+  });
+
+  it("uses an active ink selection when a text-only learner asks for a lesson", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      blob: async () => new Blob(["selection"], { type: "image/png" }),
+    }));
+    vi.stubGlobal("URL", {
+      ...URL,
+      createObjectURL: vi.fn(() => "blob:selection-question"),
+      revokeObjectURL: vi.fn(),
+    });
+    const state = {
+      mode: "select" as const,
+      component_count: 1,
+      selected_count: 1,
+      pen_color: "#176b62",
+      selection_color: "#176b62",
+      selection_input: "pen" as const,
+      selection_mode: "rectangle" as const,
+      selection_revision: 1,
+      document_version: 2,
+      saved: true,
+    };
+    const snapshot: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-selection-text-lesson",
+      document_id: "learning-session:learn-selection-text:student-ink",
+      document_version: 2,
+      created_at: "2026-09-10T00:00:00.000Z",
+      bounds: { x: 100, y: 140, width: 260, height: 120 },
+      region: {
+        kind: "rectangle",
+        closed: true,
+        points: [
+          { x: 100, y: 140 },
+          { x: 360, y: 140 },
+          { x: 360, y: 260 },
+          { x: 100, y: 260 },
+        ],
+      },
+      component_ids: ["stroke:formula"],
+      checksum: { algorithm: "sha-256", value: "e".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    const captureSelectionSnapshot = vi.fn(async () => snapshot);
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => ({
+      ready: Promise.resolve(),
+      state,
+      subscribe: vi.fn((listener: (next: typeof state) => void) => {
+        listener(state);
+        return () => undefined;
+      }),
+      setMode: vi.fn(),
+      setPenColor: vi.fn(),
+      setSelectionColor: vi.fn(),
+      setSelectionMode: vi.fn(),
+      selectAll: vi.fn(),
+      captureSelectionSnapshot,
+      undo: vi.fn(),
+      redo: vi.fn(),
+      mergeSavedDocument: vi.fn(async () => null),
+      destroy: vi.fn(async () => undefined),
+    }));
+    vi.mocked(uploadFiles).mockResolvedValue(["uploads/selected-formula.png"]);
+    sessionFilesMock.invokeSkillAction.mockResolvedValue({
+      action_id: "learning.lesson.generate-from-selection",
+      ok: true,
+      results: [],
+      jobs: [],
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-selection-text"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "讲一节课" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
+      "learn-selection-text",
+      "learning.lesson.generate-from-selection",
+      expect.objectContaining({
+        paths: ["uploads/selected-formula.png"],
+        learner_request: "讲一节课",
+        request_source: "ink_selection",
+        input_modality: "text",
+      }),
+    ));
+    expect(captureSelectionSnapshot).toHaveBeenCalledTimes(1);
+    expect(sendMessageMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(localStorage.getItem(
+      "octos-learning-questions:v1:learn-selection-text",
+    )).toContain('"imagePath":"uploads/selected-formula.png"'));
   });
 
   it("captures and displays one current frame for a text question when the camera is active", async () => {
@@ -1784,6 +1903,8 @@ describe("LearningWorkspace", () => {
         }),
       );
     });
+    expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
+    expect(screen.queryByText("正在准备课程语音")).toBeNull();
     expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
     const pendingNarration = narrationTtsMock.useOllNarrationTts.mock.calls
       .at(-1)?.[0];

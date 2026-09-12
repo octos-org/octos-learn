@@ -9,6 +9,10 @@ export function WhiteboardQuestionImage({
 }: {
   question: WhiteboardQuestionRecord;
 }) {
+  const isSelectionContext = Boolean(question.source);
+  const imageDescription = isSelectionContext
+    ? "本次问题引用的白板选区"
+    : "本次问题随附的摄像头画面";
   const [previewOpen, setPreviewOpen] = useState(false);
   const [loadedImage, setLoadedImage] = useState<{
     path: string;
@@ -71,7 +75,7 @@ export function WhiteboardQuestionImage({
       <div
         className="learning-whiteboard-question-camera is-error"
         role="img"
-        aria-label="本次问题随附的摄像头画面暂时无法显示"
+        aria-label={`${imageDescription}暂时无法显示`}
       >
         图片暂时无法显示
       </div>
@@ -91,28 +95,35 @@ export function WhiteboardQuestionImage({
   return (
     <>
       <div className="learning-whiteboard-question-camera">
-        <img
-          className="learning-whiteboard-question-camera-frame"
-          src={imageUrl}
-          alt="本次问题随附的摄像头画面"
-        />
-        <button
-          ref={triggerRef}
-          type="button"
-          className="learning-whiteboard-question-camera-expand"
-          onPointerDown={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-            setPreviewOpen(true);
-          }}
-          aria-label="放大查看本次问题图片"
-          title="放大查看"
-        >
-          <Maximize2 size={16} aria-hidden="true" />
-        </button>
+        {isSelectionContext ? (
+          <div className="learning-whiteboard-question-context-label">
+            引用的白板选区
+          </div>
+        ) : null}
+        <div className="learning-whiteboard-question-camera-preview">
+          <img
+            className="learning-whiteboard-question-camera-frame"
+            src={imageUrl}
+            alt={imageDescription}
+          />
+          <button
+            ref={triggerRef}
+            type="button"
+            className="learning-whiteboard-question-camera-expand"
+            onPointerDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.stopPropagation();
+              setPreviewOpen(true);
+            }}
+            aria-label="放大查看本次问题图片"
+            title="放大查看"
+          >
+            <Maximize2 size={16} aria-hidden="true" />
+          </button>
+        </div>
       </div>
       {previewOpen
         ? createPortal(
@@ -130,7 +141,12 @@ export function WhiteboardQuestionImage({
               }}
             >
               <div className="learning-question-image-preview">
-                <img src={imageUrl} alt="放大的本次问题随附摄像头画面" />
+                <img
+                  src={imageUrl}
+                  alt={isSelectionContext
+                    ? "放大的本次问题引用白板选区"
+                    : "放大的本次问题随附摄像头画面"}
+                />
                 <button
                   ref={closeRef}
                   type="button"

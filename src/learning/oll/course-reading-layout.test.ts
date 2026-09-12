@@ -16,6 +16,51 @@ function boardWithNodes(nodes: Record<string, unknown>): BoardState {
 }
 
 describe("course reading layout", () => {
+  it("keeps authored relationships outside host-owned question cards", () => {
+    const questionCard = { x: 100, y: 90, width: 270, height: 320 };
+    const state = boardWithNodes({
+      plot: {
+        id: "plot",
+        kind: "plot",
+        region_id: "course",
+        content: {},
+        placement: { relation: "new_region" },
+      },
+      duplicateLookingFormula: {
+        id: "duplicateLookingFormula",
+        kind: "math",
+        region_id: "course",
+        content: { latex: "y=\\cos(x)" },
+        placement: { relation: "left_of", anchor: "plot" },
+      },
+    });
+    const layout = computeBoardLayout(state, {
+      plot: { width: 380, height: 260 },
+      duplicateLookingFormula: { width: 260, height: 90 },
+    }, {
+      regions: {
+        course: {
+          x: 394,
+          y: 90,
+          reservedWidth: 886,
+          flow: "reading",
+          obstacles: [questionCard],
+        },
+      },
+    });
+
+    const formula = layout.nodes.duplicateLookingFormula!;
+    expect(formula.x).toBeGreaterThanOrEqual(
+      questionCard.x + questionCard.width,
+    );
+    expect(
+      formula.x < questionCard.x + questionCard.width
+      && formula.x + formula.width > questionCard.x
+      && formula.y < questionCard.y + questionCard.height
+      && formula.y + formula.height > questionCard.y,
+    ).toBe(false);
+  });
+
   it("reserves an interaction row below its visual without overlapping cards", () => {
     const state = boardWithNodes({
       plot: {

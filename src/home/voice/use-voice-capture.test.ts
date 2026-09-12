@@ -22,6 +22,7 @@ vi.mock("@ricky0123/vad-web", () => ({
 
 describe("useVoiceCapture", () => {
   beforeEach(() => {
+    delete window.OctosNativeAudio;
     vadInstances.length = 0;
     vadNewMock.mockReset();
     vadNewMock.mockImplementation(async (options: Record<string, unknown>) => {
@@ -95,6 +96,55 @@ describe("useVoiceCapture", () => {
     await expect(options.resumeStream()).resolves.toBe(clonedStream);
     expect(getStream).toHaveBeenCalledTimes(2);
     expect(getUserMediaMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("uses Android native WAV events when the WebView microphone is broken", async () => {
+    const startVoiceCapture = vi.fn(() => JSON.stringify({
+      ok: true,
+      device: "USB-Audio - UGREEN Camera 2K",
+      sampleRate: 16000,
+    }));
+    const stopVoiceCapture = vi.fn();
+    window.OctosNativeAudio = { startVoiceCapture, stopVoiceCapture };
+    const onSpeechStart = vi.fn();
+    const onSpeechConfirmed = vi.fn();
+    const onSpeechRealStart = vi.fn();
+    const onUtterance = vi.fn();
+    const { result, unmount } = renderHook(() => useVoiceCapture());
+
+    await act(async () => {
+      await result.current.start(onUtterance, {
+        onSpeechStart,
+        onSpeechConfirmed,
+        onSpeechRealStart,
+      });
+    });
+
+    expect(startVoiceCapture).toHaveBeenCalledTimes(1);
+    expect(vadNewMock).not.toHaveBeenCalled();
+    expect(getUserMediaMock).not.toHaveBeenCalled();
+    expect(result.current.capturing).toBe(true);
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("octos-native-audio", {
+        detail: { type: "speech-start" },
+      }));
+      window.dispatchEvent(new CustomEvent("octos-native-audio", {
+        detail: { type: "utterance", wavBase64: btoa("RIFFnative") },
+      }));
+      await Promise.resolve();
+    });
+
+    expect(onSpeechStart).toHaveBeenCalledTimes(1);
+    expect(onSpeechConfirmed).toHaveBeenCalledTimes(1);
+    expect(onSpeechRealStart).toHaveBeenCalledTimes(1);
+    expect(onUtterance).toHaveBeenCalledWith(expect.any(Blob));
+
+    await act(async () => {
+      await result.current.stop();
+    });
+    expect(stopVoiceCapture).toHaveBeenCalledTimes(1);
     unmount();
   });
 

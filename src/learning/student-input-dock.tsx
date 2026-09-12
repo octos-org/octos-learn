@@ -24,6 +24,7 @@ export function StudentInputDock({
   onToggleCamera,
   onSendText,
   onSendImage,
+  textOnly = false,
   references = [],
   suggestions = [],
   onRemoveReference,
@@ -37,6 +38,8 @@ export function StudentInputDock({
   onToggleCamera: () => void;
   onSendText: (text: string) => Promise<void> | void;
   onSendImage: (file: File) => Promise<void> | void;
+  /** Hide local media controls on the meeting-display Android build. */
+  textOnly?: boolean;
   references?: Array<{ id: string; label: string }>;
   suggestions?: string[];
   onRemoveReference?: (id: string) => void;
@@ -102,42 +105,46 @@ export function StudentInputDock({
           ))}
         </div>
       ) : null}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="sr-only"
-        onChange={(event) => void selectImage(event)}
-      />
-      <button
-        type="button"
-        className="learning-input-button"
-        onClick={() => fileRef.current?.click()}
-        aria-label="上传题目图片"
-        disabled={sendDisabled || sending}
-      >
-        <ImagePlus size={19} />
-      </button>
-      <button
-        type="button"
-        className={`learning-input-button ${cameraActive ? "is-active" : ""}`}
-        onClick={onToggleCamera}
-        aria-label={cameraActive ? "关闭摄像头" : "打开摄像头"}
-        disabled={cameraDisabled}
-      >
-        {cameraActive ? <Camera size={19} /> : <CameraOff size={19} />}
-      </button>
-      <button
-        type="button"
-        className={`learning-mic-button is-${voiceState}`}
-        onClick={onMic}
-        aria-label={
-          voiceStarting ? "语音准备中" : busy ? "打断 Octos" : "语音提问"
-        }
-        disabled={voiceDisabled || voiceStarting}
-      >
-        {busy ? <Square size={16} /> : <Mic size={21} />}
-      </button>
+      {!textOnly ? (
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(event) => void selectImage(event)}
+          />
+          <button
+            type="button"
+            className="learning-input-button"
+            onClick={() => fileRef.current?.click()}
+            aria-label="上传题目图片"
+            disabled={sendDisabled || sending}
+          >
+            <ImagePlus size={19} />
+          </button>
+          <button
+            type="button"
+            className={`learning-input-button ${cameraActive ? "is-active" : ""}`}
+            onClick={onToggleCamera}
+            aria-label={cameraActive ? "关闭摄像头" : "打开摄像头"}
+            disabled={cameraDisabled}
+          >
+            {cameraActive ? <Camera size={19} /> : <CameraOff size={19} />}
+          </button>
+          <button
+            type="button"
+            className={`learning-mic-button is-${voiceState}`}
+            onClick={onMic}
+            aria-label={
+              voiceStarting ? "语音准备中" : busy ? "打断 Octos" : "语音提问"
+            }
+            disabled={voiceDisabled || voiceStarting}
+          >
+            {busy ? <Square size={16} /> : <Mic size={21} />}
+          </button>
+        </>
+      ) : null}
       <input
         ref={textRef}
         value={text}

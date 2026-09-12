@@ -8,6 +8,7 @@ vi.mock("@/api/client", () => ({
 import { request, requestBlob } from "@/api/client";
 import {
   fetchHostedTtsStatus,
+  fetchNativeTtsConfig,
   getVoices,
   setVoice,
   synthesizeSpeech,
@@ -70,6 +71,21 @@ describe("voice api", () => {
     expect(mockRequest).toHaveBeenCalledWith("/api/learn/tts/status");
   });
 
+  it("fetches the authenticated Android native TTS configuration", async () => {
+    const config = {
+      version: 1,
+      enabled: true,
+      app_id: "server-app",
+      access_token: "server-token",
+      cluster: "volcano_tts",
+      voice_type: "zh_female_xiaohe_uranus_bigtts",
+    } as const;
+    mockRequest.mockResolvedValue(config);
+
+    await expect(fetchNativeTtsConfig()).resolves.toBe(config);
+    expect(mockRequest).toHaveBeenCalledWith("/api/learn/tts/native-config");
+  });
+
   it("routes public synthesis through the product-hosted service", async () => {
     vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
     const audio = new Blob(["audio"], { type: "audio/mpeg" });
@@ -81,6 +97,44 @@ describe("voice api", () => {
       {
         method: "POST",
         body: JSON.stringify({ text: "继续讲解。" }),
+        signal: undefined,
+      },
+    );
+  });
+
+  it("routes a local Android-mode preview through the profile TTS service", async () => {
+    vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
+    vi.stubEnv("MODE", "android");
+    vi.stubEnv("DEV", true);
+    const audio = new Blob(["audio"], { type: "audio/wav" });
+    mockRequestBlob.mockResolvedValue(audio);
+
+    await expect(synthesizeSpeech("本机预览旁白。"))
+      .resolves.toBe(audio);
+    expect(mockRequestBlob).toHaveBeenCalledWith(
+      "/api/voice/synthesize",
+      {
+        method: "POST",
+        body: JSON.stringify({ text: "本机预览旁白。" }),
+        signal: undefined,
+      },
+    );
+  });
+
+  it("keeps hosted TTS enabled in the packaged Android build", async () => {
+    vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
+    vi.stubEnv("MODE", "android");
+    vi.stubEnv("DEV", false);
+    const audio = new Blob(["audio"], { type: "audio/mpeg" });
+    mockRequestBlob.mockResolvedValue(audio);
+
+    await expect(synthesizeSpeech("APK 公网旁白。"))
+      .resolves.toBe(audio);
+    expect(mockRequestBlob).toHaveBeenCalledWith(
+      "/api/learn/tts/synthesize",
+      {
+        method: "POST",
+        body: JSON.stringify({ text: "APK 公网旁白。" }),
         signal: undefined,
       },
     );

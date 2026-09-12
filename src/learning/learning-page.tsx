@@ -8,13 +8,13 @@ import {
 } from "react";
 import {
   ArrowLeft,
-  BookOpen,
   LogOut,
   Menu,
   Pencil,
   Plus,
   Settings,
   Trash2,
+  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
@@ -34,11 +34,21 @@ import {
 } from "@/runtime/session-context";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import {
+  getEchoCancelledMicStream,
+  nativeAudioCaptureAvailable,
+  prepareNativeAudioCapture,
+} from "@/home/voice/microphone";
+import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "@/home/voice/private-asr-client";
 import { preloadVoiceCaptureRuntime } from "@/home/voice/use-voice-capture";
 import { useWakeLock } from "@/home/use-wake-lock";
+import { fetchNativeTtsConfig } from "@/api/voice";
+import {
+  configureNativeTts,
+  nativeTtsBridgeAvailable,
+} from "@/home/voice/native-tts";
 import type {
   VoiceConversationOptions,
   VoiceConversationTurn,
@@ -82,6 +92,7 @@ type LearningMediaCapability =
   | { available: false; message: string };
 
 function detectLearningMediaCapability(): LearningMediaCapability {
+  if (nativeAudioCaptureAvailable()) return { available: true };
   if (window.isSecureContext === false) {
     return {
       available: false,
@@ -110,21 +121,6 @@ function preloadLearningVoiceRuntime(): void {
   }
 }
 
-function describeLearningDeviceError(cause: unknown): string {
-  if (cause instanceof DOMException) {
-    if (cause.name === "NotAllowedError" || cause.name === "SecurityError") {
-      return "麦克风或摄像头权限被拒绝。请在浏览器的网站设置中允许访问后重试。";
-    }
-    if (cause.name === "NotFoundError" || cause.name === "DevicesNotFoundError") {
-      return "没有找到可用的麦克风或摄像头。请连接设备后重试。";
-    }
-    if (cause.name === "NotReadableError" || cause.name === "TrackStartError") {
-      return "麦克风或摄像头正被其他应用占用，或暂时无法读取。";
-    }
-  }
-  return cause instanceof Error ? cause.message : "设备授权失败";
-}
-
 async function requestLearningDevices(autoCamera: boolean): Promise<{
   autoCamera: boolean;
   voiceEnabled: boolean;
@@ -136,88 +132,32 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
   // independent. Begin the network work inside the user's activation gesture
   // instead of waiting for getUserMedia and the ASR session sequentially.
   preloadLearningVoiceRuntime();
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: true,
-    video: autoCamera,
-  });
-  stream.getTracks().forEach((track) => track.stop());
+  let microphoneStream: MediaStream | null = null;
+  let cameraStream: MediaStream | null = null;
+  try {
+    // Use the same Android-compatible acquisition path as the live voice
+    // capture. Requesting audio+video directly here used to fail at the
+    // permission gate before the USB-input fallbacks could run.
+    if (nativeAudioCaptureAvailable()) {
+      // AudioRecord is opened by the voice capture hook. Preparing here keeps
+      // this permission gate independent of the broken Android 8 WebView mic.
+      prepareNativeAudioCapture();
+    } else {
+      microphoneStream = await getEchoCancelledMicStream();
+    }
+    if (autoCamera) {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: true,
+      });
+    }
+  } finally {
+    microphoneStream?.getTracks().forEach((track) => track.stop());
+    cameraStream?.getTracks().forEach((track) => track.stop());
+  }
   localStorage.setItem(AUTO_CAMERA_KEY, String(autoCamera));
   localStorage.setItem(INPUT_MODE_KEY, "voice");
   return { autoCamera, voiceEnabled: true };
-}
-
-function LearningPermissionGate({
-  onReady,
-}: {
-  onReady: (preferences: {
-    autoCamera: boolean;
-    voiceEnabled: boolean;
-  }) => void;
-}) {
-  const [error, setError] = useState<string | null>(null);
-  const capability = detectLearningMediaCapability();
-  const capabilityMessage = capability.available ? null : capability.message;
-
-  const activate = async (autoCamera: boolean) => {
-    if (capabilityMessage) {
-      setError(capabilityMessage);
-      return;
-    }
-    try {
-      onReady(await requestLearningDevices(autoCamera));
-    } catch (cause) {
-      setError(describeLearningDeviceError(cause));
-    }
-  };
-
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-black px-6 text-white">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 text-center">
-        <BookOpen className="mx-auto mb-5 text-cyan-300" size={36} />
-        <h1 className="text-2xl font-semibold">启用小章鱼学习助手</h1>
-        <p className="mt-3 text-sm leading-6 text-white/60">
-          可以启用语音和摄像头，也可以直接用文字试用白板。
-          摄像头模式每次说话只会发送当下的一帧画面。
-        </p>
-        <button
-          type="button"
-          onClick={() => void activate(true)}
-          onPointerEnter={preloadLearningVoiceRuntime}
-          onFocus={preloadLearningVoiceRuntime}
-          disabled={!capability.available}
-          className="mt-7 w-full rounded-full bg-cyan-300 px-5 py-3 font-medium text-black disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          启用语音和摄像头
-        </button>
-        <button
-          type="button"
-          onClick={() => void activate(false)}
-          onPointerEnter={preloadLearningVoiceRuntime}
-          onFocus={preloadLearningVoiceRuntime}
-          disabled={!capability.available}
-          className="mt-3 w-full rounded-full border border-white/15 px-5 py-3 text-white/75 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          仅启用语音
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            localStorage.setItem(AUTO_CAMERA_KEY, "false");
-            localStorage.setItem(INPUT_MODE_KEY, "text");
-            onReady({ autoCamera: false, voiceEnabled: false });
-          }}
-          className="mt-3 w-full rounded-full border border-cyan-200/20 px-5 py-3 text-cyan-100/80"
-        >
-          仅用文字进入白板
-        </button>
-        {(error || capabilityMessage) && (
-          <p className="mt-4 text-sm leading-5 text-red-300" role="alert">
-            {error ?? capabilityMessage}
-          </p>
-        )}
-      </div>
-    </div>
-  );
 }
 
 function LearningSessionScope({
@@ -363,6 +303,22 @@ export function LearningPage() {
       ? requested
       : undefined;
   }, []);
+  useEffect(() => {
+    if (!nativeTtsBridgeAvailable()) return;
+    let cancelled = false;
+    void fetchNativeTtsConfig()
+      .then((config) => {
+        if (!cancelled) configureNativeTts(config);
+      })
+      .catch((error) => {
+        // A previously encrypted configuration remains available during a
+        // temporary network outage; never log the configuration itself.
+        console.warn("[learn] native TTS configuration refresh failed", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),
   );
@@ -423,18 +379,13 @@ export function LearningPage() {
   const [devicePreferences, setDevicePreferences] = useState<{
     autoCamera: boolean;
     voiceEnabled: boolean;
-  } | null>(() => {
-    if (ollFixture) return { autoCamera: false, voiceEnabled: false };
-    const storedCamera = localStorage.getItem(AUTO_CAMERA_KEY);
-    const storedMode = localStorage.getItem(INPUT_MODE_KEY);
-    if (storedCamera === null && storedMode === null) return null;
-    const voiceEnabled = storedMode !== "text";
-    if (voiceEnabled && !detectLearningMediaCapability().available) return null;
-    return {
-      autoCamera: storedCamera === "true",
-      voiceEnabled,
-    };
-  });
+  }>({ autoCamera: false, voiceEnabled: false });
+  useEffect(() => {
+    // Enter the whiteboard immediately and make media an explicit opt-in on
+    // every launch. This also clears a voice preference saved by older APKs.
+    localStorage.setItem(AUTO_CAMERA_KEY, "false");
+    localStorage.setItem(INPUT_MODE_KEY, "text");
+  }, []);
   const [serverSyncReady, setServerSyncReady] = useState(Boolean(ollFixture));
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -745,10 +696,6 @@ export function LearningPage() {
     );
   }
 
-  if (devicePreferences === null) {
-    return <LearningPermissionGate onReady={setDevicePreferences} />;
-  }
-
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
       {sidebarOpen && (
@@ -756,18 +703,26 @@ export function LearningPage() {
           type="button"
           aria-label="关闭学习会话列表"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-20 bg-black/35 backdrop-blur-[2px]"
+          className="learning-sidebar-scrim"
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-72 shrink-0 flex-col border-r border-white/10 bg-zinc-950 p-4 shadow-2xl transition-transform ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="learning-session-sidebar"
+        data-open={sidebarOpen ? "true" : "false"}
+        aria-hidden={!sidebarOpen}
       >
         <button
           type="button"
+          className="learning-sidebar-close"
+          aria-label="关闭侧栏"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <X size={20} />
+        </button>
+        <button
+          type="button"
           onClick={newSession}
-          className="flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
+          className="learning-sidebar-new flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
         >
           <Plus size={16} />
           新对话
@@ -831,12 +786,12 @@ export function LearningPage() {
       </aside>
 
       <main className="relative min-w-0 flex-1">
-        <div className="absolute left-3 top-6 z-20 flex items-center gap-2">
+        <div className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2">
           <button
             type="button"
             aria-label="打开学习会话列表"
             onClick={() => setSidebarOpen(true)}
-            className="learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+            className="learning-top-action-button learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Menu size={20} />
           </button>
@@ -845,7 +800,7 @@ export function LearningPage() {
             aria-label="打开设置"
             title="设置"
             onClick={() => navigate("/settings")}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+            className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Settings size={19} />
           </button>

@@ -156,6 +156,7 @@ function QuestionPlacementProbe({
   withCourseRegion = false,
   withTallNarrative = false,
   recovered = false,
+  selectionLesson = false,
   onCourseRendered,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
@@ -165,6 +166,7 @@ function QuestionPlacementProbe({
   withCourseRegion?: boolean;
   withTallNarrative?: boolean;
   recovered?: boolean;
+  selectionLesson?: boolean;
   onCourseRendered?: ComponentProps<typeof OllLessonBoard>["onCourseRendered"];
 }) {
   const runtime = useOllLessonRuntime({
@@ -213,9 +215,16 @@ function QuestionPlacementProbe({
           id: "lesson-unit-circle-sine-001",
           sessionId: "question-placement",
           text: "请结合单位圆解释正弦函数",
-          origin: "composer",
+          origin: selectionLesson ? "selection" : "composer",
           createdAt: "2026-08-17T00:00:00.000Z",
           status: pending ? "pending" : "answered",
+          ...(selectionLesson ? {
+            answerPresentation: "lesson" as const,
+            source: {
+              sourceId: "selected-formula",
+              bounds: { x: 2_040, y: 160, width: 240, height: 120 },
+            },
+          } : {}),
           ...(pending || recovered
             ? {}
             : { position: { x: 2_400, y: 160 } }),
@@ -1011,6 +1020,23 @@ function ReviewToLiveRuntimeProbe() {
   );
 }
 
+function AcceleratedStartupRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-accelerated-startup-runtime-test",
+    autoPlay: true,
+    narrationTiming: "external",
+    startupSpeed: 6,
+    startupNarrationId:
+      "lesson-geometry-v2-001:step:establish-task:beat:show-givens-and-goal",
+  });
+  return (
+    <span data-testid="accelerated-startup-speech">
+      {runtime?.activeSpeech ?? ""}
+    </span>
+  );
+}
+
 describe("OLL lesson Runtime integration", () => {
   it("keeps the loading camera until the new course owns a rendered card", () => {
     const board = {
@@ -1100,11 +1126,17 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => {
       expect(setRegionLayouts).toHaveBeenCalledWith({
-        __legacy__: {
+        __legacy__: expect.objectContaining({
           x: 2_694,
           y: 160,
           flow: "reading",
           reservedWidth: 1_300,
+          obstacles: [{
+            x: 2_400,
+            y: 160,
+            width: 270,
+            height: 320,
+          }],
           attachments: expect.arrayContaining([
             expect.objectContaining({
               anchorNodeId: "lesson-unit-circle-sine-001:node:sine-plot",
@@ -1115,7 +1147,7 @@ describe("OLL lesson Runtime integration", () => {
               width: 360,
             }),
           ]),
-        },
+        }),
       });
     });
     expect(onPlaceQuestion).not.toHaveBeenCalled();
@@ -1134,6 +1166,41 @@ describe("OLL lesson Runtime integration", () => {
     // The taller plot can now be the bottommost lesson node itself.
     // Its attached controls may share the full lesson's bottom boundary.
     expect(controlTop).toBeLessThanOrEqual(lessonBottom + 42);
+  });
+
+  it("gives a selection lesson the normal question lane and avoids its source ink", async () => {
+    const setRegionLayouts = vi.spyOn(
+      InfiniteBoardView.prototype,
+      "setRegionLayouts",
+    );
+    render(
+      <QuestionPlacementProbe
+        onPlaceQuestion={vi.fn()}
+        withCourseRegion
+        selectionLesson
+      />,
+    );
+
+    await waitFor(() => expect(setRegionLayouts).toHaveBeenCalledWith({
+      __legacy__: expect.objectContaining({
+        x: 2_694,
+        y: 160,
+        obstacles: expect.arrayContaining([{
+          x: 2_400,
+          y: 160,
+          width: 270,
+          height: 320,
+        }, {
+          x: 2_040,
+          y: 160,
+          width: 240,
+          height: 120,
+        }]),
+      }),
+    }));
+    expect(document.querySelector(".learning-whiteboard-question-card"))
+      .toBeTruthy();
+    expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
   });
 
   it("keeps wheel zoom available while ink selection owns pointer input", async () => {
@@ -1531,6 +1598,7 @@ describe("OLL lesson Runtime integration", () => {
         state = { ...state, pen_color: color };
         listeners.forEach((listener) => listener(state));
       }),
+      setPenWidth: vi.fn(),
       setSelectionColor: vi.fn((color: string) => {
         state = { ...state, selection_color: color };
         listeners.forEach((listener) => listener(state));
@@ -1555,12 +1623,26 @@ describe("OLL lesson Runtime integration", () => {
       locale: "zh-CN",
     }));
     expect(ink.setMode).toHaveBeenCalledWith("navigate");
+    expect(screen.getByTestId("oll-lesson-board").dataset.androidInkMode)
+      .toBe("navigate");
+    expect(ink.setPenWidth).toHaveBeenCalledWith(3.25);
     expect(onInkActivity).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
     expect(screen.queryByRole("button", { name: "退出书写模式" })).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");
     fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("draw");
+    expect(screen.queryByRole("group", { name: "笔触粗细" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "书写笔迹" }));
+    const widthMenu = screen.getByLabelText("笔触粗细");
+    expect(widthMenu.querySelectorAll(".learning-ink-width-preview > i"))
+      .toHaveLength(4);
+    expect(widthMenu.querySelectorAll(".learning-ink-width-preview > b"))
+      .toHaveLength(4);
+    expect(screen.getByText("1.3 px")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "笔触粗细：细" }));
+    expect(ink.setPenWidth).toHaveBeenLastCalledWith(2);
+    expect(screen.queryByLabelText("笔触粗细")).toBeNull();
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "显示调色板" }));
     expect(screen.getByRole("button", { name: "隐藏调色板" })).toBeTruthy();
@@ -1574,8 +1656,14 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByRole("button", { name: "笔色：蓝色" })).toBeNull();
 
     expect(screen.queryByRole("button", { name: "自由圈选笔迹" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "擦除笔迹" }));
+    expect(ink.setMode).toHaveBeenLastCalledWith("erase");
+    expect(screen.getByTestId("oll-lesson-board").dataset.androidInkMode)
+      .toBe("erase");
     fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
     expect(ink.setMode).toHaveBeenLastCalledWith("select");
+    expect(screen.getByTestId("oll-lesson-board").dataset.androidInkMode)
+      .toBe("select");
     fireEvent.click(screen.getByRole("button", { name: "选择全部笔迹" }));
     expect(ink.selectAll).toHaveBeenCalledOnce();
     expect(screen.getByRole("status").textContent).toContain("已选 2");
@@ -1801,6 +1889,8 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
     expect(await screen.findByText("接下来让小章鱼做什么？")).toBeTruthy();
     expect(screen.getByText("下面是操作，不会改变上面已经确认的选区。")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "围绕这部分讲一课" }))
+      .toBeNull();
     const targets = await screen.findAllByRole("radio");
     expect(targets.length).toBeGreaterThan(1);
     expect(document.querySelectorAll(".learning-selection-target-highlight").length)
@@ -1892,6 +1982,10 @@ describe("OLL lesson Runtime integration", () => {
       expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
     });
     expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "问小章鱼" }));
+    expect(screen.queryByRole("button", {
+      name: "根据当前选区语音生成课程",
+    })).toBeNull();
 
     act(() => {
       state = {
@@ -2539,6 +2633,17 @@ describe("OLL lesson Runtime integration", () => {
         "现在连接 A 和 D",
       );
     });
+  });
+
+  it("accelerates only the silent pre-roll before the first narration", () => {
+    vi.useFakeTimers();
+    render(<AcceleratedStartupRuntimeProbe />);
+
+    expect(screen.getByTestId("accelerated-startup-speech").textContent).toBe("");
+    act(() => vi.advanceTimersByTime(1_500));
+    expect(screen.getByTestId("accelerated-startup-speech").textContent).toContain(
+      "先只看题目",
+    );
   });
 });
 

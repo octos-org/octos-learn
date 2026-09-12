@@ -1,4 +1,5 @@
 .setup-board {
+  height: 100vh;
   height: 100dvh;
   overflow: auto;
   padding: 32px clamp(20px, 4vw, 80px) 48px;
@@ -117,6 +118,82 @@
   padding: 16px;
   transform: rotate(-1deg);
 }
+.setup-companion-picker {
+  margin-top: 18px;
+}
+.setup-companion-picker h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.setup-companion-picker > p {
+  margin: 5px 0 10px;
+  color: #69706a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.setup-teacher-skin-picker {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.setup-teacher-skin-picker .teacher-skin-option {
+  position: relative;
+  min-width: 0;
+  min-height: 106px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 4px;
+  border: 1px solid #ded8c9;
+  border-radius: 10px;
+  color: #303e3b;
+  background: #fffdf6;
+  text-align: center;
+}
+.setup-teacher-skin-picker .teacher-skin-option:hover,
+.setup-teacher-skin-picker .teacher-skin-option[data-active="true"] {
+  border-color: #4b918a;
+  background: #eef8f4;
+}
+.setup-teacher-skin-picker .teacher-skin-copy > span:first-child {
+  color: #303e3b;
+  overflow: hidden;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.setup-teacher-skin-picker .teacher-skin-description,
+.setup-teacher-skin-picker .teacher-skin-status > span:first-child {
+  display: none;
+}
+.setup-teacher-skin-picker .teacher-skin-art .octos-skin-card-art {
+  width: 56px;
+  height: 56px;
+}
+.setup-teacher-skin-picker .teacher-skin-status {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: auto;
+}
+.setup-teacher-skin-picker .teacher-skin-status .workbench-status-pill {
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  flex: 0 0 18px;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  font-size: 0;
+}
+.setup-teacher-skin-picker .teacher-skin-status svg {
+  width: 11px;
+  height: 11px;
+}
 .setup-handwritten {
   margin: -10px 0 -2px;
   display: flex;
@@ -124,7 +201,7 @@
   justify-content: flex-start;
   gap: 4px;
   color: #8b7450;
-  font-family: cursive;
+  font-family: var(--font-body);
   font-size: 16px;
   transform: rotate(-1deg);
 }
@@ -184,4 +261,211 @@
   .setup-header > a {
     white-space: nowrap;
   }
+}
+
+/* The meeting display reports a desktop-sized viewport, while each CSS pixel
+   is physically much larger than on a laptop. Keep onboarding fully readable
+   in one glance without changing its three-step information architecture. */
+[data-runtime-platform="android"] .setup-board {
+  padding: 14px 28px 20px;
+  background-size: 18px 18px;
+  font-size: 11px;
+}
+
+[data-runtime-platform="android"] .setup-header,
+[data-runtime-platform="android"] .setup-intro,
+[data-runtime-platform="android"] .setup-footer {
+  max-width: 1120px;
+}
+
+[data-runtime-platform="android"] .setup-header {
+  gap: 14px;
+}
+
+[data-runtime-platform="android"] .setup-header h1 {
+  margin-top: 3px;
+  font-size: 22px;
+}
+
+[data-runtime-platform="android"] .setup-eyebrow {
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+
+[data-runtime-platform="android"] .setup-header > a {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+[data-runtime-platform="android"] .setup-intro {
+  margin: 9px auto 14px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+[data-runtime-platform="android"] .setup-cards {
+  display: grid;
+  max-width: 1120px;
+  grid-template-columns: 1fr 1.15fr .85fr;
+  gap: 14px;
+}
+
+[data-runtime-platform="android"] .setup-card {
+  width: auto;
+  padding: 14px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px #53462b0a;
+}
+
+[data-runtime-platform="android"] .setup-card:last-child {
+  grid-column: auto;
+}
+
+[data-runtime-platform="android"] .setup-tag {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .setup-card h2 {
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+[data-runtime-platform="android"] .setup-card > p,
+[data-runtime-platform="android"] .setup-card li {
+  margin-bottom: 8px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+[data-runtime-platform="android"] .setup-card ul {
+  padding-left: 15px;
+}
+
+[data-runtime-platform="android"] .setup-form {
+  gap: 7px;
+  margin-top: 9px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .setup-form label {
+  margin: 3px 0;
+}
+
+[data-runtime-platform="android"] .setup-form input,
+[data-runtime-platform="android"] .setup-form select {
+  min-height: 32px;
+  margin-top: 3px;
+  padding: 5px 8px;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .setup-form button,
+[data-runtime-platform="android"] .setup-footer button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .setup-form summary {
+  padding: 6px 0;
+}
+
+[data-runtime-platform="android"] .setup-form [role="status"] {
+  line-height: 1.4;
+}
+
+[data-runtime-platform="android"] .setup-note {
+  padding: 8px;
+}
+
+[data-runtime-platform="android"] .setup-companion-picker {
+  margin-top: 8px;
+}
+
+[data-runtime-platform="android"] .setup-companion-picker h3 {
+  font-size: 11px;
+}
+
+[data-runtime-platform="android"] .setup-companion-picker > p {
+  margin: 2px 0 6px;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker {
+  gap: 4px;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker .teacher-skin-option {
+  min-height: 74px;
+  gap: 2px;
+  padding: 4px 2px;
+  border-radius: 7px;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker .teacher-skin-copy > span:first-child {
+  font-size: 7px;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker .teacher-skin-art .octos-skin-card-art {
+  width: 40px;
+  height: 40px;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker .teacher-skin-status {
+  top: 3px;
+  right: 3px;
+}
+
+[data-runtime-platform="android"] .setup-teacher-skin-picker .teacher-skin-status .workbench-status-pill {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+  min-height: 14px;
+  flex-basis: 14px;
+}
+
+[data-runtime-platform="android"] .setup-handwritten {
+  gap: 2px;
+  margin: -4px 0 0;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .setup-handwritten svg {
+  width: 36px;
+  height: 24px;
+}
+
+[data-runtime-platform="android"] .setup-card [aria-label="平台旁白语音"] {
+  padding: 9px;
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .setup-card [aria-label="平台旁白语音"] h3 {
+  font-size: 11px;
+}
+
+[data-runtime-platform="android"] .setup-card [aria-label="平台旁白语音"] p {
+  margin-top: 4px;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+[data-runtime-platform="android"] .setup-card [aria-label="平台旁白语音"] progress {
+  margin-top: 4px;
+}
+
+[data-runtime-platform="android"] .setup-footer {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin: 12px auto 0;
+}
+
+[data-runtime-platform="android"] .setup-footer p {
+  max-width: 560px;
+  font-size: 9px;
+  line-height: 1.45;
 }

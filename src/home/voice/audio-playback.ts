@@ -14,11 +14,88 @@
 
 let ctx: AudioContext | null = null;
 let current: AudioBufferSourceNode | null = null;
+let currentMedia: HTMLAudioElement | null = null;
+let currentMediaUrl: string | null = null;
+let currentMediaOnEnded: (() => void) | null = null;
 // Completion callback for `current`, kept alongside it so `stopAudio` can
 // fire it on interrupt. `playOne` (use-voice-conversation.ts) awaits this
 // callback; orphaning it wedges the reply drain loop's `playingRef` latch
 // and permanently silences every later reply.
 let currentOnEnded: (() => void) | null = null;
+
+function shouldUseAndroidMediaPipeline(): boolean {
+  return document.documentElement.dataset.runtimePlatform === "android";
+}
+
+function releaseCurrentMedia(invokeEnded: boolean): void {
+  if (!currentMedia) return;
+  const media = currentMedia;
+  const url = currentMediaUrl;
+  const onEnded = currentMediaOnEnded;
+  currentMedia = null;
+  currentMediaUrl = null;
+  currentMediaOnEnded = null;
+  media.onended = null;
+  media.onerror = null;
+  try {
+    media.pause();
+  } catch {
+    // already stopped / detached
+  }
+  if (url) URL.revokeObjectURL(url);
+  if (invokeEnded) onEnded?.();
+}
+
+async function playWithAndroidMediaPipeline(
+  blob: Blob,
+  onEnded: () => void,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  if (signal?.aborted) return false;
+  stopAudio();
+  const url = URL.createObjectURL(blob);
+  const media = new Audio();
+  media.preload = "auto";
+  media.src = url;
+  currentMedia = media;
+  currentMediaUrl = url;
+  currentMediaOnEnded = onEnded;
+  media.onended = () => {
+    if (currentMedia !== media) return;
+    releaseCurrentMedia(false);
+    onEnded();
+  };
+  media.onerror = () => {
+    if (currentMedia !== media) return;
+    releaseCurrentMedia(false);
+    onEnded();
+  };
+
+  try {
+    // Android's native media pipeline can decode the response incrementally.
+    // This avoids Blob.arrayBuffer() + decodeAudioData(), both expensive (and
+    // the former absent) on Chromium-era Android 8 System WebViews.
+    await Promise.resolve(media.play());
+  } catch (error) {
+    if (currentMedia === media) releaseCurrentMedia(false);
+    throw error;
+  }
+  if (signal?.aborted) {
+    if (currentMedia === media) releaseCurrentMedia(false);
+    return false;
+  }
+  return true;
+}
+
+function blobArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error ?? new Error("Unable to read audio data"));
+    reader.readAsArrayBuffer(blob);
+  });
+}
 
 function getCtx(): AudioContext | null {
   if (ctx?.state === "closed") ctx = null;
@@ -53,6 +130,9 @@ async function routeToCurrentDefaultOutput(c: AudioContext): Promise<void> {
 /** Call from inside a user-gesture handler (the entry click / orb tap) to
  *  unlock playback for the rest of the session. */
 export function unlockAudio(): void {
+  // The APK explicitly allows media playback without a fresh user gesture and
+  // uses Android's media decoder, so it does not need a Web Audio context.
+  if (shouldUseAndroidMediaPipeline()) return;
   const c = getCtx();
   if (!c) return;
   void routeToCurrentDefaultOutput(c);
@@ -64,6 +144,10 @@ export function unlockAudio(): void {
  *  completion resolve — nulling the handler without invoking it left
  *  `playOne`'s promise pending forever and no later reply ever played. */
 export function stopAudio(): void {
+  if (currentMedia) {
+    releaseCurrentMedia(true);
+    return;
+  }
   if (!current) return;
   const src = current;
   const onEnded = currentOnEnded;
@@ -92,6 +176,9 @@ export async function playAudioBlob(
   signal?: AbortSignal,
 ): Promise<boolean> {
   if (signal?.aborted) return false;
+  if (shouldUseAndroidMediaPipeline()) {
+    return playWithAndroidMediaPipeline(blob, onEnded, signal);
+  }
   const c = getCtx();
   if (!c) return false;
   await routeToCurrentDefaultOutput(c);
@@ -103,7 +190,7 @@ export async function playAudioBlob(
     }
   }
   if (signal?.aborted) return false;
-  const arrayBuf = await blob.arrayBuffer();
+  const arrayBuf = await blobArrayBuffer(blob);
   if (signal?.aborted) return false;
   const audioBuf = await c.decodeAudioData(arrayBuf);
   if (signal?.aborted) return false;

@@ -339,6 +339,27 @@ export function createHandler({ config, ledger, fetchImpl = fetch, platformSynth
         });
       }
 
+      if (request.method === "GET" && url.pathname === "/api/learn/tts/native-config") {
+        const limits = ledger.limits();
+        const enabled = usesPlatform
+          && Boolean(config.appid && config.token)
+          && limits.enabled;
+        return sendJson(response, 200, enabled ? {
+          version: 1,
+          enabled: true,
+          app_id: config.appid,
+          access_token: config.token,
+          cluster: config.cluster,
+          voice_type: config.voice,
+        } : {
+          version: 1,
+          enabled: false,
+        }, {
+          "cache-control": "no-store, max-age=0",
+          pragma: "no-cache",
+        });
+      }
+
       if (request.method === "PUT" && url.pathname === "/api/learn/tts/limits") {
         if (me.user.role !== "admin") throw new HttpError(403, "administrator access required");
         return sendJson(response, 200, ledger.setLimits(await readJson(request)));

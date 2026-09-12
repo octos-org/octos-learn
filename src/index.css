@@ -1,6 +1,76 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Android 8 vendor WebViews do not consistently implement the modern
+   transform/logical-property utilities emitted by Tailwind 4. Keep the
+   learning drawer's geometry and transform in plain, unlayered CSS. */
+.learning-sidebar-scrim {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  border: 0;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.learning-session-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  width: 18rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  flex-direction: column;
+  padding: 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  background: #09090b;
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  transform: translate3d(-100%, 0, 0);
+  transition: transform 180ms ease-out;
+}
+
+.learning-session-sidebar[data-open="true"] {
+  transform: translate3d(0, 0, 0);
+}
+
+.learning-sidebar-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 1;
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.75rem;
+  color: rgba(255, 255, 255, 0.82);
+  background: #18181b;
+}
+
+.learning-session-sidebar > button:nth-of-type(2) {
+  margin-right: 3rem;
+}
+
+[data-runtime-platform="android"] .learning-session-sidebar {
+  transition: none;
+}
+
+[data-runtime-platform="android"] .learning-sidebar-close {
+  top: 1rem;
+  height: 2.75rem;
+}
+
+[data-runtime-platform="android"] .learning-sidebar-new {
+  height: 2.75rem;
+}
+
 /* ── Self-hosted variable fonts (Ivory Obsidian type stack) ── */
 @font-face {
   font-family: "Hanken Grotesk Variable";

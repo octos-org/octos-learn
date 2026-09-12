@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AuthoringStudentTask,
   CanonicalEvent,
@@ -123,6 +123,14 @@ interface OllLessonRuntimeOptions {
   autoPlay?: boolean;
   incremental?: boolean;
   narrationTiming?: "estimated" | "external";
+  /**
+   * Temporarily accelerate the non-narrated operations before the first
+   * requested narration begins. The narration id lets an incremental classroom
+   * apply the same fast start to every newly appended course, not only the
+   * first course in the BrowserLessonSession.
+   */
+  startupSpeed?: number;
+  startupNarrationId?: string;
   startAtEnd?: boolean;
   topics?: OllLessonTopicDefinition[];
   deliveredProgram?: CanonicalEvent[] | null;
@@ -153,6 +161,8 @@ export function useOllLessonRuntime({
   autoPlay = false,
   incremental = false,
   narrationTiming = "estimated",
+  startupSpeed = 1,
+  startupNarrationId,
   startAtEnd = false,
   topics = [],
   deliveredProgram = null,
@@ -184,6 +194,10 @@ export function useOllLessonRuntime({
     [events, incremental, narrationTiming, storageKey],
   );
   const [, setRevision] = useState(0);
+  const acceleratedStartupRef = useRef<{
+    session: BrowserLessonSession;
+    narrationId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -195,8 +209,49 @@ export function useOllLessonRuntime({
     return () => {
       unsubscribe();
       session.pause();
+      if (acceleratedStartupRef.current?.session === session) {
+        acceleratedStartupRef.current = null;
+        session.setSpeed(1);
+      }
     };
   }, [autoPlay, session, startAtEnd]);
+
+  useEffect(() => {
+    if (!session || !startupNarrationId || startupSpeed <= 1 || startAtEnd) {
+      return;
+    }
+    if (
+      session.projection.current_narration
+      && session.projection.current_beat_id === startupNarrationId
+    ) return;
+    acceleratedStartupRef.current = {
+      session,
+      narrationId: startupNarrationId,
+    };
+    session.setSpeed(startupSpeed);
+    return () => {
+      if (
+        acceleratedStartupRef.current?.session !== session
+        || acceleratedStartupRef.current.narrationId !== startupNarrationId
+      ) return;
+      acceleratedStartupRef.current = null;
+      session.setSpeed(1);
+    };
+  }, [session, startAtEnd, startupNarrationId, startupSpeed]);
+
+  const activeNarrationBeatId = session?.projection.current_narration
+    ? session.projection.current_beat_id
+    : undefined;
+  useEffect(() => {
+    if (
+      !session
+      || !activeNarrationBeatId
+      || acceleratedStartupRef.current?.session !== session
+      || acceleratedStartupRef.current.narrationId !== activeNarrationBeatId
+    ) return;
+    acceleratedStartupRef.current = null;
+    session.setSpeed(1);
+  }, [activeNarrationBeatId, session]);
 
   const play = useCallback(() => session?.play(), [session]);
   const pause = useCallback(() => session?.pause(), [session]);

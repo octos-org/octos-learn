@@ -12,6 +12,7 @@ import {
 } from "@/settings/settings-api";
 import { LLM_PROVIDERS } from "@/settings/llm-providers";
 import { SharedTtsPanel } from "@/settings/shared-tts";
+import { TeacherSkinPicker } from "@/settings/learning-companion-tab";
 import {
   LearningModelContext,
   hasLearningModel,
@@ -123,7 +124,11 @@ export function SetupWhiteboard() {
               <p className="setup-note">
                 浏览器只会在你主动启用时申请设备权限。
               </p>
-              <Link to="/settings?tab=companion">选择右下角的老师形象 →</Link>
+              <div className="setup-companion-picker">
+                <h3>选择右下角老师形象</h3>
+                <p>点击形象即可保存，并立即应用到学习白板。</p>
+                <TeacherSkinPicker compact />
+              </div>
             </section>
           </div>
           <footer className="setup-footer">

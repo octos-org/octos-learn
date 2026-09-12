@@ -9,7 +9,16 @@ import { initTheme } from "./hooks/use-theme";
 // honors the saved preference and avoids a dark-to-light first-paint flash.
 initTheme();
 
-createRoot(document.getElementById("root")!).render(
+// The APK serves the same application from packaged assets. Mark that build
+// explicitly so we can avoid GPU-heavy presentation effects on older Android
+// System WebViews without weakening the desktop/web experience.
+if (import.meta.env.MODE === "android") {
+  document.documentElement.dataset.runtimePlatform = "android";
+}
+
+const rootElement = document.getElementById("root")!;
+rootElement.setAttribute("data-octos-booted", "true");
+createRoot(rootElement).render(
   <StrictMode>
     <App />
   </StrictMode>,

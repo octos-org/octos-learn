@@ -1,0 +1,41 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "cc.pitun.learn"
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "cc.pitun.learn"
+        minSdk 26
+        targetSdk 35
+        versionCode 19
+        versionName "0.1.0-test19"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    androidResources {
+        noCompress += ["wasm", "onnx"]
+    }
+}
+
+dependencies {
+    implementation "androidx.webkit:webkit:1.12.1"
+    implementation "io.agora.rtc:full-rtc-basic:4.5.2"
+}

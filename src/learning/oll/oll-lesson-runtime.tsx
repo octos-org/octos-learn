@@ -44,12 +44,16 @@ import {
   type InkRuntime,
   type InkRuntimeState,
 } from "./oll-ink-runtime";
+import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
   WHITEBOARD_QUESTION_CARD_WIDTH,
 } from "../whiteboard-question-card";
-import type { WhiteboardQuestionRecord } from "../whiteboard-questions";
+import {
+  isCourseWhiteboardQuestion,
+  type WhiteboardQuestionRecord,
+} from "../whiteboard-questions";
 import type {
   SelectionBoardContext,
   SelectionClassification,
@@ -64,7 +68,6 @@ import {
 } from "../selection-enhancements";
 import {
   availableSelectionTools,
-  selectionLessonTool,
   type SelectionToolId,
 } from "../selection-tools";
 import type {
@@ -105,6 +108,7 @@ type LearningInkState = InkRuntimeState & {
 
 type LearningInkRuntime = InkRuntime & {
   setPenColor?: (color: string) => void;
+  setPenWidth?: (width: number) => void;
   setSelectionColor?: (color: string) => void | Promise<void>;
   setSelectionMode?: (mode: "rectangle" | "lasso") => void;
   getSelectionSourceBounds?: (
@@ -235,6 +239,7 @@ const courseVisualNodeKinds = new Set([
 const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
 const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
 const MINIMUM_COURSE_READING_WIDTH = 1_300;
+const QUESTION_CARD_COLLISION_HEIGHT = 320;
 
 function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
   if (rects.length === 0) return null;
@@ -378,6 +383,20 @@ const inkColorPresets = [
   { color: "#c75445", label: "红色" },
   { color: "#202b2a", label: "黑色" },
 ];
+
+const INK_PEN_WIDTH_KEY = "octos-learning-pen-width:v1";
+const inkWidthPresets = [
+  { width: 1.25, label: "极细" },
+  { width: 2, label: "细" },
+  { width: 3.25, label: "标准" },
+  { width: 5, label: "粗" },
+];
+
+function initialInkPenWidth(): number {
+  const stored = Number(localStorage.getItem(INK_PEN_WIDTH_KEY));
+  if (Number.isFinite(stored) && stored >= 1 && stored <= 16) return stored;
+  return import.meta.env.MODE === "android" ? 2 : 3.25;
+}
 
 function InkColorControl({
   label,
@@ -611,7 +630,6 @@ export function LearningWhiteboard({
   onAskInkSelection,
   onVoiceInkSelection,
   onVoiceInkSelectionCaptureChange,
-  onReferenceInkSelection,
   onBoardWritingReady,
   onDeleteSelectionEnhancement,
   onDeleteSelectionSources,
@@ -734,6 +752,9 @@ export function LearningWhiteboard({
   }>());
   const boardVariableUpdateFrameRef = useRef<number | null>(null);
   const [inkState, setInkState] = useState<LearningInkState>(emptyInkState);
+  const [inkPenWidth, setInkPenWidthState] = useState(initialInkPenWidth);
+  const inkPenWidthRef = useRef(inkPenWidth);
+  const [inkWidthMenuOpen, setInkWidthMenuOpen] = useState(false);
   const [inkAvailable, setInkAvailable] = useState(false);
   const [inkError, setInkError] = useState("");
   const [writingRetry, setWritingRetry] = useState(0);
@@ -969,9 +990,8 @@ export function LearningWhiteboard({
     ? availableSelectionTools(selectionClassification.kind)
     : [];
   const loadingStateId = loadingState?.id;
-  const composerQuestions = questions.filter((question) =>
-    question.origin === "composer");
-  const pendingComposerQuestion = [...composerQuestions].reverse().find(
+  const courseQuestions = questions.filter(isCourseWhiteboardQuestion);
+  const pendingCourseQuestion = [...courseQuestions].reverse().find(
     (question) => question.status === "pending",
   );
   const courseRegionByQuestion = useMemo(() => new Map(
@@ -1084,6 +1104,19 @@ export function LearningWhiteboard({
           height: plan.height,
           gap: 42,
         }));
+      const obstacles = questions.flatMap((question) => {
+        const rects: WhiteboardRect[] = [];
+        if (question.position) {
+          rects.push({
+            x: question.position.x,
+            y: question.position.y,
+            width: WHITEBOARD_QUESTION_CARD_WIDTH,
+            height: QUESTION_CARD_COLLISION_HEIGHT,
+          });
+        }
+        if (question.source) rects.push(question.source.bounds);
+        return rects;
+      });
       return [[runtimeRegionIdForTopic(topic.id), {
         x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
         y: region.origin.y,
@@ -1092,12 +1125,14 @@ export function LearningWhiteboard({
           MINIMUM_COURSE_READING_WIDTH,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
         ),
+        ...(obstacles.length > 0 ? { obstacles } : {}),
         ...(attachments.length > 0 ? { attachments } : {}),
       } satisfies RegionLayoutConstraint]];
     }),
   ), [
     courseRegionByQuestion,
     interactionPlans,
+    questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
   ]);
@@ -1282,7 +1317,7 @@ export function LearningWhiteboard({
   useEffect(() => {
     if (!enhancementLayer || !onPlaceQuestion) return;
     if (inkSessionId && !inkAvailable) return;
-    const unplaced = composerQuestions.filter((question) => !question.position);
+    const unplaced = courseQuestions.filter((question) => !question.position);
     if (unplaced.length === 0) return;
     const frame = window.requestAnimationFrame(() => {
       const viewport = viewportRef.current;
@@ -1294,8 +1329,24 @@ export function LearningWhiteboard({
       });
       const reserved: WhiteboardRect[] = [];
       unplaced.forEach((question) => {
-        const existingTopic = question.status === "answered"
+        const candidateExistingTopic = question.status === "answered"
           ? runtime?.outline.find((topic) => topic.questionId === question.id)
+          : undefined;
+        const candidateRegionId = candidateExistingTopic
+          ? runtimeRegionIdForTopic(candidateExistingTopic.id)
+          : undefined;
+        const candidateHasBoardContent = Boolean(
+          candidateExistingTopic
+          && runtime?.board
+          && (
+            candidateExistingTopic.nodeIds?.some((nodeId) =>
+              Boolean(runtime.board?.nodes[nodeId]))
+            || Object.values(runtime.board.nodes).some((node) =>
+              (node.region_id ?? "__legacy__") === candidateRegionId)
+          ),
+        );
+        const existingTopic = candidateHasBoardContent
+          ? candidateExistingTopic
           : undefined;
         const existingRuntimeBounds = existingTopic
           ? runtimeRegionBounds[runtimeRegionIdForTopic(existingTopic.id)]
@@ -1341,7 +1392,7 @@ export function LearningWhiteboard({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [
-    composerQuestions,
+    courseQuestions,
     courseRegions,
     enhancementLayer,
     inkAvailable,
@@ -1396,11 +1447,11 @@ export function LearningWhiteboard({
   ]);
 
   useEffect(() => {
-    const position = pendingComposerQuestion?.position;
+    const position = pendingCourseQuestion?.position;
     if (
-      !pendingComposerQuestion
+      !pendingCourseQuestion
       || !position
-      || focusedLoadingTurnRef.current === pendingComposerQuestion.id
+      || focusedLoadingTurnRef.current === pendingCourseQuestion.id
     ) return;
     const frame = window.requestAnimationFrame(() => {
       const controller = cameraControllerRef.current;
@@ -1409,10 +1460,10 @@ export function LearningWhiteboard({
       const elements = [...layer.querySelectorAll<HTMLElement>(
         "[data-question-id], [data-loading-id]",
       )].filter((element) =>
-        element.dataset.questionId === pendingComposerQuestion.id
-        || (loadingStateId === pendingComposerQuestion.id
+        element.dataset.questionId === pendingCourseQuestion.id
+        || (loadingStateId === pendingCourseQuestion.id
           && element.dataset.loadingId === loadingStateId));
-      const currentLoadingIsRendered = loadingStateId === pendingComposerQuestion.id
+      const currentLoadingIsRendered = loadingStateId === pendingCourseQuestion.id
         && elements.some((element) =>
           element.dataset.loadingId === loadingStateId);
       const actualBounds = unionWhiteboardRects(elements.flatMap((element) => {
@@ -1421,8 +1472,8 @@ export function LearningWhiteboard({
       }));
       controller.request({
         source: "question-loading",
-        key: `question-loading:${pendingComposerQuestion.id}`,
-        courseId: pendingComposerQuestion.id,
+        key: `question-loading:${pendingCourseQuestion.id}`,
+        courseId: pendingCourseQuestion.id,
         rect: currentLoadingIsRendered && actualBounds ? actualBounds : {
           x: position.x,
           y: position.y,
@@ -1430,15 +1481,15 @@ export function LearningWhiteboard({
           height: PENDING_QUESTION_FOOTPRINT_HEIGHT,
         },
       });
-      focusedLoadingTurnRef.current = pendingComposerQuestion.id;
+      focusedLoadingTurnRef.current = pendingCourseQuestion.id;
     });
     return () => window.cancelAnimationFrame(frame);
   }, [
     enhancementLayer,
     loadingStateId,
-    pendingComposerQuestion,
-    pendingComposerQuestion?.id,
-    pendingComposerQuestion?.position,
+    pendingCourseQuestion,
+    pendingCourseQuestion?.id,
+    pendingCourseQuestion?.position,
   ]);
 
   const retryDegradedVisual = useCallback(async (
@@ -1585,9 +1636,19 @@ export function LearningWhiteboard({
     runtimeRef.current = runtime ?? null;
   }, [runtime]);
 
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    viewport.dataset.androidInkMode = inkState.mode;
+    return () => {
+      delete viewport.dataset.androidInkMode;
+    };
+  }, [inkState.mode]);
+
   const setInkMode = useCallback((mode: InkMode) => {
     try {
       inkRuntimeRef.current?.setMode(mode);
+      if (mode !== "draw") setInkWidthMenuOpen(false);
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法切换书写工具");
@@ -1657,6 +1718,23 @@ export function LearningWhiteboard({
       setInkError("");
     } catch (cause) {
       setInkError(cause instanceof Error ? cause.message : "无法设置笔迹颜色");
+    }
+  }, [setInkError]);
+
+  const setPenWidth = useCallback((width: number) => {
+    try {
+      const ink = inkRuntimeRef.current;
+      if (!ink?.setPenWidth) {
+        throw new Error("当前 Ink Runtime 不支持笔触粗细");
+      }
+      ink.setPenWidth(width);
+      inkPenWidthRef.current = width;
+      setInkPenWidthState(width);
+      localStorage.setItem(INK_PEN_WIDTH_KEY, String(width));
+      setInkWidthMenuOpen(false);
+      setInkError("");
+    } catch (cause) {
+      setInkError(cause instanceof Error ? cause.message : "无法设置笔触粗细");
     }
   }, [setInkError]);
 
@@ -1972,56 +2050,16 @@ export function LearningWhiteboard({
     selectionRequestPending,
   ]);
 
-  const referenceSelectionForLesson = useCallback(async () => {
-    if (!onReferenceInkSelection || selectionRequestPending) return;
-    setSelectionRequestPending(true);
-    try {
-      const candidate = preparedSelection ?? await captureSelection();
-      const prepared = recordSelectionContext(candidate);
-      const targets = prepared.candidates.filter((candidate) =>
-        selectedBoardTargetIds.includes(candidate.target_id),
-      );
-      const mounted = mountedRef.current;
-      if (!mounted) throw new Error("白板尚未就绪");
-      const contextImage = await selectionContextToPngFile(
-        prepared.snapshot,
-        mounted,
-        targets,
-      );
-      await onReferenceInkSelection({
-        snapshot: prepared.snapshot,
-        contentKind: selectionContentKind,
-        boardContext: {
-          boardId: prepared.boardId,
-          boardRevision: prepared.boardRevision,
-          targets,
-        },
-        contextImage,
-        label: targets[0]?.label ?? "选中的笔迹",
-      });
-      setSelectionQuestionOpen(false);
-      setPreparedSelection(null);
-      setSelectedBoardTargetIds([]);
-      setInkError("");
-    } catch (cause) {
-      setInkError(cause instanceof Error ? cause.message : "无法引用当前选区");
-    } finally {
-      setSelectionRequestPending(false);
-    }
-  }, [setInkError,
-    captureSelection,
-    onReferenceInkSelection,
-    preparedSelection,
-    recordSelectionContext,
-    selectedBoardTargetIds,
-    selectionContentKind,
-    selectionRequestPending,
-  ]);
-
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
+    if (document.documentElement.dataset.runtimePlatform === "android") {
+      // Meeting displays are viewed from much farther away than laptops.
+      // Large compositions may be cropped, but automatic framing must not
+      // reduce teaching cards to an unreadable whole-course thumbnail.
+      mounted.view.setAutomaticCameraMinimumScale(.55);
+    }
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
       if (!import.meta.env.DEV || import.meta.env.MODE === "test") return;
@@ -2082,9 +2120,12 @@ export function LearningWhiteboard({
     let active = true;
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
+    let destroyAndroidInkDensity: (() => void) | null = null;
     const destroyInk = (): Promise<void> | undefined => {
       if (!ink || inkDestroyed) return undefined;
       inkDestroyed = true;
+      destroyAndroidInkDensity?.();
+      destroyAndroidInkDensity = null;
       unsubscribeInkRef.current?.();
       unsubscribeInkRef.current = null;
       if (inkRuntimeRef.current === ink) inkRuntimeRef.current = null;
@@ -2146,7 +2187,15 @@ export function LearningWhiteboard({
           documentId: `learning-session:${inkSessionId}:student-ink`,
           locale: "zh-CN",
         }) as LearningInkRuntime;
+        if (import.meta.env.MODE === "android") {
+          destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
+            ink,
+            viewport,
+            mounted.view,
+          );
+        }
         inkRuntimeRef.current = ink;
+        ink.setPenWidth?.(inkPenWidthRef.current);
         ink.setMode("navigate");
         setInkSupportsColors(
           typeof ink.setPenColor === "function" &&
@@ -2370,7 +2419,20 @@ export function LearningWhiteboard({
     view?.setScene3dViews(activeRuntime.scene3dViews);
     view?.setActiveRegion(teachingRegionId);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
-    if (teachingTopic?.questionId) {
+    const renderedCourseNodeIds = new Set(Array.from(
+      mounted?.elements.nodes.querySelectorAll<HTMLElement>(
+        ".board-node[data-id]",
+      ) ?? [],
+    ).flatMap((element) => element.dataset.id ? [element.dataset.id] : []));
+    if (
+      teachingTopic?.questionId
+      && courseHasRenderedBoardNode(
+        activeRuntime.board,
+        teachingTopic.nodeIds,
+        teachingRegionId ?? "__legacy__",
+        renderedCourseNodeIds,
+      )
+    ) {
       onCourseRendered?.({
         turnId: teachingTopic.questionId,
         ...(activeRuntime.currentBeatId
@@ -2520,7 +2582,7 @@ export function LearningWhiteboard({
   ]);
 
   useEffect(() => {
-    const pendingCourseId = pendingComposerQuestion?.id
+    const pendingCourseId = pendingCourseQuestion?.id
       ?? (loadingState?.kind === "lesson" ? loadingStateId : undefined);
     if (pendingCourseId) {
       coursesObservedInProgressRef.current.add(pendingCourseId);
@@ -2674,7 +2736,7 @@ export function LearningWhiteboard({
     enhancementLayer,
     loadingState?.kind,
     loadingStateId,
-    pendingComposerQuestion?.id,
+    pendingCourseQuestion?.id,
     playbackCourseTarget,
     presentationTopics,
     runtime,
@@ -2841,7 +2903,7 @@ export function LearningWhiteboard({
       />
       {!runtime
         && inkState.component_count === 0
-        && composerQuestions.length === 0
+        && courseQuestions.length === 0
         && !loadingState ? (
         <div className="learning-whiteboard-empty" aria-live="polite">
           <span>这块白板会保存我们的思考过程</span>
@@ -2892,9 +2954,19 @@ export function LearningWhiteboard({
           <button
             type="button"
             className={inkState.mode === "draw" ? "is-active" : ""}
-            onClick={() => setInkMode("draw")}
+            onClick={() => {
+              if (inkState.mode === "draw") {
+                setInkColorPaletteOpen(false);
+                setInkWidthMenuOpen((current) => !current);
+              } else {
+                setInkMode("draw");
+                setInkWidthMenuOpen(false);
+              }
+            }}
             aria-label="书写笔迹"
             aria-pressed={inkState.mode === "draw"}
+            aria-expanded={inkState.mode === "draw" ? inkWidthMenuOpen : false}
+            title={inkState.mode === "draw" ? "再次点击选择笔触粗细" : "书写笔迹"}
           >
             <PenLine size={17} />
           </button>
@@ -2925,7 +2997,10 @@ export function LearningWhiteboard({
               <button
                 type="button"
                 className={inkColorPaletteOpen ? "is-active" : ""}
-                onClick={() => setInkColorPaletteOpen((current) => !current)}
+                onClick={() => {
+                  setInkWidthMenuOpen(false);
+                  setInkColorPaletteOpen((current) => !current);
+                }}
                 aria-label={inkColorPaletteOpen ? "隐藏调色板" : "显示调色板"}
                 aria-expanded={inkColorPaletteOpen}
               >
@@ -3013,6 +3088,32 @@ export function LearningWhiteboard({
               : ""}
             {inkState.saved ? " · 已保存" : " · 保存中"}
           </span>
+        </div>
+      ) : null}
+      {inkWidthMenuOpen && inkState.mode === "draw" ? (
+        <div
+          className="learning-ink-width-menu"
+          data-learning-board-occlusion=""
+          aria-label="笔触粗细"
+        >
+          {inkWidthPresets.map((preset) => (
+            <button
+              key={preset.width}
+              type="button"
+              className={inkPenWidth === preset.width ? "is-active" : ""}
+              onClick={() => setPenWidth(preset.width)}
+              aria-label={`笔触粗细：${preset.label}`}
+              aria-pressed={inkPenWidth === preset.width}
+            >
+              <span className="learning-ink-width-preview" aria-hidden="true">
+                <i style={{ width: preset.width * 3, height: preset.width * 3 }} />
+                <b style={{ height: Math.max(1, preset.width * .8) }} />
+              </span>
+              <small>
+                {preset.width.toFixed(preset.width % 1 === 0 ? 0 : 1)} px
+              </small>
+            </button>
+          ))}
         </div>
       ) : null}
       {selectionQuestionOpen && inkState.selected_count > 0 ? (
@@ -3118,15 +3219,6 @@ export function LearningWhiteboard({
                 {tool.label}
               </button>
             ))}
-            {onReferenceInkSelection ? (
-              <button
-                type="button"
-                onClick={() => void referenceSelectionForLesson()}
-                disabled={selectionRequestPending}
-              >
-                {selectionLessonTool.label}
-              </button>
-            ) : null}
           </div>
           <div className="learning-selection-question-input">
             <input
@@ -3171,7 +3263,7 @@ export function LearningWhiteboard({
       {enhancementLayer
         ? createPortal(
             <>
-              {composerQuestions.map((question, index) => (
+              {courseQuestions.map((question, index) => (
                 <WhiteboardQuestionCard
                   key={question.id}
                   question={question}
@@ -3185,11 +3277,11 @@ export function LearningWhiteboard({
               {loadingState ? (
                 <WhiteboardLoadingBlock
                   state={loadingState}
-                  left={pendingComposerQuestion?.position
-                    ? pendingComposerQuestion.position.x
+                  left={pendingCourseQuestion?.position
+                    ? pendingCourseQuestion.position.x
                       + WHITEBOARD_QUESTION_CARD_WIDTH + 24
                     : lessonLoadingPosition.left}
-                  top={pendingComposerQuestion?.position?.y
+                  top={pendingCourseQuestion?.position?.y
                     ?? lessonLoadingPosition.top}
                 />
               ) : null}
