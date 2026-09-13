@@ -15,7 +15,7 @@ function publicAsset(path: string): string {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
-export function useStaticModelPreview(
+export function shouldUseStaticModelPreview(
   requested: boolean,
   mode: string,
 ): boolean {
@@ -43,7 +43,7 @@ export function OctosSkinArt({
     return <OctosAvatar skin={definition.id} className={className} />;
   }
 
-  if (useStaticModelPreview(staticPreview, import.meta.env.MODE)) {
+  if (shouldUseStaticModelPreview(staticPreview, import.meta.env.MODE)) {
     return (
       <img
         src={publicAsset(definition.thumbnailPath)}
