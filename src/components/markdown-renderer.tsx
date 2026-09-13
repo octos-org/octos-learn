@@ -5,15 +5,24 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { Download } from "lucide-react";
-import mermaid from "mermaid";
 import DOMPurify from "dompurify";
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "dark",
-  securityLevel: "strict",
-  fontFamily: "ui-monospace, monospace",
-});
+type MermaidApi = typeof import("mermaid")["default"];
+
+let mermaidPromise: Promise<MermaidApi> | undefined;
+
+function loadMermaid(): Promise<MermaidApi> {
+  mermaidPromise ??= import("mermaid").then(({ default: mermaid }) => {
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: "dark",
+      securityLevel: "strict",
+      fontFamily: "ui-monospace, monospace",
+    });
+    return mermaid;
+  });
+  return mermaidPromise;
+}
 
 let mermaidCounter = 0;
 
@@ -21,14 +30,19 @@ function MermaidBlock({ content }: { content: string }) {
   const [svg, setSvg] = useState("");
   useEffect(() => {
     const id = `mermaid-${++mermaidCounter}`;
-    mermaid.render(id, content.trim())
+    let cancelled = false;
+    const removeTemporaryElement = () => document.getElementById(id)?.remove();
+    void loadMermaid()
+      .then((mermaid) => mermaid.render(id, content.trim()))
       .then(({ svg }) => {
-        setSvg(svg);
-        // Clean up the temporary DOM element mermaid creates for rendering
-        const el = document.getElementById(id);
-        if (el) el.remove();
+        if (!cancelled) setSvg(svg);
+        removeTemporaryElement();
       })
-      .catch(() => {});
+      .catch(removeTemporaryElement);
+    return () => {
+      cancelled = true;
+      removeTemporaryElement();
+    };
   }, [content]);
   if (!svg) return <pre className="my-3 rounded-lg bg-code-block-bg p-4 text-xs text-code-text whitespace-pre-wrap">{content}</pre>;
   return <div className="my-3 overflow-x-auto rounded-lg bg-code-block-bg p-4" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } }) }} />;

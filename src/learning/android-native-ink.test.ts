@@ -13,8 +13,8 @@ const activity = readFileSync(
   "android/app/src/main/java/cc/pitun/learn/MainActivity.java",
   "utf8",
 );
-const ollPatch = readFileSync(
-  "patches/octos-lesson-language@0.1.0-rc.1.patch",
+const ollRuntime = readFileSync(
+  "node_modules/octos-lesson-language/dist/packages/ink-runtime/src/runtime.js",
   "utf8",
 );
 
@@ -42,17 +42,37 @@ describe("Android native ink pipeline", () => {
     expect(activity).toContain('addJavascriptInterface(nativeInkBridge, "OctosNativeInk")');
     expect(activity).toContain("nativeInkBridge.onMotionEvent(event)");
     expect(activity).toContain("return super.dispatchTouchEvent(event)");
-    expect(overlay).toContain("View.LAYER_TYPE_HARDWARE");
+    expect(overlay).toContain("View.LAYER_TYPE_NONE");
+    expect(overlay).toContain("setVisibility(View.INVISIBLE)");
+    expect(overlay).toContain("setVisibility(View.VISIBLE)");
+    expect(overlay).toContain("invalidate(left, top, right, bottom)");
     expect(overlay).toContain("canvas.drawPath(activePath, paint)");
   });
 
+  it("batches WebView delivery until pointer-up while retaining native live feedback", () => {
+    const moveBranch = bridge.slice(
+      bridge.indexOf("if (action == MotionEvent.ACTION_MOVE)"),
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
+    );
+    const upBranch = bridge.slice(
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_CANCEL)"),
+    );
+
+    expect(moveBranch).toContain("collectPoints(event, index, true, pendingPoints, true)");
+    expect(moveBranch).not.toContain("evaluateJavascript");
+    expect(upBranch).toContain("dispatchBatch(");
+    expect(upBranch).toContain('"up",');
+    expect(bridge).toContain("private JSONArray pendingPoints = new JSONArray()");
+  });
+
   it("commits one polyline and clears the native overlay after the next paint", () => {
-    expect(ollPatch).toContain("handleNativeInkBatch(batch)");
-    expect(ollPatch).toContain('index === 0 ? "M" : "L"');
-    expect(ollPatch).toContain("Stroke.fromStroked(path");
-    expect(ollPatch).toContain("this.editor.dispatch(this.editor.image.addComponent(stroke))");
-    expect(ollPatch).toContain("bridge.acknowledge(pointerId)");
-    expect(ollPatch).toContain("hostWindow.requestAnimationFrame(acknowledge)");
+    expect(ollRuntime).toContain("handleNativeInkBatch(batch)");
+    expect(ollRuntime).toContain('index === 0 ? "M" : "L"');
+    expect(ollRuntime).toContain("Stroke.fromStroked(path");
+    expect(ollRuntime).toContain("this.editor.dispatch(this.editor.image.addComponent(stroke))");
+    expect(ollRuntime).toContain("bridge.acknowledge(pointerId)");
+    expect(ollRuntime).toContain("hostWindow.requestAnimationFrame(acknowledge)");
   });
 
   it("uses per-stroke ids so a late acknowledgement cannot clear the next stroke", () => {
@@ -63,9 +83,9 @@ describe("Android native ink pipeline", () => {
   });
 
   it("keeps the selected brush width identical in native preview and committed ink", () => {
-    expect(ollPatch).toContain("setPenWidth(width)");
-    expect(ollPatch).toContain("this.getTool(PenTool).setThickness");
-    expect(ollPatch).toContain("this.syncNativeInkCapture()");
+    expect(ollRuntime).toContain("setPenWidth(width)");
+    expect(ollRuntime).toContain("this.getTool(PenTool).setThickness");
+    expect(ollRuntime).toContain("this.syncNativeInkCapture()");
     expect(bridge).toContain("overlay.configure(color, (float) widthCss * cssPixelRatio)");
   });
 });

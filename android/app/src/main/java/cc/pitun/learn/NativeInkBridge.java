@@ -24,6 +24,7 @@ final class NativeInkBridge {
     private float lastAcceptedX;
     private float lastAcceptedY;
     private boolean hasAcceptedPoint;
+    private JSONArray pendingPoints = new JSONArray();
 
     NativeInkBridge(WebView webView, NativeInkOverlayView overlay) {
         this.webView = webView;
@@ -54,6 +55,7 @@ final class NativeInkBridge {
             if (!enabled) {
                 activeMotionPointerId = -1;
                 activeStrokeId = -1;
+                pendingPoints = new JSONArray();
                 overlay.clearAll();
             }
         });
@@ -89,8 +91,11 @@ final class NativeInkBridge {
             activeStrokeId = nextStrokeId++;
             if (nextStrokeId == Integer.MAX_VALUE) nextStrokeId = 1;
             resetSampleFilter();
+            pendingPoints = new JSONArray();
             overlay.begin(activeStrokeId, x, y);
-            emit("down", event, index, false);
+            final JSONArray downPoints = new JSONArray();
+            collectPoints(event, index, false, downPoints, false);
+            dispatchBatch("down", activeStrokeId, pointerType(event.getToolType(index)), downPoints);
             return;
         }
 
@@ -99,24 +104,42 @@ final class NativeInkBridge {
         if (index < 0) return;
 
         if (action == MotionEvent.ACTION_MOVE) {
-            emit("move", event, index, true);
+            collectPoints(event, index, true, pendingPoints, true);
         } else if (action == MotionEvent.ACTION_UP) {
-            emit("up", event, index, true);
+            collectPoints(event, index, true, pendingPoints, true);
+            dispatchBatch(
+                    "up",
+                    activeStrokeId,
+                    pointerType(event.getToolType(index)),
+                    pendingPoints
+            );
+            pendingPoints = new JSONArray();
             // Keep native ink visible until JavaScript commits and acknowledges it.
             activeMotionPointerId = -1;
             activeStrokeId = -1;
         } else if (action == MotionEvent.ACTION_CANCEL) {
-            emit("cancel", event, index, false);
+            dispatchBatch(
+                    "cancel",
+                    activeStrokeId,
+                    pointerType(event.getToolType(index)),
+                    new JSONArray()
+            );
+            pendingPoints = new JSONArray();
             overlay.clear(activeStrokeId);
             activeMotionPointerId = -1;
             activeStrokeId = -1;
         }
     }
 
-    private void emit(String action, MotionEvent event, int pointerIndex, boolean includeHistory) {
+    private void collectPoints(
+            MotionEvent event,
+            int pointerIndex,
+            boolean includeHistory,
+            JSONArray points,
+            boolean appendOverlay
+    ) {
         try {
             final int strokeId = activeStrokeId;
-            final JSONArray points = new JSONArray();
             if (includeHistory) {
                 for (int history = 0; history < event.getHistorySize(); history++) {
                     final float x = event.getHistoricalX(pointerIndex, history);
@@ -128,7 +151,7 @@ final class NativeInkBridge {
                             y,
                             event.getHistoricalPressure(pointerIndex, history),
                             event.getHistoricalEventTime(history),
-                            true
+                            appendOverlay
                     );
                 }
             }
@@ -142,22 +165,38 @@ final class NativeInkBridge {
                     y,
                     event.getPressure(pointerIndex),
                     event.getEventTime(),
-                    !"down".equals(action)
+                    appendOverlay
             );
+        } catch (JSONException ignored) {
+            failActiveStroke();
+        }
+    }
 
+    private void dispatchBatch(
+            String action,
+            int strokeId,
+            String pointerType,
+            JSONArray points
+    ) {
+        try {
             final JSONObject batch = new JSONObject();
             batch.put("action", action);
             batch.put("pointerId", strokeId);
-            batch.put("pointerType", pointerType(event.getToolType(pointerIndex)));
+            batch.put("pointerType", pointerType);
             batch.put("points", points);
             final String script = "window.__octosNativeInkBatch&&window.__octosNativeInkBatch("
                     + batch + ");";
             webView.evaluateJavascript(script, null);
         } catch (JSONException ignored) {
-            overlay.clearAll();
-            activeMotionPointerId = -1;
-            activeStrokeId = -1;
+            failActiveStroke();
         }
+    }
+
+    private void failActiveStroke() {
+        pendingPoints = new JSONArray();
+        overlay.clearAll();
+        activeMotionPointerId = -1;
+        activeStrokeId = -1;
     }
 
     private void addPointIfValid(

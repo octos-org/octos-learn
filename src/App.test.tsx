@@ -1,11 +1,29 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Outlet, useLocation } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppRoutes } from "./App";
-vi.mock("./settings/settings-api", () => ({ getMyProfile:vi.fn(async()=>({id:"configured",config:{llm:{primary:{family_id:"google",model_id:"test"}}}})) }));
+vi.mock("./settings/settings-api", () => ({
+  getMyProfile: vi.fn(async () => ({
+    id: "configured",
+    config: {
+      env_vars: {},
+      llm: {
+        primary: { family_id: "google", model_id: "test" },
+        fallbacks: [],
+      },
+    },
+  })),
+}));
 
-afterEach(() => cleanup());
+beforeEach(() => {
+  localStorage.setItem("octos-learn:setup-skipped:configured", "yes");
+});
+
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 vi.mock("./auth/auth-guard", () => ({
   AuthGuard: () => <Outlet />,

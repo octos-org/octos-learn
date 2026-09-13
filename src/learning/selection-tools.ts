@@ -20,7 +20,7 @@ function normalizeSelectionLessonRequest(request: string): string {
     .toLowerCase()
     .replace(/課程/gu, "课程")
     .replace(/課/gu, "课")
-    .replace(/[\s，。！？、；：,.!?;:"'“”‘’（）()【】\[\]…—–-]+/gu, "");
+    .replace(/[\s，。！？、；：,.!?;:"'“”‘’（）()【】[\]…—–-]+/gu, "");
 }
 
 /**

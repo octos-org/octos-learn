@@ -6,13 +6,30 @@ interface InkDisplay {
   setDevicePixelRatio: (ratio: number) => Promise<void> | undefined;
 }
 
+interface InkVectorComponent {
+  id: string;
+  z_index: number;
+  element: SVGGElement;
+}
+
+interface InkVectorUpdate {
+  kind: "full" | "delta";
+  revision: number;
+  upsert: InkVectorComponent[];
+  remove_ids: string[];
+  root?: SVGSVGElement;
+}
+
 interface InkRuntimeWithDisplay {
   editor?: {
     display?: InkDisplay;
     toSVG?: () => SVGElement;
   };
   host?: HTMLElement;
-  subscribe?: (listener: () => void) => () => void;
+  subscribe?: (
+    listener: (state: { content_revision?: number }) => void,
+  ) => () => void;
+  getVectorInkUpdate?: () => InkVectorUpdate;
 }
 
 interface CameraState {
@@ -77,16 +94,25 @@ function configureAndroidVectorInkMirror(
     Window & { OctosNativeInk?: unknown }
   ) | null;
   const editor = runtime.editor;
+  const exportFullSvg = editor?.toSVG?.bind(editor);
   const host = runtime.host;
   // Keep ordinary Android-mode browser previews on js-draw. The SVG mirror is
   // paired with the APK's native live-stroke overlay so ink stays visible from
   // pointer-down through the committed vector handoff.
-  if (!hostWindow?.OctosNativeInk || !editor?.toSVG || !host || !runtime.subscribe) {
+  if (
+    !hostWindow?.OctosNativeInk
+    || (!runtime.getVectorInkUpdate && !exportFullSvg)
+    || !host
+    || !runtime.subscribe
+  ) {
     return null;
   }
 
   let camera: CameraState = { panX: 0, panY: 0, scale: 1 };
   let vector: SVGElement | null = null;
+  let renderedRevision: number | undefined;
+  let pendingRevision: number | undefined;
+  let renderFrame: number | undefined;
 
   const applyCamera = (target: SVGElement) => {
     const scale = Math.max(0.01, camera.scale);
@@ -100,27 +126,93 @@ function configureAndroidVectorInkMirror(
       ].join(" "),
     );
   };
-  const render = () => {
-    const next = editor.toSVG!();
-    next.classList.add("oll-android-vector-ink");
-    next.setAttribute("aria-hidden", "true");
-    next.setAttribute("width", "100%");
-    next.setAttribute("height", "100%");
-    next.setAttribute("preserveAspectRatio", "none");
-    applyCamera(next);
+  const prepareRoot = (target: SVGElement) => {
+    target.classList.add("oll-android-vector-ink");
+    target.setAttribute("aria-hidden", "true");
+    target.setAttribute("width", "100%");
+    target.setAttribute("height", "100%");
+    target.setAttribute("preserveAspectRatio", "none");
+    applyCamera(target);
+  };
+  const replaceRoot = (next: SVGElement) => {
+    prepareRoot(next);
     if (vector) vector.replaceWith(next);
     else host.prepend(next);
     vector = next;
     host.dataset.androidVectorInk = "";
   };
+  const findComponent = (id: string): SVGElement | undefined => (
+    vector
+      ? [...vector.querySelectorAll<SVGElement>("[data-octos-vector-component-id]")]
+        .find((element) => element.dataset.octosVectorComponentId === id)
+      : undefined
+  );
+  const upsertComponent = (component: InkVectorComponent) => {
+    if (!vector) return;
+    findComponent(component.id)?.remove();
+    const existing = [
+      ...vector.querySelectorAll<SVGElement>("[data-octos-vector-component-id]"),
+    ];
+    const next = existing.find((element) => (
+      Number(element.dataset.octosVectorZ) > component.z_index
+    ));
+    if (next) vector.insertBefore(component.element, next);
+    else vector.append(component.element);
+  };
+  const renderLegacy = () => {
+    const next = exportFullSvg?.();
+    if (!next) return;
+    replaceRoot(next);
+  };
+  const render = () => {
+    if (!runtime.getVectorInkUpdate) {
+      renderLegacy();
+      return;
+    }
+    const update = runtime.getVectorInkUpdate();
+    if (update.kind === "full") {
+      if (!update.root) {
+        renderLegacy();
+        return;
+      }
+      replaceRoot(update.root);
+    } else if (!vector) {
+      renderLegacy();
+      return;
+    }
+    for (const id of update.remove_ids) findComponent(id)?.remove();
+    for (const component of update.upsert) upsertComponent(component);
+  };
 
-  const unsubscribe = runtime.subscribe(render);
+  const onRuntimeState = (state: { content_revision?: number }) => {
+    const revision = state.content_revision;
+    if (revision !== undefined && revision === renderedRevision) return;
+    pendingRevision = revision;
+
+    // Render the initial document immediately. Later content mutations are
+    // coalesced to one vector update per display frame; save/selection/mode
+    // notifications carrying the same revision do no work at all.
+    if (!vector) {
+      render();
+      renderedRevision = revision;
+      return;
+    }
+    if (renderFrame !== undefined) return;
+    renderFrame = hostWindow.requestAnimationFrame(() => {
+      renderFrame = undefined;
+      render();
+      renderedRevision = pendingRevision;
+    });
+  };
+
+  const unsubscribe = runtime.subscribe(onRuntimeState);
   return {
     updateCamera(nextCamera) {
       camera = { ...nextCamera };
       if (vector) applyCamera(vector);
     },
     destroy() {
+      if (renderFrame !== undefined) hostWindow.cancelAnimationFrame(renderFrame);
       unsubscribe();
       vector?.remove();
       delete host.dataset.androidVectorInk;

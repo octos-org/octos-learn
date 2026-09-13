@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { OctosTeacher } from "./octos-teacher";
+import { OctosTeacher, teacherArtUsesStaticPreview } from "./octos-teacher";
 
 vi.mock("@/hooks/use-teacher-skin", () => ({
   useTeacherSkin: () => ({ skin: "ocean" }),
@@ -15,6 +15,11 @@ vi.mock("@/components/octos-skin-art", () => ({
 afterEach(cleanup);
 
 describe("OctosTeacher", () => {
+  it("keeps WebGL teacher art off the Android display", () => {
+    expect(teacherArtUsesStaticPreview("android")).toBe(true);
+    expect(teacherArtUsesStaticPreview("production")).toBe(false);
+  });
+
   it("renders inline LaTeX in lesson narration instead of exposing delimiters", () => {
     const rendered = render(
       <OctosTeacher

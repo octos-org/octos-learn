@@ -45,6 +45,11 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import { planHostTeachingFocus } from "./host-camera-policy";
+import {
+  BOARD_OCCLUSION_SELECTOR,
+  mutationsTouchBoardOcclusion,
+} from "./board-occlusion-observer";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -228,7 +233,7 @@ const selectionContentKindLabels: Record<SelectionContentKind, string> = {
   unknown: "暂不确定",
 };
 
-const boardOcclusionSelector = "[data-learning-board-occlusion]";
+const boardOcclusionSelector = BOARD_OCCLUSION_SELECTOR;
 const courseVisualNodeKinds = new Set([
   "diagram",
   "geometry",
@@ -354,6 +359,7 @@ const emptyInkState: LearningInkState = {
   selection_mode: "rectangle",
   selection_transform_enabled: false,
   selection_revision: 0,
+  content_revision: 0,
   content_bounds: null,
   content_bounds_list: [],
   document_version: 0,
@@ -369,6 +375,7 @@ function normalizeInkState(state: InkRuntimeState): LearningInkState {
     selection_mode: enhanced.selection_mode ?? "rectangle",
     selection_transform_enabled: enhanced.selection_transform_enabled ?? false,
     selection_revision: enhanced.selection_revision ?? 0,
+    content_revision: enhanced.content_revision ?? 0,
     content_bounds: enhanced.content_bounds ?? null,
     content_bounds_list: enhanced.content_bounds_list ?? (
       enhanced.content_bounds ? [enhanced.content_bounds] : []
@@ -427,6 +434,8 @@ function InkColorControl({
 function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
   occlusions: Array<{ x: number; y: number; width: number; height: number }>;
 } {
+  const androidRuntime = viewport.ownerDocument.documentElement
+    .dataset.runtimePlatform === "android";
   const compact = viewport.clientWidth <= 900;
   const viewportRect = viewport.getBoundingClientRect();
   const occlusions = [
@@ -443,10 +452,14 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
       : [];
   });
   return {
-    top: compact ? 78 : 92,
-    right: compact ? 18 : 28,
-    bottom: compact ? 180 : 190,
-    left: compact ? 18 : 28,
+    // Android's persistent chrome is already represented by exact occlusion
+    // rectangles. Reserving broad full-width bands here double-counted the
+    // same UI and left a 540px-tall display with only 118px for course cards.
+    top: androidRuntime ? 0 : compact ? 78 : 92,
+    right: androidRuntime ? 0 : compact ? 18 : 28,
+    bottom: androidRuntime ? 0 : compact ? 180 : 190,
+    left: androidRuntime ? 0 : compact ? 18 : 28,
+    ...(androidRuntime ? { focusMargin: 24 } : {}),
     occlusions,
   };
 }
@@ -885,7 +898,7 @@ export function LearningWhiteboard({
     Record<string, WhiteboardRect>
   >({});
   const [interactionMeasuredSizes, setInteractionMeasuredSizes] = useState<
-    Record<string, { width: number; height: number }>
+    Record<string, { width: number; height: number; focusHeight: number }>
   >({});
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
@@ -1069,9 +1082,14 @@ export function LearningWhiteboard({
       const tasksHeight = cluster.taskIds.length > 0
         ? 60 + cluster.taskIds.length * 220
         : 0;
+      const visibleTasksHeight = tasks.length > 0
+        ? 60 + tasks.length * 220
+        : 0;
       const estimatedWidth = Math.max(controlsWidth, tasksWidth);
       const estimatedHeight = controlsHeight + tasksHeight
         + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0);
+      const estimatedFocusHeight = controlsHeight + visibleTasksHeight
+        + (controlsHeight > 0 && visibleTasksHeight > 0 ? 28 : 0);
       const measured = interactionMeasuredSizes[cluster.id];
       return {
         id: cluster.id,
@@ -1083,6 +1101,7 @@ export function LearningWhiteboard({
         controlsHeight,
         width: measured?.width ?? estimatedWidth,
         height: measured?.height ?? estimatedHeight,
+        focusHeight: measured?.focusHeight ?? estimatedFocusHeight,
       };
     });
   });
@@ -1102,6 +1121,7 @@ export function LearningWhiteboard({
           anchorNodeIds: plan.anchorNodeIds,
           width: plan.width,
           height: plan.height,
+          focusHeight: plan.focusHeight,
           gap: 42,
         }));
       const obstacles = questions.flatMap((question) => {
@@ -1222,6 +1242,8 @@ export function LearningWhiteboard({
           width: Math.max(controlsWidth, tasksWidth, presentation.width),
           height: Math.max(presentation.height, controlsHeight + tasksHeight
             + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0)),
+          focusHeight: controlsHeight + tasksHeight
+            + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0),
         }]];
       }));
       setInteractionMeasuredSizes((current) =>
@@ -2186,6 +2208,8 @@ export function LearningWhiteboard({
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
           documentId: `learning-session:${inkSessionId}:student-ink`,
           locale: "zh-CN",
+          touchMarqueeActivation:
+            import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
         if (import.meta.env.MODE === "android") {
           destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
@@ -2468,34 +2492,26 @@ export function LearningWhiteboard({
         : nextNodeBounds);
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
-    if (
-      teachingFocusAllowed
-      && attentionTargets.length > 0
-      && attentionChanged
-    ) {
-      view?.focusTargets(attentionTargets);
-    } else if (
-      teachingFocusAllowed &&
-      activeRuntime.compositionTargets.length > 0 &&
-      (compositionChanged || compositionOperationChanged)
-    ) {
-      // A Beat's declared focus describes the visual composition needed for
-      // its narration. Apply it while the Beat is unfolding so a newly written
-      // formula does not replace the diagram it is explaining. This reuses the
-      // existing focus action and does not add a playback delay.
-      view?.focusTargets(activeRuntime.compositionTargets);
-    } else if (teachingFocusAllowed && atPlaybackBoundary && focusChanged) {
-      // React can batch every operation produced by advanceBeat() into the
-      // boundary render. In that case the board already contains the new Beat
-      // focus, but the view never observed the intermediate board.focus frame.
-      view?.focusTargets(boardFocus);
-    }
+    const hostFocus = planHostTeachingFocus({
+      teachingFocusAllowed,
+      attentionTargets,
+      attentionChanged,
+      compositionTargets: activeRuntime.compositionTargets,
+      compositionChanged,
+      compositionOperationChanged,
+      atPlaybackBoundary,
+      boardFocus,
+      focusChanged,
+      variableAnimationActive: Boolean(activeRuntime.activeVariableAnimation),
+    });
+    if (hostFocus) view?.focusTargets(hostFocus.targets);
     renderedAttentionRef.current = attentionKey;
     renderedFocusRef.current = [...boardFocus];
     renderedCompositionRef.current = compositionKey;
     renderedCompositionCursorRef.current = activeRuntime.cursor;
   }, [
     runtime?.attentionTargets,
+    runtime?.activeVariableAnimation,
     runtime?.board,
     runtime?.compositionTargets,
     runtime?.currentOperation,
@@ -2841,6 +2857,7 @@ export function LearningWhiteboard({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return;
+    const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
     let animationFrame = 0;
     let lastInsets = "";
     const update = () => {
@@ -2863,7 +2880,7 @@ export function LearningWhiteboard({
     let observedOcclusions = new Set<Element>();
     const syncOcclusions = () => {
       const next = new Set(
-        viewport.ownerDocument.querySelectorAll<Element>(boardOcclusionSelector),
+        root?.querySelectorAll<Element>(boardOcclusionSelector) ?? [],
       );
       let changed = next.size !== observedOcclusions.size;
       for (const element of observedOcclusions) {
@@ -2879,10 +2896,11 @@ export function LearningWhiteboard({
       observedOcclusions = next;
       if (changed) update();
     };
-    const mutation = typeof MutationObserver === "undefined" ? null : new MutationObserver(() => {
-      syncOcclusions();
-    });
-    const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
+    const mutation = typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver((records) => {
+          if (mutationsTouchBoardOcclusion(records)) syncOcclusions();
+        });
     if (root) mutation?.observe(root, { childList: true, subtree: true });
     syncOcclusions();
     update();

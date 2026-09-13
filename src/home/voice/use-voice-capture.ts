@@ -101,6 +101,10 @@ async function fetchVadRuntimeAsset(url: string): Promise<void> {
  * pointer intent, permission acquisition, and conversation startup: every
  * caller shares one promise and MicVAD subsequently reuses the HTTP cache. */
 export function preloadVoiceCaptureRuntime(): Promise<void> {
+  // The APK captures and segments audio in NativeAudioBridge. Downloading the
+  // browser worklet, two ONNX models and ORT WASM there wastes startup time and
+  // tens of megabytes without participating in capture.
+  if (nativeAudioCaptureAvailable()) return Promise.resolve();
   if (!vadRuntimePreloadPromise) {
     vadRuntimePreloadPromise = Promise.all(
       VAD_RUNTIME_ASSETS.map(fetchVadRuntimeAsset),

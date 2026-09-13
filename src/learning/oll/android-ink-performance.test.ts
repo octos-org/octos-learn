@@ -96,7 +96,78 @@ describe("Android dynamic ink pixel budget", () => {
     expect(androidInteractiveInkPixelRatio(input)).toBe(1);
   });
 
-  it("uses a persistent SVG for committed APK ink and keeps the hidden canvas at 1080p", async () => {
+  it("incrementally adds and removes committed APK ink components", async () => {
+    (window as Window & { OctosNativeInk?: unknown }).OctosNativeInk = {};
+    const setDevicePixelRatio = vi.fn(() => undefined);
+    const makeRoot = () => document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const makeComponent = (id: string, zIndex: number) => {
+      const element = document.createElementNS("http://www.w3.org/2000/svg", "g");
+      element.dataset.octosVectorComponentId = id;
+      element.dataset.octosVectorZ = String(zIndex);
+      return { id, z_index: zIndex, element };
+    };
+    const first = makeComponent("first", 1);
+    const second = makeComponent("second", 2);
+    const getVectorInkUpdate = vi.fn()
+      .mockReturnValueOnce({
+        kind: "full",
+        revision: 1,
+        upsert: [first],
+        remove_ids: [],
+        root: makeRoot(),
+      })
+      .mockReturnValueOnce({
+        kind: "delta",
+        revision: 2,
+        upsert: [second],
+        remove_ids: [],
+      })
+      .mockReturnValueOnce({
+        kind: "delta",
+        revision: 3,
+        upsert: [],
+        remove_ids: ["first"],
+      });
+    let inkListener: ((state: { content_revision?: number }) => void) | undefined;
+    const host = document.createElement("div");
+    const runtime = {
+      host,
+      editor: { display: { setDevicePixelRatio } },
+      getVectorInkUpdate,
+      subscribe: vi.fn((listener: NonNullable<typeof inkListener>) => {
+        inkListener = listener;
+        listener({ content_revision: 1 });
+        return vi.fn();
+      }),
+    };
+    const viewport = document.createElement("div");
+    Object.defineProperties(viewport, {
+      clientWidth: { value: 1920 },
+      clientHeight: { value: 1080 },
+    });
+    const destroy = configureAndroidInkDynamicDensity(
+      runtime,
+      viewport,
+      { subscribeCamera: () => vi.fn() },
+      2,
+    );
+
+    expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(1);
+    inkListener?.({ content_revision: 2 });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(2);
+    expect(host.contains(first.element)).toBe(true);
+
+    inkListener?.({ content_revision: 3 });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(1);
+    expect(host.contains(first.element)).toBe(false);
+    expect(host.contains(second.element)).toBe(true);
+
+    destroy();
+  });
+
+  it("falls back to persistent full SVG exports for an older ink runtime", async () => {
     (window as Window & { OctosNativeInk?: unknown }).OctosNativeInk = {};
     const setDevicePixelRatio = vi.fn(() => undefined);
     const toSVG = vi.fn(() => {
@@ -104,15 +175,15 @@ describe("Android dynamic ink pixel budget", () => {
       svg.append(document.createElementNS("http://www.w3.org/2000/svg", "path"));
       return svg;
     });
-    let inkListener: (() => void) | undefined;
+    let inkListener: ((state: { content_revision?: number }) => void) | undefined;
     const unsubscribeInk = vi.fn();
     const host = document.createElement("div");
     const runtime = {
       host,
       editor: { display: { setDevicePixelRatio }, toSVG },
-      subscribe: vi.fn((listener: () => void) => {
+      subscribe: vi.fn((listener: NonNullable<typeof inkListener>) => {
         inkListener = listener;
-        listener();
+        listener({ content_revision: 7 });
         return unsubscribeInk;
       }),
     };
@@ -146,7 +217,12 @@ describe("Android dynamic ink pixel budget", () => {
     expect(host.dataset.androidVectorInk).toBe("");
     expect(host.querySelector(".oll-android-vector-ink")?.getAttribute("viewBox"))
       .toBe("-50 -20 960 540");
-    inkListener?.();
+    inkListener?.({ content_revision: 7 });
+    expect(toSVG).toHaveBeenCalledTimes(1);
+
+    inkListener?.({ content_revision: 8 });
+    inkListener?.({ content_revision: 9 });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
     expect(toSVG).toHaveBeenCalledTimes(2);
     expect(host.querySelectorAll(".oll-android-vector-ink")).toHaveLength(1);
 

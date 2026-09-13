@@ -786,7 +786,10 @@ export function LearningPage() {
       </aside>
 
       <main className="relative min-w-0 flex-1">
-        <div className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2">
+        <div
+          className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2"
+          data-learning-board-occlusion=""
+        >
           <button
             type="button"
             aria-label="打开学习会话列表"

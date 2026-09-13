@@ -14,6 +14,10 @@ const STATE_LABEL: Record<VoiceState, string> = {
   error: "轻触重试",
 };
 
+export function teacherArtUsesStaticPreview(mode: string): boolean {
+  return mode === "android";
+}
+
 export function OctosTeacher({
   state,
   speech,
@@ -103,6 +107,7 @@ export function OctosTeacher({
           skin={skin}
           className="octos-teacher-avatar-art"
           eager
+          staticPreview={teacherArtUsesStaticPreview(import.meta.env.MODE)}
           activity={
             preparing ? "thinking" : state === "starting" ? "idle" : state
           }
