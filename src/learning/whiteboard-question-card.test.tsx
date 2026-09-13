@@ -126,11 +126,21 @@ describe("WhiteboardQuestionCard", () => {
     const preview = image.closest(
       ".learning-whiteboard-question-camera-preview",
     );
+    const contextHeader = label.closest(
+      ".learning-whiteboard-question-context-header",
+    );
+    const expand = screen.getByRole("button", {
+      name: "放大查看本次问题图片",
+    });
     const camera = label.closest(".learning-whiteboard-question-camera");
     expect(preview).toBeTruthy();
+    expect(contextHeader).toBeTruthy();
     expect(camera).toBeTruthy();
-    expect(label.parentElement).toBe(camera);
+    expect(label.parentElement).toBe(contextHeader);
+    expect(expand.parentElement).toBe(contextHeader);
+    expect(preview?.contains(expand)).toBe(false);
+    expect(contextHeader?.parentElement).toBe(camera);
     expect(preview?.parentElement).toBe(camera);
-    expect(label.nextElementSibling).toBe(preview);
+    expect(contextHeader?.nextElementSibling).toBe(preview);
   });
 });

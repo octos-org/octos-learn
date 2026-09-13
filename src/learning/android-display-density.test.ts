@@ -5,6 +5,15 @@ import { planFocusCamera } from "octos-lesson-language/web-runtime";
 const styles = readFileSync("src/learning/learning-workspace.css", "utf8");
 const appStyles = readFileSync("src/index.css", "utf8");
 const setupStyles = readFileSync("src/learning/setup-whiteboard.css", "utf8");
+const runtimeSource = readFileSync(
+  "src/learning/oll/oll-lesson-runtime.tsx",
+  "utf8",
+);
+const workspaceSource = readFileSync(
+  "src/learning/learning-workspace.tsx",
+  "utf8",
+);
+const pageSource = readFileSync("src/learning/learning-page.tsx", "utf8");
 
 describe("Android meeting-display density", () => {
   it("keeps chrome compact without scaling the whiteboard surface", () => {
@@ -54,6 +63,78 @@ describe("Android meeting-display density", () => {
     expect(camera.scale).toBe(.55);
   });
 
+  it("fits a multi-card lesson scene around real Android UI occlusions", () => {
+    const camera = planFocusCamera(
+      [
+        { x: 3_714.85, y: 90, width: 380, height: 300 },
+        { x: 4_148.85, y: 501, width: 440, height: 135 },
+      ],
+      { panX: 0, panY: 0, scale: .55 },
+      { width: 960, height: 540 },
+      "relationship",
+      {
+        focusMargin: 24,
+        occlusions: [
+          { x: 6, y: 9, width: 65, height: 30 },
+          { x: 74, y: 6, width: 880, height: 36 },
+          { x: 8, y: 48, width: 314, height: 35 },
+          { x: 220, y: 495, width: 520, height: 37 },
+          { x: 658, y: 421, width: 292, height: 65 },
+        ],
+      },
+      .55,
+    );
+
+    // The previous fixed top/bottom bands left only 118px and produced
+    // 118 / 546 = 0.216117. Target-aware safe-area selection keeps the same
+    // Geometry + Note scene legible without cropping either target.
+    expect(camera.scale).toBeCloseTo(.631579, 5);
+  });
+
+  it("keeps a focused course control attachment above the bottom input dock", () => {
+    const geometry = { x: 3_714.85, y: 90, width: 380, height: 300 };
+    const controls = { x: 3_714.85, y: 432, width: 360, height: 100.5 };
+    const camera = planFocusCamera(
+      [geometry, controls],
+      { panX: 0, panY: 0, scale: .864 },
+      { width: 960, height: 540 },
+      "relationship",
+      {
+        focusMargin: 24,
+        occlusions: [
+          { x: 6, y: 9, width: 65, height: 30 },
+          { x: 74, y: 6, width: 880, height: 36 },
+          { x: 8, y: 48, width: 314, height: 35 },
+          { x: 220, y: 495, width: 520, height: 37 },
+          { x: 658, y: 421, width: 292, height: 65 },
+        ],
+      },
+      .55,
+    );
+    const controlsBottom = camera.panY
+      + (controls.y + controls.height) * camera.scale;
+
+    expect(runtimeSource).toContain("visibleTasksHeight");
+    expect(runtimeSource).toContain("focusHeight: plan.focusHeight");
+    expect(camera.scale).toBeCloseTo(.666667, 5);
+    expect(controlsBottom).toBeLessThanOrEqual(471);
+  });
+
+  it("uses measured Android chrome instead of reserving duplicate full-width bands", () => {
+    expect(runtimeSource).toContain(
+      'dataset.runtimePlatform === "android"',
+    );
+    expect(runtimeSource).toMatch(/top:\s*androidRuntime \? 0/);
+    expect(runtimeSource).toMatch(/bottom:\s*androidRuntime \? 0/);
+    expect(runtimeSource).toContain("focusMargin: 24");
+    expect(workspaceSource).toMatch(
+      /learning-workspace-topbar[\s\S]*?data-learning-board-occlusion=""/,
+    );
+    expect(pageSource).toMatch(
+      /learning-top-action-group[\s\S]*?data-learning-board-occlusion=""/,
+    );
+  });
+
   it("keeps the Android course outline compact as well as its trigger", () => {
     expect(styles).toMatch(
       /\[data-runtime-platform="android"\] \.oll-course-outline-panel\s*\{[^}]*width:\s*min\(260px[^}]*max-height:\s*min\(460px[^}]*border-radius:\s*14px/s,
@@ -66,6 +147,21 @@ describe("Android meeting-display density", () => {
     );
     expect(styles).toMatch(
       /\[data-runtime-platform="android"\] \.oll-course-step-main > span:last-child\s*\{[^}]*font-size:\s*10px/s,
+    );
+  });
+
+  it("keeps the camera monitor and framing dialog compact on the meeting display", () => {
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.learning-camera-monitor\s*\{[^}]*top:\s*48px[^}]*right:\s*8px[^}]*padding:\s*4px/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.learning-camera-frame img\s*\{[^}]*width:\s*128px[^}]*height:\s*96px/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.learning-camera-dialog\s*\{[^}]*width:\s*min\(760px[^}]*max-height:\s*calc\(100dvh - 16px\)/s,
+    );
+    expect(styles).toMatch(
+      /\[data-runtime-platform="android"\] \.learning-camera-dialog-body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 1fr\) 250px[^}]*padding:\s*12px/s,
     );
   });
 

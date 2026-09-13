@@ -55,6 +55,28 @@ export function WhiteboardQuestionImage({
   const imageUrl = currentImage?.url ?? null;
   const loadFailed = currentImage?.failed ?? false;
 
+  const expandButton = (inContextHeader = false) => (
+    <button
+      ref={triggerRef}
+      type="button"
+      className={`learning-whiteboard-question-camera-expand${
+        inContextHeader ? " is-context-header" : ""
+      }`}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.stopPropagation();
+        setPreviewOpen(true);
+      }}
+      aria-label="放大查看本次问题图片"
+      title="放大查看"
+    >
+      <Maximize2 size={inContextHeader ? 14 : 16} aria-hidden="true" />
+    </button>
+  );
+
   useEffect(() => {
     if (!previewOpen) return;
     const trigger = triggerRef.current;
@@ -96,8 +118,11 @@ export function WhiteboardQuestionImage({
     <>
       <div className="learning-whiteboard-question-camera">
         {isSelectionContext ? (
-          <div className="learning-whiteboard-question-context-label">
-            引用的白板选区
+          <div className="learning-whiteboard-question-context-header">
+            <div className="learning-whiteboard-question-context-label">
+              引用的白板选区
+            </div>
+            {expandButton(true)}
           </div>
         ) : null}
         <div className="learning-whiteboard-question-camera-preview">
@@ -106,23 +131,7 @@ export function WhiteboardQuestionImage({
             src={imageUrl}
             alt={imageDescription}
           />
-          <button
-            ref={triggerRef}
-            type="button"
-            className="learning-whiteboard-question-camera-expand"
-            onPointerDown={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-            }}
-            onClick={(event) => {
-              event.stopPropagation();
-              setPreviewOpen(true);
-            }}
-            aria-label="放大查看本次问题图片"
-            title="放大查看"
-          >
-            <Maximize2 size={16} aria-hidden="true" />
-          </button>
+          {!isSelectionContext ? expandButton() : null}
         </div>
       </div>
       {previewOpen

@@ -11,6 +11,7 @@ type RuntimeHarness = {
   renderedCamera: CameraState;
   appliedPixelRatio?: number;
   resetEditorViewport: ReturnType<typeof vi.fn>;
+  syncNativeInkCapture: ReturnType<typeof vi.fn>;
 };
 
 const updateWorldLayer = (
@@ -29,6 +30,7 @@ function createHarness(renderedCamera: CameraState): RuntimeHarness {
     },
     renderedCamera,
     resetEditorViewport: vi.fn(),
+    syncNativeInkCapture: vi.fn(),
   };
 }
 

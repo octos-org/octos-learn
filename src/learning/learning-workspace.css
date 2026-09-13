@@ -334,6 +334,180 @@
   font-size: 10px;
 }
 
+[data-runtime-platform="android"] .learning-camera-monitor {
+  top: 48px;
+  right: 8px;
+  gap: 5px;
+  padding: 4px;
+  border-radius: 10px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+[data-runtime-platform="android"] .learning-camera-frame,
+[data-runtime-platform="android"] .learning-camera-frame canvas,
+[data-runtime-platform="android"] .learning-camera-frame img {
+  max-width: 128px;
+  max-height: 96px;
+  border-radius: 8px;
+}
+
+[data-runtime-platform="android"] .learning-camera-frame img {
+  width: 128px;
+  height: 96px;
+}
+
+[data-runtime-platform="android"] .learning-camera-frame-settings {
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+[data-runtime-platform="android"] .learning-camera-frame-settings svg {
+  width: 14px;
+  height: 14px;
+}
+
+[data-runtime-platform="android"] .learning-camera-frame span {
+  right: 3px;
+  bottom: 3px;
+  left: 3px;
+  padding: 2px 4px;
+  border-radius: 5px;
+  font-size: 7px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-backdrop {
+  padding: 8px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog {
+  width: min(760px, calc(100vw - 16px));
+  max-height: calc(100dvh - 16px);
+  border-radius: 15px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header {
+  gap: 12px;
+  padding: 9px 12px 8px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header span {
+  font-size: 7px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header h2 {
+  margin: 1px 0 2px;
+  font-size: 16px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header p {
+  font-size: 9px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header button {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-header button svg {
+  width: 17px;
+  height: 17px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-body {
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 12px;
+  padding: 12px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-preview {
+  min-height: 285px;
+  border-radius: 12px;
+}
+
+[data-runtime-platform="android"]
+  .learning-camera-dialog-preview
+  .learning-camera-dialog-canvas {
+  max-height: min(66dvh, 356px);
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-preview-label {
+  top: 8px;
+  left: 8px;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-preview-label strong {
+  font-size: 9px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-preview-label span,
+[data-runtime-platform="android"] .learning-camera-dialog-privacy {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-controls {
+  gap: 8px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-actions {
+  gap: 5px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-actions button {
+  min-height: 40px;
+  gap: 2px;
+  border-radius: 10px;
+  font-size: 9px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-actions button svg {
+  width: 16px;
+  height: 16px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-slider {
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
+  gap: 6px;
+  min-height: 30px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-slider input {
+  min-height: 28px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-document-mode {
+  min-height: 48px;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 10px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-document-mode small,
+[data-runtime-platform="android"] .learning-camera-dialog-document-mode b {
+  font-size: 8px;
+}
+
+[data-runtime-platform="android"] .learning-camera-dialog-reset {
+  min-height: 34px;
+  border-radius: 9px;
+  font-size: 9px;
+}
+
 [data-runtime-platform="android"] .octos-teacher {
   right: 10px;
   bottom: 54px;
@@ -2413,12 +2587,19 @@
   overflow: hidden;
 }
 
+.learning-whiteboard-question-context-header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 4px 5px 3px 8px;
+}
+
 .learning-whiteboard-question-context-label {
   display: block;
-  flex: 0 0 auto;
-  width: 100%;
+  min-width: 0;
   box-sizing: border-box;
-  padding: 6px 8px 5px;
   color: #54706a;
   font-size: 10px;
   font-weight: 650;
@@ -2440,6 +2621,16 @@
   box-shadow: 0 4px 12px rgba(31, 53, 49, 0.18);
   cursor: pointer;
   backdrop-filter: blur(6px);
+}
+
+.learning-whiteboard-question-camera-expand.is-context-header {
+  position: static;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .learning-whiteboard-question-camera-expand:hover,

@@ -50,6 +50,8 @@ public/vad/
 
 # Generated Android build state and packaged web assets.
 Octos-Learn-android8-test*.apk
+Octos-Learn-display-test*.apk
+Octos-Learn-v*.apk
 android/.gradle/
 android/local.properties
 android/app/build/

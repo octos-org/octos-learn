@@ -2839,7 +2839,10 @@ export function LearningWorkspace({
 
   return (
     <div className="learning-workspace">
-      <header className="learning-workspace-topbar">
+      <header
+        className="learning-workspace-topbar"
+        data-learning-board-occlusion=""
+      >
         <div>
           <span>Octos Learning Canvas</span>
           <strong>{ollLesson?.title ?? "新的学习白板"}</strong>
