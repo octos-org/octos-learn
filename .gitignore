@@ -42,6 +42,9 @@ research/
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/
 
+# Generated local CoursePack fixture; published packs live outside the web build.
+public/course-packs/
+
 # Raw local math evaluation artifacts; curated summaries remain tracked.
 /docs/math-quality-results/natural-eval/
 /docs/math-quality-results/postfix-eval/
