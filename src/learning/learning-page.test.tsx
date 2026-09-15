@@ -217,6 +217,24 @@ describe("LearningPage", () => {
     expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
   });
 
+  it("creates a genuinely new blank board once and resumes it on refresh", async () => {
+    const previous = createProvisionalLearningSession(100);
+    promoteLearningSession(previous.id, "旧白板", 200);
+    window.history.replaceState({}, "", "/board?new-board=1");
+
+    const first = render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    const newSessionId = learningWorkspaceMock.props!.sessionId;
+    expect(newSessionId).not.toBe(previous.id);
+    expect(window.location.search).not.toContain("new-board");
+    first.unmount();
+    learningWorkspaceMock.props = null;
+
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props!.sessionId).toBe(newSessionId);
+  });
+
   it("uses the session menu as the standalone navigation", async () => {
     window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
 

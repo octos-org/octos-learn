@@ -5,6 +5,7 @@ import { planFocusCamera } from "octos-lesson-language/web-runtime";
 const styles = readFileSync("src/learning/learning-workspace.css", "utf8");
 const appStyles = readFileSync("src/index.css", "utf8");
 const setupStyles = readFileSync("src/learning/setup-whiteboard.css", "utf8");
+const launcherStyles = readFileSync("src/learning/course-launcher.css", "utf8");
 const runtimeSource = readFileSync(
   "src/learning/oll/oll-lesson-runtime.tsx",
   "utf8",
@@ -16,6 +17,13 @@ const workspaceSource = readFileSync(
 const pageSource = readFileSync("src/learning/learning-page.tsx", "utf8");
 
 describe("Android meeting-display density", () => {
+  it("keeps the shared launcher compact without scaling its entire page", () => {
+    expect(launcherStyles).toContain('[data-runtime-platform="android"] .course-launcher-hero');
+    expect(launcherStyles).toContain('[data-runtime-platform="android"] .course-launcher-card');
+    expect(launcherStyles).not.toMatch(
+      /\[data-runtime-platform="android"\]\s+\.course-launcher\s*\{[^}]*transform\s*:/s,
+    );
+  });
   it("keeps chrome compact without scaling the whiteboard surface", () => {
     expect(styles).toContain('[data-runtime-platform="android"] .learning-workspace-topbar');
     expect(styles).toContain('[data-runtime-platform="android"] .learning-ink-toolbar');

@@ -59,7 +59,7 @@ import {
   stripLearningContext,
 } from "./learning-context";
 import { LearningWorkspace } from "./learning-workspace";
-import { parseBuiltinCoursePackId } from "./course-pack/course-pack-loader";
+import { parseCoursePackId } from "./course-pack/course-pack-loader";
 import { useCoursePack } from "./course-pack/use-course-pack";
 import type { LearningBoardContext } from "./learning-board-context";
 import {
@@ -309,11 +309,17 @@ export function LearningPage() {
   const requestedCoursePack = useMemo(() => new URLSearchParams(
     window.location.search,
   ).get("course-pack"), []);
+  const requestedCourseVersion = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("course-version") ?? undefined, []);
+  const newBoardRequested = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("new-board") === "1", []);
   const coursePackId = useMemo(
-    () => parseBuiltinCoursePackId(requestedCoursePack),
+    () => parseCoursePackId(requestedCoursePack),
     [requestedCoursePack],
   );
-  const coursePackLoad = useCoursePack(coursePackId);
+  const coursePackLoad = useCoursePack(coursePackId, requestedCourseVersion);
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
     if (coursePackId || !nativeTtsBridgeAvailable()) return;
@@ -361,11 +367,13 @@ export function LearningPage() {
         },
       };
     }
-    const hadResumableSession = listLearningSessions().some(
+    const hadResumableSession = newBoardRequested || listLearningSessions().some(
       (session) => session.status === "active" || session.status === "paused",
     );
     const resolved = coursePackId
-      ? resolveCoursePackPreviewSession(coursePackId)
+      ? resolveCoursePackPreviewSession(`${coursePackId}@${requestedCourseVersion ?? "0.0.1"}`)
+      : newBoardRequested
+      ? createProvisionalLearningSession()
       : resolveLearningEntrySession();
     const record =
       resolved.status === "paused"
@@ -376,6 +384,14 @@ export function LearningPage() {
       record,
     };
   });
+  useEffect(() => {
+    if (!newBoardRequested) return;
+    // The entry query is a one-shot creation instruction. Removing it after
+    // mount lets refresh resume this board instead of creating another one.
+    const url = new URL(window.location.href);
+    url.searchParams.delete("new-board");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [newBoardRequested]);
   const [record, setRecord] = useState<LearningSessionRecord>(
     initialEntry.record,
   );

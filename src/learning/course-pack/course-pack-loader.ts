@@ -3,6 +3,11 @@ import {
   loadCoursePackArchive,
   type LoadedCoursePack,
 } from "octos-course-library/browser";
+import {
+  fetchCoursePackCatalog,
+  isCoursePackIdentity,
+  supportsCoursePackPlayer,
+} from "./course-pack-catalog";
 
 export type BuiltinCoursePackId = "contract-smoke";
 
@@ -17,7 +22,7 @@ const BUILTIN_COURSE_PACKS: Record<BuiltinCoursePackId, {
 };
 
 export interface CoursePackPlaybackSource {
-  id: BuiltinCoursePackId;
+  id: string;
   pack: LoadedCoursePack;
 }
 
@@ -40,6 +45,44 @@ export async function loadBuiltinCoursePack(
   return { id, pack };
 }
 
+export async function loadPublishedCoursePack(
+  id: string,
+  version: string,
+  signal?: AbortSignal,
+): Promise<CoursePackPlaybackSource> {
+  if (!isCoursePackIdentity(id, version)) throw new Error("课程包身份无效");
+  const catalog = await fetchCoursePackCatalog(signal);
+  const release = catalog.packs.find((entry) => entry.packId === id
+    && entry.version === version);
+  if (!release) throw new Error("此课程版本不在当前公开目录中");
+  if (!supportsCoursePackPlayer(release.minimumPlayerVersion)) {
+    throw new Error("此课程需要更新版本的 Octos Learn");
+  }
+  const response = await fetch(release.archiveUrl, { signal, cache: "no-store" });
+  if (!response.ok) throw new Error(`课程包下载失败（HTTP ${response.status}）`);
+  const pack = await loadCoursePackArchive(await response.arrayBuffer());
+  if (!supportsCoursePackPlayer(pack.manifest.minimumPlayerVersion)) {
+    throw new Error("此课程需要更新版本的 Octos Learn");
+  }
+  if (pack.manifest.packId !== id || pack.manifest.version !== version
+    || pack.archiveSha256 !== release.archiveSha256) {
+    throw new Error("课程包与公开目录锁定的版本或摘要不一致");
+  }
+  return { id, pack };
+}
+
+export function loadCoursePack(
+  id: string,
+  version: string | undefined,
+  signal?: AbortSignal,
+): Promise<CoursePackPlaybackSource> {
+  if (id === "contract-smoke" && !version) {
+    return loadBuiltinCoursePack(id, signal);
+  }
+  if (!version) return Promise.reject(new Error("课程包链接缺少版本"));
+  return loadPublishedCoursePack(id, version, signal);
+}
+
 export function coursePackNarrationBlob(
   source: CoursePackPlaybackSource,
   beatId: string,
@@ -54,4 +97,10 @@ export function parseBuiltinCoursePackId(
   value: string | null,
 ): BuiltinCoursePackId | undefined {
   return value === "contract-smoke" ? value : undefined;
+}
+
+export function parseCoursePackId(value: string | null): string | undefined {
+  return value && /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u.test(value)
+    ? value
+    : undefined;
 }

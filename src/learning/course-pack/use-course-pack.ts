@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  loadBuiltinCoursePack,
-  type BuiltinCoursePackId,
+  loadCoursePack,
   type CoursePackPlaybackSource,
 } from "./course-pack-loader";
 
@@ -12,26 +11,28 @@ export interface CoursePackLoadState {
 }
 
 export function useCoursePack(
-  id: BuiltinCoursePackId | undefined,
+  id: string | undefined,
+  version?: string,
 ): CoursePackLoadState {
   const [result, setResult] = useState<{
-    id: BuiltinCoursePackId;
+    key: string;
     state: CoursePackLoadState;
   } | null>(null);
+  const key = id ? `${id}@${version ?? ""}` : null;
 
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    void loadBuiltinCoursePack(id, controller.signal)
+    void loadCoursePack(id, version, controller.signal)
       .then((source) => {
         if (!controller.signal.aborted) {
-          setResult({ id, state: { source, loading: false, error: null } });
+          setResult({ key: `${id}@${version ?? ""}`, state: { source, loading: false, error: null } });
         }
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
         setResult({
-          id,
+          key: `${id}@${version ?? ""}`,
           state: {
             source: null,
             loading: false,
@@ -40,10 +41,10 @@ export function useCoursePack(
         });
       });
     return () => controller.abort();
-  }, [id]);
+  }, [id, version]);
 
   if (!id) return { source: null, loading: false, error: null };
-  return result?.id === id
+  return result?.key === key
     ? result.state
     : { source: null, loading: true, error: null };
 }
