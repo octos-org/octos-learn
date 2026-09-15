@@ -38,7 +38,8 @@ import javax.crypto.spec.GCMParameterSpec;
 /** Downloads and plays lesson narration without routing audio through WebView. */
 final class NativeTtsBridge {
     private static final String ENDPOINT = "https://openspeech.bytedance.com/api/v1/tts";
-    private static final int MAX_CACHE_FILES = 64;
+    private static final int MAX_CACHE_FILES = 512;
+    private static final long MAX_CACHE_BYTES = 512L * 1024L * 1024L;
     private static final String PREFERENCES_NAME = "octos_native_tts";
     private static final String CONFIG_PREFERENCE = "encrypted_config";
     private static final String KEY_ALIAS = "octos_native_tts_config_key";
@@ -58,7 +59,9 @@ final class NativeTtsBridge {
 
     NativeTtsBridge(WebView webView) {
         this.webView = webView;
-        this.cacheDirectory = new File(webView.getContext().getCacheDir(), "octos-native-tts");
+        // filesDir survives cache cleanup and application upgrades. The audio is
+        // regenerated after uninstall, which is the intended ownership boundary.
+        this.cacheDirectory = new File(webView.getContext().getFilesDir(), "octos-native-tts");
         this.preferences = webView.getContext().getApplicationContext()
                 .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
         this.config = loadConfig();
@@ -118,15 +121,22 @@ final class NativeTtsBridge {
             return result(false, "TTS 请求缺少文本或请求编号");
         }
         cancelled.remove(requestId);
-        final String cacheKey = sha256(activeConfig.voiceType + "\u0000" + normalized);
+        final String spokenText = ensureTerminal(normalized);
+        final String cacheKey = sha256(
+                "v2\u0000" + activeConfig.appId
+                        + "\u0000" + activeConfig.cluster
+                        + "\u0000" + activeConfig.voiceType
+                        + "\u0000mp3\u00001.0\u0000" + spokenText);
         final File cached = new File(cacheDirectory, cacheKey + ".mp3");
         CompletableFuture<File> download;
         if (cached.isFile() && cached.length() > 0) {
+            //noinspection ResultOfMethodCallIgnored
+            cached.setLastModified(System.currentTimeMillis());
             download = CompletableFuture.completedFuture(cached);
         } else {
             download = downloads.computeIfAbsent(cacheKey, ignored ->
                     CompletableFuture.supplyAsync(
-                            () -> synthesize(normalized, cached, activeConfig),
+                            () -> synthesize(spokenText, cached, activeConfig),
                             executor
                     ).whenComplete((file, error) -> downloads.remove(cacheKey)));
         }
@@ -189,7 +199,7 @@ final class NativeTtsBridge {
                     .put("speed_ratio", 1.0));
             body.put("request", new JSONObject()
                     .put("reqid", UUID.randomUUID().toString())
-                    .put("text", ensureTerminal(text))
+                    .put("text", text)
                     .put("operation", "query")
                     .put("text_type", "plain"));
             byte[] requestBytes = body.toString().getBytes(StandardCharsets.UTF_8);
@@ -293,11 +303,18 @@ final class NativeTtsBridge {
 
     private void trimCache() {
         File[] files = cacheDirectory.listFiles((directory, name) -> name.endsWith(".mp3"));
-        if (files == null || files.length <= MAX_CACHE_FILES) return;
+        if (files == null) return;
         Arrays.sort(files, Comparator.comparingLong(File::lastModified));
-        for (int index = 0; index < files.length - MAX_CACHE_FILES; index++) {
+        long totalBytes = 0;
+        for (File file : files) totalBytes += file.length();
+        int remaining = files.length;
+        for (File file : files) {
+            if (remaining <= MAX_CACHE_FILES && totalBytes <= MAX_CACHE_BYTES) break;
+            long bytes = file.length();
             //noinspection ResultOfMethodCallIgnored
-            files[index].delete();
+            file.delete();
+            remaining -= 1;
+            totalBytes -= bytes;
         }
     }
 

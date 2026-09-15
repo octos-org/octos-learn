@@ -17,6 +17,7 @@ persistent data separate:
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
 /etc/octos-learn/hosted-tts.env     platform TTS credential (0600)
+/var/lib/octos-learn/hosted-tts/audio-cache/  private persistent narration cache
 /var/lib/octos-learn/octos/         users, profiles, sessions, whiteboards
 /var/lib/octos-learn/hosted-tts/    hosted-TTS quota and usage database
 /var/lib/octos-learn/runtime/       process working directory only

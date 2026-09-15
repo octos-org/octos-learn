@@ -6,12 +6,21 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { createServer } from "node:http";
 import { createHandler, UsageLedger } from "./server.mjs";
+import { PersistentAudioCache, synthesisCacheKey } from "./audio-cache.mjs";
 
 function fixture(now = () => new Date("2026-09-05T12:00:00Z")) {
   const directory = mkdtempSync(join(tmpdir(), "octos-learn-tts-"));
   const ledger = new UsageLedger(join(directory, "usage.sqlite"), now);
   ledger.setLimits({ enabled: true, platform_monthly_chars: 100, user_monthly_chars: 60 });
-  return { ledger, cleanup: () => { ledger.close(); rmSync(directory, { recursive: true }); } };
+  return {
+    directory,
+    ledger,
+    cleanup: () => { ledger.close(); rmSync(directory, { recursive: true }); },
+  };
+}
+
+async function closeServer(server) {
+  await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
 
 test("ledger persists usage and enforces both caps", () => {
@@ -53,6 +62,164 @@ test("hosted synthesis authenticates, meters, and never exposes the credential",
     assert.equal(json.user_used_chars, 3);
     assert.equal(JSON.stringify(json).includes("secret"), false);
   } finally { server.close(); cleanup(); }
+});
+
+test("hosted synthesis persists audio across handler restarts without charging twice", async () => {
+  const { directory, ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test", appid: "app", token: "secret", endpoint: "https://openspeech.bytedance.com/api/v1/tts",
+    cluster: "volcano_tts", voice: "voice", encoding: "mp3", maxConcurrent: 2, queueWaitMs: 10, requestsPerMinute: 60,
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({
+    user: { id: "alice", role: "user" },
+    profile: { profile: { config: {} } },
+  }), { status: 200 });
+  let synthesisCalls = 0;
+  const platformSynthesize = async () => {
+    synthesisCalls += 1;
+    return { bytes: Buffer.from("cached audio"), contentType: "audio/mpeg", source: "platform" };
+  };
+  const cacheDirectory = join(directory, "audio-cache");
+  let server = createServer(createHandler({
+    config,
+    ledger,
+    fetchImpl,
+    platformSynthesize,
+    audioCache: new PersistentAudioCache(cacheDirectory),
+  }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const requestAudio = () => fetch(
+    `http://127.0.0.1:${server.address().port}/api/learn/tts/synthesize`,
+    {
+      method: "POST",
+      headers: { authorization: "Bearer session", "content-type": "application/json" },
+      body: JSON.stringify({ text: "你好" }),
+    },
+  );
+  try {
+    const first = await requestAudio();
+    assert.equal(first.headers.get("x-octos-tts-cache"), "miss");
+    assert.equal(await first.text(), "cached audio");
+
+    const replay = await requestAudio();
+    assert.equal(replay.headers.get("x-octos-tts-cache"), "hit");
+    assert.equal(await replay.text(), "cached audio");
+    assert.equal(synthesisCalls, 1);
+    assert.deepEqual(ledger.usage("alice"), { total: 3, user: 3 });
+
+    await closeServer(server);
+    server = createServer(createHandler({
+      config,
+      ledger,
+      fetchImpl,
+      platformSynthesize,
+      audioCache: new PersistentAudioCache(cacheDirectory),
+    }));
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+
+    const afterRestart = await requestAudio();
+    assert.equal(afterRestart.headers.get("x-octos-tts-cache"), "hit");
+    assert.equal(await afterRestart.text(), "cached audio");
+    assert.equal(synthesisCalls, 1);
+    assert.deepEqual(ledger.usage("alice"), { total: 3, user: 3 });
+  } finally {
+    if (server.listening) await closeServer(server);
+    cleanup();
+  }
+});
+
+test("persistent audio keys isolate users and voice configurations", () => {
+  const base = {
+    profileId: "alice",
+    profile: { profile: { config: {} } },
+    platform: {
+      appid: "app",
+      cluster: "volcano_tts",
+      encoding: "mp3",
+      endpoint: "https://openspeech.bytedance.com/api/v1/tts",
+      voice: "xiaohe",
+    },
+    text: "同一句旁白。",
+  };
+  const first = synthesisCacheKey(base);
+  assert.equal(synthesisCacheKey({ ...base }), first);
+  assert.notEqual(synthesisCacheKey({ ...base, profileId: "bob" }), first);
+  assert.notEqual(synthesisCacheKey({
+    ...base,
+    platform: { ...base.platform, voice: "another-voice" },
+  }), first);
+});
+
+test("concurrent identical narration shares one synthesis and quota reservation", async () => {
+  const { directory, ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test", appid: "app", token: "secret", endpoint: "https://openspeech.bytedance.com/api/v1/tts",
+    cluster: "volcano_tts", voice: "voice", encoding: "mp3", maxConcurrent: 2, queueWaitMs: 10, requestsPerMinute: 60,
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({
+    user: { id: "alice", role: "user" },
+    profile: { profile: { config: {} } },
+  }), { status: 200 });
+  let synthesisCalls = 0;
+  let finishSynthesis;
+  const pendingSynthesis = new Promise((resolve) => { finishSynthesis = resolve; });
+  const platformSynthesize = async () => {
+    synthesisCalls += 1;
+    await pendingSynthesis;
+    return { bytes: Buffer.from("shared audio"), contentType: "audio/mpeg", source: "platform" };
+  };
+  const server = createServer(createHandler({
+    config,
+    ledger,
+    fetchImpl,
+    platformSynthesize,
+    audioCache: new PersistentAudioCache(join(directory, "audio-cache")),
+  }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const url = `http://127.0.0.1:${server.address().port}/api/learn/tts/synthesize`;
+  const options = {
+    method: "POST",
+    headers: { authorization: "Bearer session", "content-type": "application/json" },
+    body: JSON.stringify({ text: "并发旁白" }),
+  };
+  try {
+    const first = fetch(url, options);
+    const second = fetch(url, options);
+    await new Promise((resolve) => setImmediate(resolve));
+    finishSynthesis();
+    const responses = await Promise.all([first, second]);
+    const cacheStatuses = responses.map((response) => response.headers.get("x-octos-tts-cache"));
+    assert.equal(cacheStatuses.includes("miss"), true);
+    assert.equal(cacheStatuses.some((status) => status === "coalesced" || status === "hit"), true);
+    assert.equal(synthesisCalls, 1);
+    assert.deepEqual(ledger.usage("alice"), { total: 5, user: 5 });
+  } finally {
+    await closeServer(server);
+    cleanup();
+  }
+});
+
+test("persistent audio cache evicts the least recently used entry", () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  let now = 1_000;
+  const cache = new PersistentAudioCache(directory, {
+    maxEntries: 1,
+    maxBytes: 1_024,
+    now: () => now++,
+  });
+  const firstKey = "a".repeat(64);
+  const secondKey = "b".repeat(64);
+  try {
+    cache.put(firstKey, { bytes: Buffer.from("first"), contentType: "audio/mpeg", source: "platform" });
+    cache.put(secondKey, { bytes: Buffer.from("second"), contentType: "audio/mpeg", source: "platform" });
+    assert.equal(cache.get(firstKey), null);
+    assert.equal(cache.get(secondKey).bytes.toString(), "second");
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 });
 
 test("a personal TTS configuration bypasses platform metering", async () => {

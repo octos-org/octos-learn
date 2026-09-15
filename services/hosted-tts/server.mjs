@@ -1,8 +1,9 @@
 import { createServer } from "node:http";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { PersistentAudioCache, synthesisCacheKey } from "./audio-cache.mjs";
 
 const JSON_TYPE = "application/json; charset=utf-8";
 const MAX_BODY_BYTES = 64 * 1024;
@@ -23,11 +24,21 @@ export function loadConfig(env = process.env) {
   if (parsedEndpoint.protocol !== "https:" || parsedEndpoint.hostname !== "openspeech.bytedance.com") {
     throw new Error("VOLC_TTS_ENDPOINT must be HTTPS on openspeech.bytedance.com");
   }
+  const databasePath = env.DATABASE_PATH?.trim() || "/var/lib/octos-learn/hosted-tts/usage.sqlite";
   return {
     host: env.HOST?.trim() || "127.0.0.1",
     port: parseInteger(env.PORT, 50_081, 1, 65_535),
     octosBaseUrl: env.OCTOS_BASE_URL?.trim() || "http://127.0.0.1:50080",
-    databasePath: env.DATABASE_PATH?.trim() || "/var/lib/octos-learn/hosted-tts/usage.sqlite",
+    databasePath,
+    cacheDirectory: env.HOSTED_TTS_CACHE_DIRECTORY?.trim()
+      || join(dirname(databasePath), "audio-cache"),
+    cacheMaxBytes: parseInteger(
+      env.HOSTED_TTS_CACHE_MAX_BYTES,
+      2 * 1024 * 1024 * 1024,
+      1,
+      100 * 1024 * 1024 * 1024,
+    ),
+    cacheMaxEntries: parseInteger(env.HOSTED_TTS_CACHE_MAX_ENTRIES, 10_000, 1, 1_000_000),
     appid: env.VOLC_TTS_APPID?.trim() || "",
     token: env.VOLC_TTS_TOKEN?.trim() || "",
     cluster: env.VOLC_TTS_CLUSTER?.trim() || "volcano_tts",
@@ -307,8 +318,55 @@ function sendJson(response, status, payload, extraHeaders = {}) {
   response.end(JSON.stringify(payload));
 }
 
-export function createHandler({ config, ledger, fetchImpl = fetch, platformSynthesize = synthesizePlatform }) {
+export function createHandler({
+  config,
+  ledger,
+  fetchImpl = fetch,
+  platformSynthesize = synthesizePlatform,
+  audioCache = null,
+}) {
   const gate = new ConcurrencyGate(config.maxConcurrent, config.queueWaitMs);
+  const inFlightSynthesis = new Map();
+
+  async function cachedSynthesis(key, produce) {
+    const cached = audioCache?.get(key);
+    if (cached) return { result: cached, cacheStatus: "hit" };
+
+    const active = inFlightSynthesis.get(key);
+    if (active) return { result: await active, cacheStatus: "coalesced" };
+
+    const synthesis = (async () => {
+      const result = await produce();
+      try {
+        audioCache?.put(key, result);
+      } catch (error) {
+        // A full or temporarily unavailable cache must not turn successfully
+        // synthesized narration into a playback failure.
+        console.warn("hosted TTS cache write failed", error);
+      }
+      return result;
+    })();
+    inFlightSynthesis.set(key, synthesis);
+    try {
+      return {
+        result: await synthesis,
+        cacheStatus: audioCache ? "miss" : "bypass",
+      };
+    } finally {
+      inFlightSynthesis.delete(key);
+    }
+  }
+
+  function sendAudio(response, result, cacheStatus) {
+    response.writeHead(200, {
+      "content-type": result.contentType,
+      "cache-control": "private, no-store",
+      "x-octos-tts-source": result.source,
+      "x-octos-tts-cache": cacheStatus,
+    });
+    response.end(result.bytes);
+  }
+
   return async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost");
@@ -368,22 +426,31 @@ export function createHandler({ config, ledger, fetchImpl = fetch, platformSynth
       if (request.method === "POST" && url.pathname === "/api/learn/tts/synthesize") {
         const body = await readJson(request);
         const { text, length } = parseText(body.text);
+        const cacheKey = synthesisCacheKey({
+          profileId,
+          profile: me.profile,
+          platform: usesPlatform ? config : null,
+          text: ensureTerminal(text),
+        });
         if (!usesPlatform) {
-          const result = await forwardPersonalSynthesis(request, { text }, config, fetchImpl);
-          response.writeHead(200, { "content-type": result.contentType, "x-octos-tts-source": result.source });
-          return response.end(result.bytes);
+          const { result, cacheStatus } = await cachedSynthesis(
+            cacheKey,
+            () => forwardPersonalSynthesis(request, { text }, config, fetchImpl),
+          );
+          return sendAudio(response, result, cacheStatus);
         }
         if (!config.appid || !config.token) throw new HttpError(503, "本站尚未提供默认 TTS。");
-        const release = await gate.acquire();
-        try {
-          // Reserve one extra character because terminal punctuation can be appended.
-          ledger.reserve(profileId, length + 1, config.requestsPerMinute);
-          const result = await platformSynthesize(text, config, fetchImpl);
-          response.writeHead(200, { "content-type": result.contentType, "x-octos-tts-source": result.source });
-          return response.end(result.bytes);
-        } finally {
-          release();
-        }
+        const { result, cacheStatus } = await cachedSynthesis(cacheKey, async () => {
+          const release = await gate.acquire();
+          try {
+            // Cache misses reserve one extra character because terminal punctuation can be appended.
+            ledger.reserve(profileId, length + 1, config.requestsPerMinute);
+            return await platformSynthesize(text, config, fetchImpl);
+          } finally {
+            release();
+          }
+        });
+        return sendAudio(response, result, cacheStatus);
       }
 
       throw new HttpError(404, "not found");
@@ -402,7 +469,11 @@ export function createHandler({ config, ledger, fetchImpl = fetch, platformSynth
 export function start(env = process.env) {
   const config = loadConfig(env);
   const ledger = new UsageLedger(config.databasePath);
-  const server = createServer(createHandler({ config, ledger }));
+  const audioCache = new PersistentAudioCache(config.cacheDirectory, {
+    maxBytes: config.cacheMaxBytes,
+    maxEntries: config.cacheMaxEntries,
+  });
+  const server = createServer(createHandler({ config, ledger, audioCache }));
   server.listen(config.port, config.host, () => {
     console.log(`Octos Learn hosted TTS listening on http://${config.host}:${config.port}`);
   });
