@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LearningWorkspaceProps } from "./learning-workspace";
 import {
+  createCoursePackLearningInstance,
   createProvisionalLearningSession,
   getLearningSession,
   listLearningSessions,
@@ -215,6 +216,71 @@ describe("LearningPage", () => {
     );
     expect(sessionApiMock.listSessions).not.toHaveBeenCalled();
     expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
+    expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview");
+    expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
+    expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeTypeOf("function");
+    expect(screen.getByRole("button", { name: "返回课程首页" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "打开学习会话列表" })).toBeNull();
+  });
+
+  it("creates an isolated instance only when a preview starts interactive learning", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/learn?course-pack=contract-smoke&course-mode=preview&course-title=%E6%95%B0%E5%AD%A6%E8%AF%BE",
+    );
+    const source = {
+      manifest: { packId: "contract-smoke", version: "0.0.1" },
+      archiveSha256: "a".repeat(64),
+    };
+    coursePackLibraryMock.load.mockResolvedValue(source);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview"));
+
+    act(() => learningWorkspaceMock.props?.onStartCourseInteraction?.());
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.courseAccessMode).toBe("instance"));
+    const instance = getLearningSession(learningWorkspaceMock.props!.sessionId);
+    expect(instance?.title).toBe("数学课");
+    expect(instance?.source).toEqual({
+      kind: "course-pack",
+      mode: "instance",
+      packId: "contract-smoke",
+      version: "0.0.1",
+      archiveSha256: "a".repeat(64),
+    });
+    expect(window.location.search).toContain("course-mode=learn");
+    expect(window.location.search).toContain(`course-instance=${instance?.id}`);
+  });
+
+  it("continues the explicitly selected CoursePack instance", async () => {
+    const digest = "a".repeat(64);
+    const instance = createCoursePackLearningInstance({
+      packId: "contract-smoke",
+      version: "0.0.1",
+      archiveSha256: digest,
+    }, "数学课", 100);
+    window.history.replaceState(
+      {},
+      "",
+      `/learn?course-pack=contract-smoke&course-mode=learn&course-instance=${instance.id}`,
+    );
+    coursePackLibraryMock.load.mockResolvedValue({
+      manifest: { packId: "contract-smoke", version: "0.0.1" },
+      archiveSha256: digest,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.sessionId).toBe(instance.id));
+    expect(learningWorkspaceMock.props?.courseAccessMode).toBe("instance");
+    expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeUndefined();
   });
 
   it("creates a genuinely new blank board once and resumes it on refresh", async () => {
@@ -646,6 +712,27 @@ describe("LearningPage", () => {
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
     expect(getLearningSession(staleId)).toBeNull();
     expect(learningWorkspaceMock.props?.sessionId).not.toBe(staleId);
+  });
+
+  it("keeps CoursePack instances out of ordinary session sync and navigation", async () => {
+    const instance = createCoursePackLearningInstance({
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: "a".repeat(64),
+    }, "三年级数学课程实例", 908);
+    sessionApiMock.listSessions.mockResolvedValue([]);
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(sessionApiMock.listSessions).toHaveBeenCalled());
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(getLearningSession(instance.id)).toEqual(instance);
+    expect(learningWorkspaceMock.props?.sessionId).not.toBe(instance.id);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "打开学习会话列表" }),
+    );
+    expect(screen.queryByText("三年级数学课程实例")).toBeNull();
   });
 
   it("keeps a local whiteboard with saved ink when the server has no lesson", async () => {

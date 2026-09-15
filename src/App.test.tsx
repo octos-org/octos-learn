@@ -95,7 +95,14 @@ describe("Octos Learn routes", () => {
   it("opens a version-pinned catalog course on the existing board", async () => {
     renderRoute("/course/grade-3-math?version=1.0.0");
     await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
-      "/board?course-pack=grade-3-math&course-version=1.0.0",
+      "/board?course-pack=grade-3-math&course-version=1.0.0&course-mode=preview",
+    ));
+  });
+
+  it("preserves an explicit interactive course instance", async () => {
+    renderRoute("/course/grade-3-math?version=1.0.0&title=%E6%95%B0%E5%AD%A6&mode=learn&instance=learn-123-abc");
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
+      "/board?course-pack=grade-3-math&course-version=1.0.0&course-mode=learn&course-title=%E6%95%B0%E5%AD%A6&course-instance=learn-123-abc",
     ));
   });
 

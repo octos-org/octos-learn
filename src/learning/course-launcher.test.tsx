@@ -1,12 +1,13 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
 
 const storage = vi.hoisted(() => ({ list: vi.fn(async () => []) }));
+const auth = vi.hoisted(() => ({ token: null as string | null }));
 
 vi.mock("@/auth/auth-context", () => ({
-  useAuth: () => ({ token: null }),
+  useAuth: () => ({ token: auth.token }),
 }));
 
 vi.mock("./course-pack/course-pack-store", () => ({
@@ -47,6 +48,7 @@ function showLauncher() {
 
 describe("shared course launcher", () => {
   beforeEach(() => {
+    auth.token = null;
     storage.list.mockReset().mockResolvedValue([]);
   });
 
@@ -63,11 +65,14 @@ describe("shared course launcher", () => {
     expect(await screen.findByText("课程包还在准备中")).toBeTruthy();
   });
 
-  it("opens a reviewed, version-pinned pack on the same board", async () => {
+  it("offers separate preview and interactive entry for a version-pinned pack", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
     showLauncher();
-    const start = await screen.findByRole("link", { name: /开始课程/u });
-    expect(start.getAttribute("href")).toBe("/course/grade-3-math?version=1.0.0");
+    const preview = await screen.findByRole("link", { name: /预览/u });
+    expect(preview.getAttribute("href")).toBe(
+      "/course/grade-3-math?version=1.0.0&title=%E4%B8%89%E5%B9%B4%E7%BA%A7%E6%95%B0%E5%AD%A6&mode=preview",
+    );
+    expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
     expect(screen.getByText("三年级数学")).toBeTruthy();
   });
 
@@ -76,7 +81,7 @@ describe("shared course launcher", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
     showLauncher();
     expect(await screen.findByText("联网后可打开")).toBeTruthy();
-    expect(screen.queryByRole("link", { name: /开始课程/u })).toBeNull();
+    expect(screen.queryByRole("link", { name: /预览/u })).toBeNull();
     expect(screen.getByRole("link", { name: /新建空白白板/u })).toBeTruthy();
   });
 
@@ -93,8 +98,8 @@ describe("shared course launcher", () => {
     showLauncher();
 
     expect(await screen.findByText("已下载 · 可离线")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /开始课程/u }).getAttribute("href"))
-      .toBe("/course/grade-3-math?version=1.0.0");
+    expect(screen.getByRole("link", { name: /预览/u }).getAttribute("href"))
+      .toContain("mode=preview");
   });
 
   it("keeps an installed course discoverable without the localStorage catalog", async () => {
@@ -110,5 +115,22 @@ describe("shared course launcher", () => {
 
     expect(await screen.findByText("三年级数学")).toBeTruthy();
     expect(screen.getByText("已下载 · 可离线")).toBeTruthy();
+  });
+
+  it("creates one instance explicitly, then offers continue and restart", async () => {
+    auth.token = "token";
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
+    showLauncher();
+    fireEvent.click(await screen.findByRole("button", { name: /开始互动/u }));
+
+    const raw = localStorage.getItem("octos_learning_sessions_v2:anonymous");
+    expect(raw).toContain('"mode":"instance"');
+    cleanup();
+    showLauncher();
+    expect(await screen.findByRole("link", { name: /继续学习/u })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /重新开始/u })).toBeTruthy();
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
+    expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
   });
 });

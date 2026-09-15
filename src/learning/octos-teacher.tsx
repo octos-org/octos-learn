@@ -24,12 +24,14 @@ export function OctosTeacher({
   preparing = false,
   stateLabel,
   onClick,
+  disabled = false,
 }: {
   state: VoiceState;
   speech: string;
   preparing?: boolean;
   stateLabel?: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   const { skin } = useTeacherSkin();
   const [reactionKey, setReactionKey] = useState(0);
@@ -46,6 +48,7 @@ export function OctosTeacher({
   );
 
   const handleClick = () => {
+    if (disabled) return;
     if (reactionTimerRef.current !== null) {
       window.clearTimeout(reactionTimerRef.current);
     }
@@ -75,9 +78,12 @@ export function OctosTeacher({
         data-preparing={preparing ? "true" : undefined}
         data-reacting={reacting ? "true" : undefined}
         onClick={handleClick}
+        disabled={disabled}
         aria-busy={preparing}
         aria-label={
-          preparing
+          disabled
+            ? "课程预览"
+            : preparing
             ? "Octos 正在准备下一步"
             : state === "speaking" || state === "thinking"
             ? "打断 Octos"

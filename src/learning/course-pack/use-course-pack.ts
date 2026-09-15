@@ -13,26 +13,27 @@ export interface CoursePackLoadState {
 export function useCoursePack(
   id: string | undefined,
   version?: string,
+  expectedDigest?: string,
 ): CoursePackLoadState {
   const [result, setResult] = useState<{
     key: string;
     state: CoursePackLoadState;
   } | null>(null);
-  const key = id ? `${id}@${version ?? ""}` : null;
+  const key = id ? `${id}@${version ?? ""}:${expectedDigest ?? ""}` : null;
 
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
-    void loadCoursePack(id, version, controller.signal)
+    void loadCoursePack(id, version, controller.signal, expectedDigest)
       .then((source) => {
         if (!controller.signal.aborted) {
-          setResult({ key: `${id}@${version ?? ""}`, state: { source, loading: false, error: null } });
+          setResult({ key: `${id}@${version ?? ""}:${expectedDigest ?? ""}`, state: { source, loading: false, error: null } });
         }
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
         setResult({
-          key: `${id}@${version ?? ""}`,
+          key: `${id}@${version ?? ""}:${expectedDigest ?? ""}`,
           state: {
             source: null,
             loading: false,
@@ -41,7 +42,7 @@ export function useCoursePack(
         });
       });
     return () => controller.abort();
-  }, [id, version]);
+  }, [expectedDigest, id, version]);
 
   if (!id) return { source: null, loading: false, error: null };
   return result?.key === key

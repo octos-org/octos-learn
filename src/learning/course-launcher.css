@@ -166,15 +166,41 @@
   font-size: 12px;
 }
 
-.course-launcher-start {
+.course-launcher-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 11px;
+}
+
+.course-launcher-start,
+.course-launcher-preview,
+.course-launcher-restart,
+.course-launcher-delete {
   display: inline-flex;
   min-height: 36px;
   align-items: center;
   gap: 6px;
-  color: #0b6978;
-  font-weight: 700;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
   text-decoration: none;
 }
+
+.course-launcher-start {
+  color: #0b6978;
+  font-weight: 700;
+}
+
+.course-launcher-preview,
+.course-launcher-restart,
+.course-launcher-delete { color: #607477; }
+
+.course-launcher-delete:hover { color: #a84836; }
 
 .course-launcher-unavailable { color: #875f46; }
 .course-launcher-notice,

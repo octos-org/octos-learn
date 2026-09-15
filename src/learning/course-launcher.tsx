@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpen, Plus, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
+import { ArrowRight, BookOpen, Eye, Plus, RotateCcw, Settings, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import {
   fetchCoursePackCatalog,
@@ -14,6 +14,11 @@ import {
   listInstalledCoursePacks,
   type InstalledCoursePack,
 } from "./course-pack/course-pack-store";
+import {
+  createCoursePackLearningInstance,
+  listCoursePackLearningInstances,
+  removeLearningSession,
+} from "./learning-session-store";
 import "./course-launcher.css";
 
 type CatalogState = {
@@ -57,16 +62,49 @@ function CourseCard({
   live,
   installed,
   installedThumbnail,
+  authenticated,
 }: {
   entry: CoursePackCatalogEntry;
   live: boolean;
   installed: boolean;
   installedThumbnail?: string;
+  authenticated: boolean;
 }) {
+  const navigate = useNavigate();
   const supported = supportsCoursePackPlayer(entry.minimumPlayerVersion);
   const playable = supported && (live || installed);
-  const destination = `/course/${encodeURIComponent(entry.packId)}`
-    + `?version=${encodeURIComponent(entry.version)}`;
+  const source = {
+    packId: entry.packId,
+    version: entry.version,
+    archiveSha256: entry.archiveSha256,
+  };
+  const [latestInstance, setLatestInstance] = useState(
+    () => listCoursePackLearningInstances(source)[0] ?? null,
+  );
+  const destination = (mode: "preview" | "learn", instanceId?: string) =>
+    `/course/${encodeURIComponent(entry.packId)}`
+      + `?version=${encodeURIComponent(entry.version)}`
+      + `&title=${encodeURIComponent(entry.title)}`
+      + `&mode=${mode}`
+      + (instanceId ? `&instance=${encodeURIComponent(instanceId)}` : "");
+  const startNewInstance = () => {
+    if (!authenticated) {
+      navigate(destination("learn"));
+      return;
+    }
+    const instance = createCoursePackLearningInstance(source, entry.title);
+    navigate(destination("learn", instance.id));
+  };
+  const restartCourse = () => {
+    if (!window.confirm("从课程初始白板重新开始？原来的学习记录会保留。")) return;
+    startNewInstance();
+  };
+  const deleteProgress = () => {
+    if (!latestInstance
+      || !window.confirm("删除这门课程当前保存的学习记录？课程包本身不会被删除。")) return;
+    removeLearningSession(latestInstance.id);
+    setLatestInstance(listCoursePackLearningInstances(source)[0] ?? null);
+  };
   return (
     <article className="course-launcher-card">
       <div className="course-launcher-cover">
@@ -85,9 +123,39 @@ function CourseCard({
             {installed ? "已下载 · 可离线" : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
           </span>
           {playable ? (
-            <Link to={destination} className="course-launcher-start">
-              开始课程 <ArrowRight size={16} aria-hidden="true" />
-            </Link>
+            <div className="course-launcher-actions">
+              <Link to={destination("preview")} className="course-launcher-preview">
+                <Eye size={14} aria-hidden="true" /> 预览
+              </Link>
+              {entry.capabilities.interactiveWhiteboard ? (
+                latestInstance ? (
+                  <>
+                    <button type="button" className="course-launcher-restart" onClick={restartCourse}>
+                      <RotateCcw size={14} aria-hidden="true" /> 重新开始
+                    </button>
+                    <button
+                      type="button"
+                      className="course-launcher-delete"
+                      onClick={deleteProgress}
+                      aria-label={`删除“${entry.title}”的学习记录`}
+                      title="删除学习记录"
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                    <Link
+                      to={destination("learn", latestInstance.id)}
+                      className="course-launcher-start"
+                    >
+                      继续学习 <ArrowRight size={16} aria-hidden="true" />
+                    </Link>
+                  </>
+                ) : (
+                  <button type="button" className="course-launcher-start" onClick={startNewInstance}>
+                    开始互动 <ArrowRight size={16} aria-hidden="true" />
+                  </button>
+                )
+              ) : null}
+            </div>
           ) : (
             <span className="course-launcher-unavailable">
               {supported ? "联网后可打开" : "需要更新应用"}
@@ -203,6 +271,7 @@ export function CourseLauncher() {
                     live={state.live}
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}
+                    authenticated={Boolean(token)}
                   />
                 );
               })}

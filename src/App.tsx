@@ -37,7 +37,19 @@ function CourseRoute() {
   if (!packId || !version || !isCoursePackIdentity(packId, version)) {
     return <Navigate to="/" replace />;
   }
-  const search = `?course-pack=${encodeURIComponent(packId)}&course-version=${encodeURIComponent(version)}`;
+  const courseMode = query.get("mode") === "learn" ? "learn" : "preview";
+  const instanceId = query.get("instance");
+  const boardQuery = new URLSearchParams({
+    "course-pack": packId,
+    "course-version": version,
+    "course-mode": courseMode,
+  });
+  const title = query.get("title")?.trim();
+  if (title) boardQuery.set("course-title", title.slice(0, 120));
+  if (courseMode === "learn" && instanceId?.startsWith("learn-")) {
+    boardQuery.set("course-instance", instanceId);
+  }
+  const search = `?${boardQuery.toString()}`;
   return <Navigate to={{ pathname: "/board", search }} replace />;
 }
 

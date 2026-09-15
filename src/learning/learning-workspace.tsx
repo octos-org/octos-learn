@@ -331,6 +331,8 @@ export interface LearningWorkspaceProps {
   onVoiceExit?: () => void;
   ollFixture?: OllFixture;
   coursePack?: CoursePackPlaybackSource;
+  courseAccessMode?: "preview" | "instance";
+  onStartCourseInteraction?: () => void;
 }
 
 function inkPlaybackRunStorageKey(sessionId: string): string {
@@ -407,7 +409,10 @@ export function LearningWorkspace({
   onVoiceExit,
   ollFixture,
   coursePack,
+  courseAccessMode = "instance",
+  onStartCourseInteraction,
 }: LearningWorkspaceProps) {
+  const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   const aiUnavailable = !modelConfigured || (runtime.llmReady === false && !runtime.loading);
@@ -2931,6 +2936,18 @@ export function LearningWorkspace({
           </div>
         ) : null}
         <div className="learning-workspace-actions">
+          {coursePreview ? (
+            <button
+              type="button"
+              className="learning-mode-button is-active"
+              onClick={onStartCourseInteraction}
+              disabled={!onStartCourseInteraction}
+            >
+              <Play size={15} />
+              <span>开始互动学习</span>
+            </button>
+          ) : (
+            <>
           <button
             type="button"
             className={`learning-mode-button ${voiceEnabled ? "is-active" : ""}`}
@@ -2960,6 +2977,8 @@ export function LearningWorkspace({
             {conv.cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
             <span>{conv.cameraActive ? "关闭摄像头" : "启用摄像头"}</span>
           </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -2983,7 +3002,7 @@ export function LearningWorkspace({
       <main className="learning-canvas-shell">
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
-          inkSessionId={inkSessionId}
+          inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}
           questions={replayingWithoutStudentAdditions || !selectionStateReady
             ? whiteboardQuestions.filter((question) => question.origin !== "selection")
@@ -3068,13 +3087,14 @@ export function LearningWorkspace({
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
+        disabled={coursePreview}
       />
 
       {controlledOllLesson
         ? <OllCourseOutline runtime={controlledOllLesson} />
         : null}
 
-      <StudentInputDock
+      {!coursePreview ? <StudentInputDock
         textOnly={import.meta.env.MODE === "android"}
         suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
           ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
@@ -3101,7 +3121,7 @@ export function LearningWorkspace({
         onRemoveReference={(id) => setComposerBoardReferences((current) =>
           current.filter((reference) => reference.id !== id),
         )}
-      />
+      /> : null}
 
       {(sendError ||
         fileListError ||

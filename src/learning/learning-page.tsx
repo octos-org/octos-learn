@@ -63,8 +63,11 @@ import { parseCoursePackId } from "./course-pack/course-pack-loader";
 import { useCoursePack } from "./course-pack/use-course-pack";
 import type { LearningBoardContext } from "./learning-board-context";
 import {
+  bindCoursePackArchiveDigest,
+  createCoursePackLearningInstance,
   createProvisionalLearningSession,
   adoptLearningSession,
+  getCoursePackLearningInstance,
   hasDurableLocalWhiteboardContent,
   isSubstantiveLearningText,
   listLearningSessions,
@@ -312,6 +315,16 @@ export function LearningPage() {
   const requestedCourseVersion = useMemo(() => new URLSearchParams(
     window.location.search,
   ).get("course-version") ?? undefined, []);
+  const requestedCourseMode = useMemo<"preview" | "instance">(() =>
+    new URLSearchParams(window.location.search).get("course-mode") === "learn"
+      ? "instance"
+      : "preview", []);
+  const requestedCourseInstance = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("course-instance"), []);
+  const requestedCourseTitle = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("course-title")?.trim() || undefined, []);
   const newBoardRequested = useMemo(() => new URLSearchParams(
     window.location.search,
   ).get("new-board") === "1", []);
@@ -319,7 +332,6 @@ export function LearningPage() {
     () => parseCoursePackId(requestedCoursePack),
     [requestedCoursePack],
   );
-  const coursePackLoad = useCoursePack(coursePackId, requestedCourseVersion);
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
     if (coursePackId || !nativeTtsBridgeAvailable()) return;
@@ -368,10 +380,27 @@ export function LearningPage() {
       };
     }
     const hadResumableSession = newBoardRequested || listLearningSessions().some(
-      (session) => session.status === "active" || session.status === "paused",
+      (session) => !session.source
+        && (session.status === "active" || session.status === "paused"),
     );
-    const resolved = coursePackId
-      ? resolveCoursePackPreviewSession(`${coursePackId}@${requestedCourseVersion ?? "0.0.1"}`)
+    const packSource = coursePackId ? {
+      packId: coursePackId,
+      version: requestedCourseVersion ?? "0.0.1",
+    } : null;
+    const requestedInstance = packSource && requestedCourseMode === "instance"
+      && requestedCourseInstance
+      ? getCoursePackLearningInstance(requestedCourseInstance, packSource)
+      : null;
+    const resolved = packSource
+      ? requestedCourseMode === "instance"
+        ? requestedInstance ?? createCoursePackLearningInstance(
+            packSource,
+            requestedCourseTitle ?? `课程：${coursePackId}`,
+          )
+        : resolveCoursePackPreviewSession(
+            packSource,
+            requestedCourseTitle ?? `预览：${coursePackId}`,
+          )
       : newBoardRequested
       ? createProvisionalLearningSession()
       : resolveLearningEntrySession();
@@ -395,8 +424,21 @@ export function LearningPage() {
   const [record, setRecord] = useState<LearningSessionRecord>(
     initialEntry.record,
   );
+  const [courseAccessMode, setCourseAccessMode] = useState<"preview" | "instance">(
+    coursePackId ? requestedCourseMode : "instance",
+  );
+  const [lockedCourseDigest] = useState(
+    () => "source" in initialEntry.record
+      ? initialEntry.record.source?.archiveSha256
+      : undefined,
+  );
+  const coursePackLoad = useCoursePack(
+    coursePackId,
+    requestedCourseVersion,
+    lockedCourseDigest,
+  );
   const [reviewSessionId, setReviewSessionId] = useState<string | null>(() =>
-    initialEntry.record.status === "provisional"
+    coursePackId || initialEntry.record.status === "provisional"
       ? null
       : initialEntry.record.id,
   );
@@ -404,8 +446,15 @@ export function LearningPage() {
   useEffect(() => {
     recordRef.current = record;
   }, [record]);
+  useEffect(() => {
+    const digest = coursePackLoad.source?.pack.archiveSha256;
+    if (!digest || record.source?.mode !== "instance"
+      || record.source.archiveSha256 === digest) return;
+    bindCoursePackArchiveDigest(record.id, digest);
+  }, [coursePackLoad.source, record.id, record.source]);
   const boardContextRef = useRef<LearningBoardContext>({});
-  const [sessions, setSessions] = useState(() => listLearningSessions());
+  const [sessions, setSessions] = useState(() =>
+    listLearningSessions().filter((session) => !session.source));
   const [devicePreferences, setDevicePreferences] = useState<{
     autoCamera: boolean;
     voiceEnabled: boolean;
@@ -425,7 +474,7 @@ export function LearningPage() {
   );
 
   const refreshLocalSessions = useCallback(() => {
-    setSessions(listLearningSessions());
+    setSessions(listLearningSessions().filter((session) => !session.source));
   }, []);
 
   const handleServerSync = useCallback(
@@ -441,6 +490,7 @@ export function LearningPage() {
       const adopted = discovered.map((session) => adoptLearningSession(session));
       const keepIds = new Set(adopted.map((session) => session.id));
       for (const local of listLearningSessions()) {
+        if (local.source?.kind === "course-pack") continue;
         if (
           !keepIds.has(local.id)
           && !hasDurableLocalWhiteboardContent(local.id)
@@ -450,6 +500,11 @@ export function LearningPage() {
       }
 
       const current = recordRef.current;
+      if (current.source?.kind === "course-pack") {
+        refreshLocalSessions();
+        setServerSyncReady(true);
+        return;
+      }
       const currentHasLocalWhiteboard =
         hasDurableLocalWhiteboardContent(current.id);
       const currentWasRemoved =
@@ -623,6 +678,38 @@ export function LearningPage() {
     setSidebarOpen(true);
   }, []);
 
+  const startCourseInteraction = useCallback(() => {
+    const pack = coursePackLoad.source?.pack;
+    if (!coursePackId || !pack) return;
+    const next = createCoursePackLearningInstance({
+      packId: coursePackId,
+      version: pack.manifest.version,
+      archiveSha256: pack.archiveSha256,
+    }, requestedCourseTitle ?? record.title.replace(/^预览：/u, ""));
+    const url = new URL(window.location.href);
+    url.searchParams.set("course-mode", "learn");
+    url.searchParams.set("course-instance", next.id);
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+    recordRef.current = next;
+    markerSentRef.current = false;
+    boardContextRef.current = {};
+    setCourseAccessMode("instance");
+    setReviewSessionId(null);
+    setWakeSessionId(null);
+    setRecord(next);
+    refreshLocalSessions();
+  }, [
+    coursePackId,
+    coursePackLoad.source,
+    record.title,
+    refreshLocalSessions,
+    requestedCourseTitle,
+  ]);
+
   const finishAndLeave = useCallback(() => {
     const completed = updateLearningSession(record.id, { status: "completed" });
     if (completed) {
@@ -728,7 +815,7 @@ export function LearningPage() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
-      {sidebarOpen && (
+      {!coursePackId && sidebarOpen && (
         <button
           type="button"
           aria-label="关闭学习会话列表"
@@ -736,7 +823,7 @@ export function LearningPage() {
           className="learning-sidebar-scrim"
         />
       )}
-      <aside
+      {!coursePackId ? <aside
         className="learning-session-sidebar"
         data-open={sidebarOpen ? "true" : "false"}
         aria-hidden={!sidebarOpen}
@@ -813,7 +900,7 @@ export function LearningPage() {
             {record.title}
           </div>
         </div>
-      </aside>
+      </aside> : null}
 
       <main className="relative min-w-0 flex-1">
         <div
@@ -822,11 +909,11 @@ export function LearningPage() {
         >
           <button
             type="button"
-            aria-label="打开学习会话列表"
-            onClick={() => setSidebarOpen(true)}
+            aria-label={coursePackId ? "返回课程首页" : "打开学习会话列表"}
+            onClick={coursePackId ? () => navigate("/") : () => setSidebarOpen(true)}
             className="learning-top-action-button learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
-            <Menu size={20} />
+            {coursePackId ? <ArrowLeft size={20} /> : <Menu size={20} />}
           </button>
           <button
             type="button"
@@ -859,14 +946,18 @@ export function LearningPage() {
                 wakeSessionId === record.id ? wakeAudio : null
               }
               conversationOptions={conversationOptions}
-              voiceEnabled={devicePreferences.voiceEnabled}
+              voiceEnabled={courseAccessMode !== "preview" && devicePreferences.voiceEnabled}
+              courseAccessMode={courseAccessMode}
+              onStartCourseInteraction={courseAccessMode === "preview"
+                ? startCourseInteraction
+                : undefined}
               onUseTextMode={useTextMode}
               onUseVoiceMode={useVoiceMode}
               onLearnerInput={handleLearnerInput}
               onWhiteboardActivity={handleWhiteboardActivity}
               onTurnsChange={handleTurnsChange}
               onBoardContextChange={handleBoardContextChange}
-              onBack={openSessionList}
+              onBack={coursePackId ? () => navigate("/") : openSessionList}
               onVoiceExit={finishAndLeave}
               ollFixture={ollFixture}
               coursePack={coursePackLoad.source ?? undefined}

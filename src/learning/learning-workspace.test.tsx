@@ -339,6 +339,58 @@ describe("LearningWorkspace", () => {
     expect(conversationMock.toggleCamera).not.toHaveBeenCalled();
   });
 
+  it("keeps a CoursePack preview read-only until the learner opts in", async () => {
+    const onStartCourseInteraction = vi.fn();
+    render(
+      <LearningWorkspace
+        sessionId="learn-pack-preview"
+        voiceEnabled={false}
+        courseAccessMode="preview"
+        onStartCourseInteraction={onStartCourseInteraction}
+        coursePack={{
+          id: "grade-3-math",
+          pack: {
+            archiveSha256: "a".repeat(64),
+            events: [{
+              dsl: "octos.lesson",
+              version: "0.1",
+              profile: "canonical",
+              event: "lesson.open",
+              lesson_id: "lesson-preview",
+              sequence: 0,
+              board: {
+                board_id: "board-preview",
+                base_revision: 0,
+                region_intent: "new_topic",
+              },
+              lesson: {
+                mode: "explain",
+                language: "zh-CN",
+                title: "预览课",
+                goals: ["验证预览边界"],
+              },
+            }],
+            manifest: {
+              packId: "grade-3-math",
+              version: "1.0.0",
+              narration: { voiceId: "fixture", segments: [] },
+            },
+          },
+        } as never}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.queryByRole("button", { name: "启用语音" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "启用摄像头" })).toBeNull();
+    expect(screen.getByRole("button", { name: "开始互动学习" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "开始互动学习" }));
+    expect(onStartCourseInteraction).toHaveBeenCalledOnce();
+    await act(async () => Promise.resolve());
+    expect(inkRuntimeMock.mountInkRuntime).not.toHaveBeenCalled();
+  });
+
   it("keeps the camera independent in text mode and opens settings from its preview", async () => {
     const view = render(
       <LearningWorkspace

@@ -177,6 +177,31 @@ describe("CoursePack loader", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("refuses to silently move a learning instance to different archive bytes", async () => {
+    const catalogDigest = "a".repeat(64);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      schemaVersion: 1,
+      generatedAt: "2026-09-15T00:00:00Z",
+      packs: [{
+        packId: "grade-3-math", version: "1.0.0", title: "数学", description: "互动课",
+        locale: "zh-CN", subject: "mathematics", grade: "3", durationSeconds: 60,
+        minimumPlayerVersion: "0.1.0", archiveSha256: catalogDigest, archiveBytes: 8,
+        recommended: true,
+        capabilities: { offlinePlayback: true, offlineNarration: true, interactiveWhiteboard: true, liveAi: "optional" },
+        archiveUrl: "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
+        manifestUrl: "/api/learn/course-packs/grade-3-math/1.0.0/manifest.json",
+        thumbnailUrl: "/api/learn/course-packs/grade-3-math/1.0.0/files/thumbnail.webp",
+      }],
+    }), { status: 200 })));
+
+    await expect(loadPublishedCoursePack(
+      "grade-3-math",
+      "1.0.0",
+      undefined,
+      "b".repeat(64),
+    )).rejects.toThrow(/锁定的版本/u);
+  });
+
   it("discards a corrupt installed archive and downloads the locked release", async () => {
     const expectedDigest = "a".repeat(64);
     storage.read.mockResolvedValue({

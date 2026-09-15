@@ -11,12 +11,21 @@ export type LearningSessionStatus =
   | "paused"
   | "completed";
 
+export interface CoursePackSessionSource {
+  kind: "course-pack";
+  mode: "preview" | "instance";
+  packId: string;
+  version: string;
+  archiveSha256?: string;
+}
+
 export interface LearningSessionRecord {
   id: string;
   status: LearningSessionStatus;
   title: string;
   createdAt: number;
   updatedAt: number;
+  source?: CoursePackSessionSource;
 }
 
 const STORE_KEY_PREFIX = "octos_learning_sessions_v2:";
@@ -26,6 +35,9 @@ const COURSE_PACK_PREVIOUS_KEY_PREFIX = "octos_learning_course_pack_previous_v1:
 const WAKE_ONLY = /^(你好[,，\s]*小章鱼|你好小章鱼)[。！!,.，\s]*$/;
 const INK_STORAGE_PREFIX = "octos-learning-ink:v1:";
 const SELECTION_STORAGE_PREFIX = "learn:selection-enhancements:";
+const COURSE_PACK_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
+const COURSE_PACK_VERSION = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;
+const SHA256 = /^[a-f0-9]{64}$/u;
 
 function accountStorageScope(): string {
   return encodeURIComponent(getSelectedProfileId() ?? "anonymous");
@@ -37,10 +49,6 @@ function sessionStoreKey(): string {
 
 function currentSessionKey(): string {
   return `${CURRENT_KEY_PREFIX}${accountStorageScope()}`;
-}
-
-function coursePackPreviewKey(packId: string): string {
-  return `${COURSE_PACK_PREVIEW_KEY_PREFIX}${accountStorageScope()}:${packId}`;
 }
 
 function coursePackPreviousKey(): string {
@@ -124,6 +132,24 @@ export function hasDurableLocalWhiteboardContent(
 function validLearningSessionRecord(
   item: unknown,
 ): item is LearningSessionRecord {
+  const source = (item as Record<string, unknown> | null)?.source;
+  const validSource = source === undefined || (
+    source !== null
+    && typeof source === "object"
+    && (source as Record<string, unknown>).kind === "course-pack"
+    && ["preview", "instance"].includes(String((source as Record<string, unknown>).mode))
+    && typeof (source as Record<string, unknown>).packId === "string"
+    && COURSE_PACK_ID.test(String((source as Record<string, unknown>).packId))
+    && typeof (source as Record<string, unknown>).version === "string"
+    && COURSE_PACK_VERSION.test(String((source as Record<string, unknown>).version))
+    && (
+      (source as Record<string, unknown>).archiveSha256 === undefined
+      || (
+        typeof (source as Record<string, unknown>).archiveSha256 === "string"
+        && SHA256.test(String((source as Record<string, unknown>).archiveSha256))
+      )
+    )
+  );
   return item !== null &&
     typeof item === "object" &&
     typeof (item as Record<string, unknown>).id === "string" &&
@@ -133,7 +159,8 @@ function validLearningSessionRecord(
     ) &&
     typeof (item as Record<string, unknown>).title === "string" &&
     typeof (item as Record<string, unknown>).createdAt === "number" &&
-    typeof (item as Record<string, unknown>).updatedAt === "number";
+    typeof (item as Record<string, unknown>).updatedAt === "number" &&
+    validSource;
 }
 
 function readRecords(): LearningSessionRecord[] {
@@ -189,22 +216,86 @@ export function createProvisionalLearningSession(
   return record;
 }
 
-/** A pack preview keeps its own board and never adopts the live session. */
-export function resolveCoursePackPreviewSession(packId: string, now = Date.now()): LearningSessionRecord {
-  const key = coursePackPreviewKey(packId);
-  const savedId = localStorage.getItem(key);
-  const saved = savedId && getLearningSession(savedId);
-  if (saved) {
-    localStorage.setItem(currentSessionKey(), saved.id);
-    return saved;
+/** A pack preview gets an ephemeral board and never enters the session index. */
+export function resolveCoursePackPreviewSession(
+  source: Omit<CoursePackSessionSource, "kind" | "mode">,
+  title = "课程预览",
+  now = Date.now(),
+): LearningSessionRecord {
+  return {
+    id: generateSessionId(now),
+    status: "provisional",
+    title,
+    createdAt: now,
+    updatedAt: now,
+    source: { kind: "course-pack", mode: "preview", ...source },
+  };
+}
+
+export function createCoursePackLearningInstance(
+  source: Omit<CoursePackSessionSource, "kind" | "mode">,
+  title: string,
+  now = Date.now(),
+): LearningSessionRecord {
+  const record: LearningSessionRecord = {
+    id: generateSessionId(now),
+    status: "active",
+    title: title.trim() || "预制课程",
+    createdAt: now,
+    updatedAt: now,
+    source: { kind: "course-pack", mode: "instance", ...source },
+  };
+  if (writeRecords([record, ...readRecords()])) {
+    localStorage.setItem(currentSessionKey(), record.id);
   }
-  const currentId = localStorage.getItem(currentSessionKey());
-  if (currentId && !isCoursePackPreviewSession(currentId)) {
-    localStorage.setItem(coursePackPreviousKey(), currentId);
-  }
-  const record = createProvisionalLearningSession(now);
-  localStorage.setItem(key, record.id);
   return record;
+}
+
+export function listCoursePackLearningInstances(
+  source: Pick<CoursePackSessionSource, "packId" | "version"> & {
+    archiveSha256?: string;
+  },
+): LearningSessionRecord[] {
+  return listLearningSessions({ includeProvisional: true }).filter((record) =>
+    record.source?.mode === "instance"
+    && record.source.packId === source.packId
+    && record.source.version === source.version
+    && (!source.archiveSha256 || record.source.archiveSha256 === source.archiveSha256));
+}
+
+export function getCoursePackLearningInstance(
+  id: string,
+  source: Pick<CoursePackSessionSource, "packId" | "version">,
+): LearningSessionRecord | null {
+  const record = getLearningSession(id);
+  return record?.source?.mode === "instance"
+    && record.source.packId === source.packId
+    && record.source.version === source.version
+    ? record
+    : null;
+}
+
+export function bindCoursePackArchiveDigest(
+  id: string,
+  archiveSha256: string,
+  now = Date.now(),
+): LearningSessionRecord | null {
+  if (!SHA256.test(archiveSha256)) return null;
+  let updated: LearningSessionRecord | null = null;
+  const records = readRecords().map((record) => {
+    if (record.id !== id || !record.source) return record;
+    if (record.source.archiveSha256 && record.source.archiveSha256 !== archiveSha256) {
+      return record;
+    }
+    updated = {
+      ...record,
+      source: { ...record.source, archiveSha256 },
+      updatedAt: now,
+    };
+    return updated;
+  });
+  if (!updated || !writeRecords(records)) return null;
+  return updated;
 }
 
 /**
@@ -228,6 +319,7 @@ export function resolveLearningEntrySession(
   // and React remounts; explicit Back/New/Delete actions own its cleanup.
   if (
     current &&
+    !current.source &&
     (current.status === "provisional" ||
       current.status === "active" ||
       current.status === "paused")
@@ -238,7 +330,8 @@ export function resolveLearningEntrySession(
     return createProvisionalLearningSession(now);
   }
   const resumable = records
-    .filter((record) => !isCoursePackPreviewSession(record.id)
+    .filter((record) => !record.source
+      && !isCoursePackPreviewSession(record.id)
       && (record.status === "active" || record.status === "paused"))
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
   if (resumable) {

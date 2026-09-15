@@ -54,6 +54,7 @@ async function loadInstalledCoursePack(
   id: string,
   version: string,
   signal?: AbortSignal,
+  expectedDigest?: string,
 ): Promise<CoursePackPlaybackSource | null> {
   const stored = await readStoredCoursePack(id, version);
   throwIfAborted(signal);
@@ -61,7 +62,8 @@ async function loadInstalledCoursePack(
   try {
     const pack = await loadCoursePackArchive(stored.archive);
     throwIfAborted(signal);
-    validatePackIdentity(pack, id, version, stored.archiveSha256);
+    validatePackIdentity(pack, id, version, expectedDigest ?? stored.archiveSha256);
+    if (expectedDigest && stored.archiveSha256 !== expectedDigest) return null;
     return { id, pack };
   } catch (error) {
     await deleteStoredCoursePack(id, version);
@@ -94,15 +96,19 @@ export async function loadPublishedCoursePack(
   id: string,
   version: string,
   signal?: AbortSignal,
+  expectedDigest?: string,
 ): Promise<CoursePackPlaybackSource> {
   if (!isCoursePackIdentity(id, version)) throw new Error("课程包身份无效");
-  const installed = await loadInstalledCoursePack(id, version, signal);
+  const installed = await loadInstalledCoursePack(id, version, signal, expectedDigest);
   if (installed) return installed;
   throwIfAborted(signal);
   const catalog = await fetchCoursePackCatalog(signal);
   const release = catalog.packs.find((entry) => entry.packId === id
     && entry.version === version);
   if (!release) throw new Error("此课程版本不在当前公开目录中");
+  if (expectedDigest && release.archiveSha256 !== expectedDigest) {
+    throw new Error("课程实例锁定的版本与当前公开课程不一致");
+  }
   if (!supportsCoursePackPlayer(release.minimumPlayerVersion)) {
     throw new Error("此课程需要更新版本的 Octos Learn");
   }
@@ -136,12 +142,13 @@ export function loadCoursePack(
   id: string,
   version: string | undefined,
   signal?: AbortSignal,
+  expectedDigest?: string,
 ): Promise<CoursePackPlaybackSource> {
   if (id === "contract-smoke" && !version) {
     return loadBuiltinCoursePack(id, signal);
   }
   if (!version) return Promise.reject(new Error("课程包链接缺少版本"));
-  return loadPublishedCoursePack(id, version, signal);
+  return loadPublishedCoursePack(id, version, signal, expectedDigest);
 }
 
 export function coursePackNarrationBlob(

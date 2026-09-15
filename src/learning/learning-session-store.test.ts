@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   adoptLearningSession,
+  bindCoursePackArchiveDigest,
   cleanupProvisionalLearningSessions,
+  createCoursePackLearningInstance,
   createProvisionalLearningSession,
+  getCoursePackLearningInstance,
+  getLearningSession,
   hasDurableLocalWhiteboardContent,
   isSubstantiveLearningText,
+  listCoursePackLearningInstances,
   listLearningSessions,
   promoteLearningSession,
   removeLearningSession,
@@ -63,19 +68,58 @@ describe("learning session lifecycle", () => {
     ).toEqual([provisional.id]);
   });
 
-  it("keeps a course-pack preview separate and restores the ordinary board", () => {
+  it("keeps course-pack previews ephemeral and restores the ordinary board", () => {
     const ordinary = createProvisionalLearningSession(100);
-    const preview = resolveCoursePackPreviewSession("contract-smoke", 200);
+    const source = { packId: "contract-smoke", version: "0.0.1" };
+    const preview = resolveCoursePackPreviewSession(source, "课程预览", 200);
     expect(preview.id).not.toBe(ordinary.id);
-    expect(resolveCoursePackPreviewSession("contract-smoke", 300).id).toBe(preview.id);
+    expect(resolveCoursePackPreviewSession(source, "课程预览", 300).id).not.toBe(preview.id);
+    expect(listLearningSessions({ includeProvisional: true })).toEqual([ordinary]);
     expect(resolveLearningEntrySession(400).id).toBe(ordinary.id);
-    expect(resolveCoursePackPreviewSession("contract-smoke", 500).id).toBe(preview.id);
   });
 
   it("does not resume a promoted pack preview as an ordinary lesson", () => {
-    const preview = resolveCoursePackPreviewSession("contract-smoke", 100);
+    const preview = resolveCoursePackPreviewSession(
+      { packId: "contract-smoke", version: "0.0.1" },
+      "课程预览",
+      100,
+    );
     promoteLearningSession(preview.id, "预览课程", 200);
+    expect(getLearningSession(preview.id)).toBeNull();
     expect(resolveLearningEntrySession(300).id).not.toBe(preview.id);
+  });
+
+  it("creates isolated version-pinned learning instances without mutating the pack", () => {
+    const source = {
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: "a".repeat(64),
+    };
+    const first = createCoursePackLearningInstance(source, "三年级数学", 100);
+    const second = createCoursePackLearningInstance(source, "三年级数学", 200);
+
+    expect(second.id).not.toBe(first.id);
+    expect(listCoursePackLearningInstances(source).map(({ id }) => id))
+      .toEqual([second.id, first.id]);
+    expect(getCoursePackLearningInstance(first.id, source)?.source).toEqual({
+      kind: "course-pack",
+      mode: "instance",
+      ...source,
+    });
+  });
+
+  it("binds a downloaded digest once and rejects a different archive", () => {
+    const instance = createCoursePackLearningInstance(
+      { packId: "grade-3-math", version: "1.0.0" },
+      "三年级数学",
+      100,
+    );
+    const digest = "b".repeat(64);
+
+    expect(bindCoursePackArchiveDigest(instance.id, digest, 200)?.source?.archiveSha256)
+      .toBe(digest);
+    expect(bindCoursePackArchiveDigest(instance.id, "c".repeat(64), 300)).toBeNull();
+    expect(getLearningSession(instance.id)?.source?.archiveSha256).toBe(digest);
   });
 
   it("cleans orphan provisional sessions after a false wake or crash", () => {
