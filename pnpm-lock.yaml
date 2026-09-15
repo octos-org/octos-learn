@@ -35,6 +35,9 @@ importers:
       mermaid:
         specifier: ^11.13.0
         version: 11.15.0
+      octos-course-library:
+        specifier: github:alan0x/octos-course-library#18eb587
+        version: https://codeload.github.com/alan0x/octos-course-library/tar.gz/18eb587177a32d850018517b761d05c37c725f9c(octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a)
       octos-lesson-language:
         specifier: github:alan0x/octos-lesson-language#ce1d577ed8ca7698b34384ba1902d1fe2722a85a
         version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a
@@ -2322,6 +2325,9 @@ packages:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
 
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
+
   file-entry-cache@8.0.0:
     resolution: {integrity: sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==}
     engines: {node: '>=16.0.0'}
@@ -2992,6 +2998,13 @@ packages:
 
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
+
+  octos-course-library@https://codeload.github.com/alan0x/octos-course-library/tar.gz/18eb587177a32d850018517b761d05c37c725f9c:
+    resolution: {gitHosted: true, integrity: sha512-wNgYCpDFotGC/eU6kopsXLa32KWrSuTozkFgr959dAysVlRWYE97n91R5+upnCjWO3zBhUL+ZUFGVdAUiXGGpA==, tarball: https://codeload.github.com/alan0x/octos-course-library/tar.gz/18eb587177a32d850018517b761d05c37c725f9c}
+    version: 0.0.0
+    engines: {node: '>=20'}
+    peerDependencies:
+      octos-lesson-language: github:alan0x/octos-lesson-language#ce1d577ed8ca7698b34384ba1902d1fe2722a85a
 
   octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a:
     resolution: {gitHosted: true, integrity: sha512-mLkpwQwlqva3dOxjcs6j2RK9eaICC5wvJ41DXrngjRroCju7tRv6uSaPljFlMYMsgKmfgivs54U+2ECm+Wgzww==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a}
@@ -6055,6 +6068,8 @@ snapshots:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
 
+  fflate@0.8.3: {}
+
   file-entry-cache@8.0.0:
     dependencies:
       flat-cache: 4.0.1
@@ -6958,6 +6973,12 @@ snapshots:
       path-key: 4.0.0
 
   nwsapi@2.2.23: {}
+
+  octos-course-library@https://codeload.github.com/alan0x/octos-course-library/tar.gz/18eb587177a32d850018517b761d05c37c725f9c(octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a):
+    dependencies:
+      ajv: 8.20.0
+      fflate: 0.8.3
+      octos-lesson-language: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a
 
   octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a:
     dependencies:

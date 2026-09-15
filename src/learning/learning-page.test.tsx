@@ -41,6 +41,13 @@ const nativeTtsConfigMock = vi.hoisted(() => ({
   fetch: vi.fn(),
   configure: vi.fn(),
 }));
+const coursePackLibraryMock = vi.hoisted(() => ({
+  load: vi.fn(),
+}));
+vi.mock("octos-course-library/browser", () => ({
+  loadCoursePackArchive: coursePackLibraryMock.load,
+  coursePackFileBlob: vi.fn(),
+}));
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
 }));
@@ -135,6 +142,7 @@ describe("LearningPage", () => {
     nativeTtsConfigMock.available = false;
     nativeTtsConfigMock.fetch.mockReset();
     nativeTtsConfigMock.configure.mockReset();
+    coursePackLibraryMock.load.mockReset();
   });
 
   it("logs out from the bottom of the learning sidebar", async () => {
@@ -178,6 +186,35 @@ describe("LearningPage", () => {
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
     expect(learningWorkspaceMock.props?.ollFixture).toBe("unit-circle-sine");
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
+  });
+
+  it("opens a verified local CoursePack without server sync or TTS configuration", async () => {
+    window.history.replaceState({}, "", "/learn?course-pack=contract-smoke");
+    const source = {
+      manifest: {
+        packId: "contract-smoke",
+        version: "0.0.1",
+      },
+      archiveSha256: "a".repeat(64),
+    };
+    coursePackLibraryMock.load.mockResolvedValue(source);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+    nativeTtsConfigMock.available = true;
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.coursePack).toEqual({
+      id: "contract-smoke",
+      pack: source,
+    }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/contract-smoke-0.0.1.ocpack",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(sessionApiMock.listSessions).not.toHaveBeenCalled();
+    expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
   });
 
   it("uses the session menu as the standalone navigation", async () => {

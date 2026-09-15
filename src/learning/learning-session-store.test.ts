@@ -8,6 +8,7 @@ import {
   listLearningSessions,
   promoteLearningSession,
   removeLearningSession,
+  resolveCoursePackPreviewSession,
   resolveLearningEntrySession,
   updateLearningSession,
 } from "./learning-session-store";
@@ -60,6 +61,21 @@ describe("learning session lifecycle", () => {
         (record) => record.id,
       ),
     ).toEqual([provisional.id]);
+  });
+
+  it("keeps a course-pack preview separate and restores the ordinary board", () => {
+    const ordinary = createProvisionalLearningSession(100);
+    const preview = resolveCoursePackPreviewSession("contract-smoke", 200);
+    expect(preview.id).not.toBe(ordinary.id);
+    expect(resolveCoursePackPreviewSession("contract-smoke", 300).id).toBe(preview.id);
+    expect(resolveLearningEntrySession(400).id).toBe(ordinary.id);
+    expect(resolveCoursePackPreviewSession("contract-smoke", 500).id).toBe(preview.id);
+  });
+
+  it("does not resume a promoted pack preview as an ordinary lesson", () => {
+    const preview = resolveCoursePackPreviewSession("contract-smoke", 100);
+    promoteLearningSession(preview.id, "预览课程", 200);
+    expect(resolveLearningEntrySession(300).id).not.toBe(preview.id);
   });
 
   it("cleans orphan provisional sessions after a false wake or crash", () => {

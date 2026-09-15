@@ -21,6 +21,8 @@ export interface LearningSessionRecord {
 
 const STORE_KEY_PREFIX = "octos_learning_sessions_v2:";
 const CURRENT_KEY_PREFIX = "octos_learning_current_session_v2:";
+const COURSE_PACK_PREVIEW_KEY_PREFIX = "octos_learning_course_pack_preview_v1:";
+const COURSE_PACK_PREVIOUS_KEY_PREFIX = "octos_learning_course_pack_previous_v1:";
 const WAKE_ONLY = /^(你好[,，\s]*小章鱼|你好小章鱼)[。！!,.，\s]*$/;
 const INK_STORAGE_PREFIX = "octos-learning-ink:v1:";
 const SELECTION_STORAGE_PREFIX = "learn:selection-enhancements:";
@@ -35,6 +37,23 @@ function sessionStoreKey(): string {
 
 function currentSessionKey(): string {
   return `${CURRENT_KEY_PREFIX}${accountStorageScope()}`;
+}
+
+function coursePackPreviewKey(packId: string): string {
+  return `${COURSE_PACK_PREVIEW_KEY_PREFIX}${accountStorageScope()}:${packId}`;
+}
+
+function coursePackPreviousKey(): string {
+  return `${COURSE_PACK_PREVIOUS_KEY_PREFIX}${accountStorageScope()}`;
+}
+
+function isCoursePackPreviewSession(id: string): boolean {
+  const prefix = `${COURSE_PACK_PREVIEW_KEY_PREFIX}${accountStorageScope()}:`;
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index);
+    if (key?.startsWith(prefix) && localStorage.getItem(key) === id) return true;
+  }
+  return false;
 }
 
 function isSavedInkDocumentForSession(
@@ -170,6 +189,24 @@ export function createProvisionalLearningSession(
   return record;
 }
 
+/** A pack preview keeps its own board and never adopts the live session. */
+export function resolveCoursePackPreviewSession(packId: string, now = Date.now()): LearningSessionRecord {
+  const key = coursePackPreviewKey(packId);
+  const savedId = localStorage.getItem(key);
+  const saved = savedId && getLearningSession(savedId);
+  if (saved) {
+    localStorage.setItem(currentSessionKey(), saved.id);
+    return saved;
+  }
+  const currentId = localStorage.getItem(currentSessionKey());
+  if (currentId && !isCoursePackPreviewSession(currentId)) {
+    localStorage.setItem(coursePackPreviousKey(), currentId);
+  }
+  const record = createProvisionalLearningSession(now);
+  localStorage.setItem(key, record.id);
+  return record;
+}
+
 /**
  * Natural entry resumes the latest unfinished learning session. A completed
  * session always starts a fresh provisional conversation.
@@ -178,8 +215,14 @@ export function resolveLearningEntrySession(
   now = Date.now(),
 ): LearningSessionRecord {
   const records = readRecords();
-  const currentId = localStorage.getItem(currentSessionKey());
+  const selectedId = localStorage.getItem(currentSessionKey());
+  const currentId = selectedId && isCoursePackPreviewSession(selectedId)
+    ? localStorage.getItem(coursePackPreviousKey())
+    : selectedId;
   const current = records.find((record) => record.id === currentId);
+  if (current && current.id !== selectedId) {
+    localStorage.setItem(currentSessionKey(), current.id);
+  }
   // A provisional session is a real in-progress whiteboard entry, even before
   // it has enough content to appear in the sidebar. Preserve it across refresh
   // and React remounts; explicit Back/New/Delete actions own its cleanup.
@@ -195,7 +238,8 @@ export function resolveLearningEntrySession(
     return createProvisionalLearningSession(now);
   }
   const resumable = records
-    .filter((record) => record.status === "active" || record.status === "paused")
+    .filter((record) => !isCoursePackPreviewSession(record.id)
+      && (record.status === "active" || record.status === "paused"))
     .sort((a, b) => b.updatedAt - a.updatedAt)[0];
   if (resumable) {
     localStorage.setItem(currentSessionKey(), resumable.id);

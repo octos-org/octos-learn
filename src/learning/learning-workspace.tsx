@@ -78,6 +78,10 @@ import {
   ollPlaybackStorageKey,
   type OllFixture,
 } from "./oll/oll-playback-storage";
+import {
+  coursePackNarrationBlob,
+  type CoursePackPlaybackSource,
+} from "./course-pack/course-pack-loader";
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
 import {
   addSelectionSource,
@@ -326,6 +330,7 @@ export interface LearningWorkspaceProps {
   onBack: () => void;
   onVoiceExit?: () => void;
   ollFixture?: OllFixture;
+  coursePack?: CoursePackPlaybackSource;
 }
 
 function inkPlaybackRunStorageKey(sessionId: string): string {
@@ -401,6 +406,7 @@ export function LearningWorkspace({
   onBack,
   onVoiceExit,
   ollFixture,
+  coursePack,
 }: LearningWorkspaceProps) {
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
@@ -809,9 +815,10 @@ export function LearningWorkspace({
       });
     });
   }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
-  const activeOllEvents = ollFixture
-    ? ollFixtureEvents[ollFixture]
-    : deliveredOllEvents;
+  const packagedPlayback = Boolean(ollFixture || coursePack);
+  const packagedOllEvents = coursePack?.pack.events
+    ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
+  const activeOllEvents = packagedOllEvents ?? deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
   const activeOllOperations = useMemo(
     () => activeOllEvents
@@ -822,12 +829,12 @@ export function LearningWorkspace({
   const expectedOllOperationCount = activeOllOperations.length;
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
-      ollFixture
-        ? [ollFixtureEvents[ollFixture]]
+      packagedOllEvents
+        ? [packagedOllEvents]
         : deliveredOllLessons,
-      ollFixture ? [] : deliveredOllQuestionIds,
+      packagedPlayback ? [] : deliveredOllQuestionIds,
     ),
-    [deliveredOllLessons, deliveredOllQuestionIds, ollFixture],
+    [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents, packagedPlayback],
   );
   const startupNarration = useMemo(() => {
     if (playbackMode !== "live") return null;
@@ -858,7 +865,13 @@ export function LearningWorkspace({
     : null;
   const ollLesson = useOllLessonRuntime({
     source: ollOpenSource,
-    storageKey: ollPlaybackStorageKey(sessionId, ollFixture),
+    storageKey: ollPlaybackStorageKey(
+      sessionId,
+      ollFixture,
+      coursePack
+        ? `${coursePack.pack.manifest.packId}@${coursePack.pack.manifest.version}:${coursePack.pack.archiveSha256}`
+        : undefined,
+    ),
     autoPlay: Boolean(activeOllEvents) && playbackMode === "live",
     incremental: Boolean(activeOllEvents),
     narrationTiming: "external",
@@ -1505,7 +1518,7 @@ export function LearningWorkspace({
   }, [ollArtifacts, plainReply, selectionArtifacts, threads]);
 
   useEffect(() => {
-    if (ollFixture) return;
+    if (packagedPlayback) return;
     let cancelled = false;
     let requestVersion = 0;
     const loadPersistedArtifacts = async () => {
@@ -1703,7 +1716,7 @@ export function LearningWorkspace({
   }, [
     handleTurnComplete,
     learnTrace,
-    ollFixture,
+    packagedPlayback,
     sessionId,
     setWhiteboardQuestionStatus,
     updateWhiteboardQuestion,
@@ -1761,7 +1774,7 @@ export function LearningWorkspace({
   }, [conv.turns, onTurnsChange, registerVoiceQuestion, threads]);
 
   useEffect(() => {
-    if (ollFixture || ollArtifacts.length === 0) return;
+    if (packagedPlayback || ollArtifacts.length === 0) return;
     const frame = window.requestAnimationFrame(() => {
       setWhiteboardQuestions((current) => {
         const known = new Set(current.map((question) => question.id));
@@ -1798,7 +1811,7 @@ export function LearningWorkspace({
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [conv.turns, ollArtifacts, ollFixture, sessionId, threads]);
+  }, [conv.turns, ollArtifacts, packagedPlayback, sessionId, threads]);
 
   useEffect(() => {
     const ollArtifactRequests = ollArtifactRequestsRef.current;
@@ -1999,8 +2012,11 @@ export function LearningWorkspace({
     }
     completeOllNarration?.(narrationId);
   }, [completeOllNarration]);
+  const resolvePackagedNarration = useCallback((narrationId: string) =>
+    coursePack ? coursePackNarrationBlob(coursePack, narrationId) : null,
+  [coursePack]);
   const ollNarrationTts = useOllNarrationTts({
-    enabled: runtime.ttsReady
+    enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled
       && (Boolean(ollLesson) || Boolean(plainReply)),
     playing: lessonOwnsNarration
@@ -2012,7 +2028,7 @@ export function LearningWorkspace({
     narrationId: lessonOwnsNarration
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
-    prefetchEnabled: lessonOwnsNarration,
+    prefetchEnabled: lessonOwnsNarration && !coursePack,
     prewarmText: startupNarration?.text,
     prewarmNarrationId: startupNarration?.beatId,
     upcomingText: lessonOwnsNarration
@@ -2020,6 +2036,9 @@ export function LearningWorkspace({
       : undefined,
     upcomingNarrationId: lessonOwnsNarration
       ? ollLesson?.nextNarration?.beatId
+      : undefined,
+    resolveAudio: coursePack && lessonOwnsNarration
+      ? resolvePackagedNarration
       : undefined,
     onSpeakingChange: setNarrationSpeechActive,
     onPlaybackStart: handleNarrationStart,

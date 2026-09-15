@@ -21,6 +21,13 @@ export interface OllNarrationTtsOptions {
   prewarmNarrationId?: string;
   upcomingText?: string;
   upcomingNarrationId?: string;
+  /** Resolve narration bytes from a verified local CoursePack. When supplied,
+   * neither native TTS nor the hosted synthesis API is consulted. */
+  resolveAudio?: (
+    narrationId: string,
+    text: string,
+    signal: AbortSignal,
+  ) => Blob | null | Promise<Blob | null>;
   onSpeakingChange?: (speaking: boolean) => void;
   onPlaybackStart?: (narrationId: string) => void;
   onPlaybackComplete?: (narrationId: string) => void;
@@ -58,6 +65,7 @@ export function useOllNarrationTts({
   prewarmNarrationId,
   upcomingText = "",
   upcomingNarrationId,
+  resolveAudio,
   onSpeakingChange,
   onPlaybackStart,
   onPlaybackComplete,
@@ -121,8 +129,9 @@ export function useOllNarrationTts({
       setPreparing(true);
       setStartedKey(null);
     });
-    const useNativeTts = nativeTtsAvailable();
-    const cached = !useNativeTts
+    const usePackagedAudio = Boolean(resolveAudio && narrationId);
+    const useNativeTts = !usePackagedAudio && nativeTtsAvailable();
+    const cached = !usePackagedAudio && !useNativeTts
       && currentKey && prefetchedSpeechRef.current?.key === currentKey
       ? prefetchedSpeechRef.current
       : null;
@@ -131,7 +140,27 @@ export function useOllNarrationTts({
       prefetchedSpeechRef.current = null;
     }
     const audioRequest = cached?.controller ?? request;
-    const playback = useNativeTts
+    const packagedAudio = usePackagedAudio && narrationId
+      ? Promise.resolve(resolveAudio?.(
+          narrationId,
+          normalizedText,
+          audioRequest.signal,
+        ) ?? null).then((audio) => {
+          if (!audio) throw new Error(`Packaged narration is missing for ${narrationId}`);
+          return audio;
+        })
+      : null;
+    const playback = packagedAudio
+      ? packagedAudio.then((audio) => playAudioBlob(
+          audio,
+          () => {
+            if (!current) return;
+            callbacksRef.current.onSpeakingChange?.(false);
+            completePlayback();
+          },
+          audioRequest.signal,
+        ))
+      : useNativeTts
       ? playNativeTts(normalizedText, () => {
           if (!current) return;
           callbacksRef.current.onSpeakingChange?.(false);
@@ -201,17 +230,18 @@ export function useOllNarrationTts({
     normalizedText,
     currentKey,
     playing,
+    resolveAudio,
   ]);
 
   useEffect(() => {
     const existing = prefetchedSpeechRef.current;
     const nativeExisting = nativePrefetchRef.current;
-    if (!enabled || !prefetchEnabled) {
-      if ((!enabled || !prefetchEnabled) && existing && !existing.claimed) {
+    if (resolveAudio || !enabled || !prefetchEnabled) {
+      if ((resolveAudio || !enabled || !prefetchEnabled) && existing && !existing.claimed) {
         existing.controller.abort();
         prefetchedSpeechRef.current = null;
       }
-      if ((!enabled || !prefetchEnabled) && nativeExisting) {
+      if ((resolveAudio || !enabled || !prefetchEnabled) && nativeExisting) {
         nativeExisting.cancel();
         nativePrefetchRef.current = null;
       }
@@ -269,6 +299,7 @@ export function useOllNarrationTts({
     playing,
     startedKey,
     upcomingKey,
+    resolveAudio,
   ]);
 
   useEffect(() => () => {

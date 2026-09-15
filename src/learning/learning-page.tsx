@@ -59,6 +59,8 @@ import {
   stripLearningContext,
 } from "./learning-context";
 import { LearningWorkspace } from "./learning-workspace";
+import { parseBuiltinCoursePackId } from "./course-pack/course-pack-loader";
+import { useCoursePack } from "./course-pack/use-course-pack";
 import type { LearningBoardContext } from "./learning-board-context";
 import {
   createProvisionalLearningSession,
@@ -68,6 +70,7 @@ import {
   listLearningSessions,
   promoteLearningSession,
   removeLearningSession,
+  resolveCoursePackPreviewSession,
   resolveLearningEntrySession,
   titleFromLearningText,
   updateLearningSession,
@@ -303,8 +306,17 @@ export function LearningPage() {
       ? requested
       : undefined;
   }, []);
+  const requestedCoursePack = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("course-pack"), []);
+  const coursePackId = useMemo(
+    () => parseBuiltinCoursePackId(requestedCoursePack),
+    [requestedCoursePack],
+  );
+  const coursePackLoad = useCoursePack(coursePackId);
+  const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
-    if (!nativeTtsBridgeAvailable()) return;
+    if (coursePackId || !nativeTtsBridgeAvailable()) return;
     let cancelled = false;
     void fetchNativeTtsConfig()
       .then((config) => {
@@ -318,7 +330,7 @@ export function LearningPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [coursePackId]);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),
   );
@@ -352,7 +364,9 @@ export function LearningPage() {
     const hadResumableSession = listLearningSessions().some(
       (session) => session.status === "active" || session.status === "paused",
     );
-    const resolved = resolveLearningEntrySession();
+    const resolved = coursePackId
+      ? resolveCoursePackPreviewSession(coursePackId)
+      : resolveLearningEntrySession();
     const record =
       resolved.status === "paused"
         ? updateLearningSession(resolved.id, { status: "active" }) ?? resolved
@@ -386,7 +400,7 @@ export function LearningPage() {
     localStorage.setItem(AUTO_CAMERA_KEY, "false");
     localStorage.setItem(INPUT_MODE_KEY, "text");
   }, []);
-  const [serverSyncReady, setServerSyncReady] = useState(Boolean(ollFixture));
+  const [serverSyncReady, setServerSyncReady] = useState(staticPlayback);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
   const markerSentRef = useRef(false);
@@ -809,10 +823,18 @@ export function LearningPage() {
           </button>
         </div>
         <LearningSessionScope record={record}>
-          {!ollFixture && <LearningServerSync onDone={handleServerSync} />}
-          {serverSyncReady ? (
+          {!staticPlayback && <LearningServerSync onDone={handleServerSync} />}
+          {requestedCoursePack && !coursePackId ? (
+            <div className="flex h-full items-center justify-center text-sm text-red-200">
+              无法识别课程包“{requestedCoursePack}”
+            </div>
+          ) : coursePackLoad.error ? (
+            <div className="flex h-full items-center justify-center text-sm text-red-200">
+              {coursePackLoad.error}
+            </div>
+          ) : serverSyncReady && !coursePackLoad.loading ? (
             <LearningWorkspace
-              key={record.id}
+              key={`${record.id}:${coursePackLoad.source?.pack.archiveSha256 ?? "live"}`}
               sessionId={record.id}
               playbackMode={
                 reviewSessionId === record.id ? "review" : "live"
@@ -831,10 +853,11 @@ export function LearningPage() {
               onBack={openSessionList}
               onVoiceExit={finishAndLeave}
               ollFixture={ollFixture}
+              coursePack={coursePackLoad.source ?? undefined}
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/45">
-              正在恢复学习会话…
+              {coursePackLoad.loading ? "正在校验本地课程包…" : "正在恢复学习会话…"}
             </div>
           )}
           <UiProtocolQuestionHost />
