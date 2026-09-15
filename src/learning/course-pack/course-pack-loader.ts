@@ -8,6 +8,11 @@ import {
   isCoursePackIdentity,
   supportsCoursePackPlayer,
 } from "./course-pack-catalog";
+import {
+  deleteStoredCoursePack,
+  readStoredCoursePack,
+  writeStoredCoursePack,
+} from "./course-pack-store";
 
 export type BuiltinCoursePackId = "contract-smoke";
 
@@ -24,6 +29,46 @@ const BUILTIN_COURSE_PACKS: Record<BuiltinCoursePackId, {
 export interface CoursePackPlaybackSource {
   id: string;
   pack: LoadedCoursePack;
+}
+
+function throwIfAborted(signal?: AbortSignal): void {
+  if (signal?.aborted) throw new DOMException("The operation was aborted", "AbortError");
+}
+
+function validatePackIdentity(
+  pack: LoadedCoursePack,
+  id: string,
+  version: string,
+  expectedDigest?: string,
+): void {
+  if (!supportsCoursePackPlayer(pack.manifest.minimumPlayerVersion)) {
+    throw new Error("此课程需要更新版本的 Octos Learn");
+  }
+  if (pack.manifest.packId !== id || pack.manifest.version !== version
+    || (expectedDigest && pack.archiveSha256 !== expectedDigest)) {
+    throw new Error("课程包与锁定的版本或摘要不一致");
+  }
+}
+
+async function loadInstalledCoursePack(
+  id: string,
+  version: string,
+  signal?: AbortSignal,
+): Promise<CoursePackPlaybackSource | null> {
+  const stored = await readStoredCoursePack(id, version);
+  throwIfAborted(signal);
+  if (!stored) return null;
+  try {
+    const pack = await loadCoursePackArchive(stored.archive);
+    throwIfAborted(signal);
+    validatePackIdentity(pack, id, version, stored.archiveSha256);
+    return { id, pack };
+  } catch (error) {
+    await deleteStoredCoursePack(id, version);
+    throwIfAborted(signal);
+    if (error instanceof DOMException && error.name === "AbortError") throw error;
+    return null;
+  }
 }
 
 export async function loadBuiltinCoursePack(
@@ -51,6 +96,9 @@ export async function loadPublishedCoursePack(
   signal?: AbortSignal,
 ): Promise<CoursePackPlaybackSource> {
   if (!isCoursePackIdentity(id, version)) throw new Error("课程包身份无效");
+  const installed = await loadInstalledCoursePack(id, version, signal);
+  if (installed) return installed;
+  throwIfAborted(signal);
   const catalog = await fetchCoursePackCatalog(signal);
   const release = catalog.packs.find((entry) => entry.packId === id
     && entry.version === version);
@@ -60,14 +108,27 @@ export async function loadPublishedCoursePack(
   }
   const response = await fetch(release.archiveUrl, { signal, cache: "no-store" });
   if (!response.ok) throw new Error(`课程包下载失败（HTTP ${response.status}）`);
-  const pack = await loadCoursePackArchive(await response.arrayBuffer());
-  if (!supportsCoursePackPlayer(pack.manifest.minimumPlayerVersion)) {
-    throw new Error("此课程需要更新版本的 Octos Learn");
+  const archive = await response.arrayBuffer();
+  if (archive.byteLength !== release.archiveBytes) {
+    throw new Error("课程包大小与公开目录不一致");
   }
-  if (pack.manifest.packId !== id || pack.manifest.version !== version
-    || pack.archiveSha256 !== release.archiveSha256) {
-    throw new Error("课程包与公开目录锁定的版本或摘要不一致");
-  }
+  const pack = await loadCoursePackArchive(archive);
+  throwIfAborted(signal);
+  validatePackIdentity(pack, id, version, release.archiveSha256);
+  const now = Date.now();
+  await writeStoredCoursePack({
+    identity: `${id}@${version}`,
+    packId: id,
+    version,
+    archiveSha256: release.archiveSha256,
+    archiveBytes: archive.byteLength,
+    minimumPlayerVersion: pack.manifest.minimumPlayerVersion,
+    installedAt: now,
+    lastOpenedAt: now,
+    archive,
+    thumbnail: coursePackFileBlob(pack, pack.manifest.thumbnail),
+    catalogEntry: release,
+  });
   return { id, pack };
 }
 

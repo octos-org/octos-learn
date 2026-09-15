@@ -873,7 +873,7 @@ export function LearningPage() {
             />
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-white/45">
-              {coursePackLoad.loading ? "正在校验本地课程包…" : "正在恢复学习会话…"}
+              {coursePackLoad.loading ? "正在准备课程包…" : "正在恢复学习会话…"}
             </div>
           )}
           <UiProtocolQuestionHost />

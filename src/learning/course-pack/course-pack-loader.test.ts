@@ -12,10 +12,21 @@ const library = vi.hoisted(() => ({
   load: vi.fn(),
   blob: vi.fn(),
 }));
+const storage = vi.hoisted(() => ({
+  read: vi.fn(),
+  write: vi.fn(),
+  remove: vi.fn(),
+}));
 
 vi.mock("octos-course-library/browser", () => ({
   loadCoursePackArchive: library.load,
   coursePackFileBlob: library.blob,
+}));
+
+vi.mock("./course-pack-store", () => ({
+  readStoredCoursePack: storage.read,
+  writeStoredCoursePack: storage.write,
+  deleteStoredCoursePack: storage.remove,
 }));
 
 function pack(): LoadedCoursePack {
@@ -41,6 +52,9 @@ describe("CoursePack loader", () => {
     vi.unstubAllGlobals();
     library.load.mockReset();
     library.blob.mockReset();
+    storage.read.mockReset().mockResolvedValue(null);
+    storage.write.mockReset().mockResolvedValue(true);
+    storage.remove.mockReset().mockResolvedValue(undefined);
   });
 
   it("loads the pinned local fixture and checks its identity", async () => {
@@ -94,7 +108,7 @@ describe("CoursePack loader", () => {
         liveAi: "optional",
       },
       archiveSha256: expectedDigest,
-      archiveBytes: 100,
+      archiveBytes: 8,
       recommended: true,
       archiveUrl: "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
       manifestUrl: "/api/learn/course-packs/grade-3-math/1.0.0/manifest.json",
@@ -118,6 +132,11 @@ describe("CoursePack loader", () => {
       release.archiveUrl,
       expect.objectContaining({ cache: "no-store" }),
     );
+    expect(storage.write).toHaveBeenCalledWith(expect.objectContaining({
+      identity: "grade-3-math@1.0.0",
+      archiveSha256: expectedDigest,
+      archiveBytes: 8,
+    }));
     library.load.mockResolvedValueOnce({
       manifest: { packId: "grade-3-math", version: "1.0.0", minimumPlayerVersion: "0.1.0" },
       archiveSha256: "b".repeat(64),
@@ -130,6 +149,78 @@ describe("CoursePack loader", () => {
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(new ArrayBuffer(8), { status: 200 }));
     await expect(loadPublishedCoursePack("grade-3-math", "1.0.0")).rejects.toThrow(/摘要/u);
+  });
+
+  it("plays a verified installed version without requesting the network", async () => {
+    const expectedDigest = "a".repeat(64);
+    const archive = new ArrayBuffer(8);
+    storage.read.mockResolvedValue({
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: expectedDigest,
+      archiveBytes: 8,
+      minimumPlayerVersion: "0.1.0",
+      installedAt: 1,
+      lastOpenedAt: 1,
+      archive,
+      thumbnail: null,
+    });
+    library.load.mockResolvedValue({
+      manifest: { packId: "grade-3-math", version: "1.0.0", minimumPlayerVersion: "0.1.0" },
+      archiveSha256: expectedDigest,
+    });
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect((await loadPublishedCoursePack("grade-3-math", "1.0.0")).id).toBe("grade-3-math");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("discards a corrupt installed archive and downloads the locked release", async () => {
+    const expectedDigest = "a".repeat(64);
+    storage.read.mockResolvedValue({
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: expectedDigest,
+      archiveBytes: 8,
+      minimumPlayerVersion: "0.1.0",
+      installedAt: 1,
+      lastOpenedAt: 1,
+      archive: new ArrayBuffer(8),
+      thumbnail: null,
+    });
+    library.load
+      .mockRejectedValueOnce(new Error("corrupt zip"))
+      .mockResolvedValueOnce({
+        manifest: {
+          packId: "grade-3-math",
+          version: "1.0.0",
+          minimumPlayerVersion: "0.1.0",
+          thumbnail: "thumbnail.webp",
+        },
+        archiveSha256: expectedDigest,
+      });
+    const release = {
+      packId: "grade-3-math", version: "1.0.0", title: "数学", description: "互动课",
+      locale: "zh-CN", subject: "mathematics", grade: "3", durationSeconds: 60,
+      minimumPlayerVersion: "0.1.0", archiveSha256: expectedDigest, archiveBytes: 8,
+      recommended: true,
+      capabilities: { offlinePlayback: true, offlineNarration: true, interactiveWhiteboard: true, liveAi: "optional" },
+      archiveUrl: "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
+      manifestUrl: "/api/learn/course-packs/grade-3-math/1.0.0/manifest.json",
+      thumbnailUrl: "/api/learn/course-packs/grade-3-math/1.0.0/files/thumbnail.webp",
+    };
+    vi.stubGlobal("fetch", vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        schemaVersion: 1, generatedAt: "2026-09-15T00:00:00Z", packs: [release],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(new ArrayBuffer(8), { status: 200 })));
+
+    await loadPublishedCoursePack("grade-3-math", "1.0.0");
+    expect(storage.remove).toHaveBeenCalledWith("grade-3-math", "1.0.0");
+    expect(storage.write).toHaveBeenCalled();
   });
 
   it("accepts only normalized catalog pack IDs", () => {

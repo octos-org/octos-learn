@@ -1,10 +1,16 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
+
+const storage = vi.hoisted(() => ({ list: vi.fn(async () => []) }));
 
 vi.mock("@/auth/auth-context", () => ({
   useAuth: () => ({ token: null }),
+}));
+
+vi.mock("./course-pack/course-pack-store", () => ({
+  listInstalledCoursePacks: storage.list,
 }));
 
 const release = {
@@ -40,6 +46,10 @@ function showLauncher() {
 }
 
 describe("shared course launcher", () => {
+  beforeEach(() => {
+    storage.list.mockReset().mockResolvedValue([]);
+  });
+
   afterEach(() => {
     cleanup();
     localStorage.clear();
@@ -68,5 +78,37 @@ describe("shared course launcher", () => {
     expect(await screen.findByText("联网后可打开")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /开始课程/u })).toBeNull();
     expect(screen.getByRole("link", { name: /新建空白白板/u })).toBeTruthy();
+  });
+
+  it("opens an installed pinned version when the catalog is offline", async () => {
+    localStorage.setItem("octos:course-pack-catalog:v1", JSON.stringify(catalog([release])));
+    storage.list.mockResolvedValue([{
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      thumbnail: null,
+      catalogEntry: release,
+    }]);
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
+    showLauncher();
+
+    expect(await screen.findByText("已下载 · 可离线")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /开始课程/u }).getAttribute("href"))
+      .toBe("/course/grade-3-math?version=1.0.0");
+  });
+
+  it("keeps an installed course discoverable without the localStorage catalog", async () => {
+    storage.list.mockResolvedValue([{
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      thumbnail: null,
+      catalogEntry: release,
+    }]);
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
+    showLauncher();
+
+    expect(await screen.findByText("三年级数学")).toBeTruthy();
+    expect(screen.getByText("已下载 · 可离线")).toBeTruthy();
   });
 });

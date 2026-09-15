@@ -10,6 +10,10 @@ import {
   type CoursePackCatalog,
   type CoursePackCatalogEntry,
 } from "./course-pack/course-pack-catalog";
+import {
+  listInstalledCoursePacks,
+  type InstalledCoursePack,
+} from "./course-pack/course-pack-store";
 import "./course-launcher.css";
 
 type CatalogState = {
@@ -48,15 +52,25 @@ function useLauncherCatalog(): CatalogState {
   return state;
 }
 
-function CourseCard({ entry, live }: { entry: CoursePackCatalogEntry; live: boolean }) {
+function CourseCard({
+  entry,
+  live,
+  installed,
+  installedThumbnail,
+}: {
+  entry: CoursePackCatalogEntry;
+  live: boolean;
+  installed: boolean;
+  installedThumbnail?: string;
+}) {
   const supported = supportsCoursePackPlayer(entry.minimumPlayerVersion);
-  const playable = live && supported;
+  const playable = supported && (live || installed);
   const destination = `/course/${encodeURIComponent(entry.packId)}`
     + `?version=${encodeURIComponent(entry.version)}`;
   return (
     <article className="course-launcher-card">
       <div className="course-launcher-cover">
-        <img src={entry.thumbnailUrl} alt="" />
+        <img src={installedThumbnail ?? entry.thumbnailUrl} alt="" />
         <span className="course-launcher-grade">{entry.grade} · {entry.subject}</span>
       </div>
       <div className="course-launcher-card-body">
@@ -67,7 +81,9 @@ function CourseCard({ entry, live }: { entry: CoursePackCatalogEntry; live: bool
         <h3>{entry.title}</h3>
         <p>{entry.description}</p>
         <div className="course-launcher-card-footer">
-          <span>{Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板</span>
+          <span>
+            {installed ? "已下载 · 可离线" : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
+          </span>
           {playable ? (
             <Link to={destination} className="course-launcher-start">
               开始课程 <ArrowRight size={16} aria-hidden="true" />
@@ -86,7 +102,43 @@ function CourseCard({ entry, live }: { entry: CoursePackCatalogEntry; live: bool
 export function CourseLauncher() {
   const { token } = useAuth();
   const state = useLauncherCatalog();
+  const [installed, setInstalled] = useState<InstalledCoursePack[]>([]);
+  const [installedThumbnails, setInstalledThumbnails] = useState<Map<string, string>>(
+    () => new Map(),
+  );
+  useEffect(() => {
+    let active = true;
+    const createdUrls: string[] = [];
+    void listInstalledCoursePacks().then((packs) => {
+      if (!active) return;
+      const thumbnails = new Map<string, string>();
+      if (typeof URL.createObjectURL === "function") {
+        for (const pack of packs) {
+          if (pack.thumbnail) {
+            const url = URL.createObjectURL(pack.thumbnail);
+            createdUrls.push(url);
+            thumbnails.set(pack.identity, url);
+          }
+        }
+      }
+      setInstalled(packs);
+      setInstalledThumbnails(thumbnails);
+    });
+    return () => {
+      active = false;
+      for (const url of createdUrls) URL.revokeObjectURL(url);
+    };
+  }, []);
+  const installedByIdentity = new Map(installed.map((pack) => [pack.identity, pack]));
   const recommended = state.catalog?.packs.filter((pack) => pack.recommended) ?? [];
+  const visiblePacks = [...recommended];
+  if (!state.live) {
+    for (const pack of installed) {
+      if (!visiblePacks.some((entry) => (
+        entry.packId === pack.packId && entry.version === pack.version
+      ))) visiblePacks.push(pack.catalogEntry);
+    }
+  }
   return (
     <main className="course-launcher">
       <div className="course-launcher-inner">
@@ -133,18 +185,27 @@ export function CourseLauncher() {
           {state.loading && !state.catalog && (
             <p className="course-launcher-state" role="status">正在读取课程目录…</p>
           )}
-          {!state.loading && recommended.length === 0 && (
+          {!state.loading && visiblePacks.length === 0 && (
             <div className="course-launcher-empty">
               <BookOpen size={27} aria-hidden="true" />
               <h3>课程包还在准备中</h3>
               <p>首批经过审核的课程发布后会出现在这里。现在可以先进入空白白板。</p>
             </div>
           )}
-          {recommended.length > 0 && (
+          {visiblePacks.length > 0 && (
             <div className="course-launcher-grid">
-              {recommended.map((entry) => (
-                <CourseCard key={`${entry.packId}@${entry.version}`} entry={entry} live={state.live} />
-              ))}
+              {visiblePacks.map((entry) => {
+                const identity = `${entry.packId}@${entry.version}`;
+                return (
+                  <CourseCard
+                    key={identity}
+                    entry={entry}
+                    live={state.live}
+                    installed={installedByIdentity.has(identity)}
+                    installedThumbnail={installedThumbnails.get(identity)}
+                  />
+                );
+              })}
             </div>
           )}
         </section>
