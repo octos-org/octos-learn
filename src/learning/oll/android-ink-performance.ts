@@ -27,9 +27,15 @@ interface InkRuntimeWithDisplay {
   };
   host?: HTMLElement;
   subscribe?: (
-    listener: (state: { content_revision?: number }) => void,
+    listener: (state: InkMirrorState) => void,
   ) => () => void;
   getVectorInkUpdate?: () => InkVectorUpdate;
+}
+
+interface InkMirrorState {
+  content_revision?: number;
+  document_version?: number;
+  component_count?: number;
 }
 
 interface CameraState {
@@ -110,8 +116,8 @@ function configureAndroidVectorInkMirror(
 
   let camera: CameraState = { panX: 0, panY: 0, scale: 1 };
   let vector: SVGElement | null = null;
-  let renderedRevision: number | undefined;
-  let pendingRevision: number | undefined;
+  let renderedStateKey: string | undefined;
+  let pendingStateKey: string | undefined;
   let renderFrame: number | undefined;
 
   const applyCamera = (target: SVGElement) => {
@@ -184,24 +190,32 @@ function configureAndroidVectorInkMirror(
     for (const component of update.upsert) upsertComponent(component);
   };
 
-  const onRuntimeState = (state: { content_revision?: number }) => {
-    const revision = state.content_revision;
-    if (revision !== undefined && revision === renderedRevision) return;
-    pendingRevision = revision;
+  const onRuntimeState = (state: InkMirrorState) => {
+    // Restoring a persisted SVG changes the document version and component
+    // set, but intentionally leaves content_revision at zero because hydration
+    // is not a learner edit. Track all three values so the initial empty state
+    // cannot suppress the first restored vector frame on Android.
+    const stateKey = [
+      state.document_version ?? "?",
+      state.content_revision ?? "?",
+      state.component_count ?? "?",
+    ].join(":");
+    if (stateKey === renderedStateKey) return;
+    pendingStateKey = stateKey;
 
     // Render the initial document immediately. Later content mutations are
     // coalesced to one vector update per display frame; save/selection/mode
     // notifications carrying the same revision do no work at all.
     if (!vector) {
       render();
-      renderedRevision = revision;
+      renderedStateKey = stateKey;
       return;
     }
     if (renderFrame !== undefined) return;
     renderFrame = hostWindow.requestAnimationFrame(() => {
       renderFrame = undefined;
       render();
-      renderedRevision = pendingRevision;
+      renderedStateKey = pendingStateKey;
     });
   };
 

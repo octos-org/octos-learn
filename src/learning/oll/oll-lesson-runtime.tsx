@@ -635,6 +635,7 @@ export function LearningWhiteboard({
   onPlaceQuestion,
   onUpdateCourseRegion,
   onInkActivity,
+  onInkSaveHandlerChange,
   onCourseRendered,
   selectionEnhancements = [],
   selectionSources = [],
@@ -675,6 +676,9 @@ export function LearningWhiteboard({
     >>,
   ) => void;
   onInkActivity?: () => void;
+  onInkSaveHandlerChange?: (
+    handler: (() => Promise<void>) | null,
+  ) => void;
   onCourseRendered?: (event: LearningCourseRenderEvent) => void;
   selectionEnhancements?: SelectionEnhancementArtifact[];
   onBoardWritingReady?: (ready: boolean) => void;
@@ -740,6 +744,7 @@ export function LearningWhiteboard({
   const inkReplayObservedSourceRef = useRef<string | null>(null);
   const inkActivityReportedRef = useRef(false);
   const onInkActivityRef = useRef(onInkActivity);
+  const onInkSaveHandlerChangeRef = useRef(onInkSaveHandlerChange);
   const onUpdateCourseRegionRef = useRef(onUpdateCourseRegion);
   const inkSelectionVersionRef = useRef({
     documentVersion: 0,
@@ -1317,6 +1322,10 @@ export function LearningWhiteboard({
   useEffect(() => {
     onInkActivityRef.current = onInkActivity;
   }, [onInkActivity]);
+
+  useEffect(() => {
+    onInkSaveHandlerChangeRef.current = onInkSaveHandlerChange;
+  }, [onInkSaveHandlerChange]);
 
   useEffect(() => {
     if (!loadingStateId || !enhancementLayer) return;
@@ -2150,7 +2159,10 @@ export function LearningWhiteboard({
       destroyAndroidInkDensity = null;
       unsubscribeInkRef.current?.();
       unsubscribeInkRef.current = null;
-      if (inkRuntimeRef.current === ink) inkRuntimeRef.current = null;
+      if (inkRuntimeRef.current === ink) {
+        inkRuntimeRef.current = null;
+        onInkSaveHandlerChangeRef.current?.(null);
+      }
       return ink.destroy();
     };
     try {
@@ -2219,6 +2231,9 @@ export function LearningWhiteboard({
           );
         }
         inkRuntimeRef.current = ink;
+        onInkSaveHandlerChangeRef.current?.(async () => {
+          await ink?.saveNow();
+        });
         ink.setPenWidth?.(inkPenWidthRef.current);
         ink.setMode("navigate");
         setInkSupportsColors(

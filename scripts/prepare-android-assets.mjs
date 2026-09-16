@@ -2,6 +2,8 @@
 // are large and cannot execute on that path, so remove any files left by a
 // previous dev/public build before Vite copies public/ into Android assets.
 
+import "./copy-course-pack-assets.mjs";
+
 import { rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

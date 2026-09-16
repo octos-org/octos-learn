@@ -112,6 +112,36 @@ final class NativeTtsBridge {
         return request(requestId, text, true);
     }
 
+    /** Play verified CoursePack narration through Android's media pipeline. */
+    @JavascriptInterface
+    public String playAudio(String requestId, String encodedAudio, String mediaType) {
+        if (released) return result(false, "TTS 已关闭");
+        if (requestId == null || requestId.trim().isEmpty()) {
+            return result(false, "课程旁白缺少请求编号");
+        }
+        if (encodedAudio == null || encodedAudio.isEmpty()) {
+            return result(false, "课程旁白为空");
+        }
+        // Base64 expands bytes by roughly one third. Lesson beats are short;
+        // reject an abnormal bridge payload rather than spike memory on a 4 GB display.
+        if (encodedAudio.length() > 20_000_000) {
+            return result(false, "课程旁白片段过大");
+        }
+        cancelled.remove(requestId);
+        CompletableFuture.supplyAsync(
+                () -> cachePackagedAudio(encodedAudio, mediaType),
+                executor
+        ).whenComplete((file, error) -> {
+            if (released || cancelled.containsKey(requestId)) return;
+            if (error != null || file == null || !file.isFile()) {
+                emit(requestId, "error", rootMessage(error));
+                return;
+            }
+            webView.post(() -> beginPlayback(requestId, file));
+        });
+        return result(true, null);
+    }
+
     private String request(String requestId, String text, boolean playWhenReady) {
         final TtsConfig activeConfig = config;
         if (activeConfig == null) return result(false, "尚未从服务端取得火山 TTS 配置");
@@ -233,6 +263,41 @@ final class NativeTtsBridge {
         }
     }
 
+    private File cachePackagedAudio(String encodedAudio, String mediaType) {
+        try {
+            byte[] bytes = Base64.decode(encodedAudio, Base64.DEFAULT);
+            if (bytes.length == 0) throw new IllegalStateException("课程旁白为空");
+            String extension = "audio/wav".equals(mediaType) ? ".wav"
+                    : "audio/mp4".equals(mediaType) || "audio/x-m4a".equals(mediaType)
+                    ? ".m4a"
+                    : ".mp3";
+            File destination = new File(
+                    cacheDirectory,
+                    "packaged-" + sha256(bytes) + extension
+            );
+            if (destination.isFile() && destination.length() == bytes.length) {
+                //noinspection ResultOfMethodCallIgnored
+                destination.setLastModified(System.currentTimeMillis());
+                return destination;
+            }
+            File partial = new File(destination.getAbsolutePath() + ".part");
+            try (FileOutputStream output = new FileOutputStream(partial)) {
+                output.write(bytes);
+            }
+            if (!partial.renameTo(destination)) {
+                if (!destination.isFile() || destination.length() != bytes.length) {
+                    throw new IllegalStateException("无法保存课程旁白");
+                }
+                //noinspection ResultOfMethodCallIgnored
+                partial.delete();
+            }
+            trimCache();
+            return destination;
+        } catch (Exception error) {
+            throw new IllegalStateException(rootMessage(error), error);
+        }
+    }
+
     private void beginPlayback(String requestId, File audio) {
         if (released || cancelled.containsKey(requestId)) return;
         stopPlayer(null);
@@ -302,7 +367,8 @@ final class NativeTtsBridge {
     }
 
     private void trimCache() {
-        File[] files = cacheDirectory.listFiles((directory, name) -> name.endsWith(".mp3"));
+        File[] files = cacheDirectory.listFiles((directory, name) ->
+                name.endsWith(".mp3") || name.endsWith(".wav") || name.endsWith(".m4a"));
         if (files == null) return;
         Arrays.sort(files, Comparator.comparingLong(File::lastModified));
         long totalBytes = 0;
@@ -428,14 +494,18 @@ final class NativeTtsBridge {
     }
 
     private static String sha256(String value) {
+        return sha256(value.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String sha256(byte[] value) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(value.getBytes(StandardCharsets.UTF_8));
+                    .digest(value);
             StringBuilder result = new StringBuilder();
             for (byte item : digest) result.append(String.format(Locale.ROOT, "%02x", item));
             return result.toString();
         } catch (Exception ignored) {
-            return Integer.toHexString(value.hashCode());
+            return Integer.toHexString(Arrays.hashCode(value));
         }
     }
 

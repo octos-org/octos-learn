@@ -1,5 +1,6 @@
 allowBuilds:
   core-js: false
   esbuild: true
+  octos-course-library: true
   octos-lesson-language: true
   protobufjs: true

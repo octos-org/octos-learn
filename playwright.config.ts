@@ -8,8 +8,14 @@ export default defineConfig({
   retries: 1,
   workers: 2,
   reporter: [["html", { open: "never" }], ["list"]],
+  webServer: {
+    command: "pnpm exec vite --host 127.0.0.1 --port 5174 --strictPort",
+    url: "http://127.0.0.1:5174/",
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+  },
   use: {
-    baseURL: process.env.BASE_URL || "http://localhost:5174",
+    baseURL: process.env.BASE_URL || "http://127.0.0.1:5174",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "off",

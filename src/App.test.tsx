@@ -37,6 +37,10 @@ vi.mock("./learning/learning-page", () => ({
   LearningPage: () => <div>learning-page</div>,
 }));
 
+vi.mock("./learning/course-launcher", () => ({
+  CourseLauncher: () => <div>course-launcher</div>,
+}));
+
 vi.mock("./settings/settings-page", () => ({
   AdminSettingsPage: () => <div>settings-page</div>,
 }));
@@ -60,19 +64,46 @@ function renderRoute(path: string) {
 }
 
 describe("Octos Learn routes", () => {
-  it("opens the learning canvas at the product root", async () => {
+  it("opens the shared course launcher at the product root", async () => {
     renderRoute("/");
+    expect(await screen.findByText("course-launcher")).toBeTruthy();
+  });
+
+  it("opens the learning canvas through the new board route", async () => {
+    renderRoute("/board");
     expect(await screen.findByText("learning-page")).toBeTruthy();
   });
 
-  it("keeps old /learn links working through the product root", async () => {
+  it("keeps old /learn links working through the board route", async () => {
     renderRoute("/learn?oll-fixture=geometry-v2");
     await waitFor(() => {
       expect(screen.getByTestId("location").textContent).toBe(
-        "/?oll-fixture=geometry-v2",
+        "/board?oll-fixture=geometry-v2",
       );
     });
     expect(screen.getByText("learning-page")).toBeTruthy();
+  });
+
+  it("preserves old root CoursePack deep links", async () => {
+    renderRoute("/?course-pack=contract-smoke");
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
+      "/board?course-pack=contract-smoke",
+    ));
+    expect(screen.getByText("learning-page")).toBeTruthy();
+  });
+
+  it("opens a version-pinned catalog course on the existing board", async () => {
+    renderRoute("/course/grade-3-math?version=1.0.0");
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
+      "/board?course-pack=grade-3-math&course-version=1.0.0&course-mode=preview",
+    ));
+  });
+
+  it("preserves an explicit interactive course instance", async () => {
+    renderRoute("/course/grade-3-math?version=1.0.0&title=%E6%95%B0%E5%AD%A6&mode=learn&instance=learn-123-abc");
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
+      "/board?course-pack=grade-3-math&course-version=1.0.0&course-mode=learn&course-title=%E6%95%B0%E5%AD%A6&course-instance=learn-123-abc",
+    ));
   });
 
   it("retains login and settings", () => {
@@ -89,6 +120,6 @@ describe("Octos Learn routes", () => {
     await waitFor(() => {
       expect(screen.getByTestId("location").textContent).toBe("/");
     });
-    expect(screen.getByText("learning-page")).toBeTruthy();
+    expect(screen.getByText("course-launcher")).toBeTruthy();
   });
 });
