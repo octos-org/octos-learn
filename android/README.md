@@ -22,8 +22,12 @@ endpoint requires the same authenticated Octos session as synthesis, sends
 voice while platform TTS is enabled.
 
 The native bridge shares in-flight downloads, prefetches the next narration,
-keeps a bounded 64-clip cache, and applies 15-second connect / 45-second read
-timeouts. Cancelling or advancing a lesson also stops native playback.
+and stores completed clips in the application's private files directory so
+course replay and app upgrades do not synthesize unchanged narration again.
+The LRU is bounded to 512 clips or 512 MiB. Its key includes the platform app,
+cluster, voice, encoding, speed, and normalized narration text, so a voice
+configuration change cannot replay stale audio. Connect and read timeouts are
+15 and 45 seconds. Cancelling or advancing a lesson also stops playback.
 
 ## Build
 
