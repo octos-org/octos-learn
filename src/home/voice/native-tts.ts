@@ -5,6 +5,7 @@ type AndroidTtsBridge = {
   isConfigured?: () => boolean;
   prefetch?: (requestId: string, text: string) => string;
   play?: (requestId: string, text: string) => string;
+  playAudio?: (requestId: string, encodedAudio: string, mediaType: string) => string;
   cancel?: (requestId: string) => void;
   stop?: () => void;
 };
@@ -150,6 +151,80 @@ export function playNativeTts(
       pending.delete(id);
       signal?.removeEventListener("abort", abort);
       reject(error instanceof Error ? error : new Error("Android TTS 无法启动"));
+    }
+  });
+}
+
+function blobArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
+  return new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error ?? new Error("无法读取课程旁白"));
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
+async function base64Audio(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blobArrayBuffer(blob));
+  const chunks: string[] = [];
+  const chunkSize = 0x8000;
+  for (let offset = 0; offset < bytes.length; offset += chunkSize) {
+    chunks.push(String.fromCharCode(...bytes.subarray(offset, offset + chunkSize)));
+  }
+  return btoa(chunks.join(""));
+}
+
+export function nativePackagedAudioAvailable(): boolean {
+  return typeof bridge()?.playAudio === "function";
+}
+
+/** Play verified CoursePack bytes through Android MediaPlayer. */
+export async function playNativeAudioBlob(
+  audio: Blob,
+  onEnded: () => void,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const candidate = bridge();
+  if (typeof candidate?.playAudio !== "function" || signal?.aborted) return false;
+  const encoded = await base64Audio(audio);
+  if (signal?.aborted) return false;
+  const id = requestId("packaged");
+  return new Promise<boolean>((resolve, reject) => {
+    const abort = () => {
+      pending.delete(id);
+      try {
+        candidate.cancel?.(id);
+      } catch {
+        // Activity shutdown is equivalent to cancellation.
+      }
+      resolve(false);
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    pending.set(id, {
+      started: false,
+      resolve,
+      reject,
+      onEnded,
+      detachAbort: () => signal?.removeEventListener("abort", abort),
+    });
+    try {
+      const result = parseBridgeResult(candidate.playAudio!(
+        id,
+        encoded,
+        audio.type || "audio/mpeg",
+      ));
+      if (!result.ok) {
+        pending.delete(id);
+        signal?.removeEventListener("abort", abort);
+        reject(new Error(result.error || "Android 无法播放课程旁白"));
+      }
+    } catch (error) {
+      pending.delete(id);
+      signal?.removeEventListener("abort", abort);
+      reject(error instanceof Error
+        ? error
+        : new Error("Android 无法播放课程旁白"));
     }
   });
 }

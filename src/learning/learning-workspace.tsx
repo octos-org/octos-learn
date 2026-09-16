@@ -78,6 +78,10 @@ import {
   ollPlaybackStorageKey,
   type OllFixture,
 } from "./oll/oll-playback-storage";
+import {
+  coursePackNarrationBlob,
+  type CoursePackPlaybackSource,
+} from "./course-pack/course-pack-loader";
 import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
 import {
   addSelectionSource,
@@ -319,6 +323,9 @@ export interface LearningWorkspaceProps {
   onUseVoiceMode?: () => Promise<void> | void;
   onLearnerInput?: (text: string) => void;
   onWhiteboardActivity?: () => void;
+  onInkSaveHandlerChange?: (
+    handler: (() => Promise<void>) | null,
+  ) => void;
   initialAudio?: Blob | null;
   conversationOptions?: VoiceConversationOptions;
   onTurnsChange?: (turns: VoiceConversationTurn[]) => void;
@@ -326,6 +333,9 @@ export interface LearningWorkspaceProps {
   onBack: () => void;
   onVoiceExit?: () => void;
   ollFixture?: OllFixture;
+  coursePack?: CoursePackPlaybackSource;
+  courseAccessMode?: "preview" | "instance";
+  onStartCourseInteraction?: () => void;
 }
 
 function inkPlaybackRunStorageKey(sessionId: string): string {
@@ -394,6 +404,7 @@ export function LearningWorkspace({
   onUseVoiceMode,
   onLearnerInput,
   onWhiteboardActivity,
+  onInkSaveHandlerChange,
   initialAudio,
   conversationOptions,
   onTurnsChange,
@@ -401,7 +412,11 @@ export function LearningWorkspace({
   onBack,
   onVoiceExit,
   ollFixture,
+  coursePack,
+  courseAccessMode = "instance",
+  onStartCourseInteraction,
 }: LearningWorkspaceProps) {
+  const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   const aiUnavailable = !modelConfigured || (runtime.llmReady === false && !runtime.loading);
@@ -809,9 +824,10 @@ export function LearningWorkspace({
       });
     });
   }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
-  const activeOllEvents = ollFixture
-    ? ollFixtureEvents[ollFixture]
-    : deliveredOllEvents;
+  const packagedPlayback = Boolean(ollFixture || coursePack);
+  const packagedOllEvents = coursePack?.pack.events
+    ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
+  const activeOllEvents = packagedOllEvents ?? deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
   const activeOllOperations = useMemo(
     () => activeOllEvents
@@ -822,12 +838,12 @@ export function LearningWorkspace({
   const expectedOllOperationCount = activeOllOperations.length;
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
-      ollFixture
-        ? [ollFixtureEvents[ollFixture]]
+      packagedOllEvents
+        ? [packagedOllEvents]
         : deliveredOllLessons,
-      ollFixture ? [] : deliveredOllQuestionIds,
+      packagedPlayback ? [] : deliveredOllQuestionIds,
     ),
-    [deliveredOllLessons, deliveredOllQuestionIds, ollFixture],
+    [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents, packagedPlayback],
   );
   const startupNarration = useMemo(() => {
     if (playbackMode !== "live") return null;
@@ -858,7 +874,13 @@ export function LearningWorkspace({
     : null;
   const ollLesson = useOllLessonRuntime({
     source: ollOpenSource,
-    storageKey: ollPlaybackStorageKey(sessionId, ollFixture),
+    storageKey: ollPlaybackStorageKey(
+      sessionId,
+      ollFixture,
+      coursePack
+        ? `${coursePack.pack.manifest.packId}@${coursePack.pack.manifest.version}:${coursePack.pack.archiveSha256}`
+        : undefined,
+    ),
     autoPlay: Boolean(activeOllEvents) && playbackMode === "live",
     incremental: Boolean(activeOllEvents),
     narrationTiming: "external",
@@ -1505,7 +1527,7 @@ export function LearningWorkspace({
   }, [ollArtifacts, plainReply, selectionArtifacts, threads]);
 
   useEffect(() => {
-    if (ollFixture) return;
+    if (packagedPlayback) return;
     let cancelled = false;
     let requestVersion = 0;
     const loadPersistedArtifacts = async () => {
@@ -1703,7 +1725,7 @@ export function LearningWorkspace({
   }, [
     handleTurnComplete,
     learnTrace,
-    ollFixture,
+    packagedPlayback,
     sessionId,
     setWhiteboardQuestionStatus,
     updateWhiteboardQuestion,
@@ -1761,7 +1783,7 @@ export function LearningWorkspace({
   }, [conv.turns, onTurnsChange, registerVoiceQuestion, threads]);
 
   useEffect(() => {
-    if (ollFixture || ollArtifacts.length === 0) return;
+    if (packagedPlayback || ollArtifacts.length === 0) return;
     const frame = window.requestAnimationFrame(() => {
       setWhiteboardQuestions((current) => {
         const known = new Set(current.map((question) => question.id));
@@ -1798,7 +1820,7 @@ export function LearningWorkspace({
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [conv.turns, ollArtifacts, ollFixture, sessionId, threads]);
+  }, [conv.turns, ollArtifacts, packagedPlayback, sessionId, threads]);
 
   useEffect(() => {
     const ollArtifactRequests = ollArtifactRequestsRef.current;
@@ -1999,8 +2021,11 @@ export function LearningWorkspace({
     }
     completeOllNarration?.(narrationId);
   }, [completeOllNarration]);
+  const resolvePackagedNarration = useCallback((narrationId: string) =>
+    coursePack ? coursePackNarrationBlob(coursePack, narrationId) : null,
+  [coursePack]);
   const ollNarrationTts = useOllNarrationTts({
-    enabled: runtime.ttsReady
+    enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled
       && (Boolean(ollLesson) || Boolean(plainReply)),
     playing: lessonOwnsNarration
@@ -2012,7 +2037,7 @@ export function LearningWorkspace({
     narrationId: lessonOwnsNarration
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
-    prefetchEnabled: lessonOwnsNarration,
+    prefetchEnabled: lessonOwnsNarration && !coursePack,
     prewarmText: startupNarration?.text,
     prewarmNarrationId: startupNarration?.beatId,
     upcomingText: lessonOwnsNarration
@@ -2020,6 +2045,9 @@ export function LearningWorkspace({
       : undefined,
     upcomingNarrationId: lessonOwnsNarration
       ? ollLesson?.nextNarration?.beatId
+      : undefined,
+    resolveAudio: coursePack && lessonOwnsNarration
+      ? resolvePackagedNarration
       : undefined,
     onSpeakingChange: setNarrationSpeechActive,
     onPlaybackStart: handleNarrationStart,
@@ -2912,6 +2940,18 @@ export function LearningWorkspace({
           </div>
         ) : null}
         <div className="learning-workspace-actions">
+          {coursePreview ? (
+            <button
+              type="button"
+              className="learning-mode-button is-active"
+              onClick={onStartCourseInteraction}
+              disabled={!onStartCourseInteraction}
+            >
+              <Play size={15} />
+              <span>开始互动学习</span>
+            </button>
+          ) : (
+            <>
           <button
             type="button"
             className={`learning-mode-button ${voiceEnabled ? "is-active" : ""}`}
@@ -2941,6 +2981,8 @@ export function LearningWorkspace({
             {conv.cameraActive ? <Camera size={16} /> : <CameraOff size={16} />}
             <span>{conv.cameraActive ? "关闭摄像头" : "启用摄像头"}</span>
           </button>
+            </>
+          )}
         </div>
       </header>
 
@@ -2964,7 +3006,7 @@ export function LearningWorkspace({
       <main className="learning-canvas-shell">
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
-          inkSessionId={inkSessionId}
+          inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}
           questions={replayingWithoutStudentAdditions || !selectionStateReady
             ? whiteboardQuestions.filter((question) => question.origin !== "selection")
@@ -2974,6 +3016,7 @@ export function LearningWorkspace({
           onPlaceQuestion={placeWhiteboardQuestion}
           onUpdateCourseRegion={updateCourseRegion}
           onInkActivity={onWhiteboardActivity}
+          onInkSaveHandlerChange={onInkSaveHandlerChange}
           onCourseRendered={handleCourseRendered}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
@@ -3049,13 +3092,14 @@ export function LearningWorkspace({
         preparing={lessonOwnsNarration && ollNarrationTts.preparing}
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
+        disabled={coursePreview}
       />
 
       {controlledOllLesson
         ? <OllCourseOutline runtime={controlledOllLesson} />
         : null}
 
-      <StudentInputDock
+      {!coursePreview ? <StudentInputDock
         textOnly={import.meta.env.MODE === "android"}
         suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
           ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
@@ -3082,7 +3126,7 @@ export function LearningWorkspace({
         onRemoveReference={(id) => setComposerBoardReferences((current) =>
           current.filter((reference) => reference.id !== id),
         )}
-      />
+      /> : null}
 
       {(sendError ||
         fileListError ||

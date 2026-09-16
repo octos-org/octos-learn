@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   configureNativeTts,
+  nativePackagedAudioAvailable,
   nativeTtsBridgeAvailable,
   nativeTtsAvailable,
+  playNativeAudioBlob,
   playNativeTts,
 } from "./native-tts";
 
@@ -52,6 +54,37 @@ describe("Android native TTS bridge", () => {
     controller.abort();
     await expect(started).resolves.toBe(false);
     expect(cancel).toHaveBeenCalledWith(requestId);
+  });
+
+  it("plays verified CoursePack bytes without requiring a TTS credential", async () => {
+    let requestId = "";
+    const playAudio = vi.fn((id: string) => {
+      requestId = id;
+      return JSON.stringify({ ok: true });
+    });
+    const ended = vi.fn();
+    window.OctosNativeTts = { playAudio };
+
+    expect(nativePackagedAudioAvailable()).toBe(true);
+    const started = playNativeAudioBlob(
+      new Blob([new Uint8Array([1, 2, 3])], { type: "audio/mpeg" }),
+      ended,
+    );
+    await vi.waitFor(() => expect(playAudio).toHaveBeenCalledWith(
+      requestId,
+      "AQID",
+      "audio/mpeg",
+    ));
+    window.__octosNativeTtsEvent?.(JSON.stringify({
+      requestId,
+      type: "started",
+    }));
+    await expect(started).resolves.toBe(true);
+    window.__octosNativeTtsEvent?.(JSON.stringify({
+      requestId,
+      type: "ended",
+    }));
+    expect(ended).toHaveBeenCalledOnce();
   });
 
   it("hands the authenticated server configuration to native secure storage", () => {
