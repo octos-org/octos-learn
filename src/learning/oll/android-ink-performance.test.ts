@@ -167,6 +167,77 @@ describe("Android dynamic ink pixel budget", () => {
     destroy();
   });
 
+  it("renders ink restored after the mirror first observed an empty document", async () => {
+    (window as Window & { OctosNativeInk?: unknown }).OctosNativeInk = {};
+    const setDevicePixelRatio = vi.fn(() => undefined);
+    const makeRoot = () => document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    const restoredElement = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    restoredElement.dataset.octosVectorComponentId = "restored";
+    restoredElement.dataset.octosVectorZ = "1";
+    const getVectorInkUpdate = vi.fn()
+      .mockReturnValueOnce({
+        kind: "full",
+        revision: 0,
+        upsert: [],
+        remove_ids: [],
+        root: makeRoot(),
+      })
+      .mockReturnValueOnce({
+        kind: "delta",
+        revision: 0,
+        upsert: [{ id: "restored", z_index: 1, element: restoredElement }],
+        remove_ids: [],
+      });
+    let inkListener: ((state: {
+      content_revision?: number;
+      document_version?: number;
+      component_count?: number;
+    }) => void) | undefined;
+    const host = document.createElement("div");
+    const runtime = {
+      host,
+      editor: { display: { setDevicePixelRatio } },
+      getVectorInkUpdate,
+      subscribe: vi.fn((listener: NonNullable<typeof inkListener>) => {
+        inkListener = listener;
+        listener({
+          content_revision: 0,
+          document_version: 0,
+          component_count: 0,
+        });
+        return vi.fn();
+      }),
+    };
+    const viewport = document.createElement("div");
+    Object.defineProperties(viewport, {
+      clientWidth: { value: 1920 },
+      clientHeight: { value: 1080 },
+    });
+
+    const destroy = configureAndroidInkDynamicDensity(
+      runtime,
+      viewport,
+      { subscribeCamera: () => vi.fn() },
+      2,
+    );
+
+    expect(getVectorInkUpdate).toHaveBeenCalledTimes(1);
+    expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(0);
+
+    inkListener?.({
+      content_revision: 0,
+      document_version: 1,
+      component_count: 1,
+    });
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    expect(getVectorInkUpdate).toHaveBeenCalledTimes(2);
+    expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(1);
+    expect(host.contains(restoredElement)).toBe(true);
+
+    destroy();
+  });
+
   it("falls back to persistent full SVG exports for an older ink runtime", async () => {
     (window as Window & { OctosNativeInk?: unknown }).OctosNativeInk = {};
     const setDevicePixelRatio = vi.fn(() => undefined);

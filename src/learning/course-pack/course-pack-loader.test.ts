@@ -33,7 +33,7 @@ function pack(): LoadedCoursePack {
   return {
     manifest: {
       packId: "contract-smoke",
-      version: "0.0.1",
+      version: "0.0.2",
       narration: {
         voiceId: "fixture",
         segments: [{
@@ -68,7 +68,7 @@ describe("CoursePack loader", () => {
 
     expect(source.pack).toBe(loaded);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/course-packs/contract-smoke-0.0.1.ocpack",
+      "/course-packs/contract-smoke-0.0.2.ocpack",
       expect.objectContaining({ cache: "no-store" }),
     );
     expect(library.load).toHaveBeenCalledWith(expect.any(ArrayBuffer));

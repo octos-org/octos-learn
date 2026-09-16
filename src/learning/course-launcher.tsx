@@ -1,7 +1,18 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpen, Eye, Plus, RotateCcw, Settings, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  Eye,
+  LogOut,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
+import { deleteSession, setSessionTitle } from "@/api/sessions";
 import {
   fetchCoursePackCatalog,
   loadSavedCoursePackCatalog,
@@ -16,9 +27,14 @@ import {
 } from "./course-pack/course-pack-store";
 import {
   createCoursePackLearningInstance,
+  adoptLearningSession,
+  listLearningSessions,
   listCoursePackLearningInstances,
   removeLearningSession,
+  updateLearningSession,
+  type LearningSessionRecord,
 } from "./learning-session-store";
+import { discoverServerLearningSessions } from "./learning-session-sync";
 import "./course-launcher.css";
 
 type CatalogState = {
@@ -167,9 +183,77 @@ function CourseCard({
   );
 }
 
+function WhiteboardSessionCard({
+  session,
+  onChanged,
+}: {
+  session: LearningSessionRecord;
+  onChanged: () => void;
+}) {
+  const navigate = useNavigate();
+  const open = () => {
+    updateLearningSession(session.id, { status: "active" });
+    navigate("/board");
+  };
+  const rename = () => {
+    const title = window.prompt("重命名学习白板", session.title)?.trim();
+    if (!title || title === session.title) return;
+    if (!updateLearningSession(session.id, { title })) return;
+    onChanged();
+    void setSessionTitle(session.id, title).catch(() => undefined);
+  };
+  const remove = () => {
+    if (!window.confirm(`删除“${session.title}”？此操作会删除这块白板的学习记录。`)) return;
+    void deleteSession(session.id)
+      .catch(() => undefined)
+      .finally(() => {
+        removeLearningSession(session.id);
+        onChanged();
+      });
+  };
+  return (
+    <article className="course-launcher-session-card">
+      <button type="button" className="course-launcher-session-open" onClick={open}>
+        <span>{session.title}</span>
+        <small>{session.status === "completed" ? "已完成" : "继续学习"}</small>
+      </button>
+      <div className="course-launcher-session-actions">
+        <button type="button" onClick={rename} aria-label={`重命名 ${session.title}`}>
+          <Pencil size={15} aria-hidden="true" />
+        </button>
+        <button type="button" onClick={remove} aria-label={`删除 ${session.title}`}>
+          <Trash2 size={15} aria-hidden="true" />
+        </button>
+      </div>
+    </article>
+  );
+}
+
 export function CourseLauncher() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const state = useLauncherCatalog();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [whiteboards, setWhiteboards] = useState(() =>
+    listLearningSessions().filter((session) => !session.source));
+  const refreshWhiteboards = () => {
+    setWhiteboards(listLearningSessions().filter((session) => !session.source));
+  };
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    void discoverServerLearningSessions()
+      .then((sessions) => {
+        if (!active) return;
+        sessions.forEach((session) => adoptLearningSession(session));
+        setWhiteboards(listLearningSessions().filter((session) => !session.source));
+      })
+      .catch(() => {
+        // Local whiteboards remain available while the server is offline.
+      });
+    return () => {
+      active = false;
+    };
+  }, [token]);
   const [installed, setInstalled] = useState<InstalledCoursePack[]>([]);
   const [installedThumbnails, setInstalledThumbnails] = useState<Map<string, string>>(
     () => new Map(),
@@ -217,7 +301,20 @@ export function CourseLauncher() {
           </div>
           <nav aria-label="账户">
             {token ? (
-              <Link to="/settings"><Settings size={17} aria-hidden="true" /> 设置</Link>
+              <>
+                <Link to="/settings"><Settings size={17} aria-hidden="true" /> 设置</Link>
+                <button
+                  type="button"
+                  disabled={loggingOut}
+                  onClick={() => {
+                    setLoggingOut(true);
+                    void logout().finally(() => setLoggingOut(false));
+                  }}
+                >
+                  <LogOut size={17} aria-hidden="true" />
+                  {loggingOut ? "正在退出…" : "退出"}
+                </button>
+              </>
             ) : (
               <Link to="/login">登录</Link>
             )}
@@ -233,6 +330,26 @@ export function CourseLauncher() {
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
         </section>
+
+        {whiteboards.length > 0 && (
+          <section className="course-launcher-sessions" aria-labelledby="course-launcher-sessions-title">
+            <div className="course-launcher-section-title">
+              <div>
+                <p>RECENT WHITEBOARDS</p>
+                <h2 id="course-launcher-sessions-title">最近白板</h2>
+              </div>
+            </div>
+            <div className="course-launcher-session-grid">
+              {whiteboards.map((session) => (
+                <WhiteboardSessionCard
+                  key={session.id}
+                  session={session}
+                  onChanged={refreshWhiteboards}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="course-launcher-library" aria-labelledby="course-launcher-library-title">
           <div className="course-launcher-section-title">

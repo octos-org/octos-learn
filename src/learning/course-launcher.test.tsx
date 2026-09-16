@@ -2,12 +2,34 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
+import {
+  createProvisionalLearningSession,
+  getLearningSession,
+  promoteLearningSession,
+  updateLearningSession,
+} from "./learning-session-store";
 
 const storage = vi.hoisted(() => ({ list: vi.fn(async () => []) }));
-const auth = vi.hoisted(() => ({ token: null as string | null }));
+const auth = vi.hoisted(() => ({
+  token: null as string | null,
+  logout: vi.fn(async () => undefined),
+}));
+const sessionApi = vi.hoisted(() => ({
+  delete: vi.fn(async () => undefined),
+  getFiles: vi.fn(async () => [] as Array<{ filename: string; path: string }>),
+  list: vi.fn(async () => [] as Array<{ id: string; title?: string }>),
+  setTitle: vi.fn(async () => ({})),
+}));
 
 vi.mock("@/auth/auth-context", () => ({
-  useAuth: () => ({ token: auth.token }),
+  useAuth: () => ({ token: auth.token, logout: auth.logout }),
+}));
+
+vi.mock("@/api/sessions", () => ({
+  deleteSession: sessionApi.delete,
+  getSessionFiles: sessionApi.getFiles,
+  listSessions: sessionApi.list,
+  setSessionTitle: sessionApi.setTitle,
 }));
 
 vi.mock("./course-pack/course-pack-store", () => ({
@@ -49,6 +71,11 @@ function showLauncher() {
 describe("shared course launcher", () => {
   beforeEach(() => {
     auth.token = null;
+    auth.logout.mockClear();
+    sessionApi.delete.mockClear();
+    sessionApi.getFiles.mockReset().mockResolvedValue([]);
+    sessionApi.list.mockReset().mockResolvedValue([]);
+    sessionApi.setTitle.mockClear();
     storage.list.mockReset().mockResolvedValue([]);
   });
 
@@ -132,5 +159,38 @@ describe("shared course launcher", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
     expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
+  });
+
+  it("manages ordinary whiteboards and logout from the launcher", async () => {
+    auth.token = "token";
+    const session = createProvisionalLearningSession(100);
+    promoteLearningSession(session.id, "代数白板", 110);
+    updateLearningSession(session.id, { status: "paused" }, 120);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
+
+    showLauncher();
+
+    expect(await screen.findByRole("heading", { name: "最近白板" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "代数白板 继续学习" }));
+    expect(getLearningSession(session.id)?.status).toBe("active");
+    fireEvent.click(screen.getByRole("button", { name: "退出" }));
+    expect(auth.logout).toHaveBeenCalledTimes(1);
+  });
+
+  it("discovers server-backed learning sessions on the launcher", async () => {
+    auth.token = "token";
+    sessionApi.list.mockResolvedValue([{
+      id: "learn-900-server",
+      title: "几何证明",
+    }]);
+    sessionApi.getFiles.mockResolvedValue([{
+      filename: "turn-1.octos-lesson.json",
+      path: "sessions/learn-900-server/turn-1.octos-lesson.json",
+    }]);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
+
+    showLauncher();
+
+    expect(await screen.findByRole("button", { name: "几何证明 继续学习" })).toBeTruthy();
   });
 });

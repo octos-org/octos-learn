@@ -95,8 +95,12 @@ function CameraRuntimeProbe() {
 
 function InkRuntimeProbe({
   onInkActivity,
+  onInkSaveHandlerChange,
 }: {
   onInkActivity?: () => void;
+  onInkSaveHandlerChange?: (
+    handler: (() => Promise<void>) | null,
+  ) => void;
 } = {}) {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -109,6 +113,7 @@ function InkRuntimeProbe({
         runtime={runtime}
         inkSessionId="learn-ink-1"
         onInkActivity={onInkActivity}
+        onInkSaveHandlerChange={onInkSaveHandlerChange}
       />
     </div>
   );
@@ -1605,12 +1610,19 @@ describe("OLL lesson Runtime integration", () => {
       }),
       undo: vi.fn(),
       redo: vi.fn(),
+      saveNow: vi.fn(async () => null),
       destroy: vi.fn(() => Promise.resolve()),
     };
     mountInkRuntimeMock.mockReturnValue(ink);
 
     const onInkActivity = vi.fn();
-    render(<InkRuntimeProbe onInkActivity={onInkActivity} />);
+    let saveInk: (() => Promise<void>) | null = null;
+    render(
+      <InkRuntimeProbe
+        onInkActivity={onInkActivity}
+        onInkSaveHandlerChange={(handler) => { saveInk = handler; }}
+      />,
+    );
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(document.querySelector(".learning-selection-enhancement-layer")
@@ -1627,6 +1639,8 @@ describe("OLL lesson Runtime integration", () => {
       .toBe("navigate");
     expect(ink.setPenWidth).toHaveBeenCalledWith(3.25);
     expect(onInkActivity).toHaveBeenCalledOnce();
+    await act(async () => saveInk?.());
+    expect(ink.saveNow).toHaveBeenCalledOnce();
     expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
     expect(screen.queryByRole("button", { name: "退出书写模式" })).toBeNull();
     expect(screen.getByRole("status").textContent).toContain("2 项笔迹");

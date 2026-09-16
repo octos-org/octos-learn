@@ -7,7 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const filename = "contract-smoke-0.0.1.ocpack";
+const filename = "contract-smoke-0.0.2.ocpack";
 const source = join(
   root,
   "node_modules",

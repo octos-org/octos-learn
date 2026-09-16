@@ -8,20 +8,11 @@ import {
 } from "react";
 import {
   ArrowLeft,
-  LogOut,
-  Menu,
-  Pencil,
-  Plus,
+  Home,
   Settings,
-  Trash2,
-  X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/auth/auth-context";
 import {
-  deleteSession,
-  getSessionFiles,
-  listSessions,
   setSessionTitle,
 } from "@/api/sessions";
 import { UiProtocolQuestionHost } from "@/components/ui-protocol-question-host";
@@ -53,11 +44,7 @@ import type {
   VoiceConversationOptions,
   VoiceConversationTurn,
 } from "@/home/voice/use-voice-conversation";
-import {
-  buildLearningSessionContext,
-  buildLearningTurnContext,
-  stripLearningContext,
-} from "./learning-context";
+import { buildLearningSessionContext, buildLearningTurnContext } from "./learning-context";
 import { LearningWorkspace } from "./learning-workspace";
 import { parseCoursePackId } from "./course-pack/course-pack-loader";
 import { useCoursePack } from "./course-pack/use-course-pack";
@@ -79,8 +66,7 @@ import {
   updateLearningSession,
   type LearningSessionRecord,
 } from "./learning-session-store";
-import { isOllLessonArtifact } from "./oll/oll-artifacts";
-import { isSelectionEnhancementArtifact } from "./selection-enhancements";
+import { discoverServerLearningSessions } from "./learning-session-sync";
 import { consumeWakeAudio } from "./wake-audio-handoff";
 import {
   acquireLearningTabLease,
@@ -219,11 +205,6 @@ function LearningSessionScope({
   );
 }
 
-function sessionTimestamp(sessionId: string): number {
-  const value = Number(/^learn-(\d+)/.exec(sessionId)?.[1]);
-  return Number.isFinite(value) && value > 0 ? value : Date.now();
-}
-
 function LearningServerSync({
   onDone,
 }: {
@@ -240,40 +221,7 @@ function LearningServerSync({
     const sync = async () => {
       attempts += 1;
       try {
-        const allServerSessions = await listSessions();
-        const learningSessions = allServerSessions.filter((session) =>
-          session.id.startsWith("learn-"),
-        );
-        const validatedSessions = await Promise.all(
-          learningSessions.map(async (session) => ({
-            session,
-            files: await getSessionFiles(session.id),
-          })),
-        );
-        const serverSessions = validatedSessions
-          .filter(({ files }) => files.some((file) =>
-            isOllLessonArtifact(file) || isSelectionEnhancementArtifact(file),
-          ))
-          .map(({ session }) => session);
-        const discovered: LearningSessionRecord[] = [];
-        for (const session of serverSessions) {
-          const createdAt = sessionTimestamp(session.id);
-          const serverTitle = stripLearningContext(session.title ?? "");
-          const usableServerTitle =
-            serverTitle &&
-            !serverTitle.startsWith("[[LEARNING_") &&
-            isSubstantiveLearningText(serverTitle)
-              ? serverTitle
-              : null;
-          const record: LearningSessionRecord = {
-            id: session.id,
-            status: "paused",
-            title: usableServerTitle ?? "已保存的学习",
-            createdAt,
-            updatedAt: createdAt,
-          };
-          discovered.push(record);
-        }
+        const discovered = await discoverServerLearningSessions();
         if (!cancelled) onDone(discovered, true);
       } catch {
         if (cancelled) return;
@@ -295,7 +243,6 @@ function LearningServerSync({
 }
 
 export function LearningPage() {
-  const { logout } = useAuth();
   const navigate = useNavigate();
   // Keep the screen on during lessons (long narration + no interaction;
   // audit L7 — only /home held a wake lock before).
@@ -385,7 +332,7 @@ export function LearningPage() {
     );
     const packSource = coursePackId ? {
       packId: coursePackId,
-      version: requestedCourseVersion ?? "0.0.1",
+      version: requestedCourseVersion ?? "0.0.2",
     } : null;
     const requestedInstance = packSource && requestedCourseMode === "instance"
       && requestedCourseInstance
@@ -453,8 +400,6 @@ export function LearningPage() {
     bindCoursePackArchiveDigest(record.id, digest);
   }, [coursePackLoad.source, record.id, record.source]);
   const boardContextRef = useRef<LearningBoardContext>({});
-  const [sessions, setSessions] = useState(() =>
-    listLearningSessions().filter((session) => !session.source));
   const [devicePreferences, setDevicePreferences] = useState<{
     autoCamera: boolean;
     voiceEnabled: boolean;
@@ -466,16 +411,10 @@ export function LearningPage() {
     localStorage.setItem(INPUT_MODE_KEY, "text");
   }, []);
   const [serverSyncReady, setServerSyncReady] = useState(staticPlayback);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
   const markerSentRef = useRef(false);
   const [wakeSessionId, setWakeSessionId] = useState<string | null>(
     wakeAudio ? record.id : null,
   );
-
-  const refreshLocalSessions = useCallback(() => {
-    setSessions(listLearningSessions().filter((session) => !session.source));
-  }, []);
 
   const handleServerSync = useCallback(
     (
@@ -501,7 +440,6 @@ export function LearningPage() {
 
       const current = recordRef.current;
       if (current.source?.kind === "course-pack") {
-        refreshLocalSessions();
         setServerSyncReady(true);
         return;
       }
@@ -540,12 +478,10 @@ export function LearningPage() {
         setWakeSessionId(null);
         setRecord(next);
       }
-      refreshLocalSessions();
       setServerSyncReady(true);
     },
     [
       initialEntry.hadResumableSession,
-      refreshLocalSessions,
       wakeAudio,
     ],
   );
@@ -638,31 +574,47 @@ export function LearningPage() {
         promoted = updateLearningSession(currentRecord.id, {
           title: titleFromLearningText(text),
         });
+      } else if (currentRecord.source?.mode === "instance") {
+        promoted = updateLearningSession(currentRecord.id, { status: "active" });
       }
       if (!promoted) return;
       recordRef.current = promoted;
       setRecord(promoted);
-      refreshLocalSessions();
+      if (currentRecord.source?.mode === "instance") return;
       void setSessionTitle(promoted.id, promoted.title).catch(() => {
         // Local title remains usable when an older server cannot persist it.
       });
     },
-    [refreshLocalSessions],
+    [],
   );
 
   const handleWhiteboardActivity = useCallback(() => {
     const currentRecord = recordRef.current;
+    if (currentRecord.source?.mode === "instance") {
+      const updated = updateLearningSession(currentRecord.id, { status: "active" });
+      if (!updated) return;
+      recordRef.current = updated;
+      setRecord(updated);
+      return;
+    }
     if (currentRecord.status !== "provisional") return;
     const promoted = promoteLearningSession(currentRecord.id, "手写白板");
     if (!promoted) return;
     recordRef.current = promoted;
     setRecord(promoted);
-    refreshLocalSessions();
     void setSessionTitle(promoted.id, promoted.title).catch(() => {
       // Ink is already durable locally; the title can be retried after the
       // first server-backed action creates the corresponding session.
     });
-  }, [refreshLocalSessions]);
+  }, []);
+
+  const inkSaveHandlerRef = useRef<(() => Promise<void>) | null>(null);
+  const leavingRef = useRef(false);
+  const handleInkSaveHandlerChange = useCallback((
+    handler: (() => Promise<void>) | null,
+  ) => {
+    inkSaveHandlerRef.current = handler;
+  }, []);
 
   const handleTurnsChange = useCallback(
     (turns: VoiceConversationTurn[]) => {
@@ -673,10 +625,6 @@ export function LearningPage() {
     },
     [handleLearnerInput],
   );
-
-  const openSessionList = useCallback(() => {
-    setSidebarOpen(true);
-  }, []);
 
   const startCourseInteraction = useCallback(() => {
     const pack = coursePackLoad.source?.pack;
@@ -701,96 +649,47 @@ export function LearningPage() {
     setReviewSessionId(null);
     setWakeSessionId(null);
     setRecord(next);
-    refreshLocalSessions();
   }, [
     coursePackId,
     coursePackLoad.source,
     record.title,
-    refreshLocalSessions,
     requestedCourseTitle,
   ]);
 
-  const finishAndLeave = useCallback(() => {
+  const leaveToHome = useCallback(async () => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    try {
+      await inkSaveHandlerRef.current?.();
+    } catch {
+      leavingRef.current = false;
+      window.alert("笔迹尚未保存成功，请稍后再试。");
+      return;
+    }
+    const current = recordRef.current;
+    if (current.status === "active") {
+      updateLearningSession(current.id, { status: "paused" });
+    }
+    navigate("/");
+  }, [navigate]);
+
+  const finishAndLeave = useCallback(async () => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    try {
+      await inkSaveHandlerRef.current?.();
+    } catch {
+      leavingRef.current = false;
+      window.alert("笔迹尚未保存成功，请稍后再试。");
+      return;
+    }
     const completed = updateLearningSession(record.id, { status: "completed" });
     if (completed) {
       recordRef.current = completed;
       setRecord(completed);
-      refreshLocalSessions();
     }
-    setSidebarOpen(true);
-  }, [record.id, refreshLocalSessions]);
-
-  const switchTo = useCallback((next: LearningSessionRecord) => {
-    if (record.status === "active") {
-      updateLearningSession(record.id, { status: "paused" });
-    }
-    const resumed =
-      next.status === "provisional" || next.status === "active"
-        ? next
-        : updateLearningSession(next.id, { status: "active" }) ?? next;
-    markerSentRef.current = false;
-    boardContextRef.current = {};
-    setReviewSessionId(next.id);
-    setWakeSessionId(null);
-    setRecord(resumed);
-    refreshLocalSessions();
-    setSidebarOpen(false);
-  }, [record.id, record.status, refreshLocalSessions]);
-
-  const newSession = useCallback(() => {
-    if (record.status === "provisional") {
-      void deleteSession(record.id).catch(() => undefined);
-      removeLearningSession(record.id);
-    } else if (record.status === "active") {
-      updateLearningSession(record.id, { status: "paused" });
-    }
-    const next = createProvisionalLearningSession();
-    markerSentRef.current = false;
-    boardContextRef.current = {};
-    setReviewSessionId(null);
-    setWakeSessionId(null);
-    setRecord(next);
-    refreshLocalSessions();
-    setSidebarOpen(false);
-  }, [record.id, record.status, refreshLocalSessions]);
-
-  const remove = useCallback(
-    (session: LearningSessionRecord) => {
-      if (!window.confirm(`删除“${session.title}”？此操作会删除这段学习对话。`)) {
-        return;
-      }
-      void deleteSession(session.id)
-        .catch(() => undefined)
-        .finally(() => {
-          removeLearningSession(session.id);
-          if (record.id === session.id) {
-            const next = resolveLearningEntrySession();
-            markerSentRef.current = false;
-            boardContextRef.current = {};
-            setReviewSessionId(
-              next.status === "provisional" ? null : next.id,
-            );
-            setWakeSessionId(null);
-            setRecord(next);
-          }
-          refreshLocalSessions();
-        });
-    },
-    [record.id, refreshLocalSessions],
-  );
-
-  const rename = useCallback(
-    (session: LearningSessionRecord) => {
-      const title = window.prompt("重命名学习会话", session.title)?.trim();
-      if (!title || title === session.title) return;
-      const updated = updateLearningSession(session.id, { title });
-      if (!updated) return;
-      if (record.id === session.id) setRecord(updated);
-      refreshLocalSessions();
-      void setSessionTitle(session.id, title).catch(() => undefined);
-    },
-    [record.id, refreshLocalSessions],
-  );
+    navigate("/");
+  }, [navigate, record.id]);
 
   if (!hasTabLease) {
     return (
@@ -815,93 +714,6 @@ export function LearningPage() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
-      {!coursePackId && sidebarOpen && (
-        <button
-          type="button"
-          aria-label="关闭学习会话列表"
-          onClick={() => setSidebarOpen(false)}
-          className="learning-sidebar-scrim"
-        />
-      )}
-      {!coursePackId ? <aside
-        className="learning-session-sidebar"
-        data-open={sidebarOpen ? "true" : "false"}
-        aria-hidden={!sidebarOpen}
-      >
-        <button
-          type="button"
-          className="learning-sidebar-close"
-          aria-label="关闭侧栏"
-          onClick={() => setSidebarOpen(false)}
-        >
-          <X size={20} />
-        </button>
-        <button
-          type="button"
-          onClick={newSession}
-          className="learning-sidebar-new flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-medium text-black"
-        >
-          <Plus size={16} />
-          新对话
-        </button>
-        <div className="mt-5 flex-1 space-y-1 overflow-y-auto">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className={`group flex items-center rounded-xl ${
-                session.id === record.id ? "bg-white/10" : "hover:bg-white/5"
-              }`}
-            >
-              <button
-                type="button"
-                aria-label={`重命名 ${session.title}`}
-                onClick={() => rename(session)}
-                // Always visible: hover-only controls are unreachable on
-                // touch devices (2026-08 UI audit M4).
-                className="p-1 text-white/30 transition hover:text-white/80"
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => switchTo(session)}
-                className="min-w-0 flex-1 truncate px-3 py-3 text-left text-sm text-white/75"
-              >
-                {session.title}
-              </button>
-              <button
-                type="button"
-                aria-label={`删除 ${session.title}`}
-                onClick={() => remove(session)}
-                className="mr-2 p-1 text-white/30 transition hover:text-white/80"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="space-y-2 border-t border-white/10 pt-3">
-          <button
-            type="button"
-            disabled={loggingOut}
-            onClick={() => {
-              setLoggingOut(true);
-              void logout().finally(() => {
-                setSidebarOpen(false);
-                setLoggingOut(false);
-              });
-            }}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm text-white/65 transition hover:bg-white/5 hover:text-white disabled:opacity-50"
-          >
-            <LogOut size={16} />
-            {loggingOut ? "正在退出…" : "退出登录"}
-          </button>
-          <div className="truncate px-3 text-xs text-white/40">
-            {record.title}
-          </div>
-        </div>
-      </aside> : null}
-
       <main className="relative min-w-0 flex-1">
         <div
           className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2"
@@ -909,11 +721,12 @@ export function LearningPage() {
         >
           <button
             type="button"
-            aria-label={coursePackId ? "返回课程首页" : "打开学习会话列表"}
-            onClick={coursePackId ? () => navigate("/") : () => setSidebarOpen(true)}
-            className="learning-top-action-button learning-sidebar-toggle flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
+            aria-label="返回首页"
+            title="返回首页"
+            onClick={() => void leaveToHome()}
+            className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
-            {coursePackId ? <ArrowLeft size={20} /> : <Menu size={20} />}
+            <Home size={20} />
           </button>
           <button
             type="button"
@@ -955,9 +768,10 @@ export function LearningPage() {
               onUseVoiceMode={useVoiceMode}
               onLearnerInput={handleLearnerInput}
               onWhiteboardActivity={handleWhiteboardActivity}
+              onInkSaveHandlerChange={handleInkSaveHandlerChange}
               onTurnsChange={handleTurnsChange}
               onBoardContextChange={handleBoardContextChange}
-              onBack={coursePackId ? () => navigate("/") : openSessionList}
+              onBack={leaveToHome}
               onVoiceExit={finishAndLeave}
               ollFixture={ollFixture}
               coursePack={coursePackLoad.source ?? undefined}

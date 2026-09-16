@@ -105,6 +105,32 @@ describe("useOllNarrationTts", () => {
     expect(nativePlay).not.toHaveBeenCalled();
   });
 
+  it("routes packaged narration through Android MediaPlayer when available", async () => {
+    let requestId = "";
+    const playAudio = vi.fn((id: string) => {
+      requestId = id;
+      return JSON.stringify({ ok: true });
+    });
+    window.OctosNativeTts = { playAudio };
+
+    renderHook(() => useOllNarrationTts({
+      enabled: true,
+      playing: true,
+      text: "Packaged narration.",
+      narrationId: "pack-beat-native",
+      resolveAudio: () => new Blob([new Uint8Array([1, 2, 3])], {
+        type: "audio/mpeg",
+      }),
+    }));
+
+    await waitFor(() => expect(playAudio).toHaveBeenCalledOnce());
+    expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+    window.__octosNativeTtsEvent?.(JSON.stringify({
+      requestId,
+      type: "started",
+    }));
+  });
+
   it("reports preparation until audio really starts", async () => {
     let resolveSpeech: ((audio: Blob) => void) | undefined;
     mocks.synthesizeSpeech.mockImplementation(() =>

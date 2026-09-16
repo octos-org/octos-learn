@@ -5,7 +5,9 @@ import {
   stopAudio,
 } from "@/home/voice/audio-playback";
 import {
+  nativePackagedAudioAvailable,
   nativeTtsAvailable,
+  playNativeAudioBlob,
   playNativeTts,
   prefetchNativeTts,
   stopNativeTts,
@@ -150,16 +152,15 @@ export function useOllNarrationTts({
           return audio;
         })
       : null;
+    const finishAudio = () => {
+      if (!current) return;
+      callbacksRef.current.onSpeakingChange?.(false);
+      completePlayback();
+    };
     const playback = packagedAudio
-      ? packagedAudio.then((audio) => playAudioBlob(
-          audio,
-          () => {
-            if (!current) return;
-            callbacksRef.current.onSpeakingChange?.(false);
-            completePlayback();
-          },
-          audioRequest.signal,
-        ))
+      ? packagedAudio.then((audio) => nativePackagedAudioAvailable()
+        ? playNativeAudioBlob(audio, finishAudio, audioRequest.signal)
+        : playAudioBlob(audio, finishAudio, audioRequest.signal))
       : useNativeTts
       ? playNativeTts(normalizedText, () => {
           if (!current) return;

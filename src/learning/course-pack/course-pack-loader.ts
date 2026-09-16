@@ -21,8 +21,8 @@ const BUILTIN_COURSE_PACKS: Record<BuiltinCoursePackId, {
   version: string;
 }> = {
   "contract-smoke": {
-    filename: "contract-smoke-0.0.1.ocpack",
-    version: "0.0.1",
+    filename: "contract-smoke-0.0.2.ocpack",
+    version: "0.0.2",
   },
 };
 

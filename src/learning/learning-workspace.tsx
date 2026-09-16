@@ -323,6 +323,9 @@ export interface LearningWorkspaceProps {
   onUseVoiceMode?: () => Promise<void> | void;
   onLearnerInput?: (text: string) => void;
   onWhiteboardActivity?: () => void;
+  onInkSaveHandlerChange?: (
+    handler: (() => Promise<void>) | null,
+  ) => void;
   initialAudio?: Blob | null;
   conversationOptions?: VoiceConversationOptions;
   onTurnsChange?: (turns: VoiceConversationTurn[]) => void;
@@ -401,6 +404,7 @@ export function LearningWorkspace({
   onUseVoiceMode,
   onLearnerInput,
   onWhiteboardActivity,
+  onInkSaveHandlerChange,
   initialAudio,
   conversationOptions,
   onTurnsChange,
@@ -3012,6 +3016,7 @@ export function LearningWorkspace({
           onPlaceQuestion={placeWhiteboardQuestion}
           onUpdateCourseRegion={updateCourseRegion}
           onInkActivity={onWhiteboardActivity}
+          onInkSaveHandlerChange={onInkSaveHandlerChange}
           onCourseRendered={handleCourseRendered}
           inkMergeSourceSessionId={inkMergeSourceSessionId ?? undefined}
           onInkMergeComplete={handleInkMergeComplete}
