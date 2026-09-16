@@ -42,7 +42,7 @@ research/
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/
 
-# Generated from the pinned octos-course-library dependency.
+# Generated from the pinned CoursePack library; published packs live outside the web build.
 public/course-packs/
 
 # Raw local math evaluation artifacts; curated summaries remain tracked.

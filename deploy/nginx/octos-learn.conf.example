@@ -59,6 +59,26 @@ server {
         proxy_buffering off;
     }
 
+    # Public reviewed CoursePacks are immutable static releases, not learner
+    # sessions. These longer ^~ locations override the generic /api/ proxy
+    # and the static-asset extension regex. Keep the source catalog and
+    # publisher audit log outside the public releases/ alias.
+    location = /api/learn/course-packs {
+        alias /opt/octos-learn/course-packs/catalog.json;
+        default_type application/json;
+        disable_symlinks on;
+        etag on;
+        add_header Cache-Control "public, max-age=60, must-revalidate";
+    }
+
+    location ^~ /api/learn/course-packs/ {
+        alias /opt/octos-learn/course-packs/releases/;
+        autoindex off;
+        disable_symlinks on;
+        etag on;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
     # File handles end in .jpg/.png/etc. Keep all API requests on the
     # authenticated backend, ahead of the static-asset regex locations.
     location ^~ /api/ {

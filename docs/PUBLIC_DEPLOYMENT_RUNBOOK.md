@@ -14,6 +14,7 @@ persistent data separate:
 /opt/octos-learn/web/               contents of octos-learn/dist
 /opt/octos-learn/skills/learning-coach/  product-owned learning runtime
 /opt/octos-learn/services/hosted-tts/    optional public hosted-TTS service
+/opt/octos-learn/course-packs/           reviewed immutable CoursePack releases
 /etc/octos-learn/config.json        non-secret Octos configuration
 /etc/octos-learn/octos-learn.env    SMTP and service secrets (0600)
 /etc/octos-learn/hosted-tts.env     platform TTS credential (0600)
@@ -47,6 +48,13 @@ Deploy `dist/` and `target/release/octos`; do not run Vite on the VPS. For a
 public release with platform-funded narration, also deploy
 `services/hosted-tts/` unchanged. It uses only Node.js built-ins and does not
 require `npm install`.
+
+CoursePacks are published separately from the web build. Build and validate
+them from a clean `octos-course-library` checkout, then run its publication CLI
+against `/opt/octos-learn/course-packs`. Never copy an unreviewed source
+directory or an Octos learner session into this public location. The
+publication procedure is documented in the library's
+`docs/SERVER_PUBLISHING.md`.
 
 ## 3. Install configuration
 
@@ -84,6 +92,16 @@ require `npm install`.
     `deploy/systemd/octos-learn-hosted-tts.service.example`; create
     `/var/lib/octos-learn/hosted-tts` owned by the service account. Do not place
     this credential in the Octos environment or an administrator profile.
+11. For CoursePacks, create `/opt/octos-learn/course-packs` on the publication
+    filesystem, owned by a dedicated operator or the non-login service
+    account. Nginx needs read/traverse access to `catalog.json` and
+    `releases/`, including `/opt` and `/opt/octos-learn` parent directories;
+    the publisher keeps `catalog.source.json` and `audit.ndjson` mode `0600`.
+    The example Nginx config exposes only the public catalog and releases,
+    ahead of the generic `/api/` proxy. Do not enable directory indexing or
+    point the alias at the entire CoursePack root. Run the library publisher's
+    `init` command once so an empty `200` catalog exists before the first
+    approved release.
 
 The first administrator must already exist in the Octos data directory. After
 login, public registration admits a new user after email verification; it does
@@ -148,6 +166,10 @@ Then verify in a private browser window:
    `image/png`) and does not receive the static assets' public cache policy.
    Keep configuration backups outside `sites-enabled/`; Nginx may load every
    file there, including `.orig` backups.
+11. After publishing a reviewed CoursePack, confirm its catalog metadata,
+    archive digest, file URLs, cache headers, and pinned older-version URL.
+    A withdrawn version should disappear from the catalog but remain
+    byte-identical at its immutable archive URL.
 
 ## 5. Upgrade and rollback
 
