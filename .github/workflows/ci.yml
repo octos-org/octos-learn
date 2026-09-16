@@ -51,17 +51,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install chromium --with-deps
-      # The specs default to http://localhost:5174; playwright.config.ts has
-      # no webServer entry, so the Vite dev server is started here and kept
-      # alive for the whole step.
-      - name: Start Vite dev server
-        run: |
-          pnpm exec vite --port 5174 --strictPort &
-          for i in $(seq 1 60); do
-            curl -sf http://localhost:5174/ >/dev/null && break
-            sleep 1
-          done
-          curl -sf http://localhost:5174/ >/dev/null || (echo "vite failed to start" && exit 1)
+      # Playwright owns the Vite process through its webServer configuration,
+      # so the server remains alive for the complete test lifecycle.
       - run: pnpm test:e2e:smoke
       - uses: actions/upload-artifact@v7
         if: failure()

@@ -46,7 +46,7 @@ test("opens the standalone learning canvas at the product root", async ({ page }
   await page.goto("/?oll-fixture=unit-circle-sine");
 
   await expect(page.getByText("Octos Learning Canvas")).toBeVisible();
-  await expect(page.getByRole("button", { name: "打开学习会话列表" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "返回首页" })).toBeVisible();
   await expect(page).toHaveTitle("Octos Learn");
 });
 

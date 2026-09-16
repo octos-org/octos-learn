@@ -38,7 +38,7 @@
     "katex": "^0.16.38",
     "lucide-react": "^0.577.0",
     "mermaid": "^11.13.0",
-    "octos-course-library": "github:alan0x/octos-course-library#0f08615",
+    "octos-course-library": "github:alan0x/octos-course-library#a82bc93cb1bdd3925ddbacd469292b6aaae9ef52",
     "octos-lesson-language": "github:alan0x/octos-lesson-language#c3b78b2833462b1c9d571e3a22749a4c2be1430e",
     "onnxruntime-web": "^1.26.0",
     "opentype.js": "1.3.4",
