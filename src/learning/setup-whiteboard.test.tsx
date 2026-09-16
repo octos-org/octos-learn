@@ -6,7 +6,7 @@ import {
   waitFor,
   cleanup,
 } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { normalizeProfile, type Profile } from "@/settings/settings-api";
 import { LearningSetupGate, SetupWhiteboard } from "./setup-whiteboard";
 import { needsLearningSetup } from "./setup-state";
@@ -58,6 +58,31 @@ afterEach(() => {
 });
 
 describe("first-run setup whiteboard", () => {
+  it("returns to a selected CoursePack after onboarding", async () => {
+    mocks.get.mockResolvedValue(blank());
+    const destination = "/board?course-pack=grade-3-math&course-version=1.0.0";
+    function LocationProbe() {
+      const location = useLocation();
+      return <output data-testid="path">{location.pathname}{location.search}</output>;
+    }
+    render(
+      <MemoryRouter initialEntries={[destination]}>
+        <Routes>
+          <Route path="/board" element={(
+            <LearningSetupGate><p>learning-board</p></LearningSetupGate>
+          )} />
+          <Route path="/setup" element={<SetupWhiteboard />} />
+        </Routes>
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+    await screen.findByRole("heading", { name: "把白板准备好，就可以开始了" });
+    expect(screen.getByTestId("path").textContent).toContain("/setup?redirect=");
+    fireEvent.click(await screen.findByText("先用白板，稍后设置 AI"));
+    await screen.findByText("learning-board");
+    expect(screen.getByTestId("path").textContent).toBe(destination);
+  });
+
   it("establishes the authenticated storage scope before opening the board", async () => {
     const profile = blank();
     profile.config.llm.primary = {

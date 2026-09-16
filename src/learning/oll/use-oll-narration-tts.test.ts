@@ -68,6 +68,69 @@ describe("useOllNarrationTts", () => {
     expect(onPlaybackComplete).toHaveBeenCalledWith("beat-1");
   });
 
+  it("plays verified packaged narration without contacting either TTS provider", async () => {
+    const audio = new Blob(["packaged-audio"], { type: "audio/mpeg" });
+    const resolveAudio = vi.fn(() => audio);
+    const nativePlay = vi.fn(() => JSON.stringify({ ok: true }));
+    window.OctosNativeTts = {
+      isConfigured: () => true,
+      prefetch: vi.fn(() => JSON.stringify({ ok: true })),
+      play: nativePlay,
+      cancel: vi.fn(),
+      stop: vi.fn(),
+    };
+
+    renderHook(() => useOllNarrationTts({
+      enabled: true,
+      playing: true,
+      text: "Packaged narration.",
+      narrationId: "pack-beat-1",
+      prefetchEnabled: true,
+      upcomingText: "No provider prefetch.",
+      upcomingNarrationId: "pack-beat-2",
+      resolveAudio,
+    }));
+
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
+      audio,
+      expect.any(Function),
+      expect.any(AbortSignal),
+    ));
+    expect(resolveAudio).toHaveBeenCalledWith(
+      "pack-beat-1",
+      "Packaged narration.",
+      expect.any(AbortSignal),
+    );
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+    expect(nativePlay).not.toHaveBeenCalled();
+  });
+
+  it("routes packaged narration through Android MediaPlayer when available", async () => {
+    let requestId = "";
+    const playAudio = vi.fn((id: string) => {
+      requestId = id;
+      return JSON.stringify({ ok: true });
+    });
+    window.OctosNativeTts = { playAudio };
+
+    renderHook(() => useOllNarrationTts({
+      enabled: true,
+      playing: true,
+      text: "Packaged narration.",
+      narrationId: "pack-beat-native",
+      resolveAudio: () => new Blob([new Uint8Array([1, 2, 3])], {
+        type: "audio/mpeg",
+      }),
+    }));
+
+    await waitFor(() => expect(playAudio).toHaveBeenCalledOnce());
+    expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+    window.__octosNativeTtsEvent?.(JSON.stringify({
+      requestId,
+      type: "started",
+    }));
+  });
+
   it("reports preparation until audio really starts", async () => {
     let resolveSpeech: ((audio: Blob) => void) | undefined;
     mocks.synthesizeSpeech.mockImplementation(() =>

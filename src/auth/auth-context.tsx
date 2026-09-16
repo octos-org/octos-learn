@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTokenState(null);
     setUser(null);
     setPortal(null);
-    if (location.pathname !== "/login") {
+    if (location.pathname !== "/login" && location.pathname !== "/") {
       navigate("/login", { replace: true });
     }
   }, [navigate, location.pathname]);

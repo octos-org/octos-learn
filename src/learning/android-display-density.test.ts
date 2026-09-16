@@ -5,6 +5,7 @@ import { planFocusCamera } from "octos-lesson-language/web-runtime";
 const styles = readFileSync("src/learning/learning-workspace.css", "utf8");
 const appStyles = readFileSync("src/index.css", "utf8");
 const setupStyles = readFileSync("src/learning/setup-whiteboard.css", "utf8");
+const launcherStyles = readFileSync("src/learning/course-launcher.css", "utf8");
 const runtimeSource = readFileSync(
   "src/learning/oll/oll-lesson-runtime.tsx",
   "utf8",
@@ -16,6 +17,16 @@ const workspaceSource = readFileSync(
 const pageSource = readFileSync("src/learning/learning-page.tsx", "utf8");
 
 describe("Android meeting-display density", () => {
+  it("keeps the shared launcher compact without scaling its entire page", () => {
+    expect(launcherStyles).toContain('[data-runtime-platform="android"] .course-launcher-hero');
+    expect(launcherStyles).toContain('[data-runtime-platform="android"] .course-launcher-card');
+    expect(launcherStyles).toMatch(
+      /\.course-launcher\s*\{[^}]*height:\s*100%[^}]*min-height:\s*0[^}]*overflow-y:\s*auto[^}]*touch-action:\s*pan-y/s,
+    );
+    expect(launcherStyles).not.toMatch(
+      /\[data-runtime-platform="android"\]\s+\.course-launcher\s*\{[^}]*transform\s*:/s,
+    );
+  });
   it("keeps chrome compact without scaling the whiteboard surface", () => {
     expect(styles).toContain('[data-runtime-platform="android"] .learning-workspace-topbar');
     expect(styles).toContain('[data-runtime-platform="android"] .learning-ink-toolbar');
@@ -165,13 +176,11 @@ describe("Android meeting-display density", () => {
     );
   });
 
-  it("aligns the Android sidebar close control with the new-conversation control", () => {
-    expect(appStyles).toMatch(
-      /\[data-runtime-platform="android"\] \.learning-sidebar-close\s*\{[^}]*top:\s*1rem[^}]*height:\s*2\.75rem/s,
-    );
-    expect(appStyles).toMatch(
-      /\[data-runtime-platform="android"\] \.learning-sidebar-new\s*\{[^}]*height:\s*2\.75rem/s,
-    );
+  it("uses a direct home action instead of the legacy learning sidebar", () => {
+    expect(pageSource).toContain('aria-label="返回首页"');
+    expect(pageSource).toContain("<Home size={20} />");
+    expect(pageSource).not.toContain("sidebarOpen");
+    expect(appStyles).not.toContain(".learning-session-sidebar");
   });
 
   it("does not depend on device cursive fonts for welcome or narration text", () => {

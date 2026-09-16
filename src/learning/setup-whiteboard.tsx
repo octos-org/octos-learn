@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSelectedProfileId } from "@/api/client";
 import { synthesizeSpeech } from "@/api/voice";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
@@ -24,6 +24,7 @@ import "./setup-whiteboard.css";
 /** Credentials are regular authenticated settings forms, never OLL cards,
  * canvas snapshots, conversation attachments, or localStorage values. */
 export function LearningSetupGate({ children }: { children: ReactNode }) {
+  const location = useLocation();
   const [required, setRequired] = useState<boolean | null>(null);
   const [modelConfigured, setModelConfigured] = useState(true);
   useEffect(() => {
@@ -46,7 +47,10 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
   if (required === null)
     return <div className="setup-board setup-loading">正在打开白板…</div>;
   return required ? (
-    <Navigate to="/setup" replace />
+    <Navigate
+      to={`/setup?redirect=${encodeURIComponent(`${location.pathname}${location.search}`)}`}
+      replace
+    />
   ) : (
     <LearningModelContext.Provider value={modelConfigured}>
       {children}
@@ -56,6 +60,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
 
 export function SetupWhiteboard() {
   const navigate = useNavigate();
+  const [search] = useSearchParams();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -72,7 +77,12 @@ export function SetupWhiteboard() {
     }
     // Permission prompts belong to an explicit device button inside the board.
     // Do not turn on the camera/microphone as a side effect of first-run setup.
-    navigate("/", { replace: true });
+    const requested = search.get("redirect");
+    const destination = requested?.startsWith("/board")
+      && (requested.length === 6 || requested[6] === "?")
+      ? requested
+      : "/board";
+    navigate(destination, { replace: true });
   }
   return (
     <main className="setup-board">

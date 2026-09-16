@@ -10,8 +10,10 @@ import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LearningWorkspaceProps } from "./learning-workspace";
 import {
+  createCoursePackLearningInstance,
   createProvisionalLearningSession,
   getLearningSession,
+  listCoursePackLearningInstances,
   listLearningSessions,
   promoteLearningSession,
 } from "./learning-session-store";
@@ -21,7 +23,6 @@ import { LearningPage } from "./learning-page";
 const navigateMock = vi.hoisted(() => vi.fn());
 const setTitleMock = vi.hoisted(() => vi.fn(async () => ({})));
 const deleteSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
-const logoutMock = vi.hoisted(() => vi.fn(async () => undefined));
 const sessionApiMock = vi.hoisted(() => ({
   listSessions: vi.fn(async () => [] as unknown[]),
   getSessionFiles: vi.fn(async (sessionId: string) => [
@@ -41,12 +42,15 @@ const nativeTtsConfigMock = vi.hoisted(() => ({
   fetch: vi.fn(),
   configure: vi.fn(),
 }));
+const coursePackLibraryMock = vi.hoisted(() => ({
+  load: vi.fn(),
+}));
+vi.mock("octos-course-library/browser", () => ({
+  loadCoursePackArchive: coursePackLibraryMock.load,
+  coursePackFileBlob: vi.fn(),
+}));
 vi.mock("react-router-dom", () => ({
   useNavigate: () => navigateMock,
-}));
-
-vi.mock("@/auth/auth-context", () => ({
-  useAuth: () => ({ logout: logoutMock }),
 }));
 
 vi.mock("@/api/sessions", () => ({
@@ -119,7 +123,6 @@ describe("LearningPage", () => {
     navigateMock.mockReset();
     setTitleMock.mockClear();
     deleteSessionMock.mockClear();
-    logoutMock.mockClear();
     sessionApiMock.listSessions.mockReset();
     sessionApiMock.listSessions.mockResolvedValue([]);
     sessionApiMock.getSessionFiles.mockReset();
@@ -135,18 +138,7 @@ describe("LearningPage", () => {
     nativeTtsConfigMock.available = false;
     nativeTtsConfigMock.fetch.mockReset();
     nativeTtsConfigMock.configure.mockReset();
-  });
-
-  it("logs out from the bottom of the learning sidebar", async () => {
-    render(<LearningPage />);
-    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
-
-    fireEvent.click(
-      screen.getByRole("button", { name: "打开学习会话列表" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: "退出登录" }));
-
-    await waitFor(() => expect(logoutMock).toHaveBeenCalledTimes(1));
+    coursePackLibraryMock.load.mockReset();
   });
 
   it("opens the opt-in OLL fixture without Skill or device gates", async () => {
@@ -180,18 +172,173 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
   });
 
-  it("uses the session menu as the standalone navigation", async () => {
+  it("opens a verified local CoursePack without server sync or TTS configuration", async () => {
+    window.history.replaceState({}, "", "/learn?course-pack=contract-smoke");
+    const source = {
+      manifest: {
+        packId: "contract-smoke",
+        version: "0.0.2",
+      },
+      archiveSha256: "a".repeat(64),
+    };
+    coursePackLibraryMock.load.mockResolvedValue(source);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+    nativeTtsConfigMock.available = true;
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.coursePack).toEqual({
+      id: "contract-smoke",
+      pack: source,
+    }));
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/contract-smoke-0.0.2.ocpack",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(sessionApiMock.listSessions).not.toHaveBeenCalled();
+    expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
+    expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview");
+    expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
+    expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeTypeOf("function");
+    expect(screen.getByRole("button", { name: "返回首页" })).toBeTruthy();
+  });
+
+  it("creates an isolated instance only when a preview starts interactive learning", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/learn?course-pack=contract-smoke&course-mode=preview&course-title=%E6%95%B0%E5%AD%A6%E8%AF%BE",
+    );
+    const source = {
+      manifest: { packId: "contract-smoke", version: "0.0.2" },
+      archiveSha256: "a".repeat(64),
+    };
+    coursePackLibraryMock.load.mockResolvedValue(source);
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview"));
+
+    act(() => learningWorkspaceMock.props?.onStartCourseInteraction?.());
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.courseAccessMode).toBe("instance"));
+    const instance = getLearningSession(learningWorkspaceMock.props!.sessionId);
+    expect(instance?.title).toBe("数学课");
+    expect(instance?.source).toEqual({
+      kind: "course-pack",
+      mode: "instance",
+      packId: "contract-smoke",
+      version: "0.0.2",
+      archiveSha256: "a".repeat(64),
+    });
+    expect(window.location.search).toContain("course-mode=learn");
+    expect(window.location.search).toContain(`course-instance=${instance?.id}`);
+  });
+
+  it("continues the explicitly selected CoursePack instance", async () => {
+    const digest = "a".repeat(64);
+    const instance = createCoursePackLearningInstance({
+      packId: "contract-smoke",
+      version: "0.0.2",
+      archiveSha256: digest,
+    }, "数学课", 100);
+    window.history.replaceState(
+      {},
+      "",
+      `/learn?course-pack=contract-smoke&course-mode=learn&course-instance=${instance.id}`,
+    );
+    coursePackLibraryMock.load.mockResolvedValue({
+      manifest: { packId: "contract-smoke", version: "0.0.2" },
+      archiveSha256: digest,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(learningWorkspaceMock.props?.sessionId).toBe(instance.id));
+    expect(learningWorkspaceMock.props?.courseAccessMode).toBe("instance");
+    expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeUndefined();
+  });
+
+  it("makes the CoursePack instance with newly saved ink the latest resumable instance", async () => {
+    const digest = "a".repeat(64);
+    const source = {
+      packId: "contract-smoke",
+      version: "0.0.2",
+      archiveSha256: digest,
+    };
+    const edited = createCoursePackLearningInstance(source, "数学课", 100);
+    createCoursePackLearningInstance(source, "另一个实例", 200);
+    window.history.replaceState(
+      {},
+      "",
+      `/learn?course-pack=contract-smoke&course-mode=learn&course-instance=${edited.id}`,
+    );
+    coursePackLibraryMock.load.mockResolvedValue({
+      manifest: { packId: "contract-smoke", version: "0.0.2" },
+      archiveSha256: digest,
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props?.sessionId).toBe(edited.id));
+    act(() => learningWorkspaceMock.props?.onWhiteboardActivity?.());
+
+    expect(listCoursePackLearningInstances(source)[0]?.id).toBe(edited.id);
+  });
+
+  it("creates a genuinely new blank board once and resumes it on refresh", async () => {
+    const previous = createProvisionalLearningSession(100);
+    promoteLearningSession(previous.id, "旧白板", 200);
+    window.history.replaceState({}, "", "/board?new-board=1");
+
+    const first = render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    const newSessionId = learningWorkspaceMock.props!.sessionId;
+    expect(newSessionId).not.toBe(previous.id);
+    expect(window.location.search).not.toContain("new-board");
+    first.unmount();
+    learningWorkspaceMock.props = null;
+
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props!.sessionId).toBe(newSessionId);
+  });
+
+  it("uses a home action as the standalone navigation", async () => {
     window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
 
     render(<LearningPage />);
 
-    expect(screen.queryByRole("button", { name: "返回主页" })).toBeNull();
     fireEvent.click(
-      await screen.findByRole("button", { name: "打开学习会话列表" }),
+      await screen.findByRole("button", { name: "返回首页" }),
     );
-    expect(
-      screen.getByRole("button", { name: "关闭学习会话列表" }),
-    ).toBeTruthy();
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
+  });
+
+  it("flushes the current ink document before returning home", async () => {
+    window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
+    let finishSave: (() => void) | undefined;
+    const save = vi.fn(() => new Promise<void>((resolve) => {
+      finishSave = resolve;
+    }));
+
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
+    fireEvent.click(screen.getByRole("button", { name: "返回首页" }));
+
+    expect(save).toHaveBeenCalledOnce();
+    expect(navigateMock).not.toHaveBeenCalledWith("/");
+    act(() => finishSave?.());
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
 
   it("keeps settings directly accessible from the learning canvas", async () => {
@@ -260,13 +407,12 @@ describe("LearningPage", () => {
     });
     expect(getLearningSession(sessionId)?.status).toBe("active");
     fireEvent.click(
-      screen.getByRole("button", { name: "打开学习会话列表" }),
+      screen.getByRole("button", { name: "返回首页" }),
     );
-    expect(
-      screen.getByRole("button", {
-        name: "请在白板上讲解一个新的二次函数问题",
-      }),
-    ).toBeTruthy();
+    await waitFor(() => {
+      expect(getLearningSession(sessionId)?.status).toBe("paused");
+      expect(navigateMock).toHaveBeenCalledWith("/");
+    });
   });
 
   it("refreshes Android native TTS configuration after authenticated startup", async () => {
@@ -439,7 +585,7 @@ describe("LearningPage", () => {
     ]);
   });
 
-  it("switches between server-backed OLL sessions from the sidebar", async () => {
+  it("returns to the launcher after adopting a server-backed OLL session", async () => {
     sessionApiMock.listSessions.mockResolvedValue([
       { id: "learn-200-geometry", message_count: 4, title: "几何课程" },
       { id: "learn-100-algebra", message_count: 4, title: "代数课程" },
@@ -453,23 +599,9 @@ describe("LearningPage", () => {
     );
     expect(learningWorkspaceMock.props?.playbackMode).toBe("review");
     fireEvent.click(
-      screen.getByRole("button", { name: "打开学习会话列表" }),
+      screen.getByRole("button", { name: "返回首页" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: "代数课程" }));
-
-    await waitFor(() =>
-      expect(learningWorkspaceMock.props?.sessionId).toBe(
-        "learn-100-algebra",
-      ),
-    );
-    expect(learningWorkspaceMock.props?.playbackMode).toBe("review");
-
-    act(() => {
-      learningWorkspaceMock.props?.onLearnerInput?.("继续讲一道相似题");
-    });
-    await waitFor(() =>
-      expect(learningWorkspaceMock.props?.playbackMode).toBe("live"),
-    );
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
 
   it("leaves review mode as soon as a voice turn starts", async () => {
@@ -593,6 +725,24 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props?.sessionId).not.toBe(staleId);
   });
 
+  it("keeps CoursePack instances out of ordinary session sync and navigation", async () => {
+    const instance = createCoursePackLearningInstance({
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: "a".repeat(64),
+    }, "三年级数学课程实例", 908);
+    sessionApiMock.listSessions.mockResolvedValue([]);
+
+    render(<LearningPage />);
+
+    await waitFor(() => expect(sessionApiMock.listSessions).toHaveBeenCalled());
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(getLearningSession(instance.id)).toEqual(instance);
+    expect(learningWorkspaceMock.props?.sessionId).not.toBe(instance.id);
+
+    expect(screen.getByRole("button", { name: "返回首页" })).toBeTruthy();
+  });
+
   it("keeps a local whiteboard with saved ink when the server has no lesson", async () => {
     const { id: sessionId } = createProvisionalLearningSession(906);
     promoteLearningSession(sessionId, "手写白板", 907);
@@ -648,8 +798,6 @@ describe("LearningPage", () => {
       learningWorkspaceMock.props?.onVoiceExit?.();
     });
     expect(getLearningSession(sessionId)?.status).toBe("completed");
-    expect(
-      screen.getByRole("button", { name: "关闭学习会话列表" }),
-    ).toBeTruthy();
+    expect(navigateMock).toHaveBeenCalledWith("/");
   });
 });

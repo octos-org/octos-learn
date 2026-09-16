@@ -35,9 +35,12 @@ importers:
       mermaid:
         specifier: ^11.13.0
         version: 11.15.0
+      octos-course-library:
+        specifier: github:alan0x/octos-course-library#a82bc93cb1bdd3925ddbacd469292b6aaae9ef52
+        version: https://codeload.github.com/alan0x/octos-course-library/tar.gz/a82bc93cb1bdd3925ddbacd469292b6aaae9ef52(octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e)
       octos-lesson-language:
-        specifier: github:alan0x/octos-lesson-language#ce1d577ed8ca7698b34384ba1902d1fe2722a85a
-        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a
+        specifier: github:alan0x/octos-lesson-language#c3b78b2833462b1c9d571e3a22749a4c2be1430e
+        version: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e
       onnxruntime-web:
         specifier: ^1.26.0
         version: 1.26.0
@@ -111,6 +114,9 @@ importers:
       eslint-plugin-react-refresh:
         specifier: ^0.4.24
         version: 0.4.26(eslint@9.39.4(jiti@2.7.0))
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
       globals:
         specifier: ^16.5.0
         version: 16.5.0
@@ -2297,6 +2303,10 @@ packages:
   extend@3.0.2:
     resolution: {integrity: sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==}
 
+  fake-indexeddb@6.2.5:
+    resolution: {integrity: sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==}
+    engines: {node: '>=18'}
+
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
@@ -2321,6 +2331,9 @@ packages:
   fetch-blob@3.2.0:
     resolution: {integrity: sha512-7yAQpD2UMJzLi1Dqv7qFYnPbaPx7ZfFK6PiIxQ4PfkGPyNyl2Ugx+a/umUonmKqjhM4DnfbMvdX6otXq83soQQ==}
     engines: {node: ^12.20 || >= 14.13}
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   file-entry-cache@8.0.0:
     resolution: {integrity: sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==}
@@ -2993,8 +3006,15 @@ packages:
   nwsapi@2.2.23:
     resolution: {integrity: sha512-7wfH4sLbt4M0gCDzGE6vzQBo0bfTKjU7Sfpqy/7gs1qBfYz2vEJH6vXcBKpO3+6Yu1telwd0t9HpyOoLEQQbIQ==}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a:
-    resolution: {gitHosted: true, integrity: sha512-mLkpwQwlqva3dOxjcs6j2RK9eaICC5wvJ41DXrngjRroCju7tRv6uSaPljFlMYMsgKmfgivs54U+2ECm+Wgzww==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a}
+  octos-course-library@https://codeload.github.com/alan0x/octos-course-library/tar.gz/a82bc93cb1bdd3925ddbacd469292b6aaae9ef52:
+    resolution: {gitHosted: true, integrity: sha512-aj1TqGQzJbFPfawHTWMEoNvHm4Vf7W/Y/s/lnE7kIOUq411ynMQKN3ryW2DtGNQy4KrgAwbOuPIdY6O1Qy8+aQ==, tarball: https://codeload.github.com/alan0x/octos-course-library/tar.gz/a82bc93cb1bdd3925ddbacd469292b6aaae9ef52}
+    version: 0.0.0
+    engines: {node: '>=20'}
+    peerDependencies:
+      octos-lesson-language: github:alan0x/octos-lesson-language#ce1d577ed8ca7698b34384ba1902d1fe2722a85a
+
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e:
+    resolution: {gitHosted: true, integrity: sha512-nC2qpUNXTNE8WPUOkUziM3fGG1RvXppE6wzrXYbB9QPsn4B5/8Om/fzhrzfok+HYwDuedNU765KxYvDfJZNGGQ==, tarball: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e}
     version: 0.1.0-rc.1
     engines: {node: '>=20'}
 
@@ -6038,6 +6058,8 @@ snapshots:
 
   extend@3.0.2: {}
 
+  fake-indexeddb@6.2.5: {}
+
   fast-deep-equal@3.1.3: {}
 
   fast-json-stable-stringify@2.1.0: {}
@@ -6054,6 +6076,8 @@ snapshots:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.3.3
+
+  fflate@0.8.3: {}
 
   file-entry-cache@8.0.0:
     dependencies:
@@ -6959,7 +6983,13 @@ snapshots:
 
   nwsapi@2.2.23: {}
 
-  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/ce1d577ed8ca7698b34384ba1902d1fe2722a85a:
+  octos-course-library@https://codeload.github.com/alan0x/octos-course-library/tar.gz/a82bc93cb1bdd3925ddbacd469292b6aaae9ef52(octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e):
+    dependencies:
+      ajv: 8.20.0
+      fflate: 0.8.3
+      octos-lesson-language: https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e
+
+  octos-lesson-language@https://codeload.github.com/alan0x/octos-lesson-language/tar.gz/c3b78b2833462b1c9d571e3a22749a4c2be1430e:
     dependencies:
       ajv: 8.20.0
       js-draw: 1.33.0
