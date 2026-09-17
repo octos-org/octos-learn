@@ -21,6 +21,12 @@ android {
     }
 
     buildTypes {
+        spotlight {
+            initWith debug
+            applicationIdSuffix ".spotlight"
+            versionNameSuffix "-spotlight"
+            debuggable true
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"

@@ -28,6 +28,7 @@ function renderGuard(initialPath: string) {
         <Route element={<AuthGuard />}>
           <Route path="/" element={<div>home page</div>} />
           <Route path="/chat" element={<div>chat page</div>} />
+          <Route path="/board" element={<div>board page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -39,6 +40,7 @@ describe("AuthGuard", () => {
     cleanup();
     authMocks.token = null;
     authMocks.loading = false;
+    vi.unstubAllEnvs();
   });
 
   it("bounces unauthenticated deep links to /login with the destination preserved", () => {
@@ -57,5 +59,17 @@ describe("AuthGuard", () => {
     authMocks.token = "tok";
     renderGuard("/chat");
     expect(screen.getByText("chat page")).toBeTruthy();
+  });
+
+  it("allows only an embedded Spotlight course through without a token", () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    renderGuard("/board?course-pack=grade-3-math&course-version=1.0.0");
+    expect(screen.getByText("board page")).toBeTruthy();
+  });
+
+  it("still protects blank boards in a Spotlight build", () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    renderGuard("/board?new-board=1");
+    expect(screen.getByTestId("login-probe").textContent).toContain("/login?redirect=");
   });
 });

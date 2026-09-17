@@ -59,3 +59,32 @@ adb shell dumpsys webviewupdate
 The debug APK enables WebView inspection. With the display connected over ADB,
 open `chrome://inspect/#devices` on a development computer to inspect console
 errors and network requests.
+
+## Spotlight APK
+
+The Spotlight variant is a separate application (`cc.pitun.learn.spotlight`)
+that can be installed beside the standard APK. Its reviewed CoursePack
+snapshot is locked by version, byte length, and SHA-256 in
+`android/spotlight-course-packs.json`. The build downloads those immutable
+archives, validates their identities and offline narration, and embeds them in
+the APK.
+
+```bash
+pnpm build:apk:spotlight
+```
+
+The APK is written to:
+
+```text
+android/app/build/outputs/apk/spotlight/app-spotlight.apk
+```
+
+Spotlight course discovery and playback use only the embedded catalog and
+archives. They do not require login or network access, do not copy the embedded
+archives into IndexedDB, and fail closed instead of falling back to stale local
+or server content. Blank whiteboards and cloud-backed features keep the normal
+authentication and network requirements.
+
+The current Spotlight build type is debug-signed for device E2E testing. A
+formal public release must use the release signing configuration and must not
+reuse the Android debug certificate.

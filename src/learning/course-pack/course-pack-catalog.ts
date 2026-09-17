@@ -36,6 +36,11 @@ const DIGEST = /^[a-f0-9]{64}$/u;
 const CATALOG_CACHE_KEY = "octos:course-pack-catalog:v1";
 // Keep this in step with package.json until the build injects the player version.
 const PLAYER_VERSION = "0.1.0";
+const SPOTLIGHT_ROOT = `${import.meta.env.BASE_URL}course-packs/spotlight`;
+
+export function isSpotlightBuild(): boolean {
+  return import.meta.env.VITE_OCTOS_SPOTLIGHT === "true";
+}
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -107,6 +112,41 @@ export async function fetchCoursePackCatalog(signal?: AbortSignal): Promise<Cour
   });
   if (!response.ok) throw new Error(`课程目录暂不可用（HTTP ${response.status}）`);
   return parseCoursePackCatalog(await response.json());
+}
+
+export function spotlightCoursePackArchiveUrl(
+  packId: string,
+  version: string,
+): string {
+  if (!isCoursePackIdentity(packId, version)) {
+    throw new Error("课程包身份无效");
+  }
+  return `${SPOTLIGHT_ROOT}/${encodeURIComponent(packId)}`
+    + `/${encodeURIComponent(version)}/archive.ocpack`;
+}
+
+export async function fetchSpotlightCoursePackCatalog(
+  signal?: AbortSignal,
+): Promise<CoursePackCatalog> {
+  const response = await fetch(`${SPOTLIGHT_ROOT}/catalog.json`, {
+    signal,
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`内置课程目录不可用（HTTP ${response.status}）`);
+  const catalog = parseCoursePackCatalog(await response.json());
+  return {
+    ...catalog,
+    packs: catalog.packs.map((entry) => {
+      const thumbnailPath = entry.thumbnailUrl.slice(
+        entry.thumbnailUrl.indexOf("/files/") + "/files/".length,
+      );
+      return {
+        ...entry,
+        thumbnailUrl: `${SPOTLIGHT_ROOT}/${encodeURIComponent(entry.packId)}`
+          + `/${encodeURIComponent(entry.version)}/files/${thumbnailPath}`,
+      };
+    }),
+  };
 }
 
 export function saveCoursePackCatalog(catalog: CoursePackCatalog): void {

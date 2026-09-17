@@ -83,6 +83,7 @@ describe("shared course launcher", () => {
     cleanup();
     localStorage.clear();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("always offers a blank whiteboard while no packs are published", async () => {
@@ -101,6 +102,43 @@ describe("shared course launcher", () => {
     );
     expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
     expect(screen.getByText("三年级数学")).toBeTruthy();
+  });
+
+  it("offers embedded Spotlight courses offline without claiming a download", async () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(catalog([release])), {
+      status: 200,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    showLauncher();
+
+    expect(await screen.findByText("内置课程 · 可离线")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /预览/u })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/spotlight/catalog.json",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /开始互动/u }));
+    expect(localStorage.getItem("octos_learning_sessions_v2:anonymous"))
+      .toContain('"mode":"instance"');
+  });
+
+  it("does not fall back to unreviewed installed packs when the Spotlight catalog fails", async () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    storage.list.mockResolvedValue([{
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      thumbnail: null,
+      catalogEntry: release,
+    }]);
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("embedded catalog missing"); }));
+
+    showLauncher();
+
+    expect(await screen.findByText("课程包还在准备中")).toBeTruthy();
+    expect(screen.queryByText("三年级数学")).toBeNull();
   });
 
   it("shows a saved catalog but does not claim offline playback is ready", async () => {

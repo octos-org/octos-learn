@@ -25,9 +25,13 @@ import "./setup-whiteboard.css";
  * canvas snapshots, conversation attachments, or localStorage values. */
 export function LearningSetupGate({ children }: { children: ReactNode }) {
   const location = useLocation();
+  const offlineSpotlightCourse = import.meta.env.VITE_OCTOS_SPOTLIGHT === "true"
+    && location.pathname === "/board"
+    && new URLSearchParams(location.search).has("course-pack");
   const [required, setRequired] = useState<boolean | null>(null);
   const [modelConfigured, setModelConfigured] = useState(true);
   useEffect(() => {
+    if (offlineSpotlightCourse) return;
     let active = true;
     getMyProfile()
       .then((p) => {
@@ -43,7 +47,14 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [offlineSpotlightCourse]);
+  if (offlineSpotlightCourse) {
+    return (
+      <LearningModelContext.Provider value={false}>
+        {children}
+      </LearningModelContext.Provider>
+    );
+  }
   if (required === null)
     return <div className="setup-board setup-loading">正在打开白板…</div>;
   return required ? (

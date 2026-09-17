@@ -3,12 +3,24 @@ import { useAuth } from "./auth-context";
 
 const skipAuth = import.meta.env.VITE_SKIP_AUTH === "true";
 
+function isSpotlightBuild(): boolean {
+  return import.meta.env.VITE_OCTOS_SPOTLIGHT === "true";
+}
+
 export function AuthGuard() {
   const { token, loading } = useAuth();
   const location = useLocation();
 
+  // A Spotlight build may play only its digest-locked embedded CoursePacks
+  // without an account. The loader still rejects any identity absent from the
+  // embedded catalog. Blank boards, settings, and cloud-backed routes retain
+  // the ordinary authentication boundary.
+  const offlineSpotlightCourse = isSpotlightBuild()
+    && location.pathname === "/board"
+    && new URLSearchParams(location.search).has("course-pack");
+
   // Only skip auth when explicitly configured via VITE_SKIP_AUTH=true
-  if (skipAuth) return <Outlet />;
+  if (skipAuth || offlineSpotlightCourse) return <Outlet />;
 
   if (loading) {
     // Branded splash while the stored token is validated against /me —

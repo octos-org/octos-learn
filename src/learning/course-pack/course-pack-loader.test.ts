@@ -56,6 +56,7 @@ function pack(): LoadedCoursePack {
 describe("CoursePack loader", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     library.load.mockReset();
     library.blob.mockReset();
     storage.read.mockReset().mockResolvedValue(null);
@@ -248,6 +249,72 @@ describe("CoursePack loader", () => {
       }), { status: 200 }))
       .mockResolvedValueOnce(new Response(new ArrayBuffer(8), { status: 200 }));
     await expect(loadPublishedCoursePack("grade-3-math", "1.0.0")).rejects.toThrow(/摘要/u);
+  });
+
+  it("loads a Spotlight archive from APK assets without persisting a duplicate", async () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    const expectedDigest = "a".repeat(64);
+    const release = {
+      packId: "grade-3-math",
+      version: "1.0.0",
+      title: "数学",
+      description: "互动课",
+      locale: "zh-CN",
+      subject: "mathematics",
+      grade: "3",
+      durationSeconds: 60,
+      minimumPlayerVersion: "0.1.0",
+      capabilities: {
+        offlinePlayback: true,
+        offlineNarration: true,
+        interactiveWhiteboard: true,
+        liveAi: "optional",
+      },
+      archiveSha256: expectedDigest,
+      archiveBytes: 8,
+      recommended: true,
+      archiveUrl: "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
+      manifestUrl: "/api/learn/course-packs/grade-3-math/1.0.0/manifest.json",
+      thumbnailUrl: "/api/learn/course-packs/grade-3-math/1.0.0/files/thumbnail.webp",
+    };
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        schemaVersion: 1,
+        generatedAt: "2026-09-17T00:00:00Z",
+        packs: [release],
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(new ArrayBuffer(8), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    storage.read.mockResolvedValue({
+      identity: "grade-3-math@1.0.0",
+      packId: "grade-3-math",
+      version: "1.0.0",
+      archiveSha256: "b".repeat(64),
+      archiveBytes: 8,
+      minimumPlayerVersion: "0.1.0",
+      installedAt: 1,
+      lastOpenedAt: 1,
+      archive: new ArrayBuffer(8),
+      thumbnail: null,
+    });
+    library.load.mockResolvedValue({
+      manifest: {
+        packId: "grade-3-math",
+        version: "1.0.0",
+        minimumPlayerVersion: "0.1.0",
+      },
+      archiveSha256: expectedDigest,
+    });
+
+    await loadPublishedCoursePack("grade-3-math", "1.0.0");
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/course-packs/spotlight/grade-3-math/1.0.0/archive.ocpack",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(storage.read).not.toHaveBeenCalled();
+    expect(storage.write).not.toHaveBeenCalled();
   });
 
   it("plays a verified installed version without requesting the network", async () => {

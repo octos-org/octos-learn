@@ -15,6 +15,8 @@ import { useAuth } from "@/auth/auth-context";
 import { deleteSession, setSessionTitle } from "@/api/sessions";
 import {
   fetchCoursePackCatalog,
+  fetchSpotlightCoursePackCatalog,
+  isSpotlightBuild,
   loadSavedCoursePackCatalog,
   saveCoursePackCatalog,
   supportsCoursePackPlayer,
@@ -45,18 +47,21 @@ type CatalogState = {
 };
 
 function useLauncherCatalog(): CatalogState {
+  const spotlight = isSpotlightBuild();
   const [state, setState] = useState<CatalogState>(() => ({
-    catalog: loadSavedCoursePackCatalog(),
+    catalog: spotlight ? null : loadSavedCoursePackCatalog(),
     live: false,
     loading: true,
     error: null,
   }));
   useEffect(() => {
     const controller = new AbortController();
-    void fetchCoursePackCatalog(controller.signal)
+    void (spotlight
+      ? fetchSpotlightCoursePackCatalog(controller.signal)
+      : fetchCoursePackCatalog(controller.signal))
       .then((catalog) => {
         if (controller.signal.aborted) return;
-        saveCoursePackCatalog(catalog);
+        if (!spotlight) saveCoursePackCatalog(catalog);
         setState({ catalog, live: true, loading: false, error: null });
       })
       .catch((error: unknown) => {
@@ -69,7 +74,7 @@ function useLauncherCatalog(): CatalogState {
         }));
       });
     return () => controller.abort();
-  }, []);
+  }, [spotlight]);
   return state;
 }
 
@@ -79,12 +84,14 @@ function CourseCard({
   installed,
   installedThumbnail,
   authenticated,
+  embedded,
 }: {
   entry: CoursePackCatalogEntry;
   live: boolean;
   installed: boolean;
   installedThumbnail?: string;
   authenticated: boolean;
+  embedded: boolean;
 }) {
   const navigate = useNavigate();
   const supported = supportsCoursePackPlayer(entry.minimumPlayerVersion);
@@ -104,7 +111,7 @@ function CourseCard({
       + `&mode=${mode}`
       + (instanceId ? `&instance=${encodeURIComponent(instanceId)}` : "");
   const startNewInstance = () => {
-    if (!authenticated) {
+    if (!authenticated && !embedded) {
       navigate(destination("learn"));
       return;
     }
@@ -136,7 +143,11 @@ function CourseCard({
         <p>{entry.description}</p>
         <div className="course-launcher-card-footer">
           <span>
-            {installed ? "已下载 · 可离线" : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
+            {embedded
+              ? "内置课程 · 可离线"
+              : installed
+                ? "已下载 · 可离线"
+                : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
           </span>
           {playable ? (
             <div className="course-launcher-actions">
@@ -232,6 +243,7 @@ function WhiteboardSessionCard({
 export function CourseLauncher() {
   const { token, logout } = useAuth();
   const state = useLauncherCatalog();
+  const spotlight = isSpotlightBuild();
   const [loggingOut, setLoggingOut] = useState(false);
   const [whiteboards, setWhiteboards] = useState(() =>
     listLearningSessions().filter((session) => !session.source));
@@ -284,7 +296,9 @@ export function CourseLauncher() {
   const installedByIdentity = new Map(installed.map((pack) => [pack.identity, pack]));
   const recommended = state.catalog?.packs.filter((pack) => pack.recommended) ?? [];
   const visiblePacks = [...recommended];
-  if (!state.live) {
+  // Spotlight fails closed when its APK-owned catalog is unavailable. Old
+  // installed records must not replace or extend the reviewed snapshot.
+  if (!state.live && !spotlight) {
     for (const pack of installed) {
       if (!visiblePacks.some((entry) => (
         entry.packId === pack.packId && entry.version === pack.version
@@ -389,6 +403,7 @@ export function CourseLauncher() {
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}
                     authenticated={Boolean(token)}
+                    embedded={spotlight}
                   />
                 );
               })}

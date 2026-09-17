@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchCoursePackCatalog,
+  fetchSpotlightCoursePackCatalog,
   loadSavedCoursePackCatalog,
   parseCoursePackCatalog,
   saveCoursePackCatalog,
@@ -40,6 +41,7 @@ export function sampleCatalog() {
 describe("CoursePack public catalog", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     localStorage.clear();
   });
 
@@ -76,6 +78,27 @@ describe("CoursePack public catalog", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/learn/course-packs",
       expect.objectContaining({ cache: "no-store" }),
+    );
+  });
+
+  it("loads a locked embedded catalog and rewrites only its thumbnail locally", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(sampleCatalog()), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchSpotlightCoursePackCatalog();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/spotlight/catalog.json",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(result.packs[0]?.thumbnailUrl).toBe(
+      "/course-packs/spotlight/grade-3-math/1.0.0/files/thumbnail.webp",
+    );
+    expect(result.packs[0]?.archiveUrl).toBe(
+      "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
     );
   });
 });
