@@ -625,6 +625,8 @@ function geometryTaskSnapDistance(
 
 export function LearningWhiteboard({
   runtime,
+  teachingCameraPolicy = "automatic",
+  portableCourseRegion,
   inkSessionId,
   inkMergeSourceSessionId,
   onInkMergeComplete,
@@ -651,6 +653,12 @@ export function LearningWhiteboard({
   onRetryDegradedVisual,
 }: {
   runtime?: OllLessonRuntimeController | null;
+  teachingCameraPolicy?: "automatic" | "explicit";
+  portableCourseRegion?: {
+    x: number;
+    y: number;
+    reservedWidth: number;
+  };
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: (
@@ -1116,7 +1124,6 @@ export function LearningWhiteboard({
       const region = topic.questionId
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
-      if (!region) return [];
       const attachments = interactionPlans
         .filter((plan) =>
           plan.topic.id === topic.id && Boolean(plan.anchorNodeId))
@@ -1129,6 +1136,22 @@ export function LearningWhiteboard({
           focusHeight: plan.focusHeight,
           gap: 42,
         }));
+      // Packaged/legacy lessons do not have a composer question region. Their
+      // complete course region still belongs in the same collision layout as a
+      // live lesson, even when it has no sliders or student tasks.
+      if (!region) {
+        if ((runtime?.outline.length ?? 0) !== 1) return [];
+        return [[runtimeRegionIdForTopic(topic.id), {
+          x: portableCourseRegion?.x ?? 20,
+          y: portableCourseRegion?.y ?? 20,
+          flow: "reading",
+          reservedWidth: Math.max(
+            MINIMUM_COURSE_READING_WIDTH,
+            portableCourseRegion?.reservedWidth ?? 0,
+          ),
+          ...(attachments.length > 0 ? { attachments } : {}),
+        } satisfies RegionLayoutConstraint]];
+      }
       const obstacles = questions.flatMap((question) => {
         const rects: WhiteboardRect[] = [];
         if (question.position) {
@@ -1157,6 +1180,7 @@ export function LearningWhiteboard({
   ), [
     courseRegionByQuestion,
     interactionPlans,
+    portableCourseRegion,
     questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
@@ -2331,6 +2355,10 @@ export function LearningWhiteboard({
   }, [flushBoardVariableUpdates, inkSessionId]);
 
   useEffect(() => {
+    mountedRef.current?.view.setTeachingCameraPolicy(teachingCameraPolicy);
+  }, [teachingCameraPolicy]);
+
+  useEffect(() => {
     const mounted = mountedRef.current;
     if (!mounted) return;
     const { view } = mounted;
@@ -2434,7 +2462,9 @@ export function LearningWhiteboard({
       activeRuntime.currentOperation?.type === "beat.end" ||
       activeRuntime.currentOperation?.type === "step.commit";
     const actionOperation = activeRuntime.currentOperation?.action?.op;
-    const compositionKey = `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`;
+    // Consecutive Beats often teach the same visual. A new Beat ID alone is
+    // not a new camera target and must not restore the opening composition.
+    const compositionKey = activeRuntime.compositionTargets.join("\u0000");
     const compositionChanged = compositionKey !== renderedCompositionRef.current;
     const compositionContentChanged =
       actionOperation === "board.create" ||
@@ -2509,6 +2539,7 @@ export function LearningWhiteboard({
     if (viewport) ensureScene3dInteractionHints(viewport);
     const hostFocus = planHostTeachingFocus({
       teachingFocusAllowed,
+      automaticTeachingFocus: teachingCameraPolicy === "automatic",
       attentionTargets,
       attentionChanged,
       compositionTargets: activeRuntime.compositionTargets,
@@ -2533,6 +2564,7 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
+    teachingCameraPolicy,
     onCourseRendered,
     runtimeRegionIdForTopic,
   ]);

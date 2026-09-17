@@ -3,6 +3,8 @@ import {
   loadCoursePackArchive,
   type LoadedCoursePack,
 } from "octos-course-library/browser";
+import type { AuthoringLesson, CanonicalEvent } from "octos-lesson-language";
+import { assertOllMaterializationParity } from "../oll/oll-materialization";
 import {
   fetchCoursePackCatalog,
   isCoursePackIdentity,
@@ -29,6 +31,96 @@ const BUILTIN_COURSE_PACKS: Record<BuiltinCoursePackId, {
 export interface CoursePackPlaybackSource {
   id: string;
   pack: LoadedCoursePack;
+  /** Present for packs that carry their reviewed Authoring source. These
+   * events were rebuilt and checked through the same boundary as live lessons. */
+  playbackEvents?: CanonicalEvent[];
+  cameraPolicy: TeachingCameraPolicy;
+  courseRegion?: PortableCourseRegion;
+}
+
+export type TeachingCameraPolicy = "automatic" | "explicit";
+export interface PortableCourseRegion {
+  x: number;
+  y: number;
+  reservedWidth: number;
+}
+
+const AUTHORING_LESSON_PATH = "course.authoring.json";
+
+export function resolveCoursePackPlaybackEvents(
+  pack: LoadedCoursePack,
+): CanonicalEvent[] | undefined {
+  const descriptor = pack.manifest.files?.find(
+    (file) => file.path === AUTHORING_LESSON_PATH,
+  );
+  if (!descriptor) return undefined;
+  const bytes = pack.files?.get(AUTHORING_LESSON_PATH);
+  if (!bytes) throw new Error("CoursePack is missing its declared Authoring lesson");
+  let authoring: AuthoringLesson;
+  try {
+    authoring = JSON.parse(
+      new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+    ) as AuthoringLesson;
+  } catch (cause) {
+    const message = cause instanceof Error ? cause.message : "invalid JSON";
+    throw new Error(`CoursePack Authoring lesson is invalid: ${message}`);
+  }
+  return assertOllMaterializationParity(authoring, pack.events);
+}
+
+export function resolveCoursePackCameraPolicy(
+  pack: LoadedCoursePack,
+): TeachingCameraPolicy {
+  const declarations = pack.board?.items?.filter(
+    (item) => item.kind === "playback.camera-policy",
+  ) ?? [];
+  if (declarations.length > 1) {
+    throw new Error("CoursePack declares more than one camera policy");
+  }
+  const policy = declarations[0]?.policy;
+  if (policy === "automatic" || policy === "explicit") return policy;
+  if (policy !== undefined) throw new Error("CoursePack camera policy is invalid");
+  // Compatibility for already-published curated packs. New packs carry their
+  // Authoring source and must declare editorial camera semantics explicitly.
+  return pack.manifest.files?.some((file) => file.path === AUTHORING_LESSON_PATH)
+    ? "automatic"
+    : "explicit";
+}
+
+export function resolveCoursePackRegion(
+  pack: LoadedCoursePack,
+): PortableCourseRegion | undefined {
+  const declarations = pack.board?.items?.filter(
+    (item) => item.kind === "playback.course-region",
+  ) ?? [];
+  if (declarations.length > 1) {
+    throw new Error("CoursePack declares more than one course region");
+  }
+  const region = declarations[0];
+  if (!region) return undefined;
+  if (
+    typeof region.x !== "number" || !Number.isFinite(region.x)
+    || typeof region.y !== "number" || !Number.isFinite(region.y)
+    || typeof region.reservedWidth !== "number"
+    || !Number.isFinite(region.reservedWidth)
+    || region.reservedWidth <= 0
+  ) {
+    throw new Error("CoursePack course region is invalid");
+  }
+  return {
+    x: region.x,
+    y: region.y,
+    reservedWidth: region.reservedWidth,
+  };
+}
+
+function playbackSource(id: string, pack: LoadedCoursePack): CoursePackPlaybackSource {
+  const playbackEvents = resolveCoursePackPlaybackEvents(pack);
+  const cameraPolicy = resolveCoursePackCameraPolicy(pack);
+  const courseRegion = resolveCoursePackRegion(pack);
+  return playbackEvents
+    ? { id, pack, playbackEvents, cameraPolicy, courseRegion }
+    : { id, pack, cameraPolicy, courseRegion };
 }
 
 function throwIfAborted(signal?: AbortSignal): void {
@@ -64,7 +156,7 @@ async function loadInstalledCoursePack(
     throwIfAborted(signal);
     validatePackIdentity(pack, id, version, expectedDigest ?? stored.archiveSha256);
     if (expectedDigest && stored.archiveSha256 !== expectedDigest) return null;
-    return { id, pack };
+    return playbackSource(id, pack);
   } catch (error) {
     await deleteStoredCoursePack(id, version);
     throwIfAborted(signal);
@@ -89,7 +181,7 @@ export async function loadBuiltinCoursePack(
   if (pack.manifest.packId !== id || pack.manifest.version !== descriptor.version) {
     throw new Error("课程包身份与应用内锁定版本不一致");
   }
-  return { id, pack };
+  return playbackSource(id, pack);
 }
 
 export async function loadPublishedCoursePack(
@@ -135,7 +227,7 @@ export async function loadPublishedCoursePack(
     thumbnail: coursePackFileBlob(pack, pack.manifest.thumbnail),
     catalogEntry: release,
   });
-  return { id, pack };
+  return playbackSource(id, pack);
 }
 
 export function loadCoursePack(

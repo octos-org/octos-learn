@@ -93,6 +93,16 @@ function CameraRuntimeProbe() {
   );
 }
 
+function PackagedLessonProbe() {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "packaged-lesson-layout-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return <OllLessonBoard runtime={runtime} />;
+}
+
 function InkRuntimeProbe({
   onInkActivity,
   onInkSaveHandlerChange,
@@ -1113,6 +1123,29 @@ describe("OLL lesson Runtime integration", () => {
       (await screen.findByRole("button", { name: "已发起重试" })).hasAttribute("disabled"),
     ).toBe(true);
     expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
+  });
+
+  it("includes host controls in collision layout without a composer question region", async () => {
+    const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
+    render(<PackagedLessonProbe />);
+    await waitFor(() => {
+      expect(setRegionLayouts).toHaveBeenCalledWith({
+        __legacy__: expect.objectContaining({
+          x: 20,
+          y: 20,
+          flow: "reading",
+          attachments: expect.arrayContaining([
+            expect.objectContaining({
+              anchorNodeIds: [
+                "lesson-unit-circle-sine-001:node:unit-circle",
+                "lesson-unit-circle-sine-001:node:sine-plot",
+              ],
+              width: 360,
+            }),
+          ]),
+        }),
+      });
+    });
   });
 
   it("pins a lesson region to the existing composer question origin", async () => {

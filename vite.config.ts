@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
+import { localCoursePackServer } from "./build/local-course-pack-server";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
@@ -124,6 +125,9 @@ export default defineConfig(({ mode, command }) => {
     },
     base: process.env.BASE_URL || "/",
     plugins: [
+      ...(command === "serve" && env.OCTOS_LOCAL_COURSE_PACK_ROOT?.trim()
+        ? [localCoursePackServer(path.resolve(env.OCTOS_LOCAL_COURSE_PACK_ROOT.trim()))]
+        : []),
       ...(useAndroidLegacyBuild
         ? [{
             name: "android-downlevel-oll-board-css",
@@ -164,6 +168,10 @@ export default defineConfig(({ mode, command }) => {
           ),
         } : {}),
         ...(localOll ? {
+          // Use the pinned package's identical CSS so KaTeX font assets stay
+          // inside Vite's normal dependency serving boundary.
+          "octos-lesson-language/web-runtime/styles.css": path.resolve(__dirname, "node_modules/octos-lesson-language/packages/web-runtime/styles.css"),
+          "octos-lesson-language/web-runtime": path.resolve(localOll, "dist/packages/web-runtime/src/index.js"),
           "octos-lesson-language/ink-runtime/styles.css": path.resolve(localOll, "packages/ink-runtime/styles.css"),
           "octos-lesson-language/ink-runtime": path.resolve(localOll, "dist/packages/ink-runtime/src/index.js"),
         } : {}),

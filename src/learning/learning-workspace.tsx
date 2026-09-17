@@ -825,7 +825,8 @@ export function LearningWorkspace({
     });
   }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
   const packagedPlayback = Boolean(ollFixture || coursePack);
-  const packagedOllEvents = coursePack?.pack.events
+  const packagedOllEvents = coursePack?.playbackEvents
+    ?? coursePack?.pack.events
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
   const activeOllEvents = packagedOllEvents ?? deliveredOllEvents;
   const appendedOllEventCountRef = useRef(1);
@@ -3006,6 +3007,8 @@ export function LearningWorkspace({
       <main className="learning-canvas-shell">
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
+          teachingCameraPolicy={coursePack?.cameraPolicy ?? "automatic"}
+          portableCourseRegion={coursePack?.courseRegion}
           inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}
           questions={replayingWithoutStudentAdditions || !selectionStateReady
