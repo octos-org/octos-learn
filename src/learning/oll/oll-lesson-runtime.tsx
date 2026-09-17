@@ -1141,6 +1141,9 @@ export function LearningWhiteboard({
       // complete course region still belongs in the same collision layout as a
       // live lesson, even when it has no sliders or student tasks.
       if (!region) {
+        // A live topic can render before its question region arrives. Do not
+        // temporarily relocate it to the imported-course origin.
+        if (topic.questionId) return [];
         if ((runtime?.outline.length ?? 0) !== 1) return [];
         return [[runtimeRegionIdForTopic(topic.id), {
           x: portableCourseRegion?.x ?? 20,
@@ -2469,9 +2472,11 @@ export function LearningWhiteboard({
       activeRuntime.currentOperation?.type === "beat.end" ||
       activeRuntime.currentOperation?.type === "step.commit";
     const actionOperation = activeRuntime.currentOperation?.action?.op;
-    // Consecutive Beats often teach the same visual. A new Beat ID alone is
-    // not a new camera target and must not restore the opening composition.
-    const compositionKey = activeRuntime.compositionTargets.join("\u0000");
+    // Preserve live lessons' per-Beat composition. Explicit imported timelines
+    // only change composition when their declared targets change.
+    const compositionKey = teachingCameraPolicy === "automatic"
+      ? `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`
+      : activeRuntime.compositionTargets.join("\u0000");
     const compositionChanged = compositionKey !== renderedCompositionRef.current;
     const compositionContentChanged =
       actionOperation === "board.create" ||

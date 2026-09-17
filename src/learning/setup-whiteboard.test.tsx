@@ -9,7 +9,7 @@ import {
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { normalizeProfile, type Profile } from "@/settings/settings-api";
 import { LearningSetupGate, SetupWhiteboard } from "./setup-whiteboard";
-import { needsLearningSetup } from "./setup-state";
+import { LearningModelContext, needsLearningSetup } from "./setup-state";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
@@ -55,9 +55,30 @@ afterEach(() => {
   cleanup();
   localStorage.clear();
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("first-run setup whiteboard", () => {
+  it("allows configured models in Spotlight without blocking offline playback", async () => {
+    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+    const profile = blank();
+    profile.config.llm.primary = { family_id: "google", model_id: "gemini-test" };
+    mocks.get.mockResolvedValue(profile);
+    render(
+      <MemoryRouter initialEntries={["/board?course-pack=rectangle-area-from-tiles"]}>
+        <LearningSetupGate>
+          <p>offline-course</p>
+          <LearningModelContext.Consumer>
+            {(configured) => <output>{configured ? "model-ready" : "model-unavailable"}</output>}
+          </LearningModelContext.Consumer>
+        </LearningSetupGate>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("offline-course")).toBeTruthy();
+    expect(await screen.findByText("model-ready")).toBeTruthy();
+    expect(mocks.selectProfile).toHaveBeenCalledWith("alice");
+  });
+
   it("returns to a selected CoursePack after onboarding", async () => {
     mocks.get.mockResolvedValue(blank());
     const destination = "/board?course-pack=grade-3-math&course-version=1.0.0";

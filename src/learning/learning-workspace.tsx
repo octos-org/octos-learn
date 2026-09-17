@@ -419,7 +419,9 @@ export function LearningWorkspace({
   const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
-  const aiUnavailable = !modelConfigured || (runtime.llmReady === false && !runtime.loading);
+  // Voice readiness also reports false before the profile runtime starts.
+  // That is not a missing model configuration and must not block text input.
+  const aiUnavailable = !modelConfigured;
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
     () => new LearnTraceRecorder(sessionId),

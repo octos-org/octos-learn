@@ -101,6 +101,8 @@ vi.mock("@/home/use-ominix-runtime-summary", () => ({
   useOminixRuntimeSummary: () => ({
     ready: true,
     inputReady: true,
+    // A configured profile can accept text before its voice runtime starts.
+    llmReady: false,
     ttsReady: true,
     loading: false,
   }),

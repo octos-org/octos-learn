@@ -29,20 +29,22 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
     && location.pathname === "/board"
     && new URLSearchParams(location.search).has("course-pack");
   const [required, setRequired] = useState<boolean | null>(null);
-  const [modelConfigured, setModelConfigured] = useState(true);
+  const [modelConfigured, setModelConfigured] = useState(!offlineSpotlightCourse);
   useEffect(() => {
-    if (offlineSpotlightCourse) return;
     let active = true;
     getMyProfile()
       .then((p) => {
         if (active) {
           if (p?.id) setSelectedProfileId(p.id);
           setRequired(p ? needsLearningSetup(p) : false);
-          setModelConfigured(p ? hasLearningModel(p) : true);
+          setModelConfigured(p ? hasLearningModel(p) : !offlineSpotlightCourse);
         }
       })
       .catch(() => {
-        if (active) setRequired(false);
+        if (active) {
+          setRequired(false);
+          if (offlineSpotlightCourse) setModelConfigured(false);
+        }
       });
     return () => {
       active = false;
@@ -50,7 +52,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
   }, [offlineSpotlightCourse]);
   if (offlineSpotlightCourse) {
     return (
-      <LearningModelContext.Provider value={false}>
+      <LearningModelContext.Provider value={modelConfigured}>
         {children}
       </LearningModelContext.Provider>
     );

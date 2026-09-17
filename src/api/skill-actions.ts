@@ -4,7 +4,7 @@ import {
   BridgeTimeoutError,
   METHODS,
 } from "@/runtime/ui-protocol-bridge";
-import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
+import { getActiveBridge, startBridgeForSession } from "@/runtime/ui-protocol-runtime";
 import type { SkillActionJob } from "@/runtime/ui-protocol-types";
 
 export type { SkillActionJob, SkillActionJobStatus } from "@/runtime/ui-protocol-types";
@@ -95,6 +95,9 @@ export async function invokeSkillAction(
   args: Record<string, unknown>,
   topic?: string,
 ): Promise<SkillActionInvokeResponse> {
+  // Like turn/start, an explicit invocation may be the first action on a
+  // freshly created board. Await its own session handshake before sending.
+  await startBridgeForSession(sessionId, topic, { ownership: "observe" });
   return callSkillActionWs<SkillActionInvokeResponse>(
     sessionId,
     topic,
