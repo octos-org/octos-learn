@@ -1,11 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LoadedCoursePack } from "octos-course-library/browser";
+import type { AuthoringLesson } from "octos-lesson-language";
+import { materializeOllLesson } from "../oll/oll-materialization";
 import {
   coursePackNarrationBlob,
   loadBuiltinCoursePack,
   loadPublishedCoursePack,
   parseCoursePackId,
   parseBuiltinCoursePackId,
+  resolveCoursePackCameraPolicy,
+  resolveCoursePackRegion,
+  resolveCoursePackPlaybackEvents,
 } from "./course-pack-loader";
 
 const library = vi.hoisted(() => ({
@@ -44,6 +49,7 @@ function pack(): LoadedCoursePack {
         }],
       },
     },
+    board: { items: [] },
   } as LoadedCoursePack;
 }
 
@@ -82,6 +88,99 @@ describe("CoursePack loader", () => {
     expect(coursePackNarrationBlob(source, "beat-1")).toBe(audio);
     expect(library.blob).toHaveBeenCalledWith(source.pack, "audio/intro.mp3");
     expect(coursePackNarrationBlob(source, "unknown")).toBeNull();
+  });
+
+  it("accepts an embedded Authoring lesson only when it matches live materialization", () => {
+    const authoring: AuthoringLesson = {
+      dsl: "octos.lesson",
+      version: "0.1",
+      profile: "authoring",
+      lesson: {
+        mode: "explain",
+        language: "zh-CN",
+        title: "课程包一致性",
+        goals: ["验证课程"],
+      },
+      steps: [{
+        key: "show",
+        purpose: "展示",
+        beats: [{
+          key: "result",
+          say: "这是结论。",
+          actions: [{
+            do: "write",
+            as: "result",
+            kind: "note",
+            role: "conclusion",
+            content: { text: "结论" },
+            place: { relation: "new_region", region_role: "lesson_origin" },
+          }],
+        }],
+      }],
+      close: { summary: "完成", focus: ["result"] },
+    };
+    const events = materializeOllLesson(authoring, {
+      lessonId: "pack-lesson",
+      boardId: "pack-board",
+      baseRevision: 0,
+      regionIntent: "new_topic",
+      regionId: "pack-region",
+    });
+    const bytes = new TextEncoder().encode(JSON.stringify(authoring));
+    const loaded = {
+      manifest: {
+        files: [{ path: "course.authoring.json", role: "asset" }],
+      },
+      files: new Map([["course.authoring.json", bytes]]),
+      events,
+    } as unknown as LoadedCoursePack;
+
+    expect(resolveCoursePackPlaybackEvents(loaded)).toEqual(events);
+    const changed = structuredClone(events);
+    changed[0]!.lesson!.title = "被单独修改";
+    expect(() => resolveCoursePackPlaybackEvents({
+      ...loaded,
+      events: changed,
+    })).toThrow("differs from the live materialization pipeline");
+  });
+
+  it("uses a portable camera policy instead of the CoursePack source type", () => {
+    const loaded = pack();
+    loaded.board.items = [{
+      id: "reviewed-camera",
+      kind: "playback.camera-policy",
+      policy: "explicit",
+    }];
+    expect(resolveCoursePackCameraPolicy(loaded)).toBe("explicit");
+
+    loaded.board.items = [{
+      id: "live-equivalent-camera",
+      kind: "playback.camera-policy",
+      policy: "automatic",
+    }];
+    expect(resolveCoursePackCameraPolicy(loaded)).toBe("automatic");
+  });
+
+  it("defaults new parity-checked packs to the verified live camera policy", () => {
+    const loaded = pack();
+    loaded.manifest.files = [{ path: "course.authoring.json" }] as never;
+    expect(resolveCoursePackCameraPolicy(loaded)).toBe("automatic");
+  });
+
+  it("reads the portable course region used by the shared board layout", () => {
+    const loaded = pack();
+    loaded.board.items = [{
+      id: "course-region",
+      kind: "playback.course-region",
+      x: 20,
+      y: 20,
+      reservedWidth: 1300,
+    }];
+    expect(resolveCoursePackRegion(loaded)).toEqual({
+      x: 20,
+      y: 20,
+      reservedWidth: 1300,
+    });
   });
 
   it("ignores unregistered pack identifiers", () => {

@@ -1,5 +1,6 @@
 export interface HostTeachingFocusInput {
   teachingFocusAllowed: boolean;
+  automaticTeachingFocus: boolean;
   attentionTargets: string[];
   attentionChanged: boolean;
   compositionTargets: string[];
@@ -26,6 +27,10 @@ export function planHostTeachingFocus(
   input: HostTeachingFocusInput,
 ): HostTeachingFocusDecision | null {
   if (!input.teachingFocusAllowed) return null;
+  // An explicit CoursePack owns its complete camera timeline. Derived
+  // attention/composition/boundary signals are useful for live lessons, but
+  // letting any of them through here would create an undeclared camera move.
+  if (!input.automaticTeachingFocus) return null;
   if (input.attentionTargets.length > 0 && input.attentionChanged) {
     return { source: "attention", targets: input.attentionTargets };
   }

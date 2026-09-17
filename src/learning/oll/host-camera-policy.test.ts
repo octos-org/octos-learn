@@ -6,6 +6,7 @@ import {
 
 const base: HostTeachingFocusInput = {
   teachingFocusAllowed: true,
+  automaticTeachingFocus: true,
   attentionTargets: [],
   attentionChanged: false,
   compositionTargets: ["primary-geometry"],
@@ -39,5 +40,35 @@ describe("host teaching camera policy", () => {
       source: "composition",
       targets: ["primary-geometry"],
     });
+  });
+
+  it("does not refocus an unchanged composition just because a new Beat began", () => {
+    expect(planHostTeachingFocus({
+      ...base,
+      compositionChanged: false,
+      compositionOperationChanged: false,
+      atPlaybackBoundary: true,
+    })).toBeNull();
+  });
+
+  it("leaves curated camera movement to explicit OLL focus actions", () => {
+    expect(planHostTeachingFocus({
+      ...base,
+      automaticTeachingFocus: false,
+      compositionTargets: ["model-derived-target"],
+      compositionChanged: true,
+      atPlaybackBoundary: true,
+      boardFocus: ["persistent-old-target"],
+      focusChanged: true,
+    })).toBeNull();
+  });
+
+  it("does not turn derived attention into an undeclared curated camera move", () => {
+    expect(planHostTeachingFocus({
+      ...base,
+      automaticTeachingFocus: false,
+      attentionTargets: ["chosen-outline-target"],
+      attentionChanged: true,
+    })).toBeNull();
   });
 });
