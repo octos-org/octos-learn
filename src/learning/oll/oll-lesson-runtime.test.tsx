@@ -103,6 +103,30 @@ function PackagedLessonProbe() {
   return <OllLessonBoard runtime={runtime} />;
 }
 
+function CameraPolicyRemountProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "camera-policy-remount-test",
+  });
+  const [inkSessionId, setInkSessionId] = useState("camera-policy-remount-ink-1");
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button
+        type="button"
+        onClick={() => setInkSessionId("camera-policy-remount-ink-2")}
+      >
+        以新笔迹会话重播
+      </button>
+      <OllLessonBoard
+        runtime={runtime}
+        teachingCameraPolicy="explicit"
+        inkSessionId={inkSessionId}
+      />
+    </div>
+  );
+}
+
 function InkRuntimeProbe({
   onInkActivity,
   onInkSaveHandlerChange,
@@ -2627,6 +2651,33 @@ describe("OLL lesson Runtime integration", () => {
       board.classList.contains("manual-navigation"),
       "a new Beat with an explicit teaching focus may reclaim the camera once",
     ).toBe(false);
+  });
+
+  it("reapplies the teaching camera policy when a replay remounts the board view", async () => {
+    mountInkRuntimeMock.mockImplementation(() => ({
+      ready: Promise.resolve(),
+      subscribe: vi.fn(() => () => undefined),
+      setMode: vi.fn(),
+      destroy: vi.fn(() => Promise.resolve()),
+    }));
+    const policySpy = vi.spyOn(
+      InfiniteBoardView.prototype,
+      "setTeachingCameraPolicy",
+    );
+    render(<CameraPolicyRemountProbe />);
+    await waitFor(() => expect(policySpy).toHaveBeenCalledWith("explicit"));
+    const callsBeforeReplay = policySpy.mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "以新笔迹会话重播" }));
+
+    await waitFor(() => {
+      expect(
+        policySpy.mock.calls.length,
+        "a remounted InfiniteBoardView falls back to its automatic default; "
+          + "the host must reapply the explicit CoursePack policy",
+      ).toBeGreaterThan(callsBeforeReplay);
+    });
+    expect(policySpy.mock.calls.at(-1)).toEqual(["explicit"]);
   });
 
   it("grows an active /learn board when a validated Canonical Step arrives", () => {

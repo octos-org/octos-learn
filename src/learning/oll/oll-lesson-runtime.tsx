@@ -737,6 +737,7 @@ export function LearningWhiteboard({
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
+  const teachingCameraPolicyRef = useRef(teachingCameraPolicy);
   const focusedLoadingTurnRef = useRef<string | null>(null);
   const availableTaskKeysRef = useRef(new Set<string>());
   const availableTaskKeysSeededRef = useRef(false);
@@ -2109,6 +2110,11 @@ export function LearningWhiteboard({
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
+    // A remounted view starts from its field defaults ("automatic"). Reapply
+    // the host's policy here: the syncing effect below only fires when the
+    // prop itself changes, so without this a replay that bumps inkSessionId
+    // silently demotes an explicit CoursePack timeline to automatic.
+    mounted.view.setTeachingCameraPolicy(teachingCameraPolicyRef.current);
     if (document.documentElement.dataset.runtimePlatform === "android") {
       // Meeting displays are viewed from much farther away than laptops.
       // Large compositions may be cropped, but automatic framing must not
@@ -2355,6 +2361,7 @@ export function LearningWhiteboard({
   }, [flushBoardVariableUpdates, inkSessionId]);
 
   useEffect(() => {
+    teachingCameraPolicyRef.current = teachingCameraPolicy;
     mountedRef.current?.view.setTeachingCameraPolicy(teachingCameraPolicy);
   }, [teachingCameraPolicy]);
 
