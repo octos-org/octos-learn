@@ -8,7 +8,6 @@ import {
   loadPublishedCoursePack,
   parseCoursePackId,
   parseBuiltinCoursePackId,
-  resolveCoursePackCameraPolicy,
   resolveCoursePackRegion,
   resolveCoursePackPlaybackEvents,
 } from "./course-pack-loader";
@@ -143,29 +142,6 @@ describe("CoursePack loader", () => {
       ...loaded,
       events: changed,
     })).toThrow("differs from the live materialization pipeline");
-  });
-
-  it("uses a portable camera policy instead of the CoursePack source type", () => {
-    const loaded = pack();
-    loaded.board.items = [{
-      id: "reviewed-camera",
-      kind: "playback.camera-policy",
-      policy: "explicit",
-    }];
-    expect(resolveCoursePackCameraPolicy(loaded)).toBe("explicit");
-
-    loaded.board.items = [{
-      id: "live-equivalent-camera",
-      kind: "playback.camera-policy",
-      policy: "automatic",
-    }];
-    expect(resolveCoursePackCameraPolicy(loaded)).toBe("automatic");
-  });
-
-  it("defaults new parity-checked packs to the verified live camera policy", () => {
-    const loaded = pack();
-    loaded.manifest.files = [{ path: "course.authoring.json" }] as never;
-    expect(resolveCoursePackCameraPolicy(loaded)).toBe("automatic");
   });
 
   it("reads the portable course region used by the shared board layout", () => {

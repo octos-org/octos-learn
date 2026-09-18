@@ -40,7 +40,6 @@ export interface CoursePackPlaybackSource {
   courseRegion?: PortableCourseRegion;
 }
 
-export type TeachingCameraPolicy = "automatic" | "explicit";
 export interface PortableCourseRegion {
   x: number;
   y: number;
@@ -68,25 +67,6 @@ export function resolveCoursePackPlaybackEvents(
     throw new Error(`CoursePack Authoring lesson is invalid: ${message}`);
   }
   return assertOllMaterializationParity(authoring, pack.events);
-}
-
-export function resolveCoursePackCameraPolicy(
-  pack: LoadedCoursePack,
-): TeachingCameraPolicy {
-  const declarations = pack.board?.items?.filter(
-    (item) => item.kind === "playback.camera-policy",
-  ) ?? [];
-  if (declarations.length > 1) {
-    throw new Error("CoursePack declares more than one camera policy");
-  }
-  const policy = declarations[0]?.policy;
-  if (policy === "automatic" || policy === "explicit") return policy;
-  if (policy !== undefined) throw new Error("CoursePack camera policy is invalid");
-  // Compatibility for already-published curated packs. New packs carry their
-  // Authoring source and must declare editorial camera semantics explicitly.
-  return pack.manifest.files?.some((file) => file.path === AUTHORING_LESSON_PATH)
-    ? "automatic"
-    : "explicit";
 }
 
 export function resolveCoursePackRegion(
