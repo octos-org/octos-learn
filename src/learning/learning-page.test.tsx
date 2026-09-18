@@ -192,7 +192,6 @@ describe("LearningPage", () => {
     await waitFor(() => expect(learningWorkspaceMock.props?.coursePack).toEqual({
       id: "contract-smoke",
       pack: source,
-      cameraPolicy: "explicit",
       courseRegion: undefined,
     }));
     expect(fetchMock).toHaveBeenCalledWith(

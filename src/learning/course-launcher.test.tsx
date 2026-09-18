@@ -68,8 +68,11 @@ function showLauncher() {
   return render(<MemoryRouter><CourseLauncher /></MemoryRouter>);
 }
 
+import { resetEmbeddedCoursePackCatalogCache } from "./course-pack/course-pack-catalog";
+
 describe("shared course launcher", () => {
   beforeEach(() => {
+    resetEmbeddedCoursePackCatalogCache();
     auth.token = null;
     auth.logout.mockClear();
     sessionApi.delete.mockClear();
@@ -83,6 +86,7 @@ describe("shared course launcher", () => {
     cleanup();
     localStorage.clear();
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
   });
 
   it("always offers a blank whiteboard while no packs are published", async () => {
@@ -101,6 +105,38 @@ describe("shared course launcher", () => {
     );
     expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
     expect(screen.getByText("三年级数学")).toBeTruthy();
+  });
+
+  it("offers embedded courses offline without claiming a download", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/course-packs/embedded/catalog.json")) {
+        return new Response(JSON.stringify(catalog([release])), { status: 200 });
+      }
+      throw new Error("offline");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    showLauncher();
+
+    expect(await screen.findByText("内置课程 · 可离线")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /预览/u })).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/embedded/catalog.json",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /开始互动/u }));
+    expect(localStorage.getItem("octos_learning_sessions_v2:anonymous"))
+      .toContain('"mode":"instance"');
+  });
+
+  it("shows empty state when no embedded or saved catalog is available and network fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("catalog missing"); }));
+
+    showLauncher();
+
+    expect(await screen.findByText("课程包还在准备中")).toBeTruthy();
+    expect(screen.queryByText("三年级数学")).toBeNull();
   });
 
   it("shows a saved catalog but does not claim offline playback is ready", async () => {

@@ -59,3 +59,24 @@ adb shell dumpsys webviewupdate
 The debug APK enables WebView inspection. With the display connected over ADB,
 open `chrome://inspect/#devices` on a development computer to inspect console
 errors and network requests.
+
+## Embedded CoursePacks (Local-First)
+
+All APK builds share the same package name (`cc.pitun.learn`) and codebase.
+The build embeds a locked snapshot of reviewed CoursePacks defined in
+`android/embedded-course-packs.json`. The build downloads those immutable
+archives, validates their identities, SHA-256 digests, byte counts, and offline
+narration audio, and embeds them directly in the APK assets.
+
+Embedded course discovery and playback use the embedded catalog and archives
+first (Local-First). They do not require an account or network access, and play
+offline smoothly. Courses not embedded in the APK fall back to local IndexedDB
+cache or are downloaded from the server on demand.
+
+To pin a new course or update a course version in the embedded lockfile:
+
+```bash
+pnpm pin:embedded-course <packId> [version]
+# or from a local archive:
+pnpm pin:embedded-course --archive /path/to/course.ocpack
+```

@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchCoursePackCatalog,
+  fetchEmbeddedCoursePackCatalog,
+  findEmbeddedCoursePackEntry,
   loadSavedCoursePackCatalog,
   parseCoursePackCatalog,
+  resetEmbeddedCoursePackCatalogCache,
   saveCoursePackCatalog,
   supportsCoursePackPlayer,
 } from "./course-pack-catalog";
@@ -40,6 +43,7 @@ export function sampleCatalog() {
 describe("CoursePack public catalog", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
     localStorage.clear();
   });
 
@@ -77,5 +81,48 @@ describe("CoursePack public catalog", () => {
       "/api/learn/course-packs",
       expect.objectContaining({ cache: "no-store" }),
     );
+  });
+
+  it("loads a locked embedded catalog and rewrites only its thumbnail locally", async () => {
+    resetEmbeddedCoursePackCatalogCache();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(sampleCatalog()), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchEmbeddedCoursePackCatalog();
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/course-packs/embedded/catalog.json",
+      expect.objectContaining({ cache: "no-store" }),
+    );
+    expect(result.packs[0]?.thumbnailUrl).toBe(
+      "/course-packs/embedded/grade-3-math/1.0.0/files/thumbnail.webp",
+    );
+    expect(result.packs[0]?.archiveUrl).toBe(
+      "/api/learn/course-packs/grade-3-math/1.0.0/archive.ocpack",
+    );
+  });
+
+  it("finds embedded course entries using cached catalog lookup", async () => {
+    resetEmbeddedCoursePackCatalogCache();
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(sampleCatalog()), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const hit = await findEmbeddedCoursePackEntry("grade-3-math", "1.0.0");
+    expect(hit?.packId).toBe("grade-3-math");
+    expect(hit?.version).toBe("1.0.0");
+
+    // Second call should hit the in-memory cache without refetching
+    const hit2 = await findEmbeddedCoursePackEntry("grade-3-math");
+    expect(hit2?.packId).toBe("grade-3-math");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const miss = await findEmbeddedCoursePackEntry("unknown");
+    expect(miss).toBeNull();
   });
 });

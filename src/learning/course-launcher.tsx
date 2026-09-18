@@ -15,6 +15,7 @@ import { useAuth } from "@/auth/auth-context";
 import { deleteSession, setSessionTitle } from "@/api/sessions";
 import {
   fetchCoursePackCatalog,
+  getEmbeddedCoursePackCatalog,
   loadSavedCoursePackCatalog,
   saveCoursePackCatalog,
   supportsCoursePackPlayer,
@@ -39,37 +40,89 @@ import "./course-launcher.css";
 
 type CatalogState = {
   catalog: CoursePackCatalog | null;
+  embeddedIdentities: Set<string>;
   live: boolean;
   loading: boolean;
   error: string | null;
 };
 
 function useLauncherCatalog(): CatalogState {
-  const [state, setState] = useState<CatalogState>(() => ({
-    catalog: loadSavedCoursePackCatalog(),
-    live: false,
-    loading: true,
-    error: null,
-  }));
+  const [state, setState] = useState<CatalogState>(() => {
+    const saved = loadSavedCoursePackCatalog();
+    return {
+      catalog: saved,
+      embeddedIdentities: new Set(),
+      live: false,
+      loading: true,
+      error: null,
+    };
+  });
+
   useEffect(() => {
     const controller = new AbortController();
-    void fetchCoursePackCatalog(controller.signal)
-      .then((catalog) => {
-        if (controller.signal.aborted) return;
-        saveCoursePackCatalog(catalog);
-        setState({ catalog, live: true, loading: false, error: null });
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState((previous) => ({
-          ...previous,
-          live: false,
+    let cancelled = false;
+
+    async function load() {
+      const [embedded, publicCatalogResult] = await Promise.all([
+        getEmbeddedCoursePackCatalog(controller.signal),
+        fetchCoursePackCatalog(controller.signal).catch((err: unknown) => {
+          return err instanceof Error ? err : new Error(String(err));
+        }),
+      ]);
+
+      if (cancelled || controller.signal.aborted) return;
+
+      const embeddedPacks = embedded?.packs ?? [];
+      const embeddedSet = new Set(embeddedPacks.map((p) => `${p.packId}@${p.version}`));
+
+      if (publicCatalogResult instanceof Error) {
+        if (embeddedPacks.length > 0) {
+          setState({
+            catalog: embedded,
+            embeddedIdentities: embeddedSet,
+            live: true,
+            loading: false,
+            error: null,
+          });
+        } else {
+          const saved = loadSavedCoursePackCatalog();
+          setState({
+            catalog: saved,
+            embeddedIdentities: new Set(),
+            live: false,
+            loading: false,
+            error: publicCatalogResult.message || "课程目录暂不可用",
+          });
+        }
+      } else {
+        saveCoursePackCatalog(publicCatalogResult);
+        const mergedPacks = [...embeddedPacks];
+        for (const pubPack of publicCatalogResult.packs) {
+          if (!embeddedSet.has(`${pubPack.packId}@${pubPack.version}`)) {
+            mergedPacks.push(pubPack);
+          }
+        }
+        setState({
+          catalog: {
+            schemaVersion: 1,
+            generatedAt: publicCatalogResult.generatedAt,
+            packs: mergedPacks,
+          },
+          embeddedIdentities: embeddedSet,
+          live: true,
           loading: false,
-          error: error instanceof Error ? error.message : "课程目录暂不可用",
-        }));
-      });
-    return () => controller.abort();
+          error: null,
+        });
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, []);
+
   return state;
 }
 
@@ -79,12 +132,14 @@ function CourseCard({
   installed,
   installedThumbnail,
   authenticated,
+  embedded,
 }: {
   entry: CoursePackCatalogEntry;
   live: boolean;
   installed: boolean;
   installedThumbnail?: string;
   authenticated: boolean;
+  embedded: boolean;
 }) {
   const navigate = useNavigate();
   const supported = supportsCoursePackPlayer(entry.minimumPlayerVersion);
@@ -104,7 +159,7 @@ function CourseCard({
       + `&mode=${mode}`
       + (instanceId ? `&instance=${encodeURIComponent(instanceId)}` : "");
   const startNewInstance = () => {
-    if (!authenticated) {
+    if (!authenticated && !embedded) {
       navigate(destination("learn"));
       return;
     }
@@ -136,7 +191,11 @@ function CourseCard({
         <p>{entry.description}</p>
         <div className="course-launcher-card-footer">
           <span>
-            {installed ? "已下载 · 可离线" : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
+            {embedded
+              ? "内置课程 · 可离线"
+              : installed
+                ? "已下载 · 可离线"
+                : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
           </span>
           {playable ? (
             <div className="course-launcher-actions">
@@ -389,6 +448,7 @@ export function CourseLauncher() {
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}
                     authenticated={Boolean(token)}
+                    embedded={state.embeddedIdentities.has(identity)}
                   />
                 );
               })}

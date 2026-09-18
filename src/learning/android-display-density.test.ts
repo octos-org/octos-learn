@@ -98,8 +98,10 @@ describe("Android meeting-display density", () => {
 
     // The previous fixed top/bottom bands left only 118px and produced
     // 118 / 546 = 0.216117. Target-aware safe-area selection keeps the same
-    // Geometry + Note scene legible without cropping either target.
-    expect(camera.scale).toBeCloseTo(.631579, 5);
+    // Geometry + Note scene legible without cropping either target. Among
+    // near-tie fits the most centered candidate wins, trading ~2% of scale
+    // for a placement closer to the screen center.
+    expect(camera.scale).toBeCloseTo(.616705, 5);
   });
 
   it("keeps a focused course control attachment above the bottom input dock", () => {

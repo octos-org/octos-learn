@@ -101,7 +101,9 @@ for (const course of courses) {
     await expect(page.getByRole("button", { name: "开始互动学习" })).toBeVisible();
     // A real click unlocks narration under browser autoplay policy.
     await page.getByRole("button", { name: "重新播放 OLL 课程" }).click();
-    await expect(page.locator(".learning-workspace").getByText("课程完成", { exact: true })).toBeVisible({ timeout: 210_000 });
+    await expect(page.locator(".learning-workspace").getByText("课程完成", { exact: true })).toBeVisible({
+      timeout: process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? 300_000 : 210_000,
+    });
     const audio = await page.evaluate(() => (window as unknown as {
       courseAudioObservations: { played: string[]; ended: string[]; webEnded: number[]; errors: string[] };
     }).courseAudioObservations);

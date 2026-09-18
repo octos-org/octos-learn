@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const callMethodMock = vi.hoisted(() => vi.fn());
 const bridgeMock = vi.hoisted(() => ({ callMethod: callMethodMock }));
 const getActiveBridgeMock = vi.hoisted(() => vi.fn(() => bridgeMock));
+const startBridgeMock = vi.hoisted(() => vi.fn(async () => bridgeMock));
 
 vi.mock("@/runtime/ui-protocol-runtime", () => ({
   getActiveBridge: getActiveBridgeMock,
+  startBridgeForSession: startBridgeMock,
 }));
 
 import {
@@ -36,9 +38,28 @@ beforeEach(() => {
   callMethodMock.mockReset();
   getActiveBridgeMock.mockClear();
   getActiveBridgeMock.mockReturnValue(bridgeMock);
+  startBridgeMock.mockReset();
+  startBridgeMock.mockResolvedValue(bridgeMock);
 });
 
 describe("skill action API", () => {
+  it("connects the requested session before invoking its first skill", async () => {
+    getActiveBridgeMock.mockReturnValue(null);
+    startBridgeMock.mockImplementationOnce(async () => {
+      expect(callMethodMock).not.toHaveBeenCalled();
+      getActiveBridgeMock.mockReturnValue(bridgeMock);
+      return bridgeMock;
+    });
+    callMethodMock.mockResolvedValueOnce({ ok: true });
+    await invokeSkillAction("new-board", "learning.lesson.generate", {}, "lesson");
+    expect(startBridgeMock).toHaveBeenCalledWith("new-board", "lesson", { ownership: "observe" });
+    expect(callMethodMock).toHaveBeenCalledWith(METHODS.SKILL_ACTION_INVOKE, {
+      session_id: "new-board#lesson",
+      action_id: "learning.lesson.generate",
+      arguments: {},
+    });
+  });
+
   it("preserves the timeout type so selection delivery can reject late files", async () => {
     const timeout = new BridgeTimeoutError(METHODS.SKILL_ACTION_INVOKE, 30_000);
     callMethodMock.mockRejectedValueOnce(timeout);

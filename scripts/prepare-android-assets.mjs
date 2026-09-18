@@ -13,3 +13,5 @@ const vadAssets = join(root, "public", "vad");
 
 rmSync(vadAssets, { recursive: true, force: true });
 console.log("[prepare-android-assets] excluded browser VAD/ONNX assets from APK build");
+
+import "./prepare-embedded-course-assets.mjs";

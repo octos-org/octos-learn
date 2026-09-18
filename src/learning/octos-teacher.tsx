@@ -62,7 +62,10 @@ export function OctosTeacher({
   };
 
   return (
-    <div className="octos-teacher" data-learning-board-occlusion="">
+    // The caption is transient narration chrome. Letting it shrink the
+    // camera's safe viewport cost every lesson real scale to make room for a
+    // bubble that disappears between beats; transient overlap is acceptable.
+    <div className="octos-teacher">
       {speech && (
         <div className="octos-teacher-caption" aria-live="polite">
           <MarkdownContent

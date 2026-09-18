@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "embedded-2026-09-18",
+  "generatedAt": "2026-09-18T13:39:17.544Z",
+  "sourceOrigin": "https://learn.pitun.cc",
+  "packs": [
+    {
+      "packId": "rectangle-area-from-tiles",
+      "version": "0.1.5",
+      "archiveBytes": 2483037,
+      "archiveSha256": "d001dc710ba7756f5947dbb7c954b5275c347b8e92dc88ed726b9a403f82bd0d"
+    },
+    {
+      "packId": "slope-and-intercept",
+      "version": "0.1.5",
+      "archiveBytes": 1780886,
+      "archiveSha256": "dfffa6d9262a11909cd28047d98335e940da2fac66e390c3fe88f597ea7ac6f2"
+    }
+  ]
+}

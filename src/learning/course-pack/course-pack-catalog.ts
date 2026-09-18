@@ -36,6 +36,7 @@ const DIGEST = /^[a-f0-9]{64}$/u;
 const CATALOG_CACHE_KEY = "octos:course-pack-catalog:v1";
 // Keep this in step with package.json until the build injects the player version.
 const PLAYER_VERSION = "0.1.0";
+export const EMBEDDED_COURSE_PACK_ROOT = `${import.meta.env.BASE_URL}course-packs/embedded`;
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -107,6 +108,89 @@ export async function fetchCoursePackCatalog(signal?: AbortSignal): Promise<Cour
   });
   if (!response.ok) throw new Error(`课程目录暂不可用（HTTP ${response.status}）`);
   return parseCoursePackCatalog(await response.json());
+}
+
+export function embeddedCoursePackArchiveUrl(
+  packId: string,
+  version: string,
+): string {
+  if (!isCoursePackIdentity(packId, version)) {
+    throw new Error("课程包身份无效");
+  }
+  return `${EMBEDDED_COURSE_PACK_ROOT}/${encodeURIComponent(packId)}`
+    + `/${encodeURIComponent(version)}/archive.ocpack`;
+}
+
+export async function fetchEmbeddedCoursePackCatalog(
+  signal?: AbortSignal,
+): Promise<CoursePackCatalog> {
+  const response = await fetch(`${EMBEDDED_COURSE_PACK_ROOT}/catalog.json`, {
+    signal,
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`内置课程目录不可用（HTTP ${response.status}）`);
+  const catalog = parseCoursePackCatalog(await response.json());
+  return {
+    ...catalog,
+    packs: catalog.packs.map((entry) => {
+      const thumbnailPath = entry.thumbnailUrl.slice(
+        entry.thumbnailUrl.indexOf("/files/") + "/files/".length,
+      );
+      return {
+        ...entry,
+        thumbnailUrl: `${EMBEDDED_COURSE_PACK_ROOT}/${encodeURIComponent(entry.packId)}`
+          + `/${encodeURIComponent(entry.version)}/files/${thumbnailPath}`,
+      };
+    }),
+  };
+}
+
+let cachedEmbeddedCatalog: CoursePackCatalog | null = null;
+let cachedEmbeddedCatalogPromise: Promise<CoursePackCatalog | null> | null = null;
+
+export function resetEmbeddedCoursePackCatalogCache(): void {
+  cachedEmbeddedCatalog = null;
+  cachedEmbeddedCatalogPromise = null;
+}
+
+export function getCachedEmbeddedCatalog(): CoursePackCatalog | null {
+  return cachedEmbeddedCatalog;
+}
+
+export async function getEmbeddedCoursePackCatalog(
+  signal?: AbortSignal,
+): Promise<CoursePackCatalog | null> {
+  if (cachedEmbeddedCatalog) return cachedEmbeddedCatalog;
+  if (cachedEmbeddedCatalogPromise) return cachedEmbeddedCatalogPromise;
+  cachedEmbeddedCatalogPromise = fetchEmbeddedCoursePackCatalog(signal)
+    .then((catalog) => {
+      cachedEmbeddedCatalog = catalog;
+      return catalog;
+    })
+    .catch(() => {
+      cachedEmbeddedCatalog = null;
+      return null;
+    });
+  return cachedEmbeddedCatalogPromise;
+}
+
+export function isKnownEmbeddedCourse(packId: string, version?: string): boolean {
+  if (!cachedEmbeddedCatalog) return false;
+  return cachedEmbeddedCatalog.packs.some(
+    (entry) => entry.packId === packId && (!version || entry.version === version),
+  );
+}
+
+export async function findEmbeddedCoursePackEntry(
+  packId: string,
+  version?: string,
+  signal?: AbortSignal,
+): Promise<CoursePackCatalogEntry | null> {
+  const catalog = await getEmbeddedCoursePackCatalog(signal);
+  if (!catalog) return null;
+  return catalog.packs.find(
+    (entry) => entry.packId === packId && (!version || entry.version === version),
+  ) ?? null;
 }
 
 export function saveCoursePackCatalog(catalog: CoursePackCatalog): void {

@@ -23,7 +23,6 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  formatVariableValue,
   mountInfiniteBoard,
   studentInputMethod,
   type BoardTargetCandidate,
@@ -79,6 +78,7 @@ import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
 import { buildInteractionClusters } from "./interaction-clusters";
+import { formatCourseControlValue } from "./course-control-format";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -455,9 +455,11 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
     // Android's persistent chrome is already represented by exact occlusion
     // rectangles. Reserving broad full-width bands here double-counted the
     // same UI and left a 540px-tall display with only 118px for course cards.
+    // Desktop keeps a modest full-width bottom band for the dock area; the
+    // dock itself is an exact occlusion, so corners stay usable.
     top: androidRuntime ? 0 : compact ? 78 : 92,
     right: androidRuntime ? 0 : compact ? 18 : 28,
-    bottom: androidRuntime ? 0 : compact ? 180 : 190,
+    bottom: androidRuntime ? 0 : compact ? 180 : 120,
     left: androidRuntime ? 0 : compact ? 18 : 28,
     ...(androidRuntime ? { focusMargin: 24 } : {}),
     occlusions,
@@ -625,7 +627,6 @@ function geometryTaskSnapDistance(
 
 export function LearningWhiteboard({
   runtime,
-  teachingCameraPolicy = "automatic",
   portableCourseRegion,
   inkSessionId,
   inkMergeSourceSessionId,
@@ -653,7 +654,6 @@ export function LearningWhiteboard({
   onRetryDegradedVisual,
 }: {
   runtime?: OllLessonRuntimeController | null;
-  teachingCameraPolicy?: "automatic" | "explicit";
   portableCourseRegion?: {
     x: number;
     y: number;
@@ -1090,7 +1090,7 @@ export function LearningWhiteboard({
       const controlsWidth = controls.length > 0 ? 360 : 0;
       const tasksWidth = cluster.taskIds.length > 0 ? 330 : 0;
       const controlsHeight = controls.length > 0
-        ? Math.max(112, 58 + controls.length * 52)
+        ? 20 + controls.length * 24 + Math.max(0, controls.length - 1) * 6
         : 0;
       const tasksHeight = cluster.taskIds.length > 0
         ? 60 + cluster.taskIds.length * 220
@@ -1140,6 +1140,9 @@ export function LearningWhiteboard({
       // complete course region still belongs in the same collision layout as a
       // live lesson, even when it has no sliders or student tasks.
       if (!region) {
+        // A live topic can render before its question region arrives. Do not
+        // temporarily relocate it to the imported-course origin.
+        if (topic.questionId) return [];
         if ((runtime?.outline.length ?? 0) !== 1) return [];
         return [[runtimeRegionIdForTopic(topic.id), {
           x: portableCourseRegion?.x ?? 20,
@@ -2355,10 +2358,6 @@ export function LearningWhiteboard({
   }, [flushBoardVariableUpdates, inkSessionId]);
 
   useEffect(() => {
-    mountedRef.current?.view.setTeachingCameraPolicy(teachingCameraPolicy);
-  }, [teachingCameraPolicy]);
-
-  useEffect(() => {
     const mounted = mountedRef.current;
     if (!mounted) return;
     const { view } = mounted;
@@ -2462,9 +2461,9 @@ export function LearningWhiteboard({
       activeRuntime.currentOperation?.type === "beat.end" ||
       activeRuntime.currentOperation?.type === "step.commit";
     const actionOperation = activeRuntime.currentOperation?.action?.op;
-    // Consecutive Beats often teach the same visual. A new Beat ID alone is
-    // not a new camera target and must not restore the opening composition.
-    const compositionKey = activeRuntime.compositionTargets.join("\u0000");
+    // One camera semantics for every lesson, live or packaged: a new Beat
+    // recomposes to its own targets.
+    const compositionKey = `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`;
     const compositionChanged = compositionKey !== renderedCompositionRef.current;
     const compositionContentChanged =
       actionOperation === "board.create" ||
@@ -2539,7 +2538,6 @@ export function LearningWhiteboard({
     if (viewport) ensureScene3dInteractionHints(viewport);
     const hostFocus = planHostTeachingFocus({
       teachingFocusAllowed,
-      automaticTeachingFocus: teachingCameraPolicy === "automatic",
       attentionTargets,
       attentionChanged,
       compositionTargets: activeRuntime.compositionTargets,
@@ -2564,7 +2562,6 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
-    teachingCameraPolicy,
     onCourseRendered,
     runtimeRegionIdForTopic,
   ]);
@@ -3440,9 +3437,10 @@ export function LearningWhiteboard({
                                   );
                                 }}
                                 aria-label={control.label}
+                                aria-description="可拖动滑块，也可用减小、增大按钮或方向键精细调整"
                               />
                               <output>
-                                {formatVariableValue(control.value, control.unit)}
+                                {formatCourseControlValue(control.value, control.unit)}
                               </output>
                               <div className="learning-variable-control-actions">
                                 {([-1, 1] as const).map((direction) => (
@@ -3518,18 +3516,19 @@ export function LearningWhiteboard({
                                     }
                                   }}
                                   aria-label={`复位${control.label}`}
+                                  title={`复位${control.label}`}
                                 >
-                                  复位
+                                  <RotateCcw size={12} aria-hidden="true" />
                                 </button>
                               </div>
                             </div>
                           );
                         })}
-                        <small>
-                          {runtime?.activeVariableAnimation
-                            ? "老师正在演示这个变量，结束后即可继续拖动"
-                            : "可拖动滑块，也可用 −、+ 或方向键精细调整"}
-                        </small>
+                        {runtime?.activeVariableAnimation ? (
+                          <small role="status">
+                            老师正在演示这个变量，结束后即可继续拖动
+                          </small>
+                        ) : null}
                       </div>
                     ) : null}
                     {presentation.tasks.length > 0 ? (

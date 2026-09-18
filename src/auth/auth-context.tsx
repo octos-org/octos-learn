@@ -17,6 +17,10 @@ import {
   setToken,
 } from "@/api/client";
 import type { AuthStatusResponse, AuthUser, PortalState } from "@/api/types";
+import {
+  isEmbeddedCourseLocation,
+  isKnownEmbeddedCourseLocation,
+} from "./embedded-course-access";
 
 interface AuthState {
   user: AuthUser | null;
@@ -57,6 +61,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const [embeddedCourse, setEmbeddedCourse] = useState(
+    () => isKnownEmbeddedCourseLocation(location),
+  );
+
+  useEffect(() => {
+    let active = true;
+    void isEmbeddedCourseLocation(location).then((isEmbedded) => {
+      if (active) setEmbeddedCourse(isEmbedded);
+    });
+    return () => {
+      active = false;
+    };
+  }, [location]);
 
   // Centralised auth-fail handler: wipe token slots, clear React state,
   // and redirect to /login UNLESS we're already there (don't loop on the
@@ -119,6 +136,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Embedded course playback is account-independent. Cloud-backed
+    // bridges may still report an auth rejection while the offline lesson is
+    // open; do not let that optional path eject the learner to the login page.
+    if (embeddedCourse) {
+      setLoading(false);
+      return;
+    }
     if (!token) {
       setLoading(false);
       return;
@@ -137,9 +161,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isCredentialRejection(error)) failAuthAndRedirect();
       })
       .finally(() => setLoading(false));
-  }, [token, user, syncMe, failAuthAndRedirect]);
+  }, [token, user, syncMe, failAuthAndRedirect, embeddedCourse]);
 
   const revalidate = useCallback(async () => {
+    if (embeddedCourse) return;
     // Caller flagged that an authenticated request was rejected; re-run
     // the canonical auth probe and let `failAuthAndRedirect` handle the
     // cleanup if the token is genuinely dead. If syncMe succeeds, the
@@ -150,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error: unknown) {
       if (isCredentialRejection(error)) failAuthAndRedirect();
     }
-  }, [syncMe, failAuthAndRedirect]);
+  }, [syncMe, failAuthAndRedirect, embeddedCourse]);
 
   // Issue #111.1: subscribe to the WS bridge's `crew:auth_expired`
   // signal so an auth-rejected handshake (server close-code 1008)

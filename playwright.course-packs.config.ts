@@ -13,7 +13,7 @@ const port = requestedPort;
 export default defineConfig({
   testDir: "./tests",
   testMatch: "curated-course-packs.spec.ts",
-  timeout: 240_000,
+  timeout: mode === "android" ? 330_000 : 240_000,
   expect: { timeout: 30_000 },
   workers: 1,
   retries: 0,

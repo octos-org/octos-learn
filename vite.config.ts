@@ -168,9 +168,9 @@ export default defineConfig(({ mode, command }) => {
           ),
         } : {}),
         ...(localOll ? {
-          // Use the pinned package's identical CSS so KaTeX font assets stay
-          // inside Vite's normal dependency serving boundary.
-          "octos-lesson-language/web-runtime/styles.css": path.resolve(__dirname, "node_modules/octos-lesson-language/packages/web-runtime/styles.css"),
+          // Preview local Runtime layout changes together with its JavaScript;
+          // production builds still use the pinned package and its CSS.
+          "octos-lesson-language/web-runtime/styles.css": path.resolve(localOll, "packages/web-runtime/styles.css"),
           "octos-lesson-language/web-runtime": path.resolve(localOll, "dist/packages/web-runtime/src/index.js"),
           "octos-lesson-language/ink-runtime/styles.css": path.resolve(localOll, "packages/ink-runtime/styles.css"),
           "octos-lesson-language/ink-runtime": path.resolve(localOll, "dist/packages/ink-runtime/src/index.js"),

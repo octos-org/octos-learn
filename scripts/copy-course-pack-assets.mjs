@@ -2,7 +2,7 @@
 // This keeps the player integration test offline in the APK while ensuring
 // octos-learn never carries a second hand-maintained copy of the pack contract.
 
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,6 +25,10 @@ if (!existsSync(source)) {
   );
 }
 
+// This directory is generated for every build. Clear it first so a standard
+// web/APK build can never accidentally inherit Spotlight archives from an
+// earlier build on the same machine.
+rmSync(outputDirectory, { recursive: true, force: true });
 mkdirSync(outputDirectory, { recursive: true });
 copyFileSync(source, join(outputDirectory, filename));
 console.log(`[copy-course-pack-assets] copied ${filename} to public/course-packs/`);

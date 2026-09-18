@@ -6,7 +6,9 @@ import {
 import type { AuthoringLesson, CanonicalEvent } from "octos-lesson-language";
 import { assertOllMaterializationParity } from "../oll/oll-materialization";
 import {
+  embeddedCoursePackArchiveUrl,
   fetchCoursePackCatalog,
+  getEmbeddedCoursePackCatalog,
   isCoursePackIdentity,
   supportsCoursePackPlayer,
 } from "./course-pack-catalog";
@@ -34,11 +36,11 @@ export interface CoursePackPlaybackSource {
   /** Present for packs that carry their reviewed Authoring source. These
    * events were rebuilt and checked through the same boundary as live lessons. */
   playbackEvents?: CanonicalEvent[];
-  cameraPolicy: TeachingCameraPolicy;
   courseRegion?: PortableCourseRegion;
+  /** Present and true when this course was resolved from an APK/app embedded archive. */
+  isEmbedded?: boolean;
 }
 
-export type TeachingCameraPolicy = "automatic" | "explicit";
 export interface PortableCourseRegion {
   x: number;
   y: number;
@@ -66,25 +68,6 @@ export function resolveCoursePackPlaybackEvents(
     throw new Error(`CoursePack Authoring lesson is invalid: ${message}`);
   }
   return assertOllMaterializationParity(authoring, pack.events);
-}
-
-export function resolveCoursePackCameraPolicy(
-  pack: LoadedCoursePack,
-): TeachingCameraPolicy {
-  const declarations = pack.board?.items?.filter(
-    (item) => item.kind === "playback.camera-policy",
-  ) ?? [];
-  if (declarations.length > 1) {
-    throw new Error("CoursePack declares more than one camera policy");
-  }
-  const policy = declarations[0]?.policy;
-  if (policy === "automatic" || policy === "explicit") return policy;
-  if (policy !== undefined) throw new Error("CoursePack camera policy is invalid");
-  // Compatibility for already-published curated packs. New packs carry their
-  // Authoring source and must declare editorial camera semantics explicitly.
-  return pack.manifest.files?.some((file) => file.path === AUTHORING_LESSON_PATH)
-    ? "automatic"
-    : "explicit";
 }
 
 export function resolveCoursePackRegion(
@@ -116,11 +99,10 @@ export function resolveCoursePackRegion(
 
 function playbackSource(id: string, pack: LoadedCoursePack): CoursePackPlaybackSource {
   const playbackEvents = resolveCoursePackPlaybackEvents(pack);
-  const cameraPolicy = resolveCoursePackCameraPolicy(pack);
   const courseRegion = resolveCoursePackRegion(pack);
   return playbackEvents
-    ? { id, pack, playbackEvents, cameraPolicy, courseRegion }
-    : { id, pack, cameraPolicy, courseRegion };
+    ? { id, pack, playbackEvents, courseRegion }
+    : { id, pack, courseRegion };
 }
 
 function throwIfAborted(signal?: AbortSignal): void {
@@ -184,6 +166,37 @@ export async function loadBuiltinCoursePack(
   return playbackSource(id, pack);
 }
 
+async function loadEmbeddedCoursePack(
+  id: string,
+  version: string,
+  signal?: AbortSignal,
+  expectedDigest?: string,
+): Promise<CoursePackPlaybackSource | null> {
+  const catalog = await getEmbeddedCoursePackCatalog(signal);
+  const release = catalog?.packs.find((entry) => entry.packId === id && entry.version === version);
+  if (!release) return null;
+  if (expectedDigest && release.archiveSha256 !== expectedDigest) {
+    throw new Error("课程实例锁定的版本与内置课程不一致");
+  }
+  if (!supportsCoursePackPlayer(release.minimumPlayerVersion)) {
+    throw new Error("此课程需要更新版本的 Octos Learn");
+  }
+  const archiveUrl = embeddedCoursePackArchiveUrl(id, version);
+  const response = await fetch(archiveUrl, { signal, cache: "no-store" });
+  if (!response.ok) return null;
+  const archive = await response.arrayBuffer();
+  if (archive.byteLength !== release.archiveBytes) {
+    throw new Error("内置课程包大小与目录不一致");
+  }
+  const pack = await loadCoursePackArchive(archive);
+  throwIfAborted(signal);
+  validatePackIdentity(pack, id, version, release.archiveSha256);
+  return {
+    ...playbackSource(id, pack),
+    isEmbedded: true,
+  };
+}
+
 export async function loadPublishedCoursePack(
   id: string,
   version: string,
@@ -191,8 +204,16 @@ export async function loadPublishedCoursePack(
   expectedDigest?: string,
 ): Promise<CoursePackPlaybackSource> {
   if (!isCoursePackIdentity(id, version)) throw new Error("课程包身份无效");
+
+  // Tier 1: Embedded archive in APK assets (local-first, never persists duplicate to IndexedDB)
+  const embedded = await loadEmbeddedCoursePack(id, version, signal, expectedDigest);
+  if (embedded) return embedded;
+
+  // Tier 2: Installed / cached archive in IndexedDB
   const installed = await loadInstalledCoursePack(id, version, signal, expectedDigest);
   if (installed) return installed;
+
+  // Tier 3: Network download from public server
   throwIfAborted(signal);
   const catalog = await fetchCoursePackCatalog(signal);
   const release = catalog.packs.find((entry) => entry.packId === id
@@ -213,6 +234,7 @@ export async function loadPublishedCoursePack(
   const pack = await loadCoursePackArchive(archive);
   throwIfAborted(signal);
   validatePackIdentity(pack, id, version, release.archiveSha256);
+
   const now = Date.now();
   await writeStoredCoursePack({
     identity: `${id}@${version}`,
