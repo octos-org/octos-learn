@@ -68,8 +68,11 @@ function showLauncher() {
   return render(<MemoryRouter><CourseLauncher /></MemoryRouter>);
 }
 
+import { resetEmbeddedCoursePackCatalogCache } from "./course-pack/course-pack-catalog";
+
 describe("shared course launcher", () => {
   beforeEach(() => {
+    resetEmbeddedCoursePackCatalogCache();
     auth.token = null;
     auth.logout.mockClear();
     sessionApi.delete.mockClear();
@@ -104,11 +107,14 @@ describe("shared course launcher", () => {
     expect(screen.getByText("三年级数学")).toBeTruthy();
   });
 
-  it("offers embedded Spotlight courses offline without claiming a download", async () => {
-    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify(catalog([release])), {
-      status: 200,
-    }));
+  it("offers embedded courses offline without claiming a download", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/course-packs/embedded/catalog.json")) {
+        return new Response(JSON.stringify(catalog([release])), { status: 200 });
+      }
+      throw new Error("offline");
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     showLauncher();
@@ -116,7 +122,7 @@ describe("shared course launcher", () => {
     expect(await screen.findByText("内置课程 · 可离线")).toBeTruthy();
     expect(screen.getByRole("link", { name: /预览/u })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith(
-      "/course-packs/spotlight/catalog.json",
+      "/course-packs/embedded/catalog.json",
       expect.objectContaining({ cache: "no-store" }),
     );
     fireEvent.click(screen.getByRole("button", { name: /开始互动/u }));
@@ -124,16 +130,8 @@ describe("shared course launcher", () => {
       .toContain('"mode":"instance"');
   });
 
-  it("does not fall back to unreviewed installed packs when the Spotlight catalog fails", async () => {
-    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
-    storage.list.mockResolvedValue([{
-      identity: "grade-3-math@1.0.0",
-      packId: "grade-3-math",
-      version: "1.0.0",
-      thumbnail: null,
-      catalogEntry: release,
-    }]);
-    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("embedded catalog missing"); }));
+  it("shows empty state when no embedded or saved catalog is available and network fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("catalog missing"); }));
 
     showLauncher();
 

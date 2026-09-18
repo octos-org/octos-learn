@@ -1,28 +1,42 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { useAuth } from "./auth-context";
+import {
+  isEmbeddedCourseLocation,
+  isKnownEmbeddedCourseLocation,
+  parseCoursePackRouteParams,
+} from "./embedded-course-access";
 
 const skipAuth = import.meta.env.VITE_SKIP_AUTH === "true";
-
-function isSpotlightBuild(): boolean {
-  return import.meta.env.VITE_OCTOS_SPOTLIGHT === "true";
-}
 
 export function AuthGuard() {
   const { token, loading } = useAuth();
   const location = useLocation();
+  const isCoursePackRoute =
+    location.pathname === "/board" && Boolean(parseCoursePackRouteParams(location.search));
 
-  // A Spotlight build may play only its digest-locked embedded CoursePacks
-  // without an account. The loader still rejects any identity absent from the
-  // embedded catalog. Blank boards, settings, and cloud-backed routes retain
-  // the ordinary authentication boundary.
-  const offlineSpotlightCourse = isSpotlightBuild()
-    && location.pathname === "/board"
-    && new URLSearchParams(location.search).has("course-pack");
+  const [embeddedAllowed, setEmbeddedAllowed] = useState<boolean | null>(() => {
+    if (!isCoursePackRoute) return false;
+    return isKnownEmbeddedCourseLocation(location) ? true : null;
+  });
 
-  // Only skip auth when explicitly configured via VITE_SKIP_AUTH=true
-  if (skipAuth || offlineSpotlightCourse) return <Outlet />;
+  useEffect(() => {
+    if (!isCoursePackRoute) return;
+    let active = true;
+    void isEmbeddedCourseLocation(location).then((allowed) => {
+      if (active) setEmbeddedAllowed(allowed);
+    });
+    return () => {
+      active = false;
+    };
+  }, [isCoursePackRoute, location]);
 
-  if (loading) {
+  // Trusted embedded CoursePacks play offline without requiring an account.
+  // The loader still verifies the digest-locked archive. Blank whiteboards,
+  // settings, and cloud-backed routes retain the ordinary authentication boundary.
+  if (skipAuth || (isCoursePackRoute && embeddedAllowed === true)) return <Outlet />;
+
+  if (loading || (isCoursePackRoute && embeddedAllowed === null)) {
     // Branded splash while the stored token is validated against /me —
     // replaces the old bare "Loading..." on a hard-coded dark background
     // (which also ignored the user's theme).

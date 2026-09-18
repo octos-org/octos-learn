@@ -6,11 +6,10 @@ import {
 import type { AuthoringLesson, CanonicalEvent } from "octos-lesson-language";
 import { assertOllMaterializationParity } from "../oll/oll-materialization";
 import {
+  embeddedCoursePackArchiveUrl,
   fetchCoursePackCatalog,
-  fetchSpotlightCoursePackCatalog,
+  getEmbeddedCoursePackCatalog,
   isCoursePackIdentity,
-  isSpotlightBuild,
-  spotlightCoursePackArchiveUrl,
   supportsCoursePackPlayer,
 } from "./course-pack-catalog";
 import {
@@ -38,6 +37,8 @@ export interface CoursePackPlaybackSource {
    * events were rebuilt and checked through the same boundary as live lessons. */
   playbackEvents?: CanonicalEvent[];
   courseRegion?: PortableCourseRegion;
+  /** Present and true when this course was resolved from an APK/app embedded archive. */
+  isEmbedded?: boolean;
 }
 
 export interface PortableCourseRegion {
@@ -165,6 +166,37 @@ export async function loadBuiltinCoursePack(
   return playbackSource(id, pack);
 }
 
+async function loadEmbeddedCoursePack(
+  id: string,
+  version: string,
+  signal?: AbortSignal,
+  expectedDigest?: string,
+): Promise<CoursePackPlaybackSource | null> {
+  const catalog = await getEmbeddedCoursePackCatalog(signal);
+  const release = catalog?.packs.find((entry) => entry.packId === id && entry.version === version);
+  if (!release) return null;
+  if (expectedDigest && release.archiveSha256 !== expectedDigest) {
+    throw new Error("课程实例锁定的版本与内置课程不一致");
+  }
+  if (!supportsCoursePackPlayer(release.minimumPlayerVersion)) {
+    throw new Error("此课程需要更新版本的 Octos Learn");
+  }
+  const archiveUrl = embeddedCoursePackArchiveUrl(id, version);
+  const response = await fetch(archiveUrl, { signal, cache: "no-store" });
+  if (!response.ok) return null;
+  const archive = await response.arrayBuffer();
+  if (archive.byteLength !== release.archiveBytes) {
+    throw new Error("内置课程包大小与目录不一致");
+  }
+  const pack = await loadCoursePackArchive(archive);
+  throwIfAborted(signal);
+  validatePackIdentity(pack, id, version, release.archiveSha256);
+  return {
+    ...playbackSource(id, pack),
+    isEmbedded: true,
+  };
+}
+
 export async function loadPublishedCoursePack(
   id: string,
   version: string,
@@ -172,17 +204,18 @@ export async function loadPublishedCoursePack(
   expectedDigest?: string,
 ): Promise<CoursePackPlaybackSource> {
   if (!isCoursePackIdentity(id, version)) throw new Error("课程包身份无效");
-  const embedded = isSpotlightBuild();
-  // A Spotlight build is an immutable, reviewed snapshot. Never let an
-  // IndexedDB archive left by another build shadow the APK-owned bytes.
-  if (!embedded) {
-    const installed = await loadInstalledCoursePack(id, version, signal, expectedDigest);
-    if (installed) return installed;
-  }
+
+  // Tier 1: Embedded archive in APK assets (local-first, never persists duplicate to IndexedDB)
+  const embedded = await loadEmbeddedCoursePack(id, version, signal, expectedDigest);
+  if (embedded) return embedded;
+
+  // Tier 2: Installed / cached archive in IndexedDB
+  const installed = await loadInstalledCoursePack(id, version, signal, expectedDigest);
+  if (installed) return installed;
+
+  // Tier 3: Network download from public server
   throwIfAborted(signal);
-  const catalog = embedded
-    ? await fetchSpotlightCoursePackCatalog(signal)
-    : await fetchCoursePackCatalog(signal);
+  const catalog = await fetchCoursePackCatalog(signal);
   const release = catalog.packs.find((entry) => entry.packId === id
     && entry.version === version);
   if (!release) throw new Error("此课程版本不在当前公开目录中");
@@ -192,10 +225,7 @@ export async function loadPublishedCoursePack(
   if (!supportsCoursePackPlayer(release.minimumPlayerVersion)) {
     throw new Error("此课程需要更新版本的 Octos Learn");
   }
-  const archiveUrl = embedded
-    ? spotlightCoursePackArchiveUrl(id, version)
-    : release.archiveUrl;
-  const response = await fetch(archiveUrl, { signal, cache: "no-store" });
+  const response = await fetch(release.archiveUrl, { signal, cache: "no-store" });
   if (!response.ok) throw new Error(`课程包下载失败（HTTP ${response.status}）`);
   const archive = await response.arrayBuffer();
   if (archive.byteLength !== release.archiveBytes) {
@@ -204,25 +234,21 @@ export async function loadPublishedCoursePack(
   const pack = await loadCoursePackArchive(archive);
   throwIfAborted(signal);
   validatePackIdentity(pack, id, version, release.archiveSha256);
-  // Embedded packs already live in the APK and should not be duplicated in
-  // IndexedDB. Server-delivered packs remain persisted for ordinary offline
-  // reopening.
-  if (!embedded) {
-    const now = Date.now();
-    await writeStoredCoursePack({
-      identity: `${id}@${version}`,
-      packId: id,
-      version,
-      archiveSha256: release.archiveSha256,
-      archiveBytes: archive.byteLength,
-      minimumPlayerVersion: pack.manifest.minimumPlayerVersion,
-      installedAt: now,
-      lastOpenedAt: now,
-      archive,
-      thumbnail: coursePackFileBlob(pack, pack.manifest.thumbnail),
-      catalogEntry: release,
-    });
-  }
+
+  const now = Date.now();
+  await writeStoredCoursePack({
+    identity: `${id}@${version}`,
+    packId: id,
+    version,
+    archiveSha256: release.archiveSha256,
+    archiveBytes: archive.byteLength,
+    minimumPlayerVersion: pack.manifest.minimumPlayerVersion,
+    installedAt: now,
+    lastOpenedAt: now,
+    archive,
+    thumbnail: coursePackFileBlob(pack, pack.manifest.thumbnail),
+    catalogEntry: release,
+  });
   return playbackSource(id, pack);
 }
 

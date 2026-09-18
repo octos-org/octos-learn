@@ -36,11 +36,7 @@ const DIGEST = /^[a-f0-9]{64}$/u;
 const CATALOG_CACHE_KEY = "octos:course-pack-catalog:v1";
 // Keep this in step with package.json until the build injects the player version.
 const PLAYER_VERSION = "0.1.0";
-const SPOTLIGHT_ROOT = `${import.meta.env.BASE_URL}course-packs/spotlight`;
-
-export function isSpotlightBuild(): boolean {
-  return import.meta.env.VITE_OCTOS_SPOTLIGHT === "true";
-}
+export const EMBEDDED_COURSE_PACK_ROOT = `${import.meta.env.BASE_URL}course-packs/embedded`;
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -114,21 +110,21 @@ export async function fetchCoursePackCatalog(signal?: AbortSignal): Promise<Cour
   return parseCoursePackCatalog(await response.json());
 }
 
-export function spotlightCoursePackArchiveUrl(
+export function embeddedCoursePackArchiveUrl(
   packId: string,
   version: string,
 ): string {
   if (!isCoursePackIdentity(packId, version)) {
     throw new Error("课程包身份无效");
   }
-  return `${SPOTLIGHT_ROOT}/${encodeURIComponent(packId)}`
+  return `${EMBEDDED_COURSE_PACK_ROOT}/${encodeURIComponent(packId)}`
     + `/${encodeURIComponent(version)}/archive.ocpack`;
 }
 
-export async function fetchSpotlightCoursePackCatalog(
+export async function fetchEmbeddedCoursePackCatalog(
   signal?: AbortSignal,
 ): Promise<CoursePackCatalog> {
-  const response = await fetch(`${SPOTLIGHT_ROOT}/catalog.json`, {
+  const response = await fetch(`${EMBEDDED_COURSE_PACK_ROOT}/catalog.json`, {
     signal,
     cache: "no-store",
   });
@@ -142,11 +138,59 @@ export async function fetchSpotlightCoursePackCatalog(
       );
       return {
         ...entry,
-        thumbnailUrl: `${SPOTLIGHT_ROOT}/${encodeURIComponent(entry.packId)}`
+        thumbnailUrl: `${EMBEDDED_COURSE_PACK_ROOT}/${encodeURIComponent(entry.packId)}`
           + `/${encodeURIComponent(entry.version)}/files/${thumbnailPath}`,
       };
     }),
   };
+}
+
+let cachedEmbeddedCatalog: CoursePackCatalog | null = null;
+let cachedEmbeddedCatalogPromise: Promise<CoursePackCatalog | null> | null = null;
+
+export function resetEmbeddedCoursePackCatalogCache(): void {
+  cachedEmbeddedCatalog = null;
+  cachedEmbeddedCatalogPromise = null;
+}
+
+export function getCachedEmbeddedCatalog(): CoursePackCatalog | null {
+  return cachedEmbeddedCatalog;
+}
+
+export async function getEmbeddedCoursePackCatalog(
+  signal?: AbortSignal,
+): Promise<CoursePackCatalog | null> {
+  if (cachedEmbeddedCatalog) return cachedEmbeddedCatalog;
+  if (cachedEmbeddedCatalogPromise) return cachedEmbeddedCatalogPromise;
+  cachedEmbeddedCatalogPromise = fetchEmbeddedCoursePackCatalog(signal)
+    .then((catalog) => {
+      cachedEmbeddedCatalog = catalog;
+      return catalog;
+    })
+    .catch(() => {
+      cachedEmbeddedCatalog = null;
+      return null;
+    });
+  return cachedEmbeddedCatalogPromise;
+}
+
+export function isKnownEmbeddedCourse(packId: string, version?: string): boolean {
+  if (!cachedEmbeddedCatalog) return false;
+  return cachedEmbeddedCatalog.packs.some(
+    (entry) => entry.packId === packId && (!version || entry.version === version),
+  );
+}
+
+export async function findEmbeddedCoursePackEntry(
+  packId: string,
+  version?: string,
+  signal?: AbortSignal,
+): Promise<CoursePackCatalogEntry | null> {
+  const catalog = await getEmbeddedCoursePackCatalog(signal);
+  if (!catalog) return null;
+  return catalog.packs.find(
+    (entry) => entry.packId === packId && (!version || entry.version === version),
+  ) ?? null;
 }
 
 export function saveCoursePackCatalog(catalog: CoursePackCatalog): void {

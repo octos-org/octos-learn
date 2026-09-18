@@ -15,8 +15,7 @@ import { useAuth } from "@/auth/auth-context";
 import { deleteSession, setSessionTitle } from "@/api/sessions";
 import {
   fetchCoursePackCatalog,
-  fetchSpotlightCoursePackCatalog,
-  isSpotlightBuild,
+  getEmbeddedCoursePackCatalog,
   loadSavedCoursePackCatalog,
   saveCoursePackCatalog,
   supportsCoursePackPlayer,
@@ -41,40 +40,89 @@ import "./course-launcher.css";
 
 type CatalogState = {
   catalog: CoursePackCatalog | null;
+  embeddedIdentities: Set<string>;
   live: boolean;
   loading: boolean;
   error: string | null;
 };
 
 function useLauncherCatalog(): CatalogState {
-  const spotlight = isSpotlightBuild();
-  const [state, setState] = useState<CatalogState>(() => ({
-    catalog: spotlight ? null : loadSavedCoursePackCatalog(),
-    live: false,
-    loading: true,
-    error: null,
-  }));
+  const [state, setState] = useState<CatalogState>(() => {
+    const saved = loadSavedCoursePackCatalog();
+    return {
+      catalog: saved,
+      embeddedIdentities: new Set(),
+      live: false,
+      loading: true,
+      error: null,
+    };
+  });
+
   useEffect(() => {
     const controller = new AbortController();
-    void (spotlight
-      ? fetchSpotlightCoursePackCatalog(controller.signal)
-      : fetchCoursePackCatalog(controller.signal))
-      .then((catalog) => {
-        if (controller.signal.aborted) return;
-        if (!spotlight) saveCoursePackCatalog(catalog);
-        setState({ catalog, live: true, loading: false, error: null });
-      })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        setState((previous) => ({
-          ...previous,
-          live: false,
+    let cancelled = false;
+
+    async function load() {
+      const [embedded, publicCatalogResult] = await Promise.all([
+        getEmbeddedCoursePackCatalog(controller.signal),
+        fetchCoursePackCatalog(controller.signal).catch((err: unknown) => {
+          return err instanceof Error ? err : new Error(String(err));
+        }),
+      ]);
+
+      if (cancelled || controller.signal.aborted) return;
+
+      const embeddedPacks = embedded?.packs ?? [];
+      const embeddedSet = new Set(embeddedPacks.map((p) => `${p.packId}@${p.version}`));
+
+      if (publicCatalogResult instanceof Error) {
+        if (embeddedPacks.length > 0) {
+          setState({
+            catalog: embedded,
+            embeddedIdentities: embeddedSet,
+            live: true,
+            loading: false,
+            error: null,
+          });
+        } else {
+          const saved = loadSavedCoursePackCatalog();
+          setState({
+            catalog: saved,
+            embeddedIdentities: new Set(),
+            live: false,
+            loading: false,
+            error: publicCatalogResult.message || "课程目录暂不可用",
+          });
+        }
+      } else {
+        saveCoursePackCatalog(publicCatalogResult);
+        const mergedPacks = [...embeddedPacks];
+        for (const pubPack of publicCatalogResult.packs) {
+          if (!embeddedSet.has(`${pubPack.packId}@${pubPack.version}`)) {
+            mergedPacks.push(pubPack);
+          }
+        }
+        setState({
+          catalog: {
+            schemaVersion: 1,
+            generatedAt: publicCatalogResult.generatedAt,
+            packs: mergedPacks,
+          },
+          embeddedIdentities: embeddedSet,
+          live: true,
           loading: false,
-          error: error instanceof Error ? error.message : "课程目录暂不可用",
-        }));
-      });
-    return () => controller.abort();
-  }, [spotlight]);
+          error: null,
+        });
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, []);
+
   return state;
 }
 
@@ -243,7 +291,6 @@ function WhiteboardSessionCard({
 export function CourseLauncher() {
   const { token, logout } = useAuth();
   const state = useLauncherCatalog();
-  const spotlight = isSpotlightBuild();
   const [loggingOut, setLoggingOut] = useState(false);
   const [whiteboards, setWhiteboards] = useState(() =>
     listLearningSessions().filter((session) => !session.source));
@@ -296,9 +343,7 @@ export function CourseLauncher() {
   const installedByIdentity = new Map(installed.map((pack) => [pack.identity, pack]));
   const recommended = state.catalog?.packs.filter((pack) => pack.recommended) ?? [];
   const visiblePacks = [...recommended];
-  // Spotlight fails closed when its APK-owned catalog is unavailable. Old
-  // installed records must not replace or extend the reviewed snapshot.
-  if (!state.live && !spotlight) {
+  if (!state.live) {
     for (const pack of installed) {
       if (!visiblePacks.some((entry) => (
         entry.packId === pack.packId && entry.version === pack.version
@@ -403,7 +448,7 @@ export function CourseLauncher() {
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}
                     authenticated={Boolean(token)}
-                    embedded={spotlight}
+                    embedded={state.embeddedIdentities.has(identity)}
                   />
                 );
               })}

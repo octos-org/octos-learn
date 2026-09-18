@@ -51,21 +51,53 @@ const blank = () =>
     config: {},
     enabled: true,
   } as Profile);
+import { resetEmbeddedCoursePackCatalogCache } from "./course-pack/course-pack-catalog";
+
 afterEach(() => {
   cleanup();
   localStorage.clear();
+  resetEmbeddedCoursePackCatalogCache();
+  vi.unstubAllGlobals();
   vi.clearAllMocks();
   vi.unstubAllEnvs();
 });
 
 describe("first-run setup whiteboard", () => {
-  it("allows configured models in Spotlight without blocking offline playback", async () => {
-    vi.stubEnv("VITE_OCTOS_SPOTLIGHT", "true");
+  it("allows configured models for embedded courses without blocking offline playback", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/course-packs/embedded/catalog.json")) {
+        return new Response(JSON.stringify({
+          schemaVersion: 1,
+          generatedAt: "2026-09-18T00:00:00Z",
+          packs: [{
+            packId: "rectangle-area-from-tiles",
+            version: "0.1.5",
+            title: "矩形面积",
+            description: "矩形面积练习",
+            locale: "zh-CN",
+            subject: "math",
+            grade: "3",
+            durationSeconds: 60,
+            minimumPlayerVersion: "0.1.0",
+            archiveSha256: "a".repeat(64),
+            archiveBytes: 8,
+            recommended: true,
+            archiveUrl: "/api/learn/course-packs/rectangle-area-from-tiles/0.1.5/archive.ocpack",
+            manifestUrl: "/api/learn/course-packs/rectangle-area-from-tiles/0.1.5/manifest.json",
+            thumbnailUrl: "/api/learn/course-packs/rectangle-area-from-tiles/0.1.5/files/thumb.webp",
+            capabilities: { offlinePlayback: true, offlineNarration: true, interactiveWhiteboard: true, liveAi: "none" },
+          }],
+        }), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
     const profile = blank();
     profile.config.llm.primary = { family_id: "google", model_id: "gemini-test" };
     mocks.get.mockResolvedValue(profile);
     render(
-      <MemoryRouter initialEntries={["/board?course-pack=rectangle-area-from-tiles"]}>
+      <MemoryRouter initialEntries={["/board?course-pack=rectangle-area-from-tiles&course-version=0.1.5"]}>
         <LearningSetupGate>
           <p>offline-course</p>
           <LearningModelContext.Consumer>
@@ -74,7 +106,7 @@ describe("first-run setup whiteboard", () => {
         </LearningSetupGate>
       </MemoryRouter>,
     );
-    expect(screen.getByText("offline-course")).toBeTruthy();
+    expect(await screen.findByText("offline-course")).toBeTruthy();
     expect(await screen.findByText("model-ready")).toBeTruthy();
     expect(mocks.selectProfile).toHaveBeenCalledWith("alice");
   });

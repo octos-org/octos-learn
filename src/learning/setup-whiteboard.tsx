@@ -14,6 +14,10 @@ import { LLM_PROVIDERS } from "@/settings/llm-providers";
 import { SharedTtsPanel } from "@/settings/shared-tts";
 import { TeacherSkinPicker } from "@/settings/learning-companion-tab";
 import {
+  isEmbeddedCourseLocation,
+  isKnownEmbeddedCourseLocation,
+} from "@/auth/embedded-course-access";
+import {
   LearningModelContext,
   hasLearningModel,
   needsLearningSetup,
@@ -25,32 +29,36 @@ import "./setup-whiteboard.css";
  * canvas snapshots, conversation attachments, or localStorage values. */
 export function LearningSetupGate({ children }: { children: ReactNode }) {
   const location = useLocation();
-  const offlineSpotlightCourse = import.meta.env.VITE_OCTOS_SPOTLIGHT === "true"
-    && location.pathname === "/board"
-    && new URLSearchParams(location.search).has("course-pack");
+  const [embeddedCourse, setEmbeddedCourse] = useState(
+    () => isKnownEmbeddedCourseLocation(location),
+  );
   const [required, setRequired] = useState<boolean | null>(null);
-  const [modelConfigured, setModelConfigured] = useState(!offlineSpotlightCourse);
+  const [modelConfigured, setModelConfigured] = useState(!embeddedCourse);
   useEffect(() => {
     let active = true;
-    getMyProfile()
-      .then((p) => {
-        if (active) {
-          if (p?.id) setSelectedProfileId(p.id);
-          setRequired(p ? needsLearningSetup(p) : false);
-          setModelConfigured(p ? hasLearningModel(p) : !offlineSpotlightCourse);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setRequired(false);
-          if (offlineSpotlightCourse) setModelConfigured(false);
-        }
-      });
+    void isEmbeddedCourseLocation(location).then((isEmbedded) => {
+      if (!active) return;
+      setEmbeddedCourse(isEmbedded);
+      getMyProfile()
+        .then((p) => {
+          if (active) {
+            if (p?.id) setSelectedProfileId(p.id);
+            setRequired(p ? needsLearningSetup(p) : false);
+            setModelConfigured(p ? hasLearningModel(p) : !isEmbedded);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setRequired(false);
+            if (isEmbedded) setModelConfigured(false);
+          }
+        });
+    });
     return () => {
       active = false;
     };
-  }, [offlineSpotlightCourse]);
-  if (offlineSpotlightCourse) {
+  }, [location]);
+  if (embeddedCourse) {
     return (
       <LearningModelContext.Provider value={modelConfigured}>
         {children}

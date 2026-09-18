@@ -422,6 +422,7 @@ export function LearningWorkspace({
   // Voice readiness also reports false before the profile runtime starts.
   // That is not a missing model configuration and must not block text input.
   const aiUnavailable = !modelConfigured;
+  const isEmbeddedCourse = Boolean(coursePack?.isEmbedded);
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
     () => new LearnTraceRecorder(sessionId),
@@ -3147,7 +3148,11 @@ export function LearningWorkspace({
             ollNarrationTts.error}
         </div>
       )}
-      {aiUnavailable && <div className="learning-runtime-warning">连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a></div>}
+      {aiUnavailable && !isEmbeddedCourse && (
+        <div className="learning-runtime-warning">
+          连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a>
+        </div>
+      )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning">
           语音暂不可用，你可以继续打字、上传题目和阅读课程。

@@ -21,10 +21,7 @@ android {
     }
 
     buildTypes {
-        spotlight {
-            initWith debug
-            applicationIdSuffix ".spotlight"
-            versionNameSuffix "-spotlight"
+        debug {
             debuggable true
         }
         release {

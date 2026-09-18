@@ -60,31 +60,23 @@ The debug APK enables WebView inspection. With the display connected over ADB,
 open `chrome://inspect/#devices` on a development computer to inspect console
 errors and network requests.
 
-## Spotlight APK
+## Embedded CoursePacks (Local-First)
 
-The Spotlight variant is a separate application (`cc.pitun.learn.spotlight`)
-that can be installed beside the standard APK. Its reviewed CoursePack
-snapshot is locked by version, byte length, and SHA-256 in
-`android/spotlight-course-packs.json`. The build downloads those immutable
-archives, validates their identities and offline narration, and embeds them in
-the APK.
+All APK builds share the same package name (`cc.pitun.learn`) and codebase.
+The build embeds a locked snapshot of reviewed CoursePacks defined in
+`android/embedded-course-packs.json`. The build downloads those immutable
+archives, validates their identities, SHA-256 digests, byte counts, and offline
+narration audio, and embeds them directly in the APK assets.
+
+Embedded course discovery and playback use the embedded catalog and archives
+first (Local-First). They do not require an account or network access, and play
+offline smoothly. Courses not embedded in the APK fall back to local IndexedDB
+cache or are downloaded from the server on demand.
+
+To pin a new course or update a course version in the embedded lockfile:
 
 ```bash
-pnpm build:apk:spotlight
+pnpm pin:embedded-course <packId> [version]
+# or from a local archive:
+pnpm pin:embedded-course --archive /path/to/course.ocpack
 ```
-
-The APK is written to:
-
-```text
-android/app/build/outputs/apk/spotlight/app-spotlight.apk
-```
-
-Spotlight course discovery and playback use only the embedded catalog and
-archives. They do not require login or network access, do not copy the embedded
-archives into IndexedDB, and fail closed instead of falling back to stale local
-or server content. Blank whiteboards and cloud-backed features keep the normal
-authentication and network requirements.
-
-The current Spotlight build type is debug-signed for device E2E testing. A
-formal public release must use the release signing configuration and must not
-reuse the Android debug certificate.
