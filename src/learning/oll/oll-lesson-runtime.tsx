@@ -455,9 +455,11 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
     // Android's persistent chrome is already represented by exact occlusion
     // rectangles. Reserving broad full-width bands here double-counted the
     // same UI and left a 540px-tall display with only 118px for course cards.
+    // Desktop keeps a modest full-width bottom band for the dock area; the
+    // dock itself is an exact occlusion, so corners stay usable.
     top: androidRuntime ? 0 : compact ? 78 : 92,
     right: androidRuntime ? 0 : compact ? 18 : 28,
-    bottom: androidRuntime ? 0 : compact ? 180 : 190,
+    bottom: androidRuntime ? 0 : compact ? 180 : 120,
     left: androidRuntime ? 0 : compact ? 18 : 28,
     ...(androidRuntime ? { focusMargin: 24 } : {}),
     occlusions,
