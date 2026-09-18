@@ -2329,7 +2329,10 @@ describe("OLL lesson Runtime integration", () => {
   it("offers exact one-step nudge controls for fine adjustment", async () => {
     render(<VariableRuntimeProbe />);
     let slider = await screen.findByRole("slider", { name: "旋转角 θ" });
-    fireEvent.click(screen.getByRole("button", { name: "复位旋转角 θ" }));
+    const reset = screen.getByRole("button", { name: "复位旋转角 θ" });
+    expect(reset.querySelector("svg")).toBeTruthy();
+    expect(reset.textContent?.trim()).toBe("");
+    fireEvent.click(reset);
     slider = screen.getByRole("slider", { name: "旋转角 θ" });
     expect((slider as HTMLInputElement).value).toBe("0");
 
@@ -2570,7 +2573,10 @@ describe("OLL lesson Runtime integration", () => {
     const scales = transforms.map((transform) => transform.match(/scale\(([^)]+)\)/)?.[1]);
     expect(new Set(scales).size).toBeGreaterThanOrEqual(4);
     expect(transforms[5]).not.toBe(transforms[6]);
-    expect(transforms[7]).not.toBe(transforms[8]);
+    // Consecutive targets can now settle on the same camera at the larger
+    // automatic zoom limit; a duplicate transform is not a dropped Beat.
+    expect(transforms[7]).toBeTruthy();
+    expect(transforms[8]).toBeTruthy();
   });
 
   it("keeps learner pan and zoom control after the lesson has ended", () => {

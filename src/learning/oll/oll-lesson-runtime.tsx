@@ -23,7 +23,6 @@ import {
   type CSSProperties,
 } from "react";
 import {
-  formatVariableValue,
   mountInfiniteBoard,
   studentInputMethod,
   type BoardTargetCandidate,
@@ -79,6 +78,7 @@ import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
 import { buildInteractionClusters } from "./interaction-clusters";
+import { formatCourseControlValue } from "./course-control-format";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -1090,7 +1090,7 @@ export function LearningWhiteboard({
       const controlsWidth = controls.length > 0 ? 360 : 0;
       const tasksWidth = cluster.taskIds.length > 0 ? 330 : 0;
       const controlsHeight = controls.length > 0
-        ? Math.max(112, 58 + controls.length * 52)
+        ? 20 + controls.length * 24 + Math.max(0, controls.length - 1) * 6
         : 0;
       const tasksHeight = cluster.taskIds.length > 0
         ? 60 + cluster.taskIds.length * 220
@@ -3437,9 +3437,10 @@ export function LearningWhiteboard({
                                   );
                                 }}
                                 aria-label={control.label}
+                                aria-description="可拖动滑块，也可用减小、增大按钮或方向键精细调整"
                               />
                               <output>
-                                {formatVariableValue(control.value, control.unit)}
+                                {formatCourseControlValue(control.value, control.unit)}
                               </output>
                               <div className="learning-variable-control-actions">
                                 {([-1, 1] as const).map((direction) => (
@@ -3515,18 +3516,19 @@ export function LearningWhiteboard({
                                     }
                                   }}
                                   aria-label={`复位${control.label}`}
+                                  title={`复位${control.label}`}
                                 >
-                                  复位
+                                  <RotateCcw size={12} aria-hidden="true" />
                                 </button>
                               </div>
                             </div>
                           );
                         })}
-                        <small>
-                          {runtime?.activeVariableAnimation
-                            ? "老师正在演示这个变量，结束后即可继续拖动"
-                            : "可拖动滑块，也可用 −、+ 或方向键精细调整"}
-                        </small>
+                        {runtime?.activeVariableAnimation ? (
+                          <small role="status">
+                            老师正在演示这个变量，结束后即可继续拖动
+                          </small>
+                        ) : null}
                       </div>
                     ) : null}
                     {presentation.tasks.length > 0 ? (
