@@ -18,10 +18,6 @@
   backdrop-filter: none !important;
 }
 
-[data-runtime-platform="android"] .oll-board-runtime .world {
-  transition: none !important;
-}
-
 [data-runtime-platform="android"] .oll-board-runtime .board-node,
 [data-runtime-platform="android"] .oll-board-runtime .board-group,
 [data-runtime-platform="android"] .oll-board-runtime .teacher-pointer {
