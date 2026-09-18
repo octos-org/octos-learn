@@ -625,7 +625,6 @@ function geometryTaskSnapDistance(
 
 export function LearningWhiteboard({
   runtime,
-  teachingCameraPolicy = "automatic",
   portableCourseRegion,
   inkSessionId,
   inkMergeSourceSessionId,
@@ -653,7 +652,6 @@ export function LearningWhiteboard({
   onRetryDegradedVisual,
 }: {
   runtime?: OllLessonRuntimeController | null;
-  teachingCameraPolicy?: "automatic" | "explicit";
   portableCourseRegion?: {
     x: number;
     y: number;
@@ -737,7 +735,6 @@ export function LearningWhiteboard({
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
-  const teachingCameraPolicyRef = useRef(teachingCameraPolicy);
   const focusedLoadingTurnRef = useRef<string | null>(null);
   const availableTaskKeysRef = useRef(new Set<string>());
   const availableTaskKeysSeededRef = useRef(false);
@@ -2113,11 +2110,6 @@ export function LearningWhiteboard({
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
-    // A remounted view starts from its field defaults ("automatic"). Reapply
-    // the host's policy here: the syncing effect below only fires when the
-    // prop itself changes, so without this a replay that bumps inkSessionId
-    // silently demotes an explicit CoursePack timeline to automatic.
-    mounted.view.setTeachingCameraPolicy(teachingCameraPolicyRef.current);
     if (document.documentElement.dataset.runtimePlatform === "android") {
       // Meeting displays are viewed from much farther away than laptops.
       // Large compositions may be cropped, but automatic framing must not
@@ -2364,11 +2356,6 @@ export function LearningWhiteboard({
   }, [flushBoardVariableUpdates, inkSessionId]);
 
   useEffect(() => {
-    teachingCameraPolicyRef.current = teachingCameraPolicy;
-    mountedRef.current?.view.setTeachingCameraPolicy(teachingCameraPolicy);
-  }, [teachingCameraPolicy]);
-
-  useEffect(() => {
     const mounted = mountedRef.current;
     if (!mounted) return;
     const { view } = mounted;
@@ -2472,11 +2459,9 @@ export function LearningWhiteboard({
       activeRuntime.currentOperation?.type === "beat.end" ||
       activeRuntime.currentOperation?.type === "step.commit";
     const actionOperation = activeRuntime.currentOperation?.action?.op;
-    // Preserve live lessons' per-Beat composition. Explicit imported timelines
-    // only change composition when their declared targets change.
-    const compositionKey = teachingCameraPolicy === "automatic"
-      ? `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`
-      : activeRuntime.compositionTargets.join("\u0000");
+    // One camera semantics for every lesson, live or packaged: a new Beat
+    // recomposes to its own targets.
+    const compositionKey = `${activeRuntime.currentBeatId ?? ""}\u0000${activeRuntime.compositionTargets.join("\u0000")}`;
     const compositionChanged = compositionKey !== renderedCompositionRef.current;
     const compositionContentChanged =
       actionOperation === "board.create" ||
@@ -2551,7 +2536,6 @@ export function LearningWhiteboard({
     if (viewport) ensureScene3dInteractionHints(viewport);
     const hostFocus = planHostTeachingFocus({
       teachingFocusAllowed,
-      automaticTeachingFocus: teachingCameraPolicy === "automatic",
       attentionTargets,
       attentionChanged,
       compositionTargets: activeRuntime.compositionTargets,
@@ -2576,7 +2560,6 @@ export function LearningWhiteboard({
     runtime?.currentBeatId,
     runtime?.cursor,
     runtime?.scene3dViews,
-    teachingCameraPolicy,
     onCourseRendered,
     runtimeRegionIdForTopic,
   ]);

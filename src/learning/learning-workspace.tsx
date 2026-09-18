@@ -3009,7 +3009,6 @@ export function LearningWorkspace({
       <main className="learning-canvas-shell">
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
-          teachingCameraPolicy={coursePack?.cameraPolicy ?? "automatic"}
           portableCourseRegion={coursePack?.courseRegion}
           inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}

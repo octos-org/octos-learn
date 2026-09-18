@@ -37,7 +37,6 @@ export interface CoursePackPlaybackSource {
   /** Present for packs that carry their reviewed Authoring source. These
    * events were rebuilt and checked through the same boundary as live lessons. */
   playbackEvents?: CanonicalEvent[];
-  cameraPolicy: TeachingCameraPolicy;
   courseRegion?: PortableCourseRegion;
 }
 
@@ -119,11 +118,10 @@ export function resolveCoursePackRegion(
 
 function playbackSource(id: string, pack: LoadedCoursePack): CoursePackPlaybackSource {
   const playbackEvents = resolveCoursePackPlaybackEvents(pack);
-  const cameraPolicy = resolveCoursePackCameraPolicy(pack);
   const courseRegion = resolveCoursePackRegion(pack);
   return playbackEvents
-    ? { id, pack, playbackEvents, cameraPolicy, courseRegion }
-    : { id, pack, cameraPolicy, courseRegion };
+    ? { id, pack, playbackEvents, courseRegion }
+    : { id, pack, courseRegion };
 }
 
 function throwIfAborted(signal?: AbortSignal): void {
