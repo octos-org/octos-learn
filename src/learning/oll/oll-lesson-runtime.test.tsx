@@ -2840,8 +2840,8 @@ describe("mathematical plot interaction", () => {
     await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("Δx = 3"));
     expect((a as HTMLInputElement).value).toBe("0");
     expect(document.querySelector(".plot-measurement")?.textContent).toContain("斜率 ≈ 1");
-    fireEvent.click(screen.getByRole("button", {name:"放大坐标范围中的局部"}));
-    fireEvent.click(screen.getByRole("button", {name:"恢复课程视窗和图层，保留参数"}));
+    fireEvent.keyDown(document.querySelector(".plot-preview")!, {key:"+"});
+    fireEvent.click(screen.getByRole("button", {name:"恢复课程视图和图层，保留参数"}));
     expect((b as HTMLInputElement).value).toBe("3");
     fireEvent.input(b, {target:{value:"0"}});
     await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("不能用"));

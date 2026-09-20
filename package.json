@@ -43,7 +43,7 @@
     "lucide-react": "^0.577.0",
     "mermaid": "^11.13.0",
     "octos-course-library": "github:alan0x/octos-course-library#dbc42d989a9e6d6169ceb785c239ebe3057ca5d6",
-    "octos-lesson-language": "github:alan0x/octos-lesson-language#fd0420fef440f7e044de7b9c92d4c0387f111acc",
+    "octos-lesson-language": "github:alan0x/octos-lesson-language#926bc8b57583e68a999805bfb871445397026c63",
     "onnxruntime-web": "^1.26.0",
     "opentype.js": "1.3.4",
     "react": "^19.2.0",
