@@ -1823,6 +1823,89 @@ describe("LearningWorkspace", () => {
     )).toBeNull();
   });
 
+  it("restores and updates a direct lesson job during course pack playback", async () => {
+    localStorage.setItem(
+      "octos-learning-lesson-jobs:v1:learn-course-pack-job",
+      JSON.stringify([{
+        jobId: "lesson-job-pack-restored",
+        turnId: "lesson-turn-pack-restored",
+        referenceIds: [],
+        actionId: "learning.lesson.generate-from-selection",
+      }]),
+    );
+    localStorage.setItem(
+      "octos-learning-questions:v1:learn-course-pack-job",
+      JSON.stringify([{
+        id: "lesson-turn-pack-restored",
+        sessionId: "learn-course-pack-job",
+        text: "请结合我选中的白板内容给我上一节课",
+        origin: "composer",
+        answerPresentation: "lesson",
+        createdAt: "2026-08-19T00:00:00Z",
+        status: "pending",
+      }]),
+    );
+    sessionFilesMock.listSkillActionJobs.mockImplementation(async (_sessionId, opts) => {
+      if (opts?.actionId === "learning.lesson.generate-from-selection") {
+        return [{
+          job_id: "lesson-job-pack-restored",
+          batch_id: "lesson-batch-pack-restored",
+          profile_id: "alan0x",
+          session_id: "learn-course-pack-job",
+          action_id: "learning.lesson.generate-from-selection",
+          skill_id: "learning-coach",
+          status: "succeeded",
+          created_at: "2026-08-19T00:00:00Z",
+          updated_at: "2026-08-19T00:00:10Z",
+        }];
+      }
+      return [];
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-course-pack-job"
+        voiceEnabled={false}
+        coursePack={{
+          id: "pack-math",
+          pack: {
+            archiveSha256: "b".repeat(64),
+            events: [{
+              dsl: "octos.lesson",
+              version: "0.1",
+              profile: "canonical",
+              event: "lesson.open",
+              lesson_id: "lesson-pack",
+              sequence: 0,
+              board: {
+                board_id: "board-pack",
+                base_revision: 0,
+                region_intent: "new_topic",
+              },
+              lesson: {
+                mode: "explain",
+                language: "zh-CN",
+                title: "长方形面积与周长",
+                goals: ["学习面积"],
+              },
+            }],
+            manifest: {
+              packId: "pack-math",
+              version: "1.0.0",
+              narration: { voiceId: "fixture", segments: [] },
+            },
+          },
+        }}
+        onBack={vi.fn()}
+      />,
+    );
+
+    expect(await screen.findByText("已回答")).toBeTruthy();
+    expect(localStorage.getItem(
+      "octos-learning-lesson-jobs:v1:learn-course-pack-job",
+    )).toBeNull();
+  });
+
   it("does not speak a generic reply for a voice turn with no learner transcript", async () => {
     vi.useFakeTimers();
     const genericReply = "好的，你看看还有其他题目需要讲解吗？";
@@ -2329,6 +2412,227 @@ describe("LearningWorkspace", () => {
     });
 
     expect(await screen.findByText("解释我后来圈出的这一部分")).toBeTruthy();
+  });
+
+  it("settles delivery and switches teacher state from playing to completed when topic playback ends", async () => {
+    const sessionId = "learn-topic-replay-settle";
+    localStorage.setItem(
+      `octos-learning-questions:v1:${sessionId}`,
+      JSON.stringify([{
+        id: "selection-question",
+        sessionId,
+        text: "解释我后来圈出的这一部分",
+        origin: "selection",
+        createdAt: "2026-08-17T12:00:00.000Z",
+        status: "answered",
+        source: {
+          sourceId: "selection-source",
+          bounds: { x: 20, y: 30, width: 120, height: 80 },
+        },
+      }]),
+    );
+    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "1");
+    localStorage.setItem(
+      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      sessionId,
+    );
+    let finishMerge!: () => void;
+    const mergePending = new Promise<void>((resolve) => {
+      finishMerge = resolve;
+    });
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => {
+      const state = {
+        mode: "navigate" as const,
+        component_count: 0,
+        selected_count: 0,
+        pen_color: "#176b62",
+        selection_color: null,
+        selection_input: "unknown" as const,
+        selection_mode: "rectangle" as const,
+        selection_revision: 0,
+        document_version: 0,
+        saved: true,
+      };
+      return {
+        ready: Promise.resolve(),
+        state,
+        subscribe: vi.fn((listener: (next: typeof state) => void) => {
+          listener(state);
+          return () => undefined;
+        }),
+        setMode: vi.fn(),
+        setPenColor: vi.fn(),
+        setSelectionColor: vi.fn(),
+        setSelectionMode: vi.fn(),
+        selectAll: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        mergeSavedDocument: vi.fn(() => mergePending),
+        destroy: vi.fn(async () => undefined),
+      };
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("课程完成")).toBeTruthy();
+    });
+
+    await act(async () => {
+      finishMerge();
+      await mergePending;
+    });
+
+    expect(await screen.findByText("解释我后来圈出的这一部分")).toBeTruthy();
+  });
+
+  it("restores ink from earlier saved run even after an empty intermediate replay", async () => {
+    const sessionId = "learn-multi-run-ink-restore";
+    localStorage.setItem(
+      `octos-learning-questions:v1:${sessionId}`,
+      JSON.stringify([{
+        id: "selection-question",
+        sessionId,
+        text: "追问的问题内容",
+        origin: "selection",
+        createdAt: "2026-08-17T12:00:00.000Z",
+        status: "answered",
+        source: {
+          sourceId: "selection-source",
+          bounds: { x: 20, y: 30, width: 120, height: 80 },
+        },
+      }]),
+    );
+    // Run 1 had saved ink
+    localStorage.setItem(
+      `octos-learning-ink:v1:${sessionId}:replay:1`,
+      JSON.stringify({ format: "octos.ink", version: 1 }),
+    );
+    // Run 2 was an empty replay (did not save ink)
+    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "2");
+    localStorage.setItem(
+      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      `${sessionId}:replay:2`,
+    );
+
+    let finishMerge!: () => void;
+    const mergePending = new Promise<void>((resolve) => {
+      finishMerge = resolve;
+    });
+    const mockMergeSavedDocument = vi.fn(() => mergePending);
+    inkRuntimeMock.mountInkRuntime.mockImplementation(() => {
+      const state = {
+        mode: "navigate" as const,
+        component_count: 0,
+        selected_count: 0,
+        pen_color: "#176b62",
+        selection_color: null,
+        selection_input: "unknown" as const,
+        selection_mode: "rectangle" as const,
+        selection_revision: 0,
+        document_version: 0,
+        saved: true,
+      };
+      return {
+        ready: Promise.resolve(),
+        state,
+        subscribe: vi.fn((listener: (next: typeof state) => void) => {
+          listener(state);
+          return () => undefined;
+        }),
+        setMode: vi.fn(),
+        setPenColor: vi.fn(),
+        setSelectionColor: vi.fn(),
+        setSelectionMode: vi.fn(),
+        selectAll: vi.fn(),
+        undo: vi.fn(),
+        redo: vi.fn(),
+        mergeSavedDocument: mockMergeSavedDocument,
+        destroy: vi.fn(async () => undefined),
+      };
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("课程完成")).toBeTruthy();
+    });
+
+    await waitFor(() => {
+      // It should have resolved the merge source back to replay:1 where ink actually exists!
+      expect(mockMergeSavedDocument).toHaveBeenCalledWith(
+        `octos-learning-ink:v1:${sessionId}:replay:1`,
+        `learning-session:${sessionId}:replay:1:student-ink`,
+      );
+    });
+
+    await act(async () => {
+      finishMerge();
+      await mergePending;
+    });
+
+    expect(await screen.findByText("追问的问题内容")).toBeTruthy();
+  });
+
+  it("restores all composite board nodes from fullBoard when delivery is settled", async () => {
+    const sessionId = "learn-composite-board-restore";
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("课程完成")).toBeTruthy();
+    });
+
+    expect(screen.getByText("① 已知与目标")).toBeTruthy();
+    expect(screen.getByText("② 连接 AD")).toBeTruthy();
+  });
+
+  it("dismisses the lesson completion speech bubble after standard reading time while keeping completed state label", async () => {
+    vi.useFakeTimers();
+    const sessionId = "learn-completion-bubble-dismiss";
+    render(
+      <LearningWorkspace
+        sessionId={sessionId}
+        playbackMode="review"
+        ollFixture="geometry-v2"
+        onBack={vi.fn()}
+      />,
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    const completionText = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
+    expect(screen.getByText(completionText)).toBeTruthy();
+    expect(screen.getByText("课程完成")).toBeTruthy();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6500);
+    });
+
+    expect(screen.queryByText(completionText)).toBeNull();
+    expect(screen.getByText("课程完成")).toBeTruthy();
   });
 
   it("recovers ink hidden by the previous replay implementation once", async () => {

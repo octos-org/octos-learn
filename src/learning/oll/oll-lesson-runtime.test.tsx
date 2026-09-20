@@ -103,6 +103,63 @@ function PackagedLessonProbe() {
   return <OllLessonBoard runtime={runtime} />;
 }
 
+function MultiTopicPackagedLessonProbe() {
+  const runtime = useOllLessonRuntime({
+    source: unitCircleSineLessonSource,
+    storageKey: "multi-topic-packaged-lesson-layout-test",
+    startAtEnd: true,
+  });
+  if (!runtime || runtime.outline.length === 0) return null;
+  const originalTopic = runtime.outline[0]!;
+  return (
+    <OllLessonBoard
+      runtime={{
+        ...runtime,
+        outline: [
+          originalTopic,
+          {
+            id: "turn-followup-topic",
+            title: "提问讲解",
+            questionId: "turn-followup",
+            steps: [{ id: "followup-step-1", title: "步骤1", end_cursor: 99, beats: [] }],
+          },
+        ],
+      }}
+    />
+  );
+}
+
+function MultiTopicReplayProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "multi-topic-replay-test",
+    topics: [
+      {
+        id: "topic-1",
+        title: "主题一",
+        stepIds: ["lesson-geometry-v2-001:step:establish-task"],
+      },
+      {
+        id: "topic-2",
+        title: "主题二",
+        stepIds: ["lesson-geometry-v2-001:step:construct-auxiliary-line"],
+      },
+    ],
+  });
+  if (!runtime) return null;
+  return (
+    <div>
+      <span data-testid="current-step">{runtime.currentStepId}</span>
+      <span data-testid="is-playing">{String(runtime.playing)}</span>
+      <span data-testid="cursor">{runtime.cursor}</span>
+      <button type="button" onClick={() => runtime.playStep("lesson-geometry-v2-001:step:establish-task")}>
+        播放主题一
+      </button>
+      <OllLessonBoard runtime={runtime} />
+    </div>
+  );
+}
+
 function InkRuntimeProbe({
   onInkActivity,
   onInkSaveHandlerChange,
@@ -1146,6 +1203,53 @@ describe("OLL lesson Runtime integration", () => {
         }),
       });
     });
+  });
+
+  it("preserves portable course region layout constraints and attachments across multi-topic outlines", async () => {
+    const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
+    render(<MultiTopicPackagedLessonProbe />);
+    await waitFor(() => {
+      expect(setRegionLayouts).toHaveBeenCalledWith(expect.objectContaining({
+        __legacy__: expect.objectContaining({
+          x: 20,
+          y: 20,
+          flow: "reading",
+          reservedWidth: 1_300,
+          attachments: expect.arrayContaining([
+            expect.objectContaining({
+              anchorNodeIds: [
+                "lesson-unit-circle-sine-001:node:unit-circle",
+                "lesson-unit-circle-sine-001:node:sine-plot",
+              ],
+              width: 360,
+            }),
+          ]),
+        }),
+      }));
+    });
+  });
+
+  it("halts playback at the topic boundary when replaying a multi-topic lesson", () => {
+    vi.useFakeTimers();
+    try {
+      render(<MultiTopicReplayProbe />);
+      fireEvent.click(screen.getByRole("button", { name: "播放主题一" }));
+      expect(screen.getByTestId("current-step").textContent).toBe(
+        "lesson-geometry-v2-001:step:establish-task",
+      );
+      expect(screen.getByTestId("is-playing").textContent).toBe("true");
+
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+      });
+
+      expect(screen.getByTestId("is-playing").textContent).toBe("false");
+      expect(screen.getByTestId("current-step").textContent).toBe(
+        "lesson-geometry-v2-001:step:establish-task",
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("pins a lesson region to the existing composer question origin", async () => {

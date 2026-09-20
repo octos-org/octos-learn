@@ -253,32 +253,126 @@ export function useOllLessonRuntime({
     session.setSpeed(1);
   }, [activeNarrationBeatId, session]);
 
-  const play = useCallback(() => session?.play(), [session]);
+  const stopCursorRef = useRef<number | null>(null);
+  const outlineRef = useRef<OllLessonOutlineTopic[]>([]);
+  const [deliverySettledOverride, setDeliverySettledOverride] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!session) return;
+    const originalAdvance = session.advance.bind(session);
+    session.advance = () => {
+      if (
+        stopCursorRef.current !== null
+        && session.projection.cursor >= stopCursorRef.current
+      ) {
+        stopCursorRef.current = null;
+        session.pause();
+        session.setDeliverySettled(true);
+        setDeliverySettledOverride(true);
+        return undefined;
+      }
+      const frame = originalAdvance();
+      if (
+        stopCursorRef.current !== null
+        && session.projection.cursor >= stopCursorRef.current
+      ) {
+        stopCursorRef.current = null;
+        session.pause();
+        session.setDeliverySettled(true);
+        setDeliverySettledOverride(true);
+      }
+      return frame;
+    };
+  }, [session]);
+
+  const setStopCursorForStep = useCallback((stepId: string | undefined) => {
+    if (!stepId) {
+      stopCursorRef.current = null;
+      return;
+    }
+    const topic = outlineRef.current.find((candidate) =>
+      candidate.steps.some((step) => step.id === stepId)
+    );
+    const endCursor = topic?.steps.at(-1)?.end_cursor;
+    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+  }, []);
+
+  const setStopCursorForBeat = useCallback((beatId: string | undefined) => {
+    if (!beatId) {
+      stopCursorRef.current = null;
+      return;
+    }
+    const topic = outlineRef.current.find((candidate) =>
+      candidate.steps.some((step) =>
+        step.beats.some((beat) => beat.id === beatId)
+      )
+    );
+    const endCursor = topic?.steps.at(-1)?.end_cursor;
+    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+  }, []);
+
+  const play = useCallback(() => {
+    if (!session) return;
+    if (
+      stopCursorRef.current === null
+      || session.projection.cursor >= stopCursorRef.current
+    ) {
+      const topic = outlineRef.current.find((candidate) =>
+        candidate.steps.some((step) => step.id === session.projection.current_step_id)
+      ) ?? outlineRef.current.at(-1);
+      const endCursor = topic?.steps.at(-1)?.end_cursor;
+      stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+    }
+    setDeliverySettledOverride(false);
+    session.setDeliverySettled(false);
+    session.play();
+  }, [session]);
   const pause = useCallback(() => session?.pause(), [session]);
   const restart = useCallback(() => {
     if (!session) return;
+    const currentStepId = session.projection.current_step_id;
+    const topic = (currentStepId
+      ? outlineRef.current.find((cand) =>
+          cand.steps.some((step) => step.id === currentStepId))
+      : undefined) ?? outlineRef.current[0];
+    const endCursor = topic?.steps.at(-1)?.end_cursor;
+    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+    setDeliverySettledOverride(false);
+    session.setDeliverySettled(false);
     session.reset();
     session.play();
   }, [session]);
   const nextBeat = useCallback(() => session?.advanceBeat(), [session]);
   const viewStep = useCallback(
-    (stepId: string) => session?.seekToStep(stepId, "end"),
+    (stepId: string) => {
+      stopCursorRef.current = null;
+      session?.seekToStep(stepId, "end");
+    },
     [session],
   );
   const playStep = useCallback((stepId: string) => {
     if (!session) return;
+    setStopCursorForStep(stepId);
+    setDeliverySettledOverride(false);
+    session.setDeliverySettled(false);
     session.seekToStep(stepId, "start");
     session.play();
-  }, [session]);
+  }, [session, setStopCursorForStep]);
   const viewBeat = useCallback(
-    (beatId: string) => session?.seekToBeat(beatId, "end"),
+    (beatId: string) => {
+      stopCursorRef.current = null;
+      session?.seekToBeat(beatId, "end");
+    },
     [session],
   );
   const playBeat = useCallback((beatId: string) => {
     if (!session) return;
+    setStopCursorForBeat(beatId);
+    setDeliverySettledOverride(false);
+    session.setDeliverySettled(false);
     session.seekToBeat(beatId, "start");
     session.play();
-  }, [session]);
+  }, [session, setStopCursorForBeat]);
   const startNarration = useCallback(
     (beatId: string) => session?.startNarration(beatId),
     [session],
@@ -337,7 +431,10 @@ export function useOllLessonRuntime({
     return session?.handleStudentScene3dInput(nodeId, view, event);
   }, [session]);
   const setDeliverySettled = useCallback(
-    (settled: boolean) => session?.setDeliverySettled(settled),
+    (settled: boolean) => {
+      setDeliverySettledOverride(settled);
+      session?.setDeliverySettled(settled);
+    },
     [session],
   );
   const appendEvents = useCallback(
@@ -406,8 +503,11 @@ export function useOllLessonRuntime({
       id: events[0]?.lesson_id ?? "lesson",
       title: events[0]?.lesson?.title ?? "本节课程",
       steps: remainingSteps,
+      variableAliases: (events[0]?.lesson?.variables ?? []).map((variable) => variable.as),
+      taskAliases: (events[0]?.lesson?.tasks ?? []).map((task) => task.as),
     });
   }
+  outlineRef.current = outline;
 
   return {
     title: events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL 课程",
@@ -427,7 +527,7 @@ export function useOllLessonRuntime({
     playing: session.isPlaying,
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
-    deliverySettled: session.isDeliverySettled,
+    deliverySettled: deliverySettledOverride !== null ? deliverySettledOverride : session.isDeliverySettled,
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,

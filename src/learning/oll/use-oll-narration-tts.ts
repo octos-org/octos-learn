@@ -147,20 +147,37 @@ export function useOllNarrationTts({
           narrationId,
           normalizedText,
           audioRequest.signal,
-        ) ?? null).then((audio) => {
-          if (!audio) throw new Error(`Packaged narration is missing for ${narrationId}`);
-          return audio;
-        })
+        ) ?? null).then((audio) => audio ?? null)
       : null;
     const finishAudio = () => {
       if (!current) return;
       callbacksRef.current.onSpeakingChange?.(false);
       completePlayback();
     };
+    const playFallbackTts = () =>
+      nativeTtsAvailable()
+        ? playNativeTts(normalizedText, finishAudio, audioRequest.signal)
+        : (cached?.promise ?? synthesizeSpeech(
+            normalizedText,
+            audioRequest.signal,
+          ).then((audio) => audio as Blob | null))
+          .then((audio) =>
+            audio ?? synthesizeSpeech(normalizedText, audioRequest.signal)
+          )
+          .then((audio) => playAudioBlob(
+            audio,
+            finishAudio,
+            audioRequest.signal,
+          ));
     const playback = packagedAudio
-      ? packagedAudio.then((audio) => nativePackagedAudioAvailable()
-        ? playNativeAudioBlob(audio, finishAudio, audioRequest.signal)
-        : playAudioBlob(audio, finishAudio, audioRequest.signal))
+      ? packagedAudio.then((audio) => {
+          if (!audio) {
+            return playFallbackTts();
+          }
+          return nativePackagedAudioAvailable()
+            ? playNativeAudioBlob(audio, finishAudio, audioRequest.signal)
+            : playAudioBlob(audio, finishAudio, audioRequest.signal);
+        })
       : useNativeTts
       ? playNativeTts(normalizedText, () => {
           if (!current) return;

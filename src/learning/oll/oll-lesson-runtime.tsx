@@ -255,6 +255,40 @@ function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
   return { x, y, width: right - x, height: bottom - y };
 }
 
+interface InternalInfiniteBoardView {
+  scale?: number;
+  panX?: number;
+  panY?: number;
+  viewport?: HTMLElement;
+  viewportInsets?: { left?: number; top?: number; right?: number; bottom?: number };
+  focusRects?: (targetIds: string[], rects: WhiteboardRect[], board: unknown) => void;
+  transform?: () => void;
+}
+
+function centerCameraOnScene(
+  view: MountedInfiniteBoard["view"],
+  scene: WhiteboardRect,
+  scale: number,
+) {
+  const internalView = view as unknown as InternalInfiniteBoardView;
+  const sceneCenterX = scene.x + scene.width / 2;
+  const sceneCenterY = scene.y + scene.height / 2;
+  const viewportRect = internalView.viewport?.getBoundingClientRect() ?? { width: 0, height: 0 };
+  const insets = internalView.viewportInsets ?? {};
+  const margin = 70;
+  const safeLeft = (insets.left ?? 0) + margin;
+  const safeTop = (insets.top ?? 0) + margin;
+  const safeRight = Math.max(safeLeft + 1, viewportRect.width - (insets.right ?? 0) - margin);
+  const safeBottom = Math.max(safeTop + 1, viewportRect.height - (insets.bottom ?? 0) - margin);
+  const safeCenterX = (safeLeft + safeRight) / 2;
+  const safeCenterY = (safeTop + safeBottom) / 2;
+
+  internalView.scale = scale;
+  internalView.panX = safeCenterX - sceneCenterX * scale;
+  internalView.panY = safeCenterY - sceneCenterY * scale;
+  internalView.transform?.();
+}
+
 function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
   const x = Number.parseFloat(element.style.left);
   const y = Number.parseFloat(element.style.top);
@@ -735,6 +769,8 @@ export function LearningWhiteboard({
 }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const runtimeRef = useRef<OllLessonRuntimeController | null>(runtime ?? null);
+  const questionsRef = useRef(questions);
+  questionsRef.current = questions;
   const mountedRef = useRef<MountedInfiniteBoard | null>(null);
   const cameraControllerRef = useRef<WhiteboardCameraController | null>(null);
   const focusedLoadingTurnRef = useRef<string | null>(null);
@@ -1027,11 +1063,8 @@ export function LearningWhiteboard({
     const nodeRegionIds = new Set(Object.values(runtime?.board?.nodes ?? {})
       .flatMap((node) => node.region_id ? [node.region_id] : []));
     if (nodeRegionIds.has(topicId)) return topicId;
-    if (
-      (runtime?.outline.length ?? 0) === 1
-      && Object.keys(runtime?.board?.nodes ?? {}).length > 0
-      && nodeRegionIds.size === 0
-    ) return "__legacy__";
+    const topic = runtime?.outline.find((cand) => cand.id === topicId);
+    if (!topic?.questionId || nodeRegionIds.size === 0) return "__legacy__";
     return topicId;
   }, [runtime?.board?.nodes, runtime?.outline]);
   const presentationTopics = (() => {
@@ -1065,6 +1098,8 @@ export function LearningWhiteboard({
           : []),
     }));
   })();
+  const presentationTopicsRef = useRef(presentationTopics);
+  presentationTopicsRef.current = presentationTopics;
 
   const interactionPlans = presentationTopics.flatMap((topic) => {
     const topicControls = variableControls.filter((control) =>
@@ -1143,7 +1178,6 @@ export function LearningWhiteboard({
         // A live topic can render before its question region arrives. Do not
         // temporarily relocate it to the imported-course origin.
         if (topic.questionId) return [];
-        if ((runtime?.outline.length ?? 0) !== 1) return [];
         return [[runtimeRegionIdForTopic(topic.id), {
           x: portableCourseRegion?.x ?? 20,
           y: portableCourseRegion?.y ?? 20,
@@ -2112,12 +2146,48 @@ export function LearningWhiteboard({
     const viewport = viewportRef.current;
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
-    if (document.documentElement.dataset.runtimePlatform === "android") {
+    const internalView = mounted.view as unknown as InternalInfiniteBoardView;
+    const isAndroid = document.documentElement.dataset.runtimePlatform === "android";
+    if (isAndroid) {
       // Meeting displays are viewed from much farther away than laptops.
       // Large compositions may be cropped, but automatic framing must not
       // reduce teaching cards to an unreadable whole-course thumbnail.
       mounted.view.setAutomaticCameraMinimumScale(.55);
     }
+    const originalFocusRects = internalView.focusRects?.bind(mounted.view);
+    internalView.focusRects = (targetIds: string[], rects: WhiteboardRect[], board: unknown) => {
+      let resolvedRects = rects;
+      const currentStepId = runtimeRef.current?.currentStepId;
+      const currentTopic = currentStepId
+        ? presentationTopicsRef.current.find((topic) =>
+            topic.steps.some((step) => step.id === currentStepId))
+        : presentationTopicsRef.current.find((topic) =>
+            topic.steps.some(() =>
+              targetIds.some((targetId) => topic.nodeIds?.includes(targetId))));
+      if (currentTopic?.questionId) {
+        const q = questionsRef.current.find((cand) => cand.id === currentTopic.questionId);
+        if (q) {
+          const qRect: WhiteboardRect | undefined = q.position
+            ? {
+                x: q.position.x,
+                y: q.position.y,
+                width: WHITEBOARD_QUESTION_CARD_WIDTH,
+                height: QUESTION_CARD_COLLISION_HEIGHT,
+              }
+            : q.source?.bounds;
+          if (qRect) {
+            resolvedRects = [...rects, qRect];
+          }
+        }
+      }
+      originalFocusRects?.(targetIds, resolvedRects, board);
+      if (isAndroid && (internalView.scale ?? 1) > 0.55) {
+        const scene = unionWhiteboardRects(resolvedRects);
+        if (scene) {
+          centerCameraOnScene(mounted.view, scene, 0.55);
+        }
+      }
+    };
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
       if (!import.meta.env.DEV || import.meta.env.MODE === "test") return;
@@ -2138,6 +2208,9 @@ export function LearningWhiteboard({
           exclusive: true,
           framing: courseFrame ? "course" : "content",
         });
+        if (isAndroid && !courseFrame && (internalView.scale ?? 1) > 0.55) {
+          centerCameraOnScene(mounted.view, request.rect, 0.55);
+        }
         // A course region's persisted bounds are a placement footprint, not a
         // camera target. Remember the complete world area exposed by the final
         // course frame so the next course starts beyond that view instead of
@@ -2431,6 +2504,7 @@ export function LearningWhiteboard({
         setInkError(cause instanceof Error
           ? cause.message
           : "上一遍笔迹暂时无法恢复");
+        onInkMergeComplete?.(inkMergeSourceSessionId, inkSessionId);
       },
     );
   }, [
@@ -2667,8 +2741,12 @@ export function LearningWhiteboard({
     // the previous topic. Do not mistake that restored predecessor for the
     // course that is currently in progress.
     if (pendingCourseId && pendingCourseId !== courseId) return;
+    const targetTopicEndCursor = topic.steps.at(-1)?.end_cursor;
+    const reachedTargetTopicEnd = typeof targetTopicEndCursor === "number"
+      && runtime.cursor >= targetTopicEndCursor
+      && !runtime.playing;
     const reachedCourseEnd = runtime.deliverySettled
-      && (runtime.waiting || runtime.completed);
+      && (runtime.waiting || runtime.completed || reachedTargetTopicEnd);
     if (!reachedCourseEnd) {
       const currentStepBelongsToCourse = Boolean(
         runtime.currentStepId

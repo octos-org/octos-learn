@@ -399,16 +399,41 @@ export function createHandler({
 
       if (request.method === "GET" && url.pathname === "/api/learn/tts/native-config") {
         const limits = ledger.limits();
-        const enabled = usesPlatform
-          && Boolean(config.appid && config.token)
-          && limits.enabled;
+        const userCfg = me.profile?.profile?.config || me.profile?.config || {};
+        const cloud = userCfg.tts_cloud || {};
+        const personalAppId = cloud.appid || cloud.app_id;
+        const personalToken = userCfg.env_vars?.VOLC_TTS_TOKEN || cloud.access_token || cloud.token;
+        const isMasked = (val) => typeof val !== "string" || !val.trim() || val.includes("***") || val === "masked";
+        const hasUnmaskedPersonal = Boolean(
+          personalAppId && !isMasked(personalAppId)
+          && personalToken && !isMasked(personalToken)
+        );
+
+        let enabled = false;
+        let appId = "";
+        let token = "";
+        let cluster = config.cluster;
+        let voice = cloud.voice || cloud.voice_type || config.voice;
+
+        if (hasUnmaskedPersonal) {
+          enabled = true;
+          appId = personalAppId;
+          token = personalToken;
+          cluster = cloud.cluster || config.cluster;
+        } else if (Boolean(config.appid && config.token) && limits.enabled) {
+          enabled = true;
+          appId = config.appid;
+          token = config.token;
+          cluster = cloud.cluster || config.cluster;
+        }
+
         return sendJson(response, 200, enabled ? {
           version: 1,
           enabled: true,
-          app_id: config.appid,
-          access_token: config.token,
-          cluster: config.cluster,
-          voice_type: config.voice,
+          app_id: appId,
+          access_token: token,
+          cluster,
+          voice_type: voice,
         } : {
           version: 1,
           enabled: false,
