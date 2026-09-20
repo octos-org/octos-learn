@@ -137,6 +137,7 @@ describe("LearningPage", () => {
     learningWorkspaceMock.props = null;
     nativeTtsConfigMock.available = false;
     nativeTtsConfigMock.fetch.mockReset();
+    nativeTtsConfigMock.fetch.mockResolvedValue({ version: 1, enabled: false });
     nativeTtsConfigMock.configure.mockReset();
     coursePackLibraryMock.load.mockReset();
   });
@@ -199,7 +200,7 @@ describe("LearningPage", () => {
       expect.objectContaining({ cache: "no-store" }),
     );
     expect(sessionApiMock.listSessions).not.toHaveBeenCalled();
-    expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
+    expect(nativeTtsConfigMock.fetch).toHaveBeenCalled();
     expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview");
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
     expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeTypeOf("function");

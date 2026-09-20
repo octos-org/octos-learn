@@ -1,7 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { LearningModelContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
-import { compilePlaybackOperations } from "octos-lesson-language/player";
+import { compilePlaybackOperations, HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import {
   Camera,
@@ -90,6 +90,7 @@ import {
   buildSelectionEnhancementTurnContext,
   collectPersistedSelectionEnhancementArtifacts,
   collectSelectionEnhancementArtifacts,
+  formatSelectionLessonRequest,
   hideSelectionEnhancement,
   removeSelectionSources,
   loadSelectionEnhancementArtifact,
@@ -159,6 +160,10 @@ const DELIVERABLE_ARTIFACT_SUFFIXES = [
   ".octos-lesson.json",
   ".octos-selection-enhancement.json",
 ] as const;
+
+export const LESSON_COMPLETION_SPEECH =
+  "这节课讲完了，你可以缩放白板回顾刚才的内容。";
+export const LESSON_COMPLETION_BUBBLE_DURATION_MS = 6_000;
 
 interface PendingLessonJobRecord {
   jobId: string;
@@ -366,29 +371,58 @@ function readInkPlaybackRun(sessionId: string): number {
   }
 }
 
+function findLatestSavedInkSessionId(
+  sessionId: string,
+  fromRun: number,
+): string {
+  if (typeof window === "undefined") {
+    return fromRun > 0 ? `${sessionId}:replay:${fromRun}` : sessionId;
+  }
+  for (let r = fromRun; r >= 1; r--) {
+    const key = `octos-learning-ink:v1:${sessionId}:replay:${r}`;
+    if (window.localStorage.getItem(key)) {
+      return `${sessionId}:replay:${r}`;
+    }
+  }
+  return sessionId;
+}
+
 function readInkMergeSourceSessionId(
   sessionId: string,
   currentRun: number,
 ): string | null {
   try {
     if (typeof window === "undefined") return null;
+    const currentDoc = inkDocumentSessionId(sessionId, currentRun);
     const source = window.localStorage.getItem(
       inkMergeSourceStorageKey(sessionId),
     );
-    if (source === sessionId || source?.startsWith(`${sessionId}:replay:`)) {
-      return source;
+    if (source && (source === sessionId || source.startsWith(`${sessionId}:replay:`))) {
+      if (source !== currentDoc) {
+        if (source === sessionId || window.localStorage.getItem(`octos-learning-ink:v1:${source}`)) {
+          return source;
+        }
+      }
     }
     const cumulativeRun = Number(
       window.localStorage.getItem(cumulativeInkRunStorageKey(sessionId)),
     );
-    // Versions before cumulative replay restoration created a new document
-    // but never recorded its parent. Recover the original session document
-    // once, then mark this run cumulative after the merge succeeds.
     if (
       currentRun > 0 &&
       (!Number.isSafeInteger(cumulativeRun) || cumulativeRun !== currentRun)
     ) {
-      return sessionId;
+      return findLatestSavedInkSessionId(sessionId, currentRun - 1);
+    }
+    const latest = findLatestSavedInkSessionId(
+      sessionId,
+      currentRun > 0 ? currentRun - 1 : 100,
+    );
+    if (
+      latest &&
+      latest !== currentDoc &&
+      (latest === sessionId || window.localStorage.getItem(`octos-learning-ink:v1:${latest}`))
+    ) {
+      return latest;
     }
     return null;
   } catch {
@@ -456,7 +490,6 @@ export function LearningWorkspace({
     sequence: number;
   } | null>(null);
   const inkSessionId = inkDocumentSessionId(sessionId, inkPlaybackRun);
-  const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const [loadedOllArtifacts, setLoadedOllArtifacts] = useState<
     Record<string, CanonicalEvent[]>
   >({});
@@ -831,7 +864,14 @@ export function LearningWorkspace({
   const packagedOllEvents = coursePack?.playbackEvents
     ?? coursePack?.pack.events
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
-  const activeOllEvents = packagedOllEvents ?? deliveredOllEvents;
+  const activeOllEvents = useMemo(() => {
+    if (!packagedOllEvents) return deliveredOllEvents;
+    if (deliveredOllLessons.length === 0) return packagedOllEvents;
+    return composeOllClassroomEvents(
+      [packagedOllEvents, ...deliveredOllLessons],
+      sessionId,
+    );
+  }, [deliveredOllEvents, deliveredOllLessons, packagedOllEvents, sessionId]);
   const appendedOllEventCountRef = useRef(1);
   const activeOllOperations = useMemo(
     () => activeOllEvents
@@ -843,11 +883,15 @@ export function LearningWorkspace({
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
       packagedOllEvents
-        ? [packagedOllEvents]
+        ? (deliveredOllLessons.length > 0
+          ? [packagedOllEvents, ...deliveredOllLessons]
+          : [packagedOllEvents])
         : deliveredOllLessons,
-      packagedPlayback ? [] : deliveredOllQuestionIds,
+      packagedOllEvents
+        ? [undefined, ...deliveredOllQuestionIds]
+        : deliveredOllQuestionIds,
     ),
-    [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents, packagedPlayback],
+    [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents],
   );
   const startupNarration = useMemo(() => {
     if (playbackMode !== "live") return null;
@@ -911,17 +955,38 @@ export function LearningWorkspace({
       })
     ),
   );
+  const activeStepId = ollLesson?.currentStepId;
+  const currentActiveTopic = (activeStepId
+    ? activeOllTopics.find((t) => t.stepIds.includes(activeStepId))
+    : undefined) ?? activeOllTopics.find((t) =>
+        ollLesson?.outline.find((o) => o.id === t.id)?.steps.at(-1)?.end_cursor === ollLesson?.cursor
+      ) ?? activeOllTopics.at(-1);
+  const targetTopicEndCursor = currentActiveTopic
+    ? ollLesson?.outline.find((cand) => cand.id === currentActiveTopic.id)?.steps.at(-1)?.end_cursor
+    : undefined;
+  const reachedCurrentTopicEnd = typeof targetTopicEndCursor === "number"
+    && (ollLesson?.cursor ?? 0) >= targetTopicEndCursor;
+  const reachedAllOperations = Boolean(
+    ollLesson && ollLesson.cursor >= ollLesson.totalOperations
+  );
+  const topicPlaybackFinished = Boolean(
+    ollLesson
+    && !ollLesson.playing
+    && (reachedCurrentTopicEnd || reachedAllOperations)
+  );
   const deliveryReachedCurrentEnd = Boolean(
     ollLesson &&
-    isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents),
+    (isLessonDeliverySettled(ollLesson, hasUndeliveredOllEvents)
+      || (!hasUndeliveredOllEvents && (topicPlaybackFinished || ollLesson.deliverySettled))),
   );
   // Job completion precedes artifact loading and incremental append. A
   // Runtime still at the previous lesson's end must not announce completion
   // (or release narration ownership) during that handoff. Derive this in the
   // same render; waiting for setDeliverySettled(false) leaves a stale frame.
   const lessonDeliverySettled = Boolean(
-    ollLesson?.deliverySettled && !hasUndeliveredOllEvents && deliveryReachedCurrentEnd,
+    (ollLesson?.deliverySettled || topicPlaybackFinished) && !hasUndeliveredOllEvents && deliveryReachedCurrentEnd,
   );
+  const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const setOllDeliverySettled = ollLesson?.setDeliverySettled;
   useEffect(() => {
     if (hasUndeliveredOllEvents) setOllDeliverySettled?.(false);
@@ -938,6 +1003,7 @@ export function LearningWorkspace({
     pausedLessonSource !== ollOpenSource;
   const [textTurnPending, setTextTurnPending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1202,10 +1268,14 @@ export function LearningWorkspace({
                   },
                   "lesson",
                 );
-                onLearnerInput?.(context.transcript);
+                const effectiveTranscript = formatSelectionLessonRequest(
+                  context.transcript,
+                  pendingSelection.boardContext.targets,
+                );
+                onLearnerInput?.(effectiveTranscript);
                 await startDirectLessonGeneration(
                   context.turnId,
-                  context.transcript,
+                  effectiveTranscript,
                   "voice",
                   { kind: "ink_selection", mediaPath: selectionPath },
                   clientTiming,
@@ -1305,8 +1375,9 @@ export function LearningWorkspace({
     const next = Number.isSafeInteger(inkPlaybackRun + 1)
       ? inkPlaybackRun + 1
       : 1;
+    const sourceSessionId = findLatestSavedInkSessionId(sessionId, inkPlaybackRun);
     setInkPlaybackRun(next);
-    setInkMergeSourceSessionId(inkSessionId);
+    setInkMergeSourceSessionId(sourceSessionId);
     try {
       window.localStorage.setItem(
         inkPlaybackRunStorageKey(sessionId),
@@ -1314,12 +1385,12 @@ export function LearningWorkspace({
       );
       window.localStorage.setItem(
         inkMergeSourceStorageKey(sessionId),
-        inkSessionId,
+        sourceSessionId,
       );
     } catch {
       // The new in-memory run still keeps replay clean when storage is unavailable.
     }
-  }, [inkPlaybackRun, inkSessionId, sessionId]);
+  }, [inkPlaybackRun, sessionId]);
   const markPlaybackCourse = useCallback((stepId?: string) => {
     const topic = (stepId
       ? activeOllTopics.find((candidate) => candidate.stepIds.includes(stepId))
@@ -1348,14 +1419,64 @@ export function LearningWorkspace({
       .find((candidate) => candidate.beats.some((beat) => beat.id === beatId));
     markPlaybackCourse(step?.id);
   }, [markPlaybackCourse, ollLesson?.outline]);
+  const fullBoard = useMemo(() => {
+    if (!activeOllEvents || activeOllEvents.length === 0) return null;
+    try {
+      const player = new HeadlessLessonPlayer(activeOllEvents, { allowIncomplete: true });
+      player.playAll();
+      return player.snapshot.board ?? null;
+    } catch {
+      return null;
+    }
+  }, [activeOllEvents]);
+
+  const compositeBoard = useMemo(() => {
+    if (!ollLesson?.board) return null;
+    if (!fullBoard) return ollLesson.board;
+
+    if (ollLesson.playing || !lessonDeliverySettled) {
+      return ollLesson.board;
+    }
+
+    return {
+      ...fullBoard,
+      nodes: {
+        ...fullBoard.nodes,
+        ...ollLesson.board.nodes,
+      },
+      groups: {
+        ...(fullBoard.groups ?? {}),
+        ...(ollLesson.board.groups ?? {}),
+      },
+      connections: {
+        ...(fullBoard.connections ?? {}),
+        ...(ollLesson.board.connections ?? {}),
+      },
+      variables: {
+        ...(fullBoard.variables ?? {}),
+        ...(ollLesson.board.variables ?? {}),
+      },
+    };
+  }, [
+    fullBoard,
+    lessonDeliverySettled,
+    ollLesson,
+  ]);
+
   const controlledOllLesson = useMemo(() => {
     if (!ollLesson) return null;
     const claim = () => setPausedLessonSource(null);
     const release = () => setPausedLessonSource(ollOpenSource);
     return {
       ...ollLesson,
+      deliverySettled: lessonDeliverySettled,
+      board: compositeBoard ?? ollLesson.board,
+      completed: lessonDeliverySettled && Boolean(topicPlaybackFinished || ollLesson.completed),
       play: () => {
         claim();
+        if (lessonDeliverySettled || ollLesson.deliverySettled || ollLesson.completed) {
+          beginFreshInkPlayback();
+        }
         ollLesson.play();
       },
       pause: () => {
@@ -1384,7 +1505,7 @@ export function LearningWorkspace({
       playStep: (stepId: string) => {
         claim();
         markPlaybackCourse(stepId);
-        if (ollLesson.deliverySettled || ollLesson.completed) {
+        if (lessonDeliverySettled || ollLesson.deliverySettled || ollLesson.completed) {
           beginFreshInkPlayback();
         }
         ollLesson.playStep(stepId);
@@ -1392,7 +1513,7 @@ export function LearningWorkspace({
       playBeat: (beatId: string) => {
         claim();
         markPlaybackBeatCourse(beatId);
-        if (ollLesson.deliverySettled || ollLesson.completed) {
+        if (lessonDeliverySettled || ollLesson.deliverySettled || ollLesson.completed) {
           beginFreshInkPlayback();
         }
         ollLesson.playBeat(beatId);
@@ -1416,12 +1537,15 @@ export function LearningWorkspace({
       },
     };
   }, [
-    beginFreshInkPlayback,
     activeOllTopics,
+    beginFreshInkPlayback,
+    compositeBoard,
+    lessonDeliverySettled,
     markPlaybackBeatCourse,
     markPlaybackCourse,
     ollLesson,
     ollOpenSource,
+    topicPlaybackFinished,
   ]);
   const handleInkMergeComplete = useCallback((
     sourceSessionId: string,
@@ -1451,6 +1575,25 @@ export function LearningWorkspace({
       // The in-memory state is sufficient for this page load.
     }
   }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
+  useEffect(() => {
+    if (!replayingWithoutStudentAdditions) return;
+    if (lessonDeliverySettled && !ollLesson?.playing) {
+      const timer = setTimeout(() => {
+        setInkMergeSourceSessionId(null);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [lessonDeliverySettled, ollLesson?.playing, replayingWithoutStudentAdditions]);
+  useEffect(() => {
+    if (!lessonDeliverySettled || ollLesson?.playing) {
+      setCompletionPromptDismissed(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setCompletionPromptDismissed(true);
+    }, LESSON_COMPLETION_BUBBLE_DURATION_MS);
+    return () => window.clearTimeout(timer);
+  }, [lessonDeliverySettled, ollLesson?.playing]);
   const [fileListError, setFileListError] = useState<string | null>(null);
   const [artifactError, setArtifactError] = useState<string | null>(null);
   const [cameraSettingsOpen, setCameraSettingsOpen] = useState(false);
@@ -1531,7 +1674,6 @@ export function LearningWorkspace({
   }, [ollArtifacts, plainReply, selectionArtifacts, threads]);
 
   useEffect(() => {
-    if (packagedPlayback) return;
     let cancelled = false;
     let requestVersion = 0;
     const loadPersistedArtifacts = async () => {
@@ -1546,11 +1688,13 @@ export function LearningWorkspace({
         setFileListError(null);
       } catch (cause) {
         if (cancelled || version !== requestVersion) return;
-        setFileListError(
-          cause instanceof Error
-            ? cause.message
-            : "无法读取已保存的白板课程",
-        );
+        if (!packagedPlayback) {
+          setFileListError(
+            cause instanceof Error
+              ? cause.message
+              : "无法读取已保存的白板课程",
+          );
+        }
       }
     };
     const handleToolProgress = (event: Event) => {
@@ -1714,8 +1858,14 @@ export function LearningWorkspace({
     );
     void loadPersistedArtifacts();
     restorePendingLessonJobs();
+    const pollInterval = window.setInterval(() => {
+      if (pendingLessonJobsRef.current.size > 0) {
+        restorePendingLessonJobs();
+      }
+    }, 2500);
     return () => {
       cancelled = true;
+      window.clearInterval(pollInterval);
       window.removeEventListener(
         "crew:bridge_connected",
         handleBridgeConnected,
@@ -2145,7 +2295,13 @@ export function LearningWorkspace({
           // request into the bottom composer while the selection is active.
           // It therefore uses the same selection-to-lesson action and keeps
           // the selected pixels visible in “我的问题”.
+          const effectiveQuestion = formatSelectionLessonRequest(
+            question,
+            boardContext.targets,
+            recognizedContent,
+          );
           updateWhiteboardQuestion(turnId, {
+            text: effectiveQuestion,
             imagePath: mediaPath,
             imageProfileId: selectionProfileId ?? undefined,
             source: {
@@ -2155,7 +2311,7 @@ export function LearningWorkspace({
           });
           await startDirectLessonGeneration(
             turnId,
-            question,
+            effectiveQuestion,
             "text",
             { kind: "ink_selection", mediaPath },
           );
@@ -2488,7 +2644,12 @@ export function LearningWorkspace({
           if (!selectionMediaPath) {
             throw new Error("选区图片上传失败，请重新框选后再试");
           }
+          const effectiveText = formatSelectionLessonRequest(
+            text,
+            lessonSelection.boardContext.targets,
+          );
           updateWhiteboardQuestion(turnId, {
+            text: effectiveText,
             imagePath: selectionMediaPath,
             imageProfileId: selectionProfileId ?? undefined,
             source: {
@@ -2498,7 +2659,7 @@ export function LearningWorkspace({
           });
           await startDirectLessonGeneration(
             turnId,
-            text,
+            effectiveText,
             "text",
             { kind: "ink_selection", mediaPath: selectionMediaPath },
             clientTiming,
@@ -2690,6 +2851,7 @@ export function LearningWorkspace({
 
   const handleTeacherClick = () => {
     unlockAudio();
+    setCompletionPromptDismissed(true);
     if (lessonOwnsNarration && controlledOllLesson) {
       if (controlledOllLesson.playing) controlledOllLesson.pause();
       else controlledOllLesson.play();
@@ -2778,8 +2940,8 @@ export function LearningWorkspace({
         ? "我正在整理这道题，马上写到白板上。"
         : ollLesson
           ? ollLesson.activeSpeech ||
-            (lessonDeliverySettled
-              ? "这节课讲完了，你可以缩放白板回顾刚才的内容。"
+            (lessonDeliverySettled && !completionPromptDismissed
+              ? LESSON_COMPLETION_SPEECH
               : "")
           : conv.state === "thinking"
             ? "我正在准备白板课程。"

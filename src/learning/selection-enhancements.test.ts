@@ -10,6 +10,8 @@ import {
   buildSelectionClassificationActionArguments,
   buildSelectionEnhancementActionArguments,
   buildSelectionEnhancementTurnContext,
+  formatSelectionLessonRequest,
+  inlineComputedStyles,
   loadSelectionEnhancementState,
   parseSelectionClassificationMetadata,
   removeSelectionSources,
@@ -590,3 +592,116 @@ describe("versioned board writing", () => {
     expect(() => validateSelectionEnhancementArtifact({ ...artifact, response: { kind: "explanation", title: "说明", text: "说明" } })).toThrow();
   });
 });
+
+describe("inlineComputedStyles", () => {
+  it("inlines styles on standard elements and safely ignores elements without a style property", () => {
+    const sourceParent = document.createElement("div");
+    sourceParent.style.color = "rgb(32, 43, 42)";
+    const sourceChildWithStyle = document.createElement("span");
+    sourceChildWithStyle.style.fontSize = "16px";
+    sourceParent.appendChild(sourceChildWithStyle);
+
+    // Create an XML/custom element that has no style property
+    const sourceChildWithoutStyle = document.createElementNS("http://www.w3.org/1998/Math/MathML", "annotation");
+    sourceParent.appendChild(sourceChildWithoutStyle);
+
+    const cloneParent = sourceParent.cloneNode(true) as HTMLElement;
+    expect(() => inlineComputedStyles(sourceParent, cloneParent)).not.toThrow();
+
+    // Verify styled elements received inline styles
+    expect(cloneParent.style.color).toBe("rgb(32, 43, 42)");
+    const clonedSpan = cloneParent.querySelector("span");
+    expect(clonedSpan?.style.fontSize).toBe("16px");
+  });
+});
+
+describe("formatSelectionLessonRequest", () => {
+  const baseExplainPrompt =
+    "请结合这部分内容给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。";
+
+  it("returns baseQuestion unmodified when targets are empty and recognizedContent is absent", () => {
+    expect(formatSelectionLessonRequest(baseExplainPrompt, [])).toBe(baseExplainPrompt);
+    expect(formatSelectionLessonRequest("我还是不太懂", undefined)).toBe("我还是不太懂");
+  });
+
+  it("replaces '这部分内容' with target card label and latex value when available", () => {
+    const targets = [
+      {
+        target_id: "node-1",
+        node_id: "node-1",
+        kind: "math" as const,
+        label: "长方形周长公式",
+        value: { latex: "C = 2(a + b)" },
+        world_bounds: { x: 100, y: 100, width: 200, height: 80 },
+        overlap: 1,
+        distance: 0,
+        z_index: 1,
+      },
+    ];
+    const result = formatSelectionLessonRequest(baseExplainPrompt, targets);
+    expect(result).toBe(
+      "请结合我选中的白板内容【长方形周长公式（C = 2(a + b)）】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。",
+    );
+  });
+
+  it("formats target card with label only if value is absent or identical", () => {
+    const targets = [
+      {
+        target_id: "node-2",
+        node_id: "node-2",
+        kind: "node" as const,
+        label: "长方形面积公式",
+        world_bounds: { x: 100, y: 100, width: 200, height: 80 },
+        overlap: 1,
+        distance: 0,
+        z_index: 1,
+      },
+    ];
+    const result = formatSelectionLessonRequest(baseExplainPrompt, targets);
+    expect(result).toBe(
+      "请结合我选中的白板内容【长方形面积公式】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。",
+    );
+  });
+
+  it("prefixes custom questions with selected board content context", () => {
+    const targets = [
+      {
+        target_id: "node-1",
+        node_id: "node-1",
+        kind: "math" as const,
+        label: "长方形周长公式",
+        value: { latex: "C = 2(a + b)" },
+        world_bounds: { x: 100, y: 100, width: 200, height: 80 },
+        overlap: 1,
+        distance: 0,
+        z_index: 1,
+      },
+    ];
+    const result = formatSelectionLessonRequest("我还是不太懂，再讲讲", targets);
+    expect(result).toBe(
+      "请结合我选中的白板内容【长方形周长公式（C = 2(a + b)）】：我还是不太懂，再讲讲",
+    );
+  });
+
+  it("combines both board targets and recognizedContent when both are present", () => {
+    const targets = [
+      {
+        target_id: "node-1",
+        node_id: "node-1",
+        kind: "math" as const,
+        label: "长方形周长公式",
+        value: { latex: "C = 2(a + b)" },
+        world_bounds: { x: 100, y: 100, width: 200, height: 80 },
+        overlap: 1,
+        distance: 0,
+        z_index: 1,
+      },
+    ];
+    const result = formatSelectionLessonRequest(baseExplainPrompt, targets, "手写推导步骤");
+    expect(result).toBe(
+      "请结合我选中的白板内容【长方形周长公式（C = 2(a + b)）】及识别出的内容【手写推导步骤】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。",
+    );
+  });
+});
+
+

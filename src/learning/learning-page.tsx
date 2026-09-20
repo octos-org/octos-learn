@@ -281,7 +281,7 @@ export function LearningPage() {
   );
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
-    if (coursePackId || !nativeTtsBridgeAvailable()) return;
+    if (!nativeTtsBridgeAvailable()) return;
     let cancelled = false;
     void fetchNativeTtsConfig()
       .then((config) => {
@@ -295,7 +295,7 @@ export function LearningPage() {
     return () => {
       cancelled = true;
     };
-  }, [coursePackId]);
+  }, []);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),
   );

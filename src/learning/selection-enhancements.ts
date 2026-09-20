@@ -282,6 +282,63 @@ export interface SelectionBoardContext {
   targets: BoardTargetCandidate[];
 }
 
+/**
+ * Enriches the lesson generation prompt with specific information about the
+ * board cards/fragments the learner circled or selected.
+ */
+export function formatSelectionLessonRequest(
+  baseQuestion: string,
+  targets?: readonly BoardTargetCandidate[],
+  recognizedContent?: string,
+): string {
+  const trimmed = baseQuestion.trim();
+  const validTargets = (targets ?? []).filter((target) => Boolean(target.label || target.value));
+  if (validTargets.length === 0 && !recognizedContent?.trim()) {
+    return trimmed;
+  }
+  const descriptions: string[] = [];
+  for (const target of validTargets) {
+    const label = target.label?.trim();
+    let detail = "";
+    if (target.value && typeof target.value === "object") {
+      const valObj = target.value as Record<string, unknown>;
+      const candidateVal = valObj.latex ?? valObj.text ?? valObj.expression ?? valObj.caption;
+      if (typeof candidateVal === "string" && candidateVal.trim() && candidateVal.trim() !== label) {
+        detail = candidateVal.trim();
+      }
+    } else if (typeof target.value === "string" && target.value.trim() && target.value.trim() !== label) {
+      detail = target.value.trim();
+    }
+    if (label && detail) {
+      descriptions.push(`${label}（${detail}）`);
+    } else if (label) {
+      descriptions.push(label);
+    } else if (detail) {
+      descriptions.push(detail);
+    }
+  }
+  const uniqueDescriptions = [...new Set(descriptions)];
+  const recognized = recognizedContent?.trim();
+
+  const details: string[] = [];
+  if (uniqueDescriptions.length > 0) {
+    details.push(`选中的白板内容【${uniqueDescriptions.join("，")}】`);
+  }
+  if (recognized) {
+    details.push(`识别出的内容【${recognized}】`);
+  }
+  if (details.length === 0) return trimmed;
+
+  if (/^请结合这部分内容/u.test(trimmed)) {
+    return trimmed.replace(
+      /^请结合这部分内容/u,
+      `请结合我${details.join("及")}`,
+    );
+  }
+  const contextPrefix = `请结合我${details.join("及")}：`;
+  return `${contextPrefix}${trimmed}`;
+}
+
 function contextLine(name: string, value: string | number): string {
   return `${name}: ${String(value).replace(/[\r\n]+/g, " ")}`;
 }
@@ -372,18 +429,13 @@ export async function selectionSnapshotToPngFile(
   context.fillStyle = "#fbfaf5";
   context.fillRect(0, 0, width, height);
   const image = new Image();
-  const blob = new Blob([source.svg], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
-  try {
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("选区图片解析失败"));
-      image.src = url;
-    });
-    context.drawImage(image, 0, 0, width, height);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(source.svg)}`;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = (e) => reject(new Error(`选区图片解析失败: ${e instanceof Error ? e.message : String(e)}`));
+    image.src = dataUri;
+  });
+  context.drawImage(image, 0, 0, width, height);
   const png = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (value) => value ? resolve(value) : reject(new Error("选区图片生成失败")),
@@ -401,15 +453,17 @@ const capturedStyleProperties = [
   "transform", "transform-origin", "white-space", "width",
 ] as const;
 
-function inlineComputedStyles(source: Element, clone: Element): void {
-  const style = getComputedStyle(source);
+export function inlineComputedStyles(source: Element, clone: Element): void {
   const targetStyle = (clone as HTMLElement | SVGElement).style;
-  for (const property of capturedStyleProperties) {
-    targetStyle.setProperty(property, style.getPropertyValue(property));
-  }
-  if (source instanceof SVGElement && clone instanceof SVGElement) {
-    for (const property of ["fill", "stroke", "stroke-width", "stroke-dasharray"]) {
-      clone.style.setProperty(property, style.getPropertyValue(property));
+  if (targetStyle && typeof targetStyle.setProperty === "function") {
+    const style = getComputedStyle(source);
+    for (const property of capturedStyleProperties) {
+      targetStyle.setProperty(property, style.getPropertyValue(property));
+    }
+    if (source instanceof SVGElement && clone instanceof SVGElement) {
+      for (const property of ["fill", "stroke", "stroke-width", "stroke-dasharray"]) {
+        targetStyle.setProperty(property, style.getPropertyValue(property));
+      }
     }
   }
   const sourceChildren = Array.from(source.children);
@@ -458,17 +512,15 @@ async function foreignObjectToPngFile(
   const context = canvas.getContext("2d");
   if (!context) throw new Error("当前浏览器无法生成选区图片");
   const image = new Image();
-  const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
-  try {
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("局部白板图片解析失败"));
-      image.src = url;
-    });
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  // Using a self-contained data URI rather than a blob URL prevents Chromium
+  // from tainting the canvas when rasterizing SVG with foreignObject.
+  const dataUri = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = (e) => reject(new Error(`局部白板图片解析失败: ${e instanceof Error ? e.message : String(e)}`));
+    image.src = dataUri;
+  });
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
   const png = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (value) => value ? resolve(value) : reject(new Error("局部白板图片生成失败")),
@@ -499,6 +551,7 @@ export async function selectionContextToPngFile(
   ]);
   const document = mounted.elements.viewport.ownerDocument;
   const content = document.createElement("div");
+  content.setAttribute("xmlns", "http://www.w3.org/1999/xhtml");
   Object.assign(content.style, {
     position: "relative",
     width: `${crop.width}px`,
@@ -552,7 +605,7 @@ export async function selectionContextToPngFile(
   content.append(inkHost);
 
   const serialized = new XMLSerializer().serializeToString(content);
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${crop.width}" height="${crop.height}" viewBox="0 0 ${crop.width} ${crop.height}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${serialized}</div></foreignObject></svg>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${crop.width}" height="${crop.height}" viewBox="0 0 ${crop.width} ${crop.height}"><foreignObject width="100%" height="100%">${serialized}</foreignObject></svg>`;
   try {
     return await foreignObjectToPngFile(
       svg,
@@ -560,7 +613,8 @@ export async function selectionContextToPngFile(
       crop.height,
       `${source.source_id}-context.png`,
     );
-  } catch {
+  } catch (cause) {
+    console.warn("[selectionContextToPngFile] foreignObjectToPngFile failed, falling back to pure ink snapshot:", cause);
     return selectionSnapshotToPngFile(source);
   }
 }

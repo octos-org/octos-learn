@@ -287,12 +287,55 @@ test("native config is authenticated, non-cacheable, and contains the active pla
   } finally { server.close(); cleanup(); }
 });
 
-test("native config disables direct TTS for a personal voice profile", async () => {
+test("native config falls back to platform credentials with personal voice when token is masked", async () => {
   const { ledger, cleanup } = fixture();
   const config = {
     octosBaseUrl: "http://octos.test",
     appid: "platform-app",
     token: "platform-token",
+    cluster: "volcano_tts",
+    voice: "platform-voice",
+    maxConcurrent: 2,
+    queueWaitMs: 10,
+    requestsPerMinute: 60,
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({
+    user: { id: "alice", role: "user" },
+    profile: {
+      profile: {
+        config: {
+          tts_provider: "cloud",
+          tts_cloud: { appid: "personal-app", voice: "personal-voice" },
+          env_vars: { VOLC_TTS_TOKEN: "masked***" },
+        },
+      },
+    },
+  }), { status: 200 });
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/learn/tts/native-config`,
+      { headers: { authorization: "Bearer session" } },
+    );
+    assert.deepEqual(await response.json(), {
+      version: 1,
+      enabled: true,
+      app_id: "platform-app",
+      access_token: "platform-token",
+      cluster: "volcano_tts",
+      voice_type: "personal-voice",
+    });
+  } finally { server.close(); cleanup(); }
+});
+
+test("native config disables direct TTS when platform is not configured and personal token is masked", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    appid: "",
+    token: "",
     cluster: "volcano_tts",
     voice: "platform-voice",
     maxConcurrent: 2,

@@ -437,4 +437,36 @@ describe("useOllNarrationTts", () => {
     expect(mocks.stopAudio).toHaveBeenCalled();
     expect(onPlaybackComplete).not.toHaveBeenCalled();
   });
+
+  it("falls back to live TTS when packaged audio is missing for dynamic follow-up beats", async () => {
+    const liveAudio = new Blob(["live-synthesized-audio"], { type: "audio/mpeg" });
+    mocks.synthesizeSpeech.mockResolvedValue(liveAudio);
+    const resolveAudio = vi.fn(() => null);
+
+    const { result } = renderHook(() =>
+      useOllNarrationTts({
+        enabled: true,
+        playing: true,
+        text: "这是小模型即时生成的追问课程讲解。",
+        narrationId: "dynamic-followup-beat-1",
+        resolveAudio,
+      }),
+    );
+
+    await waitFor(() => expect(resolveAudio).toHaveBeenCalledWith(
+      "dynamic-followup-beat-1",
+      "这是小模型即时生成的追问课程讲解。",
+      expect.any(AbortSignal),
+    ));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
+      "这是小模型即时生成的追问课程讲解。",
+      expect.any(AbortSignal),
+    ));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
+      liveAudio,
+      expect.any(Function),
+      expect.any(AbortSignal),
+    ));
+    expect(result.current.error).toBeNull();
+  });
 });
