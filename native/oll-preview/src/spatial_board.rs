@@ -1,6 +1,7 @@
 use crate::board_view;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
+use oll_runtime::ink::Ink;
 use oll_runtime::{
     preview::Preview,
     spatial::{self, BoardLayout, Camera, Rect as WorldRect},
@@ -34,6 +35,20 @@ pub struct SpatialBoard {
     #[rust]
     badges: Vec<(WorldRect, WidgetRef)>,
     #[rust]
+    ink: Ink,
+    #[rust]
+    drawing: bool,
+    #[rust]
+    stroke_id: u64,
+    #[rust]
+    ink_to_ack: Vec<u64>,
+    #[rust]
+    ink_drawn: Vec<u64>,
+    #[rust]
+    ink_ack_frame: NextFrame,
+    #[rust]
+    ink_ack_pass: u8,
+    #[rust]
     list: Option<DrawList2d>,
     #[rust]
     entries: Vec<(String, WorldRect, WidgetRef)>,
@@ -45,6 +60,8 @@ pub struct SpatialBoard {
     geometry: BoardLayout,
     #[rust]
     signature: String,
+    #[rust]
+    pointer_target: Option<Value>,
     #[rust]
     last_action: usize,
     #[rust]
@@ -94,7 +111,56 @@ fn resolve_geometry(
 }
 
 impl SpatialBoard {
+    pub fn ink_batch(&mut self, cx: &mut Cx, batch: &Value) -> Result<(), String> {
+        if let Some(id) = self.ink.batch(
+            batch,
+            self.camera,
+            (self.viewport.pos.x, self.viewport.pos.y),
+        )? {
+            self.ink_to_ack.push(id);
+        }
+        self.redraw(cx);
+        Ok(())
+    }
+    pub fn set_drawing(&mut self, cx: &mut Cx, enabled: bool) {
+        self.drawing = enabled;
+        self.ink.cancel();
+        self.manual = true;
+        self.drag = None;
+        self.configure_ink(cx);
+        self.redraw(cx);
+    }
+    fn configure_ink(&self, cx: &mut Cx) {
+        #[cfg(target_os = "android")]
+        {
+            let ratio = cx.get_dpi_factor_of(&self.draw_bg.area());
+            let v = self.viewport;
+            cx.android_integration("oll.ink",&json!({"op":"configure","enabled":self.drawing,"ratio":ratio,"left":v.pos.x,"top":v.pos.y,"right":v.pos.x+v.size.x,"bottom":v.pos.y+v.size.y}).to_string());
+        }
+        #[cfg(not(target_os = "android"))]
+        let _ = cx;
+    }
+    pub fn undo_ink(&mut self, cx: &mut Cx) {
+        self.ink.undo();
+        self.redraw(cx);
+    }
+    pub fn redo_ink(&mut self, cx: &mut Cx) {
+        self.ink.redo();
+        self.redraw(cx);
+    }
+    fn desktop_ink(&mut self, cx: &mut Cx, action: &str, position: Vec2d, time: f64) {
+        let batch = json!({"action":action,"pointerId":self.stroke_id,"points":[{"x":position.x,"y":position.y,"time":time*1000.,"pressure":0.5}]});
+        if let Err(e) = self.ink_batch(cx, &batch) {
+            eprintln!("Ink: {e}");
+            self.ink.cancel();
+        }
+    }
     pub fn clear(&mut self, cx: &mut Cx) {
+        self.drawing = false;
+        self.configure_ink(cx);
+        self.ink = Default::default();
+        self.ink_to_ack.clear();
+        self.ink_drawn.clear();
         self.board = None;
         self.signature.clear();
         self.entries.clear();
@@ -103,6 +169,7 @@ impl SpatialBoard {
         self.badges.clear();
         self.geometry = BoardLayout::default();
         self.targets.clear();
+        self.pointer_target = None;
         self.last_action = 0;
         self.last_focus.clear();
         self.camera = Camera::default();
@@ -175,6 +242,9 @@ impl SpatialBoard {
         }
         let signature = json!([p.cursor, p.title, p.groups, p.focus]).to_string();
         let changed = signature != self.signature;
+        self.pointer_target = action
+            .filter(|a| a["op"] == "teacher.point")
+            .map(|a| a["target"].clone());
         self.board = Some(p.clone());
         if changed {
             let sizes = p
@@ -194,6 +264,9 @@ impl SpatialBoard {
                 let id = node["id"].as_str().unwrap();
                 let w = match node["kind"].as_str().unwrap_or("") {
                     "math" => board_view::math_node(cx, node)?,
+                    "text" if node["content"]["fragments"].is_array() => {
+                        board_view::text_node(cx, node)?
+                    }
                     "plot" | "geometry" => {
                         let top = if node["kind"] == "geometry" { 28 } else { 36 };
                         board_view::widget(cx,&format!("mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:{top} bottom:40}}}}"))?
@@ -374,7 +447,36 @@ impl SpatialBoard {
 }
 impl Widget for SpatialBoard {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
-        match event.hits(cx, self.draw_bg.area()) {
+        if self.ink_ack_frame.is_event(event).is_some() {
+            if self.ink_ack_pass == 0 {
+                self.ink_ack_pass = 1;
+                self.ink_ack_frame = cx.new_next_frame();
+            } else {
+                for id in self.ink_drawn.drain(..) {
+                    #[cfg(target_os = "android")]
+                    cx.android_integration(
+                        "oll.ink",
+                        &json!({"op":"displayed","pointerId":id}).to_string(),
+                    );
+                    #[cfg(not(target_os = "android"))]
+                    let _ = id;
+                }
+            }
+        }
+        let hit = event.hits(cx, self.draw_bg.area());
+        if self.drawing {
+            match hit {
+                Hit::FingerDown(e) => {
+                    self.stroke_id += 1;
+                    self.desktop_ink(cx, "down", e.abs, e.time);
+                }
+                Hit::FingerMove(e) => self.desktop_ink(cx, "move", e.abs, e.time),
+                Hit::FingerUp(e) => self.desktop_ink(cx, "up", e.abs, e.time),
+                _ => (),
+            }
+            return;
+        }
+        match hit {
             Hit::FingerDown(_) => {
                 self.drag = Some(self.camera);
                 self.manual = true;
@@ -415,6 +517,7 @@ impl Widget for SpatialBoard {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.draw_bg.draw_walk(cx, walk);
         let viewport = self.draw_bg.area().rect(cx);
+        let viewport_changed = self.viewport != viewport;
         if self.viewport.size != viewport.size {
             self.viewport = viewport;
             if !self.manual {
@@ -422,6 +525,9 @@ impl Widget for SpatialBoard {
             }
         } else {
             self.viewport = viewport;
+        }
+        if viewport_changed {
+            self.configure_ink(cx);
         }
         let mut list = self.list.take().unwrap_or_else(|| DrawList2d::new(cx));
         list.begin_always(cx);
@@ -475,7 +581,7 @@ impl Widget for SpatialBoard {
                 }
             }
         }
-        if let Some(t) = self.board.as_ref().and_then(|b| b.last_point.as_ref()) {
+        if let Some(t) = self.pointer_target.as_ref() {
             if let Some(id) = t["node_id"]
                 .as_str()
                 .or(t["group_id"].as_str())
@@ -493,7 +599,36 @@ impl Widget for SpatialBoard {
                 }
             }
         }
+        self.draw_vector
+            .set_color(100. / 255., 219. / 255., 185. / 255., 1.);
+        for stroke in &self.ink.strokes {
+            if let Some(p) = stroke.points.first() {
+                self.draw_vector.move_to(p.x as f32, p.y as f32);
+                if stroke.points.len() == 1 {
+                    self.draw_vector.line_to((p.x + 0.01) as f32, p.y as f32);
+                }
+                for p in stroke.points.iter().skip(1) {
+                    self.draw_vector.line_to(p.x as f32, p.y as f32);
+                }
+                self.draw_vector.stroke(stroke.width as f32);
+            }
+        }
+        #[cfg(not(target_os = "android"))]
+        if let Some(points) = self.ink.active_points() {
+            if let Some(p) = points.first() {
+                self.draw_vector.move_to(p.x as f32, p.y as f32);
+                for p in points.iter().skip(1) {
+                    self.draw_vector.line_to(p.x as f32, p.y as f32);
+                }
+                self.draw_vector.stroke((3. / self.camera.scale) as f32);
+            }
+        }
         self.draw_vector.end(cx);
+        if !self.ink_to_ack.is_empty() {
+            self.ink_drawn.append(&mut self.ink_to_ack);
+            self.ink_ack_pass = 0;
+            self.ink_ack_frame = cx.new_next_frame();
+        }
         for (r, w) in &self.badges {
             w.draw_walk_all(
                 cx,
@@ -525,7 +660,7 @@ impl Widget for SpatialBoard {
             .iter()
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
-        json!({"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"manual":self.manual,"targets":self.targets,"nodes":nodes,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 

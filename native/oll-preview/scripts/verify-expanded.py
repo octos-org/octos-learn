@@ -30,17 +30,28 @@ def run(number,task):
             try:get('/gq')
             except Exception:pass
         proc.wait(timeout=15);log.close()
-state={}
-def first(get,text,click,until):
-    until('status',lambda s:'动作 0/5' in s);click('play');until('status',lambda s:'变量动画' in s);time.sleep(.4);click('play');click('save_progress');until('progress_status',lambda s:s=='进度已保存');time.sleep(.5)
-    state['saved']=json.loads((data/'unit-circle-sine.json').read_text());state['status']=text('status');state['nodes']=json.loads(text('spatial'))['nodes'];assert state['saved']['animation'] is not None
-    click('reset');assert '动作 0/5' in text('status');click('restore_progress');until('progress_status',lambda s:'进度已恢复' in s);assert text('status')==state['status'];assert json.loads(text('spatial'))['nodes']==state['nodes'];time.sleep(.5);assert text('status')==state['status']
-    shutil.copy2(get('/g')['png'],out/'restored-animation.png')
-run(1,first)
-def second(get,text,click,until):
-    until('status',lambda s:'动作 0/5' in s);click('restore_progress');until('progress_status',lambda s:'进度已恢复' in s);assert text('status')==state['status']
-    click('switch_course');click('restore_progress');until('progress_status',lambda s:'尚无保存' in s);assert '动作 0/25' in text('status');click('switch_course');click('switch_course');click('switch_course');click('restore_progress');until('progress_status',lambda s:'进度已恢复' in s);click('play');until('status',lambda s:'播放完成' in s,35)
-    shutil.copy2(get('/g')['png'],out/'resumed-complete.png')
-run(2,second)
-(out/'verification.json').write_text(json.dumps({'restart_restore':True,'paused_animation':True,'course_isolation':True,'resume_to_completion':True,'saved_cursor':state['saved']['cursor']},ensure_ascii=False,indent=2))
-print('Persistence and restart checks passed')
+fixtures=json.loads(pathlib.Path(sys.argv[3]).read_text())
+results=[]
+def verify(get,text,click,until):
+    until('status',lambda s:'动作 0/5' in s)
+    click('switch_course');click('switch_course')
+    for case in fixtures:
+        key=case['course'];count=len(case['frames'])
+        for i,checkpoint in enumerate(case['checkpoints']+[case['checkpoint']]):
+            (data/(key+'.json')).write_text(json.dumps(checkpoint,ensure_ascii=False))
+            click('restore_progress');until('progress_status',lambda s:'进度已恢复' in s)
+            expected_actions=len(checkpoint['projection']['board']['applied_actions'])
+            until('status',lambda s:f'动作 {expected_actions}/{count}' in s)
+            assert '无法' not in text('status'),text('status')
+            state=json.loads(text('spatial'))
+            assert len(state['nodes'])==len(checkpoint['projection']['board']['nodes']), (text('status'),state,checkpoint['cursor'])
+            assert state['connections']==len(checkpoint['projection']['board']['connections'])
+            time.sleep(.1)
+            if i==len(case['checkpoints']):click('overview')
+            shutil.copy2(get('/g')['png'],out/(key+'-%02d.png'%i))
+            results.append({'course':key,'status':text('status'),'nodes':len(state['nodes']),'connections':state['connections']})
+        assert '播放完成' in text('status')
+        click('switch_course')
+    (out/'verification.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
+run(1,verify)
+print('Expanded courses and imported checkpoints rendered successfully')

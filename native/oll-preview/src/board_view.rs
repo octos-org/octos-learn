@@ -59,7 +59,7 @@ pub fn name(p: &Preview, id: &str) -> String {
         }
         let formula = values(c, "fragments")
             .iter()
-            .filter_map(|v| v["latex"].as_str())
+            .filter_map(|v| v["latex"].as_str().or(v["text"].as_str()))
             .collect::<String>();
         if !formula.is_empty() {
             return formula;
@@ -89,6 +89,7 @@ pub fn target_name(p: &Preview, target: &Value) -> String {
                         f["latex"]
                             .as_str()
                             .or(f["label"].as_str())
+                            .or(f["text"].as_str())
                             .unwrap_or(fragment),
                     );
                     break;
@@ -170,7 +171,7 @@ pub fn measure(node: &Value) -> Result<(f64, f64), String> {
         }
         "plot" => Ok((440., 390.)),
         "geometry" => Ok((440., 440.)),
-        "note" | "text" => {
+        "note" | "text" | "diagram" => {
             let text = node_notes(node);
             let lines = text
                 .split('\n')
@@ -197,5 +198,65 @@ pub fn node_notes(node: &Value) -> String {
                 .map(str::to_owned),
         );
     }
+    let fragments = values(c, "fragments")
+        .iter()
+        .filter_map(|f| f["text"].as_str())
+        .collect::<String>();
+    if !fragments.is_empty() {
+        lines.push(fragments);
+    }
+    for (i, step) in values(c, "sequence").iter().enumerate() {
+        if let Some(step) = step.as_str() {
+            lines.push(format!("{}. {}", i + 1, step));
+        }
+    }
+    lines.extend(
+        values(c, "labels")
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned),
+    );
     lines.join("\n")
+}
+
+/// Fragment cards retain the original text and emphasis; wrapping is owned by Makepad.
+pub fn text_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 spacing:8 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
+    let flow = widget(
+        cx,
+        "View{width:Fill height:Fit flow:Flow.Right{wrap:true} spacing:0}",
+    )?;
+    let mut children_list = vec![];
+    for f in values(&node["content"], "fragments") {
+        let e = values(node, "emphasis").iter().rev().find(|e| {
+            e["target"]["fragment_id"].is_null() || e["target"]["fragment_id"] == f["id"]
+        });
+        let color = match e.and_then(|e| e["emphasis"].as_str()) {
+            Some("focus") => "#665020",
+            Some("supporting") => "#245846",
+            _ => "#0000",
+        };
+        let box_view = widget(
+            cx,
+            &format!("SolidView{{width:Fit height:Fit padding:3 draw_bg.color:{color}}}"),
+        )?;
+        let text = widget(
+            cx,
+            "Label{width:Fit height:Fit draw_text.text_style.font_size:12}",
+        )?;
+        text.set_text(cx, f["text"].as_str().unwrap_or(""));
+        children(cx, &box_view, vec![text])?;
+        children_list.push(box_view);
+    }
+    children(cx, &flow, children_list)?;
+    let labels = label(
+        cx,
+        &values(&node["content"], "labels")
+            .iter()
+            .filter_map(Value::as_str)
+            .collect::<Vec<_>>()
+            .join(" · "),
+    )?;
+    children(cx, &row, vec![flow, labels])?;
+    Ok(row)
 }

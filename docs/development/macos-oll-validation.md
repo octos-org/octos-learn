@@ -80,3 +80,16 @@
 - 旧临时手写层单条 Path 会在下一笔开始时覆盖尚未确认的上一笔；改成按 stroke id 保留待显示确认的 Path。取消事件在查询指针索引前处理，多指进入取消本次单笔，避免缺失指针导致残留。此行为须真机回归。
 - 使用已有完整 Homebrew OpenJDK 17.0.20.1 和已有 Android SDK 离线执行 :app:compileDebugJavaWithJavac，通过；有既有弃用 API 提示。配套 cargo-makepad 的裁剪 JDK 缺 management 库，不能用来运行 Gradle，已记录为工具分工，不另行安装 JDK。
 - ADB 只读确认 192.168.1.63:5555 为 M3G2、Android 13、arm64-v8a/armeabi-v7a/armeabi；不能沿用历史 Android 8 假设。没有安装应用或启动录音。
+
+## 2026-09-21：第 1～5 步连续推进，独立宿主开发与打包
+
+- 用户确认：先完成开发与打包，Android 实际安装前再确认。本轮只读连接过设备，没有安装、启动设备应用或录音。
+- 新增 Makepad Android ApplicationExtension，通过配套 Makepad 公共 JNI 通道接入既有 NativeInkBridge、NativeInkOverlayView、NativeAudioBridge 与 Agora。Java 源由打包脚本仅改 package 后复制，并记录原文件 SHA256；WebView 宿主继续使用原事件格式。
+- 手写：Android 临时轨迹保留到 Makepad 提交完成笔迹后的帧回调；两次 NextFrame 只证明提交顺序，不证明物理屏幕呈现或真机无闪烁。真机延迟、丢笔、压感、后台恢复仍待验收。修正异常取消通知、切换公式页/恢复进度退出书写、恢复前台同步书写状态。
+- 音频：复用现有录音与 Agora 实现，后台串行调用、显式权限和音频焦点，后台停止且不自动重新录音；独立宿主目前验证录音片段接收。完整语音会话、后端凭证、语音驱动课程和应用外围尚未迁移，不能宣称全部语音逻辑已经完成集成。
+- 有界 JNI 消息队列和分片重组覆盖大录音事件，分片避开 UTF-16 代理对边界；Rust 重组测试覆盖成功与乱序拒绝。真机运输吞吐未测。
+- 新增配方法 v2（45 动作）与英语定语从句（19 动作），共四门课程。原始 OLL 文件直接复用；显示文本片段、强调背景与 sequence 流程图。修正关系说明显示内部片段 ID 的问题。
+- macOS 最终应用 7 项测试、共享核心 23 项测试、原 Android Java 编译均通过；独立隐藏 Metal 实例通过书写/撤销重做/缩放、动画中途保存/重启恢复、两门新增课程旧进度导入及截图检查。截图与日志归档至 macos-validation-v6/evidence。
+- Android APK 完成 arm64-v8a 打包：包名 cc.pitun.learn.preview，minSdk 26、targetSdk 35（配套工具默认值）、compileSdk 33；包含现有 Agora 4.5.2 与 aosl 1.2.13.1。构建有配套库未使用变量、旧 Android API 弃用和验证应用缺自定义图标提示，未声称零警告。未安装。
+- 第 4 步：WebAssembly API/旧 Web 渲染适配器代码与类型检查完成；缺少 wasm32-unknown-unknown 编译目标，安装授权尚未收到，实际编译和浏览器验证未完成。
+- 保存的是课程进度，不包含笔迹；笔迹导入、持久化和橡皮擦未实现。多区域/宿主障碍目前完成共享几何对照，尚未在所有实际宿主尺寸上验收。性能只有原生核心测量，未设定或宣布通过产品体验阈值。

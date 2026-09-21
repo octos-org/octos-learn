@@ -197,6 +197,17 @@ final class NativeInkBridge {
     }
 
     private void failActiveStroke() {
+        if (activeStrokeId >= 0) {
+            try {
+                JSONObject cancel = new JSONObject();
+                cancel.put("action", "cancel");
+                cancel.put("pointerId", activeStrokeId);
+                cancel.put("points", new JSONArray());
+                events.emit("ink", cancel);
+            } catch (JSONException ignored) {
+                // Do not recurse into dispatchBatch while aborting a malformed stroke.
+            }
+        }
         pendingPoints = new JSONArray();
         overlay.clearAll();
         activeMotionPointerId = -1;

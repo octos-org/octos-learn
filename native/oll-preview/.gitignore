@@ -1,2 +1,7 @@
 /target/
 /dist/
+/resources/android/libs/
+/resources/android/java/NativeAudioBridge.java
+/resources/android/java/NativeInkBridge.java
+/resources/android/java/NativeInkOverlayView.java
+/resources/android/java/NativeEventSink.java
