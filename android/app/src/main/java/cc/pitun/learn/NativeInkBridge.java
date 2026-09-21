@@ -3,7 +3,6 @@ package cc.pitun.learn;
 import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,7 +10,7 @@ import org.json.JSONObject;
 
 /** Bridges Android's uncoalesced MotionEvent history into the OLL ink runtime. */
 final class NativeInkBridge {
-    private final WebView webView;
+    private final NativeEventSink events;
     private final NativeInkOverlayView overlay;
     private final RectF inkBoundsPx = new RectF();
 
@@ -26,8 +25,8 @@ final class NativeInkBridge {
     private boolean hasAcceptedPoint;
     private JSONArray pendingPoints = new JSONArray();
 
-    NativeInkBridge(WebView webView, NativeInkOverlayView overlay) {
-        this.webView = webView;
+    NativeInkBridge(NativeEventSink events, NativeInkOverlayView overlay) {
+        this.events = events;
         this.overlay = overlay;
     }
 
@@ -42,7 +41,7 @@ final class NativeInkBridge {
             String color,
             double widthCss
     ) {
-        webView.post(() -> {
+        events.post(() -> {
             cssPixelRatio = (float) Math.max(0.1, Math.min(8, devicePixelRatio));
             inkBoundsPx.set(
                     (float) leftCss * cssPixelRatio,
@@ -53,6 +52,7 @@ final class NativeInkBridge {
             enabled = captureEnabled;
             overlay.configure(color, (float) widthCss * cssPixelRatio);
             if (!enabled) {
+                if (activeStrokeId >= 0) dispatchBatch("cancel", activeStrokeId, "touch", new JSONArray());
                 activeMotionPointerId = -1;
                 activeStrokeId = -1;
                 pendingPoints = new JSONArray();
@@ -63,12 +63,12 @@ final class NativeInkBridge {
 
     @JavascriptInterface
     public void acknowledge(int pointerId) {
-        webView.post(() -> overlay.clear(pointerId));
+        events.post(() -> overlay.clear(pointerId));
     }
 
     @JavascriptInterface
     public void cancel(int pointerId) {
-        webView.post(() -> {
+        events.post(() -> {
             if (pointerId == activeStrokeId) {
                 activeMotionPointerId = -1;
                 activeStrokeId = -1;
@@ -100,8 +100,14 @@ final class NativeInkBridge {
         }
 
         if (activeMotionPointerId < 0 || activeStrokeId < 0) return;
+        if (action == MotionEvent.ACTION_CANCEL || action == MotionEvent.ACTION_POINTER_DOWN) {
+            dispatchBatch("cancel", activeStrokeId, "touch", new JSONArray());
+            overlay.clear(activeStrokeId);
+            pendingPoints = new JSONArray();activeMotionPointerId = -1;activeStrokeId = -1;
+            return;
+        }
         final int index = event.findPointerIndex(activeMotionPointerId);
-        if (index < 0) return;
+        if (index < 0) { failActiveStroke(); return; }
 
         if (action == MotionEvent.ACTION_MOVE) {
             collectPoints(event, index, true, pendingPoints, true);
@@ -114,7 +120,7 @@ final class NativeInkBridge {
                     pendingPoints
             );
             pendingPoints = new JSONArray();
-            // Keep native ink visible until JavaScript commits and acknowledges it.
+            // Keep native ink visible until the host confirms that persistent ink is displayed.
             activeMotionPointerId = -1;
             activeStrokeId = -1;
         } else if (action == MotionEvent.ACTION_CANCEL) {
@@ -184,9 +190,7 @@ final class NativeInkBridge {
             batch.put("pointerId", strokeId);
             batch.put("pointerType", pointerType);
             batch.put("points", points);
-            final String script = "window.__octosNativeInkBatch&&window.__octosNativeInkBatch("
-                    + batch + ");";
-            webView.evaluateJavascript(script, null);
+            events.emit("ink", batch);
         } catch (JSONException ignored) {
             failActiveStroke();
         }

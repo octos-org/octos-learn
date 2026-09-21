@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.view.View;
+import android.util.SparseArray;
 
 /**
  * Hardware-accelerated transient ink shown while a pointer is down.
@@ -16,7 +17,8 @@ import android.view.View;
  */
 final class NativeInkOverlayView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Path activePath = new Path();
+    private Path activePath = new Path();
+    private final SparseArray<Path> pendingPaths = new SparseArray<>();
     private int activePointerId = -1;
     private boolean hasPath;
 
@@ -48,7 +50,8 @@ final class NativeInkOverlayView extends View {
 
     void begin(int pointerId, float x, float y) {
         activePointerId = pointerId;
-        activePath.reset();
+        activePath = new Path();
+        pendingPaths.put(pointerId, activePath);
         activePath.moveTo(x, y);
         // A zero-length segment makes a tap visible with round line caps.
         activePath.lineTo(x + 0.01f, y);
@@ -66,18 +69,15 @@ final class NativeInkOverlayView extends View {
     }
 
     void clear(int pointerId) {
-        if (pointerId != activePointerId) return;
-        activePointerId = -1;
-        hasPath = false;
-        activePath.reset();
-        setVisibility(View.INVISIBLE);
+        pendingPaths.remove(pointerId);
+        if (pointerId == activePointerId) {activePointerId=-1;hasPath=false;}
+        if (pendingPaths.size()==0) setVisibility(View.INVISIBLE);
+        invalidate();
     }
 
     void clearAll() {
-        activePointerId = -1;
-        hasPath = false;
-        activePath.reset();
-        setVisibility(View.INVISIBLE);
+        activePointerId=-1;hasPath=false;pendingPaths.clear();activePath=new Path();
+        setVisibility(View.INVISIBLE);invalidate();
     }
 
     private float lastX;
@@ -97,6 +97,6 @@ final class NativeInkOverlayView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        if (hasPath) canvas.drawPath(activePath, paint);
+        for (int i=0;i<pendingPaths.size();i++) canvas.drawPath(pendingPaths.valueAt(i),paint);
     }
 }

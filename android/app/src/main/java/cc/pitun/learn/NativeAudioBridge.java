@@ -11,7 +11,6 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
-import android.webkit.WebView;
 
 import io.agora.rtc2.ChannelMediaOptions;
 import io.agora.rtc2.Constants;
@@ -55,7 +54,7 @@ final class NativeAudioBridge {
     private static final int MAX_UTTERANCE_MS = 20000;
 
     private final Activity activity;
-    private final WebView webView;
+    private final NativeEventSink events;
     private final AudioManager audioManager;
     private final Object captureLock = new Object();
     private final Object rtcLock = new Object();
@@ -72,9 +71,9 @@ final class NativeAudioBridge {
     private volatile String rtcLastError;
     private volatile long rtcFramesPushed;
 
-    NativeAudioBridge(Activity activity, WebView webView) {
+    NativeAudioBridge(Activity activity, NativeEventSink events) {
         this.activity = activity;
-        this.webView = webView;
+        this.events = events;
         this.audioManager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
     }
 
@@ -514,9 +513,7 @@ final class NativeAudioBridge {
             detail.put("device", activeDeviceName);
             if (message != null) detail.put("message", message);
             if (wavBase64 != null) detail.put("wavBase64", wavBase64);
-            final String script = "window.dispatchEvent(new CustomEvent('octos-native-audio',"
-                    + "{detail:" + detail + "}));";
-            webView.post(() -> webView.evaluateJavascript(script, null));
+            events.emit("audio", detail);
         } catch (Exception ignored) {
             // A later capture can still succeed; do not kill the audio thread.
         }

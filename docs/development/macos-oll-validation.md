@@ -73,3 +73,10 @@
 - 存储目录：macOS Application Support/Octos OLL Preview，Android 使用宿主 filesDir；测试通过 OLL_PREVIEW_DATA_DIR 隔离。损坏或不兼容进度显示错误，保留原文件。
 - verify-progress.py 启动并退出两个自有 Metal 进程，确认动画中途保存→重置恢复→退出重启恢复→课程隔离→继续完成。证据 progress-ui-2/verification.json。首轮测试因远程接口早于首帧就绪而失败，补齐首帧等待后通过。
 - release 应用 6 项测试通过，编译警告已解决；新增依赖来自共享核心的 JSON 属性保序要求。
+
+## 2026-09-21：复用 Android 原生服务的通信边界
+
+- 新增 NativeEventSink，将 NativeInkBridge/NativeAudioBridge 的 WebView 直接调用抽离；WebViewEventSink 保持旧 JavaScript 事件协议，MainActivity 接入该适配器。采样过滤、AudioRecord 与 Agora 逻辑保留。
+- 旧临时手写层单条 Path 会在下一笔开始时覆盖尚未确认的上一笔；改成按 stroke id 保留待显示确认的 Path。取消事件在查询指针索引前处理，多指进入取消本次单笔，避免缺失指针导致残留。此行为须真机回归。
+- 使用已有完整 Homebrew OpenJDK 17.0.20.1 和已有 Android SDK 离线执行 :app:compileDebugJavaWithJavac，通过；有既有弃用 API 提示。配套 cargo-makepad 的裁剪 JDK 缺 management 库，不能用来运行 Gradle，已记录为工具分工，不另行安装 JDK。
+- ADB 只读确认 192.168.1.63:5555 为 M3G2、Android 13、arm64-v8a/armeabi-v7a/armeabi；不能沿用历史 Android 8 假设。没有安装应用或启动录音。
