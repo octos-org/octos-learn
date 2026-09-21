@@ -1,11 +1,10 @@
-//! A compact native review board. Logical groups and relations are listed;
-//! this is not yet a spatial layout/zoom implementation of OLL placement.
+//! Native card construction and font measurement for the spatial board.
 use crate::formula_view;
 use makepad_widgets::*;
 use oll_runtime::preview::Preview;
 use serde_json::Value;
 
-fn widget(cx: &mut Cx, code: &str) -> Result<WidgetRef, String> {
+pub fn widget(cx: &mut Cx, code: &str) -> Result<WidgetRef, String> {
     cx.with_vm(|vm| {
         let value = vm
             .eval_checked(
@@ -24,7 +23,7 @@ fn widget(cx: &mut Cx, code: &str) -> Result<WidgetRef, String> {
         Ok(WidgetRef::script_from_value(vm, value))
     })
 }
-fn children(cx: &mut Cx, parent: &WidgetRef, values: Vec<WidgetRef>) -> Result<(), String> {
+pub fn children(cx: &mut Cx, parent: &WidgetRef, values: Vec<WidgetRef>) -> Result<(), String> {
     let mut view = parent.borrow_mut::<View>().ok_or("白板容器不是 View")?;
     view.children.clear();
     view.children.extend(
@@ -36,7 +35,7 @@ fn children(cx: &mut Cx, parent: &WidgetRef, values: Vec<WidgetRef>) -> Result<(
     view.redraw(cx);
     Ok(())
 }
-fn label(cx: &mut Cx, text: &str) -> Result<WidgetRef, String> {
+pub fn label(cx: &mut Cx, text: &str) -> Result<WidgetRef, String> {
     let w = widget(
         cx,
         "Label{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:11}",
@@ -114,67 +113,89 @@ fn ascent(latex: &str) -> Result<f32, String> {
     .map(|l| l.ascent)
     .ok_or("公式基线计算失败".into())
 }
-pub fn set_board(cx: &mut Cx, container: &WidgetRef, p: &Preview) -> Result<(), String> {
-    let mut rows = Vec::new();
-    for node in p.nodes.iter().filter(|n| n["kind"] == "math") {
-        let row = widget(cx, "View{width:Fill height:80 flow:Down spacing:3}")?;
-        let caption = node["content"]["caption"].as_str().unwrap_or("");
-        let equation = widget(cx, "View{width:Fill height:45 flow:Right spacing:0}")?;
-        let max_ascent = values(&node["content"], "fragments")
-            .iter()
-            .map(|f| ascent(f["latex"].as_str().unwrap_or("")))
-            .collect::<Result<Vec<_>, _>>()?
-            .into_iter()
-            .fold(0.0_f32, f32::max);
-        let mut fragments = Vec::new();
-        for fragment in values(&node["content"], "fragments") {
-            let emphasis = values(node, "emphasis").iter().rev().find(|e| {
-                e["target"]["fragment_id"].is_null() || e["target"]["fragment_id"] == fragment["id"]
-            });
-            let color = match emphasis.and_then(|e| e["emphasis"].as_str()) {
-                Some("focus") => "#665020",
-                Some("supporting") => "#245846",
-                _ => "#0000",
-            };
-            let top = 4.0 + max_ascent - ascent(fragment["latex"].as_str().unwrap_or(""))?;
-            let code=format!("SolidView{{width:Fit height:45 flow:Right padding:Inset{{left:3 right:3 top:{top} bottom:0}} draw_bg.color:{color}}}");
-            let f = widget(cx, &code)?;
-            formula_view::set_formula(
-                cx,
-                &f,
-                fragment["latex"].as_str().ok_or("公式片段缺少 latex")?,
-            )?;
-            fragments.push(f);
-        }
-        children(cx, &equation, fragments)?;
-        let caption = label(cx, caption)?;
-        children(cx, &row, vec![caption, equation])?;
-        rows.push(row);
-    }
-    children(cx, container, rows)
-}
-pub fn notes(p: &Preview) -> String {
-    p.nodes
+pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:12 spacing:6 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
+    let caption = node["content"]["caption"].as_str().unwrap_or("");
+    let equation = widget(cx, "View{width:Fill height:45 flow:Right spacing:0}")?;
+    let max_ascent = values(&node["content"], "fragments")
         .iter()
-        .filter(|n| n["kind"] == "note" || n["kind"] == "text")
-        .map(|n| {
-            let c = &n["content"];
-            let mut lines = Vec::new();
-            for key in ["title", "text"] {
-                if let Some(s) = c[key].as_str() {
-                    lines.push(s.to_owned());
-                }
+        .map(|f| ascent(f["latex"].as_str().unwrap_or("")))
+        .collect::<Result<Vec<_>, _>>()?
+        .into_iter()
+        .fold(0.0_f32, f32::max);
+    let mut fragments = Vec::new();
+    for fragment in values(&node["content"], "fragments") {
+        let emphasis = values(node, "emphasis").iter().rev().find(|e| {
+            e["target"]["fragment_id"].is_null() || e["target"]["fragment_id"] == fragment["id"]
+        });
+        let color = match emphasis.and_then(|e| e["emphasis"].as_str()) {
+            Some("focus") => "#665020",
+            Some("supporting") => "#245846",
+            _ => "#0000",
+        };
+        let top = 4.0 + max_ascent - ascent(fragment["latex"].as_str().unwrap_or(""))?;
+        let code=format!("SolidView{{width:Fit height:45 flow:Right padding:Inset{{left:3 right:3 top:{top} bottom:0}} draw_bg.color:{color}}}");
+        let f = widget(cx, &code)?;
+        formula_view::set_formula(
+            cx,
+            &f,
+            fragment["latex"].as_str().ok_or("公式片段缺少 latex")?,
+        )?;
+        fragments.push(f);
+    }
+    children(cx, &equation, fragments)?;
+    let caption = label(cx, caption)?;
+    children(cx, &row, vec![caption, equation])?;
+    Ok(row)
+}
+pub fn measure(node: &Value) -> Result<(f64, f64), String> {
+    match node["kind"].as_str().unwrap_or("") {
+        "math" => {
+            let font = include_bytes!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../../makepad/widgets/resources/NewCMMath-Regular.otf"
+            ));
+            let mut width = 0.;
+            for f in values(&node["content"], "fragments") {
+                let layout = makepad_latex_math::layout(
+                    &makepad_latex_math::parse(f["latex"].as_str().ok_or("公式缺少 latex")?),
+                    font,
+                    26.25,
+                    makepad_latex_math::MathStyle::Display,
+                )
+                .ok_or("无法测量公式")?;
+                width += layout.width as f64 + 6.;
             }
-            for key in ["details", "items"] {
-                lines.extend(
-                    values(c, key)
-                        .iter()
-                        .filter_map(Value::as_str)
-                        .map(str::to_owned),
-                );
-            }
-            lines.join(" · ")
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+            Ok(((width + 32.).max(280.), 112.))
+        }
+        "plot" => Ok((440., 390.)),
+        "geometry" => Ok((440., 440.)),
+        "note" | "text" => {
+            let text = node_notes(node);
+            let lines = text
+                .split('\n')
+                .map(|l| (l.chars().count() as f64 / 25.).ceil().max(1.))
+                .sum::<f64>();
+            Ok((400., (lines * 26. + 32.).max(100.)))
+        }
+        _ => Err("暂不支持此节点的原生空间测量".into()),
+    }
+}
+pub fn node_notes(node: &Value) -> String {
+    let c = &node["content"];
+    let mut lines = Vec::new();
+    for k in ["caption", "title", "text"] {
+        if let Some(s) = c[k].as_str() {
+            lines.push(s.to_owned());
+        }
+    }
+    for k in ["details", "items"] {
+        lines.extend(
+            values(c, k)
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned),
+        );
+    }
+    lines.join("\n")
 }

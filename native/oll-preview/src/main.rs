@@ -6,12 +6,14 @@ use serde_json::Value;
 use std::time::Instant;
 mod board_view;
 mod formula_view;
+mod spatial_board;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
 const QUADRATIC: &str = include_str!("../courses/quadratic.jsonl");
 const COURSE: &str = include_str!("../courses/unit-circle-sine.jsonl");
 script_mod! {
     use mod.prelude.widgets.*
+    use mod.widgets.*
     use mod.plot.*
     startup() do #(App::script_component(vm)) {
         ui: Root {
@@ -29,17 +31,14 @@ script_mod! {
                         next_formulas := Button { text: "下一组公式" }
                         status := Label { text: "准备就绪" }
                     }
-                    charts := View { width: Fill height: 490 flow: Right spacing: 20
-                        circle := LinePlot { width: 490 height: 490 plot_margin: Inset{left: 52 right: 16 top: 28 bottom: 40} demo_data: false interactive: false }
-                        wave := LinePlot { width: Fill height: Fill demo_data: false interactive: false }
+                    navigation := View {width:Fill height:Fit flow:Right spacing:12
+                        overview := Button {text:"全览"}
+                        zoom_in := Button {text:"放大"}
+                        zoom_out := Button {text:"缩小"}
+                        follow := Button {text:"跟随教学"}
+                        Label {text:"拖动白板移动 · 滚轮缩放 · 新的教学目标到来时恢复跟随" draw_text.text_style.font_size:10}
                     }
-                    lesson_board := View { visible:false width:Fill height:490 flow:Right spacing:20
-                        math_board := View { width:520 height:Fill flow:Down }
-                        View { width:Fill height:Fill flow:Down spacing:8
-                            parabola := LinePlot { width:Fill height:350 demo_data:false interactive:false }
-                            notes := Label { width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:11 }
-                        }
-                    }
+                    spatial := SpatialBoard {width:Fill height:450}
                     board_cues := Label { width:Fill height:Fit draw_text.wrap:Words text:"" draw_text.text_style.font_size:11 }
                     formula_panel := View { visible: false width: Fill height: 490 flow: Down spacing: 12
                         View { width: Fill height: 224 flow: Down spacing: 6
@@ -80,8 +79,6 @@ pub struct App {
     #[rust]
     quadratic: bool,
     #[rust]
-    board_signature: String,
-    #[rust]
     formula_page: usize,
     #[rust]
     formula_sources: [Option<String>; 2],
@@ -92,7 +89,10 @@ impl App {
     fn reset(&mut self, cx: &mut Cx) {
         self.formula_mode = false;
         self.error.clear();
-        self.board_signature.clear();
+        let w = self.ui.widget(cx, ids!(spatial));
+        if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+            board.clear(cx);
+        };
         match Session::load(if self.quadratic { QUADRATIC } else { COURSE }) {
             Ok(p) => self.player = Some(p),
             Err(e) => self.error = e,
@@ -101,17 +101,17 @@ impl App {
     }
     fn refresh(&mut self, cx: &mut Cx) {
         self.ui
-            .widget(cx, ids!(charts))
-            .set_visible(cx, !self.formula_mode && !self.quadratic);
+            .widget(cx, ids!(spatial))
+            .set_visible(cx, !self.formula_mode);
+        self.ui
+            .widget(cx, ids!(navigation))
+            .set_visible(cx, !self.formula_mode);
         self.ui
             .widget(cx, ids!(formula_panel))
             .set_visible(cx, self.formula_mode);
         self.ui
-            .widget(cx, ids!(lesson_board))
-            .set_visible(cx, !self.formula_mode && self.quadratic);
-        self.ui
             .widget(cx, ids!(board_cues))
-            .set_visible(cx, !self.formula_mode && self.quadratic);
+            .set_visible(cx, !self.formula_mode);
         if self.formula_mode {
             let samples: Vec<Value> =
                 serde_json::from_str(FORMULAS).expect("embedded formula corpus");
@@ -261,59 +261,20 @@ impl App {
                     }
                 ),
             );
-            if self.quadratic {
-                let signature = serde_json::json!([p.nodes, p.groups, p.focus]).to_string();
-                if signature != self.board_signature {
-                    if let Err(e) =
-                        board_view::set_board(cx, &self.ui.widget(cx, ids!(math_board)), p)
-                    {
-                        self.error = e;
-                    }
-                    self.ui
-                        .label(cx, ids!(notes))
-                        .set_text(cx, &board_view::notes(p));
-                    self.board_signature = signature;
+            let action = session.operations[..session.cursor]
+                .iter()
+                .rev()
+                .find(|op| op["type"] == "action.apply")
+                .map(|op| &op["action"]);
+            let w = self.ui.widget(cx, ids!(spatial));
+            if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                if let Err(e) = board.set_state(cx, p, action) {
+                    self.error = e;
                 }
-                let point = p
-                    .last_point
-                    .as_ref()
-                    .map(|t| format!("最近指向：{}", board_view::target_name(p, t)))
-                    .unwrap_or_default();
-                let groups = p
-                    .groups
-                    .iter()
-                    .map(|g| format!("{}（{} 项）", text(g, "title"), items(g, "members").len()))
-                    .collect::<Vec<_>>()
-                    .join("、");
-                self.ui.label(cx, ids!(board_cues)).set_text(
-                    cx,
-                    &format!("黄色：重点 · 绿色：辅助强调  {point}  {groups}"),
-                );
-                let w = self.ui.widget(cx, ids!(parabola));
-                if let Some(mut plot) = w.borrow_mut::<LinePlot>() {
-                    plot.clear();
-                    if let Some(node) = p.nodes.iter().find(|n| n["kind"] == "plot") {
-                        if let Err(e) = render(&mut plot, node, p) {
-                            self.error = e;
-                        }
-                    } else {
-                        plot.set_title("等待课程绘制函数图像");
-                    }
-                };
-            }
-            for (id, kind) in [(ids!(circle), "geometry"), (ids!(wave), "plot")] {
-                let widget = self.ui.widget(cx, id);
-                if let Some(mut plot) = widget.borrow_mut::<LinePlot>() {
-                    plot.clear();
-                    if let Some(node) = p.nodes.iter().find(|n| n["kind"] == kind) {
-                        if let Err(e) = render(&mut plot, node, p) {
-                            self.error = e;
-                        }
-                    } else {
-                        plot.set_title("等待课程动作");
-                    }
-                };
-            }
+            };
+            self.ui
+                .label(cx, ids!(board_cues))
+                .set_text(cx, "黄色：重点 · 绿色：辅助强调 · 蓝灰边框：课程分组");
         }
         self.ui.redraw(cx);
     }
@@ -508,6 +469,7 @@ impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
+        spatial_board::script_mod(vm);
         self::script_mod(vm)
     }
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
@@ -525,6 +487,12 @@ impl AppMain for App {
                 .replace(now)
                 .map(|t| now.duration_since(t).as_secs_f64())
                 .unwrap_or(0.0);
+            let w = self.ui.widget(cx, ids!(spatial));
+            if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                if was_playing {
+                    board.advance(cx, dt);
+                }
+            };
             if let Some(session) = &mut self.player {
                 if let Err(e) = session.tick(dt) {
                     self.error = e;
@@ -532,6 +500,22 @@ impl AppMain for App {
             }
         }
         if let Event::Actions(actions) = event {
+            let w = self.ui.widget(cx, ids!(spatial));
+            if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                if self.ui.button(cx, ids!(overview)).clicked(actions) {
+                    board.overview(cx);
+                }
+                if self.ui.button(cx, ids!(zoom_in)).clicked(actions) {
+                    board.zoom(cx, 1.2);
+                }
+                if self.ui.button(cx, ids!(zoom_out)).clicked(actions) {
+                    board.zoom(cx, 1. / 1.2);
+                }
+                if self.ui.button(cx, ids!(follow)).clicked(actions) {
+                    board.follow(cx);
+                }
+            };
+
             if self.ui.button(cx, ids!(switch_course)).clicked(actions) {
                 self.quadratic = !self.quadratic;
                 self.reset(cx);
