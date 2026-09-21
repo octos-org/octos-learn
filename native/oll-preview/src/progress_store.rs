@@ -17,6 +17,7 @@ pub enum Reply {
 pub struct Store {
     tx: SyncSender<Request>,
     rx: Receiver<Reply>,
+    dir: PathBuf,
 }
 impl Store {
     pub fn start(cx: &Cx) -> Result<Self, String> {
@@ -28,6 +29,7 @@ impl Store {
             PathBuf::from(std::env::var_os("HOME").ok_or("找不到应用存储目录")?)
                 .join("Library/Application Support/Octos OLL Preview")
         };
+        let worker_dir = dir.clone();
         let (tx, requests) = mpsc::sync_channel(4);
         let (replies, rx) = mpsc::sync_channel(4);
         cx.thread_spawner()
@@ -37,6 +39,7 @@ impl Store {
                     ..Default::default()
                 },
                 move || {
+                    let dir = worker_dir;
                     for request in requests {
                         let reply = match request {
                             Request::Save(key, value) => {
@@ -79,7 +82,12 @@ impl Store {
             )
             .map_err(|e| format!("无法启动存储工作线程：{e:?}"))?
             .detach();
-        Ok(Self { tx, rx })
+        Ok(Self { tx, rx, dir })
+    }
+    /// Checkpoint files live here as `{key}.json`; the launcher scans it to
+    /// list resumable sessions.
+    pub fn dir(&self) -> &std::path::Path {
+        &self.dir
     }
     pub fn send(&self, request: Request) -> Result<(), Request> {
         self.tx.try_send(request).map_err(|e| match e {
