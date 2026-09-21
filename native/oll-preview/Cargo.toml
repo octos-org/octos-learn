@@ -1,0 +1,21 @@
+[package]
+name = "octos-oll-preview"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+oll-runtime = { path = "../../../oll/crates/oll-runtime" }
+makepad-widgets = { path = "../../../makepad/widgets" }
+makepad-plot = { path = "../../../octoscript-makepad/crates/makepad-plot" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[patch."https://github.com/OctoSense-org/makepad.git"]
+makepad-widgets = { path = "../../../makepad/widgets" }
+makepad-script = { path = "../../../makepad/platform/script" }
+
+[profile.release]
+opt-level = 3
+
+[patch."https://github.com/OctoSense-org/Octoscript-Makepad.git"]
+octoscript-node = { path = "../../../octoscript-makepad/crates/octoscript-node" }
+
