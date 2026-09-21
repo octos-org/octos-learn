@@ -1,0 +1,66 @@
+[
+  {
+    "source": "OLL geometry-auxiliary-line / lesson-geometry-001:node:congruence-result",
+    "latex": "\\triangle ABD\\cong\\triangle ACD\\quad(SSS)"
+  },
+  {
+    "source": "OLL geometry-auxiliary-line / lesson-geometry-001:node:angle-result",
+    "latex": "\\angle BAD=\\angle CAD\\Rightarrow AD\\text{ 平分 }\\angle A"
+  },
+  {
+    "source": "OLL geometry-auxiliary-line / lesson-geometry-001:node:perpendicular-result",
+    "latex": "\\angle ADB=\\angle ADC,\\quad \\angle ADB+\\angle ADC=180^\\circ\\Rightarrow AD\\perp BC"
+  },
+  {
+    "source": "OLL learner-context-number-line-v2 / lesson-learner-context-number-line-v2-001:node:problem",
+    "latex": "3+(-5)"
+  },
+  {
+    "source": "OLL learner-context-number-line-v2 / lesson-learner-context-number-line-v2-001:node:result",
+    "latex": "3+(-5)=-2"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:original",
+    "latex": "y=x^2+6x+5"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:target-form",
+    "latex": "y=(x-h)^2+k"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:half-coefficient",
+    "latex": "6\\div2=3"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:square-identity",
+    "latex": "x^2+6x+9=(x+3)^2"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:balanced-expression",
+    "latex": "y=x^2+6x+9-9+5"
+  },
+  {
+    "source": "OLL quadratic / lesson-quadratic-001:node:vertex-form",
+    "latex": "y=(x+3)^2-4"
+  },
+  {
+    "source": "OLL quadratic-v2 / lesson-quadratic-v2-001:node:half-coefficient",
+    "latex": "6\\div 2=3"
+  },
+  {
+    "source": "OLL quadratic-v2 / lesson-quadratic-v2-001:node:grouped-form",
+    "latex": "y=(x+3)^2-9+5"
+  },
+  {
+    "source": "补充排版测试（非课程）：分式与根号",
+    "latex": "x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}"
+  },
+  {
+    "source": "补充排版测试（非课程）：积分",
+    "latex": "\\int_0^\\infty e^{-x^2} dx=\\frac{\\sqrt{\\pi}}{2}"
+  },
+  {
+    "source": "补充排版测试（非课程）：矩阵",
+    "latex": "\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}"
+  }
+]
