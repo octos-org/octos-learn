@@ -87,6 +87,8 @@ pub struct SpatialBoard {
     #[rust]
     viewport: Rect,
     #[rust]
+    left_inset: f64,
+    #[rust]
     drag: Option<Camera>,
     #[rust]
     pending_focus: bool,
@@ -155,6 +157,9 @@ impl SpatialBoard {
         }
         self.redraw(cx);
         Ok(())
+    }
+    pub fn set_left_inset(&mut self, inset: f64) {
+        self.left_inset = inset.max(0.);
     }
     pub fn set_drawing(&mut self, cx: &mut Cx, enabled: bool) {
         self.drawing = enabled;
@@ -262,6 +267,22 @@ impl SpatialBoard {
                 to.y -= (bottom - min_bottom).max(0.);
             } else {
                 to.y = min_top - scene.y * to.scale;
+            }
+            // Same treatment on the x axis when the host reserves a left band
+            // for floating UI (e.g. the variable panel): keep the scene right
+            // of the inset, left-anchoring when the scene is wider.
+            let min_left = self.left_inset.min(self.viewport.size.x - 61.);
+            if min_left > 0. {
+                let min_right = (self.viewport.size.x - 24.).max(min_left + 1.);
+                let left = to.x + scene.x * to.scale;
+                let right = to.x + (scene.x + scene.width) * to.scale;
+                if right - left <= min_right - min_left {
+                    to.x += (min_left - left).max(0.);
+                    let right = to.x + (scene.x + scene.width) * to.scale;
+                    to.x -= (right - min_right).max(0.);
+                } else {
+                    to.x = min_left - scene.x * to.scale;
+                }
             }
         }
         self.from = self.camera;

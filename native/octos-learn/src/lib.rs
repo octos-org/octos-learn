@@ -119,9 +119,9 @@ script_mod! {
                         // Top-left round page buttons (web .learning-top-action-group: left 12 top 24).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
                             View { width: 64 height: Fit flow: Down spacing: 6 align: Align{x: 0.5}
-                                back := Button { width: 44 height: 44 text: "首页" draw_text.text_style.font_size: 9
+                                back := Button { width: 44 height: 44 text: "首页" draw_text.text_style.font_size: 9 draw_text.color: #3c3832
                                     draw_bg +: { border_radius: 22 color: #fffdf8 color_hover: #f3ede2 } }
-                                settings := Button { enabled: false width: 44 height: 44 text: "设置" draw_text.text_style.font_size: 9
+                                settings := Button { enabled: false width: 44 height: 44 text: "设置" draw_text.text_style.font_size: 9 draw_text.color: #b3aa9c
                                     draw_bg +: { border_radius: 22 color: #fffdf8 } }
                                 // DIFF: settings page not migrated; the disabled state plus this note explain it.
                                 Label { width: Fill text: "设置尚未迁移" draw_text.wrap: Words draw_text.text_style.font_size: 7 draw_text.color: #a09689 }
@@ -869,6 +869,14 @@ impl App {
         self.ui
             .widget(cx, ids!(variable_panel))
             .set_visible(cx, !self.variable_rows.is_empty());
+        let w = self.ui.widget(cx, ids!(spatial));
+        if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_left_inset(if self.variable_rows.is_empty() {
+                0.
+            } else {
+                412.
+            });
+        };
     }
     fn set_variable(&mut self, cx: &mut Cx, index: usize, value: f64) {
         if self.player.as_ref().is_some_and(|s| s.board.animating()) {
