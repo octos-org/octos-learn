@@ -48,6 +48,7 @@ export function loadConfig(env = process.env) {
     maxConcurrent: parseInteger(env.HOSTED_TTS_MAX_CONCURRENT, 2, 1, 32),
     queueWaitMs: parseInteger(env.HOSTED_TTS_QUEUE_WAIT_MS, 3_000, 0, 60_000),
     requestsPerMinute: parseInteger(env.HOSTED_TTS_REQUESTS_PER_MINUTE, 60, 1, 10_000),
+    typesafeApiKey: env.TYPESAFE_API_KEY?.trim() || "",
   };
 }
 
@@ -372,6 +373,17 @@ export function createHandler({
       const url = new URL(request.url, "http://localhost");
       if (request.method === "GET" && url.pathname === "/health") {
         return sendJson(response, 200, { ok: true, configured: Boolean(config.appid && config.token) });
+      }
+      if ((request.method === "POST" || request.method === "GET") && url.pathname === "/api/systemone/grant") {
+        await fetchAuthenticatedUser(request, config, fetchImpl);
+        const apiKey = config.typesafeApiKey || "";
+        return sendJson(response, 200, {
+          apiKey,
+          available: Boolean(apiKey),
+        }, {
+          "cache-control": "no-store, max-age=0",
+          pragma: "no-cache",
+        });
       }
       if (!url.pathname.startsWith("/api/learn/tts/")) throw new HttpError(404, "not found");
       const me = await fetchAuthenticatedUser(request, config, fetchImpl);

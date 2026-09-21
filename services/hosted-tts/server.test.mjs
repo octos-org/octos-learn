@@ -365,3 +365,75 @@ test("native config disables direct TTS when platform is not configured and pers
     assert.deepEqual(await response.json(), { version: 1, enabled: false });
   } finally { server.close(); cleanup(); }
 });
+
+test("systemone grant requires authentication", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    typesafeApiKey: "ts-test-key",
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/systemone/grant`,
+      { method: "POST" },
+    );
+    assert.equal(response.status, 401);
+  } finally { server.close(); cleanup(); }
+});
+
+test("systemone grant returns api key when authenticated", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    typesafeApiKey: "ts-test-key-valid",
+  };
+  const fetchImpl = async (url) => {
+    assert.equal(url, "http://octos.test/api/auth/me");
+    return new Response(JSON.stringify({ user: { id: "alice", role: "user" } }), { status: 200 });
+  };
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/systemone/grant`,
+      { method: "POST", headers: { authorization: "Bearer valid-token" } },
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "no-store, max-age=0");
+    const json = await response.json();
+    assert.deepEqual(json, {
+      apiKey: "ts-test-key-valid",
+      available: true,
+    });
+  } finally { server.close(); cleanup(); }
+});
+
+test("systemone grant reports available=false when key is not configured", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    typesafeApiKey: "",
+  };
+  const fetchImpl = async () => new Response(JSON.stringify({ user: { id: "alice", role: "user" } }), { status: 200 });
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/systemone/grant`,
+      { method: "POST", headers: { authorization: "Bearer valid-token" } },
+    );
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.deepEqual(json, {
+      apiKey: "",
+      available: false,
+    });
+  } finally { server.close(); cleanup(); }
+});
+
