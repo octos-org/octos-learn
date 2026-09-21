@@ -60,7 +60,7 @@ export interface EvaluateSystemOneOptions {
   signal?: AbortSignal;
 }
 
-export const DEFAULT_TYPESAFE_API_URL = "https://api.typesafe.ai/v1/systemone";
+export const DEFAULT_TYPESAFE_API_URL = "/api/systemone/evaluate";
 export const DEFAULT_TYPESAFE_MODEL = "jev-latest";
 export const DEFAULT_TYPESAFE_TIMEOUT_MS = 500;
 
@@ -102,12 +102,16 @@ export async function evaluateSystemOne(
     : controller.signal;
 
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (apiKey?.trim()) {
+      headers["Authorization"] = `Bearer ${apiKey.trim()}`;
+    }
+
     const response = await fetchFn(baseUrl, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey.trim()}`,
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({
         state: requestPayload.state,
         model: requestPayload.model ?? DEFAULT_TYPESAFE_MODEL,

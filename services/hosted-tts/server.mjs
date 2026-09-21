@@ -385,6 +385,34 @@ export function createHandler({
           pragma: "no-cache",
         });
       }
+      if (request.method === "POST" && url.pathname === "/api/systemone/evaluate") {
+        const apiKey = config.typesafeApiKey || "";
+        if (!apiKey) {
+          throw new HttpError(503, "TypeSafe Jev is not configured on this server");
+        }
+        const body = await readJson(request);
+        const jevResponse = await fetchImpl("https://api.typesafe.ai/v1/systemone", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            state: body.state,
+            model: body.model || "jev-latest",
+            questions: body.questions,
+          }),
+          signal: AbortSignal.timeout(5_000),
+        });
+        if (!jevResponse.ok) {
+          const errText = await jevResponse.text().catch(() => "");
+          throw new HttpError(jevResponse.status, `Upstream TypeSafe error: ${errText}`);
+        }
+        const data = await jevResponse.json();
+        return sendJson(response, 200, data, {
+          "cache-control": "no-store, max-age=0",
+        });
+      }
       if (!url.pathname.startsWith("/api/learn/tts/")) throw new HttpError(404, "not found");
       const me = await fetchAuthenticatedUser(request, config, fetchImpl);
       const profileId = me.user.id;

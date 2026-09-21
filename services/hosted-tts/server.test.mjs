@@ -437,3 +437,40 @@ test("systemone grant reports available=false when key is not configured", async
   } finally { server.close(); cleanup(); }
 });
 
+test("systemone evaluate proxies to upstream TypeSafe and returns JSON", async () => {
+  const { ledger, cleanup } = fixture();
+  const config = {
+    octosBaseUrl: "http://octos.test",
+    typesafeApiKey: "ts-upstream-secret-key",
+  };
+  const mockJevResponse = {
+    model: "jev-1.13.0",
+    answers: {
+      disposition: { choice: "ignore", confidence: 0.95 },
+    },
+  };
+  const fetchImpl = async (url, options) => {
+    assert.equal(url, "https://api.typesafe.ai/v1/systemone");
+    assert.equal(options.headers["Authorization"], "Bearer ts-upstream-secret-key");
+    const body = JSON.parse(options.body);
+    assert.equal(body.state.learner_request, "呃...那个");
+    return new Response(JSON.stringify(mockJevResponse), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/systemone/evaluate`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ state: { learner_request: "呃...那个" }, questions: {} }),
+      },
+    );
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.deepEqual(json, mockJevResponse);
+  } finally { server.close(); cleanup(); }
+});
+

@@ -186,6 +186,21 @@ export default defineConfig(({ mode, command }) => {
           }
         : undefined,
       proxy: {
+        "/api/systemone/evaluate": {
+          target: "https://api.typesafe.ai",
+          changeOrigin: true,
+          rewrite: () => "/v1/systemone",
+          configure: (proxy) => {
+            proxy.on("proxyReq", (proxyReq) => {
+              proxyReq.removeHeader("origin");
+              proxyReq.removeHeader("referer");
+              const currentAuth = proxyReq.getHeader("authorization");
+              if (!currentAuth && env.VITE_TYPESAFE_API_KEY) {
+                proxyReq.setHeader("authorization", `Bearer ${env.VITE_TYPESAFE_API_KEY}`);
+              }
+            });
+          },
+        },
         "/api": {
           target: octosApiTarget,
           changeOrigin: true,
