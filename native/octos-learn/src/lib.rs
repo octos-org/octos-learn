@@ -592,7 +592,7 @@ impl App {
                         recommended := Label{{visible:false text:\"推荐版本\" draw_text.text_style.font_size:9 draw_text.color:#0b6978}}
                     }}
                     card_title := Label{{width:Fill text:\"{title}\" draw_text.wrap:Words draw_text.text_style.font_size:15 draw_text.color:#243b40 margin:Inset{{top:8}}}}
-                    card_desc := Label{{width:Fill height:34 text:\"{desc}\" draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#627579 margin:Inset{{top:6}}}}
+                    card_desc := Label{{width:Fill height:44 text:\"{desc}\" draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#627579 margin:Inset{{top:6}}}}
                     View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:12}}
                         SolidView{{width:Fill height:1 draw_bg +: {{color:#e7e9e3}}}}
                         View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}}
