@@ -65,13 +65,18 @@ export const DEFAULT_TYPESAFE_MODEL = "jev-latest";
 export const DEFAULT_TYPESAFE_TIMEOUT_MS = 500;
 
 export class TypeSafeApiError extends Error {
+  readonly status?: number;
+  readonly code?: string;
+
   constructor(
     message: string,
-    readonly status?: number,
-    readonly code?: string,
+    status?: number,
+    code?: string,
   ) {
     super(message);
     this.name = "TypeSafeApiError";
+    this.status = status;
+    this.code = code;
   }
 }
 

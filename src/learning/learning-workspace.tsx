@@ -145,7 +145,6 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
-import { requestSystemOneGrant } from "@/api/systemone-grant";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);

@@ -27,8 +27,10 @@ export interface AdmissionFastGateResult {
   subject?: AdmissionSubjectDomain;
   isSelfContained: boolean;
   clarificationPrompt?: string;
+  reason?: string;
   source: "jev_direct" | "fallback_local" | "passthrough";
   elapsedMs: number;
+  latencyMs: number;
 }
 
 export interface AdmissionFastGateOptions {
@@ -63,24 +65,30 @@ export async function evaluateAdmissionFastGate(
 
   // 1. Local fast check for empty strings
   if (!trimmed) {
+    const elapsedMs = Date.now() - startedAt;
     return {
       disposition: "ignore",
       confidence: 1.0,
       isSelfContained: false,
+      reason: "Empty input",
       source: "fallback_local",
-      elapsedMs: Date.now() - startedAt,
+      elapsedMs,
+      latencyMs: elapsedMs,
     };
   }
 
   // 2. Resolve credentials (Grant / Env)
   const apiKey = await resolveApiKey(options.apiKey);
   if (!apiKey) {
+    const elapsedMs = Date.now() - startedAt;
     return {
       disposition: "generate_lesson",
       confidence: 1.0,
       isSelfContained: true,
+      reason: "No credentials configured; passthrough to full pipeline",
       source: "passthrough",
-      elapsedMs: Date.now() - startedAt,
+      elapsedMs,
+      latencyMs: elapsedMs,
     };
   }
 
@@ -142,13 +150,16 @@ export async function evaluateAdmissionFastGate(
     // Confidence Floor: If the model is not confident, do not aggressively ignore or clarify.
     // Fall back to generate_lesson / passthrough to let the downstream system handle it.
     if (confidence < confidenceThreshold) {
+      const elapsedMs = Date.now() - startedAt;
       return {
         disposition: "generate_lesson",
         confidence,
         subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
         isSelfContained,
+        reason: "Low confidence; passthrough to full pipeline",
         source: "passthrough",
-        elapsedMs: Date.now() - startedAt,
+        elapsedMs,
+        latencyMs: elapsedMs,
       };
     }
 
@@ -161,23 +172,29 @@ export async function evaluateAdmissionFastGate(
       clarificationPrompt = `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`;
     }
 
+    const elapsedMs = Date.now() - startedAt;
     return {
       disposition,
       confidence,
       subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
       isSelfContained,
       clarificationPrompt,
+      reason: clarificationPrompt,
       source: "jev_direct",
-      elapsedMs: Date.now() - startedAt,
+      elapsedMs,
+      latencyMs: elapsedMs,
     };
   } catch (error) {
     // 4. Graceful Fallback on timeout or API error
+    const elapsedMs = Date.now() - startedAt;
     return {
       disposition: "generate_lesson",
       confidence: 0,
       isSelfContained: true,
+      reason: error instanceof Error ? error.message : "System One error",
       source: "passthrough",
-      elapsedMs: Date.now() - startedAt,
+      elapsedMs,
+      latencyMs: elapsedMs,
     };
   }
 }
