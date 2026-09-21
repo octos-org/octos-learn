@@ -22,62 +22,65 @@ script_mod! {
                 body +: {
                     flow: Overlay
                     // Launcher (web course-launcher.tsx): header, hero, recent
-                    // whiteboards, curated courses. Dark theme tokens from
-                    // src/index.css per stage brief (DIFF: the audited web
-                    // launcher CSS is actually light-themed #f7f4ec; see report).
+                    // whiteboards, curated courses. Light theme taken from the
+                    // audited course-launcher.css (#f7f4ec page, #fffef9 cards,
+                    // #166a79 teal accent, #243b40 text).
                     launcher := SolidView {
                         visible: true
                         width: Fill height: Fill
-                        draw_bg +: { color: #1a1714 }
+                        draw_bg +: { color: #f7f4ec }
                         launcher_scroll := ScrollYView { width: Fill height: Fill flow: Down
                             View { width: Fill height: Fit flow: Down align: Align{x: 0.5}
                                 View { width: 1120 height: Fit flow: Down padding: Inset{bottom: 72}
                                     // 1. Header (web .course-launcher-header).
                                     View { width: Fill height: Fit flow: Down
                                         View { width: Fill height: 82 flow: Right align: Align{y: 0.5} spacing: 10
-                                            RoundedView { width: 34 height: 34 align: Align{x: 0.5 y: 0.5}
-                                                draw_bg +: { color: #d4a574 border_radius: 9 }
-                                                Label { text: "O" draw_text.text_style.font_size: 15 draw_text.color: #1a1714 }
+                                            logo_fallback := RoundedView { width: 34 height: 34 align: Align{x: 0.5 y: 0.5}
+                                                draw_bg +: { color: #166a79 border_radius: 9 }
+                                                Label { text: "O" draw_text.text_style.font_size: 15 draw_text.color: #ffffff }
                                             }
-                                            Label { text: "Octos Learn" draw_text.text_style.font_size: 15 draw_text.color: #f8f3ed }
+                                            // The logo file is a multi-motif artboard sheet;
+                                            // preserve_viewbox crops to the intended motif.
+                                            logo_svg := Svg { width: 34 height: 34 draw_svg +: { preserve_viewbox: true } }
+                                            Label { text: "Octos Learn" draw_text.text_style.font_size: 16 draw_text.color: #243b40 }
                                             View { width: Fill height: 1 }
                                             // DIFF: no login/account system in this version.
-                                            Label { text: "登录尚未迁移" draw_text.text_style.font_size: 10 draw_text.color: #a09689 }
+                                            Label { text: "登录尚未迁移" draw_text.text_style.font_size: 10 draw_text.color: #607477 }
                                         }
-                                        SolidView { width: Fill height: 1 draw_bg +: { color: #2c261f } }
+                                        SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } }
                                     }
                                     // 2. Hero (web .course-launcher-hero).
                                     View { width: Fill height: Fit flow: Down padding: Inset{top: 56 bottom: 44}
-                                        Label { text: "LEARN ON A LIVING WHITEBOARD" draw_text.text_style.font_size: 9 draw_text.color: #d4a574 }
+                                        Label { text: "LEARN ON A LIVING WHITEBOARD" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
                                         Label { width: Fill text: "从一节课开始，或者从一块空白白板开始。"
-                                            draw_text.wrap: Words draw_text.text_style.font_size: 28 draw_text.color: #f8f3ed
+                                            draw_text.wrap: Words draw_text.text_style.font_size: 28 draw_text.color: #243b40
                                             margin: Inset{top: 14 bottom: 12} }
                                         Label { width: Fill text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。"
-                                            draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #a09689 }
+                                            draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #607477 }
                                         View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 24}
                                             // DIFF: blank whiteboard needs the session system; disabled.
                                             blank_board := Button { enabled: false text: "＋ 新建空白白板"
-                                                draw_bg +: { color: #d4a574 } draw_text.color: #1a1714 }
-                                            Label { text: "空白白板尚未迁移" draw_text.text_style.font_size: 9 draw_text.color: #a09689 }
+                                                draw_bg +: { color: #166a79 color_hover: #105664 color_down: #105664 } draw_text.color: #ffffff }
+                                            Label { text: "空白白板尚未迁移" draw_text.text_style.font_size: 9 draw_text.color: #718387 }
                                         }
                                     }
                                     // 3. Recent whiteboards (web .course-launcher-sessions);
                                     // cards are built from progress_store checkpoint files.
                                     sessions_section := View { visible: false width: Fill height: Fit flow: Down margin: Inset{bottom: 40}
                                         View { width: Fill height: Fit flow: Down spacing: 4
-                                            Label { text: "RECENT WHITEBOARDS" draw_text.text_style.font_size: 9 draw_text.color: #d4a574 }
-                                            Label { text: "最近白板" draw_text.text_style.font_size: 18 draw_text.color: #f8f3ed margin: Inset{top: 4 bottom: 10} }
-                                            SolidView { width: Fill height: 1 draw_bg +: { color: #2c261f } margin: Inset{bottom: 16} }
+                                            Label { text: "RECENT WHITEBOARDS" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
+                                            Label { text: "最近白板" draw_text.text_style.font_size: 18 draw_text.color: #243b40 margin: Inset{top: 4 bottom: 10} }
+                                            SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 16} }
                                         }
                                         session_list := View { width: Fill height: Fit flow: Flow.Right{wrap: true} spacing: 12 }
                                     }
                                     // 4. Curated courses (web .course-launcher-library);
                                     // cards are built from course_pack::catalog().
                                     View { width: Fill height: Fit flow: Down spacing: 4
-                                        Label { text: "CURATED COURSES" draw_text.text_style.font_size: 9 draw_text.color: #d4a574 }
-                                        Label { text: "预制课程" draw_text.text_style.font_size: 18 draw_text.color: #f8f3ed margin: Inset{top: 4 bottom: 10} }
-                                        SolidView { width: Fill height: 1 draw_bg +: { color: #2c261f } margin: Inset{bottom: 16} }
-                                        launcher_status := Label { width: Fill text: "" draw_text.wrap: Words draw_text.color: #a09689 draw_text.text_style.font_size: 11 }
+                                        Label { text: "CURATED COURSES" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
+                                        Label { text: "预制课程" draw_text.text_style.font_size: 18 draw_text.color: #243b40 margin: Inset{top: 4 bottom: 10} }
+                                        SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 16} }
+                                        launcher_status := Label { width: Fill text: "" draw_text.wrap: Words draw_text.color: #815d40 draw_text.text_style.font_size: 11 }
                                         course_list := View { width: Fill height: Fit flow: Flow.Right{wrap: true} spacing: 22 margin: Inset{top: 8} }
                                     }
                                 }
@@ -294,6 +297,9 @@ const PEN_COLORS: [(u8, u8, u8); 5] = [
     (0x4f, 0x84, 0xb5),
     (0x33, 0x2e, 0x28),
 ];
+/// Brand logo shipped with the app repository (public/images), rendered
+/// natively by DrawSvg. The rounded fallback block stays when parsing fails.
+const LAUNCHER_LOGO_SVG: &str = include_str!("../../../public/images/octos-logo-color.svg");
 const PEN_WIDTHS: [f64; 4] = [2.0, 3.5, 5.5, 8.0];
 
 fn pen_vec4(rgb: (u8, u8, u8)) -> Vec4 {
@@ -347,6 +353,57 @@ fn subject_label(subject: &str) -> &str {
 /// Text embedded into eval'd widget code must not break the string literal.
 fn script_text(text: &str) -> String {
     text.replace(['"', '\\', '\n'], " ")
+}
+/// makepad's SVG parser applies presentation attributes and inline styles but
+/// not `<style>` class rules. The brand logo uses Illustrator `stN` classes,
+/// so bake those fill/fill-rule declarations into attributes before loading.
+fn bake_svg_classes(svg: &str) -> String {
+    let mut baked_attrs: Vec<(String, String)> = Vec::new();
+    let mut out = String::new();
+    let mut rest = svg;
+    while let Some(start) = rest.find("<style") {
+        let Some(open_end) = rest[start..].find('>').map(|i| start + i + 1) else {
+            break;
+        };
+        let Some(close) = rest[open_end..].find("</style>").map(|i| open_end + i) else {
+            break;
+        };
+        let body = &rest[open_end..close];
+        out.push_str(&rest[..start]);
+        rest = &rest[close + "</style>".len()..];
+        for rule in body.split('}') {
+            let Some((selectors, decls)) = rule.split_once('{') else {
+                continue;
+            };
+            for decl in decls.split(';') {
+                let Some((prop, value)) = decl.split_once(':') else {
+                    continue;
+                };
+                let (prop, value) = (prop.trim(), value.trim());
+                if prop != "fill" && prop != "fill-rule" {
+                    continue;
+                }
+                for selector in selectors.split(',') {
+                    if let Some(class) = selector.trim().strip_prefix('.') {
+                        baked_attrs.push((class.to_owned(), format!("{prop}=\"{value}\"")));
+                    }
+                }
+            }
+        }
+    }
+    out.push_str(rest);
+    // Combine all declarations for one class into a single attribute string;
+    // the logo's elements each carry exactly one class.
+    let mut by_class: std::collections::BTreeMap<String, Vec<String>> =
+        std::collections::BTreeMap::new();
+    for (class, attr) in baked_attrs {
+        by_class.entry(class).or_default().push(attr);
+    }
+    let mut result = out;
+    for (class, attrs) in by_class {
+        result = result.replace(&format!("class=\"{class}\""), &attrs.join(" "));
+    }
+    result
 }
 
 impl App {
@@ -517,31 +574,31 @@ impl App {
         let recommended = pack["recommended"].as_bool().unwrap_or(false);
         let first_char = title.chars().next().unwrap_or('课');
         let code = format!(
-            "RoundedView{{width:340 height:Fit flow:Down draw_bg +: {{color:#252019 border_radius:18 border_size:1 border_color:#35302a}}
+            "RoundedView{{width:340 height:Fit flow:Down draw_bg +: {{color:#fffef9 border_radius:18 border_size:1 border_color:#dbded9}}
                 cover := View{{width:Fill height:174 flow:Overlay
-                    cover_fallback := RoundedView{{visible:false width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#3a3324 border_radius:0}}
-                        fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#d4a574}}
+                    cover_fallback := RoundedView{{visible:false width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:0}}
+                        fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#166a79}}
                     }}
                     thumb := Svg{{width:Fill height:Fill}}
                     View{{width:Fill height:Fill flow:Down align:Align{{x:0. y:1.}} padding:Inset{{left:14 bottom:12}}
-                        RoundedView{{width:Fit height:Fit padding:Inset{{left:10 right:10 top:5 bottom:5}} draw_bg +: {{color:#fffdf8ee border_radius:12}}
+                        RoundedView{{width:Fit height:Fit padding:Inset{{left:10 right:10 top:5 bottom:5}} draw_bg +: {{color:#fffffff0 border_radius:12}}
                             grade := Label{{text:\"{grade}\" draw_text.text_style.font_size:9 draw_text.color:#24434a}}
                         }}
                     }}
                 }}
                 View{{width:Fill height:Fit flow:Down padding:Inset{{left:20 right:20 top:16 bottom:16}}
                     View{{width:Fill height:Fit flow:Right spacing:12
-                        Label{{text:\"课程包 v{version}\" draw_text.text_style.font_size:9 draw_text.color:#a09689}}
-                        recommended := Label{{visible:false text:\"推荐版本\" draw_text.text_style.font_size:9 draw_text.color:#d4a574}}
+                        Label{{text:\"课程包 v{version}\" draw_text.text_style.font_size:9 draw_text.color:#5c8b92}}
+                        recommended := Label{{visible:false text:\"推荐版本\" draw_text.text_style.font_size:9 draw_text.color:#0b6978}}
                     }}
-                    card_title := Label{{width:Fill text:\"{title}\" draw_text.wrap:Words draw_text.text_style.font_size:15 draw_text.color:#f8f3ed margin:Inset{{top:8}}}}
-                    card_desc := Label{{width:Fill height:34 text:\"{desc}\" draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#a09689 margin:Inset{{top:6}}}}
+                    card_title := Label{{width:Fill text:\"{title}\" draw_text.wrap:Words draw_text.text_style.font_size:15 draw_text.color:#243b40 margin:Inset{{top:8}}}}
+                    card_desc := Label{{width:Fill height:34 text:\"{desc}\" draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#627579 margin:Inset{{top:6}}}}
                     View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:12}}
-                        SolidView{{width:Fill height:1 draw_bg +: {{color:#35302a}}}}
+                        SolidView{{width:Fill height:1 draw_bg +: {{color:#e7e9e3}}}}
                         View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}}
-                            Label{{width:Fill text:\"内置课程 · 可离线 · {minutes} 分钟\" draw_text.text_style.font_size:9 draw_text.color:#a09689}}
-                            preview := Button{{text:\"预览\"}}
-                            start := Button{{text:\"开始互动\" draw_bg +: {{color:#d4a574 color_hover:#e2b98c color_down:#c2935f}} draw_text.color:#1a1714}}
+                            Label{{width:Fill text:\"内置课程 · 可离线 · {minutes} 分钟\" draw_text.text_style.font_size:9 draw_text.color:#667a7b}}
+                            preview := Button{{text:\"预览\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#607477}}
+                            start := Button{{text:\"开始互动\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#0b6978}}
                         }}
                     }}
                 }}
@@ -583,12 +640,12 @@ impl App {
         let title = script_text(title);
         let state = if complete { "已完成" } else { "继续学习" };
         let code = format!(
-            "RoundedView{{width:280 height:76 flow:Right align:Align{{y:0.5}} padding:Inset{{left:16 right:10}} spacing:8 draw_bg +: {{color:#252019 border_radius:15 border_size:1 border_color:#35302a}}
+            "RoundedView{{width:280 height:76 flow:Right align:Align{{y:0.5}} padding:Inset{{left:16 right:10}} spacing:8 draw_bg +: {{color:#fffef9 border_radius:15 border_size:1 border_color:#dbded9}}
                 View{{width:Fill height:Fit flow:Down spacing:4
-                    session_title := Label{{width:Fill text:\"{title}\" draw_text.text_style.font_size:12 draw_text.color:#e4ddd4}}
-                    session_state := Label{{text:\"{state}\" draw_text.text_style.font_size:9 draw_text.color:#a09689}}
+                    session_title := Label{{width:Fill text:\"{title}\" draw_text.text_style.font_size:12 draw_text.color:#29464b}}
+                    session_state := Label{{text:\"{state}\" draw_text.text_style.font_size:9 draw_text.color:#718387}}
                 }}
-                open := Button{{text:\"继续学习\"}}
+                open := Button{{text:\"继续学习\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#0b6978}}
             }}"
         );
         let card = board_view::widget(cx, &code)?;
@@ -880,6 +937,18 @@ impl AppMain for App {
             self.last_tick = Some(Instant::now());
             self.timer = cx.start_interval(1.0 / 60.0);
             self.rebuild_launcher(cx);
+            let logo_loaded = {
+                let logo = self.ui.widget(cx, ids!(logo_svg));
+                let mut loaded = false;
+                if let Some(mut svg) = logo.borrow_mut::<Svg>() {
+                    svg.draw_svg.load_from_str(&bake_svg_classes(LAUNCHER_LOGO_SVG));
+                    loaded = svg.draw_svg.content_size.x > 0.;
+                }
+                loaded
+            };
+            if logo_loaded {
+                self.ui.widget(cx, ids!(logo_fallback)).set_visible(cx, false);
+            }
         }
         self.poll_storage(cx);
         let control_event = matches!(event, Event::Actions(_));
@@ -1140,5 +1209,19 @@ mod tests {
         assert_eq!(super::format_value(4., "厘米"), "4 厘米");
         assert_eq!(super::format_value(-2.5, ""), "-2.5");
         assert_eq!(super::format_value(0.30000000000000004, ""), "0.3");
+    }
+    #[test]
+    fn svg_style_classes_are_baked_into_attributes() {
+        let svg = r#"<svg><defs><style>
+            .st0 { fill: #f7d47b; }
+            .st0, .st1 { fill-rule: evenodd; }
+            .st1 { fill: #fff; stroke: #000; }
+        </style></defs><path class="st0" d="M0 0"/><path class="st1" d="M1 1"/></svg>"#;
+        let baked = super::bake_svg_classes(svg);
+        assert!(!baked.contains("<style"));
+        assert!(baked.contains(r##"<path fill="#f7d47b" fill-rule="evenodd" d="M0 0"/>"##));
+        assert!(baked.contains(r##"<path fill-rule="evenodd" fill="#fff" d="M1 1"/>"##));
+        // stroke is not baked (logo only needs fill/fill-rule), class attr is gone either way
+        assert!(!baked.contains("class="));
     }
 }
