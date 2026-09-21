@@ -402,7 +402,191 @@ pub fn text<'a>(v: &'a Value, k: &str) -> &'a str {
 pub fn items<'a>(v: &'a Value, k: &str) -> &'a [Value] {
     v[k].as_array().map(Vec::as_slice).unwrap_or(&[])
 }
-pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> {
+/// Tone palette for geometry polygons, matching the web renderer
+/// (oll web-runtime styles.css `.geometry-polygon-<tone>`).
+/// Returns (fill, stroke).
+pub fn polygon_tone(tone: &str) -> (Vec4, Vec4) {
+    match tone {
+        "secondary" => (
+            vec4(79. / 255., 132. / 255., 181. / 255., 0.18),
+            vec4(79. / 255., 132. / 255., 181. / 255., 1.0),
+        ),
+        "accent" => (
+            vec4(215. / 255., 154. / 255., 41. / 255., 0.22),
+            vec4(199. / 255., 131. / 255., 46. / 255., 1.0),
+        ),
+        "neutral" => (
+            vec4(82. / 255., 107. / 255., 103. / 255., 0.12),
+            vec4(82. / 255., 107. / 255., 103. / 255., 1.0),
+        ),
+        // "primary" and any unknown tone fall back to the primary teal.
+        _ => (
+            vec4(35. / 255., 135. / 255., 124. / 255., 0.18),
+            vec4(35. / 255., 135. / 255., 124. / 255., 1.0),
+        ),
+    }
+}
+/// Resolve a point id to coordinates within a geometry/plot content object.
+fn point_coords(c: &Value, id: &str) -> Result<(f64, f64), String> {
+    let v = items(c, "points")
+        .iter()
+        .find(|v| v["id"] == id)
+        .ok_or_else(|| format!("Unknown point {id}"))?;
+    Ok((num(v, "x")?, num(v, "y")?))
+}
+/// Resolve a polygon's point-id list to vertex coordinates.
+pub fn polygon_vertices(c: &Value, polygon: &Value) -> Result<Vec<(f64, f64)>, String> {
+    let ids = items(polygon, "points");
+    if ids.len() < 3 {
+        return Err("多边形至少需要 3 个顶点".into());
+    }
+    ids.iter()
+        .map(|id| point_coords(c, id.as_str().ok_or("多边形顶点不是点 id")?))
+        .collect()
+}
+/// Decompose a polygon into an x-monotone band (x, y_lo, y_hi) sampled at
+/// every vertex x, so `LinePlot::fill_between` can fill it. Exact for convex
+/// polygons (all course polygons are rectangles); non-convex self-intersecting
+/// shapes fill their vertical envelope, recorded as a known difference.
+pub fn polygon_bands(vertices: &[(f64, f64)]) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
+    let mut xs: Vec<f64> = vertices.iter().map(|v| v.0).collect();
+    xs.sort_by(f64::total_cmp);
+    xs.dedup();
+    let mut lo = Vec::with_capacity(xs.len());
+    let mut hi = Vec::with_capacity(xs.len());
+    for &x in &xs {
+        let mut ys = Vec::new();
+        for i in 0..vertices.len() {
+            let (x1, y1) = vertices[i];
+            let (x2, y2) = vertices[(i + 1) % vertices.len()];
+            if (x2 - x1).abs() < 1e-12 {
+                if (x - x1).abs() < 1e-9 {
+                    ys.push(y1);
+                    ys.push(y2);
+                }
+                continue;
+            }
+            let t = (x - x1) / (x2 - x1);
+            if (-1e-9..=1.0 + 1e-9).contains(&t) {
+                ys.push(y1 + t.clamp(0.0, 1.0) * (y2 - y1));
+            }
+        }
+        ys.sort_by(f64::total_cmp);
+        lo.push(ys.first().copied().unwrap_or(0.0));
+        hi.push(ys.last().copied().unwrap_or(0.0));
+    }
+    (xs, lo, hi)
+}
+/// formatPointLabel equivalent (oll web-runtime plot.ts:238): `{x}`/`{y}`/
+/// `{coords}` placeholders, values rounded to 3 decimals, -0 rendered as "0".
+pub fn format_point_label(raw: &str, x: f64, y: f64) -> String {
+    fn format_num(n: f64) -> String {
+        if !n.is_finite() {
+            return String::new();
+        }
+        let rounded = (n * 1000.).round() / 1000.;
+        if rounded == 0. {
+            "0".into()
+        } else {
+            format!("{rounded}")
+        }
+    }
+    raw.replace("{x}", &format_num(x))
+        .replace("{y}", &format_num(y))
+        .replace("{coords}", &format!("({}, {})", format_num(x), format_num(y)))
+}
+pub struct SecantMeasurement {
+    pub dx: f64,
+    pub dy: f64,
+    pub slope: f64,
+}
+/// secantMeasurement equivalent (plot.ts:215): undefined when the two x
+/// coordinates coincide (within relative 1e-9) or values are non-finite.
+pub fn secant_measurement(a: (f64, f64), b: (f64, f64)) -> Option<SecantMeasurement> {
+    let dx = b.0 - a.0;
+    let dy = b.1 - a.1;
+    if ![a.0, a.1, b.0, b.1, dx, dy].iter().all(|v| v.is_finite()) {
+        return None;
+    }
+    if dx.abs() <= 1e-9 * 1.0f64.max(a.0.abs()).max(b.0.abs()) {
+        return None;
+    }
+    let slope = dy / dx;
+    slope.is_finite().then_some(SecantMeasurement { dx, dy, slope })
+}
+/// Number(n.toPrecision(5)).toString() equivalent for measurement text.
+pub fn precision5(n: f64) -> String {
+    if !n.is_finite() {
+        return String::new();
+    }
+    if n == 0. {
+        return "0".into();
+    }
+    let decimals = 4. - n.abs().log10().floor();
+    if decimals < 0. {
+        let magnitude = 10f64.powf(-decimals);
+        let v = (n / magnitude).round() * magnitude;
+        return format!("{v:.0}");
+    }
+    let decimals = decimals.min(15.) as usize;
+    let s = format!("{n:.decimals$}");
+    let s = s.trim_end_matches('0').trim_end_matches('.');
+    if s == "-0" { "0".into() } else { s.into() }
+}
+/// Letterbox equal-unit plots by widening the range of the less-constrained
+/// axis instead of shrinking the frame (plot.ts plotFrame:225 adapted to a
+/// fixed plot area). Returns adjusted ((xmin, xmax), (ymin, ymax)).
+pub fn equal_scale_ranges(
+    xmin: f64,
+    xmax: f64,
+    ymin: f64,
+    ymax: f64,
+    w_px: f64,
+    h_px: f64,
+) -> ((f64, f64), (f64, f64)) {
+    let (xr, yr) = (xmax - xmin, ymax - ymin);
+    if xr <= 0. || yr <= 0. || w_px <= 0. || h_px <= 0. {
+        return ((xmin, xmax), (ymin, ymax));
+    }
+    let scale = (w_px / xr).min(h_px / yr);
+    let (xmid, ymid) = ((xmin + xmax) / 2., (ymin + ymax) / 2.);
+    let (xw, yh) = (w_px / scale / 2., h_px / scale / 2.);
+    ((xmid - xw, xmid + xw), (ymid - yh, ymid + yh))
+}
+/// Caption text rendered below a chart card: geometry captions verbatim;
+/// secant measurement for plot cards (board-view.ts:663 wording).
+pub fn chart_caption(node: &Value) -> String {
+    let c = &node["content"];
+    if node["kind"] == "plot" && text(c, "measurement") == "secant" {
+        let pts = items(c, "points");
+        if pts.len() == 2 {
+            if let (Ok(a), Ok(b)) = (
+                num(&pts[0], "x").and_then(|x| num(&pts[0], "y").map(|y| (x, y))),
+                num(&pts[1], "x").and_then(|x| num(&pts[1], "y").map(|y| (x, y))),
+            ) {
+                return match secant_measurement(a, b) {
+                    Some(m) => format!(
+                        "Δx = {} · Δy = {} · 割线斜率 ≈ {}",
+                        precision5(m.dx),
+                        precision5(m.dy),
+                        precision5(m.slope)
+                    ),
+                    None => "两点横坐标重合或过近，不能用 Δy/Δx 计算斜率。".into(),
+                };
+            }
+        }
+        return String::new();
+    }
+    c["caption"].as_str().unwrap_or("").into()
+}
+/// plot_px estimates the plot area in pixels (card size minus margins); it is
+/// only used to letterbox equal_scale axes, mirroring the web plotFrame.
+pub fn render(
+    plot: &mut LinePlot,
+    node: &Value,
+    p: &Preview,
+    plot_px: (f64, f64),
+) -> Result<(), String> {
     let c = &node["content"];
     let blue = vec4(0.20, 0.65, 1.0, 1.0);
     let gold = vec4(1.0, 0.65, 0.15, 1.0);
@@ -416,18 +600,47 @@ pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), Stri
     plot.set_ylabel(text(&c["axes"]["y"], "label"));
     let xmin = num(&c["axes"]["x"], "min")?;
     let xmax = num(&c["axes"]["x"], "max")?;
+    let ymin = num(&c["axes"]["y"], "min")?;
+    let ymax = num(&c["axes"]["y"], "max")?;
+    let ((xmin, xmax), (ymin, ymax)) = if c["axes"]["equal_scale"] == true {
+        equal_scale_ranges(xmin, xmax, ymin, ymax, plot_px.0, plot_px.1)
+    } else {
+        ((xmin, xmax), (ymin, ymax))
+    };
     plot.set_xlim(xmin, xmax);
-    plot.set_ylim(num(&c["axes"]["y"], "min")?, num(&c["axes"]["y"], "max")?);
+    plot.set_ylim(ymin, ymax);
     plot.set_show_points(false);
     plot.set_legend(makepad_plot::LegendPosition::None);
     let points = items(c, "points");
-    let point = |id: &str| -> Result<(f64, f64), String> {
-        let v = points
-            .iter()
-            .find(|v| v["id"] == id)
-            .ok_or_else(|| format!("Unknown point {id}"))?;
-        Ok((num(v, "x")?, num(v, "y")?))
-    };
+    let point = |id: &str| point_coords(c, id);
+    // Polygons fill first so segments/curves/points draw above them.
+    for polygon in items(c, "polygons") {
+        let Ok(vertices) = polygon_vertices(c, polygon) else {
+            // Web parity: unresolvable polygons are skipped, not fatal.
+            continue;
+        };
+        let (fill, stroke) = polygon_tone(text(polygon, "tone"));
+        let (bx, blo, bhi) = polygon_bands(&vertices);
+        plot.fill_between(bx, bhi, blo, fill);
+        let mut ox: Vec<f64> = vertices.iter().map(|v| v.0).collect();
+        let mut oy: Vec<f64> = vertices.iter().map(|v| v.1).collect();
+        ox.push(vertices[0].0);
+        oy.push(vertices[0].1);
+        plot.add_series(
+            Series::new("")
+                .with_data(ox, oy)
+                .with_color(stroke)
+                .with_line_width(2.2),
+        );
+        let label = text(polygon, "label");
+        if !label.is_empty() {
+            let (cx, cy) = vertices
+                .iter()
+                .fold((0., 0.), |(sx, sy), v| (sx + v.0, sy + v.1));
+            let n = vertices.len() as f64;
+            plot.annotate(label, cx / n, cy / n, stroke, 10.0);
+        }
+    }
     for key in ["circles", "arcs"] {
         for circle in items(c, key) {
             let (cx, cy) = point(text(circle, "center"))?;
@@ -457,11 +670,13 @@ pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), Stri
             Series::new(text(segment, "label"))
                 .with_data(vec![x1, x2], vec![y1, y2])
                 .with_color(gold)
-                .with_line_style(if text(segment, "style") == "projection" {
-                    LineStyle::Dashed
-                } else {
-                    LineStyle::Solid
-                }),
+                .with_line_style(
+                    if matches!(text(segment, "style"), "projection" | "dashed") {
+                        LineStyle::Dashed
+                    } else {
+                        LineStyle::Solid
+                    },
+                ),
         );
     }
     for curve in items(c, "curves") {
@@ -508,7 +723,29 @@ pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), Stri
             );
         }
     }
+    // Secant measurement: dashed secant connector plus Δx/Δy guide lines
+    // (board-view.ts:650-661). The measurement text itself is rendered as the
+    // card caption by board_view/spatial_board (chart_caption).
+    if node["kind"] == "plot" && text(c, "measurement") == "secant" && points.len() == 2 {
+        let a = (num(&points[0], "x")?, num(&points[0], "y")?);
+        let b = (num(&points[1], "x")?, num(&points[1], "y")?);
+        if secant_measurement(a, b).is_some() {
+            let guide = |xs: Vec<f64>, ys: Vec<f64>| {
+                Series::new("")
+                    .with_data(xs, ys)
+                    .with_color(gold)
+                    .with_line_style(LineStyle::Dashed)
+            };
+            plot.add_series(guide(vec![a.0, b.0], vec![a.1, b.1]));
+            plot.add_series(guide(vec![a.0, b.0], vec![a.1, a.1]));
+            plot.add_series(guide(vec![b.0, b.0], vec![a.1, b.1]));
+        }
+    }
     for pt in points {
+        // Points with visible:false only serve as polygon/segment endpoints.
+        if pt["visible"] == false {
+            continue;
+        }
         let x = num(pt, "x")?;
         let y = num(pt, "y")?;
         plot.add_series(
@@ -526,7 +763,10 @@ pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), Stri
         } else {
             0.10
         };
-        plot.annotate(text(pt, "label"), x, y + offset, gold, 10.0);
+        let label = format_point_label(text(pt, "label"), x, y);
+        if !label.is_empty() {
+            plot.annotate(label, x, y + offset, gold, 10.0);
+        }
     }
     Ok(())
 }
@@ -568,6 +808,7 @@ fn clip_curve(xs: &[f64], ys: &[f64], min: f64, max: f64) -> Vec<(Vec<f64>, Vec<
 }
 #[cfg(test)]
 mod plot_tests {
+    use serde_json::json;
     #[test]
     fn clipping_does_not_join_separated_runs_or_clamp_to_a_false_plateau() {
         let runs = super::clip_curve(&[0., 1., 2., 3., 4.], &[0., 2., 2., 2., 0.], -1., 1.);
@@ -576,6 +817,92 @@ mod plot_tests {
             vec![(vec![0., 0.5], vec![0., 1.]), (vec![3.5, 4.], vec![1., 0.])]
         );
         assert!(super::clip_curve(&[0., 1.], &[2., 2.], -1., 1.).is_empty());
+    }
+    #[test]
+    fn point_label_templates_round_to_three_decimals_and_normalize_negative_zero() {
+        assert_eq!(super::format_point_label("P(0, {y})", 0., -0.), "P(0, 0)");
+        assert_eq!(super::format_point_label("{x}", 1.23456, 0.), "1.235");
+        assert_eq!(
+            super::format_point_label("{coords}", 0.30000000000000004, -2.),
+            "(0.3, -2)"
+        );
+        assert_eq!(super::format_point_label("静态", 1., 2.), "静态");
+        assert_eq!(super::format_point_label("", 1., 2.), "");
+    }
+    #[test]
+    fn polygon_vertices_resolve_point_ids_and_reject_bad_references() {
+        let c = json!({"points":[{"id":"a","x":0,"y":0},{"id":"b","x":4,"y":0},{"id":"c","x":4,"y":3},{"id":"d","x":0,"y":3}]});
+        let polygon = json!({"points":["a","b","c","d"]});
+        assert_eq!(
+            super::polygon_vertices(&c, &polygon).unwrap(),
+            vec![(0., 0.), (4., 0.), (4., 3.), (0., 3.)]
+        );
+        assert!(super::polygon_vertices(&c, &json!({"points":["a","b","missing"]})).is_err());
+        assert!(super::polygon_vertices(&c, &json!({"points":["a","b"]})).is_err());
+    }
+    #[test]
+    fn polygon_bands_cover_rectangles_exactly() {
+        let (xs, lo, hi) =
+            super::polygon_bands(&[(0., 0.), (4., 0.), (4., 3.), (0., 3.)]);
+        assert_eq!(xs, vec![0., 4.]);
+        assert_eq!(lo, vec![0., 0.]);
+        assert_eq!(hi, vec![3., 3.]);
+        let (xs, lo, hi) = super::polygon_bands(&[(0., 0.), (2., 2.), (4., 0.)]);
+        assert_eq!(xs, vec![0., 2., 4.]);
+        assert_eq!(lo, vec![0., 0., 0.]);
+        assert_eq!(hi, vec![0., 2., 0.]);
+    }
+    #[test]
+    fn polygon_tones_match_the_web_palette() {
+        let (fill, stroke) = super::polygon_tone("primary");
+        assert!((fill.w - 0.18).abs() < 1e-6);
+        assert!((stroke.y - 135. / 255.).abs() < 1e-6);
+        assert_eq!(super::polygon_tone("unknown"), super::polygon_tone("primary"));
+        assert_ne!(super::polygon_tone("accent"), super::polygon_tone("primary"));
+    }
+    #[test]
+    fn secant_measurement_matches_the_web_guard() {
+        let m = super::secant_measurement((0., 1.), (1., 3.)).unwrap();
+        assert_eq!((m.dx, m.dy, m.slope), (1., 2., 2.));
+        assert!(super::secant_measurement((1., 1.), (1., 5.)).is_none());
+        assert!(super::secant_measurement((0., f64::NAN), (1., 5.)).is_none());
+    }
+    #[test]
+    fn precision5_trims_like_js_to_precision() {
+        assert_eq!(super::precision5(2.), "2");
+        assert_eq!(super::precision5(0.30000000000000004), "0.3");
+        assert_eq!(super::precision5(-2.), "-2");
+        assert_eq!(super::precision5(1.0 / 3.0), "0.33333");
+        assert_eq!(super::precision5(123456.), "123460");
+    }
+    #[test]
+    fn equal_scale_widens_only_the_less_constrained_axis() {
+        // Plot area 372x314 (plot card), x range 8, y range 12: y is the
+        // limiting axis, x widens symmetrically to keep units square.
+        let ((x0, x1), (y0, y1)) = super::equal_scale_ranges(-4., 4., -6., 6., 372., 314.);
+        assert!((y0 - -6.).abs() < 1e-9 && (y1 - 6.).abs() < 1e-9);
+        let scale = 314. / 12.;
+        let half = 372. / scale / 2.;
+        assert!((x0 - -half).abs() < 1e-9 && (x1 - half).abs() < 1e-9);
+        // Degenerate inputs pass through unchanged.
+        assert_eq!(
+            super::equal_scale_ranges(0., 0., -1., 1., 372., 314.),
+            ((0., 0.), (-1., 1.))
+        );
+    }
+    #[test]
+    fn chart_caption_uses_geometry_caption_or_secant_measurement() {
+        let geometry = json!({"kind":"geometry","content":{"caption":"每个小方格面积为 1"}});
+        assert_eq!(super::chart_caption(&geometry), "每个小方格面积为 1");
+        let plot = json!({"kind":"plot","content":{"measurement":"secant","points":[{"x":0,"y":1},{"x":1,"y":3}]}});
+        assert_eq!(
+            super::chart_caption(&plot),
+            "Δx = 1 · Δy = 2 · 割线斜率 ≈ 2"
+        );
+        let degenerate = json!({"kind":"plot","content":{"measurement":"secant","points":[{"x":1,"y":1},{"x":1,"y":3}]}});
+        assert!(super::chart_caption(&degenerate).contains("重合"));
+        let plain = json!({"kind":"plot","content":{}});
+        assert_eq!(super::chart_caption(&plain), "");
     }
 }
 impl AppMain for App {

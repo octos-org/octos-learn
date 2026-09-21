@@ -37,6 +37,12 @@ pub struct SpatialBoard {
     #[rust]
     ink: Ink,
     #[rust]
+    pen_color: Vec4,
+    #[rust]
+    pen_width: f64,
+    #[rust]
+    stroke_styles: BTreeMap<u64, (Vec4, f64)>,
+    #[rust]
     drawing: bool,
     #[rust]
     stroke_id: u64,
@@ -111,7 +117,35 @@ fn resolve_geometry(
 }
 
 impl SpatialBoard {
+    /// Web default pen (#176b62, 3px). Ink strokes keep no color in the
+    /// runtime; the board owns per-stroke style side state so undo/redo keep
+    /// working by stroke id without touching oll-runtime.
+    pub fn default_pen() -> (Vec4, f64) {
+        (
+            vec4(0x17 as f32 / 255., 0x6b as f32 / 255., 0x62 as f32 / 255., 1.),
+            3.,
+        )
+    }
+    pub fn pen(&self) -> (Vec4, f64) {
+        if self.pen_width <= 0. {
+            Self::default_pen()
+        } else {
+            (self.pen_color, self.pen_width)
+        }
+    }
+    pub fn set_pen(&mut self, cx: &mut Cx, color: Vec4, width: f64) {
+        self.pen_color = color;
+        self.pen_width = width;
+        self.redraw(cx);
+    }
+    pub fn ink_count(&self) -> usize {
+        self.ink.strokes.len()
+    }
     pub fn ink_batch(&mut self, cx: &mut Cx, batch: &Value) -> Result<(), String> {
+        if let Some(id) = batch["pointerId"].as_u64() {
+            let pen = self.pen();
+            self.stroke_styles.entry(id).or_insert(pen);
+        }
         if let Some(id) = self.ink.batch(
             batch,
             self.camera,
@@ -159,6 +193,7 @@ impl SpatialBoard {
         self.drawing = false;
         self.configure_ink(cx);
         self.ink = Default::default();
+        self.stroke_styles.clear();
         self.ink_to_ack.clear();
         self.ink_drawn.clear();
         self.board = None;
@@ -267,10 +302,7 @@ impl SpatialBoard {
                     "text" if node["content"]["fragments"].is_array() => {
                         board_view::text_node(cx, node)?
                     }
-                    "plot" | "geometry" => {
-                        let top = if node["kind"] == "geometry" { 28 } else { 36 };
-                        board_view::widget(cx,&format!("mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:{top} bottom:40}}}}"))?
-                    }
+                    "plot" | "geometry" => board_view::chart_node(cx, node)?,
                     _ => {
                         let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
                         let label = board_view::label(cx, &board_view::node_notes(node))?;
@@ -339,13 +371,28 @@ impl SpatialBoard {
             }
             self.signature = signature;
         }
-        for (id, _, w) in &self.entries {
-            if let Some(mut plot) = w.borrow_mut::<LinePlot>() {
-                if let Some(node) = p.nodes.iter().find(|n| n["id"] == id.as_str()) {
-                    plot.clear();
-                    crate::render(&mut plot, node, p)?;
-                }
+        for (id, rect, w) in &self.entries {
+            let Some(node) = p.nodes.iter().find(|n| n["id"] == id.as_str()) else {
+                continue;
+            };
+            let kind = node["kind"].as_str().unwrap_or("");
+            if kind != "plot" && kind != "geometry" {
+                continue;
             }
+            let plot_ref = w.widget(cx, ids!(plot));
+            if let Some(mut plot) = plot_ref.borrow_mut::<LinePlot>() {
+                let top = if kind == "geometry" { 28. } else { 36. };
+                let plot_px = (
+                    (rect.width - 68.).max(1.),
+                    (rect.height - 40. - top - board_view::caption_extra(node)).max(1.),
+                );
+                plot.clear();
+                crate::render(&mut plot, node, p, plot_px)?;
+            }
+            let caption = crate::chart_caption(node);
+            w.label(cx, ids!(caption)).set_text(cx, &caption);
+            w.widget(cx, ids!(caption_box))
+                .set_visible(cx, !caption.is_empty());
         }
         let mut requested = Vec::new();
         if self.last_action != p.cursor {
@@ -468,6 +515,8 @@ impl Widget for SpatialBoard {
             match hit {
                 Hit::FingerDown(e) => {
                     self.stroke_id += 1;
+                    let pen = self.pen();
+                    self.stroke_styles.insert(self.stroke_id, pen);
                     self.desktop_ink(cx, "down", e.abs, e.time);
                 }
                 Hit::FingerMove(e) => self.desktop_ink(cx, "move", e.abs, e.time),
@@ -599,9 +648,13 @@ impl Widget for SpatialBoard {
                 }
             }
         }
-        self.draw_vector
-            .set_color(100. / 255., 219. / 255., 185. / 255., 1.);
         for stroke in &self.ink.strokes {
+            let (color, width) = self
+                .stroke_styles
+                .get(&stroke.id)
+                .copied()
+                .unwrap_or_else(|| Self::default_pen());
+            self.draw_vector.set_color(color.x, color.y, color.z, color.w);
             if let Some(p) = stroke.points.first() {
                 self.draw_vector.move_to(p.x as f32, p.y as f32);
                 if stroke.points.len() == 1 {
@@ -610,17 +663,19 @@ impl Widget for SpatialBoard {
                 for p in stroke.points.iter().skip(1) {
                     self.draw_vector.line_to(p.x as f32, p.y as f32);
                 }
-                self.draw_vector.stroke(stroke.width as f32);
+                self.draw_vector.stroke((width / self.camera.scale) as f32);
             }
         }
         #[cfg(not(target_os = "android"))]
         if let Some(points) = self.ink.active_points() {
+            let (color, width) = self.pen();
+            self.draw_vector.set_color(color.x, color.y, color.z, color.w);
             if let Some(p) = points.first() {
                 self.draw_vector.move_to(p.x as f32, p.y as f32);
                 for p in points.iter().skip(1) {
                     self.draw_vector.line_to(p.x as f32, p.y as f32);
                 }
-                self.draw_vector.stroke((3. / self.camera.scale) as f32);
+                self.draw_vector.stroke((width / self.camera.scale) as f32);
             }
         }
         self.draw_vector.end(cx);

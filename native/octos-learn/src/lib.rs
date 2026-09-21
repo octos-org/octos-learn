@@ -1,6 +1,11 @@
+//! Octos Learn macOS product shell: launcher + course playback page.
+//! The playback page mirrors the web learning workspace (src/learning/
+//! learning-workspace.tsx + oll/oll-lesson-runtime.tsx): full-screen spatial
+//! board with floating controls. Differences from the web baseline are marked
+//! "DIFF" and collected in the handoff report.
 use makepad_widgets::*;
 use oll_runtime::session::Session;
-use octos_oll_preview::spatial_board;
+use octos_oll_preview::{board_view, progress_store, spatial_board};
 use std::time::Instant;
 
 mod course_pack;
@@ -15,7 +20,8 @@ script_mod! {
             main_window := Window {
                 window.inner_size: vec2(1440, 900)
                 body +: {
-                    width: Fill height: Fill
+                    flow: Overlay
+                    // Launcher visuals are a later milestone; structure kept as-is.
                     launcher := SolidView {
                         visible: true
                         width: Fill height: Fill
@@ -30,27 +36,145 @@ script_mod! {
                         }
                         launcher_status := Label { text: "" draw_text.color: #a09689 draw_text.text_style.font_size: 11 }
                     }
-                    learning := SolidView {
+                    // Playback page (web: learning-page.tsx full-bleed board, all
+                    // controls floating above it).
+                    learning := View {
                         visible: false
                         width: Fill height: Fill
-                        flow: Down
-                        draw_bg +: { color: #f8f7f3 }
-                        SolidView { width: Fill height: Fit flow: Right spacing: 12 padding: 10 align: Align{y: 0.5}
-                            draw_bg +: { color: #fffdf8 }
-                            back := Button { text: "首页" }
-                            course_title := Label { width: Fill text: "" }
-                            play := Button { text: "播放 / 暂停" }
-                            restart := Button { text: "重新播放" }
-                            ink_mode := Button { text: "书写 / 浏览" }
-                            status := Label { text: "" draw_text.text_style.font_size: 11 }
+                        flow: Overlay
+                        spatial := SpatialBoard { width: Fill height: Fill draw_bg +: { color: #f8f7f3 } }
+                        // Top bar (web .learning-workspace-topbar: left 116, right 14, top 14).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 116 right: 14 top: 14}
+                            topbar := RoundedView {
+                                width: Fill height: Fit flow: Right spacing: 10 align: Align{y: 0.5}
+                                padding: Inset{left: 18 right: 9 top: 7 bottom: 7}
+                                draw_bg +: { color: #fdfaf3 border_radius: 18 border_size: 1 border_color: #e8e0d4 }
+                                View { width: Fill height: Fit flow: Down spacing: 2
+                                    Label { text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 8 draw_text.color: #8a8074 }
+                                    course_title := Label { text: "" draw_text.text_style.font_size: 15 draw_text.color: #332e28 }
+                                }
+                                play := Button { text: "播放" }
+                                // DIFF: runtime has no per-beat seek, so both stay disabled.
+                                next_beat := Button { enabled: false text: "下一 Beat" }
+                                replay_topic := Button { enabled: false text: "重播 Topic" }
+                                narration_toggle := Button { text: "旁白：开" }
+                                action_status := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #a09689 }
+                                progress_note := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #94a36f }
+                                // DIFF: voice/camera are not migrated; disabled placeholders.
+                                voice := Button { enabled: false text: "语音·未迁移" }
+                                camera := Button { enabled: false text: "摄像头·未迁移" }
+                            }
                         }
-                        spatial := SpatialBoard { width: Fill height: Fill }
-                        narration := Label { width: Fill height: Fit padding: 12 draw_text.wrap: Words text: "" }
+                        // Top-left round page buttons (web .learning-top-action-group: left 12 top 24).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
+                            View { width: 64 height: Fit flow: Down spacing: 6 align: Align{x: 0.5}
+                                back := Button { width: 44 height: 44 text: "首页" draw_text.text_style.font_size: 9
+                                    draw_bg +: { border_radius: 22 color: #fffdf8 color_hover: #f3ede2 } }
+                                settings := Button { enabled: false width: 44 height: 44 text: "设置" draw_text.text_style.font_size: 9
+                                    draw_bg +: { border_radius: 22 color: #fffdf8 } }
+                                // DIFF: settings page not migrated; the disabled state plus this note explain it.
+                                Label { width: Fill text: "设置尚未迁移" draw_text.wrap: Words draw_text.text_style.font_size: 7 draw_text.color: #a09689 }
+                            }
+                        }
+                        // Handwriting toolbar (web .learning-ink-toolbar: top 88 left 20).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 20 top: 88}
+                            View { width: Fit height: Fit flow: Down spacing: 6
+                                ink_toolbar := RoundedView {
+                                    width: Fit height: Fit flow: Down spacing: 3 padding: 5 align: Align{x: 0.5}
+                                    draw_bg +: { color: #fffdf8f0 border_radius: 16 border_size: 1 border_color: #e8e0d4 }
+                                    ink_hand := Button { width: 64 text: "浏览" }
+                                    ink_pen := Button { width: 64 text: "书写" }
+                                    // DIFF: oll-runtime Ink has no erase/select; both stay disabled.
+                                    ink_erase := Button { width: 64 enabled: false text: "擦除" }
+                                    ink_select := Button { width: 64 enabled: false text: "框选" }
+                                    ink_palette := Button { width: 64 text: "调色" }
+                                    ink_width := Button { width: 64 text: "粗细" }
+                                    ink_undo := Button { width: 64 text: "撤销" }
+                                    ink_redo := Button { width: 64 text: "重做" }
+                                    ink_status := Label { width: Fit text: "0 项笔迹" draw_text.text_style.font_size: 8 draw_text.color: #827b72 }
+                                }
+                                ink_palette_panel := RoundedView {
+                                    visible: false width: Fit height: Fit flow: Right spacing: 4 padding: 5
+                                    draw_bg +: { color: #fffdf8f0 border_radius: 12 border_size: 1 border_color: #e8e0d4 }
+                                    ink_color_0 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #176b62 color_hover: #176b62 color_down: #176b62 border_radius: 13 } }
+                                    ink_color_1 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #d4a574 color_hover: #d4a574 color_down: #d4a574 border_radius: 13 } }
+                                    ink_color_2 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #b95873 color_hover: #b95873 color_down: #b95873 border_radius: 13 } }
+                                    ink_color_3 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #4f84b5 color_hover: #4f84b5 color_down: #4f84b5 border_radius: 13 } }
+                                    ink_color_4 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #332e28 color_hover: #332e28 color_down: #332e28 border_radius: 13 } }
+                                }
+                                ink_width_panel := RoundedView {
+                                    visible: false width: Fit height: Fit flow: Right spacing: 4 padding: 5
+                                    draw_bg +: { color: #fffdf8f0 border_radius: 12 border_size: 1 border_color: #e8e0d4 }
+                                    ink_width_0 := Button { text: "细" }
+                                    ink_width_1 := Button { text: "中" }
+                                    ink_width_2 := Button { text: "粗" }
+                                    ink_width_3 := Button { text: "特" }
+                                }
+                                // DIFF: persisted ink documents are not migrated; strokes live in memory only.
+                                Label { width: Fit text: "擦除 / 框选 / 笔迹持久化尚未迁移" draw_text.text_style.font_size: 8 draw_text.color: #a09689 }
+                            }
+                        }
+                        // Variable controls. DIFF: the web panel is world-anchored next to
+                        // the plot card; this version pins it to a fixed floating slot
+                        // (web default slot: left 28, bottom 182).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 1.} padding: Inset{left: 28 bottom: 182}
+                            variable_panel := RoundedView {
+                                visible: false width: 360 height: Fit flow: Down spacing: 6
+                                padding: Inset{left: 12 right: 12 top: 10 bottom: 10}
+                                draw_bg +: { color: #fffdf8f2 border_radius: 18 border_size: 1 border_color: #e8e0d4 }
+                                variable_list := View { width: Fill height: Fit flow: Down spacing: 8 }
+                                variable_note := Label { visible: false width: Fill height: Fit text: "老师正在演示这个变量，结束后即可继续拖动"
+                                    draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
+                            }
+                        }
+                        // Teacher (web .octos-teacher: right 24 bottom 98).
+                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
+                            View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 1.}
+                                narration_bubble := RoundedView {
+                                    visible: false width: 360 height: Fit
+                                    padding: Inset{left: 17 right: 17 top: 14 bottom: 14}
+                                    draw_bg +: { color: #fffdf8ee border_radius: 20 border_size: 1 border_color: #e3d9cb }
+                                    // DIFF: the web bubble renders markdown; plain text here.
+                                    narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #3c3832 }
+                                }
+                                View { width: Fit height: Fit flow: Down spacing: 4 align: Align{x: 0.5}
+                                    // DIFF: static avatar; the organic skin animation is a later milestone.
+                                    teacher_avatar := CircleView { width: 94 height: 94 align: Align{x: 0.5 y: 0.5}
+                                        draw_bg +: { color: #bfe3ea border_size: 1 border_color: #7fb5c4 }
+                                        Label { text: "Octos" draw_text.text_style.font_size: 11 draw_text.color: #2d6a78 }
+                                    }
+                                    teacher_state := Label { width: Fit text: "已暂停" draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
+                                }
+                            }
+                        }
+                        // Error bar (web .learning-ink-error bottom toast, simplified).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 24}
+                            error_bar := RoundedView {
+                                visible: false width: Fit height: Fit padding: Inset{left: 16 right: 16 top: 10 bottom: 10}
+                                draw_bg +: { color: #f9e3df border_radius: 12 }
+                                error_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #8c3a2b }
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+struct VariableRow {
+    alias: String,
+    unit: String,
+    min: f64,
+    max: f64,
+    step: f64,
+    initial: f64,
+    sliding: bool,
+    slider: WidgetRef,
+    value: WidgetRef,
+    minus: WidgetRef,
+    plus: WidgetRef,
+    reset: WidgetRef,
 }
 
 #[derive(Script, ScriptHook)]
@@ -61,19 +185,152 @@ pub struct App {
     player: Option<Session>,
     #[rust]
     course_source: String,
+    // Currently open pack (recorded so progress keys and reopen stay stable).
+    #[rust]
+    pack_id: String,
+    #[rust]
+    pack_version: String,
     #[rust]
     drawing: bool,
+    #[rust]
+    pen_color: Vec4,
+    #[rust]
+    pen_width: f64,
+    #[rust]
+    narration_muted: bool,
+    #[rust]
+    store: Option<progress_store::Store>,
+    #[rust]
+    pending_save: Option<progress_store::Request>,
+    #[rust]
+    last_save: Option<Instant>,
+    #[rust]
+    awaiting_restore: bool,
     #[rust]
     timer: Timer,
     #[rust]
     last_tick: Option<Instant>,
     #[rust]
     error: String,
+    #[rust]
+    last_ink_count: usize,
+    #[rust]
+    variable_rows: Vec<VariableRow>,
+}
+
+const PEN_COLORS: [(u8, u8, u8); 5] = [
+    (0x17, 0x6b, 0x62),
+    (0xd4, 0xa5, 0x74),
+    (0xb9, 0x58, 0x73),
+    (0x4f, 0x84, 0xb5),
+    (0x33, 0x2e, 0x28),
+];
+const PEN_WIDTHS: [f64; 4] = [2.0, 3.5, 5.5, 8.0];
+
+fn pen_vec4(rgb: (u8, u8, u8)) -> Vec4 {
+    vec4(
+        rgb.0 as f32 / 255.,
+        rgb.1 as f32 / 255.,
+        rgb.2 as f32 / 255.,
+        1.,
+    )
+}
+fn clicked(w: &WidgetRef, actions: &Actions) -> bool {
+    actions
+        .find_widget_action(w.widget_uid())
+        .is_some_and(|item| matches!(item.cast(), ButtonAction::Clicked(_)))
+}
+/// Web ± steppers snap to the declared step grid from min (oll-lesson-runtime.tsx:3515).
+fn step_value(value: f64, min: f64, max: f64, step: f64, direction: f64) -> f64 {
+    let step = if step > 0. { step } else { (max - min) / 100. };
+    let index = ((value - min) / step).round() + direction;
+    (min + index * step).clamp(min, max)
+}
+fn format_value(value: f64, unit: &str) -> String {
+    let rounded = (value * 100.).round() / 100.;
+    let base = if rounded == rounded.trunc() {
+        format!("{}", rounded as i64)
+    } else {
+        format!("{rounded}")
+    };
+    if unit.is_empty() {
+        base
+    } else {
+        format!("{base} {unit}")
+    }
 }
 
 impl App {
+    fn course_key(&self) -> String {
+        format!("{}@{}", self.pack_id, self.pack_version)
+    }
+    fn note(&mut self, cx: &mut Cx, message: &str) {
+        self.ui.label(cx, ids!(progress_note)).set_text(cx, message);
+    }
+    fn save_progress(&mut self, _cx: &mut Cx) {
+        if let Some(player) = &self.player {
+            match player.checkpoint() {
+                Ok(value) => {
+                    self.pending_save =
+                        Some(progress_store::Request::Save(self.course_key(), value));
+                    self.last_save = Some(Instant::now());
+                }
+                Err(e) => self.error = e,
+            }
+        }
+    }
+    fn poll_storage(&mut self, cx: &mut Cx) {
+        if let Some(store) = &self.store {
+            if let Some(request) = self.pending_save.take() {
+                if let Err(request) = store.send(request) {
+                    self.pending_save = Some(request);
+                }
+            }
+        }
+        while let Some(reply) = self.store.as_ref().and_then(|s| s.poll()) {
+            match reply {
+                progress_store::Reply::Saved(key) => {
+                    if key == self.course_key() {
+                        self.note(cx, "进度已保存");
+                    }
+                }
+                progress_store::Reply::Loaded(key, saved) => {
+                    if key != self.course_key() || !self.awaiting_restore {
+                        continue;
+                    }
+                    self.awaiting_restore = false;
+                    // The user already started playback before the reply
+                    // arrived; never clobber a live session with a restore.
+                    if self.player.as_ref().is_some_and(|s| s.playing) {
+                        continue;
+                    }
+                    match saved {
+                        Some(saved) => match Session::restore(&self.course_source, &saved) {
+                            Ok(player) => {
+                                let w = self.ui.widget(cx, ids!(spatial));
+                                if let Some(mut b) = w.borrow_mut::<spatial_board::SpatialBoard>()
+                                {
+                                    b.clear(cx);
+                                }
+                                self.player = Some(player);
+                                self.error.clear();
+                                self.build_variable_rows(cx);
+                                self.note(cx, "已恢复进度（已暂停），点击播放继续");
+                                self.refresh(cx);
+                            }
+                            Err(e) => self.note(cx, &format!("无法恢复进度，已从头开始：{e}")),
+                        },
+                        None => self.note(cx, "这门课程还没有保存的进度"),
+                    }
+                }
+                progress_store::Reply::Failed(e) => self.error = format!("进度存储失败：{e}"),
+            }
+        }
+    }
     fn open_course(&mut self, cx: &mut Cx, pack_id: &str, version: &str) {
         self.error.clear();
+        self.drawing = false;
+        self.narration_muted = false;
         let root = course_pack::pack_root();
         let source = match course_pack::load_source(&root, pack_id, version) {
             Ok(source) => source,
@@ -90,9 +347,17 @@ impl App {
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                     board.clear(cx);
                 };
+                self.pack_id = pack_id.into();
+                self.pack_version = version.into();
                 self.course_source = source;
                 self.player = Some(session);
+                self.build_variable_rows(cx);
                 self.show_learning(cx, true);
+                self.note(cx, "");
+                if let Some(store) = &self.store {
+                    self.awaiting_restore =
+                        store.send(progress_store::Request::Load(self.course_key())).is_ok();
+                }
             }
             Err(e) => {
                 self.error = e.clone();
@@ -105,26 +370,141 @@ impl App {
         self.ui.widget(cx, ids!(launcher)).set_visible(cx, !learning);
         self.ui.widget(cx, ids!(learning)).set_visible(cx, learning);
     }
+    fn build_variable_rows(&mut self, cx: &mut Cx) {
+        self.variable_rows.clear();
+        let mut roots = Vec::new();
+        if let Some(session) = &self.player {
+            for d in session.board.variable_declarations() {
+                let alias = d["as"].as_str().unwrap_or("").to_owned();
+                if alias.is_empty() {
+                    continue;
+                }
+                let min = d["min"].as_f64().unwrap_or(0.);
+                let max = d["max"].as_f64().unwrap_or(1.);
+                let initial = d["initial"].as_f64().unwrap_or(min);
+                let step = d["control"]["step"].as_f64().unwrap_or(0.);
+                let unit = d["unit"].as_str().unwrap_or("").to_owned();
+                let label = d["label"]
+                    .as_str()
+                    .unwrap_or(&alias)
+                    .replace(['"', '\\'], " ");
+                let code = format!(
+                    "View{{width:Fill height:Fit flow:Down spacing:3
+                        View{{width:Fill height:Fit flow:Right align: Align{{y: 0.5}}
+                            row_label := Label{{width:Fill height:Fit text:\"{label}\" draw_text.text_style.font_size:11 draw_text.color:#3c3832}}
+                            row_value := Label{{width:Fit height:Fit text:\"\" draw_text.text_style.font_size:11 draw_text.color:#827b72}}
+                        }}
+                        View{{width:Fill height:Fit flow:Right spacing:6 align: Align{{y: 0.5}}
+                            row_slider := mod.widgets.Slider{{width:Fill min:{min} max:{max} step:{step} default:{initial}}}
+                            row_minus := Button{{text:\"-\"}}
+                            row_plus := Button{{text:\"+\"}}
+                            row_reset := Button{{text:\"复位\" draw_text.text_style.font_size:9}}
+                        }}
+                    }}"
+                );
+                match board_view::widget(cx, &code) {
+                    Ok(root) => {
+                        let slider = root.widget(cx, ids!(row_slider));
+                        if let Some(mut s) = slider.borrow_mut::<Slider>() {
+                            s.set_value(cx, initial);
+                        }
+                        let row = VariableRow {
+                            alias,
+                            unit,
+                            min,
+                            max,
+                            step,
+                            initial,
+                            sliding: false,
+                            slider,
+                            value: root.widget(cx, ids!(row_value)),
+                            minus: root.widget(cx, ids!(row_minus)),
+                            plus: root.widget(cx, ids!(row_plus)),
+                            reset: root.widget(cx, ids!(row_reset)),
+                        };
+                        row.value
+                            .set_text(cx, &format_value(initial, &row.unit));
+                        roots.push(root);
+                        self.variable_rows.push(row);
+                    }
+                    Err(e) => self.error = e,
+                }
+            }
+        }
+        let list = self.ui.widget(cx, ids!(variable_list));
+        if let Err(e) = board_view::children(cx, &list, roots) {
+            self.error = e;
+        }
+        self.ui
+            .widget(cx, ids!(variable_panel))
+            .set_visible(cx, !self.variable_rows.is_empty());
+    }
+    fn set_variable(&mut self, cx: &mut Cx, index: usize, value: f64) {
+        if self.player.as_ref().is_some_and(|s| s.board.animating()) {
+            // Teacher demo in progress: sliders stay locked (web parity).
+            return;
+        }
+        let Some(alias) = self.variable_rows.get(index).map(|r| r.alias.clone()) else {
+            return;
+        };
+        if let Some(session) = &mut self.player {
+            if let Err(e) = session.board.set_variable(&alias, value) {
+                self.error = e;
+            }
+        }
+        self.refresh(cx);
+    }
+    fn refresh_variable_rows(&mut self, cx: &mut Cx) {
+        let animating = self.player.as_ref().is_some_and(|s| s.board.animating());
+        for row in &mut self.variable_rows {
+            let value = self
+                .player
+                .as_ref()
+                .and_then(|s| s.board.variables.get(&row.alias).copied())
+                .unwrap_or(row.initial);
+            if !row.sliding {
+                if let Some(mut s) = row.slider.borrow_mut::<Slider>() {
+                    s.set_value(cx, value);
+                }
+            }
+            row.value.set_text(cx, &format_value(value, &row.unit));
+        }
+        self.ui
+            .widget(cx, ids!(variable_note))
+            .set_visible(cx, animating);
+    }
     fn refresh(&mut self, cx: &mut Cx) {
         if let Some(session) = &self.player {
             let p = &session.board;
             self.ui.label(cx, ids!(course_title)).set_text(cx, &p.title);
-            self.ui.label(cx, ids!(narration)).set_text(cx, &p.narration);
-            self.ui.label(cx, ids!(status)).set_text(
+            let state = if session.complete() {
+                "播放完成"
+            } else if session.playing {
+                "播放中"
+            } else {
+                "已暂停"
+            };
+            self.ui
+                .widget(cx, ids!(play))
+                .set_text(cx, if session.playing { "暂停" } else { "播放" });
+            self.ui.label(cx, ids!(action_status)).set_text(
                 cx,
-                &format!(
-                    "{} · 动作 {}/{}",
-                    if session.complete() {
-                        "播放完成"
-                    } else if session.playing {
-                        "播放中"
-                    } else {
-                        "已暂停"
-                    },
-                    p.cursor,
-                    p.action_count()
-                ),
+                &format!("动作 {}/{}", p.cursor, p.action_count()),
             );
+            self.ui.label(cx, ids!(teacher_state)).set_text(cx, state);
+            // Narration bubble: narration during playback, summary once complete.
+            let bubble = if session.complete() {
+                &p.summary
+            } else {
+                &p.narration
+            };
+            self.ui.label(cx, ids!(narration)).set_text(cx, bubble);
+            self.ui
+                .widget(cx, ids!(narration_bubble))
+                .set_visible(cx, !self.narration_muted && !bubble.is_empty());
+            self.ui
+                .widget(cx, ids!(narration_toggle))
+                .set_text(cx, if self.narration_muted { "旁白：关" } else { "旁白：开" });
             let action = session.operations[..session.cursor]
                 .iter()
                 .rev()
@@ -137,6 +517,26 @@ impl App {
                 }
             };
         }
+        let stroke_count = self
+            .ui
+            .widget(cx, ids!(spatial))
+            .borrow::<spatial_board::SpatialBoard>()
+            .map(|b| b.ink_count())
+            .unwrap_or(0);
+        self.ui.label(cx, ids!(ink_status)).set_text(
+            cx,
+            &format!(
+                "{stroke_count} 项笔迹 · {}",
+                if self.drawing { "书写中" } else { "浏览" }
+            ),
+        );
+        self.refresh_variable_rows(cx);
+        self.ui
+            .widget(cx, ids!(error_bar))
+            .set_visible(cx, !self.error.is_empty());
+        self.ui
+            .label(cx, ids!(error_label))
+            .set_text(cx, &self.error.clone());
         self.ui.redraw(cx);
     }
 }
@@ -150,9 +550,18 @@ impl AppMain for App {
     }
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
         if matches!(event, Event::Startup) {
+            if let Err(e) = progress_store::Store::start(cx).map(|s| self.store = Some(s)) {
+                self.error = e;
+            }
+            self.pen_color = pen_vec4(PEN_COLORS[0]);
+            self.pen_width = PEN_WIDTHS[1];
             self.last_tick = Some(Instant::now());
             self.timer = cx.start_interval(1.0 / 60.0);
         }
+        self.poll_storage(cx);
+        let control_event = matches!(event, Event::Actions(_));
+        let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
+        let in_learning = self.player.is_some();
         if self.timer.is_event(event).is_some() {
             let now = Instant::now();
             let dt = self
@@ -160,46 +569,61 @@ impl AppMain for App {
                 .replace(now)
                 .map(|t| now.duration_since(t).as_secs_f64())
                 .unwrap_or(0.0);
-            if let Some(session) = &mut self.player {
-                if session.playing {
-                    let w = self.ui.widget(cx, ids!(spatial));
-                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                        board.advance(cx, dt);
-                    };
+            if was_playing {
+                let w = self.ui.widget(cx, ids!(spatial));
+                if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                    board.advance(cx, dt);
+                };
+                if let Some(session) = &mut self.player {
                     if let Err(e) = session.tick(dt) {
                         self.error = e;
                     }
-                    self.refresh(cx);
                 }
             }
+            // Strokes commit through pointer hits, not widget actions; watch
+            // the count so the toolbar status catches up while paused.
+            let ink_count = self
+                .ui
+                .widget(cx, ids!(spatial))
+                .borrow::<spatial_board::SpatialBoard>()
+                .map(|b| b.ink_count())
+                .unwrap_or(0);
+            if ink_count != self.last_ink_count {
+                self.last_ink_count = ink_count;
+                self.refresh(cx);
+            }
         }
+        let mut skip_autosave = false;
         if let Event::Actions(actions) = event {
             if self.ui.button(cx, ids!(open_rectangle)).clicked(actions) {
+                skip_autosave = true;
                 self.open_course(cx, "rectangle-area-from-tiles", "0.1.5");
             }
             if self.ui.button(cx, ids!(open_slope)).clicked(actions) {
+                skip_autosave = true;
                 self.open_course(cx, "slope-and-intercept", "0.1.6");
             }
             if self.ui.button(cx, ids!(back)).clicked(actions) {
+                skip_autosave = true;
                 if let Some(session) = &mut self.player {
                     session.pause();
                 }
+                self.save_progress(cx);
                 self.show_learning(cx, false);
+                self.note(cx, "");
                 self.ui.redraw(cx);
             }
             if self.ui.button(cx, ids!(play)).clicked(actions) {
-                if let Some(session) = &mut self.player {
-                    if session.playing {
-                        session.pause();
-                    } else if let Err(e) = session.play() {
-                        self.error = e;
-                    }
+                // Starting playback cancels any in-flight progress restore.
+                self.awaiting_restore = false;
+                if self.drawing {
+                    self.drawing = false;
+                    let w = self.ui.widget(cx, ids!(spatial));
+                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                        board.set_drawing(cx, false);
+                    };
                 }
-                self.last_tick = Some(Instant::now());
-                self.refresh(cx);
-            }
-            if self.ui.button(cx, ids!(restart)).clicked(actions) {
-                if self.player.is_some() {
+                if self.player.as_ref().is_some_and(Session::complete) {
                     let w = self.ui.widget(cx, ids!(spatial));
                     if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                         board.clear(cx);
@@ -209,20 +633,171 @@ impl AppMain for App {
                         Err(e) => self.error = e,
                     }
                 }
-                self.refresh(cx);
-            }
-            if self.ui.button(cx, ids!(ink_mode)).clicked(actions) {
-                self.drawing = !self.drawing;
                 if let Some(session) = &mut self.player {
-                    session.pause();
+                    if session.playing {
+                        session.pause();
+                    } else if let Err(e) = session.play() {
+                        self.error = e;
+                    }
+                }
+                self.last_tick = Some(Instant::now());
+            }
+            if self.ui.button(cx, ids!(narration_toggle)).clicked(actions) {
+                self.narration_muted = !self.narration_muted;
+            }
+            // Handwriting toolbar.
+            let set_drawing = if self.ui.button(cx, ids!(ink_pen)).clicked(actions) {
+                Some(true)
+            } else if self.ui.button(cx, ids!(ink_hand)).clicked(actions) {
+                Some(false)
+            } else {
+                None
+            };
+            if let Some(drawing) = set_drawing {
+                self.drawing = drawing;
+                if drawing {
+                    if let Some(session) = &mut self.player {
+                        session.pause();
+                    }
                 }
                 let w = self.ui.widget(cx, ids!(spatial));
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                    board.set_drawing(cx, self.drawing);
+                    board.set_drawing(cx, drawing);
+                    board.set_pen(cx, self.pen_color, self.pen_width);
                 };
-                self.refresh(cx);
+            }
+            {
+                let w = self.ui.widget(cx, ids!(spatial));
+                if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                    if self.ui.button(cx, ids!(ink_undo)).clicked(actions) {
+                        board.undo_ink(cx);
+                    }
+                    if self.ui.button(cx, ids!(ink_redo)).clicked(actions) {
+                        board.redo_ink(cx);
+                    }
+                };
+            }
+            if self.ui.button(cx, ids!(ink_palette)).clicked(actions) {
+                let panel = self.ui.widget(cx, ids!(ink_palette_panel));
+                let open = panel.visible();
+                panel.set_visible(cx, !open);
+            }
+            if self.ui.button(cx, ids!(ink_width)).clicked(actions) {
+                let panel = self.ui.widget(cx, ids!(ink_width_panel));
+                let open = panel.visible();
+                panel.set_visible(cx, !open);
+            }
+            for (i, id) in [
+                ids!(ink_color_0),
+                ids!(ink_color_1),
+                ids!(ink_color_2),
+                ids!(ink_color_3),
+                ids!(ink_color_4),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                if self.ui.button(cx, id).clicked(actions) {
+                    self.pen_color = pen_vec4(PEN_COLORS[i]);
+                    let w = self.ui.widget(cx, ids!(spatial));
+                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                        board.set_pen(cx, self.pen_color, self.pen_width);
+                    };
+                }
+            }
+            for (i, id) in [
+                ids!(ink_width_0),
+                ids!(ink_width_1),
+                ids!(ink_width_2),
+                ids!(ink_width_3),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                if self.ui.button(cx, id).clicked(actions) {
+                    self.pen_width = PEN_WIDTHS[i];
+                    let w = self.ui.widget(cx, ids!(spatial));
+                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                        board.set_pen(cx, self.pen_color, self.pen_width);
+                    };
+                }
+            }
+            // Variable panel: slider start/update/commit plus −/+/reset.
+            for index in 0..self.variable_rows.len() {
+                let slider_uid = self.variable_rows[index].slider.widget_uid();
+                if let Some(item) = actions.find_widget_action(slider_uid) {
+                    match item.cast() {
+                        SliderAction::StartSlide => self.variable_rows[index].sliding = true,
+                        SliderAction::Slide(v) | SliderAction::TextSlide(v) => {
+                            self.set_variable(cx, index, v)
+                        }
+                        SliderAction::EndSlide(v) => {
+                            self.variable_rows[index].sliding = false;
+                            self.set_variable(cx, index, v);
+                        }
+                        _ => (),
+                    }
+                }
+                let current = self
+                    .player
+                    .as_ref()
+                    .and_then(|s| {
+                        s.board
+                            .variables
+                            .get(&self.variable_rows[index].alias)
+                            .copied()
+                    })
+                    .unwrap_or(self.variable_rows[index].initial);
+                let (min, max, step, initial) = {
+                    let r = &self.variable_rows[index];
+                    (r.min, r.max, r.step, r.initial)
+                };
+                if clicked(&self.variable_rows[index].minus, actions) {
+                    self.set_variable(cx, index, step_value(current, min, max, step, -1.));
+                }
+                if clicked(&self.variable_rows[index].plus, actions) {
+                    self.set_variable(cx, index, step_value(current, min, max, step, 1.));
+                }
+                if clicked(&self.variable_rows[index].reset, actions) {
+                    self.set_variable(cx, index, initial);
+                }
             }
         }
+        // Autosave once per second while playing, and once when playback pauses.
+        if !skip_autosave
+            && in_learning
+            && self.player.as_ref().is_some_and(|s| s.cursor > 0)
+            && was_playing
+            && (self
+                .last_save
+                .is_none_or(|t| t.elapsed().as_secs_f64() >= 1.)
+                || self.player.as_ref().is_some_and(|s| !s.playing))
+        {
+            self.save_progress(cx);
+        }
+        self.poll_storage(cx);
+        if (self.timer.is_event(event).is_some() && was_playing) || control_event {
+            self.refresh(cx);
+        }
         self.ui.handle_event(cx, event, &mut Scope::empty());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn steppers_snap_to_the_step_grid_from_min() {
+        assert_eq!(super::step_value(4., 1., 8., 1., 1.), 5.);
+        assert_eq!(super::step_value(1., 1., 8., 1., -1.), 1.);
+        assert!((super::step_value(1.02, -5., 5., 0.05, 1.) - 1.05).abs() < 1e-9);
+        assert_eq!(super::step_value(4.97, -5., 5., 0.05, 1.), 5.);
+        // Continuous sliders fall back to a 1% nudge.
+        assert!((super::step_value(0., 0., 10., 0., 1.) - 0.1).abs() < 1e-9);
+    }
+    #[test]
+    fn values_format_with_unit_and_trimmed_decimals() {
+        assert_eq!(super::format_value(4., "厘米"), "4 厘米");
+        assert_eq!(super::format_value(-2.5, ""), "-2.5");
+        assert_eq!(super::format_value(0.30000000000000004, ""), "0.3");
     }
 }

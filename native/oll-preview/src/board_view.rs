@@ -149,6 +149,22 @@ pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
     children(cx, &row, vec![caption, equation])?;
     Ok(row)
 }
+/// Extra card height reserved for the caption label below a chart.
+pub fn caption_extra(node: &Value) -> f64 {
+    let caption = crate::chart_caption(node);
+    if caption.is_empty() {
+        return 0.;
+    }
+    let lines = (caption.chars().count() as f64 / 34.).ceil().max(1.);
+    lines * 15. + 10.
+}
+/// Chart card: the LinePlot with an optional caption row below it. The caption
+/// text/visibility is refreshed by SpatialBoard::set_state (chart_caption),
+/// because secant measurements follow variable bindings.
+pub fn chart_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let top = if node["kind"] == "geometry" { 28 } else { 36 };
+    widget(cx,&format!("RoundedView{{width:Fill height:Fill flow:Down draw_bg +: {{color: #ffffff border_radius: 12}} plot := mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:{top} bottom:40}}}} caption_box := View{{visible:false width:Fill height:Fit padding:Inset{{left:12 right:12 bottom:8}} caption := Label{{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#6b6258 text:\"\"}}}}}}"))
+}
 pub fn measure(node: &Value) -> Result<(f64, f64), String> {
     match node["kind"].as_str().unwrap_or("") {
         "math" => {
@@ -169,8 +185,8 @@ pub fn measure(node: &Value) -> Result<(f64, f64), String> {
             }
             Ok(((width + 32.).max(280.), 112.))
         }
-        "plot" => Ok((440., 390.)),
-        "geometry" => Ok((440., 440.)),
+        "plot" => Ok((440., 390. + caption_extra(node))),
+        "geometry" => Ok((440., 440. + caption_extra(node))),
         "note" | "text" | "diagram" => {
             let text = node_notes(node);
             let lines = text
