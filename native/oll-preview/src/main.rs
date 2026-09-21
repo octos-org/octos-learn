@@ -6,6 +6,7 @@ use serde_json::Value;
 use std::time::Instant;
 mod board_view;
 mod formula_view;
+mod progress_store;
 mod spatial_board;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
@@ -38,6 +39,11 @@ script_mod! {
                         follow := Button {text:"跟随教学"}
                         Label {text:"拖动白板移动 · 滚轮缩放 · 新的教学目标到来时恢复跟随" draw_text.text_style.font_size:10}
                     }
+                    View {width:Fill height:Fit flow:Right spacing:12
+                        save_progress := Button {text:"保存进度"}
+                        restore_progress := Button {text:"恢复进度"}
+                        progress_status := Label {text:"进度尚未保存" draw_text.text_style.font_size:10}
+                    }
                     spatial := SpatialBoard {width:Fill height:450}
                     board_cues := Label { width:Fill height:Fit draw_text.wrap:Words text:"" draw_text.text_style.font_size:11 }
                     formula_panel := View { visible: false width: Fill height: 490 flow: Down spacing: 12
@@ -67,6 +73,12 @@ pub struct App {
     #[live]
     ui: WidgetRef,
     #[rust]
+    store: Option<progress_store::Store>,
+    #[rust]
+    pending_save: Option<progress_store::Request>,
+    #[rust]
+    last_save: Option<Instant>,
+    #[rust]
     player: Option<Session>,
     #[rust]
     timer: Timer,
@@ -86,6 +98,88 @@ pub struct App {
     formula_errors: [String; 2],
 }
 impl App {
+    fn course_source(&self) -> &'static str {
+        if self.quadratic {
+            QUADRATIC
+        } else {
+            COURSE
+        }
+    }
+    fn course_key(&self) -> String {
+        if self.quadratic {
+            "quadratic"
+        } else {
+            "unit-circle-sine"
+        }
+        .into()
+    }
+    fn save_progress(&mut self, cx: &mut Cx) {
+        if let Some(p) = &self.player {
+            match p.checkpoint() {
+                Ok(value) => {
+                    self.pending_save =
+                        Some(progress_store::Request::Save(self.course_key(), value));
+                    self.last_save = Some(Instant::now());
+                }
+                Err(e) => self.ui.label(cx, ids!(progress_status)).set_text(cx, &e),
+            }
+        }
+    }
+    fn poll_storage(&mut self, cx: &mut Cx) {
+        if let Some(store) = &self.store {
+            if let Some(request) = self.pending_save.take() {
+                if let Err(request) = store.send(request) {
+                    self.pending_save = Some(request);
+                }
+            }
+        }
+        while let Some(reply) = self.store.as_ref().and_then(|s| s.poll()) {
+            match reply {
+                progress_store::Reply::Saved(key) => {
+                    if key == self.course_key() {
+                        self.ui
+                            .label(cx, ids!(progress_status))
+                            .set_text(cx, "进度已保存");
+                    }
+                }
+                progress_store::Reply::Loaded(key, saved) => {
+                    if key != self.course_key() {
+                        continue;
+                    }
+                    if let Some(saved) = saved {
+                        match Session::restore(self.course_source(), &saved) {
+                            Ok(player) => {
+                                let w = self.ui.widget(cx, ids!(spatial));
+                                if let Some(mut b) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                                    b.clear(cx);
+                                }
+                                self.player = Some(player);
+                                self.formula_mode = false;
+                                self.error.clear();
+                                self.refresh(cx);
+                                self.ui
+                                    .label(cx, ids!(progress_status))
+                                    .set_text(cx, "进度已恢复（暂停），点击播放继续");
+                            }
+                            Err(e) => self
+                                .ui
+                                .label(cx, ids!(progress_status))
+                                .set_text(cx, &format!("无法恢复，原文件保留：{e}")),
+                        }
+                    } else {
+                        self.ui
+                            .label(cx, ids!(progress_status))
+                            .set_text(cx, "这门课程尚无保存的进度");
+                    }
+                }
+                progress_store::Reply::Failed(e) => self
+                    .ui
+                    .label(cx, ids!(progress_status))
+                    .set_text(cx, &format!("进度存储失败：{e}")),
+            }
+        }
+    }
+
     fn reset(&mut self, cx: &mut Cx) {
         self.formula_mode = false;
         self.error.clear();
@@ -474,10 +568,16 @@ impl AppMain for App {
     }
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
         if matches!(event, Event::Startup) {
+            match progress_store::Store::start(cx) {
+                Ok(store) => self.store = Some(store),
+                Err(e) => self.ui.label(cx, ids!(progress_status)).set_text(cx, &e),
+            }
             self.reset(cx);
             self.last_tick = Some(Instant::now());
             self.timer = cx.start_interval(1.0 / 60.0);
         }
+        self.poll_storage(cx);
+        let mut skip_autosave = false;
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         if self.timer.is_event(event).is_some() || control_event {
@@ -516,7 +616,27 @@ impl AppMain for App {
                 }
             };
 
+            if self.ui.button(cx, ids!(save_progress)).clicked(actions) {
+                self.save_progress(cx);
+            }
+            if self.ui.button(cx, ids!(restore_progress)).clicked(actions) {
+                skip_autosave = true;
+                if let Some(player) = &mut self.player {
+                    player.pause();
+                }
+                if let Some(store) = &self.store {
+                    if store
+                        .send(progress_store::Request::Load(self.course_key()))
+                        .is_err()
+                    {
+                        self.ui
+                            .label(cx, ids!(progress_status))
+                            .set_text(cx, "存储队列忙，请稍后重试恢复");
+                    }
+                }
+            }
             if self.ui.button(cx, ids!(switch_course)).clicked(actions) {
+                skip_autosave = true;
                 self.quadratic = !self.quadratic;
                 self.reset(cx);
             }
@@ -538,6 +658,7 @@ impl AppMain for App {
                 }
             }
             if self.ui.button(cx, ids!(reset)).clicked(actions) {
+                skip_autosave = true;
                 self.reset(cx);
             }
             if self.ui.button(cx, ids!(play)).clicked(actions) {
@@ -555,6 +676,17 @@ impl AppMain for App {
                 self.last_tick = Some(Instant::now());
             }
         }
+        if !skip_autosave
+            && self.player.as_ref().is_some_and(|s| s.cursor > 0)
+            && was_playing
+            && (self
+                .last_save
+                .is_none_or(|t| t.elapsed().as_secs_f64() >= 1.)
+                || self.player.as_ref().is_some_and(|s| !s.playing))
+        {
+            self.save_progress(cx);
+        }
+        self.poll_storage(cx);
         if (self.timer.is_event(event).is_some() && was_playing) || control_event {
             self.refresh(cx);
         }
