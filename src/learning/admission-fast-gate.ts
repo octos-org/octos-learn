@@ -201,7 +201,10 @@ export async function evaluateAdmissionFastGate(
   }
 
   // 3. Assemble System One questions
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TYPESAFE_TIMEOUT_MS;
+  const envTimeout = Number(import.meta.env?.VITE_TYPESAFE_ADMISSION_TIMEOUT_MS);
+  const timeoutMs =
+    options.timeoutMs ??
+    (Number.isFinite(envTimeout) && envTimeout > 0 ? envTimeout : DEFAULT_TYPESAFE_TIMEOUT_MS);
   const confidenceThreshold = options.confidenceThreshold ?? DEFAULT_ADMISSION_CONFIDENCE_THRESHOLD;
 
   try {

@@ -62,7 +62,7 @@ export interface EvaluateSystemOneOptions {
 
 export const DEFAULT_TYPESAFE_API_URL = "/api/systemone/evaluate";
 export const DEFAULT_TYPESAFE_MODEL = "jev-latest";
-export const DEFAULT_TYPESAFE_TIMEOUT_MS = 500;
+export const DEFAULT_TYPESAFE_TIMEOUT_MS = 2000;
 
 export class TypeSafeApiError extends Error {
   readonly status?: number;
