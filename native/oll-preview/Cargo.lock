@@ -753,6 +753,7 @@ dependencies = [
 name = "octos-oll-preview"
 version = "0.1.0"
 dependencies = [
+ "makepad-latex-math",
  "makepad-plot",
  "makepad-widgets",
  "oll-runtime",

@@ -68,6 +68,21 @@ try:
     capture('completed.png')
     click('reset');assert '动作 0/5' in status() and 'θ = 0.000' in status()
     result['reset']=status()
+    click('switch_course')
+    assert '动作 0/25' in status(), status()
+    click('play')
+    result['quadratic']=[]
+    for action in [1,3,6,11,14,18,25]:
+        until(lambda s: int(re.search(r'动作 (\d+)/25',s)[1]) >= action, 90)
+        click('play')
+        frozen=status();time.sleep(.3);assert status()==frozen
+        result['quadratic'].append({'status':frozen,'capture':capture('quadratic-%02d.png'%action)})
+        click('play')
+    result['quadratic_completed']=until(lambda s:'播放完成' in s,30)
+    capture('quadratic-completed.png')
+    click('reset');assert '动作 0/25' in status()
+    capture('quadratic-reset.png')
+    click('switch_course');assert '动作 0/5' in status()
     result['logs']=get('/log?n=50')
     (out/'verification.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(result,ensure_ascii=False))

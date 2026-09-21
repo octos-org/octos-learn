@@ -4,9 +4,11 @@ use makepad_widgets::*;
 use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
+mod board_view;
 mod formula_view;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
+const QUADRATIC: &str = include_str!("../courses/quadratic.jsonl");
 const COURSE: &str = include_str!("../courses/unit-circle-sine.jsonl");
 script_mod! {
     use mod.prelude.widgets.*
@@ -20,6 +22,7 @@ script_mod! {
                     title := Label { text: "OLL · Makepad" draw_text.text_style.font_size: 24 }
                     Label { text: "macOS 原生验证 · OLL 讲解阶段调度 · 暂未接入语音与课后交互" }
                     View { width: Fill height: Fit flow: Right spacing: 16
+                        switch_course := Button { text: "切换课程" }
                         play := Button { text: "播放 / 暂停" }
                         reset := Button { text: "重新开始" }
                         formulas := Button { text: "课程 / 公式" }
@@ -30,6 +33,14 @@ script_mod! {
                         circle := LinePlot { width: 490 height: 490 plot_margin: Inset{left: 52 right: 16 top: 28 bottom: 40} demo_data: false interactive: false }
                         wave := LinePlot { width: Fill height: Fill demo_data: false interactive: false }
                     }
+                    lesson_board := View { visible:false width:Fill height:490 flow:Right spacing:20
+                        math_board := View { width:520 height:Fill flow:Down }
+                        View { width:Fill height:Fill flow:Down spacing:8
+                            parabola := LinePlot { width:Fill height:350 demo_data:false interactive:false }
+                            notes := Label { width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:11 }
+                        }
+                    }
+                    board_cues := Label { width:Fill height:Fit draw_text.wrap:Words text:"" draw_text.text_style.font_size:11 }
                     formula_panel := View { visible: false width: Fill height: 490 flow: Down spacing: 12
                         View { width: Fill height: 224 flow: Down spacing: 6
                             source_0 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
@@ -44,7 +55,7 @@ script_mod! {
 
 
                     }
-                    mapping := Label { width: Fill text: "" }
+                    mapping := Label { width: Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:10 text: "" }
                     narration := Label { width: Fill height: Fit draw_text.wrap: Words text: "点击播放，按 OLL 顺序生成画面。" }
                     summary := Label { width: Fill height: Fit draw_text.wrap: Words text: "" }
                 }
@@ -67,6 +78,10 @@ pub struct App {
     #[rust]
     formula_mode: bool,
     #[rust]
+    quadratic: bool,
+    #[rust]
+    board_signature: String,
+    #[rust]
     formula_page: usize,
     #[rust]
     formula_sources: [Option<String>; 2],
@@ -77,7 +92,8 @@ impl App {
     fn reset(&mut self, cx: &mut Cx) {
         self.formula_mode = false;
         self.error.clear();
-        match Session::load(COURSE) {
+        self.board_signature.clear();
+        match Session::load(if self.quadratic { QUADRATIC } else { COURSE }) {
             Ok(p) => self.player = Some(p),
             Err(e) => self.error = e,
         }
@@ -86,10 +102,16 @@ impl App {
     fn refresh(&mut self, cx: &mut Cx) {
         self.ui
             .widget(cx, ids!(charts))
-            .set_visible(cx, !self.formula_mode);
+            .set_visible(cx, !self.formula_mode && !self.quadratic);
         self.ui
             .widget(cx, ids!(formula_panel))
             .set_visible(cx, self.formula_mode);
+        self.ui
+            .widget(cx, ids!(lesson_board))
+            .set_visible(cx, !self.formula_mode && self.quadratic);
+        self.ui
+            .widget(cx, ids!(board_cues))
+            .set_visible(cx, !self.formula_mode && self.quadratic);
         if self.formula_mode {
             let samples: Vec<Value> =
                 serde_json::from_str(FORMULAS).expect("embedded formula corpus");
@@ -152,7 +174,7 @@ impl App {
             let p = &session.board;
             self.ui.label(cx, ids!(title)).set_text(cx, &p.title);
             let status = format!(
-                "{} · 动作 {}/{} · θ = {:.3} · {}",
+                "{} · 动作 {}/{}{} · {}",
                 if session.complete() {
                     "播放完成"
                 } else if session.playing {
@@ -162,7 +184,10 @@ impl App {
                 },
                 p.cursor,
                 p.action_count(),
-                p.variables.get("theta").copied().unwrap_or(0.0),
+                p.variables
+                    .get("theta")
+                    .map(|v| format!(" · θ = {v:.3}"))
+                    .unwrap_or_default(),
                 if p.animating() {
                     "变量动画"
                 } else if !p.narration.is_empty() {
@@ -188,21 +213,94 @@ impl App {
             let labels = p
                 .connections
                 .iter()
-                .filter_map(|c| c["label"].as_str())
+                .map(|c| {
+                    if self.quadratic {
+                        format!(
+                            "{} → {}：{}",
+                            board_view::target_name(p, &c["from"]),
+                            board_view::target_name(p, &c["to"]),
+                            text(c, "label")
+                        )
+                    } else {
+                        text(c, "label").to_owned()
+                    }
+                })
                 .collect::<Vec<_>>()
-                .join(" → ");
+                .join("；");
+            let focus = p
+                .focus
+                .iter()
+                .map(|id| board_view::name(p, id))
+                .collect::<Vec<_>>()
+                .join("、");
+            // Full relationships are retained in runtime; show the latest one here
+            // so narration remains readable within the review window.
+            let relation = if self.quadratic {
+                p.connections
+                    .last()
+                    .map(|c| {
+                        format!(
+                            "关系：{} → {}：{}",
+                            board_view::target_name(p, &c["from"]),
+                            board_view::target_name(p, &c["to"]),
+                            text(c, "label")
+                        )
+                    })
+                    .unwrap_or_default()
+            } else {
+                labels
+            };
             self.ui.label(cx, ids!(mapping)).set_text(
                 cx,
                 &format!(
-                    "{}{}",
-                    labels,
-                    if p.focus.is_empty() {
-                        ""
+                    "{relation}{}",
+                    if focus.is_empty() {
+                        String::new()
                     } else {
-                        "  · 当前关注：单位圆与正弦图"
+                        format!(" · 当前关注：{focus}")
                     }
                 ),
             );
+            if self.quadratic {
+                let signature = serde_json::json!([p.nodes, p.groups, p.focus]).to_string();
+                if signature != self.board_signature {
+                    if let Err(e) =
+                        board_view::set_board(cx, &self.ui.widget(cx, ids!(math_board)), p)
+                    {
+                        self.error = e;
+                    }
+                    self.ui
+                        .label(cx, ids!(notes))
+                        .set_text(cx, &board_view::notes(p));
+                    self.board_signature = signature;
+                }
+                let point = p
+                    .last_point
+                    .as_ref()
+                    .map(|t| format!("最近指向：{}", board_view::target_name(p, t)))
+                    .unwrap_or_default();
+                let groups = p
+                    .groups
+                    .iter()
+                    .map(|g| format!("{}（{} 项）", text(g, "title"), items(g, "members").len()))
+                    .collect::<Vec<_>>()
+                    .join("、");
+                self.ui.label(cx, ids!(board_cues)).set_text(
+                    cx,
+                    &format!("黄色：重点 · 绿色：辅助强调  {point}  {groups}"),
+                );
+                let w = self.ui.widget(cx, ids!(parabola));
+                if let Some(mut plot) = w.borrow_mut::<LinePlot>() {
+                    plot.clear();
+                    if let Some(node) = p.nodes.iter().find(|n| n["kind"] == "plot") {
+                        if let Err(e) = render(&mut plot, node, p) {
+                            self.error = e;
+                        }
+                    } else {
+                        plot.set_title("等待课程绘制函数图像");
+                    }
+                };
+            }
             for (id, kind) in [(ids!(circle), "geometry"), (ids!(wave), "plot")] {
                 let widget = self.ui.widget(cx, id);
                 if let Some(mut plot) = widget.borrow_mut::<LinePlot>() {
@@ -234,7 +332,12 @@ fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> 
     let c = &node["content"];
     let blue = vec4(0.20, 0.65, 1.0, 1.0);
     let gold = vec4(1.0, 0.65, 0.15, 1.0);
-    plot.set_title(text(c, "title"));
+    plot.set_title(
+        c["title"]
+            .as_str()
+            .or_else(|| items(c, "curves").first().and_then(|v| v["label"].as_str()))
+            .unwrap_or(""),
+    );
     plot.set_xlabel(text(&c["axes"]["x"], "label"));
     plot.set_ylabel(text(&c["axes"]["y"], "label"));
     let xmin = num(&c["axes"]["x"], "min")?;
@@ -297,11 +400,39 @@ fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> 
             xs.push(x);
             ys.push(evaluate(text(curve, "expression"), &vars)?);
         }
-        plot.add_series(
-            Series::new(text(curve, "label"))
-                .with_data(xs, ys)
-                .with_color(blue),
-        );
+        for (xs, ys) in clip_curve(
+            &xs,
+            &ys,
+            num(&c["axes"]["y"], "min")?,
+            num(&c["axes"]["y"], "max")?,
+        ) {
+            plot.add_series(
+                Series::new(text(curve, "label"))
+                    .with_data(xs, ys)
+                    .with_color(blue),
+            );
+        }
+    }
+    for guide in items(c, "guides") {
+        if text(guide, "kind") == "vertical_line" {
+            let x = num(guide, "value")?;
+            plot.add_series(
+                Series::new(text(guide, "label"))
+                    .with_data(
+                        vec![x, x],
+                        vec![num(&c["axes"]["y"], "min")?, num(&c["axes"]["y"], "max")?],
+                    )
+                    .with_color(gold)
+                    .with_line_style(LineStyle::Dashed),
+            );
+            plot.annotate(
+                text(guide, "label"),
+                x + 0.25,
+                num(&c["axes"]["y"], "max")? - 1.0,
+                gold,
+                10.0,
+            );
+        }
     }
     for pt in points {
         let x = num(pt, "x")?;
@@ -324,6 +455,54 @@ fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> 
         plot.annotate(text(pt, "label"), x, y + offset, gold, 10.0);
     }
     Ok(())
+}
+// Clip each sampled segment to the declared y range. Separate visible runs
+// avoid joining across invisible sections or drawing a false line on the bound.
+fn clip_curve(xs: &[f64], ys: &[f64], min: f64, max: f64) -> Vec<(Vec<f64>, Vec<f64>)> {
+    let mut result = Vec::new();
+    let mut xrun = Vec::new();
+    let mut yrun = Vec::new();
+    for i in 1..xs.len() {
+        let (a, b) = (ys[i - 1], ys[i]);
+        let (lo, hi) = if a == b {
+            if a < min || a > max {
+                (1.0, 0.0)
+            } else {
+                (0.0, 1.0)
+            }
+        } else {
+            let t1 = (min - a) / (b - a);
+            let t2 = (max - a) / (b - a);
+            (t1.min(t2).max(0.0), t1.max(t2).min(1.0))
+        };
+        if lo <= hi {
+            if xrun.is_empty() {
+                xrun.push(xs[i - 1] + (xs[i] - xs[i - 1]) * lo);
+                yrun.push(a + (b - a) * lo);
+            }
+            xrun.push(xs[i - 1] + (xs[i] - xs[i - 1]) * hi);
+            yrun.push(a + (b - a) * hi);
+        }
+        if (lo > hi || hi < 1.0) && !xrun.is_empty() {
+            result.push((std::mem::take(&mut xrun), std::mem::take(&mut yrun)));
+        }
+    }
+    if !xrun.is_empty() {
+        result.push((xrun, yrun));
+    }
+    result
+}
+#[cfg(test)]
+mod plot_tests {
+    #[test]
+    fn clipping_does_not_join_separated_runs_or_clamp_to_a_false_plateau() {
+        let runs = super::clip_curve(&[0., 1., 2., 3., 4.], &[0., 2., 2., 2., 0.], -1., 1.);
+        assert_eq!(
+            runs,
+            vec![(vec![0., 0.5], vec![0., 1.]), (vec![3.5, 4.], vec![1., 0.])]
+        );
+        assert!(super::clip_curve(&[0., 1.], &[2., 2.], -1., 1.).is_empty());
+    }
 }
 impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
@@ -353,6 +532,10 @@ impl AppMain for App {
             }
         }
         if let Event::Actions(actions) = event {
+            if self.ui.button(cx, ids!(switch_course)).clicked(actions) {
+                self.quadratic = !self.quadratic;
+                self.reset(cx);
+            }
             if self.ui.button(cx, ids!(formulas)).clicked(actions) {
                 self.formula_mode = !self.formula_mode;
                 if let Some(session) = &mut self.player {
