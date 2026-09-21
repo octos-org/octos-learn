@@ -240,13 +240,30 @@ impl SpatialBoard {
         } else {
             "detail"
         };
-        let to = spatial::focus_camera(
+        let mut to = spatial::focus_camera(
             &rects,
             self.camera,
             self.viewport.size.x.max(300.),
             self.viewport.size.y.max(240.),
             mode,
         );
+        // Keep the focused scene clear of the floating top bar: when the
+        // scaled scene fits, nudge it into the safe band; when it is taller,
+        // top-anchor it so the primary card is fully visible (the rest can be
+        // dragged into view).
+        if let Some(scene) = WorldRect::union(&rects, 0.) {
+            let min_top = 108.;
+            let min_bottom = (self.viewport.size.y - 24.).max(min_top + 1.);
+            let top = to.y + scene.y * to.scale;
+            let bottom = to.y + (scene.y + scene.height) * to.scale;
+            if bottom - top <= min_bottom - min_top {
+                to.y += (min_top - top).max(0.);
+                let bottom = to.y + (scene.y + scene.height) * to.scale;
+                to.y -= (bottom - min_bottom).max(0.);
+            } else {
+                to.y = min_top - scene.y * to.scale;
+            }
+        }
         self.from = self.camera;
         self.destination = to;
         self.elapsed = if animate { 0. } else { 0.68 };
@@ -304,7 +321,7 @@ impl SpatialBoard {
                     }
                     "plot" | "geometry" => board_view::chart_node(cx, node)?,
                     _ => {
-                        let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
+                        let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
                         let label = board_view::label(cx, &board_view::node_notes(node))?;
                         board_view::children(cx, &w, vec![label])?;
                         w
@@ -315,7 +332,7 @@ impl SpatialBoard {
             for group in &p.groups {
                 let id = group["id"].as_str().unwrap();
                 if let Some(rect) = self.geometry.groups.get(id) {
-                    let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:8 draw_bg.color:#0000 draw_bg.border_size:2 draw_bg.border_color:#7794b0}")?;
+                    let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:8 draw_bg.color:#0000 draw_bg.border_size:2 draw_bg.border_color:#a8bdd0}")?;
                     let title = board_view::label(cx, group["title"].as_str().unwrap_or(""))?;
                     board_view::children(cx, &w, vec![title])?;
                     self.groups.push((*rect, w));
@@ -361,7 +378,7 @@ impl SpatialBoard {
                 if let Some(rect) = route.label {
                     let badge = board_view::widget(
                         cx,
-                        "SolidView{width:Fill height:Fill padding:3 draw_bg.color:#263a40}",
+                        "SolidView{width:Fill height:Fill padding:3 draw_bg.color:#fffdf8f0}",
                     )?;
                     let text = board_view::label(cx, label)?;
                     board_view::children(cx, &badge, vec![text])?;

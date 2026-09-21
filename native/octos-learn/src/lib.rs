@@ -104,16 +104,16 @@ script_mod! {
                                     Label { text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 8 draw_text.color: #8a8074 }
                                     course_title := Label { text: "" draw_text.text_style.font_size: 15 draw_text.color: #332e28 }
                                 }
-                                play := Button { text: "播放" }
+                                play := Button { text: "播放" draw_text.color: #3c3832 }
                                 // DIFF: runtime has no per-beat seek, so both stay disabled.
-                                next_beat := Button { enabled: false text: "下一 Beat" }
-                                replay_topic := Button { enabled: false text: "重播 Topic" }
-                                narration_toggle := Button { text: "旁白：开" }
+                                next_beat := Button { enabled: false text: "下一 Beat（未迁移）" draw_text.color: #b3aa9c }
+                                replay_topic := Button { enabled: false text: "重播 Topic（未迁移）" draw_text.color: #b3aa9c }
+                                narration_toggle := Button { text: "旁白：开" draw_text.color: #3c3832 }
                                 action_status := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #a09689 }
                                 progress_note := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #94a36f }
                                 // DIFF: voice/camera are not migrated; disabled placeholders.
-                                voice := Button { enabled: false text: "语音·未迁移" }
-                                camera := Button { enabled: false text: "摄像头·未迁移" }
+                                voice := Button { enabled: false text: "启用语音（未迁移）" draw_text.color: #b3aa9c }
+                                camera := Button { enabled: false text: "启用摄像头（未迁移）" draw_text.color: #b3aa9c }
                             }
                         }
                         // Top-left round page buttons (web .learning-top-action-group: left 12 top 24).
@@ -133,15 +133,10 @@ script_mod! {
                                 ink_toolbar := RoundedView {
                                     width: Fit height: Fit flow: Down spacing: 3 padding: 5 align: Align{x: 0.5}
                                     draw_bg +: { color: #fffdf8f0 border_radius: 16 border_size: 1 border_color: #e8e0d4 }
-                                    ink_hand := Button { width: 64 text: "浏览" }
-                                    ink_pen := Button { width: 64 text: "书写" }
+                                    // Buttons are built in Rust (rebuild_ink_tools) so the
+                                    // browse/pen active state can be highlighted per mode.
                                     // DIFF: oll-runtime Ink has no erase/select; both stay disabled.
-                                    ink_erase := Button { width: 64 enabled: false text: "擦除" }
-                                    ink_select := Button { width: 64 enabled: false text: "框选" }
-                                    ink_palette := Button { width: 64 text: "调色" }
-                                    ink_width := Button { width: 64 text: "粗细" }
-                                    ink_undo := Button { width: 64 text: "撤销" }
-                                    ink_redo := Button { width: 64 text: "重做" }
+                                    ink_tools := View { width: Fit height: Fit flow: Down spacing: 3 align: Align{x: 0.5} }
                                     ink_status := Label { width: Fit text: "0 项笔迹" draw_text.text_style.font_size: 8 draw_text.color: #827b72 }
                                 }
                                 ink_palette_panel := RoundedView {
@@ -284,6 +279,9 @@ pub struct App {
     course_cards: Vec<CourseCardRefs>,
     #[rust]
     session_cards: Vec<SessionCardRefs>,
+    // Ink toolbar buttons in INK_TOOLS order, rebuilt when the mode changes.
+    #[rust]
+    ink_tool_buttons: Vec<WidgetRef>,
     // Set by "开始互动"/"继续学习": playback starts once the restore reply
     // resolves (restored checkpoint, or fresh when none exists).
     #[rust]
@@ -301,6 +299,16 @@ const PEN_COLORS: [(u8, u8, u8); 5] = [
 /// natively by DrawSvg. The rounded fallback block stays when parsing fails.
 const LAUNCHER_LOGO_SVG: &str = include_str!("../../../public/images/octos-logo-color.svg");
 const PEN_WIDTHS: [f64; 4] = [2.0, 3.5, 5.5, 8.0];
+// Ink toolbar order: label, tool id. Erase/select stay disabled (no Ink support).
+const INK_TOOLS: [&str; 8] = ["浏览", "书写", "擦除", "框选", "调色", "粗细", "撤销", "重做"];
+const INK_TOOL_BROWSE: usize = 0;
+const INK_TOOL_PEN: usize = 1;
+const INK_TOOL_ERASE: usize = 2;
+const INK_TOOL_SELECT: usize = 3;
+const INK_TOOL_PALETTE: usize = 4;
+const INK_TOOL_WIDTH: usize = 5;
+const INK_TOOL_UNDO: usize = 6;
+const INK_TOOL_REDO: usize = 7;
 
 fn pen_vec4(rgb: (u8, u8, u8)) -> Vec4 {
     vec4(
@@ -558,6 +566,43 @@ impl App {
         self.ui.widget(cx, ids!(launcher)).set_visible(cx, !learning);
         self.ui.widget(cx, ids!(learning)).set_visible(cx, learning);
     }
+    /// Ink toolbar buttons with the current browse/pen mode highlighted
+    /// (web .learning-ink-toolbar is-active: teal text on a faint teal wash).
+    /// Rebuilt on every mode change because script-shader buttons cannot be
+    /// recoloured from Rust without dropping state.
+    fn rebuild_ink_tools(&mut self, cx: &mut Cx) {
+        self.ink_tool_buttons.clear();
+        let mut widgets = Vec::new();
+        for (index, label) in INK_TOOLS.iter().enumerate() {
+            let active = (index == INK_TOOL_PEN) == self.drawing
+                && (index == INK_TOOL_PEN || index == INK_TOOL_BROWSE);
+            let disabled = index == INK_TOOL_ERASE || index == INK_TOOL_SELECT;
+            let (bg, extra_bg, text_color, enabled) = if disabled {
+                ("#0000", "", "#c3bbae", false)
+            } else if active {
+                ("#dceef1", "color_hover:#dceef1 color_down:#d0e5ea", "#0c7085", true)
+            } else {
+                ("#0000", "color_hover:#f1f3ee color_down:#e7ebe6", "#4a4238", true)
+            };
+            let code = format!(
+                "Button{{width:64 enabled:{enabled} text:\"{label}\"
+                    draw_bg +: {{color:{bg} {extra_bg} border_radius:10 border_color:#0000}}
+                    draw_text.color:{text_color}}}"
+            );
+            match board_view::widget(cx, &code) {
+                Ok(button) => {
+                    widgets.push(button.clone());
+                    self.ink_tool_buttons.push(button);
+                }
+                Err(e) => self.error = e,
+            }
+        }
+        if let Err(e) =
+            board_view::children(cx, &self.ui.widget(cx, ids!(ink_tools)), widgets)
+        {
+            self.error = e;
+        }
+    }
     /// Course card (web CourseCard): SVG cover with grade badge, meta row,
     /// title, description, offline/duration footer, preview/start actions.
     fn course_card(cx: &mut Cx, root: &std::path::Path, pack: &serde_json::Value) -> Result<(WidgetRef, CourseCardRefs), String> {
@@ -636,14 +681,13 @@ impl App {
     }
     /// Recent-whiteboard card (web WhiteboardSessionCard, without the
     /// rename/delete actions, which need the session system).
-    fn session_card(cx: &mut Cx, pack_id: &str, version: &str, title: &str, complete: bool) -> Result<(WidgetRef, SessionCardRefs), String> {
+    fn session_card(cx: &mut Cx, pack_id: &str, version: &str, title: &str, status: &str) -> Result<(WidgetRef, SessionCardRefs), String> {
         let title = script_text(title);
-        let state = if complete { "已完成" } else { "继续学习" };
         let code = format!(
             "RoundedView{{width:280 height:76 flow:Right align:Align{{y:0.5}} padding:Inset{{left:16 right:10}} spacing:8 draw_bg +: {{color:#fffef9 border_radius:15 border_size:1 border_color:#dbded9}}
                 View{{width:Fill height:Fit flow:Down spacing:4
                     session_title := Label{{width:Fill text:\"{title}\" draw_text.text_style.font_size:12 draw_text.color:#29464b}}
-                    session_state := Label{{text:\"{state}\" draw_text.text_style.font_size:9 draw_text.color:#718387}}
+                    session_state := Label{{text:\"{status}\" draw_text.text_style.font_size:9 draw_text.color:#718387}}
                 }}
                 open := Button{{text:\"继续学习\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#0b6978}}
             }}"
@@ -691,27 +735,35 @@ impl App {
                         .and_then(|p| p["title"].as_str())
                         .unwrap_or(pack_id)
                         .to_owned();
-                    let complete = std::fs::read_to_string(file.path())
+                    let restored = std::fs::read_to_string(file.path())
                         .ok()
                         .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
                         .and_then(|saved| {
                             course_pack::load_source(&root, pack_id, version)
                                 .ok()
                                 .and_then(|src| Session::restore(&src, &saved).ok())
-                        })
-                        .is_some_and(|s| s.complete());
+                        });
+                    let status = match &restored {
+                        Some(s) if s.complete() => "已完成".to_owned(),
+                        Some(s) => format!(
+                            "进行中 · 动作 {}/{}",
+                            s.board.cursor,
+                            s.board.action_count()
+                        ),
+                        None => "进行中".to_owned(),
+                    };
                     let mtime = file
                         .metadata()
                         .and_then(|m| m.modified())
                         .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
-                    sessions.push((pack_id.to_owned(), version.to_owned(), title, complete, mtime));
+                    sessions.push((pack_id.to_owned(), version.to_owned(), title, status, mtime));
                 }
             }
         }
         sessions.sort_by(|a, b| b.4.cmp(&a.4));
         let mut session_widgets = Vec::new();
-        for (pack_id, version, title, complete, _) in sessions {
-            match Self::session_card(cx, &pack_id, &version, &title, complete) {
+        for (pack_id, version, title, status, _) in sessions {
+            match Self::session_card(cx, &pack_id, &version, &title, &status) {
                 Ok((widget, refs)) => {
                     session_widgets.push(widget);
                     self.session_cards.push(refs);
@@ -775,9 +827,9 @@ impl App {
                         }}
                         View{{width:Fill height:Fit flow:Right spacing:6 align: Align{{y: 0.5}}
                             row_slider := mod.widgets.Slider{{width:Fill min:{min} max:{max} step:{step} default:{initial}}}
-                            row_minus := Button{{text:\"-\"}}
-                            row_plus := Button{{text:\"+\"}}
-                            row_reset := Button{{text:\"复位\" draw_text.text_style.font_size:9}}
+                            row_minus := Button{{text:\"-\" draw_text.color:#4a4238}}
+                            row_plus := Button{{text:\"+\" draw_text.color:#4a4238}}
+                            row_reset := Button{{text:\"复位\" draw_text.text_style.font_size:9 draw_text.color:#4a4238}}
                         }}
                     }}"
                 );
@@ -937,6 +989,7 @@ impl AppMain for App {
             self.last_tick = Some(Instant::now());
             self.timer = cx.start_interval(1.0 / 60.0);
             self.rebuild_launcher(cx);
+            self.rebuild_ink_tools(cx);
             let logo_loaded = {
                 let logo = self.ui.widget(cx, ids!(logo_svg));
                 let mut loaded = false;
@@ -1055,10 +1108,13 @@ impl AppMain for App {
             if self.ui.button(cx, ids!(narration_toggle)).clicked(actions) {
                 self.narration_muted = !self.narration_muted;
             }
-            // Handwriting toolbar.
-            let set_drawing = if self.ui.button(cx, ids!(ink_pen)).clicked(actions) {
+            // Handwriting toolbar (dynamic buttons, INK_TOOLS order).
+            let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
+                buttons.get(tool).is_some_and(|b| clicked(b, actions))
+            };
+            let set_drawing = if ink_clicked(INK_TOOL_PEN, &self.ink_tool_buttons, actions) {
                 Some(true)
-            } else if self.ui.button(cx, ids!(ink_hand)).clicked(actions) {
+            } else if ink_clicked(INK_TOOL_BROWSE, &self.ink_tool_buttons, actions) {
                 Some(false)
             } else {
                 None
@@ -1075,24 +1131,25 @@ impl AppMain for App {
                     board.set_drawing(cx, drawing);
                     board.set_pen(cx, self.pen_color, self.pen_width);
                 };
+                self.rebuild_ink_tools(cx);
             }
             {
                 let w = self.ui.widget(cx, ids!(spatial));
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                    if self.ui.button(cx, ids!(ink_undo)).clicked(actions) {
+                    if ink_clicked(INK_TOOL_UNDO, &self.ink_tool_buttons, actions) {
                         board.undo_ink(cx);
                     }
-                    if self.ui.button(cx, ids!(ink_redo)).clicked(actions) {
+                    if ink_clicked(INK_TOOL_REDO, &self.ink_tool_buttons, actions) {
                         board.redo_ink(cx);
                     }
                 };
             }
-            if self.ui.button(cx, ids!(ink_palette)).clicked(actions) {
+            if ink_clicked(INK_TOOL_PALETTE, &self.ink_tool_buttons, actions) {
                 let panel = self.ui.widget(cx, ids!(ink_palette_panel));
                 let open = panel.visible();
                 panel.set_visible(cx, !open);
             }
-            if self.ui.button(cx, ids!(ink_width)).clicked(actions) {
+            if ink_clicked(INK_TOOL_WIDTH, &self.ink_tool_buttons, actions) {
                 let panel = self.ui.widget(cx, ids!(ink_width_panel));
                 let open = panel.visible();
                 panel.set_visible(cx, !open);

@@ -93,6 +93,16 @@ pub fn runs(source: &str) -> Result<Vec<Run>, String> {
 /// Rebuild only when the source changes. Unhandled text nesting is shown verbatim
 /// with a visible diagnostic, never passed to MathView where glyphs could vanish.
 pub fn set_formula(cx: &mut Cx, container: &WidgetRef, source: &str) -> Result<(), String> {
+    set_formula_color(cx, container, source, "#fff")
+}
+/// Same as set_formula with an explicit glyph color; light board cards pass a
+/// dark color because MathView defaults to white (#fff).
+pub fn set_formula_color(
+    cx: &mut Cx,
+    container: &WidgetRef,
+    source: &str,
+    color: &str,
+) -> Result<(), String> {
     let parsed = runs(source);
     let (segments, diagnostic) = match parsed {
         Ok(r) => (r, None),
@@ -101,8 +111,8 @@ pub fn set_formula(cx: &mut Cx, container: &WidgetRef, source: &str) -> Result<(
     let mut children = Vec::new();
     for (i, run) in segments.into_iter().enumerate() {
         let (code,value)=match run {
-            Run::Math(text)=>("use mod.prelude.widgets.*\nreturn MathView{font_size:15 baseline_offset:0}",text),
-            Run::Text(text)=>("use mod.prelude.widgets.*\nreturn Label{padding:0 draw_text.color:#fff draw_text.text_style.font_size:18}",text),
+            Run::Math(text)=>(format!("use mod.prelude.widgets.*\nreturn MathView{{font_size:15 baseline_offset:0 color:{color}}}"),text),
+            Run::Text(text)=>(format!("use mod.prelude.widgets.*\nreturn Label{{padding:0 draw_text.color:{color} draw_text.text_style.font_size:18}}"),text),
         };
         let widget = cx.with_vm(|vm| {
             let value = vm

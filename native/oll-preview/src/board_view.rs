@@ -38,7 +38,7 @@ pub fn children(cx: &mut Cx, parent: &WidgetRef, values: Vec<WidgetRef>) -> Resu
 pub fn label(cx: &mut Cx, text: &str) -> Result<WidgetRef, String> {
     let w = widget(
         cx,
-        "Label{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:11}",
+        "Label{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:11 draw_text.color:#3c3832}",
     )?;
     w.set_text(cx, text);
     Ok(w)
@@ -115,7 +115,7 @@ fn ascent(latex: &str) -> Result<f32, String> {
     .ok_or("公式基线计算失败".into())
 }
 pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
-    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:12 spacing:6 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
+    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:12 spacing:6 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
     let caption = node["content"]["caption"].as_str().unwrap_or("");
     let equation = widget(cx, "View{width:Fill height:45 flow:Right spacing:0}")?;
     let max_ascent = values(&node["content"], "fragments")
@@ -130,17 +130,18 @@ pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
             e["target"]["fragment_id"].is_null() || e["target"]["fragment_id"] == fragment["id"]
         });
         let color = match emphasis.and_then(|e| e["emphasis"].as_str()) {
-            Some("focus") => "#665020",
-            Some("supporting") => "#245846",
+            Some("focus") => "#f4e0ac",
+            Some("supporting") => "#d3e7d6",
             _ => "#0000",
         };
         let top = 4.0 + max_ascent - ascent(fragment["latex"].as_str().unwrap_or(""))?;
         let code=format!("SolidView{{width:Fit height:45 flow:Right padding:Inset{{left:3 right:3 top:{top} bottom:0}} draw_bg.color:{color}}}");
         let f = widget(cx, &code)?;
-        formula_view::set_formula(
+        formula_view::set_formula_color(
             cx,
             &f,
             fragment["latex"].as_str().ok_or("公式片段缺少 latex")?,
+            "#243b40",
         )?;
         fragments.push(f);
     }
@@ -237,7 +238,7 @@ pub fn node_notes(node: &Value) -> String {
 
 /// Fragment cards retain the original text and emphasis; wrapping is owned by Makepad.
 pub fn text_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
-    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 spacing:8 draw_bg.color:#303844 draw_bg.border_size:1 draw_bg.border_color:#536273}")?;
+    let row=widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 spacing:8 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
     let flow = widget(
         cx,
         "View{width:Fill height:Fit flow:Flow.Right{wrap:true} spacing:0}",
@@ -248,8 +249,8 @@ pub fn text_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
             e["target"]["fragment_id"].is_null() || e["target"]["fragment_id"] == f["id"]
         });
         let color = match e.and_then(|e| e["emphasis"].as_str()) {
-            Some("focus") => "#665020",
-            Some("supporting") => "#245846",
+            Some("focus") => "#f4e0ac",
+            Some("supporting") => "#d3e7d6",
             _ => "#0000",
         };
         let box_view = widget(
@@ -258,7 +259,7 @@ pub fn text_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         )?;
         let text = widget(
             cx,
-            "Label{width:Fit height:Fit draw_text.text_style.font_size:12}",
+            "Label{width:Fit height:Fit draw_text.text_style.font_size:12 draw_text.color:#3c3832}",
         )?;
         text.set_text(cx, f["text"].as_str().unwrap_or(""));
         children(cx, &box_view, vec![text])?;
