@@ -24,8 +24,5 @@ for title, latex in [
     ('矩阵', r'\begin{pmatrix}a&b\\c&d\end{pmatrix}'),
 ]:
     result.append({'source': '补充排版测试（非课程）：'+title, 'latex': latex})
-for sample in result:
-    if '平分' in sample['latex']:
-        sample['known_issue'] = '已发现：公式中的中文“平分”未显示，此项尚未通过。'
 assert samples, 'No source courses found; check sibling checkout layout'
 (crate / 'courses/formulas.json').write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n')

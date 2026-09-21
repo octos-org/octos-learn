@@ -45,7 +45,16 @@ try:
     result['formulas']=[]
     for page in range(8):
         result['formulas'].append({'status':status(),'capture':capture('formulas-%d.png'%(page+1))})
+        if page==0:
+            # /snap exposes declared containers, not dynamically composed runs.
+            # Glyph presence is verified visually in formulas-1.png, separately.
+            container=next(w for w in get('/snap')['s'] if w['i']=='math_1')
+            assert container['r'][2]>0 and container['r'][3]>0, container
+            result['chinese_formula_container']=container
         if page<7:click('next_formulas')
+    click('next_formulas')
+    assert status()=='公式 1/8 组'
+    capture('chinese-formula-revisit.png')
     click('play')
     until(lambda s:'变量动画' in s,10)
     time.sleep(.8);click('play');frozen=status();time.sleep(1);assert status()==frozen

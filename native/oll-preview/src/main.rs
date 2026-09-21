@@ -4,6 +4,7 @@ use makepad_widgets::*;
 use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
+mod formula_view;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
 const COURSE: &str = include_str!("../courses/unit-circle-sine.jsonl");
@@ -33,12 +34,12 @@ script_mod! {
                         View { width: Fill height: 224 flow: Down spacing: 6
                             source_0 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
                             tex_0 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
-                            math_0 := MathView { text: "" font_size: 15 }
+                            math_0 := View { width: Fit height: Fit flow: Right align: Align{y: 0.5} }
                         }
                         View { width: Fill height: 224 flow: Down spacing: 6
                             source_1 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
                             tex_1 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
-                            math_1 := MathView { text: "" font_size: 15 }
+                            math_1 := View { width: Fit height: Fit flow: Right align: Align{y: 0.5} }
                         }
 
 
@@ -67,6 +68,10 @@ pub struct App {
     formula_mode: bool,
     #[rust]
     formula_page: usize,
+    #[rust]
+    formula_sources: [Option<String>; 2],
+    #[rust]
+    formula_errors: [String; 2],
 }
 impl App {
     fn reset(&mut self, cx: &mut Cx) {
@@ -113,26 +118,32 @@ impl App {
                 self.ui
                     .widget(cx, tex)
                     .set_text(cx, sample.map(|v| text(v, "latex")).unwrap_or(""));
-                self.ui
-                    .widget(cx, math)
-                    .set_text(cx, sample.map(|v| text(v, "latex")).unwrap_or(""));
+                let latex = sample.map(|v| text(v, "latex")).unwrap_or("");
+                if self.formula_sources[row].as_deref() != Some(latex) {
+                    self.formula_errors[row] =
+                        formula_view::set_formula(cx, &self.ui.widget(cx, math), latex)
+                            .err()
+                            .unwrap_or_default();
+                    self.formula_sources[row] = Some(latex.into());
+                }
             }
-            self.ui.label(cx, ids!(mapping)).set_text(
-                cx,
-                "上方为原始公式字符串，下方为 Makepad MathView 原生排版。",
-            );
+            self.ui
+                .label(cx, ids!(mapping))
+                .set_text(cx, "上方为原始公式字符串，下方为原生数学与中文混合排版。");
             self.ui.label(cx, ids!(narration)).set_text(
                 cx,
                 "课程公式保留原文；补充排版测试单独标注。此页暂不验证公式片段强调和课程动作。",
             );
-            let issues = samples
-                .iter()
-                .skip(self.formula_page * 2)
-                .take(2)
-                .filter_map(|v| v["known_issue"].as_str())
-                .collect::<Vec<_>>()
-                .join("；");
-            self.ui.label(cx, ids!(summary)).set_text(cx, &issues);
+            self.ui.label(cx, ids!(summary)).set_text(
+                cx,
+                &self
+                    .formula_errors
+                    .iter()
+                    .filter(|s| !s.is_empty())
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join("；"),
+            );
             self.ui.redraw(cx);
             return;
         }

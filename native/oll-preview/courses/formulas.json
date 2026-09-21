@@ -5,8 +5,7 @@
   },
   {
     "source": "OLL geometry-auxiliary-line / lesson-geometry-001:node:angle-result",
-    "latex": "\\angle BAD=\\angle CAD\\Rightarrow AD\\text{ 平分 }\\angle A",
-    "known_issue": "已发现：公式中的中文“平分”未显示，此项尚未通过。"
+    "latex": "\\angle BAD=\\angle CAD\\Rightarrow AD\\text{ 平分 }\\angle A"
   },
   {
     "source": "OLL geometry-auxiliary-line / lesson-geometry-001:node:perpendicular-result",

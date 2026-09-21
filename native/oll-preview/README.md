@@ -42,3 +42,12 @@ Metal 截图检查发现：代数、几何符号、分式、根号、积分及�
 核心 9 项测试通过；与现有 TypeScript 对照了 19 个操作、7 条多语言讲解计时、执行时间线和最终节点内容。时间线差异限定在 Web 动画的一帧（16ms）以内；不是对真实设备帧率的性能承诺。现有 Web 对估算讲解时间的处理不扣除变量动画时长，Rust 本轮保留此行为。
 
 重建样本：`python3 native/oll-preview/scripts/collect-formulas.py`。GPU 与交互验证：`python3 native/oll-preview/scripts/verify-macos.py 'native/oll-preview/dist/Octos OLL Preview.app' /absolute/evidence/path`。脚本只控制自己启动的实例，结束会退出。
+
+
+## 中文缺字修复
+
+已修复实际课程公式 `\angle BAD=\angle CAD\Rightarrow AD\text{ 平分 }\angle A` 中的“平分”缺字。新增 `formula_view` 适配层：顶层 `\text{…}` 使用原生 Label 的中文字体回退，与原生 MathView 数学片段按原顺序组成一行。课程字符串不变，没有增加 WebView、外部字体或修改固定 Makepad 版本。
+
+这是应用适配层的混排修复，不是 Makepad 数学引擎已支持任意嵌套中文的声明。分式内部、矩阵内部、上下标或其他尚不支持的文字结构保留完整原文并明确提示，不静默漏字。纯数学分式、积分、矩阵继续整式交给 MathView。
+
+新增 4 项回归测试覆盖真实课程、多个文字片段与转义、纯数学内容不改写、不支持结构的显式处理。GPU 截图已确认“AD 平分 ∠A”完整显示，检查页旧缺字提示已移除。自动控件快照无法枚举动态组成的子控件，所以中文字形由真实 Metal 截图目视核验；不是仅检查输入字符串。
