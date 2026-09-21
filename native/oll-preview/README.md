@@ -1,77 +1,41 @@
-# macOS OLL 课程显示验证
+# OLL 原生技术验证宿主
 
-这是读取真实 OLL JSONL 的独立原生验证应用，不是完整课程播放器。没有 WebView，也没有把 TypeScript 放进 Octoscript 执行。
+2026-09-21 当前状态：这是独立验证工具，**不是正式 Octos Learn 产品界面**。用户打开 v6 后指出与 main 差异过大，未认可它作为最终产品交付。main 界面和完整业务流程尚未迁移。后续先审阅最新 main，形成页面/交互迁移清单，再接入已经验证的 runtime 和显示能力；不自行重新设计产品。
 
-## 使用
+完整交接入口：[AGENT_HANDOFF_CURRENT.md](/Users/alan0x/Documents/projects/YY/working/octos-learn/2026-0919-makepad数学渲染与去webview化调研/AGENT_HANDOFF_CURRENT.md)。历史开发记录见 [开发日志](../../docs/development/macos-oll-validation.md)。本次文档更新不代表新构建或新增功能验收。
 
-双击 `dist/Octos OLL Preview.app`，点击“播放 / 暂停”。程序依次创建单位圆、正弦图、显示对应关系，再运行角度动画。动画中可暂停、恢复；“重新开始”清空课程状态。
+## 当前功能与限制
 
-内置未经修改的 `OLL examples/unit-circle-sine/lesson.canonical.jsonl` 与 `examples/quadratic/lesson.canonical.jsonl`，点击“切换课程”从头加载另一门课。两个图表的数据均来自课程内容和 Rust 表达式绑定。现已由 Rust spatial 模块按 OLL 相对位置排列，Makepad 测量并绘制节点；当前覆盖单个课程区域。对应关系暂以文字显示；跨节点连接线尚未绘制，教学焦点已驱动画面的平移缩放。
+- 四门未经改写的 canonical 课程：unit-circle-sine、quadratic、quadratic-v2、english-relative-clause，点击“切换课程”循环加载。
+- Rust Session 负责调度、变量动画、暂停恢复、进度与增量事件；Makepad 负责显示和平台适配，不运行 TypeScript 业务逻辑。
+- 原生公式/文本强调、函数图像、sequence 流程图、连线/箭头/标签、组框、教师指向和自动/手动取景。完整协议和任意公式/课程不保证覆盖；不支持结构明确报错或展示原文提示。顶层中文公式混排已修复，任意嵌套中文尚不支持。
+- 保存/恢复课程进度及旧 checkpoint 导入，恢复默认暂停。**不保存笔迹**；重置、切课和恢复会清空验证笔迹。
+- 鼠标书写、撤销重做；Android 复用原生采样及临时笔迹层。旧笔迹导入、持久化、橡皮擦和真实设备体验未完成。
+- Android 录音/Agora 服务复用与事件通道、独立 APK 构建完成；没有安装。完整语音会话、后端接入、真实音频时间同步、课后任务和应用外围尚未迁移。
+- WebAssembly ABI/适配器已写，缺编译目标待安装授权，实际 WASM/浏览器验证未完成。
 
-**范围：** 已替换固定两秒节拍，由 Rust Session 按 OLL 操作边界、动作间隔、估算讲解时间和变量动画时长调度。支持 1 倍速、暂停恢复、重置；尚未接入真实语音起止同步、课后任务、保存恢复、WASM、手写。窗口默认 1200×850，多区域、宿主阅读栏/障碍物/附件、任意尺寸的完整验收仍待完成。
+## 构建和版本
 
-## 构建
+并排准备 `octos-learn/`、`oll/`、`makepad/`、`octoscript/`、`octoscript-makepad/`。Rust 核心在 `oll/crates/oll-runtime`。不要把原仓库当前工作区覆盖为验证分支。
 
-同级目录排列为 `octos-learn/`、`oll/`、`makepad/`、`octoscript-makepad/`。Rust 核心在 OLL 仓库 `crates/oll-runtime`。
-
-| 源码 | 本轮版本 |
-| --- | --- |
-| Octos Learn 分支基点 | b670417d54ac517cb9113db7d331e013b45d84cf |
-| OLL 分支基点 | 2b93d67ffc30075edb3d3f34b848f799a46717f2 |
-| OLL 本轮实现 | cde09cb |
+| 仓库 | v6 构建/代码来源 |
+|---|---|
+| 应用功能分支 | codex/macos-oll-validation；v6 对应 d15ce7a（最后一项仅日志） |
+| OLL 功能分支 | codex/rust-runtime-macos-validation；v6 对应 95ab25f |
 | Octoscript-Makepad | b0628d05a89369b0c3bae2750db6da06996a05c2 |
-| Makepad（由上述项目指定） | 825dbb422c6d7926e111e2ee7831d697870d8671 |
+| Makepad | 825dbb422c6d7926e111e2ee7831d697870d8671 |
+| Octoscript | 68f6a9df55692b5d8ef8873a12721e279a3f40d6 |
 
-执行 `native/oll-preview/scripts/package-macos.sh`。脚本使用已缓存依赖的 offline/locked release 构建，收集字体等资源并作本机 ad-hoc 签名；没有开发者发布签名或公证。资源按可执行文件相对路径加载，可以从 Finder 启动。本应用没有使用 Octoscript VM 的业务执行能力；Makepad UI 声明仍使用其自带脚本系统。
+应用/OLL 历史 main 基点分别为 b670417、2b93d67。开展新的产品迁移代码前重新核对最新 main，并从其建立 codex 特性分支，选择性接入已有验证实现。底层依赖继续使用指定版本，不跟随 Makepad 最新 main 升级。
 
-## 验证记录
+macOS：`native/oll-preview/scripts/package-macos.sh`，离线锁定依赖 release 构建，收集资源并作本机 ad-hoc 签名，没有发布公证。产物在 `native/oll-preview/dist/`。
 
-- Rust 表达式与真实课程动画测试通过（OLL 仓库）。
-- macOS Metal 实际启动、中文文本、自有 GPU 截图验证。
-- 第 4/5 动作动画中暂停，等待一秒后状态保持 `θ=1.454`；恢复后完成 `θ=6.283`。
-- 初次检查发现布局声明 `Word` 应为 `Words`，已修正；随后去掉遮挡画面的图例，并调整标签和单位圆等比例区域。
-- 不把编译通过等同于完成全部显示验收。首次 Metal 启动日志有系统显示服务的 337ms 延迟记录，不能据此宣称达到性能目标。
+Android：`python3 native/oll-preview/scripts/package-android.py --sdk <existing-sdk> --cargo-makepad <pinned-tool> --target-dir <output>`。复用现有 SDK 和缓存 Agora 4.5.2/aosl 1.2.13.1；共享 Java 文件只改包名复制，哈希在 `target/android-service-build.json`。只打包不安装；设备 192.168.1.63:5555 的安装仍需用户单独确认。
 
+## 验证与后续
 
-## 第二轮验证：调度与原生公式
+v6 核心 23 项、应用 7 项测试通过；macOS Metal 自有实例验证两门原课程完整播放、暂停、导航、重置，新增两门课程 checkpoint 导入及画面，保存重启恢复和鼠标书写/撤销重做。脚本在 `scripts/verify-{spatial,progress,expanded,ink}.py`，参数和自有进程管理见脚本。自动化需使用隔离存储，不操作用户已打开实例。
 
-用户已确认首轮图像、动画及播放控制无问题。现在增加“课程 / 公式”“下一组公式”：13 条去重的真实课程公式加 3 条明确标注的补充样本，每页 2 条，共 8 页。进入公式页暂停课程；点击播放返回课程并继续。此页仅验证完整公式排版，不等于 math 节点动作、片段强调与通用布局已完成。
+历史测试/截图位于调研目录 `macos-validation-v6/evidence/`。多区域/障碍/阅读布局目前有共享几何对照，尚无任意宿主尺寸的完整验收。Android 双层笔迹物理呈现、帧率/内存/延迟及完整产品验收仍未完成。
 
-Metal 截图检查发现：代数、几何符号、分式、根号、积分及矩阵样本可显示；含 `\text{ 平分 }` 的实际课程公式丢失中文，页面明确标注未通过。源码中 MathView 的布局和轮廓取自单一数学字体，尚未解决中文回退。不得因此宣称公式全覆盖。首版公式页行高导致的分式裁切已修复。
-
-核心 9 项测试通过；与现有 TypeScript 对照了 19 个操作、7 条多语言讲解计时、执行时间线和最终节点内容。时间线差异限定在 Web 动画的一帧（16ms）以内；不是对真实设备帧率的性能承诺。现有 Web 对估算讲解时间的处理不扣除变量动画时长，Rust 本轮保留此行为。
-
-重建样本：`python3 native/oll-preview/scripts/collect-formulas.py`。GPU 与交互验证：`python3 native/oll-preview/scripts/verify-macos.py 'native/oll-preview/dist/Octos OLL Preview.app' /absolute/evidence/path`。脚本只控制自己启动的实例，结束会退出。
-
-
-## 中文缺字修复
-
-已修复实际课程公式 `\angle BAD=\angle CAD\Rightarrow AD\text{ 平分 }\angle A` 中的“平分”缺字。新增 `formula_view` 适配层：顶层 `\text{…}` 使用原生 Label 的中文字体回退，与原生 MathView 数学片段按原顺序组成一行。课程字符串不变，没有增加 WebView、外部字体或修改固定 Makepad 版本。
-
-这是应用适配层的混排修复，不是 Makepad 数学引擎已支持任意嵌套中文的声明。分式内部、矩阵内部、上下标或其他尚不支持的文字结构保留完整原文并明确提示，不静默漏字。纯数学分式、积分、矩阵继续整式交给 MathView。
-
-新增 4 项回归测试覆盖真实课程、多个文字片段与转义、纯数学内容不改写、不支持结构的显式处理。GPU 截图已确认“AD 平分 ∠A”完整显示，检查页旧缺字提示已移除。自动控件快照无法枚举动态组成的子控件，所以中文字形由真实 Metal 截图目视核验；不是仅检查输入字符串。
-
-
-## 配方法真实课程播放（2026-09-21）
-
-用户已确认公式样本全部显示通过。本轮新增配方法课程 25 个动作的原生显示：6 个公式节点逐步出现，片段背景按重点/辅助强调显示为黄/绿，随后绘制抛物线、顶点与对称轴，显示平移说明和结论。所有内容来自原版 canonical 数据。
-
-左列按公式创建顺序排版，右列显示图像与文字。分组以名称和成员数量提示；关系显示最新一条的来源、目标和说明；教师指向显示为“最近指向”。这些是验证宿主的呈现方式，尚未实现 OLL 通用空间布局、跨节点连线、组框、平移缩放或教师手势动画，不代表这些功能已完成。
-
-公式片段使用固定 Makepad 配套的 makepad-latex-math 计算相同数学字体、字号与样式的 ascent，以共同基线排版；背景使用 SolidView。没有升级底层版本或引入新字体。当前片段布局针对本课程代数式，不宣称任意公式片段边界（如跨片段的分式或定界符）已受支持。
-
-原有公式检查页仍按完整公式渲染，可随时进入；进入检查页暂停课程，点击播放返回原课程继续。切换课程则清空当前进度，重新开始所选课。仍使用文字估算讲解时间，暂无语音。
-
-
-## 空间白板与教学取景（2026-09-21）
-
-用户已人工验收上轮配方法课程。本轮两门课都使用 `SpatialBoard`：公式、说明和图像共享世界坐标，按节点 placement 排列，并显示嵌套分组边框。数学尺寸由固定数学字体的排版结果测量；文字卡片采用保守的行高估算，因此不同字体或更复杂文字仍需进一步测量验收。
-
-“全览”显示全部已出现的节点；拖动白板平移，滚轮以鼠标为锚点缩放，放大/缩小按钮以视口中心缩放。“跟随教学”回到当前教学目标。手动操作会保持画面位置，直到新的教学取景请求到来；拖动未结束时的新请求延后至松手执行。普通播放刷新不抢回手动视角。
-
-新建、修改、强调、教师指向会聚焦对应节点；变量动画同时取景真正引用该变量的节点；board.focus 支持组范围。采用 Web 的取景公式和 680ms cubic-bezier(.22,1,.36,1) 过渡。暂停会冻结正在进行的自动过渡；恢复继续。重置清空节点、分组、手动视角和相机状态。
-
-构建不增加依赖、不升级配套 Makepad。使用原生 draw-list transform 同时缩放卡片、数学字形与函数图像，并按视口换算裁剪范围，没有把白板截图后放大。全览用于查看结构，细节可放大查看。
-
-布局对照范围：当前两门 canonical 课程按创建顺序出现的单区域 semantic 布局；不是完整 Web reading-flow/多区域布局移植。跨节点连线、手写、多点触控、进度兼容/WASM/语音仍未完成。验证命令为 `python3 native/oll-preview/scripts/verify-spatial.py 'native/oll-preview/dist/Octos OLL Preview.app' /absolute/evidence/path`。
+下一任务优先是最新 main 产品页面/交互盘点，而不是继续把验证按钮页扩展为正式产品。具体不确定项询问用户。WASM 安装许可与性能标准仍待答复。
