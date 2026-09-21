@@ -4,7 +4,10 @@ import {
   type NoulAnswer,
   DEFAULT_TYPESAFE_TIMEOUT_MS,
 } from "@/api/typesafe-client";
-import { requestSystemOneGrant } from "@/api/systemone-grant";
+import {
+  requestSystemOneGrant,
+  getCachedSystemOneGrant,
+} from "@/api/systemone-grant";
 
 export interface AdmissionFastGateInput {
   text: string;
@@ -56,6 +59,109 @@ async function resolveApiKey(explicitKey?: string): Promise<string | null> {
   return null;
 }
 
+export interface AdmissionEventRecord {
+  id: string;
+  timestampEpochMs: number;
+  input: AdmissionFastGateInput;
+  result: AdmissionFastGateResult;
+}
+
+const admissionEventListeners = new Set<() => void>();
+let admissionEventHistory: AdmissionEventRecord[] = [];
+
+export function recordAdmissionEvent(
+  input: AdmissionFastGateInput,
+  result: AdmissionFastGateResult,
+): void {
+  const record: AdmissionEventRecord = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    timestampEpochMs: Date.now(),
+    input,
+    result,
+  };
+  admissionEventHistory = [record, ...admissionEventHistory].slice(0, 50);
+  admissionEventListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (e) {
+      console.error("admission listener error", e);
+    }
+  });
+}
+
+export function subscribeAdmissionEvents(listener: () => void): () => void {
+  admissionEventListeners.add(listener);
+  return () => {
+    admissionEventListeners.delete(listener);
+  };
+}
+
+export function getAdmissionEventHistory(): AdmissionEventRecord[] {
+  return admissionEventHistory;
+}
+
+export function clearAdmissionEventHistory(): void {
+  admissionEventHistory = [];
+  admissionEventListeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // listener error ignored
+    }
+  });
+}
+
+export async function getSystemOneStatus({
+  fetchIfMissing = false,
+}: {
+  fetchIfMissing?: boolean;
+} = {}): Promise<{
+  available: boolean;
+  hasKey: boolean;
+  keyPreview?: string;
+  source: "grant" | "env" | "none";
+}> {
+  const envKey = (import.meta.env?.VITE_TYPESAFE_API_KEY as string | undefined)?.trim();
+  if (envKey) {
+    return {
+      available: true,
+      hasKey: true,
+      keyPreview: envKey.slice(0, 10) + "...",
+      source: "env",
+    };
+  }
+  const cachedGrant = getCachedSystemOneGrant();
+  if (cachedGrant?.apiKey?.trim()) {
+    return {
+      available: true,
+      hasKey: true,
+      keyPreview: cachedGrant.apiKey.trim().slice(0, 10) + "...",
+      source: "grant",
+    };
+  }
+  if (fetchIfMissing) {
+    const grant = await requestSystemOneGrant();
+    if (grant?.apiKey?.trim()) {
+      return {
+        available: true,
+        hasKey: true,
+        keyPreview: grant.apiKey.trim().slice(0, 10) + "...",
+        source: "grant",
+      };
+    }
+  }
+  return {
+    available: false,
+    hasKey: false,
+    source: "none",
+  };
+}
+
+function finish(input: AdmissionFastGateInput, result: AdmissionFastGateResult): AdmissionFastGateResult {
+  recordAdmissionEvent(input, result);
+  return result;
+}
+
 export async function evaluateAdmissionFastGate(
   input: AdmissionFastGateInput,
   options: AdmissionFastGateOptions = {},
@@ -66,7 +172,7 @@ export async function evaluateAdmissionFastGate(
   // 1. Local fast check for empty strings
   if (!trimmed) {
     const elapsedMs = Date.now() - startedAt;
-    return {
+    return finish(input, {
       disposition: "ignore",
       confidence: 1.0,
       isSelfContained: false,
@@ -74,14 +180,14 @@ export async function evaluateAdmissionFastGate(
       source: "fallback_local",
       elapsedMs,
       latencyMs: elapsedMs,
-    };
+    });
   }
 
   // 2. Resolve credentials (Grant / Env)
   const apiKey = await resolveApiKey(options.apiKey);
   if (!apiKey) {
     const elapsedMs = Date.now() - startedAt;
-    return {
+    return finish(input, {
       disposition: "generate_lesson",
       confidence: 1.0,
       isSelfContained: true,
@@ -89,7 +195,7 @@ export async function evaluateAdmissionFastGate(
       source: "passthrough",
       elapsedMs,
       latencyMs: elapsedMs,
-    };
+    });
   }
 
   // 3. Assemble System One questions
@@ -151,7 +257,7 @@ export async function evaluateAdmissionFastGate(
     // Fall back to generate_lesson / passthrough to let the downstream system handle it.
     if (confidence < confidenceThreshold) {
       const elapsedMs = Date.now() - startedAt;
-      return {
+      return finish(input, {
         disposition: "generate_lesson",
         confidence,
         subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
@@ -160,7 +266,7 @@ export async function evaluateAdmissionFastGate(
         source: "passthrough",
         elapsedMs,
         latencyMs: elapsedMs,
-      };
+      });
     }
 
     let disposition: AdmissionDisposition = "generate_lesson";
@@ -173,7 +279,7 @@ export async function evaluateAdmissionFastGate(
     }
 
     const elapsedMs = Date.now() - startedAt;
-    return {
+    return finish(input, {
       disposition,
       confidence,
       subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
@@ -183,11 +289,11 @@ export async function evaluateAdmissionFastGate(
       source: "jev_direct",
       elapsedMs,
       latencyMs: elapsedMs,
-    };
+    });
   } catch (error) {
     // 4. Graceful Fallback on timeout or API error
     const elapsedMs = Date.now() - startedAt;
-    return {
+    return finish(input, {
       disposition: "generate_lesson",
       confidence: 0,
       isSelfContained: true,
@@ -195,6 +301,6 @@ export async function evaluateAdmissionFastGate(
       source: "passthrough",
       elapsedMs,
       latencyMs: elapsedMs,
-    };
+    });
   }
 }

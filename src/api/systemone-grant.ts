@@ -8,6 +8,16 @@ export interface SystemOneGrant {
 
 let inMemoryGrant: { grant: SystemOneGrant; fetchedAt: number } | null = null;
 
+export function getCachedSystemOneGrant(): SystemOneGrant | null {
+  if (inMemoryGrant) {
+    const now = Date.now();
+    if (!inMemoryGrant.grant.expiresAtMs || inMemoryGrant.grant.expiresAtMs > now + 30_000) {
+      return inMemoryGrant.grant;
+    }
+  }
+  return null;
+}
+
 export async function requestSystemOneGrant(): Promise<SystemOneGrant | null> {
   // If cached and still valid (at least 30s before expiration if expiration is provided), reuse
   if (inMemoryGrant) {

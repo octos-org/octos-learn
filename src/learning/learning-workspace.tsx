@@ -145,6 +145,7 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -3396,6 +3397,9 @@ export function LearningWorkspace({
       )}
       {import.meta.env.DEV && import.meta.env.MODE !== "test" ? (
         <LearningTraceInspector recorder={learnTrace} />
+      ) : null}
+      {import.meta.env.MODE !== "test" ? (
+        <JevAdmissionDebugger />
       ) : null}
     </div>
   );
