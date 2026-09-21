@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  compareCoursePackVersions,
   fetchCoursePackCatalog,
   fetchEmbeddedCoursePackCatalog,
   findEmbeddedCoursePackEntry,
@@ -7,6 +8,7 @@ import {
   parseCoursePackCatalog,
   resetEmbeddedCoursePackCatalogCache,
   saveCoursePackCatalog,
+  selectLatestCoursePacks,
   supportsCoursePackPlayer,
 } from "./course-pack-catalog";
 
@@ -125,4 +127,38 @@ describe("CoursePack public catalog", () => {
     const miss = await findEmbeddedCoursePackEntry("unknown");
     expect(miss).toBeNull();
   });
+
+  it("compares course pack semver versions accurately", () => {
+    expect(compareCoursePackVersions("0.1.6", "0.1.5")).toBeGreaterThan(0);
+    expect(compareCoursePackVersions("0.1.5", "0.1.6")).toBeLessThan(0);
+    expect(compareCoursePackVersions("0.1.5", "0.1.5")).toBe(0);
+    expect(compareCoursePackVersions("1.0.0", "0.9.9")).toBeGreaterThan(0);
+    expect(compareCoursePackVersions("0.2.0", "0.1.9")).toBeGreaterThan(0);
+    expect(compareCoursePackVersions("0.1.5-beta", "0.1.5")).toBeLessThan(0);
+  });
+
+  it("selects only the latest version per course pack", () => {
+    const baseEntry = sampleCatalog().packs[0]!;
+    const v1 = { ...baseEntry, version: "0.1.4", title: "v0.1.4" };
+    const v2 = { ...baseEntry, version: "0.1.5", title: "v0.1.5" };
+    const v3 = { ...baseEntry, version: "0.1.6", title: "v0.1.6" };
+    const other = { ...baseEntry, packId: "other-pack", version: "1.0.0", title: "Other" };
+
+    const selected = selectLatestCoursePacks([v1, v3, v2, other]);
+    expect(selected).toHaveLength(2);
+    expect(selected.find((p) => p.packId === "grade-3-math")?.version).toBe("0.1.6");
+    expect(selected.find((p) => p.packId === "other-pack")?.version).toBe("1.0.0");
+  });
+
+  it("prefers embedded entry when versions tie in selectLatestCoursePacks", () => {
+    const remote = { ...sampleCatalog().packs[0]!, version: "0.1.6", description: "remote" };
+    const embedded = { ...sampleCatalog().packs[0]!, version: "0.1.6", description: "embedded" };
+
+    const selected = selectLatestCoursePacks([remote, embedded], {
+      isEmbedded: (entry) => entry.description === "embedded",
+    });
+    expect(selected).toHaveLength(1);
+    expect(selected[0]?.description).toBe("embedded");
+  });
 });
+

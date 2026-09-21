@@ -18,6 +18,7 @@ import {
   getEmbeddedCoursePackCatalog,
   loadSavedCoursePackCatalog,
   saveCoursePackCatalog,
+  selectLatestCoursePacks,
   supportsCoursePackPlayer,
   type CoursePackCatalog,
   type CoursePackCatalogEntry,
@@ -77,8 +78,11 @@ function useLauncherCatalog(): CatalogState {
 
       if (publicCatalogResult instanceof Error) {
         if (embeddedPacks.length > 0) {
+          const latestEmbedded = selectLatestCoursePacks(embeddedPacks, {
+            isEmbedded: (entry) => embeddedSet.has(`${entry.packId}@${entry.version}`),
+          });
           setState({
-            catalog: embedded,
+            catalog: { ...embedded!, packs: latestEmbedded },
             embeddedIdentities: embeddedSet,
             live: true,
             loading: false,
@@ -86,8 +90,11 @@ function useLauncherCatalog(): CatalogState {
           });
         } else {
           const saved = loadSavedCoursePackCatalog();
+          const latestSaved = saved
+            ? { ...saved, packs: selectLatestCoursePacks(saved.packs) }
+            : null;
           setState({
-            catalog: saved,
+            catalog: latestSaved,
             embeddedIdentities: new Set(),
             live: false,
             loading: false,
@@ -96,12 +103,10 @@ function useLauncherCatalog(): CatalogState {
         }
       } else {
         saveCoursePackCatalog(publicCatalogResult);
-        const mergedPacks = [...embeddedPacks];
-        for (const pubPack of publicCatalogResult.packs) {
-          if (!embeddedSet.has(`${pubPack.packId}@${pubPack.version}`)) {
-            mergedPacks.push(pubPack);
-          }
-        }
+        const mergedPacks = selectLatestCoursePacks(
+          [...embeddedPacks, ...publicCatalogResult.packs],
+          { isEmbedded: (entry) => embeddedSet.has(`${entry.packId}@${entry.version}`) },
+        );
         setState({
           catalog: {
             schemaVersion: 1,
@@ -341,15 +346,16 @@ export function CourseLauncher() {
     };
   }, []);
   const installedByIdentity = new Map(installed.map((pack) => [pack.identity, pack]));
-  const recommended = state.catalog?.packs.filter((pack) => pack.recommended) ?? [];
-  const visiblePacks = [...recommended];
+  const catalogPacks = state.catalog?.packs.filter((pack) => pack.recommended) ?? [];
+  const candidatePacks = [...catalogPacks];
   if (!state.live) {
     for (const pack of installed) {
-      if (!visiblePacks.some((entry) => (
-        entry.packId === pack.packId && entry.version === pack.version
-      ))) visiblePacks.push(pack.catalogEntry);
+      candidatePacks.push(pack.catalogEntry);
     }
   }
+  const visiblePacks = selectLatestCoursePacks(candidatePacks, {
+    isEmbedded: (entry) => state.embeddedIdentities.has(`${entry.packId}@${entry.version}`),
+  });
   return (
     <main className="course-launcher">
       <div className="course-launcher-inner">

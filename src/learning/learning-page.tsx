@@ -385,7 +385,7 @@ export function LearningPage() {
     lockedCourseDigest,
   );
   const [reviewSessionId, setReviewSessionId] = useState<string | null>(() =>
-    coursePackId || initialEntry.record.status === "provisional"
+    (coursePackId && requestedCourseMode === "instance") || initialEntry.record.status === "provisional"
       ? null
       : initialEntry.record.id,
   );
