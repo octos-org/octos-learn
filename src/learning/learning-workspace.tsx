@@ -144,6 +144,8 @@ import {
   removeRecoverableValue,
   writeRecoverableJson,
 } from "./recoverable-storage";
+import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { requestSystemOneGrant } from "@/api/systemone-grant";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -1301,6 +1303,65 @@ export function LearningWorkspace({
               return true;
             }
             if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+
+            const admission = await evaluateAdmissionFastGate({
+              text: context.transcript,
+              modality: "voice",
+              hasCameraFrame: Boolean(context.currentFramePath),
+            });
+
+            if (admission.disposition === "ignore") {
+              learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+                turnId: context.turnId,
+                source: "octos-web",
+                stage: "admission-gate",
+                status: "ignored",
+                recordedAtEpochMs: Date.now(),
+                data: {
+                  transcript: context.transcript,
+                  reason: admission.reason,
+                  latency_ms: admission.latencyMs,
+                  gate_source: admission.source,
+                },
+              });
+              return true;
+            }
+
+            if (admission.disposition === "clarify") {
+              learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+                turnId: context.turnId,
+                source: "octos-web",
+                stage: "admission-gate",
+                status: "clarified",
+                recordedAtEpochMs: Date.now(),
+                data: {
+                  transcript: context.transcript,
+                  reason: admission.reason,
+                  latency_ms: admission.latencyMs,
+                  gate_source: admission.source,
+                },
+              });
+              const clarifyText = admission.reason || INSUFFICIENT_LESSON_REQUEST_MESSAGE;
+              setPlainReply({ turnId: context.turnId, text: clarifyText });
+              setPlainReplySpoken(false);
+              return true;
+            }
+
+            learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+              turnId: context.turnId,
+              source: "octos-web",
+              stage: "admission-gate",
+              status: "passed",
+              recordedAtEpochMs: Date.now(),
+              data: {
+                transcript: context.transcript,
+                disposition: admission.disposition,
+                confidence: admission.confidence,
+                latency_ms: admission.latencyMs,
+                gate_source: admission.source,
+              },
+            });
+
             registerVoiceQuestion(context.turnId, context.transcript, null);
             if (context.currentFramePath) {
               updateWhiteboardQuestion(context.turnId, {
@@ -2580,6 +2641,21 @@ export function LearningWorkspace({
         submitted_at_epoch_ms: Date.now(),
       };
       setSendError(null);
+      const references = composerBoardReferences;
+      if (references.length === 0 && !applicationContext?.trim() && !activeVoiceInkSelectionCaptureRef.current) {
+        const admission = await evaluateAdmissionFastGate({
+          text,
+          modality: "text",
+          hasCameraFrame: Boolean(conv.cameraActive),
+        });
+        if (admission.disposition === "ignore") {
+          return;
+        }
+        if (admission.disposition === "clarify") {
+          setSendError(admission.reason || "输入内容不够明确，请描述你想学习的具体知识点或题目。");
+          return;
+        }
+      }
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
       learnTrace.recordOnce(`${turnId}:request-submitted`, {
@@ -2590,7 +2666,6 @@ export function LearningWorkspace({
         recordedAtEpochMs: clientTiming.submitted_at_epoch_ms,
         data: { input_modality: "text" },
       });
-      const references = composerBoardReferences;
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
