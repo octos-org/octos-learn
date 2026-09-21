@@ -13,6 +13,7 @@ script_mod! {
     mod.widgets.SpatialBoard = set_type_default() do #(SpatialBoard::register_widget(vm)) {
         width:Fill height:450
         draw_bg +: {color:#222831}
+        draw_vector +: {draw_depth:4.0}
     }
 }
 #[derive(Script, ScriptHook, Widget)]
@@ -26,6 +27,12 @@ pub struct SpatialBoard {
     #[redraw]
     #[live]
     draw_bg: DrawColor,
+    #[live]
+    draw_vector: DrawVector,
+    #[rust]
+    routes: Vec<oll_runtime::connections::Route>,
+    #[rust]
+    badges: Vec<(WorldRect, WidgetRef)>,
     #[rust]
     list: Option<DrawList2d>,
     #[rust]
@@ -92,6 +99,8 @@ impl SpatialBoard {
         self.signature.clear();
         self.entries.clear();
         self.groups.clear();
+        self.routes.clear();
+        self.badges.clear();
         self.geometry = BoardLayout::default();
         self.targets.clear();
         self.last_action = 0;
@@ -209,6 +218,52 @@ impl SpatialBoard {
             }
             self.groups
                 .sort_by(|a, b| (b.0.width * b.0.height).total_cmp(&(a.0.width * a.0.height)));
+            self.routes.clear();
+            self.badges.clear();
+            let mut occupied_labels = self.geometry.nodes.values().copied().collect::<Vec<_>>();
+            for connection in &p.connections {
+                let resolve_target = |t: &Value| {
+                    let id = t["node_id"]
+                        .as_str()
+                        .or(t["group_id"].as_str())
+                        .or(t["connection_id"].as_str())?;
+                    resolve_geometry(&self.geometry, p, id, &mut BTreeSet::new())
+                };
+                let from = resolve_target(&connection["from"]).ok_or("无法定位连线起点")?;
+                let to = resolve_target(&connection["to"]).ok_or("无法定位连线终点")?;
+                let obstacles = self
+                    .geometry
+                    .nodes
+                    .iter()
+                    .filter(|(id, _)| {
+                        connection["from"]["node_id"] != id.as_str()
+                            && connection["to"]["node_id"] != id.as_str()
+                    })
+                    .map(|(_, r)| *r)
+                    .collect::<Vec<_>>();
+                let label = connection["label"].as_str().unwrap_or("");
+                let internal = connection["from"]["node_id"] == connection["to"]["node_id"]
+                    && connection["from"]["fragment_id"].is_string()
+                    && connection["to"]["fragment_id"].is_string();
+                let route = oll_runtime::connections::route(
+                    from,
+                    to,
+                    label,
+                    internal,
+                    &obstacles,
+                    &mut occupied_labels,
+                );
+                if let Some(rect) = route.label {
+                    let badge = board_view::widget(
+                        cx,
+                        "SolidView{width:Fill height:Fill padding:3 draw_bg.color:#263a40}",
+                    )?;
+                    let text = board_view::label(cx, label)?;
+                    board_view::children(cx, &badge, vec![text])?;
+                    self.badges.push((rect, badge));
+                }
+                self.routes.push(route);
+            }
             self.signature = signature;
         }
         for (id, _, w) in &self.entries {
@@ -231,6 +286,11 @@ impl SpatialBoard {
                             .filter_map(Value::as_str)
                             .map(str::to_owned)
                             .collect()
+                    }
+                    "board.connect" => {
+                        if let Some(id) = a["connection"]["id"].as_str() {
+                            requested.push(id.into());
+                        }
                     }
                     "board.create" => {
                         if let Some(id) = a["node"]["id"].as_str() {
@@ -390,6 +450,62 @@ impl Widget for SpatialBoard {
                 },
             );
         }
+        self.draw_vector.begin();
+        self.draw_vector.set_color(0.48, 0.74, 0.69, 1.);
+        for route in &self.routes {
+            if let Some(&(x, y)) = route.points.first() {
+                self.draw_vector.move_to(x as f32, y as f32);
+                for &(x, y) in route.points.iter().skip(1) {
+                    self.draw_vector.line_to(x as f32, y as f32);
+                }
+                self.draw_vector.stroke(2.);
+                if route.points.len() > 1 {
+                    let end = route.points[route.points.len() - 1];
+                    let before = route.points[route.points.len() - 2];
+                    let angle = (end.1 - before.1).atan2(end.0 - before.0);
+                    self.draw_vector.move_to(end.0 as f32, end.1 as f32);
+                    for offset in [-0.48_f64, 0.48] {
+                        self.draw_vector.line_to(
+                            (end.0 - 10. * (angle + offset).cos()) as f32,
+                            (end.1 - 10. * (angle + offset).sin()) as f32,
+                        );
+                    }
+                    self.draw_vector.close();
+                    self.draw_vector.fill();
+                }
+            }
+        }
+        if let Some(t) = self.board.as_ref().and_then(|b| b.last_point.as_ref()) {
+            if let Some(id) = t["node_id"]
+                .as_str()
+                .or(t["group_id"].as_str())
+                .or(t["connection_id"].as_str())
+            {
+                if let Some(r) = self.resolve(id, &mut BTreeSet::new()) {
+                    self.draw_vector.set_color(1., 0.79, 0.26, 1.);
+                    let x = (r.x + r.width - 8.) as f32;
+                    let y = (r.y - 18.) as f32;
+                    self.draw_vector.move_to(x, y);
+                    self.draw_vector.line_to(x + 20., y - 5.);
+                    self.draw_vector.line_to(x + 5., y + 20.);
+                    self.draw_vector.close();
+                    self.draw_vector.fill();
+                }
+            }
+        }
+        self.draw_vector.end(cx);
+        for (r, w) in &self.badges {
+            w.draw_walk_all(
+                cx,
+                scope,
+                Walk {
+                    abs_pos: Some(dvec2(r.x, r.y)),
+                    width: Size::Fixed(r.width),
+                    height: Size::Fixed(r.height),
+                    ..Default::default()
+                },
+            );
+        }
         cx.pop_clip_rect();
         cx.end_pass_sized_turtle();
         list.end(cx);
@@ -409,7 +525,7 @@ impl Widget for SpatialBoard {
             .iter()
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
-        json!({"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"manual":self.manual,"targets":self.targets,"nodes":nodes,"groups":self.geometry.groups.len(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"manual":self.manual,"targets":self.targets,"nodes":nodes,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 
