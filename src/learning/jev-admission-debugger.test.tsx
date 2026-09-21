@@ -31,7 +31,7 @@ describe("JevAdmissionDebugger", () => {
     fireEvent.click(trigger);
 
     expect(await screen.findByText("TypeSafe Jev 准入监视")).toBeTruthy();
-    expect(screen.getByText("Key 就绪")).toBeTruthy();
+    expect(screen.getByText(/Key 就绪/)).toBeTruthy();
     expect(screen.getByText("等待语音或键盘输入...")).toBeTruthy();
   });
 
@@ -127,5 +127,28 @@ describe("JevAdmissionDebugger", () => {
     });
 
     expect(await screen.findByText("“呃...那个”")).toBeTruthy();
+  });
+
+  it("renders passthrough fallback events with neutral badge and distinguishes from admissions", async () => {
+    recordAdmissionEvent(
+      { text: "测试降级放行", modality: "text" },
+      {
+        disposition: "generate_lesson",
+        confidence: 0,
+        isSelfContained: true,
+        source: "passthrough",
+        reason: "未配置 Jev 凭据，已降级直通排课流程",
+        elapsedMs: 5,
+        latencyMs: 5,
+      },
+    );
+
+    render(<JevAdmissionDebugger />);
+    fireEvent.click(screen.getByRole("button", { name: /Jev 准入/i }));
+
+    expect(await screen.findByText("“测试降级放行”")).toBeTruthy();
+    expect(screen.getByText("🔄 降级放行")).toBeTruthy();
+    expect(screen.getByText(/未配置 Jev 凭据/)).toBeTruthy();
+    expect(screen.getByText("降级:")).toBeTruthy();
   });
 });

@@ -74,9 +74,10 @@ export function JevAdmissionDebugger() {
   };
 
   const latestEvent = events[0] as AdmissionEventRecord | undefined;
-  const ignoreCount = events.filter((e) => e.result.disposition === "ignore").length;
-  const clarifyCount = events.filter((e) => e.result.disposition === "clarify").length;
-  const lessonCount = events.filter((e) => e.result.disposition === "generate_lesson").length;
+  const ignoreCount = events.filter((e) => e.result.disposition === "ignore" && e.result.source !== "passthrough").length;
+  const clarifyCount = events.filter((e) => e.result.disposition === "clarify" && e.result.source !== "passthrough").length;
+  const lessonCount = events.filter((e) => e.result.disposition === "generate_lesson" && e.result.source === "jev_direct").length;
+  const passthroughCount = events.filter((e) => e.result.source === "passthrough").length;
 
   return (
     <aside
@@ -108,18 +109,22 @@ export function JevAdmissionDebugger() {
           {latestEvent ? (
             <span
               className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                latestEvent.result.disposition === "ignore"
-                  ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                  : latestEvent.result.disposition === "clarify"
-                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                latestEvent.result.source === "passthrough"
+                  ? "bg-slate-800 text-slate-300 border border-slate-600"
+                  : latestEvent.result.disposition === "ignore"
+                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
+                    : latestEvent.result.disposition === "clarify"
+                      ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                      : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
               }`}
             >
-              {latestEvent.result.disposition === "ignore"
-                ? "拦截"
-                : latestEvent.result.disposition === "clarify"
-                  ? "追问"
-                  : "准入"}{" "}
+              {latestEvent.result.source === "passthrough"
+                ? "降级"
+                : latestEvent.result.disposition === "ignore"
+                  ? "拦截"
+                  : latestEvent.result.disposition === "clarify"
+                    ? "追问"
+                    : "准入"}{" "}
               {latestEvent.result.latencyMs}ms
             </span>
           ) : (
@@ -143,9 +148,9 @@ export function JevAdmissionDebugger() {
                     ? "bg-emerald-950/80 text-emerald-400 border-emerald-500/40"
                     : "bg-amber-950/80 text-amber-400 border-amber-500/40"
                 }`}
-                title={status.hasKey ? `凭据就绪: ${status.keyPreview}` : "无凭据 (透明回退)"}
+                title={status.hasKey ? `凭据就绪: ${status.keyPreview} (${status.source})` : "无凭据 (降级直通模式)"}
               >
-                {status.hasKey ? "Key 就绪" : "回退模式"}
+                {status.hasKey ? `Key 就绪 (${status.source})` : "无凭据 (直通降级)"}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -176,12 +181,20 @@ export function JevAdmissionDebugger() {
             </div>
           </header>
 
+          {/* Warning Banner if No Key */}
+          {!status.hasKey && (
+            <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-500/30 text-[10px] text-amber-300 leading-tight">
+              ⚠️ 当前未检测到 Jev 凭据，输入将自动降级直通。本地调试请配置 .env.local。
+            </div>
+          )}
+
           {/* Quick Stats Bar */}
-          <div className="grid grid-cols-4 gap-1 px-3 py-1.5 bg-slate-900/40 border-b border-slate-800/60 text-[10px] text-slate-300 text-center font-mono">
+          <div className="grid grid-cols-5 gap-0.5 px-2 py-1.5 bg-slate-900/40 border-b border-slate-800/60 text-[10px] text-slate-300 text-center font-mono">
             <div>总计: <span className="font-semibold text-slate-100">{events.length}</span></div>
             <div className="text-rose-400">拦截: <span className="font-semibold">{ignoreCount}</span></div>
             <div className="text-amber-400">追问: <span className="font-semibold">{clarifyCount}</span></div>
-            <div className="text-emerald-400">排课: <span className="font-semibold">{lessonCount}</span></div>
+            <div className="text-emerald-400">准入: <span className="font-semibold">{lessonCount}</span></div>
+            <div className="text-slate-400">降级: <span className="font-semibold">{passthroughCount}</span></div>
           </div>
 
           {/* Quick Manual Test Bar */}
@@ -231,6 +244,7 @@ export function JevAdmissionDebugger() {
             ) : (
               events.map((event) => {
                 const timeStr = new Date(event.timestampEpochMs).toLocaleTimeString();
+                const isPassthrough = event.result.source === "passthrough";
                 const isIgnore = event.result.disposition === "ignore";
                 const isClarify = event.result.disposition === "clarify";
 
@@ -238,11 +252,13 @@ export function JevAdmissionDebugger() {
                   <article
                     key={event.id}
                     className={`p-2.5 rounded-xl border transition-all ${
-                      isIgnore
-                        ? "bg-rose-950/20 border-rose-500/30"
-                        : isClarify
-                          ? "bg-amber-950/20 border-amber-500/30"
-                          : "bg-emerald-950/20 border-emerald-500/30"
+                      isPassthrough
+                        ? "bg-slate-900/60 border-slate-800"
+                        : isIgnore
+                          ? "bg-rose-950/20 border-rose-500/30"
+                          : isClarify
+                            ? "bg-amber-950/20 border-amber-500/30"
+                            : "bg-emerald-950/20 border-emerald-500/30"
                     }`}
                   >
                     {/* Top Status Row */}
@@ -250,18 +266,22 @@ export function JevAdmissionDebugger() {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                            isIgnore
-                              ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
-                              : isClarify
-                                ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
-                                : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                            isPassthrough
+                              ? "bg-slate-800 text-slate-300 border border-slate-600"
+                              : isIgnore
+                                ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                                : isClarify
+                                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/40"
+                                  : "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
                           }`}
                         >
-                          {isIgnore
-                            ? "🚫 静默拦截"
-                            : isClarify
-                              ? "❓ 引导追问"
-                              : "✅ 准入排课"}
+                          {isPassthrough
+                            ? "🔄 降级放行"
+                            : isIgnore
+                              ? "🚫 静默拦截"
+                              : isClarify
+                                ? "❓ 引导追问"
+                                : "✅ 准入排课"}
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">
                           {event.input.modality === "voice" ? "🎙️ 语音" : "⌨️ 文字"}
@@ -283,7 +303,10 @@ export function JevAdmissionDebugger() {
                         时延: <strong className="text-slate-100">{event.result.latencyMs}ms</strong>
                       </span>
                       <span>
-                        置信度: <strong className="text-slate-100">{Math.round(event.result.confidence * 100)}%</strong>
+                        置信度:{" "}
+                        <strong className="text-slate-100">
+                          {isPassthrough ? "--" : `${Math.round(event.result.confidence * 100)}%`}
+                        </strong>
                       </span>
                       {event.result.subject && (
                         <span>学科: {event.result.subject}</span>

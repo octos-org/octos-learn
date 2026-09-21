@@ -46,7 +46,9 @@ export interface AdmissionFastGateOptions {
 export const DEFAULT_ADMISSION_CONFIDENCE_THRESHOLD = 0.6;
 
 async function resolveApiKey(explicitKey?: string): Promise<string | null> {
-  if (explicitKey?.trim()) return explicitKey.trim();
+  if (explicitKey !== undefined) {
+    return explicitKey.trim() || null;
+  }
 
   // Tier 1: Vite client-side environment variable (for standalone / local debugging)
   const envKey = (import.meta.env?.VITE_TYPESAFE_API_KEY as string | undefined)?.trim();
@@ -189,9 +191,9 @@ export async function evaluateAdmissionFastGate(
     const elapsedMs = Date.now() - startedAt;
     return finish(input, {
       disposition: "generate_lesson",
-      confidence: 1.0,
+      confidence: 0,
       isSelfContained: true,
-      reason: "No credentials configured; passthrough to full pipeline",
+      reason: "未配置 Jev 凭据，已降级直通排课流程",
       source: "passthrough",
       elapsedMs,
       latencyMs: elapsedMs,
@@ -251,18 +253,24 @@ export async function evaluateAdmissionFastGate(
 
     const rawChoice = dispAnswer?.choice;
     const confidence = dispAnswer?.confidence ?? 0;
+    const lessonProbability = dispAnswer?.probabilities?.generate_lesson ?? 0;
     const isSelfContained = (selfContainedAnswer?.noul ?? 0) >= 0.5;
 
-    // Confidence Floor: If the model is not confident, do not aggressively ignore or clarify.
-    // Fall back to generate_lesson / passthrough to let the downstream system handle it.
-    if (confidence < confidenceThreshold) {
+    // Safety fallback: only if the model is genuinely uncertain whether this might be a lesson
+    // (e.g. lessonProbability is high enough to risk a false rejection, or overall confidence is low with lesson presence).
+    // If the model is choosing between ignore and clarify with near-zero lesson probability, respect the choice.
+    const isAmbiguousLesson =
+      rawChoice !== "generate_lesson" &&
+      (lessonProbability >= 0.35 || (confidence < confidenceThreshold && lessonProbability >= 0.2));
+
+    if (isAmbiguousLesson) {
       const elapsedMs = Date.now() - startedAt;
       return finish(input, {
         disposition: "generate_lesson",
         confidence,
         subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
         isSelfContained,
-        reason: "Low confidence; passthrough to full pipeline",
+        reason: `意图边界模糊（排课概率 ${Math.round(lessonProbability * 100)}%），降级直通排课流程`,
         source: "passthrough",
         elapsedMs,
         latencyMs: elapsedMs,

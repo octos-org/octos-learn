@@ -27,6 +27,8 @@ describe("admission-fast-gate", () => {
     );
 
     expect(result.disposition).toBe("generate_lesson");
+    expect(result.confidence).toBe(0);
+    expect(result.reason).toContain("未配置 Jev 凭据");
     expect(result.source).toBe("passthrough");
     expect(fetchFn).not.toHaveBeenCalled();
   });
@@ -136,13 +138,13 @@ describe("admission-fast-gate", () => {
     expect(result.source).toBe("jev_direct");
   });
 
-  it("falls back to passthrough if confidence is below threshold", async () => {
+  it("falls back to passthrough if confidence is below threshold and lesson probability is significant", async () => {
     const mockResponse = {
       answers: {
         disposition: {
           choice: "ignore",
           probabilities: { ignore: 0.45, generate_lesson: 0.4, clarify: 0.15 },
-          confidence: 0.42, // below 0.6 threshold
+          confidence: 0.42, // below 0.6 threshold and generate_lesson >= 0.35
         },
         subject: {
           choice: "math",
@@ -168,6 +170,40 @@ describe("admission-fast-gate", () => {
 
     expect(result.disposition).toBe("generate_lesson");
     expect(result.source).toBe("passthrough");
+  });
+
+  it("retains ignore choice when lesson probability is zero even if margin confidence is moderate", async () => {
+    const mockResponse = {
+      answers: {
+        disposition: {
+          choice: "ignore",
+          probabilities: { ignore: 0.69, clarify: 0.31, generate_lesson: 0.0 },
+          confidence: 0.54, // below 0.6, but generate_lesson is 0.0
+        },
+        subject: {
+          choice: "other",
+          probabilities: { other: 0.9 },
+          confidence: 0.8,
+        },
+        is_self_contained: {
+          noul: 0.03,
+        },
+      },
+      model: "jev-latest",
+    };
+
+    const fetchFn = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue(mockResponse),
+    });
+
+    const result = await evaluateAdmissionFastGate(
+      { text: "呃...那个", modality: "voice" },
+      { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey },
+    );
+
+    expect(result.disposition).toBe("ignore");
+    expect(result.source).toBe("jev_direct");
   });
 
   it("gracefully falls back to passthrough upon network failure or timeout", async () => {
