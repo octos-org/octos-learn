@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "snapshotId": "embedded-2026-09-18",
-  "generatedAt": "2026-09-18T13:39:17.544Z",
+  "generatedAt": "2026-09-20T16:54:52.973Z",
   "sourceOrigin": "https://learn.pitun.cc",
   "packs": [
     {
@@ -12,9 +12,9 @@
     },
     {
       "packId": "slope-and-intercept",
-      "version": "0.1.5",
-      "archiveBytes": 1780886,
-      "archiveSha256": "dfffa6d9262a11909cd28047d98335e940da2fac66e390c3fe88f597ea7ac6f2"
+      "version": "0.1.6",
+      "archiveBytes": 1816289,
+      "archiveSha256": "24f0c209175d5ba8ab10f4f0e7b159018056c5792ce507d07a753b8241e883c0"
     }
   ]
 }

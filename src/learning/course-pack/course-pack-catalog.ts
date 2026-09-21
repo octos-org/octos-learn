@@ -188,10 +188,15 @@ export async function findEmbeddedCoursePackEntry(
 ): Promise<CoursePackCatalogEntry | null> {
   const catalog = await getEmbeddedCoursePackCatalog(signal);
   if (!catalog) return null;
-  return catalog.packs.find(
+  const matches = catalog.packs.filter(
     (entry) => entry.packId === packId && (!version || entry.version === version),
-  ) ?? null;
+  );
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0]!;
+  matches.sort((a, b) => compareCoursePackVersions(b.version, a.version));
+  return matches[0] ?? null;
 }
+
 
 export function saveCoursePackCatalog(catalog: CoursePackCatalog): void {
   try {
@@ -224,3 +229,55 @@ export function supportsCoursePackPlayer(minimumVersion: string): boolean {
   }
   return true;
 }
+
+export function compareCoursePackVersions(a: string, b: string): number {
+  const parse = (v: string) => {
+    const match = v.match(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z.-]+))?$/u);
+    if (!match) return { major: 0, minor: 0, patch: 0, prerelease: null };
+    return {
+      major: parseInt(match[1]!, 10),
+      minor: parseInt(match[2]!, 10),
+      patch: parseInt(match[3]!, 10),
+      prerelease: match[4] ?? null,
+    };
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa.major !== pb.major) return pa.major - pb.major;
+  if (pa.minor !== pb.minor) return pa.minor - pb.minor;
+  if (pa.patch !== pb.patch) return pa.patch - pb.patch;
+  if (pa.prerelease !== null && pb.prerelease === null) return -1;
+  if (pa.prerelease === null && pb.prerelease !== null) return 1;
+  if (pa.prerelease !== null && pb.prerelease !== null) {
+    return pa.prerelease.localeCompare(pb.prerelease);
+  }
+  return 0;
+}
+
+export function selectLatestCoursePacks(
+  packs: readonly CoursePackCatalogEntry[],
+  options?: {
+    isEmbedded?: (entry: CoursePackCatalogEntry) => boolean;
+  },
+): CoursePackCatalogEntry[] {
+  const latestByPackId = new Map<string, CoursePackCatalogEntry>();
+  for (const pack of packs) {
+    const existing = latestByPackId.get(pack.packId);
+    if (!existing) {
+      latestByPackId.set(pack.packId, pack);
+      continue;
+    }
+    const cmp = compareCoursePackVersions(pack.version, existing.version);
+    if (cmp > 0) {
+      latestByPackId.set(pack.packId, pack);
+    } else if (cmp === 0) {
+      const packEmbedded = options?.isEmbedded?.(pack);
+      const existingEmbedded = options?.isEmbedded?.(existing);
+      if (packEmbedded && !existingEmbedded) {
+        latestByPackId.set(pack.packId, pack);
+      }
+    }
+  }
+  return Array.from(latestByPackId.values());
+}
+

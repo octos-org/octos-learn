@@ -2102,7 +2102,7 @@ export function LearningWorkspace({
     if (appendedOllEventCountRef.current > activeOllEvents.length) {
       appendedOllEventCountRef.current = 1;
     }
-    if (playbackMode === "review") {
+    if (playbackMode === "review" || packagedPlayback) {
       const pending = activeOllEvents.slice(appendedOllEventCountRef.current);
       if (pending.length > 0) appendOllEvents(pending);
       appendedOllEventCountRef.current = activeOllEvents.length;
@@ -2124,7 +2124,7 @@ export function LearningWorkspace({
     return () => {
       if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [activeOllEvents, appendOllEvents, playbackMode]);
+  }, [activeOllEvents, appendOllEvents, packagedPlayback, playbackMode]);
   useEffect(() => {
     if (ollLesson) {
       onBoardContextChange?.({

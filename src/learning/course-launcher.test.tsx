@@ -130,6 +130,44 @@ describe("shared course launcher", () => {
       .toContain('"mode":"instance"');
   });
 
+  it("keeps only the single latest version per course when multiple versions exist in catalogs", async () => {
+    const makePack = (version: string) => ({
+      ...release,
+      packId: "slope-and-intercept",
+      version,
+      title: "一次函数 y = mx + b 的图像与性质",
+      archiveUrl: `/api/learn/course-packs/slope-and-intercept/${version}/archive.ocpack`,
+      manifestUrl: `/api/learn/course-packs/slope-and-intercept/${version}/manifest.json`,
+      thumbnailUrl: `/api/learn/course-packs/slope-and-intercept/${version}/files/thumbnail.webp`,
+    });
+    const embeddedV016 = makePack("0.1.6");
+    const publicV015 = makePack("0.1.5");
+    const publicV014 = makePack("0.1.4");
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/course-packs/embedded/catalog.json")) {
+        return new Response(JSON.stringify(catalog([embeddedV016])), { status: 200 });
+      }
+      if (url.includes("/api/learn/course-packs")) {
+        return new Response(JSON.stringify(catalog([publicV015, publicV014])), { status: 200 });
+      }
+      throw new Error("unexpected url");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    showLauncher();
+
+    const titles = await screen.findAllByRole("heading", {
+      name: "一次函数 y = mx + b 的图像与性质",
+    });
+    expect(titles).toHaveLength(1);
+
+    expect(screen.getByText("课程包 v0.1.6")).toBeTruthy();
+    expect(screen.queryByText("课程包 v0.1.5")).toBeNull();
+    expect(screen.queryByText("课程包 v0.1.4")).toBeNull();
+  });
+
   it("shows empty state when no embedded or saved catalog is available and network fails", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("catalog missing"); }));
 
