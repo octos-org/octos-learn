@@ -1,0 +1,27 @@
+[package]
+name = "octos-learn"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+oll-runtime = { path = "../../../oll/crates/oll-runtime" }
+octos-oll-preview = { path = "../oll-preview" }
+makepad-widgets = { path = "../../../makepad/widgets" }
+makepad-latex-math = { path = "../../../makepad/libs/latex_math" }
+makepad-plot = { path = "../../../octoscript-makepad/crates/makepad-plot" }
+serde_json = { version = "1", features = ["float_roundtrip"] }
+
+[patch."https://github.com/OctoSense-org/makepad.git"]
+makepad-widgets = { path = "../../../makepad/widgets" }
+makepad-script = { path = "../../../makepad/platform/script" }
+
+[patch."https://github.com/OctoSense-org/Octoscript-Makepad.git"]
+octoscript-node = { path = "../../../octoscript-makepad/crates/octoscript-node" }
+
+[profile.release]
+opt-level = 3
+
+[lib]
+name = "octos_learn"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]

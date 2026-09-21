@@ -4,12 +4,12 @@ use makepad_widgets::*;
 use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
-mod board_view;
-mod formula_view;
+pub mod board_view;
+pub mod formula_view;
 mod platform_services;
 use platform_services::Events as PlatformEvents;
-mod progress_store;
-mod spatial_board;
+pub mod progress_store;
+pub mod spatial_board;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
 const QUADRATIC: &str = include_str!("../courses/quadratic.jsonl");
@@ -392,17 +392,17 @@ impl App {
         self.ui.redraw(cx);
     }
 }
-fn num(v: &Value, k: &str) -> Result<f64, String> {
+pub fn num(v: &Value, k: &str) -> Result<f64, String> {
     v[k].as_f64()
         .ok_or_else(|| format!("Missing coordinate {k}"))
 }
-fn text<'a>(v: &'a Value, k: &str) -> &'a str {
+pub fn text<'a>(v: &'a Value, k: &str) -> &'a str {
     v[k].as_str().unwrap_or("")
 }
-fn items<'a>(v: &'a Value, k: &str) -> &'a [Value] {
+pub fn items<'a>(v: &'a Value, k: &str) -> &'a [Value] {
     v[k].as_array().map(Vec::as_slice).unwrap_or(&[])
 }
-fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> {
+pub fn render(plot: &mut LinePlot, node: &Value, p: &Preview) -> Result<(), String> {
     let c = &node["content"];
     let blue = vec4(0.20, 0.65, 1.0, 1.0);
     let gold = vec4(1.0, 0.65, 0.15, 1.0);
