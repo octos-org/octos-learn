@@ -1,10 +1,11 @@
 use makepad_plot::{LinePlot, LineStyle, MarkerStyle, Series};
 pub use makepad_widgets;
 use makepad_widgets::*;
-use oll_runtime::{expression::evaluate, preview::Preview};
+use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
 app_main!(App);
+const FORMULAS: &str = include_str!("../courses/formulas.json");
 const COURSE: &str = include_str!("../courses/unit-circle-sine.jsonl");
 script_mod! {
     use mod.prelude.widgets.*
@@ -16,15 +17,31 @@ script_mod! {
                 body +: {
                     flow: Down spacing: 12 padding: 20
                     title := Label { text: "OLL · Makepad" draw_text.text_style.font_size: 24 }
-                    Label { text: "macOS 原生验证 · 固定节拍预览 · 暂未接入语音与课后交互" }
+                    Label { text: "macOS 原生验证 · OLL 讲解阶段调度 · 暂未接入语音与课后交互" }
                     View { width: Fill height: Fit flow: Right spacing: 16
                         play := Button { text: "播放 / 暂停" }
                         reset := Button { text: "重新开始" }
+                        formulas := Button { text: "课程 / 公式" }
+                        next_formulas := Button { text: "下一组公式" }
                         status := Label { text: "准备就绪" }
                     }
-                    View { width: Fill height: 490 flow: Right spacing: 20
+                    charts := View { width: Fill height: 490 flow: Right spacing: 20
                         circle := LinePlot { width: 490 height: 490 plot_margin: Inset{left: 52 right: 16 top: 28 bottom: 40} demo_data: false interactive: false }
                         wave := LinePlot { width: Fill height: Fill demo_data: false interactive: false }
+                    }
+                    formula_panel := View { visible: false width: Fill height: 490 flow: Down spacing: 12
+                        View { width: Fill height: 224 flow: Down spacing: 6
+                            source_0 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
+                            tex_0 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
+                            math_0 := MathView { text: "" font_size: 15 }
+                        }
+                        View { width: Fill height: 224 flow: Down spacing: 6
+                            source_1 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
+                            tex_1 := Label { width: Fill text: "" draw_text.text_style.font_size: 10 }
+                            math_1 := MathView { text: "" font_size: 15 }
+                        }
+
+
                     }
                     mapping := Label { width: Fill text: "" }
                     narration := Label { width: Fill height: Fit draw_text.wrap: Words text: "点击播放，按 OLL 顺序生成画面。" }
@@ -39,44 +56,109 @@ pub struct App {
     #[live]
     ui: WidgetRef,
     #[rust]
-    player: Option<Preview>,
+    player: Option<Session>,
     #[rust]
     timer: Timer,
     #[rust]
     last_tick: Option<Instant>,
     #[rust]
-    playing: bool,
-    #[rust]
-    wait: f64,
-    #[rust]
     error: String,
+    #[rust]
+    formula_mode: bool,
+    #[rust]
+    formula_page: usize,
 }
 impl App {
     fn reset(&mut self, cx: &mut Cx) {
-        self.playing = false;
-        self.wait = 0.0;
+        self.formula_mode = false;
         self.error.clear();
-        match Preview::load(COURSE) {
+        match Session::load(COURSE) {
             Ok(p) => self.player = Some(p),
             Err(e) => self.error = e,
         }
         self.refresh(cx);
     }
     fn refresh(&mut self, cx: &mut Cx) {
-        if let Some(p) = &self.player {
+        self.ui
+            .widget(cx, ids!(charts))
+            .set_visible(cx, !self.formula_mode);
+        self.ui
+            .widget(cx, ids!(formula_panel))
+            .set_visible(cx, self.formula_mode);
+        if self.formula_mode {
+            let samples: Vec<Value> =
+                serde_json::from_str(FORMULAS).expect("embedded formula corpus");
+            self.ui
+                .label(cx, ids!(title))
+                .set_text(cx, "原生数学公式显示检查");
+            self.ui.label(cx, ids!(status)).set_text(
+                cx,
+                &format!(
+                    "公式 {}/{} 组",
+                    self.formula_page + 1,
+                    samples.len().div_ceil(2)
+                ),
+            );
+            for (row, (source, tex, math)) in [
+                (ids!(source_0), ids!(tex_0), ids!(math_0)),
+                (ids!(source_1), ids!(tex_1), ids!(math_1)),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let sample = samples.get(self.formula_page * 2 + row);
+                self.ui
+                    .widget(cx, source)
+                    .set_text(cx, sample.map(|v| text(v, "source")).unwrap_or(""));
+                self.ui
+                    .widget(cx, tex)
+                    .set_text(cx, sample.map(|v| text(v, "latex")).unwrap_or(""));
+                self.ui
+                    .widget(cx, math)
+                    .set_text(cx, sample.map(|v| text(v, "latex")).unwrap_or(""));
+            }
+            self.ui.label(cx, ids!(mapping)).set_text(
+                cx,
+                "上方为原始公式字符串，下方为 Makepad MathView 原生排版。",
+            );
+            self.ui.label(cx, ids!(narration)).set_text(
+                cx,
+                "课程公式保留原文；补充排版测试单独标注。此页暂不验证公式片段强调和课程动作。",
+            );
+            let issues = samples
+                .iter()
+                .skip(self.formula_page * 2)
+                .take(2)
+                .filter_map(|v| v["known_issue"].as_str())
+                .collect::<Vec<_>>()
+                .join("；");
+            self.ui.label(cx, ids!(summary)).set_text(cx, &issues);
+            self.ui.redraw(cx);
+            return;
+        }
+
+        if let Some(session) = &self.player {
+            let p = &session.board;
             self.ui.label(cx, ids!(title)).set_text(cx, &p.title);
             let status = format!(
-                "{} · 动作 {}/{} · θ = {:.3}",
-                if p.complete() {
+                "{} · 动作 {}/{} · θ = {:.3} · {}",
+                if session.complete() {
                     "播放完成"
-                } else if self.playing {
+                } else if session.playing {
                     "播放中"
                 } else {
                     "已暂停"
                 },
                 p.cursor,
                 p.action_count(),
-                p.variables.get("theta").copied().unwrap_or(0.0)
+                p.variables.get("theta").copied().unwrap_or(0.0),
+                if p.animating() {
+                    "变量动画"
+                } else if !p.narration.is_empty() {
+                    "讲解中"
+                } else {
+                    "课程阶段切换"
+                }
             );
             self.ui.label(cx, ids!(status)).set_text(
                 cx,
@@ -91,7 +173,7 @@ impl App {
                 .set_text(cx, &p.narration);
             self.ui
                 .label(cx, ids!(summary))
-                .set_text(cx, if p.complete() { &p.summary } else { "" });
+                .set_text(cx, if session.complete() { &p.summary } else { "" });
             let labels = p
                 .connections
                 .iter()
@@ -117,7 +199,6 @@ impl App {
                     if let Some(node) = p.nodes.iter().find(|n| n["kind"] == kind) {
                         if let Err(e) = render(&mut plot, node, p) {
                             self.error = e;
-                            self.playing = false;
                         }
                     } else {
                         plot.set_title("等待课程动作");
@@ -245,49 +326,59 @@ impl AppMain for App {
             self.last_tick = Some(Instant::now());
             self.timer = cx.start_interval(1.0 / 60.0);
         }
-        if let Event::Actions(actions) = event {
-            if self.ui.button(cx, ids!(reset)).clicked(actions) {
-                self.reset(cx);
-            }
-            if self.ui.button(cx, ids!(play)).clicked(actions) {
-                if self.player.as_ref().is_some_and(Preview::complete) {
-                    self.reset(cx);
-                }
-                self.playing = !self.playing;
-                self.last_tick = Some(Instant::now());
-                self.refresh(cx);
-            }
-        }
-        if self.timer.is_event(event).is_some() {
+        let control_event = matches!(event, Event::Actions(_));
+        let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
+        if self.timer.is_event(event).is_some() || control_event {
             let now = Instant::now();
             let dt = self
                 .last_tick
                 .replace(now)
                 .map(|t| now.duration_since(t).as_secs_f64())
                 .unwrap_or(0.0);
-            if self.playing {
-                if let Some(p) = &mut self.player {
-                    let result = if p.animating() {
-                        p.tick(dt)
-                    } else {
-                        self.wait -= dt;
-                        if self.wait <= 0.0 {
-                            self.wait = 2.0;
-                            p.advance()
-                        } else {
-                            Ok(())
-                        }
-                    };
-                    if let Err(e) = result {
+            if let Some(session) = &mut self.player {
+                if let Err(e) = session.tick(dt) {
+                    self.error = e;
+                }
+            }
+        }
+        if let Event::Actions(actions) = event {
+            if self.ui.button(cx, ids!(formulas)).clicked(actions) {
+                self.formula_mode = !self.formula_mode;
+                if let Some(session) = &mut self.player {
+                    session.pause();
+                }
+            }
+            if self.ui.button(cx, ids!(next_formulas)).clicked(actions) {
+                let count = serde_json::from_str::<Vec<Value>>(FORMULAS)
+                    .expect("embedded corpus")
+                    .len()
+                    .div_ceil(2);
+                self.formula_page = (self.formula_page + 1) % count;
+                self.formula_mode = true;
+                if let Some(session) = &mut self.player {
+                    session.pause();
+                }
+            }
+            if self.ui.button(cx, ids!(reset)).clicked(actions) {
+                self.reset(cx);
+            }
+            if self.ui.button(cx, ids!(play)).clicked(actions) {
+                self.formula_mode = false;
+                if self.player.as_ref().is_some_and(Session::complete) {
+                    self.reset(cx);
+                }
+                if let Some(session) = &mut self.player {
+                    if session.playing {
+                        session.pause();
+                    } else if let Err(e) = session.play() {
                         self.error = e;
-                        self.playing = false;
-                    }
-                    if p.complete() {
-                        self.playing = false;
                     }
                 }
-                self.refresh(cx);
+                self.last_tick = Some(Instant::now());
             }
+        }
+        if (self.timer.is_event(event).is_some() && was_playing) || control_event {
+            self.refresh(cx);
         }
         self.ui.handle_event(cx, event, &mut Scope::empty());
     }
