@@ -167,8 +167,8 @@ script_mod! {
                             variable_panel := RoundedView {
                                 visible: false width: 360 height: Fit flow: Down spacing: 6
                                 padding: Inset{left: 12 right: 12 top: 10 bottom: 10}
-                                draw_bg +: { color: #fffdf8f2 border_radius: 18 border_size: 1 border_color: #e8e0d4 }
-                                variable_list := View { width: Fill height: Fit flow: Down spacing: 8 }
+                                draw_bg +: { color: #fffdf8f2 border_radius: 18 border_size: 1 border_color: #e4ded3 }
+                                variable_list := View { width: Fill height: Fit flow: Down spacing: 6 }
                                 variable_note := Label { visible: false width: Fill height: Fit text: "老师正在演示这个变量，结束后即可继续拖动"
                                     draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
                             }
@@ -936,21 +936,40 @@ impl App {
                     .unwrap_or(&alias)
                     .replace(['"', '\\'], " ");
                 let code = format!(
-                    "View{{width:Fill height:Fit flow:Down spacing:3
-                        View{{width:Fill height:Fit flow:Right align: Align{{y: 0.5}}
-                            row_label := Label{{width:Fill height:Fit text:\"{label}\" draw_text.text_style.font_size:11 draw_text.color:#3c3832}}
-                            row_value := Label{{width:Fit height:Fit text:\"\" draw_text.text_style.font_size:11 draw_text.color:#827b72}}
-                        }}
-                        View{{width:Fill height:Fit flow:Right spacing:6 align: Align{{y: 0.5}}
-                            row_slider := mod.widgets.Slider{{width:Fill min:{min} max:{max} step:{step} default:{initial}}}
-                            row_minus := Button{{text:\"-\" draw_text.color:#4a4238}}
-                            row_plus := Button{{text:\"+\" draw_text.color:#4a4238}}
-                            row_reset := Button{{text:\"复位\" draw_text.text_style.font_size:9 draw_text.color:#4a4238}}
-                        }}
+                    "View{{width:Fill height:Fit flow:Right spacing:4 align: Align{{y: 0.5}}
+                        row_label := Label{{width:Fit height:Fit text:\"{label}\" draw_text.text_style.font_size:11 draw_text.color:#5d5952}}
+                        row_slider := mod.widgets.Slider{{width:Fill height:25 margin: Inset{{top: -7}} min:{min} max:{max} step:{step} default:{initial}
+                            draw_bg +: {{
+                                color: #eae6de color_hover: #eae6de color_focus: #eae6de color_drag: #eae6de
+                                border_size: 0.5 border_color: #d8d2c7 border_color_hover: #d8d2c7 border_color_focus: #d8d2c7 border_color_drag: #d8d2c7
+                                val_padding: 1.
+                                val_color: #168398 val_color_hover: #168398 val_color_focus: #168398 val_color_drag: #168398
+                                handle_color: #168398 handle_color_hover: #126a7c handle_color_focus: #126a7c handle_color_drag: #126a7c
+                                handle_size: 12.
+                            }}}}
+                        row_value := Label{{width:48 height:Fit text:\"\" draw_text.text_style.font_size:11 draw_text.color:#0d7082}}
+                        row_minus := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
+                            draw_icon +: {{color:#0d7082}}
+                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
+                        row_plus := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
+                            draw_icon +: {{color:#0d7082}}
+                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
+                        row_reset := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
+                            draw_icon +: {{color:#0d7082}}
+                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
                     }}"
                 );
                 match board_view::widget(cx, &code) {
                     Ok(root) => {
+                        for (id, icon) in [
+                            (live_id!(row_minus), include_str!("../assets/icons/minus.svg")),
+                            (live_id!(row_plus), include_str!("../assets/icons/plus.svg")),
+                            (live_id!(row_reset), include_str!("../assets/icons/rotate-ccw.svg")),
+                        ] {
+                            if let Some(mut b) = root.widget(cx, &[id]).borrow_mut::<Button>() {
+                                b.draw_icon.load_from_str(icon);
+                            }
+                        }
                         let slider = root.widget(cx, ids!(row_slider));
                         if let Some(mut s) = slider.borrow_mut::<Slider>() {
                             s.set_value(cx, initial);
