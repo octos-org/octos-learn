@@ -349,6 +349,7 @@ impl SpatialBoard {
                         board_view::text_node(cx, node)?
                     }
                     "plot" | "geometry" => board_view::chart_node(cx, node)?,
+                    "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
                         let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
                         let label = board_view::label(cx, &board_view::node_notes(node))?;
@@ -427,13 +428,15 @@ impl SpatialBoard {
             }
             let plot_ref = w.widget(cx, ids!(plot));
             if let Some(mut plot) = plot_ref.borrow_mut::<LinePlot>() {
-                let top = if kind == "geometry" { 28. } else { 36. };
+                // Card chrome owns the title/badge now; the plot area itself
+                // stays untitled (web parity) and starts below the header.
                 let plot_px = (
                     (rect.width - 68.).max(1.),
-                    (rect.height - 40. - top - board_view::caption_extra(node)).max(1.),
+                    (rect.height - 112. - board_view::caption_extra(node)).max(1.),
                 );
                 plot.clear();
                 crate::render(&mut plot, node, p, plot_px)?;
+                plot.set_title("");
             }
             let caption = crate::chart_caption(node);
             w.label(cx, ids!(caption)).set_text(cx, &caption);
