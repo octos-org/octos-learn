@@ -12,10 +12,6 @@ const collection = [
     title: "一次函数 y = mx + b 的图像与性质",
   },
   {
-    id: "linear-plotting-points",
-    title: "一次函数 y = 2x - 1 的图像本质与画法",
-  },
-  {
     id: "linear-simultaneous-intersections",
     title: "二元一次方程组与一次函数的几何意义",
   },
