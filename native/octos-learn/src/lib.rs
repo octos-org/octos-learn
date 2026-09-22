@@ -193,6 +193,29 @@ script_mod! {
                                 }
                             }
                         }
+                        // Student input dock (web .learning-input-dock: bottom
+                        // 22, centered, max-width 720). DIFF: ask/voice input is
+                        // not migrated; every control shows the toast.
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 22}
+                            input_dock := RoundedView {
+                                width: 720 height: Fit flow: Right spacing: 5 align: Align{y: 0.5} padding: 6
+                                draw_bg +: { color: #fffdf8e8 border_radius: 21 border_size: 1 border_color: #e7e0d4 }
+                                ask_image := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 19 height: 19}
+                                    draw_icon +: { color: #756c61 }
+                                    draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 13 border_size: 0 border_color: #0000 } }
+                                ask_camera := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 19 height: 19}
+                                    draw_icon +: { color: #756c61 }
+                                    draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 13 border_size: 0 border_color: #0000 } }
+                                ask_mic := Button { width: 44 height: 44 text: "" icon_walk: Walk{width: 21 height: 21}
+                                    draw_icon +: { color: #ffffff }
+                                    draw_bg +: { color: #167794 color_hover: #12627c color_down: #12627c border_radius: 13 border_size: 0 border_color: #0000 } }
+                                Label { width: Fill text: "问一个问题，或告诉 Octos 你卡在哪里…"
+                                    draw_text.text_style.font_size: 14 draw_text.color: #938a7e margin: Inset{left: 12} }
+                                ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
+                                    draw_icon +: { color: #ffffff }
+                                    draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 13 border_size: 0 border_color: #0000 } }
+                            }
+                        }
                         // Error bar (web .learning-ink-error bottom toast, simplified).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 24}
                             error_bar := RoundedView {
@@ -450,13 +473,17 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 6] = [
+    let icons: [(LiveId, &str); 10] = [
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
         (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
         (live_id!(back), include_str!("../assets/icons/house.svg")),
         (live_id!(settings), include_str!("../assets/icons/settings.svg")),
+        (live_id!(ask_image), include_str!("../assets/icons/image-plus.svg")),
+        (live_id!(ask_camera), include_str!("../assets/icons/camera-off.svg")),
+        (live_id!(ask_mic), include_str!("../assets/icons/mic.svg")),
+        (live_id!(ask_send), include_str!("../assets/icons/send.svg")),
     ];
     for (id, src) in icons {
         if let Some(mut button) = ui.widget(cx, &[id]).borrow_mut::<Button>() {
@@ -1215,6 +1242,13 @@ impl AppMain for App {
             }
             if self.ui.button(cx, ids!(settings)).clicked(actions) {
                 self.toast(cx, "设置页尚未迁移，仅网页版可用");
+            }
+            if self.ui.button(cx, ids!(ask_image)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_mic)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_send)).clicked(actions)
+            {
+                self.toast(cx, "语音与提问尚未迁移，仅网页版可用");
             }
             // Handwriting toolbar (dynamic buttons, INK_TOOLS order).
             let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
