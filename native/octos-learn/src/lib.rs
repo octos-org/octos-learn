@@ -173,23 +173,33 @@ script_mod! {
                                     draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
                             }
                         }
+                        // Course outline trigger (web .oll-course-outline-trigger:
+                        // 48px rounded square above the teacher avatar).
+                        // DIFF: the outline panel is not migrated; click shows a toast.
+                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
+                            outline_trigger := Button { width: 48 height: 48 text: "" icon_walk: Walk{width: 15 height: 15}
+                                draw_icon +: { color: #466d78 }
+                                draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 16 border_size: 1 border_color: #cfe2e3 } }
+                        }
                         // Teacher (web .octos-teacher: right 24 bottom 98).
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
                             View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 1.}
                                 narration_bubble := RoundedView {
-                                    visible: false width: 360 height: Fit
+                                    visible: false width: 360 height: Fit margin: Inset{bottom: 26}
                                     padding: Inset{left: 17 right: 17 top: 14 bottom: 14}
-                                    draw_bg +: { color: #fffdf8ee border_radius: 20 border_size: 1 border_color: #e3d9cb }
+                                    draw_bg +: { color: #fffdf8ee border_radius: 18 border_size: 1 border_color: #dce3e2 }
                                     // DIFF: the web bubble renders markdown; plain text here.
-                                    narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #3c3832 }
+                                    narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 16 draw_text.color: #3c3832 }
                                 }
-                                View { width: Fit height: Fit flow: Down spacing: 4 align: Align{x: 0.5}
+                                View { width: 94 height: 94 flow: Overlay
+                                    CircleView { width: Fill height: Fill
+                                        draw_bg +: { color: #e6f4f7 border_size: 1 border_color: #c2dde6 } }
                                     // DIFF: static avatar; the organic skin animation is a later milestone.
-                                    teacher_avatar := CircleView { width: 94 height: 94 align: Align{x: 0.5 y: 0.5}
-                                        draw_bg +: { color: #bfe3ea border_size: 1 border_color: #7fb5c4 }
-                                        Label { text: "Octos" draw_text.text_style.font_size: 11 draw_text.color: #2d6a78 }
+                                    View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
+                                        octos_art := Svg { width: 56 height: 56 } }
+                                    View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 7}
+                                        teacher_state := Label { width: Fit text: "已暂停" draw_text.text_style.font_size: 10 draw_text.color: #316979 }
                                     }
-                                    teacher_state := Label { width: Fit text: "已暂停" draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
                                 }
                             }
                         }
@@ -489,6 +499,16 @@ fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
         if let Some(mut button) = ui.widget(cx, &[id]).borrow_mut::<Button>() {
             button.draw_icon.load_from_str(src);
         }
+    }
+    if let Some(mut button) = ui.widget(cx, ids!(outline_trigger)).borrow_mut::<Button>() {
+        button
+            .draw_icon
+            .load_from_str(include_str!("../assets/icons/list-tree.svg"));
+    }
+    // The mascot keeps its original gradient fills (no tint).
+    if let Some(mut svg) = ui.widget(cx, ids!(octos_art)).borrow_mut::<Svg>() {
+        svg.draw_svg
+            .load_from_str(include_str!("../assets/octos-avatar.svg"));
     }
 }
 
@@ -1249,6 +1269,9 @@ impl AppMain for App {
                 || self.ui.button(cx, ids!(ask_send)).clicked(actions)
             {
                 self.toast(cx, "语音与提问尚未迁移，仅网页版可用");
+            }
+            if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
+                self.toast(cx, "课程目录尚未迁移，仅网页版可用");
             }
             // Handwriting toolbar (dynamic buttons, INK_TOOLS order).
             let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
