@@ -14,8 +14,8 @@ script_mod! {
     mod.widgets.SpatialBoard = set_type_default() do #(SpatialBoard::register_widget(vm)) {
         width:Fill height:450
         draw_bg +: {color:#222831}
-        draw_vector +: {draw_depth:4.0}
-        draw_dots +: {draw_depth:1.0}
+        draw_vector +: {draw_depth:0.0}
+        draw_dots +: {draw_depth:0.0}
     }
 }
 #[derive(Script, ScriptHook, Widget)]

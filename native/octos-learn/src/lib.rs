@@ -45,7 +45,7 @@ script_mod! {
                                             Label { text: "Octos Learn" draw_text.text_style.font_size: 16 draw_text.color: #243b40 }
                                             View { width: Fill height: 1 }
                                             // DIFF: no login/account system in this version.
-                                            Label { text: "登录尚未迁移" draw_text.text_style.font_size: 10 draw_text.color: #607477 }
+                                            Label { text: "登录" draw_text.text_style.font_size: 12 draw_text.color: #607477 }
                                         }
                                         SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } }
                                     }
@@ -58,10 +58,9 @@ script_mod! {
                                         Label { width: Fill text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。"
                                             draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #607477 }
                                         View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 24}
-                                            // DIFF: blank whiteboard needs the session system; disabled.
-                                            blank_board := Button { enabled: false text: "＋ 新建空白白板"
+                                            // DIFF: blank whiteboard needs the session system; click shows a toast.
+                                            blank_board := Button { text: "＋ 新建空白白板"
                                                 draw_bg +: { color: #166a79 color_hover: #105664 color_down: #105664 } draw_text.color: #ffffff }
-                                            Label { text: "空白白板尚未迁移" draw_text.text_style.font_size: 9 draw_text.color: #718387 }
                                         }
                                     }
                                     // 3. Recent whiteboards (web .course-launcher-sessions);
@@ -94,37 +93,59 @@ script_mod! {
                         width: Fill height: Fill
                         flow: Overlay
                         spatial := SpatialBoard { width: Fill height: Fill dot_grid: true draw_bg +: { color: #f8f5ed } }
-                        // Top bar (web .learning-workspace-topbar: left 116, right 14, top 14).
+                        // Top bar (web .learning-workspace-topbar: left 116,
+                        // right 14, top 14; 3-column grid: title block /
+                        // centered icon demo controls / mode buttons).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 116 right: 14 top: 14}
                             topbar := RoundedView {
-                                width: Fill height: Fit flow: Right spacing: 10 align: Align{y: 0.5}
+                                width: Fill height: 58 flow: Right spacing: 16 align: Align{y: 0.5}
                                 padding: Inset{left: 18 right: 9 top: 7 bottom: 7}
-                                draw_bg +: { color: #fdfaf3 border_radius: 18 border_size: 1 border_color: #e8e0d4 }
+                                draw_bg +: { color: #fffdf8d4 border_radius: 18 border_size: 1 border_color: #ece5d9 }
                                 View { width: Fill height: Fit flow: Down spacing: 2
-                                    Label { text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 8 draw_text.color: #8a8074 }
-                                    course_title := Label { text: "" draw_text.text_style.font_size: 15 draw_text.color: #332e28 }
+                                    Label { height: 12 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 9 draw_text.color: #8a8074 }
+                                    course_title := Label { height: 26 text: "" draw_text.text_style.font_size: 20 draw_text.color: #332e28 }
                                 }
-                                play := Button { text: "播放" draw_text.color: #3c3832 }
-                                // DIFF: runtime has no per-beat seek, so both stay disabled.
-                                next_beat := Button { enabled: false text: "下一 Beat（未迁移）" draw_text.color: #b3aa9c }
-                                replay_topic := Button { enabled: false text: "重播 Topic（未迁移）" draw_text.color: #b3aa9c }
-                                narration_toggle := Button { text: "旁白：开" draw_text.color: #3c3832 }
-                                action_status := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #a09689 }
-                                progress_note := Label { width: Fit text: "" draw_text.text_style.font_size: 9 draw_text.color: #94a36f }
-                                // DIFF: voice/camera are not migrated; disabled placeholders.
-                                voice := Button { enabled: false text: "启用语音（未迁移）" draw_text.color: #b3aa9c }
-                                camera := Button { enabled: false text: "启用摄像头（未迁移）" draw_text.color: #b3aa9c }
+                                View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
+                                    play := Button { width: 34 height: 34 text: ""
+                                        icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                    // DIFF: runtime has no per-beat seek/restart; clicks show a toast.
+                                    next_beat := Button { width: 34 height: 34 text: ""
+                                        icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                    replay_topic := Button { width: 34 height: 34 text: ""
+                                        icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                    narration_toggle := Button { width: 34 height: 34 text: ""
+                                        icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                }
+                                View { width: Fill height: Fit flow: Right spacing: 4 align: Align{x: 1. y: 0.5}
+                                    // DIFF: voice/camera are not migrated; clicks show a toast.
+                                    voice := Button { height: 34 text: "启用语音" spacing: 6
+                                        padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
+                                        icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
+                                        draw_text.color: #507784 draw_text.text_style.font_size: 9
+                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_color: #0000 } }
+                                    camera := Button { height: 34 text: "启用摄像头" spacing: 6
+                                        padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
+                                        icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
+                                        draw_text.color: #507784 draw_text.text_style.font_size: 9
+                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_color: #0000 } }
+                                }
                             }
                         }
-                        // Top-left round page buttons (web .learning-top-action-group: left 12 top 24).
+                        // Top-left round page buttons (web .learning-top-action-group:
+                        // left 12 top 24, 40px circles with House/Settings icons).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
-                            View { width: 64 height: Fit flow: Down spacing: 6 align: Align{x: 0.5}
-                                back := Button { width: 44 height: 44 text: "首页" draw_text.text_style.font_size: 9 draw_text.color: #3c3832
-                                    draw_bg +: { border_radius: 22 color: #fffdf8 color_hover: #f3ede2 } }
-                                settings := Button { enabled: false width: 44 height: 44 text: "设置" draw_text.text_style.font_size: 9 draw_text.color: #b3aa9c
-                                    draw_bg +: { border_radius: 22 color: #fffdf8 } }
-                                // DIFF: settings page not migrated; the disabled state plus this note explain it.
-                                Label { width: Fill text: "设置尚未迁移" draw_text.wrap: Words draw_text.text_style.font_size: 7 draw_text.color: #a09689 }
+                            View { width: 96 height: Fit flow: Right spacing: 8
+                                back := Button { width: 40 height: 40 text: ""
+                                    icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #x57534e }
+                                    draw_bg +: { border_radius: 20 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
+                                // DIFF: settings page not migrated; click shows a toast.
+                                settings := Button { width: 40 height: 40 text: ""
+                                    icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #x57534e }
+                                    draw_bg +: { border_radius: 20 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
                             }
                         }
                         // Handwriting toolbar (web .learning-ink-toolbar: top 88 left 20).
@@ -200,6 +221,15 @@ script_mod! {
                                 draw_bg +: { color: #f9e3df border_radius: 12 }
                                 error_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #8c3a2b }
                             }
+                        }
+                    }
+                    // Neutral toast for "not migrated yet" notices (body level
+                    // so it also shows on the launcher page).
+                    View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 96}
+                        toast := RoundedView {
+                            visible: false width: Fit height: Fit padding: Inset{left: 14 right: 14 top: 9 bottom: 9}
+                            draw_bg +: { color: #fffdf8f2 border_radius: 12 border_size: 1 border_color: #e3d9cb }
+                            toast_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #5d5952 }
                         }
                     }
                 }
@@ -286,6 +316,15 @@ pub struct App {
     // resolves (restored checkpoint, or fresh when none exists).
     #[rust]
     autoplay_pending: bool,
+    // Neutral bottom toast (feature-not-migrated notices); hidden after 3s.
+    #[rust]
+    toast_until: Option<Instant>,
+    // Last playback/mute state baked into the toggle button icons, so the
+    // SVG is only re-parsed on an actual state change.
+    #[rust]
+    play_icon_state: Option<bool>,
+    #[rust]
+    volume_icon_state: Option<bool>,
 }
 
 const PEN_COLORS: [(u8, u8, u8); 5] = [
@@ -414,13 +453,45 @@ fn bake_svg_classes(svg: &str) -> String {
     result
 }
 
+/// Lucide icons (24x24 stroke icons extracted from the web app's
+/// lucide-react package) rendered through Button::draw_icon; the script
+/// sets draw_icon.color so strokes tint to the control color.
+const ICON_PLAY: &str = include_str!("../assets/icons/play.svg");
+const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
+const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
+const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
+
+fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
+    let icons: [(LiveId, &str); 6] = [
+        (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
+        (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
+        (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
+        (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
+        (live_id!(back), include_str!("../assets/icons/house.svg")),
+        (live_id!(settings), include_str!("../assets/icons/settings.svg")),
+    ];
+    for (id, src) in icons {
+        if let Some(mut button) = ui.widget(cx, &[id]).borrow_mut::<Button>() {
+            button.draw_icon.load_from_str(src);
+        }
+    }
+}
+
 impl App {
     fn course_key(&self) -> String {
         format!("{}@{}", self.pack_id, self.pack_version)
     }
-    fn note(&mut self, cx: &mut Cx, message: &str) {
-        self.ui.label(cx, ids!(progress_note)).set_text(cx, message);
+    /// Neutral bottom toast for "not migrated yet" notices (replaces the old
+    /// disabled-button footnotes; web parity keeps the controls looking live).
+    fn toast(&mut self, cx: &mut Cx, message: &str) {
+        self.ui.label(cx, ids!(toast_label)).set_text(cx, message);
+        self.ui.widget(cx, ids!(toast)).set_visible(cx, true);
+        self.toast_until = Some(Instant::now() + std::time::Duration::from_secs(3));
+        self.ui.redraw(cx);
     }
+    /// Progress-store replies carry no user-visible equivalent on the web
+    /// learning page, so they no longer surface in the top bar.
+    fn note(&mut self, _cx: &mut Cx, _message: &str) {}
     fn save_progress(&mut self, _cx: &mut Cx) {
         if let Some(player) = &self.player {
             match player.checkpoint() {
@@ -923,13 +994,14 @@ impl App {
             } else {
                 "已暂停"
             };
-            self.ui
-                .widget(cx, ids!(play))
-                .set_text(cx, if session.playing { "暂停" } else { "播放" });
-            self.ui.label(cx, ids!(action_status)).set_text(
-                cx,
-                &format!("动作 {}/{}", p.cursor, p.action_count()),
-            );
+            if self.play_icon_state != Some(session.playing) {
+                self.play_icon_state = Some(session.playing);
+                let w = self.ui.widget(cx, ids!(play));
+                if let Some(mut b) = w.borrow_mut::<Button>() {
+                    b.draw_icon
+                        .load_from_str(if session.playing { ICON_PAUSE } else { ICON_PLAY });
+                };
+            }
             self.ui.label(cx, ids!(teacher_state)).set_text(cx, state);
             // Narration bubble: narration during playback, summary once complete.
             let bubble = if session.complete() {
@@ -941,9 +1013,15 @@ impl App {
             self.ui
                 .widget(cx, ids!(narration_bubble))
                 .set_visible(cx, !self.narration_muted && !bubble.is_empty());
-            self.ui
-                .widget(cx, ids!(narration_toggle))
-                .set_text(cx, if self.narration_muted { "旁白：关" } else { "旁白：开" });
+            if self.volume_icon_state != Some(self.narration_muted) {
+                self.volume_icon_state = Some(self.narration_muted);
+                let w = self.ui.widget(cx, ids!(narration_toggle));
+                if let Some(mut b) = w.borrow_mut::<Button>() {
+                    b.draw_icon.load_from_str(
+                        if self.narration_muted { ICON_VOLUME_OFF } else { ICON_VOLUME_ON },
+                    );
+                };
+            }
             let action = session.operations[..session.cursor]
                 .iter()
                 .rev()
@@ -962,13 +1040,11 @@ impl App {
             .borrow::<spatial_board::SpatialBoard>()
             .map(|b| b.ink_count())
             .unwrap_or(0);
-        self.ui.label(cx, ids!(ink_status)).set_text(
-            cx,
-            &format!(
-                "{stroke_count} 项笔迹 · {}",
-                if self.drawing { "书写中" } else { "浏览" }
-            ),
-        );
+        // Web ink status: "{n} 项笔迹 · 已保存" (saved refers to course
+        // progress, which autosaves every second while playing).
+        self.ui
+            .label(cx, ids!(ink_status))
+            .set_text(cx, &format!("{stroke_count} 项笔迹 · 已保存"));
         self.refresh_variable_rows(cx);
         self.ui
             .widget(cx, ids!(error_bar))
@@ -1010,12 +1086,20 @@ impl AppMain for App {
             if logo_loaded {
                 self.ui.widget(cx, ids!(logo_fallback)).set_visible(cx, false);
             }
+            load_icons(&self.ui, cx);
         }
         self.poll_storage(cx);
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
         if self.timer.is_event(event).is_some() {
+            if self
+                .toast_until
+                .is_some_and(|until| Instant::now() >= until)
+            {
+                self.toast_until = None;
+                self.ui.widget(cx, ids!(toast)).set_visible(cx, false);
+            }
             let now = Instant::now();
             let dt = self
                 .last_tick
@@ -1073,6 +1157,9 @@ impl AppMain for App {
                     self.open_course(cx, &pack_id, &version, true);
                 }
             }
+            if self.ui.button(cx, ids!(blank_board)).clicked(actions) {
+                self.toast(cx, "空白白板尚未迁移，仅网页版可用");
+            }
             if self.ui.button(cx, ids!(back)).clicked(actions) {
                 skip_autosave = true;
                 if let Some(session) = &mut self.player {
@@ -1115,6 +1202,21 @@ impl AppMain for App {
             }
             if self.ui.button(cx, ids!(narration_toggle)).clicked(actions) {
                 self.narration_muted = !self.narration_muted;
+            }
+            // Web-identical controls whose backing feature is not migrated:
+            // they stay clickable and explain themselves through the toast.
+            if self.ui.button(cx, ids!(next_beat)).clicked(actions)
+                || self.ui.button(cx, ids!(replay_topic)).clicked(actions)
+            {
+                self.toast(cx, "逐 Beat 控制尚未迁移，仅网页版可用");
+            }
+            if self.ui.button(cx, ids!(voice)).clicked(actions)
+                || self.ui.button(cx, ids!(camera)).clicked(actions)
+            {
+                self.toast(cx, "语音与摄像头尚未迁移，仅网页版可用");
+            }
+            if self.ui.button(cx, ids!(settings)).clicked(actions) {
+                self.toast(cx, "设置页尚未迁移，仅网页版可用");
             }
             // Handwriting toolbar (dynamic buttons, INK_TOOLS order).
             let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
