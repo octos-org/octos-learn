@@ -108,17 +108,17 @@ script_mod! {
                                 View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
                                     play := Button { width: 34 height: 34 text: ""
                                         icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
-                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_size: 0 border_color: #0000 } }
                                     // DIFF: runtime has no per-beat seek/restart; clicks show a toast.
                                     next_beat := Button { width: 34 height: 34 text: ""
                                         icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
-                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_size: 0 border_color: #0000 } }
                                     replay_topic := Button { width: 34 height: 34 text: ""
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
-                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_size: 0 border_color: #0000 } }
                                     narration_toggle := Button { width: 34 height: 34 text: ""
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
-                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_color: #0000 } }
+                                        draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_size: 0 border_color: #0000 } }
                                 }
                                 View { width: Fill height: Fit flow: Right spacing: 4 align: Align{x: 1. y: 0.5}
                                     // DIFF: voice/camera are not migrated; clicks show a toast.
@@ -126,12 +126,12 @@ script_mod! {
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
                                         draw_text.color: #507784 draw_text.text_style.font_size: 9
-                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_color: #0000 } }
+                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_size: 0 border_color: #0000 } }
                                     camera := Button { height: 34 text: "启用摄像头" spacing: 6
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
                                         draw_text.color: #507784 draw_text.text_style.font_size: 9
-                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_color: #0000 } }
+                                        draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 10 border_size: 0 border_color: #0000 } }
                                 }
                             }
                         }
@@ -148,37 +148,16 @@ script_mod! {
                                     draw_bg +: { border_radius: 20 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
                             }
                         }
-                        // Handwriting toolbar (web .learning-ink-toolbar: top 88 left 20).
+                        // Handwriting toolbar (web .learning-ink-toolbar:
+                        // horizontal capsule, top 88 left 20).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 20 top: 88}
-                            View { width: Fit height: Fit flow: Down spacing: 6
-                                ink_toolbar := RoundedView {
-                                    width: Fit height: Fit flow: Down spacing: 3 padding: 5 align: Align{x: 0.5}
-                                    draw_bg +: { color: #fffdf8f0 border_radius: 16 border_size: 1 border_color: #e8e0d4 }
-                                    // Buttons are built in Rust (rebuild_ink_tools) so the
-                                    // browse/pen active state can be highlighted per mode.
-                                    // DIFF: oll-runtime Ink has no erase/select; both stay disabled.
-                                    ink_tools := View { width: Fit height: Fit flow: Down spacing: 3 align: Align{x: 0.5} }
-                                    ink_status := Label { width: Fit text: "0 项笔迹" draw_text.text_style.font_size: 8 draw_text.color: #827b72 }
-                                }
-                                ink_palette_panel := RoundedView {
-                                    visible: false width: Fit height: Fit flow: Right spacing: 4 padding: 5
-                                    draw_bg +: { color: #fffdf8f0 border_radius: 12 border_size: 1 border_color: #e8e0d4 }
-                                    ink_color_0 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #176b62 color_hover: #176b62 color_down: #176b62 border_radius: 13 } }
-                                    ink_color_1 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #d4a574 color_hover: #d4a574 color_down: #d4a574 border_radius: 13 } }
-                                    ink_color_2 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #b95873 color_hover: #b95873 color_down: #b95873 border_radius: 13 } }
-                                    ink_color_3 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #4f84b5 color_hover: #4f84b5 color_down: #4f84b5 border_radius: 13 } }
-                                    ink_color_4 := Button { width: 26 height: 26 text: "" draw_bg +: { color: #332e28 color_hover: #332e28 color_down: #332e28 border_radius: 13 } }
-                                }
-                                ink_width_panel := RoundedView {
-                                    visible: false width: Fit height: Fit flow: Right spacing: 4 padding: 5
-                                    draw_bg +: { color: #fffdf8f0 border_radius: 12 border_size: 1 border_color: #e8e0d4 }
-                                    ink_width_0 := Button { text: "细" }
-                                    ink_width_1 := Button { text: "中" }
-                                    ink_width_2 := Button { text: "粗" }
-                                    ink_width_3 := Button { text: "特" }
-                                }
-                                // DIFF: persisted ink documents are not migrated; strokes live in memory only.
-                                Label { width: Fit text: "擦除 / 框选 / 笔迹持久化尚未迁移" draw_text.text_style.font_size: 8 draw_text.color: #a09689 }
+                            ink_toolbar := RoundedView {
+                                width: Fit height: Fit flow: Right spacing: 3 padding: 5 align: Align{y: 0.5}
+                                draw_bg +: { color: #fffdf8f0 border_radius: 16 border_size: 1 border_color: #e4ded3 }
+                                // Buttons are built in Rust (rebuild_ink_tools) so the
+                                // browse/pen active state can be highlighted per mode.
+                                ink_tools := View { width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} }
+                                ink_status := Label { width: Fit text: "0 项笔迹 · 已保存" draw_text.text_style.font_size: 10 draw_text.color: #6e766f margin: Inset{left: 8 right: 8} }
                             }
                         }
                         // Variable controls. DIFF: the web panel is world-anchored next to
@@ -338,16 +317,25 @@ const PEN_COLORS: [(u8, u8, u8); 5] = [
 /// natively by DrawSvg. The rounded fallback block stays when parsing fails.
 const LAUNCHER_LOGO_SVG: &str = include_str!("../../../public/images/octos-logo-color.svg");
 const PEN_WIDTHS: [f64; 4] = [2.0, 3.5, 5.5, 8.0];
-// Ink toolbar order: label, tool id. Erase/select stay disabled (no Ink support).
-const INK_TOOLS: [&str; 8] = ["浏览", "书写", "擦除", "框选", "调色", "粗细", "撤销", "重做"];
+// Ink toolbar order (web .learning-ink-toolbar): Hand, PenLine, Eraser,
+// BoxSelect, 全选, Undo2, Redo2. Erase/select/select-all have no Ink
+// backing in oll-runtime; they keep the web look and show a toast.
+const INK_TOOLS: [(&str, &str); 7] = [
+    ("", include_str!("../assets/icons/hand.svg")),
+    ("", include_str!("../assets/icons/pen-line.svg")),
+    ("", include_str!("../assets/icons/eraser.svg")),
+    ("", include_str!("../assets/icons/box-select.svg")),
+    ("全选", ""),
+    ("", include_str!("../assets/icons/undo-2.svg")),
+    ("", include_str!("../assets/icons/redo-2.svg")),
+];
 const INK_TOOL_BROWSE: usize = 0;
 const INK_TOOL_PEN: usize = 1;
 const INK_TOOL_ERASE: usize = 2;
 const INK_TOOL_SELECT: usize = 3;
-const INK_TOOL_PALETTE: usize = 4;
-const INK_TOOL_WIDTH: usize = 5;
-const INK_TOOL_UNDO: usize = 6;
-const INK_TOOL_REDO: usize = 7;
+const INK_TOOL_SELECT_ALL: usize = 4;
+const INK_TOOL_UNDO: usize = 5;
+const INK_TOOL_REDO: usize = 6;
 
 fn pen_vec4(rgb: (u8, u8, u8)) -> Vec4 {
     vec4(
@@ -638,30 +626,40 @@ impl App {
         self.ui.widget(cx, ids!(learning)).set_visible(cx, learning);
     }
     /// Ink toolbar buttons with the current browse/pen mode highlighted
-    /// (web .learning-ink-toolbar is-active: teal text on a faint teal wash).
+    /// (web .learning-ink-toolbar is-active: teal icon on a faint teal wash).
     /// Rebuilt on every mode change because script-shader buttons cannot be
     /// recoloured from Rust without dropping state.
     fn rebuild_ink_tools(&mut self, cx: &mut Cx) {
         self.ink_tool_buttons.clear();
         let mut widgets = Vec::new();
-        for (index, label) in INK_TOOLS.iter().enumerate() {
+        for (index, (label, icon)) in INK_TOOLS.iter().enumerate() {
             let active = (index == INK_TOOL_PEN) == self.drawing
                 && (index == INK_TOOL_PEN || index == INK_TOOL_BROWSE);
-            let disabled = index == INK_TOOL_ERASE || index == INK_TOOL_SELECT;
-            let (bg, extra_bg, text_color, enabled) = if disabled {
-                ("#0000", "", "#c3bbae", false)
-            } else if active {
-                ("#dceef1", "color_hover:#dceef1 color_down:#d0e5ea", "#0c7085", true)
+            let (bg, tint) = if active {
+                ("#e3eeec", "#0c7085")
             } else {
-                ("#0000", "color_hover:#f1f3ee color_down:#e7ebe6", "#4a4238", true)
+                ("#0000", "#686158")
             };
-            let code = format!(
-                "Button{{width:64 enabled:{enabled} text:\"{label}\"
-                    draw_bg +: {{color:{bg} {extra_bg} border_radius:10 border_color:#0000}}
-                    draw_text.color:{text_color}}}"
-            );
+            let code = if icon.is_empty() {
+                format!(
+                    "Button{{height:36 text:\"{label}\" padding:Inset{{left:9 right:9}}
+                        draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:10 border_size:0 border_color:#0000}}
+                        draw_text.color:{tint} draw_text.text_style.font_size:10}}"
+                )
+            } else {
+                format!(
+                    "Button{{width:36 height:36 text:\"\" icon_walk:Walk{{width:16 height:16}}
+                        draw_icon +: {{color:{tint}}}
+                        draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:10 border_size:0 border_color:#0000}}}}"
+                )
+            };
             match board_view::widget(cx, &code) {
                 Ok(button) => {
+                    if !icon.is_empty() {
+                        if let Some(mut b) = button.borrow_mut::<Button>() {
+                            b.draw_icon.load_from_str(icon);
+                        }
+                    }
                     widgets.push(button.clone());
                     self.ink_tool_buttons.push(button);
                 }
@@ -1254,50 +1252,13 @@ impl AppMain for App {
                     }
                 };
             }
-            if ink_clicked(INK_TOOL_PALETTE, &self.ink_tool_buttons, actions) {
-                let panel = self.ui.widget(cx, ids!(ink_palette_panel));
-                let open = panel.visible();
-                panel.set_visible(cx, !open);
-            }
-            if ink_clicked(INK_TOOL_WIDTH, &self.ink_tool_buttons, actions) {
-                let panel = self.ui.widget(cx, ids!(ink_width_panel));
-                let open = panel.visible();
-                panel.set_visible(cx, !open);
-            }
-            for (i, id) in [
-                ids!(ink_color_0),
-                ids!(ink_color_1),
-                ids!(ink_color_2),
-                ids!(ink_color_3),
-                ids!(ink_color_4),
-            ]
-            .into_iter()
-            .enumerate()
+            // DIFF: oll-runtime Ink has no erase/select; strokes are also
+            // memory-only. Web-identical buttons explain via the toast.
+            if ink_clicked(INK_TOOL_ERASE, &self.ink_tool_buttons, actions)
+                || ink_clicked(INK_TOOL_SELECT, &self.ink_tool_buttons, actions)
+                || ink_clicked(INK_TOOL_SELECT_ALL, &self.ink_tool_buttons, actions)
             {
-                if self.ui.button(cx, id).clicked(actions) {
-                    self.pen_color = pen_vec4(PEN_COLORS[i]);
-                    let w = self.ui.widget(cx, ids!(spatial));
-                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                        board.set_pen(cx, self.pen_color, self.pen_width);
-                    };
-                }
-            }
-            for (i, id) in [
-                ids!(ink_width_0),
-                ids!(ink_width_1),
-                ids!(ink_width_2),
-                ids!(ink_width_3),
-            ]
-            .into_iter()
-            .enumerate()
-            {
-                if self.ui.button(cx, id).clicked(actions) {
-                    self.pen_width = PEN_WIDTHS[i];
-                    let w = self.ui.widget(cx, ids!(spatial));
-                    if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                        board.set_pen(cx, self.pen_color, self.pen_width);
-                    };
-                }
+                self.toast(cx, "擦除与框选尚未迁移，仅网页版可用");
             }
             // Variable panel: slider start/update/commit plus −/+/reset.
             for index in 0..self.variable_rows.len() {
