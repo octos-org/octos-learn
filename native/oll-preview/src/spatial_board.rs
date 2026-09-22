@@ -15,6 +15,7 @@ script_mod! {
         width:Fill height:450
         draw_bg +: {color:#222831}
         draw_vector +: {draw_depth:4.0}
+        draw_dots +: {draw_depth:1.0}
     }
 }
 #[derive(Script, ScriptHook, Widget)]
@@ -30,6 +31,13 @@ pub struct SpatialBoard {
     draw_bg: DrawColor,
     #[live]
     draw_vector: DrawVector,
+    #[live]
+    draw_dots: DrawVector,
+    /// Web learning board paper: fixed dot grid over the background color
+    /// (learning-workspace board: #f8f5ed with #d7d1c5 dots, 24px grid).
+    /// Off by default so the preview app's dark board is unaffected.
+    #[live]
+    dot_grid: bool,
     #[rust]
     routes: Vec<oll_runtime::connections::Route>,
     #[rust]
@@ -604,6 +612,23 @@ impl Widget for SpatialBoard {
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.draw_bg.draw_walk(cx, walk);
         let viewport = self.draw_bg.area().rect(cx);
+        if self.dot_grid {
+            // Screen-anchored dot paper: 1px dots at 24px cell centers,
+            // matching the web learning board background.
+            self.draw_dots.begin();
+            self.draw_dots.set_color_hex(0xd7d1c5, 1.0);
+            let mut y = 12.0f32;
+            while y < viewport.size.y as f32 {
+                let mut x = 12.0f32;
+                while x < viewport.size.x as f32 {
+                    self.draw_dots.circle(x, y, 1.0);
+                    x += 24.0;
+                }
+                y += 24.0;
+            }
+            self.draw_dots.fill();
+            self.draw_dots.end(cx);
+        }
         let viewport_changed = self.viewport != viewport;
         if self.viewport.size != viewport.size {
             self.viewport = viewport;

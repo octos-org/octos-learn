@@ -93,7 +93,7 @@ script_mod! {
                         visible: false
                         width: Fill height: Fill
                         flow: Overlay
-                        spatial := SpatialBoard { width: Fill height: Fill draw_bg +: { color: #f8f7f3 } }
+                        spatial := SpatialBoard { width: Fill height: Fill dot_grid: true draw_bg +: { color: #f8f5ed } }
                         // Top bar (web .learning-workspace-topbar: left 116, right 14, top 14).
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 116 right: 14 top: 14}
                             topbar := RoundedView {
