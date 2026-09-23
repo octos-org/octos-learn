@@ -2,6 +2,10 @@ import type {
   IAgoraRTCClient,
   ILocalAudioTrack,
 } from "agora-rtc-sdk-ng";
+import type {
+  Room,
+  LocalAudioTrack,
+} from "livekit-client";
 import { requestPrivateAsrGrant } from "@/api/private-asr";
 import {
   getEchoCancelledMicStream,
@@ -16,36 +20,52 @@ import {
 const PRIVATE_ASR_PREFIX = "/private-asr";
 const FINAL_TIMEOUT_MS = 12_000;
 
+let livekitRuntimePromise: Promise<typeof import("livekit-client")> | null = null;
 let agoraRuntimePromise: Promise<typeof import("agora-rtc-sdk-ng")> | null = null;
 
-/** Start downloading the Agora runtime before a private-ASR session is ready.
- * The same promise is consumed by joinAgora(), so preloading never downloads
- * or initialises a second SDK instance. */
+/** Start downloading the RTC runtime before a private-ASR session is ready. */
 export function preloadPrivateAsrRuntime(): Promise<void> {
-  // The APK owns Agora natively. Loading the 4 MB browser runtime on its old
-  // WebView is both unnecessary and the source of the failed synthetic track.
-  if (nativePrivateAsrAvailable()) return Promise.resolve();
+  if (!privateAsrEnabled()) return Promise.resolve();
+  return getLiveKitRuntime().then(() => undefined);
+}
+
+async function getLiveKitRuntime(): Promise<typeof import("livekit-client")> {
+  if (!livekitRuntimePromise) {
+    livekitRuntimePromise = import("livekit-client").catch((error) => {
+      livekitRuntimePromise = null;
+      throw error;
+    });
+  }
+  return livekitRuntimePromise;
+}
+
+async function getAgoraRuntime(): Promise<typeof import("agora-rtc-sdk-ng")> {
+  if (nativePrivateAsrAvailable()) return Promise.resolve() as unknown as typeof import("agora-rtc-sdk-ng");
   if (!agoraRuntimePromise) {
     agoraRuntimePromise = import("agora-rtc-sdk-ng").catch((error) => {
       agoraRuntimePromise = null;
       throw error;
     });
   }
-  return agoraRuntimePromise.then(() => undefined);
+  return agoraRuntimePromise;
 }
 
-async function getAgoraRuntime(): Promise<typeof import("agora-rtc-sdk-ng")> {
-  await preloadPrivateAsrRuntime();
-  return agoraRuntimePromise!;
+export interface PrivateAsrLiveKitCredentials {
+  url: string;
+  room: string;
+  token: string;
+  identity?: string;
 }
 
-interface PrivateAsrSessionResponse {
+export interface PrivateAsrSessionResponse {
   sessionId: string;
   state: string;
   expiresAtMs: number;
   eventsWsPath: string;
   demoMode: boolean;
-  agora: {
+  rtcProvider?: "livekit" | "agora";
+  livekit?: PrivateAsrLiveKitCredentials;
+  agora?: {
     appId: string;
     channel: string;
     uid: number;
@@ -63,30 +83,47 @@ interface PrivateAsrEvent {
   seq?: number;
 }
 
-function parseSession(value: unknown): PrivateAsrSessionResponse {
+export function parseSession(value: unknown): PrivateAsrSessionResponse {
   if (!value || typeof value !== "object") {
     throw new Error("Private ASR returned an invalid session");
   }
   const candidate = value as Partial<PrivateAsrSessionResponse>;
   const sessionId = candidate.sessionId;
-  const agora = candidate.agora;
   if (
     typeof sessionId !== "string" ||
     !/^[A-Za-z0-9-]{1,128}$/.test(sessionId) ||
     candidate.eventsWsPath !== `/ws/client/${sessionId}` ||
     typeof candidate.expiresAtMs !== "number" ||
     candidate.expiresAtMs <= Date.now() ||
-    typeof candidate.demoMode !== "boolean" ||
-    !agora ||
-    typeof agora.appId !== "string" ||
-    !agora.appId ||
-    typeof agora.channel !== "string" ||
-    !agora.channel ||
-    typeof agora.uid !== "number" ||
-    !Number.isSafeInteger(agora.uid) ||
-    typeof agora.token !== "string" ||
-    !agora.token
+    typeof candidate.demoMode !== "boolean"
   ) {
+    throw new Error("Private ASR returned an invalid session");
+  }
+
+  const livekit = candidate.livekit;
+  const agora = candidate.agora;
+
+  const hasValidLivekit =
+    Boolean(livekit) &&
+    typeof livekit!.url === "string" &&
+    Boolean(livekit!.url) &&
+    typeof livekit!.room === "string" &&
+    Boolean(livekit!.room) &&
+    typeof livekit!.token === "string" &&
+    Boolean(livekit!.token);
+
+  const hasValidAgora =
+    Boolean(agora) &&
+    typeof agora!.appId === "string" &&
+    Boolean(agora!.appId) &&
+    typeof agora!.channel === "string" &&
+    Boolean(agora!.channel) &&
+    typeof agora!.uid === "number" &&
+    Number.isSafeInteger(agora!.uid) &&
+    typeof agora!.token === "string" &&
+    Boolean(agora!.token);
+
+  if (!hasValidLivekit && !hasValidAgora) {
     throw new Error("Private ASR returned an invalid session");
   }
   return candidate as PrivateAsrSessionResponse;
@@ -128,6 +165,19 @@ export async function publishPrivateAsrTrackMuted(
   await client.publish([audioTrack]);
 }
 
+/** Keep the LiveKit track publishable without sending microphone media before VAD
+ * opens the speech window. Exported so the LiveKit ordering contract can be
+ * regression-tested without starting a real RTC session. */
+export async function publishLiveKitTrackMuted(
+  room: { localParticipant: { publishTrack: (track: LocalAudioTrack, options?: { name?: string }) => Promise<unknown> } },
+  audioTrack: { mute: () => Promise<unknown> },
+): Promise<void> {
+  await audioTrack.mute();
+  await room.localParticipant.publishTrack(audioTrack as LocalAudioTrack, {
+    name: "microphone",
+  });
+}
+
 export async function responseError(response: Response): Promise<Error> {
   const body = await response.json().catch(() => null) as
     | { error?: { code?: string; message?: string } }
@@ -143,6 +193,8 @@ export async function responseError(response: Response): Promise<Error> {
 export class PrivateAsrClient {
   private session: PrivateAsrSessionResponse | null = null;
   private socket: WebSocket | null = null;
+  private livekitRoom: Room | null = null;
+  private livekitTrack: LocalAudioTrack | null = null;
   private rtcClient: IAgoraRTCClient | null = null;
   private audioTrack: ILocalAudioTrack | null = null;
   private microphoneStream: MediaStream | null = null;
@@ -169,7 +221,12 @@ export class PrivateAsrClient {
       !this.closed
       && this.session
       && this.socket?.readyState === WebSocket.OPEN
-      && (this.session.demoMode || this.nativeRtcActive || this.rtcClient),
+      && (
+        this.session.demoMode
+        || this.nativeRtcActive
+        || this.rtcClient
+        || (this.livekitRoom && this.livekitRoom.state === "connected")
+      ),
     );
   }
 
@@ -178,10 +235,10 @@ export class PrivateAsrClient {
     if (this.session) await this.stop();
     this.closed = false;
     // Permission acquisition and device setup are independent of the control
-    // plane / Agora join. Start them immediately so public voice startup is
+    // plane / RTC join. Start them immediately so public voice startup is
     // bounded by the slower branch instead of paying both costs serially.
-    const useNativeRtc = nativePrivateAsrAvailable();
-    const microphonePromise = useNativeRtc
+    const nativeAgoraAvailable = nativePrivateAsrAvailable();
+    let microphonePromise: Promise<MediaStream> | null = nativeAgoraAvailable
       ? null
       : this.ensureMicrophoneStream();
     const { grant } = await requestPrivateAsrGrant();
@@ -205,14 +262,20 @@ export class PrivateAsrClient {
     }
     this.session = session;
 
+    if (!session.demoMode && (session.livekit || !nativeAgoraAvailable)) {
+      microphonePromise = microphonePromise ?? this.ensureMicrophoneStream();
+    }
+
     try {
       await Promise.all([
         this.openEventSocket(session),
         session.demoMode
           ? Promise.resolve()
-          : useNativeRtc
-            ? this.joinNativeAgora(session)
-            : this.joinAgora(session, microphonePromise!),
+          : session.livekit
+            ? this.joinLiveKit(session, microphonePromise!)
+            : nativeAgoraAvailable
+              ? this.joinNativeAgora(session)
+              : this.joinAgora(session, microphonePromise!),
       ]);
     } catch (error) {
       await this.stop();
@@ -231,6 +294,14 @@ export class PrivateAsrClient {
       const result = setNativePrivateAsrListening(listening);
       if (!result.ok) {
         throw new Error(result.error || "Android Agora 原生音频状态切换失败");
+      }
+      return;
+    }
+    if (this.livekitTrack) {
+      if (listening) {
+        await this.livekitTrack.unmute();
+      } else {
+        await this.livekitTrack.mute();
       }
       return;
     }
@@ -286,6 +357,17 @@ export class PrivateAsrClient {
       stopNativePrivateAsr();
       this.nativeRtcActive = false;
     }
+    try {
+      await this.livekitTrack?.mute();
+    } catch {
+      // The RTC client may already have disconnected.
+    }
+    this.livekitTrack?.stop();
+    this.livekitTrack = null;
+    if (this.livekitRoom) {
+      await this.livekitRoom.disconnect().catch(() => undefined);
+    }
+    this.livekitRoom = null;
     try {
       await this.audioTrack?.setMuted(true);
     } catch {
@@ -376,10 +458,49 @@ export class PrivateAsrClient {
     ).catch(() => undefined);
   }
 
+  private async joinLiveKit(
+    session: PrivateAsrSessionResponse,
+    microphonePromise: Promise<MediaStream>,
+  ): Promise<void> {
+    if (!session.livekit) {
+      throw new Error("Private ASR session missing LiveKit credentials");
+    }
+    const { Room, RoomEvent, LocalAudioTrack } = await getLiveKitRuntime();
+    const room = new Room({
+      adaptiveStream: false,
+      dynacast: false,
+    });
+    this.livekitRoom = room;
+    room.on(RoomEvent.Disconnected, () => {
+      if (!this.closed) {
+        this.onConnectionError?.(new Error("Private ASR RTC disconnected"));
+      }
+    });
+
+    const [, stream] = await Promise.all([
+      room.connect(session.livekit.url, session.livekit.token, {
+        autoSubscribe: false,
+      }),
+      microphonePromise,
+    ]);
+
+    const sourceTrack = stream.getAudioTracks()[0];
+    if (!sourceTrack) throw new Error("Microphone did not provide an audio track");
+    // LiveKit owns a clone, not the source used to create Silero's VAD clones.
+    // Muting the published track must never mute the VAD stream itself.
+    const mediaStreamTrack = sourceTrack.clone();
+    const audioTrack = new LocalAudioTrack(mediaStreamTrack);
+    this.livekitTrack = audioTrack;
+    await publishLiveKitTrackMuted(room, audioTrack);
+  }
+
   private async joinAgora(
     session: PrivateAsrSessionResponse,
     microphonePromise: Promise<MediaStream>,
   ): Promise<void> {
+    if (!session.agora) {
+      throw new Error("Private ASR session missing Agora credentials");
+    }
     const { default: AgoraRTC } = await getAgoraRuntime();
     AgoraRTC.setLogLevel(2);
     const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
@@ -417,6 +538,9 @@ export class PrivateAsrClient {
   private async joinNativeAgora(
     session: PrivateAsrSessionResponse,
   ): Promise<void> {
+    if (!session.agora) {
+      throw new Error("Private ASR session missing Agora credentials");
+    }
     const result = startNativePrivateAsr(session.agora);
     if (!result.ok || !result.joined) {
       throw new Error(result.error || "Android Agora 原生音频频道未连接");
