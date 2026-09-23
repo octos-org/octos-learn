@@ -1253,61 +1253,13 @@ export function LearningWorkspace({
             });
             const pendingSelection = captured ? frozen : pendingVoiceSelectionRef.current;
             const selectionPath = context.additionalMediaPaths?.[0];
-            if (pendingSelection && selectionPath) {
-              pendingVoiceSelectionRef.current = null;
-              pendingSelection.recordSelection();
-              if (isSelectionLessonRequest(context.transcript)) {
-                registerVoiceQuestion(
-                  context.turnId,
-                  context.transcript,
-                  {
-                    sourceId: pendingSelection.snapshot.source_id,
-                    bounds: { ...pendingSelection.snapshot.bounds },
-                  },
-                  {
-                    path: selectionPath,
-                    profileId: context.mediaProfileId,
-                  },
-                  "lesson",
-                );
-                const effectiveTranscript = formatSelectionLessonRequest(
-                  context.transcript,
-                  pendingSelection.boardContext.targets,
-                );
-                onLearnerInput?.(effectiveTranscript);
-                await startDirectLessonGeneration(
-                  context.turnId,
-                  effectiveTranscript,
-                  "voice",
-                  { kind: "ink_selection", mediaPath: selectionPath },
-                  clientTiming,
-                );
-                return true;
-              }
-              const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
-              if (!sendSelectionQuestion) {
-                throw new Error("选区语音功能尚未就绪");
-              }
-              await sendSelectionQuestion(
-                {
-                  snapshot: pendingSelection.snapshot,
-                  contentKind: pendingSelection.contentKind,
-                  boardContext: pendingSelection.boardContext,
-                  contextImage: pendingSelection.file,
-                  recordSelection: pendingSelection.recordSelection,
-                },
-                context.transcript,
-                context.turnId,
-                selectionPath,
-              );
-              return true;
-            }
-            if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+            const hasSelection = Boolean(pendingSelection && selectionPath);
 
             const admission = await evaluateAdmissionFastGate({
               text: context.transcript,
               modality: "voice",
               hasCameraFrame: Boolean(context.currentFramePath),
+              hasSelection,
             });
 
             if (admission.disposition === "ignore") {
@@ -1362,6 +1314,57 @@ export function LearningWorkspace({
               },
             });
 
+            if (pendingSelection && selectionPath) {
+              pendingVoiceSelectionRef.current = null;
+              pendingSelection.recordSelection();
+              if (isSelectionLessonRequest(context.transcript)) {
+                registerVoiceQuestion(
+                  context.turnId,
+                  context.transcript,
+                  {
+                    sourceId: pendingSelection.snapshot.source_id,
+                    bounds: { ...pendingSelection.snapshot.bounds },
+                  },
+                  {
+                    path: selectionPath,
+                    profileId: context.mediaProfileId,
+                  },
+                  "lesson",
+                );
+                const effectiveTranscript = formatSelectionLessonRequest(
+                  context.transcript,
+                  pendingSelection.boardContext.targets,
+                );
+                onLearnerInput?.(effectiveTranscript);
+                await startDirectLessonGeneration(
+                  context.turnId,
+                  effectiveTranscript,
+                  "voice",
+                  { kind: "ink_selection", mediaPath: selectionPath },
+                  clientTiming,
+                );
+                return true;
+              }
+              const sendSelectionQuestion = sendVoiceSelectionQuestionRef.current;
+              if (!sendSelectionQuestion) {
+                throw new Error("选区语音功能尚未就绪");
+              }
+              await sendSelectionQuestion(
+                {
+                  snapshot: pendingSelection.snapshot,
+                  contentKind: pendingSelection.contentKind,
+                  boardContext: pendingSelection.boardContext,
+                  contextImage: pendingSelection.file,
+                  recordSelection: pendingSelection.recordSelection,
+                },
+                context.transcript,
+                context.turnId,
+                selectionPath,
+              );
+              return true;
+            }
+            if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+
             registerVoiceQuestion(context.turnId, context.transcript, null);
             if (context.currentFramePath) {
               updateWhiteboardQuestion(context.turnId, {
@@ -1383,10 +1386,12 @@ export function LearningWorkspace({
           },
           onTurnError: handleVoiceTurnError,
           onTurnComplete: handleTurnComplete,
+          allowHesitationAdmission: true,
         });
       };
       return {
         ...createOptions(),
+        allowHesitationAdmission: true,
         captureUtteranceOptions: () => {
           const prepared = pendingVoiceSelectionRef.current;
           pendingVoiceSelectionRef.current = null;
@@ -1404,7 +1409,10 @@ export function LearningWorkspace({
           // Capture can reject before the utterance ends. Keep the rejection for
           // getAdditionalTurnFiles without creating an unhandled promise rejection.
           void captured.catch(() => undefined);
-          return createOptions(captured, Boolean(prepared || capture));
+          return {
+            ...createOptions(captured, Boolean(prepared || capture)),
+            allowHesitationAdmission: true,
+          };
         },
       };
     },
@@ -2642,11 +2650,13 @@ export function LearningWorkspace({
       };
       setSendError(null);
       const references = composerBoardReferences;
-      if (references.length === 0 && !applicationContext?.trim() && !activeVoiceInkSelectionCaptureRef.current) {
+      const hasSelection = references.length > 0 || Boolean(activeVoiceInkSelectionCaptureRef.current);
+      if (!applicationContext?.trim()) {
         const admission = await evaluateAdmissionFastGate({
           text,
           modality: "text",
           hasCameraFrame: Boolean(conv.cameraActive),
+          hasSelection,
         });
         if (admission.disposition === "ignore") {
           return;

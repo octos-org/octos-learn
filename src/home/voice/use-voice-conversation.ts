@@ -198,9 +198,15 @@ export interface VoiceAdmittedSpeechContext extends VoiceTurnSendContext {
 
 export type VoiceUtteranceOptions = Pick<VoiceConversationOptions,
   "getAdditionalTurnFiles" | "shouldIncludeCameraFrame" | "buildTurnText"
-  | "onAdmittedSpeech" | "onTurnStart"> & { contextKind?: "selection" };
+  | "onAdmittedSpeech" | "onTurnStart" | "allowHesitationAdmission"> & { contextKind?: "selection" };
 
 export interface VoiceConversationOptions {
+  /**
+   * Whether an upstream semantic admission gate (e.g. TypeSafe Jev) handles
+   * hesitation and filler filtering. When true, raw transcripts are forwarded
+   * to onAdmittedSpeech without being dropped by client-side regex heuristics.
+   */
+  allowHesitationAdmission?: boolean;
   /** Freeze application context at speech onset, before upload/admission. */
   captureUtteranceOptions?: () => VoiceUtteranceOptions;
   /** Build application context after uploads resolve, so frame paths are exact. */
@@ -532,6 +538,7 @@ export function useVoiceConversation(
   const onTurnComplete = options?.onTurnComplete;
   const onTurnError = options?.onTurnError;
   const onAdmittedSpeech = options?.onAdmittedSpeech;
+  const allowHesitationAdmission = options?.allowHesitationAdmission === true;
   const threads = useRenderThreads(sessionId, historyTopic);
   const capture = useVoiceCapture();
   // Destructure the STABLE function refs (useVoiceCapture returns a fresh
@@ -814,6 +821,7 @@ export function useVoiceConversation(
       const buildText = context?.buildTurnText ?? buildTurnText;
       const admitSpeech = context?.onAdmittedSpeech ?? onAdmittedSpeech;
       const turnStart = context?.onTurnStart ?? onTurnStart;
+      const allowHesitation = context?.allowHesitationAdmission ?? allowHesitationAdmission;
       const candidate = bargeInCandidateRef.current;
       if (!candidate) {
         // Reserve the local voice surface while upload + ASR admission run.
@@ -835,7 +843,7 @@ export function useVoiceConversation(
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = includeFrame?.() ?? true;
         const applicationTranscript = privateTranscript?.trim();
-        if (applicationTranscript && !isMeaningfulVoiceTranscript(applicationTranscript)) {
+        if (applicationTranscript && !allowHesitation && !isMeaningfulVoiceTranscript(applicationTranscript)) {
           restoreBargeInCandidate();
           return;
         }
@@ -1040,7 +1048,7 @@ export function useVoiceConversation(
           restoreBargeInCandidate();
           return;
         }
-        if (!isMeaningfulVoiceTranscript(admission.transcript)) {
+        if (!allowHesitation && !isMeaningfulVoiceTranscript(admission.transcript)) {
           restoreBargeInCandidate();
           return;
         }
