@@ -35,7 +35,10 @@ import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "./private-asr-client";
-import { nativePrivateAsrAvailable } from "./microphone";
+import {
+  nativeAudioCaptureAvailable,
+  nativePrivateAsrAvailable,
+} from "./microphone";
 
 export type VoiceState =
   | "idle"
@@ -1188,8 +1191,8 @@ export function useVoiceConversation(
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         if (generation !== startGenRef.current) return;
-        if (nativePrivateAsrAvailable()) {
-          // The native stream cannot replay an utterance after its Agora
+        if (privateAsr.isNativeRtcActive() || nativeAudioCaptureAvailable()) {
+          // The native or bridged stream cannot replay an utterance after its ASR
           // session fails. Rebuild it immediately and resume listening so the
           // next utterance works without toggling the microphone off and on.
           await recoverPrivateAsrRef.current(privateAsr, error, generation);
@@ -1353,7 +1356,10 @@ export function useVoiceConversation(
     error: unknown,
     generation: number,
   ): Promise<boolean> => {
-    if (!nativePrivateAsrAvailable() || generation !== startGenRef.current) {
+    if (
+      (!failed.isNativeRtcActive() && !nativeAudioCaptureAvailable()) ||
+      generation !== startGenRef.current
+    ) {
       return false;
     }
     if (privateAsrRecoveryRef.current) return privateAsrRecoveryRef.current;
@@ -1667,7 +1673,7 @@ export function useVoiceConversation(
         ? takeRetainedNativePrivateAsr() ?? new PrivateAsrClient()
         : new PrivateAsrClient();
       const handlePrivateAsrError = (error: Error) => {
-        if (!nativePrivateAsrAvailable()) {
+        if (!privateAsr.isNativeRtcActive() && !nativeAudioCaptureAvailable()) {
           if (privateAsrRef.current === privateAsr) privateAsrRef.current = null;
           privateAsr.setConnectionErrorHandler(undefined);
           void privateAsr.stop();

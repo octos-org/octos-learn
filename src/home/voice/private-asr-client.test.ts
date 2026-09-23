@@ -107,6 +107,7 @@ describe("private ASR same-origin routing", () => {
     expect(track.mute).toHaveBeenCalledOnce();
     expect(room.localParticipant.publishTrack).toHaveBeenCalledWith(track, {
       name: "microphone",
+      source: "microphone",
     });
   });
 

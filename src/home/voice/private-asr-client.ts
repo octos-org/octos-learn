@@ -5,10 +5,12 @@ import type {
 import type {
   Room,
   LocalAudioTrack,
+  Track,
 } from "livekit-client";
 import { requestPrivateAsrGrant } from "@/api/private-asr";
 import {
   getEchoCancelledMicStream,
+  nativeAudioCaptureAvailable,
   nativePrivateAsrAvailable,
   NATIVE_AUDIO_EVENT,
   setNativePrivateAsrListening,
@@ -169,12 +171,14 @@ export async function publishPrivateAsrTrackMuted(
  * opens the speech window. Exported so the LiveKit ordering contract can be
  * regression-tested without starting a real RTC session. */
 export async function publishLiveKitTrackMuted(
-  room: { localParticipant: { publishTrack: (track: LocalAudioTrack, options?: { name?: string }) => Promise<unknown> } },
+  room: { localParticipant: { publishTrack: (track: LocalAudioTrack, options?: { name?: string; source?: Track.Source }) => Promise<unknown> } },
   audioTrack: { mute: () => Promise<unknown> },
 ): Promise<void> {
   await audioTrack.mute();
+  const { Track: LiveKitTrack } = await getLiveKitRuntime();
   await room.localParticipant.publishTrack(audioTrack as LocalAudioTrack, {
     name: "microphone",
+    source: LiveKitTrack.Source.Microphone,
   });
 }
 
@@ -228,6 +232,10 @@ export class PrivateAsrClient {
         || (this.livekitRoom && this.livekitRoom.state === "connected")
       ),
     );
+  }
+
+  isNativeRtcActive(): boolean {
+    return this.nativeRtcActive;
   }
 
   async start(): Promise<void> {
@@ -486,9 +494,12 @@ export class PrivateAsrClient {
 
     const sourceTrack = stream.getAudioTracks()[0];
     if (!sourceTrack) throw new Error("Microphone did not provide an audio track");
-    // LiveKit owns a clone, not the source used to create Silero's VAD clones.
+    // LiveKit owns a clone in standard browser mode, not the source used to create Silero's VAD clones.
     // Muting the published track must never mute the VAD stream itself.
-    const mediaStreamTrack = sourceTrack.clone();
+    // However, when native audio capture is active, the stream originates from
+    // a Web Audio MediaStreamDestination. In Blink/Chromium, MediaStreamDestination
+    // tracks lose their audio connection when cloned, so we must use the direct track.
+    const mediaStreamTrack = nativeAudioCaptureAvailable() ? sourceTrack : sourceTrack.clone();
     const audioTrack = new LocalAudioTrack(mediaStreamTrack);
     this.livekitTrack = audioTrack;
     await publishLiveKitTrackMuted(room, audioTrack);
@@ -522,9 +533,8 @@ export class PrivateAsrClient {
     ]);
     const sourceTrack = stream.getAudioTracks()[0];
     if (!sourceTrack) throw new Error("Microphone did not provide an audio track");
-    // Agora owns a clone, not the source used to create Silero's VAD clones.
-    // Muting the published track must never mute the VAD stream itself.
-    const mediaStreamTrack = sourceTrack.clone();
+    // Agora owns a clone in standard browser mode. For bridged audio, use direct track.
+    const mediaStreamTrack = nativeAudioCaptureAvailable() ? sourceTrack : sourceTrack.clone();
     const audioTrack = AgoraRTC.createCustomAudioTrack({
       mediaStreamTrack,
       encoderConfig: "speech_standard",
@@ -558,6 +568,7 @@ export class PrivateAsrClient {
   };
 
   private handleEvent(event: PrivateAsrEvent): void {
+    console.log("[voice] private ASR event:", event.type, event);
     if (event.type === "asr.final") {
       const text = event.text?.trim();
       if (text) {
