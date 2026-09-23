@@ -26,22 +26,21 @@ let agoraRuntimePromise: Promise<typeof import("agora-rtc-sdk-ng")> | null = nul
 /** Start downloading the RTC runtime before a private-ASR session is ready. */
 export function preloadPrivateAsrRuntime(): Promise<void> {
   if (!privateAsrEnabled()) return Promise.resolve();
-  if (nativePrivateAsrAvailable()) return Promise.resolve();
+  return getLiveKitRuntime().then(() => undefined);
+}
+
+async function getLiveKitRuntime(): Promise<typeof import("livekit-client")> {
   if (!livekitRuntimePromise) {
     livekitRuntimePromise = import("livekit-client").catch((error) => {
       livekitRuntimePromise = null;
       throw error;
     });
   }
-  return livekitRuntimePromise.then(() => undefined);
-}
-
-async function getLiveKitRuntime(): Promise<typeof import("livekit-client")> {
-  await preloadPrivateAsrRuntime();
-  return livekitRuntimePromise!;
+  return livekitRuntimePromise;
 }
 
 async function getAgoraRuntime(): Promise<typeof import("agora-rtc-sdk-ng")> {
+  if (nativePrivateAsrAvailable()) return Promise.resolve() as unknown as typeof import("agora-rtc-sdk-ng");
   if (!agoraRuntimePromise) {
     agoraRuntimePromise = import("agora-rtc-sdk-ng").catch((error) => {
       agoraRuntimePromise = null;
