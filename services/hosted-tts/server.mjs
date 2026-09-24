@@ -330,7 +330,7 @@ export function createHandler({
   const inFlightSynthesis = new Map();
 
   async function cachedSynthesis(key, produce) {
-    const cached = audioCache?.get(key);
+    const cached = await audioCache?.get(key);
     if (cached) return { result: cached, cacheStatus: "hit" };
 
     const active = inFlightSynthesis.get(key);
@@ -339,7 +339,7 @@ export function createHandler({
     const synthesis = (async () => {
       const result = await produce();
       try {
-        audioCache?.put(key, result);
+        await audioCache?.put(key, result);
       } catch (error) {
         // A full or temporarily unavailable cache must not turn successfully
         // synthesized narration into a playback failure.

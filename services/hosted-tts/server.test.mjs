@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { once } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -202,7 +202,7 @@ test("concurrent identical narration shares one synthesis and quota reservation"
   }
 });
 
-test("persistent audio cache evicts the least recently used entry", () => {
+test("persistent audio cache evicts the least recently used entry", async () => {
   const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
   let now = 1_000;
   const cache = new PersistentAudioCache(directory, {
@@ -213,10 +213,116 @@ test("persistent audio cache evicts the least recently used entry", () => {
   const firstKey = "a".repeat(64);
   const secondKey = "b".repeat(64);
   try {
-    cache.put(firstKey, { bytes: Buffer.from("first"), contentType: "audio/mpeg", source: "platform" });
-    cache.put(secondKey, { bytes: Buffer.from("second"), contentType: "audio/mpeg", source: "platform" });
-    assert.equal(cache.get(firstKey), null);
-    assert.equal(cache.get(secondKey).bytes.toString(), "second");
+    await cache.put(firstKey, { bytes: Buffer.from("first"), contentType: "audio/mpeg", source: "platform" });
+    await cache.put(secondKey, { bytes: Buffer.from("second"), contentType: "audio/mpeg", source: "platform" });
+    assert.equal(await cache.get(firstKey), null);
+    assert.equal((await cache.get(secondKey)).bytes.toString(), "second");
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("persistent audio cache ranks eviction by reads, not writes", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  let now = 1_000;
+  const cache = new PersistentAudioCache(directory, {
+    maxEntries: 2,
+    maxBytes: 1024 * 1024,
+    now: () => now++,
+  });
+  const value = { bytes: Buffer.from("audio"), contentType: "audio/mpeg", source: "platform" };
+  const firstKey = "a".repeat(64);
+  const secondKey = "b".repeat(64);
+  const thirdKey = "c".repeat(64);
+  try {
+    await cache.put(firstKey, value);
+    await cache.put(secondKey, value);
+    await cache.get(firstKey);
+    await cache.put(thirdKey, value);
+    assert.ok(await cache.get(firstKey), "a read entry must survive eviction");
+    assert.equal(await cache.get(secondKey), null);
+    assert.ok(await cache.get(thirdKey));
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("persistent audio cache evicts by bytes when entries fit", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  let now = 1_000;
+  const cache = new PersistentAudioCache(directory, {
+    maxEntries: 100,
+    maxBytes: 200,
+    now: () => now++,
+  });
+  const value = { bytes: Buffer.from("audio"), contentType: "audio/mpeg", source: "platform" };
+  const firstKey = "a".repeat(64);
+  const secondKey = "b".repeat(64);
+  const thirdKey = "c".repeat(64);
+  try {
+    await cache.put(firstKey, value);
+    await cache.put(secondKey, value);
+    await cache.put(thirdKey, value);
+    assert.equal(await cache.get(firstKey), null, "oldest entry must be evicted on byte pressure");
+    assert.ok(await cache.get(secondKey));
+    assert.ok(await cache.get(thirdKey));
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("persistent audio cache re-accounts a valid pair the ledger missed", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  const cache = new PersistentAudioCache(directory);
+  const key = "e".repeat(64);
+  const value = { bytes: Buffer.from("audio"), contentType: "audio/mpeg", source: "platform" };
+  try {
+    await cache.put(key, value);
+    cache.totalBytes -= cache.entries.get(key).bytes;
+    cache.entries.delete(key);
+    assert.ok(await cache.get(key), "the pair is still on disk and must serve");
+    assert.equal(cache.entries.size, 1, "a served pair must be back in the ledger");
+    assert.equal(cache.totalBytes, cache.entries.get(key).bytes);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("persistent audio cache keeps large reads and writes off the event loop", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  const cache = new PersistentAudioCache(directory);
+  const key = "c".repeat(64);
+  const payload = Buffer.alloc(64 * 1024 * 1024, 0x63);
+  let ticks = 0;
+  const timer = setInterval(() => { ticks += 1; }, 1);
+  try {
+    // A synchronous implementation cannot run timer callbacks during its own
+    // blocking I/O, so the counts only move when the calls yield the loop to
+    // the timer while their I/O is still in flight.
+    const putPromise = cache.put(key, { bytes: payload, contentType: "audio/mpeg", source: "platform" });
+    await putPromise;
+    const putTicks = ticks;
+    const getPromise = cache.get(key);
+    const hit = await getPromise;
+    assert.ok(putTicks > 0, "put blocked the event loop");
+    assert.ok(ticks > putTicks, "get blocked the event loop");
+    assert.equal(hit.bytes.length, payload.length);
+  } finally {
+    clearInterval(timer);
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test("persistent audio cache drops a corrupted entry on read", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "octos-learn-audio-cache-"));
+  const cache = new PersistentAudioCache(directory);
+  const key = "d".repeat(64);
+  try {
+    await cache.put(key, { bytes: Buffer.from("audio"), contentType: "audio/mpeg", source: "platform" });
+    writeFileSync(cache.paths(key).metadata, "not json");
+    assert.equal(await cache.get(key), null);
+    assert.equal(existsSync(cache.paths(key).audio), false);
+    assert.equal(existsSync(cache.paths(key).metadata), false);
   } finally {
     rmSync(directory, { recursive: true });
   }
