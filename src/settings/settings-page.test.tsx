@@ -188,4 +188,43 @@ describe("AdminSettingsPage", () => {
     expect(screen.getByText(/no settings match/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
   });
+
+  it("renders Developer Options tab via direct link and toggles debug mode", async () => {
+    render(
+      <MemoryRouter initialEntries={["/settings?tab=developer"]}>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /Developer Options/i })).toBeTruthy();
+    });
+
+    const toggle = screen.getByTestId("toggle-debug-mode");
+    expect(toggle).toBeTruthy();
+
+    fireEvent.click(toggle);
+
+    const stored = JSON.parse(localStorage.getItem("octos_debug_settings") || "{}");
+    expect(typeof stored.debugMode).toBe("boolean");
+  });
+
+  it("matches Developer Options tab when searching for 'debug' or '调试'", async () => {
+    render(
+      <MemoryRouter>
+        <AdminSettingsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("settings-tab-search")).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByTestId("settings-tab-search"), {
+      target: { value: "debug" },
+    });
+
+    expect(screen.getByRole("button", { name: /Developer Options/i })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Profile" })).toBeNull();
+  });
 });

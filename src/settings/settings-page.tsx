@@ -13,6 +13,7 @@ import {
   Search,
   Moon,
   Sun,
+  Bug,
 } from "lucide-react";
 import { StudioTopbar } from "@/components/studio-topbar";
 import { useTheme } from "@/hooks/use-theme";
@@ -23,6 +24,7 @@ import { ApiKeysTab } from "./api-keys-tab";
 import { VoiceTab } from "./voice-tab";
 import { AuthenticationTab } from "./authentication-tab";
 import { LearningCompanionTab } from "./learning-companion-tab";
+import { DeveloperTab } from "./developer-tab";
 
 type TabId =
   | "profile"
@@ -30,9 +32,10 @@ type TabId =
   | "api-keys"
   | "voice"
   | "companion"
-  | "authentication";
+  | "authentication"
+  | "developer";
 
-type TabGroup = "personal" | "learning" | "system";
+type TabGroup = "personal" | "learning" | "system" | "developer";
 
 interface TabDef {
   id: TabId;
@@ -46,6 +49,7 @@ const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = [
   { id: "personal", label: "Personal" },
   { id: "learning", label: "Learning" },
   { id: "system", label: "Access" },
+  { id: "developer", label: "Developer" },
 ];
 
 const TABS: TabDef[] = [
@@ -60,6 +64,7 @@ const TABS: TabDef[] = [
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true, group: "system" },
+  { id: "developer", label: "Developer Options", icon: Bug, group: "developer" },
 ];
 
 function SettingsThemeButton() {
@@ -79,6 +84,7 @@ function SettingsThemeButton() {
 }
 
 function asTabId(value: string | null): TabId | null {
+  if (value === "debug") return "developer";
   return TABS.some((tab) => tab.id === value) ? value as TabId : null;
 }
 
@@ -157,7 +163,9 @@ export function AdminSettingsPage() {
           t.label.toLowerCase().includes(q) ||
           (TAB_GROUPS.find((g) => g.id === t.group)?.label ?? "")
             .toLowerCase()
-            .includes(q),
+            .includes(q) ||
+          (t.id === "developer" &&
+            (q.includes("debug") || q.includes("jev") || q.includes("调"))),
       )
     : accessibleTabs;
 
@@ -249,7 +257,9 @@ export function AdminSettingsPage() {
             <div className={`mx-auto ${isAdminOnlyTab ? "max-w-4xl" : "max-w-3xl"}`}>
               {activeTab === "authentication" && portal?.can_access_admin_portal && <AuthenticationTab />}
 
-              {activeTab === "companion" ? (
+              {activeTab === "developer" ? (
+                <DeveloperTab />
+              ) : activeTab === "companion" ? (
                 <LearningCompanionTab />
               ) : !isAdminOnlyTab && profile ? (
                 <>

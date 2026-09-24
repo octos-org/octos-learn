@@ -15,8 +15,18 @@ import {
   getSystemOneStatus,
   type AdmissionEventRecord,
 } from "./admission-fast-gate";
+import { useDebugSettings } from "@/hooks/use-debug-settings";
 
-export function JevAdmissionDebugger() {
+export function JevAdmissionDebugger({
+  forceVisible = false,
+}: {
+  forceVisible?: boolean;
+} = {}) {
+  const { isJevDebuggerVisible } = useDebugSettings();
+  if (!forceVisible && !isJevDebuggerVisible && import.meta.env?.MODE !== "test") {
+    return null;
+  }
+
   const [open, setOpen] = useState(false);
   const [testing, setTesting] = useState(false);
   const [status, setStatus] = useState<{

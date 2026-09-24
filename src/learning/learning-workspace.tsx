@@ -146,6 +146,7 @@ import {
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
+import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -452,6 +453,7 @@ export function LearningWorkspace({
   courseAccessMode = "instance",
   onStartCourseInteraction,
 }: LearningWorkspaceProps) {
+  const { isJevDebuggerVisible, isTraceInspectorVisible } = useDebugSettings();
   const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
@@ -3405,10 +3407,10 @@ export function LearningWorkspace({
           语音暂不可用，你可以继续打字、上传题目和阅读课程。
         </div>
       )}
-      {import.meta.env.DEV && import.meta.env.MODE !== "test" ? (
+      {import.meta.env.DEV && import.meta.env.MODE !== "test" && isTraceInspectorVisible ? (
         <LearningTraceInspector recorder={learnTrace} />
       ) : null}
-      {import.meta.env.MODE !== "test" ? (
+      {import.meta.env.MODE !== "test" && isJevDebuggerVisible ? (
         <JevAdmissionDebugger />
       ) : null}
     </div>
