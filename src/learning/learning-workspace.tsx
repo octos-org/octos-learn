@@ -144,6 +144,9 @@ import {
   removeRecoverableValue,
   writeRecoverableJson,
 } from "./recoverable-storage";
+import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { JevAdmissionDebugger } from "./jev-admission-debugger";
+import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
 
 const geometryLessonEvents = parseCanonicalJsonl(geometryLessonSource);
@@ -450,6 +453,7 @@ export function LearningWorkspace({
   courseAccessMode = "instance",
   onStartCourseInteraction,
 }: LearningWorkspaceProps) {
+  const { isJevDebuggerVisible, isTraceInspectorVisible } = useDebugSettings();
   const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
@@ -1251,6 +1255,67 @@ export function LearningWorkspace({
             });
             const pendingSelection = captured ? frozen : pendingVoiceSelectionRef.current;
             const selectionPath = context.additionalMediaPaths?.[0];
+            const hasSelection = Boolean(pendingSelection && selectionPath);
+
+            const admission = await evaluateAdmissionFastGate({
+              text: context.transcript,
+              modality: "voice",
+              hasCameraFrame: Boolean(context.currentFramePath),
+              hasSelection,
+            });
+
+            if (admission.disposition === "ignore") {
+              learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+                turnId: context.turnId,
+                source: "octos-web",
+                stage: "admission-gate",
+                status: "ignored",
+                recordedAtEpochMs: Date.now(),
+                data: {
+                  transcript: context.transcript,
+                  reason: admission.reason,
+                  latency_ms: admission.latencyMs,
+                  gate_source: admission.source,
+                },
+              });
+              return true;
+            }
+
+            if (admission.disposition === "clarify") {
+              learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+                turnId: context.turnId,
+                source: "octos-web",
+                stage: "admission-gate",
+                status: "clarified",
+                recordedAtEpochMs: Date.now(),
+                data: {
+                  transcript: context.transcript,
+                  reason: admission.reason,
+                  latency_ms: admission.latencyMs,
+                  gate_source: admission.source,
+                },
+              });
+              const clarifyText = admission.reason || INSUFFICIENT_LESSON_REQUEST_MESSAGE;
+              setPlainReply({ turnId: context.turnId, text: clarifyText });
+              setPlainReplySpoken(false);
+              return true;
+            }
+
+            learnTrace.recordOnce(`${context.turnId}:admission-fast-gate`, {
+              turnId: context.turnId,
+              source: "octos-web",
+              stage: "admission-gate",
+              status: "passed",
+              recordedAtEpochMs: Date.now(),
+              data: {
+                transcript: context.transcript,
+                disposition: admission.disposition,
+                confidence: admission.confidence,
+                latency_ms: admission.latencyMs,
+                gate_source: admission.source,
+              },
+            });
+
             if (pendingSelection && selectionPath) {
               pendingVoiceSelectionRef.current = null;
               pendingSelection.recordSelection();
@@ -1301,6 +1366,7 @@ export function LearningWorkspace({
               return true;
             }
             if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+
             registerVoiceQuestion(context.turnId, context.transcript, null);
             if (context.currentFramePath) {
               updateWhiteboardQuestion(context.turnId, {
@@ -1322,10 +1388,12 @@ export function LearningWorkspace({
           },
           onTurnError: handleVoiceTurnError,
           onTurnComplete: handleTurnComplete,
+          allowHesitationAdmission: true,
         });
       };
       return {
         ...createOptions(),
+        allowHesitationAdmission: true,
         captureUtteranceOptions: () => {
           const prepared = pendingVoiceSelectionRef.current;
           pendingVoiceSelectionRef.current = null;
@@ -1343,7 +1411,10 @@ export function LearningWorkspace({
           // Capture can reject before the utterance ends. Keep the rejection for
           // getAdditionalTurnFiles without creating an unhandled promise rejection.
           void captured.catch(() => undefined);
-          return createOptions(captured, Boolean(prepared || capture));
+          return {
+            ...createOptions(captured, Boolean(prepared || capture)),
+            allowHesitationAdmission: true,
+          };
         },
       };
     },
@@ -2580,6 +2651,23 @@ export function LearningWorkspace({
         submitted_at_epoch_ms: Date.now(),
       };
       setSendError(null);
+      const references = composerBoardReferences;
+      const hasSelection = references.length > 0 || Boolean(activeVoiceInkSelectionCaptureRef.current);
+      if (!applicationContext?.trim()) {
+        const admission = await evaluateAdmissionFastGate({
+          text,
+          modality: "text",
+          hasCameraFrame: Boolean(conv.cameraActive),
+          hasSelection,
+        });
+        if (admission.disposition === "ignore") {
+          return;
+        }
+        if (admission.disposition === "clarify") {
+          setSendError(admission.reason || "输入内容不够明确，请描述你想学习的具体知识点或题目。");
+          return;
+        }
+      }
       setTextTurnPending(true);
       const turnId = crypto.randomUUID();
       learnTrace.recordOnce(`${turnId}:request-submitted`, {
@@ -2590,7 +2678,6 @@ export function LearningWorkspace({
         recordedAtEpochMs: clientTiming.submitted_at_epoch_ms,
         data: { input_modality: "text" },
       });
-      const references = composerBoardReferences;
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -3320,8 +3407,11 @@ export function LearningWorkspace({
           语音暂不可用，你可以继续打字、上传题目和阅读课程。
         </div>
       )}
-      {import.meta.env.DEV && import.meta.env.MODE !== "test" ? (
+      {import.meta.env.DEV && import.meta.env.MODE !== "test" && isTraceInspectorVisible ? (
         <LearningTraceInspector recorder={learnTrace} />
+      ) : null}
+      {import.meta.env.MODE !== "test" && isJevDebuggerVisible ? (
+        <JevAdmissionDebugger />
       ) : null}
     </div>
   );

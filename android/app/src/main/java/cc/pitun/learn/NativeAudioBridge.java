@@ -71,6 +71,7 @@ final class NativeAudioBridge {
     private volatile boolean rtcListening;
     private volatile String rtcLastError;
     private volatile long rtcFramesPushed;
+    private final ByteArrayOutputStream livekitPcmBuffer = new ByteArrayOutputStream();
 
     NativeAudioBridge(Activity activity, WebView webView) {
         this.activity = activity;
@@ -430,6 +431,7 @@ final class NativeAudioBridge {
                 double rms = pcmRms(frame);
 
                 pushPrivateAsrFrame(frame, sampleRate);
+                pushLiveKitPcm(frame, sampleRate);
 
                 if (utterance == null) {
                     preRoll.addLast(frame);
@@ -555,6 +557,23 @@ final class NativeAudioBridge {
         }
     }
 
+    private void pushLiveKitPcm(byte[] frame, int sampleRate) {
+        livekitPcmBuffer.write(frame, 0, frame.length);
+        // Flush every ~80 ms (e.g. 16000 * 2 * 80 / 1000 = 2560 bytes)
+        int threshold = Math.max(1280, sampleRate * 2 * 80 / 1000);
+        if (livekitPcmBuffer.size() >= threshold) {
+            byte[] chunk = livekitPcmBuffer.toByteArray();
+            livekitPcmBuffer.reset();
+            final String b64 = Base64.encodeToString(chunk, Base64.NO_WRAP);
+            webView.post(() -> {
+                webView.evaluateJavascript(
+                        "window.__octosFeedPcm && window.__octosFeedPcm('" + b64 + "', " + sampleRate + ");",
+                        null
+                );
+            });
+        }
+    }
+
     private void stopPrivateAsrLocked() {
         rtcListening = false;
         rtcJoined = false;
@@ -604,6 +623,7 @@ final class NativeAudioBridge {
             captureRunning = false;
             thread = captureThread;
             activeRecorder = recorder;
+            livekitPcmBuffer.reset();
         }
         if (activeRecorder != null) {
             try {

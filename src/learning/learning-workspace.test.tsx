@@ -28,6 +28,7 @@ import { saveSelectionEnhancementState } from "./selection-enhancements";
 import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
 import { SelectionRequestState } from "./selection-request-state";
 import { saveWhiteboardQuestions } from "./whiteboard-questions";
+import * as admissionFastGate from "./admission-fast-gate";
 
 const conversationMock = vi.hoisted(() => ({
   state: "idle" as "idle" | "starting",
@@ -3504,5 +3505,139 @@ describe("LearningWorkspace", () => {
       expect(screen.getByText("流式回复中的 OLL 课程")).toBeTruthy();
       expect(screen.getByTestId("oll-controls")).toBeTruthy();
     });
+  });
+
+  it("discards voice filler words via admission fast-gate without creating a question or invoking lesson action", async () => {
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate").mockResolvedValueOnce({
+      disposition: "ignore",
+      confidence: 0.95,
+      reason: "Filler words",
+      latencyMs: 65,
+      source: "typesafe_jev",
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-gate-ignore"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    let handled = false;
+    await act(async () => {
+      handled = Boolean(await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-gate-ignore",
+        turnId: "voice-filler-turn",
+        transcript: "嗯...啊...",
+        admissionId: "adm-filler",
+        mediaPaths: ["uploads/filler.wav"],
+        additionalMediaPaths: [],
+      }));
+    });
+
+    expect(handled).toBe(true);
+    expect(gateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      text: "嗯...啊...",
+      modality: "voice",
+    }));
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+    expect(screen.queryByText("嗯...啊...")).toBeNull();
+    gateSpy.mockRestore();
+  });
+
+  it("prompts for clarification via admission fast-gate when voice utterance is ambiguous", async () => {
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate").mockResolvedValueOnce({
+      disposition: "clarify",
+      confidence: 0.9,
+      reason: "你想了解函数的哪部分知识？",
+      latencyMs: 80,
+      source: "typesafe_jev",
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-gate-clarify"
+        voiceEnabled
+        onBack={vi.fn()}
+      />,
+    );
+
+    let handled = false;
+    await act(async () => {
+      handled = Boolean(await conversationMock.options?.onAdmittedSpeech?.({
+        sessionId: "learn-gate-clarify",
+        turnId: "voice-clarify-turn",
+        transcript: "函数",
+        admissionId: "adm-clarify",
+        mediaPaths: ["uploads/clarify.wav"],
+        additionalMediaPaths: [],
+      }));
+    });
+
+    expect(handled).toBe(true);
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+    expect(await screen.findByText("你想了解函数的哪部分知识？")).toBeTruthy();
+    gateSpy.mockRestore();
+  });
+
+  it("intercepts keyboard filler input via admission fast-gate without creating a question", async () => {
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate").mockResolvedValueOnce({
+      disposition: "ignore",
+      confidence: 0.95,
+      reason: "Filler text",
+      latencyMs: 50,
+      source: "typesafe_jev",
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-gate-text-ignore"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "呃呃呃" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    await waitFor(() => {
+      expect(gateSpy).toHaveBeenCalledWith(expect.objectContaining({
+        text: "呃呃呃",
+        modality: "text",
+      }));
+    });
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+    expect(screen.queryByText("呃呃呃")).toBeNull();
+    gateSpy.mockRestore();
+  });
+
+  it("shows error prompt when keyboard input needs clarification via admission fast-gate", async () => {
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate").mockResolvedValueOnce({
+      disposition: "clarify",
+      confidence: 0.88,
+      reason: "输入内容不够明确，请补充你想学习的具体知识点。",
+      latencyMs: 55,
+      source: "typesafe_jev",
+    });
+
+    render(
+      <LearningWorkspace
+        sessionId="learn-gate-text-clarify"
+        voiceEnabled={false}
+        onBack={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("输入学习问题"), {
+      target: { value: "讲一下那个" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+
+    expect(await screen.findByText("输入内容不够明确，请补充你想学习的具体知识点。")).toBeTruthy();
+    expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
+    gateSpy.mockRestore();
   });
 });
