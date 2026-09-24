@@ -74,13 +74,13 @@
 ### 2.6 速度硬约束
 
 不允许此次功能优化造成已有速度优化回退。沿用
-[数学质量优化计划](../docs/MATH_QUALITY_IMPROVEMENT_PLAN.md)的硬约束和
-[实施状态](../docs/MATH_QUALITY_IMPLEMENTATION_STATUS.md)的度量方法。
+[数学质量优化计划](MATH_QUALITY_IMPROVEMENT_PLAN.md)的硬约束和
+[实施状态](MATH_QUALITY_IMPLEMENTATION_STATUS.md)的度量方法。
 不能用延长超时、降低模型质量、删掉必要回答、占位符提前出现或旧 15 秒目标掩盖变慢。
 
 ## 3. 仓库边界与实施前基线
 
-遵循[本地开发交接](../docs/DEVELOPMENT_HANDOFF.md)：各仓库先检查工作区与实际分支状态，从更新后的 main 建 `codex/` 分支，不使用 worktree，不覆盖其他任务修改。
+遵循[本地开发交接](DEVELOPMENT_HANDOFF.md)：各仓库先检查工作区与实际分支状态，从更新后的 main 建 `codex/` 分支，不使用 worktree，不覆盖其他任务修改。
 实际实施前核对 Octos 的必要服务端提交是否已进入当前基线，不将文档中的历史提交当成实时状态。
 
 | 仓库 | 本次职责 |
@@ -239,8 +239,8 @@
 - learning-coach：`npm test`，真实模型配对意图评估；mock 只证明请求、schema 和解析，不证明模型理解正确。
 - OLL：`npm test`、浏览器原型、SVG 往返、origin、快照兼容与事务故障注入。
 - 实施范围如果涉及通用 Octos，补对应 Rust 测试与 `cargo check -p octos-cli --features api`。
-- 本地真实端到端覆盖第 5 节，并按[发布前 E2E 清单](../docs/RELEASE_E2E_CHECKLIST.md)更新板书相关预期；旧卡片的回归标准保留。
-- 每个 PR 提交功能证据、测试结果、精确提交及性能对照；最终在 `doc/` 保存实施状态与验收报告，链接到原始统计数据。
+- 本地真实端到端覆盖第 5 节，并按[发布前 E2E 清单](RELEASE_E2E_CHECKLIST.md)更新板书相关预期；旧卡片的回归标准保留。
+- 每个 PR 提交功能证据、测试结果、精确提交及性能对照；最终在 `docs/` 保存实施状态与验收报告，链接到原始统计数据。
 - 如需发布，另按公网发布手册执行兼容部署与回滚；本计划不授权公网变更。
 
 ## 8. 本次明确不做

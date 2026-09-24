@@ -37,7 +37,7 @@ Learning Coach 的 profile 模型继承已通过
 
 | 仓库 | 职责 | 普通界面功能应优先改这里吗 |
 |---|---|---|
-| `octos-learn` | 独立学习产品前端、无限白板、课程播放、语音/摄像头交互、新用户设置、Hosted TTS sidecar 和公网部署文件 | 是 |
+| `octos-learn` | 独立学习产品前端、无限白板、课程播放、语音/摄像头交互、新用户设置、hosted-tts 托管语音服务 和公网部署文件 | 是 |
 | `octos` | 通用服务端、登录与 profile、会话和文件、模型配置、技能运行及协议 | 只有通用能力确实缺失时 |
 | `learning-coach` | 理解学习请求、生成课程计划、容忍模型格式错误、编译并交付 OLL 课程 | 修改课程生成或局部辅助时 |
 | `octos-lesson-language` | OLL 数据结构、校验器、确定性画面和交互 Runtime | 修改 DSL 或底层执行能力时 |
@@ -128,11 +128,11 @@ Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后�
 | 模型密钥 | 本机 profile 自己配置 | 每个公网用户 BYOK，各自保存 |
 | ASR | 可直接通过 `ASR_API_URL` 调本机 SenseVoice | 浏览器经 Agora 和私有 ASR 控制面访问 worker |
 | TTS | 用户个人云端/本机 TTS | 个人 TTS 优先，否则可使用限额内的平台 Hosted TTS |
-| Hosted TTS | 默认关闭，也不需要 sidecar | `VITE_HOSTED_TTS_ENABLED=true`，并运行 `services/hosted-tts` |
+| Hosted TTS | 默认关闭，也不需要 hosted-tts 服务 | `VITE_HOSTED_TTS_ENABLED=true`，并运行 `services/hosted-tts` |
 | SMTP | 不需要 | 邮箱验证码注册必需 |
 
 本地开发不要使用 `.env.public`，也不要设置 `VITE_HOSTED_TTS_ENABLED=true`。否则前端会
-请求本地并未运行的 `/api/learn/tts/*` sidecar 接口。
+请求本地并未运行的 `/api/learn/tts/*` 接口。
 
 ## 开始新功能前
 
@@ -153,7 +153,7 @@ Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后�
 - 课程结束、刷新和回放只聚焦当前课程区域，不缩放到全部课程。
 - 同一节课的数值控件必须实际影响对应画面；模型输出错误由程序做可解释的容忍或拒绝，
   不能用看似成功但内容错误的画面代替。
-- 公网平台 TTS 的密钥、额度和数据库只属于 Hosted TTS sidecar，不进入 Octos profile、
+- 公网平台 TTS 的密钥、额度和数据库只属于 hosted-tts 托管语音服务，不进入 Octos profile、
   Learning Coach 环境或前端。
 - `/learn` 的课程生成和框选辅助使用专用 action 快速路径，不重新经过携带全部工具的
   外层通用 Agent。

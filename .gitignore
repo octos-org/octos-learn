@@ -35,9 +35,13 @@ crawl-*/
 research/
 *.md
 !.octos/AGENTS.md
+!AGENTS.md
 !README.md
 !docs/**/*.md
-!doc/**/*.md
+
+# Local scratch and generated delivery packs (export-pdf.mjs / generate-delivery-pack.mjs)
+scratch/
+delivery/
 
 # Generated VAD runtime assets (copy-vad-assets.mjs)
 public/vad/

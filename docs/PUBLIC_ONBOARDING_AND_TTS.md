@@ -59,11 +59,11 @@ ASR 当前只有一个识别会话。占用时提示「语音服务正在使用�
 
 ## 部署、迁移与回退
 
-- 公网前端和 hosted-TTS 服务必须一起部署；通用 Octos 不提供这些产品接口。没有 sidecar 的构建不得设置 `VITE_HOSTED_TTS_ENABLED=true`。
+- 公网前端和 hosted-TTS 服务必须一起部署；通用 Octos 不提供这些产品接口。没有 hosted-tts 服务的构建不得设置 `VITE_HOSTED_TTS_ENABLED=true`。
 - 持久用量及额度保存在 `/var/lib/octos-learn/hosted-tts/usage.sqlite`，旁白音频默认缓存在同目录的 `audio-cache/`。缓存使用 LRU，默认上限为 10,000 段或 2 GiB，可通过 `HOSTED_TTS_CACHE_*` 环境变量调整。迁移时停服复制数据库和缓存目录，并单独安全迁移 `/etc/octos-learn/hosted-tts.env`；这些内容都不属于 Octos 数据目录。
 - 不要删除数据库来重置额度。月度重置按新月份自然生效，历史用量保留。
 - 本地开发不设置 `VITE_HOSTED_TTS_ENABLED`，继续使用通用 Octos 的个人/本机语音配置。无需 hosted-TTS、SMTP、VPS 或 Agora 才能开发文字白板。
-- 回退版本时先在额度设置中关闭平台 TTS，再恢复上一份前端和 sidecar；保留用量数据库和用户数据。停止 sidecar 只会取消默认语音，课程和文字旁白仍可使用。
+- 回退版本时先在额度设置中关闭平台 TTS，再恢复上一份前端和 hosted-tts 服务；保留用量数据库和用户数据。停止 hosted-tts 服务只会取消默认语音，课程和文字旁白仍可使用。
 
 ## 上线验收
 
