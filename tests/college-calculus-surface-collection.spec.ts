@@ -8,16 +8,19 @@ const collection = [
     id: "surface-paraboloid-level-sets",
     title: "水平截线与等高线：以 z=x²+y² 为例",
     beats: 11,
+    version: "0.2.3",
   },
   {
     id: "surface-partial-derivative-slice",
     title: "偏导数：固定输入，求截线斜率",
     beats: 11,
+    version: "0.2.3",
   },
   {
     id: "surface-saddle-point-analysis",
     title: "马鞍面与鞍点：梯度为零不一定是极值点",
     beats: 15,
+    version: "0.2.4",
   },
 ];
 
@@ -31,7 +34,7 @@ test("collection home page displays all 3 college multivariable calculus courses
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect.poll(() => card.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-    await expect(card).toContainText('0.2.3');
+    await expect(card).toContainText(item.version);
   }
 
   // Scroll to the calculus cards row to show the thumbnails clearly
