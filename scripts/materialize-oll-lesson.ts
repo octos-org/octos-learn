@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import type { AuthoringLesson } from "octos-lesson-language";
 import {
-  materializeOllLesson,
+  materializeOllLessonWithReport,
   type OllLessonMaterializationOptions,
 } from "../src/learning/oll/oll-materialization";
 
@@ -45,7 +45,13 @@ const options: OllLessonMaterializationOptions = {
   regionId: required(values, "region-id"),
 };
 const authoring = JSON.parse(await readFile(sourcePath, "utf8")) as AuthoringLesson;
-const events = materializeOllLesson(authoring, options);
+const report = materializeOllLessonWithReport(authoring, options);
+const { events } = report;
+if (values.report) {
+  await writeFile(resolve(values.report), `${JSON.stringify({
+    ...report.requirements, compilation: report.compilation, diagnostics: report.diagnostics,
+  }, null, 2)}\n`, "utf8");
+}
 await writeFile(
   outputPath,
   `${events.map((event) => JSON.stringify(event)).join("\n")}\n`,

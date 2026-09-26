@@ -1,0 +1,21 @@
+<!doctype html><meta charset="utf-8"><title>Runtime layout regression fixture</title>
+<style>body {margin:0} #viewport {width:1200px;height:850px}</style>
+<div id="viewport" class="oll-board-runtime"><div id="world" class="world"><div id="groups" class="layer"></div><div id="nodes" class="layer"></div><svg id="connections"></svg><svg id="labels"></svg><div id="pointer"></div></div></div>
+<script type="module">
+import { InfiniteBoardView } from 'octos-lesson-language/web-runtime';
+import 'octos-lesson-language/web-runtime/styles.css';
+import 'katex/dist/katex.min.css';
+const el = id => document.getElementById(id);
+const view = new InfiniteBoardView(...['viewport','world','nodes','groups','connections','labels','pointer'].map(el));
+const node = (id, kind, content) => ({id,kind,content,region_id:'course',placement:{relation:'new_region'}});
+const board = {board_id:'quality',revision:1,nodes:{
+ visual:node('visual','geometry',{title:'Visual',points:[],circles:[]}),
+ formula:node('formula','math',{fragments:Array.from({length:6},(_,i)=>({id:`term-${i}`,latex:'\\frac{x^2+y^2}{\\sqrt{1+x}}'}))}),
+ next:node('next','note',{title:'Next explanation',text:'Must remain below the entire formula.'}),
+ lower:node('lower','geometry',{title:'Lower visual',points:[],circles:[]}),
+},groups:{},connections:{},variables:{},focus:['formula'],applied_actions:[],applied_steps:[]};
+const flow = new URLSearchParams(location.search).get('flow') === 'teaching' ? 'teaching' : 'reading';
+function region(width=820, height=44) {return {course:{x:20,y:20,reservedWidth:width,flow,attachments:[{id:'controls',anchorNodeId:'visual',width:360,height}]}};}
+view.setRegionLayouts(region()); view.render(board);
+window.quality = {view,board,region, resize:(width,height)=>view.setRegionLayouts(region(width,height)), render:()=>view.render(board)};
+</script>

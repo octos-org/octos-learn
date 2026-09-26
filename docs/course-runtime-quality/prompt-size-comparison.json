@@ -1,0 +1,30 @@
+{
+  "measurement": "Exact source prompt UTF-8 bytes and Unicode characters; provider token counts require provider telemetry and are not inferred from bytes.",
+  "modelCallsAdded": 0,
+  "prompts": [
+    {
+      "prompt": "OUTLINE_SYSTEM_PROMPT",
+      "beforeUtf8Bytes": 1410,
+      "afterUtf8Bytes": 1568,
+      "deltaUtf8Bytes": 158,
+      "beforeCharacters": 692,
+      "afterCharacters": 766
+    },
+    {
+      "prompt": "SECTION_SYSTEM_PROMPT",
+      "beforeUtf8Bytes": 1672,
+      "afterUtf8Bytes": 2213,
+      "deltaUtf8Bytes": 541,
+      "beforeCharacters": 817,
+      "afterCharacters": 1076
+    },
+    {
+      "prompt": "BOOTSTRAP_FIRST_SECTION_PROMPT",
+      "beforeUtf8Bytes": 2256,
+      "afterUtf8Bytes": 2797,
+      "deltaUtf8Bytes": 541,
+      "beforeCharacters": 1197,
+      "afterCharacters": 1456
+    }
+  ]
+}

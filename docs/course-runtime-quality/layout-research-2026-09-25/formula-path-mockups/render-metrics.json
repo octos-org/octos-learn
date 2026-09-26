@@ -1,0 +1,1834 @@
+{
+  "courses": [
+    {
+      "id": "fraction-comparing-unit-shares",
+      "title": "直观理解分数的大小比较",
+      "nodes": 7,
+      "tasks": 2
+    },
+    {
+      "id": "fraction-equivalent-visuals",
+      "title": "等价分数的图形直观与原理",
+      "nodes": 9,
+      "tasks": 3
+    },
+    {
+      "id": "fraction-notation-and-parts",
+      "title": "直观理解分数的意义与结构",
+      "nodes": 6,
+      "tasks": 2
+    },
+    {
+      "id": "fraction-what-is-a-half",
+      "title": "认识分数的初步概念：从方格到二分之一",
+      "nodes": 7,
+      "tasks": 2
+    },
+    {
+      "id": "linear-intro-and-slope",
+      "title": "正比例函数 y = kx 与斜率的几何意义",
+      "nodes": 3,
+      "tasks": 2
+    },
+    {
+      "id": "linear-plotting-points",
+      "title": "一次函数 y = 2x - 1 的图像本质与画法",
+      "nodes": 5,
+      "tasks": 3
+    },
+    {
+      "id": "linear-simultaneous-intersections",
+      "title": "二元一次方程组与一次函数的几何意义",
+      "nodes": 9,
+      "tasks": 0
+    },
+    {
+      "id": "rectangle-area-from-tiles",
+      "title": "长方形的面积与周长",
+      "nodes": 5,
+      "tasks": 1
+    },
+    {
+      "id": "slope-and-intercept",
+      "title": "一次函数 y = mx + b 的图像与性质",
+      "nodes": 5,
+      "tasks": 3
+    },
+    {
+      "id": "surface-paraboloid-level-sets",
+      "title": "水平截线与等高线：以 z=x²+y² 为例",
+      "nodes": 5,
+      "tasks": 1
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "title": "偏导数：固定输入，求截线斜率",
+      "nodes": 9,
+      "tasks": 1
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+      "nodes": 14,
+      "tasks": 0
+    },
+    {
+      "id": "trig-cosine-and-phase-shift",
+      "title": "余弦函数与单位圆投影",
+      "nodes": 9,
+      "tasks": 1
+    },
+    {
+      "id": "trig-quadrants-and-monotonicity",
+      "title": "单位圆与正弦函数的单调性及象限循环",
+      "nodes": 8,
+      "tasks": 3
+    },
+    {
+      "id": "trig-unit-circle-to-sine",
+      "title": "从单位圆旋转到正弦曲线",
+      "nodes": 7,
+      "tasks": 1
+    }
+  ],
+  "metrics": [
+    {
+      "id": "fraction-comparing-unit-shares",
+      "width": 1920,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 1457,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 80,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-comparing-unit-shares",
+      "width": 1440,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 1457,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 80,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-comparing-unit-shares",
+      "width": 700,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 1983,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 245,
+          "mathHeight": 80,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-equivalent-visuals",
+      "width": 1920,
+      "nodes": 9,
+      "tasks": 3,
+      "height": 1936,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 94,
+          "mathHeight": 80,
+          "noteHeight": 94
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 123,
+          "mathHeight": 80,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-equivalent-visuals",
+      "width": 1440,
+      "nodes": 9,
+      "tasks": 3,
+      "height": 1936,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 94,
+          "mathHeight": 80,
+          "noteHeight": 94
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 123,
+          "mathHeight": 80,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-equivalent-visuals",
+      "width": 700,
+      "nodes": 9,
+      "tasks": 3,
+      "height": 2517,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 188,
+          "mathHeight": 80,
+          "noteHeight": 94
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 217,
+          "mathHeight": 80,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-notation-and-parts",
+      "width": 1920,
+      "nodes": 6,
+      "tasks": 2,
+      "height": 1436,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 176,
+          "mathHeight": 0,
+          "noteHeight": 176
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 84,
+          "mathHeight": 84,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 80,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-notation-and-parts",
+      "width": 1440,
+      "nodes": 6,
+      "tasks": 2,
+      "height": 1436,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 176,
+          "mathHeight": 0,
+          "noteHeight": 176
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 84,
+          "mathHeight": 84,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 80,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-notation-and-parts",
+      "width": 700,
+      "nodes": 6,
+      "tasks": 2,
+      "height": 1990,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 176,
+          "mathHeight": 0,
+          "noteHeight": 176
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 84,
+          "mathHeight": 84,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 241,
+          "mathHeight": 80,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-what-is-a-half",
+      "width": 1920,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 1687,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-what-is-a-half",
+      "width": 1440,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 1687,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "fraction-what-is-a-half",
+      "width": 700,
+      "nodes": 7,
+      "tasks": 2,
+      "height": 2177,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 80,
+          "mathHeight": 80,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-intro-and-slope",
+      "width": 1920,
+      "nodes": 3,
+      "tasks": 2,
+      "height": 948,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 123,
+          "mathHeight": 70,
+          "noteHeight": 123
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-intro-and-slope",
+      "width": 1440,
+      "nodes": 3,
+      "tasks": 2,
+      "height": 948,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 123,
+          "mathHeight": 70,
+          "noteHeight": 123
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-intro-and-slope",
+      "width": 700,
+      "nodes": 3,
+      "tasks": 2,
+      "height": 1296,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 207,
+          "mathHeight": 70,
+          "noteHeight": 123
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-plotting-points",
+      "width": 1920,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1411,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 171,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 112,
+          "mathHeight": 112,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-plotting-points",
+      "width": 1440,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1411,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 171,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 112,
+          "mathHeight": 112,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-plotting-points",
+      "width": 700,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1855,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 255,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 147,
+          "mathHeight": 0,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 112,
+          "mathHeight": 112,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-simultaneous-intersections",
+      "width": 1920,
+      "nodes": 9,
+      "tasks": 0,
+      "height": 1673,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 107,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 102,
+          "mathHeight": 102,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 107,
+          "mathHeight": 107,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-simultaneous-intersections",
+      "width": 1440,
+      "nodes": 9,
+      "tasks": 0,
+      "height": 1673,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 107,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 102,
+          "mathHeight": 102,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 107,
+          "mathHeight": 107,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "linear-simultaneous-intersections",
+      "width": 700,
+      "nodes": 9,
+      "tasks": 0,
+      "height": 1945,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 268,
+          "mathHeight": 107,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 102,
+          "mathHeight": 102,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 107,
+          "mathHeight": 107,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "rectangle-area-from-tiles",
+      "width": 1920,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1589,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "rectangle-area-from-tiles",
+      "width": 1440,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1589,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "rectangle-area-from-tiles",
+      "width": 700,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1884,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 171,
+          "mathHeight": 0,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "slope-and-intercept",
+      "width": 1920,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1405,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 83,
+          "mathHeight": 83,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "slope-and-intercept",
+      "width": 1440,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1405,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 83,
+          "mathHeight": 83,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "slope-and-intercept",
+      "width": 700,
+      "nodes": 5,
+      "tasks": 3,
+      "height": 1819,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 231,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 83,
+          "mathHeight": 83,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-paraboloid-level-sets",
+      "width": 1920,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1263,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 134,
+          "mathHeight": 134,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 99,
+          "mathHeight": 99,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 21.7139
+    },
+    {
+      "id": "surface-paraboloid-level-sets",
+      "width": 1440,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1263,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 134,
+          "mathHeight": 134,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 99,
+          "mathHeight": 99,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 21.7139
+    },
+    {
+      "id": "surface-paraboloid-level-sets",
+      "width": 700,
+      "nodes": 5,
+      "tasks": 1,
+      "height": 1927,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 123,
+          "mathHeight": 0,
+          "noteHeight": 123
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 134,
+          "mathHeight": 134,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 99,
+          "mathHeight": 99,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 21.7139
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "width": 1920,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 1952,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 237,
+          "mathHeight": 71,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 94,
+          "mathHeight": 94,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 87,
+          "mathHeight": 87,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 181,
+          "mathHeight": 96,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "width": 1440,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 1952,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 237,
+          "mathHeight": 71,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 94,
+          "mathHeight": 94,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 87,
+          "mathHeight": 87,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 181,
+          "mathHeight": 96,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "width": 700,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 2641,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 237,
+          "mathHeight": 71,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 94,
+          "mathHeight": 94,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 87,
+          "mathHeight": 87,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 290,
+          "mathHeight": 96,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "width": 1920,
+      "nodes": 14,
+      "tasks": 0,
+      "height": 2179,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 120,
+          "mathHeight": 120,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 70,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 255,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "width": 1440,
+      "nodes": 14,
+      "tasks": 0,
+      "height": 2179,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 120,
+          "mathHeight": 120,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 70,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 255,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "width": 700,
+      "nodes": 14,
+      "tasks": 0,
+      "height": 3132,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 120,
+          "mathHeight": 120,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 113,
+          "mathHeight": 113,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 236,
+          "mathHeight": 70,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 152,
+          "mathHeight": 0,
+          "noteHeight": 152
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 255,
+          "mathHeight": 70,
+          "noteHeight": 171
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-cosine-and-phase-shift",
+      "width": 1920,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 1876,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 252,
+          "mathHeight": 86,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-cosine-and-phase-shift",
+      "width": 1440,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 1876,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 252,
+          "mathHeight": 86,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-cosine-and-phase-shift",
+      "width": 700,
+      "nodes": 9,
+      "tasks": 1,
+      "height": 2643,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 231,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 252,
+          "mathHeight": 86,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-quadrants-and-monotonicity",
+      "width": 1920,
+      "nodes": 8,
+      "tasks": 3,
+      "height": 1761,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 79,
+          "mathHeight": 79,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 71,
+          "mathHeight": 71,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 16.3472
+    },
+    {
+      "id": "trig-quadrants-and-monotonicity",
+      "width": 1440,
+      "nodes": 8,
+      "tasks": 3,
+      "height": 1761,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 79,
+          "mathHeight": 79,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 71,
+          "mathHeight": 71,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 16.3472
+    },
+    {
+      "id": "trig-quadrants-and-monotonicity",
+      "width": 700,
+      "nodes": 8,
+      "tasks": 3,
+      "height": 2444,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 181,
+          "mathHeight": 0,
+          "noteHeight": 181
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 86,
+          "mathHeight": 86,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 79,
+          "mathHeight": 79,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 71,
+          "mathHeight": 71,
+          "noteHeight": 0
+        }
+      ],
+      "overflows": [],
+      "mathMin": 16.3472
+    },
+    {
+      "id": "trig-unit-circle-to-sine",
+      "width": 1920,
+      "nodes": 7,
+      "tasks": 1,
+      "height": 1238,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 70,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-unit-circle-to-sine",
+      "width": 1440,
+      "nodes": 7,
+      "tasks": 1,
+      "height": 1405,
+      "rows": [
+        {
+          "mode": "interval-side",
+          "height": 147,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "interval-side",
+          "height": 152,
+          "mathHeight": 70,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    },
+    {
+      "id": "trig-unit-circle-to-sine",
+      "width": 700,
+      "nodes": 7,
+      "tasks": 1,
+      "height": 2069,
+      "rows": [
+        {
+          "mode": "ordered-stack",
+          "height": 231,
+          "mathHeight": 70,
+          "noteHeight": 147
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 70,
+          "mathHeight": 70,
+          "noteHeight": 0
+        },
+        {
+          "mode": "ordered-stack",
+          "height": 236,
+          "mathHeight": 70,
+          "noteHeight": 152
+        }
+      ],
+      "overflows": [],
+      "mathMin": 22
+    }
+  ],
+  "errors": []
+}

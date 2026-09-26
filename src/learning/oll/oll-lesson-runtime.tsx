@@ -935,6 +935,15 @@ export function LearningWhiteboard({
     left: 120,
     top: 120,
   });
+  const [teachingWidth, setTeachingWidth] = useState(1300);
+  const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets} | null>(null);
+  const [courseGeometryRevision, setCourseGeometryRevision] = useState(0);
+  const [overviewRequest, setOverviewRequest] = useState(0);
+  const automaticOverviewRef = useRef<string | null>(null);
+  const lastOverviewFrameRef = useRef("");
+  const overviewFrameSequenceRef = useRef(0);
+  const [teachingInkObstacles, setTeachingInkObstacles] = useState<WhiteboardRect[]>([]);
+  const [inkPinnedLayout, setInkPinnedLayout] = useState<{nodes:Record<string,WhiteboardRect>;attachments:Record<string,WhiteboardRect>} | undefined>();
   const [runtimeRegionBounds, setRuntimeRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
@@ -947,7 +956,7 @@ export function LearningWhiteboard({
     Record<string, WhiteboardRect>
   >({});
   const [interactionMeasuredSizes, setInteractionMeasuredSizes] = useState<
-    Record<string, { width: number; height: number; focusHeight: number }>
+    Record<string, { signature: string; width: number; height: number; controlsHeight: number; focusHeight: number }>
   >({});
   const [selectionQuestionOpen, setSelectionQuestionOpen] = useState(false);
   const [selectionQuestion, setSelectionQuestion] = useState("");
@@ -1123,22 +1132,21 @@ export function LearningWhiteboard({
       const tasks = topicTasks.filter((task) =>
         cluster.taskIds.includes(task.task_id));
       const controlsWidth = controls.length > 0 ? 360 : 0;
-      const tasksWidth = cluster.taskIds.length > 0 ? 330 : 0;
+      const tasksWidth = tasks.length > 0 ? 330 : 0;
       const controlsHeight = controls.length > 0
         ? 20 + controls.length * 24 + Math.max(0, controls.length - 1) * 6
         : 0;
-      const tasksHeight = cluster.taskIds.length > 0
-        ? 60 + cluster.taskIds.length * 220
-        : 0;
-      const visibleTasksHeight = tasks.length > 0
-        ? 60 + tasks.length * 220
-        : 0;
+      // Ownership is stable before a task opens; collision space is not.
+      // Invalidate measurements when visible content changes (including replay).
+      const signature = JSON.stringify([
+        controls.map((control) => control.alias), tasks.map((task) => task.task_id),
+      ]);
+      const tasksHeight = tasks.length > 0 ? 60 + tasks.length * 220 : 0;
       const estimatedWidth = Math.max(controlsWidth, tasksWidth);
       const estimatedHeight = controlsHeight + tasksHeight
         + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0);
-      const estimatedFocusHeight = controlsHeight + visibleTasksHeight
-        + (controlsHeight > 0 && visibleTasksHeight > 0 ? 28 : 0);
-      const measured = interactionMeasuredSizes[cluster.id];
+      const cached = interactionMeasuredSizes[cluster.id];
+      const measured = cached?.signature === signature ? cached : undefined;
       return {
         id: cluster.id,
         topic,
@@ -1146,10 +1154,11 @@ export function LearningWhiteboard({
         anchorNodeIds: cluster.nodeIds,
         controls,
         tasks,
-        controlsHeight,
+        signature,
+        controlsHeight: measured?.controlsHeight ?? controlsHeight,
         width: measured?.width ?? estimatedWidth,
         height: measured?.height ?? estimatedHeight,
-        focusHeight: measured?.focusHeight ?? estimatedFocusHeight,
+        focusHeight: measured?.focusHeight ?? estimatedHeight,
       };
     });
   });
@@ -1160,17 +1169,19 @@ export function LearningWhiteboard({
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
       const attachments = interactionPlans
-        .filter((plan) =>
-          plan.topic.id === topic.id && Boolean(plan.anchorNodeId))
-        .map((plan) => ({
-          id: plan.id,
-          anchorNodeId: plan.anchorNodeId,
-          anchorNodeIds: plan.anchorNodeIds,
-          width: plan.width,
-          height: plan.height,
-          focusHeight: plan.focusHeight,
-          gap: 42,
-        }));
+        .filter(plan => plan.topic.id === topic.id && Boolean(plan.anchorNodeId) && plan.height > 0)
+        .flatMap(plan => [
+          ...(plan.controls.length ? [{
+            id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
+            anchorNodeIds: plan.anchorNodeIds, width: plan.width,
+            height: plan.controlsHeight, focusHeight: plan.controlsHeight, gap: 24,
+          }] : []),
+          ...(plan.tasks.length ? [{
+            id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
+            anchorNodeIds: plan.anchorNodeIds, width: plan.width,
+            height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
+          }] : []),
+        ]);
       // Packaged/legacy lessons do not have a composer question region. Their
       // complete course region still belongs in the same collision layout as a
       // live lesson, even when it has no sliders or student tasks.
@@ -1181,15 +1192,20 @@ export function LearningWhiteboard({
         return [[runtimeRegionIdForTopic(topic.id), {
           x: portableCourseRegion?.x ?? 20,
           y: portableCourseRegion?.y ?? 20,
-          flow: "reading",
-          reservedWidth: Math.max(
+          flow: "teaching",
+          nodeSections: topic.nodeSections,
+          plannedSteps: topic.plannedSteps,
+          pinned: inkPinnedLayout,
+          ...(teachingViewport ? { composition: {...teachingViewport, mode: runtime?.deliverySettled && (runtime.completed || runtime.waiting) ? "overview" as const : "progressive" as const} } : {}),
+          reservedWidth: Math.min(teachingWidth, Math.max(
             MINIMUM_COURSE_READING_WIDTH,
             portableCourseRegion?.reservedWidth ?? 0,
-          ),
+          )),
+          obstacles: teachingInkObstacles,
           ...(attachments.length > 0 ? { attachments } : {}),
         } satisfies RegionLayoutConstraint]];
       }
-      const obstacles = questions.flatMap((question) => {
+      const obstacles = [...teachingInkObstacles, ...questions.flatMap((question) => {
         const rects: WhiteboardRect[] = [];
         if (question.position) {
           rects.push({
@@ -1201,15 +1217,19 @@ export function LearningWhiteboard({
         }
         if (question.source) rects.push(question.source.bounds);
         return rects;
-      });
+      })];
       return [[runtimeRegionIdForTopic(topic.id), {
         x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
         y: region.origin.y,
-        flow: "reading",
-        reservedWidth: Math.max(
+        flow: "teaching",
+          nodeSections: topic.nodeSections,
+          plannedSteps: topic.plannedSteps,
+        pinned: inkPinnedLayout,
+        ...(teachingViewport ? { composition: {...teachingViewport, mode: runtime?.deliverySettled && (runtime.completed || runtime.waiting) ? "overview" as const : "progressive" as const} } : {}),
+        reservedWidth: Math.min(teachingWidth, Math.max(
           MINIMUM_COURSE_READING_WIDTH,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
-        ),
+        )),
         ...(obstacles.length > 0 ? { obstacles } : {}),
         ...(attachments.length > 0 ? { attachments } : {}),
       } satisfies RegionLayoutConstraint]];
@@ -1217,6 +1237,13 @@ export function LearningWhiteboard({
   ), [
     courseRegionByQuestion,
     interactionPlans,
+    teachingWidth,
+    teachingViewport,
+    runtime?.completed,
+    runtime?.waiting,
+    runtime?.deliverySettled,
+    teachingInkObstacles,
+    inkPinnedLayout,
     portableCourseRegion,
     questions,
     runtime?.outline,
@@ -1245,6 +1272,7 @@ export function LearningWhiteboard({
       height: 300,
     };
     const attachmentBounds = runtimeAttachmentBounds[plan.id];
+    const taskBounds = runtimeAttachmentBounds[`${plan.id}:tasks`];
     const visualBounds = runtimeVisualRegionBounds[
       runtimeRegionIdForTopic(topic.id)
     ] ?? (presentationTopics.length === 1
@@ -1266,6 +1294,8 @@ export function LearningWhiteboard({
     };
     return [{
       id: plan.id,
+      signature: plan.signature,
+      controlsHeight: plan.controlsHeight,
       topic,
       controls,
       tasks,
@@ -1276,16 +1306,18 @@ export function LearningWhiteboard({
         y: interactionPosition.y,
       },
       tasksPosition: {
-        x: interactionPosition.x,
-        y: interactionPosition.y
-          + (controls.length > 0 ? plan.controlsHeight + 28 : 0),
+        x: taskBounds?.x ?? interactionPosition.x,
+        y: taskBounds?.y ?? (interactionPosition.y + (controls.length > 0 ? plan.controlsHeight + 28 : 0)),
       },
     }];
   });
 
   useLayoutEffect(() => {
     if (!enhancementLayer || coursePresentations.length === 0) return;
-    const frame = window.requestAnimationFrame(() => {
+    let frame = 0;
+    const measure = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
       const controlsElements = [...enhancementLayer.querySelectorAll<HTMLElement>(
         "[data-interaction-controls-id]",
       )];
@@ -1302,20 +1334,28 @@ export function LearningWhiteboard({
           ? controlsElement.offsetWidth || 360
           : 0;
         const tasksWidth = tasksElement ? tasksElement.offsetWidth || 330 : 0;
-        const controlsHeight = controlsElement?.offsetHeight || 0;
-        const tasksHeight = tasksElement?.offsetHeight || 0;
+        const controlsHeight = controlsElement
+          ? controlsElement.offsetHeight || presentation.controlsHeight : 0;
+        const tasksHeight = tasksElement
+          ? tasksElement.offsetHeight || 60 + presentation.tasks.length * 220 : 0;
         return [[presentation.id, {
-          width: Math.max(controlsWidth, tasksWidth, presentation.width),
-          height: Math.max(presentation.height, controlsHeight + tasksHeight
-            + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0)),
+          signature: presentation.signature,
+          controlsHeight,
+          width: Math.max(controlsWidth, tasksWidth),
+          height: controlsHeight + tasksHeight
+            + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0),
           focusHeight: controlsHeight + tasksHeight
             + (controlsHeight > 0 && tasksHeight > 0 ? 28 : 0),
         }]];
       }));
       setInteractionMeasuredSizes((current) =>
         JSON.stringify(current) === JSON.stringify(next) ? current : next);
-    });
-    return () => window.cancelAnimationFrame(frame);
+      });
+    };
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    enhancementLayer.querySelectorAll('[data-interaction-controls-id],[data-interaction-tasks-id]').forEach(element=>observer?.observe(element));
+    measure();
+    return () => { window.cancelAnimationFrame(frame); observer?.disconnect(); };
   }, [coursePresentations, enhancementLayer]);
 
   const occupiedRectsForQuestion = useCallback((questionId: string) => {
@@ -2242,6 +2282,8 @@ export function LearningWhiteboard({
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
+    setTeachingInkObstacles([]);
+    setInkPinnedLayout(undefined);
     inkSelectionVersionRef.current = {
       documentVersion: 0,
       selectedCount: 0,
@@ -2340,6 +2382,7 @@ export function LearningWhiteboard({
           typeof ink.setPenColor === "function" &&
           typeof ink.setSelectionColor === "function",
         );
+        let lastInkBoundsSignature: string | null = null;
         unsubscribeInkRef.current = ink.subscribe((state) => {
           if (!active) return;
           const next = normalizeInkState(state);
@@ -2359,6 +2402,26 @@ export function LearningWhiteboard({
             selectionRevision: next.selection_revision,
           };
           setInkState(next);
+          // Ink written on cards is annotation, not an obstacle that should
+          // chase its own card during reflow. Only free-board ink reserves space.
+          const inkBoundsSignature = JSON.stringify(next.content_bounds_list);
+          if (inkBoundsSignature !== lastInkBoundsSignature) {
+            lastInkBoundsSignature = inkBoundsSignature;
+            const cardBounds = measureBoardNodeBounds(mounted.elements.nodes);
+            const freeInk = next.content_bounds_list.filter(inkBounds => !cardBounds.some(card =>
+              inkBounds.x < card.x + card.width && inkBounds.x + inkBounds.width > card.x
+              && inkBounds.y < card.y + card.height && inkBounds.y + inkBounds.height > card.y));
+            setTeachingInkObstacles(current => JSON.stringify(current) === JSON.stringify(freeInk) ? current : freeInk);
+            if (next.component_count === 0) setInkPinnedLayout(undefined);
+            else if (freeInk.length < next.content_bounds_list.length) {
+              const nodes = Object.fromEntries([...viewport.querySelectorAll<HTMLElement>('.board-node[data-id]')].flatMap(element=>{
+                const rect=renderedWorldRect(element);
+                return rect && element.dataset.id ? [[element.dataset.id,rect]] : [];
+              }));
+              const pinned = {nodes,attachments:mounted.view.getAttachmentBoundsMap()};
+              setInkPinnedLayout(current=>JSON.stringify(current)===JSON.stringify(pinned)?current:pinned);
+            }
+          }
           if (
             next.component_count > 0
             && next.saved
@@ -2748,6 +2811,10 @@ export function LearningWhiteboard({
     const reachedCourseEnd = runtime.deliverySettled
       && (runtime.waiting || runtime.completed || reachedTargetTopicEnd);
     if (!reachedCourseEnd) {
+      if (automaticOverviewRef.current === courseId) {
+        automaticOverviewRef.current = null;
+        lastOverviewFrameRef.current = "";
+      }
       const currentStepBelongsToCourse = Boolean(
         runtime.currentStepId
         && topic.steps.some((step) => step.id === runtime.currentStepId),
@@ -2795,12 +2862,13 @@ export function LearningWhiteboard({
       && !observedInProgress
       && restoredCourseFocusRef.current !== courseId
       && !pendingCourseId;
-    if (!observedInProgress && !restoringLastCourse) return;
+    if (!observedInProgress && !restoringLastCourse && automaticOverviewRef.current !== courseId) return;
 
     const frame = window.requestAnimationFrame(() => {
       const view = mountedRef.current?.view;
       const viewport = viewportRef.current;
       if (!view || !viewport) return;
+      if (!observedInProgress && viewport.classList.contains("manual-navigation")) return;
       const region = topic.questionId
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
@@ -2856,15 +2924,23 @@ export function LearningWhiteboard({
 
       const bounds = unionWhiteboardRects(rects);
       if (!bounds) return;
-      cameraControllerRef.current?.request({
+      const signature = JSON.stringify([courseId, bounds, teachingViewport, overviewRequest]);
+      if (lastOverviewFrameRef.current === signature) return;
+      viewport.classList.remove("manual-navigation");
+      const sequence = ++overviewFrameSequenceRef.current;
+      const accepted = cameraControllerRef.current?.request({
         source: restoringLastCourse ? "course-restore" : "course-end",
         key: restoringLastCourse
-          ? `course-restore:${courseId}`
+          ? `course-restore:${courseId}:${sequence}`
           : `course-end:${courseId}:${playbackCourseTarget?.sequence
-            ?? runtime.cursor}`,
+            ?? runtime.cursor}:${sequence}`,
         courseId,
         rect: bounds,
       });
+      if (accepted) {
+        lastOverviewFrameRef.current = signature;
+        automaticOverviewRef.current = courseId;
+      }
       if (restoringLastCourse) restoredCourseFocusRef.current = courseId;
       coursesObservedInProgressRef.current.delete(courseId);
     });
@@ -2879,6 +2955,9 @@ export function LearningWhiteboard({
     presentationTopics,
     runtime,
     runtimeRegionIdForTopic,
+    courseGeometryRevision,
+    teachingViewport,
+    overviewRequest,
   ]);
 
   useLayoutEffect(() => {
@@ -2979,6 +3058,32 @@ export function LearningWhiteboard({
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || typeof ResizeObserver === "undefined") return;
+    const selector = '.board-node[data-id],[data-course-controls-id],[data-course-tasks-id]';
+    let signature = "";
+    let frame = 0;
+    const observed = new Set<Element>();
+    const refresh = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const elements = [...viewport.querySelectorAll<HTMLElement>(selector)];
+        for (const element of observed) if (!elements.includes(element as HTMLElement)) { observer.unobserve(element); observed.delete(element); }
+        for (const element of elements) if (!observed.has(element)) { observer.observe(element); observed.add(element); }
+        const next = JSON.stringify(elements.map(element => [element.dataset.id ?? element.dataset.courseControlsId ?? element.dataset.courseTasksId, renderedWorldRect(element)]));
+        if (next !== signature) { signature = next; setCourseGeometryRevision(revision=>revision+1); }
+      });
+    };
+    const observer = new ResizeObserver(refresh);
+    const mutation = new MutationObserver(records => {
+      if (records.some(record=>record.type === 'childList' || (record.target instanceof Element && record.target.matches(selector)))) refresh();
+    });
+    mutation.observe(viewport,{subtree:true,childList:true,attributes:true,attributeFilter:['style']});
+    refresh();
+    return () => { window.cancelAnimationFrame(frame); observer.disconnect(); mutation.disconnect(); };
+  }, []);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport || typeof ResizeObserver === "undefined") return;
     const root = viewport.closest(".learning-workspace") ?? viewport.parentElement;
     let animationFrame = 0;
     let lastInsets = "";
@@ -2988,7 +3093,12 @@ export function LearningWhiteboard({
         animationFrame = 0;
         const mounted = mountedRef.current;
         if (!mounted) return;
+        if (viewport.clientWidth > 0) setTeachingWidth(Math.max(480, Math.min(1300, viewport.clientWidth - 64)));
         const insets = learningBoardInsets(viewport);
+        if (viewport.clientWidth > 0 && viewport.clientHeight > 0) {
+          const next = {width:viewport.clientWidth,height:viewport.clientHeight,insets};
+          setTeachingViewport(current=>JSON.stringify(current)===JSON.stringify(next)?current:next);
+        }
         const signature = JSON.stringify(insets);
         if (signature === lastInsets) return;
         lastInsets = signature;
@@ -3021,9 +3131,9 @@ export function LearningWhiteboard({
     const mutation = typeof MutationObserver === "undefined"
       ? null
       : new MutationObserver((records) => {
-          if (mutationsTouchBoardOcclusion(records)) syncOcclusions();
+          if (records.some(record=>record.type === "attributes") || mutationsTouchBoardOcclusion(records)) syncOcclusions();
         });
-    if (root) mutation?.observe(root, { childList: true, subtree: true });
+    if (root) mutation?.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-learning-board-occlusion"] });
     syncOcclusions();
     update();
     return () => {
@@ -3041,6 +3151,15 @@ export function LearningWhiteboard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
+      {runtime && (runtime.completed || runtime.waiting) ? (
+        <button type="button" aria-label="查看整课" data-learning-board-occlusion=""
+          style={{position:'absolute',right:24,top:88,zIndex:5,padding:'8px 14px',borderRadius:12,background:'var(--surface, #fffdf7)',border:'1px solid #d8d4ca',color:'#176b62'}}
+          onClick={()=>{
+            viewportRef.current?.classList.remove('manual-navigation');
+            lastOverviewFrameRef.current = '';
+            setOverviewRequest(value=>value+1);
+          }}>查看整课</button>
+      ) : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0

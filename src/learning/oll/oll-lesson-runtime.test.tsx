@@ -1182,6 +1182,52 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
   });
 
+  it("only reserves visible tasks and shrinks again when tasks close", async () => {
+    const layouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "visible-task-layout", startAtEnd: true });
+      const [available, setAvailable] = useState(false);
+      if (!runtime) return null;
+      return <><button onClick={() => setAvailable(value => !value)}>切换练习</button>
+        <OllLessonBoard runtime={{ ...runtime,
+          studentTasks: runtime.studentTasks.map(task => ({...task, available})),
+        }} /></>;
+    }
+    render(<Probe />);
+    const heights = () => {
+      const latest = layouts.mock.calls.at(-1)?.[0];
+      return Object.values(latest ?? {}).flatMap(region =>
+        (region.attachments ?? []).map(attachment => attachment.height));
+    };
+    await waitFor(() => expect(heights()).toEqual([44]));
+    fireEvent.click(screen.getByText("切换练习"));
+    await waitFor(() => expect(heights()).toEqual([44, 280]));
+    fireEvent.click(screen.getByText("切换练习"));
+    await waitFor(() => expect(heights()).toEqual([44]));
+  });
+
+  it("surfaces rejected input and prevents later input from becoming a successful operation", async () => {
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "rejected-input-boundary", startAtEnd: true });
+      if (!runtime) return null;
+      return <>
+        <button onClick={() => runtime.handleStudentVariableInput("missing", 1,
+          { phase: "start", control: "slider", input: "mouse" })}>非法输入</button>
+        <button onClick={() => runtime.handleStudentVariableInput("theta", 2,
+          { phase: "start", control: "slider", input: "mouse" })}>后续输入</button>
+        <span data-testid="failure">{runtime.failure?.message}</span>
+        <span data-testid="operations">{runtime.studentOperations.length}</span>
+      </>;
+    }
+    render(<Probe />);
+    fireEvent.click(screen.getByText("非法输入"));
+    await waitFor(() => expect(screen.getByTestId("failure").textContent).toContain("missing"));
+    fireEvent.click(screen.getByText("后续输入"));
+    expect(screen.getByTestId("operations").textContent).toBe("0");
+  });
+
   it("includes host controls in collision layout without a composer question region", async () => {
     const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
     render(<PackagedLessonProbe />);
@@ -1190,7 +1236,7 @@ describe("OLL lesson Runtime integration", () => {
         __legacy__: expect.objectContaining({
           x: 20,
           y: 20,
-          flow: "reading",
+          flow: "teaching",
           attachments: expect.arrayContaining([
             expect.objectContaining({
               anchorNodeIds: [
@@ -1213,7 +1259,7 @@ describe("OLL lesson Runtime integration", () => {
         __legacy__: expect.objectContaining({
           x: 20,
           y: 20,
-          flow: "reading",
+          flow: "teaching",
           reservedWidth: 1_300,
           attachments: expect.arrayContaining([
             expect.objectContaining({
@@ -1271,7 +1317,7 @@ describe("OLL lesson Runtime integration", () => {
         __legacy__: expect.objectContaining({
           x: 2_694,
           y: 160,
-          flow: "reading",
+          flow: "teaching",
           reservedWidth: 1_300,
           obstacles: [{
             x: 2_400,
@@ -1700,6 +1746,32 @@ describe("OLL lesson Runtime integration", () => {
       && position.y < inkBounds.y + inkBounds.height
       && position.y + 130 > inkBounds.y,
     ).toBe(false);
+  });
+
+  it("reserves free-board ink without reclassifying it on selection changes", async () => {
+    const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
+    const bounds = { x: 20_000, y: 100, width: 200, height: 100 };
+    let emit: (state: InkRuntimeState) => void = () => undefined;
+    const state: InkRuntimeState = {
+      mode: "navigate", component_count: 1, selected_count: 0,
+      selection_revision: 0, document_version: 1, saved: true,
+      content_bounds: bounds,
+    };
+    mountInkRuntimeMock.mockReturnValue({
+      ready: Promise.resolve(),
+      subscribe: (listener: typeof emit) => { emit = listener; listener(state); return () => undefined; },
+      setMode: vi.fn(), destroy: vi.fn(() => Promise.resolve()),
+    });
+    render(<InkRuntimeProbe />);
+    await waitFor(() => expect(setRegionLayouts.mock.calls.at(-1)?.[0].__legacy__.obstacles).toContainEqual(bounds));
+    const count = setRegionLayouts.mock.calls.length;
+    act(() => emit({ ...state, selected_count: 1, selection_revision: 1 }));
+    await act(async () => undefined);
+    for (const [regions] of setRegionLayouts.mock.calls.slice(count)) {
+      expect(regions.__legacy__.obstacles).toContainEqual(bounds);
+    }
+    act(() => emit({ ...state, component_count: 0, document_version: 2, content_bounds: undefined }));
+    await waitFor(() => expect(setRegionLayouts.mock.calls.at(-1)?.[0].__legacy__.obstacles).not.toContainEqual(bounds));
   });
 
   it("mounts writing as a persistent whiteboard capability", async () => {
@@ -2568,7 +2640,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
     const controlsCard = screen.getByTestId("oll-variable-controls");
     const tasksCard = screen.getByTestId("oll-student-tasks");
-    expect(tasksCard.style.left).toBe(controlsCard.style.left);
+    expect(Number.parseFloat(tasksCard.style.left)).toBeGreaterThanOrEqual(20);
     expect(Number.parseFloat(tasksCard.style.top)).toBeGreaterThan(
       Number.parseFloat(controlsCard.style.top),
     );
@@ -2626,6 +2698,57 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => {
       expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     });
+  });
+
+  it("unlocks an after-lesson task with a practice start transition at normal playback completion and manual Beat completion without page refresh", async () => {
+    vi.useFakeTimers();
+    const practiceSource = unitCircleSineLessonSource
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => {
+        const event = JSON.parse(line) as CanonicalEvent;
+        if (event.event === "lesson.open" && event.lesson?.tasks?.[0]) {
+          event.lesson.tasks[0].start = {
+            kind: "practice",
+            variables: ["theta"],
+          };
+        }
+        return JSON.stringify(event);
+      })
+      .join("\n");
+
+    function PracticeTaskProbe({ storageKey }: { storageKey: string }) {
+      const runtime = useOllLessonRuntime({
+        source: practiceSource,
+        storageKey,
+      });
+      if (!runtime) return null;
+      return (
+        <div style={{ width: 1200, height: 800 }}>
+          <button type="button" onClick={() => runtime.play()}>播放课程</button>
+          <button type="button" onClick={() => runtime.nextBeat()}>下一 Beat</button>
+          <OllLessonBoard runtime={runtime} />
+        </div>
+      );
+    }
+
+    const played = render(<PracticeTaskProbe storageKey="practice-task-play-test" />);
+    fireEvent.click(screen.getByRole("button", { name: "播放课程" }));
+    act(() => {
+      vi.advanceTimersByTime(120_000);
+    });
+    expect(screen.getByTestId("oll-student-tasks")).toBeTruthy();
+    expect(screen.getByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    expect((screen.getByRole("slider", { name: "旋转角 θ" }) as HTMLInputElement).value).toBe("0");
+    played.unmount();
+
+    render(<PracticeTaskProbe storageKey="practice-task-beat-test" />);
+    for (let i = 0; i < 12; i += 1) {
+      fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
+    }
+    expect(screen.getByTestId("oll-student-tasks")).toBeTruthy();
+    expect(screen.getByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    expect((screen.getByRole("slider", { name: "旋转角 θ" }) as HTMLInputElement).value).toBe("0");
   });
 
   it("groups the outline and seeks backwards to a selected Step", () => {

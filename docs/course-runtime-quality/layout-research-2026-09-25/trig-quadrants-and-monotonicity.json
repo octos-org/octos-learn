@@ -1,0 +1,687 @@
+{
+  "id": "trig-quadrants-and-monotonicity",
+  "version": "0.1.0",
+  "title": "单位圆与正弦函数的单调性及象限循环",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 387.2264404296875,
+          "y": 260.0694274902344,
+          "w": 562.54541015625,
+          "h": 485.8346862792969,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 970.2280883789062,
+          "y": 260.0694274902344,
+          "w": 562.5453491210938,
+          "h": 460.2644348144531,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 1004px; top: 20px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 1644.85009765625,
+          "y": 258.86541748046875,
+          "w": 553.182373046875,
+          "h": 201.85595703125,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 1004px; top: 20px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 518px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 387.2264404296875,
+          "y": 896.7685546875,
+          "w": 287.665283203125,
+          "h": 136.8009033203125,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 518px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 641px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 387.2264404296875,
+          "y": 1054.025634765625,
+          "w": 311.95703125,
+          "h": 144.4718017578125,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 641px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n4.71 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 387.2264404296875,
+          "y": 776.58837890625,
+          "w": 460.264404296875,
+          "h": 58.8116455078125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 288.8462829589844,
+          "y": 235.8214874267578,
+          "w": 423.4545593261719,
+          "h": 365.71075439453125,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 288.8462829589844,
+          "y": 684.29833984375,
+          "w": 423.4545593261719,
+          "h": 346.462890625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 528px; top: 20px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 777.4182739257812,
+          "y": 234.9151611328125,
+          "w": 416.40643310546875,
+          "h": 151.946533203125,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 528px; top: 20px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 894px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 288.8462829589844,
+          "y": 1076.9561767578125,
+          "w": 216.53927612304688,
+          "h": 102.9764404296875,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 894px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1017px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 288.8462829589844,
+          "y": 1195.3310546875,
+          "w": 234.82479858398438,
+          "h": 108.750732421875,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 1017px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n4.71 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 288.8462829589844,
+          "y": 624.6297607421875,
+          "w": 346.4627990722656,
+          "h": 44.270263671875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 203.3333282470703,
+          "y": 173.66665649414062,
+          "w": 293.3333740234375,
+          "h": 253.33334350585938,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 203.3333282470703,
+          "y": 484.33331298828125,
+          "w": 293.3333740234375,
+          "h": 240,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 862px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 203.10781860351562,
+          "y": 734.3721923828125,
+          "w": 288.4510498046875,
+          "h": 105.255615234375,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 20px; top: 862px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1066px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 203.3333282470703,
+          "y": 871,
+          "w": 150.00001525878906,
+          "h": 71.33331298828125,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 1066px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1189px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 203.3333282470703,
+          "y": 953,
+          "w": 162.6666717529297,
+          "h": 75.3333740234375,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 1189px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n4.71 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 203.3333282470703,
+          "y": 443,
+          "w": 240.00001525878906,
+          "h": 30.66668701171875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 453.4142150878906,
+          "y": 116,
+          "w": 288.1789245605469,
+          "h": 248.88177490234375,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 752.0723876953125,
+          "y": 116,
+          "w": 288.1788330078125,
+          "h": 235.78271484375,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 1004px; top: 20px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 1097.66552734375,
+          "y": 115.38320922851562,
+          "w": 283.38232421875,
+          "h": 103.40609741210938,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 1004px; top: 20px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 518px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 453.4142150878906,
+          "y": 442.1661376953125,
+          "w": 147.36422729492188,
+          "h": 70.079833984375,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 518px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 641px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 453.4142150878906,
+          "y": 522.7252197265625,
+          "w": 159.80831909179688,
+          "h": 74.00958251953125,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 641px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝜃\n,\n𝜃\n∈\n[\n3\n𝜋\n2\n,\n2\n𝜋\n]\n↑\ny=sinθ,θ∈[\n2\n3π\n\t​\n\n,2π]↑",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 802px; width: 329px; height: 86px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>sin</mi",
+          "x": 453.4142150878906,
+          "y": 628.1724853515625,
+          "w": 215.47921752929688,
+          "h": 56.32586669921875,
+          "nw": 329,
+          "nh": 86,
+          "style": "left: 20px; top: 802px; width: 329px; height: 86px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n增区间\n:\n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n,\n减区间\n:\n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\ny=sinx增区间:[2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n],减区间:[2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 936px; width: 660px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.795396); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/199",
+          "x": 453.4142150878906,
+          "y": 715.93603515625,
+          "w": 432.2684020996094,
+          "h": 49.7763671875,
+          "nw": 660,
+          "nh": 76,
+          "style": "left: 20px; top: 936px; width: 660px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n 在 \n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n 上单调递增，在 \n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\n 上单调递减 \n(\n𝑘\n∈\n𝑍\n)\ny=sinx 在 [2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n] 上单调递增，在 [2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n] 上单调递减 (k∈Z)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1028px; width: 660px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.639918); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/19",
+          "x": 453.4142150878906,
+          "y": 776.191650390625,
+          "w": 432.2684020996094,
+          "h": 49.7763671875,
+          "nw": 660,
+          "nh": 76,
+          "style": "left: 20px; top: 1028px; width: 660px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n2.09 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 453.4142150878906,
+          "y": 380.60064697265625,
+          "w": 235.78274536132812,
+          "h": 30.12774658203125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至 3π/2 弧度（约 4.71），观察动点到达最低点时的纵坐标。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 1120px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至 3",
+          "x": 917.1202392578125,
+          "y": 836.4472045898438,
+          "w": 216.1341552734375,
+          "h": 99.83929443359375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 1120px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 471.2908020019531,
+          "y": 116,
+          "w": 172.97299194335938,
+          "h": 149.3857421875,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 471.2908020019531,
+          "y": 299.194091796875,
+          "w": 172.97299194335938,
+          "h": 141.5233154296875,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 528px; top: 20px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 670.8629760742188,
+          "y": 115.6297836303711,
+          "w": 170.09393310546875,
+          "h": 62.06720733642578,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 528px; top: 20px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 894px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><m",
+          "x": 471.2908020019531,
+          "y": 459.58721923828125,
+          "w": 88.45211791992188,
+          "h": 42.0638427734375,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 894px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1017px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 471.2908020019531,
+          "y": 507.9410400390625,
+          "w": 95.92135620117188,
+          "h": 44.42254638671875,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 1017px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝜃\n,\n𝜃\n∈\n[\n3\n𝜋\n2\n,\n2\n𝜋\n]\n↑\ny=sinθ,θ∈[\n2\n3π\n\t​\n\n,2π]↑",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1178px; width: 329px; height: 86px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>sin</m",
+          "x": 471.2908020019531,
+          "y": 571.2333984375,
+          "w": 129.33663940429688,
+          "h": 33.808349609375,
+          "nw": 329,
+          "nh": 86,
+          "style": "left: 20px; top: 1178px; width: 329px; height: 86px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n增区间\n:\n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n,\n减区间\n:\n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\ny=sinx增区间:[2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n],减区间:[2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1312px; width: 660px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.795396); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/19",
+          "x": 471.2908020019531,
+          "y": 623.9114990234375,
+          "w": 259.4594421386719,
+          "h": 29.87713623046875,
+          "nw": 660,
+          "nh": 76,
+          "style": "left: 20px; top: 1312px; width: 660px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n 在 \n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n 上单调递增，在 \n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\n 上单调递减 \n(\n𝑘\n∈\n𝑍\n)\ny=sinx 在 [2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n] 上单调递增，在 [2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n] 上单调递减 (k∈Z)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1404px; width: 660px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.639918); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/19",
+          "x": 471.2908020019531,
+          "y": 660.07861328125,
+          "w": 259.4594421386719,
+          "h": 29.87713623046875,
+          "nw": 660,
+          "nh": 76,
+          "style": "left: 20px; top: 1404px; width: 660px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n2.09 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 471.2908020019531,
+          "y": 274.82061767578125,
+          "w": 141.52334594726562,
+          "h": 18.08355712890625,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至 3π/2 弧度（约 4.71），观察动点到达最低点时的纵坐标。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 1496px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至 3",
+          "x": 749.6200561523438,
+          "y": 696.2456665039062,
+          "w": 129.72967529296875,
+          "h": 59.92626953125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 1496px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与正弦曲线联动\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与正弦曲线联动</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=",
+          "x": 183.00222778320312,
+          "y": 150,
+          "w": 157.91110229492188,
+          "h": 136.37777709960938,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" ar",
+          "x": 183.00222778320312,
+          "y": 317.2422180175781,
+          "w": 157.91110229492188,
+          "h": 129.19998168945312,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "四个象限的角度范围\n第 I 象限: [0, π/2]\n第 II 象限: [π/2, π]\n第 III 象限: [π, 3π/2]\n第 IV 象限: [3π/2, 2π]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 862px; width: 432px; height: 156px;\"><div class=\"node-title\">四个象限的角度范围</div><ul class=\"content-list\"><li>第 I 象限: [0, π/2]</li><li>第 II 象限: [π/2, π]</li><li>第 III 象限: [π, 3π/2]</li><li>第 IV 象限: [3π/2, 2π]</li></ul></article>",
+          "x": 182.8808135986328,
+          "y": 451.84649658203125,
+          "w": 155.28282165527344,
+          "h": 56.66259765625,
+          "nw": 432,
+          "nh": 156,
+          "style": "left: 20px; top: 862px; width: 432px; height: 156px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n0\n,\n𝜋\n2\n]\nx∈[0,\n2\nπ\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↑\n0\n→\n1\n⇒sin(x)↑0→1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1066px; width: 225px; height: 107px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 183.00222778320312,
+          "y": 525.3977661132812,
+          "w": 80.75,
+          "h": 38.401123046875,
+          "nw": 225,
+          "nh": 107,
+          "style": "left: 20px; top: 1066px; width: 225px; height: 107px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑥\n∈\n[\n𝜋\n2\n,\n3\n𝜋\n2\n]\nx∈[\n2\nπ\n\t​\n\n,\n2\n3π\n\t​\n\n]\n⇒\nsin\n⁡\n(\n𝑥\n)\n↓\n1\n→\n−\n1\n⇒sin(x)↓1→−1",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1189px; width: 244px; height: 113px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><",
+          "x": 183.00222778320312,
+          "y": 569.5411376953125,
+          "w": 87.56887817382812,
+          "h": 40.554443359375,
+          "nw": 244,
+          "nh": 113,
+          "style": "left: 20px; top: 1189px; width: 244px; height: 113px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝜃\n,\n𝜃\n∈\n[\n3\n𝜋\n2\n,\n2\n𝜋\n]\n↑\ny=sinθ,θ∈[\n2\n3π\n\t​\n\n,2π]↑",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-03-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1350px; width: 329px; height: 86px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>sin</m",
+          "x": 183.00222778320312,
+          "y": 627.3222045898438,
+          "w": 118.07443237304688,
+          "h": 30.86444091796875,
+          "nw": 329,
+          "nh": 86,
+          "style": "left: 20px; top: 1350px; width: 329px; height: 86px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n增区间\n:\n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n,\n减区间\n:\n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\ny=sinx增区间:[2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n],减区间:[2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n]",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1484px; width: 652px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.785166); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/19",
+          "x": 183.00222778320312,
+          "y": 675.413330078125,
+          "w": 233.99557495117188,
+          "h": 27.27557373046875,
+          "nw": 652,
+          "nh": 76,
+          "style": "left: 20px; top: 1484px; width: 652px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝑥\n 在 \n[\n2\n𝑘\n𝜋\n−\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n𝜋\n2\n]\n 上单调递增，在 \n[\n2\n𝑘\n𝜋\n+\n𝜋\n2\n,\n2\n𝑘\n𝜋\n+\n3\n𝜋\n2\n]\n 上单调递减 \n(\n𝑘\n∈\n𝑍\n)\ny=sinx 在 [2kπ−\n2\nπ\n\t​\n\n,2kπ+\n2\nπ\n\t​\n\n] 上单调递增，在 [2kπ+\n2\nπ\n\t​\n\n,2kπ+\n2\n3π\n\t​\n\n] 上单调递减 (k∈Z)",
+          "html": "<article data-id=\"trig-quadrants-and-monotonicity-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-quadrants-and-monotonicity\" style=\"left: 20px; top: 1576px; width: 652px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display math-fitted\"><span class=\"katex\" style=\"transform: scale(0.631687); transform-origin: left center;\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/19",
+          "x": 183.00222778320312,
+          "y": 708.4310913085938,
+          "w": 233.99557495117188,
+          "h": 27.27557373046875,
+          "nw": 652,
+          "nh": 76,
+          "style": "left: 20px; top: 1576px; width: 652px; height: 76px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n2.09 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-controls-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\"",
+          "x": 183.00222778320312,
+          "y": 294.9910888671875,
+          "w": 129.19998168945312,
+          "h": 16.5089111328125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-quadrants-and-monotonicity-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至 3π/2 弧度（约 4.71），观察动点到达最低点时的纵坐标。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region\" data-interaction-tasks-id=\"trig-quadrants-and-monotonicity-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"单位圆与正弦函数的单调性及象限循环的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 1668px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至 3π",
+          "x": 183.00222778320312,
+          "y": 741.4488525390625,
+          "w": 118.43331909179688,
+          "h": 54.7081298828125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 1668px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 9
+}

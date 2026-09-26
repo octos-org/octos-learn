@@ -1,0 +1,609 @@
+{
+  "id": "fraction-comparing-unit-shares",
+  "version": "0.1.0",
+  "title": "直观理解分数的大小比较",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 698.2000122070312,
+          "y": 216.60000610351562,
+          "w": 523.6000366210938,
+          "h": 499.8000183105469,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 1255.1201171875,
+          "y": 216.60000610351562,
+          "w": 67.8299560546875,
+          "h": 90.44000244140625,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 1341.989990234375,
+          "y": 216.60000610351562,
+          "w": 129.7100830078125,
+          "h": 90.44000244140625,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 1490.390869140625,
+          "y": 215.97769165039062,
+          "w": 286.29833984375,
+          "h": 161.89462280273438,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 698.2000122070312,
+          "y": 744.9600219726562,
+          "w": 428.40008544921875,
+          "h": 90.44000244140625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 522.9307861328125,
+          "y": 203.10000610351562,
+          "w": 394.138427734375,
+          "h": 376.2230529785156,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 942.1507568359375,
+          "y": 203.10000610351562,
+          "w": 51.058837890625,
+          "h": 68.07846069335938,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 1007.5419311523438,
+          "y": 203.10000610351562,
+          "w": 97.63885498046875,
+          "h": 68.07846069335938,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 1119.250244140625,
+          "y": 202.63156127929688,
+          "w": 215.51025390625,
+          "h": 121.86572265625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 522.9307861328125,
+          "y": 600.821533203125,
+          "w": 322.4769287109375,
+          "h": 68.0784912109375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 133.51153564453125,
+          "y": 193.15000915527344,
+          "w": 432.9769287109375,
+          "h": 413.296142578125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 594.0415649414062,
+          "y": 193.15000915527344,
+          "w": 56.09014892578125,
+          "h": 74.78694152832031,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 665.8763427734375,
+          "y": 193.15000915527344,
+          "w": 107.26019287109375,
+          "h": 74.78694152832031,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 788.5924072265625,
+          "y": 192.63540649414062,
+          "w": 236.7467041015625,
+          "h": 133.8743896484375,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 133.51153564453125,
+          "y": 630.0631103515625,
+          "w": 354.2538757324219,
+          "h": 74.78692626953125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 114.39881896972656,
+          "y": 160,
+          "w": 496.279052734375,
+          "h": 473.720947265625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 642.25927734375,
+          "y": 160,
+          "w": 64.29071044921875,
+          "h": 85.72093200683594,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 724.5964965820312,
+          "y": 160,
+          "w": 122.94183349609375,
+          "h": 85.72093200683594,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 865.25390625,
+          "y": 159.41015625,
+          "w": 271.3594970703125,
+          "h": 153.44711303710938,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 179px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfr",
+          "x": 642.25927734375,
+          "y": 339.33721923828125,
+          "w": 122.94183349609375,
+          "h": 85.72091674804688,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 613px; top: 179px; width: 500px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>分子相同（为1）时：分母越大，分数越小</mtex",
+          "x": 783.2476196289062,
+          "y": 339.33721923828125,
+          "w": 563.9534301757812,
+          "h": 81.20928955078125,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 613px; top: 179px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 279px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>3</mn><mn>4</mn></mfr",
+          "x": 642.25927734375,
+          "y": 452.1278991699219,
+          "w": 122.94183349609375,
+          "h": 85.72091674804688,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 488px; top: 279px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 114.39881896972656,
+          "y": 660.7906494140625,
+          "w": 406.0465087890625,
+          "h": 85.720947265625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请调整每行方格数，观察分成4份时，单份",
+          "x": 114.39881896972656,
+          "y": 764.55810546875,
+          "w": 372.20928955078125,
+          "h": 171.935302734375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 52,
+          "y": 182.92588806152344,
+          "w": 351.8389892578125,
+          "h": 335.8463134765625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 426.2287292480469,
+          "y": 182.92588806152344,
+          "w": 45.579132080078125,
+          "h": 60.77220153808594,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 484.6020202636719,
+          "y": 182.92588806152344,
+          "w": 87.16012573242188,
+          "h": 60.77220153808594,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 584.3216552734375,
+          "y": 182.50772094726562,
+          "w": 192.38140869140625,
+          "h": 108.78692626953125,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 179px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfr",
+          "x": 426.2287292480469,
+          "y": 310.06768798828125,
+          "w": 87.16012573242188,
+          "h": 60.772216796875,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 613px; top: 179px; width: 500px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>分子相同（为1）时：分母越大，分数越小</mtex",
+          "x": 526.1829833984375,
+          "y": 310.06768798828125,
+          "w": 399.8170166015625,
+          "h": 57.57366943359375,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 613px; top: 179px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 279px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>3</mn><mn>4</mn></mfr",
+          "x": 426.2287292480469,
+          "y": 390.0311279296875,
+          "w": 87.16012573242188,
+          "h": 60.77215576171875,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 488px; top: 279px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 52,
+          "y": 537.96337890625,
+          "w": 287.8682556152344,
+          "h": 60.772216796875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请调整每行方格数，观察分成4份时，单份",
+          "x": 52,
+          "y": 611.5297241210938,
+          "w": 263.8792419433594,
+          "h": 121.89422607421875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">单位正方形铺成长方形</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"",
+          "x": 42,
+          "y": 173.11920166015625,
+          "w": 299.1611328125,
+          "h": 285.5628967285156,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 488px; top: 20px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac",
+          "x": 360.19866943359375,
+          "y": 173.11920166015625,
+          "w": 38.75494384765625,
+          "h": 51.67327880859375,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 561px; top: 20px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 409.83221435546875,
+          "y": 173.11920166015625,
+          "w": 74.11038208007812,
+          "h": 51.67327880859375,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 561px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 686px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">直观观察</div><ul class=\"content-list\"><li>总长度相同的情况下：</li><li>分成 2 份，每份更大</li><li>分成 4 份，每份更小</li></ul></article>",
+          "x": 494.6216735839844,
+          "y": 172.76364135742188,
+          "w": 163.57778930664062,
+          "h": 92.49917602539062,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 686px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 732px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfra",
+          "x": 42,
+          "y": 657.21630859375,
+          "w": 74.11036682128906,
+          "h": 51.67333984375,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 20px; top: 732px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 145px; top: 732px; width: 500px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>分子相同（为1）时：分母越大，分数越小</mtex",
+          "x": 126.98896026611328,
+          "y": 657.21630859375,
+          "w": 339.9558410644531,
+          "h": 48.95361328125,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 145px; top: 732px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-comparing-unit-shares\" style=\"left: 20px; top: 832px; width: 109px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>3</mn><mn>4</mn></mfra",
+          "x": 42,
+          "y": 725.20751953125,
+          "w": 74.11036682128906,
+          "h": 51.6732177734375,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 20px; top: 832px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-controls-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"1\" max=\"8\" step=\"1\" ar",
+          "x": 42,
+          "y": 474.9999694824219,
+          "w": 244.7681884765625,
+          "h": 51.673309326171875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region\" data-interaction-tasks-id=\"fraction-comparing-unit-shares-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"直观理解分数的大小比较的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请调整每行方格数，观察分成4份时，单份",
+          "x": 42,
+          "y": 537.5518798828125,
+          "w": 224.370849609375,
+          "h": 103.64404296875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 12
+}

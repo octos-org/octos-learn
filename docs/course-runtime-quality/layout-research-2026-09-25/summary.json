@@ -1,0 +1,482 @@
+[
+  {
+    "id": "fraction-comparing-unit-shares",
+    "title": "直观理解分数的大小比较",
+    "version": "0.1.0",
+    "catalogSupplement": true,
+    "widths": {
+      "1920": {
+        "scale": 0.758,
+        "rectOccupancy": 0.241,
+        "controlTaskEdgeGapPx": 375,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.582,
+        "rectOccupancy": 0.241,
+        "controlTaskEdgeGapPx": 288,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.475,
+        "rectOccupancy": 0.53,
+        "controlTaskEdgeGapPx": 327,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "fraction-equivalent-visuals",
+    "title": "等价分数的图形直观与原理",
+    "version": "0.1.0",
+    "catalogSupplement": true,
+    "widths": {
+      "1920": {
+        "scale": 0.631,
+        "rectOccupancy": 0.237,
+        "controlTaskEdgeGapPx": 383,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.458,
+        "rectOccupancy": 0.237,
+        "controlTaskEdgeGapPx": 278,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.363,
+        "rectOccupancy": 0.574,
+        "controlTaskEdgeGapPx": 394,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "fraction-notation-and-parts",
+    "title": "直观理解分数的意义与结构",
+    "version": "0.1.0",
+    "catalogSupplement": true,
+    "widths": {
+      "1920": {
+        "scale": 0.797,
+        "rectOccupancy": 0.24,
+        "controlTaskEdgeGapPx": 378,
+        "nodeCount": 6,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.578,
+        "rectOccupancy": 0.24,
+        "controlTaskEdgeGapPx": 274,
+        "nodeCount": 6,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.485,
+        "rectOccupancy": 0.605,
+        "controlTaskEdgeGapPx": 330,
+        "nodeCount": 6,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "fraction-what-is-a-half",
+    "title": "认识分数的初步概念：从方格到二分之一",
+    "version": "0.1.0",
+    "catalogSupplement": true,
+    "widths": {
+      "1920": {
+        "scale": 0.677,
+        "rectOccupancy": 0.416,
+        "controlTaskEdgeGapPx": 365,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.528,
+        "rectOccupancy": 0.416,
+        "controlTaskEdgeGapPx": 285,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.427,
+        "rectOccupancy": 0.566,
+        "controlTaskEdgeGapPx": 359,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "linear-intro-and-slope",
+    "title": "正比例函数 y = kx 与斜率的几何意义",
+    "version": "0.1.0",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 1.09,
+        "rectOccupancy": 0.29,
+        "controlTaskEdgeGapPx": 934,
+        "nodeCount": 3,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.796,
+        "rectOccupancy": 0.29,
+        "controlTaskEdgeGapPx": 681,
+        "nodeCount": 3,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.756,
+        "rectOccupancy": 0.759,
+        "controlTaskEdgeGapPx": 177,
+        "nodeCount": 3,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "linear-plotting-points",
+    "title": "一次函数 y = 2x - 1 的图像本质与画法",
+    "version": "0.1.0",
+    "catalogSupplement": true,
+    "widths": {
+      "1920": {
+        "scale": 0.913,
+        "rectOccupancy": 0.346,
+        "controlTaskEdgeGapPx": 376,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.603,
+        "rectOccupancy": 0.346,
+        "controlTaskEdgeGapPx": 248,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.494,
+        "rectOccupancy": 0.53,
+        "controlTaskEdgeGapPx": 335,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "linear-simultaneous-intersections",
+    "title": "二元一次方程组与一次函数的几何意义",
+    "version": "0.1.0",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.702,
+        "rectOccupancy": 0.207,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 9,
+        "controlPanels": 0,
+        "taskPanels": 0
+      },
+      "1440": {
+        "scale": 0.539,
+        "rectOccupancy": 0.207,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 9,
+        "controlPanels": 0,
+        "taskPanels": 0
+      },
+      "700": {
+        "scale": 0.471,
+        "rectOccupancy": 0.577,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 9,
+        "controlPanels": 0,
+        "taskPanels": 0
+      }
+    }
+  },
+  {
+    "id": "rectangle-area-from-tiles",
+    "title": "长方形的面积与周长",
+    "version": "0.1.5",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.724,
+        "rectOccupancy": 0.496,
+        "controlTaskEdgeGapPx": 333,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.565,
+        "rectOccupancy": 0.496,
+        "controlTaskEdgeGapPx": 260,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.495,
+        "rectOccupancy": 0.649,
+        "controlTaskEdgeGapPx": 313,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "slope-and-intercept",
+    "title": "一次函数 y = mx + b 的图像与性质",
+    "version": "0.1.6",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.847,
+        "rectOccupancy": 0.258,
+        "controlTaskEdgeGapPx": 371,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.6,
+        "rectOccupancy": 0.258,
+        "controlTaskEdgeGapPx": 263,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.549,
+        "rectOccupancy": 0.665,
+        "controlTaskEdgeGapPx": 288,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "surface-paraboloid-level-sets",
+    "title": "水平截线与等高线：以 z=x²+y² 为例",
+    "version": "0.2.3",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.89,
+        "rectOccupancy": 0.453,
+        "controlTaskEdgeGapPx": 403,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.483,
+        "rectOccupancy": 0.368,
+        "controlTaskEdgeGapPx": 372,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.462,
+        "rectOccupancy": 0.752,
+        "controlTaskEdgeGapPx": 317,
+        "nodeCount": 5,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "surface-partial-derivative-slice",
+    "title": "偏导数：固定输入，求截线斜率",
+    "version": "0.2.3",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.563,
+        "rectOccupancy": 0.315,
+        "controlTaskEdgeGapPx": 469,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.409,
+        "rectOccupancy": 0.315,
+        "controlTaskEdgeGapPx": 341,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.326,
+        "rectOccupancy": 0.657,
+        "controlTaskEdgeGapPx": 414,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "surface-saddle-point-analysis",
+    "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+    "version": "0.2.3",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.626,
+        "rectOccupancy": 0.55,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 14,
+        "controlPanels": 0,
+        "taskPanels": 0
+      },
+      "1440": {
+        "scale": 0.38,
+        "rectOccupancy": 0.494,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 14,
+        "controlPanels": 0,
+        "taskPanels": 0
+      },
+      "700": {
+        "scale": 0.252,
+        "rectOccupancy": 0.569,
+        "controlTaskEdgeGapPx": null,
+        "nodeCount": 14,
+        "controlPanels": 0,
+        "taskPanels": 0
+      }
+    }
+  },
+  {
+    "id": "trig-cosine-and-phase-shift",
+    "title": "余弦函数与单位圆投影",
+    "version": "0.1.0",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.603,
+        "rectOccupancy": 0.459,
+        "controlTaskEdgeGapPx": 503,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.369,
+        "rectOccupancy": 0.36,
+        "controlTaskEdgeGapPx": 437,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.317,
+        "rectOccupancy": 0.78,
+        "controlTaskEdgeGapPx": 471,
+        "nodeCount": 9,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "trig-quadrants-and-monotonicity",
+    "title": "单位圆与正弦函数的单调性及象限循环",
+    "version": "0.1.0",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.655,
+        "rectOccupancy": 0.361,
+        "controlTaskEdgeGapPx": 483,
+        "nodeCount": 8,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.393,
+        "rectOccupancy": 0.379,
+        "controlTaskEdgeGapPx": 426,
+        "nodeCount": 8,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.359,
+        "rectOccupancy": 0.545,
+        "controlTaskEdgeGapPx": 430,
+        "nodeCount": 8,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine",
+    "title": "从单位圆旋转到正弦曲线",
+    "version": "0.1.0",
+    "catalogSupplement": false,
+    "widths": {
+      "1920": {
+        "scale": 0.841,
+        "rectOccupancy": 0.318,
+        "controlTaskEdgeGapPx": 348,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "1440": {
+        "scale": 0.496,
+        "rectOccupancy": 0.29,
+        "controlTaskEdgeGapPx": 344,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      },
+      "700": {
+        "scale": 0.406,
+        "rectOccupancy": 0.724,
+        "controlTaskEdgeGapPx": 402,
+        "nodeCount": 7,
+        "controlPanels": 1,
+        "taskPanels": 1
+      }
+    }
+  }
+]

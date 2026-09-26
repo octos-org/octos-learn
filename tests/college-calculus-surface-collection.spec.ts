@@ -1,45 +1,28 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { installTestAccount } from "./helpers/course-test-account";
 
 test.skip(!process.env.OCTOS_LOCAL_COURSE_PACK_ROOT, "Requires reviewed CoursePack publication");
 
 const collection = [
   {
     id: "surface-paraboloid-level-sets",
-    title: "旋转抛物面的截面与降维分析法",
+    title: "水平截线与等高线：以 z=x²+y² 为例",
+    beats: 11,
   },
   {
     id: "surface-partial-derivative-slice",
-    title: "偏导数的几何意义：三维曲面与切片截线",
+    title: "偏导数：固定输入，求截线斜率",
+    beats: 11,
   },
   {
     id: "surface-saddle-point-analysis",
-    title: "马鞍面与鞍点：三维曲面中的临界点",
+    title: "马鞍面与鞍点：梯度为零不一定是极值点",
+    beats: 15,
   },
 ];
 
-async function installTestAccount(page: Page) {
-  await page.addInitScript(() => {
-    localStorage.setItem("octos_session_token", "curated-course-e2e");
-    localStorage.setItem("selected_profile", "curated-learner");
-    localStorage.setItem("octos-learn:setup-skipped:curated-learner", "yes");
-  });
-  await page.routeWebSocket((url) => url.pathname.startsWith("/api/"), (socket) => socket.close());
-  await page.route((url) => url.pathname.startsWith("/api/"), async (route) => {
-    const pathname = new URL(route.request().url()).pathname;
-    if (pathname.startsWith("/api/learn/course-packs")) return route.continue();
-    const responses: Record<string, unknown> = {
-      "/api/auth/status": { bootstrap_mode: false, email_login_enabled: true },
-      "/api/auth/me": {
-        user: { id: "curated-learner", email: "learner@example.test", name: "Learner" },
-        portal: { accessible_profiles: [{ id: "curated-learner", name: "Learner" }], home_profile_id: "curated-learner", can_access_admin_portal: false },
-      },
-      "/api/my/profile": { id: "curated-learner", name: "Learner", config: { llm: { primary: { family_id: "", model_id: "" } } } },
-    };
-    await route.fulfill({ status: pathname in responses ? 200 : 503, contentType: "application/json", body: JSON.stringify(responses[pathname] ?? {}) });
-  });
-}
 
-test("collection home page displays all 3 college multivariable calculus courses", async ({ page }) => {
+test("collection home page displays all 3 college multivariable calculus courses", async ({ page }, testInfo) => {
   await installTestAccount(page);
   await page.goto("/");
   await page.waitForLoadState("networkidle");
@@ -47,6 +30,8 @@ test("collection home page displays all 3 college multivariable calculus courses
   for (const item of collection) {
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });
     await expect(card).toBeVisible({ timeout: 15_000 });
+    await expect.poll(() => card.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    await expect(card).toContainText('0.2.3');
   }
 
   // Scroll to the calculus cards row to show the thumbnails clearly
@@ -55,12 +40,14 @@ test("collection home page displays all 3 college multivariable calculus courses
   await page.waitForTimeout(500);
 
   await page.screenshot({
-    path: "/Users/alan0x/.gemini/antigravity/brain/b13f3469-4046-4a07-a263-bbd94d17897b/browser_all_calculus_surface_cards.png",
+    path: testInfo.outputPath("browser_all_calculus_surface_cards.png"),
   });
 });
 
 for (const item of collection) {
-  test(`course: ${item.id} (${item.title}) loads, renders 3D surface with section, and plays`, async ({ page }) => {
+  test(`course: ${item.id} (${item.title}) loads, renders 3D surface with section, and plays`, async ({ page }, testInfo) => {
+    const errors: string[] = [];
+    page.on('pageerror', error => errors.push(error.message));
     await installTestAccount(page);
     await page.goto("/");
     await page.waitForLoadState("networkidle");
@@ -75,12 +62,43 @@ for (const item of collection) {
     // Wait for the whiteboard runtime to render
     await expect(page.locator(".oll-board-runtime")).toBeVisible({ timeout: 20_000 });
 
+    if (item.id === 'surface-partial-derivative-slice') {
+      await expect(page.locator('.board-node.kind-math')).toBeVisible({timeout: 3000});
+    }
     // Wait a moment for the 3D scene and section to establish
     await page.waitForTimeout(4000);
 
     // Capture visual screenshot of the playing 3D calculus lesson
     await page.screenshot({
-      path: `/Users/alan0x/.gemini/antigravity/brain/b13f3469-4046-4a07-a263-bbd94d17897b/browser_${item.id}.png`,
+      path: testInfo.outputPath(`browser_${item.id}.png`),
     });
+    const pause = page.getByRole('button', { name: '暂停 OLL 课程' });
+    if (await pause.isVisible()) await pause.click();
+    const next = page.getByRole('button', { name: '下一 OLL Beat', exact: true });
+    for (let i = 0; i <= item.beats; i++) await next.click();
+    await page.evaluate(() => document.fonts.ready);
+    await expect.poll(() => page.locator('.board-node.kind-math').evaluateAll(cards => cards.every(card => {
+      const frame = card.getBoundingClientRect();
+      return [...card.querySelectorAll('.math-fragment')].every(fragment => {
+        const r = fragment.getBoundingClientRect();
+        return r.top >= frame.top - 1 && r.bottom <= frame.bottom + 1;
+      });
+    }))).toBe(true);
+    if (item.id === 'surface-partial-derivative-slice') {
+      await expect(page.locator('.board-node.kind-plot .plot-axis-label').filter({hasText: /^z$/})).toHaveCount(1);
+      await expect(page.locator('.board-node.kind-plot .plot-legend')).not.toContainText('y = 2x');
+      await expect(page.getByRole('slider')).toHaveValue('0');
+    }
+    if (item.id === 'surface-saddle-point-analysis') {
+      await expect(page.locator('.board-node.kind-scene3d')).toHaveCount(2);
+      const tops = await page.locator('.board-node.kind-scene3d').evaluateAll(nodes => nodes.map(node => parseFloat((node as HTMLElement).style.top)));
+      expect(Math.abs(tops[0] - tops[1])).toBeLessThan(1);
+      await expect(page.locator('.board-node.kind-plot')).toHaveCount(1);
+      await expect(page.locator('.board-node.kind-plot .plot-axis-label').filter({hasText: /^t$/})).toHaveCount(1);
+      await expect(page.locator('.board-node.kind-plot .plot-axis-label').filter({hasText: /^z$/})).toHaveCount(1);
+      await expect(page.getByRole('slider')).toHaveCount(0);
+    }
+    expect(errors).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath(`complete_${item.id}.png`) });
   });
 }

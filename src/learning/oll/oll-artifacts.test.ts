@@ -13,6 +13,7 @@ import {
   ollArtifactIdentity,
   removeRedundantStandaloneMath,
 } from "./oll-artifacts";
+import { materializeOllLessonWithReport } from "./oll-materialization";
 import { buildInteractionClusters } from "./interaction-clusters";
 
 function threadWithLesson(path: string): Thread {
@@ -408,6 +409,17 @@ describe("OLL lesson artifacts", () => {
     ]);
   });
 
+  it("reports failed materialization without allowing diagnostics to replace the error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok:true, json:async()=>({}) }));
+    try {
+      const [artifact] = collectOllLessonArtifacts([threadWithLesson("study/oll/turn.octos-lesson.json")]);
+      const timing = vi.fn(() => { throw new Error("observer failure"); });
+      await expect(loadOllLessonArtifact(artifact!, "session-1", undefined, timing))
+        .rejects.toThrow("OLL 课程格式无效");
+      expect(timing).toHaveBeenCalledWith({elapsedMs:expect.any(Number), status:"failed"});
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("validates and normalizes an Authoring artifact before playback", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
@@ -416,7 +428,9 @@ describe("OLL lesson artifacts", () => {
     const [artifact] = collectOllLessonArtifacts([
       threadWithLesson("study/oll/turn.octos-lesson.json"),
     ]);
-    const events = await loadOllLessonArtifact(artifact!, "session-1");
+    const timing = vi.fn();
+    const events = await loadOllLessonArtifact(artifact!, "session-1", undefined, timing);
+    expect(timing).toHaveBeenCalledWith({ elapsedMs: expect.any(Number), status: "completed" });
     expect(events.map((event) => event.event)).toEqual([
       "lesson.open",
       "lesson.step",
@@ -464,9 +478,21 @@ describe("OLL lesson artifacts", () => {
         id: first[0]?.board?.region_id,
         title: first[0]?.lesson?.title,
         stepIds: [first[1]?.step?.id],
+        nodeSections: Object.fromEntries(first[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions => actions.flatMap(action => action.node ? [[action.node.id, first[1]!.step!.id]] : [])))),
         nodeIds: first[1]?.step?.beats.flatMap((beat) =>
           Object.values(beat.stage).flatMap((actions) =>
             actions.flatMap((action) => action.node?.id ?? []))) ?? [],
+        plannedSteps: Object.fromEntries(first[1]?.step ? [[first[1].step.id, (() => {
+          const counts = { visual: 0, math: 0, text: 0 };
+          for (const beat of first[1]!.step!.beats) for (const actions of Object.values(beat.stage)) for (const action of actions) {
+            if (!action.node) continue;
+            const kind = String(action.node.kind ?? "");
+            if (["geometry", "scene3d", "plot", "image", "diagram"].includes(kind)) counts.visual += 1;
+            else if (kind === "math") counts.math += 1;
+            else counts.text += 1;
+          }
+          return counts;
+        })()]] : []),
         variableAliases: [],
         taskAliases: [],
         taskTargets: {},
@@ -475,9 +501,21 @@ describe("OLL lesson artifacts", () => {
         id: second[0]?.board?.region_id,
         title: second[0]?.lesson?.title,
         stepIds: [second[1]?.step?.id],
+        nodeSections: Object.fromEntries(second[1]!.step!.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions => actions.flatMap(action => action.node ? [[action.node.id, second[1]!.step!.id]] : [])))),
         nodeIds: second[1]?.step?.beats.flatMap((beat) =>
           Object.values(beat.stage).flatMap((actions) =>
             actions.flatMap((action) => action.node?.id ?? []))) ?? [],
+        plannedSteps: Object.fromEntries(second[1]?.step ? [[second[1].step.id, (() => {
+          const counts = { visual: 0, math: 0, text: 0 };
+          for (const beat of second[1]!.step!.beats) for (const actions of Object.values(beat.stage)) for (const action of actions) {
+            if (!action.node) continue;
+            const kind = String(action.node.kind ?? "");
+            if (["geometry", "scene3d", "plot", "image", "diagram"].includes(kind)) counts.visual += 1;
+            else if (kind === "math") counts.math += 1;
+            else counts.text += 1;
+          }
+          return counts;
+        })()]] : []),
         variableAliases: [],
         taskAliases: [],
         taskTargets: {},
@@ -515,13 +553,20 @@ describe("OLL lesson artifacts", () => {
           min: -10,
           max: 10,
           label: variable,
-          control: { kind: "slider" },
+          control: { kind: "slider", step: 1 },
+        }],
+        tasks: [{ as: "practice", prompt: "调整变量", availability: { kind: "after_lesson" },
+          start: { kind: "practice", variables: [variable] },
+          allowed_operations: [{ kind: "variable_change", variable, controls: ["slider"] }],
+          completion: { kind: "expression_target", expression: variable, value: initial + 3, tolerance: .1 },
+          hints: ["移动滑块"],
         }],
       },
       steps: [{
         ...structuredClone(authoringLesson.steps[0]),
         beats: [{
           ...structuredClone(authoringLesson.steps[0]!.beats[0]),
+          start: { kind: "replay", variables: [variable] },
           actions: [
             {
               do: "write",
@@ -588,6 +633,14 @@ describe("OLL lesson artifacts", () => {
     expect(new Set(variableNames).size).toBe(2);
     expect(variableNames).toContain("offset");
     expect(new Set(animationVariables)).toEqual(new Set(variableNames));
+    const starts = classroom.flatMap(event => event.step?.beats.flatMap(beat =>
+      Object.values(beat.stage).flatMap(actions => actions.flatMap(action =>
+        action.transition ? Object.keys(action.transition.values) : []))) ?? []);
+    expect(new Set(starts)).toEqual(new Set(variableNames));
+    expect(classroom[0]!.lesson!.tasks!.map(task => task.start?.variables))
+      .toEqual(variableNames.map(alias => [alias]));
+    expect(classroom[0]!.lesson!.tasks!.map(task => Object.keys(task.start?.values ?? {})))
+      .toEqual(variableNames.map(alias => [alias]));
     expect(buildOllLessonTopics([first, second]).map((topic) =>
       topic.variableAliases)).toEqual([[variableNames[0]], [variableNames[1]]]);
     const plotContents = classroom.flatMap((event) =>
@@ -802,5 +855,25 @@ describe("OLL lesson artifacts", () => {
     expect(restoredClassroom[7]).toEqual(liveClassroom[7]);
     expect(restoredClassroom).toEqual(liveClassroom);
     vi.unstubAllGlobals();
+  });
+});
+
+
+describe("explicit construction reproducibility", () => {
+  it("keeps source immutable, IDs stable and one traceable transition per declared replay", () => {
+    const source = structuredClone(authoringLesson) as unknown as import("octos-lesson-language").AuthoringLesson;
+    source.lesson.variables = [{ as: "h", initial: 1, min: 0, max: 8 }];
+    source.steps[0]!.beats[0]!.start = { kind: "replay", variables: ["h"] };
+    const original = structuredClone(source);
+    const options = { lessonId: "repeat", boardId: "board", baseRevision: 0, regionIntent: "new_topic" as const, regionId: "region" };
+    const first = materializeOllLessonWithReport(source, options);
+    expect(materializeOllLessonWithReport(source, options)).toEqual(first);
+    expect(source).toEqual(original);
+    const transitions = first.events.flatMap(event => event.step?.beats ?? [])
+      .flatMap(beat => Object.values(beat.stage).flat()).filter(action => action.op === "lesson.phase.start");
+    expect(transitions).toHaveLength(1);
+    expect(transitions[0]?.transition).toMatchObject({ values: { h: 1 }, source_path: "/steps/0/beats/0/start" });
+    delete source.steps[0]!.beats[0]!.start;
+    expect(materializeOllLessonWithReport(source, options).requirements.requiredCapabilities).not.toContain("action:lesson.phase.start");
   });
 });

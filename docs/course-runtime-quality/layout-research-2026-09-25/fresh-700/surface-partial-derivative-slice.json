@@ -1,0 +1,248 @@
+{
+  "id": "surface-partial-derivative-slice",
+  "version": "0.2.3",
+  "title": "偏导数：固定输入，求截线斜率",
+  "catalogSupplement": false,
+  "states": {
+    "playing-700": {
+      "cards": [
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "𝑧\n=\n𝑓\n(\n𝑥\n,\n𝑦\n)\n=\n𝑥\n2\n+\n𝑦\n2\n(\n𝑦\n=\n𝑦\n0\n)\nz=f(x,y)=x\n2\n+y\n2\n(y=y\n0\n\t​\n\n)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 20px; width: 382px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi><mo>=</mo><mi>f</mi>",
+          "x": 101.14073944091797,
+          "y": 79.91030883789062,
+          "w": 302.25506591796875,
+          "h": 56.96954345703125,
+          "nw": 382,
+          "nh": 72,
+          "style": "left: 20px; top: 20px; width: 382px; height: 72px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面与垂直截面 (y=y₀)\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 108px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面与垂直截面 (y=y₀)</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><",
+          "x": 101.14073944091797,
+          "y": 149.5397491455078,
+          "w": 363.9720764160156,
+          "h": 284.84771728515625,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 108px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "截面约束条件\n输入变量 y 固定为常数 y₀\n输入变量 x 可自由变化\n输出高度 z 仅随 x 变化：z = g(x)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 554px; width: 302.4px; height: 135px;\"><div class=\"node-title\">截面约束条件</div><ul class=\"content-list\"><li>输入变量 y 固定为常数 y₀</li><li>输入变量 x 可自由变化</li><li>输出高度 z 仅随 x 变化：z = g(x)</li></ul></article>",
+          "x": 100.9088363647461,
+          "y": 501.9129638671875,
+          "w": 239.72845458984375,
+          "h": 107.86083984375,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 20px; top: 554px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑦\n0\n=\n1\n⟹\n𝑧\n=\n𝑔\n(\n𝑥\n)\n=\n𝑥\n2\n+\n1\n,\n𝑃\n=\n(\n1\n,\n1\n,\n2\n)\ny\n0\n\t​\n\n=1⟹z=g(x)=x\n2\n+1,P=(1,1,2)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 737px; width: 536px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi>y</mi><mn>0</mn></m",
+          "x": 101.14073944091797,
+          "y": 647.2320556640625,
+          "w": 424.10662841796875,
+          "h": 56.96954345703125,
+          "nw": 536,
+          "nh": 72,
+          "style": "left: 20px; top: 737px; width: 536px; height: 72px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-02",
+          "type": "node",
+          "text": "𝑔\n′\n(\n1\n)\n=\n∂\n𝑧\n∂\n𝑥\n∣\n(\n1\n,\n1\n)\n=\n2\ng\n′\n(1)=\n∂x\n∂z\n\t​\n\n\t​\n\n(1,1)\n\t​\n\n=2",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 825px; width: 252px; height: 92px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>g</mi><mo mathvaria",
+          "x": 101.14073944091797,
+          "y": 716.8614501953125,
+          "w": 199.39340209960938,
+          "h": 72.79443359375,
+          "nw": 252,
+          "nh": 92,
+          "style": "left: 20px; top: 825px; width: 252px; height: 92px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3-region",
+          "type": "control",
+          "text": "截面位置y₀\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-partial-derivative-slice-0.2.3-region\" data-interaction-controls-id=\"surface-partial-derivative-slice-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"偏导数：固定输入，求截线斜率的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 492px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面位置y₀</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"2\" ste",
+          "x": 101.14073944091797,
+          "y": 453.3773193359375,
+          "w": 284.84771728515625,
+          "h": 36.397216796875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 492px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "𝑧\n=\n𝑓\n(\n𝑥\n,\n𝑦\n)\n=\n𝑥\n2\n+\n𝑦\n2\n(\n𝑦\n=\n𝑦\n0\n)\nz=f(x,y)=x\n2\n+y\n2\n(y=y\n0\n\t​\n\n)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 20px; width: 382px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi><mo>=</mo><mi>f</mi>",
+          "x": 212.51742553710938,
+          "y": 150,
+          "w": 124.69528198242188,
+          "h": 23.502777099609375,
+          "nw": 382,
+          "nh": 72,
+          "style": "left: 20px; top: 20px; width: 382px; height: 72px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面与垂直截面 (y=y₀)\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 108px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面与垂直截面 (y=y₀)</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><",
+          "x": 212.51742553710938,
+          "y": 178.72561645507812,
+          "w": 150.15664672851562,
+          "h": 117.51388549804688,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 108px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "截面约束条件\n输入变量 y 固定为常数 y₀\n输入变量 x 可自由变化\n输出高度 z 仅随 x 变化：z = g(x)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 554px; width: 302.4px; height: 135px;\"><div class=\"node-title\">截面约束条件</div><ul class=\"content-list\"><li>输入变量 y 固定为常数 y₀</li><li>输入变量 x 可自由变化</li><li>输出高度 z 仅随 x 变化：z = g(x)</li></ul></article>",
+          "x": 212.4217529296875,
+          "y": 324.09716796875,
+          "w": 98.89996337890625,
+          "h": 44.497955322265625,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 20px; top: 554px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑦\n0\n=\n1\n⟹\n𝑧\n=\n𝑔\n(\n𝑥\n)\n=\n𝑥\n2\n+\n1\n,\n𝑃\n=\n(\n1\n,\n1\n,\n2\n)\ny\n0\n\t​\n\n=1⟹z=g(x)=x\n2\n+1,P=(1,1,2)",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 737px; width: 536px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msub><mi>y</mi><mn>0</mn></m",
+          "x": 212.51742553710938,
+          "y": 384.04852294921875,
+          "w": 174.96511840820312,
+          "h": 23.50274658203125,
+          "nw": 536,
+          "nh": 72,
+          "style": "left: 20px; top: 737px; width: 536px; height: 72px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-02",
+          "type": "node",
+          "text": "𝑔\n′\n(\n1\n)\n=\n∂\n𝑧\n∂\n𝑥\n∣\n(\n1\n,\n1\n)\n=\n2\ng\n′\n(1)=\n∂x\n∂z\n\t​\n\n\t​\n\n(1,1)\n\t​\n\n=2",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-02-moment-02-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 825px; width: 252px; height: 92px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>g</mi><mo mathvaria",
+          "x": 212.51742553710938,
+          "y": 412.77410888671875,
+          "w": 82.25973510742188,
+          "h": 30.0313720703125,
+          "nw": 252,
+          "nh": 92,
+          "style": "left: 20px; top: 825px; width: 252px; height: 92px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "y₀=1 截面截线与切线图 (纵轴表示高度z)\n探索\n大图\n-4\n-2\n0\n2\n4\n-10\n0\n10\n20\nx\nz\n截线 z=x²+1\nP处切线 z=2x",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 933px; width: 440px; height: 360px;\"><div class=\"node-title\">y₀=1 截面截线与切线图 (纵轴表示高度z)</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" da",
+          "x": 212.51742553710938,
+          "y": 448.0283203125,
+          "w": 143.62808227539062,
+          "h": 117.51385498046875,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 933px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "𝑔\n′\n(\n𝑥\n)\n=\n2\n𝑥\n⟹\n𝑔\n′\n(\n1\n)\n=\n2\ng\n′\n(x)=2x⟹g\n′\n(1)=2",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 1341px; width: 316px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>g</mi><mo mathvari",
+          "x": 212.51742553710938,
+          "y": 581.210693359375,
+          "w": 103.15109252929688,
+          "h": 23.5028076171875,
+          "nw": 316,
+          "nh": 72,
+          "style": "left: 20px; top: 1341px; width: 316px; height: 72px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "截线切线与偏导数\n切点: (1, 2)\n点斜式: z - 2 = 2(x - 1) => z = 2x\n斜率本质: 瞬时变化率 lim(Δx→0) Δz/Δx，非视觉角度\n一般偏导公式: f_x(x₀, y₀) = 2x₀",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 1429px; width: 440px; height: 156px;\"><div class=\"node-title\">截线切线与偏导数</div><ul class=\"content-list\"><li>切点: (1, 2)</li><li>点斜式: z - 2 = 2(x - 1) =&gt; z = 2x</li><li>斜率本质: 瞬时变化率 lim(Δx→0) Δz/Δx，非视觉角度</li><li>一般偏导公式: f_x(x₀, y₀) = 2x₀</li></ul></a",
+          "x": 212.40701293945312,
+          "y": 609.6232299804688,
+          "w": 143.84890747070312,
+          "h": 51.54888916015625,
+          "nw": 440,
+          "nh": 156,
+          "style": "left: 20px; top: 1429px; width: 440px; height: 156px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "固定变量法总结与思考\n求 ∂z/∂x：固定 y = y₀，研究 z 关于 x 的截线切线斜率\n思考：在 P(1,1,2) 求 ∂z/∂y，应固定哪个变量？\n答：应固定 x = 1，沿着 y 方向截取曲面\n课后应用：保持 x=1，使 z=2，求解非负 y₀",
+          "html": "<article data-id=\"surface-partial-derivative-slice-0.2.3:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-9\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-partial-derivative-slice\" style=\"left: 20px; top: 1633px; width: 440px; height: 156px;\"><div class=\"node-title\">固定变量法总结与思考</div><ul class=\"content-list\"><li>求 ∂z/∂x：固定 y = y₀，研究 z 关于 x 的截线切线斜率</li><li>思考：在 P(1,1,2) 求 ∂z/∂y，应固定哪个变量？</li><li>答：应固定 x = 1，沿着 y 方向截取曲面</li><li>课后应用：保持 x=1，使 z=2，求解非负 y₀",
+          "x": 212.40701293945312,
+          "y": 676.2144165039062,
+          "w": 143.84890747070312,
+          "h": 51.54888916015625,
+          "nw": 440,
+          "nh": 156,
+          "style": "left: 20px; top: 1633px; width: 440px; height: 156px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3-region",
+          "type": "control",
+          "text": "截面位置y₀\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-partial-derivative-slice-0.2.3-region\" data-interaction-controls-id=\"surface-partial-derivative-slice-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"偏导数：固定输入，求截线斜率的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 492px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面位置y₀</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"2\" ste",
+          "x": 212.51742553710938,
+          "y": 304.07379150390625,
+          "w": 117.51388549804688,
+          "h": 15.015655517578125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 492px; width: 360px;"
+        },
+        {
+          "id": "surface-partial-derivative-slice-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n对于曲面 z = x² + y²，当固定 x = 1 时，截线方程为 z = 1 + y²。请将截面位置 y₀ 调节至目标值，使得截线上的高度 z 正好等于 2。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"surface-partial-derivative-slice-0.2.3-region\" data-interaction-tasks-id=\"surface-partial-derivative-slice-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"偏导数：固定输入，求截线斜率的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 1805px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>对于曲面 z = x²",
+          "x": 212.51742553710938,
+          "y": 732.6730346679688,
+          "w": 107.7210693359375,
+          "h": 63.46978759765625,
+          "nw": 330,
+          "nh": 194,
+          "style": "left: 20px; top: 1805px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 11
+}

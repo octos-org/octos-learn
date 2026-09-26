@@ -1,0 +1,300 @@
+{
+  "id": "surface-saddle-point-analysis",
+  "version": "0.2.3",
+  "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+  "catalogSupplement": false,
+  "states": {
+    "playing-700": {
+      "cards": [
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "𝑓\n(\n𝑥\n,\n𝑦\n)\n=\n𝑥\n2\n−\n𝑦\n2\nf(x,y)=x\n2\n−y\n2\n⇒\n𝑓\n𝑥\n(\n0\n,\n0\n)\n=\n0\n,\n \n𝑓\n𝑦\n(\n0\n,\n0\n)\n=\n0\n⇒f\nx\n\t​\n\n(0,0)=0, f\ny\n\t​\n\n(0,0)=0\n⇒\n∇\n𝑓\n(\n0\n,\n0\n)\n=\n(\n0\n,\n0\n)\n⇒∇f(0,0)=(0,0)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 400px; width: 336px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 145.63999938964844,
+          "y": 127.59744262695312,
+          "w": 312.11346435546875,
+          "h": 120.7581787109375,
+          "nw": 336,
+          "nh": 130,
+          "style": "left: 20px; top: 400px; width: 336px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "截面 y=0\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 - y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">截面 y=0</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button type=\"button\">等轴</b",
+          "x": 145.63999938964844,
+          "y": -225.38800048828125,
+          "w": 427.29815673828125,
+          "h": 334.4072570800781,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "截面 x=0\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 - y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-scene3d\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 496px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">截面 x=0</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02\"><div class=\"scene3d-controls\"><button type=\"button\">等轴</",
+          "x": 587.8007202148438,
+          "y": -225.38800048828125,
+          "w": 427.29815673828125,
+          "h": 334.4072570800781,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 496px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑦\n=\n0\ny=0\n⇒\n𝑧\n=\n𝑥\n2\n⇒z=x\n2\n⇒\n𝑧\n(\n𝑡\n)\n=\n𝑡\n2\n(\n𝑡\n=\n𝑥\n)\n⇒z(t)=t\n2\n(t=x)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 566px; width: 265px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 580.3694458007812,
+          "y": 281.79632568359375,
+          "w": 246.160888671875,
+          "h": 120.7581787109375,
+          "nw": 265,
+          "nh": 130,
+          "style": "left: 488px; top: 566px; width: 265px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-02",
+          "type": "node",
+          "text": "𝑧\n(\n𝑡\n,\n0\n)\n=\n𝑡\n2\n (t=0处极小)\n,\n𝑧\n(\n0\n,\n𝑡\n)\n=\n−\n𝑡\n2\n (t=0处极大)\nz(t,0)=t\n2\n (t=0处极小),z(0,t)=−t\n2\n (t=0处极大)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 712px; width: 612px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi><mo stretchy=\"false\">(</",
+          "x": 580.3694458007812,
+          "y": 417.41705322265625,
+          "w": 568.4923706054688,
+          "h": 66.8814697265625,
+          "nw": 612,
+          "nh": 72,
+          "style": "left: 488px; top: 712px; width: 612px; height: 72px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "𝑥\n=\n0\nx=0\n⇒\n𝑧\n=\n−\n𝑦\n2\n⇒z=−y\n2\n⇒\n𝑧\n(\n𝑡\n)\n=\n−\n𝑡\n2\n(\n𝑡\n=\n𝑦\n)\n⇒z(t)=−t\n2\n(t=y)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 800px; width: 283px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 580.3694458007812,
+          "y": 499.16107177734375,
+          "w": 262.88128662109375,
+          "h": 120.7581787109375,
+          "nw": 283,
+          "nh": 130,
+          "style": "left: 488px; top: 800px; width: 283px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "截面路径参数曲线对照图\n探索\n大图\n-4\n-2\n0\n2\n4\n-10\n0\n10\nt\nz\n(x,y)=(t,0)\n(x,y)=(0,t)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 566px; width: 440px; height: 360px;\"><div class=\"node-title\">截面路径参数曲线对照图</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore",
+          "x": 145.63999938964844,
+          "y": 281.79632568359375,
+          "w": 408.719970703125,
+          "h": 334.40728759765625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 566px; width: 440px; height: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "𝑓\n(\n𝑥\n,\n𝑦\n)\n=\n𝑥\n2\n−\n𝑦\n2\nf(x,y)=x\n2\n−y\n2\n⇒\n𝑓\n𝑥\n(\n0\n,\n0\n)\n=\n0\n,\n \n𝑓\n𝑦\n(\n0\n,\n0\n)\n=\n0\n⇒f\nx\n\t​\n\n(0,0)=0, f\ny\n\t​\n\n(0,0)=0\n⇒\n∇\n𝑓\n(\n0\n,\n0\n)\n=\n(\n0\n,\n0\n)\n⇒∇f(0,0)=(0,0)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 400px; width: 336px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 78.65482330322266,
+          "y": 305.76141357421875,
+          "w": 137.72589111328125,
+          "h": 53.28680419921875,
+          "nw": 336,
+          "nh": 130,
+          "style": "left: 20px; top: 400px; width: 336px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "截面 y=0\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 - y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">截面 y=0</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button type=\"button\">等轴</b",
+          "x": 78.65482330322266,
+          "y": 150,
+          "w": 188.55331420898438,
+          "h": 147.5634765625,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "截面 x=0\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 - y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 496px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">截面 x=0</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-saddle-point-analysis-0.2.3:node:section-01-moment-02-item-02\"><div class=\"scene3d-controls\"><button type=\"butt",
+          "x": 273.7665100097656,
+          "y": 150,
+          "w": 188.55328369140625,
+          "h": 147.5634765625,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 496px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "𝑦\n=\n0\ny=0\n⇒\n𝑧\n=\n𝑥\n2\n⇒z=x\n2\n⇒\n𝑧\n(\n𝑡\n)\n=\n𝑡\n2\n(\n𝑡\n=\n𝑥\n)\n⇒z(t)=t\n2\n(t=x)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 566px; width: 265px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 270.4873046875,
+          "y": 373.8045654296875,
+          "w": 108.62310791015625,
+          "h": 53.28680419921875,
+          "nw": 265,
+          "nh": 130,
+          "style": "left: 488px; top: 566px; width: 265px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-02",
+          "type": "node",
+          "text": "𝑧\n(\n𝑡\n,\n0\n)\n=\n𝑡\n2\n (t=0处极小)\n,\n𝑧\n(\n0\n,\n𝑡\n)\n=\n−\n𝑡\n2\n (t=0处极大)\nz(t,0)=t\n2\n (t=0处极小),z(0,t)=−t\n2\n (t=0处极大)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-02-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 712px; width: 612px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>z</mi><mo stretchy=\"false\">(</",
+          "x": 270.4873046875,
+          "y": 433.6497497558594,
+          "w": 250.85791015625,
+          "h": 29.5126953125,
+          "nw": 612,
+          "nh": 72,
+          "style": "left: 488px; top: 712px; width: 612px; height: 72px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "𝑥\n=\n0\nx=0\n⇒\n𝑧\n=\n−\n𝑦\n2\n⇒z=−y\n2\n⇒\n𝑧\n(\n𝑡\n)\n=\n−\n𝑡\n2\n(\n𝑡\n=\n𝑦\n)\n⇒z(t)=−t\n2\n(t=y)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 800px; width: 283px; height: 130px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 270.4873046875,
+          "y": 469.7208251953125,
+          "w": 116.00128173828125,
+          "h": 53.28680419921875,
+          "nw": 283,
+          "nh": 130,
+          "style": "left: 488px; top: 800px; width: 283px; height: 130px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "截面路径参数曲线对照图\n探索\n大图\n-4\n-2\n0\n2\n4\n-10\n0\n10\nt\nz\n(x,y)=(t,0)\n(x,y)=(0,t)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 566px; width: 440px; height: 360px;\"><div class=\"node-title\">截面路径参数曲线对照图</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore",
+          "x": 78.65482330322266,
+          "y": 373.8045654296875,
+          "w": 180.3553466796875,
+          "h": 147.5634765625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 566px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "𝑓\n(\n𝑡\n,\n0\n)\n=\n𝑡\n2\n>\n0\n,\n𝑓\n(\n0\n,\n𝑡\n)\n=\n−\n𝑡\n2\n<\n0\n,\n𝑓\n(\n0\n,\n0\n)\n=\n0\n(\n𝑡\n≠\n0\n)\nf(t,0)=t\n2\n>0,f(0,t)=−t\n2\n<0,f(0,0)=0(t\n\n=0)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 954px; width: 675px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>f</mi><mo stretchy=\"false\">(</m",
+          "x": 78.65482330322266,
+          "y": 532.84521484375,
+          "w": 276.6814880371094,
+          "h": 29.5126953125,
+          "nw": 675,
+          "nh": 72,
+          "style": "left: 20px; top: 954px; width: 675px; height: 72px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-03-moment-03-item-01",
+          "type": "node",
+          "text": "鞍点的代数本质\n任意邻域内同时存在 f(x,y) > f(0,0) 与 f(x,y) < f(0,0)\n一升一降即可否定极值点\n注意：仅两个方向上升尚不能证明局部极小",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-03-moment-03-item-01\" data-instance-id=\"node-instance-9\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 1042px; width: 432px; height: 135px;\"><div class=\"node-title\">鞍点的代数本质</div><ul class=\"content-list\"><li>任意邻域内同时存在 f(x,y) &gt; f(0,0) 与 f(x,y) &lt; f(0,0)</li><li>一升一降即可否定极值点</li><li>注意：仅两个方向上升尚不能证明局部极小</li></ul></article>",
+          "x": 78.53494262695312,
+          "y": 568.5302124023438,
+          "w": 177.31591796875,
+          "h": 56.10833740234375,
+          "nw": 432,
+          "nh": 135,
+          "style": "left: 20px; top: 1042px; width: 432px; height: 135px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "多元函数极值分析方法体系\n固定输出：观察等高线形态与分布\n固定输入：计算一阶偏导数与梯度\n路径分析：比较过同一点的不同方向曲线",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-10\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 1201px; width: 324px; height: 135px;\"><div class=\"node-title\">多元函数极值分析方法体系</div><ul class=\"content-list\"><li>固定输出：观察等高线形态与分布</li><li>固定输入：计算一阶偏导数与梯度</li><li>路径分析：比较过同一点的不同方向曲线</li></ul></article>",
+          "x": 78.53472900390625,
+          "y": 633.8006591796875,
+          "w": 133.04730224609375,
+          "h": 55.9151611328125,
+          "nw": 324,
+          "nh": 135,
+          "style": "left: 20px; top: 1201px; width: 324px; height: 135px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "∇\n𝑧\n(\n0\n,\n0\n)\n=\n(\n0\n,\n0\n)\n∇z(0,0)=(0,0)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-11\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 360px; top: 1201px; width: 216px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi mathvariant=\"normal\">∇</mi><",
+          "x": 218.02032470703125,
+          "y": 634.090087890625,
+          "w": 88.53805541992188,
+          "h": 29.5126953125,
+          "nw": 216,
+          "nh": 72,
+          "style": "left: 360px; top: 1201px; width: 216px; height: 72px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-03-item-01",
+          "type": "node",
+          "text": "抛物面: \n𝑓\n(\n𝑥\n,\n𝑦\n)\n≥\n𝑓\n(\n0\n,\n0\n)\n∣\n马鞍面: \nΔ\n𝑓\n 符号不固定\n抛物面: f(x,y)≥f(0,0)∣马鞍面: Δf 符号不固定",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-03-item-01\" data-instance-id=\"node-instance-12\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 1352px; width: 615px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>抛物面:&nbsp;</mtext><mi>f</m",
+          "x": 78.65482330322266,
+          "y": 695.9847412109375,
+          "w": 252.08758544921875,
+          "h": 29.5126953125,
+          "nw": 615,
+          "nh": 72,
+          "style": "left: 20px; top: 1352px; width: 615px; height: 72px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-04-item-01",
+          "type": "node",
+          "text": "概念反思自查\n问题：沿 x 轴和 y 轴方向均上升，能否断言局部极小？\n思考：坐标轴方向能否代表全方位邻域的变化？",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-04-item-01\" data-instance-id=\"node-instance-13\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 651px; top: 1352px; width: 297px; height: 156px;\"><div class=\"node-title\">概念反思自查</div><ul class=\"content-list\"><li>问题：沿 x 轴和 y 轴方向均上升，能否断言局部极小？</li><li>思考：坐标轴方向能否代表全方位邻域的变化？</li></ul></article>",
+          "x": 337.1618347167969,
+          "y": 695.719482421875,
+          "w": 122.0177001953125,
+          "h": 64.4747314453125,
+          "nw": 297,
+          "nh": 156,
+          "style": "left: 651px; top: 1352px; width: 297px; height: 156px;"
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-05-item-01",
+          "type": "node",
+          "text": "结论: 不能。必须满足 \n∀\n(\n𝑥\n,\n𝑦\n)\n∈\n𝑈\n(\n𝑝\n0\n)\n,\n𝑓\n(\n𝑥\n,\n𝑦\n)\n≥\n𝑓\n(\n𝑝\n0\n)\n结论: 不能。必须满足 ∀(x,y)∈U(p\n0\n\t​\n\n),f(x,y)≥f(p\n0\n\t​\n\n)",
+          "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-05-item-01\" data-instance-id=\"node-instance-14\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 1524px; width: 621px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>结论:&nbsp;不能。必须满足&nbsp;</mt",
+          "x": 78.65482330322266,
+          "y": 766.4873046875,
+          "w": 254.54696655273438,
+          "h": 29.5126953125,
+          "nw": 621,
+          "nh": 72,
+          "style": "left: 20px; top: 1524px; width: 621px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 15
+}

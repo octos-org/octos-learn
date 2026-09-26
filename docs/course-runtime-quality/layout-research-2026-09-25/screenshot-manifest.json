@@ -1,0 +1,386 @@
+[
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-ended-1440.png",
+    "sha256": "bc6e3d3d042b6766029d0b3cb849ac83ee538da32dc890c3468576a39a816cfc"
+  },
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-ended-1920.png",
+    "sha256": "8b0877e3705c68178dd70c4b9600e09b8fab8cb61ce2b712307a7d843bc99bb3"
+  },
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-ended-700.png",
+    "sha256": "bde6fa0c02a7d6da310501e367637a52f4e483d6449e9b32571cbe860f38d046"
+  },
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-playing-1440.png",
+    "sha256": "50d3d40c281d561c370f40120cf451cd756ba22a1262d7e1358cbd46380eedee"
+  },
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-playing-1920.png",
+    "sha256": "3c49f3133c854ad772d76724be11ddb3cf5c4df969bb0f21aae1df042032dc62"
+  },
+  {
+    "file": "screenshots/fraction-comparing-unit-shares-playing-700.png",
+    "sha256": "c41aa00ed73c67f0f8e52f991be20d096c69bd69f81ab2d05255618a11faa027"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-ended-1440.png",
+    "sha256": "0f2479b76f2e1444aba28bd4423ed71ec79293fd9dd16bd1bae8b020eedd44eb"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-ended-1920.png",
+    "sha256": "4b69911c80a93977a9dfc94144a81945697fadbfe01b3e152e015591379dab82"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-ended-700.png",
+    "sha256": "b1390691bc20858293e10bb0c6dd6d100cf4deb1328d8cfb89da94188268c572"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-playing-1440.png",
+    "sha256": "b438aa0428b764180fcc44b0d61ff37c50a4e85f50118c7305c91aec218c586e"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-playing-1920.png",
+    "sha256": "fa9de1af02589a4f73b297d25a1ea60585cc76fecd138693d5c0e5d2e0644da9"
+  },
+  {
+    "file": "screenshots/fraction-equivalent-visuals-playing-700.png",
+    "sha256": "31be3d8a41a1e37ec24d4f6b713ab2e0ccc1cc02c88198da2eb2acb63122860a"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-ended-1440.png",
+    "sha256": "dcd07125c6dfb4fa9b3d64f13891f24166fbf70f002b54c08685ed017337e7cd"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-ended-1920.png",
+    "sha256": "36e45022f486a311d83193d1a4c6f75140693ba3a5d2f991cb911426f01057bb"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-ended-700.png",
+    "sha256": "017bbb9935208d1deba2bbc048af7e62c4287f3214c9b1b73abf62e01bf22c2a"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-playing-1440.png",
+    "sha256": "127453d02826fa9f3ea8b185f350c4a0013fe8fff234f9cba3fb80d2dcb754ee"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-playing-1920.png",
+    "sha256": "3dfc345298d6023799d8abb4e126f1b202a6060a7811c86800547771202d7aa3"
+  },
+  {
+    "file": "screenshots/fraction-notation-and-parts-playing-700.png",
+    "sha256": "cfa9739f70bf3f8baa6ff1dc052dcc7f044fc7f2a6e85053d86866b01fc4defc"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-ended-1440.png",
+    "sha256": "4e459b6d997558046e94f6ce2f45b15e4b58c44df51fda18f58c46284c3236df"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-ended-1920.png",
+    "sha256": "d43438dddecac63da2052e2a4f85edb9030eca0ab251830559b4fc095c12d7b3"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-ended-700.png",
+    "sha256": "2816fd9adf1e2d4b14785a7ec481471021dcfef61e6ac962d57df3f906986889"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-playing-1440.png",
+    "sha256": "075cde0a871bde19c06aa9f2b0d411df6ae97650a12479affbc0506cd9b9bffa"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-playing-1920.png",
+    "sha256": "1ad5b06ce1c3fd3e0eaf0242a827dd2221bf0082dc9627cca78408842f8124ea"
+  },
+  {
+    "file": "screenshots/fraction-what-is-a-half-playing-700.png",
+    "sha256": "f6087d877a02cd9fa347d0621b874c34466da2bb37112cd9062f29d29266635e"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-ended-1440.png",
+    "sha256": "ad8f6f93ddcc5c599f7b06b3e6b2165ef8fcf233fd7a4b097f35685fca51657f"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-ended-1920.png",
+    "sha256": "1b7ce91d2a68ff24d1c2c7d7fec2d38988af7ef389d824848385b3e2542717fb"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-ended-700.png",
+    "sha256": "5ff657224ddd6c71d5b6f795e6e58024ad204810688805f6925751ac8f30853d"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-playing-1440.png",
+    "sha256": "08239017a054ef4cfc36ec0ecf4a5476c478a968ce2c766a2362ae3edea01a66"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-playing-1920.png",
+    "sha256": "dbcd7868e6ee9d9d5af84ce41e165fcbc99fc97b41dc8b107e969fa1d96454ed"
+  },
+  {
+    "file": "screenshots/linear-intro-and-slope-playing-700.png",
+    "sha256": "35de937c3ad7a0304aad51ba68c5415b6b5f68f44fbcf6a8e4fe181e2286b22c"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-ended-1440.png",
+    "sha256": "8bd417fa4c4af17eb9f60eec911f4f7a91929b748ff6881a99c3b10115b14196"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-ended-1920.png",
+    "sha256": "473e31830c4e03706c275ae90d1f826cc2b3906281ddb59025245f446e143cdb"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-ended-700.png",
+    "sha256": "f8e009973d52ff7f0cd31e2d325d54bb2bdce91816d0d5085d70d383c40773bf"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-playing-1440.png",
+    "sha256": "f294200da40a16332dd46f7ab9c98ca24069c5705ff26dfae89424b9fb763565"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-playing-1920.png",
+    "sha256": "bbb65fa164bc122fbbd03e10c3d05bd89b12a3918ecd907fe5b8383a49e54e1a"
+  },
+  {
+    "file": "screenshots/linear-plotting-points-playing-700.png",
+    "sha256": "aa54e811d41f93adbc4fa82e484c6c9ff85494a538f703e30ebe2fde76da9783"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-ended-1440.png",
+    "sha256": "54b106508ea30f5e647aa519e62c774abf0d5051d0a382bf4aac90eca06673f0"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-ended-1920.png",
+    "sha256": "d5bbcd011733d92661f15c64a74da811f036567ac8200e47841acafb5f6cc09b"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-ended-700.png",
+    "sha256": "cc22acd255780de3707727d4575ee18ca87049e270c94752b7ab3b70e1e9ebdc"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-playing-1440.png",
+    "sha256": "4deb28f93d6be9fcebd685b43388465cc7cd5b364bcf31683f8e7fd05f2f63c2"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-playing-1920.png",
+    "sha256": "e0ed9b6b1b8628cb5a2a7f66c360eb3f71d2a81178b73c6ac3dd1bbf61760c2f"
+  },
+  {
+    "file": "screenshots/linear-simultaneous-intersections-playing-700.png",
+    "sha256": "7ce0c580bacddd1da4e697c08537aac16b63d32afb86db813b37cb00faa370be"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-ended-1440.png",
+    "sha256": "76c2ac320f8433ad421df388feb24e0cfb890186fd449332fc09b720039fc67c"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-ended-1920.png",
+    "sha256": "975bb28db9de75aa0bbc148f8fc9ccc2b77ee1b252d4add91bb08d5b5132f4b2"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-ended-700.png",
+    "sha256": "d724e73a676b899b73b4ba3163c387f91bcf1f52b45361b04a5d586df1d3ecba"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-playing-1440.png",
+    "sha256": "205997cb721864f57dc54dd91026aa22c7f665859c8e9c54216df3378b4589ad"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-playing-1920.png",
+    "sha256": "c419f0dfecb84d75a2bd857b69c0fb68c36e75153c97029ce8f112155faed1a6"
+  },
+  {
+    "file": "screenshots/rectangle-area-from-tiles-playing-700.png",
+    "sha256": "500f03dcdd270f2d82246e5ee739e90f7d30a206c32dd542959b91f095f79b61"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-ended-1440.png",
+    "sha256": "c39928afdfb56dd8ba8773d75ea66e7fff5135bfd2a0df6a555dcd56a44fca37"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-ended-1920.png",
+    "sha256": "53e15fa0f283e3e34203bd47ba7983ae0c68ab55a8ee41fbc46e51f36001e121"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-ended-700.png",
+    "sha256": "8d34e97f92b88d79eb0d6ad26ea9abcb374d797b33d72a4319d4d63c6c1b1311"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-playing-1440.png",
+    "sha256": "216eed63dc4b08d7d9d5dc2123f1cf9a54151876ef0235a6d8e2a753da65ad6e"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-playing-1920.png",
+    "sha256": "3aaa2e71340867378da4fb5d42b96a3a027475678451b4ee407fcdd9ba5469e8"
+  },
+  {
+    "file": "screenshots/slope-and-intercept-playing-700.png",
+    "sha256": "4b51bbc2b0f243539a311e9a041ec63150ad69f33ac9c37eadebb192607eced9"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-ended-1440.png",
+    "sha256": "37eaa150cfe11f2f01a38a25bda7d8125af9db2c6d21e86a7edacc6b44b81b33"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-ended-1920.png",
+    "sha256": "001af0f6e03457e6ab36172bb59ab7f3b07a4360283514cf50be4707e776bd44"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-ended-700.png",
+    "sha256": "97b38f298b8f3047a909a7cd23c52314c563c874265636a8edc6c4a27eecf631"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-playing-1440.png",
+    "sha256": "6e3e86477b5efb907e7b73252c54044aa51faa4ddcd92212de7fe20f4df97616"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-playing-1920.png",
+    "sha256": "ad479ad18582db3c3879163afb51467591b85ebe874c4f30bdf7f1acfebc0a67"
+  },
+  {
+    "file": "screenshots/surface-paraboloid-level-sets-playing-700.png",
+    "sha256": "db7881910130ef879376d764d984300b44406d0fde16224e11a4dc53dca108a2"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-ended-1440.png",
+    "sha256": "0e5dcfb656445832e84c6183c3f23f2e38f7e7626ee50cf16a01d249fa746eb7"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-ended-1920.png",
+    "sha256": "ff7146954b13e108bbf95b1ba1657905be7080eec6704ca62779333579e78399"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-ended-700.png",
+    "sha256": "d6ddcccd29ce586e5094c273ff23cf5c714358dbd7a8adc3fb7ed6e951a6bea9"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-playing-1440.png",
+    "sha256": "6b26699191108a3d1367df2feae7cdba6533d57cdccddb626f9701611b7a4ea2"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-playing-1920.png",
+    "sha256": "4a198d8cf5a1a49c5707bec58d12957be3e4a73e656d716dde826e7b2dc61b78"
+  },
+  {
+    "file": "screenshots/surface-partial-derivative-slice-playing-700.png",
+    "sha256": "1eb2c1cc5050393ba0be0abcc1f24ea8c8ddde825ac6dd6dc86b8efa8341e802"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-ended-1440.png",
+    "sha256": "8cf0b4496c96c1544e44d6a43c2b5f88456d2ad52cf581d31ebfdbafd53a3c2a"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-ended-1920.png",
+    "sha256": "65779597c2e3c3fc8682e90ab33368d2d93bbd19193dc67f3d7b319e7f3d7cb1"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-ended-700.png",
+    "sha256": "9d999197befdf0b480fdba51885ee2d04a9aa50a7d3cf73702f2a8a7fb40423e"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-playing-1440.png",
+    "sha256": "a9818d647b0fe17d5ddd742b9578ec54b45ea4afb4849253e889cd2c367ced3e"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-playing-1920.png",
+    "sha256": "4c0b948567d3cffb99daa80d457ba8456a9a4b4af4e0a29746e8e2def07e1d42"
+  },
+  {
+    "file": "screenshots/surface-saddle-point-analysis-playing-700.png",
+    "sha256": "989e1f0f8a74fd3237b649bc31005507d3c8bebb58856f13f27257e8b48a2219"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-ended-1440.png",
+    "sha256": "466a5088fb387c1850e0b65cc7a3b0c46281f70eecea9ee9f6389a8c869efcbb"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-ended-1920.png",
+    "sha256": "3e820c40ae8fe07f454a1b3e62359ebdf3c34736f34e328089c3191bbebe4737"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-ended-700.png",
+    "sha256": "be055f61dc0769fc57c66dbee016d44e53dac9c9bac95e707a5465881d12ac46"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-playing-1440.png",
+    "sha256": "a36f2e48bc0a70f28c958d6996b339ff1ebbd941077d5d5da30d33e0497d649f"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-playing-1920.png",
+    "sha256": "d588d78b8fc79f1361e8fdaca90b5f14f503a46893b6b637709b45ca4b7bbc2f"
+  },
+  {
+    "file": "screenshots/trig-cosine-and-phase-shift-playing-700.png",
+    "sha256": "ee555016a5fc5fddd9752586bd268537222ed577da5e552095db5b2cd2c6cd53"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-ended-1440.png",
+    "sha256": "a12c63afcb860273d046bcd873e5c8e89016245d4c18abfbf52eeadb33a0a6ce"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-ended-1920.png",
+    "sha256": "d45c81dfcd8263531dfad8c7e6e4a8613e62f8a191603b550ab9616bff3a16de"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-ended-700.png",
+    "sha256": "a8ed704b7abf53fc59f80bfd76ef5a8ab82f1d545064015018bcb431c18e005b"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-playing-1440.png",
+    "sha256": "d63c10d58874eeaf521d75fa44995bb74afc62207e6ca1283865944e1cf42516"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-playing-1920.png",
+    "sha256": "439e3b5c30346f65881f4208e9743ec9fba40033f157e8b5a0f58f0a64ef4120"
+  },
+  {
+    "file": "screenshots/trig-quadrants-and-monotonicity-playing-700.png",
+    "sha256": "f157b277b5c4166d4d71eb8231ba38d78bf3512b6cca038d4c5a23eb59073d01"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-ended-1440.png",
+    "sha256": "8bb68716fec6ebe8e45433be7eb00e7a30011a94d4b9d5a3dcfed4dc3be7dbc4"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-ended-1920.png",
+    "sha256": "40663b97f1995f014e880482e8358ec64f4805285eeb2c5ad58899c91d4e563f"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-ended-700.png",
+    "sha256": "9837dda02d85d4f6f5fb60b7901b1c3a99f099df1e7de2aa57d66379c0a11bc7"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-playing-1440.png",
+    "sha256": "f8c5fad3d1c095431ddd62cf47cae88da685e298c5870c14a582cf4e05e2de39"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-playing-1920.png",
+    "sha256": "d4ac67b6ecd6fcdc1cd3a54e01798c98292a405fd047466545d0c793bab78027"
+  },
+  {
+    "file": "screenshots/trig-unit-circle-to-sine-playing-700.png",
+    "sha256": "0567155b7ae6d3f7fbc7e8f3e429e8b4ca85a7578abc3280f64892b27c6b6afd"
+  },
+  {
+    "file": "fresh-700/screenshots/surface-partial-derivative-slice-ended-700.png",
+    "sha256": "d5690f6e912f710fc669c267f57a06619c4635023a7994f292315fe505acf9c0"
+  },
+  {
+    "file": "fresh-700/screenshots/surface-partial-derivative-slice-playing-700.png",
+    "sha256": "16a12d6c18efb3a766292ce3b1a7031f0868575b6dd398e4c51cf94cc30391d8"
+  },
+  {
+    "file": "fresh-700/screenshots/surface-saddle-point-analysis-ended-700.png",
+    "sha256": "0adc962efe852fa88b4003f34bc353b0c8137073929490c3b20ef52b4fc1094e"
+  },
+  {
+    "file": "fresh-700/screenshots/surface-saddle-point-analysis-playing-700.png",
+    "sha256": "cda44bb5e4480199928f6a5815e619d66b809d9ce415cb6753e2632ffcf1b2c6"
+  },
+  {
+    "file": "fresh-700/screenshots/trig-unit-circle-to-sine-ended-700.png",
+    "sha256": "4a39a75b07b2912018a97b1e5aa38988f1d13f669790dcc5ac1af7f39a0c7d1c"
+  },
+  {
+    "file": "fresh-700/screenshots/trig-unit-circle-to-sine-playing-700.png",
+    "sha256": "567bd80481405ff5bb6fd7b204781d4cae3a92e1d11da475eedee19f0f2a3f48"
+  }
+]

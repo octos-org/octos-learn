@@ -1,0 +1,609 @@
+{
+  "id": "fraction-what-is-a-half",
+  "version": "0.1.0",
+  "title": "认识分数的初步概念：从方格到二分之一",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 698.2000122070312,
+          "y": 216.60000610351562,
+          "w": 523.6000366210938,
+          "h": 499.8000183105469,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 1254.77099609375,
+          "y": 215.97769165039062,
+          "w": 286.2982177734375,
+          "h": 161.89462280273438,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 744px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 1559.410888671875,
+          "y": 215.97769165039062,
+          "w": 286.29833984375,
+          "h": 161.89462280273438,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 744px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 179px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 1255.1201171875,
+          "y": 405.80999755859375,
+          "w": 67.8299560546875,
+          "h": 90.44000244140625,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 698.2000122070312,
+          "y": 744.9600219726562,
+          "w": 428.40008544921875,
+          "h": 90.44000244140625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 522.9307861328125,
+          "y": 203.10000610351562,
+          "w": 394.138427734375,
+          "h": 376.2230529785156,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 941.887939453125,
+          "y": 202.63156127929688,
+          "w": 215.51025390625,
+          "h": 121.86572265625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 744px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 1171.204833984375,
+          "y": 202.63156127929688,
+          "w": 215.51025390625,
+          "h": 121.86572265625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 744px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 179px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 942.1507568359375,
+          "y": 345.5273132324219,
+          "w": 51.058837890625,
+          "h": 68.07846069335938,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 522.9307861328125,
+          "y": 600.821533203125,
+          "w": 322.4769287109375,
+          "h": 68.0784912109375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 133.51153564453125,
+          "y": 193.15000915527344,
+          "w": 432.9769287109375,
+          "h": 413.296142578125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 593.7528076171875,
+          "y": 192.63540649414062,
+          "w": 236.74664306640625,
+          "h": 133.8743896484375,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 171px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 593.7528076171875,
+          "y": 341.2252197265625,
+          "w": 236.74664306640625,
+          "h": 133.8743896484375,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 330px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 594.0415649414062,
+          "y": 498.2019348144531,
+          "w": 56.09014892578125,
+          "h": 74.78695678710938,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 330px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 133.51153564453125,
+          "y": 630.0631103515625,
+          "w": 354.2538757324219,
+          "h": 74.78692626953125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 187.14881896972656,
+          "y": 160,
+          "w": 496.279052734375,
+          "h": 473.720947265625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 714.6783447265625,
+          "y": 159.41015625,
+          "w": 271.3594970703125,
+          "h": 153.44711303710938,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 744px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 1003.4225463867188,
+          "y": 159.41015625,
+          "w": 271.35943603515625,
+          "h": 153.44711303710938,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 744px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 179px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 715.00927734375,
+          "y": 339.33721923828125,
+          "w": 64.29071044921875,
+          "h": 85.72091674804688,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 279px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 715.00927734375,
+          "y": 452.1278991699219,
+          "w": 64.29071044921875,
+          "h": 85.72091674804688,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 279px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 561px; top: 279px; width: 103px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>2</mn><mn>2</mn></mfrac><mo>=</mo><",
+          "x": 797.3464965820312,
+          "y": 452.1278991699219,
+          "w": 116.17437744140625,
+          "h": 85.72091674804688,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 561px; top: 279px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 379px; width: 240px; height: 135px;\"><div class=\"node-title\">练习总结</div><ul class=\"content-list\"><li>2 个方格中的 1 个表示为 1/2</li><li>整体平均分成 2 份，每份即为二分之一</li></ul></article>",
+          "x": 714.6783447265625,
+          "y": 564.3287353515625,
+          "w": 271.3594970703125,
+          "h": 153.4471435546875,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 379px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 187.14881896972656,
+          "y": 660.7906494140625,
+          "w": 406.0465087890625,
+          "h": 85.720947265625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-tasks-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将每行方格数调整为 4 个，观察平均分割后的图形。",
+          "x": 187.14881896972656,
+          "y": 764.55810546875,
+          "w": 372.20928955078125,
+          "h": 171.935302734375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 71.4534912109375,
+          "y": 160,
+          "w": 381.16278076171875,
+          "h": 363.83721923828125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 476.617919921875,
+          "y": 159.54698181152344,
+          "w": 208.41534423828125,
+          "h": 117.85371398925781,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 744px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 698.3853759765625,
+          "y": 159.54698181152344,
+          "w": 208.41534423828125,
+          "h": 117.85371398925781,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 744px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 179px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 476.8720703125,
+          "y": 297.7383728027344,
+          "w": 49.3779296875,
+          "h": 65.83721923828125,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 179px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 279px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 476.8720703125,
+          "y": 384.36627197265625,
+          "w": 49.3779296875,
+          "h": 65.83721923828125,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 279px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 561px; top: 279px; width: 103px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>2</mn><mn>2</mn></mfrac><mo>=</mo><",
+          "x": 540.1104736328125,
+          "y": 384.36627197265625,
+          "w": 89.22674560546875,
+          "h": 65.83721923828125,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 561px; top: 279px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 379px; width: 240px; height: 135px;\"><div class=\"node-title\">练习总结</div><ul class=\"content-list\"><li>2 个方格中的 1 个表示为 1/2</li><li>整体平均分成 2 份，每份即为二分之一</li></ul></article>",
+          "x": 476.617919921875,
+          "y": 470.54119873046875,
+          "w": 208.41534423828125,
+          "h": 117.85369873046875,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 379px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 71.4534912109375,
+          "y": 544.6279296875,
+          "w": 311.8604431152344,
+          "h": 65.83721923828125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-tasks-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将每行方格数调整为 4 个，观察平均分割后的图形。",
+          "x": 71.4534912109375,
+          "y": 624.3255615234375,
+          "w": 285.8720703125,
+          "h": 132.053466796875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 20px; top: 20px; width: 440px; height: 420px;\"><div class=\"node-title\">方格阵列分割示意</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-",
+          "x": 42,
+          "y": 175.7005615234375,
+          "w": 382.8248596191406,
+          "h": 365.4237060546875,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 20px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的概念</div><ul class=\"content-list\"><li>把一个整体分成若干份</li><li>只有每份完全相同，才是平均分</li></ul></article>",
+          "x": 448.9311828613281,
+          "y": 175.24557495117188,
+          "w": 209.32412719726562,
+          "h": 118.36761474609375,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 171px; width: 240px; height: 135px;\"><div class=\"node-title\">平均分的核心要点</div><ul class=\"content-list\"><li>分成的每一份必须完全相同</li><li>只有平均分，才是认识分数的前提</li></ul></article>",
+          "x": 448.9311828613281,
+          "y": 306.62408447265625,
+          "w": 209.32412719726562,
+          "h": 118.36764526367188,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 330px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 449.18646240234375,
+          "y": 445.4180908203125,
+          "w": 49.59320068359375,
+          "h": 66.12429809570312,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 330px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 430px; width: 57px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>1</mn><mn>2</mn></mfrac></mrow><anno",
+          "x": 449.18646240234375,
+          "y": 532.4237060546875,
+          "w": 49.59320068359375,
+          "h": 66.12432861328125,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 488px; top: 430px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 561px; top: 430px; width: 103px; height: 76px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mfrac><mn>2</mn><mn>2</mn></mfrac><mo>=</mo><",
+          "x": 512.7005615234375,
+          "y": 532.4237060546875,
+          "w": 89.6158447265625,
+          "h": 66.12432861328125,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 561px; top: 430px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "html": "<article data-id=\"fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"fraction-what-is-a-half\" style=\"left: 488px; top: 530px; width: 240px; height: 135px;\"><div class=\"node-title\">练习总结</div><ul class=\"content-list\"><li>2 个方格中的 1 个表示为 1/2</li><li>整体平均分成 2 份，每份即为二分之一</li></ul></article>",
+          "x": 448.9311828613281,
+          "y": 618.974365234375,
+          "w": 209.32412719726562,
+          "h": 118.36767578125,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 488px; top: 530px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-controls-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 464px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">每行方格数</label><input id=\"oll-variable-number_01\" min=\"2\" max=\"8\" step=\"1\" aria-labe",
+          "x": 42,
+          "y": 562.005615234375,
+          "w": 313.2203369140625,
+          "h": 66.12432861328125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"fraction-what-is-a-half-0.1.0-region\" data-interaction-tasks-id=\"fraction-what-is-a-half-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"认识分数的初步概念：从方格到二分之一的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 556px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将每行方格数调整为 4 个，观察平均分割后的图形。",
+          "x": 42,
+          "y": 642.0509033203125,
+          "w": 287.11865234375,
+          "h": 132.62921142578125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 11
+}

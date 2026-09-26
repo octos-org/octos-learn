@@ -1,0 +1,570 @@
+{
+  "id": "linear-simultaneous-intersections",
+  "version": "0.1.0",
+  "title": "二元一次方程组与一次函数的几何意义",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 564.7999877929688,
+          "y": 292,
+          "w": 572.0000610351562,
+          "h": 468,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 1173.199951171875,
+          "y": 292,
+          "w": 240.5,
+          "h": 131.29998779296875,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 689px; top: 20px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 1434.1190185546875,
+          "y": 291.12786865234375,
+          "w": 400.8978271484375,
+          "h": 177.2442626953125,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 689px; top: 20px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 179px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 1173.199951171875,
+          "y": 498.70001220703125,
+          "w": 182,
+          "h": 93.5999755859375,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 179px; width: 140px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 324.79998779296875,
+          "y": 202,
+          "w": 572,
+          "h": 468,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 933.199951171875,
+          "y": 202,
+          "w": 240.5,
+          "h": 131.29998779296875,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 689px; top: 20px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 1194.1190185546875,
+          "y": 201.12786865234375,
+          "w": 400.8978271484375,
+          "h": 177.2442626953125,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 689px; top: 20px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 179px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 933.199951171875,
+          "y": 408.70001220703125,
+          "w": 182,
+          "h": 93.5999755859375,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 179px; width: 140px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 88,
+          "y": 293.8684387207031,
+          "w": 379.21051025390625,
+          "h": 310.2631530761719,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 491.34210205078125,
+          "y": 293.8684387207031,
+          "w": 159.4407958984375,
+          "h": 87.04605102539062,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 137px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 491.08953857421875,
+          "y": 394.12579345703125,
+          "w": 265.7774658203125,
+          "h": 117.50503540039062,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 488px; top: 137px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 296px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 491.34210205078125,
+          "y": 531.73681640625,
+          "w": 120.65789794921875,
+          "h": 62.05267333984375,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 296px; width: 140px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 431.7283935546875,
+          "y": 154,
+          "w": 566.6637573242188,
+          "h": 463.634033203125,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 1034.45263671875,
+          "y": 154,
+          "w": 238.25634765625,
+          "h": 130.0750732421875,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 689px; top: 20px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 1292.9375,
+          "y": 153.13601684570312,
+          "w": 397.1578369140625,
+          "h": 175.59072875976562,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 689px; top: 20px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 179px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 1034.45263671875,
+          "y": 358.77166748046875,
+          "w": 180.302001953125,
+          "h": 92.726806640625,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 179px; width: 140px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "2\n=\n−\n1\n+\n3\n2=−1+3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 644px; top: 179px; width: 159px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mo>−<",
+          "x": 1235.360595703125,
+          "y": 358.77166748046875,
+          "w": 204.771728515625,
+          "h": 92.726806640625,
+          "nw": 159,
+          "nh": 72,
+          "style": "left: 644px; top: 179px; width: 159px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "{\n𝑥\n=\n1\n\n\n𝑦\n=\n2\n{\nx=1\ny=2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 819px; top: 179px; width: 122px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 1460.73828125,
+          "y": 358.77166748046875,
+          "w": 157.120361328125,
+          "h": 130.07510375976562,
+          "nw": 122,
+          "nh": 101,
+          "style": "left: 819px; top: 179px; width: 122px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "二元一次方程组与直线的几何意义\n方程组的公共解 ⇔ 两条直线的交点坐标\n方程组无解 ⇔ 两直线平行（无交点）\n方程组有无数解 ⇔ 两直线重合",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 304px; width: 361.8px; height: 135px;\"><div class=\"node-title\">二元一次方程组与直线的几何意义</div><ul class=\"content-list\"><li>方程组的公共解 ⇔ 两条直线的交点坐标</li><li>方程组无解 ⇔ 两直线平行（无交点）</li><li>方程组有无数解 ⇔ 两直线重合</li></ul></article>",
+          "x": 1034.075439453125,
+          "y": 518.739990234375,
+          "w": 466.702392578125,
+          "h": 175.8941650390625,
+          "nw": 362,
+          "nh": 135,
+          "style": "left: 488px; top: 304px; width: 361.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n𝑥\n−\n2\n{\ny=x+1\ny=x−2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 463px; width: 165px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 1034.45263671875,
+          "y": 724.5274047851562,
+          "w": 212.498779296875,
+          "h": 130.0750732421875,
+          "nw": 165,
+          "nh": 101,
+          "style": "left: 488px; top: 463px; width: 165px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "平行线 \n⇔\n 无交点 \n⇔\n 方程组无解\n平行线 ⇔ 无交点 ⇔ 方程组无解",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 669px; top: 463px; width: 416px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>平行线&nbsp;</mtext><m",
+          "x": 1267.557373046875,
+          "y": 724.5274047851562,
+          "w": 535.7548828125,
+          "h": 92.72674560546875,
+          "nw": 416,
+          "nh": 72,
+          "style": "left: 669px; top: 463px; width: 416px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 223.96253967285156,
+          "y": 160,
+          "w": 409.871337890625,
+          "h": 335.3492431640625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 659.9165649414062,
+          "y": 160,
+          "w": 172.332275390625,
+          "h": 94.0841064453125,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 689px; top: 20px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 846.8802490234375,
+          "y": 159.3750762939453,
+          "w": 287.2667236328125,
+          "h": 127.00584411621094,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 689px; top: 20px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 179px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 659.9165649414062,
+          "y": 308.11260986328125,
+          "w": 130.41363525390625,
+          "h": 67.06982421875,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 179px; width: 140px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "2\n=\n−\n1\n+\n3\n2=−1+3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 644px; top: 179px; width: 159px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mo>−<",
+          "x": 805.2345581054688,
+          "y": 308.11260986328125,
+          "w": 148.11260986328125,
+          "h": 67.06982421875,
+          "nw": 159,
+          "nh": 72,
+          "style": "left: 644px; top: 179px; width: 159px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "{\n𝑥\n=\n1\n\n\n𝑦\n=\n2\n{\nx=1\ny=2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 819px; top: 179px; width: 122px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 968.2515869140625,
+          "y": 308.11260986328125,
+          "w": 113.6461181640625,
+          "h": 94.0841064453125,
+          "nw": 122,
+          "nh": 101,
+          "style": "left: 819px; top: 179px; width: 122px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "二元一次方程组与直线的几何意义\n方程组的公共解 ⇔ 两条直线的交点坐标\n方程组无解 ⇔ 两直线平行（无交点）\n方程组有无数解 ⇔ 两直线重合",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 304px; width: 361.8px; height: 135px;\"><div class=\"node-title\">二元一次方程组与直线的几何意义</div><ul class=\"content-list\"><li>方程组的公共解 ⇔ 两条直线的交点坐标</li><li>方程组无解 ⇔ 两直线平行（无交点）</li><li>方程组有无数解 ⇔ 两直线重合</li></ul></article>",
+          "x": 659.643798828125,
+          "y": 423.81866455078125,
+          "w": 337.568603515625,
+          "h": 127.22528076171875,
+          "nw": 362,
+          "nh": 135,
+          "style": "left: 488px; top: 304px; width: 361.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n𝑥\n−\n2\n{\ny=x+1\ny=x−2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 463px; width: 165px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 659.9165649414062,
+          "y": 572.6658935546875,
+          "w": 153.7017822265625,
+          "h": 94.0841064453125,
+          "nw": 165,
+          "nh": 101,
+          "style": "left: 488px; top: 463px; width: 165px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "平行线 \n⇔\n 无交点 \n⇔\n 方程组无解\n平行线 ⇔ 无交点 ⇔ 方程组无解",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 669px; top: 463px; width: 416px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>平行线&nbsp;</mtext><m",
+          "x": 828.522705078125,
+          "y": 572.6658935546875,
+          "w": 387.5146484375,
+          "h": 67.06982421875,
+          "nw": 416,
+          "nh": 72,
+          "style": "left: 669px; top: 463px; width: 416px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "两直线的交点与几何意义\n探索\n大图\n-4\n-2\n0\n2\n4\n0\n5\nx\ny\ny = x + 1\ny = -x + 3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 20px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">两直线的交点与几何意义</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"",
+          "x": 42,
+          "y": 224.5200958251953,
+          "w": 294.288818359375,
+          "h": 240.78175354003906,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n−\n𝑥\n+\n3\n{\ny=x+1\ny=−x+3\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 20px; width: 185px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><mt",
+          "x": 355.0162658691406,
+          "y": 224.5200958251953,
+          "w": 123.73507690429688,
+          "h": 67.55265808105469,
+          "nw": 185,
+          "nh": 101,
+          "style": "left: 488px; top: 20px; width: 185px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "直线的交点\n直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)\n交点坐标同时满足两个函数解析式",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 137px; width: 307.8px; height: 135px;\"><div class=\"node-title\">直线的交点</div><ul class=\"content-list\"><li>直线 y = x + 1 与 y = -x + 3 相交于点 (1, 2)</li><li>交点坐标同时满足两个函数解析式</li></ul></article>",
+          "x": 354.82025146484375,
+          "y": 302.325439453125,
+          "w": 206.25830078125,
+          "h": 91.19058227539062,
+          "nw": 308,
+          "nh": 135,
+          "style": "left: 488px; top: 137px; width: 307.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "text": "2\n=\n1\n+\n1\n2=1+1",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 296px; width: 140px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mn>1<",
+          "x": 355.0162658691406,
+          "y": 409.11944580078125,
+          "w": 93.63735961914062,
+          "h": 48.156341552734375,
+          "nw": 140,
+          "nh": 72,
+          "style": "left: 488px; top: 296px; width: 140px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01",
+          "type": "node",
+          "text": "2\n=\n−\n1\n+\n3\n2=−1+3",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-03-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 644px; top: 296px; width: 159px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mn>2</mn><mo>=</mo><mo>−<",
+          "x": 459.35504150390625,
+          "y": 409.11944580078125,
+          "w": 106.34527587890625,
+          "h": 48.156341552734375,
+          "nw": 159,
+          "nh": 72,
+          "style": "left: 644px; top: 296px; width: 159px; height: 72px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "text": "{\n𝑥\n=\n1\n\n\n𝑦\n=\n2\n{\nx=1\ny=2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-02-moment-04-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 819px; top: 296px; width: 122px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 576.4017333984375,
+          "y": 409.11944580078125,
+          "w": 81.5982666015625,
+          "h": 67.55267333984375,
+          "nw": 122,
+          "nh": 101,
+          "style": "left: 819px; top: 296px; width: 122px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "二元一次方程组与直线的几何意义\n方程组的公共解 ⇔ 两条直线的交点坐标\n方程组无解 ⇔ 两直线平行（无交点）\n方程组有无数解 ⇔ 两直线重合",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 421px; width: 361.8px; height: 135px;\"><div class=\"node-title\">二元一次方程组与直线的几何意义</div><ul class=\"content-list\"><li>方程组的公共解 ⇔ 两条直线的交点坐标</li><li>方程组无解 ⇔ 两直线平行（无交点）</li><li>方程组有无数解 ⇔ 两直线重合</li></ul></article>",
+          "x": 354.8204345703125,
+          "y": 492.19671630859375,
+          "w": 242.375244140625,
+          "h": 91.34814453125,
+          "nw": 362,
+          "nh": 135,
+          "style": "left: 488px; top: 421px; width: 361.8px; height: 135px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑦\n=\n𝑥\n+\n1\n\n\n𝑦\n=\n𝑥\n−\n2\n{\ny=x+1\ny=x−2\n\t​\n",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 580px; width: 165px; height: 101px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mo fence=\"true\">{</mo><m",
+          "x": 355.0162658691406,
+          "y": 599.0694580078125,
+          "w": 110.35830688476562,
+          "h": 67.55267333984375,
+          "nw": 165,
+          "nh": 101,
+          "style": "left: 488px; top: 580px; width: 165px; height: 101px;"
+        },
+        {
+          "id": "linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "平行线 \n⇔\n 无交点 \n⇔\n 方程组无解\n平行线 ⇔ 无交点 ⇔ 方程组无解",
+          "html": "<article data-id=\"linear-simultaneous-intersections-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-simultaneous-intersections\" style=\"left: 488px; top: 697px; width: 416px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>平行线&nbsp;</mtext><m",
+          "x": 355.0162658691406,
+          "y": 677.3235473632812,
+          "w": 278.2367248535156,
+          "h": 48.15631103515625,
+          "nw": 416,
+          "nh": 72,
+          "style": "left: 488px; top: 697px; width: 416px; height: 72px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 9
+}

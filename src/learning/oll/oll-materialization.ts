@@ -1,9 +1,16 @@
 import {
   normalizeAuthoringLesson,
   reduceCanonicalEvents,
+  assertAuthoringSchema,
+  assertExecutionSupported,
   type AuthoringLesson,
   type CanonicalEvent,
 } from "octos-lesson-language";
+import { analyzeOllConstruction } from "./oll-construction-diagnostics";
+
+export const OLL_COMPILATION = Object.freeze({
+  compiler: "materializeOllLesson", version: "0.2.0", rules: "explicit-semantics-v1",
+});
 
 type JsonRecord = Record<string, unknown>;
 
@@ -118,12 +125,24 @@ export function materializeOllLesson(
   source: AuthoringLesson,
   options: OllLessonMaterializationOptions,
 ): CanonicalEvent[] {
+  return materializeOllLessonWithReport(source, options).events;
+}
+
+export function materializeOllLessonWithReport(
+  source: AuthoringLesson,
+  options: OllLessonMaterializationOptions,
+) {
+  assertAuthoringSchema(source);
   const authoring = removeRedundantStandaloneMath(source);
   const events = normalizeAuthoringLesson(authoring, options);
+  const requirements = assertExecutionSupported(events);
+  const diagnostics = analyzeOllConstruction(authoring);
+  const invalid = diagnostics.find(diagnostic => diagnostic.severity === "error");
+  if (invalid) throw new Error(`${invalid.code} ${invalid.path}: ${invalid.message}`);
   // A referenced lesson intentionally points at nodes created by earlier
   // artifacts. It can only be reduced after classroom composition.
   if (!authoring.board_context?.references.length) reduceCanonicalEvents(events);
-  return events;
+  return { events, requirements, compilation: OLL_COMPILATION, diagnostics };
 }
 
 export function materializationOptionsFromCanonicalLesson(

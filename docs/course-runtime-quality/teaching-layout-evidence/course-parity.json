@@ -1,0 +1,82 @@
+[
+  {
+    "id": "surface-paraboloid-level-sets",
+    "version": "0.2.1",
+    "parity": true,
+    "pedagogicalStructure": true,
+    "narrationSegments": 11,
+    "durationSeconds": 183,
+    "diagnostics": [
+      {
+        "code": "BINDING_GRID_PROVEN",
+        "severity": "info",
+        "proofStatus": "proven",
+        "scope": "slider_grid",
+        "path": "/steps/0/beats/1/actions/0/content/bindings/0",
+        "samples": 201,
+        "message": "已枚举此绑定引用变量的有限滑块网格。"
+      },
+      {
+        "code": "CONTINUOUS_BINDING_UNPROVEN",
+        "severity": "warning",
+        "proofStatus": "not_proven",
+        "scope": "continuous_domain",
+        "path": "/steps/0/beats/1/actions/0/content/bindings/0",
+        "message": "有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。"
+      },
+      {
+        "code": "BINDING_GRID_PROVEN",
+        "severity": "info",
+        "proofStatus": "proven",
+        "scope": "slider_grid",
+        "path": "/steps/0/beats/2/actions/0/content/bindings/0",
+        "samples": 201,
+        "message": "已枚举此绑定引用变量的有限滑块网格。"
+      },
+      {
+        "code": "CONTINUOUS_BINDING_UNPROVEN",
+        "severity": "warning",
+        "proofStatus": "not_proven",
+        "scope": "continuous_domain",
+        "path": "/steps/0/beats/2/actions/0/content/bindings/0",
+        "message": "有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。"
+      }
+    ]
+  },
+  {
+    "id": "surface-partial-derivative-slice",
+    "version": "0.2.1",
+    "parity": true,
+    "pedagogicalStructure": true,
+    "narrationSegments": 11,
+    "durationSeconds": 155,
+    "diagnostics": [
+      {
+        "code": "BINDING_GRID_PROVEN",
+        "severity": "info",
+        "proofStatus": "proven",
+        "scope": "slider_grid",
+        "path": "/steps/0/beats/1/actions/0/content/bindings/0",
+        "samples": 201,
+        "message": "已枚举此绑定引用变量的有限滑块网格。"
+      },
+      {
+        "code": "CONTINUOUS_BINDING_UNPROVEN",
+        "severity": "warning",
+        "proofStatus": "not_proven",
+        "scope": "continuous_domain",
+        "path": "/steps/0/beats/1/actions/0/content/bindings/0",
+        "message": "有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。"
+      }
+    ]
+  },
+  {
+    "id": "surface-saddle-point-analysis",
+    "version": "0.2.1",
+    "parity": true,
+    "pedagogicalStructure": true,
+    "narrationSegments": 15,
+    "durationSeconds": 194,
+    "diagnostics": []
+  }
+]

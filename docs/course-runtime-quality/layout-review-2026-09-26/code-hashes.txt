@@ -1,0 +1,2 @@
+b61eac75cbffbf7a333c0a721b7e96c3040ae5e15bfd49e805b2aa1a1da86e8e  /Users/alan0x/Documents/projects/octos-lesson-language/packages/web-runtime/src/teaching-layout.ts
+8d4d3d590440a09eb7a2710049acf01ca575e12450c4d414c029424f98c603ac  node_modules/octos-lesson-language/dist/packages/web-runtime/src/teaching-layout.js

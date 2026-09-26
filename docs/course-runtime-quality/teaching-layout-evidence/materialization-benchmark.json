@@ -1,0 +1,34 @@
+{
+  "scope": "local synchronous materialization only; excludes model, network, TTS and playback",
+  "node": "v24.16.0",
+  "measuredAt": "2026-09-24T17:33:21.608Z",
+  "reports": [
+    {
+      "path": "/tmp/teaching-layout-packs/surface-paraboloid-level-sets/course.authoring.json",
+      "sourceSha256": "7b014b01a1bd5ea8f9491b6c896fcec550ed365349316867b8dc2f9139476a23",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.6791670000000067,
+      "p95Ms": 1.2798329999999964,
+      "maxMs": 1.4618340000000103
+    },
+    {
+      "path": "/tmp/teaching-layout-packs/surface-partial-derivative-slice/course.authoring.json",
+      "sourceSha256": "d7c34e4fd45ba1f386334445ca739538f9faddfa7d04915e456e810177e2196f",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.3842920000000163,
+      "p95Ms": 0.577541999999994,
+      "maxMs": 0.8963330000000269
+    },
+    {
+      "path": "/tmp/teaching-layout-packs/surface-saddle-point-analysis/course.authoring.json",
+      "sourceSha256": "2215fd13b2b6ba5848efcef587eeba5266be9af29ee972dd448deab835f0ece6",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.3003330000000233,
+      "p95Ms": 0.42387500000000955,
+      "maxMs": 0.4474169999999731
+    }
+  ]
+}

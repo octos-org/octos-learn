@@ -1,0 +1,75 @@
+{
+  "id": "surface-saddle-point-analysis",
+  "version": "0.2.3",
+  "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+  "catalogSupplement": false,
+  "states": {},
+  "beats": 15,
+  "transitions": [
+    {
+      "beat": 12,
+      "changes": [
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01",
+          "delta": 468,
+          "before": {
+            "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01",
+            "type": "node",
+            "text": "多元函数极值分析方法体系\n固定输出：观察等高线形态与分布\n固定输入：计算一阶偏导数与梯度\n路径分析：比较过同一点的不同方向曲线",
+            "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-10\" class=\"board-node kind-note focused\" data-kind=\"note\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 488px; top: 875px; width: 324px; height: 135px;\"><div class=\"node-title\">多元函数极值分析方法体系</div><ul class=\"content-list\"><li>固定输出：观察等高线形态与分布</li><li>固定输入：计算一阶偏导数与梯度</li><li>路径分析：比较过同一点的不同方向曲线</li></ul></article>",
+            "x": 748.7042236328125,
+            "y": 828.0301513671875,
+            "w": 257.826416015625,
+            "h": 108.355712890625,
+            "nw": 324,
+            "nh": 135,
+            "style": "left: 488px; top: 875px; width: 324px; height: 135px;"
+          },
+          "after": {
+            "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01",
+            "type": "node",
+            "text": "多元函数极值分析方法体系\n固定输出：观察等高线形态与分布\n固定输入：计算一阶偏导数与梯度\n路径分析：比较过同一点的不同方向曲线",
+            "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-10\" class=\"board-node kind-note focused\" data-kind=\"note\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 20px; top: 875px; width: 324px; height: 135px;\"><div class=\"node-title\">多元函数极值分析方法体系</div><ul class=\"content-list\"><li>固定输出：观察等高线形态与分布</li><li>固定输入：计算一阶偏导数与梯度</li><li>路径分析：比较过同一点的不同方向曲线</li></ul></article>",
+            "x": 272.30767822265625,
+            "y": 754.0999145507812,
+            "w": 373.11358642578125,
+            "h": 156.8070068359375,
+            "nw": 324,
+            "nh": 135,
+            "style": "left: 20px; top: 875px; width: 324px; height: 135px;"
+          }
+        },
+        {
+          "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01",
+          "delta": 468,
+          "before": {
+            "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01",
+            "type": "node",
+            "text": "∇\n𝑧\n(\n0\n,\n0\n)\n=\n(\n0\n,\n0\n)\n∇z(0,0)=(0,0)",
+            "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-11\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 828px; top: 875px; width: 216px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi mathvariant=\"normal\">∇</mi><m",
+            "x": 1019.007080078125,
+            "y": 828.5911865234375,
+            "w": 171.573974609375,
+            "h": 57.1912841796875,
+            "nw": 216,
+            "nh": 72,
+            "style": "left: 828px; top: 875px; width: 216px; height: 72px;"
+          },
+          "after": {
+            "id": "surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01",
+            "type": "node",
+            "text": "∇\n𝑧\n(\n0\n,\n0\n)\n=\n(\n0\n,\n0\n)\n∇z(0,0)=(0,0)",
+            "html": "<article data-id=\"surface-saddle-point-analysis-0.2.3:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-11\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-saddle-point-analysis\" style=\"left: 360px; top: 875px; width: 216px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi mathvariant=\"normal\">∇</mi><m",
+            "x": 663.4765625,
+            "y": 754.9117431640625,
+            "w": 248.29339599609375,
+            "h": 82.76446533203125,
+            "nw": 216,
+            "nh": 72,
+            "style": "left: 360px; top: 875px; width: 216px; height: 72px;"
+          }
+        }
+      ]
+    }
+  ]
+}
