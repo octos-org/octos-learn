@@ -9,6 +9,8 @@ export interface HostTeachingFocusInput {
   boardFocus: string[];
   focusChanged: boolean;
   variableAnimationActive: boolean;
+  /** A variable animation was running on the previous render and has now finished. */
+  variableAnimationEnded?: boolean;
 }
 
 export interface HostTeachingFocusDecision {
@@ -20,7 +22,8 @@ export interface HostTeachingFocusDecision {
  * Decides whether the Learn host needs to supplement OLL's camera decision.
  * During a variable animation OLL can derive every visual driven by that
  * variable; Beat composition usually names only the current narrative target
- * and must not narrow the complete animated scene.
+ * and must not narrow the complete animated scene. When the animation ends,
+ * the camera returns to the current Beat's own targets.
  */
 export function planHostTeachingFocus(
   input: HostTeachingFocusInput,
@@ -30,6 +33,9 @@ export function planHostTeachingFocus(
     return { source: "attention", targets: input.attentionTargets };
   }
   if (input.variableAnimationActive) return null;
+  if (input.variableAnimationEnded && input.compositionTargets.length > 0) {
+    return { source: "composition", targets: input.compositionTargets };
+  }
   if (
     input.compositionTargets.length > 0
     && (input.compositionChanged || input.compositionOperationChanged)
