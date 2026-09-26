@@ -70,14 +70,14 @@ for (const [title, beats] of courses) {
     await info.attach('overview-metrics',{body:JSON.stringify(await metrics()),contentType:'application/json'});
     await writeFile(info.outputPath('metrics-1920.json'),JSON.stringify(await metrics(),null,2));
     await page.screenshot({path:info.outputPath('overview.png')});
-    // At 1920px, a normal 16px body must remain at least 12px on screen.
-    // 结构优先的分带布局下，马鞍面课最优结构解为 0.736；地板从 0.75 调整为 0.70，保留可读性下限
-    expect((await metrics()).scale).toBeGreaterThanOrEqual(.70);
-    // 1440 地板 0.54：马鞍面课（14 卡）结构优先最优解实测 0.545；旧装箱 0.611 的代价是阅读顺序
-    for (const [width,height,floor] of [[1440,900,.54],[700,1000,0]] as const) {
+    // 阶段行 × 步骤列（2026-09-26）：关联优先、窄屏单列可读流，整课全景缩放不再作为
+    // 验收门槛（产品决定，见 layout-research-2026-09-26 报告）。这里仍要求全部卡片完整
+    // 落在安全区内（settle 中 clipped===0），缩放只写入 metrics 文件供跟踪。
+    expect((await metrics()).scale).toBeGreaterThan(0);
+    for (const [width,height] of [[1440,900],[700,1000]] as const) {
       await page.setViewportSize({width,height});
       await settle();
-      expect((await metrics()).scale).toBeGreaterThanOrEqual(floor);
+      expect((await metrics()).scale).toBeGreaterThan(0);
       await page.screenshot({path:info.outputPath(`overview-${width}.png`)});
       await writeFile(info.outputPath(`metrics-${width}.json`),JSON.stringify(await metrics(),null,2));
     }

@@ -244,6 +244,8 @@ const courseVisualNodeKinds = new Set([
 const PENDING_QUESTION_FOOTPRINT_WIDTH = COURSE_PENDING_FOOTPRINT_WIDTH;
 const PENDING_QUESTION_FOOTPRINT_HEIGHT = COURSE_PENDING_FOOTPRINT_HEIGHT;
 const MINIMUM_COURSE_READING_WIDTH = 1_300;
+// One open practice panel measures about 150–200 px; reserve the upper end.
+const RESERVED_PRACTICE_HEIGHT = 200;
 const QUESTION_CARD_COLLISION_HEIGHT = 320;
 
 function unionWhiteboardRects(rects: WhiteboardRect[]): WhiteboardRect | null {
@@ -1159,6 +1161,11 @@ export function LearningWhiteboard({
         width: measured?.width ?? estimatedWidth,
         height: measured?.height ?? estimatedHeight,
         focusHeight: measured?.focusHeight ?? estimatedHeight,
+        // Practice declared for these visuals: the teaching layout keeps this
+        // space before and after it opens, so opening never moves other cards.
+        reservedTask: cluster.taskIds.length > 0
+          ? { width: Math.max(controlsWidth, 330), height: RESERVED_PRACTICE_HEIGHT }
+          : undefined,
       };
     });
   });
@@ -1175,6 +1182,7 @@ export function LearningWhiteboard({
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
             height: plan.controlsHeight, focusHeight: plan.controlsHeight, gap: 24,
+            ...(plan.reservedTask ? { reservedTask: plan.reservedTask } : {}),
           }] : []),
           ...(plan.tasks.length ? [{
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
