@@ -1,0 +1,34 @@
+[
+  {
+    "original": "delivery/Octos_Learn_功能架构全景导图.png",
+    "sha256": "7c2259f088e78cb62482c158fa25d857861f1511fa253939bafe7857d64cfb8c"
+  },
+  {
+    "original": "delivery/Octos_Learn_产品架构与功能全景.zip",
+    "sha256": "95d76c5fc4145bc2e1b90ec271172a351fe064e3d00646ba2bc9a1530976b54f"
+  },
+  {
+    "original": "delivery/Octos_Learn_产品详细功能全景清单.pdf",
+    "sha256": "f48b251cb21c77e98395e2ae445c5f340742b4e9199edc229038fbe29ee6047b"
+  },
+  {
+    "original": "scratch/mermaid.min.js",
+    "sha256": "8d607d7ef1d077a8aa202e18e62212bfa992c68bfeabc5cf45d51a128fe6675d"
+  },
+  {
+    "original": "scratch/marked.min.js",
+    "sha256": "3e7e7d7feb3e5d58cb6c804f68ab5c24cc7e5eb6270fd6e5cbb9124739217d0c"
+  },
+  {
+    "original": "scratch/course-baseline.mjs",
+    "sha256": "fff4c5989180e970c785fc1b5306fff4076a2f53ae2618012bbfc502870688f7"
+  },
+  {
+    "original": "/Users/alan0x/Documents/projects/octos-lesson-language/pnpm-workspace.yaml",
+    "sha256": "d6d0c24446d91ef762d37c6ba801bb516e65d7055aa9f8027fcd457409a97ce1"
+  },
+  {
+    "original": "/Users/alan0x/Documents/projects/learning-coach/pnpm-lock.yaml",
+    "sha256": "c1119594f5bdf2a0f198f1c7e714446dde0185acb0485c8eb8cec1db890e94d3"
+  }
+]
