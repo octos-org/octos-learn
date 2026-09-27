@@ -1,0 +1,50 @@
+{
+  "minimumPlayerVersion": "0.2.0",
+  "requiredCapabilities": [
+    "action:board.create",
+    "action:board.focus",
+    "action:lesson.variable.animate",
+    "action:teacher.point",
+    "canonical:0.1",
+    "node:math",
+    "node:note",
+    "node:plot",
+    "node:scene3d",
+    "practice-start",
+    "student-tasks:expression_target",
+    "value-bindings",
+    "variables"
+  ],
+  "compilation": {
+    "compiler": "materializeOllLesson",
+    "version": "0.2.0",
+    "rules": "explicit-semantics-v1"
+  },
+  "diagnostics": [
+    {
+      "code": "BINDING_GRID_PROVEN",
+      "severity": "info",
+      "proofStatus": "proven",
+      "scope": "slider_grid",
+      "path": "/steps/0/beats/0/actions/0/content/bindings/0",
+      "samples": 201,
+      "message": "已枚举此绑定引用变量的有限滑块网格。"
+    },
+    {
+      "code": "CONTINUOUS_BINDING_UNPROVEN",
+      "severity": "warning",
+      "proofStatus": "not_proven",
+      "scope": "continuous_domain",
+      "path": "/steps/0/beats/0/actions/0/content/bindings/0",
+      "message": "有限滑块网格检查不证明动画或几何拖动的连续取值域；运行时仍校验实际值。"
+    },
+    {
+      "code": "RELATED_VISUALS_SUGGESTION",
+      "severity": "warning",
+      "proofStatus": "not_proven",
+      "scope": "authoring_intent",
+      "path": "/steps/2/beats/3/actions/1",
+      "message": "图形 section-01-moment-01-item-01、section-02-moment-03-item-01 反复共同聚焦，但未声明直接布局关联；请核对，不自动分组。"
+    }
+  ]
+}

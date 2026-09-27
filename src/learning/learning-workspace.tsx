@@ -860,6 +860,7 @@ export function LearningWorkspace({
         source: "octos-web",
         stage: "lesson-playable-loaded",
         status: "completed",
+        elapsedMs: learnTrace.elapsedSinceStage(turnId, "request-submitted"),
         data: { canonical_events: events.length },
       });
     });
@@ -877,12 +878,17 @@ export function LearningWorkspace({
     );
   }, [deliveredOllEvents, deliveredOllLessons, packagedOllEvents, sessionId]);
   const appendedOllEventCountRef = useRef(1);
-  const activeOllOperations = useMemo(
-    () => activeOllEvents
-      ? compilePlaybackOperations(activeOllEvents, { allowIncomplete: true })
-      : [],
-    [activeOllEvents],
-  );
+  const ollAppendBlockedRef = useRef(false);
+  const activeOllCompilation = useMemo(() => {
+    try {
+      return { operations: activeOllEvents
+        ? compilePlaybackOperations(activeOllEvents, { allowIncomplete: true })
+        : [], error: null };
+    } catch (error) {
+      return { operations: [], error: error instanceof Error ? error.message : String(error) };
+    }
+  }, [activeOllEvents]);
+  const activeOllOperations = activeOllCompilation.operations;
   const expectedOllOperationCount = activeOllOperations.length;
   const activeOllTopics = useMemo(
     () => buildOllLessonTopics(
@@ -965,9 +971,19 @@ export function LearningWorkspace({
     : undefined) ?? activeOllTopics.find((t) =>
         ollLesson?.outline.find((o) => o.id === t.id)?.steps.at(-1)?.end_cursor === ollLesson?.cursor
       ) ?? activeOllTopics.at(-1);
-  const targetTopicEndCursor = currentActiveTopic
+  const rawTargetTopicEndCursor = currentActiveTopic
     ? ollLesson?.outline.find((cand) => cand.id === currentActiveTopic.id)?.steps.at(-1)?.end_cursor
     : undefined;
+  const targetTopicEndCursor = (() => {
+    if (typeof rawTargetTopicEndCursor !== "number" || !ollLesson) {
+      return rawTargetTopicEndCursor;
+    }
+    const trailing = activeOllOperations.slice(rawTargetTopicEndCursor, ollLesson.totalOperations);
+    if (trailing.length > 0 && trailing.every((op) => op.type === "lesson.close")) {
+      return ollLesson.totalOperations;
+    }
+    return rawTargetTopicEndCursor;
+  })();
   const reachedCurrentTopicEnd = typeof targetTopicEndCursor === "number"
     && (ollLesson?.cursor ?? 0) >= targetTopicEndCursor;
   const reachedAllOperations = Boolean(
@@ -988,7 +1004,10 @@ export function LearningWorkspace({
   // (or release narration ownership) during that handoff. Derive this in the
   // same render; waiting for setDeliverySettled(false) leaves a stale frame.
   const lessonDeliverySettled = Boolean(
-    (ollLesson?.deliverySettled || topicPlaybackFinished) && !hasUndeliveredOllEvents && deliveryReachedCurrentEnd,
+    !ollLesson?.activePhaseTransition
+    && (ollLesson?.deliverySettled || topicPlaybackFinished)
+    && !hasUndeliveredOllEvents
+    && deliveryReachedCurrentEnd,
   );
   const replayingWithoutStudentAdditions = inkMergeSourceSessionId !== null;
   const setOllDeliverySettled = ollLesson?.setDeliverySettled;
@@ -2074,7 +2093,10 @@ export function LearningWorkspace({
       requestedOllArtifactsRef.current.add(artifact.path);
       ollArtifactRequestsRef.current.get(artifactIdentity)?.abort();
       ollArtifactRequestsRef.current.set(artifactIdentity, controller);
-      loadOllLessonArtifact(artifact, sessionId, controller.signal)
+      loadOllLessonArtifact(artifact, sessionId, controller.signal, (timing) => {
+        learnTrace.record({ turnId: artifact.turnId, source: "octos-web",
+          stage: "oll-materialization", ...timing });
+      })
         .then((events) => {
           if (ollArtifactRequestsRef.current.get(artifactIdentity) !== controller) {
             return;
@@ -2109,7 +2131,7 @@ export function LearningWorkspace({
           }
         });
     });
-  }, [ollArtifacts, sessionId]);
+  }, [ollArtifacts, sessionId, learnTrace]);
 
   useEffect(() => {
     if (!selectionState) return;
@@ -2166,16 +2188,28 @@ export function LearningWorkspace({
     // accepted Steps, while a rejected stale checkpoint needs every Step from
     // sequence 1 again.
     appendedOllEventCountRef.current = 1;
+    ollAppendBlockedRef.current = false;
   }, [ollOpenSource]);
 
   useEffect(() => {
     if (!activeOllEvents || !appendOllEvents) return;
+    if (ollAppendBlockedRef.current || activeOllCompilation.error) return;
+    const append = (events: CanonicalEvent[]): boolean => {
+      try {
+        appendOllEvents(events);
+        return true;
+      } catch (error) {
+        ollAppendBlockedRef.current = true;
+        setArtifactError(`课程追加已暂停：${error instanceof Error ? error.message : String(error)}`);
+        return false;
+      }
+    };
     if (appendedOllEventCountRef.current > activeOllEvents.length) {
       appendedOllEventCountRef.current = 1;
     }
     if (playbackMode === "review" || packagedPlayback) {
       const pending = activeOllEvents.slice(appendedOllEventCountRef.current);
-      if (pending.length > 0) appendOllEvents(pending);
+      if (pending.length > 0 && !append(pending)) return;
       appendedOllEventCountRef.current = activeOllEvents.length;
       return;
     }
@@ -2184,7 +2218,7 @@ export function LearningWorkspace({
     const appendNext = () => {
       const event = activeOllEvents[eventIndex] as CanonicalEvent | undefined;
       if (!event) return;
-      appendOllEvents([event]);
+      if (!append([event])) return;
       eventIndex += 1;
       appendedOllEventCountRef.current = eventIndex;
       if (eventIndex < activeOllEvents.length) {
@@ -2195,7 +2229,11 @@ export function LearningWorkspace({
     return () => {
       if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [activeOllEvents, appendOllEvents, packagedPlayback, playbackMode]);
+  }, [activeOllCompilation.error, activeOllEvents, appendOllEvents, packagedPlayback, playbackMode]);
+  const pauseOllLesson = ollLesson?.pause;
+  useEffect(() => {
+    if (activeOllCompilation.error) pauseOllLesson?.();
+  }, [activeOllCompilation.error, pauseOllLesson]);
   useEffect(() => {
     if (ollLesson) {
       onBoardContextChange?.({
@@ -2989,6 +3027,7 @@ export function LearningWorkspace({
       source: "octos-web",
       stage: "lesson-first-rendered",
       status: "completed",
+      elapsedMs: learnTrace.elapsedSinceStage(event.turnId, "request-submitted"),
       data: {
         beat_id: event.beatId,
         operation_type: event.operationType,
@@ -3347,6 +3386,7 @@ export function LearningWorkspace({
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
         disabled={coursePreview}
+        courseOverview={lessonDeliverySettled}
       />
 
       {controlledOllLesson
@@ -3385,6 +3425,8 @@ export function LearningWorkspace({
       {(sendError ||
         fileListError ||
         artifactError ||
+        activeOllCompilation.error ||
+        ollLesson?.failure ||
         conv.error ||
         conv.cameraError ||
         ollNarrationTts.error) && (
@@ -3392,18 +3434,20 @@ export function LearningWorkspace({
           {sendError ??
             fileListError ??
             artifactError ??
+            activeOllCompilation.error ??
+            (ollLesson?.failure ? `课程已暂停：${ollLesson.failure.message}` : null) ??
             conv.error ??
             conv.cameraError ??
             ollNarrationTts.error}
         </div>
       )}
       {aiUnavailable && !isEmbeddedCourse && (
-        <div className="learning-runtime-warning">
+        <div className="learning-runtime-warning" data-learning-board-occlusion="">
           连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a>
         </div>
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
-        <div className="learning-runtime-warning">
+        <div className="learning-runtime-warning" data-learning-board-occlusion="">
           语音暂不可用，你可以继续打字、上传题目和阅读课程。
         </div>
       )}

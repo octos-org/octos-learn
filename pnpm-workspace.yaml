@@ -4,3 +4,6 @@ allowBuilds:
   octos-course-library: true
   octos-lesson-language: true
   protobufjs: true
+patchedDependencies:
+  octos-course-library@0.0.0: patches/octos-course-library@0.0.0.patch
+  octos-lesson-language@0.1.0-rc.1: patches/octos-lesson-language@0.1.0-rc.1.patch

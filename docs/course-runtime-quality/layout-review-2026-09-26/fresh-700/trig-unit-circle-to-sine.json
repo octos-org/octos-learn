@@ -1,0 +1,209 @@
+{
+  "id": "trig-unit-circle-to-sine",
+  "version": "0.1.0",
+  "title": "从单位圆旋转到正弦曲线",
+  "catalogSupplement": false,
+  "states": {
+    "playing-700": {
+      "cards": [
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-a",
+          "x": 106.4813232421875,
+          "y": 335.937744140625,
+          "w": 239.17013549804688,
+          "h": 206.5560302734375,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fa",
+          "x": 354.34857177734375,
+          "y": 335.937744140625,
+          "w": 239.17010498046875,
+          "h": 195.6846923828125,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "𝑃\n=\n(\ncos\n⁡\n𝜃\n,\nsin\n⁡\n𝜃\n)\nP=(cosθ,sinθ)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 408px; top: 420px; width: 219px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>P</mi><mo>=</mo><mo stretchy=\"false\">(</",
+          "x": 317.3858947753906,
+          "y": 553.3651123046875,
+          "w": 119.04150390625,
+          "h": 39.136962890625,
+          "nw": 219,
+          "nh": 72,
+          "style": "left: 408px; top: 420px; width: 219px; height: 72px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "正弦值的几何意义\n单位圆半径 r = 1\n动点 P 的高度（纵坐标）即为 sin θ",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 643px; top: 420px; width: 240px; height: 135px;\"><div class=\"node-title\">正弦值的几何意义</div><ul class=\"content-list\"><li>单位圆半径 r = 1</li><li>动点 P 的高度（纵坐标）即为 sin θ</li></ul></article>",
+          "x": 444.96502685546875,
+          "y": 553.0808715820312,
+          "w": 130.775390625,
+          "h": 73.95025634765625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 643px; top: 420px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0-region",
+          "type": "control",
+          "text": "旋转角 θ\n6.28 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-unit-circle-to-sine-0.1.0-region\" data-interaction-controls-id=\"trig-unit-circle-to-sine-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"从单位圆旋转到正弦曲线的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400000000",
+          "x": 106.4813232421875,
+          "y": 555.5394287109375,
+          "w": 195.68466186523438,
+          "h": 25.004150390625,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和平移\" data-a",
+          "x": 42,
+          "y": 206.1875,
+          "w": 302.5,
+          "h": 261.25,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "正弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, sin(θ))\ny = sin(x)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fa",
+          "x": 355.5,
+          "y": 206.1875,
+          "w": 302.5,
+          "h": 247.5,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "𝑃\n=\n(\ncos\n⁡\n𝜃\n,\nsin\n⁡\n𝜃\n)\nP=(cosθ,sinθ)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 408px; top: 420px; width: 219px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>P</mi><mo>=</mo><mo stretchy=\"false\">(</",
+          "x": 308.75,
+          "y": 481.1875,
+          "w": 150.5625,
+          "h": 49.5,
+          "nw": 219,
+          "nh": 72,
+          "style": "left: 408px; top: 420px; width: 219px; height: 72px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "正弦值的几何意义\n单位圆半径 r = 1\n动点 P 的高度（纵坐标）即为 sin θ",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 643px; top: 420px; width: 240px; height: 135px;\"><div class=\"node-title\">正弦值的几何意义</div><ul class=\"content-list\"><li>单位圆半径 r = 1</li><li>动点 P 的高度（纵坐标）即为 sin θ</li></ul></article>",
+          "x": 470.11077880859375,
+          "y": 480.8279724121094,
+          "w": 165.4034423828125,
+          "h": 93.53152465820312,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 643px; top: 420px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "𝑃\n=\n(\ncos\n⁡\n𝜃\n,\nsin\n⁡\n𝜃\n)\nP=(cosθ,sinθ)",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 408px; top: 579px; width: 219px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>P</mi><mo>=</mo><mo stretchy=\"false\">(</",
+          "x": 308.75,
+          "y": 590.5,
+          "w": 150.5625,
+          "h": 49.5,
+          "nw": 219,
+          "nh": 72,
+          "style": "left: 408px; top: 579px; width: 219px; height: 72px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-03-moment-03-item-01",
+          "type": "node",
+          "text": "𝑦\n=\nsin\n⁡\n𝜃\ny=sinθ",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-03-moment-03-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 643px; top: 579px; width: 132px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>sin</mi><mo>⁡</mo><m",
+          "x": 470.3125,
+          "y": 590.5,
+          "w": 90.75,
+          "h": 49.5,
+          "nw": 132,
+          "nh": 72,
+          "style": "left: 643px; top: 579px; width: 132px; height: 72px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "正弦函数 y = sin x 的性质\n周期性：T = 2π\n值域：[-1, 1]\n波峰位置：x = π/2 + 2kπ",
+          "html": "<article data-id=\"trig-unit-circle-to-sine-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-unit-circle-to-sine\" style=\"left: 408px; top: 667px; width: 302.4px; height: 135px;\"><div class=\"node-title\">正弦函数 y = sin x 的性质</div><ul class=\"content-list\"><li>周期性：T = 2π</li><li>值域：[-1, 1]</li><li>波峰位置：x = π/2 + 2kπ</li></ul></article>",
+          "x": 308.5484924316406,
+          "y": 650.546875,
+          "w": 208.29660034179688,
+          "h": 93.71875,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 408px; top: 667px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0-region",
+          "type": "control",
+          "text": "旋转角 θ\n6.28 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-unit-circle-to-sine-0.1.0-region\" data-interaction-controls-id=\"trig-unit-circle-to-sine-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"从单位圆旋转到正弦曲线的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400000000",
+          "x": 42,
+          "y": 483.9375,
+          "w": 247.5,
+          "h": 31.625,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-unit-circle-to-sine-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动滑块改变旋转角 θ，观察动点 P 的高度与正弦曲线上的点如何实时对应。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-unit-circle-to-sine-0.1.0-region\" data-interaction-tasks-id=\"trig-unit-circle-to-sine-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"从单位圆旋转到正弦曲线的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 486px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动滑块改变旋转角 θ，观察动点 P 的高度与正弦曲线上的点如",
+          "x": 42,
+          "y": 526.5625,
+          "w": 226.875,
+          "h": 104.80078125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 486px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 10
+}

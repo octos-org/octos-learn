@@ -1,0 +1,279 @@
+{
+  "kind": "proposal-mockup-not-application-screenshot",
+  "courses": [
+    {
+      "id": "fraction-comparing-unit-shares",
+      "title": "直观理解分数的大小比较",
+      "nodes": 7,
+      "tasks": 2
+    },
+    {
+      "id": "fraction-equivalent-visuals",
+      "title": "等价分数的图形直观与原理",
+      "nodes": 9,
+      "tasks": 3
+    },
+    {
+      "id": "fraction-notation-and-parts",
+      "title": "直观理解分数的意义与结构",
+      "nodes": 6,
+      "tasks": 2
+    },
+    {
+      "id": "fraction-what-is-a-half",
+      "title": "认识分数的初步概念：从方格到二分之一",
+      "nodes": 7,
+      "tasks": 2
+    },
+    {
+      "id": "linear-intro-and-slope",
+      "title": "正比例函数 y = kx 与斜率的几何意义",
+      "nodes": 3,
+      "tasks": 2
+    },
+    {
+      "id": "linear-plotting-points",
+      "title": "一次函数 y = 2x - 1 的图像本质与画法",
+      "nodes": 5,
+      "tasks": 3
+    },
+    {
+      "id": "linear-simultaneous-intersections",
+      "title": "二元一次方程组与一次函数的几何意义",
+      "nodes": 9,
+      "tasks": 0
+    },
+    {
+      "id": "rectangle-area-from-tiles",
+      "title": "长方形的面积与周长",
+      "nodes": 5,
+      "tasks": 1
+    },
+    {
+      "id": "slope-and-intercept",
+      "title": "一次函数 y = mx + b 的图像与性质",
+      "nodes": 5,
+      "tasks": 3
+    },
+    {
+      "id": "surface-paraboloid-level-sets",
+      "title": "水平截线与等高线：以 z=x²+y² 为例",
+      "nodes": 5,
+      "tasks": 1
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "title": "偏导数：固定输入，求截线斜率",
+      "nodes": 9,
+      "tasks": 1
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+      "nodes": 14,
+      "tasks": 0
+    },
+    {
+      "id": "trig-cosine-and-phase-shift",
+      "title": "余弦函数与单位圆投影",
+      "nodes": 9,
+      "tasks": 1
+    },
+    {
+      "id": "trig-quadrants-and-monotonicity",
+      "title": "单位圆与正弦函数的单调性及象限循环",
+      "nodes": 8,
+      "tasks": 3
+    },
+    {
+      "id": "trig-unit-circle-to-sine",
+      "title": "从单位圆旋转到正弦曲线",
+      "nodes": 7,
+      "tasks": 1
+    }
+  ],
+  "images": [
+    {
+      "file": "images/fraction-comparing-unit-shares-1440.png",
+      "sha256": "5c466b53c82e188af973cc6a1c11d67ddc19fc156fb2d3d4d1332b1d7950bb47"
+    },
+    {
+      "file": "images/fraction-comparing-unit-shares-1920.png",
+      "sha256": "5ceccb65fd15f1117bd5b2f1f1bff982d52c5eebf8e86e4deafd67d5ed7f8f91"
+    },
+    {
+      "file": "images/fraction-comparing-unit-shares-700.png",
+      "sha256": "0f3d8507273095b3a245620381673ffec817819ffdec68fe3697d9766043b57e"
+    },
+    {
+      "file": "images/fraction-equivalent-visuals-1440.png",
+      "sha256": "083c27c5bc1d8c8b8fc4d9216d0208a32e7f019010ebc8b011858d8441b92a70"
+    },
+    {
+      "file": "images/fraction-equivalent-visuals-1920.png",
+      "sha256": "7a7805b6e0fd2c7db30d51e4c1f3f97687205610bc1cb94c19338b1bbe1d17ca"
+    },
+    {
+      "file": "images/fraction-equivalent-visuals-700.png",
+      "sha256": "13b7b57aa47c1c64be345649371c028050e204eebaaa0facdd10a42119bfcaf5"
+    },
+    {
+      "file": "images/fraction-notation-and-parts-1440.png",
+      "sha256": "7d57fe75fbf005b1cf42e01d043a7712160d6587f8144a8bc2e69fb5ecce228a"
+    },
+    {
+      "file": "images/fraction-notation-and-parts-1920.png",
+      "sha256": "31c7280977160ac11164dee54124ffd66cd553754cf40fe59283c0ebb44d0ffb"
+    },
+    {
+      "file": "images/fraction-notation-and-parts-700.png",
+      "sha256": "cb90728d899363153d5df93b818fd21d7c5f2ac15a4c12cd144b16f925a74390"
+    },
+    {
+      "file": "images/fraction-what-is-a-half-1440.png",
+      "sha256": "116769b0325ef96c657c7e4e7a0bd4bc59f4916b226885f6362181f07ed8f0a6"
+    },
+    {
+      "file": "images/fraction-what-is-a-half-1920.png",
+      "sha256": "2ba1afbe306858b7cfa0159fe64e536410a7ef395f7dd2840c68f5671bbe0b7a"
+    },
+    {
+      "file": "images/fraction-what-is-a-half-700.png",
+      "sha256": "3d1f9b083c45265e6f5f556975b7c625845dab4c1362d666190588471c4bf132"
+    },
+    {
+      "file": "images/linear-intro-and-slope-1440.png",
+      "sha256": "737f8b557da56c9e594e1636707328b664bd7bc71ab865e329a2ba4876d2808e"
+    },
+    {
+      "file": "images/linear-intro-and-slope-1920.png",
+      "sha256": "1b8fc063ab29c714e1632988ffc28f8101a629948f6bdf53649b2e9758983fbd"
+    },
+    {
+      "file": "images/linear-intro-and-slope-700.png",
+      "sha256": "54e640a5fac0fef9a67d655997854d6599b47084df7dac68710e1c59901b4680"
+    },
+    {
+      "file": "images/linear-plotting-points-1440.png",
+      "sha256": "6eadca5e684607fae29556a60779dd670968546a7fab8ecda45aa822905abdb6"
+    },
+    {
+      "file": "images/linear-plotting-points-1920.png",
+      "sha256": "ed18726e5c0d7d063d3745f119e3476350df9ddacdd41b8689f7983936ce131f"
+    },
+    {
+      "file": "images/linear-plotting-points-700.png",
+      "sha256": "fe6809823f5c116874e76e7e76d9b94131faef21e263a3bca539b8d79a0d8ed5"
+    },
+    {
+      "file": "images/linear-simultaneous-intersections-1440.png",
+      "sha256": "703c5c5037aafd21c99f8d71b2666f255b08e44283354ffa16ac02ad22e4bed4"
+    },
+    {
+      "file": "images/linear-simultaneous-intersections-1920.png",
+      "sha256": "0fe2b93b10cc6ae2577eae4f2e9540068b9585832392644047f5ff424d9aeb5b"
+    },
+    {
+      "file": "images/linear-simultaneous-intersections-700.png",
+      "sha256": "4c97af1338acbfbefcf76c7fca8c6409747c0827590b17e80703db6fb93fbbca"
+    },
+    {
+      "file": "images/rectangle-area-from-tiles-1440.png",
+      "sha256": "babdddafaa2e1341f6239b6dc3b20befd5544bd537a78b1c5bb96e1bc13d4fc1"
+    },
+    {
+      "file": "images/rectangle-area-from-tiles-1920.png",
+      "sha256": "7c34a028e3081c3a64ef533c928ec1d323ae363463ebd5f1addc9390268ff456"
+    },
+    {
+      "file": "images/rectangle-area-from-tiles-700.png",
+      "sha256": "b9daf688c8bcf49b395d02e26142b17fb95f1d0b7e47d0f185c376ce7d00338a"
+    },
+    {
+      "file": "images/slope-and-intercept-1440.png",
+      "sha256": "4c6840281824bb9363c4b19ffeb99f116e186c344198c54da2f4be41a2913214"
+    },
+    {
+      "file": "images/slope-and-intercept-1920.png",
+      "sha256": "e9f5ac3aa12fe065653f3017339fe608ac924ad6b04312adaae0f8cbf4e77372"
+    },
+    {
+      "file": "images/slope-and-intercept-700.png",
+      "sha256": "baa17f4098a14cde576974eaed9ca12c44bfd72226dc9dcfede380f9cbbf8297"
+    },
+    {
+      "file": "images/surface-paraboloid-level-sets-1440.png",
+      "sha256": "390c66d87c12ecbd8b884b55bf4624f6bcf51565255e1f3acf74769942c68562"
+    },
+    {
+      "file": "images/surface-paraboloid-level-sets-1920.png",
+      "sha256": "847c5bdfd0223875bcfd28a31f9ac7be3d301c28fb078a112664fb9e1ed0d83a"
+    },
+    {
+      "file": "images/surface-paraboloid-level-sets-700.png",
+      "sha256": "5c49b419b6bf4cb79728e61e28bf670d7e6ba9758398940e585a35436772603c"
+    },
+    {
+      "file": "images/surface-partial-derivative-slice-1440.png",
+      "sha256": "cba86ffc82e91c7b191e066164d299afab0c0ac4c5aa27a4a60206e6a79629e1"
+    },
+    {
+      "file": "images/surface-partial-derivative-slice-1920.png",
+      "sha256": "d9c11de33dc37f0d6bf431a06334e7b9c876e9eb0dfd18ef2c9073f71ea5a236"
+    },
+    {
+      "file": "images/surface-partial-derivative-slice-700.png",
+      "sha256": "36e6642ea5d0870ee0e82a4a788f41e815deda17ddb75d9cfab0c40a0b3623ee"
+    },
+    {
+      "file": "images/surface-saddle-point-analysis-1440.png",
+      "sha256": "1bed688947d6389b6804029f2e5847126fdf352b667f2a32a5392aa952c4f443"
+    },
+    {
+      "file": "images/surface-saddle-point-analysis-1920.png",
+      "sha256": "dfc0113b9b135827aaf2c906e9a4d747b22fefa181f9780bf4e68b50501a6f06"
+    },
+    {
+      "file": "images/surface-saddle-point-analysis-700.png",
+      "sha256": "a8d2fee8c12d14f8145d02db3bf94ff2ebb037ab8aeeddfbfba403cd612f0d22"
+    },
+    {
+      "file": "images/trig-cosine-and-phase-shift-1440.png",
+      "sha256": "d31d1b98496a71a394c63d77769e1b92056de51a30536c0d453f2634a9e499e5"
+    },
+    {
+      "file": "images/trig-cosine-and-phase-shift-1920.png",
+      "sha256": "aceb0e6210e1593207d2acfebe9f16b647ce841033c1db313621fe4f435cfc01"
+    },
+    {
+      "file": "images/trig-cosine-and-phase-shift-700.png",
+      "sha256": "44d65fcd6cfde7d9407f5f549fcf5926350b33c22bf33d5412dd3be86adadd6d"
+    },
+    {
+      "file": "images/trig-quadrants-and-monotonicity-1440.png",
+      "sha256": "38a1bc3dd0c02c0e04e13cd37500d565eaa75e39d7b7e1ae5eb87c057953c6a3"
+    },
+    {
+      "file": "images/trig-quadrants-and-monotonicity-1920.png",
+      "sha256": "bd0cd232c687f732ec4e2f52dbd4bd35c33a9095284e013d9c14625535c151c8"
+    },
+    {
+      "file": "images/trig-quadrants-and-monotonicity-700.png",
+      "sha256": "69a44ca3a23243e5ebe7c4c64ed635ccd75f3ce5ec9f1dd9613ca5bf23440541"
+    },
+    {
+      "file": "images/trig-unit-circle-to-sine-1440.png",
+      "sha256": "9c1559c50d2684396e18ca5c3d0b4b83c9971d02a89b4f6b07c81184a6de790f"
+    },
+    {
+      "file": "images/trig-unit-circle-to-sine-1920.png",
+      "sha256": "48a70a3ba1acbbc7cdb7c6cb8100a7ac57814defce9e215413849ef5e837352d"
+    },
+    {
+      "file": "images/trig-unit-circle-to-sine-700.png",
+      "sha256": "8a50130a2887a60d04b0be35f95fa817667a46a796813d84fcc826bfdc8e9cb9"
+    }
+  ],
+  "failures": [],
+  "errors": []
+}
