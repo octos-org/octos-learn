@@ -120,7 +120,9 @@ pnpm setup:https
 
 本地开发默认从公网读取已发布预制课程：Vite 将 `/api/learn/course-packs` 及其资源子路径代理到 `https://learn.pitun.cc`，不转发本地登录凭据。日常查看课程无需本地打包，也无需设置 `OCTOS_LOCAL_COURSE_PACK_ROOT`。仅测试未发布课程时设置该变量，指向包含 `catalog.json` 的本地发布目录；这时本地课程服务替代公网代理。
 
-2026-09-27 核查：公网目录有 10 门不同课程（19 条版本记录），包含一次函数、三角函数、多元微积分三个课程集各 3 门及长方形单课。公网微积分仍为 0.1.0，主线为 0.2.3；本地使用公网课程不等于复现主线最新课程内容。该配置修正不发布或升级公网课程。
+2026-09-27 按用户要求完成课程发布：公网目录精确保留一次函数、三角函数、多元微积分三个课程集各 3 门，共 9 条版本记录；微积分三课均为 0.2.3，课程包与课程库主线 8ea5f21 构建哈希一致。长方形及其他旧版本已从目录撤下，历史不可变包保留。详见[公网发布核验](course-runtime-quality/whiteboard-closeout-2026-09-27/PUBLICATION-2026-09-27.json)。这是课程内容发布，没有重新部署公网前端或后端。
+
+如果本机以前构建过 APK/Spotlight，启动 Web 前执行 `node scripts/copy-course-pack-assets.mjs`，清除 public/course-packs 中的旧内置课程生成目录，避免其与公网九门课程混合显示。
 
 Vite 默认把其余 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后端端口不同，复制
 `.env.example` 为 `.env.local` 并修改 `OCTOS_API_TARGET`。
