@@ -52,22 +52,23 @@ Learning Coach 的 profile 模型继承已通过
 
 ### 1. 准备 Learning Coach
 
-Learning Coach 是产品内置运行依赖，但 Octos 的 `OCTOS_SKILLS_PATH` 接收的是“包含
-多个技能目录的根目录”，不能直接指向 Learning Coach 仓库本身。首次启动前建立一个
-仅供本机使用的技能根目录：
+本机单用户开发现使用 Octos 的账户级正式安装：Learning Coach 安装到 `alan0x` 的 `~/.octos/profiles/alan0x/data/skills/learning-coach/`，不再需要临时 `OCTOS_SKILLS_PATH`。这不改变公网产品技能的部署方式，也不自动安装到其他账户。
+
+2026-09-27 检查发现这里已存在旧安装（同为 0.15.0，但 OLL ref 为 `9599d46e8fe3327d2fed0dd9432c8178b9f03273`）；已备份到 `~/.octos/backups/learning-coach-before-closeout-20260927T162859Z`，通过正式安装器更新为主线版本，OLL ref 为 `f2a1c654041735f566385f9e208c868b270b8095`。
+
+以后修改技能源码后，重新构建并安装，再重启本地 Octos：
 
 ```bash
-mkdir -p /private/tmp/octos-learn-skills
-ln -sfn /Users/alan0x/Documents/projects/learning-coach \
-  /private/tmp/octos-learn-skills/learning-coach
-
 cd /Users/alan0x/Documents/projects/learning-coach
 npm ci
 npm run build
+cd /Users/alan0x/Documents/projects/octos
+./target/release/octos skills --profile alan0x install /Users/alan0x/Documents/projects/learning-coach --force
+cd "$HOME/.octos/profiles/alan0x/data/skills/learning-coach"
+npm ci
 ```
 
-修改 Learning Coach 后需要重新执行 `npm run build`，然后重启 Octos，使 manifest、
-action 和可执行文件重新载入。
+安装器复制源码和构建产物，不是链接；仓库修改不会自动更新安装目录。用 `env -u OCTOS_SKILLS_PATH ./target/release/octos skills --profile alan0x info learning-coach` 可在 Octos 仓库下检查账户级发现结果。
 
 ### 2. 启动 Octos
 
@@ -78,7 +79,7 @@ action 和可执行文件重新载入。
 cd /Users/alan0x/Documents/projects/octos
 cargo build --release -p octos-cli --features api
 
-OCTOS_SKILLS_PATH=/private/tmp/octos-learn-skills \
+env -u OCTOS_SKILLS_PATH \
 OLL_PROVIDER=gemini \
 OLL_MODEL=gemini-3.6-flash \
 ASR_API_URL=http://127.0.0.1:8094 \
