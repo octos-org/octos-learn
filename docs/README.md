@@ -11,6 +11,8 @@
 
 - [课程集与课程卡片 UI](course-runtime-quality/course-collections-2026-09-27/README.md)：两层导航、课程集编辑配置、统一卡片操作与响应式截图。
 
+- [会话入口与历史标题修复](course-runtime-quality/session-history-2026-09-27/README.md)：恢复侧栏、最近两行、历史标题恢复与只读数据调查。
+
 ## 产品与规划
 
 - [产品纲要与未来规划](PRODUCT_OUTLINE_AND_ROADMAP.md)：产品定位、功能模块现状、未来规划汇总。

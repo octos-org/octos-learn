@@ -388,6 +388,7 @@ export function adoptLearningSession(
           : existing.status,
       title:
         existing.status === "provisional" || existing.title === "新的学习"
+          || existing.title === "已保存的学习" || existing.title.startsWith("[[LEARNING_")
           ? record.title
           : existing.title,
       createdAt: Math.min(existing.createdAt, record.createdAt),

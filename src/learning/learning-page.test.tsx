@@ -343,15 +343,20 @@ describe("LearningPage", () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
 
-  it("keeps settings directly accessible from the learning canvas", async () => {
-    window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
-
+  it("offers history instead of settings and saves ink before switching sessions", async () => {
+    const previous = createProvisionalLearningSession(100);
+    promoteLearningSession(previous.id, "之前的数学课", 101);
+    window.history.replaceState({}, "", "/board?new-board=1&oll-fixture=geometry-v2");
     render(<LearningPage />);
-
-    fireEvent.click(
-      await screen.findByRole("button", { name: "打开设置" }),
-    );
-    expect(navigateMock).toHaveBeenCalledWith("/settings");
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    const save = vi.fn(async () => {});
+    act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
+    expect(screen.queryByRole("button", { name: "打开设置" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "打开学习记录" }));
+    expect(screen.getByRole("dialog", { name: "学习记录" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /之前的数学课/u }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith(`/board?session=${previous.id}`));
+    expect(save).toHaveBeenCalledOnce();
   });
 
   it("treats learning-coach as a built-in product capability", async () => {
