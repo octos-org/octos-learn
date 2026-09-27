@@ -118,7 +118,11 @@ pnpm dev:https
 pnpm setup:https
 ```
 
-Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后端端口不同，复制
+本地开发默认从公网读取已发布预制课程：Vite 将 `/api/learn/course-packs` 及其资源子路径代理到 `https://learn.pitun.cc`，不转发本地登录凭据。日常查看课程无需本地打包，也无需设置 `OCTOS_LOCAL_COURSE_PACK_ROOT`。仅测试未发布课程时设置该变量，指向包含 `catalog.json` 的本地发布目录；这时本地课程服务替代公网代理。
+
+2026-09-27 核查：公网目录有 10 门不同课程（19 条版本记录），包含一次函数、三角函数、多元微积分三个课程集各 3 门及长方形单课。公网微积分仍为 0.1.0，主线为 0.2.3；本地使用公网课程不等于复现主线最新课程内容。该配置修正不发布或升级公网课程。
+
+Vite 默认把其余 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后端端口不同，复制
 `.env.example` 为 `.env.local` 并修改 `OCTOS_API_TARGET`。
 
 ## 本地与公网的差异
