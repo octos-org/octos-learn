@@ -1,0 +1,483 @@
+{
+  "id": "rectangle-area-from-tiles",
+  "version": "0.1.5",
+  "title": "长方形的面积与周长",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 561.5986938476562,
+          "y": 345.0651550292969,
+          "w": 379.10162353515625,
+          "h": 361.8696594238281,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 964.5328979492188,
+          "y": 344.5379638671875,
+          "w": 242.51715087890625,
+          "h": 135.46310424804688,
+          "nw": 281,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 280.8px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 1241.2218017578125,
+          "y": 345.0651550292969,
+          "w": 451.4755859375,
+          "h": 62.0347900390625,
+          "nw": 524,
+          "nh": 72,
+          "style": "left: 1196.8px; top: 20px; width: 524px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 227.3000030517578,
+          "y": 345.0651550292969,
+          "w": 310.174072265625,
+          "h": 65.48117065429688,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 697.0628662109375,
+          "y": 203.09999084472656,
+          "w": 388.1666259765625,
+          "h": 370.522705078125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 1109.632080078125,
+          "y": 202.56021118164062,
+          "w": 248.316162109375,
+          "h": 138.70230102539062,
+          "nw": 281,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 280.8px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 354.7704772949219,
+          "y": 605.3818359375,
+          "w": 462.2712097167969,
+          "h": 63.5181884765625,
+          "nw": 524,
+          "nh": 72,
+          "style": "left: 20px; top: 476px; width: 524px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 354.7704772949219,
+          "y": 203.09999084472656,
+          "w": 317.5908508300781,
+          "h": 67.04698181152344,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 133.70370483398438,
+          "y": 187,
+          "w": 293.3333435058594,
+          "h": 280,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 133.53994750976562,
+          "y": 559.3899536132812,
+          "w": 432.9108581542969,
+          "h": 77.88677978515625,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 580px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 133.70370483398438,
+          "y": 663,
+          "w": 432.5833435058594,
+          "h": 48.00006103515625,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 734px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 133.70370483398438,
+          "y": 483,
+          "w": 240,
+          "h": 50.66668701171875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 466.28033447265625,
+          "y": 180.5749969482422,
+          "w": 469.80242919921875,
+          "h": 448.44775390625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 965.6173095703125,
+          "y": 179.92169189453125,
+          "w": 300.5400390625,
+          "h": 167.8729248046875,
+          "nw": 281,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 280.8px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 1308.504638671875,
+          "y": 180.5749969482422,
+          "w": 559.4920654296875,
+          "h": 76.87675476074219,
+          "nw": 524,
+          "nh": 72,
+          "style": "left: 1196.8px; top: 20px; width: 524px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-03-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑆\n=\n𝑎\n×\n𝑏\n=\n4\n cm\n×\n3\n cm\n=\n12\n cm\n2\nS=a×b=4 cm×3 cm=12 cm\n2",
+          "x": 52,
+          "y": 667.461181640625,
+          "w": 442.0413818359375,
+          "h": 76.876708984375,
+          "nw": 414,
+          "nh": 72,
+          "style": "left: 20px; top: 476px; width: 414px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-04-moment-04-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "面积与周长的区别\n周长：围成图形四周边界的总长度（单位：厘米）\n周长计算：(4 + 3) × 2 = 14 厘米\n面积：图形所占平面区域的大小（单位：平方厘米）\n面积计算：4 × 3 = 12 平方厘米",
+          "x": 536.3895263671875,
+          "y": 666.43701171875,
+          "w": 470.5247802734375,
+          "h": 168.6146240234375,
+          "nw": 440,
+          "nh": 156,
+          "style": "left: 474px; top: 476px; width: 440px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 52,
+          "y": 180.5749969482422,
+          "w": 384.3838195800781,
+          "h": 81.14768981933594,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n尝试将长设为5厘米，观察小方格的覆盖情况。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 278.806396484375,
+          "w": 352.3518371582031,
+          "h": 162.76254272460938,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 350.30401611328125,
+          "y": 181.22308349609375,
+          "w": 338.28289794921875,
+          "h": 322.9064025878906,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 709.8533935546875,
+          "y": 180.75267028808594,
+          "w": 216.40478515625,
+          "h": 120.87748718261719,
+          "nw": 281,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 280.8px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 52,
+          "y": 531.80712890625,
+          "w": 402.8641662597656,
+          "h": 55.35546875,
+          "nw": 524,
+          "nh": 72,
+          "style": "left: 20px; top: 476px; width: 524px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-03-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑆\n=\n𝑎\n×\n𝑏\n=\n4\n cm\n×\n3\n cm\n=\n12\n cm\n2\nS=a×b=4 cm×3 cm=12 cm\n2",
+          "x": 485.6171569824219,
+          "y": 531.80712890625,
+          "w": 318.2934875488281,
+          "h": 55.35546875,
+          "nw": 414,
+          "nh": 72,
+          "style": "left: 584px; top: 476px; width: 414px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-04-moment-04-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "面积与周长的区别\n周长：围成图形四周边界的总长度（单位：厘米）\n周长计算：(4 + 3) × 2 = 14 厘米\n面积：图形所占平面区域的大小（单位：平方厘米）\n面积计算：4 × 3 = 12 平方厘米",
+          "x": 51.739952087402344,
+          "y": 614.102783203125,
+          "w": 338.802978515625,
+          "h": 121.4114990234375,
+          "nw": 440,
+          "nh": 156,
+          "style": "left: 20px; top: 584px; width: 440px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 52,
+          "y": 181.22308349609375,
+          "w": 276.77691650390625,
+          "h": 58.43067932128906,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n尝试将长设为5厘米，观察小方格的覆盖情况。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 251.9549560546875,
+          "w": 253.712158203125,
+          "h": 117.19772338867188,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 133.9214324951172,
+          "y": 150,
+          "w": 225.2297821044922,
+          "h": 214.9920654296875,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "面积的概念\n面积表示平面图形所占用平面区域的大小。\n常用边长为1厘米的正方形作为基本度量单位（1平方厘米）。",
+          "x": 133.7957000732422,
+          "y": 521.9285278320312,
+          "w": 332.40142822265625,
+          "h": 59.80377197265625,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 748px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-02-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "方格总数\n=\n每行方格数\n×\n行数\n=\n4\n×\n3\n=\n12\n方格总数=每行方格数×行数=4×3=12",
+          "x": 133.9214324951172,
+          "y": 601.4833374023438,
+          "w": 332.14996337890625,
+          "h": 36.85577392578125,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 902px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-03-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑆\n=\n𝑎\n×\n𝑏\n=\n4\n cm\n×\n3\n cm\n=\n12\n cm\n2\nS=a×b=4 cm×3 cm=12 cm\n2",
+          "x": 133.9214324951172,
+          "y": 658.8145751953125,
+          "w": 332.14996337890625,
+          "h": 36.85577392578125,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 1014px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5:node:section-04-moment-04-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "面积与周长的区别\n周长：围成图形四周边界的总长度（单位：厘米）\n周长计算：(4 + 3) × 2 = 14 厘米\n面积：图形所占平面区域的大小（单位：平方厘米）\n面积计算：4 × 3 = 12 平方厘米",
+          "x": 133.74879455566406,
+          "y": 715.4215087890625,
+          "w": 332.49517822265625,
+          "h": 81.302734375,
+          "nw": 649,
+          "nh": 156,
+          "style": "left: 20px; top: 1126px; width: 648.889px; height: 156px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "control",
+          "text": "每行方格数（长）\n4 厘米\n−\n+\n行数（宽）\n3 厘米\n−\n+",
+          "x": 133.9214324951172,
+          "y": 377.27734375,
+          "w": 184.27891540527344,
+          "h": 38.9033203125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "rectangle-area-from-tiles-0.1.5-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n尝试将长设为5厘米，观察小方格的覆盖情况。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 133.9214324951172,
+          "y": 424.370849609375,
+          "w": 168.92234802246094,
+          "h": 78.03057861328125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 13
+}

@@ -17,10 +17,9 @@ const courses = [
   ["trig-unit-circle-to-sine", "从单位圆旋转到正弦曲线"],
 ] as const;
 
-const OUT = '/tmp/banded-mock/browser';
-
 for (const [packId, title] of courses) {
-  test(`${packId}: overview scale across widths`, async ({page}) => {
+  test(`${packId}: overview scale across widths`, async ({page}, testInfo) => {
+    const OUT = testInfo.outputPath('overview');
     await installTestAccount(page);
     await page.goto('/');
     const card = page.locator('.course-launcher-card').filter({has: page.getByRole('heading', {name: title, exact: true})});
@@ -28,12 +27,14 @@ for (const [packId, title] of courses) {
     await expect(page.getByTestId('oll-controls')).toBeVisible();
     const pause = page.getByRole('button', {name: '暂停 OLL 课程'});
     if (await pause.isVisible()) await pause.click();
-    const next = page.getByRole('button', {name: '下一 OLL Beat', exact: true});
+    const next = page.getByRole('button', {name: '下一 OLL Beat', exact: true, includeHidden: true});
     for (let i = 0; i < 80; i++) {
-      if (!(await next.isVisible().catch(() => false))) break;
-      try { await next.click({timeout: 5000}); } catch { break; }
+      if (await next.isDisabled()) break;
+      // The overview check advances the runtime even while playback chrome fades.
+      await next.evaluate((button: HTMLButtonElement) => button.click());
       await page.waitForTimeout(120);
     }
+    await expect(next, 'Course must finish before overview measurements').toBeDisabled();
     await page.evaluate(() => document.fonts.ready);
     const metrics = () => page.evaluate(() => {
       const cards = [...document.querySelectorAll<HTMLElement>('.board-node,[data-course-controls-id],[data-course-tasks-id]')]

@@ -1,0 +1,600 @@
+{
+  "id": "fraction-comparing-unit-shares",
+  "version": "0.1.0",
+  "title": "直观理解分数的大小比较",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 398.239990234375,
+          "y": 75.5999984741211,
+          "w": 343.20001220703125,
+          "h": 327.5999755859375,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 763.2799682617188,
+          "y": 75.5999984741211,
+          "w": 218.4000244140625,
+          "h": 59.280006408691406,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 20px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 763.2799682617188,
+          "y": 147.36000061035156,
+          "w": 218.4000244140625,
+          "h": 59.279998779296875,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 112px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 763.05126953125,
+          "y": 218.64402770996094,
+          "w": 218.857421875,
+          "h": 106.25193786621094,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 204px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 95.5999984741211,
+          "y": 75.5999984741211,
+          "w": 280.79998779296875,
+          "h": 59.280006408691406,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 691.164794921875,
+          "y": 203.10000610351562,
+          "w": 487.98095703125,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 1210.1990966796875,
+          "y": 203.10000610351562,
+          "w": 310.5333251953125,
+          "h": 84.28762817382812,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 20px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 1210.1990966796875,
+          "y": 305.13238525390625,
+          "w": 310.5333251953125,
+          "h": 84.28762817382812,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 112px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 1209.8739013671875,
+          "y": 406.488037109375,
+          "w": 311.1837158203125,
+          "h": 151.074951171875,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 204px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 260.85430908203125,
+          "y": 203.10000610351562,
+          "w": 399.25714111328125,
+          "h": 84.28762817382812,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 133.51153564453125,
+          "y": 193.15000915527344,
+          "w": 432.9769287109375,
+          "h": 413.296142578125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 133.51153564453125,
+          "y": 744.2115478515625,
+          "w": 432.9769287109375,
+          "h": 74.78692626953125,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 580px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 133.51153564453125,
+          "y": 834.7431030273438,
+          "w": 432.9769287109375,
+          "h": 74.78692626953125,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 672px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 133.22378540039062,
+          "y": 924.3306274414062,
+          "w": 433.5523986816406,
+          "h": 134.73309326171875,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 20px; top: 764px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 133.51153564453125,
+          "y": 630.0631103515625,
+          "w": 354.2538757324219,
+          "h": 74.78692626953125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 438.0865783691406,
+          "y": 298.33685302734375,
+          "w": 437.8301086425781,
+          "h": 417.92877197265625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 903.7786254882812,
+          "y": 298.33685302734375,
+          "w": 278.61920166015625,
+          "h": 75.62521362304688,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 20px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 903.7786254882812,
+          "y": 389.8831481933594,
+          "w": 278.61920166015625,
+          "h": 75.62521362304688,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 112px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 903.4868774414062,
+          "y": 480.822265625,
+          "w": 279.20269775390625,
+          "h": 135.54864501953125,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 204px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 1222.2005615234375,
+          "y": 298.33685302734375,
+          "w": 497.5341796875,
+          "h": 75.62521362304688,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 1196px; top: 20px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "x": 1222.2005615234375,
+          "y": 389.8831481933594,
+          "w": 497.5341796875,
+          "h": 71.64492797851562,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 1196px; top: 112px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 1759.5374755859375,
+          "y": 298.33685302734375,
+          "w": 108.4625244140625,
+          "h": 75.62521362304688,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 1736px; top: 20px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 52,
+          "y": 298.33685302734375,
+          "w": 358.22467041015625,
+          "h": 75.62521362304688,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 389.8831481933594,
+          "w": 328.37261962890625,
+          "h": 151.68576049804688,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 361.2887878417969,
+          "y": 201.33680725097656,
+          "w": 350.7397766113281,
+          "h": 334.797119140625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 734.348388671875,
+          "y": 201.33680725097656,
+          "w": 223.19805908203125,
+          "h": 60.58232116699219,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 20px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 734.348388671875,
+          "y": 274.67333984375,
+          "w": 223.19805908203125,
+          "h": 60.58233642578125,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 876px; top: 112px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 734.1146850585938,
+          "y": 347.5234069824219,
+          "w": 223.66552734375,
+          "h": 108.58621215820312,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 204px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 989.4319458007812,
+          "y": 201.33680725097656,
+          "w": 398.56793212890625,
+          "h": 60.58232116699219,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 1196px; top: 20px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "x": 989.4319458007812,
+          "y": 274.67333984375,
+          "w": 398.56793212890625,
+          "h": 57.393768310546875,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 1196px; top: 112px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 52,
+          "y": 564.830810546875,
+          "w": 86.8878173828125,
+          "h": 60.58233642578125,
+          "nw": 109,
+          "nh": 76,
+          "style": "left: 20px; top: 476px; width: 109px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 52,
+          "y": 201.33680725097656,
+          "w": 286.9689636230469,
+          "h": 60.58232116699219,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 274.67333984375,
+          "w": 263.05487060546875,
+          "h": 121.51339721679688,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "单位正方形铺成长方形\n探索\n大图\n0\n2\n4\n6\n8\n0\n1\n2\n3\n4\n5\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 181.8580780029297,
+          "y": 150,
+          "w": 207.9297637939453,
+          "h": 198.47842407226562,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 181.8580780029297,
+          "y": 494.0292663574219,
+          "w": 236.28382873535156,
+          "h": 35.915130615234375,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 20px; top: 748px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 181.8580780029297,
+          "y": 537.5054931640625,
+          "w": 236.28382873535156,
+          "h": 35.9151611328125,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 20px; top: 840px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-01-moment-03-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "直观观察\n总长度相同的情况下：\n分成 2 份，每份更大\n分成 4 份，每份更小",
+          "x": 181.7200164794922,
+          "y": 580.466552734375,
+          "w": 236.55995178222656,
+          "h": 64.8270263671875,
+          "nw": 500,
+          "nh": 135,
+          "style": "left: 20px; top: 932px; width: 500px; height: 135px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n>\n1\n4\n2\n1\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 181.8580780029297,
+          "y": 663.6810913085938,
+          "w": 236.28382873535156,
+          "h": 35.91510009765625,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 20px; top: 1107px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-02-moment-04-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "分子相同（为1）时：分母越大，分数越小\n分子相同（为1）时：分母越大，分数越小",
+          "x": 181.8580780029297,
+          "y": 707.1572875976562,
+          "w": 236.28382873535156,
+          "h": 34.02490234375,
+          "nw": 500,
+          "nh": 72,
+          "style": "left: 20px; top: 1199px; width: 500px; height: 72px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n>\n1\n4\n4\n3\n\t​\n\n>\n4\n1\n\t​\n",
+          "x": 181.8580780029297,
+          "y": 760.0848999023438,
+          "w": 236.28382873535156,
+          "h": 35.91510009765625,
+          "nw": 500,
+          "nh": 76,
+          "style": "left: 20px; top: 1311px; width: 500px; height: 76px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n8 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 181.8580780029297,
+          "y": 359.820068359375,
+          "w": 170.1243438720703,
+          "h": 35.91510009765625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-comparing-unit-shares-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请调整每行方格数，观察分成4份时，单份方格的大小变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 181.8580780029297,
+          "y": 403.2962646484375,
+          "w": 155.9473419189453,
+          "h": 72.03704833984375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 12
+}

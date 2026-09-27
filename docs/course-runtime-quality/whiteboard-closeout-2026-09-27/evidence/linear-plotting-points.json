@@ -1,0 +1,483 @@
+{
+  "id": "linear-plotting-points",
+  "version": "0.1.0",
+  "title": "一次函数 y = 2x - 1 的图像本质与画法",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 926.199951171875,
+          "y": 266.6499938964844,
+          "w": 572,
+          "h": 518.699951171875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 1534.599853515625,
+          "y": 266.6499938964844,
+          "w": 364,
+          "h": 93.60000610351562,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 1534.1591796875,
+          "y": 380.2568359375,
+          "w": 364.88134765625,
+          "h": 204.38629150390625,
+          "nw": 280,
+          "nh": 156,
+          "style": "left: 876px; top: 108px; width: 280px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "x": 421.79998779296875,
+          "y": 266.6499938964844,
+          "w": 467.99993896484375,
+          "h": 98.79998779296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 689.6471557617188,
+          "y": 203.10000610351562,
+          "w": 513.6641235351562,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 1235.9990234375,
+          "y": 203.10000610351562,
+          "w": 326.877197265625,
+          "h": 84.05413818359375,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 1235.603271484375,
+          "y": 305.1205749511719,
+          "w": 327.668701171875,
+          "h": 183.54183959960938,
+          "nw": 280,
+          "nh": 156,
+          "style": "left: 876px; top: 108px; width: 280px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "x": 236.688720703125,
+          "y": 203.10000610351562,
+          "w": 420.27069091796875,
+          "h": 88.72381591796875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 127.29999542236328,
+          "y": 196.43795776367188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 127.29999542236328,
+          "y": 742.052978515625,
+          "w": 445.4000244140625,
+          "h": 72.88360595703125,
+          "nw": 440,
+          "nh": 72,
+          "style": "left: 20px; top: 559px; width: 440px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 127.05035400390625,
+          "y": 830.1617431640625,
+          "w": 445.8992919921875,
+          "h": 117.34149169921875,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 647px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "x": 127.29999542236328,
+          "y": 624.6292724609375,
+          "w": 364.4181823730469,
+          "h": 76.93280029296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 431.637939453125,
+          "y": 312.1007995605469,
+          "w": 430.5172119140625,
+          "h": 390.4008483886719,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 889.5516967773438,
+          "y": 312.1007995605469,
+          "w": 273.96551513671875,
+          "h": 70.44827270507812,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 889.2200317382812,
+          "y": 397.6072692871094,
+          "w": 274.62884521484375,
+          "h": 153.83181762695312,
+          "nw": 280,
+          "nh": 156,
+          "style": "left: 876px; top: 108px; width: 280px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "x": 1202.4149169921875,
+          "y": 310.6497802734375,
+          "w": 665.8253173828125,
+          "h": 114.44512939453125,
+          "nw": 680,
+          "nh": 114,
+          "style": "left: 1196px; top: 20px; width: 680px; height: 114px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "x": 1202.6551513671875,
+          "y": 439.299072265625,
+          "w": 665.3448486328125,
+          "h": 142.85345458984375,
+          "nw": 680,
+          "nh": 146,
+          "style": "left: 1196px; top: 150px; width: 680px; height: 146px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "x": 52,
+          "y": 312.1007995605469,
+          "w": 352.2413635253906,
+          "h": 74.362060546875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 402.1180419921875,
+          "w": 322.887939453125,
+          "h": 128.60479736328125,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 350.5140686035156,
+          "y": 184.49032592773438,
+          "w": 338.5211486816406,
+          "h": 306.97711181640625,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 710.5774536132812,
+          "y": 184.49032592773438,
+          "w": 215.42254638671875,
+          "h": 55.39436340332031,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 710.316650390625,
+          "y": 251.72512817382812,
+          "w": 215.94415283203125,
+          "h": 120.95993041992188,
+          "nw": 280,
+          "nh": 156,
+          "style": "left: 876px; top: 108px; width: 280px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "x": 51.81114196777344,
+          "y": 518.023681640625,
+          "w": 523.5467529296875,
+          "h": 89.9896240234375,
+          "nw": 680,
+          "nh": 114,
+          "style": "left: 20px; top: 455px; width: 680px; height: 114px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "x": 52,
+          "y": 619.1822509765625,
+          "w": 523.1690063476562,
+          "h": 112.327392578125,
+          "nw": 680,
+          "nh": 146,
+          "style": "left: 20px; top: 585px; width: 680px; height: 146px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "x": 52,
+          "y": 184.49032592773438,
+          "w": 276.9718322753906,
+          "h": 58.471832275390625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 255.27200317382812,
+          "w": 253.89083862304688,
+          "h": 101.12356567382812,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "x": 130.97488403320312,
+          "y": 150,
+          "w": 229.22579956054688,
+          "h": 207.86611938476562,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "x": 130.97488403320312,
+          "y": 507.38385009765625,
+          "w": 338.0429382324219,
+          "h": 37.50970458984375,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 706px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "x": 130.846923828125,
+          "y": 552.4918212890625,
+          "w": 338.298828125,
+          "h": 60.86474609375,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 794px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "x": 130.846923828125,
+          "y": 632.7208251953125,
+          "w": 338.298828125,
+          "h": 60.86468505859375,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 948px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "x": 130.97488403320312,
+          "y": 701.183837890625,
+          "w": 338.0429382324219,
+          "h": 94.81610107421875,
+          "nw": 649,
+          "nh": 182,
+          "style": "left: 20px; top: 1078px; width: 648.889px; height: 182px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "x": 130.97488403320312,
+          "y": 370.36932373046875,
+          "w": 187.54837036132812,
+          "h": 39.59356689453125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 130.97488403320312,
+          "y": 418.29840087890625,
+          "w": 171.91934204101562,
+          "h": 68.47467041015625,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 535px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 8
+}
