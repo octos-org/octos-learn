@@ -21,7 +21,7 @@ const collection = [
 
 test("collection home page displays all 3 high school trigonometry courses", async ({ page }, testInfo) => {
   await installTestAccount(page);
-  await page.goto("/");
+  await page.goto("/?collection=trigonometry");
   await page.waitForLoadState("networkidle");
 
   for (const item of collection) {
@@ -42,7 +42,7 @@ test("collection home page displays all 3 high school trigonometry courses", asy
 for (const item of collection) {
   test(`course: ${item.id} (${item.title}) loads, renders unit circle & wave projection, and plays`, async ({ page }, testInfo) => {
     await installTestAccount(page);
-    await page.goto("/");
+    await page.goto("/?collection=trigonometry");
     await page.waitForLoadState("networkidle");
 
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });

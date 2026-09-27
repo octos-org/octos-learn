@@ -21,7 +21,7 @@ const collection = [
 
 test("collection home page displays all 3 linear function courses", async ({ page }, testInfo) => {
   await installTestAccount(page);
-  await page.goto("/");
+  await page.goto("/?collection=linear-functions");
   await page.waitForLoadState("networkidle");
 
   for (const item of collection) {
@@ -37,7 +37,7 @@ test("collection home page displays all 3 linear function courses", async ({ pag
 for (const item of collection) {
   test(`course: ${item.id} (${item.title}) loads, renders plot visual and plays`, async ({ page }, testInfo) => {
     await installTestAccount(page);
-    await page.goto("/");
+    await page.goto("/?collection=linear-functions");
     await page.waitForLoadState("networkidle");
 
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });

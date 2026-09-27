@@ -24,14 +24,14 @@ const collection = [
 
 test("collection home page displays all 3 college multivariable calculus courses", async ({ page }, testInfo) => {
   await installTestAccount(page);
-  await page.goto("/");
+  await page.goto("/?collection=multivariable-calculus");
   await page.waitForLoadState("networkidle");
 
   for (const item of collection) {
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect.poll(() => card.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-    await expect(card).toContainText('0.2.3');
+    await expect(card.locator('.course-launcher-version')).toContainText(/课程包 v\d+\.\d+\.\d+/u);
   }
 
   // Scroll to the calculus cards row to show the thumbnails clearly
@@ -49,7 +49,7 @@ for (const item of collection) {
     const errors: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
     await installTestAccount(page);
-    await page.goto("/");
+    await page.goto("/?collection=multivariable-calculus");
     await page.waitForLoadState("networkidle");
 
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });

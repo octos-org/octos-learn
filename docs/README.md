@@ -9,6 +9,8 @@
 - [公开注册、新手设置与平台旁白语音](PUBLIC_ONBOARDING_AND_TTS.md)：当前用户入口、功能降级、共享 TTS 额度和本次上线记录。
 - [发布前 E2E 清单](RELEASE_E2E_CHECKLIST.md)：文字、图片、语音、摄像头、局部辅助、回放和多用户隔离的人工验收。
 
+- [课程集与课程卡片 UI](course-runtime-quality/course-collections-2026-09-27/README.md)：两层导航、课程集编辑配置、统一卡片操作与响应式截图。
+
 ## 产品与规划
 
 - [产品纲要与未来规划](PRODUCT_OUTLINE_AND_ROADMAP.md)：产品定位、功能模块现状、未来规划汇总。
