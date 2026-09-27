@@ -2,6 +2,8 @@
 
 本次收尾把已完成的白板布局与镜头工作合入 main，并保留可复现的测试输入与真实截图。代码集成收尾不等于最终排版体验验收；Claude 正在另一台电脑开展的三个课程集九门课内容审查独立继续。
 
+合并记录：[应用 #28](https://github.com/octos-org/octos-learn/pull/28)、[OLL #18](https://github.com/alan0x/octos-lesson-language/pull/18)、[Coach #19](https://github.com/alan0x/learning-coach/pull/19) 与[依赖固定 #20](https://github.com/alan0x/learning-coach/pull/20)、[课程库 #7](https://github.com/alan0x/octos-course-library/pull/7)。本次没有部署公网。
+
 ## 固定范围与分支策略
 
 | 仓库 | 本次纳入的工作分支截止提交 | 范围 |

@@ -5,7 +5,7 @@
   "components": {
     "learning_coach": {
       "repository": "alan0x/learning-coach",
-      "main_baseline_ref": "e706de06a897d8b27a0ee0a18dfb73cf9bc49aa5",
+      "main_baseline_ref": "7bb8078b19aac033085e5ae435d31220c7e204f3",
       "package_version": "0.15.0",
       "oll_authoring_ref": "f2a1c654041735f566385f9e208c868b270b8095"
     },
