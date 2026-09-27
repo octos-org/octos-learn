@@ -13,7 +13,7 @@ const courses = [
 for (const [title, beats] of courses) {
   test(`${title}: complete course is readable and contained`, async ({page}, info) => {
     await installTestAccount(page);
-    await page.goto('/');
+    await page.goto('/?collection=multivariable-calculus');
     const card = page.locator('.course-launcher-card').filter({has:page.getByRole('heading',{name:title,exact:true})});
     await card.getByRole('button',{name:'开始互动',exact:true}).click();
     await expect(page.getByTestId('oll-controls')).toBeVisible();
@@ -101,7 +101,7 @@ for (const [title, beats] of courses) {
 
 test('handwritten annotations keep their course cards in place at completion', async ({page}) => {
   await installTestAccount(page);
-  await page.goto('/');
+  await page.goto('/?collection=multivariable-calculus');
   const card=page.locator('.course-launcher-card').filter({has:page.getByRole('heading',{name:courses[0][0],exact:true})});
   await card.getByRole('button',{name:'开始互动',exact:true}).click();
   await expect(page.getByTestId('oll-controls')).toBeVisible();

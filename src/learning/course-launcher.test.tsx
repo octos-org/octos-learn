@@ -64,8 +64,8 @@ function catalog(packs: unknown[]) {
   return { schemaVersion: 1, generatedAt: "2026-09-15T00:00:00Z", packs };
 }
 
-function showLauncher() {
-  return render(<MemoryRouter><CourseLauncher /></MemoryRouter>);
+function showLauncher(path = "/?collection=other") {
+  return render(<MemoryRouter initialEntries={[path]}><CourseLauncher /></MemoryRouter>);
 }
 
 import { resetEmbeddedCoursePackCatalogCache } from "./course-pack/course-pack-catalog";
@@ -91,9 +91,40 @@ describe("shared course launcher", () => {
 
   it("always offers a blank whiteboard while no packs are published", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
-    showLauncher();
+    showLauncher("/");
     expect(screen.getByRole("link", { name: /新建空白白板/u }).getAttribute("href")).toBe("/board?new-board=1");
     expect(await screen.findByText("课程包还在准备中")).toBeTruthy();
+  });
+
+  it("shows collections first and opens their ordered courses with back navigation", async () => {
+    const packs = [
+      { ...release, packId: "surface-saddle-point-analysis", title: "鞍点" },
+      { ...release, packId: "surface-paraboloid-level-sets", title: "等高线" },
+      { ...release, packId: "surface-partial-derivative-slice", title: "偏导数" },
+    ].map(pack => ({ ...pack, archiveUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/archive.ocpack`, manifestUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/manifest.json`, thumbnailUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/files/thumbnail.webp` }));
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog(packs)), { status: 200 })));
+    showLauncher("/");
+    fireEvent.click(await screen.findByRole("link", { name: /用截面理解多元函数/u }));
+    expect((await screen.findAllByRole("heading", { level: 3 })).map(h => h.textContent))
+      .toEqual(["等高线", "偏导数", "鞍点"]);
+    fireEvent.click(screen.getByRole("link", { name: /全部课程集/u }));
+    expect(screen.queryByRole("heading", { name: "等高线" })).toBeNull();
+    expect(screen.getByRole("link", { name: /用截面理解多元函数/u })).toBeTruthy();
+  });
+
+  it.each([
+    ["college-calculus", "大学微积分 · 数学"],
+    ["highschool-mathematics", "高中 · 数学"],
+    ["secondary-age-12-14", "初中（12–14岁） · 数学"],
+    ["unspecified", "数学"],
+    ["三年级", "三年级 · 数学"],
+  ])("renders readable course tags for %s", async (grade, label) => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      JSON.stringify(catalog([{ ...release, grade }])), { status: 200 },
+    )));
+    showLauncher();
+    expect(await screen.findByText(label)).toBeTruthy();
+    expect(screen.queryByText(/unspecified|mathematics/u)).toBeNull();
   });
 
   it("offers separate preview and interactive entry for a version-pinned pack", async () => {
@@ -156,7 +187,7 @@ describe("shared course launcher", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    showLauncher();
+    showLauncher("/?collection=linear-functions");
 
     const titles = await screen.findAllByRole("heading", {
       name: "一次函数 y = mx + b 的图像与性质",
@@ -183,7 +214,7 @@ describe("shared course launcher", () => {
     showLauncher();
     expect(await screen.findByText("联网后可打开")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /预览/u })).toBeNull();
-    expect(screen.getByRole("link", { name: /新建空白白板/u })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /全部课程集/u })).toBeTruthy();
   });
 
   it("opens an installed pinned version when the catalog is offline", async () => {
@@ -199,6 +230,7 @@ describe("shared course launcher", () => {
     showLauncher();
 
     expect(await screen.findByText("已下载 · 可离线")).toBeTruthy();
+    expect(screen.getByText("3 分钟")).toBeTruthy();
     expect(screen.getByRole("link", { name: /预览/u }).getAttribute("href"))
       .toContain("mode=preview");
   });
@@ -229,6 +261,7 @@ describe("shared course launcher", () => {
     cleanup();
     showLauncher();
     expect(await screen.findByRole("link", { name: /继续学习/u })).toBeTruthy();
+    fireEvent.click(screen.getByLabelText(/更多操作/u));
     expect(screen.getByRole("button", { name: /重新开始/u })).toBeTruthy();
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
@@ -242,7 +275,7 @@ describe("shared course launcher", () => {
     updateLearningSession(session.id, { status: "paused" }, 120);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
 
-    showLauncher();
+    showLauncher("/");
 
     expect(await screen.findByRole("heading", { name: "最近白板" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "代数白板 继续学习" }));
@@ -263,7 +296,7 @@ describe("shared course launcher", () => {
     }]);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
 
-    showLauncher();
+    showLauncher("/");
 
     expect(await screen.findByRole("button", { name: "几何证明 继续学习" })).toBeTruthy();
   });

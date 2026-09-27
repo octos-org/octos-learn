@@ -1,3 +1,4 @@
+import { collectionUrl } from "./helpers/course-collection";
 import {expect, test} from '@playwright/test';
 import {writeFile, mkdir} from 'node:fs/promises';
 import {installTestAccount} from './helpers/course-test-account';
@@ -21,7 +22,7 @@ for (const [packId, title] of courses) {
   test(`${packId}: overview scale across widths`, async ({page}, testInfo) => {
     const OUT = testInfo.outputPath('overview');
     await installTestAccount(page);
-    await page.goto('/');
+    await page.goto(collectionUrl(packId));
     const card = page.locator('.course-launcher-card').filter({has: page.getByRole('heading', {name: title, exact: true})});
     await card.getByRole('button', {name: '开始互动', exact: true}).click();
     await expect(page.getByTestId('oll-controls')).toBeVisible();

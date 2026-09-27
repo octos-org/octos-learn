@@ -1,3 +1,4 @@
+import { collectionUrl } from "./helpers/course-collection";
 import { expect, test, type Page } from "@playwright/test";
 
 test.skip(!process.env.OCTOS_LOCAL_COURSE_PACK_ROOT, "Requires reviewed CoursePack publication");
@@ -33,7 +34,7 @@ async function installTestAccount(page: Page, externalCalls: string[] = []) {
 for (const course of courses) {
   test(`${course.id}: independent interactive ink survives return and reload`, async ({ page }) => {
     await installTestAccount(page);
-    await page.goto("/");
+    await page.goto(collectionUrl(course.id));
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: course.title, exact: true }) });
     await card.getByRole("button", { name: "开始互动", exact: true }).click();
     await expect(page.getByTestId("oll-controls")).toBeVisible();
@@ -47,6 +48,7 @@ for (const course of courses) {
     await page.mouse.up();
     await expect(page.locator(".learning-ink-status")).toContainText("1 项笔迹");
     await page.getByRole("button", { name: "返回首页" }).click();
+    await page.goto(collectionUrl(course.id));
     const saved = await page.evaluate(() => {
       const entries = JSON.parse(localStorage.getItem("octos_learning_sessions_v2:curated-learner") ?? "[]") as Array<{ id: string; source?: { mode: string } }>;
       const instance = entries.find((entry) => entry.source?.mode === "instance");
@@ -93,7 +95,7 @@ for (const course of courses) {
         return start.apply(this, args);
       };
     });
-    await page.goto("/");
+    await page.goto(collectionUrl(course.id));
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: course.title, exact: true }) });
     await expect(card).toBeVisible();
     await card.getByRole("link", { name: "预览", exact: true }).click();
@@ -137,6 +139,7 @@ for (const course of courses) {
     expect(overlaps).toEqual([]);
     await page.screenshot({ path: `test-results/${course.id}-${process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? "android" : "desktop"}-complete.png` });
     await page.getByRole("button", { name: "返回首页" }).click();
+    await page.goto(collectionUrl(course.id));
     await expect(card.getByText("已下载 · 可离线", { exact: true })).toBeVisible();
     await page.route("**/api/learn/course-packs**", (route) => route.abort());
     await page.reload();

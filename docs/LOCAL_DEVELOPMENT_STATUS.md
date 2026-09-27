@@ -1,5 +1,7 @@
 # 本地开发恢复记录
 
+> 2026-09-27 更新：本地 alan0x 账户已通过 `octos skills --profile alan0x install` 更新 Learning Coach，正式目录为 `~/.octos/profiles/alan0x/data/skills/learning-coach/`。安装目录 165 项测试通过，取消 OCTOS_SKILLS_PATH 后仍能发现三个工具。下文临时技能软链接属于历史配置；当前启动方式见 [开发交接](DEVELOPMENT_HANDOFF.md)。本次未启动或重启服务。
+
 更新日期：2026-09-06。
 
 数学质量专题已经完成收尾。当前精确依赖为 OLL `c87fe9f`；OLL #7、Learning Coach #14 和
