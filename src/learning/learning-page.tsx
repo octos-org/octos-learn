@@ -223,7 +223,8 @@ function LearningServerSync({
     const sync = async () => {
       attempts += 1;
       try {
-        const discovered = await discoverServerLearningSessions();
+        // Board entry must not wait for historical lesson/title downloads.
+        const discovered = await discoverServerLearningSessions({ recoverTitles: false });
         if (!cancelled) onDone(discovered, true);
       } catch {
         if (cancelled) return;

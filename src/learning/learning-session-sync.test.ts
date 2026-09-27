@@ -35,6 +35,12 @@ describe("historical learning titles", () => {
     api.messages.mockResolvedValue([{ role: "user", content: "[[LEARNING_SESSION]]" }, { role: "user", content: "如何求导数？" }]);
     expect((await discoverServerLearningSessions())[0].title).toBe("如何求导数？");
   });
+  it("does not download historical titles on the critical board-entry path", async () => {
+    const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);
+    expect(await discoverServerLearningSessions({ recoverTitles: false })).toHaveLength(1);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(api.messages).not.toHaveBeenCalled();
+  });
   it("does not convert an incomplete file listing into authoritative deletion evidence", async () => {
     api.files.mockRejectedValue(new Error("offline"));
     await expect(discoverServerLearningSessions()).rejects.toThrow("offline");

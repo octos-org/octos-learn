@@ -43,19 +43,21 @@ async function recoverTitle(id: string, files: SessionFileInfo[]): Promise<strin
   return null;
 }
 
-export async function discoverServerLearningSessions(): Promise<LearningSessionRecord[]> {
+export async function discoverServerLearningSessions(options: { recoverTitles?: boolean } = {}): Promise<LearningSessionRecord[]> {
+  const recoverTitles = options.recoverTitles !== false;
   const sessions = (await listSessions()).filter(session => session.id.startsWith("learn-"));
   const result: LearningSessionRecord[] = [];
   // Keep network concurrency bounded for accounts with a long history.
-  for (let start = 0; start < sessions.length; start += 6) {
-    const batch = await Promise.all(sessions.slice(start, start + 6).map(async session => {
+  const batchSize = recoverTitles ? 6 : Math.max(1, sessions.length);
+  for (let start = 0; start < sessions.length; start += batchSize) {
+    const batch = await Promise.all(sessions.slice(start, start + batchSize).map(async session => {
       // File-list errors propagate: an incomplete discovery must never be
       // treated as authoritative evidence for deleting the local index.
       const files = await getSessionFiles(session.id);
       if (!files.some(file => isOllLessonArtifact(file) || isSelectionEnhancementArtifact(file))) return null;
       const createdAt = sessionTimestamp(session.id);
       return { id: session.id, status: "paused" as const,
-        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? await recoverTitle(session.id, files) ?? "已保存的学习",
+        title: usableTitle(session.title) ?? usableTitle(getLearningSession(session.id)?.title) ?? (recoverTitles ? await recoverTitle(session.id, files) : null) ?? "已保存的学习",
         createdAt, updatedAt: createdAt };
     }));
     for (const session of batch) if (session) result.push(session);
