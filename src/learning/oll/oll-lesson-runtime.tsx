@@ -1164,6 +1164,8 @@ export function LearningWhiteboard({
     });
   });
 
+  const regionLayoutMode = runtime?.deliverySettled && (runtime.completed || runtime.waiting)
+    ? "overview" as const : "progressive" as const;
   const regionLayoutConstraints = useMemo(() => Object.fromEntries(
     (runtime?.outline ?? []).flatMap((topic) => {
       const region = topic.questionId
@@ -1197,7 +1199,7 @@ export function LearningWhiteboard({
           nodeSections: topic.nodeSections,
           plannedSteps: topic.plannedSteps,
           pinned: inkPinnedLayout,
-          ...(teachingViewport ? { composition: {...teachingViewport, mode: runtime?.deliverySettled && (runtime.completed || runtime.waiting) ? "overview" as const : "progressive" as const} } : {}),
+          ...(teachingViewport ? { composition: {...teachingViewport, mode: regionLayoutMode} } : {}),
           reservedWidth: Math.min(teachingWidth, Math.max(
             MINIMUM_COURSE_READING_WIDTH,
             portableCourseRegion?.reservedWidth ?? 0,
@@ -1226,7 +1228,7 @@ export function LearningWhiteboard({
           nodeSections: topic.nodeSections,
           plannedSteps: topic.plannedSteps,
         pinned: inkPinnedLayout,
-        ...(teachingViewport ? { composition: {...teachingViewport, mode: runtime?.deliverySettled && (runtime.completed || runtime.waiting) ? "overview" as const : "progressive" as const} } : {}),
+        ...(teachingViewport ? { composition: {...teachingViewport, mode: regionLayoutMode} } : {}),
         reservedWidth: Math.min(teachingWidth, Math.max(
           MINIMUM_COURSE_READING_WIDTH,
           region.reservedWidth - COURSE_RUNTIME_OFFSET_X,
@@ -1240,9 +1242,7 @@ export function LearningWhiteboard({
     interactionPlans,
     teachingWidth,
     teachingViewport,
-    runtime?.completed,
-    runtime?.waiting,
-    runtime?.deliverySettled,
+    regionLayoutMode,
     teachingInkObstacles,
     inkPinnedLayout,
     portableCourseRegion,
