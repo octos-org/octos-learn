@@ -67,9 +67,13 @@ test("plot wheel zoom changes ticks without moving the whiteboard", async ({ pag
   await expect(dialog.getByRole("button", { name: "恢复课程视图和图层，保留参数" })).toBeHidden();
   await dialog.getByRole("button", { name: "关闭大图" }).click();
 
-  await page.locator(".board-node.kind-plot [data-action=explore]").click();
-  const box = await page.locator(".plot-preview").first().boundingBox();
-  await page.mouse.move(box!.x + box!.width * .55, box!.y + box!.height * .55);
+  const explore = page.locator(".board-node.kind-plot [data-action=explore]");
+  await explore.click();
+  await expect(explore).toHaveAttribute("aria-pressed", "true");
+  const plot = page.locator(".plot-preview").first();
+  // Locator actionability waits for the current SVG to be stable after the mode change.
+  await plot.hover();
+  const box = await plot.boundingBox();
   await page.mouse.down();
   await page.mouse.move(box!.x + box!.width * .7, box!.y + box!.height * .45, { steps: 5 });
   await page.mouse.up();

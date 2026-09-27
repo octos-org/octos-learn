@@ -1,0 +1,492 @@
+{
+  "id": "linear-plotting-points",
+  "version": "0.1.0",
+  "title": "一次函数 y = 2x - 1 的图像本质与画法",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 687.1823120117188,
+          "y": 216.60000610351562,
+          "w": 545.6353149414062,
+          "h": 494.7919616699219,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 528px; top: 20px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 1317.14306640625,
+          "y": 216.60000610351562,
+          "w": 192.21240234375,
+          "h": 89.2857666015625,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 1236px; top: 20px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 2194.69921875,
+          "y": 215.94351196289062,
+          "w": 302.1806640625,
+          "h": 194.76547241210938,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 1236px; top: 20px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 687.1823120117188,
+          "y": 741.1538696289062,
+          "w": 446.42889404296875,
+          "h": 94.24609375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 514.6372680664062,
+          "y": 203.10000610351562,
+          "w": 410.72540283203125,
+          "h": 372.4533386230469,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 528px; top: 20px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 988.8385009765625,
+          "y": 203.10000610351562,
+          "w": 144.6873779296875,
+          "h": 67.20962524414062,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 1236px; top: 20px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 1649.4163818359375,
+          "y": 202.60581970214844,
+          "w": 227.4656982421875,
+          "h": 146.6092071533203,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 1236px; top: 20px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 514.6372680664062,
+          "y": 597.95654296875,
+          "w": 336.048095703125,
+          "h": 70.9434814453125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = -1 · Δy = -2 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 127.29999542236328,
+          "y": 196.43795776367188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 535px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 127.29999542236328,
+          "y": 717.7584228515625,
+          "w": 156.90228271484375,
+          "h": 72.88360595703125,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 20px; top: 535px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 623px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 126.95664978027344,
+          "y": 806.302490234375,
+          "w": 246.66893005371094,
+          "h": 158.98638916015625,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 20px; top: 623px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n1\n−\n+\n点B横坐标\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 127.29999542236328,
+          "y": 624.6292724609375,
+          "w": 364.4181823730469,
+          "h": 76.93280029296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 64.80940246582031,
+          "y": 160,
+          "w": 401.694091796875,
+          "h": 364.2635498046875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 528px; top: 20px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 528.58349609375,
+          "y": 160,
+          "w": 141.50592041015625,
+          "h": 65.73176574707031,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 1236px; top: 20px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 1174.6361083984375,
+          "y": 159.51669311523438,
+          "w": 222.464111328125,
+          "h": 143.38546752929688,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 1236px; top: 20px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 728px; top: 567px; width: 240px; height: 156px;\"><div class=\"node-title\">两点确定一条直线</div><ul class=\"content-list\"><li>画一次函数图像只需求出两个点</li><li>连接两点并向两端延伸即可完成画图</li></ul></article>",
+          "x": 710.8621215820312,
+          "y": 658.9014892578125,
+          "w": 219.72515869140625,
+          "h": 143.3734130859375,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 728px; top: 567px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 567px; width: 660px; height: 146px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Expected &amp; or \\\\ or \\cr or \\end at end of input: …in{cases} x = 0\" style=\"color:#cc0000\">\\begin{cases} ",
+          "x": 64.80940246582031,
+          "y": 659.3787841796875,
+          "w": 602.5411987304688,
+          "h": 133.2894287109375,
+          "nw": 660,
+          "nh": 146,
+          "style": "left: 20px; top: 567px; width: 660px; height: 146px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 64.80940246582031,
+          "y": 546.174072265625,
+          "w": 328.6588134765625,
+          "h": 69.383544921875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-plotting-points-0.1.0-region\" data-interaction-tasks-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 739px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请把点A横坐标调到 3。</p><div ",
+          "x": 711.1717529296875,
+          "y": 816.4046630859375,
+          "w": 301.27056884765625,
+          "h": 119.9947509765625,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 728px; top: 739px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 439.2601623535156,
+          "y": 154,
+          "w": 265.4235534667969,
+          "h": 240.69088745117188,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 528px; top: 20px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 745.7037353515625,
+          "y": 154,
+          "w": 93.50146484375,
+          "h": 43.43293762207031,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 1236px; top: 20px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 1172.5897216796875,
+          "y": 153.68063354492188,
+          "w": 146.995361328125,
+          "h": 94.74342346191406,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 1236px; top: 20px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 728px; top: 567px; width: 240px; height: 156px;\"><div class=\"node-title\">两点确定一条直线</div><ul class=\"content-list\"><li>画一次函数图像只需求出两个点</li><li>连接两点并向两端延伸即可完成画图</li></ul></article>",
+          "x": 866.1461791992188,
+          "y": 483.654296875,
+          "w": 145.18560791015625,
+          "h": 94.7354736328125,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 728px; top: 567px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 567px; width: 660px; height: 146px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Expected &amp; or \\\\ or \\cr or \\end at end of input: …in{cases} x = 0\" style=\"color:#cc0000\">\\begin{cases} ",
+          "x": 439.2601623535156,
+          "y": 483.9697265625,
+          "w": 398.1353454589844,
+          "h": 88.07232666015625,
+          "nw": 660,
+          "nh": 146,
+          "style": "left: 20px; top: 567px; width: 660px; height: 146px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 439.2601623535156,
+          "y": 409.16851806640625,
+          "w": 217.16470336914062,
+          "h": 45.84588623046875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-plotting-points-0.1.0-region\" data-interaction-tasks-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 739px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请把点A横坐标调到 3。</p><div ",
+          "x": 866.3507690429688,
+          "y": 587.7261962890625,
+          "w": 199.06768798828125,
+          "h": 79.2877197265625,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 728px; top: 739px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-3\n-2\n-1\n0\n1\n2\n3\n-10\n-5\n0\n5\n10\nx\ny\nA\nB\nΔx = 0.5 · Δy = 1 · 割线斜率 ≈ 2\n说明\ny = 2x - 1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fals",
+          "x": 138.99388122558594,
+          "y": 150,
+          "w": 217.30885314941406,
+          "h": 197.05963134765625,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n2\n𝑥\n−\n1\ny=2x−1",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 535px; width: 155px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>2</mn><mi>x</mi><mo>−</mo",
+          "x": 138.99388122558594,
+          "y": 404.35015869140625,
+          "w": 76.55198669433594,
+          "h": 35.55963134765625,
+          "nw": 155,
+          "nh": 72,
+          "style": "left: 20px; top: 535px; width: 155px; height: 72px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "图像本质\n图像上的每一个点 (x, y) 都满足函数解析式\n满足解析式的所有点汇聚成连续的直线",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 623px; width: 243px; height: 156px;\"><div class=\"node-title\">图像本质</div><ul class=\"content-list\"><li>图像上的每一个点 (x, y) 都满足函数解析式</li><li>满足解析式的所有点汇聚成连续的直线</li></ul></article>",
+          "x": 138.8263702392578,
+          "y": 447.55047607421875,
+          "w": 120.34880065917969,
+          "h": 77.56878662109375,
+          "nw": 243,
+          "nh": 156,
+          "style": "left: 20px; top: 623px; width: 243px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "text": "两点确定一条直线\n画一次函数图像只需求出两个点\n连接两点并向两端延伸即可完成画图",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 827px; width: 240px; height: 156px;\"><div class=\"node-title\">两点确定一条直线</div><ul class=\"content-list\"><li>画一次函数图像只需求出两个点</li><li>连接两点并向两端延伸即可完成画图</li></ul></article>",
+          "x": 138.8263702392578,
+          "y": 548.3060302734375,
+          "w": 118.86717224121094,
+          "h": 77.562255859375,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 20px; top: 827px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "\\begin{cases} x = 0\n\\Rightarrow y = -1 & \\text{与y轴交点 } (0, -1) \\\\ y = 0\n\\Rightarrow x = 0.5 & \\text{与x轴交点 } (0.5, 0) \\end{cases}",
+          "html": "<article data-id=\"linear-plotting-points-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-plotting-points\" style=\"left: 20px; top: 999px; width: 652px; height: 182px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-error\" title=\"ParseError: KaTeX parse error: Expected &amp; or \\\\ or \\cr or \\end at end of input: …in{cases} x = 0\" style=\"color:#cc0000\">\\begin{cases} ",
+          "x": 138.99388122558594,
+          "y": 633.51220703125,
+          "w": 322.01220703125,
+          "h": 89.8868408203125,
+          "nw": 652,
+          "nh": 182,
+          "style": "left: 20px; top: 999px; width: 652px; height: 182px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "control",
+          "text": "点A横坐标\n0\n−\n+\n点B横坐标\n0.5\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-plotting-points-0.1.0-region\" data-interaction-controls-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">点A横坐标</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" a",
+          "x": 138.99388122558594,
+          "y": 358.912841796875,
+          "w": 177.7981719970703,
+          "h": 37.53515625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-plotting-points-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把点A横坐标调到 3。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-plotting-points-0.1.0-region\" data-interaction-tasks-id=\"linear-plotting-points-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = 2x - 1 的图像本质与画法的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 1197px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请把点A横坐标调到 3。</p><div ",
+          "x": 138.99388122558594,
+          "y": 731.3012084960938,
+          "w": 162.9816436767578,
+          "h": 64.91485595703125,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 1197px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 8
+}

@@ -12,7 +12,7 @@ if (!Number.isInteger(requestedPort) || requestedPort < 1 || requestedPort > 65_
 const port = requestedPort;
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "curated-course-packs.spec.ts",
+  testMatch: process.env.PLAYWRIGHT_TEST_MATCH ?? "curated-course-packs.spec.ts",
   timeout: mode === "android" ? 330_000 : 240_000,
   expect: { timeout: 30_000 },
   workers: 1,

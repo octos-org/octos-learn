@@ -1,0 +1,141 @@
+2026-09-27 fixed baseline closeout
+OLL: 320 passed
+Learning Coach: 165 passed
+Course library: 20 passed
+Application unit: 1040 passed (NODE_OPTIONS=--no-experimental-webstorage; Node 25.6.1)
+Application public build: passed
+Drag test: 5 repetitions passed, retries=0
+
+Final browser regression (retries=0):
+Already up to date
+Done in 178ms using pnpm v11.5.2
+
+Running 39 tests using 2 workers
+
+(node:55064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55063) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › tests/college-calculus-surface-collection.spec.ts:25:1 › collection home page displays all 3 college multivariable calculus courses (2.2s)
+MEASURE {"packId":"linear-intro-and-slope","title":"正比例函数 y = kx 与斜率的几何意义","scale1920":1.3,"clipped1920":0,"count1920":5,"scale1440":1.176,"clipped1440":0,"count1440":5,"scale700":0.735,"clipped700":0,"count700":5}
+  ✓   2 [chromium] › tests/course-overview-all.spec.ts:21:3 › linear-intro-and-slope: overview scale across widths (5.6s)
+  ✓   3 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-paraboloid-level-sets (水平截线与等高线：以 z=x²+y² 为例) loads, renders 3D surface with section, and plays (6.0s)
+MEASURE {"packId":"linear-simultaneous-intersections","title":"二元一次方程组与一次函数的几何意义","scale1920":0.875,"clipped1920":0,"count1920":9,"scale1440":0.866,"clipped1440":0,"count1440":9,"scale700":0.478,"clipped700":0,"count700":9}
+  ✓   4 [chromium] › tests/course-overview-all.spec.ts:21:3 › linear-simultaneous-intersections: overview scale across widths (5.0s)
+  ✓   5 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-partial-derivative-slice (偏导数：固定输入，求截线斜率) loads, renders 3D surface with section, and plays (6.9s)
+MEASURE {"packId":"rectangle-area-from-tiles","title":"长方形的面积与周长","scale1920":1.068,"clipped1920":0,"count1920":7,"scale1440":0.769,"clipped1440":0,"count1440":7,"scale700":0.512,"clipped700":0,"count700":7}
+  ✓   6 [chromium] › tests/course-overview-all.spec.ts:21:3 › rectangle-area-from-tiles: overview scale across widths (5.8s)
+  ✓   7 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-saddle-point-analysis (马鞍面与鞍点：梯度为零不一定是极值点) loads, renders 3D surface with section, and plays (6.3s)
+MEASURE {"packId":"slope-and-intercept","title":"一次函数 y = mx + b 的图像与性质","scale1920":1.027,"clipped1920":0,"count1920":7,"scale1440":0.982,"clipped1440":0,"count1440":7,"scale700":0.566,"clipped700":0,"count700":7}
+  ✓   8 [chromium] › tests/course-overview-all.spec.ts:21:3 › slope-and-intercept: overview scale across widths (5.6s)
+  ✓   9 [chromium] › tests/course-overview.spec.ts:14:3 › 水平截线与等高线：以 z=x²+y² 为例: complete course is readable and contained (6.4s)
+MEASURE {"packId":"surface-paraboloid-level-sets","title":"水平截线与等高线：以 z=x²+y² 为例","scale1920":1.114,"clipped1920":0,"count1920":7,"scale1440":0.729,"clipped1440":0,"count1440":7,"scale700":0.465,"clipped700":0,"count700":7}
+  ✓  10 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-paraboloid-level-sets: overview scale across widths (5.7s)
+MEASURE {"packId":"surface-partial-derivative-slice","title":"偏导数：固定输入，求截线斜率","scale1920":0.87,"clipped1920":0,"count1920":11,"scale1440":0.516,"clipped1440":0,"count1440":11,"scale700":0.321,"clipped700":0,"count700":11}
+  ✓  12 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-partial-derivative-slice: overview scale across widths (6.0s)
+  ✓  11 [chromium] › tests/course-overview.spec.ts:14:3 › 偏导数：固定输入，求截线斜率: complete course is readable and contained (6.5s)
+MEASURE {"packId":"surface-saddle-point-analysis","title":"马鞍面与鞍点：梯度为零不一定是极值点","scale1920":0.679,"clipped1920":0,"count1920":14,"scale1440":0.425,"clipped1440":0,"count1440":14,"scale700":0.253,"clipped700":0,"count700":14}
+  ✓  13 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-saddle-point-analysis: overview scale across widths (6.6s)
+  ✓  14 [chromium] › tests/course-overview.spec.ts:14:3 › 马鞍面与鞍点：梯度为零不一定是极值点: complete course is readable and contained (7.0s)
+  ✓  16 [chromium] › tests/course-overview.spec.ts:102:1 › handwritten annotations keep their course cards in place at completion (2.8s)
+  ✓  17 [chromium] › tests/course-runtime-quality.spec.ts:6:1 › unopened practice does not separate the two calculus visuals (1.6s)
+  ✓  18 [chromium] › tests/course-runtime-quality.spec.ts:56:1 › regenerated calculus demonstrates once and initializes practice before grading (1.8s)
+MEASURE {"packId":"trig-cosine-and-phase-shift","title":"余弦函数与单位圆投影","scale1920":0.852,"clipped1920":0,"count1920":11,"scale1440":0.64,"clipped1440":0,"count1440":11,"scale700":0.315,"clipped700":0,"count700":11}
+  ✓  15 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-cosine-and-phase-shift: overview scale across widths (7.2s)
+  ✓  19 [chromium] › tests/geometry-plot-runtime.spec.ts:49:1 › plot wheel zoom changes ticks without moving the whiteboard (2.0s)
+  ✓  21 [chromium] › tests/geometry-plot-runtime.spec.ts:84:1 › rectangle geometry uses integer ticks, square units and its own zoom (1.5s)
+MEASURE {"packId":"trig-quadrants-and-monotonicity","title":"单位圆与正弦函数的单调性及象限循环","scale1920":0.908,"clipped1920":0,"count1920":10,"scale1440":0.645,"clipped1440":0,"count1440":10,"scale700":0.359,"clipped700":0,"count700":10}
+  ✓  20 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-quadrants-and-monotonicity: overview scale across widths (5.4s)
+  ✓  22 [chromium] › tests/geometry-plot-runtime.spec.ts:107:1 › geometry control points still change lesson variables while exploration is enabled (2.5s)
+  ✓  24 [chromium] › tests/highschool-trigonometry-collection.spec.ts:22:1 › collection home page displays all 3 high school trigonometry courses (1.5s)
+MEASURE {"packId":"trig-unit-circle-to-sine","title":"从单位圆旋转到正弦曲线","scale1920":1.124,"clipped1920":0,"count1920":9,"scale1440":0.659,"clipped1440":0,"count1440":9,"scale700":0.407,"clipped700":0,"count700":9}
+  ✓  23 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-unit-circle-to-sine: overview scale across widths (5.3s)
+  ✓  26 [chromium] › tests/learning-smoke.spec.ts:44:1 › opens the standalone learning canvas at the product root (462ms)
+  ✓  27 [chromium] › tests/learning-smoke.spec.ts:53:1 › redirects the inherited /learn URL to the standalone root (460ms)
+  ✓  25 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-unit-circle-to-sine (从单位圆旋转到正弦曲线) loads, renders unit circle & wave projection, and plays (5.3s)
+  ✓  28 [chromium] › tests/linear-function-collection.spec.ts:22:1 › collection home page displays all 3 linear function courses (1.0s)
+  ✓  30 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: linear-intro-and-slope (正比例函数 y = kx 与斜率的几何意义) loads, renders plot visual and plays (4.4s)
+  ✓  29 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-cosine-and-phase-shift (余弦函数与单位圆投影) loads, renders unit circle & wave projection, and plays (5.4s)
+  ✓  31 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: slope-and-intercept (一次函数 y = mx + b 的图像与性质) loads, renders plot visual and plays (4.3s)
+  ✓  32 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-quadrants-and-monotonicity (单位圆与正弦函数的单调性及象限循环) loads, renders unit circle & wave projection, and plays (5.3s)
+  ✓  34 [chromium] › tests/runtime-quality.spec.ts:13:1 › reading: formula fits its final column, including wrapped fractions (216ms)
+  ✓  35 [chromium] › tests/runtime-quality.spec.ts:27:1 › reading: host-only attachment changes keep a visible anchor at the same screen position (210ms)
+  ✓  36 [chromium] › tests/runtime-quality.spec.ts:43:1 › reading: late font metrics reflow a paused board without another lesson operation (317ms)
+  ✓  37 [chromium] › tests/runtime-quality.spec.ts:13:1 › teaching: formula fits its final column, including wrapped fractions (211ms)
+  ✓  38 [chromium] › tests/runtime-quality.spec.ts:27:1 › teaching: host-only attachment changes keep a visible anchor at the same screen position (210ms)
+  ✓  39 [chromium] › tests/runtime-quality.spec.ts:43:1 › teaching: late font metrics reflow a paused board without another lesson operation (300ms)
+  ✓  33 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: linear-simultaneous-intersections (二元一次方程组与一次函数的几何意义) loads, renders plot visual and plays (4.3s)
+
+  39 passed (1.2m)
+
+After pinning merged OLL f2a1c654041735f566385f9e208c868b270b8095:
+App unit: 1040 passed; public build passed; coach: 165 passed; library: 20 passed.
+Final browser regression (retries=0):
+Already up to date
+Done in 192ms using pnpm v11.5.2
+
+Running 39 tests using 2 workers
+
+(node:57802) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:57801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:57802) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:57801) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › tests/college-calculus-surface-collection.spec.ts:25:1 › collection home page displays all 3 college multivariable calculus courses (2.9s)
+MEASURE {"packId":"linear-intro-and-slope","title":"正比例函数 y = kx 与斜率的几何意义","scale1920":1.3,"clipped1920":0,"count1920":5,"scale1440":1.176,"clipped1440":0,"count1440":5,"scale700":0.735,"clipped700":0,"count700":5}
+  ✓   2 [chromium] › tests/course-overview-all.spec.ts:21:3 › linear-intro-and-slope: overview scale across widths (6.5s)
+  ✓   3 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-paraboloid-level-sets (水平截线与等高线：以 z=x²+y² 为例) loads, renders 3D surface with section, and plays (6.1s)
+MEASURE {"packId":"linear-simultaneous-intersections","title":"二元一次方程组与一次函数的几何意义","scale1920":0.875,"clipped1920":0,"count1920":9,"scale1440":0.866,"clipped1440":0,"count1440":9,"scale700":0.478,"clipped700":0,"count700":9}
+  ✓   4 [chromium] › tests/course-overview-all.spec.ts:21:3 › linear-simultaneous-intersections: overview scale across widths (5.0s)
+  ✓   5 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-partial-derivative-slice (偏导数：固定输入，求截线斜率) loads, renders 3D surface with section, and plays (6.8s)
+MEASURE {"packId":"rectangle-area-from-tiles","title":"长方形的面积与周长","scale1920":1.068,"clipped1920":0,"count1920":7,"scale1440":0.769,"clipped1440":0,"count1440":7,"scale700":0.512,"clipped700":0,"count700":7}
+  ✓   6 [chromium] › tests/course-overview-all.spec.ts:21:3 › rectangle-area-from-tiles: overview scale across widths (5.7s)
+  ✓   7 [chromium] › tests/college-calculus-surface-collection.spec.ts:48:3 › course: surface-saddle-point-analysis (马鞍面与鞍点：梯度为零不一定是极值点) loads, renders 3D surface with section, and plays (6.2s)
+MEASURE {"packId":"slope-and-intercept","title":"一次函数 y = mx + b 的图像与性质","scale1920":1.027,"clipped1920":0,"count1920":7,"scale1440":0.982,"clipped1440":0,"count1440":7,"scale700":0.566,"clipped700":0,"count700":7}
+  ✓   8 [chromium] › tests/course-overview-all.spec.ts:21:3 › slope-and-intercept: overview scale across widths (5.6s)
+  ✓   9 [chromium] › tests/course-overview.spec.ts:14:3 › 水平截线与等高线：以 z=x²+y² 为例: complete course is readable and contained (6.4s)
+MEASURE {"packId":"surface-paraboloid-level-sets","title":"水平截线与等高线：以 z=x²+y² 为例","scale1920":1.114,"clipped1920":0,"count1920":7,"scale1440":0.729,"clipped1440":0,"count1440":7,"scale700":0.465,"clipped700":0,"count700":7}
+  ✓  10 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-paraboloid-level-sets: overview scale across widths (5.7s)
+MEASURE {"packId":"surface-partial-derivative-slice","title":"偏导数：固定输入，求截线斜率","scale1920":0.87,"clipped1920":0,"count1920":11,"scale1440":0.516,"clipped1440":0,"count1440":11,"scale700":0.321,"clipped700":0,"count700":11}
+  ✓  12 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-partial-derivative-slice: overview scale across widths (5.7s)
+  ✓  11 [chromium] › tests/course-overview.spec.ts:14:3 › 偏导数：固定输入，求截线斜率: complete course is readable and contained (6.2s)
+MEASURE {"packId":"surface-saddle-point-analysis","title":"马鞍面与鞍点：梯度为零不一定是极值点","scale1920":0.679,"clipped1920":0,"count1920":14,"scale1440":0.425,"clipped1440":0,"count1440":14,"scale700":0.253,"clipped700":0,"count700":14}
+  ✓  13 [chromium] › tests/course-overview-all.spec.ts:21:3 › surface-saddle-point-analysis: overview scale across widths (6.3s)
+  ✓  14 [chromium] › tests/course-overview.spec.ts:14:3 › 马鞍面与鞍点：梯度为零不一定是极值点: complete course is readable and contained (6.4s)
+  ✓  16 [chromium] › tests/course-overview.spec.ts:102:1 › handwritten annotations keep their course cards in place at completion (1.8s)
+  ✓  17 [chromium] › tests/course-runtime-quality.spec.ts:6:1 › unopened practice does not separate the two calculus visuals (1.4s)
+  ✓  18 [chromium] › tests/course-runtime-quality.spec.ts:56:1 › regenerated calculus demonstrates once and initializes practice before grading (1.6s)
+MEASURE {"packId":"trig-cosine-and-phase-shift","title":"余弦函数与单位圆投影","scale1920":0.852,"clipped1920":0,"count1920":11,"scale1440":0.64,"clipped1440":0,"count1440":11,"scale700":0.315,"clipped700":0,"count700":11}
+  ✓  15 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-cosine-and-phase-shift: overview scale across widths (5.8s)
+  ✓  19 [chromium] › tests/geometry-plot-runtime.spec.ts:49:1 › plot wheel zoom changes ticks without moving the whiteboard (1.9s)
+  ✓  21 [chromium] › tests/geometry-plot-runtime.spec.ts:84:1 › rectangle geometry uses integer ticks, square units and its own zoom (1.4s)
+MEASURE {"packId":"trig-quadrants-and-monotonicity","title":"单位圆与正弦函数的单调性及象限循环","scale1920":0.907,"clipped1920":0,"count1920":10,"scale1440":0.645,"clipped1440":0,"count1440":10,"scale700":0.359,"clipped700":0,"count700":10}
+  ✓  20 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-quadrants-and-monotonicity: overview scale across widths (5.2s)
+  ✓  22 [chromium] › tests/geometry-plot-runtime.spec.ts:107:1 › geometry control points still change lesson variables while exploration is enabled (2.3s)
+  ✓  24 [chromium] › tests/highschool-trigonometry-collection.spec.ts:22:1 › collection home page displays all 3 high school trigonometry courses (1.7s)
+MEASURE {"packId":"trig-unit-circle-to-sine","title":"从单位圆旋转到正弦曲线","scale1920":1.124,"clipped1920":0,"count1920":9,"scale1440":0.659,"clipped1440":0,"count1440":9,"scale700":0.407,"clipped700":0,"count700":9}
+  ✓  23 [chromium] › tests/course-overview-all.spec.ts:21:3 › trig-unit-circle-to-sine: overview scale across widths (5.5s)
+  ✓  26 [chromium] › tests/learning-smoke.spec.ts:44:1 › opens the standalone learning canvas at the product root (446ms)
+  ✓  27 [chromium] › tests/learning-smoke.spec.ts:53:1 › redirects the inherited /learn URL to the standalone root (444ms)
+  ✓  25 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-unit-circle-to-sine (从单位圆旋转到正弦曲线) loads, renders unit circle & wave projection, and plays (5.4s)
+  ✓  28 [chromium] › tests/linear-function-collection.spec.ts:22:1 › collection home page displays all 3 linear function courses (1.0s)
+  ✓  30 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: linear-intro-and-slope (正比例函数 y = kx 与斜率的几何意义) loads, renders plot visual and plays (4.3s)
+  ✓  29 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-cosine-and-phase-shift (余弦函数与单位圆投影) loads, renders unit circle & wave projection, and plays (5.3s)
+  ✓  31 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: slope-and-intercept (一次函数 y = mx + b 的图像与性质) loads, renders plot visual and plays (4.2s)
+  ✓  32 [chromium] › tests/highschool-trigonometry-collection.spec.ts:43:3 › course: trig-quadrants-and-monotonicity (单位圆与正弦函数的单调性及象限循环) loads, renders unit circle & wave projection, and plays (5.2s)
+  ✓  34 [chromium] › tests/runtime-quality.spec.ts:13:1 › reading: formula fits its final column, including wrapped fractions (217ms)
+  ✓  35 [chromium] › tests/runtime-quality.spec.ts:27:1 › reading: host-only attachment changes keep a visible anchor at the same screen position (210ms)
+  ✓  36 [chromium] › tests/runtime-quality.spec.ts:43:1 › reading: late font metrics reflow a paused board without another lesson operation (300ms)
+  ✓  37 [chromium] › tests/runtime-quality.spec.ts:13:1 › teaching: formula fits its final column, including wrapped fractions (212ms)
+  ✓  38 [chromium] › tests/runtime-quality.spec.ts:27:1 › teaching: host-only attachment changes keep a visible anchor at the same screen position (227ms)
+  ✓  39 [chromium] › tests/runtime-quality.spec.ts:43:1 › teaching: late font metrics reflow a paused board without another lesson operation (314ms)
+  ✓  33 [chromium] › tests/linear-function-collection.spec.ts:38:3 › course: linear-simultaneous-intersections (二元一次方程组与一次函数的几何意义) loads, renders plot visual and plays (4.2s)
+
+  39 passed (1.2m)

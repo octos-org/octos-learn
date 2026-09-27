@@ -1,0 +1,570 @@
+{
+  "id": "surface-paraboloid-level-sets",
+  "version": "0.2.3",
+  "title": "水平截线与等高线：以 z=x²+y² 为例",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 1004px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 1643.47802734375,
+          "y": 245.8199462890625,
+          "w": 312.6435546875,
+          "h": 149.55990600585938,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1004px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button",
+          "x": 364.60003662109375,
+          "y": 246.4999237060547,
+          "w": 597.9998779296875,
+          "h": 467.9998779296875,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 496px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 983.39990234375,
+          "y": 246.4999237060547,
+          "w": 571.999755859375,
+          "h": 493.9998779296875,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 496px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 498px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 364.60003662109375,
+          "y": 867.8997802734375,
+          "w": 254.7999267578125,
+          "h": 179.39990234375,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 498px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 652px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><m",
+          "x": 364.60003662109375,
+          "y": 1068.0997314453125,
+          "w": 542.099853515625,
+          "h": 93.5999755859375,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 652px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 404px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 364.60003662109375,
+          "y": 745.6998291015625,
+          "w": 467.9998779296875,
+          "h": 59.79998779296875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 404px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 528px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 773.8945922851562,
+          "y": 202.5334014892578,
+          "w": 260.51776123046875,
+          "h": 124.62437438964844,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 528px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button",
+          "x": 223.86883544921875,
+          "y": 203.10000610351562,
+          "w": 498.29766845703125,
+          "h": 389.9720764160156,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 466px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 223.86883544921875,
+          "y": 686.2320556640625,
+          "w": 476.632568359375,
+          "h": 411.63720703125,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 466px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 894px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 223.86883544921875,
+          "y": 1149.8656005859375,
+          "w": 212.318115234375,
+          "h": 149.4892578125,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 894px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1048px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><",
+          "x": 223.86883544921875,
+          "y": 1316.68701171875,
+          "w": 451.7176513671875,
+          "h": 77.994384765625,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 1048px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 404px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 223.86883544921875,
+          "y": 619.0701904296875,
+          "w": 389.97210693359375,
+          "h": 49.82977294921875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 404px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 223.60101318359375,
+          "y": 61.70979690551758,
+          "w": 260.51873779296875,
+          "h": 124.62486267089844,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 150px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><butto",
+          "x": 223.86920166015625,
+          "y": 203.1002197265625,
+          "w": 498.29962158203125,
+          "h": 389.9736328125,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 150px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 596px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 223.86920166015625,
+          "y": 686.2341918945312,
+          "w": 476.6343994140625,
+          "h": 411.63885498046875,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 596px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1024px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 223.86920166015625,
+          "y": 1149.8695068359375,
+          "w": 212.3189697265625,
+          "h": 149.4898681640625,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 1024px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1178px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><",
+          "x": 223.86920166015625,
+          "y": 1316.6915283203125,
+          "w": 451.71942138671875,
+          "h": 77.9947509765625,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 1178px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 534px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 223.86920166015625,
+          "y": 619.0720825195312,
+          "w": 389.9736328125,
+          "h": 49.8299560546875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 534px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 1004px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 1061.62548828125,
+          "y": 159.53451538085938,
+          "w": 214.0185546875,
+          "h": 102.3804931640625,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1004px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button",
+          "x": 186.1761474609375,
+          "y": 160,
+          "w": 409.3577880859375,
+          "h": 320.366943359375,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 496px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 609.7724609375,
+          "y": 160,
+          "w": 391.55963134765625,
+          "h": 338.16510009765625,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 496px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 498px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 186.1761474609375,
+          "y": 585.3761596679688,
+          "w": 174.4219970703125,
+          "h": 122.80731201171875,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 498px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 652px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><m",
+          "x": 186.1761474609375,
+          "y": 722.4219970703125,
+          "w": 371.09173583984375,
+          "h": 64.07342529296875,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 652px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 404px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 186.1761474609375,
+          "y": 501.72479248046875,
+          "w": 320.366943359375,
+          "h": 40.93572998046875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 404px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 740px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>想让投影圆的半径为 ",
+          "x": 816.231201171875,
+          "y": 800.7339477539062,
+          "w": 293.669677734375,
+          "h": 135.6553955078125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 740px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 528px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 669.8876953125,
+          "y": 129.52207946777344,
+          "w": 116.160400390625,
+          "h": 55.56787109375,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 528px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><button",
+          "x": 424.640625,
+          "y": 129.77471923828125,
+          "w": 222.182373046875,
+          "h": 173.88186645507812,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 466px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 424.640625,
+          "y": 345.1950378417969,
+          "w": 212.52227783203125,
+          "h": 183.54196166992188,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 466px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 894px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow>",
+          "x": 424.640625,
+          "y": 551.9212036132812,
+          "w": 94.66900634765625,
+          "h": 66.65472412109375,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 894px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1048px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><",
+          "x": 424.640625,
+          "y": 626.3040161132812,
+          "w": 201.41314697265625,
+          "h": 34.7763671875,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 1048px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 404px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 424.640625,
+          "y": 315.24871826171875,
+          "w": 173.8818359375,
+          "h": 22.218231201171875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 404px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 1136px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>想让投影圆的半径为",
+          "x": 766.6082763671875,
+          "y": 668.8084716796875,
+          "w": 159.3917236328125,
+          "h": 73.62811279296875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 1136px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">研究曲面方法</div><ul class=\"content-list\"><li>固定输出高度 z = h</li><li>观察截面交线及其投影</li></ul></article>",
+          "x": 193.60520935058594,
+          "y": 149.75830078125,
+          "w": 111.13008117675781,
+          "h": 53.1614990234375,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-2\" class=\"board-node kind-scene3d focused\" data-kind=\"scene3d\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 150px; width: 460px; height: 360px;\"><div class=\"node-title\">曲面 z=x²+y² 与截面 z=h</div><div class=\"scene3d-runtime\" data-oll-scene3d=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01\"><div class=\"scene3d-controls\"><butto",
+          "x": 193.7196044921875,
+          "y": 210.071533203125,
+          "w": 212.560791015625,
+          "h": 166.3519287109375,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 150px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-geometry focused\" data-kind=\"geometry\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 596px; width: 440px; height: 380px;\"><div class=\"node-title\">xy 平面投影圆</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图",
+          "x": 193.7196044921875,
+          "y": 416.1630859375,
+          "w": 203.31903076171875,
+          "h": 175.59368896484375,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 596px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1024px; width: 196px; height: 138px;\"><div class=\"math-render math-lines\"><div class=\"math-line\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow",
+          "x": 193.7196044921875,
+          "y": 613.9370727539062,
+          "w": 90.56939697265625,
+          "h": 63.76824951171875,
+          "nw": 196,
+          "nh": 138,
+          "style": "left: 20px; top: 1024px; width: 196px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "html": "<article data-id=\"surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"surface-paraboloid-level-sets\" style=\"left: 20px; top: 1178px; width: 417px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msup><mi>x</mi><mn>2</mn></msup><",
+          "x": 193.7196044921875,
+          "y": 685.0987548828125,
+          "w": 192.69097900390625,
+          "h": 33.2703857421875,
+          "nw": 417,
+          "nh": 72,
+          "style": "left: 20px; top: 1178px; width: 417px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-controls-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 534px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">截面高度 h</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"4\" st",
+          "x": 193.7196044921875,
+          "y": 387.51361083984375,
+          "w": 166.3519287109375,
+          "h": 21.25604248046875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 534px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region\" data-interaction-tasks-id=\"surface-paraboloid-level-sets-0.2.3-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"水平截线与等高线：以 z=x²+y² 为例的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 1266px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>想让投影圆的半径为 ",
+          "x": 193.7196044921875,
+          "y": 725.7625122070312,
+          "w": 152.4892578125,
+          "h": 70.439697265625,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 1266px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 11
+}

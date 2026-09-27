@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import {
   evaluateAdmissionFastGate,
-  type AdmissionFastGateInput,
 } from "./admission-fast-gate";
 
 describe("admission-fast-gate", () => {

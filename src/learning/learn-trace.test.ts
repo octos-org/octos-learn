@@ -6,6 +6,13 @@ import {
 } from "./learn-trace";
 
 describe("LearnTraceRecorder", () => {
+  it("measures from the matching request and leaves missing baselines unavailable", () => {
+    const recorder = new LearnTraceRecorder("session", { now: () => 1000 });
+    recorder.record({turnId: "a", source: "octos-web", stage: "request-submitted"});
+    expect(recorder.elapsedSinceStage("a", "request-submitted", 1250)).toBe(250);
+    expect(recorder.elapsedSinceStage("b", "request-submitted", 1250)).toBeUndefined();
+    expect(recorder.elapsedSinceStage("a", "request-submitted", 999)).toBeUndefined();
+  });
   it("keeps a bounded, session-owned timeline", () => {
     const now = vi.fn()
       .mockReturnValueOnce(1_000)

@@ -1,25 +1,25 @@
 {
   "schema": "octos.learning-stack.release-bom.v1",
-  "release_train": "learn-math-quality-local-v1",
+  "release_train": "whiteboard-camera-closeout-2026-09-27",
   "status": "development",
   "components": {
     "learning_coach": {
       "repository": "alan0x/learning-coach",
-      "main_baseline_ref": "2b3c8ff98ec5d16189fb2449b4baa603afb73f74",
-      "package_version": "0.14.0",
-      "oll_authoring_ref": "29a615e43ed8c26156fbbe4afc770ec1c4ef2cca"
+      "main_baseline_ref": "7bb8078b19aac033085e5ae435d31220c7e204f3",
+      "package_version": "0.15.0",
+      "oll_authoring_ref": "f2a1c654041735f566385f9e208c868b270b8095"
     },
     "octos_lesson_language": {
       "repository": "alan0x/octos-lesson-language",
-      "reviewed_main_ref": "44185c9cdb86d8ed03f6851bad6f237b755b9ff3",
-      "authoring_profile_ref": "29a615e43ed8c26156fbbe4afc770ec1c4ef2cca",
-      "web_runtime_ref": "2b93d67ffc30075edb3d3f34b848f799a46717f2"
+      "reviewed_main_ref": "f2a1c654041735f566385f9e208c868b270b8095",
+      "authoring_profile_ref": "f2a1c654041735f566385f9e208c868b270b8095",
+      "web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
     },
     "octos_learn": {
-      "repository": "alan0x/octos-learn",
-      "main_baseline_ref": "4f361c3a0281993af1778d4cad64bbdfcbf61570",
+      "repository": "octos-org/octos-learn",
+      "main_baseline_ref": "739b003c359446d718008823e3b6d8bc40dbc523",
       "package_version": "0.1.0",
-      "oll_web_runtime_ref": "2b93d67ffc30075edb3d3f34b848f799a46717f2"
+      "oll_web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
     }
   },
   "contracts": {

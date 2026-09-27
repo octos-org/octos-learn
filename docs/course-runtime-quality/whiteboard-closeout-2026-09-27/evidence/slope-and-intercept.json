@@ -1,0 +1,483 @@
+{
+  "id": "slope-and-intercept",
+  "version": "0.1.6",
+  "title": "一次函数 y = mx + b 的图像与性质",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "x": 926.199951171875,
+          "y": 266.6499938964844,
+          "w": 572,
+          "h": 518.699951171875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 1534.599853515625,
+          "y": 266.6499938964844,
+          "w": 364,
+          "h": 93.60000610351562,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 1534.21875,
+          "y": 380.2567138671875,
+          "w": 364.762451171875,
+          "h": 177.0865478515625,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 108px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "x": 421.79998779296875,
+          "y": 266.6499938964844,
+          "w": 467.99993896484375,
+          "h": 98.79998779296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "x": 689.6471557617188,
+          "y": 203.10000610351562,
+          "w": 513.6641235351562,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 1235.9990234375,
+          "y": 203.10000610351562,
+          "w": 326.877197265625,
+          "h": 84.05413818359375,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 1235.65673828125,
+          "y": 305.1204528808594,
+          "w": 327.561767578125,
+          "h": 159.02627563476562,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 108px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "x": 236.688720703125,
+          "y": 203.10000610351562,
+          "w": 420.27069091796875,
+          "h": 88.72381591796875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "x": 127.29999542236328,
+          "y": 196.43795776367188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 127.29999542236328,
+          "y": 742.052978515625,
+          "w": 445.4000244140625,
+          "h": 72.88360595703125,
+          "nw": 440,
+          "nh": 72,
+          "style": "left: 20px; top: 559px; width: 440px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 127.05035400390625,
+          "y": 830.1617431640625,
+          "w": 445.8992919921875,
+          "h": 117.34149169921875,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 647px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "x": 127.29999542236328,
+          "y": 624.6292724609375,
+          "w": 364.4181823730469,
+          "h": 76.93280029296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "x": 450.533935546875,
+          "y": 302.38494873046875,
+          "w": 451.94573974609375,
+          "h": 409.83258056640625,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 931.2398071289062,
+          "y": 302.38494873046875,
+          "w": 287.60186767578125,
+          "h": 73.95474243164062,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 930.9386596679688,
+          "y": 392.14727783203125,
+          "w": 288.20416259765625,
+          "h": 139.91876220703125,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 108px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "x": 1259.9276123046875,
+          "y": 302.38494873046875,
+          "w": 307.11767578125,
+          "h": 73.95474243164062,
+          "nw": 299,
+          "nh": 72,
+          "style": "left: 1196px; top: 20px; width: 299px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "x": 1608.1312255859375,
+          "y": 302.38494873046875,
+          "w": 259.8687744140625,
+          "h": 83.1990966796875,
+          "nw": 253,
+          "nh": 81,
+          "style": "left: 1535px; top: 20px; width: 253px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "x": 52,
+          "y": 302.38494873046875,
+          "w": 369.77374267578125,
+          "h": 78.0633544921875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 396.8826904296875,
+          "w": 338.9592590332031,
+          "h": 156.5760498046875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "x": 543.2267456054688,
+          "y": 160,
+          "w": 432.1124267578125,
+          "h": 391.847412109375,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 1002.8372192382812,
+          "y": 160,
+          "w": 274.98052978515625,
+          "h": 70.70928955078125,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 1002.5492553710938,
+          "y": 245.8231964111328,
+          "w": 275.55645751953125,
+          "h": 133.7784881591797,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 876px; top: 108px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "x": 162.1821746826172,
+          "y": 587.2020263671875,
+          "w": 293.6400146484375,
+          "h": 70.70928955078125,
+          "nw": 299,
+          "nh": 72,
+          "style": "left: 20px; top: 455px; width: 299px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "x": 495.10516357421875,
+          "y": 587.2020263671875,
+          "w": 248.464599609375,
+          "h": 79.5479736328125,
+          "nw": 253,
+          "nh": 81,
+          "style": "left: 359px; top: 455px; width: 253px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "x": 162.1821746826172,
+          "y": 160,
+          "w": 353.5465087890625,
+          "h": 74.63758850097656,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 162.1821746826172,
+          "y": 250.35076904296875,
+          "w": 324.08428955078125,
+          "h": 149.70486450195312,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "x": 116.47010040283203,
+          "y": 150,
+          "w": 248.89666748046875,
+          "h": 225.70401000976562,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "x": 116.47010040283203,
+          "y": 549.9317016601562,
+          "w": 367.0518798828125,
+          "h": 40.728515625,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 727px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "x": 116.33116149902344,
+          "y": 598.9105224609375,
+          "w": 367.32977294921875,
+          "h": 66.087890625,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 815px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "x": 116.47010040283203,
+          "y": 686.8248901367188,
+          "w": 367.0518798828125,
+          "h": 40.728515625,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 969px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "x": 116.47010040283203,
+          "y": 750.1803588867188,
+          "w": 367.0518798828125,
+          "h": 45.81964111328125,
+          "nw": 649,
+          "nh": 81,
+          "style": "left: 20px; top: 1081px; width: 648.889px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "x": 116.47010040283203,
+          "y": 389.28021240234375,
+          "w": 203.64273071289062,
+          "h": 42.9912109375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 116.47010040283203,
+          "y": 441.32220458984375,
+          "w": 186.67251586914062,
+          "h": 86.22998046875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 535px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 13
+}

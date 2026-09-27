@@ -1,0 +1,89 @@
+{
+  "applicationCommit": "88198b456823929274b695b61d5e3968cd0424b6",
+  "ollCommit": "2b93d67ffc30075edb3d3f34b848f799a46717f2",
+  "courseLibraryCommit": "8a80ba3c0c5fb710cd30198aff9f0f2fa971d894",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "nodes": [
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-01-moment-01-item-01",
+      "kind": "scene3d",
+      "style": "left: 20px; top: 20px; width: 460px; height: 360px;",
+      "client": [
+        458,
+        358
+      ],
+      "scroll": [
+        458,
+        366
+      ]
+    },
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-01-moment-01-item-02",
+      "kind": "math",
+      "style": "left: 534px; top: 20px; width: 162px; height: 72px;",
+      "client": [
+        160,
+        70
+      ],
+      "scroll": [
+        160,
+        70
+      ]
+    },
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-01-moment-01-item-03",
+      "kind": "note",
+      "style": "left: 534px; top: 120px; width: 240px; height: 114px;",
+      "client": [
+        238,
+        112
+      ],
+      "scroll": [
+        238,
+        112
+      ]
+    },
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-02-moment-01-item-01",
+      "kind": "math",
+      "style": "left: 534px; top: 262px; width: 293px; height: 72px;",
+      "client": [
+        291,
+        70
+      ],
+      "scroll": [
+        291,
+        70
+      ]
+    },
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-02-moment-01-item-02",
+      "kind": "math",
+      "style": "left: 534px; top: 362px; width: 289px; height: 72px;",
+      "client": [
+        287,
+        70
+      ],
+      "scroll": [
+        287,
+        70
+      ]
+    },
+    {
+      "id": "surface-paraboloid-level-sets-0.1.0:node:section-02-moment-02-item-01",
+      "kind": "geometry",
+      "style": "left: 20px; top: 828px; width: 440px; height: 380px;",
+      "client": [
+        438,
+        378
+      ],
+      "scroll": [
+        438,
+        378
+      ]
+    }
+  ]
+}

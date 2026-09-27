@@ -27,6 +27,10 @@ export function JevAdmissionDebugger({
     return null;
   }
 
+  return <JevAdmissionDebuggerPanel />;
+}
+
+function JevAdmissionDebuggerPanel() {
   const [open, setOpen] = useState(false);
   const [testing, setTesting] = useState(false);
   const [status, setStatus] = useState<{

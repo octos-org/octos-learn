@@ -1,3 +1,5 @@
+import { OLL_PLAYER_EXECUTION_VERSION } from "octos-lesson-language";
+
 export interface CoursePackCatalogEntry {
   packId: string;
   version: string;
@@ -34,8 +36,8 @@ const PACK_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 const VERSION = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;
 const DIGEST = /^[a-f0-9]{64}$/u;
 const CATALOG_CACHE_KEY = "octos:course-pack-catalog:v1";
-// Keep this in step with package.json until the build injects the player version.
-const PLAYER_VERSION = "0.1.0";
+// This is the executable protocol level, independent of the app's release label.
+const PLAYER_VERSION = OLL_PLAYER_EXECUTION_VERSION;
 export const EMBEDDED_COURSE_PACK_ROOT = `${import.meta.env.BASE_URL}course-packs/embedded`;
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -280,4 +282,3 @@ export function selectLatestCoursePacks(
   }
   return Array.from(latestByPackId.values());
 }
-

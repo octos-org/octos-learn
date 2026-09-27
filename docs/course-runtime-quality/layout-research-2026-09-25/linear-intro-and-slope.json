@@ -1,0 +1,414 @@
+{
+  "id": "linear-intro-and-slope",
+  "version": "0.1.0",
+  "title": "正比例函数 y = kx 与斜率的几何意义",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 674,
+          "y": 221.14999389648438,
+          "w": 572,
+          "h": 518.699951171875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 528px; top: 20px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 1334.39990234375,
+          "y": 221.14999389648438,
+          "w": 282.10009765625,
+          "h": 93.60000610351562,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 1236px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 2254.47802734375,
+          "y": 220.4700164794922,
+          "w": 312.6435546875,
+          "h": 149.55995178222656,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1236px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 674,
+          "y": 771.0499267578125,
+          "w": 468,
+          "h": 59.800048828125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 501.50103759765625,
+          "y": 203.10000610351562,
+          "w": 436.99786376953125,
+          "h": 396.2776184082031,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 528px; top: 20px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 1006.0349731445312,
+          "y": 203.10000610351562,
+          "w": 215.51947021484375,
+          "h": 71.50875854492188,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 1236px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 1708.95849609375,
+          "y": 202.5805206298828,
+          "w": 238.854248046875,
+          "h": 114.26115417480469,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1236px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 501.50103759765625,
+          "y": 623.2138671875,
+          "w": 357.54376220703125,
+          "h": 45.6861572265625,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 127.29999542236328,
+          "y": 211.62203979492188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 505px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 127.29999542236328,
+          "y": 702.5743408203125,
+          "w": 219.66317749023438,
+          "h": 72.88360595703125,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 20px; top: 505px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 593px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 127.04939270019531,
+          "y": 791.1248168945312,
+          "w": 243.44664001464844,
+          "h": 116.45806884765625,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 593px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 127.29999542236328,
+          "y": 639.8133544921875,
+          "w": 364.4181823730469,
+          "h": 46.5645751953125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 117.09934997558594,
+          "y": 160,
+          "w": 479.7882080078125,
+          "h": 435.0806884765625,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 528px; top: 20px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 671.03662109375,
+          "y": 160,
+          "w": 236.622802734375,
+          "h": 78.51080322265625,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 1236px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 1442.78955078125,
+          "y": 159.42965698242188,
+          "w": 262.2425537109375,
+          "h": 125.449462890625,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1236px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 117.09934997558594,
+          "y": 621.2509765625,
+          "w": 392.55401611328125,
+          "h": 50.15966796875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-tasks-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 1236px; top: 505px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 k 调整为 2，亲自体验直线陡峭程度",
+          "x": 1443.0594482421875,
+          "y": 688.8574829101562,
+          "w": 359.8411865234375,
+          "h": 166.22210693359375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 1236px; top: 505px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 105.0584716796875,
+          "y": 160,
+          "w": 350.0314025878906,
+          "h": 317.4148254394531,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 528px; top: 20px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 509.1856384277344,
+          "y": 160,
+          "w": 172.62911987304688,
+          "h": 57.277862548828125,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 528px; top: 20px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 1236px; top: 20px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 1072.2210693359375,
+          "y": 159.58389282226562,
+          "w": 191.320068359375,
+          "h": 91.52215576171875,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 1236px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 105.0584716796875,
+          "y": 496.5074462890625,
+          "w": 286.3893127441406,
+          "h": 36.59423828125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-tasks-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 1236px; top: 505px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 k 调整为 2，亲自体验直线陡峭程度",
+          "x": 1072.41796875,
+          "y": 545.830078125,
+          "w": 262.5235595703125,
+          "h": 121.2679443359375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 1236px; top: 505px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">正比例函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"fal",
+          "x": 133.77777099609375,
+          "y": 150,
+          "w": 332.4444580078125,
+          "h": 301.4666748046875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 505px; width: 217px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>k</mi><mi>x</mi><mspace w",
+          "x": 133.77777099609375,
+          "y": 516.4444580078125,
+          "w": 163.95556640625,
+          "h": 54.4000244140625,
+          "nw": 217,
+          "nh": 72,
+          "style": "left: 20px; top: 505px; width: 217px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "html": "<article data-id=\"linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"linear-intro-and-slope\" style=\"left: 20px; top: 593px; width: 240px; height: 114px;\"><div class=\"node-title\">正比例函数特征</div><ul class=\"content-list\"><li>图像是一条经过原点的直线</li><li>参数 k 称为直线的斜率</li></ul></article>",
+          "x": 133.59072875976562,
+          "y": 582.5380859375,
+          "w": 181.70742797851562,
+          "h": 86.923828125,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 593px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-controls-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 k</label><input id=\"oll-variable-number_01\" min=\"-3\" max=\"3\" step=\"0.03\" aria-",
+          "x": 133.77777099609375,
+          "y": 469.6000061035156,
+          "w": 272,
+          "h": 34.75555419921875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"linear-intro-and-slope-0.1.0-region\" data-interaction-tasks-id=\"linear-intro-and-slope-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"正比例函数 y = kx 与斜率的几何意义的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 723px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 k 调整为 2，亲自体验直线陡峭程度的变",
+          "x": 133.77777099609375,
+          "y": 681.155517578125,
+          "w": 249.33334350585938,
+          "h": 115.175048828125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 723px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 8
+}

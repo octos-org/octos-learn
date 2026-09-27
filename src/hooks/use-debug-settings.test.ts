@@ -2,7 +2,6 @@ import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
-  DEFAULT_DEBUG_SETTINGS,
   loadDebugSettings,
   saveDebugSettings,
   useDebugSettings,
