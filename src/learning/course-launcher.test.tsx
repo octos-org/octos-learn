@@ -96,6 +96,21 @@ describe("shared course launcher", () => {
     expect(await screen.findByText("课程包还在准备中")).toBeTruthy();
   });
 
+  it.each([
+    ["college-calculus", "大学微积分 · 数学"],
+    ["highschool-mathematics", "高中 · 数学"],
+    ["secondary-age-12-14", "初中（12–14岁） · 数学"],
+    ["unspecified", "数学"],
+    ["三年级", "三年级 · 数学"],
+  ])("renders readable course tags for %s", async (grade, label) => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(
+      JSON.stringify(catalog([{ ...release, grade }])), { status: 200 },
+    )));
+    showLauncher();
+    expect(await screen.findByText(label)).toBeTruthy();
+    expect(screen.queryByText(/unspecified|mathematics/u)).toBeNull();
+  });
+
   it("offers separate preview and interactive entry for a version-pinned pack", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
     showLauncher();

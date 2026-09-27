@@ -203,3 +203,5 @@ OLL 的确切提交，以及 provider、model 和可接受的已知例外。
 
 公网专属注册、功能降级和 TTS 额度说明见
 [公开注册、新手设置与平台旁白语音](PUBLIC_ONBOARDING_AND_TTS.md)。
+
+2026-09-27 补齐微积分课程元数据：当前公网版本 **0.2.6**，恢复 `authoring/<packId>/course-pack.json` 已有的 `college-calculus` 学段和中文简介。前端将学段、学科代码显示为中文，并隐藏 `unspecified`。相对 0.2.5 仅 manifest 变化，封面与教学内容不变。[元数据发布核验](course-runtime-quality/whiteboard-closeout-2026-09-27/METADATA-PUBLICATION-2026-09-27.json)。

@@ -47,6 +47,21 @@ type CatalogState = {
   error: string | null;
 };
 
+function courseTags(entry: CoursePackCatalogEntry): string {
+  const grades: Record<string, string> = {
+    "primary-age-8-9": "小学（8–9岁）",
+    "secondary-age-12-14": "初中（12–14岁）",
+    "highschool-mathematics": "高中",
+    "college-calculus": "大学微积分",
+  };
+  const grade = entry.grade.trim();
+  const subject = entry.subject.trim();
+  return [
+    grade.toLowerCase() === "unspecified" ? "" : (grades[grade] ?? grade),
+    subject === "mathematics" ? "数学" : subject,
+  ].filter(Boolean).join(" · ");
+}
+
 function useLauncherCatalog(): CatalogState {
   const [state, setState] = useState<CatalogState>(() => {
     const saved = loadSavedCoursePackCatalog();
@@ -185,7 +200,7 @@ function CourseCard({
     <article className="course-launcher-card">
       <div className="course-launcher-cover">
         <img src={installedThumbnail ?? entry.thumbnailUrl} alt="" />
-        <span className="course-launcher-grade">{entry.grade} · {entry.subject}</span>
+        <span className="course-launcher-grade">{courseTags(entry)}</span>
       </div>
       <div className="course-launcher-card-body">
         <div className="course-launcher-card-meta">
