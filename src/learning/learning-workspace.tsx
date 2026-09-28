@@ -3386,7 +3386,6 @@ export function LearningWorkspace({
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
         disabled={coursePreview}
-        courseOverview={lessonDeliverySettled}
       />
 
       {controlledOllLesson
