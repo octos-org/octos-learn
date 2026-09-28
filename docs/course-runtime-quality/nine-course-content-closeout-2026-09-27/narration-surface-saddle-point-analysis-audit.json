@@ -1,0 +1,114 @@
+{
+  "packId": "surface-saddle-point-analysis",
+  "version": "0.2.7",
+  "generated": 4,
+  "reused": 11,
+  "sha256": "59f6f810fd6b55f67f9bc33c6ca5910013ca38de4445f293421c6c8570c030c1",
+  "segments": [
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-01:beat:moment-01",
+      "file": "audio/001.mp3",
+      "regenerated": false,
+      "durationMs": 17064,
+      "textSha256": "8bff60baeeebe7244e846ae275e05e99c6c71aa07e243bd191da6966640f88f0"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-01:beat:moment-02",
+      "file": "audio/002.mp3",
+      "regenerated": false,
+      "durationMs": 14880,
+      "textSha256": "31badadb3276599c084beb9748e6bfb7892e24ba75af4f537f612523dee8659f"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-02:beat:moment-01",
+      "file": "audio/003.mp3",
+      "regenerated": true,
+      "durationMs": 9288,
+      "textSha256": "acb6eea2ecdec933d053eb20241881c28bae007dc69b72d734724c92463e8d2e"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-02:beat:moment-02",
+      "file": "audio/004.mp3",
+      "regenerated": true,
+      "durationMs": 12072,
+      "textSha256": "196c094be8cd70f329a43b744cfa80fa51f3dd399c538f4e08f231774d70d615"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-02:beat:moment-03",
+      "file": "audio/005.mp3",
+      "regenerated": true,
+      "durationMs": 12672,
+      "textSha256": "c0aaf68ef3213dd681eb6afc7c70981c149d3ffb27a0618e14dfb701dc585b57"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-02:beat:moment-04",
+      "file": "audio/006.mp3",
+      "regenerated": true,
+      "durationMs": 16056,
+      "textSha256": "04ff98f3faa4e2c30e442321624d92ee0b366a5744647bf9363dc748373b9ba1"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-03:beat:moment-01",
+      "file": "audio/007.mp3",
+      "regenerated": false,
+      "durationMs": 12288,
+      "textSha256": "fe4bfd69e023e00b516471ab5cd6f6b06ffda077a8314ba5f62f4c1133a0b807"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-03:beat:moment-02",
+      "file": "audio/008.mp3",
+      "regenerated": false,
+      "durationMs": 12264,
+      "textSha256": "546bc7ad80ad9faf2b787c2630a67f3c806a99944b2b5b6368e5b6e870c26172"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-03:beat:moment-03",
+      "file": "audio/009.mp3",
+      "regenerated": false,
+      "durationMs": 11472,
+      "textSha256": "0fdf21d4e6ee91c879f89697dbd76b3e5e52632fec37eaa03dacae8dfffaa4df"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-03:beat:moment-04",
+      "file": "audio/010.mp3",
+      "regenerated": false,
+      "durationMs": 7680,
+      "textSha256": "2e453d78aaf6eb81d0b5fbe63cb6ba8545308f145362a2f36d17c707ad8544fb"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-04:beat:moment-01",
+      "file": "audio/011.mp3",
+      "regenerated": false,
+      "durationMs": 14064,
+      "textSha256": "992e5738260c8be8ff097fe19bd0823c1d83c5e75faefe4bcbeb5b50f9e6426a"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-04:beat:moment-02",
+      "file": "audio/012.mp3",
+      "regenerated": false,
+      "durationMs": 13848,
+      "textSha256": "65551f83a0b6c71cc60a9a1f6d19379ebeaae126076c4a63e8a41ed3cc8bb114"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-04:beat:moment-03",
+      "file": "audio/013.mp3",
+      "regenerated": false,
+      "durationMs": 18072,
+      "textSha256": "38945a576200264f34bfc7a4d39ed5a002a1d84ee15ce74394ca82c251190bad"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-04:beat:moment-04",
+      "file": "audio/014.mp3",
+      "regenerated": false,
+      "durationMs": 11688,
+      "textSha256": "de1fa2126217bbe29c4fe044b6f67feb6cbb8d7577c219396ab8a26fb85c2c30"
+    },
+    {
+      "beatId": "surface-saddle-point-analysis-0.2.7:step:section-04:beat:moment-05",
+      "file": "audio/015.mp3",
+      "regenerated": false,
+      "durationMs": 16560,
+      "textSha256": "5b8dc6cf6b26b6d62a3314a338dc95520cdc7fc34a730cca4766eb6d4f94f08e"
+    }
+  ]
+}

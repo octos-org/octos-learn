@@ -26,12 +26,19 @@ test("collection home page displays all 3 college multivariable calculus courses
   await installTestAccount(page);
   await page.goto("/?collection=multivariable-calculus");
   await page.waitForLoadState("networkidle");
+  const response = await page.request.get("/api/learn/course-packs");
+  expect(response.ok()).toBe(true);
+  const catalog = await response.json() as {
+    packs: Array<{ packId: string; version: string; recommended: boolean }>;
+  };
 
   for (const item of collection) {
     const card = page.locator(".course-launcher-card").filter({ has: page.getByRole("heading", { name: item.title, exact: true }) });
     await expect(card).toBeVisible({ timeout: 15_000 });
     await expect.poll(() => card.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
-    await expect(card.locator('.course-launcher-version')).toContainText(/课程包 v\d+\.\d+\.\d+/u);
+    const published = catalog.packs.find((pack) => pack.packId === item.id && pack.recommended);
+    expect(published, `Recommended version for ${item.id}`).toBeDefined();
+    await expect(card.locator('.course-launcher-version')).toHaveText(`课程包 v${published!.version}`);
   }
 
   // Scroll to the calculus cards row to show the thumbnails clearly

@@ -1,0 +1,86 @@
+{
+  "packId": "surface-partial-derivative-slice",
+  "version": "0.2.7",
+  "generated": 3,
+  "reused": 8,
+  "sha256": "0612e7a9ca84f40abac3908ef8780391ba7c3ebebf23ff722b6b2d0e7cba41c1",
+  "segments": [
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-01:beat:moment-01",
+      "file": "audio/001.mp3",
+      "regenerated": false,
+      "durationMs": 10704,
+      "textSha256": "fa23603183973078a3cc36f1591e46734998b2f350d73b91f1db4274442821a2"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-01:beat:moment-02",
+      "file": "audio/002.mp3",
+      "regenerated": false,
+      "durationMs": 11088,
+      "textSha256": "41856e0af7924620cb0bcdcecb28ca68fbeb27bb0e6eb7f9999b563bccec2281"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-01:beat:moment-03",
+      "file": "audio/003.mp3",
+      "regenerated": false,
+      "durationMs": 11280,
+      "textSha256": "9aba5579336fd08718bc0c11c6bf72fb963abeebe62b3a8ccee7b08626baec50"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-02:beat:moment-01",
+      "file": "audio/004.mp3",
+      "regenerated": false,
+      "durationMs": 9480,
+      "textSha256": "4b6212caf25974b9ab4841e23671aeca4c92e92a8d426a2de38574aff7d2b234"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-02:beat:moment-02",
+      "file": "audio/005.mp3",
+      "regenerated": false,
+      "durationMs": 11664,
+      "textSha256": "40f7b16a2dc6b3c7b3a7fa939c1c6983e0d6db179b954c286d24b36fbe0bcdce"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-02:beat:moment-03",
+      "file": "audio/006.mp3",
+      "regenerated": false,
+      "durationMs": 12288,
+      "textSha256": "a077aef569f41ced7412a8ee9111b55e8e0b8f21afda2b7abbef416e878d5f74"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-03:beat:moment-01",
+      "file": "audio/007.mp3",
+      "regenerated": true,
+      "durationMs": 10272,
+      "textSha256": "2b815bf55d5aa27116052755687e972541d9aa55ece4238156f0da8b5e1f4346"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-03:beat:moment-02",
+      "file": "audio/008.mp3",
+      "regenerated": true,
+      "durationMs": 18696,
+      "textSha256": "afa2a458023ea8181a76261c6e729a1f29d885205acea8966e8ec7ee6a776b04"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-03:beat:moment-03",
+      "file": "audio/009.mp3",
+      "regenerated": true,
+      "durationMs": 25728,
+      "textSha256": "b00dae65f6fe4ca552b9c37f0032d75aa2f019ec7313ef98d24fb7238081684e"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-04:beat:moment-01",
+      "file": "audio/010.mp3",
+      "regenerated": false,
+      "durationMs": 14304,
+      "textSha256": "470811c9653dd95714deda2006fae77faadeaec6d31a036e8080005db06a676b"
+    },
+    {
+      "beatId": "surface-partial-derivative-slice-0.2.7:step:section-04:beat:moment-02",
+      "file": "audio/011.mp3",
+      "regenerated": false,
+      "durationMs": 19248,
+      "textSha256": "010543e13f9f7a2e0d73f88ddbf7a45764d56a4ff9fe62c8552e28836822a3f2"
+    }
+  ]
+}

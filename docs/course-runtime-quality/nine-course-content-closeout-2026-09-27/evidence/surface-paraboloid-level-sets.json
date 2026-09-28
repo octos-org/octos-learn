@@ -1,0 +1,13 @@
+{
+  "packId": "surface-paraboloid-level-sets",
+  "title": "水平截线与等高线：以 z=x²+y² 为例",
+  "scale1920": 1.114,
+  "clipped1920": 0,
+  "count1920": 7,
+  "scale1440": 0.729,
+  "clipped1440": 0,
+  "count1440": 7,
+  "scale700": 0.465,
+  "clipped700": 0,
+  "count700": 7
+}

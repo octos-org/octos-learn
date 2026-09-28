@@ -8,7 +8,6 @@ test.setTimeout(120_000);
 const courses = [
   ["linear-intro-and-slope", "正比例函数 y = kx 与斜率的几何意义"],
   ["linear-simultaneous-intersections", "二元一次方程组与一次函数的几何意义"],
-  ["rectangle-area-from-tiles", "长方形的面积与周长"],
   ["slope-and-intercept", "一次函数 y = mx + b 的图像与性质"],
   ["surface-paraboloid-level-sets", "水平截线与等高线：以 z=x²+y² 为例"],
   ["surface-partial-derivative-slice", "偏导数：固定输入，求截线斜率"],
@@ -69,7 +68,7 @@ for (const [packId, title] of courses) {
       row[`scale${w}`] = Math.round(m.scale * 1000) / 1000;
       row[`clipped${w}`] = m.clipped;
       row[`count${w}`] = m.count;
-      if (packId.startsWith('surface-')) await page.screenshot({path: `${OUT}/${packId}-${w}.png`});
+      await page.screenshot({path: `${OUT}/${packId}-${w}.png`});
     }
     await writeFile(`${OUT}/${packId}.json`, JSON.stringify(row, null, 2));
     console.log('MEASURE', JSON.stringify(row));

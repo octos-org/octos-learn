@@ -1,0 +1,65 @@
+[
+  {
+    "packId": "linear-intro-and-slope",
+    "version": "0.1.0",
+    "archiveSha256": "2b7f83fe1c642887b11f6c31ff3e8c29aed28b1d422bfa989337ea1527a8466c",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "linear-simultaneous-intersections",
+    "version": "0.1.1",
+    "archiveSha256": "3ded98c318536f3c6c06ac23d00aab3f3697f411d83f14438ec16be91ae05ae5",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "slope-and-intercept",
+    "version": "0.1.6",
+    "archiveSha256": "24f0c209175d5ba8ab10f4f0e7b159018056c5792ce507d07a753b8241e883c0",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "surface-paraboloid-level-sets",
+    "version": "0.2.6",
+    "archiveSha256": "3e7806e5506db793066f9ca8a74934cab986d50065f83ddf53b5edae83d593d4",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "surface-partial-derivative-slice",
+    "version": "0.2.6",
+    "archiveSha256": "6ef83e3095796466607f02f67bad05aebc48a4b7d10fa64623f814b8255ffe51",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "surface-saddle-point-analysis",
+    "version": "0.2.7",
+    "archiveSha256": "3f6ce7ddaf9e6705137eb3de211b7ec287e960e235261e542b35a0b061b82fff",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "trig-cosine-and-phase-shift",
+    "version": "0.1.2",
+    "archiveSha256": "2c535e6dc6917def46441ce75e6c8988e501b46e7edc81790d3070f323d0abf5",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "trig-quadrants-and-monotonicity",
+    "version": "0.1.1",
+    "archiveSha256": "4cd9268b37a714642ebe9ea06063952ffe54c15ce40782946d37b2eb5cb59ceb",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  },
+  {
+    "packId": "trig-unit-circle-to-sine",
+    "version": "0.1.1",
+    "archiveSha256": "c30ce8f67ce1879bf01511b49b5d9b60685a38029d7561b9aa24e036107388f9",
+    "coverAndMetadataPreserved": true,
+    "allAudioUnchangedBeforeNarrationReview": true
+  }
+]
