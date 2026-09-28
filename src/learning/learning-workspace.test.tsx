@@ -1,8 +1,8 @@
+import { renderLearning } from "../test/render-learning";
 import {
   act,
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
 } from "@testing-library/react";
@@ -254,7 +254,7 @@ describe("LearningWorkspace", () => {
     vi.restoreAllMocks();
   });
 
-  it("shows the live camera and the exact frame sent with the voice turn", () => {
+  it("shows the live camera and the exact frame sent with the voice turn", async () => {
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     conversationMock.cameraActive = true;
     conversationMock.cameraStream = {
@@ -262,7 +262,7 @@ describe("LearningWorkspace", () => {
     } as unknown as MediaStream;
     conversationMock.lastSentFrameUrl = "blob:sent-frame";
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-camera-feedback"
         voiceEnabled
@@ -278,11 +278,11 @@ describe("LearningWorkspace", () => {
     expect(screen.getByText("本轮已发送")).toBeTruthy();
   });
 
-  it("shows an explicit startup panel while voice dependencies are loading", () => {
+  it("shows an explicit startup panel while voice dependencies are loading", async () => {
     conversationMock.state = "starting";
     conversationMock.startupDetail = "正在连接语音识别服务并启动人声检测…";
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-starting"
         voiceEnabled
@@ -303,7 +303,7 @@ describe("LearningWorkspace", () => {
       getTracks: () => [],
     } as unknown as MediaStream;
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-camera-calibration"
         voiceEnabled
@@ -325,7 +325,7 @@ describe("LearningWorkspace", () => {
 
   it("lets text mode enable voice without also enabling the camera", async () => {
     const onUseVoiceMode = vi.fn(async () => undefined);
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-enable-voice"
         voiceEnabled={false}
@@ -344,7 +344,7 @@ describe("LearningWorkspace", () => {
 
   it("keeps a CoursePack preview read-only until the learner opts in", async () => {
     const onStartCourseInteraction = vi.fn();
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-pack-preview"
         voiceEnabled={false}
@@ -395,7 +395,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("keeps the camera independent in text mode and opens settings from its preview", async () => {
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-camera-settings-in-text-mode"
         voiceEnabled={false}
@@ -430,8 +430,8 @@ describe("LearningWorkspace", () => {
     expect(conversationMock.stopCamera).not.toHaveBeenCalled();
   });
 
-  it("releases microphone capture when switching from voice to text mode", () => {
-    const { rerender } = render(
+  it("releases microphone capture when switching from voice to text mode", async () => {
+    const { rerender } = await renderLearning(
       <LearningWorkspace
         sessionId="learn-switch-to-text"
         voiceEnabled
@@ -453,7 +453,7 @@ describe("LearningWorkspace", () => {
     });
   });
 
-  it("does not project ordinary assistant prose onto the OLL whiteboard", () => {
+  it("does not project ordinary assistant prose onto the OLL whiteboard", async () => {
     const longReply =
       "第一步：先看 $x^2 + 6x$。配方公式是 $(x+b)^2=x^2+2bx+b^2$。\n\n所以得到 $y=(x+3)^2-4$。";
     conversationMock.turns = [
@@ -465,7 +465,7 @@ describe("LearningWorkspace", () => {
       },
     ];
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-test"
         voiceEnabled={false}
@@ -479,7 +479,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("provides the shared handwriting toolbar on a new blank whiteboard", async () => {
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-blank-whiteboard-ink"
         voiceEnabled={false}
@@ -511,7 +511,7 @@ describe("LearningWorkspace", () => {
       assistantText: "画面有些模糊，请把试卷转正并移近一点。",
       awaitingTranscript: false,
     }];
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-camera-clarification"
         voiceEnabled
@@ -545,7 +545,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("places lesson generation feedback on the whiteboard", async () => {
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-loading-lesson"
         voiceEnabled={false}
@@ -589,7 +589,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-22T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-question"
         voiceEnabled
@@ -666,7 +666,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-23T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-clarify"
         voiceEnabled
@@ -741,7 +741,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-23T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-ignore"
         voiceEnabled
@@ -812,7 +812,7 @@ describe("LearningWorkspace", () => {
       jobs: [],
       results: [],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-context-voice"
         voiceEnabled
@@ -930,7 +930,7 @@ describe("LearningWorkspace", () => {
       destroy: vi.fn(async () => undefined),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-direct-selection-voice"
         voiceEnabled
@@ -1070,7 +1070,7 @@ describe("LearningWorkspace", () => {
       destroy: vi.fn(async () => undefined),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-direct-selection-voice"
         voiceEnabled
@@ -1210,7 +1210,7 @@ describe("LearningWorkspace", () => {
       jobs: [],
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-selection-text"
         voiceEnabled={false}
@@ -1276,7 +1276,7 @@ describe("LearningWorkspace", () => {
       results: [],
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-camera-text"
         voiceEnabled={false}
@@ -1307,7 +1307,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("clears the lesson loader and speaks a voice turn failure", async () => {
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-error"
         voiceEnabled
@@ -1364,7 +1364,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-19T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-follow-up-loading"
         voiceEnabled={false}
@@ -1415,7 +1415,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-19T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-direct-lesson"
         voiceEnabled={false}
@@ -1532,7 +1532,7 @@ describe("LearningWorkspace", () => {
     vi.stubGlobal("fetch", vi.fn(async (url: string) => ({
       ok: true, json: async () => makeLesson(url.includes("old-turn") ? "旧课程" : "新课程"),
     })));
-    const view = render(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
+    const view = await renderLearning(<LearningWorkspace sessionId={sessionId} voiceEnabled={false}
       playbackMode="review" onBack={vi.fn()} />);
     const finishText = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
     await screen.findByText(finishText);
@@ -1597,7 +1597,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-09-04T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-missing-lesson-artifact"
         voiceEnabled={false}
@@ -1658,7 +1658,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-23T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-text-clarify"
         voiceEnabled={false}
@@ -1728,7 +1728,7 @@ describe("LearningWorkspace", () => {
         updated_at: "2026-08-23T00:00:00Z",
       }],
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-text-unsupported"
         voiceEnabled={false}
@@ -1806,7 +1806,7 @@ describe("LearningWorkspace", () => {
       updated_at: "2026-08-19T00:00:10Z",
     }]);
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-restored-job"
         voiceEnabled={false}
@@ -1863,7 +1863,7 @@ describe("LearningWorkspace", () => {
       return [];
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-course-pack-job"
         voiceEnabled={false}
@@ -1916,7 +1916,7 @@ describe("LearningWorkspace", () => {
       assistantText: genericReply,
       awaitingTranscript: true,
     }];
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-empty-voice-turn"
         voiceEnabled
@@ -1954,7 +1954,7 @@ describe("LearningWorkspace", () => {
       assistantText: assistantReply,
       awaitingTranscript: true,
     }];
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-late-transcript"
         voiceEnabled
@@ -2003,8 +2003,8 @@ describe("LearningWorkspace", () => {
     );
   });
 
-  it("suspends voice capture in the render that starts OLL playback", () => {
-    render(
+  it("suspends voice capture in the render that starts OLL playback", async () => {
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-voice-playback-ownership"
         voiceEnabled
@@ -2023,7 +2023,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("keeps lesson narration active while the student moves a variable control", async () => {
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-student-control-during-narration"
         voiceEnabled
@@ -2081,7 +2081,7 @@ describe("LearningWorkspace", () => {
         jobs: [],
       };
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-text-voice-exclusion"
         voiceEnabled
@@ -2115,9 +2115,9 @@ describe("LearningWorkspace", () => {
     });
   });
 
-  it("feeds the OLL fixture into the real /learn Runtime as incremental events", () => {
+  it("feeds the OLL fixture into the real /learn Runtime as incremental events", async () => {
     vi.useFakeTimers();
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-stream-test"
         voiceEnabled={false}
@@ -2162,8 +2162,8 @@ describe("LearningWorkspace", () => {
     ["voice", true],
   ] as const)(
     "enables the shared OLL narration path in %s input mode",
-    (_mode, voiceEnabled) => {
-      render(
+    async (_mode, voiceEnabled) => {
+      await renderLearning(
         <LearningWorkspace
           sessionId={`learn-narration-${_mode}`}
           voiceEnabled={voiceEnabled}
@@ -2181,12 +2181,12 @@ describe("LearningWorkspace", () => {
     },
   );
 
-  it("animates the teacher while the next lesson Beat is preparing", () => {
+  it("animates the teacher while the next lesson Beat is preparing", async () => {
     narrationTtsMock.useOllNarrationTts.mockReturnValue({
       error: null,
       preparing: true,
     });
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-narration-preparing"
         voiceEnabled
@@ -2203,7 +2203,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("restarts TTS on a saved lesson and opens a clean ink document", async () => {
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-narration-review"
         playbackMode="review"
@@ -2231,10 +2231,10 @@ describe("LearningWorkspace", () => {
       );
     });
     expect(localStorage.getItem(
-      "octos-learning-ink-run:v1:learn-narration-review",
+      "octos-learning-ink-run:v2:learn-narration-review",
     )).toBe("1");
     expect(localStorage.getItem(
-      "octos-learning-ink-merge-source:v1:learn-narration-review",
+      "octos-learning-ink-merge-source:v2:learn-narration-review",
     )).toBe("learn-narration-review");
     await waitFor(() => {
       expect(inkRuntimeMock.mountInkRuntime).toHaveBeenLastCalledWith(
@@ -2256,7 +2256,7 @@ describe("LearningWorkspace", () => {
 
   it("opens a clean ink document when a saved step is replayed from the course outline", async () => {
     const sessionId = "learn-outline-step-replay";
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2271,10 +2271,10 @@ describe("LearningWorkspace", () => {
     })[0]!);
 
     expect(localStorage.getItem(
-      `octos-learning-ink-run:v1:${sessionId}`,
+      `octos-learning-ink-run:v2:${sessionId}`,
     )).toBe("1");
     expect(localStorage.getItem(
-      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      `octos-learning-ink-merge-source:v2:${sessionId}`,
     )).toBe(sessionId);
     await waitFor(() => {
       expect(inkRuntimeMock.mountInkRuntime).toHaveBeenLastCalledWith(
@@ -2289,15 +2289,15 @@ describe("LearningWorkspace", () => {
 
   it("restores earlier ink into the current document after replay completes", async () => {
     localStorage.setItem(
-      "octos-learning-ink-run:v1:learn-finished-replay",
+      "octos-learning-ink-run:v2:learn-finished-replay",
       "1",
     );
     localStorage.setItem(
-      "octos-learning-ink-merge-source:v1:learn-finished-replay",
+      "octos-learning-ink-merge-source:v2:learn-finished-replay",
       "learn-finished-replay",
     );
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-finished-replay"
         playbackMode="review"
@@ -2315,11 +2315,11 @@ describe("LearningWorkspace", () => {
     });
     await waitFor(() => {
       expect(localStorage.getItem(
-        "octos-learning-ink-merge-source:v1:learn-finished-replay",
+        "octos-learning-ink-merge-source:v2:learn-finished-replay",
       )).toBeNull();
     });
     expect(localStorage.getItem(
-      "octos-learning-ink-cumulative-run:v1:learn-finished-replay",
+      "octos-learning-ink-cumulative-run:v2:learn-finished-replay",
     )).toBe("1");
     expect(inkRuntimeMock.mountInkRuntime).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -2354,9 +2354,9 @@ describe("LearningWorkspace", () => {
         position: { x: 10, y: 10 },
       }]),
     );
-    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "1");
+    localStorage.setItem(`octos-learning-ink-run:v2:${sessionId}`, "1");
     localStorage.setItem(
-      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      `octos-learning-ink-merge-source:v2:${sessionId}`,
       sessionId,
     );
     let finishMerge!: () => void;
@@ -2395,7 +2395,7 @@ describe("LearningWorkspace", () => {
       };
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2432,9 +2432,9 @@ describe("LearningWorkspace", () => {
         },
       }]),
     );
-    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "1");
+    localStorage.setItem(`octos-learning-ink-run:v2:${sessionId}`, "1");
     localStorage.setItem(
-      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      `octos-learning-ink-merge-source:v2:${sessionId}`,
       sessionId,
     );
     let finishMerge!: () => void;
@@ -2473,7 +2473,7 @@ describe("LearningWorkspace", () => {
       };
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2517,9 +2517,9 @@ describe("LearningWorkspace", () => {
       JSON.stringify({ format: "octos.ink", version: 1 }),
     );
     // Run 2 was an empty replay (did not save ink)
-    localStorage.setItem(`octos-learning-ink-run:v1:${sessionId}`, "2");
+    localStorage.setItem(`octos-learning-ink-run:v2:${sessionId}`, "2");
     localStorage.setItem(
-      `octos-learning-ink-merge-source:v1:${sessionId}`,
+      `octos-learning-ink-merge-source:v2:${sessionId}`,
       `${sessionId}:replay:2`,
     );
 
@@ -2560,7 +2560,7 @@ describe("LearningWorkspace", () => {
       };
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2589,9 +2589,25 @@ describe("LearningWorkspace", () => {
     expect(await screen.findByText("追问的问题内容")).toBeTruthy();
   });
 
+  it("keeps the recovery source when merging ink fails instead of marking it completed", async () => {
+    const id = "learn-ink-merge-failure";
+    localStorage.setItem(`octos-learning-ink-run:v2:${id}`, "1");
+    localStorage.setItem(`octos-learning-ink-merge-source:v2:${id}`, id);
+    const defaultMount = inkRuntimeMock.mountInkRuntime.getMockImplementation()!;
+    inkRuntimeMock.mountInkRuntime.mockImplementation((...args) => ({
+      ...defaultMount(...args),
+      mergeSavedDocument: vi.fn(async () => { throw new Error("读取旧笔迹失败"); }),
+    }));
+    await renderLearning(<LearningWorkspace sessionId={id} playbackMode="review" ollFixture="geometry-v2" onBack={vi.fn()} />);
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("读取旧笔迹失败"));
+    expect(localStorage.getItem(`octos-learning-ink-merge-source:v2:${id}`)).toBe(id);
+    expect(localStorage.getItem(`octos-learning-ink-cumulative-run:v2:${id}`)).not.toBe("1");
+    expect(screen.getByText(/恢复失败/)).toBeTruthy();
+  });
+
   it("restores all composite board nodes from fullBoard when delivery is settled", async () => {
     const sessionId = "learn-composite-board-restore";
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2611,7 +2627,7 @@ describe("LearningWorkspace", () => {
   it("dismisses the lesson completion speech bubble after standard reading time while keeping completed state label", async () => {
     vi.useFakeTimers();
     const sessionId = "learn-completion-bubble-dismiss";
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         playbackMode="review"
@@ -2638,11 +2654,11 @@ describe("LearningWorkspace", () => {
 
   it("recovers ink hidden by the previous replay implementation once", async () => {
     localStorage.setItem(
-      "octos-learning-ink-run:v1:learn-legacy-replay",
+      "octos-learning-ink-run:v2:learn-legacy-replay",
       "1",
     );
 
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-legacy-replay"
         playbackMode="review"
@@ -2660,13 +2676,13 @@ describe("LearningWorkspace", () => {
     });
     await waitFor(() => {
       expect(localStorage.getItem(
-        "octos-learning-ink-cumulative-run:v1:learn-legacy-replay",
+        "octos-learning-ink-cumulative-run:v2:learn-legacy-replay",
       )).toBe("1");
     });
 
     view.unmount();
     inkRuntimeMock.mountInkRuntime.mockClear();
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-legacy-replay"
         playbackMode="review"
@@ -2745,7 +2761,7 @@ describe("LearningWorkspace", () => {
       }),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-model-test"
         voiceEnabled={false}
@@ -2823,7 +2839,7 @@ describe("LearningWorkspace", () => {
     }];
     vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
 
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-selection-no-tts"
         voiceEnabled
@@ -2950,7 +2966,7 @@ describe("LearningWorkspace", () => {
       }),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         voiceEnabled={false}
@@ -3015,7 +3031,7 @@ describe("LearningWorkspace", () => {
       }),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         voiceEnabled={false}
@@ -3076,7 +3092,7 @@ describe("LearningWorkspace", () => {
     const requests = new SelectionRequestState(sessionId);
     requests.begin("historical-turn");
     if (status === "timed-out") requests.timeout("historical-turn");
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId={sessionId}
         voiceEnabled={false}
@@ -3132,7 +3148,7 @@ describe("LearningWorkspace", () => {
         }),
       }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-restored"
         voiceEnabled={false}
@@ -3191,7 +3207,7 @@ describe("LearningWorkspace", () => {
       }),
     }));
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-reconnected"
         voiceEnabled={false}
@@ -3283,7 +3299,7 @@ describe("LearningWorkspace", () => {
     }));
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-progressive"
         voiceEnabled={false}
@@ -3349,7 +3365,7 @@ describe("LearningWorkspace", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-no-artifact"
         voiceEnabled={false}
@@ -3380,7 +3396,7 @@ describe("LearningWorkspace", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-file-list-error"
         voiceEnabled={false}
@@ -3448,7 +3464,7 @@ describe("LearningWorkspace", () => {
       });
     }));
 
-    const view = render(
+    const view = await renderLearning(
       <LearningWorkspace
         sessionId="learn-streaming-artifact-test"
         voiceEnabled={false}
@@ -3516,7 +3532,7 @@ describe("LearningWorkspace", () => {
       source: "typesafe_jev",
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-gate-ignore"
         voiceEnabled
@@ -3555,7 +3571,7 @@ describe("LearningWorkspace", () => {
       source: "typesafe_jev",
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-gate-clarify"
         voiceEnabled
@@ -3590,7 +3606,7 @@ describe("LearningWorkspace", () => {
       source: "typesafe_jev",
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-gate-text-ignore"
         voiceEnabled={false}
@@ -3623,7 +3639,7 @@ describe("LearningWorkspace", () => {
       source: "typesafe_jev",
     });
 
-    render(
+    await renderLearning(
       <LearningWorkspace
         sessionId="learn-gate-text-clarify"
         voiceEnabled={false}
@@ -3640,4 +3656,17 @@ describe("LearningWorkspace", () => {
     expect(sessionFilesMock.invokeSkillAction).not.toHaveBeenCalled();
     gateSpy.mockRestore();
   });
+});
+
+// These Runtime/UI tests use small synchronous fixtures. IndexedDB durability
+// and disk failures are covered separately in learning-document-store.test.ts
+// and the real-browser persistence tests.
+vi.mock("./learning-document-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./learning-document-store")>();
+  const { LocalPlaybackStore } = await import("octos-lesson-language/web-runtime");
+  return {
+    ...actual,
+    createIndexedPlaybackStore: async () => new LocalPlaybackStore(),
+    hasStoredInk: (key: string) => localStorage.getItem(key) !== null,
+  };
 });

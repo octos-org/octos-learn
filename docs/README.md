@@ -1,5 +1,7 @@
 # Octos Learn 文档索引
 
+- [课程和笔迹 IndexedDB 存储](course-runtime-quality/indexeddb-storage-2026-09-28/REPORT.md)：旧开发缓存清理范围、保存失败重试和验证结果。
+
 ## 当前使用
 
 - [Makepad 原生迁移接手入口](makepad-migration/AGENT_HANDOFF.md)：macOS 原生应用现状、工作区重建、验证方法、剩余差异与交接维护规矩（每个工作阶段结束必须更新）。

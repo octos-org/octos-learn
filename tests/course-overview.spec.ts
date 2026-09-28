@@ -94,8 +94,7 @@ for (const [title, beats] of courses) {
     }
     await expect(board).toHaveClass(/manual-navigation/);
     expect((await metrics()).scale).toBeCloseTo(manualScale,2);
-    await page.getByRole('button',{name:'查看整课',exact:true}).click();
-    await settle();
+    await expect(page.getByRole('button',{name:'查看整课',exact:true})).toHaveCount(0);
   });
 }
 
@@ -120,6 +119,7 @@ test('handwritten annotations keep their course cards in place at completion', a
   await expect(page.getByText(/1 项笔迹/)).toBeVisible();
   const before=await scene.evaluate(element=>({x:element.style.left,y:element.style.top}));
   for(let i=0;i<8 && await next.isEnabled();i++)await next.click();
-  await expect(page.getByRole('button',{name:'查看整课',exact:true})).toBeVisible();
+  await expect(next).toBeDisabled();
+  await expect(page.getByRole('button',{name:'查看整课',exact:true})).toHaveCount(0);
   await expect.poll(()=>scene.evaluate(element=>({x:element.style.left,y:element.style.top}))).toEqual(before);
 });

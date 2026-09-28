@@ -36,6 +36,19 @@ describe("OctosTeacher", () => {
     rendered.unmount();
   });
 
+  it("keeps completion captions out of camera occlusions while retaining the avatar", () => {
+    const { container, rerender } = render(
+      <OctosTeacher state="idle" stateLabel="课程完成" speech="这节课讲完了" onClick={vi.fn()} />,
+    );
+    expect(container.querySelector(".octos-teacher-caption")?.hasAttribute("data-learning-board-occlusion")).toBe(false);
+    const avatar = container.querySelector("[data-learning-board-occlusion]");
+    expect(avatar?.classList.contains("octos-teacher-avatar")).toBe(true);
+    rerender(<OctosTeacher state="idle" stateLabel="课程完成" speech="" onClick={vi.fn()} />);
+    expect(container.querySelector(".octos-teacher-caption")).toBeNull();
+    expect(container.querySelectorAll("[data-learning-board-occlusion]")).toHaveLength(1);
+    expect(container.querySelector("[data-learning-board-occlusion]")).toBe(avatar);
+  });
+
   it("shows a generic preparation animation without exposing TTS details", () => {
     const onClick = vi.fn();
     render(

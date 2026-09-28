@@ -1,3 +1,4 @@
+import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { LearningModelContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
@@ -347,15 +348,15 @@ export interface LearningWorkspaceProps {
 }
 
 function inkPlaybackRunStorageKey(sessionId: string): string {
-  return `octos-learning-ink-run:v1:${sessionId}`;
+  return `octos-learning-ink-run:v2:${sessionId}`;
 }
 
 function inkMergeSourceStorageKey(sessionId: string): string {
-  return `octos-learning-ink-merge-source:v1:${sessionId}`;
+  return `octos-learning-ink-merge-source:v2:${sessionId}`;
 }
 
 function cumulativeInkRunStorageKey(sessionId: string): string {
-  return `octos-learning-ink-cumulative-run:v1:${sessionId}`;
+  return `octos-learning-ink-cumulative-run:v2:${sessionId}`;
 }
 
 function inkDocumentSessionId(sessionId: string, run: number): string {
@@ -383,7 +384,7 @@ function findLatestSavedInkSessionId(
   }
   for (let r = fromRun; r >= 1; r--) {
     const key = `octos-learning-ink:v1:${sessionId}:replay:${r}`;
-    if (window.localStorage.getItem(key)) {
+    if (hasStoredInk(key)) {
       return `${sessionId}:replay:${r}`;
     }
   }
@@ -402,7 +403,7 @@ function readInkMergeSourceSessionId(
     );
     if (source && (source === sessionId || source.startsWith(`${sessionId}:replay:`))) {
       if (source !== currentDoc) {
-        if (source === sessionId || window.localStorage.getItem(`octos-learning-ink:v1:${source}`)) {
+        if (source === sessionId || hasStoredInk(`octos-learning-ink:v1:${source}`)) {
           return source;
         }
       }
@@ -416,6 +417,7 @@ function readInkMergeSourceSessionId(
     ) {
       return findLatestSavedInkSessionId(sessionId, currentRun - 1);
     }
+    if (cumulativeRun === currentRun) return null;
     const latest = findLatestSavedInkSessionId(
       sessionId,
       currentRun > 0 ? currentRun - 1 : 100,
@@ -423,7 +425,7 @@ function readInkMergeSourceSessionId(
     if (
       latest &&
       latest !== currentDoc &&
-      (latest === sessionId || window.localStorage.getItem(`octos-learning-ink:v1:${latest}`))
+      (latest === sessionId || hasStoredInk(`octos-learning-ink:v1:${latest}`))
     ) {
       return latest;
     }
@@ -1019,6 +1021,7 @@ export function LearningWorkspace({
     hasUndeliveredOllEvents,
     setOllDeliverySettled,
   ]);
+  const lessonStorageLoading = Boolean(ollOpenSource && !ollLesson && playbackMode === "live");
   const lessonOwnsNarration =
     ollLesson !== null &&
     (playbackMode === "live" || ollLesson.playing) &&
@@ -1232,7 +1235,7 @@ export function LearningWorkspace({
           // naturally (issue #315).
           externalSpeechActive:
             voiceEnabled &&
-            ((lessonOwnsNarration && narrationAudioEnabled) ||
+            (((lessonOwnsNarration || lessonStorageLoading) && narrationAudioEnabled) ||
               narrationSpeechActive ||
               textTurnPending),
           // Do not feed the final speaker frame / acoustic echo back into ASR when
@@ -1442,6 +1445,7 @@ export function LearningWorkspace({
       handleTurnComplete,
       handleVoiceTurnError,
       lessonOwnsNarration,
+      lessonStorageLoading,
       learnTrace,
       narrationAudioEnabled,
       narrationSpeechActive,
@@ -1665,15 +1669,7 @@ export function LearningWorkspace({
       // The in-memory state is sufficient for this page load.
     }
   }, [inkMergeSourceSessionId, inkPlaybackRun, sessionId]);
-  useEffect(() => {
-    if (!replayingWithoutStudentAdditions) return;
-    if (lessonDeliverySettled && !ollLesson?.playing) {
-      const timer = setTimeout(() => {
-        setInkMergeSourceSessionId(null);
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [lessonDeliverySettled, ollLesson?.playing, replayingWithoutStudentAdditions]);
+
   useEffect(() => {
     if (!lessonDeliverySettled || ollLesson?.playing) {
       setCompletionPromptDismissed(false);
@@ -3386,7 +3382,6 @@ export function LearningWorkspace({
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
         disabled={coursePreview}
-        courseOverview={lessonDeliverySettled}
       />
 
       {controlledOllLesson
