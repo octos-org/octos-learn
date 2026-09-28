@@ -1,3 +1,4 @@
+import { readLearningDocument } from "./helpers/learning-documents";
 import { collectionUrl } from "./helpers/course-collection";
 import { expect, test, type Page } from "@playwright/test";
 
@@ -53,20 +54,22 @@ for (const course of courses) {
     await page.mouse.up();
     await expect(page.locator(".learning-ink-status")).toContainText("1 项笔迹");
     await page.getByRole("button", { name: "返回首页" }).click();
+    await expect(page).toHaveURL(/\/$/);
     await page.goto(collectionUrl(course.id));
     const saved = await page.evaluate(() => {
       const entries = JSON.parse(localStorage.getItem("octos_learning_sessions_v2:curated-learner") ?? "[]") as Array<{ id: string; source?: { mode: string } }>;
       const instance = entries.find((entry) => entry.source?.mode === "instance");
-      return { id: instance?.id, ink: instance ? localStorage.getItem(`octos-learning-ink:v1:${instance.id}`) : null };
+      return { id: instance?.id };
     });
     expect(saved.id).toBeTruthy();
-    expect(saved.ink).toContain("oll.student-ink.svg");
+    const savedInk = await readLearningDocument(page, `octos-learning-ink:v1:${saved.id}`) as { format: string; svg: string };
+    expect(savedInk.format).toBe("oll.student-ink.svg");
     await card.getByRole("link", { name: "继续学习", exact: true }).click();
     await expect(page.locator(".learning-ink-status")).toContainText("1 项笔迹");
     await page.reload();
     await expect(page.locator(".learning-ink-status")).toContainText("1 项笔迹");
-    const current = await page.evaluate((id) => localStorage.getItem(`octos-learning-ink:v1:${id}`), saved.id);
-    expect(JSON.parse(current!).svg).toBe(JSON.parse(saved.ink!).svg);
+    const current = await readLearningDocument(page, `octos-learning-ink:v1:${saved.id}`) as { svg: string };
+    expect(current.svg).toBe(savedInk.svg);
     await page.screenshot({ path: `test-results/${course.id}-${process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? "android" : "desktop"}-ink-restored.png` });
   });
 
@@ -157,6 +160,7 @@ for (const course of courses) {
     expect(overlaps).toEqual([]);
     await page.screenshot({ path: `test-results/${course.id}-${process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? "android" : "desktop"}-complete.png` });
     await page.getByRole("button", { name: "返回首页" }).click();
+    await expect(page).toHaveURL(/\/$/);
     await page.goto(collectionUrl(course.id));
     await expect(card.getByText("已下载 · 可离线", { exact: true })).toBeVisible();
     await page.route("**/api/learn/course-packs**", (route) => route.abort());

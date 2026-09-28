@@ -1,3 +1,4 @@
+import { indexedInkStore } from "../learning-document-store";
 import {
   BoxSelect,
   CheckCircle2,
@@ -2361,6 +2362,7 @@ export function LearningWhiteboard({
           board: mounted.view,
           viewport,
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
+          store: indexedInkStore,
           documentId: `learning-session:${inkSessionId}:student-ink`,
           locale: "zh-CN",
           touchMarqueeActivation:
@@ -2568,7 +2570,7 @@ export function LearningWhiteboard({
         setInkError(cause instanceof Error
           ? cause.message
           : "上一遍笔迹暂时无法恢复");
-        onInkMergeComplete?.(inkMergeSourceSessionId, inkSessionId);
+        // Keep the merge source pending on failure; never mark it recovered.
       },
     );
   }, [
@@ -3350,7 +3352,7 @@ export function LearningWhiteboard({
             {inkState.selected_count > 0
               ? ` · 已选 ${inkState.selected_count}`
               : ""}
-            {inkState.saved ? " · 已保存" : " · 保存中"}
+            {inkMergeSourceSessionId ? (inkError ? " · 恢复失败" : " · 等待恢复笔迹") : inkState.saved ? " · 已保存" : " · 保存中"}
           </span>
         </div>
       ) : null}

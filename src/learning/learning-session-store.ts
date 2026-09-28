@@ -1,3 +1,4 @@
+import { hasStoredSessionInk } from "./learning-document-store";
 import { hasSavedWhiteboardQuestion } from "./whiteboard-questions";
 import {
   loadRecoverableJson,
@@ -112,6 +113,7 @@ export function hasDurableLocalWhiteboardContent(
   sessionId: string,
   storage: Storage = localStorage,
 ): boolean {
+  if (hasStoredSessionInk(sessionId)) return true;
   const inkKeyPrefix = `${INK_STORAGE_PREFIX}${sessionId}`;
   for (let index = 0; index < storage.length; index += 1) {
     const key = storage.key(index);

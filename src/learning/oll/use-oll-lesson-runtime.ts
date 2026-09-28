@@ -1,3 +1,4 @@
+import { createIndexedPlaybackStore } from "../learning-document-store";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   AuthoringStudentTask,
@@ -14,7 +15,7 @@ import type {
 } from "octos-lesson-language/player";
 import {
   BrowserLessonSession,
-  LocalPlaybackStore,
+  type PlaybackStore,
   parseCanonicalJsonl,
   type StudentOperation,
   type StudentInkSelectionOperation,
@@ -188,12 +189,24 @@ export function useOllLessonRuntime({
     () => (source ? parseCanonicalJsonl(source) : null),
     [source],
   );
+  const [hydratedStore, setHydratedStore] = useState<{ key: string; store: PlaybackStore } | null>(null);
+  const [storageError, setStorageError] = useState<Error | null>(null);
+  useEffect(() => {
+    let active = true;
+    void createIndexedPlaybackStore(storageKey).then(
+      store => { if (active) setHydratedStore({ key: storageKey, store }); },
+      error => { if (active) setStorageError(error instanceof Error ? error : new Error(String(error))); },
+    );
+    return () => { active = false; };
+  }, [storageKey]);
+  if (storageError) throw storageError;
+  const playbackStore = hydratedStore?.key === storageKey ? hydratedStore.store : null;
   const session = useMemo(
     () =>
-      events
+      events && playbackStore
         ? new BrowserLessonSession(
             events,
-            new LocalPlaybackStore(),
+            playbackStore,
             storageKey,
             {
               incremental,
@@ -208,7 +221,7 @@ export function useOllLessonRuntime({
     // appended to the existing Runtime rather than reconstructing it; when
     // lesson.open changes, `events` changes and the current guard is captured.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [events, incremental, narrationTiming, storageKey],
+    [events, incremental, narrationTiming, storageKey, playbackStore],
   );
   const [, setRevision] = useState(0);
   const acceleratedStartupRef = useRef<{
