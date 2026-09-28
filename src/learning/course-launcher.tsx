@@ -40,6 +40,7 @@ import {
   type LearningSessionRecord,
 } from "./learning-session-store";
 import { discoverServerLearningSessions } from "./learning-session-sync";
+import { LearningHistory, learningSessionHref } from "./learning-history";
 import { groupCoursePacks } from "./course-collections";
 import "./course-launcher.css";
 
@@ -285,7 +286,7 @@ function WhiteboardSessionCard({
   const navigate = useNavigate();
   const open = () => {
     updateLearningSession(session.id, { status: "active" });
-    navigate("/board");
+    navigate(learningSessionHref(session));
   };
   const rename = () => {
     const title = window.prompt("重命名学习白板", session.title)?.trim();
@@ -323,6 +324,8 @@ function WhiteboardSessionCard({
 
 export function CourseLauncher() {
   const { token, logout } = useAuth();
+  const navigate = useNavigate();
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const collectionId = searchParams.get("collection");
   const state = useLauncherCatalog();
@@ -393,7 +396,10 @@ export function CourseLauncher() {
   }, [collectionId]);
   return (
     <main className="course-launcher">
-      <div className="course-launcher-inner">
+      {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
+        onNew={() => navigate("/board?new-board=1")}
+        onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
+      <div className="course-launcher-inner" inert={historyOpen}>
         <header className="course-launcher-header">
           <div className="course-launcher-brand">
             <img src="/images/octos-logo-color.svg" alt="" />
@@ -438,6 +444,7 @@ export function CourseLauncher() {
                 <p>RECENT WHITEBOARDS</p>
                 <h2 id="course-launcher-sessions-title">最近白板</h2>
               </div>
+              <button type="button" className="course-launcher-history-link" onClick={() => setHistoryOpen(true)}>全部学习记录 <ArrowRight size={16} /></button>
             </div>
             <div className="course-launcher-session-grid">
               {whiteboards.map((session) => (
