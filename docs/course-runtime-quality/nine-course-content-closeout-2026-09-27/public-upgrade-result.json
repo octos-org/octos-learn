@@ -1,0 +1,11 @@
+{
+  "packId": "trig-cosine-and-phase-shift",
+  "oldVersion": "0.1.0",
+  "newVersion": "0.1.2",
+  "singleRecommendedCard": true,
+  "oldSessionPreserved": true,
+  "oldVersionOfflineOpen": true,
+  "newVersionOfflineOpen": true,
+  "usesPublicArchives": true,
+  "isolatedMockAccount": true
+}
