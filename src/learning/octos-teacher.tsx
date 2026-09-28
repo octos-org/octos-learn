@@ -25,7 +25,6 @@ export function OctosTeacher({
   stateLabel,
   onClick,
   disabled = false,
-  courseOverview = false,
 }: {
   state: VoiceState;
   speech: string;
@@ -33,7 +32,6 @@ export function OctosTeacher({
   stateLabel?: string;
   onClick: () => void;
   disabled?: boolean;
-  courseOverview?: boolean;
 }) {
   const { skin } = useTeacherSkin();
   const [reactionKey, setReactionKey] = useState(0);
@@ -64,11 +62,11 @@ export function OctosTeacher({
   };
 
   return (
-    // Ordinary narration is transient. The completion caption remains visible
-    // during review and must not cover the course overview.
+    // All captions are transient, including the completion prompt. Their
+    // appearance and dismissal must not change board layout or camera framing.
     <div className="octos-teacher">
       {speech && (
-        <div className="octos-teacher-caption" aria-live="polite" data-learning-board-occlusion={courseOverview ? "" : undefined}>
+        <div className="octos-teacher-caption" aria-live="polite">
           <MarkdownContent
             text={speech}
             className="octos-teacher-caption-content"

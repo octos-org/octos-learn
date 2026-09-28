@@ -939,7 +939,6 @@ export function LearningWhiteboard({
   const [teachingWidth, setTeachingWidth] = useState(1300);
   const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets} | null>(null);
   const [courseGeometryRevision, setCourseGeometryRevision] = useState(0);
-  const [overviewRequest, setOverviewRequest] = useState(0);
   const automaticOverviewRef = useRef<string | null>(null);
   const lastOverviewFrameRef = useRef("");
   const overviewFrameSequenceRef = useRef(0);
@@ -2929,7 +2928,7 @@ export function LearningWhiteboard({
 
       const bounds = unionWhiteboardRects(rects);
       if (!bounds) return;
-      const signature = JSON.stringify([courseId, bounds, teachingViewport, overviewRequest]);
+      const signature = JSON.stringify([courseId, bounds, teachingViewport]);
       if (lastOverviewFrameRef.current === signature) return;
       viewport.classList.remove("manual-navigation");
       const sequence = ++overviewFrameSequenceRef.current;
@@ -2962,7 +2961,6 @@ export function LearningWhiteboard({
     runtimeRegionIdForTopic,
     courseGeometryRevision,
     teachingViewport,
-    overviewRequest,
   ]);
 
   useLayoutEffect(() => {
@@ -3156,15 +3154,6 @@ export function LearningWhiteboard({
         data-testid="oll-lesson-board"
         aria-label="OLL 无限白板"
       />
-      {runtime && (runtime.completed || runtime.waiting) ? (
-        <button type="button" aria-label="查看整课" data-learning-board-occlusion=""
-          style={{position:'absolute',right:24,top:88,zIndex:5,padding:'8px 14px',borderRadius:12,background:'var(--surface, #fffdf7)',border:'1px solid #d8d4ca',color:'#176b62'}}
-          onClick={()=>{
-            viewportRef.current?.classList.remove('manual-navigation');
-            lastOverviewFrameRef.current = '';
-            setOverviewRequest(value=>value+1);
-          }}>查看整课</button>
-      ) : null}
       {!runtime
         && inkState.component_count === 0
         && courseQuestions.length === 0
