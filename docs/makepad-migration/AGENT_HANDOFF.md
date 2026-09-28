@@ -31,7 +31,7 @@ macOS 产品应用 **v2 已交付并推送到远端分支**：以 main 网页版
 
 ## 2. 工作区重建
 
-当前工作区在 `/private/tmp/oll-product`（2026-09-27 重建，含合并后代码）。/private/tmp 会被系统定期清空，重建步骤如下（已实测可走通）。所有代码提交都在 §1 的持久分支里，证据与锁文件在本调研目录。重建工作区：
+当前工作区：原机器在 `/private/tmp/oll-product`（2026-09-27）；**新机器（yangyang，2026-09-28）在 `~/Documents/projects/OctosLearn/.local-dev/oll-product`**（持久目录，不会被系统清空；持久仓库在 `~/Documents/projects/OctosLearn/{octos-learn,octos-lesson-language}`，已分别检出 `codex/macos-product-ui` / `codex/rust-runtime-product`）。2026-09-28 在新机器按下列步骤实测走通：锁文件与 zbias 补丁已入库（`docs/makepad-migration/evidence/`），无需调研目录；Homebrew Rust 1.98.1 构建/测试全绿（原机 1.96.0）；空 cargo 缓存时先在 crate 目录跑一次 `cargo fetch --locked`，再走离线打包。/private/tmp 会被系统定期清空，重建步骤如下（已实测可走通）。所有代码提交都在 §1 的持久分支里，证据与锁文件在本调研目录。重建工作区：
 
 ```sh
 WS=/private/tmp/oll-product  # 自选空目录
@@ -43,10 +43,12 @@ git clone https://github.com/OctoSense-org/makepad.git makepad && git -C makepad
 git clone https://github.com/OctoSense-org/Octoscript.git octoscript && git -C octoscript checkout --detach 68f6a9df55692b5d8ef8873a12721e279a3f40d6
 git clone https://github.com/OctoSense-org/Octoscript-Makepad.git octoscript-makepad && git -C octoscript-makepad checkout --detach b0628d05a89369b0c3bae2750db6da06996a05c2
 # 锁文件（防依赖漂移）
-cp <调研目录>/phase0-evidence/Makepad.Cargo.lock makepad/Cargo.lock
-cp <调研目录>/phase0-evidence/Cargo.lock octoscript-makepad/Cargo.lock
+E=octos-learn/docs/makepad-migration/evidence   # 已入库，与调研目录 phase0-evidence 同内容
+cp $E/Makepad.Cargo.lock makepad/Cargo.lock
+cp $E/Cargo.lock octoscript-makepad/Cargo.lock
 # zbias 修复（PR #35 合并前必须应用）
-cd octoscript-makepad && git am <调研目录>/phase0-evidence/makepad-plot-zbias-band.patch && cd ..
+cd octoscript-makepad && git am ../$E/makepad-plot-zbias-band.patch && cd ..
+# 空 cargo 缓存时：(cd octos-learn/native/octos-learn && cargo fetch --locked)
 # 课程包：无需人工拷贝。9 门课的 SHA-256 锁定在 octos-learn 分支的
 # native/octos-learn/course-packs.lock.json，打包脚本自动从 learn.pitun.cc 下载校验
 ```
