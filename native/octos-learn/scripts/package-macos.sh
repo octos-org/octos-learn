@@ -8,7 +8,7 @@ crate_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 checkout_parent=$(CDPATH= cd -- "$crate_dir/../../.." && pwd)
 repo_root=$(CDPATH= cd -- "$crate_dir/../.." && pwd)
 archives_dir="${OCTOS_PACK_ARCHIVES:-$checkout_parent/course-packs}"
-pins="$repo_root/android/embedded-course-packs.json"
+pins="$crate_dir/course-packs.lock.json"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$crate_dir/target}"
 export MAKEPAD_PACKAGE_DIR=../Resources
 cargo build --offline --locked --release --manifest-path "$crate_dir/Cargo.toml"
@@ -20,23 +20,32 @@ cp "$CARGO_TARGET_DIR/release/octos-learn" "$app/Contents/MacOS/octos-learn"
 cp -R "$checkout_parent/makepad/widgets/resources" "$app/Contents/Resources/makepad_widgets/"
 
 # Course packs: verify every pinned archive's SHA-256 against
-# android/embedded-course-packs.json, then unpack into Resources/course-packs
-# and assemble catalog.json from the verified manifests.
+# course-packs.lock.json, downloading missing archives from the pinned
+# source origin, then unpack into Resources/course-packs and assemble
+# catalog.json from the verified manifests.
 python3 - "$pins" "$archives_dir" "$app/Contents/Resources/course-packs" <<'PY'
-import hashlib, json, pathlib, sys, zipfile
+import hashlib, json, pathlib, sys, urllib.request, zipfile
 
 pins_path, archives_dir, out_dir = (
     sys.argv[1],
     pathlib.Path(sys.argv[2]),
     pathlib.Path(sys.argv[3]),
 )
-pins = json.load(open(pins_path))["packs"]
+lock = json.load(open(pins_path))
+origin = lock.get("sourceOrigin", "https://learn.pitun.cc").rstrip("/")
+archives_dir.mkdir(parents=True, exist_ok=True)
 entries = []
-for pin in pins:
+for pin in lock["packs"]:
     archive = archives_dir / f"{pin['packId']}-{pin['version']}.ocpack"
     if not archive.is_file():
-        sys.exit(f"missing course pack archive: {archive}")
-    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+        url = f"{origin}/api/learn/course-packs/{pin['packId']}/{pin['version']}/archive.ocpack"
+        print(f"downloading {pin['packId']}@{pin['version']} from {url}")
+        with urllib.request.urlopen(url) as response:
+            archive.write_bytes(response.read())
+    raw = archive.read_bytes()
+    if len(raw) != pin["archiveBytes"]:
+        sys.exit(f"size mismatch for {archive.name}: {len(raw)} != pinned {pin['archiveBytes']}")
+    digest = hashlib.sha256(raw).hexdigest()
     if digest != pin["archiveSha256"]:
         sys.exit(
             f"SHA-256 mismatch for {archive.name}: {digest} != pinned {pin['archiveSha256']}"
