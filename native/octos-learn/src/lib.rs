@@ -6,6 +6,7 @@
 use makepad_widgets::*;
 use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, progress_store, scene3d_view, spatial_board};
+mod svg_image;
 use std::time::Instant;
 
 mod course_pack;
@@ -32,6 +33,9 @@ script_mod! {
                         launcher_scroll := ScrollYView { width: Fill height: Fill flow: Down
                             View { width: Fill height: Fit flow: Down align: Align{x: 0.5}
                                 View { width: 1120 height: Fit flow: Down padding: Inset{bottom: 72}
+                                    // Text boxes follow the web CSS: font_size = px * 0.75,
+                                    // line_spacing = CSS line-height / 1.18, spacing on a
+                                    // wrapping View (see web_text).
                                     // 1. Header (web .course-launcher-header).
                                     View { width: Fill height: Fit flow: Down
                                         View { width: Fill height: 82 flow: Right align: Align{y: 0.5} spacing: 10
@@ -42,45 +46,64 @@ script_mod! {
                                             // The logo file is a multi-motif artboard sheet;
                                             // preserve_viewbox crops to the intended motif.
                                             logo_svg := Svg { width: 34 height: 34 draw_svg +: { preserve_viewbox: true } }
-                                            Label { text: "Octos Learn" draw_text.text_style.font_size: 16 draw_text.color: #243b40 }
+                                            View { width: Fit height: Fit padding: Inset{top: 3.04 bottom: 3.04 left: 0}
+    Label { width: Fit padding: 0 text: "Octos Learn" draw_text.text_style: theme.font_bold{font_size: 14.25 line_spacing: 1.271} draw_text.color: #243b40 } }
                                             View { width: Fill height: 1 }
                                             // DIFF: no login/account system in this version.
-                                            Label { text: "登录" draw_text.text_style.font_size: 12 draw_text.color: #607477 }
+                                            View { width: Fit height: Fit padding: Inset{top: 2.24 bottom: 2.24 left: 0}
+    Label { width: Fit padding: 0 text: "登录" draw_text.text_style: theme.font_regular{font_size: 10.50 line_spacing: 1.271} draw_text.color: #244f5a } }
                                         }
                                         SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } }
                                     }
-                                    // 2. Hero (web .course-launcher-hero).
-                                    View { width: Fill height: Fit flow: Down padding: Inset{top: 56 bottom: 44}
-                                        Label { text: "LEARN ON A LIVING WHITEBOARD" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
-                                        Label { width: Fill text: "从一节课开始，或者从一块空白白板开始。"
-                                            draw_text.wrap: Words draw_text.text_style.font_size: 28 draw_text.color: #243b40
-                                            margin: Inset{top: 14 bottom: 12} }
-                                        Label { width: Fill text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。"
-                                            draw_text.wrap: Words draw_text.text_style.font_size: 13 draw_text.color: #607477 }
-                                        View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 24}
-                                            // DIFF: blank whiteboard needs the session system; click shows a toast.
-                                            blank_board := Button { text: "＋ 新建空白白板"
-                                                draw_bg +: { color: #166a79 color_hover: #105664 color_down: #105664 } draw_text.color: #ffffff }
+                                    // 2. Hero (web .course-launcher-hero), collections home only
+                                    // (web: !collectionId).
+                                    home_sections := View { width: Fill height: Fit flow: Down padding: Inset{top: 56 bottom: 44}
+                                        View { width: Fit height: Fit padding: Inset{top: 1.76 bottom: 1.76 left: 0}
+    Label { width: Fit padding: 0 text: "LEARN ON A LIVING WHITEBOARD" draw_text.text_style: theme.font_code{font_size: 8.25 line_spacing: 1.271} draw_text.color: #5a8d94 } }
+                                        View { width: Fill height: Fit padding: Inset{top: 20.92 bottom: 21.92 left: 0}
+    Label { width: Fill padding: 0 text: "从一组课程，开始新的探索。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 36.72 line_spacing: 1.136} draw_text.color: #243b40 } }
+                                        View { width: Fill height: Fit padding: Inset{top: 4.42 bottom: 4.42 left: 0}
+    Label { width: Fill padding: 0 text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 12.75 line_spacing: 1.441} draw_text.color: #607477 } }
+                                        // DIFF: blank whiteboard needs the session system; a tap shows a toast.
+                                        blank_board := RoundedView { width: Fit height: 52 flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 32}
+                                            padding: Inset{left: 20 right: 20} draw_bg +: { color: #166a79 border_radius: 15 }
+                                            blank_plus := Svg { width: 20 height: 20 draw_svg +: { preserve_viewbox: true } }
+                                            View { width: Fit height: Fit padding: Inset{top: 2.56 bottom: 2.56 left: 0}
+    Label { width: Fit padding: 0 text: "新建空白白板" draw_text.text_style: theme.font_bold{font_size: 12.00 line_spacing: 1.271} draw_text.color: #ffffff } }
+                                            blank_arrow := Svg { width: 18 height: 18 draw_svg +: { preserve_viewbox: true } margin: Inset{left: 18} }
                                         }
                                     }
-                                    // 3. Recent whiteboards (web .course-launcher-sessions);
-                                    // cards are built from progress_store checkpoint files.
-                                    sessions_section := View { visible: false width: Fill height: Fit flow: Down margin: Inset{bottom: 40}
-                                        View { width: Fill height: Fit flow: Down spacing: 4
-                                            Label { text: "RECENT WHITEBOARDS" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
-                                            Label { text: "最近白板" draw_text.text_style.font_size: 18 draw_text.color: #243b40 margin: Inset{top: 4 bottom: 10} }
-                                            SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 16} }
+                                    // 3. Library (web .course-launcher-library): the
+                                    // collection grid on home, or one collection's
+                                    // course cards (web ?collection=<id>). Recent
+                                    // whiteboards (web: blank boards only) are not migrated.
+                                    View { width: Fill height: Fit flow: Down
+                                        collection_back := View { visible: false width: Fit height: 44 flow: Right spacing: 8 align: Align{y: 0.5} margin: Inset{top: 28 bottom: 28}
+                                            back_icon := Svg { width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
+                                            View { width: Fit height: Fit padding: Inset{top: 2.24 bottom: 2.24 left: 0}
+    Label { width: Fit padding: 0 text: "全部课程集" draw_text.text_style: theme.font_regular{font_size: 10.50 line_spacing: 1.271} draw_text.color: #426568 } }
                                         }
-                                        session_list := View { width: Fill height: Fit flow: Flow.Right{wrap: true} spacing: 12 }
-                                    }
-                                    // 4. Curated courses (web .course-launcher-library);
-                                    // cards are built from course_pack::catalog().
-                                    View { width: Fill height: Fit flow: Down spacing: 4
-                                        Label { text: "CURATED COURSES" draw_text.text_style.font_size: 9 draw_text.color: #5a8d94 }
-                                        Label { text: "预制课程" draw_text.text_style.font_size: 18 draw_text.color: #243b40 margin: Inset{top: 4 bottom: 10} }
-                                        SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 16} }
-                                        launcher_status := Label { width: Fill text: "" draw_text.wrap: Words draw_text.color: #815d40 draw_text.text_style.font_size: 11 }
-                                        course_list := View { width: Fill height: Fit flow: Flow.Right{wrap: true} spacing: 22 margin: Inset{top: 8} }
+                                        View { width: Fill height: Fit flow: Right align: Align{y: 1.0} padding: Inset{bottom: 15}
+                                            View { width: Fill height: Fit flow: Down
+                                                View { width: Fit height: Fit padding: Inset{top: 1.76 bottom: 1.76 left: 0}
+    library_eyebrow := Label { width: Fit padding: 0 text: "CURATED COLLECTIONS" draw_text.text_style: theme.font_code{font_size: 8.25 line_spacing: 1.271} draw_text.color: #5a8d94 }
+    // The mono code font has no CJK glyphs; collection levels use the UI font.
+    library_level := Label { visible: false width: Fit padding: 0 text: "" draw_text.text_style: theme.font_bold{font_size: 8.25 line_spacing: 1.271} draw_text.color: #5a8d94 } }
+                                                View { width: Fit height: Fit padding: Inset{top: 6.27 bottom: 0.27 left: 0}
+    library_title := Label { width: Fit padding: 0 text: "课程集" draw_text.text_style: theme.font_regular{font_size: 20.25 line_spacing: 1.017} draw_text.color: #243b40 } }
+                                            }
+                                            library_icon := Svg { width: 23 height: 23 draw_svg +: { preserve_viewbox: true } }
+                                        }
+                                        SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 22} }
+                                        collection_intro := View { visible: false width: Fill height: Fit flow: Down margin: Inset{bottom: 30}
+                                            View { width: Fill height: Fit padding: Inset{top: 4.96 bottom: 4.96 left: 0}
+    intro_text := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 12.00 line_spacing: 1.525} draw_text.color: #607477 } }
+                                            View { width: Fill height: Fit padding: Inset{top: 16.03 bottom: 4.03 left: 0}
+    intro_meta := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 9.75 line_spacing: 1.525} draw_text.color: #607477 } }
+                                        }
+                                        launcher_status := View { visible: false width: Fill height: Fit padding: Inset{top: 2.94 bottom: 20.94 left: 0}
+    launcher_status_text := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 10.50 line_spacing: 1.356} draw_text.color: #815d40 } }
+                                        course_list := View { width: Fill height: Fit flow: Down spacing: 22 }
                                     }
                                 }
                             }
@@ -268,14 +291,150 @@ struct VariableRow {
 struct CourseCardRefs {
     pack_id: String,
     version: String,
+    /// Tap targets (icon+label pills, hit-tested by area).
     preview: WidgetRef,
     start: WidgetRef,
 }
 
-struct SessionCardRefs {
-    pack_id: String,
-    version: String,
-    open: WidgetRef,
+/// Editorial collections (web src/learning/course-collections.ts); packs not
+/// listed fall into 其他课程. Membership is by packId, independent of version.
+struct CourseCollection {
+    id: &'static str,
+    title: &'static str,
+    level: &'static str,
+    description: &'static str,
+    cover: &'static str,
+    pack_ids: &'static [&'static str],
+}
+const COURSE_COLLECTIONS: [CourseCollection; 3] = [
+    CourseCollection { id: "linear-functions", title: "读懂一次函数", level: "初中数学", description: "从斜率与截距出发，把函数图像、变化关系和方程联系起来。", cover: include_str!("../assets/collections/linear.svg"), pack_ids: &["linear-intro-and-slope", "slope-and-intercept", "linear-simultaneous-intersections"] },
+    CourseCollection { id: "trigonometry", title: "从单位圆理解三角函数", level: "高中数学", description: "让圆上的运动变成曲线，理解正弦、余弦与周期变化。", cover: include_str!("../assets/collections/trig.svg"), pack_ids: &["trig-unit-circle-to-sine", "trig-cosine-and-phase-shift", "trig-quadrants-and-monotonicity"] },
+    CourseCollection { id: "multivariable-calculus", title: "用截面理解多元函数", level: "大学微积分", description: "从三维曲面的截面入手，逐步认识等高线、偏导数与鞍点。", cover: include_str!("../assets/collections/surface.svg"), pack_ids: &["surface-paraboloid-level-sets", "surface-partial-derivative-slice", "surface-saddle-point-analysis"] },
+];
+struct CollectionGroup {
+    id: String,
+    title: String,
+    level: String,
+    description: String,
+    cover: &'static str,
+    packs: Vec<serde_json::Value>,
+}
+/// Web groupCoursePacks: editorial order, missing packs dropped, leftovers
+/// in a trailing 其他课程 group, empty groups removed.
+fn group_course_packs(packs: &[serde_json::Value]) -> Vec<CollectionGroup> {
+    let find = |id: &str| packs.iter().find(|p| p["packId"] == id).cloned();
+    let mut groups: Vec<CollectionGroup> = COURSE_COLLECTIONS
+        .iter()
+        .map(|c| CollectionGroup {
+            id: c.id.into(),
+            title: c.title.into(),
+            level: c.level.into(),
+            description: c.description.into(),
+            cover: c.cover,
+            packs: c.pack_ids.iter().filter_map(|id| find(id)).collect(),
+        })
+        .collect();
+    let assigned = |id: &str| COURSE_COLLECTIONS.iter().any(|c| c.pack_ids.contains(&id));
+    let remaining: Vec<_> = packs
+        .iter()
+        .filter(|p| !assigned(p["packId"].as_str().unwrap_or("")))
+        .cloned()
+        .collect();
+    if !remaining.is_empty() {
+        groups.push(CollectionGroup {
+            id: "other".into(),
+            title: "其他课程".into(),
+            level: "探索学习".into(),
+            description: "更多可以独立学习的互动课程。".into(),
+            cover: COURSE_COLLECTIONS[0].cover,
+            packs: remaining,
+        });
+    }
+    groups.retain(|g| !g.packs.is_empty());
+    groups
+}
+/// "3 节课 · 约 5 分钟" (web sums durationSeconds, then rounds up minutes).
+fn collection_summary(packs: &[serde_json::Value]) -> String {
+    let seconds: f64 = packs.iter().map(|p| p["durationSeconds"].as_f64().unwrap_or(0.)).sum();
+    format!("{} 节课 · 约 {} 分钟", packs.len(), (seconds / 60.).ceil() as u64)
+}
+/// A Makepad text row box is (ascent + descent) = about 1.18 em for the UI
+/// fonts, and `line_spacing` scales only the advance between wrapped rows.
+/// CSS line boxes are `line-height` x px with the leading split above and
+/// below, so a web text box is: line_spacing = line-height / 1.18 plus
+/// half-leading padding on the label.
+const EM_BOX: f64 = 1.18;
+/// A web text box (CSS px size, line-height ratio, vertical margins).
+/// Label folds its own padding/margin into the walk twice, so spacing lives
+/// on a wrapping View and the Label keeps none. `fill` = block width with
+/// word wrap; otherwise the box hugs the text.
+fn web_text(text: &str, px: f64, line_height: f64, color: &str, bold: bool, fill: bool, margin: (f64, f64)) -> String {
+    let style = if bold { "theme.font_bold" } else { "theme.font_regular" };
+    let leading = ((line_height - EM_BOX) * px / 2.).max(0.);
+    let (width, wrap) = if fill { ("Fill", "draw_text.wrap:Words") } else { ("Fit", "") };
+    format!(
+        "View{{width:{width} height:Fit padding:Inset{{top:{:.2} bottom:{:.2}}} Label{{width:{width} padding:0 text:\"{text}\" {wrap} draw_text.text_style: {style}{{font_size:{:.2} line_spacing:{:.3}}} draw_text.color:{color}}}}}",
+        margin.0 + leading,
+        margin.1 + leading,
+        px * 0.75,
+        line_height / EM_BOX
+    )
+}
+/// Lucide icons are black-stroked; tint them for Svg widgets.
+fn tinted(icon: &str, color: &str) -> String {
+    icon.replace("#000000", color)
+}
+/// Web covers sit in a card with rounded top corners (overflow hidden);
+/// Makepad cannot clip to a rounded rect, so round the SVG's full-size
+/// background rect instead (bottom corners stay square under the card body).
+/// `radius_px` is the on-screen radius at `width_px`.
+fn round_cover_top(svg: &str, radius_px: f64, width_px: f64) -> String {
+    let Some(vb) = svg.find("viewBox=\"").map(|i| &svg[i + 9..]) else {
+        return svg.into();
+    };
+    let dims: Vec<f64> = vb[..vb.find('"').unwrap_or(0)]
+        .split_whitespace()
+        .filter_map(|v| v.parse().ok())
+        .collect();
+    let [_, _, w, h] = dims[..] else {
+        return svg.into();
+    };
+    let (ws, hs) = (format!("width=\"{}\"", w), format!("height=\"{}\"", h));
+    let Some(start) = svg
+        .match_indices("<rect")
+        .map(|(i, _)| i)
+        .find(|&i| {
+            let tag = &svg[i..i + svg[i..].find('>').unwrap_or(0)];
+            tag.contains(&ws) && tag.contains(&hs) && !tag.contains(" x=") && !tag.contains(" y=")
+        })
+    else {
+        return svg.into();
+    };
+    let end = start + svg[start..].find('>').unwrap_or(0) + 1;
+    let tag = &svg[start..end];
+    let fill = tag
+        .find("fill=\"")
+        .map(|i| &tag[i + 6..])
+        .and_then(|t| t.find('"').map(|e| &t[..e]))
+        .unwrap_or("#ffffff");
+    let r = radius_px * w / width_px;
+    format!(
+        "{}<rect width=\"{w}\" height=\"{h}\" rx=\"{r}\" ry=\"{r}\" fill=\"{fill}\"/><rect y=\"{}\" width=\"{w}\" height=\"{r}\" fill=\"{fill}\"/>{}",
+        &svg[..start],
+        h - r,
+        &svg[end..]
+    )
+}
+/// A tap on an icon+label pill or card (FingerUp over it, little travel).
+fn tapped(cx: &mut Cx, event: &Event, target: &WidgetRef) -> bool {
+    match event.hits(cx, target.area()) {
+        Hit::FingerHoverIn(_) => {
+            cx.set_cursor(MouseCursor::Hand);
+            false
+        }
+        Hit::FingerUp(e) => e.is_over && (e.abs - e.abs_start).length() < 8.,
+        _ => false,
+    }
 }
 
 #[derive(Script, ScriptHook)]
@@ -319,8 +478,22 @@ pub struct App {
     variable_rows: Vec<VariableRow>,
     #[rust]
     course_cards: Vec<CourseCardRefs>,
+    /// Selected collection (web ?collection=<id>); None = collections home.
     #[rust]
-    session_cards: Vec<SessionCardRefs>,
+    collection: Option<String>,
+    /// Collection card tap targets on the home page, by collection id.
+    #[rust]
+    collection_cards: Vec<(String, WidgetRef)>,
+    /// Card rows awaiting the web grid's equal-height stretch: per row the
+    /// (card, spacer) pairs; resolved one frame after the cards first draw.
+    #[rust]
+    card_rows: Vec<Vec<(WidgetRef, WidgetRef)>>,
+    #[rust]
+    equalize_frame: NextFrame,
+    #[rust]
+    equalize_tries: u8,
+    #[rust]
+    learning_visible: bool,
     // Ink toolbar buttons in INK_TOOLS order, rebuilt when the mode changes.
     #[rust]
     ink_tool_buttons: Vec<WidgetRef>,
@@ -405,18 +578,26 @@ fn format_value(value: f64, unit: &str) -> String {
 /// Catalog grade/subject codes rendered as localized badge text. The audited
 /// web launcher prints the raw codes; these labels follow the localized
 /// wording requested for the product UI, falling back to the raw code.
-fn grade_label(grade: &str) -> &str {
-    match grade {
-        "primary-age-8-9" => "小学 8-9 岁",
-        "secondary-age-12-14" => "初中 12-14 岁",
-        other => other,
-    }
-}
-fn subject_label(subject: &str) -> &str {
-    match subject {
-        "mathematics" => "数学",
-        other => other,
-    }
+/// Web courseTags: localized grade (unspecified hidden) · subject.
+fn course_tags(pack: &serde_json::Value) -> String {
+    let grade = pack["grade"].as_str().unwrap_or("").trim();
+    let grade = match grade {
+        "primary-age-8-9" => "小学（8–9岁）",
+        "secondary-age-12-14" => "初中（12–14岁）",
+        "highschool-mathematics" => "高中",
+        "college-calculus" => "大学微积分",
+        g if g.eq_ignore_ascii_case("unspecified") => "",
+        g => g,
+    };
+    let subject = pack["subject"].as_str().unwrap_or("").trim();
+    let subject = if subject == "mathematics" { "数学" } else { subject };
+    script_text(
+        &[grade, subject]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" · "),
+    )
 }
 /// Text embedded into eval'd widget code must not break the string literal.
 fn script_text(text: &str) -> String {
@@ -478,6 +659,9 @@ fn bake_svg_classes(svg: &str) -> String {
 /// lucide-react package) rendered through Button::draw_icon; the script
 /// sets draw_icon.color so strokes tint to the control color.
 const ICON_PLAY: &str = include_str!("../assets/icons/play.svg");
+const ICON_CLOCK: &str = include_str!("../assets/icons/clock-3.svg");
+const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
+const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
 const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
@@ -504,6 +688,16 @@ fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
         button
             .draw_icon
             .load_from_str(include_str!("../assets/icons/list-tree.svg"));
+    }
+    for (id, icon, color) in [
+        (live_id!(back_icon), include_str!("../assets/icons/arrow-left.svg"), "#426568"),
+        (live_id!(library_icon), include_str!("../assets/icons/book-open.svg"), "#243b40"),
+        (live_id!(blank_plus), include_str!("../assets/icons/plus.svg"), "#ffffff"),
+        (live_id!(blank_arrow), include_str!("../assets/icons/arrow-right.svg"), "#ffffff"),
+    ] {
+        if let Some(mut svg) = ui.widget(cx, &[id]).borrow_mut::<Svg>() {
+            svg.draw_svg.load_from_str(&tinted(icon, color));
+        }
     }
     // The mascot keeps its original gradient fills (no tint).
     if let Some(mut svg) = ui.widget(cx, ids!(octos_art)).borrow_mut::<Svg>() {
@@ -632,7 +826,7 @@ impl App {
             Ok(source) => source,
             Err(e) => {
                 self.error = e.clone();
-                self.ui.label(cx, ids!(launcher_status)).set_text(cx, &e);
+                self.set_status(cx, &e);
                 self.refresh(cx);
                 return;
             }
@@ -663,12 +857,13 @@ impl App {
             }
             Err(e) => {
                 self.error = e.clone();
-                self.ui.label(cx, ids!(launcher_status)).set_text(cx, &e);
+                self.set_status(cx, &e);
             }
         }
         self.refresh(cx);
     }
     fn show_learning(&mut self, cx: &mut Cx, learning: bool) {
+        self.learning_visible = learning;
         self.ui.widget(cx, ids!(launcher)).set_visible(cx, !learning);
         self.ui.widget(cx, ids!(learning)).set_visible(cx, learning);
     }
@@ -719,74 +914,103 @@ impl App {
             self.error = e;
         }
     }
-    /// Course card (web CourseCard): SVG cover with grade badge, meta row,
-    /// title, description, offline/duration footer, preview/start actions.
-    fn course_card(cx: &mut Cx, root: &std::path::Path, pack: &serde_json::Value) -> Result<(WidgetRef, CourseCardRefs), String> {
+    /// Course card (web CourseCard, collections redesign): 16:9 cover with
+    /// the pack thumbnail (object-fit contain), grade chip + version, 第 NN 课,
+    /// title, description, duration/offline facts and the 预览 / 开始互动
+    /// (继续学习 when progress is saved) pills. `spacer` absorbs the extra
+    /// height when a row is stretched to its tallest card.
+    fn course_card(
+        cx: &mut Cx,
+        root: &std::path::Path,
+        pack: &serde_json::Value,
+        index: usize,
+        resume: bool,
+    ) -> Result<(WidgetRef, WidgetRef, CourseCardRefs), String> {
         let pack_id = pack["packId"].as_str().unwrap_or("").to_owned();
         let version = pack["version"].as_str().unwrap_or("").to_owned();
         let title = script_text(pack["title"].as_str().unwrap_or(&pack_id));
         let desc = script_text(pack["description"].as_str().unwrap_or(""));
-        let grade = format!(
-            "{} · {}",
-            grade_label(pack["grade"].as_str().unwrap_or("")),
-            subject_label(pack["subject"].as_str().unwrap_or(""))
-        );
-        let minutes = (pack["durationSeconds"].as_f64().unwrap_or(0.) / 60.).ceil() as u64;
-        let recommended = pack["recommended"].as_bool().unwrap_or(false);
+        let tags = course_tags(pack);
+        let minutes = ((pack["durationSeconds"].as_f64().unwrap_or(0.) / 60.).ceil() as u64).max(1);
+        let lesson = format!("第 {:02} 课", index + 1);
+        let start_label = if resume { "继续学习" } else { "开始互动" };
         let first_char = title.chars().next().unwrap_or('课');
+        let tags_label = web_text(&tags, 11., 1.5, "#285c60", false, false, (0., 0.));
+        let version_label = web_text(&format!("课程包 v{version}"), 11., 1.5, "#778583", false, false, (0., 0.));
+        let lesson_label = web_text(&lesson, 11., 1.5, "#648682", false, false, (22., 0.));
+        let title_label = web_text(&title, 20., 1.5, "#243b40", false, true, (8., 12.));
+        let desc_label = web_text(&desc, 13., 1.8, "#627579", false, true, (0., 24.));
+        let minutes_label = web_text(&format!("{minutes} 分钟"), 12., 1.5, "#667a7b", false, false, (0., 0.));
+        let offline_label = web_text("内置课程 · 可离线", 12., 1.5, "#667a7b", false, false, (0., 0.));
+        let preview_label = web_text("预览", 13., 1.5, "#426568", false, false, (0., 0.));
+        let start_text = web_text(start_label, 13., 1.5, "#ffffff", true, false, (0., 0.));
         let code = format!(
-            "RoundedView{{width:340 height:Fit flow:Down draw_bg +: {{color:#fffef9 border_radius:18 border_size:1 border_color:#dbded9}}
-                cover := View{{width:Fill height:174 flow:Overlay
-                    cover_fallback := RoundedView{{visible:false width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:0}}
+            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:18 border_size:1 border_color:#dbded9}}
+                cover := View{{width:Fill height:201 flow:Overlay
+                    cover_fallback := RoundedView{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:17}}
                         fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#166a79}}
                     }}
-                    thumb := Svg{{width:Fill height:Fill}}
-                    View{{width:Fill height:Fill flow:Down align:Align{{x:0. y:1.}} padding:Inset{{left:14 bottom:12}}
-                        RoundedView{{width:Fit height:Fit padding:Inset{{left:10 right:10 top:5 bottom:5}} draw_bg +: {{color:#fffffff0 border_radius:12}}
-                            grade := Label{{text:\"{grade}\" draw_text.text_style.font_size:9 draw_text.color:#24434a}}
-                        }}
-                    }}
+                    thumb := mod.widgets.SvgImage{{width:Fill height:Fill}}
                 }}
-                View{{width:Fill height:Fit flow:Down padding:Inset{{left:20 right:20 top:16 bottom:16}}
-                    View{{width:Fill height:Fit flow:Right spacing:12
-                        Label{{text:\"课程包 v{version}\" draw_text.text_style.font_size:9 draw_text.color:#5c8b92}}
-                        recommended := Label{{visible:false text:\"推荐版本\" draw_text.text_style.font_size:9 draw_text.color:#0b6978}}
+                View{{width:Fill height:Fit flow:Down padding:Inset{{left:21 right:21 top:22 bottom:21}}
+                    View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}}
+                        RoundedView{{width:Fit height:Fit padding:Inset{{left:8 right:8 top:4 bottom:4}} draw_bg +: {{color:#eaf2ee border_radius:6}}
+                            {tags_label}
+                        }}
+                        {version_label}
                     }}
-                    card_title := Label{{width:Fill text:\"{title}\" draw_text.wrap:Words draw_text.text_style.font_size:15 draw_text.color:#243b40 margin:Inset{{top:8}}}}
-                    card_desc := Label{{width:Fill height:44 text:\"{desc}\" draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#627579 margin:Inset{{top:6}}}}
-                    View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:12}}
-                        SolidView{{width:Fill height:1 draw_bg +: {{color:#e7e9e3}}}}
-                        View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}}
-                            Label{{width:Fill text:\"内置课程 · 可离线 · {minutes} 分钟\" draw_text.text_style.font_size:9 draw_text.color:#667a7b}}
-                            preview := Button{{text:\"预览\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#607477}}
-                            start := Button{{text:\"开始互动\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#0b6978}}
+                    {lesson_label}
+                    {title_label}
+                    {desc_label}
+                    spacer := View{{width:Fill height:0}}
+                    View{{width:Fill height:Fit flow:Right spacing:14 align:Align{{y:0.5}} padding:Inset{{top:8}}
+                        View{{width:Fit height:Fit flow:Right spacing:5 align:Align{{y:0.5}}
+                            clock := Svg{{width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
+                            {minutes_label}
+                        }}
+                        {offline_label}
+                    }}
+                    SolidView{{width:Fill height:1 margin:Inset{{top:16}} draw_bg +: {{color:#e7e9e3}}}}
+                    View{{width:Fill height:44 flow:Right align:Align{{y:0.5}} margin:Inset{{top:16}}
+                        preview := RoundedView{{width:70 height:44 flow:Right spacing:6 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#f0f3ee border_radius:9}}
+                            eye := Svg{{width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
+                            {preview_label}
+                        }}
+                        View{{width:Fill height:1}}
+                        start := RoundedView{{width:98 height:44 flow:Right spacing:6 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#166a79 border_radius:9}}
+                            {start_text}
+                            arrow := Svg{{width:16 height:16 draw_svg +: {{preserve_viewbox:true}}}}
                         }}
                     }}
                 }}
             }}"
         );
         let card = board_view::widget(cx, &code)?;
-        // Thumbnail: render the pack SVG natively; fall back to an accent
-        // block with the first title character when missing/unreadable.
+        // Thumbnail: the pack SVG with its text runs (SvgImage); the accent
+        // block with the first title character stays when it is missing.
         let thumb_name = pack["thumbnail"].as_str().unwrap_or("thumbnail.svg");
         let thumb_text = std::fs::read_to_string(root.join(&pack_id).join(&version).join(thumb_name))
             .ok()
             .filter(|text| text.contains("<svg"));
-        let thumb = card.widget(cx, ids!(thumb));
-        match thumb_text {
-            Some(text) => {
-                if let Some(mut svg) = thumb.borrow_mut::<Svg>() {
-                    svg.draw_svg.load_from_str(&text);
-                }
+        if let Some(text) = thumb_text {
+            if let Some(mut svg) = card.widget(cx, ids!(thumb)).borrow_mut::<svg_image::SvgImage>() {
+                svg.load(cx, &round_cover_top(&text, 17., 357.));
             }
-            None => {
-                thumb.set_visible(cx, false);
-                card.widget(cx, ids!(cover_fallback)).set_visible(cx, true);
+            card.widget(cx, ids!(cover_fallback)).set_visible(cx, false);
+        }
+        for (id, icon, color) in [
+            (live_id!(clock), ICON_CLOCK, "#667a7b"),
+            (live_id!(eye), ICON_EYE, "#426568"),
+            (live_id!(arrow), ICON_ARROW_RIGHT, "#ffffff"),
+        ] {
+            if let Some(mut svg) = card.widget(cx, &[id]).borrow_mut::<Svg>() {
+                svg.draw_svg.load_from_str(&tinted(icon, color));
             }
         }
-        card.widget(cx, ids!(recommended)).set_visible(cx, recommended);
+        let spacer = card.widget(cx, ids!(spacer));
         Ok((
             card.clone(),
+            spacer,
             CourseCardRefs {
                 pack_id,
                 version,
@@ -795,125 +1019,246 @@ impl App {
             },
         ))
     }
-    /// Recent-whiteboard card (web WhiteboardSessionCard, without the
-    /// rename/delete actions, which need the session system).
-    fn session_card(cx: &mut Cx, pack_id: &str, version: &str, title: &str, status: &str) -> Result<(WidgetRef, SessionCardRefs), String> {
-        let title = script_text(title);
+    /// Collection card (web .course-collection-card): 16:10 cover art,
+    /// level, title, description and the lesson count / 查看课程 footer; the
+    /// whole card is the tap target.
+    fn collection_card(cx: &mut Cx, group: &CollectionGroup) -> Result<(WidgetRef, WidgetRef), String> {
+        let title = script_text(&group.title);
+        let level = script_text(&group.level);
+        let desc = script_text(&group.description);
+        let summary = collection_summary(&group.packs);
+        let level_label = web_text(&level, 12., 1.5, "#517a75", false, false, (0., 0.));
+        let title_label = web_text(&title, 23., 1.45, "#243b40", false, true, (10., 12.));
+        let desc_label = web_text(&desc, 14., 1.8, "#627579", false, true, (0., 28.));
+        let summary_label = web_text(&summary, 12., 1.5, "#667a7b", false, false, (0., 0.));
+        let view_label = web_text("查看课程", 12., 1.5, "#166a79", true, false, (0., 0.));
         let code = format!(
-            "RoundedView{{width:280 height:76 flow:Right align:Align{{y:0.5}} padding:Inset{{left:16 right:10}} spacing:8 draw_bg +: {{color:#fffef9 border_radius:15 border_size:1 border_color:#dbded9}}
-                View{{width:Fill height:Fit flow:Down spacing:4
-                    session_title := Label{{width:Fill text:\"{title}\" draw_text.text_style.font_size:12 draw_text.color:#29464b}}
-                    session_state := Label{{text:\"{status}\" draw_text.text_style.font_size:9 draw_text.color:#718387}}
+            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:20 border_size:1 border_color:#dbded9}}
+                cover := mod.widgets.SvgImage{{width:Fill height:222}}
+                View{{width:Fill height:Fit flow:Down padding:Inset{{left:23 right:23 top:24 bottom:23}}
+                    {level_label}
+                    {title_label}
+                    {desc_label}
+                    spacer := View{{width:Fill height:0}}
+                    SolidView{{width:Fill height:1 draw_bg +: {{color:#e7e9e3}}}}
+                    View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{top:20}}
+                        {summary_label}
+                        View{{width:Fill height:1}}
+                        View{{width:Fit height:Fit flow:Right spacing:6 align:Align{{y:0.5}}
+                            {view_label}
+                            arrow := Svg{{width:17 height:17 draw_svg +: {{preserve_viewbox:true}}}}
+                        }}
+                    }}
                 }}
-                open := Button{{text:\"继续学习\" draw_bg +: {{color:#0000 color_hover:#f1f3ee color_down:#e7ebe6 border_radius:8 border_color:#0000}} draw_text.color:#0b6978}}
             }}"
         );
         let card = board_view::widget(cx, &code)?;
-        Ok((
-            card.clone(),
-            SessionCardRefs {
-                pack_id: pack_id.into(),
-                version: version.into(),
-                open: card.widget(cx, ids!(open)),
-            },
-        ))
+        if let Some(mut svg) = card.widget(cx, ids!(cover)).borrow_mut::<svg_image::SvgImage>() {
+            svg.load(cx, &round_cover_top(group.cover, 19., 355.));
+        }
+        if let Some(mut svg) = card.widget(cx, ids!(arrow)).borrow_mut::<Svg>() {
+            svg.draw_svg.load_from_str(&tinted(ICON_ARROW_RIGHT, "#166a79"));
+        }
+        let spacer = card.widget(cx, ids!(spacer));
+        Ok((card, spacer))
     }
-    /// Rebuild the launcher lists: curated course cards from the pack catalog
-    /// and recent-whiteboard cards from progress_store checkpoint files.
+    /// Lay cards into web-grid rows of three (gap 22 / 24) and queue the
+    /// equal-height pass.
+    fn card_grid(
+        &mut self,
+        cx: &mut Cx,
+        cards: Vec<(WidgetRef, WidgetRef)>,
+        gap: f64,
+    ) -> Result<Vec<WidgetRef>, String> {
+        let mut rows = Vec::new();
+        self.card_rows.clear();
+        for chunk in cards.chunks(3) {
+            let row = board_view::widget(
+                cx,
+                &format!("View{{width:Fill height:Fit flow:Right spacing:{gap}}}"),
+            )?;
+            let mut members: Vec<WidgetRef> = chunk.iter().map(|(c, _)| c.clone()).collect();
+            // Keep column widths when the last row is short.
+            for _ in chunk.len()..3 {
+                members.push(board_view::widget(cx, "View{width:Fill height:1}")?);
+            }
+            board_view::children(cx, &row, members)?;
+            rows.push(row);
+            self.card_rows.push(chunk.to_vec());
+        }
+        self.equalize_tries = 0;
+        self.equalize_frame = cx.new_next_frame();
+        Ok(rows)
+    }
+    /// Web grid rows stretch every card to the tallest one; Makepad Fit
+    /// cards are measured after their first draw and padded via `spacer`.
+    fn equalize_card_rows(&mut self, cx: &mut Cx) {
+        let mut pending = false;
+        for row in &self.card_rows {
+            let heights: Vec<f64> = row
+                .iter()
+                .map(|(card, spacer)| {
+                    let current = spacer
+                        .borrow::<View>()
+                        .map(|v| match v.walk.height {
+                            Size::Fixed(h) => h,
+                            _ => 0.,
+                        })
+                        .unwrap_or(0.);
+                    card.area().rect(cx).size.y - current
+                })
+                .collect();
+            if heights.iter().any(|h| *h <= 1.) {
+                pending = true;
+                continue;
+            }
+            let max = heights.iter().cloned().fold(0., f64::max);
+            for ((_, spacer), h) in row.iter().zip(heights) {
+                if let Some(mut v) = spacer.borrow_mut::<View>() {
+                    v.walk.height = Size::Fixed((max - h).max(0.));
+                }
+            }
+        }
+        if pending && self.equalize_tries < 10 {
+            self.equalize_tries += 1;
+            self.equalize_frame = cx.new_next_frame();
+        }
+        self.ui.redraw(cx);
+    }
+    /// Launcher navigation (web links): collection cards open a collection,
+    /// 全部课程集 returns home; course pills open the course (预览 paused,
+    /// 开始互动/继续学习 autoplay).
+    fn handle_launcher_taps(&mut self, cx: &mut Cx, event: &Event) {
+        let blank = self.ui.widget(cx, ids!(blank_board));
+        if self.collection.is_none() && tapped(cx, event, &blank) {
+            self.toast(cx, "空白白板尚未迁移，仅网页版可用");
+            return;
+        }
+        let back = self.ui.widget(cx, ids!(collection_back));
+        if self.collection.is_some() && tapped(cx, event, &back) {
+            self.set_collection(cx, None);
+            return;
+        }
+        let collections = self.collection_cards.clone();
+        for (id, card) in collections {
+            if tapped(cx, event, &card) {
+                self.set_collection(cx, Some(id));
+                return;
+            }
+        }
+        let mut open = None;
+        for card in &self.course_cards {
+            if tapped(cx, event, &card.preview) {
+                open = Some((card.pack_id.clone(), card.version.clone(), false));
+            } else if tapped(cx, event, &card.start) {
+                open = Some((card.pack_id.clone(), card.version.clone(), true));
+            }
+        }
+        if let Some((pack_id, version, autoplay)) = open {
+            self.open_course(cx, &pack_id, &version, autoplay);
+        }
+    }
+    /// Launcher notice line (web .course-launcher-notice); hidden when empty
+    /// so it adds no gap above the grid.
+    fn set_status(&mut self, cx: &mut Cx, text: &str) {
+        self.ui.label(cx, ids!(launcher_status_text)).set_text(cx, text);
+        self.ui.widget(cx, ids!(launcher_status)).set_visible(cx, !text.is_empty());
+    }
+    fn set_collection(&mut self, cx: &mut Cx, collection: Option<String>) {
+        self.collection = collection;
+        self.rebuild_launcher(cx);
+        // Web scrolls the launcher to the top on every collection change.
+        if let Some(mut scroll) = self.ui.widget(cx, ids!(launcher_scroll)).borrow_mut::<View>() {
+            scroll.set_scroll_pos(cx, dvec2(0., 0.));
+        }
+    }
+    /// Rebuild the launcher library from the pack catalog.
     /// Called at startup and whenever the user returns from the learning page.
     fn rebuild_launcher(&mut self, cx: &mut Cx) {
         self.course_cards.clear();
-        self.session_cards.clear();
         let root = course_pack::pack_root();
         let packs = match course_pack::catalog(&root) {
             Ok(packs) => {
-                self.ui.label(cx, ids!(launcher_status)).set_text(cx, "");
+                self.set_status(cx, "");
                 packs
             }
             Err(e) => {
-                self.ui.label(cx, ids!(launcher_status)).set_text(cx, &e);
+                self.set_status(cx, &e);
                 Vec::new()
             }
         };
-        // Recent whiteboards: every `{packId}@{version}.json` checkpoint in the
-        // store directory, newest first. Completion is resolved by restoring
-        // the checkpoint once (cheap for the small built-in packs).
-        let mut sessions = Vec::new();
-        if let Some(store) = &self.store {
-            if let Ok(read) = std::fs::read_dir(store.dir()) {
-                for file in read.flatten() {
-                    let name = file.file_name().to_string_lossy().into_owned();
-                    let Some(key) = name.strip_suffix(".json") else { continue };
-                    let Some((pack_id, version)) = key.split_once('@') else { continue };
-                    let title = packs
-                        .iter()
-                        .find(|p| p["packId"] == pack_id && p["version"] == version)
-                        .and_then(|p| p["title"].as_str())
-                        .unwrap_or(pack_id)
-                        .to_owned();
-                    let restored = std::fs::read_to_string(file.path())
-                        .ok()
-                        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
-                        .and_then(|saved| {
-                            course_pack::load_source(&root, pack_id, version)
-                                .ok()
-                                .and_then(|src| Session::restore(&src, &saved).ok())
-                        });
-                    let status = match &restored {
-                        Some(s) if s.complete() => "已完成".to_owned(),
-                        Some(s) => format!(
-                            "进行中 · 动作 {}/{}",
-                            s.board.cursor,
-                            s.board.action_count()
-                        ),
-                        None => "进行中".to_owned(),
-                    };
-                    let mtime = file
-                        .metadata()
-                        .and_then(|m| m.modified())
-                        .unwrap_or(std::time::SystemTime::UNIX_EPOCH);
-                    sessions.push((pack_id.to_owned(), version.to_owned(), title, status, mtime));
-                }
-            }
-        }
-        sessions.sort_by(|a, b| b.4.cmp(&a.4));
-        let mut session_widgets = Vec::new();
-        for (pack_id, version, title, status, _) in sessions {
-            match Self::session_card(cx, &pack_id, &version, &title, &status) {
-                Ok((widget, refs)) => {
-                    session_widgets.push(widget);
-                    self.session_cards.push(refs);
-                }
-                Err(e) => {
-                    self.ui.label(cx, ids!(launcher_status)).set_text(cx, &e);
-                }
-            }
-        }
-        if let Err(e) = board_view::children(cx, &self.ui.widget(cx, ids!(session_list)), session_widgets) {
-            self.error = e;
-        }
+        // Recent whiteboards (web) lists blank whiteboards only, which are
+        // not migrated; course progress surfaces as 继续学习 on its card.
+        // Library: collections home, or the selected collection's courses.
+        let groups = group_course_packs(&packs);
+        let selected = self
+            .collection
+            .as_ref()
+            .and_then(|id| groups.iter().find(|g| &g.id == id));
+        let home = self.collection.is_none();
+        self.ui.widget(cx, ids!(home_sections)).set_visible(cx, home);
+        self.ui.widget(cx, ids!(collection_back)).set_visible(cx, !home);
+        self.ui.widget(cx, ids!(collection_intro)).set_visible(cx, selected.is_some());
+        self.ui.widget(cx, ids!(library_eyebrow)).set_visible(cx, selected.is_none());
+        self.ui.widget(cx, ids!(library_level)).set_visible(cx, selected.is_some());
         self.ui
-            .widget(cx, ids!(sessions_section))
-            .set_visible(cx, !self.session_cards.is_empty());
-        let mut course_widgets = Vec::new();
-        for pack in &packs {
-            match Self::course_card(cx, &root, pack) {
-                Ok((widget, refs)) => {
-                    course_widgets.push(widget);
-                    self.course_cards.push(refs);
+            .label(cx, ids!(library_level))
+            .set_text(cx, selected.map_or("", |g| g.level.as_str()));
+        self.ui
+            .label(cx, ids!(library_title))
+            .set_text(cx, selected.map_or("课程集", |g| g.title.as_str()));
+        self.collection_cards.clear();
+        let store_dir = self.store.as_ref().map(|s| s.dir().to_path_buf());
+        let saved = |pack_id: &str, version: &str| {
+            store_dir
+                .as_ref()
+                .is_some_and(|d| d.join(format!("{pack_id}@{version}.json")).is_file())
+        };
+        let mut cards = Vec::new();
+        let mut gap = 24.;
+        if let Some(group) = selected {
+            gap = 22.;
+            self.ui.label(cx, ids!(intro_text)).set_text(cx, &group.description);
+            self.ui.label(cx, ids!(intro_meta)).set_text(
+                cx,
+                &format!("{} · 按顺序循序学习", collection_summary(&group.packs)),
+            );
+            for (index, pack) in group.packs.iter().enumerate() {
+                let resume = saved(
+                    pack["packId"].as_str().unwrap_or(""),
+                    pack["version"].as_str().unwrap_or(""),
+                );
+                match Self::course_card(cx, &root, pack, index, resume) {
+                    Ok((widget, spacer, refs)) => {
+                        cards.push((widget, spacer));
+                        self.course_cards.push(refs);
+                    }
+                    Err(e) => self.set_status(cx, &e),
                 }
-                Err(e) => {
-                    self.ui.label(cx, ids!(launcher_status)).set_text(cx, &e);
+            }
+        } else if !home {
+            self.set_status(cx, "这个课程集暂不可用，请选择其他课程集。");
+        } else {
+            for group in &groups {
+                match Self::collection_card(cx, group) {
+                    Ok((widget, spacer)) => {
+                        self.collection_cards.push((group.id.clone(), widget.clone()));
+                        cards.push((widget, spacer));
+                    }
+                    Err(e) => self.set_status(cx, &e),
                 }
             }
         }
-        if let Err(e) = board_view::children(cx, &self.ui.widget(cx, ids!(course_list)), course_widgets) {
-            self.error = e;
+        match self.card_grid(cx, cards, gap) {
+            Ok(rows) => {
+                if let Err(e) = board_view::children(cx, &self.ui.widget(cx, ids!(course_list)), rows) {
+                    self.error = e;
+                }
+            }
+            Err(e) => self.error = e,
         }
-        if self.course_cards.is_empty() && self.error.is_empty() {
-            self.ui
-                .label(cx, ids!(launcher_status))
-                .set_text(cx, "课程包还在准备中。首批课程发布后会出现在这里。");
+        if packs.is_empty() && self.error.is_empty() {
+            self.set_status(cx, "课程包还在准备中。首批经过审核的课程发布后会出现在这里。");
         }
         self.ui.redraw(cx);
     }
@@ -1125,6 +1470,7 @@ impl AppMain for App {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
         scene3d_view::script_mod(vm);
+        svg_image::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
     }
@@ -1197,34 +1543,6 @@ impl AppMain for App {
         }
         let mut skip_autosave = false;
         if let Event::Actions(actions) = event {
-            // Launcher cards: preview stays paused, start/continue autoplay.
-            for index in 0..self.course_cards.len() {
-                let (pack_id, version) = {
-                    let card = &self.course_cards[index];
-                    (card.pack_id.clone(), card.version.clone())
-                };
-                if clicked(&self.course_cards[index].preview, actions) {
-                    skip_autosave = true;
-                    self.open_course(cx, &pack_id, &version, false);
-                }
-                if clicked(&self.course_cards[index].start, actions) {
-                    skip_autosave = true;
-                    self.open_course(cx, &pack_id, &version, true);
-                }
-            }
-            for index in 0..self.session_cards.len() {
-                let (pack_id, version) = {
-                    let card = &self.session_cards[index];
-                    (card.pack_id.clone(), card.version.clone())
-                };
-                if clicked(&self.session_cards[index].open, actions) {
-                    skip_autosave = true;
-                    self.open_course(cx, &pack_id, &version, true);
-                }
-            }
-            if self.ui.button(cx, ids!(blank_board)).clicked(actions) {
-                self.toast(cx, "空白白板尚未迁移，仅网页版可用");
-            }
             if self.ui.button(cx, ids!(back)).clicked(actions) {
                 skip_autosave = true;
                 if let Some(session) = &mut self.player {
@@ -1394,12 +1712,55 @@ impl AppMain for App {
         if (self.timer.is_event(event).is_some() && was_playing) || control_event {
             self.refresh(cx);
         }
+        // Launcher pills/cards are plain views: hit-test them before the UI
+        // tree so the scroll view does not capture the finger first.
+        if !self.learning_visible {
+            self.handle_launcher_taps(cx, event);
+        }
         self.ui.handle_event(cx, event, &mut Scope::empty());
+        if self.equalize_frame.is_event(event).is_some() {
+            self.equalize_card_rows(cx);
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use serde_json::json;
+    #[test]
+    fn packs_group_into_editorial_collections_like_the_web() {
+        let packs = vec![
+            json!({"packId":"surface-saddle-point-analysis","durationSeconds":200}),
+            json!({"packId":"slope-and-intercept","durationSeconds":90}),
+            json!({"packId":"linear-intro-and-slope","durationSeconds":100}),
+            json!({"packId":"fraction-halves","durationSeconds":60}),
+        ];
+        let groups = super::group_course_packs(&packs);
+        let ids: Vec<_> = groups.iter().map(|g| g.id.as_str()).collect();
+        // Editorial order, empty trigonometry dropped, leftovers last.
+        assert_eq!(ids, ["linear-functions", "multivariable-calculus", "other"]);
+        // Membership order follows the collection, not the catalog.
+        assert_eq!(groups[0].packs[0]["packId"], "linear-intro-and-slope");
+        assert_eq!(super::collection_summary(&groups[0].packs), "2 节课 · 约 4 分钟");
+    }
+    #[test]
+    fn course_tags_follow_the_web_labels() {
+        let tags = |grade: &str| super::course_tags(&json!({"grade": grade, "subject": "mathematics"}));
+        assert_eq!(tags("secondary-age-12-14"), "初中（12–14岁） · 数学");
+        assert_eq!(tags("college-calculus"), "大学微积分 · 数学");
+        assert_eq!(tags("unspecified"), "数学");
+    }
+    #[test]
+    fn cover_background_gets_rounded_top_and_square_bottom() {
+        let svg = r##"<svg viewBox="0 0 640 400"><rect width="640" height="400" fill="#e4eee7"/><path d="M0 0"/></svg>"##;
+        let out = super::round_cover_top(svg, 20., 320.);
+        assert!(out.contains(r##"rx="40" ry="40" fill="#e4eee7""##));
+        assert!(out.contains(r##"<rect y="360" width="640" height="40" fill="#e4eee7"/>"##));
+        assert!(out.ends_with(r#"<path d="M0 0"/></svg>"#));
+        // No full-size background rect: unchanged.
+        let plain = r#"<svg viewBox="0 0 10 10"><circle r="1"/></svg>"#;
+        assert_eq!(super::round_cover_top(plain, 5., 10.), plain);
+    }
     #[test]
     fn steppers_snap_to_the_step_grid_from_min() {
         assert_eq!(super::step_value(4., 1., 8., 1., 1.), 5.);
