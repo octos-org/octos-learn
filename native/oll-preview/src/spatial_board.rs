@@ -1,12 +1,16 @@
 use crate::board_view;
+use crate::controls_view::{ControlModel, ControlsCard, Part};
 use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
 use oll_runtime::ink::Ink;
 use oll_runtime::scene3d::View as SceneView;
 use oll_runtime::{
+    camera::{self, Insets, Mode},
+    focus::{self, Policy},
     preview::Preview,
     spatial::{self, BoardLayout, Camera, Rect as WorldRect},
+    teaching,
 };
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -81,8 +85,6 @@ pub struct SpatialBoard {
     #[rust]
     last_action: usize,
     #[rust]
-    last_focus: Vec<String>,
-    #[rust]
     targets: Vec<String>,
     #[rust]
     camera: Camera,
@@ -97,11 +99,47 @@ pub struct SpatialBoard {
     #[rust]
     viewport: Rect,
     #[rust]
-    left_inset: f64,
-    #[rust]
     drag: Option<Camera>,
+    /// Teaching camera requested during a pointer gesture (web
+    /// pendingCameraFocus), applied when the gesture ends.
     #[rust]
-    pending_focus: bool,
+    pending_camera: Option<Camera>,
+    /// Host viewport insets and floating-UI occlusions (web
+    /// learningBoardInsets), in viewport-local pixels.
+    #[rust]
+    insets: Insets,
+    #[rust]
+    policy: Policy,
+    /// Course slider models supplied by the host each refresh.
+    #[rust]
+    controls: Vec<ControlModel>,
+    /// Control panels laid out in the world: (attachment, slider aliases,
+    /// rect, card).
+    #[rust]
+    attachment_cards: Vec<(teaching::Attachment, Vec<String>, WorldRect, WidgetRef)>,
+    /// Variable changes requested from the world panels, for the host.
+    #[rust]
+    control_requests: Vec<(String, f64)>,
+    /// Active slider drag: (panel index, row).
+    #[rust]
+    control_drag: Option<(usize, usize)>,
+    /// Viewport changed: relayout (composition) and reframe next frame.
+    #[rust]
+    relayout_frame: NextFrame,
+    /// Rendered card sizes (web syncNodes): layout width and rendered height
+    /// of content-sized cards, fed back into the next layout.
+    #[rust]
+    measured: BTreeMap<String, (f64, f64)>,
+    /// Content-sized card ids (drawn at natural height, then measured).
+    #[rust]
+    content_ids: BTreeSet<String>,
+    /// Measure/relayout passes spent on the current operation (web: 3).
+    #[rust]
+    measure_passes: u8,
+    /// The host's current operation is a Beat/step boundary (see
+    /// focus::Policy::render).
+    #[rust]
+    at_boundary: bool,
     /// Student-adjusted scene3d cameras by node id (web scene3dViews);
     /// absent means the authored camera.
     #[rust]
@@ -175,8 +213,41 @@ impl SpatialBoard {
         self.redraw(cx);
         Ok(())
     }
-    pub fn set_left_inset(&mut self, inset: f64) {
-        self.left_inset = inset.max(0.);
+    /// Host floating UI (web learningBoardInsets). A change re-composes the
+    /// teaching layout, whose readable width and height follow the insets.
+    pub fn set_insets(&mut self, cx: &mut Cx, insets: Insets) {
+        if self.insets != insets {
+            self.insets = insets;
+            self.relayout_frame = cx.new_next_frame();
+        }
+    }
+    /// Course slider state; panels show the models of their cluster.
+    pub fn set_controls(&mut self, cx: &mut Cx, controls: Vec<ControlModel>) {
+        if self.controls != controls {
+            self.controls = controls;
+            self.sync_control_cards(cx);
+        }
+    }
+    /// Host playback position: true when the current operation is a
+    /// `beat.end`/`step.commit` rather than an applied action.
+    pub fn set_operation_boundary(&mut self, boundary: bool) {
+        self.at_boundary = boundary;
+    }
+    pub fn take_control_requests(&mut self) -> Vec<(String, f64)> {
+        std::mem::take(&mut self.control_requests)
+    }
+    fn sync_control_cards(&mut self, cx: &mut Cx) {
+        for (_, aliases, _, card) in &self.attachment_cards {
+            let rows: Vec<ControlModel> = self
+                .controls
+                .iter()
+                .filter(|c| aliases.contains(&c.alias))
+                .cloned()
+                .collect();
+            if let Some(mut c) = card.borrow_mut::<ControlsCard>() {
+                c.set_rows(cx, rows);
+            }
+        }
     }
     pub fn set_drawing(&mut self, cx: &mut Cx, enabled: bool) {
         self.drawing = enabled;
@@ -228,14 +299,17 @@ impl SpatialBoard {
         self.targets.clear();
         self.pointer_target = None;
         self.last_action = 0;
-        self.last_focus.clear();
+        self.policy.reset();
+        self.attachment_cards.clear();
+        self.control_drag = None;
+        self.control_requests.clear();
         self.camera = Camera::default();
         self.from = self.camera;
         self.destination = self.camera;
         self.elapsed = 0.68;
         self.manual = false;
         self.drag = None;
-        self.pending_focus = false;
+        self.pending_camera = None;
         self.scene_views.clear();
         self.orbit = None;
         self.redraw(cx);
@@ -244,72 +318,146 @@ impl SpatialBoard {
     fn resolve(&self, id: &str, seen: &mut BTreeSet<String>) -> Option<WorldRect> {
         resolve_geometry(&self.geometry, self.board.as_ref()?, id, seen)
     }
-    fn focus(&mut self, animate: bool) {
-        let rects = self
-            .targets
-            .iter()
-            .filter_map(|id| self.resolve(id, &mut BTreeSet::new()))
-            .collect::<Vec<_>>();
-        if rects.is_empty() {
-            return;
+    /// Viewport and host inputs for the teaching camera.
+    fn camera_view<'a>(&'a self, panels: &'a [(String, Vec<String>, f64)]) -> focus::View<'a> {
+        focus::View {
+            width: self.viewport.size.x.max(1.),
+            height: self.viewport.size.y.max(1.),
+            insets: &self.insets,
+            attachments: panels,
+            scale_floor: camera::MIN_AUTOMATIC_SCALE,
         }
-        let mode = if rects.len() > 1 {
-            "relationship"
-        } else if self
-            .targets
+    }
+    fn panel_focus(&self) -> Vec<(String, Vec<String>, f64)> {
+        self.attachment_cards
             .iter()
-            .any(|id| self.geometry.groups.contains_key(id))
-        {
-            "overview"
-        } else {
-            "detail"
-        };
-        let mut to = spatial::focus_camera(
-            &rects,
-            self.camera,
-            self.viewport.size.x.max(300.),
-            self.viewport.size.y.max(240.),
-            mode,
-        );
-        // Keep the focused scene clear of the floating top bar: when the
-        // scaled scene fits, nudge it into the safe band; when it is taller,
-        // top-anchor it so the primary card is fully visible (the rest can be
-        // dragged into view).
-        if let Some(scene) = WorldRect::union(&rects, 0.) {
-            let min_top = 108.;
-            let min_bottom = (self.viewport.size.y - 24.).max(min_top + 1.);
-            let top = to.y + scene.y * to.scale;
-            let bottom = to.y + (scene.y + scene.height) * to.scale;
-            if bottom - top <= min_bottom - min_top {
-                to.y += (min_top - top).max(0.);
-                let bottom = to.y + (scene.y + scene.height) * to.scale;
-                to.y -= (bottom - min_bottom).max(0.);
-            } else {
-                to.y = min_top - scene.y * to.scale;
-            }
-            // Same treatment on the x axis when the host reserves a left band
-            // for floating UI (e.g. the variable panel): keep the scene right
-            // of the inset, left-anchoring when the scene is wider.
-            let min_left = self.left_inset.min(self.viewport.size.x - 61.);
-            if min_left > 0. {
-                let min_right = (self.viewport.size.x - 24.).max(min_left + 1.);
-                let left = to.x + scene.x * to.scale;
-                let right = to.x + (scene.x + scene.width) * to.scale;
-                if right - left <= min_right - min_left {
-                    to.x += (min_left - left).max(0.);
-                    let right = to.x + (scene.x + scene.width) * to.scale;
-                    to.x -= (right - min_right).max(0.);
-                } else {
-                    to.x = min_left - scene.x * to.scale;
-                }
-            }
+            .map(|(a, _, _, _)| (a.id.clone(), a.anchor_node_ids.clone(), a.height + 2.))
+            .collect()
+    }
+    /// Start the Web .world transition (cubic-bezier .22,1,.36,1, 680ms).
+    fn animate_to(&mut self, to: Camera) {
+        if self.drag.is_some() || self.orbit.is_some() || self.control_drag.is_some() {
+            self.pending_camera = Some(to);
+            return;
         }
         self.from = self.camera;
         self.destination = to;
-        self.elapsed = if animate { 0. } else { 0.68 };
-        if !animate {
-            self.camera = to;
+        self.elapsed = 0.;
+        self.manual = false;
+    }
+    fn jump_to(&mut self, to: Camera) {
+        self.camera = to;
+        self.from = to;
+        self.destination = to;
+        self.elapsed = 0.68;
+    }
+    /// Web resize(): after a viewport change re-plan the last attention.
+    fn reframe(&mut self) {
+        let Some(p) = self.board.clone() else { return };
+        let panels = self.panel_focus();
+        let targets = self.policy.last_attention().to_vec();
+        let view = self.camera_view(&panels);
+        let rects = Policy::focus_rects(&p, &self.geometry, &targets, &view);
+        if rects.is_empty() {
+            return;
         }
+        let to = Policy::plan(&p, &targets, &rects, self.destination, &view);
+        self.jump_to(to);
+    }
+    /// Web captureReflowAnchor: the visible card nearest the viewport
+    /// centre (focused cards first), with its world position.
+    fn reflow_anchor(&self) -> Option<(String, f64, f64)> {
+        let p = self.board.as_ref()?;
+        let c = self.destination;
+        let (w, h) = (self.viewport.size.x, self.viewport.size.y);
+        let mut visible: Vec<(&String, &WorldRect)> = self
+            .geometry
+            .nodes
+            .iter()
+            .filter(|(_, r)| {
+                let x = c.x + r.x * c.scale;
+                let y = c.y + r.y * c.scale;
+                x < w && y < h && x + r.width * c.scale > 0. && y + r.height * c.scale > 0.
+            })
+            .collect();
+        let distance = |r: &WorldRect| {
+            (c.x + (r.x + r.width / 2.) * c.scale - w / 2.).hypot(c.y + (r.y + r.height / 2.) * c.scale - h / 2.)
+        };
+        visible.sort_by(|(a, ra), (b, rb)| {
+            let fa = p.focus.iter().any(|f| f == *a);
+            let fb = p.focus.iter().any(|f| f == *b);
+            fb.cmp(&fa).then(distance(ra).total_cmp(&distance(rb)))
+        });
+        visible.first().map(|(id, r)| ((*id).clone(), r.x, r.y))
+    }
+    /// Relayout with the Web composition: the teaching region is the course
+    /// region, composed for the viewport and host insets, with the control
+    /// panels as attachments. Text cards re-measured at their column width
+    /// (web: up to three passes).
+    fn compute_layout(&self, p: &Preview) -> Result<(BoardLayout, Vec<(teaching::Attachment, Vec<String>)>), String> {
+        let region = p
+            .nodes
+            .first()
+            .and_then(|n| n["region_id"].as_str())
+            .filter(|r| !r.is_empty())
+            .unwrap_or("__legacy__")
+            .to_owned();
+        let sections = p.node_sections();
+        let course_nodes: Vec<String> = sections.iter().map(|(id, _)| id.clone()).collect();
+        let clusters = teaching::control_clusters(p, &region, &course_nodes, p.variable_declarations());
+        let insets = &self.insets;
+        let options = json!({"regions": {region: {
+            "x": 20, "y": 20, "flow": "teaching",
+            "nodeSections": sections.iter().map(|(id, s)| (id.clone(), json!(s))).collect::<serde_json::Map<_, _>>(),
+            "plannedSteps": p.planned_steps().iter().map(|(s, c)| (s.clone(), json!({"visual": c.visual, "math": c.math, "text": c.text}))).collect::<serde_json::Map<_, _>>(),
+            "composition": {
+                "width": self.viewport.size.x.max(320.),
+                "height": self.viewport.size.y.max(240.),
+                "mode": if p.complete() { "overview" } else { "progressive" },
+                "insets": {"top": insets.top, "right": insets.right, "bottom": insets.bottom, "left": insets.left},
+            },
+            "reservedWidth": 1300,
+            "attachments": clusters.iter().map(|(a, _)| json!({
+                "id": a.id, "kind": "control", "anchorNodeId": a.anchor_node_ids.last(),
+                // The host reports the rendered panel: estimate + 1px borders.
+                "anchorNodeIds": a.anchor_node_ids, "width": a.width, "height": a.height + 2.,
+                "focusHeight": a.height + 2., "gap": 24,
+            })).collect::<Vec<_>>(),
+        }}});
+        // Web render(): provisional layout from measureSemanticNode estimates,
+        // then syncNodes sizes (provisional layout width; rendered formula
+        // width for math, capped at the layout width on later passes;
+        // rendered heights for content cards), re-laid out while widths move.
+        let estimates: BTreeMap<String, (f64, f64)> = p
+            .nodes
+            .iter()
+            .filter_map(|n| Some((n["id"].as_str()?.to_owned(), board_view::estimate(n))))
+            .collect();
+        let mut layout = spatial::layout_with_options(p, &estimates, &options)?;
+        for pass in 0..4 {
+            let mut next = BTreeMap::new();
+            for n in &p.nodes {
+                let Some(id) = n["id"].as_str() else { continue };
+                let provisional = layout.nodes.get(id).copied().unwrap_or_default();
+                let width = if n["kind"] == "math" {
+                    let w = board_view::math_width(n)?;
+                    if pass > 0 { w.min(provisional.width) } else { w }
+                } else {
+                    provisional.width
+                };
+                let height = board_view::fixed_height(n)
+                    .or_else(|| self.measured.get(id).map(|m| m.1))
+                    .unwrap_or(estimates[id].1);
+                next.insert(id.to_owned(), (width, height));
+            }
+            let settled = pass > 0
+                && next.iter().all(|(id, (w, _))| layout.nodes.get(id).is_none_or(|r| (r.width - w).abs() < 0.5));
+            layout = spatial::layout_with_options(p, &next, &options)?;
+            if settled {
+                break;
+            }
+        }
+        Ok((layout, clusters))
     }
     pub fn set_state(
         &mut self,
@@ -322,38 +470,43 @@ impl SpatialBoard {
             .as_ref()
             .is_none_or(|b| b.title != p.title || p.cursor < b.cursor);
         if reset {
+            self.measured.clear();
             self.signature.clear();
             self.last_action = 0;
-            self.last_focus.clear();
             self.targets.clear();
-            self.camera = Camera::default();
-            self.destination = self.camera;
-            self.from = self.camera;
-            self.elapsed = 0.68;
+            self.policy.reset();
+            self.jump_to(Camera::default());
             self.manual = false;
+            self.pending_camera = None;
             self.scene_views.clear();
             self.orbit = None;
         }
-        let signature = json!([p.cursor, p.title, p.groups, p.focus]).to_string();
+        let signature = json!([
+            p.cursor, p.title, p.groups, p.focus, p.complete(),
+            self.viewport.size.x, self.viewport.size.y,
+            [self.insets.top, self.insets.right, self.insets.bottom, self.insets.left],
+        ])
+        .to_string();
         let changed = signature != self.signature;
         self.pointer_target = action
             .filter(|a| a["op"] == "teacher.point")
             .map(|a| a["target"].clone());
+        let anchor = (!reset && changed).then(|| self.reflow_anchor()).flatten();
+        if self.last_action != p.cursor {
+            self.measure_passes = 0;
+        }
         self.board = Some(p.clone());
         if changed {
-            let sizes = p
-                .nodes
-                .iter()
-                .map(|n| {
-                    Ok((
-                        n["id"].as_str().ok_or("节点没有 id")?.to_owned(),
-                        board_view::measure(n)?,
-                    ))
-                })
-                .collect::<Result<BTreeMap<_, _>, String>>()?;
-            self.geometry = spatial::layout(p, &sizes)?;
+            let (geometry, clusters) = self.compute_layout(p)?;
+            self.geometry = geometry;
             self.entries.clear();
             self.groups.clear();
+            self.content_ids = p
+                .nodes
+                .iter()
+                .filter(|n| board_view::content_sized(n))
+                .filter_map(|n| n["id"].as_str().map(str::to_owned))
+                .collect();
             for node in &p.nodes {
                 let id = node["id"].as_str().unwrap();
                 let w = match node["kind"].as_str().unwrap_or("") {
@@ -373,6 +526,18 @@ impl SpatialBoard {
                 };
                 self.entries.push((id.into(), self.geometry.nodes[id], w));
             }
+            let previous = std::mem::take(&mut self.attachment_cards);
+            for (spec, aliases) in clusters {
+                let Some(rect) = self.geometry.attachments.get(&spec.id).copied() else { continue };
+                // Keep the panel widget across relayouts so a slider drag survives.
+                let card = previous
+                    .iter()
+                    .find(|(a, _, _, _)| a.id == spec.id)
+                    .map(|(_, _, _, w)| w.clone())
+                    .map_or_else(|| board_view::widget(cx, "mod.widgets.ControlsCard{width:Fill height:Fill}"), Ok)?;
+                self.attachment_cards.push((spec, aliases, rect, card));
+            }
+            self.sync_control_cards(cx);
             for group in &p.groups {
                 let id = group["id"].as_str().unwrap();
                 if let Some(rect) = self.geometry.groups.get(id) {
@@ -464,63 +629,41 @@ impl SpatialBoard {
             w.widget(cx, ids!(caption_box))
                 .set_visible(cx, !caption.is_empty());
         }
-        let mut requested = Vec::new();
-        if self.last_action != p.cursor {
-            if let Some(a) = action {
-                match a["op"].as_str().unwrap_or("") {
-                    "board.focus" => {
-                        requested = a["focus"]["targets"]
-                            .as_array()
-                            .into_iter()
-                            .flatten()
-                            .filter_map(Value::as_str)
-                            .map(str::to_owned)
-                            .collect()
+        for (_, _, _, card) in &self.attachment_cards {
+            card.redraw(cx);
+        }
+        // Teaching camera: the board's render focus plus the host Beat
+        // composition, then the course-end overview once playback completes.
+        let panels = self.panel_focus();
+        let current = self.destination;
+        let mut policy = std::mem::take(&mut self.policy);
+        let planned = {
+            let view = self.camera_view(&panels);
+            let mut to = policy.render(p, &self.geometry, current, &view, self.at_boundary);
+            if let Some(end) = policy.course_end(p, &self.geometry, to.unwrap_or(current), &view) {
+                to = Some(end);
+            }
+            to
+        };
+        self.policy = policy;
+        if let Some(to) = planned {
+            self.animate_to(to);
+        } else if let Some((id, x, y)) = anchor {
+            // Passive layout change: keep the anchor card where it was on
+            // screen (web stable-anchor compensation, no transition).
+            if let Some(r) = self.geometry.nodes.get(&id) {
+                let s = self.destination.scale;
+                let (dx, dy) = ((x - r.x) * s, (y - r.y) * s);
+                if dx.abs() > 0.01 || dy.abs() > 0.01 {
+                    for c in [&mut self.camera, &mut self.from, &mut self.destination] {
+                        c.x += dx;
+                        c.y += dy;
                     }
-                    "board.connect" => {
-                        if let Some(id) = a["connection"]["id"].as_str() {
-                            requested.push(id.into());
-                        }
-                    }
-                    "board.create" => {
-                        if let Some(id) = a["node"]["id"].as_str() {
-                            requested.push(id.into());
-                        }
-                    }
-                    "board.revise" | "board.emphasize" | "teacher.point" => {
-                        let t = &a["target"];
-                        if let Some(id) = t["node_id"]
-                            .as_str()
-                            .or(t["group_id"].as_str())
-                            .or(t["connection_id"].as_str())
-                        {
-                            requested.push(id.into());
-                        }
-                    }
-                    "lesson.variable.animate" => {
-                        requested = spatial::variable_targets(
-                            p,
-                            a["animation"]["variable"].as_str().unwrap_or(""),
-                        );
-                    }
-                    _ => (),
                 }
             }
         }
-        if self.last_focus != p.focus && requested.is_empty() {
-            requested = p.focus.clone();
-        }
         self.last_action = p.cursor;
-        self.last_focus = p.focus.clone();
-        if !requested.is_empty() {
-            self.targets = requested;
-            if self.drag.is_some() {
-                self.pending_focus = true;
-            } else {
-                self.manual = false;
-                self.focus(true);
-            }
-        }
+        self.targets = self.policy.last_attention().to_vec();
         self.redraw(cx);
         Ok(())
     }
@@ -531,27 +674,34 @@ impl SpatialBoard {
             self.redraw(cx);
         }
     }
+    /// Whole-course frame (web course framing: small margin, no floor).
     pub fn overview(&mut self, cx: &mut Cx) {
         let rs = self
             .geometry
             .nodes
             .values()
             .chain(self.geometry.groups.values())
+            .chain(self.geometry.attachments.values())
             .copied()
             .collect::<Vec<_>>();
-        self.camera = spatial::focus_camera(
-            &rs,
-            self.camera,
-            self.viewport.size.x,
-            self.viewport.size.y,
-            "course",
-        );
+        if let Some(bounds) = WorldRect::union(&rs, 0.) {
+            let to = camera::plan_focus(
+                &[bounds],
+                self.destination,
+                self.viewport.size.x,
+                self.viewport.size.y,
+                Mode::Course,
+                &self.insets,
+                camera::MIN_AUTOMATIC_SCALE,
+            );
+            self.animate_to(to);
+        }
         self.manual = true;
         self.redraw(cx);
     }
     pub fn follow(&mut self, cx: &mut Cx) {
         self.manual = false;
-        self.focus(false);
+        self.reframe();
         self.redraw(cx);
     }
     pub fn zoom(&mut self, cx: &mut Cx, factor: f64) {
@@ -626,6 +776,7 @@ impl SpatialBoard {
                 if self.orbit.take().is_none() {
                     return false;
                 }
+                self.replay_pending_camera(cx);
                 cx.set_cursor(MouseCursor::Grab);
                 true
             }
@@ -649,8 +800,96 @@ impl SpatialBoard {
         }
     }
 }
+impl SpatialBoard {
+    fn replay_pending_camera(&mut self, cx: &mut Cx) {
+        if let Some(to) = self.pending_camera.take() {
+            self.animate_to(to);
+            self.redraw(cx);
+        }
+    }
+    fn world_point(&self, abs: DVec2) -> DVec2 {
+        let local = abs - self.viewport.pos;
+        let (x, y) = self.camera.view_to_world(local.x, local.y);
+        dvec2(x, y)
+    }
+    /// A slider value for a track fraction, snapped to the step grid from
+    /// min like an <input type=range>.
+    fn track_value(row: &ControlModel, t: f64) -> f64 {
+        let raw = row.min + t * (row.max - row.min);
+        let v = if row.step > 0. {
+            row.min + ((raw - row.min) / row.step).round() * row.step
+        } else {
+            raw
+        };
+        (v.clamp(row.min, row.max) * 1e12).round() / 1e12
+    }
+    fn stepped(row: &ControlModel, direction: f64) -> f64 {
+        let step = if row.step > 0. { row.step } else { (row.max - row.min) / 100. };
+        let index = ((row.value - row.min) / step).round() + direction;
+        let v = (row.min + index * step).clamp(row.min, row.max);
+        format!("{v:.15}").parse().unwrap_or(v)
+    }
+    /// World control panels: slider drags and the − + ↺ buttons.
+    fn control_event(&mut self, cx: &mut Cx, hit: &Hit) -> bool {
+        match hit {
+            Hit::FingerDown(e) => {
+                let world = self.world_point(e.abs);
+                for (i, (_, _, _, card)) in self.attachment_cards.iter().enumerate() {
+                    let Some(c) = card.borrow::<ControlsCard>() else { continue };
+                    let Some((row, part)) = c.hit(world) else { continue };
+                    let Some(model) = c.rows().get(row).cloned() else { continue };
+                    let value = match part {
+                        Part::Track(t) => {
+                            self.control_drag = Some((i, row));
+                            Self::track_value(&model, t)
+                        }
+                        Part::Minus => Self::stepped(&model, -1.),
+                        Part::Plus => Self::stepped(&model, 1.),
+                        Part::Reset => model.initial,
+                    };
+                    self.control_requests.push((model.alias, value));
+                    cx.set_cursor(MouseCursor::EwResize);
+                    return true;
+                }
+                false
+            }
+            Hit::FingerMove(e) => {
+                let Some((i, row)) = self.control_drag else { return false };
+                let world = self.world_point(e.abs);
+                if let Some(c) = self.attachment_cards.get(i).and_then(|(_, _, _, card)| card.borrow::<ControlsCard>()) {
+                    if let Some(model) = c.rows().get(row) {
+                        let value = Self::track_value(model, c.track_fraction(row, world.x));
+                        self.control_requests.push((model.alias.clone(), value));
+                    }
+                }
+                true
+            }
+            Hit::FingerUp(_) => {
+                if self.control_drag.take().is_none() {
+                    return false;
+                }
+                self.replay_pending_camera(cx);
+                true
+            }
+            _ => false,
+        }
+    }
+}
 impl Widget for SpatialBoard {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
+        if self.relayout_frame.is_event(event).is_some() {
+            // The composition follows the viewport and host insets.
+            if let Some(p) = self.board.clone() {
+                self.signature.clear();
+                if let Err(e) = self.set_state(cx, &p, None) {
+                    eprintln!("Board relayout: {e}");
+                }
+                if !self.manual {
+                    self.reframe();
+                }
+                self.redraw(cx);
+            }
+        }
         if self.ink_ack_frame.is_event(event).is_some() {
             if self.ink_ack_pass == 0 {
                 self.ink_ack_pass = 1;
@@ -682,7 +921,7 @@ impl Widget for SpatialBoard {
             }
             return;
         }
-        if self.scene_event(cx, &hit) {
+        if self.control_event(cx, &hit) || self.scene_event(cx, &hit) {
             return;
         }
         match hit {
@@ -694,29 +933,25 @@ impl Widget for SpatialBoard {
             Hit::FingerMove(e) => {
                 if let Some(start) = self.drag {
                     let delta = e.abs - e.abs_start;
-                    self.camera = Camera {
+                    self.jump_to(Camera {
                         x: start.x + delta.x,
                         y: start.y + delta.y,
                         ..start
-                    };
+                    });
                     self.redraw(cx);
                 }
             }
             Hit::FingerUp(_) => {
                 self.drag = None;
-                if self.pending_focus {
-                    self.pending_focus = false;
-                    self.manual = false;
-                    self.focus(true);
-                    self.redraw(cx);
-                }
+                self.replay_pending_camera(cx);
                 cx.set_cursor(MouseCursor::Grab);
             }
             Hit::FingerScroll(e) => {
                 let at = e.abs - self.viewport.pos;
-                self.camera =
-                    self.camera
-                        .zoom_at(if e.scroll.y < 0. { 1.1 } else { 0.9 }, at.x, at.y);
+                let to = self
+                    .camera
+                    .zoom_at(if e.scroll.y < 0. { 1.1 } else { 0.9 }, at.x, at.y);
+                self.jump_to(to);
                 self.manual = true;
                 self.redraw(cx);
             }
@@ -746,9 +981,7 @@ impl Widget for SpatialBoard {
         let viewport_changed = self.viewport != viewport;
         if self.viewport.size != viewport.size {
             self.viewport = viewport;
-            if !self.manual {
-                self.focus(false);
-            }
+            self.relayout_frame = cx.new_next_frame();
         } else {
             self.viewport = viewport;
         }
@@ -765,22 +998,37 @@ impl Widget for SpatialBoard {
             viewport.size.x / self.camera.scale,
             viewport.size.y / self.camera.scale,
         ));
-        for (r, w) in self
+        let mut remeasured = false;
+        for (id, r, w) in self
             .groups
             .iter()
-            .map(|(r, w)| (r, w))
-            .chain(self.entries.iter().map(|(_, r, w)| (r, w)))
+            .map(|(r, w)| (None, r, w))
+            .chain(self.entries.iter().map(|(id, r, w)| (Some(id), r, w)))
+            .chain(self.attachment_cards.iter().map(|(_, _, r, w)| (None, r, w)))
         {
+            let natural = id.is_some_and(|id| self.content_ids.contains(id));
             w.draw_walk_all(
                 cx,
                 scope,
                 Walk {
                     abs_pos: Some(dvec2(r.x, r.y)),
                     width: Size::Fixed(r.width),
-                    height: Size::Fixed(r.height),
+                    height: if natural { Size::fit() } else { Size::Fixed(r.height) },
                     ..Default::default()
                 },
             );
+            if let (Some(id), true) = (id, natural) {
+                // Web syncNodes: max(72, rendered height) at the layout width.
+                let h = w.area().rect(cx).size.y.max(72.);
+                if (h - r.height).abs() >= 1. {
+                    self.measured.insert(id.clone(), (r.width, h));
+                    remeasured = true;
+                }
+            }
+        }
+        if remeasured && self.measure_passes < 3 {
+            self.measure_passes += 1;
+            self.relayout_frame = cx.new_next_frame();
         }
         self.draw_vector.begin();
         self.draw_vector.set_color(0.48, 0.74, 0.69, 1.);
@@ -892,7 +1140,14 @@ impl Widget for SpatialBoard {
             .iter()
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
-        json!({"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        let attachments = self
+            .geometry
+            .attachments
+            .iter()
+            .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
+            .collect::<Vec<_>>();
+        let (cursor, complete) = self.board.as_ref().map_or((0, false), |p| (p.cursor, p.complete()));
+        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 

@@ -5,7 +5,7 @@
 //! "DIFF" and collected in the handoff report.
 use makepad_widgets::*;
 use oll_runtime::session::Session;
-use octos_oll_preview::{board_view, progress_store, scene3d_view, spatial_board};
+use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 mod svg_image;
 use std::time::Instant;
 
@@ -183,19 +183,8 @@ script_mod! {
                                 ink_status := Label { width: Fit text: "0 项笔迹 · 已保存" draw_text.text_style.font_size: 10 draw_text.color: #6e766f margin: Inset{left: 8 right: 8} }
                             }
                         }
-                        // Variable controls. DIFF: the web panel is world-anchored next to
-                        // the plot card; this version pins it to a fixed floating slot
-                        // (web default slot: left 28, bottom 182).
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 1.} padding: Inset{left: 28 bottom: 182}
-                            variable_panel := RoundedView {
-                                visible: false width: 360 height: Fit flow: Down spacing: 6
-                                padding: Inset{left: 12 right: 12 top: 10 bottom: 10}
-                                draw_bg +: { color: #fffdf8f2 border_radius: 18 border_size: 1 border_color: #e4ded3 }
-                                variable_list := View { width: Fill height: Fit flow: Down spacing: 6 }
-                                variable_note := Label { visible: false width: Fill height: Fit text: "老师正在演示这个变量，结束后即可继续拖动"
-                                    draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.color: #827b72 }
-                            }
-                        }
+                        // Variable controls live in the board world (web
+                        // .learning-variable-controls.is-world), drawn by SpatialBoard.
                         // Course outline trigger (web .oll-course-outline-trigger:
                         // 48px rounded square above the teacher avatar).
                         // DIFF: the outline panel is not migrated; click shows a toast.
@@ -214,7 +203,7 @@ script_mod! {
                                     // DIFF: the web bubble renders markdown; plain text here.
                                     narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 16 draw_text.color: #3c3832 }
                                 }
-                                View { width: 94 height: 94 flow: Overlay
+                                teacher_avatar := View { width: 94 height: 94 flow: Overlay
                                     CircleView { width: Fill height: Fill
                                         draw_bg +: { color: #e6f4f7 border_size: 1 border_color: #c2dde6 } }
                                     // DIFF: static avatar; the organic skin animation is a later milestone.
@@ -271,21 +260,6 @@ script_mod! {
             }
         }
     }
-}
-
-struct VariableRow {
-    alias: String,
-    unit: String,
-    min: f64,
-    max: f64,
-    step: f64,
-    initial: f64,
-    sliding: bool,
-    slider: WidgetRef,
-    value: WidgetRef,
-    minus: WidgetRef,
-    plus: WidgetRef,
-    reset: WidgetRef,
 }
 
 struct CourseCardRefs {
@@ -475,8 +449,6 @@ pub struct App {
     #[rust]
     last_ink_count: usize,
     #[rust]
-    variable_rows: Vec<VariableRow>,
-    #[rust]
     course_cards: Vec<CourseCardRefs>,
     /// Selected collection (web ?collection=<id>); None = collections home.
     #[rust]
@@ -556,28 +528,6 @@ fn clicked(w: &WidgetRef, actions: &Actions) -> bool {
         .find_widget_action(w.widget_uid())
         .is_some_and(|item| matches!(item.cast(), ButtonAction::Clicked(_)))
 }
-/// Web ± steppers snap to the declared step grid from min (oll-lesson-runtime.tsx:3515).
-fn step_value(value: f64, min: f64, max: f64, step: f64, direction: f64) -> f64 {
-    let step = if step > 0. { step } else { (max - min) / 100. };
-    let index = ((value - min) / step).round() + direction;
-    (min + index * step).clamp(min, max)
-}
-fn format_value(value: f64, unit: &str) -> String {
-    let rounded = (value * 100.).round() / 100.;
-    let base = if rounded == rounded.trunc() {
-        format!("{}", rounded as i64)
-    } else {
-        format!("{rounded}")
-    };
-    if unit.is_empty() {
-        base
-    } else {
-        format!("{base} {unit}")
-    }
-}
-/// Catalog grade/subject codes rendered as localized badge text. The audited
-/// web launcher prints the raw codes; these labels follow the localized
-/// wording requested for the product UI, falling back to the raw code.
 /// Web courseTags: localized grade (unspecified hidden) · subject.
 fn course_tags(pack: &serde_json::Value) -> String {
     let grade = pack["grade"].as_str().unwrap_or("").trim();
@@ -769,7 +719,6 @@ impl App {
                                 }
                                 self.player = Some(player);
                                 self.error.clear();
-                                self.build_variable_rows(cx);
                                 if self.autoplay_pending {
                                     self.autoplay_pending = false;
                                     self.note(cx, "已恢复进度，继续播放");
@@ -841,7 +790,6 @@ impl App {
                 self.pack_version = version.into();
                 self.course_source = source;
                 self.player = Some(session);
-                self.build_variable_rows(cx);
                 self.show_learning(cx, true);
                 self.note(cx, "");
                 self.autoplay_pending = autoplay;
@@ -1262,135 +1210,88 @@ impl App {
         }
         self.ui.redraw(cx);
     }
-    fn build_variable_rows(&mut self, cx: &mut Cx) {
-        self.variable_rows.clear();
-        let mut roots = Vec::new();
-        if let Some(session) = &self.player {
-            for d in session.board.variable_declarations() {
-                let alias = d["as"].as_str().unwrap_or("").to_owned();
-                if alias.is_empty() {
-                    continue;
-                }
+    /// Slider models for the board's world control panels (web
+    /// variableControlModels: slider-controlled variables only).
+    fn control_models(&self) -> Vec<controls_view::ControlModel> {
+        let Some(session) = &self.player else { return vec![] };
+        let p = &session.board;
+        let animating = p
+            .animation_state()
+            .and_then(|a| a["variable"].as_str().map(str::to_owned));
+        p.variable_declarations()
+            .iter()
+            .filter(|d| d["control"]["kind"] == "slider")
+            .filter_map(|d| {
+                let alias = d["as"].as_str()?.to_owned();
                 let min = d["min"].as_f64().unwrap_or(0.);
                 let max = d["max"].as_f64().unwrap_or(1.);
                 let initial = d["initial"].as_f64().unwrap_or(min);
-                let step = d["control"]["step"].as_f64().unwrap_or(0.);
-                let unit = d["unit"].as_str().unwrap_or("").to_owned();
-                let label = d["label"]
-                    .as_str()
-                    .unwrap_or(&alias)
-                    .replace(['"', '\\'], " ");
-                let code = format!(
-                    "View{{width:Fill height:Fit flow:Right spacing:4 align: Align{{y: 0.5}}
-                        row_label := Label{{width:Fit height:Fit text:\"{label}\" draw_text.text_style.font_size:11 draw_text.color:#5d5952}}
-                        row_slider := mod.widgets.Slider{{width:Fill height:25 margin: Inset{{top: -7}} min:{min} max:{max} step:{step} default:{initial}
-                            draw_bg +: {{
-                                color: #eae6de color_hover: #eae6de color_focus: #eae6de color_drag: #eae6de
-                                border_size: 0.5 border_color: #d8d2c7 border_color_hover: #d8d2c7 border_color_focus: #d8d2c7 border_color_drag: #d8d2c7
-                                val_padding: 1.
-                                val_color: #168398 val_color_hover: #168398 val_color_focus: #168398 val_color_drag: #168398
-                                handle_color: #168398 handle_color_hover: #126a7c handle_color_focus: #126a7c handle_color_drag: #126a7c
-                                handle_size: 12.
-                            }}}}
-                        row_value := Label{{width:48 height:Fit text:\"\" draw_text.text_style.font_size:11 draw_text.color:#0d7082}}
-                        row_minus := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
-                            draw_icon +: {{color:#0d7082}}
-                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
-                        row_plus := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
-                            draw_icon +: {{color:#0d7082}}
-                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
-                        row_reset := Button{{width:24 height:24 text:\"\" icon_walk:Walk{{width:12 height:12}}
-                            draw_icon +: {{color:#0d7082}}
-                            draw_bg +: {{color:#eaf3f4 color_hover:#d8e9eb color_down:#c8dfe2 border_radius:7 border_size:1 border_color:#d0e0e2}}}}
-                    }}"
-                );
-                match board_view::widget(cx, &code) {
-                    Ok(root) => {
-                        for (id, icon) in [
-                            (live_id!(row_minus), include_str!("../assets/icons/minus.svg")),
-                            (live_id!(row_plus), include_str!("../assets/icons/plus.svg")),
-                            (live_id!(row_reset), include_str!("../assets/icons/rotate-ccw.svg")),
-                        ] {
-                            if let Some(mut b) = root.widget(cx, &[id]).borrow_mut::<Button>() {
-                                b.draw_icon.load_from_str(icon);
-                            }
-                        }
-                        let slider = root.widget(cx, ids!(row_slider));
-                        if let Some(mut s) = slider.borrow_mut::<Slider>() {
-                            s.set_value(cx, initial);
-                        }
-                        let row = VariableRow {
-                            alias,
-                            unit,
-                            min,
-                            max,
-                            step,
-                            initial,
-                            sliding: false,
-                            slider,
-                            value: root.widget(cx, ids!(row_value)),
-                            minus: root.widget(cx, ids!(row_minus)),
-                            plus: root.widget(cx, ids!(row_plus)),
-                            reset: root.widget(cx, ids!(row_reset)),
-                        };
-                        row.value
-                            .set_text(cx, &format_value(initial, &row.unit));
-                        roots.push(root);
-                        self.variable_rows.push(row);
-                    }
-                    Err(e) => self.error = e,
-                }
-            }
-        }
-        let list = self.ui.widget(cx, ids!(variable_list));
-        if let Err(e) = board_view::children(cx, &list, roots) {
-            self.error = e;
-        }
-        self.ui
-            .widget(cx, ids!(variable_panel))
-            .set_visible(cx, !self.variable_rows.is_empty());
-        let w = self.ui.widget(cx, ids!(spatial));
-        if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-            board.set_left_inset(if self.variable_rows.is_empty() {
-                0.
-            } else {
-                412.
-            });
-        };
+                Some(controls_view::ControlModel {
+                    label: d["label"].as_str().unwrap_or(&alias).to_owned(),
+                    value: p.variables.get(&alias).copied().unwrap_or(initial),
+                    min,
+                    max,
+                    step: d["control"]["step"].as_f64().unwrap_or((max - min) / 100.),
+                    unit: d["unit"].as_str().unwrap_or("").to_owned(),
+                    initial,
+                    animating: animating.as_deref() == Some(alias.as_str()),
+                    alias,
+                })
+            })
+            .collect()
     }
-    fn set_variable(&mut self, cx: &mut Cx, index: usize, value: f64) {
+    fn set_variable(&mut self, cx: &mut Cx, alias: &str, value: f64) {
         if self.player.as_ref().is_some_and(|s| s.board.animating()) {
             // Teacher demo in progress: sliders stay locked (web parity).
             return;
         }
-        let Some(alias) = self.variable_rows.get(index).map(|r| r.alias.clone()) else {
-            return;
-        };
         if let Some(session) = &mut self.player {
-            if let Err(e) = session.board.set_variable(&alias, value) {
+            if let Err(e) = session.board.set_variable(alias, value) {
                 self.error = e;
             }
         }
         self.refresh(cx);
     }
-    fn refresh_variable_rows(&mut self, cx: &mut Cx) {
-        let animating = self.player.as_ref().is_some_and(|s| s.board.animating());
-        for row in &mut self.variable_rows {
-            let value = self
-                .player
-                .as_ref()
-                .and_then(|s| s.board.variables.get(&row.alias).copied())
-                .unwrap_or(row.initial);
-            if !row.sliding {
-                if let Some(mut s) = row.slider.borrow_mut::<Slider>() {
-                    s.set_value(cx, value);
-                }
+    /// Web learningBoardInsets (desktop): fixed bands plus the rectangles of
+    /// the floating UI marked as board occlusions, viewport-local.
+    fn board_insets(&self, cx: &mut Cx) -> oll_runtime::camera::Insets {
+        let board = self.ui.widget(cx, ids!(spatial)).area().rect(cx);
+        let compact = board.size.x <= 900.;
+        let mut occlusions = Vec::new();
+        for id in [
+            live_id!(topbar),
+            live_id!(back),
+            live_id!(settings),
+            live_id!(ink_toolbar),
+            live_id!(input_dock),
+            live_id!(teacher_avatar),
+        ] {
+            let w = self.ui.widget(cx, &[id]);
+            if !w.visible() {
+                continue;
             }
-            row.value.set_text(cx, &format_value(value, &row.unit));
+            let r = w.area().rect(cx);
+            let left = r.pos.x.max(board.pos.x);
+            let top = r.pos.y.max(board.pos.y);
+            let right = (r.pos.x + r.size.x).min(board.pos.x + board.size.x);
+            let bottom = (r.pos.y + r.size.y).min(board.pos.y + board.size.y);
+            if right > left && bottom > top {
+                occlusions.push(oll_runtime::spatial::Rect {
+                    x: left - board.pos.x,
+                    y: top - board.pos.y,
+                    width: right - left,
+                    height: bottom - top,
+                });
+            }
         }
-        self.ui
-            .widget(cx, ids!(variable_note))
-            .set_visible(cx, animating);
+        oll_runtime::camera::Insets {
+            top: if compact { 78. } else { 92. },
+            right: if compact { 18. } else { 28. },
+            bottom: if compact { 180. } else { 120. },
+            left: if compact { 18. } else { 28. },
+            focus_margin: None,
+            occlusions,
+        }
     }
     fn refresh(&mut self, cx: &mut Cx) {
         if let Some(session) = &self.player {
@@ -1436,8 +1337,16 @@ impl App {
                 .rev()
                 .find(|op| op["type"] == "action.apply")
                 .map(|op| &op["action"]);
+            let controls = self.control_models();
             let w = self.ui.widget(cx, ids!(spatial));
+            let boundary = session
+                .cursor
+                .checked_sub(1)
+                .and_then(|i| session.operations.get(i))
+                .is_some_and(|op| op["type"] == "beat.end" || op["type"] == "step.commit");
             if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
+                board.set_operation_boundary(boundary);
+                board.set_controls(cx, controls);
                 if let Err(e) = board.set_state(cx, p, action) {
                     self.error = e;
                 }
@@ -1454,7 +1363,6 @@ impl App {
         self.ui
             .label(cx, ids!(ink_status))
             .set_text(cx, &format!("{stroke_count} 项笔迹 · 已保存"));
-        self.refresh_variable_rows(cx);
         self.ui
             .widget(cx, ids!(error_bar))
             .set_visible(cx, !self.error.is_empty());
@@ -1469,6 +1377,7 @@ impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
+        controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);
         svg_image::script_mod(vm);
         spatial_board::script_mod(vm);
@@ -1485,6 +1394,26 @@ impl AppMain for App {
             self.timer = cx.start_interval(1.0 / 60.0);
             self.rebuild_launcher(cx);
             self.rebuild_ink_tools(cx);
+            // Verification hook: OCTOS_LEARN_OPEN=<packId>[@<version>] opens a
+            // course paused on startup (scripts drive playback from there).
+            if let Ok(target) = std::env::var("OCTOS_LEARN_OPEN") {
+                let (pack, version) = target.split_once('@').unwrap_or((target.as_str(), ""));
+                let root = course_pack::pack_root();
+                let version = if version.is_empty() {
+                    course_pack::catalog(&root)
+                        .ok()
+                        .and_then(|packs| {
+                            packs
+                                .iter()
+                                .find(|p| p["packId"] == pack)
+                                .and_then(|p| p["version"].as_str().map(str::to_owned))
+                        })
+                        .unwrap_or_default()
+                } else {
+                    version.to_owned()
+                };
+                self.open_course(cx, pack, &version, false);
+            }
             let logo_loaded = {
                 let logo = self.ui.widget(cx, ids!(logo_svg));
                 let mut loaded = false;
@@ -1588,10 +1517,18 @@ impl AppMain for App {
             }
             // Web-identical controls whose backing feature is not migrated:
             // they stay clickable and explain themselves through the toast.
-            if self.ui.button(cx, ids!(next_beat)).clicked(actions)
-                || self.ui.button(cx, ids!(replay_topic)).clicked(actions)
-            {
-                self.toast(cx, "逐 Beat 控制尚未迁移，仅网页版可用");
+            if self.ui.button(cx, ids!(next_beat)).clicked(actions) {
+                // Web advanceBeat: jump to the end of the current Beat, paused.
+                self.awaiting_restore = false;
+                if let Some(session) = &mut self.player {
+                    if let Err(e) = session.advance_beat() {
+                        self.error = e;
+                    }
+                }
+                self.refresh(cx);
+            }
+            if self.ui.button(cx, ids!(replay_topic)).clicked(actions) {
+                self.toast(cx, "重播 Topic 尚未迁移，仅网页版可用");
             }
             if self.ui.button(cx, ids!(voice)).clicked(actions)
                 || self.ui.button(cx, ids!(camera)).clicked(actions)
@@ -1655,46 +1592,6 @@ impl AppMain for App {
             {
                 self.toast(cx, "擦除与框选尚未迁移，仅网页版可用");
             }
-            // Variable panel: slider start/update/commit plus −/+/reset.
-            for index in 0..self.variable_rows.len() {
-                let slider_uid = self.variable_rows[index].slider.widget_uid();
-                if let Some(item) = actions.find_widget_action(slider_uid) {
-                    match item.cast() {
-                        SliderAction::StartSlide => self.variable_rows[index].sliding = true,
-                        SliderAction::Slide(v) | SliderAction::TextSlide(v) => {
-                            self.set_variable(cx, index, v)
-                        }
-                        SliderAction::EndSlide(v) => {
-                            self.variable_rows[index].sliding = false;
-                            self.set_variable(cx, index, v);
-                        }
-                        _ => (),
-                    }
-                }
-                let current = self
-                    .player
-                    .as_ref()
-                    .and_then(|s| {
-                        s.board
-                            .variables
-                            .get(&self.variable_rows[index].alias)
-                            .copied()
-                    })
-                    .unwrap_or(self.variable_rows[index].initial);
-                let (min, max, step, initial) = {
-                    let r = &self.variable_rows[index];
-                    (r.min, r.max, r.step, r.initial)
-                };
-                if clicked(&self.variable_rows[index].minus, actions) {
-                    self.set_variable(cx, index, step_value(current, min, max, step, -1.));
-                }
-                if clicked(&self.variable_rows[index].plus, actions) {
-                    self.set_variable(cx, index, step_value(current, min, max, step, 1.));
-                }
-                if clicked(&self.variable_rows[index].reset, actions) {
-                    self.set_variable(cx, index, initial);
-                }
-            }
         }
         // Autosave once per second while playing, and once when playback pauses.
         if !skip_autosave
@@ -1718,6 +1615,26 @@ impl AppMain for App {
             self.handle_launcher_taps(cx, event);
         }
         self.ui.handle_event(cx, event, &mut Scope::empty());
+        // World control panels (drawn and hit-tested by the board).
+        let requests = self
+            .ui
+            .widget(cx, ids!(spatial))
+            .borrow_mut::<spatial_board::SpatialBoard>()
+            .map(|mut b| b.take_control_requests())
+            .unwrap_or_default();
+        for (alias, value) in requests {
+            self.set_variable(cx, &alias, value);
+        }
+        // Floating UI occludes the board: keep the teaching camera and the
+        // composition clear of it (web learningBoardInsets).
+        if self.learning_visible
+            && (self.timer.is_event(event).is_some() || matches!(event, Event::WindowGeomChange(_)))
+        {
+            let insets = self.board_insets(cx);
+            if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                b.set_insets(cx, insets);
+            }
+        }
         if self.equalize_frame.is_event(event).is_some() {
             self.equalize_card_rows(cx);
         }
@@ -1760,21 +1677,6 @@ mod tests {
         // No full-size background rect: unchanged.
         let plain = r#"<svg viewBox="0 0 10 10"><circle r="1"/></svg>"#;
         assert_eq!(super::round_cover_top(plain, 5., 10.), plain);
-    }
-    #[test]
-    fn steppers_snap_to_the_step_grid_from_min() {
-        assert_eq!(super::step_value(4., 1., 8., 1., 1.), 5.);
-        assert_eq!(super::step_value(1., 1., 8., 1., -1.), 1.);
-        assert!((super::step_value(1.02, -5., 5., 0.05, 1.) - 1.05).abs() < 1e-9);
-        assert_eq!(super::step_value(4.97, -5., 5., 0.05, 1.), 5.);
-        // Continuous sliders fall back to a 1% nudge.
-        assert!((super::step_value(0., 0., 10., 0., 1.) - 0.1).abs() < 1e-9);
-    }
-    #[test]
-    fn values_format_with_unit_and_trimmed_decimals() {
-        assert_eq!(super::format_value(4., "厘米"), "4 厘米");
-        assert_eq!(super::format_value(-2.5, ""), "-2.5");
-        assert_eq!(super::format_value(0.30000000000000004, ""), "0.3");
     }
     #[test]
     fn svg_style_classes_are_baked_into_attributes() {

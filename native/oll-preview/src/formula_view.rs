@@ -90,6 +90,60 @@ pub fn runs(source: &str) -> Result<Vec<Run>, String> {
     Ok(result)
 }
 
+/// The pinned makepad-latex-math parser never consumes a top-level `]`
+/// (parse_one returns None without advancing), so any formula with a plain
+/// bracket pair such as `x \in [0, \pi]` spins forever. Rewrite plain
+/// brackets to `\lbrack`/`\rbrack`, keeping `\sqrt[n]` optional arguments
+/// and `\left[`/`\right]` delimiters, before anything reaches the parser.
+pub fn parser_safe(math: &str) -> String {
+    let mut out = String::with_capacity(math.len() + 16);
+    let mut chars = math.chars().peekable();
+    let mut command = String::new();
+    let mut sqrt_depth = 0usize;
+    while let Some(c) = chars.next() {
+        match c {
+            '\\' => {
+                out.push(c);
+                command.clear();
+                // Copy the control word (or single escaped symbol) verbatim.
+                if let Some(&next) = chars.peek() {
+                    if next.is_ascii_alphabetic() {
+                        while let Some(&n) = chars.peek() {
+                            if !n.is_ascii_alphabetic() {
+                                break;
+                            }
+                            command.push(n);
+                            out.push(n);
+                            chars.next();
+                        }
+                    } else {
+                        out.push(next);
+                        chars.next();
+                    }
+                }
+                continue;
+            }
+            '[' if command == "sqrt" => {
+                sqrt_depth += 1;
+                out.push(c);
+            }
+            ']' if sqrt_depth > 0 => {
+                sqrt_depth -= 1;
+                out.push(c);
+            }
+            '[' if command == "left" || command == "right" => out.push(c),
+            ']' if command == "left" || command == "right" => out.push(c),
+            '[' => out.push_str("\\lbrack "),
+            ']' => out.push_str("\\rbrack "),
+            _ => out.push(c),
+        }
+        if !c.is_whitespace() {
+            command.clear();
+        }
+    }
+    out
+}
+
 /// Rebuild only when the source changes. Unhandled text nesting is shown verbatim
 /// with a visible diagnostic, never passed to MathView where glyphs could vanish.
 pub fn set_formula(cx: &mut Cx, container: &WidgetRef, source: &str) -> Result<(), String> {
@@ -103,6 +157,19 @@ pub fn set_formula_color(
     source: &str,
     color: &str,
 ) -> Result<(), String> {
+    set_formula_scaled(cx, container, source, color, 15., 18.)
+}
+/// Explicit run sizes: MathView font_size (its em is 1.75x) and the text
+/// run Label size in points (board math cards match KaTeX, web
+/// fitRenderedMath scales both down together).
+pub fn set_formula_scaled(
+    cx: &mut Cx,
+    container: &WidgetRef,
+    source: &str,
+    color: &str,
+    math_size: f64,
+    text_size: f64,
+) -> Result<(), String> {
     let parsed = runs(source);
     let (segments, diagnostic) = match parsed {
         Ok(r) => (r, None),
@@ -111,8 +178,8 @@ pub fn set_formula_color(
     let mut children = Vec::new();
     for (i, run) in segments.into_iter().enumerate() {
         let (code,value)=match run {
-            Run::Math(text)=>(format!("use mod.prelude.widgets.*\nreturn MathView{{font_size:15 baseline_offset:0 color:{color}}}"),text),
-            Run::Text(text)=>(format!("use mod.prelude.widgets.*\nreturn Label{{padding:0 draw_text.color:{color} draw_text.text_style.font_size:18}}"),text),
+            Run::Math(text)=>(format!("use mod.prelude.widgets.*\nreturn MathView{{font_size:{math_size} baseline_offset:0 color:{color}}}"),parser_safe(&text)),
+            Run::Text(text)=>(format!("use mod.prelude.widgets.*\nreturn Label{{padding:0 draw_text.color:{color} draw_text.text_style.font_size:{text_size}}}"),text),
         };
         let widget = cx.with_vm(|vm| {
             let value = vm
@@ -184,6 +251,14 @@ mod tests {
         ] {
             assert_eq!(runs(text).unwrap(), vec![Run::Math(text.into())]);
         }
+    }
+    #[test]
+    fn plain_brackets_are_rewritten_but_sqrt_and_left_right_are_kept() {
+        use super::parser_safe;
+        assert_eq!(parser_safe(r"x \in [0, \pi]"), r"x \in \lbrack 0, \pi\rbrack ");
+        assert_eq!(parser_safe(r"\sqrt[3]{x}"), r"\sqrt[3]{x}");
+        assert_eq!(parser_safe(r"\left[x\right]"), r"\left[x\right]");
+        assert_eq!(parser_safe(r"[a]"), r"\lbrack a\rbrack ");
     }
     #[test]
     fn rejects_nesting_and_malformed_text_instead_of_dropping_it() {

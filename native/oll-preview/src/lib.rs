@@ -5,6 +5,7 @@ use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
 pub mod board_view;
+pub mod controls_view;
 pub mod formula_view;
 mod platform_services;
 use platform_services::Events as PlatformEvents;
@@ -910,6 +911,7 @@ impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
+        controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
