@@ -1,0 +1,488 @@
+From 7d8777e69a6d5dee67ecbaf0f5ef5607e277ad5c Mon Sep 17 00:00:00 2001
+From: alan0x <theyy.me@gmail.com>
+Date: Mon, 21 Sep 2026 20:19:07 -0700
+Subject: [PATCH] fix(plot): keep chart layer draw_depth inside the zbias band
+
+Whole-unit draw_depth (0.1/2.0/3.0) made chart content win the depth
+test over any chrome drawn later, so board cards painted above the
+product's floating controls. Layers keep their relative order with
+0.000x offsets that paint order can still outrank.
+---
+ crates/makepad-plot/src/charts/bar.rs       | 24 ++++++++++-----------
+ crates/makepad-plot/src/charts/circular.rs  | 24 ++++++++++-----------
+ crates/makepad-plot/src/charts/field.rs     | 18 ++++++++--------
+ crates/makepad-plot/src/charts/hierarchy.rs | 12 +++++------
+ crates/makepad-plot/src/charts/line.rs      |  6 +++---
+ crates/makepad-plot/src/charts/line2.rs     | 18 ++++++++--------
+ crates/makepad-plot/src/charts/polar.rs     | 12 +++++------
+ crates/makepad-plot/src/charts/scatter.rs   | 18 ++++++++--------
+ crates/makepad-plot/src/charts/stack.rs     | 18 ++++++++--------
+ crates/makepad-plot/src/charts/stats.rs     | 12 +++++------
+ crates/makepad-plot/src/charts/three_d.rs   | 18 ++++++++--------
+ crates/makepad-plot/src/plot_view.rs        |  9 +++++---
+ 12 files changed, 96 insertions(+), 93 deletions(-)
+
+diff --git a/crates/makepad-plot/src/charts/bar.rs b/crates/makepad-plot/src/charts/bar.rs
+index 647de8c..6535e1d 100644
+--- a/crates/makepad-plot/src/charts/bar.rs
++++ b/crates/makepad-plot/src/charts/bar.rs
+@@ -20,9 +20,9 @@ script_mod! {
+         show_grid: false
+         show_ticks: false
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.HistogramChartBase = #(HistogramChart::register_widget(vm))
+@@ -32,9 +32,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.CandlestickChartBase = #(CandlestickChart::register_widget(vm))
+@@ -44,9 +44,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.WaterfallChartBase = #(WaterfallChart::register_widget(vm))
+@@ -58,9 +58,9 @@ script_mod! {
+         show_grid: false
+         show_ticks: false
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/circular.rs b/crates/makepad-plot/src/charts/circular.rs
+index 45dd61d..79d6c0c 100644
+--- a/crates/makepad-plot/src/charts/circular.rs
++++ b/crates/makepad-plot/src/charts/circular.rs
+@@ -78,9 +78,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.DonutChartBase = #(DonutChart::register_widget(vm))
+@@ -93,9 +93,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.GaugeChartBase = #(GaugeChart::register_widget(vm))
+@@ -108,9 +108,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.FunnelChartBase = #(FunnelChart::register_widget(vm))
+@@ -123,9 +123,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/field.rs b/crates/makepad-plot/src/charts/field.rs
+index e408286..18fb3ba 100644
+--- a/crates/makepad-plot/src/charts/field.rs
++++ b/crates/makepad-plot/src/charts/field.rs
+@@ -20,9 +20,9 @@ script_mod! {
+         show_ticks: false
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.Heatmap = mod.plot.HeatmapChart
+@@ -36,9 +36,9 @@ script_mod! {
+         show_grid: false
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.QuiverPlotBase = #(QuiverPlot::register_widget(vm))
+@@ -49,9 +49,9 @@ script_mod! {
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/hierarchy.rs b/crates/makepad-plot/src/charts/hierarchy.rs
+index 2f6a32a..d66ec81 100644
+--- a/crates/makepad-plot/src/charts/hierarchy.rs
++++ b/crates/makepad-plot/src/charts/hierarchy.rs
+@@ -21,9 +21,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.SankeyDiagramBase = #(SankeyDiagram::register_widget(vm))
+@@ -36,9 +36,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/line.rs b/crates/makepad-plot/src/charts/line.rs
+index 90ec05b..51cae9e 100644
+--- a/crates/makepad-plot/src/charts/line.rs
++++ b/crates/makepad-plot/src/charts/line.rs
+@@ -18,9 +18,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/line2.rs b/crates/makepad-plot/src/charts/line2.rs
+index d788ef5..396d104 100644
+--- a/crates/makepad-plot/src/charts/line2.rs
++++ b/crates/makepad-plot/src/charts/line2.rs
+@@ -19,9 +19,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.AreaChartBase = #(AreaChart::register_widget(vm))
+@@ -31,9 +31,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.StepPlotBase = #(StepPlot::register_widget(vm))
+@@ -43,9 +43,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/polar.rs b/crates/makepad-plot/src/charts/polar.rs
+index c3c70e5..74b35ad 100644
+--- a/crates/makepad-plot/src/charts/polar.rs
++++ b/crates/makepad-plot/src/charts/polar.rs
+@@ -22,9 +22,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.RadarChartBase = #(RadarChart::register_widget(vm))
+@@ -37,9 +37,9 @@ script_mod! {
+         show_border: false
+         plot_margin: Inset{left: 8.0, top: 28.0, right: 8.0, bottom: 8.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/scatter.rs b/crates/makepad-plot/src/charts/scatter.rs
+index 10a97ee..fc704de 100644
+--- a/crates/makepad-plot/src/charts/scatter.rs
++++ b/crates/makepad-plot/src/charts/scatter.rs
+@@ -21,9 +21,9 @@ script_mod! {
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.BubbleChart = set_type_default() do mod.plot.BubbleChartBase{
+@@ -32,9 +32,9 @@ script_mod! {
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.HexbinChart = set_type_default() do mod.plot.HexbinChartBase{
+@@ -43,9 +43,9 @@ script_mod! {
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/stack.rs b/crates/makepad-plot/src/charts/stack.rs
+index 6ebd82a..3f26f9f 100644
+--- a/crates/makepad-plot/src/charts/stack.rs
++++ b/crates/makepad-plot/src/charts/stack.rs
+@@ -19,9 +19,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 52.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.StackplotBase = #(Stackplot::register_widget(vm))
+@@ -31,9 +31,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.StreamgraphBase = #(Streamgraph::register_widget(vm))
+@@ -43,9 +43,9 @@ script_mod! {
+         height: Fill
+         plot_margin: Inset{left: 52.0, top: 28.0, right: 16.0, bottom: 34.0}
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/stats.rs b/crates/makepad-plot/src/charts/stats.rs
+index 280dd2c..0f4b425 100644
+--- a/crates/makepad-plot/src/charts/stats.rs
++++ b/crates/makepad-plot/src/charts/stats.rs
+@@ -23,9 +23,9 @@ script_mod! {
+         show_grid: false
+         show_ticks: false
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.ViolinPlotBase = #(ViolinPlot::register_widget(vm))
+@@ -37,9 +37,9 @@ script_mod! {
+         show_grid: false
+         show_ticks: false
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/charts/three_d.rs b/crates/makepad-plot/src/charts/three_d.rs
+index fa854d9..c7dd615 100644
+--- a/crates/makepad-plot/src/charts/three_d.rs
++++ b/crates/makepad-plot/src/charts/three_d.rs
+@@ -24,9 +24,9 @@ script_mod! {
+         show_border: false
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.Scatter3DBase = #(Scatter3D::register_widget(vm))
+@@ -40,9 +40,9 @@ script_mod! {
+         show_border: false
+         colormap: "Viridis"
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ 
+     mod.plot.Line3DBase = #(Line3D::register_widget(vm))
+@@ -55,9 +55,9 @@ script_mod! {
+         show_ticks: false
+         show_border: false
+         draw_bg +: { draw_depth: 0.0, color: #xffffff }
+-        draw_grid +: { draw_depth: 0.1, color: #xe4e4e4 }
+-        draw_vector +: { draw_depth: 2.0 }
+-        draw_text +: { draw_depth: 3.0, color: #x333333, text_style: theme.font_regular{} }
++        draw_grid +: { draw_depth: 0.0001, color: #xe4e4e4 }
++        draw_vector +: { draw_depth: 0.0002 }
++        draw_text +: { draw_depth: 0.0003, color: #x333333, text_style: theme.font_regular{} }
+     }
+ }
+ 
+diff --git a/crates/makepad-plot/src/plot_view.rs b/crates/makepad-plot/src/plot_view.rs
+index 3129a03..da2912d 100644
+--- a/crates/makepad-plot/src/plot_view.rs
++++ b/crates/makepad-plot/src/plot_view.rs
+@@ -22,16 +22,19 @@ script_mod! {
+         }
+ 
+         draw_grid +: {
+-            draw_depth: 0.1
++            // Keep every plot layer inside the paint-order (zbias) band so
++            // chrome drawn after the board wins the depth test; the internal
++            // layering still increases per layer.
++            draw_depth: 0.0001
+             color: #xe0e0e0
+         }
+ 
+         draw_vector +: {
+-            draw_depth: 2.0
++            draw_depth: 0.0002
+         }
+ 
+         draw_text +: {
+-            draw_depth: 3.0
++            draw_depth: 0.0003
+             color: #x333333
+             text_style: theme.font_regular{}
+         }
+-- 
+2.50.1 (Apple Git-155)
+
