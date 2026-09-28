@@ -7,7 +7,7 @@ test('unopened practice does not separate the two calculus visuals', async ({pag
   await installTestAccount(page);
   const errors: string[] = [];
   page.on('pageerror', e=>errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/?collection=multivariable-calculus');
   const card=page.locator('.course-launcher-card').filter({has:page.getByRole('heading',{name:'水平截线与等高线：以 z=x²+y² 为例',exact:true})});
   const start=Date.now();
   await card.getByRole('link',{name:'预览',exact:true}).click();
@@ -57,7 +57,7 @@ test('regenerated calculus demonstrates once and initializes practice before gra
   await installTestAccount(page);
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/?collection=multivariable-calculus');
   const card = page.locator('.course-launcher-card').filter({has:page.getByRole('heading',{name:'水平截线与等高线：以 z=x²+y² 为例',exact:true})});
   await card.getByRole('link',{name:'预览',exact:true}).click();
   await expect(page.getByTestId('oll-controls')).toBeVisible();
