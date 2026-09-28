@@ -204,6 +204,28 @@ pub fn chart_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         plot := mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:8 bottom:40}}}}
         caption_box := View{{visible:false width:Fill height:Fit padding:Inset{{left:18 right:18 bottom:10}} caption := Label{{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#6b6258 text:\"\"}}}}}}"))
 }
+/// scene3d card (web `.board-node.kind-scene3d`): 16px/18px padding, bold
+/// 16px node title, SCENE3D badge pinned top-right, then the scene panel
+/// (Scene3dView), which fills calc(100% - 24px) and is clipped by the card
+/// bottom padding exactly as the web overflow does. The panel's content,
+/// variables and camera are pushed by SpatialBoard::set_state.
+pub fn scene3d_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let title = script_text(
+        node["content"]["title"]
+            .as_str()
+            .or(node["content"]["label"].as_str())
+            .unwrap_or(""),
+    );
+    widget(cx,&format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7 border_radius:16 border_size:1 border_color:#d8d0c2}}
+        View{{width:Fill height:Fill flow:Down padding:Inset{{left:18 right:18 top:16 bottom:6}}
+            card_title := Label{{width:Fill height:24 text:\"{title}\" draw_text.text_style: theme.font_bold{{font_size:12}} draw_text.color:#243b40}}
+            scene := mod.widgets.Scene3dView{{width:Fill height:Fill margin:Inset{{top:10}}}}
+        }}
+        View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} padding:Inset{{right:10 top:8}}
+            kind_badge := Label{{width:Fit text:\"SCENE3D\" draw_text.text_style: theme.font_code{{font_size:6.75}} draw_text.color:#aaa194}}
+        }}
+    }}"))
+}
 /// Note card (web sticky note): pale yellow card, bold title, body lines,
 /// NOTE badge top-right.
 pub fn note_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
@@ -284,6 +306,8 @@ pub fn measure(node: &Value) -> Result<(f64, f64), String> {
         }
         "plot" => Ok((440., 390. + CHART_HEADER + caption_extra(node))),
         "geometry" => Ok((440., 440. + CHART_HEADER + caption_extra(node))),
+        // Web measureSemanticNode: fixed 460x360 visual.
+        "scene3d" => Ok((460., 360.)),
         "note" | "text" | "diagram" => {
             let text = node_notes(node);
             let lines = text

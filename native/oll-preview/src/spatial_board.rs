@@ -1,7 +1,9 @@
 use crate::board_view;
+use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
 use oll_runtime::ink::Ink;
+use oll_runtime::scene3d::View as SceneView;
 use oll_runtime::{
     preview::Preview,
     spatial::{self, BoardLayout, Camera, Rect as WorldRect},
@@ -100,6 +102,13 @@ pub struct SpatialBoard {
     drag: Option<Camera>,
     #[rust]
     pending_focus: bool,
+    /// Student-adjusted scene3d cameras by node id (web scene3dViews);
+    /// absent means the authored camera.
+    #[rust]
+    scene_views: BTreeMap<String, SceneView>,
+    /// Active scene3d orbit drag: node id and the view at pointer down.
+    #[rust]
+    orbit: Option<(String, SceneView)>,
 }
 fn resolve_geometry(
     geometry: &BoardLayout,
@@ -227,6 +236,8 @@ impl SpatialBoard {
         self.manual = false;
         self.drag = None;
         self.pending_focus = false;
+        self.scene_views.clear();
+        self.orbit = None;
         self.redraw(cx);
     }
 
@@ -320,6 +331,8 @@ impl SpatialBoard {
             self.from = self.camera;
             self.elapsed = 0.68;
             self.manual = false;
+            self.scene_views.clear();
+            self.orbit = None;
         }
         let signature = json!([p.cursor, p.title, p.groups, p.focus]).to_string();
         let changed = signature != self.signature;
@@ -349,6 +362,7 @@ impl SpatialBoard {
                         board_view::text_node(cx, node)?
                     }
                     "plot" | "geometry" => board_view::chart_node(cx, node)?,
+                    "scene3d" => board_view::scene3d_node(cx, node)?,
                     "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
                         let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
@@ -423,6 +437,13 @@ impl SpatialBoard {
                 continue;
             };
             let kind = node["kind"].as_str().unwrap_or("");
+            if kind == "scene3d" {
+                if let Some(mut scene) = w.widget(cx, ids!(scene)).borrow_mut::<Scene3dView>() {
+                    scene.set_content(cx, &node["content"], &p.variables);
+                    scene.set_view(cx, self.scene_views.get(id).copied());
+                }
+                continue;
+            }
             if kind != "plot" && kind != "geometry" {
                 continue;
             }
@@ -541,6 +562,93 @@ impl SpatialBoard {
         self.redraw(cx);
     }
 }
+impl SpatialBoard {
+    /// The scene3d panel under a screen position, if any (topmost card last).
+    fn scene_at(&self, cx: &mut Cx, abs: DVec2) -> Option<(String, WidgetRef, DVec2)> {
+        let local = abs - self.viewport.pos;
+        let (x, y) = self.camera.view_to_world(local.x, local.y);
+        let world = dvec2(x, y);
+        self.entries.iter().rev().find_map(|(id, r, w)| {
+            let inside = world.x >= r.x
+                && world.x <= r.x + r.width
+                && world.y >= r.y
+                && world.y <= r.y + r.height;
+            if !inside {
+                return None;
+            }
+            let scene = w.widget(cx, ids!(scene));
+            let is_scene = scene.borrow::<Scene3dView>().is_some();
+            is_scene.then(|| (id.clone(), scene, world))
+        })
+    }
+    fn set_scene_view(&mut self, cx: &mut Cx, id: &str, scene: &WidgetRef, view: SceneView) {
+        self.scene_views.insert(id.into(), view);
+        if let Some(mut s) = scene.borrow_mut::<Scene3dView>() {
+            s.set_view(cx, Some(view));
+        }
+        self.redraw(cx);
+    }
+    /// Web scene3d pointer handling; true when the event belongs to a scene.
+    fn scene_event(&mut self, cx: &mut Cx, hit: &Hit) -> bool {
+        match hit {
+            Hit::FingerDown(e) => {
+                let Some((id, scene, world)) = self.scene_at(cx, e.abs) else {
+                    return false;
+                };
+                let (button, inside, current) = {
+                    let s = scene.borrow::<Scene3dView>().unwrap();
+                    (s.button_at(world), s.scene_contains(world), s.view())
+                };
+                if let Some(index) = button {
+                    let view = scene.borrow::<Scene3dView>().unwrap().control_view(index);
+                    self.set_scene_view(cx, &id, &scene, view);
+                    return true;
+                }
+                if inside {
+                    self.orbit = Some((id, current));
+                    cx.set_cursor(MouseCursor::Grabbing);
+                    return true;
+                }
+                false
+            }
+            Hit::FingerMove(e) => {
+                let Some((id, start)) = self.orbit.clone() else {
+                    return false;
+                };
+                let delta = e.abs - e.abs_start;
+                if let Some((_, _, w)) = self.entries.iter().find(|(i, _, _)| *i == id) {
+                    let scene = w.widget(cx, ids!(scene));
+                    self.set_scene_view(cx, &id, &scene, start.orbit(delta.x, delta.y));
+                }
+                true
+            }
+            Hit::FingerUp(_) => {
+                if self.orbit.take().is_none() {
+                    return false;
+                }
+                cx.set_cursor(MouseCursor::Grab);
+                true
+            }
+            Hit::FingerScroll(e) => {
+                let Some((id, scene, world)) = self.scene_at(cx, e.abs) else {
+                    return false;
+                };
+                let (inside, current) = {
+                    let s = scene.borrow::<Scene3dView>().unwrap();
+                    (s.scene_contains(world), s.view())
+                };
+                if !inside {
+                    return false;
+                }
+                // Same sign convention as the board zoom (scroll.y < 0 zooms
+                // in), which is the web wheel deltaY convention.
+                self.set_scene_view(cx, &id, &scene, current.wheel(e.scroll.y));
+                true
+            }
+            _ => false,
+        }
+    }
+}
 impl Widget for SpatialBoard {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
         if self.ink_ack_frame.is_event(event).is_some() {
@@ -572,6 +680,9 @@ impl Widget for SpatialBoard {
                 Hit::FingerUp(e) => self.desktop_ink(cx, "up", e.abs, e.time),
                 _ => (),
             }
+            return;
+        }
+        if self.scene_event(cx, &hit) {
             return;
         }
         match hit {

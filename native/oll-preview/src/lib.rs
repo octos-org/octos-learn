@@ -9,6 +9,7 @@ pub mod formula_view;
 mod platform_services;
 use platform_services::Events as PlatformEvents;
 pub mod progress_store;
+pub mod scene3d_view;
 pub mod spatial_board;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
@@ -909,6 +910,7 @@ impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
+        scene3d_view::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
     }

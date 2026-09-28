@@ -5,7 +5,7 @@
 //! "DIFF" and collected in the handoff report.
 use makepad_widgets::*;
 use oll_runtime::session::Session;
-use octos_oll_preview::{board_view, progress_store, spatial_board};
+use octos_oll_preview::{board_view, progress_store, scene3d_view, spatial_board};
 use std::time::Instant;
 
 mod course_pack;
@@ -1124,6 +1124,7 @@ impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
         makepad_plot::script_mod(vm);
+        scene3d_view::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
     }
