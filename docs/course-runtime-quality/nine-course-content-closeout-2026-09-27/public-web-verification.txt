@@ -1,0 +1,2 @@
+==> verifying https://learn.pitun.cc/
+    OK (60 assets checked)

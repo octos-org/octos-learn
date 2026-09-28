@@ -2,13 +2,13 @@
 
 历史正文更新日期：2026-09-06
 
-2026-09-27 白板布局与镜头集成收尾见[最新收尾记录](course-runtime-quality/whiteboard-closeout-2026-09-27/REPORT.md)。该记录提供四仓库固定范围、测试及真实截图；Claude 的九门预制课程审查独立继续。下文部署版本和旧基线属于 09-06 历史快照，本次没有重新核实或部署公网。
+2026-09-27 白板布局与镜头集成收尾见[布局收尾记录](course-runtime-quality/whiteboard-closeout-2026-09-27/REPORT.md)。Claude 的九门预制课程审查已整合，八段旁白已重录，[内容与公网发布收尾记录](course-runtime-quality/nine-course-content-closeout-2026-09-27/REPORT.md)提供最终版本、包哈希、测试与异机 CLI 接手说明。下文 09-06 部署版本仅为历史快照，不能用作当前公网版本判断依据。
 
 这份文档用于公网版本完成后继续本地迭代。部署、迁移和服务器运维仍以
 [公网部署手册](PUBLIC_DEPLOYMENT_RUNBOOK.md) 为准；这里重点说明当前代码基线、
 各仓库边界、本地启动方式，以及修改新功能时需要保留的行为。
 
-## 当前状态
+## 历史状态（2026-09-06）
 
 - 公网地址：<https://learn.pitun.cc>
 - 公网前端仍运行 `octos-learn` 提交 `4f361c3`；数学质量改进已合并到 `main`，

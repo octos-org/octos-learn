@@ -39,8 +39,13 @@ for (const course of courses) {
     await card.getByRole("button", { name: "开始互动", exact: true }).click();
     await expect(page.getByTestId("oll-controls")).toBeVisible();
     const pause = page.getByRole("button", { name: "暂停 OLL 课程" });
-    if (await pause.isVisible()) await pause.click();
-    await page.getByRole("button", { name: "书写笔迹", exact: true }).click();
+    // The toolbar can mount before asynchronous course startup resets ink mode.
+    await expect(pause).toBeVisible();
+    await pause.click();
+    await expect(page.getByRole("button", { name: "播放 OLL 课程", exact: true })).toBeVisible();
+    const pen = page.getByRole("button", { name: "书写笔迹", exact: true });
+    await pen.click();
+    await expect(pen).toHaveAttribute("aria-pressed", "true");
     await page.mouse.move(160, 700);
     await page.mouse.down();
     await page.mouse.move(210, 660, { steps: 8 });
@@ -66,6 +71,8 @@ for (const course of courses) {
   });
 
   test(`${course.id}: real archive, complete narration and cached replay`, async ({ page }, testInfo) => {
+    // Real narration must finish within the assertion budget before cached replay.
+    test.setTimeout(process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? 360_000 : 270_000);
     const externalCalls: string[] = [];
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -103,9 +110,20 @@ for (const course of courses) {
     await expect(page.getByRole("button", { name: "开始互动学习" })).toBeVisible();
     // A real click unlocks narration under browser autoplay policy.
     await page.getByRole("button", { name: "重新播放 OLL 课程" }).click();
-    await expect(page.locator(".learning-workspace").getByText("课程完成", { exact: true })).toBeVisible({
-      timeout: process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? 300_000 : 210_000,
-    });
+    try {
+      await expect(page.locator(".learning-workspace").getByText("课程完成", { exact: true })).toBeVisible({
+        timeout: process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? 300_000 : 210_000,
+      });
+    } finally {
+      await testInfo.attach("narration-at-completion-wait", {
+        body: JSON.stringify(await page.evaluate(() => ({
+          audio: (window as unknown as { courseAudioObservations: unknown }).courseAudioObservations,
+          controls: document.querySelector('[data-testid="oll-controls"]')?.textContent,
+          speech: document.querySelector('.learning-workspace')?.textContent,
+        })), null, 2),
+        contentType: "application/json",
+      });
+    }
     const audio = await page.evaluate(() => (window as unknown as {
       courseAudioObservations: { played: string[]; ended: string[]; webEnded: number[]; errors: string[] };
     }).courseAudioObservations);

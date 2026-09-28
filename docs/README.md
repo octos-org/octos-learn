@@ -2,6 +2,7 @@
 
 ## 当前使用
 
+- [九门课程内容与发布收尾](course-runtime-quality/nine-course-content-closeout-2026-09-27/REPORT.md)：Claude 修复整合、八段旁白重录、九门公网包校验及 27 张真实截图。
 - [白板布局与镜头收尾](course-runtime-quality/whiteboard-closeout-2026-09-27/REPORT.md)：固定提交范围、15 门课真实截图、回归验证与异机协作边界。
 
 - [本地开发交接](DEVELOPMENT_HANDOFF.md)：当前稳定基线、仓库边界、本地启动方式、与公网的差异及后续开发约束。

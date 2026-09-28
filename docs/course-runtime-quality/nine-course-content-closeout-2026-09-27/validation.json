@@ -1,0 +1,371 @@
+{
+  "batch": {
+    "stats": {
+      "startTime": "2026-09-27T22:32:38.285Z",
+      "duration": 443354.326,
+      "expected": 23,
+      "skipped": 0,
+      "unexpected": 2,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "collection home page displays all 3 college multivariable calculus courses",
+        "status": "passed",
+        "durationMs": 2914,
+        "errors": []
+      },
+      {
+        "title": "course: surface-paraboloid-level-sets (水平截线与等高线：以 z=x²+y² 为例) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 6265,
+        "errors": []
+      },
+      {
+        "title": "course: surface-partial-derivative-slice (偏导数：固定输入，求截线斜率) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 7071,
+        "errors": []
+      },
+      {
+        "title": "course: surface-saddle-point-analysis (马鞍面与鞍点：梯度为零不一定是极值点) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 6505,
+        "errors": []
+      },
+      {
+        "title": "linear-intro-and-slope: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6620,
+        "errors": []
+      },
+      {
+        "title": "linear-simultaneous-intersections: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5283,
+        "errors": []
+      },
+      {
+        "title": "slope-and-intercept: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6273,
+        "errors": []
+      },
+      {
+        "title": "surface-paraboloid-level-sets: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6070,
+        "errors": []
+      },
+      {
+        "title": "surface-partial-derivative-slice: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6080,
+        "errors": []
+      },
+      {
+        "title": "surface-saddle-point-analysis: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6583,
+        "errors": []
+      },
+      {
+        "title": "trig-cosine-and-phase-shift: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6321,
+        "errors": []
+      },
+      {
+        "title": "trig-quadrants-and-monotonicity: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5743,
+        "errors": []
+      },
+      {
+        "title": "trig-unit-circle-to-sine: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5872,
+        "errors": []
+      },
+      {
+        "title": "rectangle-area-from-tiles: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2638,
+        "errors": []
+      },
+      {
+        "title": "rectangle-area-from-tiles: real archive, complete narration and cached replay",
+        "status": "passed",
+        "durationMs": 169616,
+        "errors": []
+      },
+      {
+        "title": "slope-and-intercept: independent interactive ink survives return and reload",
+        "status": "failed",
+        "durationMs": 31832,
+        "errors": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.learning-ink-status')\nExpected substring: \u001b[32m\"\u001b[7m1\u001b[27m 项笔迹\"\u001b[39m\nReceived string:    \u001b[31m\"\u001b[7m0\u001b[27m 项笔迹\u001b[7m · 已保存\u001b[27m\"\u001b[39m\nTimeout: 30000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 30000ms\u001b[22m\n\u001b[2m  - waiting for locator('.learning-ink-status')\u001b[22m\n\u001b[2m    60 × locator resolved to <span role=\"status\" class=\"learning-ink-status\">0 项笔迹 · 已保存</span>\u001b[22m\n\u001b[2m       - unexpected value \"0 项笔迹 · 已保存\"\u001b[22m\n\n\n  47 |     await page.mouse.move(260, 710, { steps: 8 });\n  48 |     await page.mouse.up();\n> 49 |     await expect(page.locator(\".learning-ink-status\")).toContainText(\"1 项笔迹\");\n     |                                                        ^\n  50 |     await page.getByRole(\"button\", { name: \"返回首页\" }).click();\n  51 |     await page.goto(collectionUrl(course.id));\n  52 |     const saved = await page.evaluate(() => {\n    at /Users/alan0x/Documents/projects/octos-learn/tests/curated-course-packs.spec.ts:49:56"
+        ]
+      },
+      {
+        "title": "slope-and-intercept: real archive, complete narration and cached replay",
+        "status": "failed",
+        "durationMs": 212955,
+        "errors": [
+          "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('.learning-workspace').getByText('课程完成', { exact: true })\nExpected: visible\nTimeout: 210000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 210000ms\u001b[22m\n\u001b[2m  - waiting for locator('.learning-workspace').getByText('课程完成', { exact: true })\u001b[22m\n\n\n  106 |     const card = page.locator(\".course-launcher-card\").filter({ has: page.getByRole(\"heading\", { name: course.title, exact: true }) });\n  107 |     await expect(card).toBeVisible();\n> 108 |     await card.getByRole(\"link\", { name: \"预览\", exact: true }).click();\n      |                                                                       ^\n  109 |     await expect(page.getByTestId(\"oll-controls\")).toBeVisible();\n  110 |     await expect(page.getByRole(\"button\", { name: \"开始互动学习\" })).toBeVisible();\n  111 |     // A real click unlocks narration under browser autoplay policy.\n    at /Users/alan0x/Documents/projects/octos-learn/tests/curated-course-packs.spec.ts:108:90"
+        ]
+      },
+      {
+        "title": "collection home page displays all 3 high school trigonometry courses",
+        "status": "passed",
+        "durationMs": 1692,
+        "errors": []
+      },
+      {
+        "title": "course: trig-unit-circle-to-sine (从单位圆旋转到正弦曲线) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5358,
+        "errors": []
+      },
+      {
+        "title": "course: trig-cosine-and-phase-shift (余弦函数与单位圆投影) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5363,
+        "errors": []
+      },
+      {
+        "title": "course: trig-quadrants-and-monotonicity (单位圆与正弦函数的单调性及象限循环) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5369,
+        "errors": []
+      },
+      {
+        "title": "collection home page displays all 3 linear function courses",
+        "status": "passed",
+        "durationMs": 1096,
+        "errors": []
+      },
+      {
+        "title": "course: linear-intro-and-slope (正比例函数 y = kx 与斜率的几何意义) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4351,
+        "errors": []
+      },
+      {
+        "title": "course: slope-and-intercept (一次函数 y = mx + b 的图像与性质) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4372,
+        "errors": []
+      },
+      {
+        "title": "course: linear-simultaneous-intersections (二元一次方程组与一次函数的几何意义) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4343,
+        "errors": []
+      }
+    ]
+  },
+  "inkRepeat": {
+    "stats": {
+      "startTime": "2026-09-27T22:38:11.420Z",
+      "duration": 14003.503,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "rectangle-area-from-tiles: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 4379,
+        "errors": []
+      },
+      {
+        "title": "slope-and-intercept: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2876,
+        "errors": []
+      },
+      {
+        "title": "rectangle-area-from-tiles: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 4175,
+        "errors": []
+      },
+      {
+        "title": "slope-and-intercept: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2907,
+        "errors": []
+      },
+      {
+        "title": "rectangle-area-from-tiles: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2771,
+        "errors": []
+      },
+      {
+        "title": "slope-and-intercept: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2353,
+        "errors": []
+      }
+    ]
+  },
+  "audioRerun": {
+    "stats": {
+      "startTime": "2026-09-27T22:41:16.652Z",
+      "duration": 134373.97,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "slope-and-intercept: real archive, complete narration and cached replay",
+        "status": "passed",
+        "durationMs": 133586,
+        "errors": []
+      }
+    ]
+  },
+  "final": {
+    "stats": {
+      "startTime": "2026-09-28T02:10:26.127Z",
+      "duration": 413508.75200000004,
+      "expected": 25,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "title": "collection home page displays all 3 college multivariable calculus courses",
+        "status": "passed",
+        "durationMs": 2130
+      },
+      {
+        "title": "course: surface-paraboloid-level-sets (水平截线与等高线：以 z=x²+y² 为例) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 5983
+      },
+      {
+        "title": "course: surface-partial-derivative-slice (偏导数：固定输入，求截线斜率) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 6815
+      },
+      {
+        "title": "course: surface-saddle-point-analysis (马鞍面与鞍点：梯度为零不一定是极值点) loads, renders 3D surface with section, and plays",
+        "status": "passed",
+        "durationMs": 6234
+      },
+      {
+        "title": "linear-intro-and-slope: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5179
+      },
+      {
+        "title": "linear-simultaneous-intersections: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5420
+      },
+      {
+        "title": "slope-and-intercept: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6011
+      },
+      {
+        "title": "surface-paraboloid-level-sets: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5845
+      },
+      {
+        "title": "surface-partial-derivative-slice: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5891
+      },
+      {
+        "title": "surface-saddle-point-analysis: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6585
+      },
+      {
+        "title": "trig-cosine-and-phase-shift: overview scale across widths",
+        "status": "passed",
+        "durationMs": 6067
+      },
+      {
+        "title": "trig-quadrants-and-monotonicity: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5639
+      },
+      {
+        "title": "trig-unit-circle-to-sine: overview scale across widths",
+        "status": "passed",
+        "durationMs": 5624
+      },
+      {
+        "title": "rectangle-area-from-tiles: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2367
+      },
+      {
+        "title": "rectangle-area-from-tiles: real archive, complete narration and cached replay",
+        "status": "passed",
+        "durationMs": 169623
+      },
+      {
+        "title": "slope-and-intercept: independent interactive ink survives return and reload",
+        "status": "passed",
+        "durationMs": 2125
+      },
+      {
+        "title": "slope-and-intercept: real archive, complete narration and cached replay",
+        "status": "passed",
+        "durationMs": 132986
+      },
+      {
+        "title": "collection home page displays all 3 high school trigonometry courses",
+        "status": "passed",
+        "durationMs": 1616
+      },
+      {
+        "title": "course: trig-unit-circle-to-sine (从单位圆旋转到正弦曲线) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5309
+      },
+      {
+        "title": "course: trig-cosine-and-phase-shift (余弦函数与单位圆投影) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5333
+      },
+      {
+        "title": "course: trig-quadrants-and-monotonicity (单位圆与正弦函数的单调性及象限循环) loads, renders unit circle & wave projection, and plays",
+        "status": "passed",
+        "durationMs": 5368
+      },
+      {
+        "title": "collection home page displays all 3 linear function courses",
+        "status": "passed",
+        "durationMs": 1061
+      },
+      {
+        "title": "course: linear-intro-and-slope (正比例函数 y = kx 与斜率的几何意义) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4293
+      },
+      {
+        "title": "course: slope-and-intercept (一次函数 y = mx + b 的图像与性质) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4396
+      },
+      {
+        "title": "course: linear-simultaneous-intersections (二元一次方程组与一次函数的几何意义) loads, renders plot visual and plays",
+        "status": "passed",
+        "durationMs": 4353
+      }
+    ]
+  }
+}
