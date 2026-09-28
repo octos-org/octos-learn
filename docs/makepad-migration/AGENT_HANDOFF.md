@@ -17,14 +17,16 @@
 
 ## 0. 一句话现状
 
-macOS 产品应用 **v5（白板排布与取景）已本地提交、未推送**（记录见 `OLL_MACOS_PRODUCT_V5.md`）：runtime 移植了 web 最新的阶段行×步骤列布局、安全视口相机与教学对焦策略，原生白板逐 Beat 与 web 对照，大部分 Beat 在 15px 以内；变量滑块改为世界坐标面板；"下一 Beat"可用。v4（启动器课程集，同样未推送，记录见 `OLL_MACOS_PRODUCT_V4.md`）：启动器改为与 web 一致的两层导航（课程集首页 → 课程集页），课程卡换成 web 新设计，有进度的课显示"继续学习"。**v3（scene3d）已推送**（`OLL_MACOS_PRODUCT_V3.md`）：九门预制课全部可打开并播放到底，其中三门 surface 课的三维场景支持拖动旋转、预设视角和滚轮缩放，并与滑块变量联动。v2 已推送：以 main 网页版真实截图为基准做过一轮像素级对齐；启动器 + 课程播放 + 手写 + 变量联动 + 进度保存/恢复可用。**这不是"界面功能与网页版完全一致"的终态**；差异与待办见 §5。
+**2026-09-28 暂停点**：用户要求在 v5 完成后暂停。以下全部已提交并推送。恢复工作时从 §5 开始，建议的第一项是练习任务面板（V5 §4-1）。工作区 `~/Documents/projects/OctosLearn/.local-dev/oll-product` 保持可直接构建。
+
+macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_MACOS_PRODUCT_V5.md`）：runtime 移植了 web 最新的阶段行×步骤列布局、安全视口相机与教学对焦策略，原生白板逐 Beat 与 web 对照，大部分 Beat 在 15px 以内；变量滑块改为世界坐标面板；"下一 Beat"可用。v4（启动器课程集，已推送，记录见 `OLL_MACOS_PRODUCT_V4.md`）：启动器改为与 web 一致的两层导航（课程集首页 → 课程集页），课程卡换成 web 新设计，有进度的课显示"继续学习"。**v3（scene3d）已推送**（`OLL_MACOS_PRODUCT_V3.md`）：九门预制课全部可打开并播放到底，其中三门 surface 课的三维场景支持拖动旋转、预设视角和滚轮缩放，并与滑块变量联动。v2 已推送：以 main 网页版真实截图为基准做过一轮像素级对齐；启动器 + 课程播放 + 手写 + 变量联动 + 进度保存/恢复可用。**这不是"界面功能与网页版完全一致"的终态**；差异与待办见 §5。
 
 ## 1. 分支与提交
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | `fde93a7` 等（**本地，未推送**）：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档；远端为 `4df1787`（v3，已推送） | octos-org/octos-learn 同名分支 |
-| `octos-lesson-language` | `codex/rust-runtime-product` | `d4d5af1`（**本地，未推送**）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；远端为 `b7d079f`（scene3d，已推送），基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | 截至 v5 文档提交全部**已推送**：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-lesson-language` | `codex/rust-runtime-product` | `d4d5af1`（**已推送**）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
 两个仓库的持久路径：原机器在 `~/Documents/projects/`，新机器在 `~/Documents/projects/OctosLearn/`。新机器上的提交先落在工作区 clone，再用 `git pull --ff-only <工作区clone> <分支>` 同步回持久仓库。
