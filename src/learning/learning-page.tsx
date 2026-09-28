@@ -9,7 +9,7 @@ import {
 import {
   ArrowLeft,
   Home,
-  Settings,
+  Menu,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -55,6 +55,7 @@ import {
   createProvisionalLearningSession,
   adoptLearningSession,
   getCoursePackLearningInstance,
+  getLearningSession,
   hasDurableLocalWhiteboardContent,
   isSubstantiveLearningText,
   listLearningSessions,
@@ -66,6 +67,7 @@ import {
   updateLearningSession,
   type LearningSessionRecord,
 } from "./learning-session-store";
+import { LearningHistory, learningSessionHref } from "./learning-history";
 import { discoverServerLearningSessions } from "./learning-session-sync";
 import { consumeWakeAudio } from "./wake-audio-handoff";
 import {
@@ -221,7 +223,8 @@ function LearningServerSync({
     const sync = async () => {
       attempts += 1;
       try {
-        const discovered = await discoverServerLearningSessions();
+        // Board entry must not wait for historical lesson/title downloads.
+        const discovered = await discoverServerLearningSessions({ recoverTitles: false });
         if (!cancelled) onDone(discovered, true);
       } catch {
         if (cancelled) return;
@@ -244,6 +247,7 @@ function LearningServerSync({
 
 export function LearningPage() {
   const navigate = useNavigate();
+  const [historyOpen, setHistoryOpen] = useState(false);
   // Keep the screen on during lessons (long narration + no interaction;
   // audit L7 — only /home held a wake lock before).
   useWakeLock();
@@ -338,6 +342,8 @@ export function LearningPage() {
       && requestedCourseInstance
       ? getCoursePackLearningInstance(requestedCourseInstance, packSource)
       : null;
+    const requestedSessionId = new URLSearchParams(window.location.search).get("session");
+    const requestedSession = requestedSessionId ? getLearningSession(requestedSessionId) : null;
     const resolved = packSource
       ? requestedCourseMode === "instance"
         ? requestedInstance ?? createCoursePackLearningInstance(
@@ -350,7 +356,7 @@ export function LearningPage() {
           )
       : newBoardRequested
       ? createProvisionalLearningSession()
-      : resolveLearningEntrySession();
+      : requestedSession && !requestedSession.source ? requestedSession : resolveLearningEntrySession();
     const record =
       resolved.status === "paused"
         ? updateLearningSession(resolved.id, { status: "active" }) ?? resolved
@@ -656,7 +662,7 @@ export function LearningPage() {
     requestedCourseTitle,
   ]);
 
-  const leaveToHome = useCallback(async () => {
+  const leaveTo = useCallback(async (destination: string) => {
     if (leavingRef.current) return;
     leavingRef.current = true;
     try {
@@ -670,7 +676,7 @@ export function LearningPage() {
     if (current.status === "active") {
       updateLearningSession(current.id, { status: "paused" });
     }
-    navigate("/");
+    navigate(destination);
   }, [navigate]);
 
   const finishAndLeave = useCallback(async () => {
@@ -714,7 +720,13 @@ export function LearningPage() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
-      <main className="relative min-w-0 flex-1">
+      {historyOpen && <LearningHistory currentId={record.id} onClose={() => setHistoryOpen(false)}
+        onNew={() => void leaveTo("/board?new-board=1")}
+        onSelect={session => {
+          if (session.id === record.id) { setHistoryOpen(false); return; }
+          void leaveTo(learningSessionHref(session));
+        }} />}
+      <main className="relative min-w-0 flex-1" inert={historyOpen}>
         <div
           className="learning-top-action-group absolute left-3 top-6 z-20 flex items-center gap-2"
           data-learning-board-occlusion=""
@@ -723,19 +735,19 @@ export function LearningPage() {
             type="button"
             aria-label="返回首页"
             title="返回首页"
-            onClick={() => void leaveToHome()}
+            onClick={() => void leaveTo("/")}
             className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
             <Home size={20} />
           </button>
           <button
             type="button"
-            aria-label="打开设置"
-            title="设置"
-            onClick={() => navigate("/settings")}
+            aria-label="打开学习记录"
+            title="学习记录"
+            onClick={() => setHistoryOpen(true)}
             className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
-            <Settings size={19} />
+            <Menu size={19} />
           </button>
         </div>
         <LearningSessionScope record={record}>
@@ -771,7 +783,7 @@ export function LearningPage() {
               onInkSaveHandlerChange={handleInkSaveHandlerChange}
               onTurnsChange={handleTurnsChange}
               onBoardContextChange={handleBoardContextChange}
-              onBack={leaveToHome}
+              onBack={() => void leaveTo("/")}
               onVoiceExit={finishAndLeave}
               ollFixture={ollFixture}
               coursePack={coursePackLoad.source ?? undefined}

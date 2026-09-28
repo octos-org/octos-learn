@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-24",
+  "oll": {
+    "passed": 236
+  },
+  "generator": {
+    "passed": 161
+  },
+  "courseLibrary": {
+    "passed": 20
+  },
+  "appRelated": {
+    "passed": 88,
+    "note": "87 in combined run; artifacts rerun 17 after adding one reproducibility test"
+  },
+  "browser": {
+    "passed": 17
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "eslint": {
+    "errors": 0,
+    "warnings": 5
+  },
+  "course": {
+    "id": "surface-paraboloid-level-sets",
+    "version": "0.1.1",
+    "minimumExecutionVersion": "0.2.0",
+    "parity": "passed",
+    "directoryValidation": "passed",
+    "newAudioSegments": 2,
+    "reusedAudioSegments": 6
+  },
+  "ollPatchSha256": "fec6962406dcb39cf8d5ee79e9cb350f4c2ae1acbf9729267a2ae956413a8a67",
+  "unmeasured": [
+    "provider token counts",
+    "live model latency A/B",
+    "interaction frame P50/P95",
+    "production retry/escape/correction rates"
+  ],
+  "productionPublished": false
+}

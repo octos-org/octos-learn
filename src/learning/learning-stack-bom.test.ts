@@ -18,7 +18,7 @@ describe("learning stack release BOM", () => {
     expect(dependency).toContain(`#${web.oll_web_runtime_ref}`);
     expect(web.oll_web_runtime_ref).toBe(oll.web_runtime_ref);
     expect(coach.oll_authoring_ref).toBe(oll.authoring_profile_ref);
-    expect(coach.package_version).toBe("0.14.0");
+    expect(coach.package_version).toBe("0.15.0");
     for (const ref of [
       web.main_baseline_ref,
       coach.main_baseline_ref,

@@ -35,7 +35,10 @@ import {
   privateAsrEnabled,
   preloadPrivateAsrRuntime,
 } from "./private-asr-client";
-import { nativePrivateAsrAvailable } from "./microphone";
+import {
+  nativeAudioCaptureAvailable,
+  nativePrivateAsrAvailable,
+} from "./microphone";
 
 export type VoiceState =
   | "idle"
@@ -195,9 +198,15 @@ export interface VoiceAdmittedSpeechContext extends VoiceTurnSendContext {
 
 export type VoiceUtteranceOptions = Pick<VoiceConversationOptions,
   "getAdditionalTurnFiles" | "shouldIncludeCameraFrame" | "buildTurnText"
-  | "onAdmittedSpeech" | "onTurnStart"> & { contextKind?: "selection" };
+  | "onAdmittedSpeech" | "onTurnStart" | "allowHesitationAdmission"> & { contextKind?: "selection" };
 
 export interface VoiceConversationOptions {
+  /**
+   * Whether an upstream semantic admission gate (e.g. TypeSafe Jev) handles
+   * hesitation and filler filtering. When true, raw transcripts are forwarded
+   * to onAdmittedSpeech without being dropped by client-side regex heuristics.
+   */
+  allowHesitationAdmission?: boolean;
   /** Freeze application context at speech onset, before upload/admission. */
   captureUtteranceOptions?: () => VoiceUtteranceOptions;
   /** Build application context after uploads resolve, so frame paths are exact. */
@@ -529,6 +538,7 @@ export function useVoiceConversation(
   const onTurnComplete = options?.onTurnComplete;
   const onTurnError = options?.onTurnError;
   const onAdmittedSpeech = options?.onAdmittedSpeech;
+  const allowHesitationAdmission = options?.allowHesitationAdmission === true;
   const threads = useRenderThreads(sessionId, historyTopic);
   const capture = useVoiceCapture();
   // Destructure the STABLE function refs (useVoiceCapture returns a fresh
@@ -811,6 +821,7 @@ export function useVoiceConversation(
       const buildText = context?.buildTurnText ?? buildTurnText;
       const admitSpeech = context?.onAdmittedSpeech ?? onAdmittedSpeech;
       const turnStart = context?.onTurnStart ?? onTurnStart;
+      const allowHesitation = context?.allowHesitationAdmission ?? allowHesitationAdmission;
       const candidate = bargeInCandidateRef.current;
       if (!candidate) {
         // Reserve the local voice surface while upload + ASR admission run.
@@ -832,7 +843,7 @@ export function useVoiceConversation(
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = includeFrame?.() ?? true;
         const applicationTranscript = privateTranscript?.trim();
-        if (applicationTranscript && !isMeaningfulVoiceTranscript(applicationTranscript)) {
+        if (applicationTranscript && !allowHesitation && !isMeaningfulVoiceTranscript(applicationTranscript)) {
           restoreBargeInCandidate();
           return;
         }
@@ -1037,7 +1048,7 @@ export function useVoiceConversation(
           restoreBargeInCandidate();
           return;
         }
-        if (!isMeaningfulVoiceTranscript(admission.transcript)) {
+        if (!allowHesitation && !isMeaningfulVoiceTranscript(admission.transcript)) {
           restoreBargeInCandidate();
           return;
         }
@@ -1188,8 +1199,8 @@ export function useVoiceConversation(
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         if (generation !== startGenRef.current) return;
-        if (nativePrivateAsrAvailable()) {
-          // The native stream cannot replay an utterance after its Agora
+        if (privateAsr.isNativeRtcActive() || nativeAudioCaptureAvailable()) {
+          // The native or bridged stream cannot replay an utterance after its ASR
           // session fails. Rebuild it immediately and resume listening so the
           // next utterance works without toggling the microphone off and on.
           await recoverPrivateAsrRef.current(privateAsr, error, generation);
@@ -1353,7 +1364,10 @@ export function useVoiceConversation(
     error: unknown,
     generation: number,
   ): Promise<boolean> => {
-    if (!nativePrivateAsrAvailable() || generation !== startGenRef.current) {
+    if (
+      (!failed.isNativeRtcActive() && !nativeAudioCaptureAvailable()) ||
+      generation !== startGenRef.current
+    ) {
       return false;
     }
     if (privateAsrRecoveryRef.current) return privateAsrRecoveryRef.current;
@@ -1667,7 +1681,7 @@ export function useVoiceConversation(
         ? takeRetainedNativePrivateAsr() ?? new PrivateAsrClient()
         : new PrivateAsrClient();
       const handlePrivateAsrError = (error: Error) => {
-        if (!nativePrivateAsrAvailable()) {
+        if (!privateAsr.isNativeRtcActive() && !nativeAudioCaptureAvailable()) {
           if (privateAsrRef.current === privateAsr) privateAsrRef.current = null;
           privateAsr.setConnectionErrorHandler(undefined);
           void privateAsr.stop();

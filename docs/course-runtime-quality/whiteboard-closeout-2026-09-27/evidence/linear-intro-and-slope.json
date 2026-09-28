@@ -1,0 +1,405 @@
+{
+  "id": "linear-intro-and-slope",
+  "version": "0.1.0",
+  "title": "正比例函数 y = kx 与斜率的几何意义",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "x": 926.199951171875,
+          "y": 266.6499938964844,
+          "w": 572,
+          "h": 518.699951171875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 1534.599853515625,
+          "y": 266.6499938964844,
+          "w": 364,
+          "h": 93.60000610351562,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 1534.2783203125,
+          "y": 380.256591796875,
+          "w": 364.643310546875,
+          "h": 149.78680419921875,
+          "nw": 280,
+          "nh": 114,
+          "style": "left: 876px; top: 108px; width: 280px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "x": 421.79998779296875,
+          "y": 266.6499938964844,
+          "w": 467.99993896484375,
+          "h": 59.79998779296875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "x": 689.6471557617188,
+          "y": 203.10000610351562,
+          "w": 513.6641235351562,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 1235.9990234375,
+          "y": 203.10000610351562,
+          "w": 326.877197265625,
+          "h": 84.05413818359375,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 1235.710205078125,
+          "y": 305.1203308105469,
+          "w": 327.454833984375,
+          "h": 134.51071166992188,
+          "nw": 280,
+          "nh": 114,
+          "style": "left: 876px; top: 108px; width: 280px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "x": 236.688720703125,
+          "y": 203.10000610351562,
+          "w": 420.27069091796875,
+          "h": 53.701263427734375,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 3 · 割线斜率 ≈ 3\n说明\ny = kx（y = 3x）",
+          "x": 127.29999542236328,
+          "y": 211.62203979492188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 127.29999542236328,
+          "y": 726.8688354492188,
+          "w": 445.4000244140625,
+          "h": 72.8836669921875,
+          "nw": 440,
+          "nh": 72,
+          "style": "left: 20px; top: 529px; width: 440px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 127.05035400390625,
+          "y": 814.9776611328125,
+          "w": 445.8992919921875,
+          "h": 117.34149169921875,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 617px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n3\n−\n+",
+          "x": 127.29999542236328,
+          "y": 639.8133544921875,
+          "w": 364.4181823730469,
+          "h": 46.5645751953125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "x": 726,
+          "y": 246.92608642578125,
+          "w": 571.9998779296875,
+          "h": 518.699951171875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 1334.39990234375,
+          "y": 246.92608642578125,
+          "w": 364,
+          "h": 93.60000610351562,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 1334.078369140625,
+          "y": 360.53265380859375,
+          "w": 364.6431884765625,
+          "h": 149.78683471679688,
+          "nw": 280,
+          "nh": 114,
+          "style": "left: 876px; top: 108px; width: 280px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "x": 221.60000610351562,
+          "y": 246.92608642578125,
+          "w": 467.9999694824219,
+          "h": 59.79998779296875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 221.60000610351562,
+          "y": 327.5260925292969,
+          "w": 428.9999694824219,
+          "h": 198.16873168945312,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 82px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "x": 508.30987548828125,
+          "y": 178.75177001953125,
+          "w": 517.4647827148438,
+          "h": 469.24652099609375,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 408px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 1058.7042236328125,
+          "y": 178.75177001953125,
+          "w": 329.2958984375,
+          "h": 84.67605590820312,
+          "nw": 280,
+          "nh": 72,
+          "style": "left: 876px; top: 20px; width: 280px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 1058.413330078125,
+          "y": 281.5269470214844,
+          "w": 329.877685546875,
+          "h": 135.50595092773438,
+          "nw": 280,
+          "nh": 114,
+          "style": "left: 876px; top: 108px; width: 280px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "x": 52,
+          "y": 178.75177001953125,
+          "w": 423.38031005859375,
+          "h": 54.09858703613281,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 251.66726684570312,
+          "w": 388.0986022949219,
+          "h": 179.27511596679688,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 82px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "plot",
+          "text": "正比例函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nA\nB\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = kx（y = 0）",
+          "x": 138.31626892089844,
+          "y": 150,
+          "w": 323.367431640625,
+          "h": 293.2355041503906,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑦\n=\n𝑘\n𝑥\n(\n𝑘\n≠\n0\n)\ny=kx(k\n\n=0)",
+          "x": 138.31626892089844,
+          "y": 647.544921875,
+          "w": 323.367431640625,
+          "h": 52.9146728515625,
+          "nw": 440,
+          "nh": 72,
+          "style": "left: 20px; top: 697px; width: 440px; height: 72px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "正比例函数特征\n图像是一条经过原点的直线\n参数 k 称为直线的斜率",
+          "x": 138.13502502441406,
+          "y": 711.5133056640625,
+          "w": 323.72991943359375,
+          "h": 85.1917724609375,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 785px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "control",
+          "text": "斜率 k\n0\n−\n+",
+          "x": 138.31626892089844,
+          "y": 460.87371826171875,
+          "w": 264.5733642578125,
+          "h": 33.806610107421875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "linear-intro-and-slope-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 k 调整为 2，亲自体验直线陡峭程度的变化。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 138.31626892089844,
+          "y": 506.43914794921875,
+          "w": 242.5255889892578,
+          "h": 112.0302734375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 505px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 8
+}

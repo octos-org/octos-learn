@@ -25,6 +25,8 @@ import {
   type StudentScene3dViewOperation,
   type StudentTaskSnapshot,
   type StudentVariableInputEvent,
+  type PlaybackFailure,
+  type PhaseTransition,
 } from "octos-lesson-language/web-runtime";
 
 export interface OllLessonTopicDefinition {
@@ -32,6 +34,8 @@ export interface OllLessonTopicDefinition {
   title: string;
   stepIds: string[];
   nodeIds?: string[];
+  nodeSections?: Record<string, string>;
+  plannedSteps?: Record<string, { visual?: number; math?: number; text?: number }>;
   variableAliases?: string[];
   taskAliases?: string[];
   taskTargets?: Record<string, {
@@ -46,6 +50,8 @@ export interface OllLessonOutlineTopic {
   title: string;
   steps: PlaybackOutlineStep[];
   nodeIds?: string[];
+  nodeSections?: Record<string, string>;
+  plannedSteps?: Record<string, { visual?: number; math?: number; text?: number }>;
   variableAliases?: string[];
   taskAliases?: string[];
   taskTargets?: Record<string, {
@@ -64,6 +70,8 @@ export interface OllLessonRuntimeController {
   title: string;
   language: string;
   status: PlaybackStatus;
+  failure?: PlaybackFailure;
+  activePhaseTransition?: PhaseTransition;
   cursor: number;
   totalOperations: number;
   beatIndex: number;
@@ -107,7 +115,7 @@ export interface OllLessonRuntimeController {
   recordStudentInkSelection(
     source: StudentInkSelectionSource,
     input: StudentInputMethod,
-  ): StudentInkSelectionOperation;
+  ): StudentInkSelectionOperation | undefined;
   handleStudentScene3dInput(
     nodeId: string,
     view: Scene3dViewState,
@@ -153,6 +161,15 @@ function advanceToAvailableEnd(session: BrowserLessonSession): void {
     if (!session.advance()) break;
     remaining -= 1;
   }
+  if (session.activePhaseTransition?.kind === "practice") {
+    session.advance();
+  }
+}
+
+function guardedStudentInput<T>(session: BrowserLessonSession | null, apply: () => T): T | undefined {
+  if (!session || session.failure || session.activePhaseTransition) return undefined;
+  try { return apply(); }
+  catch (error) { session.reportFailure("input", error); return undefined; }
 }
 
 export function useOllLessonRuntime({
@@ -257,29 +274,62 @@ export function useOllLessonRuntime({
   const outlineRef = useRef<OllLessonOutlineTopic[]>([]);
   const [deliverySettledOverride, setDeliverySettledOverride] = useState<boolean | null>(null);
 
+  const resolveTopicStopCursor = useCallback(
+    (topic: OllLessonOutlineTopic | undefined): number | null => {
+      const endCursor = topic?.steps.at(-1)?.end_cursor;
+      if (typeof endCursor !== "number") return null;
+      if (!session) return endCursor;
+      const trailing = session.operations.slice(endCursor);
+      if (trailing.length > 0 && trailing.every((op) => op.type === "lesson.close")) {
+        return session.operations.length;
+      }
+      return endCursor;
+    },
+    [session],
+  );
+
   useEffect(() => {
     if (!session) return;
     const originalAdvance = session.advance.bind(session);
+    const consumeTrailingLessonClose = (
+      initialFrame: ReturnType<typeof originalAdvance>,
+    ) => {
+      let latestFrame = initialFrame;
+      while (
+        session.projection.cursor < session.operations.length
+        && session.operations[session.projection.cursor]?.type === "lesson.close"
+      ) {
+        latestFrame = originalAdvance() ?? latestFrame;
+      }
+      return latestFrame;
+    };
+    const settleTopicStop = () => {
+      stopCursorRef.current = null;
+      if (
+        session.status !== "completed"
+        && session.activePhaseTransition?.kind !== "practice"
+      ) {
+        session.pause();
+      }
+      session.setDeliverySettled(true);
+      setDeliverySettledOverride(true);
+    };
     session.advance = () => {
       if (
         stopCursorRef.current !== null
         && session.projection.cursor >= stopCursorRef.current
       ) {
-        stopCursorRef.current = null;
-        session.pause();
-        session.setDeliverySettled(true);
-        setDeliverySettledOverride(true);
-        return undefined;
+        const frame = consumeTrailingLessonClose(undefined);
+        settleTopicStop();
+        return frame;
       }
-      const frame = originalAdvance();
+      let frame = originalAdvance();
       if (
         stopCursorRef.current !== null
         && session.projection.cursor >= stopCursorRef.current
       ) {
-        stopCursorRef.current = null;
-        session.pause();
-        session.setDeliverySettled(true);
-        setDeliverySettledOverride(true);
+        frame = consumeTrailingLessonClose(frame);
+        settleTopicStop();
       }
       return frame;
     };
@@ -293,9 +343,8 @@ export function useOllLessonRuntime({
     const topic = outlineRef.current.find((candidate) =>
       candidate.steps.some((step) => step.id === stepId)
     );
-    const endCursor = topic?.steps.at(-1)?.end_cursor;
-    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
-  }, []);
+    stopCursorRef.current = resolveTopicStopCursor(topic);
+  }, [resolveTopicStopCursor]);
 
   const setStopCursorForBeat = useCallback((beatId: string | undefined) => {
     if (!beatId) {
@@ -307,9 +356,8 @@ export function useOllLessonRuntime({
         step.beats.some((beat) => beat.id === beatId)
       )
     );
-    const endCursor = topic?.steps.at(-1)?.end_cursor;
-    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
-  }, []);
+    stopCursorRef.current = resolveTopicStopCursor(topic);
+  }, [resolveTopicStopCursor]);
 
   const play = useCallback(() => {
     if (!session) return;
@@ -320,13 +368,12 @@ export function useOllLessonRuntime({
       const topic = outlineRef.current.find((candidate) =>
         candidate.steps.some((step) => step.id === session.projection.current_step_id)
       ) ?? outlineRef.current.at(-1);
-      const endCursor = topic?.steps.at(-1)?.end_cursor;
-      stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+      stopCursorRef.current = resolveTopicStopCursor(topic);
     }
     setDeliverySettledOverride(false);
     session.setDeliverySettled(false);
     session.play();
-  }, [session]);
+  }, [resolveTopicStopCursor, session]);
   const pause = useCallback(() => session?.pause(), [session]);
   const restart = useCallback(() => {
     if (!session) return;
@@ -335,14 +382,19 @@ export function useOllLessonRuntime({
       ? outlineRef.current.find((cand) =>
           cand.steps.some((step) => step.id === currentStepId))
       : undefined) ?? outlineRef.current[0];
-    const endCursor = topic?.steps.at(-1)?.end_cursor;
-    stopCursorRef.current = typeof endCursor === "number" ? endCursor : null;
+    stopCursorRef.current = resolveTopicStopCursor(topic);
     setDeliverySettledOverride(false);
     session.setDeliverySettled(false);
     session.reset();
     session.play();
+  }, [resolveTopicStopCursor, session]);
+  const nextBeat = useCallback(() => {
+    if (!session) return;
+    session.advanceBeat();
+    if (session.activePhaseTransition?.kind === "practice") {
+      session.advance();
+    }
   }, [session]);
-  const nextBeat = useCallback(() => session?.advanceBeat(), [session]);
   const viewStep = useCallback(
     (stepId: string) => {
       stopCursorRef.current = null;
@@ -373,13 +425,14 @@ export function useOllLessonRuntime({
     session.seekToBeat(beatId, "start");
     session.play();
   }, [session, setStopCursorForBeat]);
+  const playbackEpoch = session?.playbackEpoch;
   const startNarration = useCallback(
-    (beatId: string) => session?.startNarration(beatId),
-    [session],
+    (beatId: string) => session?.startNarration(beatId, playbackEpoch),
+    [playbackEpoch, session],
   );
   const completeNarration = useCallback(
-    (beatId: string) => session?.completeNarration(beatId),
-    [session],
+    (beatId: string) => session?.completeNarration(beatId, playbackEpoch),
+    [playbackEpoch, session],
   );
   const setVariable = useCallback(
     (alias: string, value: number) => session?.setVariable(alias, value),
@@ -391,44 +444,48 @@ export function useOllLessonRuntime({
     event: StudentVariableInputEvent,
   ): string | void => {
     if (!session) return;
-    if (event.phase === "start") {
-      return session.beginStudentVariableOperation(alias, {
-        control: event.control,
-        input: event.input,
-      });
-    }
-    if (!event.operation_id) return;
-    if (event.phase === "update") {
-      session.updateStudentVariableOperation(event.operation_id, value);
-    } else {
-      session.commitStudentVariableOperation(event.operation_id, value);
+    if (session.failure) return;
+    try {
+      if (event.phase === "start") {
+        return session.beginStudentVariableOperation(alias, {
+          control: event.control,
+          input: event.input,
+        });
+      }
+      if (!event.operation_id) return;
+      if (event.phase === "update") {
+        session.updateStudentVariableOperation(event.operation_id, value);
+      } else {
+        session.commitStudentVariableOperation(event.operation_id, value);
+      }
+    } catch (error) {
+      session.reportFailure("input", error);
     }
   }, [session]);
   const requestStudentTaskHint = useCallback(
     (taskId: string) => {
-      session?.requestStudentTaskHint(taskId);
+      guardedStudentInput(session, () => session!.requestStudentTaskHint(taskId));
     },
     [session],
   );
   const retryStudentTask = useCallback(
     (taskId: string) => {
-      session?.retryStudentTask(taskId);
+      guardedStudentInput(session, () => session!.retryStudentTask(taskId));
     },
     [session],
   );
   const recordStudentInkSelection = useCallback((
     source: StudentInkSelectionSource,
     input: StudentInputMethod,
-  ): StudentInkSelectionOperation => {
-    if (!session) throw new Error("OLL Runtime 尚未初始化");
-    return session.recordStudentInkSelection(source, input);
+  ): StudentInkSelectionOperation | undefined => {
+    return guardedStudentInput(session, () => session!.recordStudentInkSelection(source, input));
   }, [session]);
   const handleStudentScene3dInput = useCallback((
     nodeId: string,
     view: Scene3dViewState,
     event: Scene3dViewInputEvent,
   ): string | StudentScene3dViewOperation | void => {
-    return session?.handleStudentScene3dInput(nodeId, view, event);
+    return guardedStudentInput(session, () => session!.handleStudentScene3dInput(nodeId, view, event));
   }, [session]);
   const setDeliverySettled = useCallback(
     (settled: boolean) => {
@@ -489,6 +546,8 @@ export function useOllLessonRuntime({
             title: topic.title,
             steps: topicSteps,
             nodeIds: topic.nodeIds,
+            nodeSections: topic.nodeSections,
+            plannedSteps: topic.plannedSteps,
             variableAliases: topic.variableAliases,
             taskAliases: topic.taskAliases,
             taskTargets: topic.taskTargets,
@@ -513,6 +572,8 @@ export function useOllLessonRuntime({
     title: events[0]?.lesson?.title ?? events[0]?.lesson_id ?? "OLL 课程",
     language: events[0]?.lesson?.language ?? "zh-CN",
     status: session.status,
+    failure: session.failure,
+    activePhaseTransition: session.activePhaseTransition,
     cursor: projection.cursor,
     totalOperations: projection.total_operations,
     beatIndex: currentBeatIndex,
@@ -522,12 +583,16 @@ export function useOllLessonRuntime({
     currentBeatId,
     attentionTargets: session.attentionTargets,
     compositionTargets: session.compositionTargets,
-    activeSpeech: projection.current_narration?.text ?? "",
+    activeSpeech: session.activePhaseTransition ? "" : projection.current_narration?.text ?? "",
     nextNarration,
     playing: session.isPlaying,
     completed: projection.status === "completed",
     waiting: projection.status === "waiting",
-    deliverySettled: deliverySettledOverride !== null ? deliverySettledOverride : session.isDeliverySettled,
+    deliverySettled: session.activePhaseTransition
+      ? false
+      : deliverySettledOverride !== null
+        ? deliverySettledOverride
+        : session.isDeliverySettled,
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,

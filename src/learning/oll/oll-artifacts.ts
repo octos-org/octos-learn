@@ -27,6 +27,11 @@ export interface OllLessonTopic {
   /** Nodes created by this lesson's own Steps. This remains reliable even
    * when an older saved lesson has no per-node region_id metadata. */
   nodeIds: string[];
+  nodeSections?: Record<string, string>;
+  /** Planned per-step card counts by layout column kind, computed from every
+   *  currently known lesson event (complete for packaged lessons, growing for
+   *  live ones). Lets the matrix layout reserve cell capacity up front. */
+  plannedSteps?: Record<string, { visual?: number; math?: number; text?: number }>;
   variableAliases: string[];
   taskAliases: string[];
   taskTargets: Record<string, {
@@ -116,8 +121,18 @@ function namespaceCanonicalLesson(
   for (const variable of lesson.variables ?? []) {
     variable.as = variableNames.get(variable.as.toLocaleLowerCase())!;
   }
+  const scopedValues = (values: Record<string, number>) => Object.fromEntries(
+    Object.entries(values).map(([alias, value]) => [
+      variableNames.get(alias.toLocaleLowerCase()) ?? alias, value,
+    ]),
+  );
   for (const task of lesson.tasks ?? []) {
     task.as = scopedIdentifier(namespace, task.as);
+    if (task.start) {
+      task.start.variables = task.start.variables?.map(alias =>
+        variableNames.get(alias.toLocaleLowerCase()) ?? alias);
+      if (task.start.values) task.start.values = scopedValues(task.start.values);
+    }
     for (const operation of task.allowed_operations) {
       if (operation.kind !== "variable_change") continue;
       operation.variable = variableNames.get(operation.variable.toLocaleLowerCase())
@@ -134,6 +149,7 @@ function namespaceCanonicalLesson(
     for (const beat of event.step?.beats ?? []) {
       for (const stage of Object.values(beat.stage)) {
         for (const action of stage) {
+          if (action.transition) action.transition.values = scopedValues(action.transition.values);
           if (action.animation) {
             action.animation.variable = variableNames.get(
               action.animation.variable.toLocaleLowerCase(),
@@ -279,6 +295,7 @@ export async function loadOllLessonArtifact(
   artifact: OllLessonArtifactRef,
   sessionId: string,
   signal?: AbortSignal,
+  onMaterialized?: (timing: { elapsedMs: number; status: "completed" | "failed" }) => void,
 ): Promise<CanonicalEvent[]> {
   const response = await fetch(buildFileUrl(artifact.path, { sessionId }), {
     headers: buildApiHeaders(),
@@ -288,20 +305,27 @@ export async function loadOllLessonArtifact(
     throw new Error(`OLL 课程读取失败 (${response.status})`);
   }
   const authoring = (await response.json()) as AuthoringLesson;
+  const started = performance.now();
+  let status: "completed" | "failed" = "failed";
   try {
     const artifactIdentity = ollArtifactIdentity(artifact);
     const boardId = `learning-board-${sessionId}`;
     const boardContext = authoring.board_context;
-    return materializeOllLesson(authoring, {
+    const events = materializeOllLesson(authoring, {
       lessonId: `learn-${sessionId}-${artifactIdentity}`,
       boardId,
       baseRevision: boardContext?.revision ?? 0,
       regionIntent: boardContext ? "continue_topic" : "new_topic",
       regionId: `topic-${artifactIdentity}`,
     });
+    status = "completed";
+    return events;
   } catch (cause) {
     const message = cause instanceof Error ? cause.message : "未知格式错误";
-    throw new Error(`OLL 课程格式无效：${message}`);
+    throw new Error(`OLL 课程格式无效：${message}`, { cause });
+  } finally {
+    // Diagnostic observers must never change artifact acceptance or playback.
+    try { onMaterialized?.({ elapsedMs: performance.now() - started, status }); } catch { /* observer only */ }
   }
 }
 
@@ -399,6 +423,25 @@ export function buildOllLessonTopics(
       title: open.lesson?.title ?? `课程主题 ${index + 1}`,
       stepIds,
       nodeIds: [...new Set(nodeIds)],
+      nodeSections: Object.fromEntries(events.flatMap(event => event.event === "lesson.step" && event.step
+        ? event.step.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions => actions.flatMap(action =>
+          action.op === "board.create" && action.node ? [[action.node.id, event.step!.id]] : []))) : [])),
+      plannedSteps: Object.fromEntries(events.flatMap(event => {
+        if (event.event !== "lesson.step" || !event.step) return [];
+        const counts = { visual: 0, math: 0, text: 0 };
+        for (const beat of event.step.beats) {
+          for (const actions of Object.values(beat.stage)) {
+            for (const action of actions) {
+              if (action.op !== "board.create" || !action.node) continue;
+              const kind = String(action.node.kind ?? "");
+              if (["geometry", "scene3d", "plot", "image", "diagram"].includes(kind)) counts.visual += 1;
+              else if (kind === "math") counts.math += 1;
+              else counts.text += 1;
+            }
+          }
+        }
+        return [[event.step.id, counts]];
+      })),
       variableAliases: (open.lesson?.variables ?? []).map((variable) =>
         namespace ? scopedIdentifier(namespace, variable.as) : variable.as),
       taskAliases: (open.lesson?.tasks ?? []).map((task) =>

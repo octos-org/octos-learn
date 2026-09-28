@@ -224,7 +224,103 @@ async function openMicrophone(audio: boolean | MediaTrackConstraints): Promise<M
   return navigator.mediaDevices.getUserMedia({ audio });
 }
 
+let nativeStreamInstance: { stream: MediaStream; ctx: AudioContext } | null = null;
+
+export function getNativeBridgedMicStream(): MediaStream | null {
+  if (typeof window === "undefined") return null;
+  const AudioContextClass =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) return null;
+
+  if (
+    nativeStreamInstance &&
+    nativeStreamInstance.stream.getAudioTracks().some((track) => track.readyState === "live")
+  ) {
+    if (nativeStreamInstance.ctx.state === "suspended") {
+      void nativeStreamInstance.ctx.resume();
+    }
+    return nativeStreamInstance.stream;
+  }
+
+  try {
+    const ctx = new AudioContextClass({ sampleRate: 16000 });
+    if (ctx.state === "suspended") {
+      void ctx.resume();
+    }
+    if (typeof ctx.createMediaStreamDestination !== "function") return null;
+    const destination = ctx.createMediaStreamDestination();
+    let nextPlayTime = 0;
+
+    (window as unknown as {
+      __octosFeedPcm?: (base64Chunk: string, sampleRate: number) => void;
+    }).__octosFeedPcm = (base64Chunk: string, sampleRate: number) => {
+      try {
+        if (ctx.state === "suspended") {
+          void ctx.resume();
+        }
+        const binary = atob(base64Chunk);
+        const len = binary.length / 2;
+        const floatData = new Float32Array(len);
+        for (let i = 0; i < len; i++) {
+          const low = binary.charCodeAt(i * 2);
+          const high = binary.charCodeAt(i * 2 + 1);
+          let s = (high << 8) | low;
+          if (s >= 0x8000) s -= 0x10000;
+          floatData[i] = s / 32768.0;
+        }
+        const audioBuf = ctx.createBuffer(1, len, sampleRate || 16000);
+        audioBuf.copyToChannel(floatData, 0);
+
+        const src = ctx.createBufferSource();
+        src.buffer = audioBuf;
+        src.connect(destination);
+
+        const now = ctx.currentTime;
+        if (nextPlayTime < now || nextPlayTime > now + 0.2) {
+          nextPlayTime = now;
+        }
+        src.start(nextPlayTime);
+        nextPlayTime += audioBuf.duration;
+      } catch (err) {
+        console.warn("[voice] failed feeding native PCM chunk", err);
+      }
+    };
+
+    const stream = destination.stream;
+    const track = stream.getAudioTracks()[0];
+    if (track) {
+      const origStop = track.stop.bind(track);
+      track.stop = () => {
+        origStop();
+        delete (window as unknown as { __octosFeedPcm?: unknown }).__octosFeedPcm;
+        ctx.close().catch(() => undefined);
+        if (nativeStreamInstance?.stream === stream) {
+          nativeStreamInstance = null;
+        }
+      };
+    }
+
+    const bridge = nativeAudioBridge();
+    try {
+      bridge?.startVoiceCapture?.();
+    } catch {
+      // Ignore start errors
+    }
+
+    nativeStreamInstance = { stream, ctx };
+    return stream;
+  } catch (err) {
+    console.warn("[voice] failed creating native bridged mic stream", err);
+    return null;
+  }
+}
+
 export async function getEchoCancelledMicStream(): Promise<MediaStream> {
+  if (nativeAudioCaptureAvailable()) {
+    const bridged = getNativeBridgedMicStream();
+    if (bridged) return bridged;
+  }
   const bridge = nativeAudioBridge();
   if (!bridge) {
     return openMicrophone(MIC_CONSTRAINTS_WITH_ALL_SYSTEM_AEC);

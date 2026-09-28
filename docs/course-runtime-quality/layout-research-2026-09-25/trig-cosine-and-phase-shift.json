@@ -1,0 +1,609 @@
+{
+  "id": "trig-cosine-and-phase-shift",
+  "version": "0.1.0",
+  "title": "余弦函数与单位圆投影",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 387.2264404296875,
+          "y": 260.0694274902344,
+          "w": 562.54541015625,
+          "h": 485.8346862792969,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 970.2280883789062,
+          "y": 260.0694274902344,
+          "w": 562.5453491210938,
+          "h": 460.2644348144531,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n3.14 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 387.2264404296875,
+          "y": 776.58837890625,
+          "w": 460.264404296875,
+          "h": 58.8116455078125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 288.8462829589844,
+          "y": 235.8214874267578,
+          "w": 423.4545593261719,
+          "h": 365.71075439453125,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 288.8462829589844,
+          "y": 684.29833984375,
+          "w": 423.4545593261719,
+          "h": 346.462890625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n3.14 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 288.8462829589844,
+          "y": 624.6297607421875,
+          "w": 346.4627990722656,
+          "h": 44.270263671875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 203.3333282470703,
+          "y": 173.66665649414062,
+          "w": 293.3333740234375,
+          "h": 253.33334350585938,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 203.3333282470703,
+          "y": 484.33331298828125,
+          "w": 293.3333740234375,
+          "h": 240,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n3.14 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 203.3333282470703,
+          "y": 443,
+          "w": 240.00001525878906,
+          "h": 30.66668701171875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 571.0321044921875,
+          "y": 116,
+          "w": 265.2940673828125,
+          "h": 229.11764526367188,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 476px; top: 20px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 845.9732666015625,
+          "y": 116,
+          "w": 265.2940673828125,
+          "h": 217.058837890625,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "正弦与余弦曲线对比\n探索\n大图\n-6\n-4\n-2\n0\n2\n4\n6\n-1\n0\n1\nx\ny\ny = cos x\ny = sin x",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 518px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦与余弦曲线对比</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria",
+          "x": 571.0321044921875,
+          "y": 416.26470947265625,
+          "w": 265.2940673828125,
+          "h": 217.05877685546875,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 518px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02",
+          "type": "node",
+          "text": "𝑦\n=\ncos\n⁡\n𝑥\n,\n𝑦\n=\nsin\n⁡\n𝑥\ny=cosx,y=sinx",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 528px; top: 518px; width: 269px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>cos</mi><mo>⁡<",
+          "x": 877.326171875,
+          "y": 416.26470947265625,
+          "w": 162.191162109375,
+          "h": 43.4117431640625,
+          "nw": 269,
+          "nh": 72,
+          "style": "left: 528px; top: 518px; width: 269px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 528px; top: 606px; width: 250px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 877.326171875,
+          "y": 469.32354736328125,
+          "w": 150.7353515625,
+          "h": 43.4117431640625,
+          "nw": 250,
+          "nh": 72,
+          "style": "left: 528px; top: 606px; width: 250px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n=\ncos\n⁡\n𝜃\nx=cosθ",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 926px; width: 136px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>=</mo><mi>cos</mi><mo>⁡</",
+          "x": 571.0321044921875,
+          "y": 662.2646484375,
+          "w": 82,
+          "h": 43.41180419921875,
+          "nw": 136,
+          "nh": 72,
+          "style": "left: 20px; top: 926px; width: 136px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "余弦函数的几何意义\n单位圆上动点 P 的横坐标等于 cos θ\n投影在 x 轴上的符号与长度反映 cos θ 的变化",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 728px; top: 926px; width: 302.4px; height: 135px;\"><div class=\"node-title\">余弦函数的几何意义</div><ul class=\"content-list\"><li>单位圆上动点 P 的横坐标等于 cos θ</li><li>投影在 x 轴上的符号与长度反映 cos θ 的变化</li></ul></article>",
+          "x": 997.7376708984375,
+          "y": 661.8673095703125,
+          "w": 182.67724609375,
+          "h": 82.1917724609375,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 728px; top: 926px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1014px; width: 251px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 571.0321044921875,
+          "y": 715.323486328125,
+          "w": 151.33819580078125,
+          "h": 43.4117431640625,
+          "nw": 251,
+          "nh": 72,
+          "style": "left: 20px; top: 1014px; width: 251px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02",
+          "type": "node",
+          "text": "余弦曲线的关键特征点\n波峰位置：θ = 0, 2π（cos θ = 1）\n零点位置：θ = π/2, 3π/2（cos θ = 0）\n波谷位置：θ = π（cos θ = -1）",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 728px; top: 1077px; width: 440px; height: 135px;\"><div class=\"node-title\">余弦曲线的关键特征点</div><ul class=\"content-list\"><li>波峰位置：θ = 0, 2π（cos θ = 1）</li><li>零点位置：θ = π/2, 3π/2（cos θ = 0）</li><li>波谷位置：θ = π（cos θ = -1）</li></ul></article>",
+          "x": 997.7381591796875,
+          "y": 752.7304077148438,
+          "w": 265.646728515625,
+          "h": 82.55377197265625,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 728px; top: 1077px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n1.57 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 571.0321044921875,
+          "y": 359.5882263183594,
+          "w": 217.058837890625,
+          "h": 27.735321044921875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 1228px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至约 1.57 rad (π/2)，",
+          "x": 997.9144287109375,
+          "y": 844.3529052734375,
+          "w": 198.9705810546875,
+          "h": 91.91082763671875,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 1228px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 463.7073974609375,
+          "y": 116,
+          "w": 162.2120361328125,
+          "h": 140.0921630859375,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 463.7073974609375,
+          "y": 287.7972412109375,
+          "w": 162.2120361328125,
+          "h": 132.71890258789062,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "正弦与余弦曲线对比\n探索\n大图\n-6\n-4\n-2\n0\n2\n4\n6\n-1\n0\n1\nx\ny\ny = cos x\ny = sin x",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 894px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦与余弦曲线对比</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria",
+          "x": 463.7073974609375,
+          "y": 438.2120056152344,
+          "w": 162.2120361328125,
+          "h": 132.71890258789062,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 894px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02",
+          "type": "node",
+          "text": "𝑦\n=\ncos\n⁡\n𝑥\n,\n𝑦\n=\nsin\n⁡\n𝑥\ny=cosx,y=sinx",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 528px; top: 894px; width: 269px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>cos</mi><mo>⁡<",
+          "x": 650.988525390625,
+          "y": 438.2120056152344,
+          "w": 99.1705322265625,
+          "h": 26.543792724609375,
+          "nw": 269,
+          "nh": 72,
+          "style": "left: 528px; top: 894px; width: 269px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 528px; top: 982px; width: 250px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 650.988525390625,
+          "y": 470.6543884277344,
+          "w": 92.1658935546875,
+          "h": 26.543792724609375,
+          "nw": 250,
+          "nh": 72,
+          "style": "left: 528px; top: 982px; width: 250px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n=\ncos\n⁡\n𝜃\nx=cosθ",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1302px; width: 136px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>=</mo><mi>cos</mi><mo>⁡<",
+          "x": 463.7073974609375,
+          "y": 588.6267700195312,
+          "w": 50.13824462890625,
+          "h": 26.54376220703125,
+          "nw": 136,
+          "nh": 72,
+          "style": "left: 20px; top: 1302px; width: 136px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "余弦函数的几何意义\n单位圆上动点 P 的横坐标等于 cos θ\n投影在 x 轴上的符号与长度反映 cos θ 的变化",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 728px; top: 1302px; width: 302.4px; height: 135px;\"><div class=\"node-title\">余弦函数的几何意义</div><ul class=\"content-list\"><li>单位圆上动点 P 的横坐标等于 cos θ</li><li>投影在 x 轴上的符号与长度反映 cos θ 的变化</li></ul></article>",
+          "x": 724.6131591796875,
+          "y": 588.3837890625,
+          "w": 111.696533203125,
+          "h": 50.2554931640625,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 728px; top: 1302px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1390px; width: 251px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 463.7073974609375,
+          "y": 621.0691528320312,
+          "w": 92.5345458984375,
+          "h": 26.54376220703125,
+          "nw": 251,
+          "nh": 72,
+          "style": "left: 20px; top: 1390px; width: 251px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02",
+          "type": "node",
+          "text": "余弦曲线的关键特征点\n波峰位置：θ = 0, 2π（cos θ = 1）\n零点位置：θ = π/2, 3π/2（cos θ = 0）\n波谷位置：θ = π（cos θ = -1）",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 728px; top: 1453px; width: 440px; height: 135px;\"><div class=\"node-title\">余弦曲线的关键特征点</div><ul class=\"content-list\"><li>波峰位置：θ = 0, 2π（cos θ = 1）</li><li>零点位置：θ = π/2, 3π/2（cos θ = 0）</li><li>波谷位置：θ = π（cos θ = -1）</li></ul></article>",
+          "x": 724.6134033203125,
+          "y": 643.9412841796875,
+          "w": 162.4276123046875,
+          "h": 50.47686767578125,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 728px; top: 1453px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n1.57 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 463.7073974609375,
+          "y": 264.9400939941406,
+          "w": 132.71893310546875,
+          "h": 16.958526611328125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 728px; top: 1604px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至约 1.57 rad (π/2)，",
+          "x": 724.7212524414062,
+          "y": 699.963134765625,
+          "w": 121.65899658203125,
+          "h": 56.19818115234375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 728px; top: 1604px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle",
+          "type": "node",
+          "text": "单位圆与 x 轴投影\n探索\n大图\n-1\n-0.5\n0\n0.5\n1\n-1\n-0.5\n0\n0.5\n1\nx\ny\nr = 1\nsin θ\nθ\nO\nP(cos θ, sin θ)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-circle\" data-instance-id=\"node-instance-1\" class=\"board-node kind-geometry\" data-kind=\"geometry\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 20px; width: 440px; height: 380px;\"><div class=\"node-title\">单位圆与 x 轴投影</div><div class=\"coordinate-toolbar geometry-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内拖动和平移\" aria-label=\"切换图内拖动和",
+          "x": 418.640625,
+          "y": 118.33821105957031,
+          "w": 139.359375,
+          "h": 120.35581970214844,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot",
+          "type": "node",
+          "text": "余弦函数图像\n探索\n大图\n0\n1\n2\n3\n4\n5\n6\n-1\n-0.5\n0\n0.5\n1\nθ\ny\nP(θ, cos(θ))\ny = cos(x)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-01-moment-01-item-01-plot\" data-instance-id=\"node-instance-2\" class=\"board-node kind-plot\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 486px; width: 440px; height: 360px;\"><div class=\"node-title\">余弦函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-press",
+          "x": 418.640625,
+          "y": 265.93243408203125,
+          "w": 139.359375,
+          "h": 114.02133178710938,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 486px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "正弦与余弦曲线对比\n探索\n大图\n-6\n-4\n-2\n0\n2\n4\n6\n-1\n0\n1\nx\ny\ny = cos x\ny = sin x",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 894px; width: 440px; height: 360px;\"><div class=\"node-title\">正弦与余弦曲线对比</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria",
+          "x": 418.640625,
+          "y": 395.1566162109375,
+          "w": 139.359375,
+          "h": 114.02130126953125,
+          "nw": 440,
+          "nh": 360,
+          "style": "left: 20px; top: 894px; width: 440px; height: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02",
+          "type": "node",
+          "text": "𝑦\n=\ncos\n⁡\n𝑥\n,\n𝑦\n=\nsin\n⁡\n𝑥\ny=cosx,y=sinx",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-02-item-02\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1270px; width: 269px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>cos</mi><mo>⁡<",
+          "x": 418.640625,
+          "y": 514.2454833984375,
+          "w": 85.19927978515625,
+          "h": 22.8043212890625,
+          "nw": 269,
+          "nh": 72,
+          "style": "left: 20px; top: 1270px; width: 269px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-03-moment-04-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1358px; width: 250px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 418.640625,
+          "y": 542.117431640625,
+          "w": 79.18145751953125,
+          "h": 22.80419921875,
+          "nw": 250,
+          "nh": 72,
+          "style": "left: 20px; top: 1358px; width: 250px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑥\n=\ncos\n⁡\n𝜃\nx=cosθ",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-6\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1478px; width: 136px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>x</mi><mo>=</mo><mi>cos</mi><mo>⁡<",
+          "x": 418.640625,
+          "y": 580.12451171875,
+          "w": 43.074737548828125,
+          "h": 22.80426025390625,
+          "nw": 136,
+          "nh": 72,
+          "style": "left: 20px; top: 1478px; width: 136px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02",
+          "type": "node",
+          "text": "余弦函数的几何意义\n单位圆上动点 P 的横坐标等于 cos θ\n投影在 x 轴上的符号与长度反映 cos θ 的变化",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-01-item-02\" data-instance-id=\"node-instance-7\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1566px; width: 302.4px; height: 135px;\"><div class=\"node-title\">余弦函数的几何意义</div><ul class=\"content-list\"><li>单位圆上动点 P 的横坐标等于 cos θ</li><li>投影在 x 轴上的符号与长度反映 cos θ 的变化</li></ul></article>",
+          "x": 418.5478210449219,
+          "y": 607.78759765625,
+          "w": 95.96060180664062,
+          "h": 43.175537109375,
+          "nw": 302,
+          "nh": 135,
+          "style": "left: 20px; top: 1566px; width: 302.4px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "text": "cos\n⁡\n𝜃\n=\nsin\n⁡\n(\n𝜃\n+\n𝜋\n2\n)\ncosθ=sin(θ+\n2\nπ\n\t​\n\n)",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-01\" data-instance-id=\"node-instance-8\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1717px; width: 251px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>cos</mi><mo>⁡</mo><mi>θ</mi><mo>=<",
+          "x": 418.640625,
+          "y": 655.822021484375,
+          "w": 79.49819946289062,
+          "h": 22.80419921875,
+          "nw": 251,
+          "nh": 72,
+          "style": "left: 20px; top: 1717px; width: 251px; height: 72px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02",
+          "type": "node",
+          "text": "余弦曲线的关键特征点\n波峰位置：θ = 0, 2π（cos θ = 1）\n零点位置：θ = π/2, 3π/2（cos θ = 0）\n波谷位置：θ = π（cos θ = -1）",
+          "html": "<article data-id=\"trig-cosine-and-phase-shift-0.1.0:node:section-04-moment-02-item-02\" data-instance-id=\"node-instance-9\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"trig-cosine-and-phase-shift\" style=\"left: 20px; top: 1805px; width: 440px; height: 135px;\"><div class=\"node-title\">余弦曲线的关键特征点</div><ul class=\"content-list\"><li>波峰位置：θ = 0, 2π（cos θ = 1）</li><li>零点位置：θ = π/2, 3π/2（cos θ = 0）</li><li>波谷位置：θ = π（cos θ = -1）</li></ul></article>",
+          "x": 418.5480041503906,
+          "y": 683.3900146484375,
+          "w": 139.54464721679688,
+          "h": 43.3656005859375,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 20px; top: 1805px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "control",
+          "text": "旋转角度 θ\n1.57 rad\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-controls-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 424px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">旋转角度 θ</label><input id=\"oll-variable-number_01\" min=\"0\" max=\"6.28\" step=\"0.031400",
+          "x": 418.640625,
+          "y": 246.2954559326172,
+          "w": 114.02130126953125,
+          "h": 14.569381713867188,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "trig-cosine-and-phase-shift-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region\" data-interaction-tasks-id=\"trig-cosine-and-phase-shift-0.1.0-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"余弦函数与单位圆投影的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 1956px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>拖动角度滑块至约 1.57 rad (π/2)，观",
+          "x": 418.640625,
+          "y": 731.5194091796875,
+          "w": 104.51953125,
+          "h": 48.2808837890625,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 1956px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 13
+}

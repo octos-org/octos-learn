@@ -1,12 +1,14 @@
 # Octos Learn 本地开发交接
 
-更新日期：2026-09-06
+历史正文更新日期：2026-09-06
+
+2026-09-27 白板布局与镜头集成收尾见[布局收尾记录](course-runtime-quality/whiteboard-closeout-2026-09-27/REPORT.md)。Claude 的九门预制课程审查已整合，八段旁白已重录，[内容与公网发布收尾记录](course-runtime-quality/nine-course-content-closeout-2026-09-27/REPORT.md)提供最终版本、包哈希、测试与异机 CLI 接手说明。下文 09-06 部署版本仅为历史快照，不能用作当前公网版本判断依据。
 
 这份文档用于公网版本完成后继续本地迭代。部署、迁移和服务器运维仍以
 [公网部署手册](PUBLIC_DEPLOYMENT_RUNBOOK.md) 为准；这里重点说明当前代码基线、
 各仓库边界、本地启动方式，以及修改新功能时需要保留的行为。
 
-## 当前状态
+## 历史状态（2026-09-06）
 
 - 公网地址：<https://learn.pitun.cc>
 - 公网前端仍运行 `octos-learn` 提交 `4f361c3`；数学质量改进已合并到 `main`，
@@ -37,7 +39,7 @@ Learning Coach 的 profile 模型继承已通过
 
 | 仓库 | 职责 | 普通界面功能应优先改这里吗 |
 |---|---|---|
-| `octos-learn` | 独立学习产品前端、无限白板、课程播放、语音/摄像头交互、新用户设置、Hosted TTS sidecar 和公网部署文件 | 是 |
+| `octos-learn` | 独立学习产品前端、无限白板、课程播放、语音/摄像头交互、新用户设置、hosted-tts 托管语音服务 和公网部署文件 | 是 |
 | `octos` | 通用服务端、登录与 profile、会话和文件、模型配置、技能运行及协议 | 只有通用能力确实缺失时 |
 | `learning-coach` | 理解学习请求、生成课程计划、容忍模型格式错误、编译并交付 OLL 课程 | 修改课程生成或局部辅助时 |
 | `octos-lesson-language` | OLL 数据结构、校验器、确定性画面和交互 Runtime | 修改 DSL 或底层执行能力时 |
@@ -50,22 +52,23 @@ Learning Coach 的 profile 模型继承已通过
 
 ### 1. 准备 Learning Coach
 
-Learning Coach 是产品内置运行依赖，但 Octos 的 `OCTOS_SKILLS_PATH` 接收的是“包含
-多个技能目录的根目录”，不能直接指向 Learning Coach 仓库本身。首次启动前建立一个
-仅供本机使用的技能根目录：
+本机单用户开发现使用 Octos 的账户级正式安装：Learning Coach 安装到 `alan0x` 的 `~/.octos/profiles/alan0x/data/skills/learning-coach/`，不再需要临时 `OCTOS_SKILLS_PATH`。这不改变公网产品技能的部署方式，也不自动安装到其他账户。
+
+2026-09-27 检查发现这里已存在旧安装（同为 0.15.0，但 OLL ref 为 `9599d46e8fe3327d2fed0dd9432c8178b9f03273`）；已备份到 `~/.octos/backups/learning-coach-before-closeout-20260927T162859Z`，通过正式安装器更新为主线版本，OLL ref 为 `f2a1c654041735f566385f9e208c868b270b8095`。
+
+以后修改技能源码后，重新构建并安装，再重启本地 Octos：
 
 ```bash
-mkdir -p /private/tmp/octos-learn-skills
-ln -sfn /Users/alan0x/Documents/projects/learning-coach \
-  /private/tmp/octos-learn-skills/learning-coach
-
 cd /Users/alan0x/Documents/projects/learning-coach
 npm ci
 npm run build
+cd /Users/alan0x/Documents/projects/octos
+./target/release/octos skills --profile alan0x install /Users/alan0x/Documents/projects/learning-coach --force
+cd "$HOME/.octos/profiles/alan0x/data/skills/learning-coach"
+npm ci
 ```
 
-修改 Learning Coach 后需要重新执行 `npm run build`，然后重启 Octos，使 manifest、
-action 和可执行文件重新载入。
+安装器复制源码和构建产物，不是链接；仓库修改不会自动更新安装目录。用 `env -u OCTOS_SKILLS_PATH ./target/release/octos skills --profile alan0x info learning-coach` 可在 Octos 仓库下检查账户级发现结果。
 
 ### 2. 启动 Octos
 
@@ -76,7 +79,7 @@ action 和可执行文件重新载入。
 cd /Users/alan0x/Documents/projects/octos
 cargo build --release -p octos-cli --features api
 
-OCTOS_SKILLS_PATH=/private/tmp/octos-learn-skills \
+env -u OCTOS_SKILLS_PATH \
 OLL_PROVIDER=gemini \
 OLL_MODEL=gemini-3.6-flash \
 ASR_API_URL=http://127.0.0.1:8094 \
@@ -116,7 +119,15 @@ pnpm dev:https
 pnpm setup:https
 ```
 
-Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后端端口不同，复制
+本地开发默认从公网读取已发布预制课程：Vite 将 `/api/learn/course-packs` 及其资源子路径代理到 `https://learn.pitun.cc`，不转发本地登录凭据。日常查看课程无需本地打包，也无需设置 `OCTOS_LOCAL_COURSE_PACK_ROOT`。仅测试未发布课程时设置该变量，指向包含 `catalog.json` 的本地发布目录；这时本地课程服务替代公网代理。
+
+2026-09-27 按用户要求完成课程发布：公网目录精确保留一次函数、三角函数、多元微积分三个课程集各 3 门，共 9 条版本记录；微积分三课均为 0.2.3，课程包与课程库主线 8ea5f21 构建哈希一致。长方形及其他旧版本已从目录撤下，历史不可变包保留。详见[公网发布核验](course-runtime-quality/whiteboard-closeout-2026-09-27/PUBLICATION-2026-09-27.json)。这是课程内容发布，没有重新部署公网前端或后端。
+
+同日发现微积分三课误用了长方形封面，已发布仅封面修正版本 **0.2.5**，并撤下目录中的 0.2.3；课程正文、旁白和播放事件字节不变。公网仍为三集九课。核验与备份见[封面发布记录](course-runtime-quality/whiteboard-closeout-2026-09-27/COVER-PUBLICATION-2026-09-27.json)，[封面预览](course-runtime-quality/whiteboard-closeout-2026-09-27/calculus-covers-0.2.5.png)。
+
+如果本机以前构建过 APK/Spotlight，启动 Web 前执行 `node scripts/copy-course-pack-assets.mjs`，清除 public/course-packs 中的旧内置课程生成目录，避免其与公网九门课程混合显示。
+
+Vite 默认把其余 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后端端口不同，复制
 `.env.example` 为 `.env.local` 并修改 `OCTOS_API_TARGET`。
 
 ## 本地与公网的差异
@@ -128,11 +139,11 @@ Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后�
 | 模型密钥 | 本机 profile 自己配置 | 每个公网用户 BYOK，各自保存 |
 | ASR | 可直接通过 `ASR_API_URL` 调本机 SenseVoice | 浏览器经 Agora 和私有 ASR 控制面访问 worker |
 | TTS | 用户个人云端/本机 TTS | 个人 TTS 优先，否则可使用限额内的平台 Hosted TTS |
-| Hosted TTS | 默认关闭，也不需要 sidecar | `VITE_HOSTED_TTS_ENABLED=true`，并运行 `services/hosted-tts` |
+| Hosted TTS | 默认关闭，也不需要 hosted-tts 服务 | `VITE_HOSTED_TTS_ENABLED=true`，并运行 `services/hosted-tts` |
 | SMTP | 不需要 | 邮箱验证码注册必需 |
 
 本地开发不要使用 `.env.public`，也不要设置 `VITE_HOSTED_TTS_ENABLED=true`。否则前端会
-请求本地并未运行的 `/api/learn/tts/*` sidecar 接口。
+请求本地并未运行的 `/api/learn/tts/*` 接口。
 
 ## 开始新功能前
 
@@ -153,7 +164,7 @@ Vite 默认把 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。若后�
 - 课程结束、刷新和回放只聚焦当前课程区域，不缩放到全部课程。
 - 同一节课的数值控件必须实际影响对应画面；模型输出错误由程序做可解释的容忍或拒绝，
   不能用看似成功但内容错误的画面代替。
-- 公网平台 TTS 的密钥、额度和数据库只属于 Hosted TTS sidecar，不进入 Octos profile、
+- 公网平台 TTS 的密钥、额度和数据库只属于 hosted-tts 托管语音服务，不进入 Octos profile、
   Learning Coach 环境或前端。
 - `/learn` 的课程生成和框选辅助使用专用 action 快速路径，不重新经过携带全部工具的
   外层通用 Agent。
@@ -192,3 +203,5 @@ OLL 的确切提交，以及 provider、model 和可接受的已知例外。
 
 公网专属注册、功能降级和 TTS 额度说明见
 [公开注册、新手设置与平台旁白语音](PUBLIC_ONBOARDING_AND_TTS.md)。
+
+2026-09-27 补齐微积分课程元数据：当前公网版本 **0.2.6**，恢复 `authoring/<packId>/course-pack.json` 已有的 `college-calculus` 学段和中文简介。前端将学段、学科代码显示为中文，并隐藏 `unspecified`。相对 0.2.5 仅 manifest 变化，封面与教学内容不变。[元数据发布核验](course-runtime-quality/whiteboard-closeout-2026-09-27/METADATA-PUBLICATION-2026-09-27.json)。

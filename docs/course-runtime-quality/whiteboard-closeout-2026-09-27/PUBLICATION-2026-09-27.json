@@ -1,0 +1,70 @@
+{
+  "catalogGeneratedAt": "2026-09-27T16:12:36.826Z",
+  "sourceCommit": "8ea5f2163d5c54574e82a262280a9df9548918e9",
+  "backup": "/opt/octos-learn/backups/course-catalog-nine-20260927T161229Z",
+  "verification": [
+    {
+      "packId": "linear-intro-and-slope",
+      "version": "0.1.0",
+      "sha256": "2b7f83fe1c642887b11f6c31ff3e8c29aed28b1d422bfa989337ea1527a8466c",
+      "bytes": 1116410,
+      "verified": true
+    },
+    {
+      "packId": "linear-simultaneous-intersections",
+      "version": "0.1.0",
+      "sha256": "027a0c2bfd5958f69656d698153c5752924a50b5e9e1f82a0677dc64f1aae28d",
+      "bytes": 1399731,
+      "verified": true
+    },
+    {
+      "packId": "slope-and-intercept",
+      "version": "0.1.6",
+      "sha256": "24f0c209175d5ba8ab10f4f0e7b159018056c5792ce507d07a753b8241e883c0",
+      "bytes": 1816289,
+      "verified": true
+    },
+    {
+      "packId": "surface-paraboloid-level-sets",
+      "version": "0.2.3",
+      "sha256": "126e603a1ec0cf78504a4d65e2f21068cc5919b0471d9a4fba1ea6f0cff7c75a",
+      "bytes": 3201612,
+      "verified": true
+    },
+    {
+      "packId": "surface-partial-derivative-slice",
+      "version": "0.2.3",
+      "sha256": "abede6a6006c58ec94ec917c4b010cfd50ad0a9b62f4a620857b5fb7a728b66f",
+      "bytes": 2704980,
+      "verified": true
+    },
+    {
+      "packId": "surface-saddle-point-analysis",
+      "version": "0.2.3",
+      "sha256": "777ab5b836801a88ab085eff24d099a3c69e9587b882e7a76fc451034a911f23",
+      "bytes": 3380411,
+      "verified": true
+    },
+    {
+      "packId": "trig-cosine-and-phase-shift",
+      "version": "0.1.0",
+      "sha256": "796e8a9b10c47b0f5ec3cabf98f2c28b2086457ccce1d02e54ef6e713d900d7f",
+      "bytes": 2099362,
+      "verified": true
+    },
+    {
+      "packId": "trig-quadrants-and-monotonicity",
+      "version": "0.1.0",
+      "sha256": "6c89b57b936d336108bbb4a992d299c6e9ab6825339a4419faf3b5bfea43c309",
+      "bytes": 1765923,
+      "verified": true
+    },
+    {
+      "packId": "trig-unit-circle-to-sine",
+      "version": "0.1.0",
+      "sha256": "697c72fbacf70c38f582801fb85c316d0cc0702dd01a5235b98b719281dbcda1",
+      "bytes": 2050959,
+      "verified": true
+    }
+  ]
+}

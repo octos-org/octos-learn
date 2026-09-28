@@ -59,6 +59,14 @@ server {
         proxy_buffering off;
     }
 
+    # Product-specific TypeSafe Jev admission fast-gate grant.
+    location = /api/systemone/grant {
+        proxy_pass http://127.0.0.1:50081;
+        include /etc/nginx/proxy_params;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
     # Public reviewed CoursePacks are immutable static releases, not learner
     # sessions. These longer ^~ locations override the generic /api/ proxy
     # and the static-asset extension regex. Keep the source catalog and

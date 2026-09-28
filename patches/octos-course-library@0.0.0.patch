@@ -1,0 +1,778 @@
+diff --git a/packages/course-pack/dist/schema/course-pack-manifest-v1.schema.json b/packages/course-pack/dist/schema/course-pack-manifest-v1.schema.json
+index 0bec72e3fb45be681dd5379cf1cb72358b932126..ba765e8d7cdd4840907916de6c4bdc43030557bc 100644
+--- a/packages/course-pack/dist/schema/course-pack-manifest-v1.schema.json
++++ b/packages/course-pack/dist/schema/course-pack-manifest-v1.schema.json
+@@ -1,127 +1,302 @@
+ {
+-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+-  "$id": "https://learn.pitun.cc/schemas/course-pack-manifest-v1.schema.json",
+-  "title": "Octos CoursePack Manifest v1",
+-  "type": "object",
+-  "additionalProperties": false,
+-  "required": [
+-    "schemaVersion",
+-    "packId",
+-    "version",
+-    "title",
+-    "description",
+-    "locale",
+-    "subject",
+-    "grade",
+-    "durationSeconds",
+-    "minimumPlayerVersion",
+-    "entry",
+-    "board",
+-    "thumbnail",
+-    "capabilities",
+-    "narration",
+-    "files",
+-    "licenses"
+-  ],
+-  "properties": {
+-    "schemaVersion": { "const": 1 },
+-    "packId": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 128 },
+-    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$" },
+-    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+-    "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+-    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?$" },
+-    "subject": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+-    "grade": { "type": "string", "minLength": 1, "maxLength": 64 },
+-    "durationSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+-    "minimumPlayerVersion": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$" },
+-    "entry": { "$ref": "#/$defs/safePath" },
+-    "board": { "$ref": "#/$defs/safePath" },
+-    "thumbnail": { "$ref": "#/$defs/safePath" },
+-    "capabilities": {
+-      "type": "object",
+-      "additionalProperties": false,
+-      "required": ["offlinePlayback", "offlineNarration", "interactiveWhiteboard", "liveAi"],
+-      "properties": {
+-        "offlinePlayback": { "type": "boolean" },
+-        "offlineNarration": { "type": "boolean" },
+-        "interactiveWhiteboard": { "type": "boolean" },
+-        "liveAi": { "enum": ["none", "optional", "required"] },
+-        "asr": { "enum": ["none", "optional", "required"] },
+-        "camera": { "enum": ["none", "optional", "required"] }
+-      }
+-    },
+-    "narration": {
+-      "type": "object",
+-      "additionalProperties": false,
+-      "required": ["voiceId", "segments"],
+-      "properties": {
+-        "voiceId": { "type": "string", "minLength": 1, "maxLength": 160 },
+-        "segments": {
+-          "type": "array",
+-          "items": {
++    "$schema": "https://json-schema.org/draft/2020-12/schema",
++    "$id": "https://learn.pitun.cc/schemas/course-pack-manifest-v1.schema.json",
++    "title": "Octos CoursePack Manifest v1",
++    "type": "object",
++    "additionalProperties": false,
++    "required": [
++        "schemaVersion",
++        "packId",
++        "version",
++        "title",
++        "description",
++        "locale",
++        "subject",
++        "grade",
++        "durationSeconds",
++        "minimumPlayerVersion",
++        "entry",
++        "board",
++        "thumbnail",
++        "capabilities",
++        "narration",
++        "files",
++        "licenses"
++    ],
++    "properties": {
++        "schemaVersion": {
++            "const": 1
++        },
++        "packId": {
++            "type": "string",
++            "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
++            "maxLength": 128
++        },
++        "version": {
++            "type": "string",
++            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
++        },
++        "title": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 160
++        },
++        "description": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 1000
++        },
++        "locale": {
++            "type": "string",
++            "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?$"
++        },
++        "subject": {
++            "type": "string",
++            "pattern": "^[a-z][a-z0-9-]{0,63}$"
++        },
++        "grade": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 64
++        },
++        "durationSeconds": {
++            "type": "integer",
++            "minimum": 1,
++            "maximum": 86400
++        },
++        "minimumPlayerVersion": {
++            "type": "string",
++            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
++        },
++        "entry": {
++            "$ref": "#/$defs/safePath"
++        },
++        "board": {
++            "$ref": "#/$defs/safePath"
++        },
++        "thumbnail": {
++            "$ref": "#/$defs/safePath"
++        },
++        "capabilities": {
+             "type": "object",
+             "additionalProperties": false,
+-            "required": ["beatId", "file", "textSha256", "durationMs"],
++            "required": [
++                "offlinePlayback",
++                "offlineNarration",
++                "interactiveWhiteboard",
++                "liveAi"
++            ],
+             "properties": {
+-              "beatId": { "type": "string", "minLength": 1, "maxLength": 256 },
+-              "file": { "$ref": "#/$defs/safePath" },
+-              "textSha256": { "$ref": "#/$defs/sha256" },
+-              "durationMs": { "type": "integer", "minimum": 1, "maximum": 3600000 }
++                "offlinePlayback": {
++                    "type": "boolean"
++                },
++                "offlineNarration": {
++                    "type": "boolean"
++                },
++                "interactiveWhiteboard": {
++                    "type": "boolean"
++                },
++                "liveAi": {
++                    "enum": [
++                        "none",
++                        "optional",
++                        "required"
++                    ]
++                },
++                "asr": {
++                    "enum": [
++                        "none",
++                        "optional",
++                        "required"
++                    ]
++                },
++                "camera": {
++                    "enum": [
++                        "none",
++                        "optional",
++                        "required"
++                    ]
++                }
+             }
+-          }
+-        }
+-      }
+-    },
+-    "files": {
+-      "type": "array",
+-      "minItems": 3,
+-      "items": {
+-        "type": "object",
+-        "additionalProperties": false,
+-        "required": ["path", "sha256", "bytes", "mediaType", "role"],
+-        "properties": {
+-          "path": { "$ref": "#/$defs/safePath" },
+-          "sha256": { "$ref": "#/$defs/sha256" },
+-          "bytes": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+-          "mediaType": { "type": "string", "minLength": 1, "maxLength": 160 },
+-          "role": { "enum": ["lesson", "board", "thumbnail", "narration", "asset", "license"] }
+-        }
+-      }
+-    },
+-    "licenses": {
+-      "type": "array",
+-      "minItems": 1,
+-      "items": {
+-        "type": "object",
+-        "additionalProperties": false,
+-        "required": ["name", "appliesTo"],
+-        "properties": {
+-          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+-          "url": { "type": "string", "format": "uri" },
+-          "attribution": { "type": "string", "minLength": 1, "maxLength": 2000 },
+-          "appliesTo": {
++        },
++        "narration": {
++            "type": "object",
++            "additionalProperties": false,
++            "required": [
++                "voiceId",
++                "segments"
++            ],
++            "properties": {
++                "voiceId": {
++                    "type": "string",
++                    "minLength": 1,
++                    "maxLength": 160
++                },
++                "segments": {
++                    "type": "array",
++                    "items": {
++                        "type": "object",
++                        "additionalProperties": false,
++                        "required": [
++                            "beatId",
++                            "file",
++                            "textSha256",
++                            "durationMs"
++                        ],
++                        "properties": {
++                            "beatId": {
++                                "type": "string",
++                                "minLength": 1,
++                                "maxLength": 256
++                            },
++                            "file": {
++                                "$ref": "#/$defs/safePath"
++                            },
++                            "textSha256": {
++                                "$ref": "#/$defs/sha256"
++                            },
++                            "durationMs": {
++                                "type": "integer",
++                                "minimum": 1,
++                                "maximum": 3600000
++                            }
++                        }
++                    }
++                }
++            }
++        },
++        "files": {
++            "type": "array",
++            "minItems": 3,
++            "items": {
++                "type": "object",
++                "additionalProperties": false,
++                "required": [
++                    "path",
++                    "sha256",
++                    "bytes",
++                    "mediaType",
++                    "role"
++                ],
++                "properties": {
++                    "path": {
++                        "$ref": "#/$defs/safePath"
++                    },
++                    "sha256": {
++                        "$ref": "#/$defs/sha256"
++                    },
++                    "bytes": {
++                        "type": "integer",
++                        "minimum": 1,
++                        "maximum": 536870912
++                    },
++                    "mediaType": {
++                        "type": "string",
++                        "minLength": 1,
++                        "maxLength": 160
++                    },
++                    "role": {
++                        "enum": [
++                            "lesson",
++                            "board",
++                            "thumbnail",
++                            "narration",
++                            "asset",
++                            "license"
++                        ]
++                    }
++                }
++            }
++        },
++        "licenses": {
+             "type": "array",
+             "minItems": 1,
+-            "items": { "$ref": "#/$defs/safePath" }
+-          }
+-        },
+-        "anyOf": [
+-          { "required": ["url"] },
+-          { "required": ["attribution"] }
+-        ]
+-      }
+-    }
+-  },
+-  "$defs": {
+-    "safePath": {
+-      "type": "string",
+-      "minLength": 1,
+-      "maxLength": 512,
+-      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[^\\u0000-\\u001f]+$"
++            "items": {
++                "type": "object",
++                "additionalProperties": false,
++                "required": [
++                    "name",
++                    "appliesTo"
++                ],
++                "properties": {
++                    "name": {
++                        "type": "string",
++                        "minLength": 1,
++                        "maxLength": 160
++                    },
++                    "url": {
++                        "type": "string",
++                        "format": "uri"
++                    },
++                    "attribution": {
++                        "type": "string",
++                        "minLength": 1,
++                        "maxLength": 2000
++                    },
++                    "appliesTo": {
++                        "type": "array",
++                        "minItems": 1,
++                        "items": {
++                            "$ref": "#/$defs/safePath"
++                        }
++                    }
++                },
++                "anyOf": [
++                    {
++                        "required": [
++                            "url"
++                        ]
++                    },
++                    {
++                        "required": [
++                            "attribution"
++                        ]
++                    }
++                ]
++            }
++        },
++        "requiredCapabilities": {
++            "type": "array",
++            "uniqueItems": true,
++            "items": {
++                "type": "string",
++                "minLength": 1
++            }
++        },
++        "compilation": {
++            "type": "object",
++            "required": [
++                "compiler",
++                "version",
++                "rules"
++            ],
++            "additionalProperties": false,
++            "properties": {
++                "compiler": {
++                    "type": "string",
++                    "minLength": 1
++                },
++                "version": {
++                    "type": "string",
++                    "minLength": 1
++                },
++                "rules": {
++                    "type": "string",
++                    "minLength": 1
++                }
++            }
++        }
+     },
+-    "sha256": {
+-      "type": "string",
+-      "pattern": "^[a-f0-9]{64}$"
++    "$defs": {
++        "safePath": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 512,
++            "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\)[^\\u0000-\\u001f]+$"
++        },
++        "sha256": {
++            "type": "string",
++            "pattern": "^[a-f0-9]{64}$"
++        }
+     }
+-  }
+ }
+diff --git a/packages/course-pack/dist/src/browser.js b/packages/course-pack/dist/src/browser.js
+index dec132e31ce1d087430ea89b249c5538e2460471..80ee70f099734b03f7240279e2fb2688685d5a0a 100644
+--- a/packages/course-pack/dist/src/browser.js
++++ b/packages/course-pack/dist/src/browser.js
+@@ -1,6 +1,6 @@
+ import { Ajv2020 } from "ajv/dist/2020.js";
+ import { compilePlaybackOperations, } from "octos-lesson-language/player";
+-import { reduceCanonicalEvents, } from "octos-lesson-language";
++import { reduceCanonicalEvents, assertExecutionDeclaration, } from "octos-lesson-language";
+ import { unzipSync } from "fflate";
+ import boardSchema from "../schema/course-pack-board-v1.schema.json" with { type: "json" };
+ import manifestSchema from "../schema/course-pack-manifest-v1.schema.json" with { type: "json" };
+@@ -207,10 +207,17 @@ export async function loadCoursePackArchive(input, limits = {}) {
+                 message: "OLL entry file is missing",
+             }]);
+     }
++    const events = parseEvents(entry, manifest.entry);
++    try {
++        assertExecutionDeclaration(events, manifest);
++    }
++    catch (error) {
++        throw new CoursePackLoadError([{ code: "PACK_EXECUTION_CAPABILITY", path: "/manifest.json", message: error instanceof Error ? error.message : String(error) }]);
++    }
+     return {
+         manifest,
+         board: rawBoard,
+-        events: parseEvents(entry, manifest.entry),
++        events,
+         files,
+         archiveSha256: await sha256(archive),
+     };
+diff --git a/packages/course-pack/dist/src/types.d.ts b/packages/course-pack/dist/src/types.d.ts
+index b051645a1ba311cb9075ab0b1cd0f7c24fafe12f..4c3960247a5736ff49beadfca3cacac637ffc11f 100644
+--- a/packages/course-pack/dist/src/types.d.ts
++++ b/packages/course-pack/dist/src/types.d.ts
+@@ -30,6 +30,12 @@ export interface CoursePackManifestV1 {
+     grade: string;
+     durationSeconds: number;
+     minimumPlayerVersion: string;
++    requiredCapabilities?: string[];
++    compilation?: {
++        compiler: string;
++        version: string;
++        rules: string;
++    };
+     entry: string;
+     board: string;
+     thumbnail: string;
+diff --git a/packages/course-pack/schema/course-pack-manifest-v1.schema.json b/packages/course-pack/schema/course-pack-manifest-v1.schema.json
+index 0bec72e3fb45be681dd5379cf1cb72358b932126..b453321ac285dc10eef9b0e2bca3d5c5e7aa0f18 100644
+--- a/packages/course-pack/schema/course-pack-manifest-v1.schema.json
++++ b/packages/course-pack/schema/course-pack-manifest-v1.schema.json
+@@ -24,49 +24,142 @@
+     "licenses"
+   ],
+   "properties": {
+-    "schemaVersion": { "const": 1 },
+-    "packId": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$", "maxLength": 128 },
+-    "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$" },
+-    "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+-    "description": { "type": "string", "minLength": 1, "maxLength": 1000 },
+-    "locale": { "type": "string", "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?$" },
+-    "subject": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+-    "grade": { "type": "string", "minLength": 1, "maxLength": 64 },
+-    "durationSeconds": { "type": "integer", "minimum": 1, "maximum": 86400 },
+-    "minimumPlayerVersion": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$" },
+-    "entry": { "$ref": "#/$defs/safePath" },
+-    "board": { "$ref": "#/$defs/safePath" },
+-    "thumbnail": { "$ref": "#/$defs/safePath" },
++    "schemaVersion": {
++      "const": 1
++    },
++    "packId": {
++      "type": "string",
++      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$",
++      "maxLength": 128
++    },
++    "version": {
++      "type": "string",
++      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
++    },
++    "title": {
++      "type": "string",
++      "minLength": 1,
++      "maxLength": 160
++    },
++    "description": {
++      "type": "string",
++      "minLength": 1,
++      "maxLength": 1000
++    },
++    "locale": {
++      "type": "string",
++      "pattern": "^[a-z]{2,3}(?:-[A-Z][a-z]{3})?(?:-[A-Z]{2}|-[0-9]{3})?$"
++    },
++    "subject": {
++      "type": "string",
++      "pattern": "^[a-z][a-z0-9-]{0,63}$"
++    },
++    "grade": {
++      "type": "string",
++      "minLength": 1,
++      "maxLength": 64
++    },
++    "durationSeconds": {
++      "type": "integer",
++      "minimum": 1,
++      "maximum": 86400
++    },
++    "minimumPlayerVersion": {
++      "type": "string",
++      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
++    },
++    "entry": {
++      "$ref": "#/$defs/safePath"
++    },
++    "board": {
++      "$ref": "#/$defs/safePath"
++    },
++    "thumbnail": {
++      "$ref": "#/$defs/safePath"
++    },
+     "capabilities": {
+       "type": "object",
+       "additionalProperties": false,
+-      "required": ["offlinePlayback", "offlineNarration", "interactiveWhiteboard", "liveAi"],
++      "required": [
++        "offlinePlayback",
++        "offlineNarration",
++        "interactiveWhiteboard",
++        "liveAi"
++      ],
+       "properties": {
+-        "offlinePlayback": { "type": "boolean" },
+-        "offlineNarration": { "type": "boolean" },
+-        "interactiveWhiteboard": { "type": "boolean" },
+-        "liveAi": { "enum": ["none", "optional", "required"] },
+-        "asr": { "enum": ["none", "optional", "required"] },
+-        "camera": { "enum": ["none", "optional", "required"] }
++        "offlinePlayback": {
++          "type": "boolean"
++        },
++        "offlineNarration": {
++          "type": "boolean"
++        },
++        "interactiveWhiteboard": {
++          "type": "boolean"
++        },
++        "liveAi": {
++          "enum": [
++            "none",
++            "optional",
++            "required"
++          ]
++        },
++        "asr": {
++          "enum": [
++            "none",
++            "optional",
++            "required"
++          ]
++        },
++        "camera": {
++          "enum": [
++            "none",
++            "optional",
++            "required"
++          ]
++        }
+       }
+     },
+     "narration": {
+       "type": "object",
+       "additionalProperties": false,
+-      "required": ["voiceId", "segments"],
++      "required": [
++        "voiceId",
++        "segments"
++      ],
+       "properties": {
+-        "voiceId": { "type": "string", "minLength": 1, "maxLength": 160 },
++        "voiceId": {
++          "type": "string",
++          "minLength": 1,
++          "maxLength": 160
++        },
+         "segments": {
+           "type": "array",
+           "items": {
+             "type": "object",
+             "additionalProperties": false,
+-            "required": ["beatId", "file", "textSha256", "durationMs"],
++            "required": [
++              "beatId",
++              "file",
++              "textSha256",
++              "durationMs"
++            ],
+             "properties": {
+-              "beatId": { "type": "string", "minLength": 1, "maxLength": 256 },
+-              "file": { "$ref": "#/$defs/safePath" },
+-              "textSha256": { "$ref": "#/$defs/sha256" },
+-              "durationMs": { "type": "integer", "minimum": 1, "maximum": 3600000 }
++              "beatId": {
++                "type": "string",
++                "minLength": 1,
++                "maxLength": 256
++              },
++              "file": {
++                "$ref": "#/$defs/safePath"
++              },
++              "textSha256": {
++                "$ref": "#/$defs/sha256"
++              },
++              "durationMs": {
++                "type": "integer",
++                "minimum": 1,
++                "maximum": 3600000
++              }
+             }
+           }
+         }
+@@ -78,13 +171,40 @@
+       "items": {
+         "type": "object",
+         "additionalProperties": false,
+-        "required": ["path", "sha256", "bytes", "mediaType", "role"],
++        "required": [
++          "path",
++          "sha256",
++          "bytes",
++          "mediaType",
++          "role"
++        ],
+         "properties": {
+-          "path": { "$ref": "#/$defs/safePath" },
+-          "sha256": { "$ref": "#/$defs/sha256" },
+-          "bytes": { "type": "integer", "minimum": 1, "maximum": 536870912 },
+-          "mediaType": { "type": "string", "minLength": 1, "maxLength": 160 },
+-          "role": { "enum": ["lesson", "board", "thumbnail", "narration", "asset", "license"] }
++          "path": {
++            "$ref": "#/$defs/safePath"
++          },
++          "sha256": {
++            "$ref": "#/$defs/sha256"
++          },
++          "bytes": {
++            "type": "integer",
++            "minimum": 1,
++            "maximum": 536870912
++          },
++          "mediaType": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 160
++          },
++          "role": {
++            "enum": [
++              "lesson",
++              "board",
++              "thumbnail",
++              "narration",
++              "asset",
++              "license"
++            ]
++          }
+         }
+       }
+     },
+@@ -94,22 +214,77 @@
+       "items": {
+         "type": "object",
+         "additionalProperties": false,
+-        "required": ["name", "appliesTo"],
++        "required": [
++          "name",
++          "appliesTo"
++        ],
+         "properties": {
+-          "name": { "type": "string", "minLength": 1, "maxLength": 160 },
+-          "url": { "type": "string", "format": "uri" },
+-          "attribution": { "type": "string", "minLength": 1, "maxLength": 2000 },
++          "name": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 160
++          },
++          "url": {
++            "type": "string",
++            "format": "uri"
++          },
++          "attribution": {
++            "type": "string",
++            "minLength": 1,
++            "maxLength": 2000
++          },
+           "appliesTo": {
+             "type": "array",
+             "minItems": 1,
+-            "items": { "$ref": "#/$defs/safePath" }
++            "items": {
++              "$ref": "#/$defs/safePath"
++            }
+           }
+         },
+         "anyOf": [
+-          { "required": ["url"] },
+-          { "required": ["attribution"] }
++          {
++            "required": [
++              "url"
++            ]
++          },
++          {
++            "required": [
++              "attribution"
++            ]
++          }
+         ]
+       }
++    },
++    "requiredCapabilities": {
++      "type": "array",
++      "uniqueItems": true,
++      "items": {
++        "type": "string",
++        "minLength": 1
++      }
++    },
++    "compilation": {
++      "type": "object",
++      "required": [
++        "compiler",
++        "version",
++        "rules"
++      ],
++      "additionalProperties": false,
++      "properties": {
++        "compiler": {
++          "type": "string",
++          "minLength": 1
++        },
++        "version": {
++          "type": "string",
++          "minLength": 1
++        },
++        "rules": {
++          "type": "string",
++          "minLength": 1
++        }
++      }
+     }
+   },
+   "$defs": {

@@ -1,0 +1,561 @@
+{
+  "id": "surface-paraboloid-level-sets",
+  "version": "0.2.3",
+  "title": "水平截线与等高线：以 z=x²+y² 为例",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": 15.87816333770752,
+          "y": 232.8200225830078,
+          "w": 312.6436462402344,
+          "h": 149.55992126464844,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 364.6000061035156,
+          "y": 233.5,
+          "w": 598,
+          "h": 468,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 288px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 983.3999633789062,
+          "y": 233.5,
+          "w": 571.9999389648438,
+          "h": 494,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 764px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": 1591.7999267578125,
+          "y": 233.5,
+          "w": 543.4000244140625,
+          "h": 179.39999389648438,
+          "nw": 418,
+          "nh": 138,
+          "style": "left: 1232px; top: 20px; width: 418px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": 1591.7999267578125,
+          "y": 433.70001220703125,
+          "w": 543.4000244140625,
+          "h": 93.5999755859375,
+          "nw": 418,
+          "nh": 72,
+          "style": "left: 1232px; top: 174px; width: 418px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 364.6000061035156,
+          "y": 758.699951171875,
+          "w": 467.9999694824219,
+          "h": 59.800048828125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 288px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": -31.74692726135254,
+          "y": 202.55857849121094,
+          "w": 248.93917846679688,
+          "h": 119.08552551269531,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 245.9191131591797,
+          "y": 203.10000610351562,
+          "w": 476.15106201171875,
+          "h": 372.6399841308594,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 288px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 738.6319580078125,
+          "y": 203.10000610351562,
+          "w": 455.4488525390625,
+          "h": 393.3421936035156,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 764px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": -31.49066925048828,
+          "y": 706.1639404296875,
+          "w": 432.6764221191406,
+          "h": 142.8453369140625,
+          "nw": 418,
+          "nh": 138,
+          "style": "left: 20px; top: 506px; width: 418px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": -31.49066925048828,
+          "y": 865.571044921875,
+          "w": 432.6764221191406,
+          "h": 74.52801513671875,
+          "nw": 418,
+          "nh": 72,
+          "style": "left: 20px; top: 660px; width: 418px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 245.9191131591797,
+          "y": 621.2848510742188,
+          "w": 372.63995361328125,
+          "h": 47.6151123046875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 288px; top: 424px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": 127.05136108398438,
+          "y": -296.452880859375,
+          "w": 657.335693359375,
+          "h": 118.26397705078125,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 127.29999542236328,
+          "y": -163.42498779296875,
+          "w": 465.64544677734375,
+          "h": 364.4181823730469,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 150px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 127.29999542236328,
+          "y": 288.0486145019531,
+          "w": 445.4000244140625,
+          "h": 384.6636657714844,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 596px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": 127.29999542236328,
+          "y": 713.2032470703125,
+          "w": 656.8385009765625,
+          "h": 139.693603515625,
+          "nw": 649,
+          "nh": 138,
+          "style": "left: 20px; top: 1016px; width: 648.889px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": 127.29999542236328,
+          "y": 869.09326171875,
+          "w": 656.8385009765625,
+          "h": 72.883544921875,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 1170px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 127.29999542236328,
+          "y": 225.28775024414062,
+          "w": 364.4181823730469,
+          "h": 46.56451416015625,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 534px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": 51.72418212890625,
+          "y": 196.99578857421875,
+          "w": 267.9381408691406,
+          "h": 128.174072265625,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 350.5816345214844,
+          "y": 197.5785369873047,
+          "w": 512.49072265625,
+          "h": 401.07977294921875,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 288px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 880.898193359375,
+          "y": 197.5785369873047,
+          "w": 490.2086181640625,
+          "h": 423.36199951171875,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 764px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": 1402.3018798828125,
+          "y": 197.5785369873047,
+          "w": 465.6981201171875,
+          "h": 153.7472381591797,
+          "nw": 418,
+          "nh": 138,
+          "style": "left: 1232px; top: 20px; width: 418px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": 1402.3018798828125,
+          "y": 369.15155029296875,
+          "w": 465.6981201171875,
+          "h": 80.2159423828125,
+          "nw": 418,
+          "nh": 72,
+          "style": "left: 1232px; top: 174px; width: 418px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 350.5816345214844,
+          "y": 647.67919921875,
+          "w": 401.0797424316406,
+          "h": 51.2490234375,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 288px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 769.4871215820312,
+          "y": 647.67919921875,
+          "w": 367.65643310546875,
+          "h": 169.8321533203125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 664px; top: 424px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": 57.484657287597656,
+          "y": 159.618896484375,
+          "w": 175.22628784179688,
+          "h": 83.82333374023438,
+          "nw": 240,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 240px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 252.93153381347656,
+          "y": 160,
+          "w": 335.158935546875,
+          "h": 262.29827880859375,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 288px; top: 20px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 599.7481689453125,
+          "y": 160,
+          "w": 320.5867919921875,
+          "h": 276.87042236328125,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 764px; top: 20px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": 57.6650390625,
+          "y": 591.3349609375,
+          "w": 304.55743408203125,
+          "h": 100.54766845703125,
+          "nw": 418,
+          "nh": 138,
+          "style": "left: 20px; top: 612px; width: 418px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": 57.6650390625,
+          "y": 703.5403442382812,
+          "w": 304.55743408203125,
+          "h": 52.45965576171875,
+          "nw": 418,
+          "nh": 72,
+          "style": "left: 20px; top: 766px; width: 418px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 252.93153381347656,
+          "y": 454.35693359375,
+          "w": 262.29827880859375,
+          "h": 33.51593017578125,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 288px; top: 424px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 526.8875122070312,
+          "y": 454.35693359375,
+          "w": 240.4400634765625,
+          "h": 111.06695556640625,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 664px; top: 424px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影",
+          "x": 149.10086059570312,
+          "y": 149.34234619140625,
+          "w": 301.7917785644531,
+          "h": 54.296600341796875,
+          "nw": 649,
+          "nh": 114,
+          "style": "left: 20px; top: 20px; width: 648.889px; height: 114px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "scene3d",
+          "text": "曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放",
+          "x": 149.2150115966797,
+          "y": 210.41726684570312,
+          "w": 213.78416442871094,
+          "h": 167.30935668945312,
+          "nw": 460,
+          "nh": 360,
+          "style": "left: 20px; top: 150px; width: 460px; height: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-01-moment-03-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "xy 平面投影圆\n探索\n大图\n-2\n0\n2\n-3\n-2\n-1\n0\n1\n2\n3\nx\ny\nr = 1\n(0, 0)",
+          "x": 149.2150115966797,
+          "y": 495.77264404296875,
+          "w": 204.4892120361328,
+          "h": 176.60430908203125,
+          "nw": 440,
+          "nh": 380,
+          "style": "left: 20px; top: 764px; width: 440px; height: 380px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "{\n𝑧\n=\n𝑥\n2\n+\n𝑦\n2\n\n\n𝑧\n=\nℎ\n{\nz=x\n2\n+y\n2\nz=h\n\t​\n\n⇒\n𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⇒x\n2\n+y\n2\n=h",
+          "x": 149.2150115966797,
+          "y": 690.9669189453125,
+          "w": 301.5634765625,
+          "h": 64.13525390625,
+          "nw": 649,
+          "nh": 138,
+          "style": "left: 20px; top: 1184px; width: 648.889px; height: 138px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3:node:section-02-moment-01-item-02",
+          "type": "node",
+          "kind": "math",
+          "text": "𝑥\n2\n+\n𝑦\n2\n=\nℎ\n⟹\n𝑟\n=\nℎ\n(\nℎ\n≥\n0\n)\nx\n2\n+y\n2\n=h⟹r=\nh\n\t​\n\n(h≥0)",
+          "x": 149.2150115966797,
+          "y": 762.5380859375,
+          "w": 301.5634765625,
+          "h": 33.4619140625,
+          "nw": 649,
+          "nh": 72,
+          "style": "left: 20px; top: 1338px; width: 648.889px; height: 72px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "control",
+          "text": "截面高度 h\n1\n−\n+",
+          "x": 149.2150115966797,
+          "y": 388.88055419921875,
+          "w": 167.30934143066406,
+          "h": 21.37841796875,
+          "nw": 360,
+          "nh": 46,
+          "style": "left: 20px; top: 534px; width: 360px;"
+        },
+        {
+          "id": "surface-paraboloid-level-sets-0.2.3-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n想让投影圆的半径为 √3，请先算出需要的高度，再调节高度验证。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 149.2150115966797,
+          "y": 417.6949462890625,
+          "w": 153.3668975830078,
+          "h": 70.8450927734375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 596px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 11
+}

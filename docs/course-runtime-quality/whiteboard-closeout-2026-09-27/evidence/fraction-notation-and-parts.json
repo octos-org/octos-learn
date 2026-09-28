@@ -1,0 +1,522 @@
+{
+  "id": "fraction-notation-and-parts",
+  "version": "0.1.0",
+  "title": "直观理解分数的意义与结构",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 926.199951171875,
+          "y": 253,
+          "w": 572,
+          "h": 546,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 1534.159423828125,
+          "y": 252.14334106445312,
+          "w": 393.98876953125,
+          "h": 204.5133056640625,
+          "nw": 302,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 302.4px; height: 156px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 1534.599853515625,
+          "y": 476.5999755859375,
+          "w": 393.10791015625,
+          "h": 100.0999755859375,
+          "nw": 302,
+          "nh": 77,
+          "style": "left: 876px; top: 192px; width: 302.4px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 421.79998779296875,
+          "y": 253,
+          "w": 467.99993896484375,
+          "h": 98.79998779296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 691.164794921875,
+          "y": 203.10000610351562,
+          "w": 487.98095703125,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 1209.8232421875,
+          "y": 202.36917114257812,
+          "w": 336.1173095703125,
+          "h": 174.47311401367188,
+          "nw": 302,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 302.4px; height: 156px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 1210.1990966796875,
+          "y": 393.856201171875,
+          "w": 335.3656005859375,
+          "h": 85.39666748046875,
+          "nw": 302,
+          "nh": 77,
+          "style": "left: 876px; top: 192px; width: 302.4px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 260.85430908203125,
+          "y": 203.10000610351562,
+          "w": 399.25714111328125,
+          "h": 84.28762817382812,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 133.51153564453125,
+          "y": 193.15000915527344,
+          "w": 432.9769287109375,
+          "h": 413.296142578125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 133.22378540039062,
+          "y": 743.267578125,
+          "w": 433.5523986816406,
+          "h": 134.733154296875,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 20px; top: 580px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 133.51153564453125,
+          "y": 892.8013916015625,
+          "w": 432.9769287109375,
+          "h": 75.77093505859375,
+          "nw": 440,
+          "nh": 77,
+          "style": "left: 20px; top: 731px; width: 440px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 133.51153564453125,
+          "y": 630.0631103515625,
+          "w": 354.2538757324219,
+          "h": 74.78692626953125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 486.56768798828125,
+          "y": 272.09710693359375,
+          "w": 492.8087158203125,
+          "h": 470.4083251953125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 1010.3573608398438,
+          "y": 271.3590393066406,
+          "w": 339.44256591796875,
+          "h": 176.19918823242188,
+          "nw": 302,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 302.4px; height: 156px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 1010.7369384765625,
+          "y": 464.740478515625,
+          "w": 338.6834716796875,
+          "h": 86.2415771484375,
+          "nw": 302,
+          "nh": 77,
+          "style": "left: 876px; top: 192px; width: 302.4px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n4\n3\n\t​\n",
+          "x": 1394.22119140625,
+          "y": 272.09710693359375,
+          "w": 313.6055908203125,
+          "h": 85.12149047851562,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 1218.4px; top: 20px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分母与分子的作用\n分母：表示把整体平均分成的总份数\n分子：表示取了其中的几份",
+          "x": 1393.892822265625,
+          "y": 374.4554443359375,
+          "w": 314.2623291015625,
+          "h": 152.569580078125,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 1218.4px; top: 112px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "4\n4\n=\n1\n4\n4\n\t​\n\n=1",
+          "x": 1752.6275634765625,
+          "y": 272.09710693359375,
+          "w": 115.362060546875,
+          "h": 85.12149047851562,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 1538.4px; top: 20px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 52,
+          "y": 272.09710693359375,
+          "w": 403.2071228027344,
+          "h": 85.12149047851562,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把每行方格数（分母）调到 8 个。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 375.138916015625,
+          "w": 369.6065368652344,
+          "h": 147.21258544921875,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 344.74169921875,
+          "y": 164.34202575683594,
+          "w": 331.97515869140625,
+          "h": 316.88531494140625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 697.5867919921875,
+          "y": 163.84483337402344,
+          "w": 228.66180419921875,
+          "h": 118.69465637207031,
+          "nw": 302,
+          "nh": 156,
+          "style": "left: 876px; top: 20px; width: 302.4px; height: 156px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 697.842529296875,
+          "y": 294.1141357421875,
+          "w": 228.150390625,
+          "h": 58.09564208984375,
+          "nw": 302,
+          "nh": 77,
+          "style": "left: 876px; top: 192px; width: 302.4px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n4\n3\n\t​\n",
+          "x": 52,
+          "y": 508.38897705078125,
+          "w": 211.25689697265625,
+          "h": 57.3411865234375,
+          "nw": 280,
+          "nh": 76,
+          "style": "left: 20px; top: 476px; width: 280px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分母与分子的作用\n分母：表示把整体平均分成的总份数\n分子：表示取了其中的几份",
+          "x": 51.77879333496094,
+          "y": 577.341552734375,
+          "w": 211.69932556152344,
+          "h": 102.77685546875,
+          "nw": 280,
+          "nh": 135,
+          "style": "left: 20px; top: 568px; width: 280px; height: 135px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "4\n4\n=\n1\n4\n4\n\t​\n\n=1",
+          "x": 293.43646240234375,
+          "y": 508.38897705078125,
+          "w": 77.71237182617188,
+          "h": 57.3411865234375,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 340px; top: 476px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 52,
+          "y": 164.34202575683594,
+          "w": 271.61602783203125,
+          "h": 57.341156005859375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把每行方格数（分母）调到 8 个。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 233.7550048828125,
+          "w": 248.98135375976562,
+          "h": 99.16815185546875,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格整体模型\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\n4\n6\n8\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 190.42405700683594,
+          "y": 150,
+          "w": 219.15187072753906,
+          "h": 209.1904296875,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-01-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分数的结构与名称\n分数线：表示平均分\n分母：表示平均分成的总份数（写在分数线下）\n分子：表示取的份数（写在分数线上）",
+          "x": 190.2783966064453,
+          "y": 501.659423828125,
+          "w": 219.4431915283203,
+          "h": 68.1954345703125,
+          "nw": 440,
+          "nh": 135,
+          "style": "left: 20px; top: 727px; width: 440px; height: 135px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "分子\n分母\n分母\n分子\n\t​\n",
+          "x": 190.42405700683594,
+          "y": 577.34619140625,
+          "w": 219.15187072753906,
+          "h": 38.3515625,
+          "nw": 440,
+          "nh": 77,
+          "style": "left: 20px; top: 878px; width: 440px; height: 77px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "3\n4\n4\n3\n\t​\n",
+          "x": 190.42405700683594,
+          "y": 635.6206665039062,
+          "w": 219.15187072753906,
+          "h": 37.85345458984375,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 995px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-02-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "分母与分子的作用\n分母：表示把整体平均分成的总份数\n分子：表示取了其中的几份",
+          "x": 190.3012237548828,
+          "y": 680.9654541015625,
+          "w": 219.39756774902344,
+          "h": 57.7359619140625,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 1087px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0:node:section-03-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "4\n4\n=\n1\n4\n4\n\t​\n\n=1",
+          "x": 190.42405700683594,
+          "y": 758.146484375,
+          "w": 219.15187072753906,
+          "h": 37.853515625,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 1241px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数（分母）\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 190.42405700683594,
+          "y": 371.1441650390625,
+          "w": 179.3061065673828,
+          "h": 37.853515625,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-notation-and-parts-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请把每行方格数（分母）调到 8 个。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 190.42405700683594,
+          "y": 416.9668273925781,
+          "w": 164.36390686035156,
+          "h": 65.46542358398438,
+          "nw": 330,
+          "nh": 131,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 8
+}

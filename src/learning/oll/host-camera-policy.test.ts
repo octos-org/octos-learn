@@ -34,6 +34,23 @@ describe("host teaching camera policy", () => {
     })).toEqual({ source: "attention", targets: ["explicit-target"] });
   });
 
+  it("returns to the Beat's own targets when a variable animation ends", () => {
+    expect(planHostTeachingFocus({
+      ...base,
+      compositionChanged: false,
+      variableAnimationEnded: true,
+    })).toEqual({ source: "composition", targets: ["primary-geometry"] });
+  });
+
+  it("does not recompose after an animation when the Beat names no target", () => {
+    expect(planHostTeachingFocus({
+      ...base,
+      compositionTargets: [],
+      compositionChanged: false,
+      variableAnimationEnded: true,
+    })).toBeNull();
+  });
+
   it("keeps ordinary Beat composition focus outside variable animation", () => {
     expect(planHostTeachingFocus(base)).toEqual({
       source: "composition",

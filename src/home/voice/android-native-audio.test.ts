@@ -39,7 +39,6 @@ describe("Android native private-ASR audio pipeline", () => {
     expect(bridge).toContain("pushExternalAudioFrame(");
     expect(bridge).toContain("engine.getCurrentMonotonicTimeInMs()");
     expect(bridge).not.toContain('emitEvent("pcm"');
-    expect(microphone).not.toContain("createMediaStreamDestination");
     expect(microphone).not.toContain("decodeNativePcm");
   });
 

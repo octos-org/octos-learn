@@ -208,6 +208,13 @@ export class LearnTraceRecorder {
       : null;
   }
 
+  /** Missing/restored requests have no local baseline; do not report zero. */
+  elapsedSinceStage(turnId: string, stage: string, now = Date.now()): number | undefined {
+    const start = this.events.find(event => event.turn_id === turnId && event.stage === stage);
+    if (!start || !Number.isFinite(now) || now < start.recorded_at_epoch_ms) return undefined;
+    return now - start.recorded_at_epoch_ms;
+  }
+
   getEvents(): readonly LearnTraceEvent[] {
     return this.events;
   }

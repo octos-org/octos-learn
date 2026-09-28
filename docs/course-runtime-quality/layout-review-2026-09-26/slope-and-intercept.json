@@ -1,0 +1,492 @@
+{
+  "id": "slope-and-intercept",
+  "version": "0.1.6",
+  "title": "一次函数 y = mx + b 的图像与性质",
+  "catalogSupplement": false,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 687.1823120117188,
+          "y": 216.60000610351562,
+          "w": 545.6353149414062,
+          "h": 494.7919616699219,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 1267.539794921875,
+          "y": 216.60000610351562,
+          "w": 200.89306640625,
+          "h": 89.2857666015625,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 1487.853515625,
+          "y": 215.95162963867188,
+          "w": 298.46044921875,
+          "h": 194.74923706054688,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 687.1823120117188,
+          "y": 741.1538696289062,
+          "w": 446.42889404296875,
+          "h": 94.24609375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 514.6372680664062,
+          "y": 203.10000610351562,
+          "w": 410.72540283203125,
+          "h": 372.4533386230469,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 951.499755859375,
+          "y": 203.10000610351562,
+          "w": 151.2216796875,
+          "h": 67.20962524414062,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 1117.34033203125,
+          "y": 202.6119384765625,
+          "w": 224.6651611328125,
+          "h": 146.59698486328125,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 514.6372680664062,
+          "y": 597.95654296875,
+          "w": 336.048095703125,
+          "h": 70.9434814453125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, 0)\nQ(1, 0)\nΔx = 1 · Δy = 0 · 割线斜率 ≈ 0\n说明\ny = mx + b（y = 0）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 127.29999542236328,
+          "y": 196.43795776367188,
+          "w": 445.4000244140625,
+          "h": 403.8968200683594,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 601.0436401367188,
+          "y": 196.43795776367188,
+          "w": 163.98822021484375,
+          "h": 72.88363647460938,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 780.8848876953125,
+          "y": 195.90869140625,
+          "w": 243.632080078125,
+          "h": 158.97308349609375,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n0\n−\n+\n纵截距 b\n0\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 127.29999542236328,
+          "y": 624.6292724609375,
+          "w": 364.4181823730469,
+          "h": 76.93280029296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 215.4056854248047,
+          "y": 160,
+          "w": 511.904052734375,
+          "h": 464.203857421875,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 759.8854370117188,
+          "y": 160,
+          "w": 188.4737548828125,
+          "h": 83.76611328125,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 966.5792846679688,
+          "y": 159.39169311523438,
+          "w": 280.00958251953125,
+          "h": 182.70986938476562,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 200px; width: 299px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>直线与&nbsp;y&nbsp;轴交点为&nbsp;</mtext><mo stretchy=",
+          "x": 759.8854370117188,
+          "y": 369.415283203125,
+          "w": 347.86199951171875,
+          "h": 83.76611328125,
+          "nw": 299,
+          "nh": 72,
+          "style": "left: 488px; top: 200px; width: 299px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 296px; width: 253px; height: 81px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>m</mi><mo>=</mo><mfrac><mrow><mi mathvariant=\"norm",
+          "x": 759.8854370117188,
+          "y": 481.10345458984375,
+          "w": 294.34478759765625,
+          "h": 94.23687744140625,
+          "nw": 253,
+          "nh": 81,
+          "style": "left: 488px; top: 296px; width: 253px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 215.4056854248047,
+          "y": 652.1259155273438,
+          "w": 418.83056640625,
+          "h": 88.4197998046875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"slope-and-intercept-0.1.6-region\" data-interaction-tasks-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 535px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。",
+          "x": 215.4056854248047,
+          "y": 759.160400390625,
+          "w": 383.92803955078125,
+          "h": 177.34857177734375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 535px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 93.15592193603516,
+          "y": 160,
+          "w": 393.1634216308594,
+          "h": 356.5277099609375,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 511.33880615234375,
+          "y": 160,
+          "w": 144.755615234375,
+          "h": 64.33583068847656,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 670.0881958007812,
+          "y": 159.53280639648438,
+          "w": 215.05889892578125,
+          "h": 140.32870483398438,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 200px; width: 299px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>直线与&nbsp;y&nbsp;轴交点为&nbsp;</mtext><mo stretchy=",
+          "x": 511.33880615234375,
+          "y": 320.8395690917969,
+          "w": 267.17242431640625,
+          "h": 64.33584594726562,
+          "nw": 299,
+          "nh": 72,
+          "style": "left: 488px; top: 200px; width: 299px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 296px; width: 253px; height: 81px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>m</mi><mo>=</mo><mfrac><mrow><mi mathvariant=\"norm",
+          "x": 511.33880615234375,
+          "y": 406.6206970214844,
+          "w": 226.0689697265625,
+          "h": 72.3778076171875,
+          "nw": 253,
+          "nh": 81,
+          "style": "left: 488px; top: 296px; width: 253px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 93.15592193603516,
+          "y": 537.9730224609375,
+          "w": 321.67913818359375,
+          "h": 67.9100341796875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"slope-and-intercept-0.1.6-region\" data-interaction-tasks-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 535px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。",
+          "x": 93.15592193603516,
+          "y": 620.179931640625,
+          "w": 294.87255859375,
+          "h": 136.2109375,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 535px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-01",
+          "type": "node",
+          "text": "一次函数图像\n探索\n大图\n-4\n-2\n0\n2\n4\n-5\n0\n5\nx\ny\nP(0, -2)\nQ(1, -4)\nΔx = 1 · Δy = -2 · 割线斜率 ≈ -2\n说明\ny = mx + b（y = -2x - 2）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-01\" data-instance-id=\"node-instance-1\" class=\"board-node kind-plot focused\" data-kind=\"plot\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 20px; top: 20px; width: 440px; height: 399px;\"><div class=\"node-title\">一次函数图像</div><div class=\"plot-toolbar\" data-oll-board-input=\"ignore\" data-oll-ink-input=\"ignore\"><button type=\"button\" title=\"切换图内平移和缩放\" aria-label=\"切换图内平移和缩放\" data-action=\"explore\" aria-pressed=\"false\">探索<",
+          "x": 42,
+          "y": 243.1309356689453,
+          "w": 305.9142150878906,
+          "h": 277.4085693359375,
+          "nw": 440,
+          "nh": 399,
+          "style": "left: 20px; top: 20px; width: 440px; height: 399px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-01-item-02",
+          "type": "node",
+          "text": "𝑦\n=\n𝑚\n𝑥\n+\n𝑏\ny=mx+b",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-01-item-02\" data-instance-id=\"node-instance-2\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 20px; width: 162px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi><mo>=</mo><mi>m</mi><mi>x</mi><mo>+</mo><mi>b",
+          "x": 367.3815002441406,
+          "y": 243.1309356689453,
+          "w": 112.63204956054688,
+          "h": 50.05870056152344,
+          "nw": 162,
+          "nh": 72,
+          "style": "left: 488px; top: 20px; width: 162px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-01-moment-02-item-01",
+          "type": "node",
+          "text": "参数含义\nm：斜率（决定倾斜方向与陡缓）\nb：纵截距（直线与 y 轴交点的纵坐标）",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-01-moment-02-item-01\" data-instance-id=\"node-instance-3\" class=\"board-node kind-note\" data-kind=\"note\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 666px; top: 20px; width: 240px; height: 156px;\"><div class=\"node-title\">参数含义</div><ul class=\"content-list\"><li>m：斜率（决定倾斜方向与陡缓）</li><li>b：纵截距（直线与 y 轴交点的纵坐标）</li></ul></article>",
+          "x": 490.9018859863281,
+          "y": 242.7674102783203,
+          "w": 167.33389282226562,
+          "h": 109.18754577636719,
+          "nw": 240,
+          "nh": 156,
+          "style": "left: 666px; top: 20px; width: 240px; height: 156px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-03-moment-02-item-01",
+          "type": "node",
+          "text": "直线与 y 轴交点为 \n(\n0\n,\n𝑏\n)\n直线与 y 轴交点为 (0,b)",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-03-moment-02-item-01\" data-instance-id=\"node-instance-4\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 200px; width: 299px; height: 72px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mtext>直线与&nbsp;y&nbsp;轴交点为&nbsp;</mtext><mo stretchy=",
+          "x": 367.3815002441406,
+          "y": 368.27764892578125,
+          "w": 207.88259887695312,
+          "h": 50.058685302734375,
+          "nw": 299,
+          "nh": 72,
+          "style": "left: 488px; top: 200px; width: 299px; height: 72px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6:node:section-04-moment-01-item-01",
+          "type": "node",
+          "text": "𝑚\n=\nΔ\n𝑦\nΔ\n𝑥\n=\n𝑦\n2\n−\n𝑦\n1\n𝑥\n2\n−\n𝑥\n1\nm=\nΔx\nΔy\n\t​\n\n=\nx\n2\n\t​\n\n−x\n1\n\t​\n\ny\n2\n\t​\n\n−y\n1\n\t​\n\n\t​\n",
+          "html": "<article data-id=\"slope-and-intercept-0.1.6:node:section-04-moment-01-item-01\" data-instance-id=\"node-instance-5\" class=\"board-node kind-math\" data-kind=\"math\" data-plot-view-scope=\"slope-and-intercept\" style=\"left: 488px; top: 296px; width: 253px; height: 81px;\"><div class=\"math-render\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>m</mi><mo>=</mo><mfrac><mrow><mi mathvariant=\"norm",
+          "x": 367.3815002441406,
+          "y": 435.0225830078125,
+          "w": 175.90060424804688,
+          "h": 56.316009521484375,
+          "nw": 253,
+          "nh": 81,
+          "style": "left: 488px; top: 296px; width: 253px; height: 81px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "control",
+          "text": "斜率 m\n-2\n−\n+\n纵截距 b\n-2\n−\n+",
+          "html": "<div class=\"learning-variable-controls is-world\" data-course-controls-id=\"slope-and-intercept-0.1.6-region\" data-interaction-controls-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的课程变量控制\" data-testid=\"oll-variable-controls\" style=\"left: 20px; top: 443px; width: 360px;\"><div class=\"learning-variable-control\"><label for=\"oll-variable-number_01\">斜率 m</label><input id=\"oll-variable-number_01\" min=\"-5\" max=\"5\" step=\"0.05\" aria-label",
+          "x": 42,
+          "y": 537.2257080078125,
+          "w": 250.29345703125,
+          "h": 52.8397216796875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 443px; width: 360px;"
+        },
+        {
+          "id": "slope-and-intercept-0.1.6-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "html": "<section class=\"learning-student-tasks is-world\" data-course-tasks-id=\"slope-and-intercept-0.1.6-region\" data-interaction-tasks-id=\"slope-and-intercept-0.1.6-region:interaction:1\" data-oll-ink-input=\"ignore\" aria-label=\"一次函数 y = mx + b 的图像与性质的动手任务\" data-testid=\"oll-student-tasks\" style=\"left: 20px; top: 535px; width: 330px;\"><header><span>动手试一试</span><small>直接操作白板上的图形、视角或控制器</small></header><article class=\"learning-student-task is-not_started\" aria-live=\"polite\"><p>请将斜率 m 设为 -3，观察负斜率绝对值更大时的倾斜程度。",
+          "x": 42,
+          "y": 601.1895751953125,
+          "w": 229.4356689453125,
+          "h": 105.983642578125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 535px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 13
+}

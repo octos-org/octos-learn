@@ -1,0 +1,486 @@
+[
+  {
+    "packId": "linear-simultaneous-intersections",
+    "version": "0.1.1",
+    "previousVersion": "0.1.0",
+    "sha256": "3ded98c318536f3c6c06ac23d00aab3f3697f411d83f14438ec16be91ae05ae5",
+    "bytes": 1399945,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "1f5346cbfe0405a20bc3f7ce78660a319d23ace97f994505f8f7c8fcd035bd19"
+      },
+      {
+        "path": "board.json",
+        "sha256": "5cd105d4f5ce2e0718d5f9d75f70fe84aa2fffaa58544f65691e403cae9d8710"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "182d373d10596e42a6583f04ea870a41de6eb1c85d3ddbc95204edec2cc7af01"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "4a83b71b367ba293135664d4a31894e2a4db8d9d5b16967fc58654743722f72f"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "95beaa84364a7b6d11c0b75e4d47a6353c81bf6d0236bd120dcaf92755980f47"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "0f71b30e3243072fc3647a9ddb51898ec078e07d1d13cf0c50fe5329bbf9f9dd"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "558e8a09856c380aeb6229ed68ff6a21d983e0ec9795b6a3dc9024eb7d9e12fb"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "c83d682ef48bc00cbefad611a012862f369669e1e3994788a50a0918e26087ba"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "5c538357c819ae68c847fc5988ad014a7ef1d1b0363b7e3b7b2bde6ddc55d3ae"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "8ec3347c5779e7b9bcbf868c607a8d8ebbdbda8ff8147ac5cd3073078244c90e"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "cec9fec71947b5c3c5e91d1432a1e81745ef2dd0c521d1a3ddf2832986693e59"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "1abafa80125cf61d846173155c47ae45a7633791e66034d716fc2ef24a96accf"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "4f476b87c388201e2ffdefe9817d5965c8ae94a46fd4da1231a2d01c32953550"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "e365bc35b3089821166faa2b616620762d9d8fc91ee5f923cb8e1ce52ac06fb6"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "0762c53251b592ae746453af8367a1093aa386afaf023a963c798973c672f8c5"
+      }
+    ]
+  },
+  {
+    "packId": "surface-partial-derivative-slice",
+    "version": "0.2.7",
+    "previousVersion": "0.2.6",
+    "sha256": "0612e7a9ca84f40abac3908ef8780391ba7c3ebebf23ff722b6b2d0e7cba41c1",
+    "bytes": 2721221,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "1d6a47de1a77bf850b9d4df516478d4246df4d0db69bd90ab655379d40f894d5"
+      },
+      {
+        "path": "board.json",
+        "sha256": "0d70c8e7885c76abd80d30e2c4de0c0ef0e6031a9a7debe1c6fed777351fc256"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "35b029aa1ca598fa4a487353cac6fdefd1a7907048a13af433543efdf505dbcb"
+      },
+      {
+        "path": "compilation.json",
+        "sha256": "8f3a0585d2373884b8e48902b11e75952343471d68f0d43056bcfe1980d531bb"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "c14d2de53e838f759c05ad1a9394bda46149ba6e227537522b63b5a7e78c21d3"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "d14f8dfc4e87bfe64f668146d0ba3225a769e2e02abd0f7b3d44cff9a5e0dd29"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "32bae104894dc65e2811e8eece8db65483d8661706ae9a0d546fc6912915a650"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "65a68a0e547814b7c6eadf02276648cf4d4c3cc8c493fd248f5708b9f420647d"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "64f27323853a3fbcc177b72244e13ac1d8ba65c8f77b23f99c071e8dda829a37"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "c1a9041572fe2c37a67d6512b1a333a76281199215f8802e0aa1796fd3bd7259"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "9c99f0166c196f823f53e246e3c025281d2a04a524ab223a1759c70255581ca9"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "90fb62a6a359b3c25ed477ea281d19668fd12ed2aa2902141003d0f44ce72480"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "1bb545c80e6ea75857b173d3924696d76914f54633b92472f9c066b7517d4845"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "f35ebdad874001591b5e6371de8ca9af325c34fb64b53912499a5b378ed6e368"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "5c6630a18e5808dc8b0b129ccf527acc83da8b429694077405bb8b4027cab2c5"
+      },
+      {
+        "path": "audio/010.mp3",
+        "sha256": "5bc94c3eefcc9934de1e833a8087695c895e3323a3c1ed766c533c6e0a9bd834"
+      },
+      {
+        "path": "audio/011.mp3",
+        "sha256": "f5b95e3057f937c20815bc8851c07bb6dcd02faa5f3f8825a15fa4041321c869"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "a3ab693b13967175ee2086935445862012a22d8f607ab97d1a86dd8eb5a425fa"
+      }
+    ]
+  },
+  {
+    "packId": "surface-saddle-point-analysis",
+    "version": "0.2.7",
+    "previousVersion": "0.2.6",
+    "sha256": "59f6f810fd6b55f67f9bc33c6ca5910013ca38de4445f293421c6c8570c030c1",
+    "bytes": 3506717,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "227f37a4dc0ef6c25dffb9d644a20b067bf38aec1fdef29771639d320a9dbca9"
+      },
+      {
+        "path": "board.json",
+        "sha256": "a4e2488ed104de36916eae77b2c5fc9f6c159ff84a36a568c5fba5b1d3a4eea7"
+      },
+      {
+        "path": "compilation.json",
+        "sha256": "2962b79b5bacfe52ab6ef55498b9d7fa03d2b2a49527c74d3e0337d48cb25abc"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "0570fc709ebd8997200d99945017d7a73844a5dba1343682980565ff43490ba9"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "5f043df8d6301c602ba2bb091e87d3b7b2df151a95efe30ba5fec7bbacd3d87f"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "596cbd3c5e5c841dbf48324e907456cc7eb7ed454b1716b8d1911047c2e20d8a"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "7e289f1cb67b1499906056db00c337fd04beb73c6908b48776a95f478f15ff7a"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "0ecae071b0c2de69c60751cb23c11ffcbc81bf8a5d3eaee67f98108b7083fba8"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "f721d4c4767a87fb1d8d293f10769df7019bf17dbb6b7e706fd6a14f9fd1655d"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "2286081a0527fb56e6177c8d05f65eb16da0850bcede89ab07925901386724df"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "780a141c1cfc2e436160a995114a29bab980cdec21ad39a2edc05ed625a4a7d2"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "7b653ca07d0905834607babb78a578cc0de5c150be1d3df4bb6d19acc73ddf7c"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "afe455b6cdd469c547a2459a152a52d8a2e1221d6b5e1bc5e5004f74f5de4979"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "efc20bc0cc28d5e30f94867fe7b3c8c1c814b7a079d546ae78dfeab0029fbdad"
+      },
+      {
+        "path": "audio/010.mp3",
+        "sha256": "266ff5c212f9a3148398398e94701fef630b67e63a3626cfb313bd3a5ef65928"
+      },
+      {
+        "path": "audio/011.mp3",
+        "sha256": "aebd97deaa955857aeff1468f5316d73d2ecca3c07358dfa259f41cba646a6bf"
+      },
+      {
+        "path": "audio/012.mp3",
+        "sha256": "ca6c885059da98c58339acd3a729dea879a636209451e21c9c039b3f4cd46169"
+      },
+      {
+        "path": "audio/013.mp3",
+        "sha256": "38c62302501c9178a9a6ef9ec8b29f548b57eba3a377c9fa98a4e32f36f2e35e"
+      },
+      {
+        "path": "audio/014.mp3",
+        "sha256": "11b4cdfd4a93d4e71343e3aa9ae6895c15ab3ab61cc93fe8121ec94e838e1d9e"
+      },
+      {
+        "path": "audio/015.mp3",
+        "sha256": "f0c37f9951103959593da791af841a903b91a4f90dc73ff028dfaaf1bed8a52f"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "a7a3f9a356ee96ad7f6fcdf3dd358b8045edcb34417196613e426347e8a8d497"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "a40b7c3ae65257016dae4c5cf868178e9a684ae6c8c26d4e7f9287de44a20b2a"
+      }
+    ]
+  },
+  {
+    "packId": "trig-cosine-and-phase-shift",
+    "version": "0.1.2",
+    "previousVersion": "0.1.0",
+    "sha256": "2c535e6dc6917def46441ce75e6c8988e501b46e7edc81790d3070f323d0abf5",
+    "bytes": 2099521,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "6f9f1b3aac9a0a92229f72fedd6f576c9a11c8dc333aa9817fd3f8f3d8f49654"
+      },
+      {
+        "path": "board.json",
+        "sha256": "1263897ba3982bdb7b24cd40d0e5264bb4781cdb35460372b4f8789bdcfc00b2"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "8e7b6c5f9a14954eeef43070acc14c14279018677c236d2d3f34b1cd64374a65"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "24b815df600a29b9cc7161ee69295aea0e56e10c09c9ae5880cf7365d968cdfe"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "e183772fe15f155f881d4e2aca1d897c5fb82b298d438526b8316411881a6722"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "b119001fea69c8b0499bd5dd850666eed994e988cb383dd3511c77dda41dc28d"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "531fdf7e39bf2745dbf2d5789785ae319c945a518b8f536abedb6204ab864ac6"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "2b096dd8293139c476e39f1a533a743ee0e29c0814d357f14a79e961c0f09a46"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "71a86d8b1f0b20b74ea651f1840c705a767c05287de077909b0771a61f787178"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "2980069408caa8f568df762d3c8195083e7560b71bf718d1d7fa095171148067"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "7b5e5b7f4a8f4a070bb30cef20436ed038f74ecdf989418853bc0b14a12813b3"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "8f830f19bd3d31ce55392fa24aaa751bd7320d2c5d98184f3c2fe93fca0b0f26"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "05acd1e628557591ee6dec68c3fa8c9f778296fe9a497c0a8c90cb5759a061c5"
+      },
+      {
+        "path": "audio/010.mp3",
+        "sha256": "2f778ab1a7af686525d89c14c927e7f850ffb27ad0adbe68e0ad7c52f50cdd8e"
+      },
+      {
+        "path": "audio/011.mp3",
+        "sha256": "c5c4fed017840899fe2611befd455d1995897cb85535ff76e3ac75ebf711c15b"
+      },
+      {
+        "path": "audio/012.mp3",
+        "sha256": "c7ec795639713d3040b3de9a4398f97adcbbd893710a6ad3ae403d4c64a0daab"
+      },
+      {
+        "path": "audio/013.mp3",
+        "sha256": "aff8b4bc42e4bce22afd75ca556afc755328bc3dff59c2d36f53afacbf59519e"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "a5be7fcf617526cf18b36b3ca55eea21007c74e2c84c7908b8157b224341be7e"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "a6d106f688c58700dac66caeed755c2836c6d1c50960c86ec9c9ef274a3bfd8c"
+      }
+    ]
+  },
+  {
+    "packId": "trig-quadrants-and-monotonicity",
+    "version": "0.1.2",
+    "previousVersion": "0.1.0",
+    "sha256": "b289eeedc5a1283e3e35ea9aa7000735a69e660937e08b6b68a2e1f65faeb93c",
+    "bytes": 1795290,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "972356d5cd9d0b5c45b3e89a1629713abddc6330e4954c77bf51f5e8001e791d"
+      },
+      {
+        "path": "board.json",
+        "sha256": "880f60b4e5f61ee66d7a4648b404070a8a4e2cf72509b5ae5000911183ec693b"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "aa5a2fd74e181f9b16e6d497165a72387b5896f26e7c1305e15aa115a2931ce0"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "ecf161e1b538a08562209cb8dcfcc0503b50063d340fa4e84eb412880e90b465"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "26b022fd1aee64dc663a44709f1f5c60894e33b6e20d0a30420fe0d1af212520"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "7fefd6785bdab718717eb2bb4c41095b5328f3d4aae85a30d7644add953d95e0"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "4793202e9612c5005079ab1daaa1ce28a2d939c14753e12d974ded8d85e0c5e1"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "27d8e57f5287f2a0969a6ccc7869239e0698942dc4d18de376ad418c8a69566c"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "47e3093e3d13d6fc4981b6a98c63b741adb39cffce9c074f262ff7044b147431"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "f469f9553617b926730f30ed105f1df0611c6214d3d7c82d4d5c1a6567b2f6f8"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "1a5b32bfc6ca523d614824a705564c31705b0e4fed9e0e7da42ae7c29ff7240e"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "c8e7418af2e2f4666b8c9a1cb4988390f8802a6344b7dbb438eb4be93f966505"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "a111802737f930ee9c4807d1b0e657d98a9bd447dcee53ef503db0c7220c72de"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "1a233e263a32d2f31c794e5a3aceb7072099cd0ccc2cf4daa218ae569860f373"
+      },
+      {
+        "path": "compilation.json",
+        "sha256": "df2db43590c6f077575d45d18d91ea48101801fc60b89fe191e5f5d073fcd5d9"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "b283781fbe51123cad88c0961206b9c3a8c29a799e72ac77d4d0a78c3d3ad671"
+      }
+    ]
+  },
+  {
+    "packId": "trig-unit-circle-to-sine",
+    "version": "0.1.1",
+    "previousVersion": "0.1.0",
+    "sha256": "c30ce8f67ce1879bf01511b49b5d9b60685a38029d7561b9aa24e036107388f9",
+    "bytes": 2051002,
+    "commit": "2fd039255800f833de57bb190a66f5c21f390283",
+    "files": [
+      {
+        "path": "NOTICE.txt",
+        "sha256": "36509d7e560b5a1b12767d1954ceabe290b4447ebfbf6c46e421bd0ccd318d82"
+      },
+      {
+        "path": "board.json",
+        "sha256": "1970b958c0fe32b613666413b8a8559b564014babe4ccbac45da78cb56ffb8d6"
+      },
+      {
+        "path": "course.oll.jsonl",
+        "sha256": "c79328ed218186407f3293f4ce2f23ce518afb5b0bf280e8ef23c83375ca3bc3"
+      },
+      {
+        "path": "thumbnail.svg",
+        "sha256": "65077aafb6c238e2dbaa7768e01118953ace138172a918e8173083e7099b1cb2"
+      },
+      {
+        "path": "audio/001.mp3",
+        "sha256": "14a9149cc9fe752e40c3fd151a33dcd577c061917c6942a1e2a4ccfe0bf55a77"
+      },
+      {
+        "path": "audio/002.mp3",
+        "sha256": "7a3f761c46b444e4144e094b950d77603c521ab1ef13a74d3dfa846a05ea0202"
+      },
+      {
+        "path": "audio/003.mp3",
+        "sha256": "8bc8deb229f66d8f02ec2c2ff0339f6489af24e9ee7505ebfbe753109e978ddb"
+      },
+      {
+        "path": "audio/004.mp3",
+        "sha256": "bd18f8c43e61ef4d8624642d966c7bd20d54424fbe50d35d0302c89ec0eec628"
+      },
+      {
+        "path": "audio/005.mp3",
+        "sha256": "692d28cdd9a5ef9afde72cd7e13c27fe558c713b518fa6b86a1de04e5a1bbab6"
+      },
+      {
+        "path": "audio/006.mp3",
+        "sha256": "7c3621cf6ded1b433ceac755d56d54e40459047046a4cf860bd8458a1b9a8a3f"
+      },
+      {
+        "path": "audio/007.mp3",
+        "sha256": "cd86aaf18698154c52b121be50da21587ed249a898927ef69dca3d8e7cf0d2b9"
+      },
+      {
+        "path": "audio/008.mp3",
+        "sha256": "af682a766c17f43e98eb2a759727a2fd644341c0b1fb449731923ed264d91dca"
+      },
+      {
+        "path": "audio/009.mp3",
+        "sha256": "1c262ed8f9a474eebc23c8eb12a3edef5a269ed6fe1343cfd1660cb1313901b4"
+      },
+      {
+        "path": "audio/010.mp3",
+        "sha256": "e41ab02284075f2acbc24f6798029ae08c6a8d74e777c6c731b07ef7a06211e7"
+      },
+      {
+        "path": "course.authoring.json",
+        "sha256": "1d69f448452333d7efeab875fc6a3a59d057896d8cd6a5acd7070abe4c6d9437"
+      },
+      {
+        "path": "manifest.json",
+        "sha256": "f4840234c9e1c720c6adfe835a3b3550f3cfcb5aff50237a3a79df48910baf8f"
+      }
+    ]
+  }
+]

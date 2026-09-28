@@ -54,6 +54,7 @@ function CourseRoute() {
 }
 
 export function AppRoutes() {
+  const location = useLocation();
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -61,7 +62,7 @@ export function AppRoutes() {
       <Route path="/course/:packId" element={<CourseRoute />} />
       <Route path="/learn" element={<LegacyLearningRedirect />} />
       <Route element={<AuthGuard />}>
-        <Route path="/board" element={<LearningSetupGate><LearningPage /></LearningSetupGate>} />
+        <Route path="/board" element={<LearningSetupGate><LearningPage key={location.key} /></LearningSetupGate>} />
         <Route path="/setup" element={<SetupWhiteboard />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
       </Route>

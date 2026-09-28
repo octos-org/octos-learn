@@ -1,0 +1,88 @@
+{
+  "scope": "local synchronous materialization only; excludes model, network, TTS and playback",
+  "node": "v24.16.0",
+  "measuredAt": "2026-09-24T12:24:19.026Z",
+  "reports": [
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/linear-intro-and-slope/course.authoring.json",
+      "sourceSha256": "e64dfc40764eae6724c05fd4d91cbfad48a4422a01c668baa34981464ad057b4",
+      "events": 5,
+      "samples": 30,
+      "p50Ms": 0.2632080000000201,
+      "p95Ms": 0.39529099999998607,
+      "maxMs": 0.4142089999999712
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/slope-and-intercept/course.authoring.json",
+      "sourceSha256": "73a88361ee232b6f7d97d7304ffb5ae404432467d10ccb8d05b51b34f4e7117c",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.35395799999997735,
+      "p95Ms": 0.45545800000002146,
+      "maxMs": 0.7752500000000282
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/linear-simultaneous-intersections/course.authoring.json",
+      "sourceSha256": "4a3ff7c50c621e9287e4f4f2380f94c79958bd8472bcf5cb2bb9a9bc826563c8",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.14562499999999545,
+      "p95Ms": 0.19020799999998417,
+      "maxMs": 0.278665999999987
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/surface-paraboloid-level-sets/course.authoring.json",
+      "sourceSha256": "a7f0de0e542b83deaea1ad9efa953787e85745d6ac4ea610b25e1f208d3a6806",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.29137500000001637,
+      "p95Ms": 0.3319169999999758,
+      "maxMs": 0.33424999999999727
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/surface-partial-derivative-slice/course.authoring.json",
+      "sourceSha256": "9e9ef54f480424395c9ea1688f07f032b6e14de7e48fd8856c0956fb3f46e2e4",
+      "events": 5,
+      "samples": 30,
+      "p50Ms": 0.17720900000000483,
+      "p95Ms": 0.22720799999996188,
+      "maxMs": 0.410082999999986
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/surface-saddle-point-analysis/course.authoring.json",
+      "sourceSha256": "465d82a9589e25f2937678bfa5b8699c9833f65fa772ae2bf4e319dc5ba7e6e2",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.2157919999999649,
+      "p95Ms": 0.24066699999997354,
+      "maxMs": 0.35024999999996
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/trig-unit-circle-to-sine/course.authoring.json",
+      "sourceSha256": "2778b7e07471bc757a56e0f93d06bd03a31bf044a01dc70641b7eac706aedb6e",
+      "events": 5,
+      "samples": 30,
+      "p50Ms": 0.3158329999999978,
+      "p95Ms": 0.393916000000047,
+      "maxMs": 0.4152090000000044
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/trig-cosine-and-phase-shift/course.authoring.json",
+      "sourceSha256": "5aa075da243b2d50b127ea11406ae6b0d545b0b38af19424018c001367353d7b",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.44137499999999363,
+      "p95Ms": 0.5675830000000133,
+      "maxMs": 0.6315419999999676
+    },
+    {
+      "path": "/Users/alan0x/Documents/projects/octos-course-library/courses/trig-quadrants-and-monotonicity/course.authoring.json",
+      "sourceSha256": "36306629abd25ce8ad5e7ad9d5f3a97f456436f1882a89defa31e35365e8328e",
+      "events": 6,
+      "samples": 30,
+      "p50Ms": 0.4982919999999922,
+      "p95Ms": 0.5543749999999932,
+      "maxMs": 0.7736670000000458
+    }
+  ]
+}

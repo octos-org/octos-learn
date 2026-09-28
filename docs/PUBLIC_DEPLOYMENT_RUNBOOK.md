@@ -173,6 +173,14 @@ Then verify in a private browser window:
 
 ## 5. Upgrade and rollback
 
+For the web frontend, use `scripts/deploy-public-web.sh` from a clean
+`octos-learn` checkout after `pnpm build:public`. It mirrors `dist/` onto the
+server with `rsync --delete` (via `sudo rsync` so root-owned files can be
+replaced), keeps a single `web.bak-pre-deploy` rollback directory, and then
+verifies that every referenced asset in `dist/` returns `200` on the public
+URL — this catches partial deploys (e.g. `index.html` uploaded without its JS
+chunks) immediately. Use `--verify` to re-check without deploying.
+
 Before every upgrade, back up `/var/lib/octos-learn/octos` and
 `/var/lib/octos-learn/hosted-tts` with encryption. Back up the root-only
 hosted-TTS environment separately; never place it in source control.

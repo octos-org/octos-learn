@@ -1,0 +1,72 @@
+{
+  "packId": "trig-quadrants-and-monotonicity",
+  "version": "0.1.2",
+  "generated": 1,
+  "reused": 8,
+  "sha256": "b289eeedc5a1283e3e35ea9aa7000735a69e660937e08b6b68a2e1f65faeb93c",
+  "segments": [
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-01:beat:moment-01",
+      "file": "audio/001.mp3",
+      "regenerated": false,
+      "durationMs": 7272,
+      "textSha256": "fc775d4f181ca3a7829903d696db5ea035ab5affd971fd11456f9a936ecb2bf8"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-01:beat:moment-02",
+      "file": "audio/002.mp3",
+      "regenerated": false,
+      "durationMs": 8664,
+      "textSha256": "9f05695cc8e7f93cec3167b8d43ac5b1c9003c05c48fa52fdda75db0d813bbec"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-02:beat:moment-01",
+      "file": "audio/003.mp3",
+      "regenerated": false,
+      "durationMs": 11064,
+      "textSha256": "e86390699588406640e47f13a759f23084098413afbd54e6ad898c9f7928ce11"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-02:beat:moment-02",
+      "file": "audio/004.mp3",
+      "regenerated": false,
+      "durationMs": 14496,
+      "textSha256": "14e4df6fda433240607dd726100f5a51c4ac735aea606f7839135d45a95c4eb6"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-03:beat:moment-01",
+      "file": "audio/005.mp3",
+      "regenerated": false,
+      "durationMs": 9120,
+      "textSha256": "f539dd46a7257770a90923f2a8afc160208c7f1fbd75deb0289b7162d94b3d46"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-03:beat:moment-02",
+      "file": "audio/006.mp3",
+      "regenerated": true,
+      "durationMs": 12720,
+      "textSha256": "3009083ed042af691abecf27e147f852fa44b191c1d4d60c0b82dccc76cf7331"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-03:beat:moment-03",
+      "file": "audio/007.mp3",
+      "regenerated": false,
+      "durationMs": 12072,
+      "textSha256": "db457c518e34853ecf032d3f15740100e71247273843c408118be8460d19c22d"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-04:beat:moment-01",
+      "file": "audio/008.mp3",
+      "regenerated": false,
+      "durationMs": 17712,
+      "textSha256": "61317a9a89d3574b38448e0a5d065dba1d06c14f8632c9aa493f38a517654e41"
+    },
+    {
+      "beatId": "trig-quadrants-and-monotonicity-0.1.2:step:section-04:beat:moment-02",
+      "file": "audio/009.mp3",
+      "regenerated": false,
+      "durationMs": 8880,
+      "textSha256": "0e7b280a05393cfc1c97449e8492bc6e013f927f0f33f02768f798bfc5ffc46b"
+    }
+  ]
+}

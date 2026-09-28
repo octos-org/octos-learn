@@ -78,6 +78,7 @@ const {
     start: vi.fn(async () => {}),
     stop: vi.fn(async () => {}),
     isReusable: vi.fn(() => false),
+    isNativeRtcActive: vi.fn(() => false),
     setConnectionErrorHandler: vi.fn(),
     setListening: vi.fn(async () => {}),
     commit: vi.fn(async () => "请比较两条函数曲线"),
@@ -225,6 +226,8 @@ afterEach(() => {
   });
   commitAdmittedVoiceMessageMock.mockReset();
   commitAdmittedVoiceMessageMock.mockResolvedValue({ accepted: true });
+  privateAsrInstance.isNativeRtcActive.mockReset();
+  privateAsrInstance.isNativeRtcActive.mockReturnValue(false);
 });
 
 describe("assembleTurnFiles", () => {
@@ -1006,6 +1009,7 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     });
     privateAsrEnabledMock.mockReturnValue(true);
     nativePrivateAsrAvailableMock.mockReturnValue(true);
+    privateAsrInstance.isNativeRtcActive.mockReturnValue(true);
     privateAsrInstance.commit.mockRejectedValueOnce(
       new Error("Private ASR transcript timed out"),
     );

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
+  ArrowLeft,
+  MoreHorizontal,
+  Clock3,
   BookOpen,
   Eye,
   LogOut,
@@ -10,7 +13,7 @@ import {
   Settings,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/auth/auth-context";
 import { deleteSession, setSessionTitle } from "@/api/sessions";
 import {
@@ -37,6 +40,8 @@ import {
   type LearningSessionRecord,
 } from "./learning-session-store";
 import { discoverServerLearningSessions } from "./learning-session-sync";
+import { LearningHistory, learningSessionHref } from "./learning-history";
+import { groupCoursePacks } from "./course-collections";
 import "./course-launcher.css";
 
 type CatalogState = {
@@ -46,6 +51,21 @@ type CatalogState = {
   loading: boolean;
   error: string | null;
 };
+
+function courseTags(entry: CoursePackCatalogEntry): string {
+  const grades: Record<string, string> = {
+    "primary-age-8-9": "小学（8–9岁）",
+    "secondary-age-12-14": "初中（12–14岁）",
+    "highschool-mathematics": "高中",
+    "college-calculus": "大学微积分",
+  };
+  const grade = entry.grade.trim();
+  const subject = entry.subject.trim();
+  return [
+    grade.toLowerCase() === "unspecified" ? "" : (grades[grade] ?? grade),
+    subject === "mathematics" ? "数学" : subject,
+  ].filter(Boolean).join(" · ");
+}
 
 function useLauncherCatalog(): CatalogState {
   const [state, setState] = useState<CatalogState>(() => {
@@ -138,7 +158,9 @@ function CourseCard({
   installedThumbnail,
   authenticated,
   embedded,
+  index,
 }: {
+  index: number;
   entry: CoursePackCatalogEntry;
   live: boolean;
   installed: boolean;
@@ -185,23 +207,21 @@ function CourseCard({
     <article className="course-launcher-card">
       <div className="course-launcher-cover">
         <img src={installedThumbnail ?? entry.thumbnailUrl} alt="" />
-        <span className="course-launcher-grade">{entry.grade} · {entry.subject}</span>
+
       </div>
       <div className="course-launcher-card-body">
         <div className="course-launcher-card-meta">
-          <span>课程包 v{entry.version}</span>
-          {entry.recommended && <span>推荐版本</span>}
+          <span className="course-launcher-grade">{courseTags(entry)}</span>
+          <span className="course-launcher-version">课程包 v{entry.version}</span>
         </div>
+        <div className="course-lesson-number">第 {String(index + 1).padStart(2, "0")} 课</div>
         <h3>{entry.title}</h3>
         <p>{entry.description}</p>
+        <div className="course-launcher-facts">
+          <span><Clock3 size={14} aria-hidden="true" /> {Math.max(1, Math.ceil(entry.durationSeconds / 60))} 分钟</span>
+          <span>{embedded ? "内置课程 · 可离线" : installed ? "已下载 · 可离线" : "尚未下载"}</span>
+        </div>
         <div className="course-launcher-card-footer">
-          <span>
-            {embedded
-              ? "内置课程 · 可离线"
-              : installed
-                ? "已下载 · 可离线"
-                : `${Math.ceil(entry.durationSeconds / 60)} 分钟 · 互动白板`}
-          </span>
           {playable ? (
             <div className="course-launcher-actions">
               <Link to={destination("preview")} className="course-launcher-preview">
@@ -210,6 +230,13 @@ function CourseCard({
               {entry.capabilities.interactiveWhiteboard ? (
                 latestInstance ? (
                   <>
+                    <details className="course-launcher-more" onKeyDown={event => {
+                      if (event.key === "Escape") { event.currentTarget.open = false; event.currentTarget.querySelector("summary")?.focus(); }
+                    }} onBlur={event => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
+                    }}>
+                      <summary aria-label={`更多操作：${entry.title}`}><MoreHorizontal size={20} /></summary>
+                      <div className="course-launcher-more-panel" onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); }}>
                     <button type="button" className="course-launcher-restart" onClick={restartCourse}>
                       <RotateCcw size={14} aria-hidden="true" /> 重新开始
                     </button>
@@ -220,8 +247,10 @@ function CourseCard({
                       aria-label={`删除“${entry.title}”的学习记录`}
                       title="删除学习记录"
                     >
-                      <Trash2 size={14} aria-hidden="true" />
+                      <Trash2 size={14} aria-hidden="true" /> 删除学习记录
                     </button>
+                      </div>
+                    </details>
                     <Link
                       to={destination("learn", latestInstance.id)}
                       className="course-launcher-start"
@@ -257,7 +286,7 @@ function WhiteboardSessionCard({
   const navigate = useNavigate();
   const open = () => {
     updateLearningSession(session.id, { status: "active" });
-    navigate("/board");
+    navigate(learningSessionHref(session));
   };
   const rename = () => {
     const title = window.prompt("重命名学习白板", session.title)?.trim();
@@ -295,6 +324,10 @@ function WhiteboardSessionCard({
 
 export function CourseLauncher() {
   const { token, logout } = useAuth();
+  const navigate = useNavigate();
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const collectionId = searchParams.get("collection");
   const state = useLauncherCatalog();
   const [loggingOut, setLoggingOut] = useState(false);
   const [whiteboards, setWhiteboards] = useState(() =>
@@ -356,9 +389,17 @@ export function CourseLauncher() {
   const visiblePacks = selectLatestCoursePacks(candidatePacks, {
     isEmbedded: (entry) => state.embeddedIdentities.has(`${entry.packId}@${entry.version}`),
   });
+  const collections = groupCoursePacks(visiblePacks);
+  const selected = collections.find(group => group.id === collectionId);
+  useEffect(() => {
+    document.querySelector(".course-launcher")?.scrollTo?.(0, 0);
+  }, [collectionId]);
   return (
     <main className="course-launcher">
-      <div className="course-launcher-inner">
+      {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
+        onNew={() => navigate("/board?new-board=1")}
+        onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
+      <div className="course-launcher-inner" inert={historyOpen}>
         <header className="course-launcher-header">
           <div className="course-launcher-brand">
             <img src="/images/octos-logo-color.svg" alt="" />
@@ -386,23 +427,24 @@ export function CourseLauncher() {
           </nav>
         </header>
 
-        <section className="course-launcher-hero">
+        {!collectionId && <section className="course-launcher-hero">
           <p className="course-launcher-eyebrow">LEARN ON A LIVING WHITEBOARD</p>
-          <h1>从一节课开始，或者从一块空白白板开始。</h1>
+          <h1>从一组课程，开始新的探索。</h1>
           <p>跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。</p>
           <Link to="/board?new-board=1" className="course-launcher-blank">
             <Plus size={20} aria-hidden="true" /> 新建空白白板
             <ArrowRight size={18} aria-hidden="true" />
           </Link>
-        </section>
+        </section>}
 
-        {whiteboards.length > 0 && (
+        { !collectionId && whiteboards.length > 0 && (
           <section className="course-launcher-sessions" aria-labelledby="course-launcher-sessions-title">
             <div className="course-launcher-section-title">
               <div>
                 <p>RECENT WHITEBOARDS</p>
                 <h2 id="course-launcher-sessions-title">最近白板</h2>
               </div>
+              <button type="button" className="course-launcher-history-link" onClick={() => setHistoryOpen(true)}>全部学习记录 <ArrowRight size={16} /></button>
             </div>
             <div className="course-launcher-session-grid">
               {whiteboards.map((session) => (
@@ -417,18 +459,21 @@ export function CourseLauncher() {
         )}
 
         <section className="course-launcher-library" aria-labelledby="course-launcher-library-title">
+          {collectionId && <Link to="/" className="course-collection-back"><ArrowLeft size={17} /> 全部课程集</Link>}
           <div className="course-launcher-section-title">
             <div>
-              <p>CURATED COURSES</p>
-              <h2 id="course-launcher-library-title">预制课程</h2>
+              <p>{selected ? selected.level : "CURATED COLLECTIONS"}</p>
+              <h2 id="course-launcher-library-title">{selected?.title ?? "课程集"}</h2>
             </div>
             <BookOpen size={23} aria-hidden="true" />
           </div>
 
+          {selected && <p className="course-collection-intro">{selected.description}<span>{selected.packs.length} 节课 · 约 {Math.ceil(selected.packs.reduce((sum, p) => sum + p.durationSeconds, 0) / 60)} 分钟 · 按顺序循序学习</span></p>}
+          {collectionId && !selected && !state.loading && <p role="status">这个课程集暂不可用，请选择其他课程集。</p>}
           {state.error && (
             <p className="course-launcher-notice" role="status">
               {state.catalog
-                ? "课程目录暂不可用；下面是上次保存的目录，联网后才能打开。"
+                ? "课程目录暂不可用，正在显示本机保存的目录；已下载课程仍可离线打开。"
                 : "课程目录暂不可用；你仍可新建空白白板。"}
             </p>
           )}
@@ -442,14 +487,25 @@ export function CourseLauncher() {
               <p>首批经过审核的课程发布后会出现在这里。现在可以先进入空白白板。</p>
             </div>
           )}
-          {visiblePacks.length > 0 && (
+          {!selected && visiblePacks.length > 0 && <div className="course-collection-grid">
+            {collections.map(group => <Link key={group.id} to={`?collection=${group.id}`} className="course-collection-card">
+              <img src={`/images/course-collections/${group.cover}.svg`} alt="" />
+              <div className="course-collection-body">
+                <span className="course-collection-level">{group.level}</span>
+                <h3>{group.title}</h3><p>{group.description}</p>
+                <div className="course-collection-footer"><span>{group.packs.length} 节课 · 约 {Math.ceil(group.packs.reduce((sum, p) => sum + p.durationSeconds, 0) / 60)} 分钟</span><strong>查看课程 <ArrowRight size={17} /></strong></div>
+              </div>
+            </Link>)}
+          </div>}
+          {selected && (
             <div className="course-launcher-grid">
-              {visiblePacks.map((entry) => {
+              {selected.packs.map((entry, index) => {
                 const identity = `${entry.packId}@${entry.version}`;
                 return (
                   <CourseCard
                     key={identity}
                     entry={entry}
+                    index={index}
                     live={state.live}
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}

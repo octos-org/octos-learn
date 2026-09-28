@@ -1,0 +1,78 @@
+{
+  "baseUrl": "https://learn.pitun.cc",
+  "courseCount": 9,
+  "courses": [
+    {
+      "packId": "linear-intro-and-slope",
+      "version": "0.1.0",
+      "sha256": "2b7f83fe1c642887b11f6c31ff3e8c29aed28b1d422bfa989337ea1527a8466c",
+      "bytes": 1116410,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "linear-simultaneous-intersections",
+      "version": "0.1.1",
+      "sha256": "3ded98c318536f3c6c06ac23d00aab3f3697f411d83f14438ec16be91ae05ae5",
+      "bytes": 1399945,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "slope-and-intercept",
+      "version": "0.1.6",
+      "sha256": "24f0c209175d5ba8ab10f4f0e7b159018056c5792ce507d07a753b8241e883c0",
+      "bytes": 1816289,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "surface-paraboloid-level-sets",
+      "version": "0.2.6",
+      "sha256": "3e7806e5506db793066f9ca8a74934cab986d50065f83ddf53b5edae83d593d4",
+      "bytes": 3207772,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "surface-partial-derivative-slice",
+      "version": "0.2.7",
+      "sha256": "0612e7a9ca84f40abac3908ef8780391ba7c3ebebf23ff722b6b2d0e7cba41c1",
+      "bytes": 2721221,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "surface-saddle-point-analysis",
+      "version": "0.2.7",
+      "sha256": "59f6f810fd6b55f67f9bc33c6ca5910013ca38de4445f293421c6c8570c030c1",
+      "bytes": 3506717,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "trig-cosine-and-phase-shift",
+      "version": "0.1.2",
+      "sha256": "2c535e6dc6917def46441ce75e6c8988e501b46e7edc81790d3070f323d0abf5",
+      "bytes": 2099521,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "trig-quadrants-and-monotonicity",
+      "version": "0.1.2",
+      "sha256": "b289eeedc5a1283e3e35ea9aa7000735a69e660937e08b6b68a2e1f65faeb93c",
+      "bytes": 1795290,
+      "downloadVerified": true,
+      "manifestMatches": true
+    },
+    {
+      "packId": "trig-unit-circle-to-sine",
+      "version": "0.1.1",
+      "sha256": "c30ce8f67ce1879bf01511b49b5d9b60685a38029d7561b9aa24e036107388f9",
+      "bytes": 2051002,
+      "downloadVerified": true,
+      "manifestMatches": true
+    }
+  ]
+}

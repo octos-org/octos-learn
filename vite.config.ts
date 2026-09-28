@@ -186,6 +186,38 @@ export default defineConfig(({ mode, command }) => {
           }
         : undefined,
       proxy: {
+        // CoursePack publication is served by public Nginx, not octos serve.
+        // An explicit local publication uses the middleware above instead.
+        ...(!env.OCTOS_LOCAL_COURSE_PACK_ROOT?.trim() ? {
+          "^/api/learn/course-packs(?:/|$|\\?)": {
+            target: "https://learn.pitun.cc",
+            changeOrigin: true,
+            configure: (proxy: Parameters<NonNullable<import("vite").ProxyOptions["configure"]>>[0]) => {
+              proxy.on("proxyReq", (proxyReq) => {
+                // Public static content must not receive local account credentials.
+                proxyReq.removeHeader("authorization");
+                proxyReq.removeHeader("cookie");
+                proxyReq.removeHeader("origin");
+                proxyReq.removeHeader("referer");
+              });
+            },
+          },
+        } : {}),
+        "/api/systemone/evaluate": {
+          target: "https://api.typesafe.ai",
+          changeOrigin: true,
+          rewrite: () => "/v1/systemone",
+          configure: (proxy) => {
+            proxy.on("proxyReq", (proxyReq) => {
+              proxyReq.removeHeader("origin");
+              proxyReq.removeHeader("referer");
+              const currentAuth = proxyReq.getHeader("authorization");
+              if (!currentAuth && env.VITE_TYPESAFE_API_KEY) {
+                proxyReq.setHeader("authorization", `Bearer ${env.VITE_TYPESAFE_API_KEY}`);
+              }
+            });
+          },
+        },
         "/api": {
           target: octosApiTarget,
           changeOrigin: true,

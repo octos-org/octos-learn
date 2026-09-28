@@ -1,0 +1,600 @@
+{
+  "id": "fraction-what-is-a-half",
+  "version": "0.1.0",
+  "title": "认识分数的初步概念：从方格到二分之一",
+  "catalogSupplement": true,
+  "states": {
+    "playing-1920": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 926.199951171875,
+          "y": 253,
+          "w": 572,
+          "h": 546,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 1534.218505859375,
+          "y": 252.32015991210938,
+          "w": 312.7626953125,
+          "h": 176.85964965820312,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 1534.218505859375,
+          "y": 448.62017822265625,
+          "w": 312.7626953125,
+          "h": 176.85968017578125,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 1898.599853515625,
+          "y": 253,
+          "w": 74.10009765625,
+          "h": 98.79998779296875,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 1156px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 421.79998779296875,
+          "y": 253,
+          "w": 467.99993896484375,
+          "h": 98.79998779296875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "playing-1440": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 691.164794921875,
+          "y": 203.10000610351562,
+          "w": 487.98095703125,
+          "h": 465.8000183105469,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 1209.873779296875,
+          "y": 202.52001953125,
+          "w": 266.822021484375,
+          "h": 150.88140869140625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 1209.873779296875,
+          "y": 369.9862060546875,
+          "w": 266.822021484375,
+          "h": 150.88140869140625,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 260.85430908203125,
+          "y": 708.8257446289062,
+          "w": 63.2156982421875,
+          "h": 84.28759765625,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 20px; top: 476px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 260.85430908203125,
+          "y": 203.10000610351562,
+          "w": 399.25714111328125,
+          "h": 84.28762817382812,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "playing-700": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 133.51153564453125,
+          "y": 193.15000915527344,
+          "w": 432.9769287109375,
+          "h": 413.296142578125,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 133.26885986328125,
+          "y": 743.2674560546875,
+          "w": 433.4622802734375,
+          "h": 114.068603515625,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 580px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 133.26885986328125,
+          "y": 871.1924438476562,
+          "w": 433.4622802734375,
+          "h": 114.068603515625,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 710px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 133.51153564453125,
+          "y": 1023.678466796875,
+          "w": 432.9769287109375,
+          "h": 74.786865234375,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 864px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 133.51153564453125,
+          "y": 630.0631103515625,
+          "w": 354.2538757324219,
+          "h": 74.78692626953125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    },
+    "ended-1920": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 488.0198059082031,
+          "y": 271.3111267089844,
+          "w": 494.4554748535156,
+          "h": 471.9801940917969,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 1013.6109008789062,
+          "y": 270.72344970703125,
+          "w": 270.36236572265625,
+          "h": 152.88330078125,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 1013.6109008789062,
+          "y": 440.4115905761719,
+          "w": 270.36236572265625,
+          "h": 152.88327026367188,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 1328.5941162109375,
+          "y": 271.3111267089844,
+          "w": 64.054443359375,
+          "h": 85.40594482421875,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 1156px; top: 20px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 1437.5989990234375,
+          "y": 271.3111267089844,
+          "w": 115.74755859375,
+          "h": 85.40594482421875,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 1253px; top: 20px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "x": 1437.5989990234375,
+          "y": 374.697265625,
+          "w": 115.74755859375,
+          "h": 85.40594482421875,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 1253px; top: 112px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "x": 1597.9674072265625,
+          "y": 270.72344970703125,
+          "w": 270.3623046875,
+          "h": 152.88330078125,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 1396px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 52,
+          "y": 271.3111267089844,
+          "w": 404.554443359375,
+          "h": 85.40594482421875,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 52,
+          "y": 374.697265625,
+          "w": 370.8415832519531,
+          "h": 171.30352783203125,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "controls": ""
+    },
+    "ended-1440": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 747.845947265625,
+          "y": 154,
+          "w": 361.554443359375,
+          "h": 345.1202087402344,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 408px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 1132.1673583984375,
+          "y": 153.57028198242188,
+          "w": 197.6937255859375,
+          "h": 111.79092407226562,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 20px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 1132.1673583984375,
+          "y": 277.64923095703125,
+          "w": 197.6937255859375,
+          "h": 111.7908935546875,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 876px; top: 171px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 429.0206298828125,
+          "y": 528.701904296875,
+          "w": 46.837738037109375,
+          "h": 62.4503173828125,
+          "nw": 57,
+          "nh": 76,
+          "style": "left: 20px; top: 476px; width: 57px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 508.7269592285156,
+          "y": 528.701904296875,
+          "w": 84.63662719726562,
+          "h": 62.4503173828125,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 117px; top: 476px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "x": 508.7269592285156,
+          "y": 604.2996826171875,
+          "w": 84.63662719726562,
+          "h": 62.4503173828125,
+          "nw": 103,
+          "nh": 76,
+          "style": "left: 117px; top: 568px; width: 103px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "x": 625.9910888671875,
+          "y": 528.272216796875,
+          "w": 197.6937255859375,
+          "h": 111.7908935546875,
+          "nw": 240,
+          "nh": 135,
+          "style": "left: 260px; top: 476px; width: 240px; height: 135px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 429.0206298828125,
+          "y": 154,
+          "w": 295.81732177734375,
+          "h": 62.4503173828125,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 20px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 429.0206298828125,
+          "y": 229.59774780273438,
+          "w": 271.1658935546875,
+          "h": 125.26016235351562,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 112px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "controls": ""
+    },
+    "ended-700": {
+      "cards": [
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-01-item-01",
+          "type": "node",
+          "kind": "geometry",
+          "text": "方格阵列分割示意\n探索\n大图\n0\n2\n4\n6\n8\n0\n2\nx\ny\n1 平方单位\n每个小方格面积为 1 平方单位；每行方格数 × 行数 = 方格总数 = 长方形面积。",
+          "x": 201.9862060546875,
+          "y": 150,
+          "w": 196.027587890625,
+          "h": 187.11724853515625,
+          "nw": 440,
+          "nh": 420,
+          "style": "left: 20px; top: 20px; width: 440px; height: 420px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的概念\n把一个整体分成若干份\n只有每份完全相同，才是平均分",
+          "x": 201.8763427734375,
+          "y": 473.90911865234375,
+          "w": 196.247314453125,
+          "h": 51.64385986328125,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 748px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-01-moment-02-item-02",
+          "type": "node",
+          "kind": "note",
+          "text": "平均分的核心要点\n分成的每一份必须完全相同\n只有平均分，才是认识分数的前提",
+          "x": 201.8763427734375,
+          "y": 531.8263549804688,
+          "w": 196.247314453125,
+          "h": 51.64385986328125,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 878px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-02-moment-02-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 201.9862060546875,
+          "y": 600.8634643554688,
+          "w": 196.027587890625,
+          "h": 33.85931396484375,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 1032px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-01-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "1\n2\n2\n1\n\t​\n",
+          "x": 201.9862060546875,
+          "y": 652.54345703125,
+          "w": 196.027587890625,
+          "h": 33.85931396484375,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 1148px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-03-moment-04-item-01",
+          "type": "node",
+          "kind": "math",
+          "text": "2\n2\n=\n1\n2\n2\n\t​\n\n=1",
+          "x": 201.9862060546875,
+          "y": 693.5310668945312,
+          "w": 196.027587890625,
+          "h": 33.85931396484375,
+          "nw": 440,
+          "nh": 76,
+          "style": "left: 20px; top: 1240px; width: 440px; height: 76px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0:node:section-04-moment-02-item-01",
+          "type": "node",
+          "kind": "note",
+          "text": "练习总结\n2 个方格中的 1 个表示为 1/2\n整体平均分成 2 份，每份即为二分之一",
+          "x": 201.8763427734375,
+          "y": 744.7836303710938,
+          "w": 196.247314453125,
+          "h": 51.643798828125,
+          "nw": 440,
+          "nh": 114,
+          "style": "left: 20px; top: 1356px; width: 440px; height: 114px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "control",
+          "text": "每行方格数\n4 个\n−\n+\n行数\n1 行\n−\n+",
+          "x": 201.9862060546875,
+          "y": 347.8096618652344,
+          "w": 160.38623046875,
+          "h": 33.85931396484375,
+          "nw": 360,
+          "nh": 76,
+          "style": "left: 20px; top: 464px; width: 360px;"
+        },
+        {
+          "id": "fraction-what-is-a-half-0.1.0-region",
+          "type": "task",
+          "text": "动手试一试\n直接操作白板上的图形、视角或控制器\n\n请将每行方格数调整为 4 个，观察平均分割后的图形。\n\n轮到你操作了，完成后这里会立即反馈。",
+          "x": 201.9862060546875,
+          "y": 388.7972412109375,
+          "w": 147.02069091796875,
+          "h": 67.91354370117188,
+          "nw": 330,
+          "nh": 152,
+          "style": "left: 20px; top: 556px; width: 330px;"
+        }
+      ],
+      "viewport": {
+        "w": 700,
+        "h": 1000
+      },
+      "controls": ""
+    }
+  },
+  "beats": 11
+}

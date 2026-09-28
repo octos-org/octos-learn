@@ -1,0 +1,53 @@
+{
+  "scope": "Local layout only, 30 samples; excludes browser measurement, models, network and TTS. Canonical estimated node sizes; no host attachments.",
+  "reports": [
+    {
+      "id": "surface-paraboloid-level-sets",
+      "nodes": 5,
+      "modes": {
+        "uncached": {
+          "p50Ms": 0.39658400000000427,
+          "p95Ms": 1.1824160000000035,
+          "maxMs": 1.3407919999999933
+        },
+        "cached": {
+          "p50Ms": 0.026957999999993376,
+          "p95Ms": 0.11012499999999648,
+          "maxMs": 0.12837499999999125
+        }
+      }
+    },
+    {
+      "id": "surface-partial-derivative-slice",
+      "nodes": 9,
+      "modes": {
+        "uncached": {
+          "p50Ms": 4.974959000000013,
+          "p95Ms": 9.56291699999997,
+          "maxMs": 18.244459000000006
+        },
+        "cached": {
+          "p50Ms": 0.0442920000000413,
+          "p95Ms": 0.12383399999998801,
+          "maxMs": 0.14987500000000864
+        }
+      }
+    },
+    {
+      "id": "surface-saddle-point-analysis",
+      "nodes": 14,
+      "modes": {
+        "uncached": {
+          "p50Ms": 6.070582999999999,
+          "p95Ms": 10.857915999999989,
+          "maxMs": 11.90466699999996
+        },
+        "cached": {
+          "p50Ms": 0.08945900000003348,
+          "p95Ms": 0.16849999999999454,
+          "maxMs": 0.19533300000000509
+        }
+      }
+    }
+  ]
+}
