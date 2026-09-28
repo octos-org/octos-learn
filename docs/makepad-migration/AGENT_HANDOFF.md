@@ -23,15 +23,15 @@ macOS 产品应用 **v2 已交付并推送到远端分支**：以 main 网页版
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `~/Documents/projects/octos-learn` | `codex/macos-product-ui` | `dd73069` | octos-org/octos-learn 同名分支 |
-| `~/Documents/projects/octos-lesson-language` | `codex/rust-runtime-product` | `9f77a66` | alan0x/octos-lesson-language 同名分支 |
+| `~/Documents/projects/octos-learn` | `codex/macos-product-ui` | `173639f`（已对齐 main `e39adbb`，九门课发布版） | octos-org/octos-learn 同名分支 |
+| `~/Documents/projects/octos-lesson-language` | `codex/rust-runtime-product` | `e4cfac6`（已对齐 main `f2a1c65`） | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
-## 2. ⚠️ /private/tmp 已被系统清空
+## 2. 工作区重建
 
-GPT 的 `oll-phase0-20260921` 与产品工作区 `oll-product-20260921` **均已不存在**。所有代码提交都在 §1 的持久分支里，证据与锁文件在本调研目录。重建工作区：
+当前工作区在 `/private/tmp/oll-product`（2026-09-27 重建，含合并后代码）。/private/tmp 会被系统定期清空，重建步骤如下（已实测可走通）。所有代码提交都在 §1 的持久分支里，证据与锁文件在本调研目录。重建工作区：
 
 ```sh
 WS=/private/tmp/oll-product  # 自选空目录
@@ -47,11 +47,8 @@ cp <调研目录>/phase0-evidence/Makepad.Cargo.lock makepad/Cargo.lock
 cp <调研目录>/phase0-evidence/Cargo.lock octoscript-makepad/Cargo.lock
 # zbias 修复（PR #35 合并前必须应用）
 cd octoscript-makepad && git am <调研目录>/phase0-evidence/makepad-plot-zbias-band.patch && cd ..
-# 课程包 archive（两处来源，均需 SHA-256 对照 octos-learn/android/embedded-course-packs.json）
-mkdir -p course-packs
-cp ~/Documents/projects/octos-learn/android/app/src/main/assets/course-packs/embedded/rectangle-area-from-tiles/0.1.5/archive.ocpack course-packs/rectangle-area-from-tiles-0.1.5.ocpack
-cp ~/Documents/projects/octos-learn/android/app/src/main/assets/course-packs/embedded/slope-and-intercept/0.1.6/archive.ocpack course-packs/slope-and-intercept-0.1.6.ocpack
-# 备选：rectangle 可从 https://learn.pitun.cc/api/learn/course-packs/rectangle-area-from-tiles/0.1.5/archive.ocpack 下载；slope 0.1.6 服务端没有，只有 android 资产
+# 课程包：无需人工拷贝。9 门课的 SHA-256 锁定在 octos-learn 分支的
+# native/octos-learn/course-packs.lock.json，打包脚本自动从 learn.pitun.cc 下载校验
 ```
 
 <调研目录> = `/Users/alan0x/Documents/projects/YY/working/octos-learn/2026-0919-makepad数学渲染与去webview化调研`。
@@ -75,15 +72,18 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 - 产品 crate：`octos-learn/native/octos-learn/`（lib.rs 全部产品 UI；course_pack.rs 课程包加载；assets/icons/ 23 个 lucide SVG；assets/octos-avatar.svg 章鱼；scripts/package-macos.sh）。
 - 复用组件：`octos-learn/native/oll-preview/`（spatial_board.rs 白板 widget：布局/相机/连线/笔迹/点阵/安全区取景；board_view.rs 卡片工厂：math/note/plot/geometry 卡+角标；formula_view.rs 公式混排；progress_store.rs 文件进度存储）。**v6 预览 app 是回归工具，改动这些共享文件后跑一遍它的测试。**
-- Rust runtime：`oll/crates/oll-runtime/`（Session/Preview/spatial/connections/expression/timing/checkpoint/ink/api/wasm）。已支持 9 种 canonical op 全部（teacher.expression 是 3912d01 补的）；节点限 geometry/plot/math/note/text/diagram(sequence)。
+- Rust runtime：`oll/crates/oll-runtime/`（Session/Preview/spatial/connections/expression/timing/checkpoint/ink/api/wasm）。已支持 9 种 canonical op 全部；节点限 geometry/plot/math/note/text/diagram(sequence)。
+- 九门课 runtime 覆盖（2026-09-27 实测，host_api 加载+全程播放）：linear 3 门 + trig 3 门完整播放到底；surface 3 门报 "Unsupported preview node kind"（scene3d 节点，3D 支持是下一里程碑）。
 - 已交付两轮记录：`OLL_MACOS_PRODUCT_V1.md`（功能流程）、`OLL_MACOS_PRODUCT_V2.md`（像素对齐）。
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
 
-1. **卡片排布**：原生 spatial::layout 与 web 布局结果不完全一致（如 NOTE 卡位置）；变量面板是固定槽位（web 是世界坐标锚定）。→ 布局引擎对照。
-2. **字体**：web 用 Hanken Grotesk/Inter（仅拉丁 woff2）；makepad ttf_parser 只吃 ttf/otf。→ 构建期 woff2→ttf 预转（一次性工具）后接入。
-3. **功能禁用项**（UI 上有占位，点击 toast 说明）：语音、摄像头、提问输入坞、本课目录、下一 Beat / 重播 Topic（需 runtime 加 Session::next_beat/restart_topic 与大纲结构暴露）、橡皮擦/框选/笔迹持久化（需 Ink 加 erase/select/持久化，对齐 web `oll.student-ink.svg` 格式）、旁白音频（包内 mp3 未接入；manifest narration.segments 有 beatId→文件+时长，可先做 durationMs 真实节奏）、登录/设置页、空白白板、网络课程目录。
-4. **细节近似**：无真毛玻璃/阴影/markdown；滑块把手方形；探索/大图按钮纯视觉；PR #35 合并前构建依赖本地补丁。
+1. **surface 三门课（3D）**：scene3d 节点未支持，是覆盖九门课的最大缺口。→ runtime 加 scene3d 节点 + 渲染层接 makepad-d3 charts_3d（注意：其 GPU 着色器 DrawSurface3D 无现成调用方，现成组件是 CPU 投影路径）。
+2. **启动器课程集 UI**：main 已改为按课程集分组的两层导航（PR #29），产品启动器还是平铺 9 卡。→ 按新 main 基准重拍截图后对齐。
+3. **卡片排布**：原生 spatial::layout 与 web 布局结果不完全一致；变量面板固定槽位（web 世界坐标锚定）。→ 布局引擎对照。
+4. **字体**：web 用 Hanken Grotesk/Inter（仅拉丁 woff2）；makepad ttf_parser 只吃 ttf/otf。→ 构建期 woff2→ttf 预转（一次性工具）后接入。
+5. **功能禁用项**（UI 上有占位，点击 toast 说明）：语音、摄像头、提问输入坞、本课目录、下一 Beat / 重播 Topic（需 runtime 加 Session::next_beat/restart_topic 与大纲结构暴露）、橡皮擦/框选/笔迹持久化（需 Ink 加 erase/select/持久化，对齐 web `oll.student-ink.svg` 格式）、旁白音频（包内 mp3 未接入；manifest narration.segments 有 beatId→文件+时长，可先做 durationMs 真实节奏）、登录/设置页、空白白板、网络课程目录。
+6. **细节近似**：无真毛玻璃/阴影/markdown；滑块把手方形；探索/大图按钮纯视觉；PR #35 合并前构建依赖本地补丁。
 
 ## 6. 授权与边界（用户已确认的规矩）
 
