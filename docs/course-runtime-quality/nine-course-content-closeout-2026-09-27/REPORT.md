@@ -34,7 +34,7 @@ Claude 提交与整合提交对应：`e70f2d3→bd98527`、`c8671c1→b6d2753`�
 - [发布前目录](catalog-before.json) / [发布后目录](catalog-after.json)
 - [发布计划](publication-plan.json) / [实际发布脚本](publish-content.py)
 - 服务端目录清单备份：`/opt/octos-learn/backups/course-content-20260928T022059Z`（UTC）。回滚应恢复该备份的 `catalog.source.json` 和 `catalog.json` 并记录审计；不要改写已发布版本的归档。
-- 公网前端本轮只校验现有资源，[60 个资源全部通过](public-web-verify.log)，课程包独立发布；没有重启用户本地前后端。
+- 公网前端本轮只校验现有资源，[60 个资源全部通过](public-web-verification.txt)，课程包独立发布；没有重启用户本地前后端。
 - [公网升级与离线验证](public-upgrade-result.json)：隔离测试浏览器先安装真实旧余弦课 0.1.0，再切换到现行目录 0.1.2；只显示一个推荐课程卡，旧学习记录保留。阻断课程接口后，旧、新两个固定版本都能从缓存打开，截图见 evidence/public-*-version-offline.png。认证接口只在浏览器中使用测试响应，不访问真实用户账户。
 
 ## 旁白与音频
