@@ -1,3 +1,4 @@
+import { LearningStorageBoundary } from "./learning/learning-storage-boundary";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -20,6 +21,6 @@ const rootElement = document.getElementById("root")!;
 rootElement.setAttribute("data-octos-booted", "true");
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <LearningStorageBoundary><App /></LearningStorageBoundary>
   </StrictMode>,
 );

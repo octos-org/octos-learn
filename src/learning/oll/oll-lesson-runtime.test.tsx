@@ -1,8 +1,8 @@
+import { renderLearning } from "../../test/render-learning";
 import {
   act,
   cleanup,
   fireEvent,
-  render,
   screen,
   waitFor,
 } from "@testing-library/react";
@@ -1133,7 +1133,7 @@ describe("OLL lesson Runtime integration", () => {
   });
   it("reports the owning turn after a course frame is rendered", async () => {
     const onCourseRendered = vi.fn();
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         onPlaceQuestion={vi.fn()}
         onCourseRendered={onCourseRendered}
@@ -1160,7 +1160,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("keeps the lesson visible and retries only a degraded visual component", async () => {
     const onRetry = vi.fn(async () => undefined);
-    render(<DegradedVisualRuntimeProbe onRetry={onRetry} />);
+    await renderLearning(<DegradedVisualRuntimeProbe onRetry={onRetry} />);
 
     expect(await screen.findAllByText("这个互动画面暂时没有生成成功")).toHaveLength(2);
     expect(screen.getByText("展示可旋转的抛物面与水平截面")).toBeTruthy();
@@ -1194,7 +1194,7 @@ describe("OLL lesson Runtime integration", () => {
           studentTasks: runtime.studentTasks.map(task => ({...task, available})),
         }} /></>;
     }
-    render(<Probe />);
+    await renderLearning(<Probe />);
     const heights = () => {
       const latest = layouts.mock.calls.at(-1)?.[0];
       return Object.values(latest ?? {}).flatMap(region =>
@@ -1221,7 +1221,7 @@ describe("OLL lesson Runtime integration", () => {
         <span data-testid="operations">{runtime.studentOperations.length}</span>
       </>;
     }
-    render(<Probe />);
+    await renderLearning(<Probe />);
     fireEvent.click(screen.getByText("非法输入"));
     await waitFor(() => expect(screen.getByTestId("failure").textContent).toContain("missing"));
     fireEvent.click(screen.getByText("后续输入"));
@@ -1230,7 +1230,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("includes host controls in collision layout without a composer question region", async () => {
     const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
-    render(<PackagedLessonProbe />);
+    await renderLearning(<PackagedLessonProbe />);
     await waitFor(() => {
       expect(setRegionLayouts).toHaveBeenCalledWith({
         __legacy__: expect.objectContaining({
@@ -1253,7 +1253,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("preserves portable course region layout constraints and attachments across multi-topic outlines", async () => {
     const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
-    render(<MultiTopicPackagedLessonProbe />);
+    await renderLearning(<MultiTopicPackagedLessonProbe />);
     await waitFor(() => {
       expect(setRegionLayouts).toHaveBeenCalledWith(expect.objectContaining({
         __legacy__: expect.objectContaining({
@@ -1275,10 +1275,10 @@ describe("OLL lesson Runtime integration", () => {
     });
   });
 
-  it("halts playback at the topic boundary when replaying a multi-topic lesson", () => {
+  it("halts playback at the topic boundary when replaying a multi-topic lesson", async () => {
     vi.useFakeTimers();
     try {
-      render(<MultiTopicReplayProbe />);
+      await renderLearning(<MultiTopicReplayProbe />);
       fireEvent.click(screen.getByRole("button", { name: "播放主题一" }));
       expect(screen.getByTestId("current-step").textContent).toBe(
         "lesson-geometry-v2-001:step:establish-task",
@@ -1304,7 +1304,7 @@ describe("OLL lesson Runtime integration", () => {
       "setRegionLayouts",
     );
     const onPlaceQuestion = vi.fn();
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         onPlaceQuestion={onPlaceQuestion}
         withCourseRegion
@@ -1361,7 +1361,7 @@ describe("OLL lesson Runtime integration", () => {
       InfiniteBoardView.prototype,
       "setRegionLayouts",
     );
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         onPlaceQuestion={vi.fn()}
         withCourseRegion
@@ -1411,7 +1411,7 @@ describe("OLL lesson Runtime integration", () => {
       }),
       destroy: vi.fn(() => Promise.resolve()),
     }));
-    render(<InkRuntimeProbe />);
+    await renderLearning(<InkRuntimeProbe />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     fireEvent.click(screen.getByRole("button", { name: "框选多个笔迹" }));
@@ -1429,7 +1429,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("reserves a new course area before its loading state renders", async () => {
     const onPlaceQuestion = vi.fn();
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         onPlaceQuestion={onPlaceQuestion}
         pending
@@ -1448,7 +1448,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("restores a missing historical question beside its existing course", async () => {
     const onPlaceQuestion = vi.fn();
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         onPlaceQuestion={onPlaceQuestion}
         recovered
@@ -1465,7 +1465,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("focuses a new question and loading block once without reclaiming the camera", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<PendingQuestionFocusProbe />);
+    await renderLearning(<PendingQuestionFocusProbe />);
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
       x: 2_400,
@@ -1482,7 +1482,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("focuses the complete course footprint before loading UI catches up", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<PendingQuestionFocusProbe showLoading={false} />);
+    await renderLearning(<PendingQuestionFocusProbe showLoading={false} />);
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
       x: 2_400,
@@ -1495,7 +1495,7 @@ describe("OLL lesson Runtime integration", () => {
   it("ignores a previous course focus while a new course is loading", async () => {
     const focusTargets = vi.spyOn(InfiniteBoardView.prototype, "focusTargets");
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<PendingQuestionFocusProbe />);
+    await renderLearning(<PendingQuestionFocusProbe />);
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledWith({
       x: 2_400,
@@ -1518,7 +1518,7 @@ describe("OLL lesson Runtime integration", () => {
       "releaseHostCamera",
     );
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<NewCourseNodeHandoffProbe />);
+    await renderLearning(<NewCourseNodeHandoffProbe />);
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalled());
     expect(releaseHostCamera).not.toHaveBeenCalled();
@@ -1534,7 +1534,7 @@ describe("OLL lesson Runtime integration", () => {
       InfiniteBoardView.prototype,
       "setActiveRegion",
     );
-    render(<NewCourseNodeHandoffProbe />);
+    await renderLearning(<NewCourseNodeHandoffProbe />);
 
     fireEvent.click(screen.getByRole("button", {
       name: "显示新课程第一张卡片",
@@ -1546,7 +1546,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("ends inside the current course region instead of fitting every course", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe />);
+    await renderLearning(<CompletedCourseFocusProbe />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1577,7 +1577,7 @@ describe("OLL lesson Runtime integration", () => {
     vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect")
       .mockReturnValue(focusedViewport);
     const onUpdateCourseRegion = vi.fn();
-    render(<CompletedCourseFocusProbe
+    await renderLearning(<CompletedCourseFocusProbe
       onUpdateCourseRegion={onUpdateCourseRegion}
     />);
 
@@ -1592,7 +1592,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("uses one course-end camera request when an after-lesson task appears", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe taskAppearsAtEnd />);
+    await renderLearning(<CompletedCourseFocusProbe taskAppearsAtEnd />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1612,7 +1612,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("does not run restore focus after naturally completing the same course", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe completesAtEnd />);
+    await renderLearning(<CompletedCourseFocusProbe completesAtEnd />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1626,7 +1626,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("keeps the completed-course camera when a later OLL operation requests another focus", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+    await renderLearning(<CompletedCourseFocusProbe legacyNodeMetadata />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1647,7 +1647,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("uses Step-owned nodes when older cards share legacy region metadata", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+    await renderLearning(<CompletedCourseFocusProbe legacyNodeMetadata />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1668,7 +1668,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("focuses the explicitly replayed course instead of the whole restored board", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe legacyNodeMetadata />);
+    await renderLearning(<CompletedCourseFocusProbe legacyNodeMetadata />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1691,7 +1691,7 @@ describe("OLL lesson Runtime integration", () => {
 
   it("restores a completed multi-course board to its last course once", async () => {
     const focusWorldRect = vi.spyOn(InfiniteBoardView.prototype, "focusWorldRect");
-    render(<CompletedCourseFocusProbe restored />);
+    await renderLearning(<CompletedCourseFocusProbe restored />);
 
     await act(async () => undefined);
     focusWorldRect.mockClear();
@@ -1729,7 +1729,7 @@ describe("OLL lesson Runtime integration", () => {
       destroy: vi.fn(() => Promise.resolve()),
     });
     const onPlaceQuestion = vi.fn();
-    render(
+    await renderLearning(
       <QuestionPlacementProbe
         inkSessionId="question-placement-ink"
         onPlaceQuestion={onPlaceQuestion}
@@ -1762,7 +1762,7 @@ describe("OLL lesson Runtime integration", () => {
       subscribe: (listener: typeof emit) => { emit = listener; listener(state); return () => undefined; },
       setMode: vi.fn(), destroy: vi.fn(() => Promise.resolve()),
     });
-    render(<InkRuntimeProbe />);
+    await renderLearning(<InkRuntimeProbe />);
     await waitFor(() => expect(setRegionLayouts.mock.calls.at(-1)?.[0].__legacy__.obstacles).toContainEqual(bounds));
     const count = setRegionLayouts.mock.calls.length;
     act(() => emit({ ...state, selected_count: 1, selection_revision: 1 }));
@@ -1826,7 +1826,7 @@ describe("OLL lesson Runtime integration", () => {
 
     const onInkActivity = vi.fn();
     let saveInk: (() => Promise<void>) | null = null;
-    render(
+    await renderLearning(
       <InkRuntimeProbe
         onInkActivity={onInkActivity}
         onInkSaveHandlerChange={(handler) => { saveInk = handler; }}
@@ -1929,7 +1929,7 @@ describe("OLL lesson Runtime integration", () => {
     };
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    const view = render(<InkShortcutProbe />);
+    const view = await renderLearning(<InkShortcutProbe />);
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
 
     fireEvent.keyDown(window, { key: "z", ctrlKey: true });
@@ -1991,7 +1991,7 @@ describe("OLL lesson Runtime integration", () => {
     };
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(<BlankToLessonWhiteboardProbe />);
+    await renderLearning(<BlankToLessonWhiteboardProbe />);
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(screen.getByRole("status").textContent).toContain("1 项笔迹");
@@ -2064,7 +2064,7 @@ describe("OLL lesson Runtime integration", () => {
     const onVoiceCaptureChange = vi.fn();
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(
+    await renderLearning(
       <SelectionInkRuntimeProbe
         onAsk={onAsk}
         onClassify={onClassify}
@@ -2276,7 +2276,7 @@ describe("OLL lesson Runtime integration", () => {
     const onDeleteSources = vi.fn();
     mountInkRuntimeMock.mockReturnValue(ink);
 
-    render(
+    await renderLearning(
       <SelectionSourceLifecycleProbe
         source={source}
         onDeleteSources={onDeleteSources}
@@ -2316,8 +2316,9 @@ describe("OLL lesson Runtime integration", () => {
       subscribe: vi.fn(() => () => undefined),
       destroy: vi.fn(() => Promise.resolve()),
     };
+    void ink.ready.catch(() => undefined);
     mountInkRuntimeMock.mockReturnValue(ink);
-    render(<InkRuntimeProbe />);
+    await renderLearning(<InkRuntimeProbe />);
 
     await waitFor(() => {
       expect(screen.getByRole("alert").textContent).toContain(
@@ -2328,8 +2329,8 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByRole("button", { name: "启用白板书写" })).toBeNull();
   });
 
-  it("plays Canonical Beats without replacing existing board nodes", () => {
-    render(<RuntimeProbe />);
+  it("plays Canonical Beats without replacing existing board nodes", async () => {
+    await renderLearning(<RuntimeProbe />);
 
     fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
 
@@ -2355,7 +2356,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("opens a historical lesson at its final board state without playing", async () => {
-    render(<ReviewRuntimeProbe />);
+    await renderLearning(<ReviewRuntimeProbe />);
 
     await waitFor(() => {
       const [cursor, total] = screen
@@ -2382,7 +2383,7 @@ describe("OLL lesson Runtime integration", () => {
       toJSON: () => ({}),
     } as DOMRect);
     const directValues: number[] = [];
-    const first = render(<VariableRuntimeProbe onVariable={(value) => directValues.push(value)} />);
+    const first = await renderLearning(<VariableRuntimeProbe onVariable={(value) => directValues.push(value)} />);
     const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
     const board = screen.getByTestId("oll-lesson-board");
     const unitPointId = "lesson-unit-circle-sine-001:node:unit-circle:fragment:point-p";
@@ -2447,7 +2448,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByTestId("student-operation-count").textContent).toBe("4");
 
     first.unmount();
-    render(<VariableRuntimeProbe />);
+    await renderLearning(<VariableRuntimeProbe />);
     const restoredSlider = await screen.findByRole("slider", { name: "旋转角 θ" });
     expect(Number((restoredSlider as HTMLInputElement).value)).toBeCloseTo(Math.PI);
     expect(screen.getByText("π", { selector: "output" })).toBeTruthy();
@@ -2459,7 +2460,7 @@ describe("OLL lesson Runtime integration", () => {
       value: number;
       phase: StudentVariableInputEvent["phase"];
     }> = [];
-    render(<VariableRuntimeProbe onInputEvent={(_alias, value, event) => {
+    await renderLearning(<VariableRuntimeProbe onInputEvent={(_alias, value, event) => {
       if (event.control === "slider") {
         inputEvents.push({ value, phase: event.phase });
       }
@@ -2503,7 +2504,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("offers exact one-step nudge controls for fine adjustment", async () => {
-    render(<VariableRuntimeProbe />);
+    await renderLearning(<VariableRuntimeProbe />);
     let slider = await screen.findByRole("slider", { name: "旋转角 θ" });
     const reset = screen.getByRole("button", { name: "复位旋转角 θ" });
     expect(reset.querySelector("svg")).toBeTruthy();
@@ -2527,7 +2528,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("snaps a pointer release near the active task's accepted range", async () => {
-    render(<VariableRuntimeProbe />);
+    await renderLearning(<VariableRuntimeProbe />);
     const slider = await screen.findByRole("slider", { name: "旋转角 θ" });
     vi.spyOn(slider, "getBoundingClientRect").mockReturnValue({
       x: 0,
@@ -2565,7 +2566,7 @@ describe("OLL lesson Runtime integration", () => {
       height: 210,
       toJSON: () => ({}),
     } as DOMRect);
-    render(<VariableRuntimeProbe />);
+    await renderLearning(<VariableRuntimeProbe />);
     const board = screen.getByTestId("oll-lesson-board");
     const controlPoint = await waitFor(() => {
       const point = board.querySelector<SVGCircleElement>(
@@ -2595,14 +2596,14 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("shows only the current lesson's controls on a multi-lesson whiteboard", async () => {
-    render(<CurrentTopicVariableRuntimeProbe />);
+    await renderLearning(<CurrentTopicVariableRuntimeProbe />);
 
     expect(await screen.findByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
     expect(screen.queryByRole("slider", { name: "旧课程参数" })).toBeNull();
   });
 
   it("renders a highlighted 3D scene, completes its view task, and restores progress", async () => {
-    const first = render(<Scene3dRuntimeProbe />);
+    const first = await renderLearning(<Scene3dRuntimeProbe />);
 
     const scene = await screen.findByRole("img", { name: "立方体" });
     expect(scene.closest("[data-oll-scene3d]")).toBeTruthy();
@@ -2623,19 +2624,19 @@ describe("OLL lesson Runtime integration", () => {
     });
 
     first.unmount();
-    render(<Scene3dRuntimeProbe />);
+    await renderLearning(<Scene3dRuntimeProbe />);
     expect(await screen.findByRole("img", { name: "立方体" })).toBeTruthy();
     expect(screen.getByTestId("scene3d-operation-count").textContent).toBe("1");
     expect(screen.getByText("正确，这是立方体的正视图。")).toBeTruthy();
   });
 
   it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
-    const duringLesson = render(<StudentTaskRuntimeProbe startAtEnd={false} />);
+    const duringLesson = await renderLearning(<StudentTaskRuntimeProbe startAtEnd={false} />);
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
     expect(screen.queryByRole("slider", { name: "旋转角 θ" })).toBeNull();
     duringLesson.unmount();
 
-    const first = render(<StudentTaskRuntimeProbe />);
+    const first = await renderLearning(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
     expect(screen.getByRole("slider", { name: "旋转角 θ" })).toBeTruthy();
     const controlsCard = screen.getByTestId("oll-variable-controls");
@@ -2670,13 +2671,13 @@ describe("OLL lesson Runtime integration", () => {
     });
 
     first.unmount();
-    render(<StudentTaskRuntimeProbe />);
+    await renderLearning(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
   });
 
   it("opens an after-lesson task when the current incremental delivery settles", async () => {
-    render(<IncrementalStudentTaskRuntimeProbe />);
+    await renderLearning(<IncrementalStudentTaskRuntimeProbe />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
 
     const slider = screen.getByRole("slider", { name: "旋转角 θ" });
@@ -2732,7 +2733,7 @@ describe("OLL lesson Runtime integration", () => {
       );
     }
 
-    const played = render(<PracticeTaskProbe storageKey="practice-task-play-test" />);
+    const played = await renderLearning(<PracticeTaskProbe storageKey="practice-task-play-test" />);
     fireEvent.click(screen.getByRole("button", { name: "播放课程" }));
     act(() => {
       vi.advanceTimersByTime(120_000);
@@ -2742,7 +2743,7 @@ describe("OLL lesson Runtime integration", () => {
     expect((screen.getByRole("slider", { name: "旋转角 θ" }) as HTMLInputElement).value).toBe("0");
     played.unmount();
 
-    render(<PracticeTaskProbe storageKey="practice-task-beat-test" />);
+    await renderLearning(<PracticeTaskProbe storageKey="practice-task-beat-test" />);
     for (let i = 0; i < 12; i += 1) {
       fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
     }
@@ -2751,8 +2752,8 @@ describe("OLL lesson Runtime integration", () => {
     expect((screen.getByRole("slider", { name: "旋转角 θ" }) as HTMLInputElement).value).toBe("0");
   });
 
-  it("groups the outline and seeks backwards to a selected Step", () => {
-    render(<OutlineRuntimeProbe />);
+  it("groups the outline and seeks backwards to a selected Step", async () => {
+    await renderLearning(<OutlineRuntimeProbe />);
     const [initialCursor, total] = screen
       .getByTestId("outline-progress")
       .textContent!.split("/")
@@ -2773,7 +2774,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByText("① 已知与目标")).toBeTruthy();
   });
 
-  it("applies each Beat focus even when React batches advanceBeat updates", () => {
+  it("applies each Beat focus even when React batches advanceBeat updates", async () => {
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
       x: 0,
       y: 0,
@@ -2785,7 +2786,7 @@ describe("OLL lesson Runtime integration", () => {
       height: 608,
       toJSON: () => ({}),
     } as DOMRect);
-    render(<RuntimeProbe />);
+    await renderLearning(<RuntimeProbe />);
 
     const board = screen.getByTestId("oll-lesson-board");
     const world = board.querySelector<HTMLElement>("[data-oll-board-runtime-world]");
@@ -2806,9 +2807,9 @@ describe("OLL lesson Runtime integration", () => {
     expect(transforms[8]).toBeTruthy();
   });
 
-  it("keeps learner pan and zoom control after the lesson has ended", () => {
+  it("keeps learner pan and zoom control after the lesson has ended", async () => {
     vi.useFakeTimers();
-    render(<ReviewRuntimeProbe />);
+    await renderLearning(<ReviewRuntimeProbe />);
 
     const board = screen.getByTestId("oll-lesson-board");
     fireEvent.pointerDown(board, {
@@ -2831,8 +2832,8 @@ describe("OLL lesson Runtime integration", () => {
     ).toBe(true);
   });
 
-  it("ignores ordinary host rerenders but lets a new teaching Beat reclaim the camera", () => {
-    render(<CameraRuntimeProbe />);
+  it("ignores ordinary host rerenders but lets a new teaching Beat reclaim the camera", async () => {
+    await renderLearning(<CameraRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
 
     const board = screen.getByTestId("oll-lesson-board");
@@ -2862,8 +2863,8 @@ describe("OLL lesson Runtime integration", () => {
     ).toBe(false);
   });
 
-  it("grows an active /learn board when a validated Canonical Step arrives", () => {
-    render(<IncrementalRuntimeProbe />);
+  it("grows an active /learn board when a validated Canonical Step arrives", async () => {
+    await renderLearning(<IncrementalRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "推进增量课程" }));
     expect(screen.getByTestId("stream-status").textContent).toBe("waiting");
     const totalBefore = Number(screen.getByTestId("stream-total").textContent);
@@ -2875,7 +2876,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("applies an incrementally restored history directly to its available end", async () => {
-    render(<IncrementalReviewRuntimeProbe />);
+    await renderLearning(<IncrementalReviewRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "恢复历史课程" }));
 
     await waitFor(() => {
@@ -2896,7 +2897,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("plays a new incremental step after a reviewed lesson returns to live mode", async () => {
-    render(<ReviewToLiveRuntimeProbe />);
+    await renderLearning(<ReviewToLiveRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "恢复已有步骤" }));
     expect(screen.getByTestId("review-to-live-status").textContent).toBe(
       "waiting",
@@ -2915,9 +2916,9 @@ describe("OLL lesson Runtime integration", () => {
     });
   });
 
-  it("accelerates only the silent pre-roll before the first narration", () => {
+  it("accelerates only the silent pre-roll before the first narration", async () => {
     vi.useFakeTimers();
-    render(<AcceleratedStartupRuntimeProbe />);
+    await renderLearning(<AcceleratedStartupRuntimeProbe />);
 
     expect(screen.getByTestId("accelerated-startup-speech").textContent).toBe("");
     act(() => vi.advanceTimersByTime(1_500));
@@ -2941,7 +2942,7 @@ describe("mathematical plot interaction", () => {
     Object.defineProperty(prototype,"showModal",{configurable:true,value:function(this:HTMLDialogElement){this.setAttribute("open","");}});
     Object.defineProperty(prototype,"close",{configurable:true,value:function(this:HTMLDialogElement){this.removeAttribute("open");this.dispatchEvent(new Event("close"));}});
     try {
-      const mounted = render(<TwoPointProbe />);
+      const mounted = await renderLearning(<TwoPointProbe />);
       fireEvent.click(await screen.findByRole("button",{name:"放大查看函数图"}));
       expect(document.querySelector("dialog[open]")).not.toBeNull();
       mounted.unmount();
@@ -2953,7 +2954,7 @@ describe("mathematical plot interaction", () => {
   });
 
   it("moves the two samples independently and protects division by zero", async () => {
-    render(<TwoPointProbe />);
+    await renderLearning(<TwoPointProbe />);
     const a = await screen.findByRole("slider", {name:"点A横坐标 x1"});
     const b = screen.getByRole("slider", {name:"点B横坐标 x2"});
     fireEvent.input(a, {target:{value:"0"}});
@@ -2969,4 +2970,17 @@ describe("mathematical plot interaction", () => {
     fireEvent.input(b, {target:{value:"0"}});
     await waitFor(() => expect(document.querySelector(".plot-measurement")?.textContent).toContain("不能用"));
   });
+});
+
+// These Runtime/UI tests use small synchronous fixtures. IndexedDB durability
+// and disk failures are covered separately in learning-document-store.test.ts
+// and the real-browser persistence tests.
+vi.mock("../learning-document-store", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../learning-document-store")>();
+  const { LocalPlaybackStore } = await import("octos-lesson-language/web-runtime");
+  return {
+    ...actual,
+    createIndexedPlaybackStore: async () => new LocalPlaybackStore(),
+    hasStoredInk: (key: string) => localStorage.getItem(key) !== null,
+  };
 });

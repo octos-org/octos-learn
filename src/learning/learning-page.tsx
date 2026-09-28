@@ -1,3 +1,4 @@
+import { flushLearningDocumentWrites } from "./learning-document-store";
 import {
   useCallback,
   useEffect,
@@ -667,9 +668,10 @@ export function LearningPage() {
     leavingRef.current = true;
     try {
       await inkSaveHandlerRef.current?.();
+      await flushLearningDocumentWrites();
     } catch {
       leavingRef.current = false;
-      window.alert("笔迹尚未保存成功，请稍后再试。");
+      window.alert("学习进度或笔迹尚未保存成功，请重试保存后再离开。");
       return;
     }
     const current = recordRef.current;
@@ -684,9 +686,10 @@ export function LearningPage() {
     leavingRef.current = true;
     try {
       await inkSaveHandlerRef.current?.();
+      await flushLearningDocumentWrites();
     } catch {
       leavingRef.current = false;
-      window.alert("笔迹尚未保存成功，请稍后再试。");
+      window.alert("学习进度或笔迹尚未保存成功，请重试保存后再离开。");
       return;
     }
     const completed = updateLearningSession(record.id, { status: "completed" });

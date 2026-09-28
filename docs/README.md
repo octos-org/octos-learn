@@ -1,5 +1,7 @@
 # Octos Learn 文档索引
 
+- [课程和笔迹 IndexedDB 存储](course-runtime-quality/indexeddb-storage-2026-09-28/REPORT.md)：旧开发缓存清理范围、保存失败重试和验证结果。
+
 ## 当前使用
 
 - [九门课程内容与发布收尾](course-runtime-quality/nine-course-content-closeout-2026-09-27/REPORT.md)：Claude 修复整合、八段旁白重录、九门公网包校验及 27 张真实截图。
