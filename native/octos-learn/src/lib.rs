@@ -1446,11 +1446,15 @@ impl AppMain for App {
                 .replace(now)
                 .map(|t| now.duration_since(t).as_secs_f64())
                 .unwrap_or(0.0);
-            if was_playing {
+            // Camera transitions run whenever the lesson is on screen: 下一 Beat,
+            // replies and slider changes move the camera while paused too.
+            if self.learning_visible {
                 let w = self.ui.widget(cx, ids!(spatial));
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                     board.advance(cx, dt);
                 };
+            }
+            if was_playing {
                 if let Some(session) = &mut self.player {
                     if let Err(e) = session.tick(dt) {
                         self.error = e;
