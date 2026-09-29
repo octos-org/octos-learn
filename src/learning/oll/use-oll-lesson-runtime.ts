@@ -82,6 +82,8 @@ export interface OllLessonRuntimeController {
   currentBeatId?: string;
   attentionTargets: string[];
   compositionTargets: string[];
+  /** Cards the current Step wrote before the current Beat (camera context). */
+  stepContextTargets: string[];
   activeSpeech: string;
   nextNarration?: OllLessonNarration;
   playing: boolean;
@@ -596,6 +598,7 @@ export function useOllLessonRuntime({
     currentBeatId,
     attentionTargets: session.attentionTargets,
     compositionTargets: session.compositionTargets,
+    stepContextTargets: session.stepContextTargets,
     activeSpeech: session.activePhaseTransition ? "" : projection.current_narration?.text ?? "",
     nextNarration,
     playing: session.isPlaying,

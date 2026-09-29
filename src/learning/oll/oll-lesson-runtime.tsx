@@ -50,6 +50,12 @@ import {
   BOARD_OCCLUSION_SELECTOR,
   mutationsTouchBoardOcclusion,
 } from "./board-occlusion-observer";
+import {
+  boardChromeInsets,
+  isAndroidRuntime,
+  teachingCameraCeiling,
+  teachingReadingScale,
+} from "./board-chrome-insets";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -266,30 +272,6 @@ interface InternalInfiniteBoardView {
   transform?: () => void;
 }
 
-function centerCameraOnScene(
-  view: MountedInfiniteBoard["view"],
-  scene: WhiteboardRect,
-  scale: number,
-) {
-  const internalView = view as unknown as InternalInfiniteBoardView;
-  const sceneCenterX = scene.x + scene.width / 2;
-  const sceneCenterY = scene.y + scene.height / 2;
-  const viewportRect = internalView.viewport?.getBoundingClientRect() ?? { width: 0, height: 0 };
-  const insets = internalView.viewportInsets ?? {};
-  const margin = 70;
-  const safeLeft = (insets.left ?? 0) + margin;
-  const safeTop = (insets.top ?? 0) + margin;
-  const safeRight = Math.max(safeLeft + 1, viewportRect.width - (insets.right ?? 0) - margin);
-  const safeBottom = Math.max(safeTop + 1, viewportRect.height - (insets.bottom ?? 0) - margin);
-  const safeCenterX = (safeLeft + safeRight) / 2;
-  const safeCenterY = (safeTop + safeBottom) / 2;
-
-  internalView.scale = scale;
-  internalView.panX = safeCenterX - sceneCenterX * scale;
-  internalView.panY = safeCenterY - sceneCenterY * scale;
-  internalView.transform?.();
-}
-
 function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
   const x = Number.parseFloat(element.style.left);
   const y = Number.parseFloat(element.style.top);
@@ -473,7 +455,7 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
     .dataset.runtimePlatform === "android";
   const compact = viewport.clientWidth <= 900;
   const viewportRect = viewport.getBoundingClientRect();
-  const occlusions = [
+  const chrome = [
     ...viewport.ownerDocument.querySelectorAll<HTMLElement>(boardOcclusionSelector),
   ].flatMap((element) => {
     if (element.hidden) return [];
@@ -486,18 +468,17 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
       ? [{ x: left - viewportRect.left, y: top - viewportRect.top, width: right - left, height: bottom - top }]
       : [];
   });
+  const bands = boardChromeInsets(viewportRect.width, viewportRect.height, chrome);
   return {
-    // Android's persistent chrome is already represented by exact occlusion
-    // rectangles. Reserving broad full-width bands here double-counted the
-    // same UI and left a 540px-tall display with only 118px for course cards.
-    // Desktop keeps a modest full-width bottom band for the dock area; the
-    // dock itself is an exact occlusion, so corners stay usable.
-    top: androidRuntime ? 0 : compact ? 78 : 92,
+    // Desktop keeps a modest band for the dock area as a floor; Android's
+    // bands come only from its actual chrome so a 540px display is not
+    // double-counted. Both layout and camera use these same insets.
+    top: Math.round(Math.max(androidRuntime ? 0 : compact ? 78 : 92, bands.top)),
     right: androidRuntime ? 0 : compact ? 18 : 28,
-    bottom: androidRuntime ? 0 : compact ? 180 : 120,
+    bottom: Math.round(Math.max(androidRuntime ? 0 : compact ? 180 : 120, bands.bottom)),
     left: androidRuntime ? 0 : compact ? 18 : 28,
     ...(androidRuntime ? { focusMargin: 24 } : {}),
-    occlusions,
+    occlusions: bands.occlusions,
   };
 }
 
@@ -938,7 +919,7 @@ export function LearningWhiteboard({
     top: 120,
   });
   const [teachingWidth, setTeachingWidth] = useState(1300);
-  const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets} | null>(null);
+  const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets; readingScale:number} | null>(null);
   const [courseGeometryRevision, setCourseGeometryRevision] = useState(0);
   const automaticOverviewRef = useRef<string | null>(null);
   const lastOverviewFrameRef = useRef("");
@@ -2188,13 +2169,15 @@ export function LearningWhiteboard({
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
-    const isAndroid = document.documentElement.dataset.runtimePlatform === "android";
-    if (isAndroid) {
+    if (isAndroidRuntime()) {
       // Meeting displays are viewed from much farther away than laptops.
       // Large compositions may be cropped, but automatic framing must not
       // reduce teaching cards to an unreadable whole-course thumbnail.
       mounted.view.setAutomaticCameraMinimumScale(.55);
     }
+    // Keep automatic close-ups near the teaching layout's reading scale so a
+    // single diagram is never magnified until the rest of its row is cut off.
+    mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     const originalFocusRects = internalView.focusRects?.bind(mounted.view);
     internalView.focusRects = (targetIds: string[], rects: WhiteboardRect[], board: unknown) => {
       let resolvedRects = rects;
@@ -2222,12 +2205,6 @@ export function LearningWhiteboard({
         }
       }
       originalFocusRects?.(targetIds, resolvedRects, board);
-      if (isAndroid && (internalView.scale ?? 1) > 0.55) {
-        const scene = unionWhiteboardRects(resolvedRects);
-        if (scene) {
-          centerCameraOnScene(mounted.view, scene, 0.55);
-        }
-      }
     };
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
@@ -2249,9 +2226,6 @@ export function LearningWhiteboard({
           exclusive: true,
           framing: courseFrame ? "course" : "content",
         });
-        if (isAndroid && !courseFrame && (internalView.scale ?? 1) > 0.55) {
-          centerCameraOnScene(mounted.view, request.rect, 0.55);
-        }
         // A course region's persisted bounds are a placement footprint, not a
         // camera target. Remember the complete world area exposed by the final
         // course frame so the next course starts beyond that view instead of
@@ -2625,7 +2599,7 @@ export function LearningWhiteboard({
       ?.allowsTeachingFocus(teachingCourseId) ?? true;
     view?.setScene3dViews(activeRuntime.scene3dViews);
     view?.setActiveRegion(teachingRegionId);
-    view?.setBeatTargets(activeRuntime.compositionTargets);
+    view?.setBeatTargets(activeRuntime.compositionTargets, activeRuntime.stepContextTargets);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
     const renderedCourseNodeIds = new Set(Array.from(
       mounted?.elements.nodes.querySelectorAll<HTMLElement>(
@@ -3101,7 +3075,7 @@ export function LearningWhiteboard({
         if (viewport.clientWidth > 0) setTeachingWidth(Math.max(480, Math.min(1300, viewport.clientWidth - 64)));
         const insets = learningBoardInsets(viewport);
         if (viewport.clientWidth > 0 && viewport.clientHeight > 0) {
-          const next = {width:viewport.clientWidth,height:viewport.clientHeight,insets};
+          const next = {width:viewport.clientWidth,height:viewport.clientHeight,insets,readingScale:teachingReadingScale()};
           setTeachingViewport(current=>JSON.stringify(current)===JSON.stringify(next)?current:next);
         }
         const signature = JSON.stringify(insets);
@@ -3717,11 +3691,18 @@ export function LearningWhiteboard({
                             </div>
                           );
                         })}
-                        {runtime?.activeVariableAnimation ? (
-                          <small role="status">
-                            老师正在演示这个变量，结束后即可继续拖动
-                          </small>
-                        ) : null}
+                        {/* The status line always keeps its height so a
+                            teacher demonstration never resizes the panel
+                            and pushes the cards laid out below it. */}
+                        <small
+                          role={runtime?.activeVariableAnimation ? "status" : undefined}
+                          aria-hidden={runtime?.activeVariableAnimation ? undefined : true}
+                          className={runtime?.activeVariableAnimation ? undefined : "is-idle"}
+                        >
+                          {runtime?.activeVariableAnimation
+                            ? "老师正在演示这个变量，结束后即可继续拖动"
+                            : "\u00a0"}
+                        </small>
                       </div>
                     ) : null}
                     {presentation.tasks.length > 0 ? (

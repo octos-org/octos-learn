@@ -1622,6 +1622,10 @@
   color: #c35e42;
 }
 
+.learning-variable-controls > small.is-idle {
+  visibility: hidden;
+}
+
 .learning-variable-controls > small {
   color: #827b72;
   font-size: 10px;
