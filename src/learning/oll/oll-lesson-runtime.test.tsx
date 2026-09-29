@@ -1200,11 +1200,11 @@ describe("OLL lesson Runtime integration", () => {
       return Object.values(latest ?? {}).flatMap(region =>
         (region.attachments ?? []).map(attachment => attachment.height));
     };
-    await waitFor(() => expect(heights()).toEqual([44]));
+    await waitFor(() => expect(heights()).toEqual([36]));
     fireEvent.click(screen.getByText("切换练习"));
-    await waitFor(() => expect(heights()).toEqual([44, 280]));
+    await waitFor(() => expect(heights()).toEqual([36, 280]));
     fireEvent.click(screen.getByText("切换练习"));
-    await waitFor(() => expect(heights()).toEqual([44]));
+    await waitFor(() => expect(heights()).toEqual([36]));
   });
 
   it("surfaces rejected input and prevents later input from becoming a successful operation", async () => {

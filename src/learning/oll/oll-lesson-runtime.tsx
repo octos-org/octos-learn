@@ -1131,8 +1131,9 @@ export function LearningWhiteboard({
         cluster.taskIds.includes(task.task_id));
       const controlsWidth = controls.length > 0 ? 360 : 0;
       const tasksWidth = tasks.length > 0 ? 330 : 0;
+      // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
       const controlsHeight = controls.length > 0
-        ? 20 + controls.length * 24 + Math.max(0, controls.length - 1) * 6
+        ? 12 + controls.length * 24 + Math.max(0, controls.length - 1) * 4
         : 0;
       // Ownership is stable before a task opens; collision space is not.
       // Invalidate measurements when visible content changes (including replay).
@@ -1199,8 +1200,9 @@ export function LearningWhiteboard({
             height: plan.controlsHeight, focusHeight: plan.controlsHeight, gap: 24,
           }] : []),
           ...(plan.tasks.length ? [{
+            // Practice always renders 330 wide; docked controls may be wider.
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
-            anchorNodeIds: plan.anchorNodeIds, width: plan.width,
+            anchorNodeIds: plan.anchorNodeIds, width: 330,
             height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
         ])
@@ -1355,6 +1357,8 @@ export function LearningWhiteboard({
         x: interactionPosition.x,
         y: interactionPosition.y,
       },
+      // A single visual's controls are docked under it at its width.
+      controlsWidth: attachmentBounds?.width ?? 360,
       tasksPosition: {
         x: taskBounds?.x ?? interactionPosition.x,
         y: taskBounds?.y ?? (interactionPosition.y + (controls.length > 0 ? plan.controlsHeight + 28 : 0)),
@@ -3595,7 +3599,7 @@ export function LearningWhiteboard({
                         style={{
                           left: presentation.controlsPosition.x,
                           top: presentation.controlsPosition.y,
-                          width: 360,
+                          width: presentation.controlsWidth,
                         }}
                         data-course-controls-id={courseId}
                         data-interaction-controls-id={presentation.id}
