@@ -58,6 +58,14 @@
   opacity: 1;
 }
 
+/*
+ * Learner ink is hidden while the lesson plays. `visibility` keeps js-draw's
+ * measured size, so showing the layer again needs no canvas resize.
+ */
+.learning-oll-board[data-ink-suspended] .oll-ink-layer {
+  visibility: hidden !important;
+}
+
 .oll-android-vector-ink {
   position: absolute;
   inset: 0;

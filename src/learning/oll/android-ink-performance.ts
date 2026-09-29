@@ -92,27 +92,38 @@ function sameCamera(left: CameraState, right: CameraState): boolean {
     && Math.abs(left.scale - right.scale) < 0.0001;
 }
 
+/**
+ * True when committed ink is shown by the SVG mirror, leaving the js-draw
+ * canvases transparent and used only for editing mechanics.
+ */
+export function usesAndroidVectorInkMirror(
+  runtime: unknown,
+  viewport: HTMLElement,
+): boolean {
+  const inkRuntime = runtime as InkRuntimeWithDisplay;
+  const hostWindow = viewport.ownerDocument.defaultView as (
+    Window & { OctosNativeInk?: unknown }
+  ) | null;
+  // Keep ordinary Android-mode browser previews on js-draw. The SVG mirror is
+  // paired with the APK's native live-stroke overlay so ink stays visible from
+  // pointer-down through the committed vector handoff.
+  return Boolean(
+    hostWindow?.OctosNativeInk
+    && (inkRuntime.getVectorInkUpdate || inkRuntime.editor?.toSVG)
+    && inkRuntime.host
+    && inkRuntime.subscribe,
+  );
+}
+
 function configureAndroidVectorInkMirror(
   runtime: InkRuntimeWithDisplay,
   viewport: HTMLElement,
 ): AndroidVectorInkMirror | null {
-  const hostWindow = viewport.ownerDocument.defaultView as (
-    Window & { OctosNativeInk?: unknown }
-  ) | null;
+  if (!usesAndroidVectorInkMirror(runtime, viewport)) return null;
+  const hostWindow = viewport.ownerDocument.defaultView!;
   const editor = runtime.editor;
   const exportFullSvg = editor?.toSVG?.bind(editor);
-  const host = runtime.host;
-  // Keep ordinary Android-mode browser previews on js-draw. The SVG mirror is
-  // paired with the APK's native live-stroke overlay so ink stays visible from
-  // pointer-down through the committed vector handoff.
-  if (
-    !hostWindow?.OctosNativeInk
-    || (!runtime.getVectorInkUpdate && !exportFullSvg)
-    || !host
-    || !runtime.subscribe
-  ) {
-    return null;
-  }
+  const host = runtime.host!;
 
   let camera: CameraState = { panX: 0, panY: 0, scale: 1 };
   let vector: SVGElement | null = null;
@@ -219,7 +230,7 @@ function configureAndroidVectorInkMirror(
     });
   };
 
-  const unsubscribe = runtime.subscribe(onRuntimeState);
+  const unsubscribe = runtime.subscribe!(onRuntimeState);
   return {
     updateCamera(nextCamera) {
       camera = { ...nextCamera };
