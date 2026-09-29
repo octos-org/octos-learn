@@ -272,6 +272,22 @@ interface InternalInfiniteBoardView {
   transform?: () => void;
 }
 
+const REFLECTION_CARD_ESTIMATED_HEIGHT = 150;
+const OPEN_REFLECTIONS_KEY = "octos-learn:open-reflections:v1";
+
+function readOpenReflections(): Record<string, boolean> {
+  try {
+    const value = JSON.parse(localStorage.getItem(OPEN_REFLECTIONS_KEY) ?? "{}");
+    return value && typeof value === "object" ? value as Record<string, boolean> : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOpenReflections(value: Record<string, boolean>): void {
+  try { localStorage.setItem(OPEN_REFLECTIONS_KEY, JSON.stringify(value)); } catch { /* per-device convenience only */ }
+}
+
 function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
   const x = Number.parseFloat(element.style.left);
   const y = Number.parseFloat(element.style.top);
@@ -1147,14 +1163,36 @@ export function LearningWhiteboard({
 
   const regionLayoutMode = runtime?.deliverySettled && (runtime.completed || runtime.waiting)
     ? "overview" as const : "progressive" as const;
+  // Thinking questions open after the lesson as their own card under the
+  // board card that poses them; the answer stays collapsed until opened.
+  const [reflectionHeights, setReflectionHeights] = useState<Record<string, number>>({});
+  const [openReflections, setOpenReflections] = useState<Record<string, boolean>>(readOpenReflections);
+  const reflectionCards = useMemo(() => (runtime?.reflections ?? [])
+    .filter((reflection) => reflection.available)
+    .flatMap((reflection) => {
+      const outline = runtime?.outline ?? [];
+      const topic = outline.find((candidate) => candidate.nodeIds?.includes(reflection.anchor))
+        ?? (outline.length === 1 ? outline[0] : undefined);
+      if (!topic) return [];
+      const key = `${topic.id}:${reflection.id}`;
+      return [{ ...reflection, topic, key, attachmentId: `reflection:${key}` }];
+    }), [runtime?.reflections, runtime?.outline]);
+  const toggleReflection = useCallback((key: string) => {
+    setOpenReflections((current) => {
+      const next = { ...current, [key]: !current[key] };
+      writeOpenReflections(next);
+      return next;
+    });
+  }, []);
+
   const regionLayoutConstraints = useMemo(() => Object.fromEntries(
     (runtime?.outline ?? []).flatMap((topic) => {
       const region = topic.questionId
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
-      const attachments = interactionPlans
+      const attachments: NonNullable<RegionLayoutConstraint["attachments"]> = interactionPlans
         .filter(plan => plan.topic.id === topic.id && Boolean(plan.anchorNodeId) && plan.height > 0)
-        .flatMap(plan => [
+        .flatMap((plan): NonNullable<RegionLayoutConstraint["attachments"]> => [
           ...(plan.controls.length ? [{
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
@@ -1165,7 +1203,13 @@ export function LearningWhiteboard({
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
             height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
-        ]);
+        ])
+        .concat(reflectionCards
+          .filter((card) => card.topic.id === topic.id)
+          .map((card) => ({
+            id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.anchor,
+            width: 330, height: reflectionHeights[card.attachmentId] ?? REFLECTION_CARD_ESTIMATED_HEIGHT,
+          })));
       // Packaged/legacy lessons do not have a composer question region. Their
       // complete course region still belongs in the same collision layout as a
       // live lesson, even when it has no sliders or student tasks.
@@ -1230,7 +1274,31 @@ export function LearningWhiteboard({
     questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
+    reflectionCards,
+    reflectionHeights,
   ]);
+
+  // Measure rendered thinking-question cards (collapsed or open) so the
+  // layout reserves their real height under the anchor card.
+  useEffect(() => {
+    if (!enhancementLayer || reflectionCards.length === 0 || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const measured: Record<string, number> = {};
+      for (const entry of entries) {
+        const element = entry.target as HTMLElement;
+        const id = element.dataset.reflectionAttachmentId;
+        if (id && element.offsetHeight > 0) measured[id] = element.offsetHeight;
+      }
+      setReflectionHeights((current) => Object.entries(measured)
+        .some(([id, height]) => Math.abs((current[id] ?? 0) - height) > 1) ? { ...current, ...measured } : current);
+    });
+    const frame = window.requestAnimationFrame(() => {
+      for (const element of enhancementLayer.querySelectorAll<HTMLElement>("[data-reflection-attachment-id]")) {
+        observer.observe(element);
+      }
+    });
+    return () => { window.cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [enhancementLayer, reflectionCards, runtimeAttachmentBounds]);
 
   const coursePresentations = interactionPlans.flatMap((plan) => {
     const { topic } = plan;
@@ -2889,11 +2957,13 @@ export function LearningWhiteboard({
           "[data-loading-id]",
           "[data-course-controls-id]",
           "[data-course-tasks-id]",
+          "[data-course-reflection-id]",
         ].join(","))) {
           const belongsToCourse = element.dataset.questionId === topic.questionId
             || element.dataset.loadingId === topic.questionId
             || element.dataset.courseControlsId === courseId
-            || element.dataset.courseTasksId === courseId;
+            || element.dataset.courseTasksId === courseId
+            || element.dataset.courseReflectionId === courseId;
           if (!belongsToCourse) continue;
           const bounds = renderedWorldRect(element);
           if (bounds) rects.push(bounds);
@@ -3798,6 +3868,39 @@ export function LearningWhiteboard({
                       </section>
                     ) : null}
                   </div>
+                );
+              })}
+              {reflectionCards.map((card) => {
+                const bounds = runtimeAttachmentBounds[card.attachmentId];
+                if (!bounds) return null;
+                const open = Boolean(openReflections[card.key]);
+                return (
+                  <section
+                    key={card.attachmentId}
+                    className="learning-reflection-card is-world"
+                    style={{ left: bounds.x, top: bounds.y, width: bounds.width }}
+                    data-course-reflection-id={card.topic.questionId ?? card.topic.id}
+                    data-reflection-attachment-id={card.attachmentId}
+                    data-oll-ink-input="ignore"
+                    aria-label="想一想"
+                    data-testid="oll-reflection-card"
+                  >
+                    <header>
+                      <span>想一想</span>
+                      <small>先独立思考，再展开答案核对</small>
+                    </header>
+                    <p>{card.prompt}</p>
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => toggleReflection(card.key)}
+                    >
+                      {open ? "收起答案" : "查看答案"}
+                    </button>
+                    {open ? (
+                      <div className="learning-reflection-answer">{card.answer}</div>
+                    ) : null}
+                  </section>
                 );
               })}
               {selectionQuestionOpen

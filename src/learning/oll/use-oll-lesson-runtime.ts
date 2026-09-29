@@ -24,6 +24,7 @@ import {
   type Scene3dViewInputEvent,
   type Scene3dViewState,
   type StudentScene3dViewOperation,
+  type ReflectionSnapshot,
   type StudentTaskSnapshot,
   type StudentVariableInputEvent,
   type PlaybackFailure,
@@ -94,6 +95,8 @@ export interface OllLessonRuntimeController {
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
   studentTasks: StudentTaskSnapshot[];
+  /** Thinking questions; available once the after-lesson window opens. */
+  reflections: ReflectionSnapshot[];
   studentTaskDefinitions: AuthoringStudentTask[];
   scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
@@ -613,6 +616,7 @@ export function useOllLessonRuntime({
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,
     studentTasks: session.studentTasks,
+    reflections: session.reflections,
     studentTaskDefinitions: events[0]?.lesson?.tasks ?? [],
     scene3dViews: session.scene3dViews,
     currentOperation: session.currentOperation,
