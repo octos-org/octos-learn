@@ -2308,6 +2308,7 @@ export function LearningWhiteboard({
         const focusedViewport = mounted.view.focusWorldRect(request.rect, {
           exclusive: true,
           framing: courseFrame ? "course" : "content",
+          parts: request.parts,
         });
         // A course region's persisted bounds are a placement footprint, not a
         // camera target. Remember the complete world area exposed by the final
@@ -3001,6 +3002,7 @@ export function LearningWhiteboard({
             ?? runtime.cursor}:${sequence}`,
         courseId,
         rect: bounds,
+        parts: rects,
       });
       if (accepted) {
         lastOverviewFrameRef.current = signature;

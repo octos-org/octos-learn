@@ -1553,7 +1553,8 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
-    expect(focusWorldRect.mock.calls[0]?.[1]).toEqual({
+    const options = focusWorldRect.mock.calls[0]?.[1];
+    expect(options).toMatchObject({
       exclusive: true,
       framing: "course",
     });
@@ -1561,6 +1562,13 @@ describe("OLL lesson Runtime integration", () => {
     expect(bounds!.x).toBeGreaterThan(2_000);
     expect(bounds!.y).toBeGreaterThanOrEqual(180);
     expect(bounds!.width).toBeLessThan(2_000);
+    // The course cards travel with the frame so floating UI is checked
+    // against them rather than the empty corners of their bounds.
+    expect(options!.parts!.length).toBeGreaterThan(1);
+    for (const part of options!.parts!) {
+      expect(part.x).toBeGreaterThanOrEqual(bounds!.x);
+      expect(part.x + part.width).toBeLessThanOrEqual(bounds!.x + bounds!.width + .001);
+    }
 
     fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
     await act(async () => undefined);
