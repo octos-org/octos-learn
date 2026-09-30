@@ -96,7 +96,7 @@ function sameCamera(left: CameraState, right: CameraState): boolean {
  * True when committed ink is shown by the SVG mirror, leaving the js-draw
  * canvases transparent and used only for editing mechanics.
  */
-export function usesAndroidVectorInkMirror(
+function usesAndroidVectorInkMirror(
   runtime: unknown,
   viewport: HTMLElement,
 ): boolean {
@@ -245,6 +245,15 @@ function configureAndroidVectorInkMirror(
   };
 }
 
+export interface AndroidInkDensity {
+  destroy: () => void;
+  /**
+   * True when committed ink is shown by the SVG mirror, leaving the js-draw
+   * canvases transparent and used only for editing mechanics.
+   */
+  usesVectorMirror: boolean;
+}
+
 /**
  * Dynamically trade canvas resolution for camera-interaction throughput.
  *
@@ -259,10 +268,12 @@ export function configureAndroidInkDynamicDensity(
   viewport: HTMLElement,
   cameraSource: CameraSource,
   devicePixelRatio = window.devicePixelRatio || 1,
-): () => void {
+): AndroidInkDensity {
   const inkRuntime = runtime as InkRuntimeWithDisplay;
   const display = inkRuntime.editor?.display;
-  if (!display?.setDevicePixelRatio) return () => undefined;
+  if (!display?.setDevicePixelRatio) {
+    return { destroy: () => undefined, usesVectorMirror: false };
+  }
 
   const input = {
     cssWidth: viewport.clientWidth,
@@ -318,10 +329,13 @@ export function configureAndroidInkDynamicDensity(
     previousCamera = { ...camera };
   });
 
-  return () => {
-    if (restoreTimer !== undefined) clearTimeout(restoreTimer);
-    unsubscribeCamera();
-    vectorMirror?.destroy();
-    display.setDevicePixelRatio = originalSetDevicePixelRatio;
+  return {
+    usesVectorMirror: vectorMirror !== null,
+    destroy: () => {
+      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
+      unsubscribeCamera();
+      vectorMirror?.destroy();
+      display.setDevicePixelRatio = originalSetDevicePixelRatio;
+    },
   };
 }

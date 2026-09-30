@@ -97,7 +97,13 @@ export function createInkCameraGate<Board extends InkCameraBoard>(
     const entry: GateListener = { channel, listener };
     listeners.add(entry);
     if (!unsubscribeBoard && !destroyed) {
+      // The board replays its current camera to a new subscriber, which
+      // reaches this listener through onBoardCamera.
       unsubscribeBoard = board.subscribeCamera(onBoardCamera);
+    } else if (!destroyed) {
+      // Keep that subscribe-time contract for every later listener: a freshly
+      // mounted board does not start at the identity camera.
+      listener(board.getCameraState());
     }
     return () => {
       listeners.delete(entry);

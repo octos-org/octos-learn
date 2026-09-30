@@ -5,9 +5,11 @@ import {
   type InkCameraState,
 } from "./ink-camera-gate";
 
+// Mirrors OLL's InfiniteBoardView: a fresh board is not at the identity
+// camera, and subscribeCamera replays the current camera immediately.
 function createBoard() {
   let emit: ((camera: InkCameraState) => void) | undefined;
-  let current: InkCameraState = { panX: 0, panY: 0, scale: 1 };
+  let current: InkCameraState = { panX: 80, panY: 60, scale: 0.78 };
   const unsubscribe = vi.fn(() => {
     emit = undefined;
   });
@@ -15,6 +17,7 @@ function createBoard() {
     getCameraState: vi.fn(() => ({ ...current })),
     subscribeCamera: vi.fn((listener: (camera: InkCameraState) => void) => {
       emit = listener;
+      listener({ ...current });
       return unsubscribe;
     }),
     viewportToBoard(point: { x: number; y: number }) {
@@ -44,12 +47,30 @@ describe("ink camera gate", () => {
     gate.editorBoard.subscribeCamera(editor);
     gate.liveCameraSource.subscribeCamera(live);
 
+    editor.mockClear();
+    live.mockClear();
     move({ panX: 10, panY: 0, scale: 1 });
     move({ panX: 20, panY: 0, scale: 1 });
 
     expect(editor).toHaveBeenCalledTimes(2);
     expect(live).toHaveBeenCalledTimes(2);
     expect(board.subscribeCamera).toHaveBeenCalledOnce();
+  });
+
+  it("replays the current camera to every subscriber, not only the first", () => {
+    const { board } = createBoard();
+    const gate = createInkCameraGate(board);
+    const editor = vi.fn();
+    const live = vi.fn();
+
+    // APK mount order: the ink runtime subscribes before the SVG mirror.
+    gate.editorBoard.subscribeCamera(editor);
+    gate.liveCameraSource.subscribeCamera(live);
+
+    expect(editor).toHaveBeenCalledOnce();
+    expect(editor).toHaveBeenCalledWith({ panX: 80, panY: 60, scale: 0.78 });
+    expect(live).toHaveBeenCalledOnce();
+    expect(live).toHaveBeenCalledWith({ panX: 80, panY: 60, scale: 0.78 });
   });
 
   it("keeps the rest of the board API bound to the real board", () => {
@@ -69,6 +90,8 @@ describe("ink camera gate", () => {
     const live = vi.fn();
     gate.editorBoard.subscribeCamera(editor);
     gate.liveCameraSource.subscribeCamera(live);
+    editor.mockClear();
+    live.mockClear();
     gate.setEditorSyncDeferred(true);
 
     for (let frame = 1; frame <= 10; frame += 1) {
@@ -89,6 +112,7 @@ describe("ink camera gate", () => {
     const gate = createInkCameraGate(board);
     const editor = vi.fn();
     gate.editorBoard.subscribeCamera(editor);
+    editor.mockClear();
     gate.setEditorSyncDeferred(true);
 
     move({ panX: 30, panY: 0, scale: 1.2 });
@@ -107,6 +131,8 @@ describe("ink camera gate", () => {
     const live = vi.fn();
     gate.editorBoard.subscribeCamera(editor);
     gate.liveCameraSource.subscribeCamera(live);
+    editor.mockClear();
+    live.mockClear();
     gate.setEditorSyncDeferred(true);
     move({ panX: 1, panY: 0, scale: 1 });
 

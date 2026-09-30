@@ -44,10 +44,7 @@ import {
   type InkRuntime,
   type InkRuntimeState,
 } from "./oll-ink-runtime";
-import {
-  configureAndroidInkDynamicDensity,
-  usesAndroidVectorInkMirror,
-} from "./android-ink-performance";
+import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
 import {
   createInkCameraGate,
   type InkCameraBoard,
@@ -797,6 +794,9 @@ export function LearningWhiteboard({
   const inkCameraGateRef = useRef<InkCameraGate<InkCameraBoard> | null>(null);
   // Read by the mount effect, which can run after the policy effect below.
   const inkCameraPolicyRef = useRef({ suspended: false, navigating: true });
+  // Only the APK's transparent js-draw canvases (behind the SVG mirror) may
+  // lag the camera; visible js-draw ink must follow every frame.
+  const inkEditorSurfaceHiddenRef = useRef(false);
   const inkMergeAttemptRef = useRef<string | null>(null);
   const inkReplayObservedSourceRef = useRef<string | null>(null);
   const inkActivityReportedRef = useRef(false);
@@ -1798,7 +1798,9 @@ export function LearningWhiteboard({
     inkCameraPolicyRef.current = { suspended: inkSuspendedForPlayback, navigating };
     // Resume before undeferring so the layer reappears at the live camera.
     inkCameraGateRef.current?.setSuspended(inkSuspendedForPlayback);
-    inkCameraGateRef.current?.setEditorSyncDeferred(navigating);
+    inkCameraGateRef.current?.setEditorSyncDeferred(
+      inkEditorSurfaceHiddenRef.current && navigating,
+    );
     const viewport = viewportRef.current;
     if (!viewport) return;
     if (inkSuspendedForPlayback) viewport.dataset.inkSuspended = "";
@@ -2330,6 +2332,7 @@ export function LearningWhiteboard({
       destroyAndroidInkDensity = null;
       if (inkCameraGateRef.current === inkCameraGate) {
         inkCameraGateRef.current = null;
+        inkEditorSurfaceHiddenRef.current = false;
       }
       inkCameraGate?.destroy();
       inkCameraGate = null;
@@ -2401,24 +2404,21 @@ export function LearningWhiteboard({
           touchMarqueeActivation:
             import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
+        let editorSurfaceHidden = false;
         if (import.meta.env.MODE === "android") {
-          destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
+          const androidInkDensity = configureAndroidInkDynamicDensity(
             ink,
             viewport,
             inkCameraGate.liveCameraSource,
           );
+          destroyAndroidInkDensity = androidInkDensity.destroy;
+          editorSurfaceHidden = androidInkDensity.usesVectorMirror;
         }
-        const editorSurfaceHidden = usesAndroidVectorInkMirror(ink, viewport);
-        inkCameraGateRef.current = {
-          ...inkCameraGate,
-          // Only the APK's transparent js-draw canvases may lag the camera.
-          setEditorSyncDeferred: (deferred) => inkCameraGate?.setEditorSyncDeferred(
-            editorSurfaceHidden && deferred,
-          ),
-        };
-        inkCameraGateRef.current.setSuspended(inkCameraPolicyRef.current.suspended);
-        inkCameraGateRef.current.setEditorSyncDeferred(
-          inkCameraPolicyRef.current.navigating,
+        inkCameraGateRef.current = inkCameraGate;
+        inkEditorSurfaceHiddenRef.current = editorSurfaceHidden;
+        inkCameraGate.setSuspended(inkCameraPolicyRef.current.suspended);
+        inkCameraGate.setEditorSyncDeferred(
+          editorSurfaceHidden && inkCameraPolicyRef.current.navigating,
         );
         inkRuntimeRef.current = ink;
         onInkSaveHandlerChangeRef.current?.(async () => {
