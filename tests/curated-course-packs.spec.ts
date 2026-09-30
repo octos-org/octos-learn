@@ -53,9 +53,8 @@ for (const course of courses) {
     await page.mouse.move(260, 710, { steps: 8 });
     await page.mouse.up();
     await expect(page.locator(".learning-ink-status")).toContainText("1 项笔迹");
-    await page.getByRole("button", { name: "返回首页" }).click();
-    await expect(page).toHaveURL(/\/$/);
-    await page.goto(collectionUrl(course.id));
+    await page.getByRole("button", { name: "返回", exact: true }).click();
+    await expect(page).toHaveURL(new URL(collectionUrl(course.id), page.url()).href);
     const saved = await page.evaluate(() => {
       const entries = JSON.parse(localStorage.getItem("octos_learning_sessions_v2:curated-learner") ?? "[]") as Array<{ id: string; source?: { mode: string } }>;
       const instance = entries.find((entry) => entry.source?.mode === "instance");
@@ -159,9 +158,8 @@ for (const course of courses) {
     });
     expect(overlaps).toEqual([]);
     await page.screenshot({ path: `test-results/${course.id}-${process.env.OCTOS_COURSE_TEST_ANDROID === "1" ? "android" : "desktop"}-complete.png` });
-    await page.getByRole("button", { name: "返回首页" }).click();
-    await expect(page).toHaveURL(/\/$/);
-    await page.goto(collectionUrl(course.id));
+    await page.getByRole("button", { name: "返回", exact: true }).click();
+    await expect(page).toHaveURL(new URL(collectionUrl(course.id), page.url()).href);
     await expect(card.getByText("已下载 · 可离线", { exact: true })).toBeVisible();
     await page.route("**/api/learn/course-packs**", (route) => route.abort());
     await page.reload();

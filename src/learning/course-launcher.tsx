@@ -163,8 +163,10 @@ function CourseCard({
   authenticated,
   embedded,
   index,
+  collectionId,
 }: {
   index: number;
+  collectionId: string;
   entry: CoursePackCatalogEntry;
   live: boolean;
   installed: boolean;
@@ -188,6 +190,7 @@ function CourseCard({
       + `?version=${encodeURIComponent(entry.version)}`
       + `&title=${encodeURIComponent(entry.title)}`
       + `&mode=${mode}`
+      + `&collection=${encodeURIComponent(collectionId)}`
       + (instanceId ? `&instance=${encodeURIComponent(instanceId)}` : "");
   const startNewInstance = () => {
     if (!authenticated && !embedded) {
@@ -510,6 +513,7 @@ export function CourseLauncher() {
                     key={identity}
                     entry={entry}
                     index={index}
+                    collectionId={selected.id}
                     live={state.live}
                     installed={installedByIdentity.has(identity)}
                     installedThumbnail={installedThumbnails.get(identity)}

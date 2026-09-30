@@ -46,6 +46,8 @@ function CourseRoute() {
   });
   const title = query.get("title")?.trim();
   if (title) boardQuery.set("course-title", title.slice(0, 120));
+  const collectionId = query.get("collection");
+  if (collectionId) boardQuery.set("collection", collectionId);
   if (courseMode === "learn" && instanceId?.startsWith("learn-")) {
     boardQuery.set("course-instance", instanceId);
   }

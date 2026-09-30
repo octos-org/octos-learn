@@ -197,7 +197,7 @@ describe("Android meeting-display density", () => {
   });
 
   it("uses a direct home action instead of the legacy learning sidebar", () => {
-    expect(pageSource).toContain('aria-label="返回首页"');
+    expect(pageSource).toContain('aria-label={returnLabel}');
     expect(pageSource).toContain("<Home size={20} />");
     expect(pageSource).not.toContain("sidebarOpen");
     expect(appStyles).not.toContain(".learning-session-sidebar");

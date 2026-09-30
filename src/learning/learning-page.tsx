@@ -284,6 +284,14 @@ export function LearningPage() {
     () => parseCoursePackId(requestedCoursePack),
     [requestedCoursePack],
   );
+  const collectionId = useMemo(() => new URLSearchParams(
+    window.location.search,
+  ).get("collection"), []);
+  const returnToCollection = Boolean(coursePackId && collectionId);
+  const returnDestination = coursePackId && collectionId
+    ? `/?collection=${encodeURIComponent(collectionId)}`
+    : "/";
+  const returnLabel = returnToCollection ? "返回" : "返回首页";
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
     if (!nativeTtsBridgeAvailable()) return;
@@ -705,11 +713,11 @@ export function LearningPage() {
       <div className="relative flex h-screen w-screen items-center justify-center bg-black px-6 text-white">
         <button
           type="button"
-          onClick={() => navigate("/")}
+          onClick={() => navigate(returnDestination)}
           className="absolute left-5 top-6 flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-sm text-white/60 transition hover:border-white/30 hover:text-white"
         >
           <ArrowLeft size={16} />
-          返回首页
+          {returnLabel}
         </button>
         <div className="max-w-md text-center">
           <h1 className="text-xl font-semibold">学习助手已在另一个标签页中使用</h1>
@@ -736,12 +744,12 @@ export function LearningPage() {
         >
           <button
             type="button"
-            aria-label="返回首页"
-            title="返回首页"
-            onClick={() => void leaveTo("/")}
+            aria-label={returnLabel}
+            title={returnToCollection ? "返回课程集" : returnLabel}
+            onClick={() => void leaveTo(returnDestination)}
             className="learning-top-action-button flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-stone-600 shadow-sm backdrop-blur-md hover:text-cyan-800"
           >
-            <Home size={20} />
+            {returnToCollection ? <ArrowLeft size={20} aria-hidden="true" /> : <Home size={20} />}
           </button>
           <button
             type="button"
