@@ -1,0 +1,65 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "collection": "trigonometry",
+      "cards": [
+        {
+          "title": "从单位圆旋转到正弦曲线",
+          "version": "课程包 v0.1.3",
+          "preview": "/course/trig-unit-circle-to-sine?version=0.1.3&title=%E4%BB%8E%E5%8D%95%E4%BD%8D%E5%9C%86%E6%97%8B%E8%BD%AC%E5%88%B0%E6%AD%A3%E5%BC%A6%E6%9B%B2%E7%BA%BF&mode=preview"
+        },
+        {
+          "title": "余弦函数与单位圆投影",
+          "version": "课程包 v0.1.4",
+          "preview": "/course/trig-cosine-and-phase-shift?version=0.1.4&title=%E4%BD%99%E5%BC%A6%E5%87%BD%E6%95%B0%E4%B8%8E%E5%8D%95%E4%BD%8D%E5%9C%86%E6%8A%95%E5%BD%B1&mode=preview"
+        },
+        {
+          "title": "单位圆与正弦函数的单调性及象限循环",
+          "version": "课程包 v0.1.4",
+          "preview": "/course/trig-quadrants-and-monotonicity?version=0.1.4&title=%E5%8D%95%E4%BD%8D%E5%9C%86%E4%B8%8E%E6%AD%A3%E5%BC%A6%E5%87%BD%E6%95%B0%E7%9A%84%E5%8D%95%E8%B0%83%E6%80%A7%E5%8F%8A%E8%B1%A1%E9%99%90%E5%BE%AA%E7%8E%AF&mode=preview"
+        }
+      ]
+    },
+    {
+      "collection": "multivariable-calculus",
+      "cards": [
+        {
+          "title": "水平截线与等高线：以 z=x²+y² 为例",
+          "version": "课程包 v0.2.6",
+          "preview": "/course/surface-paraboloid-level-sets?version=0.2.6&title=%E6%B0%B4%E5%B9%B3%E6%88%AA%E7%BA%BF%E4%B8%8E%E7%AD%89%E9%AB%98%E7%BA%BF%EF%BC%9A%E4%BB%A5%20z%3Dx%C2%B2%2By%C2%B2%20%E4%B8%BA%E4%BE%8B&mode=preview"
+        },
+        {
+          "title": "偏导数：固定输入，求截线斜率",
+          "version": "课程包 v0.2.8",
+          "preview": "/course/surface-partial-derivative-slice?version=0.2.8&title=%E5%81%8F%E5%AF%BC%E6%95%B0%EF%BC%9A%E5%9B%BA%E5%AE%9A%E8%BE%93%E5%85%A5%EF%BC%8C%E6%B1%82%E6%88%AA%E7%BA%BF%E6%96%9C%E7%8E%87&mode=preview"
+        },
+        {
+          "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+          "version": "课程包 v0.2.8",
+          "preview": "/course/surface-saddle-point-analysis?version=0.2.8&title=%E9%A9%AC%E9%9E%8D%E9%9D%A2%E4%B8%8E%E9%9E%8D%E7%82%B9%EF%BC%9A%E6%A2%AF%E5%BA%A6%E4%B8%BA%E9%9B%B6%E4%B8%8D%E4%B8%80%E5%AE%9A%E6%98%AF%E6%9E%81%E5%80%BC%E7%82%B9&mode=preview"
+        }
+      ]
+    },
+    {
+      "collection": "linear-functions",
+      "cards": [
+        {
+          "title": "正比例函数 y = kx 与斜率的几何意义",
+          "version": "课程包 v0.1.1",
+          "preview": "/course/linear-intro-and-slope?version=0.1.1&title=%E6%AD%A3%E6%AF%94%E4%BE%8B%E5%87%BD%E6%95%B0%20y%20%3D%20kx%20%E4%B8%8E%E6%96%9C%E7%8E%87%E7%9A%84%E5%87%A0%E4%BD%95%E6%84%8F%E4%B9%89&mode=preview"
+        },
+        {
+          "title": "一次函数 y = mx + b 的图像与性质",
+          "version": "课程包 v0.1.8",
+          "preview": "/course/slope-and-intercept?version=0.1.8&title=%E4%B8%80%E6%AC%A1%E5%87%BD%E6%95%B0%20y%20%3D%20mx%20%2B%20b%20%E7%9A%84%E5%9B%BE%E5%83%8F%E4%B8%8E%E6%80%A7%E8%B4%A8&mode=preview"
+        },
+        {
+          "title": "二元一次方程组与一次函数的几何意义",
+          "version": "课程包 v0.1.2",
+          "preview": "/course/linear-simultaneous-intersections?version=0.1.2&title=%E4%BA%8C%E5%85%83%E4%B8%80%E6%AC%A1%E6%96%B9%E7%A8%8B%E7%BB%84%E4%B8%8E%E4%B8%80%E6%AC%A1%E5%87%BD%E6%95%B0%E7%9A%84%E5%87%A0%E4%BD%95%E6%84%8F%E4%B9%89&mode=preview"
+        }
+      ]
+    }
+  ]
+}
