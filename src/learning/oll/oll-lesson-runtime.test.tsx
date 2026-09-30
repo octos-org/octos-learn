@@ -186,6 +186,26 @@ function InkRuntimeProbe({
   );
 }
 
+function InkPlaybackProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-ink-playback-runtime-test",
+  });
+  const [playing, setPlaying] = useState(false);
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => setPlaying((current) => !current)}>
+        切换播放
+      </button>
+      <OllLessonBoard
+        runtime={{ ...runtime, playing }}
+        inkSessionId="learn-ink-playback"
+      />
+    </div>
+  );
+}
+
 function InkShortcutProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -1425,6 +1445,56 @@ describe("OLL lesson Runtime integration", () => {
 
     expect(world?.style.transform).not.toBe(transformBefore);
     expect(board.classList.contains("manual-navigation")).toBe(true);
+  });
+
+  it("hides learner ink and pauses its camera sync while the lesson plays", async () => {
+    let inkState: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 1,
+      selected_count: 0,
+      selection_revision: 0,
+      document_version: 1,
+      saved: true,
+    };
+    let emitInkState: ((next: InkRuntimeState) => void) | undefined;
+    const cameraListener = vi.fn();
+    mountInkRuntimeMock.mockImplementation((options) => {
+      options.board.subscribeCamera(cameraListener);
+      return {
+        ready: Promise.resolve(),
+        subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+          emitInkState = listener;
+          listener(inkState);
+          return () => undefined;
+        }),
+        setMode: vi.fn((mode: InkMode) => {
+          inkState = { ...inkState, mode };
+          emitInkState?.(inkState);
+        }),
+        destroy: vi.fn(() => Promise.resolve()),
+      };
+    });
+    await renderLearning(<InkPlaybackProbe />);
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    const board = screen.getByTestId("oll-lesson-board");
+    expect(board.dataset.inkSuspended).toBeUndefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    cameraListener.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBeUndefined());
+    // Resuming re-syncs the hidden layer to the camera it missed.
+    expect(cameraListener).toHaveBeenCalledOnce();
+
+    // Picking a writing tool mid-lesson keeps the learner's ink visible.
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    act(() => {
+      emitInkState?.({ ...inkState, mode: "draw" });
+    });
+    await waitFor(() => expect(board.dataset.inkSuspended).toBeUndefined());
   });
 
   it("reserves a new course area before its loading state renders", async () => {

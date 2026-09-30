@@ -45,6 +45,11 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import {
+  createInkCameraGate,
+  type InkCameraBoard,
+  type InkCameraGate,
+} from "./ink-camera-gate";
 import { planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
@@ -783,6 +788,12 @@ export function LearningWhiteboard({
   const renderedCompositionCursorRef = useRef(-1);
   const renderedAnimationActiveRef = useRef(false);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
+  const inkCameraGateRef = useRef<InkCameraGate<InkCameraBoard> | null>(null);
+  // Read by the mount effect, which can run after the policy effect below.
+  const inkCameraPolicyRef = useRef({ suspended: false, navigating: true });
+  // Only the APK's transparent js-draw canvases (behind the SVG mirror) may
+  // lag the camera; visible js-draw ink must follow every frame.
+  const inkEditorSurfaceHiddenRef = useRef(false);
   const inkMergeAttemptRef = useRef<string | null>(null);
   const inkReplayObservedSourceRef = useRef<string | null>(null);
   const inkActivityReportedRef = useRef(false);
@@ -1842,6 +1853,24 @@ export function LearningWhiteboard({
     };
   }, [inkState.mode]);
 
+  // Learner ink is hidden while the lesson plays. Choosing a writing tool
+  // keeps it visible, because the learner is then deliberately writing.
+  const inkSuspendedForPlayback = Boolean(runtime?.playing)
+    && inkState.mode === "navigate";
+  useEffect(() => {
+    const navigating = inkState.mode === "navigate";
+    inkCameraPolicyRef.current = { suspended: inkSuspendedForPlayback, navigating };
+    // Resume before undeferring so the layer reappears at the live camera.
+    inkCameraGateRef.current?.setSuspended(inkSuspendedForPlayback);
+    inkCameraGateRef.current?.setEditorSyncDeferred(
+      inkEditorSurfaceHiddenRef.current && navigating,
+    );
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    if (inkSuspendedForPlayback) viewport.dataset.inkSuspended = "";
+    else delete viewport.dataset.inkSuspended;
+  }, [inkState.mode, inkSuspendedForPlayback]);
+
   const setInkMode = useCallback((mode: InkMode) => {
     try {
       inkRuntimeRef.current?.setMode(mode);
@@ -2353,11 +2382,18 @@ export function LearningWhiteboard({
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
     let destroyAndroidInkDensity: (() => void) | null = null;
+    let inkCameraGate: InkCameraGate<typeof mounted.view> | null = null;
     const destroyInk = (): Promise<void> | undefined => {
       if (!ink || inkDestroyed) return undefined;
       inkDestroyed = true;
       destroyAndroidInkDensity?.();
       destroyAndroidInkDensity = null;
+      if (inkCameraGateRef.current === inkCameraGate) {
+        inkCameraGateRef.current = null;
+        inkEditorSurfaceHiddenRef.current = false;
+      }
+      inkCameraGate?.destroy();
+      inkCameraGate = null;
       unsubscribeInkRef.current?.();
       unsubscribeInkRef.current = null;
       if (inkRuntimeRef.current === ink) {
@@ -2415,8 +2451,9 @@ export function LearningWhiteboard({
         return typeof result === "string" ? result : undefined;
       });
       if (inkSessionId) {
+        inkCameraGate = createInkCameraGate(mounted.view);
         ink = mountInkRuntime({
-          board: mounted.view,
+          board: inkCameraGate.editorBoard,
           viewport,
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
           store: indexedInkStore,
@@ -2425,13 +2462,22 @@ export function LearningWhiteboard({
           touchMarqueeActivation:
             import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
+        let editorSurfaceHidden = false;
         if (import.meta.env.MODE === "android") {
-          destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
+          const androidInkDensity = configureAndroidInkDynamicDensity(
             ink,
             viewport,
-            mounted.view,
+            inkCameraGate.liveCameraSource,
           );
+          destroyAndroidInkDensity = androidInkDensity.destroy;
+          editorSurfaceHidden = androidInkDensity.usesVectorMirror;
         }
+        inkCameraGateRef.current = inkCameraGate;
+        inkEditorSurfaceHiddenRef.current = editorSurfaceHidden;
+        inkCameraGate.setSuspended(inkCameraPolicyRef.current.suspended);
+        inkCameraGate.setEditorSyncDeferred(
+          editorSurfaceHidden && inkCameraPolicyRef.current.navigating,
+        );
         inkRuntimeRef.current = ink;
         onInkSaveHandlerChangeRef.current?.(async () => {
           await ink?.saveNow();
