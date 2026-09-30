@@ -1,26 +1,26 @@
 {
   "schemaVersion": 1,
-  "snapshotId": "embedded-2026-09-28",
-  "generatedAt": "2026-09-28T02:21:03.451Z",
+  "snapshotId": "curated-e2e-closeout-2026-09-30",
+  "generatedAt": "2026-09-30T17:12:04.728Z",
   "sourceOrigin": "https://learn.pitun.cc",
   "packs": [
     {
       "packId": "linear-intro-and-slope",
-      "version": "0.1.0",
-      "archiveBytes": 1116410,
-      "archiveSha256": "2b7f83fe1c642887b11f6c31ff3e8c29aed28b1d422bfa989337ea1527a8466c"
+      "version": "0.1.1",
+      "archiveBytes": 1116480,
+      "archiveSha256": "a8ef5819d3815f5ce807f68bb02f07f1d25ff5709ba3d20d3fb04d7c13922472"
     },
     {
       "packId": "linear-simultaneous-intersections",
-      "version": "0.1.1",
-      "archiveBytes": 1399945,
-      "archiveSha256": "3ded98c318536f3c6c06ac23d00aab3f3697f411d83f14438ec16be91ae05ae5"
+      "version": "0.1.2",
+      "archiveBytes": 1400396,
+      "archiveSha256": "8f05895e956e99c0878bde49b7a9e2d48d69361fdd9ad65f1c526e7a91403c3e"
     },
     {
       "packId": "slope-and-intercept",
-      "version": "0.1.6",
-      "archiveBytes": 1816289,
-      "archiveSha256": "24f0c209175d5ba8ab10f4f0e7b159018056c5792ce507d07a753b8241e883c0"
+      "version": "0.1.8",
+      "archiveBytes": 1811756,
+      "archiveSha256": "e852bd217080b10fd6daab84e094e76fe5a3d9903540f914c60dc3ab7301c35b"
     },
     {
       "packId": "surface-paraboloid-level-sets",
@@ -30,33 +30,33 @@
     },
     {
       "packId": "surface-partial-derivative-slice",
-      "version": "0.2.7",
-      "archiveBytes": 2721221,
-      "archiveSha256": "0612e7a9ca84f40abac3908ef8780391ba7c3ebebf23ff722b6b2d0e7cba41c1"
+      "version": "0.2.8",
+      "archiveBytes": 2615202,
+      "archiveSha256": "6f946b5bc600df75e57cabdd4b4d24bcb0d63721ddcd154e1dc526b0500adffd"
     },
     {
       "packId": "surface-saddle-point-analysis",
-      "version": "0.2.7",
-      "archiveBytes": 3506717,
-      "archiveSha256": "59f6f810fd6b55f67f9bc33c6ca5910013ca38de4445f293421c6c8570c030c1"
+      "version": "0.2.8",
+      "archiveBytes": 3216684,
+      "archiveSha256": "4b8de9d785f542f9e5ece0f4e4b13035ba6ddb768cea7e8edb80c63c24fee55d"
     },
     {
       "packId": "trig-cosine-and-phase-shift",
-      "version": "0.1.2",
-      "archiveBytes": 2099521,
-      "archiveSha256": "2c535e6dc6917def46441ce75e6c8988e501b46e7edc81790d3070f323d0abf5"
+      "version": "0.1.4",
+      "archiveBytes": 2226135,
+      "archiveSha256": "6fa55948301af53bc66a716f7ce5ee0b611c640938e5ee46c4301e22a9a62d28"
     },
     {
       "packId": "trig-quadrants-and-monotonicity",
-      "version": "0.1.2",
-      "archiveBytes": 1795290,
-      "archiveSha256": "b289eeedc5a1283e3e35ea9aa7000735a69e660937e08b6b68a2e1f65faeb93c"
+      "version": "0.1.4",
+      "archiveBytes": 1795305,
+      "archiveSha256": "8ce209e7905f561d530065c40aa47baee3f4b63f407be40b23dd24783232bcb3"
     },
     {
       "packId": "trig-unit-circle-to-sine",
-      "version": "0.1.1",
-      "archiveBytes": 2051002,
-      "archiveSha256": "c30ce8f67ce1879bf01511b49b5d9b60685a38029d7561b9aa24e036107388f9"
+      "version": "0.1.3",
+      "archiveBytes": 1375762,
+      "archiveSha256": "2c06f174c0f4a9d0300733e7a87d6aa374bfaebdccc55c2fdfdd1b1dd3b7dc5a"
     }
   ]
 }

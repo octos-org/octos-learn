@@ -1,0 +1,130 @@
+[
+  {
+    "packId": "linear-intro-and-slope",
+    "title": "正比例函数 y = kx 与斜率的几何意义",
+    "version": "0.1.1",
+    "minimumPlayerVersion": "0.1.0",
+    "sha256": "a8ef5819d3815f5ce807f68bb02f07f1d25ff5709ba3d20d3fb04d7c13922472",
+    "bytes": 1116480,
+    "beats": 8,
+    "durationSeconds": 64,
+    "changed": true,
+    "reviews": [
+      "review-2026-09-30.mjs"
+    ]
+  },
+  {
+    "packId": "linear-simultaneous-intersections",
+    "title": "二元一次方程组与一次函数的几何意义",
+    "version": "0.1.2",
+    "minimumPlayerVersion": "0.3.0",
+    "sha256": "8f05895e956e99c0878bde49b7a9e2d48d69361fdd9ad65f1c526e7a91403c3e",
+    "bytes": 1400396,
+    "beats": 9,
+    "durationSeconds": 80,
+    "changed": true,
+    "reviews": [
+      "review-2026-09-30.mjs"
+    ]
+  },
+  {
+    "packId": "slope-and-intercept",
+    "title": "一次函数 y = mx + b 的图像与性质",
+    "version": "0.1.8",
+    "minimumPlayerVersion": "0.1.0",
+    "sha256": "e852bd217080b10fd6daab84e094e76fe5a3d9903540f914c60dc3ab7301c35b",
+    "bytes": 1811756,
+    "beats": 13,
+    "durationSeconds": 104,
+    "changed": true,
+    "reviews": [
+      "narration-2026-09-28.json",
+      "review-2026-09-30.mjs"
+    ]
+  },
+  {
+    "packId": "surface-paraboloid-level-sets",
+    "title": "水平截线与等高线：以 z=x²+y² 为例",
+    "version": "0.2.6",
+    "minimumPlayerVersion": "0.2.0",
+    "sha256": "3e7806e5506db793066f9ca8a74934cab986d50065f83ddf53b5edae83d593d4",
+    "bytes": 3207772,
+    "beats": 11,
+    "durationSeconds": 183,
+    "changed": false,
+    "reviews": []
+  },
+  {
+    "packId": "surface-partial-derivative-slice",
+    "title": "偏导数：固定输入，求截线斜率",
+    "version": "0.2.8",
+    "minimumPlayerVersion": "0.3.0",
+    "sha256": "6f946b5bc600df75e57cabdd4b4d24bcb0d63721ddcd154e1dc526b0500adffd",
+    "bytes": 2615202,
+    "beats": 11,
+    "durationSeconds": 149,
+    "changed": true,
+    "reviews": [
+      "narration-2026-09-29.json"
+    ]
+  },
+  {
+    "packId": "surface-saddle-point-analysis",
+    "title": "马鞍面与鞍点：梯度为零不一定是极值点",
+    "version": "0.2.8",
+    "minimumPlayerVersion": "0.3.0",
+    "sha256": "4b8de9d785f542f9e5ece0f4e4b13035ba6ddb768cea7e8edb80c63c24fee55d",
+    "bytes": 3216684,
+    "beats": 14,
+    "durationSeconds": 184,
+    "changed": true,
+    "reviews": [
+      "review-2026-09-29.mjs"
+    ]
+  },
+  {
+    "packId": "trig-cosine-and-phase-shift",
+    "title": "余弦函数与单位圆投影",
+    "version": "0.1.4",
+    "minimumPlayerVersion": "0.1.0",
+    "sha256": "6fa55948301af53bc66a716f7ce5ee0b611c640938e5ee46c4301e22a9a62d28",
+    "bytes": 2226135,
+    "beats": 13,
+    "durationSeconds": 127,
+    "changed": true,
+    "reviews": [
+      "narration-2026-09-28.json",
+      "review-2026-09-29.mjs"
+    ]
+  },
+  {
+    "packId": "trig-quadrants-and-monotonicity",
+    "title": "单位圆与正弦函数的单调性及象限循环",
+    "version": "0.1.4",
+    "minimumPlayerVersion": "0.1.0",
+    "sha256": "8ce209e7905f561d530065c40aa47baee3f4b63f407be40b23dd24783232bcb3",
+    "bytes": 1795305,
+    "beats": 9,
+    "durationSeconds": 102,
+    "changed": true,
+    "reviews": [
+      "review-2026-09-28.mjs",
+      "review-2026-09-29.mjs"
+    ]
+  },
+  {
+    "packId": "trig-unit-circle-to-sine",
+    "title": "从单位圆旋转到正弦曲线",
+    "version": "0.1.3",
+    "minimumPlayerVersion": "0.1.0",
+    "sha256": "2c06f174c0f4a9d0300733e7a87d6aa374bfaebdccc55c2fdfdd1b1dd3b7dc5a",
+    "bytes": 1375762,
+    "beats": 7,
+    "durationSeconds": 79,
+    "changed": true,
+    "reviews": [
+      "review-2026-09-28.mjs",
+      "review-2026-09-29.mjs"
+    ]
+  }
+]
