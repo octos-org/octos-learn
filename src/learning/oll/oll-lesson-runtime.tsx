@@ -85,7 +85,7 @@ import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
 import { buildInteractionClusters } from "./interaction-clusters";
-import { formatCourseControlValue } from "./course-control-format";
+import { courseControlLabelWidth, formatCourseControlValue } from "./course-control-format";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -804,6 +804,10 @@ export function LearningWhiteboard({
     operationId?: string;
   }>());
   const pendingSliderUpdatesRef = useRef(new Map<string, number>());
+  // While a learner drags, the slider shows the pointer's value; writing the
+  // lagging runtime value back into a dragged range input made its thumb and
+  // number jump backwards.
+  const [draggedSliderValues, setDraggedSliderValues] = useState<Record<string, number>>({});
   const sliderUpdateFrameRef = useRef<number | null>(null);
   const pendingBoardVariableUpdatesRef = useRef(new Map<string, {
     value: number;
@@ -1760,6 +1764,7 @@ export function LearningWhiteboard({
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
     active.value = value;
+    setDraggedSliderValues((current) => current[alias] === value ? current : { ...current, [alias]: value });
     pendingSliderUpdatesRef.current.set(alias, value);
     if (sliderUpdateFrameRef.current === null) {
       sliderUpdateFrameRef.current = window.requestAnimationFrame(
@@ -1797,6 +1802,12 @@ export function LearningWhiteboard({
       sliderUpdateFrameRef.current = null;
     }
     sliderOperationsRef.current.delete(alias);
+    setDraggedSliderValues((current) => {
+      if (!(alias in current)) return current;
+      const next = { ...current };
+      delete next[alias];
+      return next;
+    });
     runtimeRef.current?.handleStudentVariableInput(alias, committedValue, {
       phase: "commit",
       control: "slider",
@@ -3609,6 +3620,9 @@ export function LearningWhiteboard({
                       >
                         {presentation.controls.map((control) => {
                           const inputId = `oll-variable-${control.alias}`;
+                          const shownValue = draggedSliderValues[control.alias] ?? control.value;
+                          const moving = control.alias in draggedSliderValues
+                            || runtime?.activeVariableAnimation?.variable === control.alias;
                           return (
                             <div
                               className={runtime?.activeVariableAnimation?.variable === control.alias
@@ -3623,7 +3637,7 @@ export function LearningWhiteboard({
                                 min={control.min}
                                 max={control.max}
                                 step={control.step}
-                                value={control.value}
+                                value={shownValue}
                                 onPointerDown={(event) => {
                                   startSliderOperation(
                                     control.alias,
@@ -3680,8 +3694,10 @@ export function LearningWhiteboard({
                                 aria-label={control.label}
                                 aria-description="可拖动滑块，也可用减小、增大按钮或方向键精细调整"
                               />
-                              <output>
-                                {formatCourseControlValue(control.value, control.unit)}
+                              <output
+                                style={{ minWidth: `${courseControlLabelWidth(control.min, control.max, control.unit, control.step)}ch` }}
+                              >
+                                {formatCourseControlValue(shownValue, control.unit, { step: control.step, moving })}
                               </output>
                               <div className="learning-variable-control-actions">
                                 {([-1, 1] as const).map((direction) => (
