@@ -161,6 +161,23 @@ describe("shared course launcher", () => {
       .toContain('"mode":"instance"');
   });
 
+  it("does not resurrect withdrawn embedded courses in the online catalog", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const embedded = String(input).includes("/course-packs/embedded/catalog.json");
+      return new Response(JSON.stringify(catalog((embedded
+        ? [{ ...release, packId: "rectangle-area-from-tiles" }]
+        : [{ ...release, packId: "slope-and-intercept" }]
+      ).map(pack => ({ ...pack,
+        archiveUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/archive.ocpack`,
+        manifestUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/manifest.json`,
+        thumbnailUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/files/thumbnail.webp`,
+      })))), { status: 200 });
+    }));
+    showLauncher("/");
+    expect(await screen.findByRole("heading", { name: "读懂一次函数" })).toBeTruthy();
+    expect(screen.queryByText("其他课程")).toBeNull();
+  });
+
   it("keeps only the single latest version per course when multiple versions exist in catalogs", async () => {
     const makePack = (version: string) => ({
       ...release,

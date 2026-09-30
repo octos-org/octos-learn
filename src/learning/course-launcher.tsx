@@ -124,7 +124,11 @@ function useLauncherCatalog(): CatalogState {
       } else {
         saveCoursePackCatalog(publicCatalogResult);
         const mergedPacks = selectLatestCoursePacks(
-          [...embeddedPacks, ...publicCatalogResult.packs],
+          // A successful public catalog is authoritative about withdrawn courses.
+          // Keep embedded archives available for existing records/offline playback.
+          [...embeddedPacks.filter(pack => publicCatalogResult.packs.some(
+            published => published.packId === pack.packId && published.recommended,
+          )), ...publicCatalogResult.packs],
           { isEmbedded: (entry) => embeddedSet.has(`${entry.packId}@${entry.version}`) },
         );
         setState({
