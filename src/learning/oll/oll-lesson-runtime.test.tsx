@@ -186,6 +186,26 @@ function InkRuntimeProbe({
   );
 }
 
+function InkPlaybackProbe() {
+  const runtime = useOllLessonRuntime({
+    source: geometryLessonSource,
+    storageKey: "oll-ink-playback-runtime-test",
+  });
+  const [playing, setPlaying] = useState(false);
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <button type="button" onClick={() => setPlaying((current) => !current)}>
+        切换播放
+      </button>
+      <OllLessonBoard
+        runtime={{ ...runtime, playing }}
+        inkSessionId="learn-ink-playback"
+      />
+    </div>
+  );
+}
+
 function InkShortcutProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
@@ -1200,11 +1220,11 @@ describe("OLL lesson Runtime integration", () => {
       return Object.values(latest ?? {}).flatMap(region =>
         (region.attachments ?? []).map(attachment => attachment.height));
     };
-    await waitFor(() => expect(heights()).toEqual([44]));
+    await waitFor(() => expect(heights()).toEqual([36]));
     fireEvent.click(screen.getByText("切换练习"));
-    await waitFor(() => expect(heights()).toEqual([44, 280]));
+    await waitFor(() => expect(heights()).toEqual([36, 280]));
     fireEvent.click(screen.getByText("切换练习"));
-    await waitFor(() => expect(heights()).toEqual([44]));
+    await waitFor(() => expect(heights()).toEqual([36]));
   });
 
   it("surfaces rejected input and prevents later input from becoming a successful operation", async () => {
@@ -1427,6 +1447,56 @@ describe("OLL lesson Runtime integration", () => {
     expect(board.classList.contains("manual-navigation")).toBe(true);
   });
 
+  it("hides learner ink and pauses its camera sync while the lesson plays", async () => {
+    let inkState: InkRuntimeState = {
+      mode: "navigate",
+      component_count: 1,
+      selected_count: 0,
+      selection_revision: 0,
+      document_version: 1,
+      saved: true,
+    };
+    let emitInkState: ((next: InkRuntimeState) => void) | undefined;
+    const cameraListener = vi.fn();
+    mountInkRuntimeMock.mockImplementation((options) => {
+      options.board.subscribeCamera(cameraListener);
+      return {
+        ready: Promise.resolve(),
+        subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+          emitInkState = listener;
+          listener(inkState);
+          return () => undefined;
+        }),
+        setMode: vi.fn((mode: InkMode) => {
+          inkState = { ...inkState, mode };
+          emitInkState?.(inkState);
+        }),
+        destroy: vi.fn(() => Promise.resolve()),
+      };
+    });
+    await renderLearning(<InkPlaybackProbe />);
+    await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
+    const board = screen.getByTestId("oll-lesson-board");
+    expect(board.dataset.inkSuspended).toBeUndefined();
+
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    cameraListener.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBeUndefined());
+    // Resuming re-syncs the hidden layer to the camera it missed.
+    expect(cameraListener).toHaveBeenCalledOnce();
+
+    // Picking a writing tool mid-lesson keeps the learner's ink visible.
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    act(() => {
+      emitInkState?.({ ...inkState, mode: "draw" });
+    });
+    await waitFor(() => expect(board.dataset.inkSuspended).toBeUndefined());
+  });
+
   it("reserves a new course area before its loading state renders", async () => {
     const onPlaceQuestion = vi.fn();
     await renderLearning(
@@ -1553,7 +1623,8 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "结束当前课程" }));
 
     await waitFor(() => expect(focusWorldRect).toHaveBeenCalledTimes(1));
-    expect(focusWorldRect.mock.calls[0]?.[1]).toEqual({
+    const options = focusWorldRect.mock.calls[0]?.[1];
+    expect(options).toMatchObject({
       exclusive: true,
       framing: "course",
     });
@@ -1561,6 +1632,13 @@ describe("OLL lesson Runtime integration", () => {
     expect(bounds!.x).toBeGreaterThan(2_000);
     expect(bounds!.y).toBeGreaterThanOrEqual(180);
     expect(bounds!.width).toBeLessThan(2_000);
+    // The course cards travel with the frame so floating UI is checked
+    // against them rather than the empty corners of their bounds.
+    expect(options!.parts!.length).toBeGreaterThan(1);
+    for (const part of options!.parts!) {
+      expect(part.x).toBeGreaterThanOrEqual(bounds!.x);
+      expect(part.x + part.width).toBeLessThanOrEqual(bounds!.x + bounds!.width + .001);
+    }
 
     fireEvent.click(screen.getByRole("button", { name: "更新结束界面" }));
     await act(async () => undefined);
@@ -2483,7 +2561,9 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.change(slider, { target: { value: "0.3" } });
 
     expect(inputEvents.filter((event) => event.phase === "update")).toEqual([]);
-    expect(frames.size).toBe(1);
+    // Showing the dragged value re-renders the panel, whose layout effects
+    // may request their own frames; the slider still sends one update.
+    expect(frames.size).toBeGreaterThanOrEqual(1);
     await act(async () => {
       const pending = [...frames.values()];
       frames.clear();

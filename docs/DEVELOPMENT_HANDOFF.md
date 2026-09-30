@@ -106,6 +106,8 @@ ASR_API_URL=http://127.0.0.1:8094 \
 
 ### 3. 启动 Octos Learn
 
+本机开发及人工 E2E 复测入口固定使用 **HTTPS 5173**（`https://127.0.0.1:5173/`，用 `pnpm dev:https` 启动）（用户约定，2026-09-29）。启动时使用 `--port 5173 --strictPort`；若端口已有旧前端服务，先确认并关闭旧服务，再启动本次服务，不自动换用其他端口。
+
 ```bash
 cd /Users/alan0x/Documents/projects/octos-learn
 corepack enable

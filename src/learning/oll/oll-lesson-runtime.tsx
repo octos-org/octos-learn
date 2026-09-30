@@ -45,11 +45,22 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import {
+  createInkCameraGate,
+  type InkCameraBoard,
+  type InkCameraGate,
+} from "./ink-camera-gate";
 import { planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
   mutationsTouchBoardOcclusion,
 } from "./board-occlusion-observer";
+import {
+  boardChromeInsets,
+  isAndroidRuntime,
+  teachingCameraCeiling,
+  teachingReadingScale,
+} from "./board-chrome-insets";
 import { SelectionEnhancementLayer } from "../selection-enhancement-layer";
 import {
   WhiteboardQuestionCard,
@@ -79,7 +90,7 @@ import type {
   OllLessonRuntimeController,
 } from "./use-oll-lesson-runtime";
 import { buildInteractionClusters } from "./interaction-clusters";
-import { formatCourseControlValue } from "./course-control-format";
+import { courseControlLabelWidth, formatCourseControlValue } from "./course-control-format";
 import {
   WhiteboardLoadingBlock,
   type WhiteboardLoadingState,
@@ -266,28 +277,20 @@ interface InternalInfiniteBoardView {
   transform?: () => void;
 }
 
-function centerCameraOnScene(
-  view: MountedInfiniteBoard["view"],
-  scene: WhiteboardRect,
-  scale: number,
-) {
-  const internalView = view as unknown as InternalInfiniteBoardView;
-  const sceneCenterX = scene.x + scene.width / 2;
-  const sceneCenterY = scene.y + scene.height / 2;
-  const viewportRect = internalView.viewport?.getBoundingClientRect() ?? { width: 0, height: 0 };
-  const insets = internalView.viewportInsets ?? {};
-  const margin = 70;
-  const safeLeft = (insets.left ?? 0) + margin;
-  const safeTop = (insets.top ?? 0) + margin;
-  const safeRight = Math.max(safeLeft + 1, viewportRect.width - (insets.right ?? 0) - margin);
-  const safeBottom = Math.max(safeTop + 1, viewportRect.height - (insets.bottom ?? 0) - margin);
-  const safeCenterX = (safeLeft + safeRight) / 2;
-  const safeCenterY = (safeTop + safeBottom) / 2;
+const REFLECTION_CARD_ESTIMATED_HEIGHT = 150;
+const OPEN_REFLECTIONS_KEY = "octos-learn:open-reflections:v1";
 
-  internalView.scale = scale;
-  internalView.panX = safeCenterX - sceneCenterX * scale;
-  internalView.panY = safeCenterY - sceneCenterY * scale;
-  internalView.transform?.();
+function readOpenReflections(): Record<string, boolean> {
+  try {
+    const value = JSON.parse(localStorage.getItem(OPEN_REFLECTIONS_KEY) ?? "{}");
+    return value && typeof value === "object" ? value as Record<string, boolean> : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOpenReflections(value: Record<string, boolean>): void {
+  try { localStorage.setItem(OPEN_REFLECTIONS_KEY, JSON.stringify(value)); } catch { /* per-device convenience only */ }
 }
 
 function renderedWorldRect(element: HTMLElement): WhiteboardRect | null {
@@ -473,7 +476,7 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
     .dataset.runtimePlatform === "android";
   const compact = viewport.clientWidth <= 900;
   const viewportRect = viewport.getBoundingClientRect();
-  const occlusions = [
+  const chrome = [
     ...viewport.ownerDocument.querySelectorAll<HTMLElement>(boardOcclusionSelector),
   ].flatMap((element) => {
     if (element.hidden) return [];
@@ -486,18 +489,17 @@ function learningBoardInsets(viewport: HTMLElement): ViewportInsets & {
       ? [{ x: left - viewportRect.left, y: top - viewportRect.top, width: right - left, height: bottom - top }]
       : [];
   });
+  const bands = boardChromeInsets(viewportRect.width, viewportRect.height, chrome);
   return {
-    // Android's persistent chrome is already represented by exact occlusion
-    // rectangles. Reserving broad full-width bands here double-counted the
-    // same UI and left a 540px-tall display with only 118px for course cards.
-    // Desktop keeps a modest full-width bottom band for the dock area; the
-    // dock itself is an exact occlusion, so corners stay usable.
-    top: androidRuntime ? 0 : compact ? 78 : 92,
+    // Desktop keeps a modest band for the dock area as a floor; Android's
+    // bands come only from its actual chrome so a 540px display is not
+    // double-counted. Both layout and camera use these same insets.
+    top: Math.round(Math.max(androidRuntime ? 0 : compact ? 78 : 92, bands.top)),
     right: androidRuntime ? 0 : compact ? 18 : 28,
-    bottom: androidRuntime ? 0 : compact ? 180 : 120,
+    bottom: Math.round(Math.max(androidRuntime ? 0 : compact ? 180 : 120, bands.bottom)),
     left: androidRuntime ? 0 : compact ? 18 : 28,
     ...(androidRuntime ? { focusMargin: 24 } : {}),
-    occlusions,
+    occlusions: bands.occlusions,
   };
 }
 
@@ -786,6 +788,12 @@ export function LearningWhiteboard({
   const renderedCompositionCursorRef = useRef(-1);
   const renderedAnimationActiveRef = useRef(false);
   const inkRuntimeRef = useRef<LearningInkRuntime | null>(null);
+  const inkCameraGateRef = useRef<InkCameraGate<InkCameraBoard> | null>(null);
+  // Read by the mount effect, which can run after the policy effect below.
+  const inkCameraPolicyRef = useRef({ suspended: false, navigating: true });
+  // Only the APK's transparent js-draw canvases (behind the SVG mirror) may
+  // lag the camera; visible js-draw ink must follow every frame.
+  const inkEditorSurfaceHiddenRef = useRef(false);
   const inkMergeAttemptRef = useRef<string | null>(null);
   const inkReplayObservedSourceRef = useRef<string | null>(null);
   const inkActivityReportedRef = useRef(false);
@@ -807,6 +815,10 @@ export function LearningWhiteboard({
     operationId?: string;
   }>());
   const pendingSliderUpdatesRef = useRef(new Map<string, number>());
+  // While a learner drags, the slider shows the pointer's value; writing the
+  // lagging runtime value back into a dragged range input made its thumb and
+  // number jump backwards.
+  const [draggedSliderValues, setDraggedSliderValues] = useState<Record<string, number>>({});
   const sliderUpdateFrameRef = useRef<number | null>(null);
   const pendingBoardVariableUpdatesRef = useRef(new Map<string, {
     value: number;
@@ -938,7 +950,7 @@ export function LearningWhiteboard({
     top: 120,
   });
   const [teachingWidth, setTeachingWidth] = useState(1300);
-  const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets} | null>(null);
+  const [teachingViewport, setTeachingViewport] = useState<{width:number; height:number; insets:ViewportInsets; readingScale:number} | null>(null);
   const [courseGeometryRevision, setCourseGeometryRevision] = useState(0);
   const automaticOverviewRef = useRef<string | null>(null);
   const lastOverviewFrameRef = useRef("");
@@ -1134,8 +1146,9 @@ export function LearningWhiteboard({
         cluster.taskIds.includes(task.task_id));
       const controlsWidth = controls.length > 0 ? 360 : 0;
       const tasksWidth = tasks.length > 0 ? 330 : 0;
+      // Compact panel: 5px padding and 1px border on each side, 24px rows, 4px gaps.
       const controlsHeight = controls.length > 0
-        ? 20 + controls.length * 24 + Math.max(0, controls.length - 1) * 6
+        ? 12 + controls.length * 24 + Math.max(0, controls.length - 1) * 4
         : 0;
       // Ownership is stable before a task opens; collision space is not.
       // Invalidate measurements when visible content changes (including replay).
@@ -1166,25 +1179,54 @@ export function LearningWhiteboard({
 
   const regionLayoutMode = runtime?.deliverySettled && (runtime.completed || runtime.waiting)
     ? "overview" as const : "progressive" as const;
+  // Thinking questions open after the lesson as their own card under the
+  // board card that poses them; the answer stays collapsed until opened.
+  const [reflectionHeights, setReflectionHeights] = useState<Record<string, number>>({});
+  const [openReflections, setOpenReflections] = useState<Record<string, boolean>>(readOpenReflections);
+  const reflectionCards = useMemo(() => (runtime?.reflections ?? [])
+    .filter((reflection) => reflection.available)
+    .flatMap((reflection) => {
+      const outline = runtime?.outline ?? [];
+      const topic = outline.find((candidate) => candidate.nodeIds?.includes(reflection.anchor))
+        ?? (outline.length === 1 ? outline[0] : undefined);
+      if (!topic) return [];
+      const key = `${topic.id}:${reflection.id}`;
+      return [{ ...reflection, topic, key, attachmentId: `reflection:${key}` }];
+    }), [runtime?.reflections, runtime?.outline]);
+  const toggleReflection = useCallback((key: string) => {
+    setOpenReflections((current) => {
+      const next = { ...current, [key]: !current[key] };
+      writeOpenReflections(next);
+      return next;
+    });
+  }, []);
+
   const regionLayoutConstraints = useMemo(() => Object.fromEntries(
     (runtime?.outline ?? []).flatMap((topic) => {
       const region = topic.questionId
         ? courseRegionByQuestion.get(topic.questionId)
         : undefined;
-      const attachments = interactionPlans
+      const attachments: NonNullable<RegionLayoutConstraint["attachments"]> = interactionPlans
         .filter(plan => plan.topic.id === topic.id && Boolean(plan.anchorNodeId) && plan.height > 0)
-        .flatMap(plan => [
+        .flatMap((plan): NonNullable<RegionLayoutConstraint["attachments"]> => [
           ...(plan.controls.length ? [{
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
             height: plan.controlsHeight, focusHeight: plan.controlsHeight, gap: 24,
           }] : []),
           ...(plan.tasks.length ? [{
+            // Practice always renders 330 wide; docked controls may be wider.
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
-            anchorNodeIds: plan.anchorNodeIds, width: plan.width,
+            anchorNodeIds: plan.anchorNodeIds, width: 330,
             height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
-        ]);
+        ])
+        .concat(reflectionCards
+          .filter((card) => card.topic.id === topic.id)
+          .map((card) => ({
+            id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.anchor,
+            width: 330, height: reflectionHeights[card.attachmentId] ?? REFLECTION_CARD_ESTIMATED_HEIGHT,
+          })));
       // Packaged/legacy lessons do not have a composer question region. Their
       // complete course region still belongs in the same collision layout as a
       // live lesson, even when it has no sliders or student tasks.
@@ -1249,7 +1291,31 @@ export function LearningWhiteboard({
     questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
+    reflectionCards,
+    reflectionHeights,
   ]);
+
+  // Measure rendered thinking-question cards (collapsed or open) so the
+  // layout reserves their real height under the anchor card.
+  useEffect(() => {
+    if (!enhancementLayer || reflectionCards.length === 0 || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver((entries) => {
+      const measured: Record<string, number> = {};
+      for (const entry of entries) {
+        const element = entry.target as HTMLElement;
+        const id = element.dataset.reflectionAttachmentId;
+        if (id && element.offsetHeight > 0) measured[id] = element.offsetHeight;
+      }
+      setReflectionHeights((current) => Object.entries(measured)
+        .some(([id, height]) => Math.abs((current[id] ?? 0) - height) > 1) ? { ...current, ...measured } : current);
+    });
+    const frame = window.requestAnimationFrame(() => {
+      for (const element of enhancementLayer.querySelectorAll<HTMLElement>("[data-reflection-attachment-id]")) {
+        observer.observe(element);
+      }
+    });
+    return () => { window.cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [enhancementLayer, reflectionCards, runtimeAttachmentBounds]);
 
   const coursePresentations = interactionPlans.flatMap((plan) => {
     const { topic } = plan;
@@ -1306,6 +1372,8 @@ export function LearningWhiteboard({
         x: interactionPosition.x,
         y: interactionPosition.y,
       },
+      // A single visual's controls are docked under it at its width.
+      controlsWidth: attachmentBounds?.width ?? 360,
       tasksPosition: {
         x: taskBounds?.x ?? interactionPosition.x,
         y: taskBounds?.y ?? (interactionPosition.y + (controls.length > 0 ? plan.controlsHeight + 28 : 0)),
@@ -1707,6 +1775,7 @@ export function LearningWhiteboard({
     const active = sliderOperationsRef.current.get(alias);
     if (!active) return;
     active.value = value;
+    setDraggedSliderValues((current) => current[alias] === value ? current : { ...current, [alias]: value });
     pendingSliderUpdatesRef.current.set(alias, value);
     if (sliderUpdateFrameRef.current === null) {
       sliderUpdateFrameRef.current = window.requestAnimationFrame(
@@ -1744,6 +1813,12 @@ export function LearningWhiteboard({
       sliderUpdateFrameRef.current = null;
     }
     sliderOperationsRef.current.delete(alias);
+    setDraggedSliderValues((current) => {
+      if (!(alias in current)) return current;
+      const next = { ...current };
+      delete next[alias];
+      return next;
+    });
     runtimeRef.current?.handleStudentVariableInput(alias, committedValue, {
       phase: "commit",
       control: "slider",
@@ -1777,6 +1852,24 @@ export function LearningWhiteboard({
       delete viewport.dataset.androidInkMode;
     };
   }, [inkState.mode]);
+
+  // Learner ink is hidden while the lesson plays. Choosing a writing tool
+  // keeps it visible, because the learner is then deliberately writing.
+  const inkSuspendedForPlayback = Boolean(runtime?.playing)
+    && inkState.mode === "navigate";
+  useEffect(() => {
+    const navigating = inkState.mode === "navigate";
+    inkCameraPolicyRef.current = { suspended: inkSuspendedForPlayback, navigating };
+    // Resume before undeferring so the layer reappears at the live camera.
+    inkCameraGateRef.current?.setSuspended(inkSuspendedForPlayback);
+    inkCameraGateRef.current?.setEditorSyncDeferred(
+      inkEditorSurfaceHiddenRef.current && navigating,
+    );
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+    if (inkSuspendedForPlayback) viewport.dataset.inkSuspended = "";
+    else delete viewport.dataset.inkSuspended;
+  }, [inkState.mode, inkSuspendedForPlayback]);
 
   const setInkMode = useCallback((mode: InkMode) => {
     try {
@@ -2188,13 +2281,15 @@ export function LearningWhiteboard({
     if (!viewport) return;
     const mounted = mountInfiniteBoard(viewport);
     const internalView = mounted.view as unknown as InternalInfiniteBoardView;
-    const isAndroid = document.documentElement.dataset.runtimePlatform === "android";
-    if (isAndroid) {
+    if (isAndroidRuntime()) {
       // Meeting displays are viewed from much farther away than laptops.
       // Large compositions may be cropped, but automatic framing must not
       // reduce teaching cards to an unreadable whole-course thumbnail.
       mounted.view.setAutomaticCameraMinimumScale(.55);
     }
+    // Keep automatic close-ups near the teaching layout's reading scale so a
+    // single diagram is never magnified until the rest of its row is cut off.
+    mounted.view.setAutomaticCameraMaximumScale(teachingCameraCeiling());
     const originalFocusRects = internalView.focusRects?.bind(mounted.view);
     internalView.focusRects = (targetIds: string[], rects: WhiteboardRect[], board: unknown) => {
       let resolvedRects = rects;
@@ -2222,12 +2317,6 @@ export function LearningWhiteboard({
         }
       }
       originalFocusRects?.(targetIds, resolvedRects, board);
-      if (isAndroid && (internalView.scale ?? 1) > 0.55) {
-        const scene = unionWhiteboardRects(resolvedRects);
-        if (scene) {
-          centerCameraOnScene(mounted.view, scene, 0.55);
-        }
-      }
     };
     mountedRef.current = mounted;
     const reportCameraDecision = (decision: WhiteboardCameraDecision) => {
@@ -2248,10 +2337,8 @@ export function LearningWhiteboard({
         const focusedViewport = mounted.view.focusWorldRect(request.rect, {
           exclusive: true,
           framing: courseFrame ? "course" : "content",
+          parts: request.parts,
         });
-        if (isAndroid && !courseFrame && (internalView.scale ?? 1) > 0.55) {
-          centerCameraOnScene(mounted.view, request.rect, 0.55);
-        }
         // A course region's persisted bounds are a placement footprint, not a
         // camera target. Remember the complete world area exposed by the final
         // course frame so the next course starts beyond that view instead of
@@ -2295,11 +2382,18 @@ export function LearningWhiteboard({
     let ink: LearningInkRuntime | null = null;
     let inkDestroyed = false;
     let destroyAndroidInkDensity: (() => void) | null = null;
+    let inkCameraGate: InkCameraGate<typeof mounted.view> | null = null;
     const destroyInk = (): Promise<void> | undefined => {
       if (!ink || inkDestroyed) return undefined;
       inkDestroyed = true;
       destroyAndroidInkDensity?.();
       destroyAndroidInkDensity = null;
+      if (inkCameraGateRef.current === inkCameraGate) {
+        inkCameraGateRef.current = null;
+        inkEditorSurfaceHiddenRef.current = false;
+      }
+      inkCameraGate?.destroy();
+      inkCameraGate = null;
       unsubscribeInkRef.current?.();
       unsubscribeInkRef.current = null;
       if (inkRuntimeRef.current === ink) {
@@ -2357,8 +2451,9 @@ export function LearningWhiteboard({
         return typeof result === "string" ? result : undefined;
       });
       if (inkSessionId) {
+        inkCameraGate = createInkCameraGate(mounted.view);
         ink = mountInkRuntime({
-          board: mounted.view,
+          board: inkCameraGate.editorBoard,
           viewport,
           storageKey: `octos-learning-ink:v1:${inkSessionId}`,
           store: indexedInkStore,
@@ -2367,13 +2462,22 @@ export function LearningWhiteboard({
           touchMarqueeActivation:
             import.meta.env.MODE === "android" ? "direct" : "hold",
         }) as LearningInkRuntime;
+        let editorSurfaceHidden = false;
         if (import.meta.env.MODE === "android") {
-          destroyAndroidInkDensity = configureAndroidInkDynamicDensity(
+          const androidInkDensity = configureAndroidInkDynamicDensity(
             ink,
             viewport,
-            mounted.view,
+            inkCameraGate.liveCameraSource,
           );
+          destroyAndroidInkDensity = androidInkDensity.destroy;
+          editorSurfaceHidden = androidInkDensity.usesVectorMirror;
         }
+        inkCameraGateRef.current = inkCameraGate;
+        inkEditorSurfaceHiddenRef.current = editorSurfaceHidden;
+        inkCameraGate.setSuspended(inkCameraPolicyRef.current.suspended);
+        inkCameraGate.setEditorSyncDeferred(
+          editorSurfaceHidden && inkCameraPolicyRef.current.navigating,
+        );
         inkRuntimeRef.current = ink;
         onInkSaveHandlerChangeRef.current?.(async () => {
           await ink?.saveNow();
@@ -2625,7 +2729,7 @@ export function LearningWhiteboard({
       ?.allowsTeachingFocus(teachingCourseId) ?? true;
     view?.setScene3dViews(activeRuntime.scene3dViews);
     view?.setActiveRegion(teachingRegionId);
-    view?.setBeatTargets(activeRuntime.compositionTargets);
+    view?.setBeatTargets(activeRuntime.compositionTargets, activeRuntime.stepContextTargets);
     view?.render(activeRuntime.board, activeRuntime.currentOperation);
     const renderedCourseNodeIds = new Set(Array.from(
       mounted?.elements.nodes.querySelectorAll<HTMLElement>(
@@ -2915,11 +3019,13 @@ export function LearningWhiteboard({
           "[data-loading-id]",
           "[data-course-controls-id]",
           "[data-course-tasks-id]",
+          "[data-course-reflection-id]",
         ].join(","))) {
           const belongsToCourse = element.dataset.questionId === topic.questionId
             || element.dataset.loadingId === topic.questionId
             || element.dataset.courseControlsId === courseId
-            || element.dataset.courseTasksId === courseId;
+            || element.dataset.courseTasksId === courseId
+            || element.dataset.courseReflectionId === courseId;
           if (!belongsToCourse) continue;
           const bounds = renderedWorldRect(element);
           if (bounds) rects.push(bounds);
@@ -2942,6 +3048,7 @@ export function LearningWhiteboard({
             ?? runtime.cursor}:${sequence}`,
         courseId,
         rect: bounds,
+        parts: rects,
       });
       if (accepted) {
         lastOverviewFrameRef.current = signature;
@@ -3101,7 +3208,7 @@ export function LearningWhiteboard({
         if (viewport.clientWidth > 0) setTeachingWidth(Math.max(480, Math.min(1300, viewport.clientWidth - 64)));
         const insets = learningBoardInsets(viewport);
         if (viewport.clientWidth > 0 && viewport.clientHeight > 0) {
-          const next = {width:viewport.clientWidth,height:viewport.clientHeight,insets};
+          const next = {width:viewport.clientWidth,height:viewport.clientHeight,insets,readingScale:teachingReadingScale()};
           setTeachingViewport(current=>JSON.stringify(current)===JSON.stringify(next)?current:next);
         }
         const signature = JSON.stringify(insets);
@@ -3551,7 +3658,7 @@ export function LearningWhiteboard({
                         style={{
                           left: presentation.controlsPosition.x,
                           top: presentation.controlsPosition.y,
-                          width: 360,
+                          width: presentation.controlsWidth,
                         }}
                         data-course-controls-id={courseId}
                         data-interaction-controls-id={presentation.id}
@@ -3561,6 +3668,9 @@ export function LearningWhiteboard({
                       >
                         {presentation.controls.map((control) => {
                           const inputId = `oll-variable-${control.alias}`;
+                          const shownValue = draggedSliderValues[control.alias] ?? control.value;
+                          const moving = control.alias in draggedSliderValues
+                            || runtime?.activeVariableAnimation?.variable === control.alias;
                           return (
                             <div
                               className={runtime?.activeVariableAnimation?.variable === control.alias
@@ -3575,7 +3685,7 @@ export function LearningWhiteboard({
                                 min={control.min}
                                 max={control.max}
                                 step={control.step}
-                                value={control.value}
+                                value={shownValue}
                                 onPointerDown={(event) => {
                                   startSliderOperation(
                                     control.alias,
@@ -3632,8 +3742,10 @@ export function LearningWhiteboard({
                                 aria-label={control.label}
                                 aria-description="可拖动滑块，也可用减小、增大按钮或方向键精细调整"
                               />
-                              <output>
-                                {formatCourseControlValue(control.value, control.unit)}
+                              <output
+                                style={{ minWidth: `${courseControlLabelWidth(control.min, control.max, control.unit, control.step)}ch` }}
+                              >
+                                {formatCourseControlValue(shownValue, control.unit, { step: control.step, moving })}
                               </output>
                               <div className="learning-variable-control-actions">
                                 {([-1, 1] as const).map((direction) => (
@@ -3717,11 +3829,18 @@ export function LearningWhiteboard({
                             </div>
                           );
                         })}
-                        {runtime?.activeVariableAnimation ? (
-                          <small role="status">
-                            老师正在演示这个变量，结束后即可继续拖动
-                          </small>
-                        ) : null}
+                        {/* The status line always keeps its height so a
+                            teacher demonstration never resizes the panel
+                            and pushes the cards laid out below it. */}
+                        <small
+                          role={runtime?.activeVariableAnimation ? "status" : undefined}
+                          aria-hidden={runtime?.activeVariableAnimation ? undefined : true}
+                          className={runtime?.activeVariableAnimation ? undefined : "is-idle"}
+                        >
+                          {runtime?.activeVariableAnimation
+                            ? "老师正在演示这个变量，结束后即可继续拖动"
+                            : "\u00a0"}
+                        </small>
                       </div>
                     ) : null}
                     {presentation.tasks.length > 0 ? (
@@ -3817,6 +3936,39 @@ export function LearningWhiteboard({
                       </section>
                     ) : null}
                   </div>
+                );
+              })}
+              {reflectionCards.map((card) => {
+                const bounds = runtimeAttachmentBounds[card.attachmentId];
+                if (!bounds) return null;
+                const open = Boolean(openReflections[card.key]);
+                return (
+                  <section
+                    key={card.attachmentId}
+                    className="learning-reflection-card is-world"
+                    style={{ left: bounds.x, top: bounds.y, width: bounds.width }}
+                    data-course-reflection-id={card.topic.questionId ?? card.topic.id}
+                    data-reflection-attachment-id={card.attachmentId}
+                    data-oll-ink-input="ignore"
+                    aria-label="想一想"
+                    data-testid="oll-reflection-card"
+                  >
+                    <header>
+                      <span>想一想</span>
+                      <small>先独立思考，再展开答案核对</small>
+                    </header>
+                    <p>{card.prompt}</p>
+                    <button
+                      type="button"
+                      aria-expanded={open}
+                      onClick={() => toggleReflection(card.key)}
+                    >
+                      {open ? "收起答案" : "查看答案"}
+                    </button>
+                    {open ? (
+                      <div className="learning-reflection-answer">{card.answer}</div>
+                    ) : null}
+                  </section>
                 );
               })}
               {selectionQuestionOpen

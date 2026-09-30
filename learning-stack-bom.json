@@ -7,19 +7,19 @@
       "repository": "alan0x/learning-coach",
       "main_baseline_ref": "7bb8078b19aac033085e5ae435d31220c7e204f3",
       "package_version": "0.15.0",
-      "oll_authoring_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "oll_authoring_ref": "1a463851a0bcb59fefe9b9eaab93c5a30caea678"
     },
     "octos_lesson_language": {
       "repository": "alan0x/octos-lesson-language",
       "reviewed_main_ref": "f2a1c654041735f566385f9e208c868b270b8095",
-      "authoring_profile_ref": "f2a1c654041735f566385f9e208c868b270b8095",
-      "web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "authoring_profile_ref": "1a463851a0bcb59fefe9b9eaab93c5a30caea678",
+      "web_runtime_ref": "067597cb5233d532ae8190f7857a760437163444"
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
       "main_baseline_ref": "739b003c359446d718008823e3b6d8bc40dbc523",
       "package_version": "0.1.0",
-      "oll_web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "oll_web_runtime_ref": "067597cb5233d532ae8190f7857a760437163444"
     }
   },
   "contracts": {

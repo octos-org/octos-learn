@@ -24,6 +24,7 @@ import {
   type Scene3dViewInputEvent,
   type Scene3dViewState,
   type StudentScene3dViewOperation,
+  type ReflectionSnapshot,
   type StudentTaskSnapshot,
   type StudentVariableInputEvent,
   type PlaybackFailure,
@@ -82,6 +83,8 @@ export interface OllLessonRuntimeController {
   currentBeatId?: string;
   attentionTargets: string[];
   compositionTargets: string[];
+  /** Cards the current Step wrote before the current Beat (camera context). */
+  stepContextTargets: string[];
   activeSpeech: string;
   nextNarration?: OllLessonNarration;
   playing: boolean;
@@ -92,6 +95,8 @@ export interface OllLessonRuntimeController {
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
   studentTasks: StudentTaskSnapshot[];
+  /** Thinking questions; available once the after-lesson window opens. */
+  reflections: ReflectionSnapshot[];
   studentTaskDefinitions: AuthoringStudentTask[];
   scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
@@ -596,6 +601,7 @@ export function useOllLessonRuntime({
     currentBeatId,
     attentionTargets: session.attentionTargets,
     compositionTargets: session.compositionTargets,
+    stepContextTargets: session.stepContextTargets,
     activeSpeech: session.activePhaseTransition ? "" : projection.current_narration?.text ?? "",
     nextNarration,
     playing: session.isPlaying,
@@ -610,6 +616,7 @@ export function useOllLessonRuntime({
     activeVariableAnimation: session.activeVariableAnimation,
     studentOperations: session.studentOperations,
     studentTasks: session.studentTasks,
+    reflections: session.reflections,
     studentTaskDefinitions: events[0]?.lesson?.tasks ?? [],
     scene3dViews: session.scene3dViews,
     currentOperation: session.currentOperation,

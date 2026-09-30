@@ -56,12 +56,14 @@ describe("Android dynamic ink pixel budget", () => {
       }),
     };
 
-    const destroy = configureAndroidInkDynamicDensity(
+    const { destroy, usesVectorMirror } = configureAndroidInkDynamicDensity(
       runtime,
       viewport,
       cameraSource,
       2,
     );
+    // Without the APK bridge, js-draw itself shows the ink.
+    expect(usesVectorMirror).toBe(false);
     await Promise.resolve();
     await Promise.resolve();
     expect(setDevicePixelRatio).toHaveBeenLastCalledWith(2);
@@ -145,13 +147,14 @@ describe("Android dynamic ink pixel budget", () => {
       clientWidth: { value: 1920 },
       clientHeight: { value: 1080 },
     });
-    const destroy = configureAndroidInkDynamicDensity(
+    const { destroy, usesVectorMirror } = configureAndroidInkDynamicDensity(
       runtime,
       viewport,
       { subscribeCamera: () => vi.fn() },
       2,
     );
 
+    expect(usesVectorMirror).toBe(true);
     expect(host.querySelectorAll("[data-octos-vector-component-id]")).toHaveLength(1);
     inkListener?.({ content_revision: 2 });
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
@@ -214,7 +217,7 @@ describe("Android dynamic ink pixel budget", () => {
       clientHeight: { value: 1080 },
     });
 
-    const destroy = configureAndroidInkDynamicDensity(
+    const { destroy } = configureAndroidInkDynamicDensity(
       runtime,
       viewport,
       { subscribeCamera: () => vi.fn() },
@@ -275,7 +278,7 @@ describe("Android dynamic ink pixel budget", () => {
       }),
     };
 
-    const destroy = configureAndroidInkDynamicDensity(
+    const { destroy } = configureAndroidInkDynamicDensity(
       runtime,
       viewport,
       cameraSource,
