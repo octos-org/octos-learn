@@ -22,6 +22,7 @@ import {
   fetchProviderModels,
   formatSettingsError,
   updateMyProfileConfig,
+  profileModelSaveMessage,
   type Profile,
   type LlmPrimary,
 } from "./settings-api";
@@ -191,6 +192,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState<string | null>(null);
@@ -394,6 +396,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       const newForm = profileToForm(result);
       setForm(newForm);
       setOriginal(newForm);
+      setSaveMessage(profileModelSaveMessage(result));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -1049,7 +1052,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           ) : (
             <Save size={14} />
           )}
-          {saved ? "已保存，下一次生成课程时生效" : "Save Changes"}
+          {saved ? saveMessage : "Save Changes"}
         </button>
         {isDirty && (
           <button

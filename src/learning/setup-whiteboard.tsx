@@ -8,6 +8,7 @@ import {
   getMyProfile,
   updateMyProfileConfig,
   formatSettingsError,
+  profileModelSaveMessage,
   type Profile,
 } from "@/settings/settings-api";
 import { LLM_PROVIDERS, isLessonCapable } from "@/settings/llm-providers";
@@ -249,7 +250,7 @@ function ModelCard({
       });
       setKey("");
       onSaved(result);
-      setMessage("已保存，下一次生成课程时生效");
+      setMessage(profileModelSaveMessage(result));
       void refreshOminixRuntimeSummary();
     } catch (e) {
       setMessage(formatSettingsError(e));
