@@ -26,7 +26,7 @@
 | Learn `NODE_OPTIONS=--no-experimental-webstorage pnpm test:unit` | 最终 117 文件、1089 测试通过 |
 | Learn `pnpm build` | 通过，仅既有大 bundle 警告 |
 | Learn 修改文件 ESLint | 0 错误；B 为 3 条警告，C5 为 1 条警告 |
-| Learn `pnpm lint` | 未完成：持续停在未修改的 `selection-enhancement-layer.tsx` 后中断。临时排除该文件时其余文件为 0 错误 / 35 警告，未在配置中排除该源码文件 |
+| Learn `pnpm lint` | 未完成：持续停在未修改的 `selection-enhancement-layer.tsx` 后中断；复核在基线 `81a8c23` 上重现相同停滞，确认是原有问题。临时排除该文件时其余文件为 0 错误 / 35 警告，未在配置中排除该源码文件 |
 | `cargo test -p octos-agent --lib strict_` | 15/15 通过；新增单测和真实子进程测试先失败再修复 |
 | `cargo test -p octos-agent --lib loader_forwards_profile_blocked_env` | 1/1 通过 |
 | `cargo test -p octos-cli --features api --lib resolved_profile_llm_env_` | 1/1 通过 |
@@ -75,3 +75,10 @@ p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以
 未完成项：全量 ESLint 检查；p90 尾延迟复核；浏览器中三种真实错误的视觉验收。主模型路由、用户 key 隔离、进行中稳定性、保存状态和主要自动化验证已完成。
 
 部署留给用户。建议顺序：octos-learn 前端 → learning-coach（至少 `a37c9eb`）→ 清理服务器 env 中的 `OLL_*`，并确认没有模型 key、Vertex 凭据和 `OCTOS_AUTH_TOKEN` → Octos 新版本。管理员令牌放 `config.json`。
+
+
+## 复核跟进：2.4 lint 基线对照（2026-10-01）
+
+在 `git archive 81a8c23` 导出的独立目录中复用现有 node_modules，运行 `pnpm --config.verifyDepsBeforeRun=false lint --debug`；关闭的是 pnpm 自动依赖重装检查，没有关闭 ESLint 规则。该目录的 package.json、pnpm-lock.yaml 和 selection-enhancement-layer.tsx 与本分支 SHA-256 完全相同。
+
+基线和本分支 `pnpm lint --debug` 均在该文件的 parsing/scope analysis successful 后持续停住，各 120 秒后中断。这是原有问题，按审查指令不修改。证据：`.local-dev/profile-model-review/2.4-baseline-lint.log`、`2.4-baseline-lint-result.json`、`2.4-candidate-lint.log`、`2.4-candidate-lint-result.json`。本轮修改文件 lint 通过（0 错误、1 条既有警告）。
