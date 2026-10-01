@@ -227,10 +227,14 @@ For startup-pinned local profiles, saved model changes require a service restart
 
 
 For the profile-model feature, upgrade **Octos → Learning Coach → frontend**.
-This makes strict BYOK and process-environment isolation effective before the
-new client messages ship. Remove `OLL_*` at any time; profile-mode Coach ignores
-these overrides. Before upgrading Octos, confirm the actual live commit: this
-branch starts at `ae230ce0`; an older deployed version also brings intervening
-upstream changes, which need a separate review. The local review found a
-runtime-lock/session-recovery issue when saving a model during generation;
-see `PROFILE_MODEL_LESSON_GENERATION_REPORT.md` before deciding to release.
+Remove `OLL_*` at any time; profile-mode Coach ignores these overrides. Before
+upgrading Octos, confirm the actual live commit: this branch starts at
+`ae230ce0`; an older deployed version also brings intervening upstream changes,
+which need a separate review. The feature itself only needs an Octos that
+includes #2227 (`25ff2734`), which exports the profile model to skills.
+
+Strict BYOK is a deployment requirement, not Octos code: Octos falls back to
+the service process environment when a profile has no key. The service
+environment must therefore contain no model credentials (`GEMINI_API_KEY`,
+`GOOGLE_API_KEY`, `VERTEX_*`, `OPENAI_API_KEY`, ...) and no `OCTOS_AUTH_TOKEN`
+(keep the admin token in `config.json`). Check this before every start.

@@ -11,7 +11,7 @@
 | octos-learn / B | `81a8c23` | `d2cd499`：统一课程平台判断、模型推荐、中文错误与设置入口、配置文档 |
 | octos / C1 | `ae230ce0` | `ef082360`：strict env gate 拦截未声明的敏感 `OCTOS_*` |
 | octos / C2 | 同上 | `d1e82de5`：使用已解析 Config 导出 provider/model/地址/协议/revision |
-| octos / C3 | 同上 | `e9bd3892`：用户 Gemini key 规范导出、隔离宿主凭据、插件/子代理继承环境清理 |
+| octos / C3（已撤销，见文末） | 同上 | `e9bd3892`：用户 Gemini key 规范导出、隔离宿主凭据、插件/子代理继承环境清理；由 `19b832f7` 撤销 |
 | octos / C4 | 同上 | `e8195d72`：REST 保存返回 runtime 状态，与 OUP 共用转换 |
 | octos-learn / C5 | `81a8c23` | `73d5250`：前端显示已生效、重启后生效、暂未就绪；兼容旧服务端 |
 | octos / 验收 | 同上 | `f227b968`：动态 profile、真实技能子进程、多用户、进行中切换与真实 Coach 验收测试 |
@@ -76,7 +76,7 @@ p50 未回退；p90 差异来自模型修复调用，与路由代码无关；上
 
 部署由用户执行，本次未合并、未部署、未改服务器。建议顺序：
 
-1. **Octos**：先让严格 BYOK 和环境隔离生效。
+1. **Octos**：先上线运行时热替换修复（`241f14f5`）和 C1 安全修复。
 2. **learning-coach**：至少包含 `a37c9eb`。
 3. **octos-learn 前端**：放在最后，保证提示文案与实际行为一致。
 4. **清理服务器 env 的 `OLL_*`**：可在任意时点进行；新版 Coach 在 profile 模式下忽略这些变量。
@@ -156,3 +156,44 @@ p50 未回退；p90 差异来自模型修复调用，与路由代码无关；上
 除单独写出的编译日志外，上述证据路径均相对于 `.local-dev/profile-model-review/`。该目录为 gitignored，测试配置/会话文件 0600，截图和交付日志不包含 key。用户已有 `public/demo/` 保留。本次启动的本地前端和测试后端已停止，证据与私有测试状态保留，未修改用户日常 profile。
 
 未完成的修复：2.2 所发现的 Octos 锁窗口/会话恢复问题，按明确指令留给审查方评估；未完成的检查：全量 lint，原因是已经确认的基线停滞。没有其他待办未执行。
+
+
+## 后续：撤销 C3 与运行时热替换修复（2026-10-01，Claude 接手）
+
+### 撤销 C3
+
+用户决定撤销 C3（`e9bd3892`）。原因是它把 Octos Learn 的产品策略写进了通用的 Octos：只对 Gemini 生效，并且按部署模式推断“禁止使用宿主 key”，会影响在 Cloud 模式下由平台提供 key 的其他 Octos 服务。
+
+- 提交 `19b832f7`：revert C3。两个验收测试改为使用 profile 的标准 `GEMINI_API_KEY`，删除 `plugin_blocked_env` 断言。
+- 严格自带 key 改由部署保证：服务进程的 env 中不放任何模型 key。已写入 `PUBLIC_DEPLOYMENT_RUNBOOK.md`。
+- Coach 不依赖 C3。用户的 `GEMINI_API_KEY` 本来就由 Octos 从 profile 传给技能（`bdce758a`）。
+
+### 运行时热替换修复（解决 2.2）
+
+- 提交 `241f14f5`，单独成提交，方便向上游提 PR。
+- 根因：配置提交后，Octos 冷启动一个新 ProfileRuntime，需要重新打开只允许单写者的 `episodes.redb`；而进行中的任务仍持有旧 runtime，锁未释放，打开失败。
+- 修法：
+  - 提交配置时，以弱引用保留被移出缓存的旧 runtime。
+  - 下一次 bootstrap 若存储形态不变（数据目录、embedder 配置、recall 维度均相同），就共享旧 runtime 的 episode/memory/recall/tool-config 存储、cron 服务和 lifecycle，并接管 memory refresh（停掉旧的 sweep，用新模型重新启动）。其余由配置推导的部分全部按冷启动方式重建。
+  - 不满足条件时退回冷启动。如果这时撞锁，返回 `profile_runtime_switching`，不再误报为“另一个进程占用”。
+- `MemoryRefreshService` 新增可等待的 `shutdown()`：先释放 profile 锁，替换者才能立即接管。
+
+测试：
+
+| 测试 | 结果 |
+|---|---|
+| `profile_model_dynamic_skill_acceptance`（改为不 `drop(old)`） | 通过：保存返回 `reloaded`；紧接着即可拿到 M2 的新 runtime；存储句柄与旧 runtime 是同一对象；进行中的任务仍为 M1/旧 revision；用户 B 的 runtime 指针不变 |
+| 同一测试在去掉修复后 | 失败：`persisted_but_not_live`，与 2.2 的现象一致 |
+| `should_share_stores_and_match_cold_bootstrap_when_replacing_runtime` | 通过：旧 runtime 存活时冷启动失败、替换成功；释放后冷启动，配置推导状态（env、provider、model、工具集、system prompt）与替换得到的完全一致 |
+| `should_refuse_sharing_when_storage_shape_changes` | 通过：数据目录、embedding、recall 维度、embedding key 变化时都拒绝共享 |
+| `should_release_lock_after_shutdown_for_replacement_runtime` | 通过 |
+| `profile_runtime_switching_error_is_not_reported_as_a_second_process` | 通过 |
+| `cargo test -p octos-cli --features api --lib` 全量 | 4138 通过，0 失败 |
+| `cargo test -p octos-agent --lib` 全量 | 2999 通过，3 失败。失败的 3 个是 Docker sandbox 测试；本机没有 Docker，在上游基线 `ae230ce0` 上同样失败，与本次改动无关 |
+| `cargo fmt --all -- --check`、`git diff --check` | 通过 |
+
+前端未改。`ui-protocol-bridge.ts` 本来就会对失败的 `session/open` 做退避重连。2.2 中页面停在“准备中”，是因为首次连接有 10 秒的启动期限（`DEFAULT_INITIAL_CONNECT_TIMEOUT_MS`），而锁要等整节课结束才释放，重试在期限内都会失败。修复后第一次 `session/open` 就能成功。
+
+### 待完成
+
+真实服务器加浏览器的 2.2 重跑尚未完成，需要提供 Gemini 测试 key。
