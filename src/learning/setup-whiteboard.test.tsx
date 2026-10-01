@@ -95,6 +95,7 @@ describe("first-run setup whiteboard", () => {
     vi.stubGlobal("fetch", fetchMock);
     const profile = blank();
     profile.config.llm.primary = { family_id: "google", model_id: "gemini-test" };
+    profile.config.env_vars = { ...profile.config.env_vars, GEMINI_API_KEY: "AI***xy" };
     mocks.get.mockResolvedValue(profile);
     render(
       <MemoryRouter initialEntries={["/board?course-pack=rectangle-area-from-tiles&course-version=0.1.5"]}>

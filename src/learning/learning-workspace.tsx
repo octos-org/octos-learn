@@ -1,7 +1,7 @@
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { LearningModelContext } from "./setup-state";
+import { LearningModelContext, LearningModelIssueContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
 import { compilePlaybackOperations, HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
@@ -465,6 +465,8 @@ export function LearningWorkspace({
   // Voice readiness also reports false before the profile runtime starts.
   // That is not a missing model configuration and must not block text input.
   const aiUnavailable = !modelConfigured;
+  const modelIssue = useContext(LearningModelIssueContext);
+  const aiUnavailableMessage = modelIssue ?? "请先在设置中连接模型，笔迹和已有课程仍可使用。";
   const isEmbeddedCourse = Boolean(coursePack?.isEmbedded);
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
@@ -2374,7 +2376,7 @@ export function LearningWorkspace({
       turnId: string;
       uploadedMediaPath: string;
     }) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       const selectionScope = selectionScopeRef.current;
       if (!selectionScope?.active || selectionScope.sessionId !== sessionId) return;
       unlockAudio();
@@ -2514,6 +2516,7 @@ export function LearningWorkspace({
     [setSendError, setSendErrorCode, setTextTurnPending,
       handleTurnComplete,
       aiUnavailable,
+      aiUnavailableMessage,
       addWhiteboardQuestion,
       ollLesson,
       onLearnerInput,
@@ -2695,7 +2698,7 @@ export function LearningWorkspace({
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       unlockAudio();
       const clientTiming: LearningClientTiming = {
         submitted_at_epoch_ms: Date.now(),
@@ -2905,6 +2908,7 @@ export function LearningWorkspace({
     [
       buildTurnText,
       aiUnavailable,
+      aiUnavailableMessage,
       addWhiteboardQuestion,
       composerBoardReferences,
       conv,
@@ -2926,7 +2930,7 @@ export function LearningWorkspace({
 
   const sendImage = useCallback(
     async (file: File) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       unlockAudio();
       setSendError(null);
       setSendErrorCode(undefined);
@@ -2974,6 +2978,7 @@ export function LearningWorkspace({
       addWhiteboardQuestion,
       buildTurnText,
       aiUnavailable,
+      aiUnavailableMessage,
       handleTurnComplete,
       onLearnerInput,
       sessionId,
@@ -3462,7 +3467,9 @@ export function LearningWorkspace({
       )}
       {aiUnavailable && !isEmbeddedCourse && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
-          连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a>
+          {modelIssue
+            ? <>{modelIssue} <a href="/settings?tab=llm">前往设置</a></>
+            : <>连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a></>}
         </div>
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (

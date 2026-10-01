@@ -20,6 +20,8 @@ import {
 } from "@/auth/embedded-course-access";
 import {
   LearningModelContext,
+  LearningModelIssueContext,
+  learningModelIssue,
   hasLearningModel,
   needsLearningSetup,
   setupSkipKey,
@@ -35,6 +37,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
   );
   const [required, setRequired] = useState<boolean | null>(null);
   const [modelConfigured, setModelConfigured] = useState(!embeddedCourse);
+  const [modelIssue, setModelIssue] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
     void isEmbeddedCourseLocation(location).then((isEmbedded) => {
@@ -46,6 +49,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
             if (p?.id) setSelectedProfileId(p.id);
             setRequired(p ? needsLearningSetup(p) : false);
             setModelConfigured(p ? hasLearningModel(p) : !isEmbedded);
+            setModelIssue(p ? learningModelIssue(p) : null);
           }
         })
         .catch(() => {
@@ -62,7 +66,9 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
   if (embeddedCourse) {
     return (
       <LearningModelContext.Provider value={modelConfigured}>
-        {children}
+        <LearningModelIssueContext.Provider value={modelIssue}>
+          {children}
+        </LearningModelIssueContext.Provider>
       </LearningModelContext.Provider>
     );
   }
@@ -75,7 +81,9 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
     />
   ) : (
     <LearningModelContext.Provider value={modelConfigured}>
-      {children}
+      <LearningModelIssueContext.Provider value={modelIssue}>
+        {children}
+      </LearningModelIssueContext.Provider>
     </LearningModelContext.Provider>
   );
 }
