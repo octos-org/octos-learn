@@ -325,3 +325,12 @@ C4 A revision：`2026-10-01T18:15:45.088248+00:00`；B revision：`2026-10-01T18
 `E/acceptance-summary.json` 汇总判定、模型/revision、协议和用户归属检查；`E/secret-scan.json` 记录对全部 `.log`、`.jsonl`、`*-results.json` 的扫描结果：已知真实 Key、JWT、服务 token 的匹配为 0，未发现需要后补脱敏的日志文件。隔离凭证文件保持私有，不随报告提交。验收脚本也只留在 gitignored 证据目录。
 
 验收结束后已停止本轮创建的 Octos 和 HTTPS 前端，见 `E/cleanup.json`。其他仓库工作区未改。Learn 唯一提交内容为本报告追加；原有 `public/demo/` 未跟踪内容保留。没有为修复失败项改代码，没有合并、部署或改服务器。由于本轮没有实现改动，不重跑前端单元测试或全量 lint；本轮有效验证是指定版本重新编译、真实服务/浏览器验收、协议/trace/日志核对和文档 `git diff --check`。
+
+
+## 后续：第一轮真实验收失败的修正（2026-10-01，Claude）
+
+- octos `e8dab732`：被替换 runtime 的存储改为强引用保留。真实路径中进行中任务的 Agent 直接持有 `episodes.redb`，而 ProfileRuntime 在会话缓存失效后就被释放，所以第一版的弱引用会失效。验收测试已改为同样的形状；去掉修复后，该测试按预期失败，返回 `persisted_but_not_live`。同时把 bootstrap future 和 retiree 的配置改为 Box：`should_keep_spawn_only_sent_file_identity_and_one_hydrated_attachment` 在 1.5 MiB 栈上通过，而上游 `ae230ce0` 在 1.5 MiB 上会溢出。
+- octos `019db9cc`：serve 的 tokio worker 栈改为 8 MiB，与 chat/acp/mcp-serve 一致。
+- octos-learn `445dda9`：profile 中缺少模型 key 时，前端视为模型不可用，提交前就给出具体提示和设置链接。
+- 测试：`cargo test -p octos-cli --features api --lib` 全量 4138 通过；前端 `vitest` 全量 1101 通过；修改过的文件 lint 结果为 0 错误；build 通过。
+- 第二轮真实验收指令：`PROFILE_MODEL_LESSON_GENERATION_LIVE_ACCEPTANCE_2.md`。
