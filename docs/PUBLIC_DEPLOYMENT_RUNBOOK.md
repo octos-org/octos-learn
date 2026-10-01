@@ -224,3 +224,13 @@ documented data migration explicitly requires it.
 The profile-model lesson change requires Learning Coach commit `a37c9eb` or later
 (on `codex/profile-model-lessons` until reviewed). The code is not yet deployed.
 For startup-pinned local profiles, saved model changes require a service restart.
+
+
+For the profile-model feature, upgrade **Octos → Learning Coach → frontend**.
+This makes strict BYOK and process-environment isolation effective before the
+new client messages ship. Remove `OLL_*` at any time; profile-mode Coach ignores
+these overrides. Before upgrading Octos, confirm the actual live commit: this
+branch starts at `ae230ce0`; an older deployed version also brings intervening
+upstream changes, which need a separate review. The local review found a
+runtime-lock/session-recovery issue when saving a model during generation;
+see `PROFILE_MODEL_LESSON_GENERATION_REPORT.md` before deciding to release.

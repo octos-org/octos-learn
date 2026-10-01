@@ -23,7 +23,7 @@
 | 命令 / 检查 | 结果 |
 |---|---|
 | Coach `npm test`（含构建） | 最终 183/183 通过，构建产物已提交 |
-| Learn `NODE_OPTIONS=--no-experimental-webstorage pnpm test:unit` | 最终 117 文件、1089 测试通过 |
+| Learn `NODE_OPTIONS=--no-experimental-webstorage pnpm test:unit` | 复核后最终 117 文件、1100 测试通过 |
 | Learn `pnpm build` | 通过，仅既有大 bundle 警告 |
 | Learn 修改文件 ESLint | 0 错误；B 为 3 条警告，C5 为 1 条警告 |
 | Learn `pnpm lint` | 未完成：持续停在未修改的 `selection-enhancement-layer.tsx` 后中断；复核在基线 `81a8c23` 上重现相同停滞，确认是原有问题。临时排除该文件时其余文件为 0 错误 / 35 警告，未在配置中排除该源码文件 |
@@ -40,7 +40,7 @@
 | `node --test services/hosted-tts/server.test.mjs` | 19/19 通过 |
 | 现有个人火山 TTS 两次真实合成 | 两次均 HTTP 200 / code 3000，均返回 41280 字节音频 |
 
-真实错误验证：缺 key 返回 `LESSON_CREDENTIAL_MISSING`；不存在的模型返回 `GEMINI_MODEL_NOT_FOUND`；用户批准精确例外后，无效 key 返回 `GEMINI_AUTH_FAILED`。前端结构化映射测试覆盖全部六种中文文案，错误卡片的“前往设置”入口通过组件测试。未完成浏览器中三种真实错误的人工视觉验收。
+真实错误验证：缺 key 返回 `LESSON_CREDENTIAL_MISSING`；不存在的模型返回 `GEMINI_MODEL_NOT_FOUND`；用户批准精确例外后，无效 key 返回 `GEMINI_AUTH_FAILED`。前端结构化映射测试覆盖全部六种中文文案，错误卡片的“前往设置”入口通过组件测试。复核已完成真实浏览器三种错误与框选辅助界面验收，见下文 2.3。
 
 ## A/B 速度
 
@@ -52,7 +52,7 @@
 | p90（nearest rank） | 9771 ms | 12479 ms |
 | model-call 总次数（包含模型输出修复） | 40 | 43 |
 
-p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以确认尾延迟无回退。20 对样本的 paired bootstrap（10000 次重采样、固定随机种子）给出候选减基线的 95% 区间：p50 为 -975～1136.5 ms，p90 为 -4099～7749 ms；区间包含 0，但这不等于证明性能等价。因此尾延迟验收保留为待复核。
+p50 未回退；p90 差异来自模型修复调用，与路由代码无关；上线后观察一周线上 p90。按 2026-10-01 审查结论，尾部来自 3 次 model-call 的修复样本及一个离群值；仅看 2 次调用的样本，两组中位数为 7353 和 7456 ms，基本一致，结合请求体字节一致及零新增路由请求，不阻塞上线，不再重测 A/B。原始数据仍完整保留。此前 paired bootstrap（10000 次、固定种子）的候选减基线 95% 区间：p50 -975～1136.5 ms，p90 -4099～7749 ms；这是样本统计，不作为性能等价证明。
 
 额外调用来自非确定性的模型输出修复，未增加路由解析或配置验证的模型请求。同一 provider/model 的四类请求及有/无图片的请求体字节一致性测试通过；Gemini 流式 bootstrap 未开启。数据测量于 `40584a1`；后续 `a37c9eb` 只修改失败 HTTP 响应分类，不改变成功请求路径。
 
@@ -67,15 +67,21 @@ p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以
 - 普通 harness 变量审计未发现 secret-like 误判；未声明的 `OCTOS_AUTH_TOKEN`、`OCTOS_ADMIN_TOKEN` 及已注册 secret 被拒绝，显式 allowlist 的 secret 仍可使用。
 - 正常用户旧模型/不支持平台的保存值不被自动改写。首次真实切换测试误选 Gemini 2.5 Flash，其拒绝现有 schema；该选择不合适，未为 2.5 添加适配，随后改用 3.6 → 3.5 完成验收。
 - 旧 runtime 被进行中的任务持有时，内存数据库锁可能阻止立即重建，保存应报告 `persisted_but_not_live`。旧任务完成并释放后，下一次请求重试加载新模型；动态/真实验收确认这一行为。
-- ESLint 原配置扫描 `scratch/`、`delivery/`、Android 等生成目录。增加这些生成目录的 ignore，未降低源码规则。全量 lint 停滞问题仍未修复。
+- ESLint 原配置扫描 `scratch/`、`delivery/`、Android 等生成目录。增加这些生成目录的 ignore，未降低源码规则。复核已在基线重现相同停滞，按指令不修改。
 - Rust 验证遇到依赖下载超时、自动模型下载等待及磁盘耗尽；恢复网络、在测试中禁止模型自动下载，并只清理可重建编译缓存后继续。未删除源码、用户数据或用户已有文件。
 
 ## 未完成项与部署顺序
 
-未完成项：全量 ESLint 检查；p90 尾延迟复核；浏览器中三种真实错误的视觉验收。主模型路由、用户 key 隔离、进行中稳定性、保存状态和主要自动化验证已完成。
+复核待办已逐项执行。**第 2.2 项验收未通过：** 生成中改模型后，锁窗口阻止 session/open/框选分类；即使后端课程完成，刷新后的页面仍停在准备中，需再次进入白板恢复。按照复核要求，不修改 Octos 的 runtime 缓存、锁或会话查找逻辑，等待审查方评估修法。全量 ESLint 未跑完，但基线已确认同样停滞，属于原有问题且按指令不修。错误界面验收已完成，A/B 已按审查结论关闭复核。
 
-部署留给用户。建议顺序：octos-learn 前端 → learning-coach（至少 `a37c9eb`）→ 清理服务器 env 中的 `OLL_*`，并确认没有模型 key、Vertex 凭据和 `OCTOS_AUTH_TOKEN` → Octos 新版本。管理员令牌放 `config.json`。
+部署由用户执行，本次未合并、未部署、未改服务器。建议顺序：
 
+1. **Octos**：先让严格 BYOK 和环境隔离生效。
+2. **learning-coach**：至少包含 `a37c9eb`。
+3. **octos-learn 前端**：放在最后，保证提示文案与实际行为一致。
+4. **清理服务器 env 的 `OLL_*`**：可在任意时点进行；新版 Coach 在 profile 模式下忽略这些变量。
+
+部署前先确认线上 Octos 的当前版本。本分支基于 `ae230ce0`；若线上更旧，本次部署会同时包含上游其他改动，需单独评估，不能把旧交接文档的版本当作当前线上版本。服务进程不得含模型 key、Vertex 凭据及 `OCTOS_AUTH_TOKEN`；管理员令牌放 `config.json`。
 
 ## 复核跟进：2.4 lint 基线对照（2026-10-01）
 
@@ -121,3 +127,32 @@ p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以
 截图均位于 `.local-dev/profile-model-review/errors/`：三种情况各有 `<missing-key|invalid-key|missing-model>-board.png`、`*-settings-from-card.png`、`*-settings-from-bottom.png`；框选为 `invalid-key-selection-verified.png`、`invalid-key-settings-from-selection-verified.png`。结果/脱敏协议日志：`.local-dev/profile-model-review/errors-results.json`、`errors-browser-events.jsonl`、`selection-results.json`、`selection-browser-events.jsonl`。
 
 测试准备过程中，留空既有 key 会按 save_with_merge 语义保留原值；因此改为删除 env_vars 条目构造真正缺 key 情况。初次框选脚本在发送后读取已关闭的面板发生超时；修正脚本后完整重跑，没有应用代码变更。这些准备失败分别保留在 `fixture-empty-key-retained-*`、`panel-closed-after-send-*` 文件中，不计为验收通过记录。
+
+
+## 复核交付汇总（第 4 节）
+
+依据 [REVIEW_FOLLOWUP](PROFILE_MODEL_LESSON_GENERATION_REVIEW_FOLLOWUP.md)，继续原特性分支，未合并/部署/修改服务器；Coach 和 Octos 本轮没有源码变更。
+
+| 待办 | 完成情况 | octos-learn 提交 |
+|---|---|---|
+| 2.1 保存提示 | 已完成：persisted_but_not_live 文案修正；两个界面按钮旁 role=status 常驻，编辑后清除；按钮 Saved 两秒；兼容旧接口 | `7341cac` |
+| 2.2 真实生成中切换 | 已执行全部六步并记录；发现锁窗口与刷新后交付问题，验收不通过，未擅自修 Octos | `c954ae6` |
+| 2.3 三种错误界面 | 已完成：三种错误在问题卡片/底部显示中文，六个链接和一次框选辅助链接均正确进入 LLM 设置 | `3edc04c` |
+| 2.4 lint 基线 | 已完成：81a8c23 与本分支相同停滞；120 秒超时，原有问题，按要求不修 | `c027e52` |
+| 2.5 报告 | 已调整部署顺序、线上版本前提和 A/B 结论，补充本表及 2.1–2.4 证据；本次文档提交哈希随交付提供 | 最终文档提交 |
+
+测试命令与结果：
+
+- `NODE_OPTIONS=--no-experimental-webstorage pnpm exec vitest run src/settings/llm-tab.test.tsx src/learning/setup-whiteboard.test.tsx`：22/22 通过（新增验收测试先失败，再修复）；红/绿日志 `2.1-red.log` / `2.1-green.log`。
+- `NODE_OPTIONS=--no-experimental-webstorage pnpm test:unit`：117 文件、1100/1100 通过；`2.1-unit.log`。
+- `pnpm build`：通过；`2.1-build.log`。
+- `pnpm exec eslint src/settings/settings-api.ts src/settings/llm-tab.tsx src/settings/llm-tab.test.tsx src/learning/setup-whiteboard.tsx src/learning/setup-whiteboard.test.tsx`：0 错误、1 条既有 warning；`2.1-lint.log`。
+- 基线 `pnpm --config.verifyDepsBeforeRun=false lint --debug` 和本分支 `pnpm lint --debug`：均 120 秒停滞；`2.4-*-lint.log` / `2.4-*-lint-result.json`。
+- `CARGO_INCREMENTAL=0 cargo build -p octos-cli --features api`：通过，真实本地服务使用该二进制；日志 `/private/tmp/octos-review-build-second.log`。未改 Rust 源码。
+- `node .local-dev/profile-model-review/browser-review.mjs switch`：全部六步执行完成，验收发现上述问题；`switch-results.json` / `switch-browser-events.jsonl`。
+- 同脚本 `errors` 和 `selection`：三种错误、六处文字入口链接和新建选区问题的链接通过；结构化协议实际观察到三个预期错误码和 `learning.lesson.generate-from-selection` action。
+- `git diff --check`：通过。没有重新进行付费 A/B 测试。
+
+除单独写出的编译日志外，上述证据路径均相对于 `.local-dev/profile-model-review/`。该目录为 gitignored，测试配置/会话文件 0600，截图和交付日志不包含 key。用户已有 `public/demo/` 保留。本次启动的本地前端和测试后端已停止，证据与私有测试状态保留，未修改用户日常 profile。
+
+未完成的修复：2.2 所发现的 Octos 锁窗口/会话恢复问题，按明确指令留给审查方评估；未完成的检查：全量 lint，原因是已经确认的基线停滞。没有其他待办未执行。
