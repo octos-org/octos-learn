@@ -334,3 +334,113 @@ C4 A revision：`2026-10-01T18:15:45.088248+00:00`；B revision：`2026-10-01T18
 - octos-learn `445dda9`：profile 中缺少模型 key 时，前端视为模型不可用，提交前就给出具体提示和设置链接。
 - 测试：`cargo test -p octos-cli --features api --lib` 全量 4138 通过；前端 `vitest` 全量 1101 通过；修改过的文件 lint 结果为 0 错误；build 通过。
 - 第二轮真实验收指令：`PROFILE_MODEL_LESSON_GENERATION_LIVE_ACCEPTANCE_2.md`。
+
+
+## 真实验收（第二轮）
+
+按 `PROFILE_MODEL_LESSON_GENERATION_LIVE_ACCEPTANCE_2.md` 执行，A/B 各跑 debug、release，C/D 使用 release。A：debug 通过、release 通过；单列 A4-交付：debug 通过、release 通过。B：debug 通过、release 通过。C1 部分满足、未完整通过：提示位置与文档不符，提交子项被禁用控件阻断；C2–C4 的无效/有效 Key、双用户回归通过。D 的日志检查和真实 cron 保留检查通过。本轮只验收，不修改产品代码、不合并、不部署、不改公网服务器。
+
+### 版本、构建和环境
+
+三个仓库先 fetch，并同步指定特性分支。Learn 在验收时为 `cc69d4c0e07b0f58c82d6238b979bf32cef0bcfc`，Coach 为 `a37c9eb7d519301c57b2dff667eca24ac50334f1`，Octos 为 `019db9ccb0ec219f26b26ca6e6138dd96e6242ad`。两套 Octos 二进制都由该提交重新构建：
+
+| 构建 | 命令 | 二进制 SHA-256 |
+|---|---|---|
+| debug | `cargo build -p octos-cli --features api` | `bda7b61bd0f573b35640eebe97d89c35004f924ce4a467b7a4a19be2c7f284e5` |
+| release | `cargo build --release -p octos-cli --features api`（环境设 `CARGO_BUILD_JOBS=2` 控制本机占用） | `3836e78123ac1f434b5ef5fc6ce07bc6d6f890e24563146275cf914ea46d5dcb` |
+
+debug 编译成功，用时 1m36s；release 编译成功，用时 12m48s。编译日志为 `E/build-debug.log`、`E/build-release.log`；实际二进制分别为 `/Users/alan0x/Documents/projects/octos/target/debug/octos` 和 `/Users/alan0x/Documents/projects/octos/target/release/octos`。每套服务启动前核对 HEAD 和 SHA-256，记录在 `E/{debug,release}/binary-and-environment.json`。
+
+下文 **E** 为 `.local-dev/profile-model-review/live-3/`，本机绝对路径为 `/Users/alan0x/Documents/projects/octos-learn/.local-dev/profile-model-review/live-3/`。debug/release 使用不同的独立 registry、data、配置和浏览器状态，均为真实 `mode=cloud`、不加 `--solo`、dynamic profile、真实 Coach 技能与 Gemini API；测试用户为各自隔离 registry 中的 `live-a`、`live-b`。先停 debug 再启 release，共用本机 `127.0.0.1:50080` 和 HTTPS 前端 `https://127.0.0.1:5173`；Chromium 无模型 mock。只使用 3.6 Flash、3.5 Flash。下文时间均为 UTC。
+
+每套服务启动前，在实际传给进程的环境中执行：
+
+```sh
+env | grep -E 'GEMINI|GOOGLE|VERTEX|OPENAI|OCTOS_AUTH_TOKEN' | cut -d= -f1
+```
+
+debug 与 release 的实际输出均为 **空，0 字节**，分别见 `E/debug/env-check.txt`、`E/release/env-check.txt`。宿主没有模型 Key 或 `OCTOS_AUTH_TOKEN`；服务认证来自隔离配置文件；真实模型 Key 仅通过 `PUT /api/my/profile` 写入测试用户 profile。正常用户 profile 未修改。`OCTOS_NO_MODEL_DOWNLOAD=1`，无本地 embedding 模型，记忆搜索使用 keyword-only。
+
+### A：生成中切换、刷新与分类
+
+| 检查 | debug | release |
+|---|---|---|
+| 保存 3.5 为 reloaded，页面明确已生效 | 通过 | 通过 |
+| 刷新首次 session/open 成功 | 通过 | 通过 |
+| 原课程未结束时分类到达工具，3.5/profile/新 revision | 通过 | 通过 |
+| 原课程完成，全部调用保持 3.6/profile/旧 revision | 通过，4 次 | 通过，4 次 |
+| A4-交付：刷新页无后续操作自动显示课程 | 通过 | 通过 |
+| 下一节课程完成，全部调用使用 3.5/profile/新 revision | 通过，2 次 | 通过，2 次 |
+| 最终刷新两课、问题卡、笔迹和历史恢复 | 通过 | 通过 |
+
+| 路由 revision | debug | release |
+|---|---|---|
+| 当前课程旧 revision | `2026-10-01T19:32:10.860803+00:00` | `2026-10-01T19:46:21.030671+00:00` |
+| 保存后新 revision | `2026-10-01T19:32:13.902566+00:00` | `2026-10-01T19:46:23.983887+00:00` |
+
+A4 后端完成与页面检查时间：debug `2026-10-01T19:32:36.399Z` / `2026-10-01T19:32:36.672Z`（间隔 0.273s）；release `2026-10-01T19:46:47.548Z` / `2026-10-01T19:46:47.823Z`（间隔 0.275s）。这段观察期间未再次刷新、提交或重新进入白板；A3 的规定分类操作完成后直接等待后端完成并检查页面。A5 前通过“浏览白板”退出选区，两套下一课均从文本入口调用 `learning.lesson.generate`。
+
+每套 A 的逐步结果、完整 OUP 协议为 `E/<构建>/A-results.json`、`A-protocol.jsonl`。首次刷新 open 的完整结果、全部后续通知与时间保留在 `A-results.json` 的 A3/A4 记录；通知 method/time 摘要另见 `acceptance-summary.json` 的 `A.delivery`。截图：`A-A1-started.png`、`A-A2-save.png`、`A-A3-refresh.png`、`A-A3-history.png`、`A-A3-selection.png`、`A-A4-complete-without-reentry.png`、`A-A5-next-complete.png`、`A-A6-refresh.png`、`A-A6-history.png`，均在相应构建目录。原笔迹保留 1 项，最终问题卡 2 张，pending/loading/error 均为 0；历史对白板的列表与课程恢复截图已保存。
+
+### B：同一课程连续保存两次
+
+| 检查 | debug | release |
+|---|---|---|
+| 两次保存都为 reloaded | 通过 | 通过 |
+| 两次保存结果之间的间隔 | 2.155s | 2.136s |
+| 当前课程正常完成并保持初始 3.6/旧 revision | 通过，4 次调用 | 通过，4 次调用 |
+| 下一课程使用 3.6/第二次保存 revision，完成 | 通过，2 次调用 | 通过，2 次调用 |
+| 服务不崩溃 | 通过 | 通过 |
+
+| B revision | debug | release |
+|---|---|---|
+| 初始 | `2026-10-01T19:33:27.854410+00:00` | `2026-10-01T19:47:15.562482+00:00` |
+| 首次保存 | `2026-10-01T19:33:29.874617+00:00` | `2026-10-01T19:47:17.409297+00:00` |
+| 第二次保存 | `2026-10-01T19:33:32.046092+00:00` | `2026-10-01T19:47:19.563565+00:00` |
+
+两套证据均为 `E/<构建>/B-results.json`、`B-protocol.jsonl`，截图 `B-B2-first-save.png`、`B-B2-second-save.png`、`B-B4-current.png`、`B-B5-next.png`。两节后台 job 完成记录可在协议中核对。两套 B 均未崩溃，文档的 lldb/backtrace 条件步骤不适用。
+
+### C：release 的自带 Key 回归
+
+| 情况 | 实际结果 | 证据 |
+|---|---|---|
+| 删除用户 Key 并刷新 /learn | 未完整通过：提示文字/设置链接正确，无课程 action、无 pending，旧课程卡与笔迹保留；但提示实际在底部，输入和发送禁用，无法验证提交时错误 | `C-C1-missing-before-submit.png`、`C-C1-missing.png` |
+| 无效 Key | `GEMINI_AUTH_FAILED`，问题卡和底部中文鉴权错误 | `C-C2-invalid.png` |
+| 恢复有效 Key | 课程正常完成 | `C-C3-valid.png` |
+| A 有效/B 无效同时提交 | A completed；B `GEMINI_AUTH_FAILED`；错配 job 事件 0 个 | `C-C4-a.png`、`C-C4-b.png`、`D-C4-post-completion.png` |
+
+缺 Key 时实际提示文字为：“请在设置中填写你的 Google Gemini API Key，笔迹和已有课程仍可使用。”，提示中的“前往设置”指向 `/settings?tab=llm`。该提示位于底部输入框上方，与文档的“顶部提示条”位置不符。输入框和发送按钮均为 disabled，无法通过正常 UI 输入并提交问题，因此没有验证到“提交时立即显示同样文字”这一子项；本轮按严格标准将 C1 记为部分满足、未完整通过。首次脚本对禁用输入框的 fill 等待超时，保存在 C-first-attempt-results.json、C-first-attempt-protocol.jsonl、C-first-blocked-input.png；随后仅调整 gitignored 验收脚本，记录控件禁用并继续 C2–C4。未用 DOM 强制启用或直接调用内部函数替代真实提交。观察期间没有新增正在准备的卡片，也没有发出课程 `skill/action/invoke`。`session/open` 的 `runtime_unavailable` 是文档明确允许的底层行为，未作为 C 失败项；缺 Key 时服务的 provider 初始化失败日志需与 A/B 热替换锁错误区分。详情为 `E/release/C-results.json`、`C-protocol.jsonl`。两个用户 trace、revision、job 归属均保留在汇总中；并发提交不扩大解释为模型调用必须重叠。
+
+### D：release 的记忆整理与 cron
+
+保存期间的记忆锁告警 0 行，cron 关闭日志 0 行；debug 也均为 0。取日志的时间在主动停止测试服务之前，避免把结束测试的 shutdown 与模型保存混淆。
+
+cron 保留检查：**通过**。通过真实 OUP 聊天调用 cron 工具，创建一次性任务；设置页切换模型返回 reloaded，之后真实 cron/list 中同一任务 ID 与同名任务各只有一个。验收后通过 cron/toggle 将该测试任务禁用。
+
+任务名 `live-3-runtime-swap-check`，ID `846c5c2b`；工具在 19:52:06.658 返回创建成功，`mode=notify`、`after_seconds=86400`。OUP 的 `projection/envelope` 在 19:52:08.218 收到 `turn_terminal`，`outcome=completed`；19:53:04.458 模型保存返回 `reloaded`，新旧列表中 ID 和同名任务数量均为 1，19:53:05.691 禁用成功。截图 `E/release/D-D2-cron-after-switch.png`。
+
+验收脚本最初只匹配平铺的 `turn/completed`，没有匹配投影事件，因而等满 60 秒并尝试 interrupt。复核完整协议后确认聊天早已正常完成；`D-results.json` 追加的 `D2-projection-protocol-review` 保留工具和终态证据，不把脚本等待误报为产品超时。
+
+证据为 `E/release/D-results.json`、`D-protocol.jsonl`，记录初始列表、聊天 turn、工具调用、创建后的列表、模型保存、新列表和清理。截图在该目录中；测试任务仅存在于隔离数据目录，不发往其他用户。
+
+### 日志计数、额外观察和交付
+
+关键词计数单位：服务为匹配行，协议为匹配事件。范围为停止服务前保存的日志，两套详见 `E/<构建>/lock-search.json`、`service-runtime.log`。
+
+| 关键词 | debug 服务 | release 服务（含 C/D） | debug 协议 | release 协议 |
+|---|---:|---:|---:|---:|
+| `runtime rebuild failed` | 0 | 2 | 0 | 0 |
+| `Database already open` | 0 | 0 | 0 | 0 |
+| `data_dir_locked` | 0 | 0 | 0 | 0 |
+| `profile_runtime_switching` | 0 | 0 | 0 | 0 |
+| `memory refresh lock held elsewhere` | 0 | 0 | 0 | 0 |
+| `cron service shutdown signalled` | 0 | 0 | 0 | 0 |
+| `stack overflow` | 0 | 0 | 0 | 0 |
+
+完整 release 日志的 2 行 `runtime rebuild failed` 均来自 C 删除 Key（首次及重跑），原因均为 `GEMINI_API_KEY not set or empty`，属于文档允许的底层初始化行为。**debug/release 的 A、B 时间段内，上表全部服务关键词和协议锁错误均为 0**；D 的服务关键词也均为 0。分阶段计数在 `acceptance-summary.json` 的 `phase_service_keyword_matching_lines`，具体命中行在 `lock-search.json`。
+
+另外观察到 debug 新白板早期 `session/title.set` 返回 `unknown_session`，A 两次、B 一次，未影响本轮要求的 open、生成和最终历史恢复。debug A4 截图有一块公式显示红色 LaTeX 源码；本轮未排查该内容/渲染问题，作为范围外现象保留截图，不据此修改实现。
+
+所有课程与分类 trace 都在 `E/<构建>/state/profiles/<用户>/data/users/<会话>/workspace/skill-output/study/oll/`，具体完整路径在各阶段 results 和 `acceptance-summary.json`。所有已知真实 Key、JWT、服务 token 的日志扫描结果记录在 `secret-scan.json`，两套已知凭证匹配均为 0；凭证文件权限 0600，证据目录 0700，日志和截图不进入 Git。
+
+验收结束后停止本轮创建的服务和 HTTPS 前端，保留 `cleanup.json`。唯一交付提交为此报告追加，原有 `public/demo/` 未跟踪内容保留；Octos/Coach 工作区未改，未合并或部署。两套二进制构建与真实验收是本轮验证内容；没有实现改动，未重跑无关全量单元测试或 lint。文档 `git diff --check` 通过。
