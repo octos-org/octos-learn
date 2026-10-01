@@ -1,0 +1,371 @@
+{
+  "date": "2026-10-01",
+  "model": "gemini-3.6-flash",
+  "baseline_coach_commit": "2a5fcc5",
+  "candidate_coach_commit": "40584a1",
+  "request": "请解释一次函数 y=2x+1 中斜率和截距的含义，并用一个简单例子说明。",
+  "order": "paired alternating baseline/candidate order",
+  "metric": "lesson-prefix-published elapsed_ms; p50 median; p90 nearest rank",
+  "rows": [
+    {
+      "pair": 0,
+      "variant": "baseline",
+      "first_playable_ms": 6120,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13140
+    },
+    {
+      "pair": 0,
+      "variant": "candidate",
+      "first_playable_ms": 7639,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 14806
+    },
+    {
+      "pair": 1,
+      "variant": "candidate",
+      "first_playable_ms": 8003,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13233
+    },
+    {
+      "pair": 1,
+      "variant": "baseline",
+      "first_playable_ms": 8048,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 14279
+    },
+    {
+      "pair": 2,
+      "variant": "baseline",
+      "first_playable_ms": 5769,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 11249
+    },
+    {
+      "pair": 2,
+      "variant": "candidate",
+      "first_playable_ms": 6960,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 11680
+    },
+    {
+      "pair": 3,
+      "variant": "candidate",
+      "first_playable_ms": 17435,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 21667
+    },
+    {
+      "pair": 3,
+      "variant": "baseline",
+      "first_playable_ms": 9686,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 14529
+    },
+    {
+      "pair": 4,
+      "variant": "baseline",
+      "first_playable_ms": 8162,
+      "success": true,
+      "error_code": null,
+      "model_calls": 1,
+      "wall_ms": 8247
+    },
+    {
+      "pair": 4,
+      "variant": "candidate",
+      "first_playable_ms": 12479,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 17573
+    },
+    {
+      "pair": 5,
+      "variant": "candidate",
+      "first_playable_ms": 6717,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13437
+    },
+    {
+      "pair": 5,
+      "variant": "baseline",
+      "first_playable_ms": 8061,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13742
+    },
+    {
+      "pair": 6,
+      "variant": "baseline",
+      "first_playable_ms": 6816,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 11105
+    },
+    {
+      "pair": 6,
+      "variant": "candidate",
+      "first_playable_ms": 9118,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 22058
+    },
+    {
+      "pair": 7,
+      "variant": "candidate",
+      "first_playable_ms": 8555,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 14615
+    },
+    {
+      "pair": 7,
+      "variant": "baseline",
+      "first_playable_ms": 13217,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 18349
+    },
+    {
+      "pair": 8,
+      "variant": "baseline",
+      "first_playable_ms": 7636,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12613
+    },
+    {
+      "pair": 8,
+      "variant": "candidate",
+      "first_playable_ms": 15260,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 20509
+    },
+    {
+      "pair": 9,
+      "variant": "candidate",
+      "first_playable_ms": 7144,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 11695
+    },
+    {
+      "pair": 9,
+      "variant": "baseline",
+      "first_playable_ms": 7071,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12121
+    },
+    {
+      "pair": 10,
+      "variant": "baseline",
+      "first_playable_ms": 8226,
+      "success": true,
+      "error_code": null,
+      "model_calls": 1,
+      "wall_ms": 8306
+    },
+    {
+      "pair": 10,
+      "variant": "candidate",
+      "first_playable_ms": 8490,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13419
+    },
+    {
+      "pair": 11,
+      "variant": "candidate",
+      "first_playable_ms": 8206,
+      "success": true,
+      "error_code": null,
+      "model_calls": 1,
+      "wall_ms": 8285
+    },
+    {
+      "pair": 11,
+      "variant": "baseline",
+      "first_playable_ms": 5595,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 9468
+    },
+    {
+      "pair": 12,
+      "variant": "baseline",
+      "first_playable_ms": 6442,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13859
+    },
+    {
+      "pair": 12,
+      "variant": "candidate",
+      "first_playable_ms": 7456,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13848
+    },
+    {
+      "pair": 13,
+      "variant": "candidate",
+      "first_playable_ms": 7053,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 11691
+    },
+    {
+      "pair": 13,
+      "variant": "baseline",
+      "first_playable_ms": 9771,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 15907
+    },
+    {
+      "pair": 14,
+      "variant": "baseline",
+      "first_playable_ms": 9291,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 15157
+    },
+    {
+      "pair": 14,
+      "variant": "candidate",
+      "first_playable_ms": 6975,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12706
+    },
+    {
+      "pair": 15,
+      "variant": "candidate",
+      "first_playable_ms": 6926,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12152
+    },
+    {
+      "pair": 15,
+      "variant": "baseline",
+      "first_playable_ms": 5674,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 10008
+    },
+    {
+      "pair": 16,
+      "variant": "baseline",
+      "first_playable_ms": 8092,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 13791
+    },
+    {
+      "pair": 16,
+      "variant": "candidate",
+      "first_playable_ms": 7090,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12875
+    },
+    {
+      "pair": 17,
+      "variant": "candidate",
+      "first_playable_ms": 7738,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 41588
+    },
+    {
+      "pair": 17,
+      "variant": "baseline",
+      "first_playable_ms": 8097,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 14605
+    },
+    {
+      "pair": 18,
+      "variant": "baseline",
+      "first_playable_ms": 5720,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 10136
+    },
+    {
+      "pair": 18,
+      "variant": "candidate",
+      "first_playable_ms": 7853,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12699
+    },
+    {
+      "pair": 19,
+      "variant": "candidate",
+      "first_playable_ms": 7491,
+      "success": true,
+      "error_code": null,
+      "model_calls": 2,
+      "wall_ms": 12080
+    },
+    {
+      "pair": 19,
+      "variant": "baseline",
+      "first_playable_ms": 11808,
+      "success": true,
+      "error_code": null,
+      "model_calls": 3,
+      "wall_ms": 15684
+    }
+  ]
+}

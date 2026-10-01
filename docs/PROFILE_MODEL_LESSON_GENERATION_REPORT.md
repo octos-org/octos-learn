@@ -1,0 +1,77 @@
+# 课程模型路由实施报告
+
+2026-10-01。依据 Claude 设计和执行指令，按 A → B → C 实施。三个仓库均先 fetch，再从当时最新 `origin/main` 建立 `codex/profile-model-lessons`。未合并、未部署、未修改服务器。
+
+## 提交
+
+| 仓库 / 阶段 | main 基线 | 特性分支提交 |
+|---|---|---|
+| learning-coach / A | `2a5fcc5` | `40584a1`：不可变 profile 路由、Ark 课程路径删除、凭据/地址、错误码和 trace |
+| learning-coach / 经用户授权的补充 | 同上 | `a37c9eb`：结构化 `API_KEY_INVALID` 的 HTTP 400 精确映射为认证错误 |
+| octos-learn / B | `81a8c23` | `d2cd499`：统一课程平台判断、模型推荐、中文错误与设置入口、配置文档 |
+| octos / C1 | `ae230ce0` | `ef082360`：strict env gate 拦截未声明的敏感 `OCTOS_*` |
+| octos / C2 | 同上 | `d1e82de5`：使用已解析 Config 导出 provider/model/地址/协议/revision |
+| octos / C3 | 同上 | `e9bd3892`：用户 Gemini key 规范导出、隔离宿主凭据、插件/子代理继承环境清理 |
+| octos / C4 | 同上 | `e8195d72`：REST 保存返回 runtime 状态，与 OUP 共用转换 |
+| octos-learn / C5 | `81a8c23` | `73d5250`：前端显示已生效、重启后生效、暂未就绪；兼容旧服务端 |
+| octos / 验收 | 同上 | `f227b968`：动态 profile、真实技能子进程、多用户、进行中切换与真实 Coach 验收测试 |
+
+最终交付还包含本报告、设计/执行文档及文档索引。用户已有的 `public/demo/` 未纳入提交。
+
+## 测试结果
+
+| 命令 / 检查 | 结果 |
+|---|---|
+| Coach `npm test`（含构建） | 最终 183/183 通过，构建产物已提交 |
+| Learn `NODE_OPTIONS=--no-experimental-webstorage pnpm test:unit` | 最终 117 文件、1089 测试通过 |
+| Learn `pnpm build` | 通过，仅既有大 bundle 警告 |
+| Learn 修改文件 ESLint | 0 错误；B 为 3 条警告，C5 为 1 条警告 |
+| Learn `pnpm lint` | 未完成：持续停在未修改的 `selection-enhancement-layer.tsx` 后中断。临时排除该文件时其余文件为 0 错误 / 35 警告，未在配置中排除该源码文件 |
+| `cargo test -p octos-agent --lib strict_` | 15/15 通过；新增单测和真实子进程测试先失败再修复 |
+| `cargo test -p octos-agent --lib loader_forwards_profile_blocked_env` | 1/1 通过 |
+| `cargo test -p octos-cli --features api --lib resolved_profile_llm_env_` | 1/1 通过 |
+| `cargo test -p octos-cli --features api --lib profile_primary_credentials` | 3/3 通过 |
+| `OCTOS_NO_MODEL_DOWNLOAD=1 cargo test -p octos-cli --features api --lib my_profile_runtime_response` | 1/1 通过，覆盖四种保存结果 |
+| 同上，过滤 `should_report_` | 29/29 通过，含既有 OUP 重启/重建失败状态回归 |
+| `CARGO_INCREMENTAL=0 OCTOS_NO_MODEL_DOWNLOAD=1 cargo test -p octos-cli --features api --lib profile_model_dynamic_skill_acceptance` | 1/1 通过：Cloud、非 solo、动态 profile、实际技能子进程，两个用户同时隔离；进行中的 M1/revision 不变，后续使用 M2/revision |
+| 过滤 `profile_model_real_coach_acceptance -- --ignored`，显式提供本地测试 key 和 Coach 路径 | 1/1 通过：真实课程生成过程中保存，当前所有调用保持 Gemini 3.6 Flash，下一课程使用 Gemini 3.5 Flash，trace 均为 `route_source=profile` |
+| `cargo check -p octos-cli --features api` | C1–C4 和最终验收源码均通过 |
+| `cargo fmt --all -- --check` / `git diff --check` | 通过 |
+| `node --test services/hosted-tts/server.test.mjs` | 19/19 通过 |
+| 现有个人火山 TTS 两次真实合成 | 两次均 HTTP 200 / code 3000，均返回 41280 字节音频 |
+
+真实错误验证：缺 key 返回 `LESSON_CREDENTIAL_MISSING`；不存在的模型返回 `GEMINI_MODEL_NOT_FOUND`；用户批准精确例外后，无效 key 返回 `GEMINI_AUTH_FAILED`。前端结构化映射测试覆盖全部六种中文文案，错误卡片的“前往设置”入口通过组件测试。未完成浏览器中三种真实错误的人工视觉验收。
+
+## A/B 速度
+
+相同 Gemini 3.6 Flash、相同文本请求，旧版 Coach + `OLL_PROVIDER/OLL_MODEL` 对新版 Coach + profile，交错配对，各 20 次；40 次均成功。首片段以 `lesson-prefix-published.elapsed_ms` 计。
+
+| 指标 | 基线 | 候选 |
+|---|---:|---:|
+| p50（中位数） | 8054.5 ms | 7688.5 ms |
+| p90（nearest rank） | 9771 ms | 12479 ms |
+| model-call 总次数（包含模型输出修复） | 40 | 43 |
+
+p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以确认尾延迟无回退。20 对样本的 paired bootstrap（10000 次重采样、固定随机种子）给出候选减基线的 95% 区间：p50 为 -975～1136.5 ms，p90 为 -4099～7749 ms；区间包含 0，但这不等于证明性能等价。因此尾延迟验收保留为待复核。
+
+额外调用来自非确定性的模型输出修复，未增加路由解析或配置验证的模型请求。同一 provider/model 的四类请求及有/无图片的请求体字节一致性测试通过；Gemini 流式 bootstrap 未开启。数据测量于 `40584a1`；后续 `a37c9eb` 只修改失败 HTTP 响应分类，不改变成功请求路径。
+
+原始非敏感数据：[PROFILE_MODEL_LESSON_GENERATION_AB_DATA.json](PROFILE_MODEL_LESSON_GENERATION_AB_DATA.json)。
+
+## 实施差异与发现
+
+- Coach 顶层 `error_code` 原本被 Octos PluginTool → action/job 转换丢弃。先报告断点后，复用既有 `structured_metadata.error_code` 通道；前端未解析错误文本。
+- 用户在执行中明确批准 A4 的精确例外：只有 Gemini HTTP 400 的结构化 `error.details[].reason=API_KEY_INVALID` 归为 `GEMINI_AUTH_FAILED`，其他 400 保持 schema 错误，无新增重试。新增 bootstrap/section 和负向测试先失败，修复后通过；流式/非流式共用该分类函数。
+- 为清除宿主 key，仅删除 plugin extra env 不够，因为 manifest 允许的变量仍可从进程继承。增加通用 `blocked_env` loader 策略并传递给插件重载和子代理，未引入课程业务逻辑或新 key 变量。
+- Octos 现有部署标志为 `AppState.deployment_mode`（Local/Tenant/Cloud）和 `solo_login_enabled`。将宿主部署模式传入已解析 Config；Local（含 solo 和非 solo 本地）保留回落，Tenant/Cloud 禁止 Gemini 宿主 key 回落。本项目公网配置为 Cloud。
+- 普通 harness 变量审计未发现 secret-like 误判；未声明的 `OCTOS_AUTH_TOKEN`、`OCTOS_ADMIN_TOKEN` 及已注册 secret 被拒绝，显式 allowlist 的 secret 仍可使用。
+- 正常用户旧模型/不支持平台的保存值不被自动改写。首次真实切换测试误选 Gemini 2.5 Flash，其拒绝现有 schema；该选择不合适，未为 2.5 添加适配，随后改用 3.6 → 3.5 完成验收。
+- 旧 runtime 被进行中的任务持有时，内存数据库锁可能阻止立即重建，保存应报告 `persisted_but_not_live`。旧任务完成并释放后，下一次请求重试加载新模型；动态/真实验收确认这一行为。
+- ESLint 原配置扫描 `scratch/`、`delivery/`、Android 等生成目录。增加这些生成目录的 ignore，未降低源码规则。全量 lint 停滞问题仍未修复。
+- Rust 验证遇到依赖下载超时、自动模型下载等待及磁盘耗尽；恢复网络、在测试中禁止模型自动下载，并只清理可重建编译缓存后继续。未删除源码、用户数据或用户已有文件。
+
+## 未完成项与部署顺序
+
+未完成项：全量 ESLint 检查；p90 尾延迟复核；浏览器中三种真实错误的视觉验收。主模型路由、用户 key 隔离、进行中稳定性、保存状态和主要自动化验证已完成。
+
+部署留给用户。建议顺序：octos-learn 前端 → learning-coach（至少 `a37c9eb`）→ 清理服务器 env 中的 `OLL_*`，并确认没有模型 key、Vertex 凭据和 `OCTOS_AUTH_TOKEN` → Octos 新版本。管理员令牌放 `config.json`。

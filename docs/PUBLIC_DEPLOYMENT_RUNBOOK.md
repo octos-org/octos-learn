@@ -221,6 +221,6 @@ documented data migration explicitly requires it.
   frontend. The service token belongs only in Octos's root-owned environment
   file.
 
-The profile-model lesson change requires Learning Coach commit `40584a1` or later
+The profile-model lesson change requires Learning Coach commit `a37c9eb` or later
 (on `codex/profile-model-lessons` until reviewed). The code is not yet deployed.
 For startup-pinned local profiles, saved model changes require a service restart.
