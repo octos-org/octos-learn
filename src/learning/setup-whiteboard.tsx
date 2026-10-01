@@ -307,7 +307,7 @@ function ModelCard({
         模型名称
         <input
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={(e) => { setModel(e.target.value); setMessage(""); }}
           required
           autoComplete="off"
         />
@@ -317,7 +317,7 @@ function ModelCard({
         <input
           type="password"
           value={key}
-          onChange={(e) => setKey(e.target.value)}
+          onChange={(e) => { setKey(e.target.value); setMessage(""); }}
           placeholder={
             provider && profile.config.env_vars[provider.envKey]
               ? "已保存；留空继续使用"
@@ -327,10 +327,12 @@ function ModelCard({
           spellCheck={false}
         />
       </label>
-      <button disabled={busy || !provider} type="submit">
-        {busy ? "正在测试并保存…" : "测试连接并保存"}
-      </button>
-      <p role="status">{message}</p>
+      <div className="setup-model-actions">
+        <button disabled={busy || !provider} type="submit">
+          {busy ? "正在测试并保存…" : "测试连接并保存"}
+        </button>
+        <p role="status">{message}</p>
+      </div>
       <Link to="/settings?tab=llm">打开完整模型设置 →</Link>
     </form>
   );

@@ -197,7 +197,7 @@ export function profileModelSaveMessage(profile: Profile): string {
   switch (profile.runtime_disposition) {
     case "reloaded": return "已生效，下一次生成使用新模型";
     case "restart_required": return "已保存，服务重启后生效";
-    case "persisted_but_not_live": return "已保存，模型暂未就绪，请检查 Key 后重试";
+    case "persisted_but_not_live": return "已保存。当前任务结束后，下一次生成将使用新模型";
     default: return "已保存，下一次生成课程时生效";
   }
 }
