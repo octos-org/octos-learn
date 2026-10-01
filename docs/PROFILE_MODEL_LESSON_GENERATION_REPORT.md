@@ -103,3 +103,21 @@ p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以
 服务日志 `.local-dev/profile-model-review/service-runtime.log` 在 `2026-10-01T16:52:37.039859Z` 记录 `profile LLM mutation saved but runtime rebuild failed`，原因 episodes.redb `Database already open`。浏览器协议日志 `switch-browser-events.jsonl` 在 16:52:37.341Z、16:52:38.350Z、16:52:40.377Z 和 16:52:44.401Z 记录 session/open 失败。步骤原始结果：`switch-results.json`；trace：`traces/fe3e706e-b871-43b2-a148-b4cb7805463c.generation-trace.jsonl`（M1）、`traces/b1e56dc5-187d-4e03-89cb-2fdb86ba8887.generation-trace.jsonl`（M2）。
 
 按复核指令，只报告现象和证据；未修改 Octos runtime 缓存、锁或会话查找逻辑。
+
+
+## 复核跟进：2.3 真实中文错误界面（2026-10-01）
+
+同一 Cloud/dynamic 环境，真实 API 更新用户设置，真实课程 action/模型响应；未 mock 网络或错误。
+
+| 情况 | 结构化错误码 | 问题卡片与底部错误条 | 链接点击 |
+|---|---|---|---|
+| 删除用户 key 条目（宿主仍有测试 key） | LESSON_CREDENTIAL_MISSING | “请在设置中填写你的 Gemini API Key” | 两处均进入 /settings?tab=llm |
+| 无效 key | GEMINI_AUTH_FAILED | “Gemini API Key 无效，或没有访问该模型的权限” | 两处均进入 /settings?tab=llm |
+| 不存在模型 ID | GEMINI_MODEL_NOT_FOUND | “所选模型不存在或你的 Key 无权使用，请在设置中更换” | 两处均进入 /settings?tab=llm |
+| 无效 key，框选辅助“解释这部分” | GEMINI_AUTH_FAILED | 新建的框选问题卡片显示无效 key 中文提示与“前往设置” | 正确进入 LLM 设置页 |
+
+第 2.3 项通过。框选验收使用新的空白白板，等待新的选区问题卡片出现（问题 ID `0782553d-2d71-4137-b2dd-c4747257c1ae`），避免旧错误卡片造成假阳性；自动分类本身的失败提示仍为原有通用提示，第三项验证的是“解释这部分”辅助入口的课程失败展示。
+
+截图均位于 `.local-dev/profile-model-review/errors/`：三种情况各有 `<missing-key|invalid-key|missing-model>-board.png`、`*-settings-from-card.png`、`*-settings-from-bottom.png`；框选为 `invalid-key-selection-verified.png`、`invalid-key-settings-from-selection-verified.png`。结果/脱敏协议日志：`.local-dev/profile-model-review/errors-results.json`、`errors-browser-events.jsonl`、`selection-results.json`、`selection-browser-events.jsonl`。
+
+测试准备过程中，留空既有 key 会按 save_with_merge 语义保留原值；因此改为删除 env_vars 条目构造真正缺 key 情况。初次框选脚本在发送后读取已关闭的面板发生超时；修正脚本后完整重跑，没有应用代码变更。这些准备失败分别保留在 `fixture-empty-key-retained-*`、`panel-closed-after-send-*` 文件中，不计为验收通过记录。
