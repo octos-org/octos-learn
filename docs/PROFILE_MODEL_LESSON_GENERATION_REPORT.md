@@ -82,3 +82,24 @@ p50 改善约 4.5%，未回退。候选 p90 高约 27.7%，本次样本不足以
 在 `git archive 81a8c23` 导出的独立目录中复用现有 node_modules，运行 `pnpm --config.verifyDepsBeforeRun=false lint --debug`；关闭的是 pnpm 自动依赖重装检查，没有关闭 ESLint 规则。该目录的 package.json、pnpm-lock.yaml 和 selection-enhancement-layer.tsx 与本分支 SHA-256 完全相同。
 
 基线和本分支 `pnpm lint --debug` 均在该文件的 parsing/scope analysis successful 后持续停住，各 120 秒后中断。这是原有问题，按审查指令不修改。证据：`.local-dev/profile-model-review/2.4-baseline-lint.log`、`2.4-baseline-lint-result.json`、`2.4-candidate-lint.log`、`2.4-candidate-lint-result.json`。本轮修改文件 lint 通过（0 错误、1 条既有警告）。
+
+
+## 复核跟进：2.2 真实 Cloud 服务与浏览器（2026-10-01）
+
+环境：Octos `f227b968` 的真实 `target/debug/octos serve`，`mode=cloud`、未传 `--solo`；隔离 registry 和数据位于 `.local-dev/profile-model-review/state/`。用户 A 为本地测试账户 `review-a`，使用真实用户 JWT（隔离环境的 static-token 登录）。Coach 为 `a37c9eb` 的构建产物，前端为 `7341cac`。HTTPS 5173、Chromium、1440×1100。宿主进程中同时存在测试用 Gemini key，以验证后续 Cloud 严格 BYOK。所有测试凭据与原始状态均 gitignored；交付日志已脱敏。
+
+| 步骤 | 实际结果 | 截图（相对于 `.local-dev/profile-model-review/`） |
+|---|---|---|
+| 1 | A 发起完整一次函数课程；3.6 Flash，route_source=profile，revision `2026-10-01T16:52:31.829369+00:00` | `2.2-refresh-during.png` |
+| 2 | 首个 model-call started 后约 78ms，在真实设置页保存 3.5。HTTP 200，persisted_but_not_live，新 revision `2026-10-01T16:52:37.032262+00:00`；显示“已保存。当前任务结束后，下一次生成将使用新模型” | `2.2-save-status.png` |
+| 3 刷新 | 当前课程仍在生成，刷新 /learn 后 1 项笔迹、待回答问题卡片和本地历史保留；但 session/open 返回 -32603 / data_dir_locked，不能恢复正常课程交付连接 | `2.2-refresh-during.png`、`2.2-history-during.png` |
+| 3 框选 | 点击“选择全部笔迹”，发起现有笔迹的自动分类；session/open 返回 -32603 / data_dir_locked，分类没有成功到达工具；面板随后显示“没有可靠识别出内容，请手动选择类型” | `2.2-selection-during.png`、`2.2-M1-finished.png` |
+| 4 | 后端 M1 完成：全部 model-call 保持 3.6 / 原 revision，最终 lesson-plan-generation=completed，已产出课程。但刷新后的页面仍停在“正在准备回答/正在搭建这节课”，没有实时交付到界面 | `2.2-M1-finished.png` |
+| 5 | 再进入白板后 M1 可恢复；下一节真实课程用 3.5 Flash / route_source=profile / 新 revision，并完成生成 | `2.2-refresh-final.png` |
+| 6 | 再刷新后，两节课程画面、两张已回答问题卡片、1 项笔迹均在；学习记录里仍有当前白板 | `2.2-refresh-final.png`、`2.2-history-final.png` |
+
+**判定：发现问题，2.2 不通过。** 复现只需一个 serve 进程：先启动动态 profile 的课程，再保存不同模型，任务完成前刷新并全选现有笔迹。保存使重建失败，进行中 runtime 的 redb 单写锁阻止 session/open；刷新后的页面不自动恢复交付，需再次进入白板。服务端文字声称另一个进程持锁，但本次只有一个测试服务，所以不能按该报错推断为多进程冲突。
+
+服务日志 `.local-dev/profile-model-review/service-runtime.log` 在 `2026-10-01T16:52:37.039859Z` 记录 `profile LLM mutation saved but runtime rebuild failed`，原因 episodes.redb `Database already open`。浏览器协议日志 `switch-browser-events.jsonl` 在 16:52:37.341Z、16:52:38.350Z、16:52:40.377Z 和 16:52:44.401Z 记录 session/open 失败。步骤原始结果：`switch-results.json`；trace：`traces/fe3e706e-b871-43b2-a148-b4cb7805463c.generation-trace.jsonl`（M1）、`traces/b1e56dc5-187d-4e03-89cb-2fdb86ba8887.generation-trace.jsonl`（M2）。
+
+按复核指令，只报告现象和证据；未修改 Octos runtime 缓存、锁或会话查找逻辑。
