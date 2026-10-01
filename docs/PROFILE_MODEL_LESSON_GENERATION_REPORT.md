@@ -197,3 +197,131 @@ p50 未回退；p90 差异来自模型修复调用，与路由代码无关；上
 ### 待完成
 
 真实服务器加浏览器的 2.2 重跑尚未完成，需要提供 Gemini 测试 key。
+
+## 真实验收：热替换修复（2026-10-01）
+
+按 `PROFILE_MODEL_LESSON_GENERATION_LIVE_ACCEPTANCE.md` 执行。结论：**整体不通过**。真实技能生成期间的热替换仍出现单写者锁错误；连续保存测试中服务发生栈溢出；无宿主 Key 时，缺 Key 的课程错误提示没有到达预期路径。无效 Key、有效 Key、双用户归属检查通过。仅记录验收结果，未修改三个仓库的产品代码，未合并、未部署、未改公网服务器。
+
+### 版本与隔离环境
+
+先完成三个仓库的 `git fetch`，使用各自的 `codex/profile-model-lessons` 分支。Learn 同分支快进到远端最新文档提交，没有生成合并提交。
+
+| 项目 | 实际版本 |
+|---|---|
+| octos | `241f14f595d46a51b9147c78a0942e41d01c00df` |
+| learning-coach | `a37c9eb7d519301c57b2dff667eca24ac50334f1` |
+| octos-learn（验收时） | `428428c89871787750af1ccc55f351a9fb22f693` |
+| Octos 编译 | 在 `241f14f5` 执行 `CARGO_INCREMENTAL=0 cargo build -p octos-cli --features api`，成功，用时 1m15s |
+| 实际二进制 | `/Users/alan0x/Documents/projects/octos/target/debug/octos` |
+| 二进制 SHA-256 | `fed3d3171fe02fced7261cfe84218dbbe8f1a7d4a8fd1c17852585fa2511247e` |
+
+证据目录统一为本仓库的 `.local-dev/profile-model-review/live-2/`，下文简称 **E**；本机绝对路径为 `/Users/alan0x/Documents/projects/octos-learn/.local-dev/profile-model-review/live-2/`。`build-octos.log`、`binary-and-environment.json` 记录编译和二进制对应关系。证据不提交 Git；目录权限 0700，凭证 JSON 为 0600。
+
+环境为真实 `octos serve`、`mode=cloud`、不加 `--solo`，独立 registry/data/config，动态测试 profile `live-a`、`live-b`。Octos 仅监听 `127.0.0.1:50080`，Vite HTTPS 前端为 `https://127.0.0.1:5173`，Playwright 驱动 Chromium，通过真实 HTTP/OUP 和 Gemini API 执行。每个 profile 使用上述 Coach 提交的已构建技能；没有模型返回 mock。只使用 3.6 Flash、3.5 Flash。
+
+服务启动前，在**实际传给服务进程的环境**中执行以下命令；崩溃重启时再次执行，均为空输出：
+
+```sh
+env | grep -E 'GEMINI|GOOGLE|VERTEX|OPENAI|OCTOS_AUTH_TOKEN' | cut -d= -f1
+```
+
+实际输出：**空，0 字节**，见 `E/env-check.txt`。启动包装脚本删除全部匹配名称后断言检查结果为空，没有向宿主进程传入模型 Key。服务认证凭据来自隔离配置文件。A 的有效 Key 和 B 的独立无效 Key 仅通过 `PUT /api/my/profile` 写入各自测试 profile；没有修改正常用户 profile。`OCTOS_NO_MODEL_DOWNLOAD=1`，本机无 embedding 模型，日志显示记忆搜索使用 keyword-only；未下载模型。所有下文时间为 UTC。
+
+### A：生成过程中切换模型
+
+旧 revision 为 `2026-10-01T18:08:50.514278+00:00`，保存 3.5 Flash 后的新 revision 为 `2026-10-01T18:08:54.804981+00:00`。总记录为 `E/A-results.json`、`E/A-protocol.jsonl`。
+
+| 步骤 | 实际结果 | 判定与截图 |
+|---|---|---|
+| A1 3.6 发起完整文本课程 | 18:08:54.625 首个 `model-call` 开始，模型 3.6、profile 路由、旧 revision。发起前画入一项笔迹并等待保存 | 通过；`E/A-A1-started.png` |
+| A2 生成中设置页保存 3.5 | HTTP 200，但 `runtime_disposition=persisted_but_not_live`，`runtime_error` 指向 `episodes.redb: Database already open`。页面显示“已保存。当前任务结束后，下一次生成将使用新模型”，没有显示要求的“已生效” | **不通过**；`E/A-A2-save.png` |
+| A3 课程完成前刷新 `/learn` | 第一条 `session/open` 返回 -32603，`data.kind=data_dir_locked`；之后三次重试仍同样失败。笔迹保存数量 1、原问题卡片和历史项仍在，但连接未成功 | **不通过**；`E/A-A3-refresh.png`、`E/A-A3-history.png` |
+| A3 对已有笔迹发起分类 | 点击“选择全部笔迹”，显示已选 1 项；在生成仍进行时观察 20 秒，没有分类工具 trace，也没有 `learning.selection.classify` 到达工具的协议记录 | **不通过，受连接失败阻断**；`E/A-A3-selection.png` |
+| A4 等原课程完成 | 18:09:21.727 后端 `lesson-plan-generation=completed`，4 次调用全部为 3.6/profile/旧 revision。完成后继续等待 45 秒，到 18:10:06.850 页面仍是“正在准备回答”，loading block 仍在。期间未重新进入白板 | 后端路由冻结通过；**刷新后的课程交付不通过**；`E/A-A4-complete-without-reentry.png` |
+| A5 再发起课程 | 在同一页面提交下一问题；这次操作触发新的 `session/open`，18:10:08.038 成功。2 次调用全部为 3.5/profile/新 revision，18:10:24.943 后端完成 | 新模型/revision 通过；`E/A-A5-next-complete.png` |
+| A6 再次刷新 | 两个问题均“已回答”，无 pending/loading/error；笔迹仍为 1 项，原白板历史项仍在，两节课程恢复可见 | 通过；`E/A-A6-refresh.png`、`E/A-A6-history.png` |
+
+A5 操作时，A3 留下的笔迹仍处于选中状态，因此前端实际调用 `learning.lesson.generate-from-selection`，问题内容附带“引用的白板选区”；该次确实生成了下一节课，但不是纯文本入口。A5 前没有导航或手动重新进入白板；**后续操作触发的连接恢复不能算作 A3 的一次连接成功或 A4 的自动交付通过**。
+
+关键协议时间线（完整请求 ID、响应、通知在 `A-protocol.jsonl`）：
+
+- 18:08:55.058 / 55.077：刷新后的首条 `session/open` 请求 / `data_dir_locked` 响应。
+- 18:08:56.082、18:08:58.097、18:09:02.117：三次重试，均为 `data_dir_locked`。
+- 刷新后到 A4 截图期间，仅有错误响应、heartbeat 等记录，没有该课程的成功交付通知。
+- 18:10:07.908 / 18:10:08.038：下一操作触发 `session/open` 并成功；紧接着派发下一课程。
+
+文档提到的“`session/open` 成功但旧任务交付丢失”的独立问题，**本轮不能单独确认**：A 的首次 open 本身就失败了。可以确认的现象是：在后端完成 45 秒后，刷新页面仍未恢复课程，直到后续操作/刷新恢复。
+
+A 的 trace 位于 `E/state/profiles/live-a/data/users/learn-1790877662972-0ctg68/workspace/skill-output/study/oll/`：
+
+- 当前课程：`0ec6c1d3-ebf7-4fc6-8b32-1dadbd50f4b9.generation-trace.jsonl`。
+- 下一课程：`db30bc82-f7d3-424b-9eb3-658373cea275.generation-trace.jsonl`。
+
+### B：同一节课生成中连续保存两次
+
+总记录为 `E/B-results.json`、`E/B-protocol.jsonl`。B 首次课程使用 3.6/profile，revision 为 `2026-10-01T18:10:49.131935+00:00`。
+
+| 步骤 | 实际结果 | 判定与证据 |
+|---|---|---|
+| B1 发起课程 | 首个调用 18:10:50.916 开始，3.6/profile/初始 revision | 通过；`B-results.json` 的 `B1-current-started` |
+| B2 首次保存 3.5 | 18:10:51.024 收到结果，HTTP 200，`persisted_but_not_live`，revision `2026-10-01T18:10:50.975138+00:00`，同样的 redb 锁错误 | **不通过**；`E/B-B2-first-save.png` |
+| B2 约 2 秒后保存回 3.6 | 18:10:53.153 收到结果，两次结果相距 2.129 秒，HTTP 200，仍为 `persisted_but_not_live`，revision `2026-10-01T18:10:53.131910+00:00` | **不通过**；`E/B-B2-second-save.png` |
+| B4 当前课程完成 | 首轮调用完成，仍使用初始模型/revision；trace 最后停在 `lesson-plan-outline-ready`。随后服务栈溢出中止，180 秒观察没有完成记录 | **被服务崩溃阻断，不能判为完成** |
+| B5 下一课程使用第二次保存 revision | 服务中止，未执行到下一节课程验证。停止 B 的浏览器脚本，避免重启服务后继续发请求干扰 C | **阻断** |
+| B6 无锁错误 | 两次保存均有 `Database already open` | **不通过** |
+
+服务原始 fatal 输出已保存在 `E/server-run1.log`：
+
+```text
+thread 'tokio-rt-worker' (3732399) has overflowed its stack
+fatal runtime error: stack overflow, aborting
+```
+
+包装进程退出码 250，对应 Python 子进程返回 -6（SIGABRT）。当时本地 50080 已不再监听。fatal 行没有时间戳；最后一条滚动服务日志为 18:10:53.139275，因此不把这条日志时间冒充精确崩溃时间。没有 Rust backtrace，**未确认栈溢出根因，也未推断它一定由第二次保存直接触发**。这是本轮观测到的真实服务崩溃。
+
+B trace：`E/state/profiles/live-a/data/users/learn-1790878249577-djm8cw/workspace/skill-output/study/oll/421a3725-1f43-4677-a629-ffd6d6db8f5d.generation-trace.jsonl`。B 协议记录覆盖两次保存期间，后续完成步骤因崩溃没有完整截图。`B-results.json` 保留超时、验收脚本停止及单独记录的服务 fatal 证据。
+
+为完成 C/D，仅重启同一二进制、同一隔离数据目录；启动环境检查再次为空。重启后的 stdout 为 `E/server.log`，滚动日志与第一次运行均汇总在 `E/service-runtime.log`。没有重新编译或修改实现。
+
+### C：严格自带 Key 回归
+
+`E/C-results.json`、`E/C-protocol.jsonl` 记录最终一轮完整 C。第一轮缺 Key 测试因无法取得工具 trace 而停止，保留在 `E/C-first-attempt-results.json`、`E/C-first-attempt-protocol.jsonl`；调整的只是 gitignored 验收脚本，使其记录这一阻断后继续其余情况。
+
+| 情况 | 实际结果 | 判定与截图 |
+|---|---|---|
+| 删除 A profile 的 `GEMINI_API_KEY` 条目 | PUT 200、`persisted_but_not_live`；`session/open` 返回 `runtime_unavailable`，消息为 `failed to create LLM provider ... GEMINI_API_KEY not set or empty`。问题提交后无课程工具 trace，问题卡仍“正在准备回答”，没有 `LESSON_CREDENTIAL_MISSING` 和指定中文提示。第一轮已等待 45 秒，仍未产生工具 trace | **不通过**；`E/C-C1-missing.png`、`E/C-harness-error-0.png` |
+| A 写入无效 Key | PUT `reloaded`，真实 Gemini 请求失败，trace 为 `GEMINI_AUTH_FAILED`；问题卡与底部均显示“Gemini API Key 无效，或没有访问该模型的权限”，有“前往设置” | 通过；`E/C-C2-invalid.png` |
+| A 写回有效 Key | PUT `reloaded`，3.6/profile 课程正常完成，OUP job 为 `succeeded`，问题卡“已回答” | 通过；`E/C-C3-valid.png` |
+| A 有效 Key、B 自己的无效 Key，同时提交 | 两条派发请求时间相距约 15ms。A 成功，B `GEMINI_AUTH_FAILED`。所有 `skill/action/job/updated` 的 page/profile 归属检查错配 0；trace 在不同 profile/session 工作区、revision 不同，A 页面没有 B 的错误，B 页面没有 A 的课程 | 通过；`E/C-C4-a.png`、`E/C-C4-b.png`、`E/D-C4-post-completion.png` |
+
+并发提交不等于模型调用一定重叠：本轮 B 在 A 开始模型调用前失败，协议能够证明请求同时提交以及结果各自归属。最终 A 页面复查为 pending 0、loading 0、error 0。有效 Key 课程刚完成时的截图可能还显示短暂 loading，后续截图记录最终状态。
+
+C4 A revision：`2026-10-01T18:15:45.088248+00:00`；B revision：`2026-10-01T18:15:53.168476+00:00`。trace：
+
+- A：`E/state/profiles/live-a/data/users/learn-1790878553869-s3iqyf/workspace/skill-output/study/oll/64aa55b8-6654-46f6-ac56-f0f53210365c.generation-trace.jsonl`。
+- B：`E/state/profiles/live-b/data/users/learn-1790878553631-zhd97s/workspace/skill-output/study/oll/859de958-8f9b-41fb-9b91-e1adc3fc32fe.generation-trace.jsonl`。
+
+缺 Key 检查确认服务没有借用宿主 Key，但**这不等于指定错误体验通过**。阻断发生在通用 ProfileRuntime 创建 provider 时，课程技能尚未执行，所以没有到达 Coach 的缺凭证错误映射。原样记录，未修复。
+
+### D：记忆整理和定时任务
+
+- D1：检查两次服务运行的完整日志，`memory refresh lock held elsewhere` 为 **0 行**，满足该告警的负向检查。A/B 的 `runtime_disposition` 没有达到 `reloaded`，因此**不能把告警为 0 扩大为热替换接管已验证成功**。保存期间还观察到 `cron service shutdown signalled`，见服务日志；未据此推断任务丢失。
+- D2：**任务保留/不重复检查跳过**。隔离测试环境没有已有 cron 任务，当前设置页/OUP 面板只有 `cron/list` 和 `cron/toggle`，没有创建入口；本轮未通过模型驱动聊天创建任务。实际调用真实 OUP `cron/list` 得到 `jobs=[]`、`count=0`、`gateway_running=false`，仅说明查询可用，不能证明热替换保留已有任务。记录为 `E/D-results.json`、`E/D-protocol.jsonl`，截图 `E/D-D2-cron-list.png`。这是第 6 节允许的跳过项。
+
+### 日志搜索、证据与交付边界
+
+对 `E/service-runtime.log` 按关键词搜索，计数单位为**命中的日志行**：
+
+| 关键词 | 行数 | 说明 |
+|---|---:|---|
+| `runtime rebuild failed` | 5 | A 保存 1、B 保存 2、C 缺 Key 两轮各 1 |
+| `Database already open` | 3 | A 保存 1、B 保存 2 |
+| `data_dir_locked` | 0 | 此字符串未进入服务日志；A 浏览器 RPC 错误中出现 **4 次**，不能以服务日志 0 行判断通过 |
+| `profile_runtime_switching` | 0 | A 实际返回的是 `data_dir_locked` |
+| `memory refresh lock held elsewhere` | 0 | 只证明未见这条告警 |
+
+`E/lock-search.json` 保存计数及全部命中日志行。服务日志 67、102、105 行分别是 A 保存、B 两次保存的 redb 锁错误；138、150 行分别是两次缺 Key 的 provider 初始化失败。完整消息和数据目录都在该文件中。
+
+`E/acceptance-summary.json` 汇总判定、模型/revision、协议和用户归属检查；`E/secret-scan.json` 记录对全部 `.log`、`.jsonl`、`*-results.json` 的扫描结果：已知真实 Key、JWT、服务 token 的匹配为 0，未发现需要后补脱敏的日志文件。隔离凭证文件保持私有，不随报告提交。验收脚本也只留在 gitignored 证据目录。
+
+验收结束后已停止本轮创建的 Octos 和 HTTPS 前端，见 `E/cleanup.json`。其他仓库工作区未改。Learn 唯一提交内容为本报告追加；原有 `public/demo/` 未跟踪内容保留。没有为修复失败项改代码，没有合并、部署或改服务器。由于本轮没有实现改动，不重跑前端单元测试或全量 lint；本轮有效验证是指定版本重新编译、真实服务/浏览器验收、协议/trace/日志核对和文档 `git diff --check`。
