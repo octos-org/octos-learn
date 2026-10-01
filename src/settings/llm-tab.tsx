@@ -28,6 +28,7 @@ import {
 import {
   buildCredentialEnvPatch,
   findProvider,
+  isLessonCapable,
   providersForDeployment,
   showsBaseUrl,
   usesJsonCredential,
@@ -441,6 +442,17 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div role="status" className="text-xs text-muted">
+            <p>{isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true")
+              ? "可用于课程生成" : "暂不支持课程生成"}</p>
+            {effectiveFamilyId && !isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true") && (
+              <p>当前模型平台暂不支持生成课程，请选择 Gemini。原设置会保留，直到你保存新的选择。</p>
+            )}
+            {["google", "gemini"].includes(effectiveFamilyId) && effectiveModelId !== "gemini-3.6-flash" && (
+              <p>课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型</p>
+            )}
           </div>
 
           {/* Custom provider ID (only when Custom selected) */}
@@ -1037,7 +1049,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           ) : (
             <Save size={14} />
           )}
-          {saved ? "Saved" : "Save Changes"}
+          {saved ? "已保存，下一次生成课程时生效" : "Save Changes"}
         </button>
         {isDirty && (
           <button

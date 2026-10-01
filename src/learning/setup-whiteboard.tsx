@@ -10,7 +10,7 @@ import {
   formatSettingsError,
   type Profile,
 } from "@/settings/settings-api";
-import { LLM_PROVIDERS } from "@/settings/llm-providers";
+import { LLM_PROVIDERS, isLessonCapable } from "@/settings/llm-providers";
 import { SharedTtsPanel } from "@/settings/shared-tts";
 import { TeacherSkinPicker } from "@/settings/learning-companion-tab";
 import {
@@ -186,12 +186,9 @@ function ModelCard({
   profile: Profile;
   onSaved: (p: Profile) => void;
 }) {
-  // This hosted release pins learning-coach to Gemini. Do not offer a model
-  // platform that can pass a chat connection test but cannot generate lessons.
   const providers = LLM_PROVIDERS.filter((p) =>
-    import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true"
-      ? p.id === "google"
-      : p.credentialKind !== "json",
+    isLessonCapable(p.id, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true")
+      && p.credentialKind !== "json",
   );
   const [providerId, setProviderId] = useState(
     profile.config.llm.primary.family_id || "google",
@@ -252,7 +249,7 @@ function ModelCard({
       });
       setKey("");
       onSaved(result);
-      setMessage("模型已连接并保存。可以开始 AI 课程了。");
+      setMessage("已保存，下一次生成课程时生效");
       void refreshOminixRuntimeSummary();
     } catch (e) {
       setMessage(formatSettingsError(e));
@@ -271,8 +268,11 @@ function ModelCard({
       {import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true" && (
         <p>
           本站课程生成目前使用 Gemini。请提供已开通相应模型的 Gemini API
-          Key；普通聊天模型连接成功不等于课程生成服务已配置。
+          Key；课程将使用你在设置中保存的主模型。
         </p>
+      )}
+      {!isLessonCapable(providerId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true") && (
+        <p>当前模型平台暂不支持生成课程，请选择 Gemini。原设置尚未更改。</p>
       )}
       <div className="setup-handwritten" aria-hidden="true">
         <span>先连模型，其他的以后再说也行</span>
@@ -292,6 +292,9 @@ function ModelCard({
             setMessage("");
           }}
         >
+          {!providers.some((p) => p.id === providerId) && providerId && (
+            <option value={providerId}>{providerId}（请在完整设置中检查课程支持）</option>
+          )}
           {providers.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}

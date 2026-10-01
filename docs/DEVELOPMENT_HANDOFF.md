@@ -80,8 +80,6 @@ cd /Users/alan0x/Documents/projects/octos
 cargo build --release -p octos-cli --features api
 
 env -u OCTOS_SKILLS_PATH \
-OLL_PROVIDER=gemini \
-OLL_MODEL=gemini-3.6-flash \
 ASR_API_URL=http://127.0.0.1:8094 \
 ./target/release/octos serve \
   --host 127.0.0.1 \
@@ -94,7 +92,7 @@ ASR_API_URL=http://127.0.0.1:8094 \
 - `ASR_API_URL` 只有在本机 SenseVoice 服务运行于 `8094` 时才设置；只开发文字白板时
   可以删除这一行。
 - Gemini API Key 等个人凭据从本机 profile 的 Settings 读取，不应写入仓库、命令或
-  `.env`。`OLL_PROVIDER` 和 `OLL_MODEL` 是课程生成的服务端选择，需与准备测试的模型一致。
+  `.env`。课程使用 Settings 中保存的主模型；`OLL_PROVIDER` / `OLL_MODEL` 仅用于独立 eval 脚本，不放入产品服务启动环境。
 - 只有直接测试 Vertex Service Account 时才需要临时提供 `VERTEX_SA_JSON`；使用 Settings
   中的 Gemini API Key 时不需要它。
 - 如果需要一套完全独立的本地测试数据，可额外加
