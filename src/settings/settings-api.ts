@@ -178,6 +178,11 @@ export interface ProfileStatus {
 }
 
 export interface Profile {
+  runtime_disposition?: "reloaded" | "restart_required" | "persisted_but_not_live" | "deferred" | "unchanged";
+  restart_required?: boolean;
+  config_revision?: string;
+  effective_from?: string;
+  runtime_error?: string;
   id: string;
   name: string;
   enabled: boolean;
@@ -186,6 +191,15 @@ export interface Profile {
   created_at: string;
   updated_at: string;
   status: ProfileStatus;
+}
+
+export function profileModelSaveMessage(profile: Profile): string {
+  switch (profile.runtime_disposition) {
+    case "reloaded": return "已生效，下一次生成使用新模型";
+    case "restart_required": return "已保存，服务重启后生效";
+    case "persisted_but_not_live": return "已保存。当前任务结束后，下一次生成将使用新模型";
+    default: return "已保存，下一次生成课程时生效";
+  }
 }
 
 export interface MatrixPendingInvite {

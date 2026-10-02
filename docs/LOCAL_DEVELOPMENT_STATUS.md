@@ -24,8 +24,6 @@ Octos Learn #9 已按依赖顺序合并且 CI 全部通过，尚未部署。详�
 
 ```bash
 OCTOS_SKILLS_PATH=/private/tmp/octos-learn-skills \
-OLL_PROVIDER=gemini \
-OLL_MODEL=gemini-3.6-flash \
 ./target/release/octos serve --host 127.0.0.1 --port 50080 --solo
 ```
 
