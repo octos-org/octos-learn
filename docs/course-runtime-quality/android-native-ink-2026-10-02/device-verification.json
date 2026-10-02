@@ -1,0 +1,40 @@
+{
+  "installed": true,
+  "verified": true,
+  "buildInfo": {
+    "revision": "42b8e7cc453a4bf17627ff6202659bc9eae793a0",
+    "dirty": false,
+    "builtAt": "2026-10-02T13:40:21.625Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "path": "/board",
+  "viewport": {
+    "width": 960,
+    "height": 540,
+    "dpr": 4
+  },
+  "nativeBatchHandler": "function",
+  "exclusionApi": "function",
+  "boardCamera": {
+    "panX": 80,
+    "panY": 60,
+    "scale": 0.78
+  },
+  "renderedCamera": {
+    "panX": 80,
+    "panY": 60,
+    "scale": 0.78
+  },
+  "svgViewBox": "-102.56410256410255 -76.92307692307692 1230.7692307692307 692.3076923076923",
+  "svgMatrix": {
+    "a": 0.7799999642944352,
+    "b": 0,
+    "c": 0,
+    "d": 0.7800000158691409,
+    "e": 79.99999603271502,
+    "f": 60.00000396728524
+  },
+  "worldTransform": "matrix(0.78, 0, 0, 0.78, 80, 60)",
+  "manualInkTests": "user confirmed passed on 2026-10-02"
+}

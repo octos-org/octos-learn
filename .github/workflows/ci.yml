@@ -53,7 +53,8 @@ jobs:
       - run: pnpm exec playwright install chromium --with-deps
       # Playwright owns the Vite process through its webServer configuration,
       # so the server remains alive for the complete test lifecycle.
-      - run: pnpm test:e2e:smoke
+      # Native-bridge fixtures cover initial camera and completed-course ink handoff.
+      - run: pnpm exec playwright test tests/learning-smoke.spec.ts tests/android-ink-camera.spec.ts tests/android-course-ink.spec.ts
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

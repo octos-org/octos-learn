@@ -1,0 +1,31 @@
+{
+  "bytes": 97292673,
+  "sha256": "807702386261a1e2055657b00340456d1b27619b30da7778d5199fe1f620bd0e",
+  "buildInfo": {
+    "revision": "42b8e7cc453a4bf17627ff6202659bc9eae793a0",
+    "dirty": false,
+    "builtAt": "2026-10-02T13:40:21.625Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "ollBaseRevision": "289ab1bbd3eddc37a17af4f7bdaa5ccdc0ec12f9",
+  "ollPatchSourceRevision": "7009c4b456ac0d7d4a6bd96b20ca83816b18bb62",
+  "ollPatchSha256": "5ae149f1045608e7f8aae1c7120c6cec6bb8952cf39bca8cf8c3c04b3b165781",
+  "embeddedCourseCount": 9,
+  "noDemoOrTestAssets": true,
+  "tests": {
+    "oll": 339,
+    "frontendUnit": 1106,
+    "browserAlignmentAndSmoke": 5
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 35
+  },
+  "previousApk": "octos-learn-camera-alignment-0c8d8ad.apk",
+  "previousApkSha256": "605071028fd88e054d471fe686b0b22e176b003ff87d6279a7f88434f7e8f392",
+  "installed": true,
+  "signerSha256": "7aa6d10fe65e2cd576cbb7e7eb0b6a8f7ea94723ec1a9826c0127dfe2b3a9aa3",
+  "deviceRuntimeVerification": "device-verification.json",
+  "manualInkTests": "user confirmed passed on 2026-10-02"
+}
