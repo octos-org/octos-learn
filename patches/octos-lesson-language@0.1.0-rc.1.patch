@@ -1,0 +1,22 @@
+diff --git a/dist/packages/web-runtime/src/board-view.js b/dist/packages/web-runtime/src/board-view.js
+index 8b6d0fd9380928dc374d04402c39fe18565c85af..e67d005679312c303634d37b1a277a2a793c1d5e 100644
+--- a/dist/packages/web-runtime/src/board-view.js
++++ b/dist/packages/web-runtime/src/board-view.js
+@@ -1625,7 +1625,16 @@ export class InfiniteBoardView {
+     }
+     subscribeCamera(listener) {
+         this.cameraListeners.add(listener);
+-        listener(this.getCameraState());
++        const camera = this.getCameraState();
++        listener(camera);
++        // The initial transform can start before the first listener exists. Its
++        // replay may still be an early CSS-transition frame, so follow the camera
++        // until it settles instead of leaving ink at that subscribe-time snapshot.
++        if (Math.abs(camera.panX - this.panX) >= .01
++            || Math.abs(camera.panY - this.panY) >= .01
++            || Math.abs(camera.scale - this.scale) >= .0001) {
++            this.scheduleCameraNotifications();
++        }
+         return () => this.cameraListeners.delete(listener);
+     }
+     boardToViewport(point) {
