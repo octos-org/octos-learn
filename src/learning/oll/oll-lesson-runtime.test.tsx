@@ -249,6 +249,7 @@ function QuestionPlacementProbe({
   withTallNarrative = false,
   recovered = false,
   selectionLesson = false,
+  selectionTop = 160,
   onCourseRendered,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
@@ -259,6 +260,7 @@ function QuestionPlacementProbe({
   withTallNarrative?: boolean;
   recovered?: boolean;
   selectionLesson?: boolean;
+  selectionTop?: number;
   onCourseRendered?: ComponentProps<typeof OllLessonBoard>["onCourseRendered"];
 }) {
   const runtime = useOllLessonRuntime({
@@ -314,7 +316,7 @@ function QuestionPlacementProbe({
             answerPresentation: "lesson" as const,
             source: {
               sourceId: "selected-formula",
-              bounds: { x: 2_040, y: 160, width: 240, height: 120 },
+              bounds: { x: 2_040, y: selectionTop, width: 240, height: 120 },
             },
           } : {}),
           ...(pending || recovered
@@ -1514,7 +1516,57 @@ describe("OLL lesson Runtime integration", () => {
       + Number.parseFloat(node.style.width)));
     const position = onPlaceQuestion.mock.calls[0]?.[1] as { x: number; y: number };
     expect(position.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+    expect(position.y).toBe(90);
   });
+
+  it.each([460, 160, 0, -240])(
+    "aligns a new selection lesson with the selected ink top at y=%s",
+    async (selectionTop) => {
+      const selectedInk = { x: 2_040, y: selectionTop, width: 240, height: 120 };
+      const otherInk = { x: 4_000, y: -1_000, width: 200, height: 100 };
+      const state: InkRuntimeState = {
+        mode: "select",
+        component_count: 2,
+        selected_count: 1,
+        selection_revision: 1,
+        content_bounds_list: [selectedInk, otherInk],
+        document_version: 2,
+        saved: true,
+      };
+      mountInkRuntimeMock.mockReturnValue({
+        ready: Promise.resolve(),
+        subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
+          listener(state);
+          return () => undefined;
+        }),
+        setMode: vi.fn(),
+        destroy: vi.fn(() => Promise.resolve()),
+      });
+      const onPlaceQuestion = vi.fn();
+      await renderLearning(
+        <QuestionPlacementProbe
+          inkSessionId="selection-question-placement-ink"
+          onPlaceQuestion={onPlaceQuestion}
+          pending
+          selectionLesson
+          selectionTop={selectionTop}
+        />,
+      );
+
+      await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+      const oldLessonRight = Math.max(...Array.from(
+        document.querySelectorAll<HTMLElement>(".board-node"),
+      ).map((node) => Number.parseFloat(node.style.left)
+        + Number.parseFloat(node.style.width)));
+      const position = onPlaceQuestion.mock.calls.at(-1)?.[1];
+      expect(position.y).toBe(selectionTop);
+      expect(position.x).toBeGreaterThanOrEqual(Math.max(
+        oldLessonRight,
+        selectedInk.x + selectedInk.width,
+        otherInk.x + otherInk.width,
+      ) + 180);
+    },
+  );
 
   it("restores a missing historical question beside its existing course", async () => {
     const onPlaceQuestion = vi.fn();
