@@ -923,6 +923,7 @@ export function SelectionEnhancementLayer({
               onPointerCancel={finishCardDrag}
               data-source-id={item.question.source?.sourceId}
               data-question-id={item.question.id}
+              data-oll-ink-input="ignore"
               data-card-x={item.layout.x}
               data-card-y={item.layout.y}
             >

@@ -98,6 +98,46 @@ describe('live slider rendering', () => {
     expect(card.querySelectorAll('.plot-curve')).toHaveLength(2);
   });
 
+  it('replaces the plot SVG when learner zoom, pan or restore changes its ranges', () => {
+    const m = setup(), initial = board();
+    initial.nodes.plot = { id: 'plot', kind: 'plot', content: {
+      title: '参数曲线', axes: { x: { min: -3, max: 3 }, y: { min: -3, max: 3 } },
+      curves: [{ id: 'line', expression: 'n1*x', label: '直线' }],
+    } } as typeof initial.nodes[string];
+    m.view.render(initial);
+    const body = m.elements.nodes.querySelector<HTMLElement>('[data-id="plot"] .plot-explorer-body')!;
+    const press = (key: string) => body.querySelector('svg')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+    const original = body.querySelector('svg');
+    press('+');
+    press('ArrowLeft');
+    expect(body.querySelectorAll('svg')).toHaveLength(1);
+    expect(body.querySelector('svg')).not.toBe(original);
+    m.elements.nodes.querySelector<HTMLButtonElement>('[data-id="plot"] [data-action=restore]')!.click();
+    expect(body.querySelectorAll('svg')).toHaveLength(1);
+  });
+
+  it('keeps a second finger on a 3D scene out of board navigation', () => {
+    const m = setup(), inputs: string[] = [];
+    m.view.setScene3dInputHandler((_id, _view, event) => { inputs.push(event.phase); });
+    m.view.render(board());
+    const svg = m.elements.nodes.querySelector<SVGSVGElement>('.scene3d-runtime svg')!;
+    svg.setPointerCapture = vi.fn();
+    const bubbled = vi.fn();
+    m.elements.nodes.addEventListener('pointerdown', bubbled);
+    const down = (pointerId: number) => {
+      const event = new MouseEvent('pointerdown', { clientX: 10, clientY: 10, bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'pointerId', { value: pointerId });
+      svg.dispatchEvent(event);
+      return event;
+    };
+    down(1);
+    const second = down(2);
+    expect(bubbled).not.toHaveBeenCalled();
+    expect(second.defaultPrevented).toBe(true);
+    expect(inputs).toEqual(['start']);
+  });
+
   it('coalesces orbit events, ignores stale echoes and commits the exact last view', () => {
     const frames = new Map<number, FrameRequestCallback>();
     let sequence = 0;
