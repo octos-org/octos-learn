@@ -87,3 +87,8 @@ M3G2，Android 13、WebView 101，3840×2160、CSS 960×540、DPR 4。没有启�
 前端分支为 `codex/android-performance`。提交 PR 时将临时的 OLL 编译补丁替换为该源码提交的固定 Git 依赖；上文的补丁方式描述的是电视 APK 构建时状态。电视验收 APK 保持不变，正式依赖的 core、player、web 和 ink Runtime 共 52 个 JavaScript 模块与已验收源码构建逐字节一致，见 [依赖一致性核验](pr-runtime-parity.json)。随后复跑产品回归。该依赖版本可在 OLL PR 合并前按提交哈希安装；两个仓库分别审查，前端依赖 OLL 的这组源码改动。
 
 PR 依赖切换后，118 文件 / 1,118 项前端单元测试通过，9 项 CI 浏览器用例无重试通过，lint 0 errors / 35 项既有 warnings，普通 Web、公网模式、Android 资源和 Gradle 构建通过。初次复跑发现 BOM 仍锁定旧 ref，已同步更新两项 Runtime ref；字体未就绪时的布局基线竞态通过等待 fonts.ready 和两次 rAF 修正。未改变渲染源码或电视安装包。见 [PR 验证汇总](pr-validation.json)。
+
+
+## Claude 审核后复测
+
+前端 433b1b4 / OLL 78b444f 已重新构建 APK 并在电视安装复测。二维范围变更、三维第二触点和问题卡片笔迹避让的修复均通过；原学习记录保留。版本、原始数据、测试方式和性能限制见 [电视复测记录](TV-REVIEW.md)。
