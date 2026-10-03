@@ -32,7 +32,10 @@ describe("Android native ink pipeline", () => {
   });
 
   it("rejects replayed and out-of-bounds Android driver samples", () => {
-    expect(bridge).toContain("time <= lastAcceptedEventTime");
+    // Replays from an earlier MotionEvent are dropped; samples that share one
+    // timestamp inside a single batch are kept.
+    expect(bridge).toContain("time < lastAcceptedEventTime || time <= previousEventTime");
+    expect(bridge).toContain("previousEventTime = lastAcceptedEventTime");
     expect(bridge).toContain("final float edgeTolerance = 24f * cssPixelRatio");
     expect(bridge).toContain("addPointIfValid(");
     expect(bridge).toContain("if (appendOverlay) overlay.append(strokeId, xPx, yPx)");
@@ -46,29 +49,28 @@ describe("Android native ink pipeline", () => {
     expect(overlay).toContain("setVisibility(View.INVISIBLE)");
     expect(overlay).toContain("setVisibility(View.VISIBLE)");
     expect(overlay).toContain("invalidate(left, top, right, bottom)");
-    expect(overlay).toContain("canvas.drawPath(activePath, paint)");
+    expect(overlay).toContain("canvas.drawPath(segment, stroke.paint)");
   });
 
   it("batches WebView delivery until pointer-up while retaining native live feedback", () => {
     const moveBranch = bridge.slice(
       bridge.indexOf("if (action == MotionEvent.ACTION_MOVE)"),
-      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP"),
     );
-    const upBranch = bridge.slice(
-      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP)"),
-      bridge.indexOf("} else if (action == MotionEvent.ACTION_CANCEL)"),
-    );
+    const finish = bridge.slice(bridge.indexOf("private void finishActiveStroke()"));
 
     expect(moveBranch).toContain("collectPoints(event, index, true, pendingPoints, true)");
     expect(moveBranch).not.toContain("evaluateJavascript");
-    expect(upBranch).toContain("dispatchBatch(");
-    expect(upBranch).toContain('"up",');
+    expect(moveBranch).not.toContain("finishActiveStroke");
+    expect(finish).toContain(
+      'dispatchBatch("up", activeStrokeId, activePointerType, pendingPoints)',
+    );
     expect(bridge).toContain("private JSONArray pendingPoints = new JSONArray()");
   });
 
-  it("commits one polyline and clears the native overlay after the next paint", () => {
+  it("commits one smoothed stroke and clears the native overlay after the next paint", () => {
     expect(ollRuntime).toContain("handleNativeInkBatch(batch)");
-    expect(ollRuntime).toContain('index === 0 ? "M" : "L"');
+    expect(ollRuntime).toContain("smoothedInkPathData(pathPoints)");
     expect(ollRuntime).toContain("Stroke.fromStroked(path");
     expect(ollRuntime).toContain("this.editor.dispatch(this.editor.image.addComponent(stroke))");
     expect(ollRuntime).toContain("bridge.acknowledge(pointerId)");
@@ -80,6 +82,67 @@ describe("Android native ink pipeline", () => {
     expect(bridge).toContain("activeStrokeId = nextStrokeId++");
     expect(bridge).toContain("overlay.begin(activeStrokeId");
     expect(bridge).toContain('batch.put("pointerId", strokeId)');
+  });
+
+  it("ends the stroke when the drawing pointer lifts before another contact", () => {
+    const upBranch = bridge.slice(
+      bridge.indexOf("} else if (action == MotionEvent.ACTION_UP"),
+      bridge.indexOf("private void finishActiveStroke()"),
+    );
+
+    expect(upBranch).toContain("action == MotionEvent.ACTION_POINTER_UP");
+    expect(upBranch).toContain("event.getActionIndex() == index");
+    expect(upBranch).toContain("finishActiveStroke()");
+    // A vanished drawing pointer commits instead of stranding the stroke.
+    const lostPointer = bridge.slice(bridge.indexOf("if (index < 0) {"));
+    expect(lostPointer.slice(0, lostPointer.indexOf("}"))).toContain(
+      "finishActiveStroke()",
+    );
+  });
+
+  it("keeps every unacknowledged stroke until the WebView draws its commit", () => {
+    expect(overlay).toContain("Map<Integer, StrokePath> strokes");
+    expect(overlay).toContain("strokes.put(pointerId, stroke)");
+    expect(overlay).toContain("strokes.remove(pointerId)");
+    // Starting a stroke must not discard the previous, still pending one.
+    const begin = overlay.slice(
+      overlay.indexOf("void begin("),
+      overlay.indexOf("void append("),
+    );
+    expect(begin).not.toContain("strokes.clear()");
+    expect(begin).not.toContain(".reset()");
+
+    const acknowledge = bridge.slice(
+      bridge.indexOf("public void acknowledge("),
+      bridge.indexOf("public void cancel("),
+    );
+    expect(acknowledge).toContain("webView.postVisualStateCallback(");
+    expect(acknowledge.indexOf("onComplete")).toBeLessThan(
+      acknowledge.indexOf("overlay.clear(pointerId)"),
+    );
+  });
+
+  it("limits live stroke rasterization to the newest path segment", () => {
+    expect(overlay).toContain("POINTS_PER_SEGMENT = 32");
+    expect(overlay).toContain("segments.add(path)");
+    expect(overlay).toContain("path.moveTo(endX, endY)");
+  });
+
+  it("draws the same midpoint curve live that the whiteboard commits", () => {
+    // ink-runtime smoothedInkPathData: L to the first midpoint, then one Q per
+    // sample through the previous sample, then a straight tail.
+    expect(overlay).toContain("path.quadTo(lastX, lastY, midX, midY)");
+    expect(overlay).toContain("path.lineTo(midX, midY)");
+    expect(overlay).toContain(
+      "canvas.drawLine(stroke.endX, stroke.endY, stroke.lastX, stroke.lastY, stroke.paint)",
+    );
+  });
+
+  it("never starts native ink on a control the whiteboard reports", () => {
+    expect(bridge).toContain("public void setExclusionRects(String rectsJson)");
+    expect(bridge).toContain("if (!inkBoundsPx.contains(x, y) || isExcluded(x, y)) return;");
+    expect(ollRuntime).toContain("bridge.setExclusionRects?.(key)");
+    expect(ollRuntime).toContain('typeof bridge.setExclusionRects !== "function"');
   });
 
   it("keeps the selected brush width identical in native preview and committed ink", () => {

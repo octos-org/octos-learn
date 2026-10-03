@@ -2520,7 +2520,12 @@ export function LearningWhiteboard({
               && inkBounds.y < card.y + card.height && inkBounds.y + inkBounds.height > card.y));
             setTeachingInkObstacles(current => JSON.stringify(current) === JSON.stringify(freeInk) ? current : freeInk);
             if (next.component_count === 0) setInkPinnedLayout(undefined);
-            else if (freeInk.length < next.content_bounds_list.length) {
+            else {
+              // New free-board ink can overlap the course's enclosing region
+              // even when it touches no card. Preserve the cards already on
+              // screen before adding that obstacle, or reflow moves the whole
+              // course and its anchor compensation sends every stroke away.
+              // Keep reserving free ink so future course content avoids it.
               const nodes = Object.fromEntries([...viewport.querySelectorAll<HTMLElement>('.board-node[data-id]')].flatMap(element=>{
                 const rect=renderedWorldRect(element);
                 return rect && element.dataset.id ? [[element.dataset.id,rect]] : [];

@@ -1,0 +1,69 @@
+<!doctype html>
+<meta charset="utf-8"><title>Completed course ink alignment</title>
+<style>body {margin:0;} #root {width:960px;height:540px;} .oll-android-vector-ink {position:absolute;inset:0;pointer-events:none;}</style>
+<div id="root"></div>
+<script type="module">
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
+import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
+import {configureAndroidInkDynamicDensity} from '/src/learning/oll/android-ink-performance.ts';
+import source from './saddle-course.canonical.jsonl?raw';
+import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
+const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
+import '/src/index.css';
+import '/src/learning/learning-workspace.css';
+import 'octos-lesson-language/web-runtime/styles.css';
+window.OctosNativeInk={configure(){},acknowledge(){},cancel(){},setExclusionRects(){}};
+function App(){
+ const runtime=useOllLessonRuntime({source,storageKey:'saddle-ink-regression',startAtEnd:true,topics});
+ return runtime?React.createElement(OllLessonBoard,{runtime,inkSessionId:'saddle-ink-regression'}):null;
+}
+createRoot(document.getElementById('root')).render(React.createElement(App));
+function getInk(){
+ const node=document.querySelector('.learning-oll-board');if(!node)return;
+ let f=node[Object.keys(node).find(k=>k.startsWith('__reactFiber'))];
+ for(let d=0;f&&d<30;d++,f=f.return)for(let h=f.memoizedState,i=0;h&&i<150;h=h.next,i++){
+  const v=h.memoizedState?.current;if(v?.editor&&v.options?.board)return v;
+ }
+}
+let pointerId=5000;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+window.courseInkTest={
+ get ready(){return Boolean(getInk()&&document.querySelector('.board-node'));},
+ async setup(){
+  const ink=getInk();await ink.ready;await wait(1000);
+  const view=ink.options.board;
+  // Use the APK mirror with the real lesson component, including its ink
+  // obstacle subscription and course reflow. Ordinary browser previews do
+  // not mount this mirror, so install it for this native-bridge fixture.
+  configureAndroidInkDynamicDensity(ink,ink.options.viewport,view);
+  const boxes=[...Object.values(view.layout.nodes),...Object.values(view.getAttachmentBoundsMap())];
+  const region=Object.values(view.getRegionBoundsMap())[0];let gap;
+  for(let y=region.y+30;y<region.y+region.height-50&&!gap;y+=40)
+   for(let x=region.x+30;x<region.x+region.width-100;x+=40){
+    const r={x,y,width:70,height:40};
+    if(!boxes.some(b=>r.x<b.x+b.width+10&&r.x+r.width>b.x-10&&r.y<b.y+b.height+10&&r.y+r.height>b.y-10)){gap=r;break;}
+   }
+  if(!gap)throw Error('No free course gap found');
+  view.focusWorldRect({x:gap.x-560,y:gap.y-320,width:1200,height:700},{exclusive:true});
+  await wait(1000);ink.setMode('draw');
+  const camera=view.getCameraState();
+  this.point={x:gap.x*camera.scale+camera.panX,y:gap.y*camera.scale+camera.panY};
+  return {gap,camera,point:this.point};
+ },
+ snapshot(){
+  const ink=getInk();return {camera:ink.options.board.getCameraState(),nodes:Object.fromEntries([...document.querySelectorAll('.board-node[data-id]')].map(n=>[n.dataset.id,{top:n.style.top,left:n.style.left}]))};
+ },
+ async commit(){
+  const x=this.point.x+(pointerId-5000)*.5,y=this.point.y;const id=pointerId++;
+  window.__octosNativeInkBatch({action:'down',pointerId:id,pointerType:'touch',points:[{x,y,pressure:.5,time:1}]});
+  window.__octosNativeInkBatch({action:'up',pointerId:id,pointerType:'touch',points:[{x:x+4,y:y+2,pressure:.5,time:2}]});
+  await wait(1100);
+  const starts=[...document.querySelectorAll('.oll-android-vector-ink path')].map(path=>{
+   const p=path.getPointAtLength(0);const s=new DOMPoint(p.x,p.y).matrixTransform(path.getScreenCTM());return {x:s.x,y:s.y};
+  });
+  return {expected:{x,y},starts,...this.snapshot()};
+ }
+};
+</script>

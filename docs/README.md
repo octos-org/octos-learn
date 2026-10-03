@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 原生笔迹与课程坐标收尾](course-runtime-quality/android-native-ink-2026-10-02/REPORT.md)：电视验收、原生移交与坐标修复、正式运行时依赖和回归门槛。
+
 - [E2E 修复收尾](course-runtime-quality/e2e-closeout-2026-09-30/REPORT.md)：四仓合并、最终课程包、APK快照与分阶段上线。
 
 - [Android 课程目录与真机更新](course-runtime-quality/android-catalog-2026-09-28/REPORT.md)：最新主线 APK、三集九课内嵌快照与 960×540 真机布局验证。
