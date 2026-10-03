@@ -1,0 +1,98 @@
+{
+  "calls": [],
+  "records": [],
+  "before": [
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "style": "left: 20px; top: 20px; width: 382px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "style": "left: 788px; top: 20px; width: 460px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "style": "left: 20px; top: 108px; width: 382px; height: 135px;",
+      "height": 135
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "style": "left: 20px; top: 494px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "style": "left: 20px; top: 582px; width: 536px; height: 92px;",
+      "height": 92
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "style": "left: 584px; top: 494px; width: 440px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "style": "left: 20px; top: 714px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "style": "left: 20px; top: 802px; width: 536px; height: 156px;",
+      "height": 156
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "style": "left: 20px; top: 994px; width: 405px; height: 114px;",
+      "height": 114
+    }
+  ],
+  "after": [
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "style": "left: 20px; top: 20px; width: 382px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "style": "left: 788px; top: 20px; width: 460px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "style": "left: 20px; top: 108px; width: 382px; height: 135px;",
+      "height": 135
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "style": "left: 20px; top: 494px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "style": "left: 20px; top: 582px; width: 536px; height: 92px;",
+      "height": 92
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "style": "left: 584px; top: 494px; width: 440px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "style": "left: 20px; top: 714px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "style": "left: 20px; top: 802px; width: 536px; height: 156px;",
+      "height": 156
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "style": "left: 20px; top: 994px; width: 405px; height: 114px;",
+      "height": 114
+    }
+  ]
+}

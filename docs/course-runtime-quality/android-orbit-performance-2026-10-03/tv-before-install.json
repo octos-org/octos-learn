@@ -1,0 +1,354 @@
+{
+  "build": {
+    "revision": "d100e158ff62d10b28d706f74090b95d21deb758",
+    "dirty": true,
+    "builtAt": "2026-10-03T14:18:13.431Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "viewport": {
+    "width": 960,
+    "height": 540,
+    "dpr": 4
+  },
+  "nodes": 4,
+  "inkComponents": 64,
+  "camera": {
+    "panX": -714.126,
+    "panY": 50.9041,
+    "scale": 0.623288
+  },
+  "boardMethods": [
+    "constructor",
+    "render",
+    "captureReflowAnchor",
+    "setViewportInsets",
+    "getCameraState",
+    "subscribeCamera",
+    "boardToViewport",
+    "viewportToBoard",
+    "queryBoardTargets",
+    "setInputOwner",
+    "getInputOwner",
+    "isPanOverrideActive",
+    "abortActiveGesture",
+    "onKeyDown",
+    "onKeyUp",
+    "releaseSpacePan",
+    "setVariableInputHandler",
+    "setScene3dInputHandler",
+    "setScene3dViews",
+    "setRegionLayouts",
+    "setActiveRegion",
+    "setBeatTargets",
+    "setAutomaticCameraMinimumScale",
+    "setAutomaticCameraMaximumScale",
+    "getRegionBounds",
+    "getRegionBoundsMap",
+    "getAttachmentBoundsMap",
+    "mountWorldLayer",
+    "focusTargets",
+    "focusWorldRect",
+    "releaseHostCamera",
+    "resize",
+    "fit",
+    "zoomBy",
+    "dispose",
+    "clearBoard",
+    "syncNodes",
+    "syncNodeFragmentEmphasis",
+    "positionNodes",
+    "syncGroups",
+    "renderConnections",
+    "renderInternalDiagramConnection",
+    "renderPointer",
+    "transform",
+    "scheduleCameraNotifications",
+    "resolveFocusRects",
+    "collectFocusRects",
+    "readableTogether",
+    "requestTeachingFocus",
+    "replayPendingCameraFocus",
+    "withTeachingContext",
+    "focusRects",
+    "onWheel",
+    "beginManualNavigation",
+    "resumeAutomaticCamera",
+    "zoomAt",
+    "updateVariableDrag",
+    "onPointerDown",
+    "onPointerMove",
+    "onPointerEnd",
+    "feedGesture",
+    "applyGestureActions",
+    "finishVariableDrag"
+  ],
+  "viewMethods": [
+    "constructor",
+    "render",
+    "captureReflowAnchor",
+    "setViewportInsets",
+    "getCameraState",
+    "subscribeCamera",
+    "boardToViewport",
+    "viewportToBoard",
+    "queryBoardTargets",
+    "setInputOwner",
+    "getInputOwner",
+    "isPanOverrideActive",
+    "abortActiveGesture",
+    "onKeyDown",
+    "onKeyUp",
+    "releaseSpacePan",
+    "setVariableInputHandler",
+    "setScene3dInputHandler",
+    "setScene3dViews",
+    "setRegionLayouts",
+    "setActiveRegion",
+    "setBeatTargets",
+    "setAutomaticCameraMinimumScale",
+    "setAutomaticCameraMaximumScale",
+    "getRegionBounds",
+    "getRegionBoundsMap",
+    "getAttachmentBoundsMap",
+    "mountWorldLayer",
+    "focusTargets",
+    "focusWorldRect",
+    "releaseHostCamera",
+    "resize",
+    "fit",
+    "zoomBy",
+    "dispose",
+    "clearBoard",
+    "syncNodes",
+    "syncNodeFragmentEmphasis",
+    "positionNodes",
+    "syncGroups",
+    "renderConnections",
+    "renderInternalDiagramConnection",
+    "renderPointer",
+    "transform",
+    "scheduleCameraNotifications",
+    "resolveFocusRects",
+    "collectFocusRects",
+    "readableTogether",
+    "requestTeachingFocus",
+    "replayPendingCameraFocus",
+    "withTeachingContext",
+    "focusRects",
+    "onWheel",
+    "beginManualNavigation",
+    "resumeAutomaticCamera",
+    "zoomAt",
+    "updateVariableDrag",
+    "onPointerDown",
+    "onPointerMove",
+    "onPointerEnd",
+    "feedGesture",
+    "applyGestureActions",
+    "finishVariableDrag"
+  ],
+  "runtimeStatus": {
+    "playing": false,
+    "completed": true,
+    "beatCount": 7
+  },
+  "runtimeKeys": [
+    "title",
+    "language",
+    "status",
+    "failure",
+    "activePhaseTransition",
+    "cursor",
+    "totalOperations",
+    "beatIndex",
+    "beatCount",
+    "outline",
+    "currentStepId",
+    "currentBeatId",
+    "attentionTargets",
+    "compositionTargets",
+    "stepContextTargets",
+    "activeSpeech",
+    "nextNarration",
+    "playing",
+    "completed",
+    "waiting",
+    "deliverySettled",
+    "board",
+    "activeVariableAnimation",
+    "studentOperations",
+    "studentTasks",
+    "reflections",
+    "studentTaskDefinitions",
+    "scene3dViews",
+    "currentOperation",
+    "play",
+    "pause",
+    "restart",
+    "nextBeat",
+    "viewStep",
+    "playStep",
+    "viewBeat",
+    "playBeat",
+    "startNarration",
+    "completeNarration",
+    "setVariable",
+    "handleStudentVariableInput",
+    "requestStudentTaskHint",
+    "retryStudentTask",
+    "recordStudentInkSelection",
+    "handleStudentScene3dInput",
+    "setDeliverySettled",
+    "appendEvents"
+  ],
+  "sessionMethods": null,
+  "sliders": [
+    {
+      "min": "-5",
+      "max": "5",
+      "value": "2",
+      "cls": ""
+    },
+    {
+      "min": "-5",
+      "max": "5",
+      "value": "0",
+      "cls": ""
+    }
+  ],
+  "buttons": [
+    {
+      "label": "返回首页",
+      "text": ""
+    },
+    {
+      "label": "打开学习记录",
+      "text": ""
+    },
+    {
+      "label": "播放 OLL 课程",
+      "text": ""
+    },
+    {
+      "label": "下一 OLL Beat",
+      "text": ""
+    },
+    {
+      "label": "重新播放 OLL 课程",
+      "text": ""
+    },
+    {
+      "label": "关闭课程旁白语音",
+      "text": ""
+    },
+    {
+      "label": "启用语音",
+      "text": "启用语音"
+    },
+    {
+      "label": "启用摄像头",
+      "text": "启用摄像头"
+    },
+    {
+      "label": "切换图内平移和缩放",
+      "text": "探索"
+    },
+    {
+      "label": "恢复课程视图和图层，保留参数",
+      "text": "恢复"
+    },
+    {
+      "label": "放大查看函数图",
+      "text": "大图"
+    },
+    {
+      "label": "减小斜率 k",
+      "text": "−"
+    },
+    {
+      "label": "增大斜率 k",
+      "text": "+"
+    },
+    {
+      "label": "复位斜率 k",
+      "text": ""
+    },
+    {
+      "label": "减小截距 b",
+      "text": "−"
+    },
+    {
+      "label": "增大截距 b",
+      "text": "+"
+    },
+    {
+      "label": "复位截距 b",
+      "text": ""
+    },
+    {
+      "label": null,
+      "text": "以文本形式重绘"
+    },
+    {
+      "label": null,
+      "text": "开启声音探索"
+    },
+    {
+      "label": null,
+      "text": "下一个"
+    },
+    {
+      "label": null,
+      "text": "关闭"
+    },
+    {
+      "label": "浏览白板",
+      "text": ""
+    },
+    {
+      "label": "书写笔迹",
+      "text": ""
+    },
+    {
+      "label": "擦除笔迹",
+      "text": ""
+    },
+    {
+      "label": "框选多个笔迹",
+      "text": ""
+    },
+    {
+      "label": "显示调色板",
+      "text": ""
+    },
+    {
+      "label": "选择全部笔迹",
+      "text": "全选"
+    },
+    {
+      "label": "撤销笔迹",
+      "text": ""
+    },
+    {
+      "label": "重做笔迹",
+      "text": ""
+    },
+    {
+      "label": "和 Octos 说话",
+      "text": "课程完成"
+    },
+    {
+      "label": "打开本课目录",
+      "text": ""
+    },
+    {
+      "label": "发送问题",
+      "text": ""
+    },
+    {
+      "label": null,
+      "text": "Jev 准入\n待机"
+    }
+  ]
+}

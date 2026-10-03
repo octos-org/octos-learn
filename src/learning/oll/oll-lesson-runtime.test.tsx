@@ -79,6 +79,7 @@ function CameraRuntimeProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "oll-camera-runtime-test",
+    topics: [], // The host can recreate equal topic metadata during UI updates.
   });
   const [, rerenderHostUi] = useState(0);
   if (!runtime) return null;
@@ -1965,7 +1966,7 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(document.querySelector(".learning-selection-enhancement-layer")
-      ?.getAttribute("data-oll-ink-input")).toBe("ignore");
+      ?.getAttribute("data-oll-ink-input")).toBeNull();
     expect(document.querySelector(".learning-selection-enhancement-layer")
       ?.getAttribute("data-oll-board-wheel")).toBe("pass");
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -2965,6 +2966,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("ignores ordinary host rerenders but lets a new teaching Beat reclaim the camera", async () => {
+    const renderBoard = vi.spyOn(InfiniteBoardView.prototype, "render");
     await renderLearning(<CameraRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
 
@@ -2982,7 +2984,9 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.pointerUp(window, { pointerType: "mouse" });
     expect(board.classList.contains("manual-navigation")).toBe(true);
 
+    renderBoard.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "更新旁边界面" }));
+    expect(renderBoard, "unchanged lesson snapshots must not reflow the board during navigation").not.toHaveBeenCalled();
     expect(
       board.classList.contains("manual-navigation"),
       "re-rendering the current Beat must preserve the learner's camera",
@@ -2993,6 +2997,7 @@ describe("OLL lesson Runtime integration", () => {
       board.classList.contains("manual-navigation"),
       "a new Beat with an explicit teaching focus may reclaim the camera once",
     ).toBe(false);
+    expect(renderBoard, "real lesson changes must still render").toHaveBeenCalled();
   });
 
   it("grows an active /learn board when a validated Canonical Step arrives", async () => {
