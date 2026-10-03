@@ -1563,7 +1563,7 @@ export function LearningWhiteboard({
         if (existingTopic && !existingRuntimeBounds) return;
         const preferred = {
           x: center.x - 180 - WHITEBOARD_QUESTION_CARD_WIDTH - 24,
-          y: center.y - 105,
+          y: question.source?.bounds.y ?? center.y - 105,
         };
         // Every composer question starts a complete lesson. Its placement must
         // not depend on whether React has already rendered the asynchronous
@@ -1585,6 +1585,7 @@ export function LearningWhiteboard({
                 height,
                 occupied,
                 gutter: COURSE_REGION_GUTTER,
+                top: question.source?.bounds.y,
               })
             : findOpenWhiteboardPosition({ preferred, width, height, occupied });
         reserved.push({ ...position, width, height });
