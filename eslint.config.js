@@ -8,7 +8,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   // Generated packages and historical snapshots contain copies of compiled/vendor code.
   globalIgnores([
-    'dist', 'docs/development-artifacts/**', 'scratch/**', 'delivery/**',
+    'dist', 'docs/development-artifacts/**', 'scratch/**', 'delivery/**', '.local-dev/**',
     'android/app/src/main/assets/**', 'android/app/build/**', 'public/vad/**',
     'public/course-packs/**', 'playwright-report/**', 'test-results/**',
   ]),

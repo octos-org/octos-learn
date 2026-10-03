@@ -45,6 +45,7 @@ import {
   type InkRuntimeState,
 } from "./oll-ink-runtime";
 import { configureAndroidInkDynamicDensity } from "./android-ink-performance";
+import { configureAndroidCoursePreview } from "./android-course-preview";
 import {
   createInkCameraGate,
   type InkCameraBoard,
@@ -665,6 +666,7 @@ function geometryTaskSnapDistance(
 export function LearningWhiteboard({
   runtime,
   portableCourseRegion,
+  preservePackagedCourseLayout = Boolean(portableCourseRegion),
   inkSessionId,
   inkMergeSourceSessionId,
   onInkMergeComplete,
@@ -696,6 +698,8 @@ export function LearningWhiteboard({
     y: number;
     reservedWidth: number;
   };
+  /** Learner ink must not repack the original nodes of an immutable CoursePack. */
+  preservePackagedCourseLayout?: boolean;
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: (
@@ -1227,9 +1231,9 @@ export function LearningWhiteboard({
             id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.anchor,
             width: 330, height: reflectionHeights[card.attachmentId] ?? REFLECTION_CARD_ESTIMATED_HEIGHT,
           })));
-      // Packaged/legacy lessons do not have a composer question region. Their
-      // complete course region still belongs in the same collision layout as a
-      // live lesson, even when it has no sliders or student tasks.
+      // The original CoursePack layout must not depend on restored annotations.
+      // Pinning a partly restored pack would push its later nodes below the
+      // pinned prefix. Follow-up question regions still reserve learner ink.
       if (!region) {
         // A live topic can render before its question region arrives. Do not
         // temporarily relocate it to the imported-course origin.
@@ -1240,13 +1244,13 @@ export function LearningWhiteboard({
           flow: "teaching",
           nodeSections: topic.nodeSections,
           plannedSteps: topic.plannedSteps,
-          pinned: inkPinnedLayout,
+          pinned: preservePackagedCourseLayout ? undefined : inkPinnedLayout,
           ...(teachingViewport ? { composition: {...teachingViewport, mode: regionLayoutMode} } : {}),
           reservedWidth: Math.min(teachingWidth, Math.max(
             MINIMUM_COURSE_READING_WIDTH,
             portableCourseRegion?.reservedWidth ?? 0,
           )),
-          obstacles: teachingInkObstacles,
+          obstacles: preservePackagedCourseLayout ? [] : teachingInkObstacles,
           ...(attachments.length > 0 ? { attachments } : {}),
         } satisfies RegionLayoutConstraint]];
       }
@@ -1288,6 +1292,7 @@ export function LearningWhiteboard({
     teachingInkObstacles,
     inkPinnedLayout,
     portableCourseRegion,
+    preservePackagedCourseLayout,
     questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
@@ -2359,7 +2364,7 @@ export function LearningWhiteboard({
     cameraControllerRef.current = cameraController;
     const enhancementHost = viewport.ownerDocument.createElement("div");
     enhancementHost.className = "learning-selection-enhancement-layer";
-    enhancementHost.dataset.ollInkInput = "ignore";
+    // Only actual cards exclude ink; this transparent host spans the world.
     enhancementHost.dataset.ollBoardWheel = "pass";
     const unmountEnhancementLayer =
       mounted.view.mountWorldLayer(enhancementHost);
@@ -2571,6 +2576,10 @@ export function LearningWhiteboard({
       const destruction = destroyInk();
       if (destruction) void destruction.catch(() => undefined);
     }
+    // Ink subscribers read camera/layout first; switch graph layers afterwards.
+    const androidCoursePreview = import.meta.env.MODE === "android"
+      ? configureAndroidCoursePreview(viewport, mounted.view, () => !runtimeRef.current?.playing)
+      : null;
     return () => {
       active = false;
       cameraController.destroy();
@@ -2600,6 +2609,7 @@ export function LearningWhiteboard({
       }
       sliderOperations.clear();
       const destruction = destroyInk();
+      androidCoursePreview?.destroy();
       mounted.destroy();
       if (destruction) void destruction.catch(() => undefined);
     };

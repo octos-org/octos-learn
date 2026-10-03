@@ -1,0 +1,22 @@
+{
+  "build": {
+    "revision": "d100e158ff62d10b28d706f74090b95d21deb758",
+    "dirty": true,
+    "builtAt": "2026-10-03T12:56:02.015Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "camera": {
+    "panX": -714.126,
+    "panY": 50.9041,
+    "scale": 0.623288
+  },
+  "mode": "draw",
+  "ink": 64,
+  "playing": false,
+  "completed": true,
+  "nodes": 4,
+  "previewActive": false,
+  "probeRemaining": false,
+  "raf": "function requestAnimationFrame() { [native code] }"
+}

@@ -8,16 +8,25 @@ import {createRoot} from 'react-dom/client';
 import {useOllLessonRuntime} from '/src/learning/oll/use-oll-lesson-runtime.ts';
 import {OllLessonBoard} from '/src/learning/oll/oll-lesson-runtime.tsx';
 import {configureAndroidInkDynamicDensity} from '/src/learning/oll/android-ink-performance.ts';
-import source from './saddle-course.canonical.jsonl?raw';
+import {configureAndroidCoursePreview} from '/src/learning/oll/android-course-preview.ts';
+import saddleSource from './saddle-course.canonical.jsonl?raw';
+import cosineSource from './cosine-course.canonical.jsonl?raw';
+const source=new URLSearchParams(location.search).get('course')==='cosine'?cosineSource:saddleSource;
 import {buildOllLessonTopics} from '/src/learning/oll/oll-artifacts.ts';
 const topics=buildOllLessonTopics([source.trim().split('\n').map(line=>JSON.parse(line))]);
 import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 import 'octos-lesson-language/web-runtime/styles.css';
-window.OctosNativeInk={configure(){},acknowledge(){},cancel(){},setExclusionRects(){}};
+let nativeExclusions=[];
+window.OctosNativeInk={configure(){},acknowledge(){},cancel(){},setExclusionRects(json){nativeExclusions=JSON.parse(json);}};
 function App(){
  const runtime=useOllLessonRuntime({source,storageKey:'saddle-ink-regression',startAtEnd:true,topics});
- return runtime?React.createElement(OllLessonBoard,{runtime,inkSessionId:'saddle-ink-regression'}):null;
+ const [partial,setPartial]=React.useState(new URLSearchParams(location.search).has('partialRestore'));
+ window.finishCourseRestore=()=>setPartial(false);
+ if(!runtime?.board)return null;
+ const firstId=Object.keys(runtime.board.nodes)[0];
+ const board=partial&&firstId?{...runtime.board,nodes:{[firstId]:runtime.board.nodes[firstId]},groups:{},connections:{},focus:[firstId]}:runtime.board;
+ return React.createElement(OllLessonBoard,{runtime:{...runtime,board},inkSessionId:'saddle-ink-regression',portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
 }
 createRoot(document.getElementById('root')).render(React.createElement(App));
 function getInk(){
@@ -28,9 +37,27 @@ function getInk(){
  }
 }
 let pointerId=5000;
+let previewControl;
+const graphSelector='svg.plot-preview,svg.geometry-preview,svg.diagram-preview';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 window.courseInkTest={
  get ready(){return Boolean(getInk()&&document.querySelector('.board-node'));},
+ async seedRestoreInk(){
+  const ink=getInk();await ink.ready;await wait(1000);
+  configureAndroidInkDynamicDensity(ink,ink.options.viewport,ink.options.board);
+  const view=ink.options.board;
+  Object.assign(view,{panX:100-1818*.4,panY:200-45*.4,scale:.4});view.transform();
+  await wait(500);ink.setMode('draw');this.point={x:100,y:200};
+  await this.commit();await ink.saveNow();
+  return {components:ink.state.component_count};
+ },
+ async awaitInkRestore(){
+  const ink=getInk();await ink.ready;await wait(500);
+  return {components:ink.state.component_count};
+ },
+ async completeCourseRestore(){
+  window.finishCourseRestore();await wait(500);return this.snapshot();
+ },
  async setup(){
   const ink=getInk();await ink.ready;await wait(1000);
   const view=ink.options.board;
@@ -54,6 +81,101 @@ window.courseInkTest={
  },
  snapshot(){
   const ink=getInk();return {camera:ink.options.board.getCameraState(),nodes:Object.fromEntries([...document.querySelectorAll('.board-node[data-id]')].map(n=>[n.dataset.id,{top:n.style.top,left:n.style.left}]))};
+ },
+ async checkNativeExclusions(){
+  const ink=getInk(),view=ink.options.board,camera=view.getCameraState();
+  const host=document.querySelector('.learning-selection-enhancement-layer');
+  const card=document.createElement('article');
+  card.dataset.ollInkInput='ignore';card.style.pointerEvents='auto';
+  Object.assign(card.style,{position:'absolute',left:`${(430-camera.panX)/camera.scale}px`,top:`${(230-camera.panY)/camera.scale}px`,width:`${100/camera.scale}px`,height:`${80/camera.scale}px`});
+  host.append(card);await wait(300);
+  const rects=[];for(let i=0;i<nativeExclusions.length;i+=4)rects.push(nativeExclusions.slice(i,i+4));
+  const contains=(r,x,y)=>x>=r[0]&&x<r[2]&&y>=r[1]&&y<r[3];
+  const result={outsideAllowed:!rects.some(r=>contains(r,200,200)),cardExcluded:rects.some(r=>contains(r,480,270)),fullViewport:rects.some(r=>r[0]<=0&&r[1]<=0&&r[2]>=960&&r[3]>=540)};
+  card.remove();await wait(300);return result;
+ },
+ checkPreviewFallback(){
+  const ink=getInk(),previous=window.ResizeObserver;
+  try {
+   window.ResizeObserver=undefined;
+   const preview=configureAndroidCoursePreview(ink.options.viewport,ink.options.board);
+   preview.destroy();
+   return {active:ink.options.viewport.hasAttribute('data-android-course-preview'),canvases:ink.options.viewport.querySelectorAll('[data-android-graph-preview]').length};
+  } finally {window.ResizeObserver=previous;}
+ },
+ async previewNavigation(){
+  const ink=getInk(),view=ink.options.board,viewport=ink.options.viewport;
+  const preparation={paused:true};
+  const preview=configureAndroidCoursePreview(viewport,view,()=>preparation.paused);
+  await wait(2000);
+  view.panX+=1;view.transform();await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+  const autoReleased=view.world.style.willChange!=='transform';
+  view.panX-=1;view.transform();await wait(800);
+  const idlePromoted=view.world.style.willChange==='transform';
+  const camera={panX:view.panX,panY:view.panY,scale:view.scale};
+  const manual=viewport.classList.contains('manual-navigation');
+  const bounds=new Map([...viewport.querySelectorAll(graphSelector)].map(svg=>{
+   const rect=svg.getBoundingClientRect();return [svg,{x:(rect.x-camera.panX)/camera.scale,y:(rect.y-camera.panY)/camera.scale,width:rect.width/camera.scale,height:rect.height/camera.scale}];
+  }));
+  previewControl={preview,view,viewport,camera,manual,bounds,preparation};
+  viewport.classList.add('manual-navigation');
+  view.panX+=20;view.scale*=1.1;view.transform();
+  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+  return {autoReleased,idlePromoted,active:viewport.hasAttribute('data-android-course-preview'),canvases:viewport.querySelectorAll('[data-android-graph-preview]').length,
+   svgHidden:[...viewport.querySelectorAll(graphSelector)].every(svg=>(getComputedStyle(svg).opacity==='0'||getComputedStyle(svg).display==='none')),
+   worldPromoted:view.world.style.willChange==='transform',
+   nonempty:[...viewport.querySelectorAll('[data-android-graph-preview]')].every(image=>{
+    const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+    const context=canvas.getContext('2d');context.drawImage(image,0,0);
+    const pixels=context.getImageData(0,0,canvas.width,canvas.height).data;
+    return pixels.some((value,index)=>index%4===3&&value>0);
+   })};
+ },
+ async panPauseZoomPreview(){
+  const {view,viewport}=previewControl;
+  const geometry=()=>[...viewport.querySelectorAll('.board-node')].map(n=>({id:n.dataset.id,left:n.offsetLeft,top:n.offsetTop,width:n.offsetWidth,height:n.offsetHeight}));
+  const before=geometry();const count=viewport.querySelectorAll('[data-android-graph-preview]').length;
+  for(let i=0;i<20;i++){view.panX+=1;view.transform();await new Promise(requestAnimationFrame);}
+  await wait(800);
+  const settled=geometry();
+  let minimum=count;
+  for(let i=0;i<30;i++){view.scale*=i%2?1/1.02:1.02;view.transform();await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);minimum=Math.min(minimum,viewport.querySelectorAll('[data-android-graph-preview]').length);}
+  const aligned=[...viewport.querySelectorAll('[data-android-graph-preview]')].every(image=>{
+   const svg=image.parentElement.querySelector(graphSelector);const a=image.getBoundingClientRect(),b=previewControl.bounds.get(svg),c=view.getCameraState();
+   return Math.abs(a.x-(b.x*c.scale+c.panX))<.1&&Math.abs(a.y-(b.y*c.scale+c.panY))<.1&&Math.abs(a.width-b.width*c.scale)<.1&&Math.abs(a.height-b.height*c.scale)<.1;
+  });
+  return {minimum,count,layoutUnchanged:JSON.stringify(before)===JSON.stringify(settled)&&JSON.stringify(before)===JSON.stringify(geometry()),aligned};
+ },
+ async finishPreview(){
+  const {preview,view,viewport,camera,manual}=previewControl;
+  Object.assign(view,camera);view.transform();await wait(400);
+  const result={active:viewport.hasAttribute('data-android-course-preview'),canvases:viewport.querySelectorAll('[data-android-graph-preview]').length,
+   svgVisible:[...viewport.querySelectorAll(graphSelector)].every(svg=>(getComputedStyle(svg).opacity!=='0'&&getComputedStyle(svg).display!=='none')),worldPromoted:view.world.style.willChange==='transform'};
+  preview.destroy();if(!manual)viewport.classList.remove('manual-navigation');
+  return {...result,layerReleased:view.world.style.willChange!=='transform'};
+ },
+ async suspendPreview(){
+  const {view,viewport,preparation}=previewControl;
+  preparation.paused=false;view.panX+=1;view.transform();await wait(60);
+  return {active:viewport.hasAttribute('data-android-course-preview'),layerReleased:view.world.style.willChange!=='transform',
+   svgVisible:[...viewport.querySelectorAll(graphSelector)].every(svg=>getComputedStyle(svg).display!=='none')};
+ },
+ async invalidatePreview(){
+  const svg=previewControl.viewport.querySelector(graphSelector);
+  svg.setAttribute('data-test-update','1');await wait(30);
+  return {canvases:previewControl.viewport.querySelectorAll('[data-android-graph-preview]').length,svgVisible:(getComputedStyle(svg).opacity!=='0'&&getComputedStyle(svg).display!=='none')};
+ },
+ async rewritePreviewAttributes(){
+  previewControl.view.panX+=1;previewControl.view.transform();
+  await new Promise(requestAnimationFrame);await new Promise(requestAnimationFrame);
+  const svg=previewControl.viewport.querySelector(graphSelector);
+  svg.setAttribute('viewBox',svg.getAttribute('viewBox'));
+  const card=previewControl.viewport.querySelector('.board-node.kind-plot');
+  card.style.height='auto';card.style.height='360px';
+  card.classList.add('focused');
+  previewControl.viewport.querySelector('.board-node.kind-math').setAttribute('data-preview-test','1');
+  await wait(30);
+  return {active:previewControl.viewport.hasAttribute('data-android-course-preview'),canvases:previewControl.viewport.querySelectorAll('[data-android-graph-preview]').length};
  },
  async commit(){
   const x=this.point.x+(pointerId-5000)*.5,y=this.point.y;const id=pointerId++;

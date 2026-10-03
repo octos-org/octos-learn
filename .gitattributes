@@ -1,0 +1,2 @@
+# Unified diff snapshots contain required single-space blank context lines.
+docs/course-runtime-quality/**/*.patch whitespace=-blank-at-eol

@@ -54,7 +54,7 @@ jobs:
       # Playwright owns the Vite process through its webServer configuration,
       # so the server remains alive for the complete test lifecycle.
       # Native-bridge fixtures cover initial camera and completed-course ink handoff.
-      - run: pnpm exec playwright test tests/learning-smoke.spec.ts tests/android-ink-camera.spec.ts tests/android-course-ink.spec.ts
+      - run: pnpm exec playwright test tests/learning-smoke.spec.ts tests/android-ink-camera.spec.ts tests/android-course-ink.spec.ts tests/android-course-preview.spec.ts tests/android-course-restore.spec.ts tests/slider-rendering.spec.ts
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

@@ -1,0 +1,13 @@
+{
+  "apk": "delivery/android-performance/octos-learn-slider-performance-final-20261003.apk",
+  "size": 107348301,
+  "sha256": "c19b855e35238288301e6d167957a56fb8879a72da3492d304be1bd1bfb581ea",
+  "build": {
+    "revision": "d100e158ff62d10b28d706f74090b95d21deb758",
+    "dirty": true,
+    "builtAt": "2026-10-03T14:18:13.431Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "embeddedPacksByteIdentical": 9
+}
