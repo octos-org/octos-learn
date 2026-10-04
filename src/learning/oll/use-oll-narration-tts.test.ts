@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOllNarrationTts } from "./use-oll-narration-tts";
+import { configureNativeTts } from "@/home/voice/native-tts";
 
 const mocks = vi.hoisted(() => ({
   synthesizeSpeech: vi.fn(),
@@ -66,6 +67,36 @@ describe("useOllNarrationTts", () => {
     expect(onSpeakingChange).toHaveBeenLastCalledWith(false);
     expect(onPlaybackComplete).toHaveBeenCalledOnce();
     expect(onPlaybackComplete).toHaveBeenCalledWith("beat-1");
+  });
+
+  it("continues narration through server synthesis after native credentials are disabled", async () => {
+    let configured = true;
+    const nativePlay = vi.fn();
+    window.OctosNativeTts = {
+      configure: (raw) => {
+        configured = JSON.parse(raw).enabled;
+        return JSON.stringify({ ok: true });
+      },
+      isConfigured: () => configured,
+      play: nativePlay,
+      stop: vi.fn(),
+    };
+    expect(configureNativeTts({ version: 1, enabled: false })).toBe(true);
+    const onPlaybackComplete = vi.fn();
+    renderHook(() => useOllNarrationTts({
+      enabled: true,
+      playing: true,
+      text: "Continue the narration.",
+      narrationId: "platform-disabled",
+      onPlaybackComplete,
+    }));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
+      "Continue the narration.", expect.any(AbortSignal),
+    ));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(nativePlay).not.toHaveBeenCalled();
+    act(() => mocks.playAudioBlob.mock.calls[0][1]());
+    expect(onPlaybackComplete).toHaveBeenCalledWith("platform-disabled");
   });
 
   it("plays verified packaged narration without contacting either TTS provider", async () => {
