@@ -923,6 +923,7 @@ export function SelectionEnhancementLayer({
               onPointerCancel={finishCardDrag}
               data-source-id={item.question.source?.sourceId}
               data-question-id={item.question.id}
+              data-oll-ink-input="ignore"
               data-card-x={item.layout.x}
               data-card-y={item.layout.y}
             >
@@ -1035,6 +1036,7 @@ export function SelectionEnhancementLayer({
             data-source-id={artifact.source.source_id}
             data-question-id={question?.id}
             data-enhancement-id={artifact.turn_id}
+            data-oll-ink-input="ignore"
             data-card-scale={cardScale.toFixed(2)}
             data-card-x={item.layout.x}
             data-card-y={item.layout.y}

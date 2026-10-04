@@ -1,0 +1,83 @@
+{
+  "seeded": {
+    "components": 1
+  },
+  "seedBounds": {
+    "x": 19998.75,
+    "y": 98.75,
+    "width": 12.5,
+    "height": 7.5
+  },
+  "normalNodes": {
+    "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle": {
+      "top": "20px",
+      "left": "20px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot": {
+      "top": "20px",
+      "left": "476px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01": {
+      "top": "596px",
+      "left": "20px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02": {
+      "top": "596px",
+      "left": "488px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01": {
+      "top": "684px",
+      "left": "488px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02": {
+      "top": "596px",
+      "left": "796px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02": {
+      "top": "726px",
+      "left": "796px"
+    }
+  },
+  "continuedNodes": {
+    "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle": {
+      "top": "20px",
+      "left": "20px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot": {
+      "top": "20px",
+      "left": "476px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01": {
+      "top": "596px",
+      "left": "20px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02": {
+      "top": "596px",
+      "left": "488px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01": {
+      "top": "684px",
+      "left": "488px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02": {
+      "top": "596px",
+      "left": "796px"
+    },
+    "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02": {
+      "top": "726px",
+      "left": "796px"
+    }
+  },
+  "layoutUnchanged": true,
+  "inkUnchanged": true,
+  "beforeMode": "draw",
+  "playing": {
+    "mode": "navigate",
+    "visibility": "hidden"
+  },
+  "paused": {
+    "mode": "navigate",
+    "visibility": "visible"
+  },
+  "input": "native bridge batches on temporary real LearningWhiteboard; no student lesson record"
+}

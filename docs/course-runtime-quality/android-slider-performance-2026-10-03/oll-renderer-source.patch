@@ -1,0 +1,869 @@
+diff --git a/packages/web-runtime/src/board-view.ts b/packages/web-runtime/src/board-view.ts
+index 4b53eb6..9e28637 100644
+--- a/packages/web-runtime/src/board-view.ts
++++ b/packages/web-runtime/src/board-view.ts
+@@ -1,4 +1,4 @@
+-import { disposePlotExplorer, renderPlotExplorer } from "./plot-explorer.js";
++import { disposePlotExplorer, renderPlotExplorer, updatePlotExplorer } from "./plot-explorer.js";
+ import { disposeGeometryExplorer, renderGeometryExplorer } from "./geometry-explorer.js";
+ import { planAxisTicks } from "./axis-ticks.js";
+ import { referencedMathVariables, type CanonicalAction, type SemanticBoardState } from "../../core/src/index.js";
+@@ -67,6 +67,8 @@ import {
+ } from "./student-operations.js";
+ import {
+   renderScene3d,
++  updateScene3d,
++  scene3dVariableSignature,
+   type Scene3dViewInputHandler,
+   type Scene3dViewState,
+ } from "./scene3d.js";
+@@ -561,6 +563,9 @@ function appendPlotLabel(svg: SVGSVGElement, value: string, x: number, y: number
+ let plotClipSequence = 0;
+ let geometryClipSequence = 0;
+ const plotTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
++const plotFrames = new WeakMap<HTMLElement, {
++  svg: SVGSVGElement; staticKey: string; clipId: string; staticCount: number;
++}>();
+ const geometryTickSteps = new WeakMap<HTMLElement, { x: number; y: number }>();
+ 
+ function drawPlot(
+@@ -577,51 +582,61 @@ function drawPlot(
+   const {left:PLOT_LEFT,right:PLOT_RIGHT,top:PLOT_TOP,bottom:PLOT_BOTTOM}=plotFrame(width,height,xRange,yRange,axes.equal_scale===true);
+   const mapX = (value: number) => PLOT_LEFT + (value - xRange.min) / (xRange.max - xRange.min) * (PLOT_RIGHT - PLOT_LEFT);
+   const mapY = (value: number) => PLOT_BOTTOM - (value - yRange.min) / (yRange.max - yRange.min) * (PLOT_BOTTOM - PLOT_TOP);
+-  const svg = document.createElementNS(SVG_NS, "svg");
+-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+-  svg.classList.add("plot-preview");
++  const priorFrame = plotFrames.get(parent);
++  const staticKey = JSON.stringify([width, height, axes]);
++  const reuseFrame = priorFrame?.staticKey === staticKey && priorFrame.svg.parentNode === parent;
++  const svg = reuseFrame ? priorFrame.svg : document.createElementNS(SVG_NS, "svg");
++  if (!reuseFrame) {
++    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
++    svg.classList.add("plot-preview");
++  } else {
++    while (svg.childNodes.length > priorFrame.staticCount) svg.lastChild!.remove();
++  }
++  const clipId = reuseFrame ? priorFrame.clipId : `plot-clip-${++plotClipSequence}`;
++  if (!reuseFrame) {
++    const previousTickSteps = plotTickSteps.get(parent);
++    const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
++      minMajorPixelSpacing: 46,
++      previousStep: previousTickSteps?.x,
++    });
++    const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
++      minMajorPixelSpacing: 34,
++      previousStep: previousTickSteps?.y,
++    });
++    plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
++    for (const value of xTicks.minor) {
++      const x = mapX(value);
++      appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
++    }
++    for (const value of yTicks.minor) {
++      const y = mapY(value);
++      appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
++    }
++    for (const value of xTicks.major) {
++      const x = mapX(value);
++      appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
++      appendPlotLabel(svg, xTicks.format(value), x, height-4);
++    }
++    for (const value of yTicks.major) {
++      const y = mapY(value);
++      appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
++      appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
++    }
++    const xAxisY = zeroAxisPosition(yRange, mapY);
++    const yAxisX = zeroAxisPosition(xRange, mapX);
++    if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
++    if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
++    appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
++    appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
+ 
+-  const previousTickSteps = plotTickSteps.get(parent);
+-  const xTicks = planAxisTicks(xRange, PLOT_RIGHT - PLOT_LEFT, {
+-    minMajorPixelSpacing: 46,
+-    previousStep: previousTickSteps?.x,
+-  });
+-  const yTicks = planAxisTicks(yRange, PLOT_BOTTOM - PLOT_TOP, {
+-    minMajorPixelSpacing: 34,
+-    previousStep: previousTickSteps?.y,
+-  });
+-  plotTickSteps.set(parent, { x: xTicks.step, y: yTicks.step });
+-  for (const value of xTicks.minor) {
+-    const x = mapX(value);
+-    appendPlotLine(svg, "plot-grid plot-grid-minor", x, PLOT_TOP, x, PLOT_BOTTOM);
+-  }
+-  for (const value of yTicks.minor) {
+-    const y = mapY(value);
+-    appendPlotLine(svg, "plot-grid plot-grid-minor", PLOT_LEFT, y, PLOT_RIGHT, y);
+-  }
+-  for (const value of xTicks.major) {
+-    const x = mapX(value);
+-    appendPlotLine(svg, "plot-grid", x, PLOT_TOP, x, PLOT_BOTTOM);
+-    appendPlotLabel(svg, xTicks.format(value), x, height-4);
++    const defs = document.createElementNS(SVG_NS, "defs");
++    const clip = document.createElementNS(SVG_NS, "clipPath");
++    clip.setAttribute("id", clipId);
++    const clipRect = document.createElementNS(SVG_NS, "rect");
++    for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
++    clip.append(clipRect); defs.append(clip); svg.append(defs);
++    plotFrames.set(parent, { svg, staticKey, clipId, staticCount: svg.childNodes.length });
+   }
+-  for (const value of yTicks.major) {
+-    const y = mapY(value);
+-    appendPlotLine(svg, "plot-grid", PLOT_LEFT, y, PLOT_RIGHT, y);
+-    appendPlotLabel(svg, yTicks.format(value), PLOT_LEFT - 5, y + 3, "end");
+-  }
+-  const xAxisY = zeroAxisPosition(yRange, mapY);
+-  const yAxisX = zeroAxisPosition(xRange, mapX);
+-  if (xAxisY !== undefined) appendPlotLine(svg, "plot-axis", PLOT_LEFT, xAxisY, PLOT_RIGHT, xAxisY);
+-  if (yAxisX !== undefined) appendPlotLine(svg, "plot-axis", yAxisX, PLOT_TOP, yAxisX, PLOT_BOTTOM);
+-  appendPlotLabel(svg, text(axes.x?.label || "x"), PLOT_RIGHT, PLOT_BOTTOM - 5, "end");
+-  appendPlotLabel(svg, text(axes.y?.label || "y"), PLOT_LEFT + 6, PLOT_TOP + 9, "start");
+-  const clipId = `plot-clip-${++plotClipSequence}`;
+-  const defs = document.createElementNS(SVG_NS, "defs");
+-  const clip = document.createElementNS(SVG_NS, "clipPath");
+-  clip.setAttribute("id", clipId);
+-  const clipRect = document.createElementNS(SVG_NS, "rect");
+-  for (const [key, value] of Object.entries({x:PLOT_LEFT,y:PLOT_TOP,width:PLOT_RIGHT-PLOT_LEFT,height:PLOT_BOTTOM-PLOT_TOP})) clipRect.setAttribute(key, String(value));
+-  clip.append(clipRect); defs.append(clip); svg.append(defs);
+ 
+   for (const guide of Array.isArray(content.guides) ? content.guides : []) {
+     const value = Number(guide.value);
+@@ -756,7 +771,7 @@ function drawPlot(
+       svg.append(pointLabel);
+     }
+   }
+-  parent.append(svg);
++  if (!reuseFrame) parent.append(svg);
+ 
+   if (measurementText) appendText(parent, measurementText, "plot-measurement");
+   if (controlHint) {
+@@ -1469,6 +1484,8 @@ export class InfiniteBoardView {
+   private panY = 60;
+   private scale = .78;
+   private layout?: BoardLayout;
++  private layoutMeasuredSizes?: MeasuredNodeSizes;
++  private layoutSemanticSizes?: string;
+   private board?: SemanticBoardState;
+   private operation?: PlaybackOperation;
+   private lastAttentionTargets: string[] = [];
+@@ -1577,6 +1594,34 @@ export class InfiniteBoardView {
+       board?.board_id,
+       operation?.operation_id,
+     );
++    // Parameter updates usually keep card dimensions and placement unchanged.
++    // Try the current widths first; only reflow if semantic or measured sizes
++    // changed. Avoid alternating intrinsic/final-width DOM measurements on
++    // every slider frame, which also forced layout for unrelated math cards.
++    const semanticSizes = board ? JSON.stringify(Object.values(board.nodes).map(node =>
++      [node.id, node.kind, measureSemanticNode(node)])) : undefined;
++    if (!teachingCameraChanged && board && this.board?.board_id === board.board_id
++      && this.layout && this.layoutMeasuredSizes && semanticSizes === this.layoutSemanticSizes) {
++      const candidate = computeBoardLayout(board, this.layoutMeasuredSizes, { regions: this.regionLayouts });
++      if (JSON.stringify(candidate) === JSON.stringify(this.layout)) {
++        const priorSizes = new Map([...this.nodeMeasurements].map(([id, measurement]) => [id, measurement.size]));
++        const sizes = this.syncNodes(board, this.layout, operation?.action, true);
++        const unchanged = Object.keys(sizes).length === priorSizes.size && Object.entries(sizes).every(([id, size]) => {
++          const prior = priorSizes.get(id);
++          return prior && Math.abs(prior.width - size.width) < .5 && Math.abs(prior.height - size.height) < .5;
++        });
++        if (unchanged) {
++          this.board = board;
++          this.operation = operation;
++          this.pointer.hidden = true;
++          this.positionNodes(this.layout);
++          this.syncGroups(board, this.layout, operation?.action);
++          this.renderConnections(board, this.layout);
++          this.renderPointer(board, this.layout, operation);
++          return;
++        }
++      }
++    }
+     const stableAnchor = !teachingCameraChanged && this.board?.board_id === board?.board_id
+       ? this.captureReflowAnchor(board) : undefined;
+     if (this.board?.board_id !== board?.board_id) { this.lastAttentionTargets = []; this.lastFramedScene = undefined; }
+@@ -1618,6 +1663,8 @@ export class InfiniteBoardView {
+       layout = computeBoardLayout(board, measuredNodeSizes, layoutOptions);
+     }
+     this.layout = layout;
++    this.layoutMeasuredSizes = measuredNodeSizes;
++    this.layoutSemanticSizes = semanticSizes;
+     this.world.style.width = `${Math.max(1800, layout.bounds.x + layout.bounds.width + 300)}px`;
+     this.world.style.height = `${Math.max(1200, layout.bounds.y + layout.bounds.height + 300)}px`;
+     this.positionNodes(layout);
+@@ -2158,7 +2205,7 @@ export class InfiniteBoardView {
+   private clearBoard(): void {
+     for (const element of this.nodeElements.values()) { disposePlotExplorer(element); disposeGeometryExplorer(element); }
+     this.nodes.replaceChildren(); this.groups.replaceChildren(); this.connections.replaceChildren(); this.connectionLabels.replaceChildren();
+-    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined;
++    this.nodeElements.clear(); this.nodeContentSignatures.clear(); this.nodeMeasurements.clear(); this.groupElements.clear(); this.layout = undefined; this.layoutMeasuredSizes = undefined; this.layoutSemanticSizes = undefined;
+     this.lastAttentionTargets = [];
+     this.lastFramedScene = undefined;
+   }
+@@ -2198,17 +2245,27 @@ export class InfiniteBoardView {
+       applyEmphasisClass(element, latestEmphasis(node));
+       const signature = nodeContentSignature(node)
+         + JSON.stringify(kind === "scene3d" ? this.scene3dViews[node.id] ?? null : null)
+-        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "");
++        + (kind === "plot" ? plotVariableSignature(node, variableValues) : "")
++        + (kind === "scene3d" ? scene3dVariableSignature(node, variableValues) : "");
+       if (this.nodeContentSignatures.get(node.id) !== signature) {
+-        element.replaceChildren();
+-        renderContent(
+-          element,
+-          node,
+-          this.resolveAsset,
+-          this.scene3dViews[node.id],
+-          this.scene3dInputHandler,
+-          variableValues,
+-        );
++        let updated = false;
++        if (kind === "plot") {
++          try { updated = updatePlotExplorer(element, node, variableValues); }
++          catch { /* Recreate the plot if an incremental update cannot render. */ }
++        }
++        if (kind === "scene3d") {
++          try {
++            updated = updateScene3d(element, node, this.scene3dViews[node.id],
++              variableValues, this.scene3dInputHandler);
++          } catch { /* Recreate through the existing static fallback on failure. */ }
++        }
++        if (!updated) {
++          element.replaceChildren();
++          renderContent(
++            element, node, this.resolveAsset,
++            this.scene3dViews[node.id], this.scene3dInputHandler, variableValues,
++          );
++        }
+         this.nodeContentSignatures.set(node.id, signature);
+       }
+       this.syncNodeFragmentEmphasis(element, node);
+diff --git a/packages/web-runtime/src/plot-explorer.ts b/packages/web-runtime/src/plot-explorer.ts
+index e8f8f80..18fe41d 100644
+--- a/packages/web-runtime/src/plot-explorer.ts
++++ b/packages/web-runtime/src/plot-explorer.ts
+@@ -10,6 +10,22 @@ import {
+ type Ranges = CoordinateRanges;
+ type State = {disposed?:boolean;ranges:Ranges;signature:string;exploring:boolean;hidden:Set<number>;dialog?:HTMLDialogElement;gesture?:{host:HTMLElement;pointers:Map<number,{x:number;y:number}>};draw?:()=>void};
+ const states=new WeakMap<HTMLElement,State>();
++interface PlotController {
++  body: HTMLElement;
++  signature: string;
++  update: (node: Record<string,any>, variables: Record<string,number>) => void;
++}
++const controllers = new WeakMap<HTMLElement, PlotController>();
++function controllerSignature(node: Record<string,any>): string {
++  return JSON.stringify([node.kind, node.role, node.content?.title, node.content?.label,
++    node.content?.axes, node.content?.curves?.map((curve: Record<string,any>) => [curve.id, curve.expression, curve.kind])]);
++}
++export function updatePlotExplorer(parent: HTMLElement, node: Record<string,any>, variables: Record<string,number>): boolean {
++  const controller = controllers.get(parent);
++  if (!controller || controller.body.parentNode !== parent || controller.signature !== controllerSignature(node)) return false;
++  controller.update(node, variables);
++  return true;
++}
+ export function disposePlotExplorer(parent:HTMLElement):void {
+   const state=states.get(parent);
+   if (!state) return;
+@@ -17,6 +33,7 @@ export function disposePlotExplorer(parent:HTMLElement):void {
+   state.dialog?.close();
+   state.dialog?.remove();
+   states.delete(parent);
++  controllers.delete(parent);
+ }
+ export function zoomPlotRanges(ranges:Ranges,factor:number,anchor={x:.5,y:.5}):Ranges {
+   return zoomCoordinateRanges(ranges,factor,anchor);
+@@ -36,7 +53,7 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
+   const axes=node.content?.axes??{};
+   const valid=(r:any):PlotRange=>validCoordinateRange(r,{min:-5,max:5});
+   const recommended={x:valid(axes.x),y:valid(axes.y)};
+-  const curves:any[]=node.content?.curves??[];
++  let curves:any[]=node.content?.curves??[];
+   const xLabel=String(axes.x?.label||"x"),yLabel=String(axes.y?.label||"y");
+   const defaultAxisNames=xLabel==="x"&&yLabel==="y";
+   const signature=JSON.stringify({axes,curves:curves.map(c=>[c.id,c.expression])});
+@@ -51,7 +68,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
+     states.set(parent,state);
+   }
+   const current=state;
+-  const evaluators=curves.map(c=>{try{return c.kind==='implicit'?undefined:compilePlotExpression(c.expression,variables);}catch{return undefined;}});
++  const compileEvaluators=()=>curves.map(c=>{try{return c.kind==='implicit'?undefined:compilePlotExpression(c.expression,variables);}catch{return undefined;}});
++  let evaluators=compileEvaluators();
+   const surfaces:Array<{body:HTMLElement;large:boolean}>=[];
+   const save=()=>{if(storageKey)try{sessionStorage.setItem(storageKey,JSON.stringify({signature,ranges:current.ranges}));}catch{}};
+   const toolbar=document.createElement('div'); toolbar.className='plot-toolbar';
+@@ -96,7 +114,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
+   }
+   function paint(host:HTMLElement,large:boolean){
+     if(!host.isConnected && host!==body)return;
+-    host.replaceChildren();
++    // Keep the coordinate SVG and captured-pointer host across variable updates.
++    for (const child of [...host.children]) if (child.tagName.toLowerCase() !== 'svg') child.remove();
+     host.dataset.ollBoardInput=current.exploring?'ignore':'';host.dataset.ollInkInput=current.exploring?'ignore':'';
+     const width=large?Math.max(360,Math.min(1000,window.innerWidth-80)):404, height=large?Math.max(260,Math.min(520,window.innerHeight-220)):235;
+     const frame=plotFrame(width,height,current.ranges.x,current.ranges.y,axes.equal_scale===true);
+@@ -124,8 +143,8 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
+       const svgX=(event.clientX-rect.left)/rect.width*width,svgY=(event.clientY-rect.top)/rect.height*height;
+       return {inside:svgX>=frame.left&&svgX<=frame.right&&svgY>=frame.top&&svgY<=frame.bottom,
+         x:Math.max(0,Math.min(1,(svgX-frame.left)/frame.width)),y:Math.max(0,Math.min(1,1-(svgY-frame.top)/frame.height))};};
+-    svg.addEventListener('wheel',event=>{const point=anchor(event);if(!point.inside)return;event.preventDefault();event.stopPropagation();
+-      current.ranges=zoomPlotRanges(current.ranges,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point);schedule();},{passive:false});
++    svg.onwheel=event=>{const point=anchor(event);if(!point.inside)return;event.preventDefault();event.stopPropagation();
++      current.ranges=zoomPlotRanges(current.ranges,coordinateWheelZoomFactor(event.deltaY,event.deltaMode),point);schedule();};
+     // Pointer capture lives on the persistent host: redraws do not lose the gesture.
+     svg.onpointerdown=event=>{if(!current.exploring)return;event.preventDefault();event.stopPropagation();host.setPointerCapture(event.pointerId);
+       if(current.gesture?.host!==host)current.gesture={host,pointers:new Map()};
+@@ -193,4 +212,14 @@ export function renderPlotExplorer(parent:HTMLElement,node:Record<string,any>,va
+   current.draw=refresh;
+   if(current.dialog)mountDialog(current.dialog);
+   refresh();
++  controllers.set(parent, {
++    body, signature: controllerSignature(node),
++    update(nextNode, nextVariables) {
++      node = nextNode;
++      variables = nextVariables;
++      curves = node.content?.curves ?? [];
++      evaluators = compileEvaluators();
++      refresh();
++    },
++  });
+ }
+diff --git a/packages/web-runtime/src/scene3d.ts b/packages/web-runtime/src/scene3d.ts
+index d7971d5..3d17d80 100644
+--- a/packages/web-runtime/src/scene3d.ts
++++ b/packages/web-runtime/src/scene3d.ts
+@@ -35,6 +35,7 @@ interface SceneMesh {
+   target: string;
+   solid: boolean;
+   triangles: Triangle3d[];
++  surfaceFaces?: Point3d[][];
+ }
+ 
+ const MAX_IMPLICIT_SURFACE_TRIANGLES = 20_000;
+@@ -100,7 +101,7 @@ function safeColor(value: unknown, fallback = "#277c75"): string {
+ }
+ 
+ function line(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   from: Point3d,
+   to: Point3d,
+   view: Scene3dViewState,
+@@ -116,7 +117,7 @@ function line(
+ }
+ 
+ function polygon(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   points: Point3d[],
+   view: Scene3dViewState,
+   color: string,
+@@ -184,6 +185,7 @@ function surfaceMesh(
+     points.push(column);
+   }
+   const triangles: Triangle3d[] = [];
++  const surfaceFaces: Point3d[][] = [];
+   for (let xIndex = 0; xIndex < samples; xIndex += 1) {
+     for (let yIndex = 0; yIndex < samples; yIndex += 1) {
+       const a = points[xIndex]![yIndex]!;
+@@ -191,9 +193,10 @@ function surfaceMesh(
+       const c = points[xIndex + 1]![yIndex + 1]!;
+       const d = points[xIndex]![yIndex + 1]!;
+       triangles.push({ points: [a, b, c] }, { points: [a, c, d] });
++      surfaceFaces.push([a, b, c, d]);
+     }
+   }
+-  return { target: objectTarget(object), solid: false, triangles };
++  return { target: objectTarget(object), solid: false, triangles, surfaceFaces };
+ }
+ 
+ function interpolateLevel(
+@@ -607,7 +610,7 @@ function sectionPlanePoints(
+ }
+ 
+ function renderSectionIntersection(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   section: Record<string, any>,
+   intersection: Scene3dSectionPath,
+   view: Scene3dViewState,
+@@ -628,39 +631,39 @@ function renderSectionIntersection(
+ }
+ 
+ function renderSurface(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   object: Record<string, any>,
++  mesh: SceneMesh,
+   view: Scene3dViewState,
+-  variables: Record<string, number>,
+ ): void {
+-  const samples = Math.max(4, Math.min(24, Number(object.samples) || 12));
+-  const evaluate = compileMathExpression(object.expression, ["x", "y", ...Object.keys(variables)]);
+   const color = safeColor(object.color, "#3479a8");
+-  const point = (xIndex: number, yIndex: number): Point3d => {
+-    const x = object.x_range.min
+-      + (object.x_range.max - object.x_range.min) * xIndex / samples;
+-    const y = object.y_range.min
+-      + (object.y_range.max - object.y_range.min) * yIndex / samples;
+-    return { x, y, z: evaluate({ ...variables, x, y }) };
+-  };
+-  const faces: Array<{ points: Point3d[]; depth: number }> = [];
+-  for (let x = 0; x < samples; x += 1) {
+-    for (let y = 0; y < samples; y += 1) {
+-      const points = [point(x, y), point(x + 1, y), point(x + 1, y + 1), point(x, y + 1)];
+-      const depth = points.reduce((sum, candidate) =>
+-        sum + projectScene3dPoint(candidate, view).depth, 0) / 4;
+-      faces.push({ points, depth });
++  // Shared mesh vertices are evaluated once per mesh and projected once per view.
++  const projected = new Map<Point3d, ProjectedPoint>();
++  const project = (point: Point3d) => {
++    let value = projected.get(point);
++    if (!value) {
++      value = projectScene3dPoint(point, view);
++      projected.set(point, value);
+     }
+-  }
+-  faces.sort((left, right) => left.depth - right.depth);
++    return value;
++  };
++  const faces = (mesh.surfaceFaces ?? []).map(points => {
++    const vertices = points.map(project);
++    return { vertices, depth: vertices.reduce((sum, point) => sum + point.depth, 0) / 4 };
++  }).sort((left, right) => left.depth - right.depth);
+   for (const face of faces) {
+-    const element = polygon(svg, face.points, view, color, .22, "scene3d-surface-cell");
+-    element.dataset.id = String(object.id ?? object.as ?? "");
++    const element = svgElement("polygon", {
++      points: face.vertices.map(point => `${point.x},${point.y}`).join(" "),
++      fill: color, "fill-opacity": .22, stroke: color,
++      class: "scene3d-surface-cell",
++    });
++    element.dataset.id = objectTarget(object);
++    svg.append(element);
+   }
+ }
+ 
+ function renderImplicitSurface(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   object: Record<string, any>,
+   mesh: SceneMesh,
+   view: Scene3dViewState,
+@@ -684,152 +687,203 @@ function renderImplicitSurface(
+   }
+ }
+ 
++interface SceneRenderState {
++  frame: SVGGElement;
++  base: SVGGElement;
++  sections: SVGGElement;
++  highlights: SVGGElement;
++  baseKey?: string;
++  sectionKey?: string;
++  highlightKey?: string;
++  fitKey?: string;
++}
++const sceneRenderStates = new WeakMap<SVGElement, SceneRenderState>();
++
++export function scene3dVariableSignature(
++  node: Record<string, any>, variables: Record<string, number>,
++): string {
++  return JSON.stringify(expressionVariables(node.content?.objects ?? [], variables));
++}
++
+ function renderScene(
+-  svg: SVGSVGElement,
++  svg: SVGElement,
+   content: Record<string, any>,
+   view: Scene3dViewState,
+   variables: Record<string, number>,
+ ): void {
+-  svg.replaceChildren();
+-  const meshes = sceneMeshes(content, variables);
+-  if (content.axes !== false) {
+-    for (const [axis, end, color] of [
+-      ["x", { x: 2.7, y: 0, z: 0 }, "#c75b52"],
+-      ["y", { x: 0, y: 2.7, z: 0 }, "#377fa4"],
+-      ["z", { x: 0, y: 0, z: 2.7 }, "#377568"],
+-    ] as const) {
+-      line(svg, { x: 0, y: 0, z: 0 }, end, view, "scene3d-axis", color);
+-      const labelPoint = projectScene3dPoint(end, view);
+-      const label = svgElement("text", { x: labelPoint.x + 5, y: labelPoint.y - 4 });
+-      label.textContent = axis;
+-      label.setAttribute("class", "scene3d-axis-label");
+-      svg.append(label);
+-    }
++  let state = sceneRenderStates.get(svg);
++  if (!state || state.frame.parentNode !== svg) {
++    state = {
++      frame: svgElement("g"), base: svgElement("g"),
++      sections: svgElement("g"), highlights: svgElement("g"),
++    };
++    state.frame.append(state.base, state.sections, state.highlights);
++    svg.replaceChildren(state.frame);
++    sceneRenderStates.set(svg, state);
+   }
+-  const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
+-  for (const object of content.objects ?? []) {
+-    const color = safeColor(object.color);
+-    if (object.kind === "surface") {
+-      renderSurface(svg, object, view, variables);
+-      continue;
+-    }
+-    if (object.kind === "implicit_surface") {
+-      const mesh = meshes.find((candidate) =>
+-        candidate.target === objectTarget(object));
+-      if (mesh) renderImplicitSurface(svg, object, mesh, view);
+-      continue;
+-    }
+-    if (object.kind === "box") {
+-      for (const points of boxFaces(object)) {
+-        const depth = points.reduce((sum, point) =>
+-          sum + projectScene3dPoint(point, view).depth, 0) / points.length;
+-        faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
++  const objects = content.objects ?? [];
++  const viewKey = JSON.stringify(view);
++  const meshKey = JSON.stringify([objects, expressionVariables(objects, variables)]);
++  const baseKey = JSON.stringify([content.axes, meshKey, viewKey]);
++  const meshes = sceneMeshes(content, variables);
++  if (state.baseKey !== baseKey) {
++    state.base.replaceChildren();
++    const svg = state.base;
++    if (content.axes !== false) {
++      for (const [axis, end, color] of [
++        ["x", { x: 2.7, y: 0, z: 0 }, "#c75b52"],
++        ["y", { x: 0, y: 2.7, z: 0 }, "#377fa4"],
++        ["z", { x: 0, y: 0, z: 2.7 }, "#377568"],
++      ] as const) {
++        line(svg, { x: 0, y: 0, z: 0 }, end, view, "scene3d-axis", color);
++        const labelPoint = projectScene3dPoint(end, view);
++        const label = svgElement("text", { x: labelPoint.x + 5, y: labelPoint.y - 4 });
++        label.textContent = axis;
++        label.setAttribute("class", "scene3d-axis-label");
++        svg.append(label);
+       }
+-      continue;
+     }
+-    const center = object.center as Point3d;
+-    const projected = projectScene3dPoint(center, view);
+-    if (object.kind === "sphere") {
+-      const radius = object.radius * 54 * view.zoom;
+-      const sphere = svgElement("ellipse", {
+-        cx: projected.x, cy: projected.y, rx: radius, ry: radius * .74,
+-        fill: color, "fill-opacity": .28, stroke: color,
+-      });
+-      sphere.setAttribute("class", "scene3d-solid");
+-      sphere.dataset.id = String(object.id ?? object.as ?? "");
+-      svg.append(sphere);
+-    } else {
+-      const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
+-      const bottom = projectScene3dPoint({ ...center, z: center.z - object.height / 2 }, view);
+-      const radius = object.radius * 54 * view.zoom;
+-      if (object.kind === "cone") {
+-        const cone = svgElement("path", {
+-          d: `M ${top.x} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} Z`,
++    const faces: Array<{ points: Point3d[]; color: string; depth: number; objectId: string }> = [];
++    for (const object of content.objects ?? []) {
++      const color = safeColor(object.color);
++      if (object.kind === "surface") {
++        const mesh = meshes.find(candidate => candidate.target === objectTarget(object));
++        if (mesh) renderSurface(svg, object, mesh, view);
++        continue;
++      }
++      if (object.kind === "implicit_surface") {
++        const mesh = meshes.find((candidate) =>
++          candidate.target === objectTarget(object));
++        if (mesh) renderImplicitSurface(svg, object, mesh, view);
++        continue;
++      }
++      if (object.kind === "box") {
++        for (const points of boxFaces(object)) {
++          const depth = points.reduce((sum, point) =>
++            sum + projectScene3dPoint(point, view).depth, 0) / points.length;
++          faces.push({ points, color, depth, objectId: String(object.id ?? object.as ?? "") });
++        }
++        continue;
++      }
++      const center = object.center as Point3d;
++      const projected = projectScene3dPoint(center, view);
++      if (object.kind === "sphere") {
++        const radius = object.radius * 54 * view.zoom;
++        const sphere = svgElement("ellipse", {
++          cx: projected.x, cy: projected.y, rx: radius, ry: radius * .74,
+           fill: color, "fill-opacity": .28, stroke: color,
+         });
+-        cone.setAttribute("class", "scene3d-solid");
+-        cone.dataset.id = String(object.id ?? object.as ?? "");
+-        svg.append(cone);
++        sphere.setAttribute("class", "scene3d-solid");
++        sphere.dataset.id = String(object.id ?? object.as ?? "");
++        svg.append(sphere);
+       } else {
+-        const cylinder = svgElement("path", {
+-          d: `M ${top.x - radius} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} L ${top.x + radius} ${top.y} A ${radius} ${radius * .3} 0 0 0 ${top.x - radius} ${top.y} Z`,
+-          fill: color, "fill-opacity": .25, stroke: color,
+-        });
+-        cylinder.setAttribute("class", "scene3d-solid");
+-        cylinder.dataset.id = String(object.id ?? object.as ?? "");
+-        svg.append(cylinder);
++        const top = projectScene3dPoint({ ...center, z: center.z + object.height / 2 }, view);
++        const bottom = projectScene3dPoint({ ...center, z: center.z - object.height / 2 }, view);
++        const radius = object.radius * 54 * view.zoom;
++        if (object.kind === "cone") {
++          const cone = svgElement("path", {
++            d: `M ${top.x} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} Z`,
++            fill: color, "fill-opacity": .28, stroke: color,
++          });
++          cone.setAttribute("class", "scene3d-solid");
++          cone.dataset.id = String(object.id ?? object.as ?? "");
++          svg.append(cone);
++        } else {
++          const cylinder = svgElement("path", {
++            d: `M ${top.x - radius} ${top.y} L ${bottom.x - radius} ${bottom.y} A ${radius} ${radius * .3} 0 0 0 ${bottom.x + radius} ${bottom.y} L ${top.x + radius} ${top.y} A ${radius} ${radius * .3} 0 0 0 ${top.x - radius} ${top.y} Z`,
++            fill: color, "fill-opacity": .25, stroke: color,
++          });
++          cylinder.setAttribute("class", "scene3d-solid");
++          cylinder.dataset.id = String(object.id ?? object.as ?? "");
++          svg.append(cylinder);
++        }
+       }
+     }
+-  }
+-  faces.sort((left, right) => left.depth - right.depth);
+-  for (const face of faces) {
+-    const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
+-    element.dataset.id = face.objectId;
+-  }
+-  for (const section of content.sections ?? []) {
+-    const display = (section.display ?? "plane") as SectionDisplay;
+-    if (display !== "intersection") {
+-      const plane = polygon(
+-        svg,
+-        sectionPlanePoints(section, meshes),
+-        view,
+-        safeColor(section.color, "#d28a31"),
+-        .12,
+-        "scene3d-section",
+-      );
+-      plane.dataset.sectionId = String(section.id ?? section.as ?? "");
+-      plane.dataset.id = String(section.id ?? section.as ?? "");
+-    }
+-    for (const intersection of scene3dSectionIntersections(content, section, variables)) {
+-      renderSectionIntersection(svg, section, intersection, view);
++    faces.sort((left, right) => left.depth - right.depth);
++    for (const face of faces) {
++      const element = polygon(svg, face.points, view, face.color, .23, "scene3d-face");
++      element.dataset.id = face.objectId;
+     }
++    state.baseKey = baseKey;
+   }
+-  for (const highlight of content.highlights ?? []) {
+-    const points = highlight.points as Point3d[];
+-    const color = safeColor(highlight.color, "#d04f45");
+-    const id = String(highlight.id ?? highlight.as ?? "");
+-    let labelPoint: ProjectedPoint | undefined;
+-    if (highlight.kind === "point") {
+-      labelPoint = projectScene3dPoint(points[0]!, view);
+-      const point = svgElement("circle", {
+-        cx: labelPoint.x,
+-        cy: labelPoint.y,
+-        r: 7,
+-        fill: color,
+-        stroke: "#fff",
+-        "stroke-width": 2,
+-      });
+-      point.setAttribute("class", "scene3d-highlight scene3d-highlight-point");
+-      point.dataset.id = id;
+-      svg.append(point);
+-    } else if (highlight.kind === "edge") {
+-      const from = projectScene3dPoint(points[0]!, view);
+-      const to = projectScene3dPoint(points[1]!, view);
+-      labelPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, depth: 0 };
+-      const edge = svgElement("line", {
+-        x1: from.x, y1: from.y, x2: to.x, y2: to.y,
+-        stroke: color, "stroke-width": 5, "stroke-linecap": "round",
+-      });
+-      edge.setAttribute("class", "scene3d-highlight scene3d-highlight-edge");
+-      edge.dataset.id = id;
+-      svg.append(edge);
+-    } else {
+-      const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
+-      face.dataset.id = id;
+-      const projected = points.map((point) => projectScene3dPoint(point, view));
+-      labelPoint = {
+-        x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
+-        y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
+-        depth: 0,
+-      };
++  const sectionKey = JSON.stringify([content.sections, meshKey, viewKey]);
++  if (state.sectionKey !== sectionKey) {
++    state.sections.replaceChildren();
++    const svg = state.sections;
++    for (const section of content.sections ?? []) {
++      const display = (section.display ?? "plane") as SectionDisplay;
++      if (display !== "intersection") {
++        const plane = polygon(
++          svg,
++          sectionPlanePoints(section, meshes),
++          view,
++          safeColor(section.color, "#d28a31"),
++          .12,
++          "scene3d-section",
++        );
++        plane.dataset.sectionId = String(section.id ?? section.as ?? "");
++        plane.dataset.id = String(section.id ?? section.as ?? "");
++      }
++      for (const intersection of scene3dSectionIntersections(content, section, variables)) {
++        renderSectionIntersection(svg, section, intersection, view);
++      }
+     }
+-    if (highlight.label && labelPoint) {
+-      const label = svgElement("text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
+-      label.textContent = String(highlight.label);
+-      label.setAttribute("class", "scene3d-highlight-label");
+-      svg.append(label);
++    state.sectionKey = sectionKey;
++  }
++  const highlightKey = JSON.stringify([content.highlights, viewKey]);
++  if (state.highlightKey !== highlightKey) {
++    state.highlights.replaceChildren();
++    const svg = state.highlights;
++    for (const highlight of content.highlights ?? []) {
++      const points = highlight.points as Point3d[];
++      const color = safeColor(highlight.color, "#d04f45");
++      const id = String(highlight.id ?? highlight.as ?? "");
++      let labelPoint: ProjectedPoint | undefined;
++      if (highlight.kind === "point") {
++        labelPoint = projectScene3dPoint(points[0]!, view);
++        const point = svgElement("circle", {
++          cx: labelPoint.x,
++          cy: labelPoint.y,
++          r: 7,
++          fill: color,
++          stroke: "#fff",
++          "stroke-width": 2,
++        });
++        point.setAttribute("class", "scene3d-highlight scene3d-highlight-point");
++        point.dataset.id = id;
++        svg.append(point);
++      } else if (highlight.kind === "edge") {
++        const from = projectScene3dPoint(points[0]!, view);
++        const to = projectScene3dPoint(points[1]!, view);
++        labelPoint = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, depth: 0 };
++        const edge = svgElement("line", {
++          x1: from.x, y1: from.y, x2: to.x, y2: to.y,
++          stroke: color, "stroke-width": 5, "stroke-linecap": "round",
++        });
++        edge.setAttribute("class", "scene3d-highlight scene3d-highlight-edge");
++        edge.dataset.id = id;
++        svg.append(edge);
++      } else {
++        const face = polygon(svg, points, view, color, .42, "scene3d-highlight scene3d-highlight-face");
++        face.dataset.id = id;
++        const projected = points.map((point) => projectScene3dPoint(point, view));
++        labelPoint = {
++          x: projected.reduce((sum, point) => sum + point.x, 0) / projected.length,
++          y: projected.reduce((sum, point) => sum + point.y, 0) / projected.length,
++          depth: 0,
++        };
++      }
++      if (highlight.label && labelPoint) {
++        const label = svgElement("text", { x: labelPoint.x + 8, y: labelPoint.y - 8 });
++        label.textContent = String(highlight.label);
++        label.setAttribute("class", "scene3d-highlight-label");
++        svg.append(label);
++      }
+     }
++    state.highlightKey = highlightKey;
+   }
++  // Section-only updates retain the mesh projection and fit transform.
++  if (state.fitKey === baseKey) return;
+   const baseView = { ...view, zoom: 1 };
+   let minX = CENTER_X, maxX = CENTER_X, minY = CENTER_Y, maxY = CENTER_Y;
+   const include = (point: Point3d) => {
+@@ -848,13 +902,14 @@ function renderScene(
+       (HEIGHT - margin * 2) / Math.max(1, maxY - minY));
+     const centerX = CENTER_X + ((minX + maxX) / 2 - CENTER_X) * view.zoom;
+     const centerY = CENTER_Y + ((minY + maxY) / 2 - CENTER_Y) * view.zoom;
+-    const frame = svgElement("g", {
+-      class: "scene3d-fitted-frame",
+-      transform: `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`,
+-    });
+-    frame.append(...Array.from(svg.childNodes));
+-    svg.append(frame);
++    state.frame.setAttribute("class", "scene3d-fitted-frame");
++    state.frame.setAttribute("transform",
++      `translate(${WIDTH / 2} ${HEIGHT / 2}) scale(${fit}) translate(${-centerX} ${-centerY})`);
++  } else {
++    state.frame.removeAttribute("class");
++    state.frame.removeAttribute("transform");
+   }
++  state.fitKey = baseKey;
+ 
+ }
+ 
+@@ -863,6 +918,28 @@ function inputMethod(pointerType: string | undefined): StudentInputMethod {
+   return pointerType === "mouse" || !pointerType ? "mouse" : "unknown";
+ }
+ 
++interface SceneController {
++  shell: HTMLElement;
++  titleKey: string;
++  update: (node: Record<string, any>, storedView: Scene3dViewState | undefined,
++    variables: Record<string, number>, onInput?: Scene3dViewInputHandler) => void;
++}
++const sceneControllers = new WeakMap<HTMLElement, SceneController>();
++function sceneTitleKey(node: Record<string, any>): string {
++  return JSON.stringify([node.role, node.content?.title, node.content?.label]);
++}
++
++export function updateScene3d(
++  parent: HTMLElement, node: Record<string, any>, storedView: Scene3dViewState | undefined,
++  variables: Record<string, number>, onInput?: Scene3dViewInputHandler,
++): boolean {
++  const controller = sceneControllers.get(parent);
++  if (!controller || controller.shell.parentNode !== parent
++    || controller.titleKey !== sceneTitleKey(node)) return false;
++  controller.update(node, storedView, variables, onInput);
++  return true;
++}
++
+ export function renderScene3d(
+   parent: HTMLElement,
+   node: Record<string, any>,
+@@ -870,9 +947,9 @@ export function renderScene3d(
+   variables: Record<string, number>,
+   onInput?: Scene3dViewInputHandler,
+ ): void {
+-  const content = node.content ?? {};
++  let content = node.content ?? {};
+   let view = normalizeScene3dView(storedView ?? content.camera ?? { yaw: .65, pitch: .5, zoom: 1 });
+-  const initial = normalizeScene3dView(content.camera ?? view);
++  let initial = normalizeScene3dView(content.camera ?? view);
+   const shell = document.createElement("div");
+   shell.className = "scene3d-runtime";
+   shell.dataset.ollScene3d = node.id;
+@@ -994,6 +1071,19 @@ export function renderScene3d(
+   fallback.textContent = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
+   shell.append(controls, svg, fallback);
+   parent.append(shell);
++  sceneControllers.set(parent, {
++    shell, titleKey: sceneTitleKey(node),
++    update(nextNode, storedView, nextVariables, nextInput) {
++      content = nextNode.content ?? {};
++      variables = nextVariables;
++      onInput = nextInput;
++      view = normalizeScene3dView(storedView ?? content.camera ?? view);
++      initial = normalizeScene3dView(content.camera ?? view);
++      svg.setAttribute("aria-label", textLabel(content.title, "可旋转三维场景"));
++      fallback.textContent = `静态说明：${textLabel(content.fallback, "请结合旁白和标注理解这个三维场景。")}`;
++      renderScene(svg, content, view, variables);
++    },
++  });
+ }
+ 
+ function textLabel(value: unknown, fallback: string): string {
