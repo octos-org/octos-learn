@@ -249,7 +249,9 @@ function QuestionPlacementProbe({
   withTallNarrative = false,
   recovered = false,
   selectionLesson = false,
+  selectionOrigin = "selection",
   selectionTop = 160,
+  emptyBoard = false,
   onCourseRendered,
 }: {
   onPlaceQuestion: (questionId: string, position: { x: number; y: number }) => void;
@@ -260,7 +262,9 @@ function QuestionPlacementProbe({
   withTallNarrative?: boolean;
   recovered?: boolean;
   selectionLesson?: boolean;
+  selectionOrigin?: "selection" | "composer";
   selectionTop?: number;
+  emptyBoard?: boolean;
   onCourseRendered?: ComponentProps<typeof OllLessonBoard>["onCourseRendered"];
 }) {
   const runtime = useOllLessonRuntime({
@@ -292,7 +296,7 @@ function QuestionPlacementProbe({
       <OllLessonBoard
         runtime={{
           ...runtime,
-          board,
+          board: emptyBoard && board ? { ...board, nodes: {} } : board,
           outline: runtime.outline.map((topic) => ({
             ...topic,
             questionId: "lesson-unit-circle-sine-001",
@@ -309,7 +313,7 @@ function QuestionPlacementProbe({
           id: "lesson-unit-circle-sine-001",
           sessionId: "question-placement",
           text: "请结合单位圆解释正弦函数",
-          origin: selectionLesson ? "selection" : "composer",
+          origin: selectionLesson ? selectionOrigin : "composer",
           createdAt: "2026-08-17T00:00:00.000Z",
           status: pending ? "pending" : "answered",
           ...(selectionLesson ? {
@@ -1563,8 +1567,34 @@ describe("OLL lesson Runtime integration", () => {
         + Number.parseFloat(node.style.width)));
       const position = onPlaceQuestion.mock.calls.at(-1)?.[1];
       expect(position.y).toBe(selectionTop);
-      expect(position.x).toBe(oldLessonRight + 180);
+      expect(position.x).toBe(Math.max(oldLessonRight, selectedInk.x + selectedInk.width) + 180);
       expect(position.x).toBeLessThan(otherInk.x);
+    },
+  );
+
+  it.each(["selection", "composer"] as const)(
+    "places a first %s course beside its referenced selection on an otherwise empty board",
+    async (selectionOrigin) => {
+      const onPlaceQuestion = vi.fn();
+      await renderLearning(
+        <QuestionPlacementProbe
+          onPlaceQuestion={onPlaceQuestion}
+          pending
+          showLoading={false}
+          selectionLesson
+          selectionOrigin={selectionOrigin}
+          selectionTop={-240}
+          emptyBoard
+        />,
+      );
+
+      await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
+      // The selected source ends at x=2280. No ink-runtime subscription is
+      // needed: the immutable question reference supplies this placement.
+      expect(onPlaceQuestion.mock.calls.at(-1)?.[1]).toEqual({
+        x: 2_280 + 180,
+        y: -240,
+      });
     },
   );
 
