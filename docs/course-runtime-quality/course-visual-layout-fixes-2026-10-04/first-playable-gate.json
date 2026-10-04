@@ -5,51 +5,51 @@
   "generationResults": [
     {
       "case": "unit_circle_to_sine",
-      "baselineFirstPlayableP50Ms": 0.4347080000002279,
-      "candidateFirstPlayableP50Ms": 0.44020899999986796,
-      "deltaMs": 0.005500999999640044
+      "baselineFirstPlayableP50Ms": 0.414792000000034,
+      "candidateFirstPlayableP50Ms": 0.4220420000001468,
+      "deltaMs": 0.007250000000112777
     },
     {
       "case": "square_function",
-      "baselineFirstPlayableP50Ms": 0.3519579999997404,
-      "candidateFirstPlayableP50Ms": 0.3524999999999636,
-      "deltaMs": 0.0005420000002231973
+      "baselineFirstPlayableP50Ms": 0.361084000000119,
+      "candidateFirstPlayableP50Ms": 0.3602080000000569,
+      "deltaMs": -0.0008760000000620494
     },
     {
       "case": "quadratic_translation",
-      "baselineFirstPlayableP50Ms": 0.3638750000000073,
-      "candidateFirstPlayableP50Ms": 0.36204099999986283,
-      "deltaMs": -0.0018340000001444423
+      "baselineFirstPlayableP50Ms": 0.3698749999998654,
+      "candidateFirstPlayableP50Ms": 0.36429199999975026,
+      "deltaMs": -0.005583000000115135
     },
     {
       "case": "arc_length",
-      "baselineFirstPlayableP50Ms": 0.3267090000003918,
-      "candidateFirstPlayableP50Ms": 0.33291700000017954,
-      "deltaMs": 0.006207999999787717
+      "baselineFirstPlayableP50Ms": 0.31754099999989194,
+      "candidateFirstPlayableP50Ms": 0.3240000000000691,
+      "deltaMs": 0.006459000000177184
     },
     {
       "case": "spring_oscillation",
-      "baselineFirstPlayableP50Ms": 0.35866699999996854,
-      "candidateFirstPlayableP50Ms": 0.3617500000000291,
-      "deltaMs": 0.003083000000060565
-    },
-    {
-      "case": "cube_and_section",
-      "baselineFirstPlayableP50Ms": 0.32816700000012133,
-      "candidateFirstPlayableP50Ms": 0.3259579999999005,
-      "deltaMs": -0.00220900000022084
-    },
-    {
-      "case": "paraboloid_section",
-      "baselineFirstPlayableP50Ms": 0.32629099999985556,
-      "candidateFirstPlayableP50Ms": 0.32495799999969677,
+      "baselineFirstPlayableP50Ms": 0.3447080000000824,
+      "candidateFirstPlayableP50Ms": 0.3433749999999236,
       "deltaMs": -0.0013330000001587905
     },
     {
+      "case": "cube_and_section",
+      "baselineFirstPlayableP50Ms": 0.31433400000014444,
+      "candidateFirstPlayableP50Ms": 0.3087909999999283,
+      "deltaMs": -0.005543000000216125
+    },
+    {
+      "case": "paraboloid_section",
+      "baselineFirstPlayableP50Ms": 0.30924999999979264,
+      "candidateFirstPlayableP50Ms": 0.30720800000017334,
+      "deltaMs": -0.002041999999619293
+    },
+    {
       "case": "natural_log_origin",
-      "baselineFirstPlayableP50Ms": 0.33254200000010314,
-      "candidateFirstPlayableP50Ms": 0.3350829999999405,
-      "deltaMs": 0.002540999999837368
+      "baselineFirstPlayableP50Ms": 0.31791700000030687,
+      "candidateFirstPlayableP50Ms": 0.3162080000001879,
+      "deltaMs": -0.0017090000001189765
     }
   ]
 }
