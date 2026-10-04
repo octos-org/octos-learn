@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { createServer } from "node:http";
-import { createHandler, UsageLedger } from "./server.mjs";
+import { createHandler, loadConfig, UsageLedger } from "./server.mjs";
 import { PersistentAudioCache, synthesisCacheKey } from "./audio-cache.mjs";
 
 function fixture(now = () => new Date("2026-09-05T12:00:00Z")) {
@@ -22,6 +22,98 @@ function fixture(now = () => new Date("2026-09-05T12:00:00Z")) {
 async function closeServer(server) {
   await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
 }
+
+async function inspectNativeConfig(env, profileConfig, inspect, {
+  role = "user", authenticated = true, platformEnabled = true,
+} = {}) {
+  const { ledger, cleanup } = fixture();
+  if (!platformEnabled) {
+    ledger.setLimits({ enabled: false, platform_monthly_chars: 100, user_monthly_chars: 60 });
+  }
+  const config = loadConfig({
+    VOLC_TTS_APPID: "platform-app", VOLC_TTS_TOKEN: "platform-token",
+    VOLC_TTS_VOICE: "platform-voice", ...env,
+  });
+  const fetchImpl = async (_url, options) => {
+    assert.equal(options.headers.authorization, "Bearer session");
+    return new Response(JSON.stringify(authenticated ? {
+      user: { id: "alice", role }, profile: { profile: { config: profileConfig } },
+    } : { error: "unauthorized" }), { status: authenticated ? 200 : 401 });
+  };
+  const server = createServer(createHandler({ config, ledger, fetchImpl }));
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/api/learn/tts/native-config`, {
+      headers: { authorization: "Bearer session" },
+    });
+    await inspect(response);
+  } finally {
+    await closeServer(server);
+    cleanup();
+  }
+}
+
+for (const value of [undefined, "", "0", "true", "01", " 1", "1 "]) {
+  test(`native platform credential distribution stays closed for flag ${JSON.stringify(value)}`, async () => {
+    const env = value === undefined ? {} : { OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE: value };
+    await inspectNativeConfig(env, {}, async (response) => {
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("cache-control"), "no-store, max-age=0");
+      assert.equal(response.headers.get("pragma"), "no-cache");
+      assert.deepEqual(await response.json(), { version: 1, enabled: false });
+    });
+  });
+}
+
+test("the exact operator flag enables the configured platform route", async () => {
+  await inspectNativeConfig({ OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE: "1" }, {}, async (response) => {
+    assert.deepEqual(await response.json(), {
+      version: 1, enabled: true, app_id: "platform-app", access_token: "platform-token",
+      cluster: "volcano_tts", voice_type: "platform-voice",
+    });
+  });
+});
+
+test("administrator login does not implicitly enable platform credential distribution", async () => {
+  await inspectNativeConfig({}, {}, async (response) => {
+    assert.deepEqual(await response.json(), { version: 1, enabled: false });
+  }, { role: "admin" });
+});
+
+test("masked personal credentials cannot unlock the platform token without opt-in", async () => {
+  await inspectNativeConfig({}, {
+    tts_provider: "cloud", tts_cloud: { appid: "personal-app", voice: "personal-voice" },
+    env_vars: { VOLC_TTS_TOKEN: "masked***" },
+  }, async (response) => {
+    assert.deepEqual(await response.json(), { version: 1, enabled: false });
+  });
+});
+
+test("personal credentials remain available with platform distribution and platform quota disabled", async () => {
+  await inspectNativeConfig({ OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE: "0" }, {
+    tts_provider: "cloud", tts_cloud: { appid: "personal-app", voice: "personal-voice", cluster: "personal-cluster" },
+    env_vars: { VOLC_TTS_TOKEN: "personal-token" },
+  }, async (response) => {
+    assert.deepEqual(await response.json(), {
+      version: 1, enabled: true, app_id: "personal-app", access_token: "personal-token",
+      cluster: "personal-cluster", voice_type: "personal-voice",
+    });
+  }, { platformEnabled: false });
+});
+
+test("operator opt-in cannot bypass authentication", async () => {
+  await inspectNativeConfig({ OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE: "1" }, {}, async (response) => {
+    assert.equal(response.status, 401);
+    assert.equal(JSON.stringify(await response.json()).includes("platform-token"), false);
+  }, { authenticated: false });
+});
+
+test("operator opt-in does not enable a paused platform", async () => {
+  await inspectNativeConfig({ OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE: "1" }, {}, async (response) => {
+    assert.deepEqual(await response.json(), { version: 1, enabled: false });
+  }, { platformEnabled: false });
+});
 
 test("ledger persists usage and enforces both caps", () => {
   const { ledger, cleanup } = fixture();
@@ -50,6 +142,10 @@ test("hosted synthesis authenticates, meters, and never exposes the credential",
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   try {
+    const native = await fetch(`http://127.0.0.1:${server.address().port}/api/learn/tts/native-config`, {
+      headers: { authorization: "Bearer session" },
+    });
+    assert.deepEqual(await native.json(), { version: 1, enabled: false });
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api/learn/tts/synthesize`, {
       method: "POST", headers: { authorization: "Bearer session", "content-type": "application/json" }, body: JSON.stringify({ text: "你好" }),
     });
@@ -352,12 +448,13 @@ test("a personal TTS configuration bypasses platform metering", async () => {
   } finally { server.close(); cleanup(); }
 });
 
-test("native config is authenticated, non-cacheable, and contains the active platform voice", async () => {
+test("native config distributes platform credentials only with operator opt-in", async () => {
   const { ledger, cleanup } = fixture();
   const config = {
     octosBaseUrl: "http://octos.test",
     appid: "app-from-server",
     token: "token-from-server",
+    distributePlatformToken: true,
     cluster: "volcano_tts",
     voice: "zh_female_xiaohe_uranus_bigtts",
     maxConcurrent: 2,
@@ -393,12 +490,13 @@ test("native config is authenticated, non-cacheable, and contains the active pla
   } finally { server.close(); cleanup(); }
 });
 
-test("native config falls back to platform credentials with personal voice when token is masked", async () => {
+test("operator opt-in permits the masked-personal fallback with its selected voice", async () => {
   const { ledger, cleanup } = fixture();
   const config = {
     octosBaseUrl: "http://octos.test",
     appid: "platform-app",
     token: "platform-token",
+    distributePlatformToken: true,
     cluster: "volcano_tts",
     voice: "platform-voice",
     maxConcurrent: 2,
@@ -442,6 +540,7 @@ test("native config disables direct TTS when platform is not configured and pers
     octosBaseUrl: "http://octos.test",
     appid: "",
     token: "",
+    distributePlatformToken: true,
     cluster: "volcano_tts",
     voice: "platform-voice",
     maxConcurrent: 2,
@@ -579,4 +678,3 @@ test("systemone evaluate proxies to upstream TypeSafe and returns JSON", async (
     assert.deepEqual(json, mockJevResponse);
   } finally { server.close(); cleanup(); }
 });
-
