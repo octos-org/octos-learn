@@ -1265,6 +1265,7 @@ describe("OLL lesson Runtime integration", () => {
                 "lesson-unit-circle-sine-001:node:unit-circle",
                 "lesson-unit-circle-sine-001:node:sine-plot",
               ],
+              ownerNodeId: "lesson-unit-circle-sine-001:node:unit-circle",
               width: 360,
             }),
           ]),
