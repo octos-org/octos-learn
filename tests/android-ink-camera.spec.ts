@@ -2,11 +2,15 @@ import { expect, test } from "@playwright/test";
 
 test.use({ viewport: { width: 960, height: 540 }, deviceScaleFactor: 4 });
 
-for (const navigation of [false, true]) {
-  test(`native ink starts and ends at the same screen point after ${navigation ? "pan and zoom" : "initial camera transition"}`, async ({ page }) => {
-    await page.goto("/tests/fixtures/android-ink-camera.html");
+for (const { navigation, transitionDelay, name } of [
+  { navigation: false, transitionDelay: 0, name: "initial camera transition" },
+  { navigation: true, transitionDelay: 0, name: "pan and zoom" },
+  { navigation: false, transitionDelay: 900, name: "delayed initial camera transition" },
+]) {
+  test(`native ink starts and ends at the same screen point after ${name}`, async ({ page }) => {
+    await page.goto(`/tests/fixtures/android-ink-camera.html?transitionDelay=${transitionDelay}`);
     await page.waitForFunction(() => Boolean((window as unknown as { inkCameraTest?: { ready: boolean } }).inkCameraTest?.ready));
-    await page.waitForTimeout(850);
+    await page.waitForTimeout(850 + transitionDelay);
     if (navigation) {
       // Actual board camera operations exercise both the live SVG and editor
       // channels. No learner document or backend is involved in this fixture.
