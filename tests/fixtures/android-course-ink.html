@@ -18,15 +18,18 @@ import '/src/index.css';
 import '/src/learning/learning-workspace.css';
 import 'octos-lesson-language/web-runtime/styles.css';
 let nativeExclusions=[];
-window.OctosNativeInk={configure(){},acknowledge(){},cancel(){},setExclusionRects(json){nativeExclusions=JSON.parse(json);}};
+let nativeCapture=false;
+window.OctosNativeInk={configure(enabled){nativeCapture=enabled;},acknowledge(){},cancel(){},setExclusionRects(json){nativeExclusions=JSON.parse(json);}};
 function App(){
  const runtime=useOllLessonRuntime({source,storageKey:'saddle-ink-regression',startAtEnd:true,topics});
  const [partial,setPartial]=React.useState(new URLSearchParams(location.search).has('partialRestore'));
  window.finishCourseRestore=()=>setPartial(false);
+ const [playing,setPlaying]=React.useState(false);
+ window.setCourseInkPlayback=setPlaying;
  if(!runtime?.board)return null;
  const firstId=Object.keys(runtime.board.nodes)[0];
  const board=partial&&firstId?{...runtime.board,nodes:{[firstId]:runtime.board.nodes[firstId]},groups:{},connections:{},focus:[firstId]}:runtime.board;
- return React.createElement(OllLessonBoard,{runtime:{...runtime,board},inkSessionId:'saddle-ink-regression',portableCourseRegion:{x:20,y:20,reservedWidth:1300}});
+ return React.createElement(OllLessonBoard,{runtime:{...runtime,board,playing,...new URLSearchParams(location.search).has('progressive')?{completed:false,waiting:false}:{}},inkSessionId:'saddle-ink-regression',...new URLSearchParams(location.search).has('live')?{}:{portableCourseRegion:{x:20,y:20,reservedWidth:1300}}});
 }
 createRoot(document.getElementById('root')).render(React.createElement(App));
 function getInk(){
@@ -42,15 +45,21 @@ const graphSelector='svg.plot-preview,svg.geometry-preview,svg.diagram-preview';
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 window.courseInkTest={
  get ready(){return Boolean(getInk()&&document.querySelector('.board-node'));},
- async seedRestoreInk(){
+ async seedRestoreInk(point={x:1818,y:45}){
   const ink=getInk();await ink.ready;await wait(1000);
   configureAndroidInkDynamicDensity(ink,ink.options.viewport,ink.options.board);
   const view=ink.options.board;
-  Object.assign(view,{panX:100-1818*.4,panY:200-45*.4,scale:.4});view.transform();
-  await wait(500);ink.setMode('draw');this.point={x:100,y:200};
+  view.beginManualNavigation();
+  Object.assign(view,{panX:100-point.x*.4,panY:200-point.y*.4,scale:.4});view.transform();
+  await wait(500);ink.setMode('draw');this.point=view.boardToViewport(point);
   await this.commit();await ink.saveNow();
   return {components:ink.state.component_count};
  },
+ playbackState(){
+  const ink=getInk();return {mode:ink.state.mode,components:ink.state.component_count,ink:ink.serialize(),bounds:ink.state.content_bounds,visibility:getComputedStyle(document.querySelector('.oll-ink-layer')).visibility,nativeCapture};
+ },
+ async beginPlayback(){window.setCourseInkPlayback(true);await wait(150);return this.playbackState();},
+ async pausePlayback(){window.setCourseInkPlayback(false);await wait(150);return this.playbackState();},
  async awaitInkRestore(){
   const ink=getInk();await ink.ready;await wait(500);
   return {components:ink.state.component_count};

@@ -3321,7 +3321,6 @@ export function LearningWorkspace({
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
           portableCourseRegion={coursePack?.courseRegion}
-          preservePackagedCourseLayout={Boolean(coursePack)}
           inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}
           questions={replayingWithoutStudentAdditions || !selectionStateReady

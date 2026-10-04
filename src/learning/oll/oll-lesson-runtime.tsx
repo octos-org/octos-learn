@@ -666,7 +666,6 @@ function geometryTaskSnapDistance(
 export function LearningWhiteboard({
   runtime,
   portableCourseRegion,
-  preservePackagedCourseLayout = Boolean(portableCourseRegion),
   inkSessionId,
   inkMergeSourceSessionId,
   onInkMergeComplete,
@@ -698,8 +697,6 @@ export function LearningWhiteboard({
     y: number;
     reservedWidth: number;
   };
-  /** Learner ink must not repack the original nodes of an immutable CoursePack. */
-  preservePackagedCourseLayout?: boolean;
   inkSessionId?: string;
   inkMergeSourceSessionId?: string;
   onInkMergeComplete?: (
@@ -959,8 +956,6 @@ export function LearningWhiteboard({
   const automaticOverviewRef = useRef<string | null>(null);
   const lastOverviewFrameRef = useRef("");
   const overviewFrameSequenceRef = useRef(0);
-  const [teachingInkObstacles, setTeachingInkObstacles] = useState<WhiteboardRect[]>([]);
-  const [inkPinnedLayout, setInkPinnedLayout] = useState<{nodes:Record<string,WhiteboardRect>;attachments:Record<string,WhiteboardRect>} | undefined>();
   const [runtimeRegionBounds, setRuntimeRegionBounds] = useState<
     Record<string, WhiteboardRect>
   >({});
@@ -1231,9 +1226,7 @@ export function LearningWhiteboard({
             id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.anchor,
             width: 330, height: reflectionHeights[card.attachmentId] ?? REFLECTION_CARD_ESTIMATED_HEIGHT,
           })));
-      // The original CoursePack layout must not depend on restored annotations.
-      // Pinning a partly restored pack would push its later nodes below the
-      // pinned prefix. Follow-up question regions still reserve learner ink.
+      // Course composition depends on course content, never learner ink.
       if (!region) {
         // A live topic can render before its question region arrives. Do not
         // temporarily relocate it to the imported-course origin.
@@ -1244,17 +1237,15 @@ export function LearningWhiteboard({
           flow: "teaching",
           nodeSections: topic.nodeSections,
           plannedSteps: topic.plannedSteps,
-          pinned: preservePackagedCourseLayout ? undefined : inkPinnedLayout,
           ...(teachingViewport ? { composition: {...teachingViewport, mode: regionLayoutMode} } : {}),
           reservedWidth: Math.min(teachingWidth, Math.max(
             MINIMUM_COURSE_READING_WIDTH,
             portableCourseRegion?.reservedWidth ?? 0,
           )),
-          obstacles: preservePackagedCourseLayout ? [] : teachingInkObstacles,
           ...(attachments.length > 0 ? { attachments } : {}),
         } satisfies RegionLayoutConstraint]];
       }
-      const obstacles = [...teachingInkObstacles, ...questions.flatMap((question) => {
+      const obstacles = questions.flatMap((question) => {
         const rects: WhiteboardRect[] = [];
         if (question.position) {
           rects.push({
@@ -1264,16 +1255,14 @@ export function LearningWhiteboard({
             height: QUESTION_CARD_COLLISION_HEIGHT,
           });
         }
-        if (question.source) rects.push(question.source.bounds);
         return rects;
-      })];
+      });
       return [[runtimeRegionIdForTopic(topic.id), {
         x: region.origin.x + COURSE_RUNTIME_OFFSET_X,
         y: region.origin.y,
         flow: "teaching",
           nodeSections: topic.nodeSections,
           plannedSteps: topic.plannedSteps,
-        pinned: inkPinnedLayout,
         ...(teachingViewport ? { composition: {...teachingViewport, mode: regionLayoutMode} } : {}),
         reservedWidth: Math.min(teachingWidth, Math.max(
           MINIMUM_COURSE_READING_WIDTH,
@@ -1289,10 +1278,7 @@ export function LearningWhiteboard({
     teachingWidth,
     teachingViewport,
     regionLayoutMode,
-    teachingInkObstacles,
-    inkPinnedLayout,
     portableCourseRegion,
-    preservePackagedCourseLayout,
     questions,
     runtime?.outline,
     runtimeRegionIdForTopic,
@@ -1459,18 +1445,15 @@ export function LearningWhiteboard({
     occupied.push(...courseRegions
       .filter((region) => region.questionId !== questionId)
       .map(courseRegionOccupiedRect));
-    occupied.push(...inkState.content_bounds_list);
     return occupied;
   }, [
     courseRegions,
     enhancementLayer,
-    inkState.content_bounds_list,
     loadingStateId,
   ]);
 
   const selectionCardOccupiedRects = useMemo<WhiteboardRect[]>(() => {
     const rects: WhiteboardRect[] = [
-      ...inkState.content_bounds_list,
       ...(runtimeNodeBounds.length > 0
         ? runtimeNodeBounds
         : Object.values(runtimeRegionBounds)),
@@ -1487,7 +1470,6 @@ export function LearningWhiteboard({
     }
     return rects;
   }, [
-    inkState.content_bounds_list,
     questions,
     runtimeAttachmentBounds,
     runtimeNodeBounds,
@@ -1886,6 +1868,13 @@ export function LearningWhiteboard({
       setInkError(cause instanceof Error ? cause.message : "无法切换书写工具");
     }
   }, [setInkError]);
+
+  // Starting or resuming playback restores the clean browsing environment.
+  // This runs on the playback transition, not on later deliberate tool choices.
+  useLayoutEffect(() => {
+    if (!runtime?.playing) return;
+    inkRuntimeRef.current?.setMode("navigate");
+  }, [runtime?.playing]);
 
   const runInkHistory = useCallback((action: "undo" | "redo") => {
     const ink = inkRuntimeRef.current;
@@ -2376,8 +2365,6 @@ export function LearningWhiteboard({
     setInkAvailable(false);
     setInkSupportsColors(false);
     setInkState(emptyInkState);
-    setTeachingInkObstacles([]);
-    setInkPinnedLayout(undefined);
     inkSelectionVersionRef.current = {
       documentVersion: 0,
       selectedCount: 0,
@@ -2494,7 +2481,6 @@ export function LearningWhiteboard({
           typeof ink.setPenColor === "function" &&
           typeof ink.setSelectionColor === "function",
         );
-        let lastInkBoundsSignature: string | null = null;
         unsubscribeInkRef.current = ink.subscribe((state) => {
           if (!active) return;
           const next = normalizeInkState(state);
@@ -2514,31 +2500,6 @@ export function LearningWhiteboard({
             selectionRevision: next.selection_revision,
           };
           setInkState(next);
-          // Ink written on cards is annotation, not an obstacle that should
-          // chase its own card during reflow. Only free-board ink reserves space.
-          const inkBoundsSignature = JSON.stringify(next.content_bounds_list);
-          if (inkBoundsSignature !== lastInkBoundsSignature) {
-            lastInkBoundsSignature = inkBoundsSignature;
-            const cardBounds = measureBoardNodeBounds(mounted.elements.nodes);
-            const freeInk = next.content_bounds_list.filter(inkBounds => !cardBounds.some(card =>
-              inkBounds.x < card.x + card.width && inkBounds.x + inkBounds.width > card.x
-              && inkBounds.y < card.y + card.height && inkBounds.y + inkBounds.height > card.y));
-            setTeachingInkObstacles(current => JSON.stringify(current) === JSON.stringify(freeInk) ? current : freeInk);
-            if (next.component_count === 0) setInkPinnedLayout(undefined);
-            else {
-              // New free-board ink can overlap the course's enclosing region
-              // even when it touches no card. Preserve the cards already on
-              // screen before adding that obstacle, or reflow moves the whole
-              // course and its anchor compensation sends every stroke away.
-              // Keep reserving free ink so future course content avoids it.
-              const nodes = Object.fromEntries([...viewport.querySelectorAll<HTMLElement>('.board-node[data-id]')].flatMap(element=>{
-                const rect=renderedWorldRect(element);
-                return rect && element.dataset.id ? [[element.dataset.id,rect]] : [];
-              }));
-              const pinned = {nodes,attachments:mounted.view.getAttachmentBoundsMap()};
-              setInkPinnedLayout(current=>JSON.stringify(current)===JSON.stringify(pinned)?current:pinned);
-            }
-          }
           if (
             next.component_count > 0
             && next.saved
