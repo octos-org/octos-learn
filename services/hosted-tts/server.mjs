@@ -460,7 +460,14 @@ export function createHandler({
           appId = personalAppId;
           token = personalToken;
           cluster = cloud.cluster || config.cluster;
-        } else if (Boolean(config.appid && config.token) && limits.enabled) {
+        } else if (
+          Boolean(config.appid && config.token)
+          && limits.enabled
+          // The platform credentials must not be handed to client devices
+          // by default: distribute the raw platform token only when the
+          // operator explicitly opts in (rotation-ready; #2439).
+          && process.env.OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE === "1"
+        ) {
           enabled = true;
           appId = config.appid;
           token = config.token;
