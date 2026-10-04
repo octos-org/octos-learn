@@ -101,9 +101,32 @@ describe("ink camera gate", () => {
     expect(live).toHaveBeenCalledTimes(10);
     expect(editor).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(DEFERRED_EDITOR_SYNC_MS);
+    vi.advanceTimersByTime(DEFERRED_EDITOR_SYNC_MS + 16);
     expect(editor).toHaveBeenCalledOnce();
     expect(editor).toHaveBeenLastCalledWith({ panX: 100, panY: 0, scale: 1 });
+  });
+
+  it("waits for the next camera frame before flushing during slow navigation", () => {
+    vi.useFakeTimers();
+    const { board, move } = createBoard();
+    const gate = createInkCameraGate(board);
+    const editor = vi.fn();
+    gate.editorBoard.subscribeCamera(editor);
+    editor.mockClear();
+    gate.setEditorSyncDeferred(true);
+
+    move({ panX: 10, panY: 0, scale: 1 });
+    vi.advanceTimersByTime(DEFERRED_EDITOR_SYNC_MS);
+    expect(editor).not.toHaveBeenCalled();
+    // The next board notification arrives before the pending display frame.
+    move({ panX: 20, panY: 0, scale: 1.2 });
+    vi.advanceTimersByTime(16);
+    expect(editor).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(DEFERRED_EDITOR_SYNC_MS + 16);
+    expect(editor).toHaveBeenCalledOnce();
+    expect(editor).toHaveBeenLastCalledWith({ panX: 20, panY: 0, scale: 1.2 });
+    gate.destroy();
   });
 
   it("flushes a pending editor camera as soon as editing starts", () => {

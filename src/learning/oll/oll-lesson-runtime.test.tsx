@@ -34,7 +34,6 @@ import {
   OllLessonBoard,
   courseHasRenderedBoardNode,
 } from "./oll-lesson-runtime";
-import { WHITEBOARD_QUESTION_CARD_WIDTH } from "../whiteboard-question-card";
 import { createCourseRegion } from "../course-regions";
 import type { SelectionClassification } from "../selection-enhancements";
 import { isLessonDeliverySettled } from "./lesson-delivery";
@@ -79,6 +78,7 @@ function CameraRuntimeProbe() {
   const runtime = useOllLessonRuntime({
     source: geometryLessonSource,
     storageKey: "oll-camera-runtime-test",
+    topics: [], // The host can recreate equal topic metadata during UI updates.
   });
   const [, rerenderHostUi] = useState(0);
   if (!runtime) return null;
@@ -1265,6 +1265,7 @@ describe("OLL lesson Runtime integration", () => {
                 "lesson-unit-circle-sine-001:node:unit-circle",
                 "lesson-unit-circle-sine-001:node:sine-plot",
               ],
+              ownerNodeId: "lesson-unit-circle-sine-001:node:unit-circle",
               width: 360,
             }),
           ]),
@@ -1378,7 +1379,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(controlTop).toBeLessThanOrEqual(lessonBottom + 42);
   });
 
-  it("gives a selection lesson the normal question lane and avoids its source ink", async () => {
+  it("keeps a selection lesson clear of question cards without reserving source ink", async () => {
     const setRegionLayouts = vi.spyOn(
       InfiniteBoardView.prototype,
       "setRegionLayouts",
@@ -1400,11 +1401,6 @@ describe("OLL lesson Runtime integration", () => {
           y: 160,
           width: 270,
           height: 320,
-        }, {
-          x: 2_040,
-          y: 160,
-          width: 240,
-          height: 120,
         }]),
       }),
     }));
@@ -1449,7 +1445,7 @@ describe("OLL lesson Runtime integration", () => {
     expect(board.classList.contains("manual-navigation")).toBe(true);
   });
 
-  it("hides learner ink and pauses its camera sync while the lesson plays", async () => {
+  it.each(["书写笔迹", "擦除笔迹", "框选多个笔迹"])("returns %s to browsing and hides ink when playback starts", async (tool) => {
     let inkState: InkRuntimeState = {
       mode: "navigate",
       component_count: 1,
@@ -1480,9 +1476,12 @@ describe("OLL lesson Runtime integration", () => {
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     const board = screen.getByTestId("oll-lesson-board");
     expect(board.dataset.inkSuspended).toBeUndefined();
+    fireEvent.click(screen.getByRole("button", { name: tool }));
+    expect(inkState.mode).not.toBe("navigate");
 
     fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
     await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    expect(inkState.mode).toBe("navigate");
     cameraListener.mockClear();
 
     fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
@@ -1490,13 +1489,17 @@ describe("OLL lesson Runtime integration", () => {
     // Resuming re-syncs the hidden layer to the camera it missed.
     expect(cameraListener).toHaveBeenCalledOnce();
 
-    // Picking a writing tool mid-lesson keeps the learner's ink visible.
+    // An explicit tool choice remains available while a lesson is running.
     fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
     await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
     act(() => {
       emitInkState?.({ ...inkState, mode: "draw" });
     });
     await waitFor(() => expect(board.dataset.inkSuspended).toBeUndefined());
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    fireEvent.click(screen.getByRole("button", { name: "切换播放" }));
+    await waitFor(() => expect(board.dataset.inkSuspended).toBe(""));
+    expect(inkState.mode).toBe("navigate");
   });
 
   it("reserves a new course area before its loading state renders", async () => {
@@ -1520,7 +1523,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it.each([460, 160, 0, -240])(
-    "aligns a new selection lesson with the selected ink top at y=%s",
+    "anchors a selection lesson at y=%s without avoiding unrelated ink",
     async (selectionTop) => {
       const selectedInk = { x: 2_040, y: selectionTop, width: 240, height: 120 };
       const otherInk = { x: 4_000, y: -1_000, width: 200, height: 100 };
@@ -1560,11 +1563,8 @@ describe("OLL lesson Runtime integration", () => {
         + Number.parseFloat(node.style.width)));
       const position = onPlaceQuestion.mock.calls.at(-1)?.[1];
       expect(position.y).toBe(selectionTop);
-      expect(position.x).toBeGreaterThanOrEqual(Math.max(
-        oldLessonRight,
-        selectedInk.x + selectedInk.width,
-        otherInk.x + otherInk.width,
-      ) + 180);
+      expect(position.x).toBe(oldLessonRight + 180);
+      expect(position.x).toBeLessThan(otherInk.x);
     },
   );
 
@@ -1838,54 +1838,33 @@ describe("OLL lesson Runtime integration", () => {
     expect(focusWorldRect).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps a newly anchored composer question away from restored student ink", async () => {
-    const inkBounds = { x: -1_000, y: -1_000, width: 2_000, height: 2_000 };
+  it.each([0, 1])("places a composer lesson independently of %s restored ink components", async (componentCount) => {
+    const inkBounds = { x: -1_000, y: -1_000, width: 40_000, height: 40_000 };
     const state: InkRuntimeState = {
-      mode: "navigate",
-      component_count: 1,
-      selected_count: 0,
-      selection_revision: 0,
-      content_bounds: inkBounds,
-      document_version: 2,
-      saved: true,
+      mode: "navigate", component_count: componentCount, selected_count: 0,
+      selection_revision: 0, content_bounds: componentCount ? inkBounds : undefined,
+      document_version: 2, saved: true,
     };
     mountInkRuntimeMock.mockReturnValue({
       ready: Promise.resolve(),
-      subscribe: vi.fn((listener: (next: InkRuntimeState) => void) => {
-        listener(state);
-        return () => undefined;
-      }),
-      setMode: vi.fn(),
-      destroy: vi.fn(() => Promise.resolve()),
+      subscribe: (listener: (next: InkRuntimeState) => void) => { listener(state); return () => undefined; },
+      setMode: vi.fn(), destroy: vi.fn(() => Promise.resolve()),
     });
     const onPlaceQuestion = vi.fn();
-    await renderLearning(
-      <QuestionPlacementProbe
-        inkSessionId="question-placement-ink"
-        onPlaceQuestion={onPlaceQuestion}
-        pending
-      />,
-    );
-
+    await renderLearning(<QuestionPlacementProbe inkSessionId="question-placement-ink" onPlaceQuestion={onPlaceQuestion} pending />);
     await waitFor(() => expect(onPlaceQuestion).toHaveBeenCalled());
-    const position = onPlaceQuestion.mock.calls.at(-1)?.[1];
-    expect(position).toBeTruthy();
-    expect(
-      position.x < inkBounds.x + inkBounds.width
-      && position.x + WHITEBOARD_QUESTION_CARD_WIDTH > inkBounds.x
-      && position.y < inkBounds.y + inkBounds.height
-      && position.y + 130 > inkBounds.y,
-    ).toBe(false);
+    const oldLessonRight = Math.max(...Array.from(document.querySelectorAll<HTMLElement>(".board-node"))
+      .map(node => Number.parseFloat(node.style.left) + Number.parseFloat(node.style.width)));
+    expect(onPlaceQuestion.mock.calls.at(-1)?.[1]).toEqual({x: oldLessonRight + 180, y: 90});
   });
 
-  it("reserves free-board ink without reclassifying it on selection changes", async () => {
+  it.each([20, 20_000])("does not pin cards or reserve ink at x=%s during writing, selection or erasing", async (x) => {
     const setRegionLayouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
-    const bounds = { x: 20_000, y: 100, width: 200, height: 100 };
+    const bounds = { x, y: 100, width: 200, height: 100 };
     let emit: (state: InkRuntimeState) => void = () => undefined;
     const state: InkRuntimeState = {
-      mode: "navigate", component_count: 1, selected_count: 0,
+      mode: "navigate", component_count: 0, selected_count: 0,
       selection_revision: 0, document_version: 1, saved: true,
-      content_bounds: bounds,
     };
     mountInkRuntimeMock.mockReturnValue({
       ready: Promise.resolve(),
@@ -1893,15 +1872,25 @@ describe("OLL lesson Runtime integration", () => {
       setMode: vi.fn(), destroy: vi.fn(() => Promise.resolve()),
     });
     await renderLearning(<InkRuntimeProbe />);
-    await waitFor(() => expect(setRegionLayouts.mock.calls.at(-1)?.[0].__legacy__.obstacles).toContainEqual(bounds));
-    const count = setRegionLayouts.mock.calls.length;
-    act(() => emit({ ...state, selected_count: 1, selection_revision: 1 }));
-    await act(async () => undefined);
-    for (const [regions] of setRegionLayouts.mock.calls.slice(count)) {
-      expect(regions.__legacy__.obstacles).toContainEqual(bounds);
+    await waitFor(() => expect(setRegionLayouts).toHaveBeenCalled());
+    const positions = () => [...document.querySelectorAll<HTMLElement>(".board-node")]
+      .map(node => [node.dataset.id, node.style.left, node.style.top]);
+    const before = positions();
+    for (const update of [
+      { component_count: 1, content_bounds: bounds, document_version: 2 },
+      { component_count: 1, content_bounds: bounds, selected_count: 1, selection_revision: 1 },
+      { component_count: 0, content_bounds: undefined, document_version: 3 },
+    ]) {
+      act(() => emit({ ...state, ...update }));
+      await act(async () => undefined);
+      expect(positions()).toEqual(before);
+      for (const [regions] of setRegionLayouts.mock.calls) {
+        for (const region of Object.values(regions)) {
+          expect(region.pinned).toBeUndefined();
+          expect(region.obstacles ?? []).not.toContainEqual(bounds);
+        }
+      }
     }
-    act(() => emit({ ...state, component_count: 0, document_version: 2, content_bounds: undefined }));
-    await waitFor(() => expect(setRegionLayouts.mock.calls.at(-1)?.[0].__legacy__.obstacles).not.toContainEqual(bounds));
   });
 
   it("mounts writing as a persistent whiteboard capability", async () => {
@@ -1965,7 +1954,7 @@ describe("OLL lesson Runtime integration", () => {
 
     await waitFor(() => expect(mountInkRuntimeMock).toHaveBeenCalledOnce());
     expect(document.querySelector(".learning-selection-enhancement-layer")
-      ?.getAttribute("data-oll-ink-input")).toBe("ignore");
+      ?.getAttribute("data-oll-ink-input")).toBeNull();
     expect(document.querySelector(".learning-selection-enhancement-layer")
       ?.getAttribute("data-oll-board-wheel")).toBe("pass");
     expect(mountInkRuntimeMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -2965,6 +2954,7 @@ describe("OLL lesson Runtime integration", () => {
   });
 
   it("ignores ordinary host rerenders but lets a new teaching Beat reclaim the camera", async () => {
+    const renderBoard = vi.spyOn(InfiniteBoardView.prototype, "render");
     await renderLearning(<CameraRuntimeProbe />);
     fireEvent.click(screen.getByRole("button", { name: "下一 Beat" }));
 
@@ -2982,7 +2972,9 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.pointerUp(window, { pointerType: "mouse" });
     expect(board.classList.contains("manual-navigation")).toBe(true);
 
+    renderBoard.mockClear();
     fireEvent.click(screen.getByRole("button", { name: "更新旁边界面" }));
+    expect(renderBoard, "unchanged lesson snapshots must not reflow the board during navigation").not.toHaveBeenCalled();
     expect(
       board.classList.contains("manual-navigation"),
       "re-rendering the current Beat must preserve the learner's camera",
@@ -2993,6 +2985,7 @@ describe("OLL lesson Runtime integration", () => {
       board.classList.contains("manual-navigation"),
       "a new Beat with an explicit teaching focus may reclaim the camera once",
     ).toBe(false);
+    expect(renderBoard, "real lesson changes must still render").toHaveBeenCalled();
   });
 
   it("grows an active /learn board when a validated Canonical Step arrives", async () => {

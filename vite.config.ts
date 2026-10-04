@@ -119,6 +119,9 @@ export default defineConfig(({ mode, command }) => {
       // dependency optimized so the directly served OLL modules receive Vite's
       // ESM interop wrapper.
       include: [
+        // HTML test fixtures import React directly. Prebundle these entries
+        // together so late dependency discovery cannot load two React copies.
+        "react", "react-dom/client", "react/jsx-runtime", "react/jsx-dev-runtime",
         "octos-lesson-language > ajv/dist/2020.js",
         "octos-lesson-language > js-draw",
       ],
@@ -155,6 +158,7 @@ export default defineConfig(({ mode, command }) => {
     ],
     worker: { format: "es" },
     resolve: {
+      ...(command === "serve" ? { dedupe: ["react", "react-dom"] } : {}),
       alias: {
         "@": path.resolve(__dirname, "./src"),
         ...(usePackagedAndroidRuntime ? {

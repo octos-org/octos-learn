@@ -53,7 +53,7 @@ export interface InkCameraGate<Board extends InkCameraBoard> {
  */
 export function createInkCameraGate<Board extends InkCameraBoard>(
   board: Board,
-  hostWindow: Pick<Window, "setTimeout" | "clearTimeout"> = window,
+  hostWindow: Pick<Window, "setTimeout" | "clearTimeout" | "requestAnimationFrame" | "cancelAnimationFrame"> = window,
 ): InkCameraGate<Board> {
   const listeners = new Set<GateListener>();
   let unsubscribeBoard: (() => void) | null = null;
@@ -61,12 +61,18 @@ export function createInkCameraGate<Board extends InkCameraBoard>(
   let editorDeferred = false;
   let pendingEditorCamera: InkCameraState | null = null;
   let editorTimer: ReturnType<typeof setTimeout> | undefined;
+  let editorSettleFrame: number | undefined;
   let destroyed = false;
 
   const clearEditorTimer = () => {
-    if (editorTimer === undefined) return;
-    hostWindow.clearTimeout(editorTimer);
-    editorTimer = undefined;
+    if (editorTimer !== undefined) {
+      hostWindow.clearTimeout(editorTimer);
+      editorTimer = undefined;
+    }
+    if (editorSettleFrame !== undefined) {
+      hostWindow.cancelAnimationFrame(editorSettleFrame);
+      editorSettleFrame = undefined;
+    }
   };
   const emit = (channel: GateListener["channel"], camera: InkCameraState) => {
     for (const entry of [...listeners]) {
@@ -88,7 +94,16 @@ export function createInkCameraGate<Board extends InkCameraBoard>(
     }
     pendingEditorCamera = { ...camera };
     clearEditorTimer();
-    editorTimer = hostWindow.setTimeout(flushEditor, DEFERRED_EDITOR_SYNC_MS);
+    editorTimer = hostWindow.setTimeout(() => {
+      editorTimer = undefined;
+      // On a slow WebView the quiet-period timer can expire between two
+      // camera frames even while a pinch is still moving. Let the next frame's
+      // camera notification cancel this flush before rerendering hidden ink.
+      editorSettleFrame = hostWindow.requestAnimationFrame(() => {
+        editorSettleFrame = undefined;
+        flushEditor();
+      });
+    }, DEFERRED_EDITOR_SYNC_MS);
   };
   const subscribe = (
     channel: GateListener["channel"],
