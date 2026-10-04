@@ -94,6 +94,14 @@ publication procedure is documented in the library's
     `deploy/systemd/octos-learn-hosted-tts.service.example`; create
     `/var/lib/octos-learn/hosted-tts` owned by the service account. Do not place
     this credential in the Octos environment or an administrator profile.
+    The temporary public deployment policy (2026-10-04) explicitly sets
+    `OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE=1` to preserve Android direct
+    synthesis and avoid the Singapore audio round trip. Preserve this value
+    when upgrading the service, then verify native narration after restart;
+    do not replace the existing environment file with an unfilled example.
+    This opt-in distributes the shared platform credential to authenticated
+    clients outside hosted quota enforcement. See
+    [the TTS policy](PUBLIC_ONBOARDING_AND_TTS.md) before changing it.
 11. For CoursePacks, create `/opt/octos-learn/course-packs` on the publication
     filesystem, owned by a dedicated operator or the non-login service
     account. Nginx needs read/traverse access to `catalog.json` and
