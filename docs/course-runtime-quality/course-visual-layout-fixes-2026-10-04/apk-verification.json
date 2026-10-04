@@ -1,0 +1,12 @@
+{
+  "revision": "6f8b9a21df8ec6380548c13aa48b88ee5d4cbf1d",
+  "dirty": true,
+  "builtAt": "2026-10-04T07:09:30.768Z",
+  "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+  "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa",
+  "apk_sha256": "70ca279e769e64ae401448e593f53e1bbad28b99b74a451d02d10af91a2aa2a0",
+  "oll_ref": "472b297c9be418f5730e47ea02dd26b2c1175bff",
+  "install_result": "Success",
+  "device": "192.168.1.63:5555",
+  "note": "dirty flag includes preserved user-owned untracked public/demo files; tracked source was clean"
+}

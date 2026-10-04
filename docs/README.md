@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [课程画面复用与附件归属修复](course-runtime-quality/course-visual-layout-fixes-2026-10-04/REPORT.md)：从 main 分支修复跨组件重复和跨行附件重复占位，包含依赖顺序、回归及电视验证。
+
 - [皓丽会议大屏“全部应用”入口](ANDROID_APP_DRAWER.md)：原生侧边栏自定义槽、独立 APK 构建安装、升级重绑、实机重启验收与回滚。
 - [笔迹与课程布局解耦](course-runtime-quality/android-ink-layout-independence-2026-10-03/REPORT.md)：移除笔迹固定/避障，保留播放隐藏并自动回浏览模式，以及浏览器和电视验证。
 - [Android 三维旋转优化](course-runtime-quality/android-orbit-performance-2026-10-03/REPORT.md)：按帧合并拖拽/滚轮、保留 SVG 图元、交线和投影缓存，以及电视对照与 Canvas/WebGL 路线评估。
