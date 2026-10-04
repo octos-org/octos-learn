@@ -22,6 +22,7 @@ export function WhiteboardLoadingBlock({
       aria-live="polite"
       aria-label={`${state.title}。${state.detail}`}
       data-loading-id={state.id}
+      data-oll-ink-input="ignore"
     >
       <div className="learning-whiteboard-loading-glow" aria-hidden="true">
         {Array.from({ length: 6 }, (_, index) => (

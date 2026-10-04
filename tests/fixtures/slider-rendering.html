@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8"><title>Live slider renderer regression</title>
+<style>body{margin:0;background:#fbfaf5}.viewport{position:relative;width:700px;height:650px;overflow:hidden}.world{position:absolute;transform-origin:0 0}</style>
+<div id="candidate"></div>
+<script type="module">
+import { mountInfiniteBoard } from 'octos-lesson-language/web-runtime';
+import 'octos-lesson-language/web-runtime/styles.css';
+const mounted=mountInfiniteBoard(document.getElementById('candidate'));
+const objects=[{id:'surface',kind:'surface',expression:'x^2-y^2',x_range:{min:-2,max:2},y_range:{min:-2,max:2},samples:12}];
+const board={board_id:'slider-regression',revision:1,variables:{n1:{value:0}},nodes:{scene:{id:'scene',kind:'scene3d',content:{title:'函数曲面与截面',axes:true,camera:{yaw:.72,pitch:.55,zoom:1},fallback:'曲面与截面',objects,sections:[{id:'section',axis:'y',value:0,targets:['surface'],display:'plane_and_intersection'}]}},math:{id:'math',kind:'math',content:{latex:'z=x^2-y^2'}},plot:{id:'plot',kind:'plot',content:{title:'直线',axes:{x:{min:-3,max:3},y:{min:-3,max:3}},curves:[{id:'curve',expression:'n1*x',label:'y=kx'}]}}},groups:{},connections:{},focus:[],applied_lessons:[],applied_steps:[],applied_actions:[]};
+const orbitInputs=[];let orbitView={...board.nodes.scene.content.camera};
+mounted.view.setScene3dInputHandler((id,view,event)=>{
+ orbitInputs.push({...event,view:{...view}});orbitView={...view};
+ if(event.phase!=='start'){mounted.view.setScene3dViews({[id]:view});mounted.view.render(structuredClone(board));}
+ return 'browser-orbit';
+});
+mounted.view.render(structuredClone(board));
+const root=mounted.elements.nodes;
+const sceneSvg=root.querySelector('.scene3d-runtime svg'),plotSvg=root.querySelector('.plot-preview');
+const cells=[...sceneSvg.querySelectorAll('.scene3d-surface-cell')],axes=[...plotSvg.querySelectorAll('.plot-axis,.plot-grid')];
+await document.fonts.ready;
+await new Promise(requestAnimationFrame);
+await new Promise(requestAnimationFrame);
+window.sliderTest={ready:true,orbitState(){return {inputs:orbitInputs,view:orbitView,retained:cells.every((cell,i)=>sceneSvg.querySelectorAll('.scene3d-surface-cell')[i]===cell),cards:[...root.querySelectorAll('.board-node')].map(e=>({id:e.dataset.id,left:e.style.left,top:e.style.top,width:e.style.width,height:e.style.height}))};},async update(value){
+ board.variables.n1.value=value;
+ board.nodes.scene.content.sections[0].value=value;
+ mounted.view.render(structuredClone(board));await document.fonts.ready;await new Promise(requestAnimationFrame);
+ return {
+  sceneRetained:root.querySelector('.scene3d-runtime svg')===sceneSvg,
+  plotRetained:root.querySelector('.plot-preview')===plotSvg,
+  surfaceRetained:cells.every((cell,i)=>sceneSvg.querySelectorAll('.scene3d-surface-cell')[i]===cell),
+  axesRetained:axes.every((axis,i)=>plotSvg.querySelectorAll('.plot-axis,.plot-grid')[i]===axis),
+  intersection:sceneSvg.querySelector('.scene3d-intersection').getAttribute('d'),
+  curve:plotSvg.querySelector('.plot-curve').getAttribute('d'),
+  cells:cells.length, sceneMarkup:sceneSvg.innerHTML, plotMarkup:plotSvg.innerHTML,
+  cards:[...root.querySelectorAll('.board-node')].map(e=>({id:e.dataset.id,left:e.style.left,top:e.style.top,width:e.style.width,height:e.style.height})),
+ };
+}};
+</script>

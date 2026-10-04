@@ -4,6 +4,13 @@
 
 ## 当前使用
 
+- [笔迹与课程布局解耦](course-runtime-quality/android-ink-layout-independence-2026-10-03/REPORT.md)：移除笔迹固定/避障，保留播放隐藏并自动回浏览模式，以及浏览器和电视验证。
+- [Android 三维旋转优化](course-runtime-quality/android-orbit-performance-2026-10-03/REPORT.md)：按帧合并拖拽/滚轮、保留 SVG 图元、交线和投影缓存，以及电视对照与 Canvas/WebGL 路线评估。
+- [Android 滑块实时更新优化](course-runtime-quality/android-slider-performance-2026-10-03/REPORT.md)：共用布局复用、二维曲线增量更新、三维分层和网格复用，以及电视对照数据。
+
+- [Android 触屏拖拽起步诊断](course-runtime-quality/android-drag-start-2026-10-03/REPORT.md)：重复板书重排、合成层冷启动与暂停期间的预热修复。
+- [Android 导航缓存第二阶段](course-runtime-quality/android-performance-2026-10-03-phase2/REPORT.md)：正常预制课布局基线、导航覆盖图对齐及父卡片更新的缓存失效修复。
+- [Android 白板性能优化](course-runtime-quality/android-performance-2026-10-02/REPORT.md)：电视缓存开关对照、图形预览缓存、原生控件避让修复与 APK 交付记录；[预制课历史恢复布局修复](course-runtime-quality/android-performance-2026-10-02/HISTORY-LAYOUT.md)。
 - [皓丽会议大屏“全部应用”入口](ANDROID_APP_DRAWER.md)：原生侧边栏自定义槽、独立 APK 构建安装、升级重绑、实机重启验收与回滚。
 
 - [Android 原生笔迹与课程坐标收尾](course-runtime-quality/android-native-ink-2026-10-02/REPORT.md)：电视验收、原生移交与坐标修复、正式运行时依赖和回归门槛。

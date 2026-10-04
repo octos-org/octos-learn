@@ -1,0 +1,507 @@
+{
+  "calls": [
+    {
+      "time": 7588971.5,
+      "duration": 259.90000000596046,
+      "stack": "Error\n    at oce.b.render (<anonymous>:1:411)\n    at https://learn.pitun.cc/assets/index-DD6Y6hK2.js:1090:58716\n    at Sp (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:93798)\n    at qE (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109176)\n    at ec (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109060)\n    at qE (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109947)\n    at ec (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109060)\n    at qE (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109947)\n    at ec (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109060)\n    at qE (https://learn.pitun.cc/assets/index-DD6Y6hK2.js:8:109156)"
+    }
+  ],
+  "records": [
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 436.8px; height: 72px;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 436.8px; height: 96px;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 382px; height: 96px;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "old": "board-node kind-scene3d",
+      "current": "board-node kind-scene3d focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 132px; width: 382px; height: 135px;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 132px; width: 436.8px; height: 135px;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 132px; width: 436.8px; height: 130px;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "old": "left: 20px; top: 494px; width: 649.6px; height: 72px;",
+      "current": "left: 20px; top: 494px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "old": "left: 20px; top: 494px; width: 649.6px; height: 96px;",
+      "current": "left: 20px; top: 494px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "old": "left: 20px; top: 494px; width: 536px; height: 96px;",
+      "current": "left: 20px; top: 494px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 606px; width: 536px; height: 92px;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 606px; width: 649.6px; height: 92px;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 606px; width: 649.6px; height: 96px;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 606px; width: 252px; height: 96px;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "board-node kind-plot",
+      "current": "board-node kind-plot focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "left: 697.6px; top: 494px; width: 440px; height: 360px;",
+      "current": "left: 584px; top: 494px; width: 440px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "left: 697.6px; top: 494px; width: 440px; height: 390px;",
+      "current": "left: 584px; top: 494px; width: 440px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 742px; width: 536px; height: 72px;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 742px; width: 649.6px; height: 72px;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 742px; width: 649.6px; height: 96px;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 742px; width: 316px; height: 96px;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 920px; width: 536px; height: 156px;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 920px; width: 440px; height: 156px;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 920px; width: 440px; height: 154px;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 1114px; width: 405px; height: 114px;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 1114px; width: 440px; height: 114px;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 1114px; width: 440px; height: 130px;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 382px; height: auto;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 381px; height: 72px;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "old": "board-node kind-scene3d",
+      "current": "board-node kind-scene3d focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "old": "left: 842.8px; top: 20px; width: 460px; height: 360px;",
+      "current": "left: 788px; top: 20px; width: 460px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 132px; width: 436.8px; height: auto;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 108px; width: 436.8px; height: auto;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 108px; width: 382px; height: auto;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "old": "left: 20px; top: 494px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 494px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 606px; width: 252px; height: auto;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 582px; width: 252px; height: auto;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 582px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 582px; width: 252px; height: 92px;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "board-node kind-plot",
+      "current": "board-node kind-plot focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "left: 697.6px; top: 494px; width: 440px; height: auto;",
+      "current": "left: 584px; top: 494px; width: 440px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "left: 584px; top: 494px; width: 440px; height: auto;",
+      "current": "left: 584px; top: 494px; width: 440px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 742px; width: 316px; height: auto;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 714px; width: 316px; height: auto;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 714px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 714px; width: 316px; height: 72px;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 920px; width: 440px; height: auto;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 802px; width: 440px; height: auto;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 802px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 1114px; width: 440px; height: auto;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 994px; width: 440px; height: auto;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 994px; width: 405px; height: auto;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 381px; height: auto;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "old": "left: 20px; top: 20px; width: 382px; height: auto;",
+      "current": "left: 20px; top: 20px; width: 382px; height: 72px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "old": "board-node kind-scene3d",
+      "current": "board-node kind-scene3d focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "old": "left: 20px; top: 108px; width: 382px; height: auto;",
+      "current": "left: 20px; top: 108px; width: 382px; height: 135px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "old": "left: 20px; top: 494px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 494px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 582px; width: 252px; height: auto;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "old": "left: 20px; top: 582px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 582px; width: 536px; height: 92px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "board-node kind-plot",
+      "current": "board-node kind-plot focused"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "left: 584px; top: 494px; width: 440px; height: auto;",
+      "current": "left: 584px; top: 494px; width: 440px; height: 360px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 714px; width: 316px; height: auto;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "old": "left: 20px; top: 714px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 714px; width: 536px; height: 72px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "old": "left: 20px; top: 802px; width: 536px; height: auto;",
+      "current": "left: 20px; top: 802px; width: 536px; height: 156px;"
+    },
+    {
+      "attr": "style",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "old": "left: 20px; top: 994px; width: 405px; height: auto;",
+      "current": "left: 20px; top: 994px; width: 405px; height: 114px;"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "old": "board-node kind-scene3d",
+      "current": "board-node kind-scene3d focused"
+    },
+    {
+      "attr": "class",
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "old": "board-node kind-plot",
+      "current": "board-node kind-plot focused"
+    }
+  ],
+  "before": [
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "style": "left: 20px; top: 20px; width: 382px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "style": "left: 788px; top: 20px; width: 460px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "style": "left: 20px; top: 108px; width: 382px; height: 135px;",
+      "height": 135
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "style": "left: 20px; top: 494px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "style": "left: 20px; top: 582px; width: 536px; height: 92px;",
+      "height": 92
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "style": "left: 584px; top: 494px; width: 440px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "style": "left: 20px; top: 714px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "style": "left: 20px; top: 802px; width: 536px; height: 156px;",
+      "height": 156
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "style": "left: 20px; top: 994px; width: 405px; height: 114px;",
+      "height": 114
+    }
+  ],
+  "after": [
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-01-item-01",
+      "style": "left: 20px; top: 20px; width: 382px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-02-item-01",
+      "style": "left: 788px; top: 20px; width: 460px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-01-moment-03-item-01",
+      "style": "left: 20px; top: 108px; width: 382px; height: 135px;",
+      "height": 135
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-01",
+      "style": "left: 20px; top: 494px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-02-item-02",
+      "style": "left: 20px; top: 582px; width: 536px; height: 92px;",
+      "height": 92
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-02-moment-03-item-01",
+      "style": "left: 584px; top: 494px; width: 440px; height: 360px;",
+      "height": 360
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-01-item-01",
+      "style": "left: 20px; top: 714px; width: 536px; height: 72px;",
+      "height": 72
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-03-moment-02-item-01",
+      "style": "left: 20px; top: 802px; width: 536px; height: 156px;",
+      "height": 156
+    },
+    {
+      "id": "surface-partial-derivative-slice-0.2.8:node:section-04-moment-02-item-01",
+      "style": "left: 20px; top: 994px; width: 405px; height: 114px;",
+      "height": 114
+    }
+  ]
+}
