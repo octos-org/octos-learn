@@ -1164,6 +1164,9 @@ export function LearningWhiteboard({
         id: cluster.id,
         topic,
         anchorNodeId: cluster.anchorNodeId,
+        // Dependencies may grow across chapters. The controls belong to the
+        // first bound visual; practice belongs to the final target visual.
+        controlOwnerNodeId: cluster.nodeIds[0] ?? cluster.anchorNodeId,
         anchorNodeIds: cluster.nodeIds,
         controls,
         tasks,
@@ -1210,12 +1213,14 @@ export function LearningWhiteboard({
         .flatMap((plan): NonNullable<RegionLayoutConstraint["attachments"]> => [
           ...(plan.controls.length ? [{
             id: plan.id, kind: "control" as const, anchorNodeId: plan.anchorNodeId,
+            ownerNodeId: plan.controlOwnerNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: plan.width,
             height: plan.controlsHeight, focusHeight: plan.controlsHeight, gap: 24,
           }] : []),
           ...(plan.tasks.length ? [{
             // Practice always renders 330 wide; docked controls may be wider.
             id: `${plan.id}:tasks`, kind: "task" as const, anchorNodeId: plan.anchorNodeId,
+            ownerNodeId: plan.anchorNodeId,
             anchorNodeIds: plan.anchorNodeIds, width: 330,
             height: Math.max(1, plan.height - (plan.controls.length ? plan.controlsHeight + 28 : 0)), gap: 28,
           }] : []),
