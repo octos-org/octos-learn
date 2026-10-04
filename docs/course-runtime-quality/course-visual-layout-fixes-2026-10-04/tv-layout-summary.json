@@ -1,0 +1,9 @@
+{
+  "sameSession": true,
+  "sameBoard": true,
+  "nodesBefore": 8,
+  "nodesAfter": 8,
+  "beforeGap": 229.00002564102567,
+  "afterGap": 72.00002564102567,
+  "inkCount": 10
+}

@@ -1,0 +1,57 @@
+{
+  "schemasUnchanged": true,
+  "modelCallChanges": 0,
+  "kind": "interleaved first-section compile-and-validate CPU; does not simulate network/LLM latency",
+  "iterations": 200,
+  "batch": 5,
+  "results": [
+    {
+      "case": "unit_circle_to_sine",
+      "baselineP50Ms": 0.14475840000000062,
+      "candidateP50Ms": 0.14427500000000465,
+      "deltaMs": -0.0004833999999959704
+    },
+    {
+      "case": "square_function",
+      "baselineP50Ms": 0.08520820000001095,
+      "candidateP50Ms": 0.08576680000001033,
+      "deltaMs": 0.0005585999999993818
+    },
+    {
+      "case": "quadratic_translation",
+      "baselineP50Ms": 0.10331659999999374,
+      "candidateP50Ms": 0.10313320000000203,
+      "deltaMs": -0.0001833999999917013
+    },
+    {
+      "case": "arc_length",
+      "baselineP50Ms": 0.09111659999998664,
+      "candidateP50Ms": 0.09115819999997257,
+      "deltaMs": 4.159999998593067e-05
+    },
+    {
+      "case": "spring_oscillation",
+      "baselineP50Ms": 0.12330820000001949,
+      "candidateP50Ms": 0.12338340000001154,
+      "deltaMs": 7.519999999204552e-05
+    },
+    {
+      "case": "cube_and_section",
+      "baselineP50Ms": 0.08925840000001699,
+      "candidateP50Ms": 0.089516599999979,
+      "deltaMs": 0.0002581999999620166
+    },
+    {
+      "case": "paraboloid_section",
+      "baselineP50Ms": 0.09008319999998093,
+      "candidateP50Ms": 0.09043320000000676,
+      "deltaMs": 0.00035000000002582965
+    },
+    {
+      "case": "natural_log_origin",
+      "baselineP50Ms": 0.09284999999999854,
+      "candidateP50Ms": 0.09290819999996529,
+      "deltaMs": 5.819999996674319e-05
+    }
+  ]
+}
