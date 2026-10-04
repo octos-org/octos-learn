@@ -15,6 +15,9 @@ import 'octos-lesson-language/web-runtime/styles.css';
 import 'octos-lesson-language/ink-runtime/styles.css';
 window.OctosNativeInk = {configure(){}, acknowledge(){}, cancel(){}, setExclusionRects(){}};
 const el = id => document.getElementById(id);
+// A CSS delay reproduces a late initial camera without simulating CPU load.
+const transitionDelay = Number(new URLSearchParams(location.search).get('transitionDelay') ?? 0);
+if (transitionDelay > 0) el('world').style.transitionDelay = `${transitionDelay}ms`;
 // Force the initial identity frame to be rendered before the board starts its
 // CSS transition, matching the first mount on the television.
 getComputedStyle(el('world')).transform;
