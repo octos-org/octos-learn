@@ -754,6 +754,10 @@ describe("SelectionEnhancementLayer", () => {
       />,
     );
 
+    // The layer host no longer excludes ink; each card must exclude itself.
+    expect(document.querySelector(`[data-question-id="${failed.id}"]`)
+      ?.getAttribute("data-oll-ink-input")).toBe("ignore");
+
     fireEvent.click(screen.getByRole("button", {
       name: "删除这条辅助内容",
     }));

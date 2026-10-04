@@ -1,0 +1,13 @@
+{
+  "sha256": "1a664781dccc4ab8b8c516203b2032e5f0497d5138c122473c103daf381ccced",
+  "bytes": 107346691,
+  "embeddedPacks": 9,
+  "unchanged": true,
+  "build": {
+    "revision": "d100e158ff62d10b28d706f74090b95d21deb758",
+    "dirty": true,
+    "builtAt": "2026-10-03T10:13:41.298Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  }
+}

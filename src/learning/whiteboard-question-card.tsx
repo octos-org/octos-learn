@@ -30,6 +30,7 @@ export function WhiteboardQuestionCard({
         : "learning-whiteboard-question-card"}
       style={{ left, top, width: WHITEBOARD_QUESTION_CARD_WIDTH }}
       data-question-id={question.id}
+      data-oll-ink-input="ignore"
     >
       <header>
         <strong>我的问题</strong>

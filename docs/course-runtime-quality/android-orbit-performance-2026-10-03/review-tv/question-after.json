@@ -1,0 +1,78 @@
+{
+  "events": [
+    {
+      "id": "review-pending",
+      "type": "touch"
+    },
+    {
+      "id": "review-failed",
+      "type": "touch"
+    },
+    {
+      "id": "review-pending",
+      "type": "touch"
+    },
+    {
+      "id": "review-failed",
+      "type": "touch"
+    }
+  ],
+  "changes": [
+    {
+      "id": "review-pending",
+      "layout": {
+        "x": 40,
+        "y": 100,
+        "scale": 1,
+        "minimized": false,
+        "manually_positioned": true
+      }
+    },
+    {
+      "id": "review-failed",
+      "layout": {
+        "x": 430,
+        "y": 100,
+        "scale": 1,
+        "minimized": false,
+        "manually_positioned": true
+      }
+    },
+    {
+      "id": "review-pending",
+      "layout": {
+        "x": 49.4857177734375,
+        "y": 102.37142944335938,
+        "scale": 1,
+        "minimized": false,
+        "manually_positioned": true
+      }
+    },
+    {
+      "id": "review-failed",
+      "layout": {
+        "x": 439.94287109375,
+        "y": 102.4857177734375,
+        "scale": 1,
+        "minimized": false,
+        "manually_positioned": true
+      }
+    }
+  ],
+  "cards": [
+    {
+      "id": "review-pending",
+      "ignore": "ignore",
+      "x": "49.4857177734375",
+      "y": "102.37142944335938"
+    },
+    {
+      "id": "review-failed",
+      "ignore": "ignore",
+      "x": "439.94287109375",
+      "y": "102.4857177734375"
+    }
+  ],
+  "inkCount": 64,
+  "inkUnchanged": true
+}

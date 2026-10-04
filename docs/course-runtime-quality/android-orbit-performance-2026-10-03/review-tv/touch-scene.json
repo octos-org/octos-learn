@@ -1,0 +1,98 @@
+{
+  "trustedProtocolTouch": true,
+  "cameraBefore": {
+    "panX": 125,
+    "panY": 62.8571,
+    "scale": 0.357143
+  },
+  "cameraAfter": {
+    "panX": 125,
+    "panY": 62.8571,
+    "scale": 0.357143
+  },
+  "bubbled": [],
+  "inputs": [
+    {
+      "view": {
+        "yaw": 0.72,
+        "pitch": 0.55,
+        "zoom": 1
+      },
+      "phase": "start"
+    },
+    {
+      "view": {
+        "yaw": 0.756,
+        "pitch": 0.54,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.792,
+        "pitch": 0.53,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.828,
+        "pitch": 0.52,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.864,
+        "pitch": 0.51,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.8999999999999999,
+        "pitch": 0.5,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.9359999999999999,
+        "pitch": 0.49000000000000005,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 0.972,
+        "pitch": 0.48000000000000004,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 1.008,
+        "pitch": 0.47000000000000003,
+        "zoom": 1
+      },
+      "phase": "update"
+    },
+    {
+      "view": {
+        "yaw": 1.008,
+        "pitch": 0.47000000000000003,
+        "zoom": 1
+      },
+      "phase": "commit"
+    }
+  ],
+  "retainedCells": true,
+  "cameraUnchanged": true
+}

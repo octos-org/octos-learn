@@ -1,0 +1,7 @@
+{
+  "webgl": true,
+  "version": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+  "renderer": "Mali-G52",
+  "maxTextureSize": 4096,
+  "dpr": 4
+}

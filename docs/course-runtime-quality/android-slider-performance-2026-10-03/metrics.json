@@ -1,0 +1,42 @@
+[
+  {
+    "name": "baseline",
+    "renderCount": 11,
+    "renderMedianMs": 160.7,
+    "renderMaxMs": 398.5,
+    "inputMedianMs": 11.3,
+    "frameMedianMs": 189.7,
+    "inkCount": 64,
+    "finalSlope": "2"
+  },
+  {
+    "name": "candidate",
+    "renderCount": 11,
+    "renderMedianMs": 88.9,
+    "renderMaxMs": 279.7,
+    "inputMedianMs": 12.5,
+    "frameMedianMs": 121.1,
+    "inkCount": 64,
+    "finalSlope": "2"
+  },
+  {
+    "name": "final",
+    "renderCount": 11,
+    "renderMedianMs": 70.4,
+    "renderMaxMs": 98.1,
+    "inputMedianMs": 13.8,
+    "frameMedianMs": 102.8,
+    "inkCount": 64,
+    "finalSlope": "2"
+  },
+  {
+    "name": "final-repeat",
+    "renderCount": 11,
+    "renderMedianMs": 62.5,
+    "renderMaxMs": 168.7,
+    "inputMedianMs": 11.5,
+    "frameMedianMs": 86,
+    "inkCount": 64,
+    "finalSlope": "2"
+  }
+]

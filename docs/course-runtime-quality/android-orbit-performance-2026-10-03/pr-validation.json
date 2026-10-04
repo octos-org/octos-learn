@@ -1,0 +1,29 @@
+{
+  "ollCommit": "6bf5f9009f70eae0483d68d90b971b47ec1b3da6",
+  "runtimeModuleParity": {
+    "compared": 52,
+    "mismatches": 0
+  },
+  "ollTests": {
+    "passed": 339
+  },
+  "frontendUnit": {
+    "filesPassed": 118,
+    "testsPassed": 1118
+  },
+  "browser": {
+    "passed": 9,
+    "retries": 0
+  },
+  "builds": [
+    "default Web",
+    "public Web",
+    "Android assets",
+    "Gradle debug APK"
+  ],
+  "televisionApkChangedDuringPrPreparation": false,
+  "lint": {
+    "errors": 0,
+    "existingWarnings": 35
+  }
+}

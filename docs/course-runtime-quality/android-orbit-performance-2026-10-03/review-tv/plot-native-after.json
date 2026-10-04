@@ -1,0 +1,19 @@
+{
+  "events": [
+    {
+      "type": "touch",
+      "event": "down"
+    }
+  ],
+  "svgCounts": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "panned": true,
+  "cameraUnchanged": true,
+  "inkUnchanged": true
+}
