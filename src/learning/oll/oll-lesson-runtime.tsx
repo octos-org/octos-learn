@@ -1562,7 +1562,14 @@ export function LearningWhiteboard({
         // loading state for that turn.
         const width = PENDING_QUESTION_FOOTPRINT_WIDTH;
         const height = PENDING_QUESTION_FOOTPRINT_HEIGHT;
-        const occupied = [...occupiedRectsForQuestion(question.id), ...reserved];
+        // Reserve the question's immutable reference only when placing its
+        // course for the first time. Live ink must never repack or pin an
+        // existing course, but its question card must not cover this source.
+        const occupied = [
+          ...occupiedRectsForQuestion(question.id),
+          ...(question.source ? [question.source.bounds] : []),
+          ...reserved,
+        ];
         const startsNewTopic = occupied.length > 0
           || courseRegions.some((region) => region.questionId !== question.id)
           || Boolean(runtime?.board && Object.keys(runtime.board.nodes).length > 0);
