@@ -1,5 +1,5 @@
 use crate::board_view;
-use crate::controls_view::{ControlModel, ControlsCard, Part};
+use crate::controls_view::{self, ControlModel, ControlsCard, Part};
 use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
@@ -14,6 +14,13 @@ use oll_runtime::{
 };
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
+
+/// Camera scale the desktop host plans teaching rows for (web teachingReadingScale).
+const TEACHING_READING_SCALE: f64 = 0.9;
+/// Zoom ceiling of automatic teaching focus (web teachingCameraCeiling).
+const TEACHING_CAMERA_CEILING: f64 = 1.1;
+/// Reflection card height reserved before it is measured.
+const REFLECTION_ESTIMATED_HEIGHT: f64 = 150.;
 
 script_mod! {
     use mod.prelude.widgets_internal.*
@@ -126,6 +133,18 @@ pub struct SpatialBoard {
     /// Viewport changed: relayout (composition) and reframe next frame.
     #[rust]
     relayout_frame: NextFrame,
+    /// The viewport or insets changed: re-plan the camera after relayout
+    /// (web resize). Measurement relayouts keep the camera.
+    #[rust]
+    reframe_pending: bool,
+    /// Camera policy and camera before the current operation's first render.
+    /// The Web measures cards before it decides the camera, so a relayout
+    /// caused by measured sizes re-decides this operation from here.
+    #[rust]
+    operation_start: Option<(Policy, Camera)>,
+    /// The pending relayout comes from measured card sizes.
+    #[rust]
+    measure_relayout: bool,
     /// Rendered card sizes (web syncNodes): layout width and rendered height
     /// of content-sized cards, fed back into the next layout.
     #[rust]
@@ -147,6 +166,16 @@ pub struct SpatialBoard {
     /// Active scene3d orbit drag: node id and the view at pointer down.
     #[rust]
     orbit: Option<(String, SceneView)>,
+    /// Thinking-question cards laid out under their anchors after the
+    /// lesson: (attachment id, reflection id, rect, card).
+    #[rust]
+    reflection_cards: Vec<(String, String, WorldRect, WidgetRef)>,
+    /// Rendered reflection card heights (web ResizeObserver), by attachment id.
+    #[rust]
+    reflection_heights: BTreeMap<String, f64>,
+    /// Reflections whose answer the learner opened.
+    #[rust]
+    open_reflections: BTreeSet<String>,
 }
 fn resolve_geometry(
     geometry: &BoardLayout,
@@ -218,6 +247,7 @@ impl SpatialBoard {
     pub fn set_insets(&mut self, cx: &mut Cx, insets: Insets) {
         if self.insets != insets {
             self.insets = insets;
+            self.reframe_pending = true;
             self.relayout_frame = cx.new_next_frame();
         }
     }
@@ -301,6 +331,8 @@ impl SpatialBoard {
         self.last_action = 0;
         self.policy.reset();
         self.attachment_cards.clear();
+        self.reflection_cards.clear();
+        self.reflection_heights.clear();
         self.control_drag = None;
         self.control_requests.clear();
         self.camera = Camera::default();
@@ -326,12 +358,13 @@ impl SpatialBoard {
             insets: &self.insets,
             attachments: panels,
             scale_floor: camera::MIN_AUTOMATIC_SCALE,
+            scale_ceiling: TEACHING_CAMERA_CEILING,
         }
     }
     fn panel_focus(&self) -> Vec<(String, Vec<String>, f64)> {
         self.attachment_cards
             .iter()
-            .map(|(a, _, _, _)| (a.id.clone(), a.anchor_node_ids.clone(), a.height + 2.))
+            .map(|(a, aliases, _, _)| (a.id.clone(), a.anchor_node_ids.clone(), controls_view::panel_height(aliases.len())))
             .collect()
     }
     /// Start the Web .world transition (cubic-bezier .22,1,.36,1, 680ms).
@@ -355,14 +388,24 @@ impl SpatialBoard {
     fn reframe(&mut self) {
         let Some(p) = self.board.clone() else { return };
         let panels = self.panel_focus();
-        let targets = self.policy.last_attention().to_vec();
-        let view = self.camera_view(&panels);
-        let rects = Policy::focus_rects(&p, &self.geometry, &targets, &view);
-        if rects.is_empty() {
-            return;
+        let mut policy = std::mem::take(&mut self.policy);
+        let to = policy.refocus(&p, &self.geometry, self.destination, &self.camera_view(&panels));
+        self.policy = policy;
+        if let Some(to) = to {
+            self.jump_to(to);
         }
-        let to = Policy::plan(&p, &targets, &rects, self.destination, &view);
-        self.jump_to(to);
+    }
+    /// Thinking questions available after the lesson: (attachment id,
+    /// reflection id, anchor node id).
+    fn reflection_specs(&self, p: &Preview, region: &str) -> Vec<(String, String, String)> {
+        if !p.complete() {
+            return vec![];
+        }
+        p.reflections()
+            .into_iter()
+            .filter(|(_, _, _, anchor)| p.nodes.iter().any(|n| n["id"] == anchor.as_str()))
+            .map(|(id, _, _, anchor)| (format!("reflection:{region}:{id}"), id, anchor))
+            .collect()
     }
     /// Web captureReflowAnchor: the visible card nearest the viewport
     /// centre (focused cards first), with its world position.
@@ -406,6 +449,14 @@ impl SpatialBoard {
         let course_nodes: Vec<String> = sections.iter().map(|(id, _)| id.clone()).collect();
         let clusters = teaching::control_clusters(p, &region, &course_nodes, p.variable_declarations());
         let insets = &self.insets;
+        let reflections: Vec<Value> = self
+            .reflection_specs(p, &region)
+            .into_iter()
+            .map(|(id, _, anchor)| json!({
+                "id": id, "kind": "reflection", "anchorNodeId": anchor, "width": 330,
+                "height": self.reflection_heights.get(&id).copied().unwrap_or(REFLECTION_ESTIMATED_HEIGHT),
+            }))
+            .collect();
         let options = json!({"regions": {region: {
             "x": 20, "y": 20, "flow": "teaching",
             "nodeSections": sections.iter().map(|(id, s)| (id.clone(), json!(s))).collect::<serde_json::Map<_, _>>(),
@@ -415,19 +466,27 @@ impl SpatialBoard {
                 "height": self.viewport.size.y.max(240.),
                 "mode": if p.complete() { "overview" } else { "progressive" },
                 "insets": {"top": insets.top, "right": insets.right, "bottom": insets.bottom, "left": insets.left},
+                "readingScale": TEACHING_READING_SCALE,
             },
             "reservedWidth": 1300,
-            "attachments": clusters.iter().map(|(a, _)| json!({
-                "id": a.id, "kind": "control", "anchorNodeId": a.anchor_node_ids.last(),
-                // The host reports the rendered panel: estimate + 1px borders.
-                "anchorNodeIds": a.anchor_node_ids, "width": a.width, "height": a.height + 2.,
-                "focusHeight": a.height + 2., "gap": 24,
-            })).collect::<Vec<_>>(),
+            // The host reports the rendered panel height (web measured size).
+            "attachments": clusters.iter().map(|(a, aliases)| json!({
+                "id": a.id, "kind": "control", "anchorNodeId": a.anchor_node_id,
+                "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
+                "width": a.width, "height": controls_view::panel_height(aliases.len()),
+                "focusHeight": controls_view::panel_height(aliases.len()), "gap": 24,
+            }))
+            // Thinking questions open with the after-lesson window, under the
+            // card that poses them.
+            .chain(reflections)
+            .collect::<Vec<_>>(),
         }}});
         // Web render(): provisional layout from measureSemanticNode estimates,
-        // then syncNodes sizes (provisional layout width; rendered formula
-        // width for math, capped at the layout width on later passes;
-        // rendered heights for content cards), re-laid out while widths move.
+        // then syncNodes sizes: rendered heights for content cards, rendered
+        // formula width for math (capped at the layout width on later
+        // passes), and the natural (estimate) width for every other card —
+        // a width stretched to its column is never fed back. Re-laid out
+        // while widths move.
         let estimates: BTreeMap<String, (f64, f64)> = p
             .nodes
             .iter()
@@ -443,16 +502,18 @@ impl SpatialBoard {
                     let w = board_view::math_width(n)?;
                     if pass > 0 { w.min(provisional.width) } else { w }
                 } else {
-                    provisional.width
+                    estimates[id].0
                 };
                 let height = board_view::fixed_height(n)
                     .or_else(|| self.measured.get(id).map(|m| m.1))
                     .unwrap_or(estimates[id].1);
                 next.insert(id.to_owned(), (width, height));
             }
+            let next_layout = spatial::layout_with_options(p, &next, &options)?;
+            // Web: stop once every card was measured at its final width.
             let settled = pass > 0
-                && next.iter().all(|(id, (w, _))| layout.nodes.get(id).is_none_or(|r| (r.width - w).abs() < 0.5));
-            layout = spatial::layout_with_options(p, &next, &options)?;
+                && next_layout.nodes.iter().all(|(id, r)| layout.nodes.get(id).is_none_or(|l| (l.width - r.width).abs() < 0.5));
+            layout = next_layout;
             if settled {
                 break;
             }
@@ -485,6 +546,7 @@ impl SpatialBoard {
             p.cursor, p.title, p.groups, p.focus, p.complete(),
             self.viewport.size.x, self.viewport.size.y,
             [self.insets.top, self.insets.right, self.insets.bottom, self.insets.left],
+            self.reflection_heights, self.open_reflections,
         ])
         .to_string();
         let changed = signature != self.signature;
@@ -492,9 +554,11 @@ impl SpatialBoard {
             .filter(|a| a["op"] == "teacher.point")
             .map(|a| a["target"].clone());
         let anchor = (!reset && changed).then(|| self.reflow_anchor()).flatten();
-        if self.last_action != p.cursor {
+        if self.last_action != p.cursor || reset {
             self.measure_passes = 0;
+            self.operation_start = Some((self.policy.clone(), self.destination));
         }
+        let remeasure = std::mem::take(&mut self.measure_relayout) && !self.manual;
         self.board = Some(p.clone());
         if changed {
             let (geometry, clusters) = self.compute_layout(p)?;
@@ -538,6 +602,15 @@ impl SpatialBoard {
                 self.attachment_cards.push((spec, aliases, rect, card));
             }
             self.sync_control_cards(cx);
+            self.reflection_cards.clear();
+            let region = p.nodes.first().and_then(|n| n["region_id"].as_str()).filter(|r| !r.is_empty()).unwrap_or("__legacy__");
+            let texts = p.reflections();
+            for (attachment, id, _) in self.reflection_specs(p, region) {
+                let Some(rect) = self.geometry.attachments.get(&attachment).copied() else { continue };
+                let Some((_, prompt, answer, _)) = texts.iter().find(|r| r.0 == id) else { continue };
+                let card = board_view::reflection_card(cx, prompt, answer, self.open_reflections.contains(&id))?;
+                self.reflection_cards.push((attachment, id, rect, card));
+            }
             for group in &p.groups {
                 let id = group["id"].as_str().unwrap();
                 if let Some(rect) = self.geometry.groups.get(id) {
@@ -635,8 +708,12 @@ impl SpatialBoard {
         // Teaching camera: the board's render focus plus the host Beat
         // composition, then the course-end overview once playback completes.
         let panels = self.panel_focus();
-        let current = self.destination;
-        let mut policy = std::mem::take(&mut self.policy);
+        let restart = self.operation_start.clone().filter(|_| remeasure);
+        let current = restart.as_ref().map_or(self.destination, |(_, c)| *c);
+        let mut policy = match &restart {
+            Some((start, _)) => start.clone(),
+            None => std::mem::take(&mut self.policy),
+        };
         let planned = {
             let view = self.camera_view(&panels);
             let mut to = policy.render(p, &self.geometry, current, &view, self.at_boundary);
@@ -646,7 +723,14 @@ impl SpatialBoard {
             to
         };
         self.policy = policy;
-        if let Some(to) = planned {
+        if restart.is_some() {
+            // Same operation, measured sizes: the decision replaces the one
+            // made from estimates (no passive anchor compensation).
+            let to = planned.unwrap_or(current);
+            if to != self.destination {
+                self.animate_to(to);
+            }
+        } else if let Some(to) = planned {
             self.animate_to(to);
         } else if let Some((id, x, y)) = anchor {
             // Passive layout change: keep the anchor card where it was on
@@ -693,6 +777,8 @@ impl SpatialBoard {
                 Mode::Course,
                 &self.insets,
                 camera::MIN_AUTOMATIC_SCALE,
+                TEACHING_CAMERA_CEILING,
+                Some(&rs),
             );
             self.animate_to(to);
         }
@@ -834,6 +920,17 @@ impl SpatialBoard {
         match hit {
             Hit::FingerDown(e) => {
                 let world = self.world_point(e.abs);
+                // Reflection "查看答案/收起答案" toggles (card areas are in world space).
+                let toggled = self.reflection_cards.iter().find_map(|(_, id, _, card)| {
+                    card.widget(cx, ids!(toggle)).area().rect(cx).contains(world).then(|| id.clone())
+                });
+                if let Some(id) = toggled {
+                    if !self.open_reflections.remove(&id) {
+                        self.open_reflections.insert(id);
+                    }
+                    self.relayout_frame = cx.new_next_frame();
+                    return true;
+                }
                 for (i, (_, _, _, card)) in self.attachment_cards.iter().enumerate() {
                     let Some(c) = card.borrow::<ControlsCard>() else { continue };
                     let Some((row, part)) = c.hit(world) else { continue };
@@ -848,6 +945,9 @@ impl SpatialBoard {
                         Part::Reset => model.initial,
                     };
                     self.control_requests.push((model.alias, value));
+                    if let (Part::Track(_), Some(mut c)) = (part, card.borrow_mut::<ControlsCard>()) {
+                        c.set_dragging(cx, Some(row));
+                    }
                     cx.set_cursor(MouseCursor::EwResize);
                     return true;
                 }
@@ -865,8 +965,11 @@ impl SpatialBoard {
                 true
             }
             Hit::FingerUp(_) => {
-                if self.control_drag.take().is_none() {
+                let Some((i, _)) = self.control_drag.take() else {
                     return false;
+                };
+                if let Some(mut c) = self.attachment_cards.get(i).and_then(|(_, _, _, card)| card.borrow_mut::<ControlsCard>()) {
+                    c.set_dragging(cx, None);
                 }
                 self.replay_pending_camera(cx);
                 true
@@ -884,7 +987,7 @@ impl Widget for SpatialBoard {
                 if let Err(e) = self.set_state(cx, &p, None) {
                     eprintln!("Board relayout: {e}");
                 }
-                if !self.manual {
+                if std::mem::take(&mut self.reframe_pending) && !self.manual {
                     self.reframe();
                 }
                 self.redraw(cx);
@@ -981,6 +1084,7 @@ impl Widget for SpatialBoard {
         let viewport_changed = self.viewport != viewport;
         if self.viewport.size != viewport.size {
             self.viewport = viewport;
+            self.reframe_pending = true;
             self.relayout_frame = cx.new_next_frame();
         } else {
             self.viewport = viewport;
@@ -999,14 +1103,17 @@ impl Widget for SpatialBoard {
             viewport.size.y / self.camera.scale,
         ));
         let mut remeasured = false;
+        let mut reflection_resized = false;
         for (id, r, w) in self
             .groups
             .iter()
             .map(|(r, w)| (None, r, w))
             .chain(self.entries.iter().map(|(id, r, w)| (Some(id), r, w)))
             .chain(self.attachment_cards.iter().map(|(_, _, r, w)| (None, r, w)))
+            .chain(self.reflection_cards.iter().map(|(id, _, r, w)| (Some(id), r, w)))
         {
-            let natural = id.is_some_and(|id| self.content_ids.contains(id));
+            let reflection = id.is_some_and(|id| id.starts_with("reflection:"));
+            let natural = reflection || id.is_some_and(|id| self.content_ids.contains(id));
             w.draw_walk_all(
                 cx,
                 scope,
@@ -1017,7 +1124,14 @@ impl Widget for SpatialBoard {
                     ..Default::default()
                 },
             );
-            if let (Some(id), true) = (id, natural) {
+            if let (Some(id), true) = (id, reflection) {
+                // Web ResizeObserver on the rendered reflection card.
+                let h = w.area().rect(cx).size.y;
+                if h > 0. && (h - r.height).abs() > 1. {
+                    self.reflection_heights.insert(id.clone(), h);
+                    reflection_resized = true;
+                }
+            } else if let (Some(id), true) = (id, natural) {
                 // Web syncNodes: max(72, rendered height) at the layout width.
                 let h = w.area().rect(cx).size.y.max(72.);
                 if (h - r.height).abs() >= 1. {
@@ -1026,8 +1140,11 @@ impl Widget for SpatialBoard {
                 }
             }
         }
-        if remeasured && self.measure_passes < 3 {
-            self.measure_passes += 1;
+        if (remeasured && self.measure_passes < 3) || reflection_resized {
+            if remeasured {
+                self.measure_passes += 1;
+            }
+            self.measure_relayout = true;
             self.relayout_frame = cx.new_next_frame();
         }
         self.draw_vector.begin();

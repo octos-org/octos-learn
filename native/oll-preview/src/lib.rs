@@ -744,8 +744,9 @@ pub fn render(
         }
     }
     for pt in points {
-        // Points with visible:false only serve as polygon/segment endpoints.
-        if pt["visible"] == false {
+        // Points with visible:false only serve as polygon/segment endpoints;
+        // a point whose bound position is undefined is hidden.
+        if pt["visible"] == false || pt["binding_undefined"] == true {
             continue;
         }
         let x = num(pt, "x")?;

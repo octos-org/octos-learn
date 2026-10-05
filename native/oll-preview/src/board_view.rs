@@ -341,6 +341,35 @@ pub fn note_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         {}
     }}", badge("note", "#aaa194")))
 }
+/// Thinking-question card (web `.learning-reflection-card.is-world`): header
+/// "想一想" with a hint, the prompt, and a "查看答案" toggle; the reference
+/// answer shows only when open. The toggle is `toggle` for hit-testing.
+pub fn reflection_card(cx: &mut Cx, prompt: &str, answer: &str, open: bool) -> Result<WidgetRef, String> {
+    let answer_box = if open {
+        format!(
+            "RoundedView{{width:Fill height:Fit padding:Inset{{left:12 right:12 top:10 bottom:10}} draw_bg +: {{color:#f5eed8cc border_radius:12}} {}}}",
+            text_box(answer, 13., 1.55, "#4a4336", false, true, (0., 0.))
+        )
+    } else {
+        String::new()
+    };
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:8 padding:14 draw_bg +: {{color:#fffaebf7 border_radius:18 border_size:1 border_color:#9a762638}}
+        View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}}
+            {}
+            View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} {}}}
+        }}
+        {}
+        toggle := RoundedView{{width:Fit height:Fit padding:Inset{{left:12 right:12 top:5 bottom:5}} draw_bg +: {{color:#ffffff border_radius:12 border_size:1 border_color:#9a76264d}}
+            {}
+        }}
+        {answer_box}
+    }}",
+        text_box("想一想", 13., 1.18, "#8a6212", true, false, (0., 0.)),
+        text_box("先独立思考，再展开答案核对", 9., 1.18, "#827b72", false, false, (0., 0.)),
+        text_box(prompt, 14., 1.5, "#373c38", true, true, (0., 0.)),
+        text_box(if open { "收起答案" } else { "查看答案" }, 12., 1.18, "#8a6212", true, false, (0., 0.)),
+    ))
+}
 /// Extra card height reserved for the caption label below a chart.
 pub fn caption_extra(node: &Value) -> f64 {
     let caption = crate::chart_caption(node);

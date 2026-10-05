@@ -1,5 +1,6 @@
 //! World-space course control panel (octos-learn
-//! `.learning-variable-controls.is-world`): one row per slider variable,
+//! `.learning-variable-controls.is-world`, the compact panel docked under its
+//! visual at the visual's width): one row per slider variable,
 //! `label | range | value | − + ↺`, drawn in board world coordinates so it
 //! moves and zooms with its lesson visuals. Board cards receive no events,
 //! so SpatialBoard hit-tests the panel through `hit` in world coordinates.
@@ -19,14 +20,26 @@ script_mod! {
 
 /// Web px -> Makepad points.
 const PT: f64 = 0.75;
-const PAD_X: f64 = 12.;
-const PAD_Y: f64 = 10.;
-const ROW_H: f64 = 24.;
-const ROW_GAP: f64 = 6.;
+// Compact docked panel: 5px/10px padding + 1px border, rows as tall as
+// their 22px buttons (web measures 34px for one row), 4px gaps.
+const PAD_X: f64 = 11.;
+const PAD_Y: f64 = 6.;
+const ROW_H: f64 = 22.;
+const ROW_GAP: f64 = 4.;
 const COL_GAP: f64 = 6.;
-const BUTTON: f64 = 24.;
+const BUTTON: f64 = 22.;
 const BUTTON_GAP: f64 = 3.;
+const RADIUS: f32 = 14.;
+/// Status pill shown on the panel's top edge while the teacher animates a variable.
+const DEMO_HINT: &str = "老师正在演示这个变量，结束后即可继续拖动";
 const RESET_ICON: &str = include_str!("../../octos-learn/assets/icons/rotate-ccw.svg");
+
+/// Rendered panel height for `rows` sliders (the host reports the measured
+/// panel to the layout, like the web interaction measurement).
+pub fn panel_height(rows: usize) -> f64 {
+    let n = rows as f64;
+    2. * PAD_Y + n * ROW_H + (n - 1.).max(0.) * ROW_GAP
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ControlModel {
@@ -77,6 +90,9 @@ pub struct ControlsCard {
     buttons: Vec<[Rect; 3]>,
     #[rust]
     icon_loaded: bool,
+    /// Row the learner is dragging (its value shows without symbolic labels).
+    #[rust]
+    dragging: Option<usize>,
 }
 
 fn rgb(hex: u32) -> (f32, f32, f32) {
@@ -101,9 +117,9 @@ fn rect(x: f64, y: f64, w: f64, h: f64) -> Rect {
     }
 }
 
-/// Web formatCourseControlValue for plain units (value + unit), and the
-/// variable-controls π-fraction format for radians.
-pub fn format_value(value: f64, unit: &str) -> String {
+/// Web formatVariableValue: π fractions (eighths) for radians, otherwise
+/// the value to three decimals with its unit.
+fn format_variable_value(value: f64, unit: &str) -> String {
     if unit == "rad" {
         let ratio = value / std::f64::consts::PI;
         let eighths = (ratio * 8.).round();
@@ -123,18 +139,74 @@ pub fn format_value(value: f64, unit: &str) -> String {
             };
         }
     }
-    let rounded = (value * 100.).round() / 100.;
-    let rounded = if rounded == 0. { 0. } else { rounded };
-    let base = if rounded == rounded.trunc() {
-        format!("{}", rounded as i64)
+    let rounded = if value.abs() < 1e-10 {
+        0.
     } else {
-        format!("{rounded}")
+        trim(&format!("{value:.3}"))
     };
-    if unit.is_empty() || unit == "rad" {
-        base
+    if unit.is_empty() {
+        js_number(rounded)
     } else {
-        format!("{base} {unit}")
+        format!("{} {unit}", js_number(rounded))
     }
+}
+fn trim(fixed: &str) -> f64 {
+    fixed.parse().unwrap_or(0.)
+}
+/// JS Number -> String for the short decimals used here.
+fn js_number(v: f64) -> String {
+    let v = if v == 0. { 0. } else { v };
+    if v == v.trunc() {
+        format!("{}", v as i64)
+    } else {
+        format!("{v}")
+    }
+}
+/// Web courseControlDecimals: decimals implied by a slider step, at most two.
+fn decimals(step: Option<f64>) -> usize {
+    let Some(step) = step.filter(|s| s.is_finite() && *s > 0.) else {
+        return 2;
+    };
+    (0..2)
+        .find(|d| {
+            let scaled = step * 10f64.powi(*d as i32);
+            (scaled - scaled.round()).abs() < 1e-9
+        })
+        .unwrap_or(2)
+}
+
+/// Web formatCourseControlValue: symbolic radians while at rest; otherwise a
+/// fixed number of decimals from the step, so the label keeps its length.
+pub fn format_value(value: f64, unit: &str, step: Option<f64>, moving: bool) -> String {
+    if unit == "rad" && !moving {
+        let symbolic = format_variable_value(value, unit);
+        if symbolic == "0" || symbolic.contains('π') {
+            return symbolic;
+        }
+    }
+    let text = match step {
+        None => js_number(trim(&format!("{value:.2}"))),
+        Some(_) => format!("{value:.*}", decimals(step)),
+    };
+    let normalized = match text.strip_prefix('-') {
+        Some(rest) if rest.chars().all(|c| c == '0' || c == '.') => rest.to_owned(),
+        _ => text,
+    };
+    if unit.is_empty() {
+        normalized
+    } else {
+        format!("{normalized} {unit}")
+    }
+}
+
+/// Web courseControlLabelWidth: characters that fit every label of the range.
+pub fn label_width_chars(min: f64, max: f64, unit: &str, step: Option<f64>) -> usize {
+    [min, max]
+        .iter()
+        .map(|v| format_value(*v, unit, step, true).chars().count())
+        .max()
+        .unwrap_or(1)
+        .max(if unit == "rad" { 4 } else { 1 })
 }
 fn gcd(a: i64, b: i64) -> i64 {
     if b == 0 {
@@ -153,6 +225,17 @@ impl ControlsCard {
     }
     pub fn rows(&self) -> &[ControlModel] {
         &self.rows
+    }
+    pub fn set_dragging(&mut self, cx: &mut Cx, row: Option<usize>) {
+        if self.dragging != row {
+            self.dragging = row;
+            self.redraw(cx);
+        }
+    }
+    fn shown(&self, i: usize) -> String {
+        let row = &self.rows[i];
+        let step = (row.step > 0.).then_some(row.step);
+        format_value(row.value, &row.unit, step, row.animating || self.dragging == Some(i))
     }
     /// Row and part under a board-world point.
     pub fn hit(&self, p: DVec2) -> Option<(usize, Part)> {
@@ -210,20 +293,19 @@ impl Widget for ControlsCard {
             .iter()
             .map(|row| Self::text_width(&mut self.draw_bold, cx, &row.label, 12.))
             .fold(0., f64::max);
-        // Output column: at least 5ch of the 12px bold figure font.
+        // Output column: at least 5ch of the 12px bold figure font, and the
+        // ch width that fits every label of each range (web min-width).
         let ch = Self::text_width(&mut self.draw_bold, cx, "0", 12.).max(1.);
-        let output_w = self
-            .rows
-            .iter()
-            .map(|row| {
-                Self::text_width(
-                    &mut self.draw_bold,
-                    cx,
-                    &format_value(row.value, &row.unit),
-                    12.,
-                )
-            })
-            .fold(5. * ch, f64::max);
+        let mut output_w = 5. * ch;
+        for i in 0..self.rows.len() {
+            let row = &self.rows[i];
+            let step = (row.step > 0.).then_some(row.step);
+            let chars = label_width_chars(row.min, row.max, &row.unit, step) as f64;
+            let shown = self.shown(i);
+            output_w = output_w
+                .max(chars * ch)
+                .max(Self::text_width(&mut self.draw_bold, cx, &shown, 12.));
+        }
         let actions_w = 3. * BUTTON + 2. * BUTTON_GAP;
         let inner_w = w - 2. * PAD_X;
         let track_w = (inner_w - label_w - output_w - actions_w - 3. * COL_GAP).max(20.);
@@ -239,9 +321,9 @@ impl Widget for ControlsCard {
         );
         let v = &mut self.draw_card;
         v.begin();
-        // Card: rgba(255,253,248,.95), 1px rgba(63,73,67,.14), radius 18.
+        // Card: rgba(255,253,248,.95), 1px rgba(63,73,67,.14), radius 14.
         set(v, 0xfffdf8, 0.95);
-        v.rounded_rect(x as f32, y as f32, w as f32, h as f32, 18.);
+        v.rounded_rect(x as f32, y as f32, w as f32, h as f32, RADIUS);
         v.fill();
         set(v, 0x3f4943, 0.14);
         v.rounded_rect(
@@ -249,7 +331,7 @@ impl Widget for ControlsCard {
             y as f32 + 0.5,
             w as f32 - 1.,
             h as f32 - 1.,
-            17.5,
+            RADIUS - 0.5,
         );
         v.stroke(1.);
         self.tracks.clear();
@@ -274,14 +356,15 @@ impl Widget for ControlsCard {
             let mut bs = [Rect::default(); 3];
             for (k, b) in bs.iter_mut().enumerate() {
                 let bx = bx0 + k as f64 * (BUTTON + BUTTON_GAP);
-                *b = rect(bx, ry, BUTTON, BUTTON);
+                let by = cy - BUTTON / 2.;
+                *b = rect(bx, by, BUTTON, BUTTON);
                 set(v, 0x168398, 0.08);
-                v.rounded_rect(bx as f32, ry as f32, BUTTON as f32, BUTTON as f32, 7.);
+                v.rounded_rect(bx as f32, by as f32, BUTTON as f32, BUTTON as f32, 7.);
                 v.fill();
                 set(v, 0x0d7082, 0.2);
                 v.rounded_rect(
                     bx as f32 + 0.5,
-                    ry as f32 + 0.5,
+                    by as f32 + 0.5,
                     BUTTON as f32 - 1.,
                     BUTTON as f32 - 1.,
                     6.5,
@@ -291,7 +374,7 @@ impl Widget for ControlsCard {
             // − and + glyphs as strokes (1.5px, 8px long), web font glyph size.
             set(v, 0x0d7082, 1.);
             for (k, plus) in [(0usize, false), (1, true)] {
-                let (gx, gy) = (bs[k].pos.x + BUTTON / 2., ry + BUTTON / 2.);
+                let (gx, gy) = (bs[k].pos.x + BUTTON / 2., cy);
                 v.move_to((gx - 4.) as f32, gy as f32);
                 v.line_to((gx + 4.) as f32, gy as f32);
                 v.stroke_opts(1.5, LineCap::Round, LineJoin::Round, 4., 1.);
@@ -303,16 +386,40 @@ impl Widget for ControlsCard {
             }
             self.buttons.push(bs);
         }
+        // Demonstration hint: a pill on the panel's top edge (10px text,
+        // 16px line, 8px side padding, 10px from the right edge).
+        let animating = self.rows.iter().any(|r| r.animating);
+        let hint_w = if animating {
+            Self::text_width(&mut self.draw_text, cx, DEMO_HINT, 10.)
+        } else {
+            0.
+        };
+        let hint = rect(x + w - 10. - hint_w - 18., y - 9., hint_w + 18., 18.);
+        let v = &mut self.draw_card;
+        if animating {
+            set(v, 0xfff7f2, 1.);
+            v.rounded_rect(hint.pos.x as f32, hint.pos.y as f32, hint.size.x as f32, 18., 9.);
+            v.fill();
+            set(v, 0xc35e42, 0.25);
+            v.rounded_rect(
+                hint.pos.x as f32 + 0.5,
+                hint.pos.y as f32 + 0.5,
+                hint.size.x as f32 - 1.,
+                17.,
+                8.5,
+            );
+            v.stroke(1.);
+        }
         v.end(cx);
         for (i, row) in self.rows.iter().enumerate() {
             let ry = y + PAD_Y + i as f64 * (ROW_H + ROW_GAP);
-            // 12px text centered in the 24px row (web grid align-items: center).
+            // 12px text centered in the row (web grid align-items: center).
             let text_y = ry + (ROW_H - 12. * 1.18) / 2.;
             self.draw_bold.text_style.font_size = (12. * PT) as f32;
             self.draw_bold.color = color(0x5d5952);
             self.draw_bold
                 .draw_abs(cx, dvec2(x + PAD_X, text_y), &row.label);
-            let value = format_value(row.value, &row.unit);
+            let value = self.shown(i);
             let vw = Self::text_width(&mut self.draw_bold, cx, &value, 12.);
             let right = x + w - PAD_X - actions_w - COL_GAP;
             self.draw_bold.color = color(if row.animating { 0xc35e42 } else { 0x0d7082 });
@@ -320,7 +427,16 @@ impl Widget for ControlsCard {
                 .draw_abs(cx, dvec2(right - vw, text_y), &value);
             let reset = self.buttons[i][2];
             self.draw_reset
-                .draw_abs(cx, rect(reset.pos.x + 6., reset.pos.y + 6., 12., 12.));
+                .draw_abs(cx, rect(reset.pos.x + 5., reset.pos.y + 5., 12., 12.));
+        }
+        if animating {
+            self.draw_text.text_style.font_size = (10. * PT) as f32;
+            self.draw_text.color = color(0xc35e42);
+            self.draw_text.draw_abs(
+                cx,
+                dvec2(hint.pos.x + 9., hint.pos.y + 1. + (16. - 10. * 1.18) / 2.),
+                DEMO_HINT,
+            );
         }
         cx.end_turtle();
         DrawStep::done()
@@ -329,14 +445,22 @@ impl Widget for ControlsCard {
 
 #[cfg(test)]
 mod tests {
-    use super::format_value;
+    use super::{format_value, label_width_chars};
+    use std::f64::consts::PI;
     #[test]
     fn values_format_like_the_web() {
-        assert_eq!(format_value(1., ""), "1");
-        assert_eq!(format_value(0.4, ""), "0.4");
-        assert_eq!(format_value(-0.0001, ""), "0");
-        assert_eq!(format_value(4., "厘米"), "4 厘米");
-        assert_eq!(format_value(std::f64::consts::PI / 2., "rad"), "π/2");
-        assert_eq!(format_value(-std::f64::consts::PI, "rad"), "−π");
+        assert_eq!(format_value(1., "", None, false), "1");
+        assert_eq!(format_value(0.4, "", None, false), "0.4");
+        assert_eq!(format_value(-0.0001, "", None, false), "0");
+        assert_eq!(format_value(4., "厘米", None, false), "4 厘米");
+        assert_eq!(format_value(PI / 2., "rad", None, false), "π/2");
+        assert_eq!(format_value(-PI, "rad", None, false), "−π");
+        // A known step keeps the decimals fixed; moving radians are numeric.
+        assert_eq!(format_value(1., "", Some(0.1), false), "1.0");
+        assert_eq!(format_value(-0.001, "", Some(0.01), false), "0.00");
+        assert_eq!(format_value(PI / 2., "rad", Some(0.01), true), "1.57 rad");
+        assert_eq!(format_value(0.5, "rad", Some(0.01), false), "0.50 rad");
+        assert_eq!(label_width_chars(-5., 5., "", Some(0.5)), 4);
+        assert_eq!(label_width_chars(0., 1., "rad", Some(1.)), 5);
     }
 }

@@ -144,6 +144,13 @@ script_mod! {
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 11 border_size: 0 border_color: #0000 } }
                                 }
                                 View { width: Fill height: Fit flow: Right spacing: 4 align: Align{x: 1. y: 0.5}
+                                    // Course preview (web coursePreview): one action that
+                                    // switches to interactive learning.
+                                    start_interaction := Button { visible: false height: 34 text: "开始互动学习" spacing: 6
+                                        padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
+                                        icon_walk: Walk{width: 15 height: 15} draw_icon +: { color: #0c7085 }
+                                        draw_text.color: #0c7085 draw_text.text_style.font_size: 9
+                                        draw_bg +: { color: #dbeceb color_hover: #cfe5e4 color_down: #c3dedd border_radius: 10 border_size: 0 border_color: #0000 } }
                                     // DIFF: voice/camera are not migrated; clicks show a toast.
                                     voice := Button { height: 34 text: "启用语音" spacing: 6
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
@@ -426,6 +433,10 @@ pub struct App {
     pack_version: String,
     #[rust]
     drawing: bool,
+    /// Course opened for preview (web course-mode=preview): no ink, no input
+    /// dock, and a "开始互动学习" action instead of voice/camera.
+    #[rust]
+    course_preview: bool,
     #[rust]
     pen_color: Vec4,
     #[rust]
@@ -617,7 +628,8 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 10] = [
+    let icons: [(LiveId, &str); 11] = [
+        (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
@@ -790,6 +802,9 @@ impl App {
                 self.pack_version = version.into();
                 self.course_source = source;
                 self.player = Some(session);
+                // The launcher's 预览 opens a preview; 开始 opens interactive learning.
+                self.course_preview = !autoplay;
+                self.apply_course_mode(cx);
                 self.show_learning(cx, true);
                 self.note(cx, "");
                 self.autoplay_pending = autoplay;
@@ -809,6 +824,22 @@ impl App {
             }
         }
         self.refresh(cx);
+    }
+    /// Web learning-workspace chrome for preview vs interactive learning.
+    fn apply_course_mode(&mut self, cx: &mut Cx) {
+        let preview = self.course_preview;
+        if preview && self.drawing {
+            self.drawing = false;
+            if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                board.set_drawing(cx, false);
+            }
+            self.rebuild_ink_tools(cx);
+        }
+        self.ui.widget(cx, ids!(start_interaction)).set_visible(cx, preview);
+        for id in [live_id!(voice), live_id!(camera), live_id!(ink_toolbar), live_id!(input_dock)] {
+            self.ui.widget(cx, &[id]).set_visible(cx, !preview);
+        }
+        self.ui.redraw(cx);
     }
     fn show_learning(&mut self, cx: &mut Cx, learning: bool) {
         self.learning_visible = learning;
@@ -1284,10 +1315,13 @@ impl App {
                 });
             }
         }
+        // Desktop keeps modest bands as floors; chrome along the top edge and
+        // the dock across the bottom middle widen them (web boardChromeInsets).
+        let (top, bottom, occlusions) = board_chrome_insets(board.size.x, board.size.y, occlusions);
         oll_runtime::camera::Insets {
-            top: if compact { 78. } else { 92. },
+            top: top.max(if compact { 78. } else { 92. }).round(),
             right: if compact { 18. } else { 28. },
-            bottom: if compact { 180. } else { 120. },
+            bottom: bottom.max(if compact { 180. } else { 120. }).round(),
             left: if compact { 18. } else { 28. },
             focus_margin: None,
             occlusions,
@@ -1534,6 +1568,10 @@ impl AppMain for App {
             if self.ui.button(cx, ids!(replay_topic)).clicked(actions) {
                 self.toast(cx, "重播 Topic 尚未迁移，仅网页版可用");
             }
+            if self.ui.button(cx, ids!(start_interaction)).clicked(actions) {
+                self.course_preview = false;
+                self.apply_course_mode(cx);
+            }
             if self.ui.button(cx, ids!(voice)).clicked(actions)
                 || self.ui.button(cx, ids!(camera)).clicked(actions)
             {
@@ -1696,4 +1734,31 @@ mod tests {
         // stroke is not baked (logo only needs fill/fill-rule), class attr is gone either way
         assert!(!baked.contains("class="));
     }
+}
+
+/// octos-learn boardChromeInsets: chrome anchored to the top edge becomes the
+/// top band, chrome across the middle of the bottom edge becomes the bottom
+/// band, and the rest (e.g. the teacher avatar in a corner) stays an occlusion.
+fn board_chrome_insets(
+    width: f64,
+    height: f64,
+    chrome: Vec<oll_runtime::spatial::Rect>,
+) -> (f64, f64, Vec<oll_runtime::spatial::Rect>) {
+    let (mut top, mut bottom) = (0f64, 0f64);
+    let mut occlusions = Vec::new();
+    let (middle_left, middle_right) = (width * 0.3, width * 0.7);
+    for r in chrome {
+        let rect_bottom = r.y + r.height;
+        if r.y <= height * 0.2 && rect_bottom <= height * 0.35 {
+            top = top.max(rect_bottom);
+            continue;
+        }
+        let spans_middle = r.x < middle_right && r.x + r.width > middle_left;
+        if spans_middle && r.y >= height * 0.65 {
+            bottom = bottom.max(height - r.y);
+            continue;
+        }
+        occlusions.push(r);
+    }
+    (top, bottom, occlusions)
 }
