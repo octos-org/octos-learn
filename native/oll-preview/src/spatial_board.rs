@@ -1,5 +1,6 @@
 use crate::board_view;
 use crate::controls_view::{self, ControlModel, ControlsCard, Part};
+use crate::plot_view::{PlotState, PlotView, Tool};
 use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
@@ -202,6 +203,15 @@ pub struct SpatialBoard {
     /// lesson: (attachment id, reflection id, rect, card).
     #[rust]
     reflection_cards: Vec<(String, String, WorldRect, WidgetRef)>,
+    /// Plot explorer state by node id (web PlotExplorer state).
+    #[rust]
+    plot_states: BTreeMap<String, PlotState>,
+    /// Active explore-mode pan: node id, ranges and pointer at the start.
+    #[rust]
+    plot_drag: Option<(String, (oll_runtime::plot::Range, oll_runtime::plot::Range), DVec2)>,
+    /// 大图 requests for the host (node id).
+    #[rust]
+    plot_expand: Vec<String>,
     /// Rendered reflection card heights (web ResizeObserver), by attachment id.
     #[rust]
     reflection_heights: BTreeMap<String, f64>,
@@ -382,6 +392,8 @@ impl SpatialBoard {
         self.task_cards.clear();
         self.task_heights.clear();
         self.task_requests.clear();
+        self.plot_states.clear();
+        self.plot_drag = None;
         self.camera = Camera::default();
         self.from = self.camera;
         self.destination = self.camera;
@@ -678,7 +690,8 @@ impl SpatialBoard {
                     "text" if node["content"]["fragments"].is_array() => {
                         board_view::text_node(cx, node)?
                     }
-                    "plot" | "geometry" => board_view::chart_node(cx, node)?,
+                    "plot" => board_view::plot_node(cx, node)?,
+                    "geometry" => board_view::chart_node(cx, node)?,
                     "scene3d" => board_view::scene3d_node(cx, node)?,
                     "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
@@ -789,7 +802,14 @@ impl SpatialBoard {
                 }
                 continue;
             }
-            if kind != "plot" && kind != "geometry" {
+            if kind == "plot" {
+                let state = self.plot_states.get(id).cloned().unwrap_or_default();
+                if let Some(mut plot) = w.widget(cx, ids!(plot)).borrow_mut::<PlotView>() {
+                    plot.set_node(cx, node, &p.variables, &state);
+                }
+                continue;
+            }
+            if kind != "geometry" {
                 continue;
             }
             let plot_ref = w.widget(cx, ids!(plot));
@@ -932,6 +952,108 @@ impl SpatialBoard {
         self.redraw(cx);
     }
     /// Web scene3d pointer handling; true when the event belongs to a scene.
+    pub fn take_plot_expand(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.plot_expand)
+    }
+    /// Plot card under a screen point: (node id, PlotView, world point).
+    fn plot_at(&self, cx: &mut Cx, abs: DVec2) -> Option<(String, WidgetRef, DVec2)> {
+        let world = self.world_point(abs);
+        self.entries.iter().find_map(|(id, r, w)| {
+            let inside = world.x >= r.x && world.x <= r.x + r.width && world.y >= r.y && world.y <= r.y + r.height;
+            let plot = w.widget(cx, ids!(plot));
+            (inside && plot.borrow::<PlotView>().is_some()).then(|| (id.clone(), plot, world))
+        })
+    }
+    fn set_plot_state(&mut self, cx: &mut Cx, id: &str, plot: &WidgetRef, state: PlotState) {
+        if let Some(mut v) = plot.borrow_mut::<PlotView>() {
+            v.state = state.clone();
+            v.redraw(cx);
+        }
+        self.plot_states.insert(id.to_owned(), state);
+        // The card height may change (details, restore): re-measure.
+        self.measure_relayout = true;
+        self.relayout_frame = cx.new_next_frame();
+    }
+    /// Plot explorer input (web renderPlotExplorer): toolbar, 说明 toggle,
+    /// wheel zoom inside the frame, drag-pan while exploring.
+    fn plot_event(&mut self, cx: &mut Cx, hit: &Hit) -> bool {
+        use oll_runtime::plot;
+        match hit {
+            Hit::FingerDown(e) => {
+                let Some((id, view, world)) = self.plot_at(cx, e.abs) else { return false };
+                let (tool, details, fraction, ranges, recommended_state) = {
+                    let v = view.borrow::<PlotView>().unwrap();
+                    (v.tool_at(world), v.details_contains(world), v.frame_fraction(world), v.current_ranges(), v.state.clone())
+                };
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or(recommended_state);
+                if let Some(tool) = tool {
+                    match tool {
+                        Tool::Explore => state.exploring = !state.exploring,
+                        Tool::Restore => {
+                            state.ranges = None;
+                            state.hidden.clear();
+                        }
+                        Tool::Expand => self.plot_expand.push(id.clone()),
+                    }
+                    self.set_plot_state(cx, &id, &view, state);
+                    return true;
+                }
+                if details {
+                    state.details_open = !state.details_open;
+                    self.set_plot_state(cx, &id, &view, state);
+                    return true;
+                }
+                if state.exploring && fraction.is_some() {
+                    if let Some(r) = ranges {
+                        self.plot_drag = Some((id, r, e.abs));
+                        cx.set_cursor(MouseCursor::Grabbing);
+                        return true;
+                    }
+                }
+                false
+            }
+            Hit::FingerMove(e) => {
+                let Some((id, start, at)) = self.plot_drag.clone() else { return false };
+                let Some((_, _, w)) = self.entries.iter().find(|(i, _, _)| *i == id) else { return true };
+                let view = w.widget(cx, ids!(plot));
+                let Some((px, py)) = view.borrow::<PlotView>().and_then(|v| v.data_per_world()) else { return true };
+                let delta = (e.abs - at) / self.camera.scale;
+                let next = plot::pan(start.0, start.1, -delta.x * px, delta.y * py);
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or_default();
+                state.ranges = Some(next);
+                if let Some(mut v) = view.borrow_mut::<PlotView>() {
+                    v.state = state.clone();
+                    v.redraw(cx);
+                }
+                self.plot_states.insert(id, state);
+                true
+            }
+            Hit::FingerUp(_) => {
+                if self.plot_drag.take().is_none() {
+                    return false;
+                }
+                cx.set_cursor(MouseCursor::Grab);
+                true
+            }
+            Hit::FingerScroll(e) => {
+                let Some((id, view, world)) = self.plot_at(cx, e.abs) else { return false };
+                let (fraction, ranges, current) = {
+                    let v = view.borrow::<PlotView>().unwrap();
+                    (v.frame_fraction(world), v.current_ranges(), v.state.clone())
+                };
+                let (Some(anchor), Some((x, y))) = (fraction, ranges) else { return false };
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or(current);
+                state.ranges = Some(plot::zoom(x, y, plot::wheel_zoom_factor(e.scroll.y), anchor));
+                if let Some(mut v) = view.borrow_mut::<PlotView>() {
+                    v.state = state.clone();
+                    v.redraw(cx);
+                }
+                self.plot_states.insert(id, state);
+                true
+            }
+            _ => false,
+        }
+    }
     fn scene_event(&mut self, cx: &mut Cx, hit: &Hit) -> bool {
         match hit {
             Hit::FingerDown(e) => {
@@ -1173,7 +1295,7 @@ impl Widget for SpatialBoard {
             }
             return;
         }
-        if self.control_event(cx, &hit) || self.scene_event(cx, &hit) {
+        if self.control_event(cx, &hit) || self.plot_event(cx, &hit) || self.scene_event(cx, &hit) {
             return;
         }
         match hit {

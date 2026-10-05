@@ -11,6 +11,7 @@ mod platform_services;
 use platform_services::Events as PlatformEvents;
 pub mod progress_store;
 pub mod scene3d_view;
+pub mod plot_view;
 pub mod spatial_board;
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
@@ -914,6 +915,7 @@ impl AppMain for App {
         makepad_plot::script_mod(vm);
         controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);
+        plot_view::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
     }

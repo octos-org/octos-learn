@@ -262,6 +262,38 @@ pub fn chart_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         plot := mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:8 bottom:40}}}}
         caption_box := View{{visible:false width:Fill height:Fit padding:Inset{{left:18 right:18 bottom:10}} caption := Label{{width:Fill height:Fit draw_text.wrap:Words draw_text.text_style.font_size:10 draw_text.color:#6b6258 text:\"\"}}}}}}"))
 }
+/// Web renderContent node title: content.title / label, else the role
+/// when it differs from the kind.
+pub fn node_title(node: &Value) -> String {
+    let c = &node["content"];
+    let role = node["role"].as_str().unwrap_or("");
+    let kind = node["kind"].as_str().unwrap_or("");
+    c["title"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .or(c["label"].as_str().filter(|s| !s.is_empty()))
+        .map(str::to_owned)
+        .unwrap_or_else(|| if !role.is_empty() && kind != "math" && role != kind { role.to_owned() } else { String::new() })
+}
+/// Plot card (web `.board-node.kind-plot`): padding 16/18, bold 16px node
+/// title (margin-bottom 8), then the explorer body (`PlotView`: toolbar,
+/// plot, measurement, details, legend). Content-sized: the Web measures
+/// scrollHeight + 8, mirrored by an extra 8px bottom padding.
+pub fn plot_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let title = node_title(node);
+    let title_box = if title.is_empty() {
+        String::new()
+    } else {
+        text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
+    };
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:16 border_size:1 border_color:#d8d0c2}}
+        View{{width:Fill height:Fit flow:Down padding:Inset{{left:18 right:18 top:16 bottom:24}}
+            {title_box}
+            plot := mod.widgets.PlotView{{}}
+        }}
+        {}
+    }}", badge("plot", "#aaa194")))
+}
 /// scene3d card (web `.board-node.kind-scene3d`): 16px/18px padding, bold
 /// 16px node title, SCENE3D badge pinned top-right, then the scene panel
 /// (Scene3dView), which fills calc(100% - 24px) and is clipped by the card
@@ -587,7 +619,6 @@ pub fn math_width(node: &Value) -> Result<f64, String> {
 /// size to content: 360 plus caption rows).
 pub fn fixed_height(node: &Value) -> Option<f64> {
     match node["kind"].as_str().unwrap_or("") {
-        "plot" => Some(360. + caption_extra(node)),
         "geometry" | "scene3d" => Some(estimate(node).1),
         "diagram" if node["content"]["elements"].is_array() => Some(estimate(node).1),
         _ => None,
@@ -595,7 +626,7 @@ pub fn fixed_height(node: &Value) -> Option<f64> {
 }
 /// Kinds whose height the Web measures from the rendered card.
 pub fn content_sized(node: &Value) -> bool {
-    matches!(node["kind"].as_str().unwrap_or(""), "math" | "note" | "text")
+    matches!(node["kind"].as_str().unwrap_or(""), "math" | "note" | "text" | "plot")
         || (node["kind"] == "diagram" && !node["content"]["elements"].is_array())
 }
 pub fn node_notes(node: &Value) -> String {

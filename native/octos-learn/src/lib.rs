@@ -1473,6 +1473,7 @@ impl AppMain for App {
         makepad_plot::script_mod(vm);
         controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);
+        octos_oll_preview::plot_view::script_mod(vm);
         svg_image::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
