@@ -43,3 +43,23 @@ pub fn load_source(root: &std::path::Path, pack_id: &str, version: &str) -> Resu
     let entry = manifest["entry"].as_str().unwrap_or("course.oll.jsonl");
     std::fs::read_to_string(dir.join(entry)).map_err(|e| format!("无法读取课程内容：{e}"))
 }
+
+/// Recorded narration clips (manifest narration.segments): Beat id -> (audio
+/// file, duration ms). Missing files are skipped.
+pub fn narration(root: &std::path::Path, pack_id: &str, version: &str) -> Vec<(String, PathBuf, f64)> {
+    let dir = root.join(pack_id).join(version);
+    let Ok(raw) = std::fs::read_to_string(dir.join("manifest.json")) else { return vec![] };
+    let Ok(manifest) = serde_json::from_str::<Value>(&raw) else { return vec![] };
+    manifest["narration"]["segments"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|s| {
+            let path = dir.join(s["file"].as_str()?);
+            if !path.is_file() {
+                return None;
+            }
+            Some((s["beatId"].as_str()?.to_owned(), path, s["durationMs"].as_f64()?))
+        })
+        .collect()
+}

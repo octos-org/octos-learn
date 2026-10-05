@@ -7,6 +7,7 @@ use makepad_widgets::*;
 use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 mod svg_image;
+use std::collections::BTreeMap;
 use std::time::Instant;
 
 mod course_pack;
@@ -446,6 +447,13 @@ pub struct App {
     pen_width: f64,
     #[rust]
     narration_muted: bool,
+    /// Recorded narration clips of the open course: Beat id -> audio file.
+    #[rust]
+    narration_audio: BTreeMap<String, std::path::PathBuf>,
+    /// The clip being played: (Beat id, player id, playing, seek ms pending
+    /// until the player is prepared).
+    #[rust]
+    audio_now: Option<(String, LiveId, bool, Option<u64>)>,
     #[rust]
     store: Option<progress_store::Store>,
     #[rust]
@@ -786,6 +794,7 @@ impl App {
         self.error.clear();
         self.drawing = false;
         self.narration_muted = false;
+        self.stop_narration_audio(cx);
         self.autoplay_pending = false;
         let root = course_pack::pack_root();
         let source = match course_pack::load_source(&root, pack_id, version) {
@@ -806,6 +815,10 @@ impl App {
                 self.pack_id = pack_id.into();
                 self.pack_version = version.into();
                 self.course_source = source;
+                let clips = course_pack::narration(&root, pack_id, version);
+                self.narration_audio = clips.iter().map(|(b, p, _)| (b.clone(), p.clone())).collect();
+                let mut session = session;
+                session.narration_durations = clips.into_iter().map(|(b, _, ms)| (b, ms)).collect();
                 self.player = Some(session);
                 // The launcher's 预览 opens a preview; 开始 opens interactive learning.
                 self.course_preview = !autoplay;
@@ -1312,6 +1325,54 @@ impl App {
             self.refresh(cx);
         }
     }
+    fn stop_narration_audio(&mut self, cx: &mut Cx) {
+        if let Some((_, id, ..)) = self.audio_now.take() {
+            cx.cleanup_video_playback_resources(id);
+        }
+    }
+    /// Play the recorded clip of the narration being spoken (web packaged
+    /// narration audio): start it at the current narration position, pause
+    /// and resume it with the lesson, stop it when the narration ends.
+    fn sync_narration_audio(&mut self, cx: &mut Cx) {
+        let desired = self.player.as_ref().and_then(|s| {
+            if !s.playing || self.narration_muted || !self.learning_visible {
+                return None;
+            }
+            let (beat, ms) = s.narration_position()?;
+            self.narration_audio.contains_key(beat).then(|| (beat.to_owned(), ms))
+        });
+        let paused_same = self.player.as_ref().and_then(|s| s.narration_position()).map(|(b, _)| b.to_owned());
+        match (&mut self.audio_now, desired) {
+            (Some((beat, id, playing, _)), Some((want, _))) if *beat == want => {
+                if !*playing {
+                    cx.resume_video_playback(*id);
+                    *playing = true;
+                }
+            }
+            (Some((beat, id, playing, _)), None) if paused_same.as_deref() == Some(beat.as_str()) && !self.narration_muted => {
+                // Paused mid-narration: keep the clip at its position.
+                if *playing {
+                    cx.pause_video_playback(*id);
+                    *playing = false;
+                }
+            }
+            (_, desired) => {
+                self.stop_narration_audio(cx);
+                if let Some((beat, ms)) = desired {
+                    let path = self.narration_audio[&beat].to_string_lossy().to_string();
+                    let id = LiveId::from_str(&format!("narration:{beat}:{}", self.audio_epoch()));
+                    cx.prepare_audio_playback(id, makepad_widgets::makepad_platform::event::VideoSource::Filesystem(path), true, false);
+                    let seek = (ms > 250.).then_some(ms as u64);
+                    self.audio_now = Some((beat, id, true, seek));
+                }
+            }
+        }
+    }
+    fn audio_epoch(&self) -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| d.as_millis() as u64)
+    }
     fn set_variable(&mut self, cx: &mut Cx, alias: &str, value: f64) {
         if self.player.as_ref().is_some_and(|s| s.board.animating()) {
             // Teacher demo in progress: sliders stay locked (web parity).
@@ -1412,7 +1473,7 @@ impl App {
             self.ui.label(cx, ids!(narration)).set_text(cx, bubble);
             self.ui
                 .widget(cx, ids!(narration_bubble))
-                .set_visible(cx, !self.narration_muted && !bubble.is_empty());
+                .set_visible(cx, !bubble.is_empty());
             if self.volume_icon_state != Some(self.narration_muted) {
                 self.volume_icon_state = Some(self.narration_muted);
                 let w = self.ui.widget(cx, ids!(narration_toggle));
@@ -1479,6 +1540,18 @@ impl AppMain for App {
         self::script_mod(vm)
     }
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
+        if let Event::VideoPlaybackPrepared(e) = event {
+            if std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() {
+                eprintln!("[audio] prepared {:?} duration {}ms", e.video_id, e.duration);
+            }
+            if let Some((_, id, _, seek)) = &mut self.audio_now {
+                if *id == e.video_id {
+                    if let Some(ms) = seek.take() {
+                        cx.seek_video_playback(*id, ms);
+                    }
+                }
+            }
+        }
         if matches!(event, Event::Startup) {
             if let Err(e) = progress_store::Store::start(cx).map(|s| self.store = Some(s)) {
                 self.error = e;
@@ -1556,6 +1629,8 @@ impl AppMain for App {
                     }
                 }
             }
+            // Narration voice follows the lesson (play / pause / next Beat).
+            self.sync_narration_audio(cx);
             // After the lesson: practice start states animate into place.
             if self.learning_visible {
                 let changed = match self.player.as_mut().filter(|s| s.complete()) {
@@ -1631,7 +1706,15 @@ impl AppMain for App {
                 self.last_tick = Some(Instant::now());
             }
             if self.ui.button(cx, ids!(narration_toggle)).clicked(actions) {
+                // Web: the toggle turns the narration voice off; the lesson no
+                // longer waits for narration, the bubble still shows it.
                 self.narration_muted = !self.narration_muted;
+                let enabled = !self.narration_muted;
+                if let Some(session) = &mut self.player {
+                    session.set_narration_enabled(enabled);
+                }
+                self.sync_narration_audio(cx);
+                self.refresh(cx);
             }
             // Web-identical controls whose backing feature is not migrated:
             // they stay clickable and explain themselves through the toast.
