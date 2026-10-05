@@ -217,7 +217,7 @@ script_mod! {
                                     View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
                                         octos_art := Svg { width: 56 height: 56 } }
                                     View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 7}
-                                        teacher_state := Label { width: Fit text: "已暂停" draw_text.text_style.font_size: 10 draw_text.color: #316979 }
+                                        teacher_state := Label { width: Fit text: "继续播放" draw_text.text_style.font_size: 10 draw_text.color: #316979 }
                                     }
                                 }
                             }
@@ -437,6 +437,9 @@ pub struct App {
     /// dock, and a "开始互动学习" action instead of voice/camera.
     #[rust]
     course_preview: bool,
+    /// When the lesson completed (web shows LESSON_COMPLETION_SPEECH for 6s).
+    #[rust]
+    completed_at: Option<Instant>,
     #[rust]
     pen_color: Vec4,
     #[rust]
@@ -619,6 +622,8 @@ fn bake_svg_classes(svg: &str) -> String {
 /// Lucide icons (24x24 stroke icons extracted from the web app's
 /// lucide-react package) rendered through Button::draw_icon; the script
 /// sets draw_icon.color so strokes tint to the control color.
+/// Web LESSON_COMPLETION_SPEECH.
+const LESSON_COMPLETION_SPEECH: &str = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
 const ICON_PLAY: &str = include_str!("../assets/icons/play.svg");
 const ICON_CLOCK: &str = include_str!("../assets/icons/clock-3.svg");
 const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
@@ -1271,6 +1276,44 @@ impl App {
             })
             .collect()
     }
+    /// Web handleStudentVariableInput for the world control panels: apply
+    /// the value; a commit snaps a pointer drag to the active task target
+    /// and evaluates the task.
+    fn control_request(&mut self, cx: &mut Cx, request: spatial_board::ControlRequest) {
+        let Some(session) = &self.player else { return };
+        if session.practice_transition() {
+            return;
+        }
+        let mut value = request.value;
+        if request.commit && request.track_px > 0. {
+            if let Some(d) = session.board.variable_declarations().iter().find(|d| d["as"] == request.alias.as_str()) {
+                let (min, max) = (d["min"].as_f64().unwrap_or(0.), d["max"].as_f64().unwrap_or(1.));
+                let range = max - min;
+                // Web sliderTaskSnapDistance: 12px on screen, at most 4% of the range.
+                let distance = (range * 12. / request.track_px).min(range * 0.04);
+                value = session.practice.snap(
+                    session.complete(),
+                    &request.alias,
+                    request.control,
+                    value,
+                    distance,
+                    &session.board.variables,
+                    (min, max, d["control"]["step"].as_f64()),
+                );
+            }
+        }
+        self.set_variable(cx, &request.alias, value);
+        if request.commit {
+            if let Some(session) = &mut self.player {
+                match session.commit_student_variable(&request.alias, request.control) {
+                    Ok(true) => self.save_progress(cx),
+                    Ok(false) => {}
+                    Err(e) => self.error = e,
+                }
+            }
+            self.refresh(cx);
+        }
+    }
     fn set_variable(&mut self, cx: &mut Cx, alias: &str, value: f64) {
         if self.player.as_ref().is_some_and(|s| s.board.animating()) {
             // Teacher demo in progress: sliders stay locked (web parity).
@@ -1331,13 +1374,18 @@ impl App {
         if let Some(session) = &self.player {
             let p = &session.board;
             self.ui.label(cx, ids!(course_title)).set_text(cx, &p.title);
+            // Web teacherStateLabel: the lesson owns the narration while it
+            // plays; once delivery settles the course is complete.
             let state = if session.complete() {
-                "播放完成"
+                "课程完成"
             } else if session.playing {
-                "播放中"
+                "课程播放中"
             } else {
-                "已暂停"
+                "继续播放"
             };
+            for id in [live_id!(play), live_id!(next_beat)] {
+                self.ui.button(cx, &[id]).set_enabled(cx, !session.complete());
+            }
             if self.play_icon_state != Some(session.playing) {
                 self.play_icon_state = Some(session.playing);
                 let w = self.ui.widget(cx, ids!(play));
@@ -1347,9 +1395,19 @@ impl App {
                 };
             }
             self.ui.label(cx, ids!(teacher_state)).set_text(cx, state);
-            // Narration bubble: narration during playback, summary once complete.
-            let bubble = if session.complete() {
-                &p.summary
+            // Web teacherSpeech: the current narration (none while a practice
+            // start transition runs); after the lesson a short completion
+            // prompt for LESSON_COMPLETION_BUBBLE_DURATION_MS.
+            if !session.complete() {
+                self.completed_at = None;
+            } else if self.completed_at.is_none() {
+                self.completed_at = Some(Instant::now());
+            }
+            let completion_prompt = self.completed_at.is_some_and(|t| t.elapsed().as_secs_f64() < 6.);
+            let bubble: &str = if session.practice_transition() {
+                ""
+            } else if session.complete() {
+                if completion_prompt { LESSON_COMPLETION_SPEECH } else { "" }
             } else {
                 &p.narration
             };
@@ -1378,8 +1436,10 @@ impl App {
                 .checked_sub(1)
                 .and_then(|i| session.operations.get(i))
                 .is_some_and(|op| op["type"] == "beat.end" || op["type"] == "step.commit");
+            let tasks: Vec<_> = session.tasks().into_iter().filter(|t| t.available).collect();
             if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                 board.set_operation_boundary(boundary);
+                board.set_tasks(cx, session.practice.definitions(), tasks);
                 board.set_controls(cx, controls);
                 if let Err(e) = board.set_state(cx, p, action) {
                     self.error = e;
@@ -1493,6 +1553,25 @@ impl AppMain for App {
                     if let Err(e) = session.tick(dt) {
                         self.error = e;
                     }
+                }
+            }
+            // After the lesson: practice start states animate into place.
+            if self.learning_visible {
+                let changed = match self.player.as_mut().filter(|s| s.complete()) {
+                    Some(session) => match session.step_practice(dt) {
+                        Ok(changed) => changed,
+                        Err(e) => {
+                            self.error = e;
+                            false
+                        }
+                    },
+                    None => false,
+                };
+                if changed {
+                    if self.player.as_ref().is_some_and(|s| !s.practice_transition()) {
+                        self.save_progress(cx);
+                    }
+                    self.refresh(cx);
                 }
             }
             // Strokes commit through pointer hits, not widget actions; watch
@@ -1648,7 +1727,10 @@ impl AppMain for App {
             self.save_progress(cx);
         }
         self.poll_storage(cx);
-        if (self.timer.is_event(event).is_some() && was_playing) || control_event {
+        // The completion prompt hides after 6s (web LESSON_COMPLETION_BUBBLE_DURATION_MS).
+        let prompt_expired = self.timer.is_event(event).is_some()
+            && self.completed_at.is_some_and(|t| (6.0..6.6).contains(&t.elapsed().as_secs_f64()));
+        if (self.timer.is_event(event).is_some() && was_playing) || control_event || prompt_expired {
             self.refresh(cx);
         }
         // Launcher pills/cards are plain views: hit-test them before the UI
@@ -1664,8 +1746,27 @@ impl AppMain for App {
             .borrow_mut::<spatial_board::SpatialBoard>()
             .map(|mut b| b.take_control_requests())
             .unwrap_or_default();
-        for (alias, value) in requests {
-            self.set_variable(cx, &alias, value);
+        for request in requests {
+            self.control_request(cx, request);
+        }
+        let task_requests = self
+            .ui
+            .widget(cx, ids!(spatial))
+            .borrow_mut::<spatial_board::SpatialBoard>()
+            .map(|mut b| b.take_task_requests())
+            .unwrap_or_default();
+        for request in task_requests {
+            if let Some(session) = &mut self.player {
+                let result = match &request {
+                    spatial_board::TaskRequest::Hint(id) => session.task_hint(id),
+                    spatial_board::TaskRequest::Retry(id) => session.task_retry(id),
+                };
+                if let Err(e) = result {
+                    self.toast(cx, &e);
+                }
+            }
+            self.save_progress(cx);
+            self.refresh(cx);
         }
         // Floating UI occludes the board: keep the teaching camera and the
         // composition clear of it (web learningBoardInsets).

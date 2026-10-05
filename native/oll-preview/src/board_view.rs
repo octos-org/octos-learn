@@ -370,6 +370,104 @@ pub fn reflection_card(cx: &mut Cx, prompt: &str, answer: &str, open: bool) -> R
         text_box(if open { "收起答案" } else { "查看答案" }, 12., 1.18, "#8a6212", true, false, (0., 0.)),
     ))
 }
+const ICON_LIGHTBULB: &str = include_str!("../../octos-learn/assets/icons/lightbulb.svg");
+const ICON_CHECK: &str = include_str!("../../octos-learn/assets/icons/circle-check.svg");
+const ICON_RETRY: &str = include_str!("../../octos-learn/assets/icons/rotate-ccw.svg");
+
+/// An icon-only Button used as a static glyph inside a world card.
+fn glyph(name: &str, size: f64, color: &str) -> String {
+    format!("{name} := Button{{width:{size} height:{size} padding:0 text:\"\" icon_walk:Walk{{width:{size} height:{size}}} draw_icon +: {{color:{color}}} draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}")
+}
+/// A practice action button (web .learning-student-task-actions > button).
+fn action_button(name: &str, label: &str) -> String {
+    format!("{name} := Button{{height:30 text:\"{}\" spacing:5 padding:Inset{{left:9 right:9 top:5 bottom:5}}
+        icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#0d7082}}
+        draw_text.color:#0d7082 draw_text.text_style.font_size:7.5
+        draw_bg +: {{color:#16839812 color_hover:#16839824 color_down:#16839830 border_radius:9 border_size:1 border_color:#0d70822e}}}}", script_text(label))
+}
+
+/// Practice panel (web `.learning-student-tasks.is-world`, "动手试一试"):
+/// one article per available task with its feedback, current hint and the
+/// hint/retry actions. Buttons are `hint_<i>` / `retry_<i>` for hit-testing
+/// by task index.
+pub fn tasks_card(cx: &mut Cx, tasks: &[oll_runtime::tasks::Snapshot]) -> Result<WidgetRef, String> {
+    use oll_runtime::tasks::Status;
+    let mut body = String::new();
+    for (i, t) in tasks.iter().enumerate() {
+        let status = t.progress.status;
+        let attempts = t.progress.attempts.len();
+        let feedback = if status == Status::Succeeded {
+            format!(
+                "View{{width:Fill height:Fit flow:Right spacing:7 {} {}}}",
+                glyph(&format!("ok_{i}"), 17., "#167251"),
+                text_box(t.success_message.as_deref().unwrap_or("完成得很好，已经达到目标。"), 11., 1.45, "#167251", true, true, (0., 0.))
+            )
+        } else if attempts > 0 {
+            let message = if status == Status::NeedsHint {
+                "还没达到目标，可以查看提示后再试。"
+            } else {
+                "已经记录这次操作，再调整一下试试。"
+            };
+            format!(
+                "View{{width:Fill height:Fit flow:Right spacing:7 {} {}}}",
+                text_box(message, 11., 1.45, "#6f6a62", false, true, (0., 0.)),
+                text_box(&format!("已尝试 {attempts} 次"), 9., 1.45, "#938c82", false, false, (0., 0.))
+            )
+        } else {
+            text_box("轮到你操作了，完成后这里会立即反馈。", 11., 1.45, "#6f6a62", false, true, (0., 0.))
+        };
+        let hint = t.current_hint.as_ref().map_or(String::new(), |h| {
+            format!(
+                "RoundedView{{width:Fill height:Fit flow:Right spacing:7 padding:Inset{{left:9 right:9 top:8 bottom:8}} draw_bg +: {{color:#f4cf5f2e border_radius:10}} {} {}}}",
+                glyph(&format!("bulb_{i}"), 16., "#745d23"),
+                text_box(h, 11., 1.45, "#745d23", false, true, (0., 0.))
+            )
+        });
+        let actions = if status != Status::Succeeded && attempts > 0 {
+            let more_hints = t.progress.hints_revealed < t.hints.len();
+            format!(
+                "View{{width:Fill height:Fit flow:Right spacing:7 {} {}}}",
+                if more_hints {
+                    action_button(&format!("hint_{i}"), if t.current_hint.is_some() { "下一个提示" } else { "给我提示" })
+                } else {
+                    String::new()
+                },
+                action_button(&format!("retry_{i}"), "重新开始")
+            )
+        } else {
+            String::new()
+        };
+        let (bg, border) = if status == Status::Succeeded {
+            ("#e7f7efe6", "#1e846140")
+        } else {
+            ("#f5faf7d1", "#176b6224")
+        };
+        body.push_str(&format!(
+            "RoundedView{{width:Fill height:Fit flow:Down spacing:9 padding:12 draw_bg +: {{color:{bg} border_radius:14 border_size:1 border_color:{border}}}
+                {} {feedback} {hint} {actions}}}\n",
+            text_box(&t.prompt, 14., 1.5, "#373c38", true, true, (0., 0.))
+        ));
+    }
+    let card = widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:10 padding:14 draw_bg +: {{color:#fffdf8f5 border_radius:18 border_size:1 border_color:#3f494324}}
+        View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}}
+            {}
+            View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} {}}}
+        }}
+        {body}
+    }}",
+        text_box("动手试一试", 13., 1.18, "#176b62", true, false, (0., 0.)),
+        text_box("直接操作白板上的图形、视角或控制器", 9., 1.18, "#827b72", false, false, (0., 0.)),
+    ))?;
+    for i in 0..tasks.len() {
+        for (prefix, icon) in [("ok", ICON_CHECK), ("bulb", ICON_LIGHTBULB), ("hint", ICON_LIGHTBULB), ("retry", ICON_RETRY)] {
+            let id = LiveId::from_str(&format!("{prefix}_{i}"));
+            if let Some(mut b) = card.widget(cx, &[id]).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(icon);
+            }
+        }
+    }
+    Ok(card)
+}
 /// Extra card height reserved for the caption label below a chart.
 pub fn caption_extra(node: &Value) -> f64 {
     let caption = crate::chart_caption(node);

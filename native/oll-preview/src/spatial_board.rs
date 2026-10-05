@@ -22,6 +22,25 @@ const TEACHING_CAMERA_CEILING: f64 = 1.1;
 /// Reflection card height reserved before it is measured.
 const REFLECTION_ESTIMATED_HEIGHT: f64 = 150.;
 
+/// A learner change of a lesson variable from a world control panel (web
+/// handleStudentVariableInput). `commit` ends the operation; `track_px` is
+/// the on-screen slider track width for task snapping (0: no snapping, e.g.
+/// the − + buttons which the web treats as keyboard input).
+#[derive(Clone, Debug, PartialEq)]
+pub struct ControlRequest {
+    pub alias: String,
+    pub value: f64,
+    pub control: &'static str,
+    pub commit: bool,
+    pub track_px: f64,
+}
+/// A practice panel action.
+#[derive(Clone, Debug, PartialEq)]
+pub enum TaskRequest {
+    Hint(String),
+    Retry(String),
+}
+
 script_mod! {
     use mod.prelude.widgets_internal.*
     mod.widgets.SpatialBoard = set_type_default() do #(SpatialBoard::register_widget(vm)) {
@@ -126,7 +145,20 @@ pub struct SpatialBoard {
     attachment_cards: Vec<(teaching::Attachment, Vec<String>, WorldRect, WidgetRef)>,
     /// Variable changes requested from the world panels, for the host.
     #[rust]
-    control_requests: Vec<(String, f64)>,
+    control_requests: Vec<ControlRequest>,
+    /// Practice task definitions and the available task snapshots (host).
+    #[rust]
+    task_defs: Vec<Value>,
+    #[rust]
+    tasks: Vec<oll_runtime::tasks::Snapshot>,
+    /// Practice panels laid out in the world: (attachment id, task ids, rect, card).
+    #[rust]
+    task_cards: Vec<(String, Vec<String>, WorldRect, WidgetRef)>,
+    /// Rendered practice panel heights by attachment id.
+    #[rust]
+    task_heights: BTreeMap<String, f64>,
+    #[rust]
+    task_requests: Vec<TaskRequest>,
     /// Active slider drag: (panel index, row).
     #[rust]
     control_drag: Option<(usize, usize)>,
@@ -263,8 +295,20 @@ impl SpatialBoard {
     pub fn set_operation_boundary(&mut self, boundary: bool) {
         self.at_boundary = boundary;
     }
-    pub fn take_control_requests(&mut self) -> Vec<(String, f64)> {
+    pub fn take_control_requests(&mut self) -> Vec<ControlRequest> {
         std::mem::take(&mut self.control_requests)
+    }
+    pub fn take_task_requests(&mut self) -> Vec<TaskRequest> {
+        std::mem::take(&mut self.task_requests)
+    }
+    /// Practice tasks (definitions for cluster ownership, available
+    /// snapshots for the panels). A change re-composes the board.
+    pub fn set_tasks(&mut self, cx: &mut Cx, defs: &[Value], tasks: Vec<oll_runtime::tasks::Snapshot>) {
+        if self.task_defs != defs || self.tasks != tasks {
+            self.task_defs = defs.to_vec();
+            self.tasks = tasks;
+            self.relayout_frame = cx.new_next_frame();
+        }
     }
     fn sync_control_cards(&mut self, cx: &mut Cx) {
         for (_, aliases, _, card) in &self.attachment_cards {
@@ -335,6 +379,9 @@ impl SpatialBoard {
         self.reflection_heights.clear();
         self.control_drag = None;
         self.control_requests.clear();
+        self.task_cards.clear();
+        self.task_heights.clear();
+        self.task_requests.clear();
         self.camera = Camera::default();
         self.from = self.camera;
         self.destination = self.camera;
@@ -365,6 +412,16 @@ impl SpatialBoard {
         self.attachment_cards
             .iter()
             .map(|(a, aliases, _, _)| (a.id.clone(), a.anchor_node_ids.clone(), controls_view::panel_height(aliases.len())))
+            // Practice panels count with their whole height (web focusHeight unset).
+            .chain(self.task_cards.iter().map(|(id, _, r, _)| {
+                let anchors = self
+                    .geometry
+                    .attachments
+                    .get(id)
+                    .map(|_| self.task_anchor_ids(id))
+                    .unwrap_or_default();
+                (id.clone(), anchors, r.height)
+            }))
             .collect()
     }
     /// Start the Web .world transition (cubic-bezier .22,1,.36,1, 680ms).
@@ -394,6 +451,16 @@ impl SpatialBoard {
         if let Some(to) = to {
             self.jump_to(to);
         }
+    }
+    fn task_anchor_ids(&self, attachment: &str) -> Vec<String> {
+        let Some(p) = &self.board else { return vec![] };
+        let region = p.nodes.first().and_then(|n| n["region_id"].as_str()).filter(|r| !r.is_empty()).unwrap_or("__legacy__");
+        let nodes: Vec<String> = p.node_sections().into_iter().map(|(id, _)| id).collect();
+        teaching::interaction_clusters(p, region, &nodes, p.variable_declarations(), &self.task_defs)
+            .into_iter()
+            .find(|c| format!("{}:tasks", c.id) == attachment)
+            .map(|c| c.node_ids)
+            .unwrap_or_default()
     }
     /// Thinking questions available after the lesson: (attachment id,
     /// reflection id, anchor node id).
@@ -437,7 +504,11 @@ impl SpatialBoard {
     /// region, composed for the viewport and host insets, with the control
     /// panels as attachments. Text cards re-measured at their column width
     /// (web: up to three passes).
-    fn compute_layout(&self, p: &Preview) -> Result<(BoardLayout, Vec<(teaching::Attachment, Vec<String>)>), String> {
+    #[allow(clippy::type_complexity)]
+    fn compute_layout(
+        &self,
+        p: &Preview,
+    ) -> Result<(BoardLayout, Vec<(teaching::Attachment, Vec<String>)>, Vec<(teaching::Attachment, Vec<String>)>), String> {
         let region = p
             .nodes
             .first()
@@ -447,7 +518,30 @@ impl SpatialBoard {
             .to_owned();
         let sections = p.node_sections();
         let course_nodes: Vec<String> = sections.iter().map(|(id, _)| id.clone()).collect();
-        let clusters = teaching::control_clusters(p, &region, &course_nodes, p.variable_declarations());
+        let interaction = teaching::interaction_clusters(p, &region, &course_nodes, p.variable_declarations(), &self.task_defs);
+        let clusters: Vec<(teaching::Attachment, Vec<String>)> = interaction
+            .iter()
+            .filter(|c| !c.sliders.is_empty())
+            .map(|c| (c.controls_attachment(), c.sliders.clone()))
+            .collect();
+        // Practice panels: a cluster's available tasks, measured once rendered.
+        let task_panels: Vec<(teaching::Attachment, Vec<String>)> = interaction
+            .iter()
+            .filter_map(|c| {
+                let open: Vec<String> = c
+                    .task_ids
+                    .iter()
+                    .filter(|id| self.tasks.iter().any(|t| &t.progress.task_id == *id))
+                    .cloned()
+                    .collect();
+                if open.is_empty() {
+                    return None;
+                }
+                let id = format!("{}:tasks", c.id);
+                let measured = self.task_heights.get(&id).copied();
+                Some((c.tasks_attachment(open.len(), measured), open))
+            })
+            .collect();
         let insets = &self.insets;
         let reflections: Vec<Value> = self
             .reflection_specs(p, &region)
@@ -478,6 +572,11 @@ impl SpatialBoard {
             }))
             // Thinking questions open with the after-lesson window, under the
             // card that poses them.
+            .chain(task_panels.iter().map(|(a, _)| json!({
+                "id": a.id, "kind": "task", "anchorNodeId": a.anchor_node_id,
+                "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
+                "width": a.width, "height": a.height, "gap": 28,
+            })))
             .chain(reflections)
             .collect::<Vec<_>>(),
         }}});
@@ -518,7 +617,7 @@ impl SpatialBoard {
                 break;
             }
         }
-        Ok((layout, clusters))
+        Ok((layout, clusters, task_panels))
     }
     pub fn set_state(
         &mut self,
@@ -546,7 +645,8 @@ impl SpatialBoard {
             p.cursor, p.title, p.groups, p.focus, p.complete(),
             self.viewport.size.x, self.viewport.size.y,
             [self.insets.top, self.insets.right, self.insets.bottom, self.insets.left],
-            self.reflection_heights, self.open_reflections,
+            self.reflection_heights, self.open_reflections, self.task_heights,
+            self.tasks.iter().map(|t| format!("{:?}", t)).collect::<Vec<_>>(),
         ])
         .to_string();
         let changed = signature != self.signature;
@@ -561,7 +661,7 @@ impl SpatialBoard {
         let remeasure = std::mem::take(&mut self.measure_relayout) && !self.manual;
         self.board = Some(p.clone());
         if changed {
-            let (geometry, clusters) = self.compute_layout(p)?;
+            let (geometry, clusters, task_panels) = self.compute_layout(p)?;
             self.geometry = geometry;
             self.entries.clear();
             self.groups.clear();
@@ -602,6 +702,13 @@ impl SpatialBoard {
                 self.attachment_cards.push((spec, aliases, rect, card));
             }
             self.sync_control_cards(cx);
+            self.task_cards.clear();
+            for (spec, ids) in task_panels {
+                let Some(rect) = self.geometry.attachments.get(&spec.id).copied() else { continue };
+                let snapshots: Vec<_> = self.tasks.iter().filter(|t| ids.contains(&t.progress.task_id)).cloned().collect();
+                let card = board_view::tasks_card(cx, &snapshots)?;
+                self.task_cards.push((spec.id.clone(), ids, rect, card));
+            }
             self.reflection_cards.clear();
             let region = p.nodes.first().and_then(|n| n["region_id"].as_str()).filter(|r| !r.is_empty()).unwrap_or("__legacy__");
             let texts = p.reflections();
@@ -931,20 +1038,42 @@ impl SpatialBoard {
                     self.relayout_frame = cx.new_next_frame();
                     return true;
                 }
+                // Practice panel actions.
+                for (_, ids, _, card) in &self.task_cards {
+                    for (i, task) in ids.iter().enumerate() {
+                        let hit = |name: &str| {
+                            card.widget(cx, &[LiveId::from_str(&format!("{name}_{i}"))])
+                                .area()
+                                .rect(cx)
+                                .contains(world)
+                        };
+                        if hit("hint") {
+                            self.task_requests.push(TaskRequest::Hint(task.clone()));
+                            return true;
+                        }
+                        if hit("retry") {
+                            self.task_requests.push(TaskRequest::Retry(task.clone()));
+                            return true;
+                        }
+                    }
+                }
                 for (i, (_, _, _, card)) in self.attachment_cards.iter().enumerate() {
-                    let Some(c) = card.borrow::<ControlsCard>() else { continue };
-                    let Some((row, part)) = c.hit(world) else { continue };
-                    let Some(model) = c.rows().get(row).cloned() else { continue };
-                    let value = match part {
+                    let Some((row, part, model)) = card.borrow::<ControlsCard>().and_then(|c| {
+                        let (row, part) = c.hit(world)?;
+                        Some((row, part, c.rows().get(row)?.clone()))
+                    }) else {
+                        continue;
+                    };
+                    let (value, control, commit) = match part {
                         Part::Track(t) => {
                             self.control_drag = Some((i, row));
-                            Self::track_value(&model, t)
+                            (Self::track_value(&model, t), "slider", false)
                         }
-                        Part::Minus => Self::stepped(&model, -1.),
-                        Part::Plus => Self::stepped(&model, 1.),
-                        Part::Reset => model.initial,
+                        Part::Minus => (Self::stepped(&model, -1.), "slider", true),
+                        Part::Plus => (Self::stepped(&model, 1.), "slider", true),
+                        Part::Reset => (model.initial, "reset", true),
                     };
-                    self.control_requests.push((model.alias, value));
+                    self.control_requests.push(ControlRequest { alias: model.alias, value, control, commit, track_px: 0. });
                     if let (Part::Track(_), Some(mut c)) = (part, card.borrow_mut::<ControlsCard>()) {
                         c.set_dragging(cx, Some(row));
                     }
@@ -959,17 +1088,37 @@ impl SpatialBoard {
                 if let Some(c) = self.attachment_cards.get(i).and_then(|(_, _, _, card)| card.borrow::<ControlsCard>()) {
                     if let Some(model) = c.rows().get(row) {
                         let value = Self::track_value(model, c.track_fraction(row, world.x));
-                        self.control_requests.push((model.alias.clone(), value));
+                        self.control_requests.push(ControlRequest {
+                            alias: model.alias.clone(),
+                            value,
+                            control: "slider",
+                            commit: false,
+                            track_px: 0.,
+                        });
                     }
                 }
                 true
             }
             Hit::FingerUp(_) => {
-                let Some((i, _)) = self.control_drag.take() else {
+                let Some((i, row)) = self.control_drag.take() else {
                     return false;
                 };
+                let scale = self.camera.scale;
                 if let Some(mut c) = self.attachment_cards.get(i).and_then(|(_, _, _, card)| card.borrow_mut::<ControlsCard>()) {
                     c.set_dragging(cx, None);
+                    // Commit the drag (web commitSliderOperation): the host snaps
+                    // to an active task target within the on-screen snap radius.
+                    let last = self.control_requests.iter().rev().find(|r| !r.commit).cloned();
+                    if let Some(model) = c.rows().get(row) {
+                        let value = last.filter(|r| r.alias == model.alias).map_or(model.value, |r| r.value);
+                        self.control_requests.push(ControlRequest {
+                            alias: model.alias.clone(),
+                            value,
+                            control: "slider",
+                            commit: true,
+                            track_px: c.track_width(row) * scale,
+                        });
+                    }
                 }
                 self.replay_pending_camera(cx);
                 true
@@ -1111,8 +1260,9 @@ impl Widget for SpatialBoard {
             .chain(self.entries.iter().map(|(id, r, w)| (Some(id), r, w)))
             .chain(self.attachment_cards.iter().map(|(_, _, r, w)| (None, r, w)))
             .chain(self.reflection_cards.iter().map(|(id, _, r, w)| (Some(id), r, w)))
+            .chain(self.task_cards.iter().map(|(id, _, r, w)| (Some(id), r, w)))
         {
-            let reflection = id.is_some_and(|id| id.starts_with("reflection:"));
+            let reflection = id.is_some_and(|id| id.starts_with("reflection:") || id.ends_with(":tasks"));
             let natural = reflection || id.is_some_and(|id| self.content_ids.contains(id));
             w.draw_walk_all(
                 cx,
@@ -1128,7 +1278,11 @@ impl Widget for SpatialBoard {
                 // Web ResizeObserver on the rendered reflection card.
                 let h = w.area().rect(cx).size.y;
                 if h > 0. && (h - r.height).abs() > 1. {
-                    self.reflection_heights.insert(id.clone(), h);
+                    if id.ends_with(":tasks") {
+                        self.task_heights.insert(id.clone(), h);
+                    } else {
+                        self.reflection_heights.insert(id.clone(), h);
+                    }
                     reflection_resized = true;
                 }
             } else if let (Some(id), true) = (id, natural) {
@@ -1264,7 +1418,7 @@ impl Widget for SpatialBoard {
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
         let (cursor, complete) = self.board.as_ref().map_or((0, false), |p| (p.cursor, p.complete()));
-        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 

@@ -262,6 +262,14 @@ impl ControlsCard {
         }
         None
     }
+    /// World rects of the slider tracks (debug snapshots).
+    pub fn track_rects(&self) -> Vec<(f64, f64, f64, f64)> {
+        self.tracks.iter().map(|t| (t.pos.x, t.pos.y, t.size.x, t.size.y)).collect()
+    }
+    /// World width of row `row`'s slider track.
+    pub fn track_width(&self, row: usize) -> f64 {
+        self.tracks.get(row).map_or(0., |t| t.size.x)
+    }
     /// Track fraction for a world x during a drag of row `row`.
     pub fn track_fraction(&self, row: usize, x: f64) -> f64 {
         self.tracks
