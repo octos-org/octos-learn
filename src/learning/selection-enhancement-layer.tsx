@@ -702,6 +702,14 @@ export function SelectionEnhancementLayer({
     needsPersistence: boolean;
   }> = [];
   const reserved: WhiteboardRect[] = [...occupiedRects];
+  // Ink paints above these cards, so a card must not cover the handwriting it
+  // answers. Only card sources reserve space; other learner ink never does.
+  for (const sourceId of sourceIds) {
+    const bounds = sourceBoundsFor(sourceId)
+      ?? questionSourceById.get(sourceId)
+      ?? artifactSourceById.get(sourceId)?.bounds;
+    if (bounds) reserved.push(bounds);
+  }
   const placedCards: Array<WhiteboardRect & { automatic: boolean }> = [];
   const cardDragActive = draggingTurnId !== null;
   for (const { sourceIds: groupedSourceIds } of sourceGroups) {
