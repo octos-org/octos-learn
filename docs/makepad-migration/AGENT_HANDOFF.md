@@ -23,7 +23,7 @@
 - 课程包升版与 `hide_when_undefined`；
 - 预览模式顶栏。
 
-runtime fixture 与 web 全部 1e-6 一致；逐 Beat 对照的剩余偏差来自卡片尺寸和缺失的练习面板。**v6 只做了本地提交，尚未推送（推送前须问用户）。** 建议下一项：练习任务面板。
+runtime fixture 与 web 全部 1e-6 一致；逐 Beat 对照的剩余偏差来自卡片尺寸和缺失的练习面板。**v6 已于 2026-10-05 推送**（OLL `9a86f8e`，octos-learn `490de05` + 本文档更新）。 建议下一项：练习任务面板。
 
 **2026-09-28 暂停点**（历史）：用户要求在 v5 完成后暂停。
 
@@ -33,8 +33,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **v6 本地提交未推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档（见 `git log github/codex/macos-product-ui..`）。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
-| `octos-lesson-language` | `codex/rust-runtime-product` | **v6 本地提交未推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-lesson-language` | `codex/rust-runtime-product` | **v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
 两个仓库的持久路径：原机器在 `~/Documents/projects/`，新机器在 `~/Documents/projects/OctosLearn/`。新机器上的提交先落在工作区 clone，再用 `git pull --ff-only <工作区clone> <分支>` 同步回持久仓库。
