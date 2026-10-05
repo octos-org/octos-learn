@@ -1,0 +1,47 @@
+<!doctype html>
+<meta charset="utf-8"><title>Android ink camera alignment regression</title>
+<style>
+body { margin: 0; }
+#viewport { position: relative; width: 960px; height: 540px; }
+.oll-android-vector-ink { position:absolute; inset:0; pointer-events:none; }
+</style>
+<div id="viewport" class="oll-board-runtime"><div id="world" class="world" style="transform:translate(0px,0px) scale(1)"><div id="groups" class="layer"></div><div id="nodes" class="layer"></div><svg id="connections"></svg><svg id="labels"></svg><div id="pointer"></div></div></div>
+<script type="module">
+import { InfiniteBoardView } from 'octos-lesson-language/web-runtime';
+import { mountInkRuntime } from 'octos-lesson-language/ink-runtime';
+import { createInkCameraGate } from '/src/learning/oll/ink-camera-gate.ts';
+import { configureAndroidInkDynamicDensity } from '/src/learning/oll/android-ink-performance.ts';
+import 'octos-lesson-language/web-runtime/styles.css';
+import 'octos-lesson-language/ink-runtime/styles.css';
+window.OctosNativeInk = {configure(){}, acknowledge(){}, cancel(){}, setExclusionRects(){}};
+const el = id => document.getElementById(id);
+// A CSS delay reproduces a late initial camera without simulating CPU load.
+const transitionDelay = Number(new URLSearchParams(location.search).get('transitionDelay') ?? 0);
+if (transitionDelay > 0) el('world').style.transitionDelay = `${transitionDelay}ms`;
+// Force the initial identity frame to be rendered before the board starts its
+// CSS transition, matching the first mount on the television.
+getComputedStyle(el('world')).transform;
+const view = new InfiniteBoardView(...['viewport','world','nodes','groups','connections','labels','pointer'].map(el));
+const gate = createInkCameraGate(view);
+const ink = mountInkRuntime({board:gate.editorBoard,viewport:el('viewport'),storageKey:'camera-alignment-test',documentId:'camera-alignment-test',store:{load:()=>null,save(){}}});
+const density = configureAndroidInkDynamicDensity(ink,el('viewport'),gate.liveCameraSource);
+ink.setMode('draw');
+let strokeId = 1000;
+window.inkCameraTest = {
+  ready:false, view,
+  camera(){return {board:view.getCameraState(),editor:ink.renderedCamera,svg:document.querySelector('.oll-android-vector-ink')?.getAttribute('viewBox')};},
+  async commit(x,y){
+    const id = strokeId++;
+    window.__octosNativeInkBatch({action:'down',pointerId:id,pointerType:'touch',points:[{x,y,pressure:.5,time:1}]});
+    window.__octosNativeInkBatch({action:'up',pointerId:id,pointerType:'touch',points:[{x:x+40,y:y+30,pressure:.5,time:2}]});
+    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    const path=[...document.querySelectorAll('.oll-android-vector-ink path')].at(-1);
+    const start=path.getPointAtLength(0);
+    const displayed=new DOMPoint(start.x,start.y).matrixTransform(path.getScreenCTM());
+    return {expected:{x,y},displayed:{x:displayed.x,y:displayed.y},camera:this.camera()};
+  },
+  dispose(){density.destroy();gate.destroy();view.dispose();return ink.destroy();}
+};
+await ink.ready;
+window.inkCameraTest.ready=true;
+</script>

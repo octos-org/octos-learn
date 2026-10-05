@@ -85,9 +85,9 @@ public final class MainActivity extends Activity {
         settings.setDisplayZoomControls(false);
         settings.setTextZoom(100);
 
-        nativeInkBridge = new NativeInkBridge(new WebViewEventSink(webView), nativeInkOverlay);
+        nativeInkBridge = new NativeInkBridge(webView, nativeInkOverlay);
         webView.addJavascriptInterface(nativeInkBridge, "OctosNativeInk");
-        nativeAudioBridge = new NativeAudioBridge(this, new WebViewEventSink(webView));
+        nativeAudioBridge = new NativeAudioBridge(this, webView);
         webView.addJavascriptInterface(nativeAudioBridge, "OctosNativeAudio");
         nativeTtsBridge = new NativeTtsBridge(webView);
         webView.addJavascriptInterface(nativeTtsBridge, "OctosNativeTts");

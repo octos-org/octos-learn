@@ -35,6 +35,14 @@ Learning Coach 的 profile 模型继承已通过
 [数学质量优化方案](MATH_QUALITY_IMPROVEMENT_PLAN.md)和
 [数学质量实施状态](MATH_QUALITY_IMPLEMENTATION_STATUS.md)。
 
+## 课程重复内容修复约束（用户明确要求，2026-10-03）
+
+- 本轮课程画面重复及布局修复不修改模型提示词，不加入针对某节示例课程、某个公式或某个组件的特殊提示规则。
+- 面向各类课程修复通用问题：同一教学对象被重复创建，包括不同组件展开后包含同一画面的情况。优先扩展已有确定性编译、复用、引用重定向和验证机制；具体组件产出哪些画面由程序管理。
+- 不能仅凭标题、旁白或表达式相似判定等价；需验证数学内容、变量绑定、单位和实际互动契约，并保留明确且有不同教学内容的对照。
+- 回归必须包括不同组件之间的重复、不同章节的复用、非重复对象和合法对照；不能只用当前余弦示例证明通用修复有效。
+- 布局附件的联动范围与显示归属分开；同一附件只在实际所属位置占位一次。实时笔迹不参与课程重排及固定；从选区发起课程时，仅在首次放置课程区域时避开该次引用选区，并与其顶部对齐，位置确定后不再跟随笔迹变化。开始/继续播放切回浏览模式，播放浏览时隐藏笔迹。
+
 ## 各仓库负责什么
 
 | 仓库 | 职责 | 普通界面功能应优先改这里吗 |
@@ -80,8 +88,6 @@ cd /Users/alan0x/Documents/projects/octos
 cargo build --release -p octos-cli --features api
 
 env -u OCTOS_SKILLS_PATH \
-OLL_PROVIDER=gemini \
-OLL_MODEL=gemini-3.6-flash \
 ASR_API_URL=http://127.0.0.1:8094 \
 ./target/release/octos serve \
   --host 127.0.0.1 \
@@ -94,7 +100,7 @@ ASR_API_URL=http://127.0.0.1:8094 \
 - `ASR_API_URL` 只有在本机 SenseVoice 服务运行于 `8094` 时才设置；只开发文字白板时
   可以删除这一行。
 - Gemini API Key 等个人凭据从本机 profile 的 Settings 读取，不应写入仓库、命令或
-  `.env`。`OLL_PROVIDER` 和 `OLL_MODEL` 是课程生成的服务端选择，需与准备测试的模型一致。
+  `.env`。课程使用 Settings 中保存的主模型；`OLL_PROVIDER` / `OLL_MODEL` 仅用于独立 eval 脚本，不放入产品服务启动环境。
 - 只有直接测试 Vertex Service Account 时才需要临时提供 `VERTEX_SA_JSON`；使用 Settings
   中的 Gemini API Key 时不需要它。
 - 如果需要一套完全独立的本地测试数据，可额外加
@@ -105,6 +111,8 @@ ASR_API_URL=http://127.0.0.1:8094 \
 切换 Octos 提交或现有二进制不包含所需接口时才重新编译。
 
 ### 3. 启动 Octos Learn
+
+本机开发及人工 E2E 复测入口固定使用 **HTTPS 5173**（`https://127.0.0.1:5173/`，用 `pnpm dev:https` 启动）（用户约定，2026-09-29）。启动时使用 `--port 5173 --strictPort`；若端口已有旧前端服务，先确认并关闭旧服务，再启动本次服务，不自动换用其他端口。
 
 ```bash
 cd /Users/alan0x/Documents/projects/octos-learn
@@ -156,6 +164,8 @@ Vite 默认把其余 `/api` 和 WebSocket 代理到 `http://127.0.0.1:50080`。�
    公网服务器上开发。
 
 ## 必须保留的行为
+
+- Android 新白板初始化、平移和缩放后，笔迹编辑器及 SVG 镜像必须收到相机实际到位后的最终坐标；不能仅用固定时间窗口判断同步结束。回归需验证实时笔迹与抬笔后的 SVG 位于同一屏幕位置，且相机到位后停止同步，不产生持续重绘。
 
 - Learning Coach 对用户是内置能力，不能重新出现“请安装 skill”的提示或 Skills 设置入口。
 - 用户之间的白板、图片、课程、模型凭据必须隔离。

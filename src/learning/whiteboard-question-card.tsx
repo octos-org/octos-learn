@@ -1,3 +1,4 @@
+import { lessonModelErrorMessage } from "./lesson-model-errors";
 import { useState } from "react";
 import type { WhiteboardQuestionRecord } from "./whiteboard-questions";
 import { WhiteboardQuestionImage } from "./whiteboard-question-image";
@@ -29,6 +30,7 @@ export function WhiteboardQuestionCard({
         : "learning-whiteboard-question-card"}
       style={{ left, top, width: WHITEBOARD_QUESTION_CARD_WIDTH }}
       data-question-id={question.id}
+      data-oll-ink-input="ignore"
     >
       <header>
         <strong>我的问题</strong>
@@ -38,6 +40,9 @@ export function WhiteboardQuestionCard({
       </header>
       <p className={expanded ? "is-expanded" : undefined}>{question.text}</p>
       <WhiteboardQuestionImage question={question} />
+      {question.status === "failed" && lessonModelErrorMessage(question.errorCode) && (
+        <p>{lessonModelErrorMessage(question.errorCode)} <a href="/settings?tab=llm">前往设置</a></p>
+      )}
       {question.text.length > 72 ? (
         <button
           type="button"

@@ -95,6 +95,7 @@ describe("first-run setup whiteboard", () => {
     vi.stubGlobal("fetch", fetchMock);
     const profile = blank();
     profile.config.llm.primary = { family_id: "google", model_id: "gemini-test" };
+    profile.config.env_vars = { ...profile.config.env_vars, GEMINI_API_KEY: "AI***xy" };
     mocks.get.mockResolvedValue(profile);
     render(
       <MemoryRouter initialEntries={["/board?course-pack=rectangle-area-from-tiles&course-version=0.1.5"]}>
@@ -228,4 +229,40 @@ describe("first-run setup whiteboard", () => {
       .toBe("true");
     expect(localStorage.getItem("octos-teacher-skin")).toBe("bee-3d");
   });
+});
+
+
+for (const [runtime_disposition, message] of [
+  ["reloaded", "已生效，下一次生成使用新模型"],
+  ["restart_required", "已保存，服务重启后生效"],
+  ["persisted_but_not_live", "已保存。当前任务结束后，下一次生成将使用新模型"],
+  ["deferred", "已保存，下一次生成课程时生效"],
+  ["unchanged", "已保存，下一次生成课程时生效"],
+  [undefined, "已保存，下一次生成课程时生效"],
+] as const) {
+  it(`onboarding retains ${runtime_disposition ?? "legacy"} save status until an input changes`, async () => {
+    mocks.get.mockResolvedValue(blank());
+    mocks.request.mockResolvedValue({ ok: true });
+    mocks.save.mockImplementation(async (p, patch) => ({ ...p, config: { ...p.config, ...patch }, runtime_disposition }));
+    render(<MemoryRouter><SetupWhiteboard /></MemoryRouter>);
+    fireEvent.click(await screen.findByText("测试连接并保存"));
+    await screen.findByText(message);
+    expect(screen.getByText(message).getAttribute("role")).toBe("status");
+    // Advancing time must not hide the status as it used to in the settings button.
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+    expect(screen.getByText(message)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("模型名称"), { target: { value: "gemini-3.5-flash" } });
+    expect(screen.queryByText(message)).toBeNull();
+  });
+}
+
+it("clears onboarding's save status when the credential changes", async () => {
+  mocks.get.mockResolvedValue(blank());
+  mocks.request.mockResolvedValue({ ok: true });
+  mocks.save.mockImplementation(async (p, patch) => ({ ...p, config: { ...p.config, ...patch }, runtime_disposition: "reloaded" }));
+  render(<MemoryRouter><SetupWhiteboard /></MemoryRouter>);
+  fireEvent.click(await screen.findByText("测试连接并保存"));
+  await screen.findByText("已生效，下一次生成使用新模型");
+  fireEvent.change(screen.getByLabelText("API Key"), { target: { value: "new-test-key" } });
+  expect(screen.queryByText("已生效，下一次生成使用新模型")).toBeNull();
 });

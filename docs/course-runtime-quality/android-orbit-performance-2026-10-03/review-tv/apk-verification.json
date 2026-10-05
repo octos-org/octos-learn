@@ -1,0 +1,22 @@
+{
+  "sha256": "30658aa199f36b7c1af0e521a7bc8f6d14e82b1f5ba21ee2779b2dfeb35c1d9c",
+  "size": 107349088,
+  "build": {
+    "revision": "433b1b4ce797d4eadc6da2d17ca8af88d43128bd",
+    "dirty": true,
+    "builtAt": "2026-10-03T17:10:25.498Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "coursePacks": {
+    "assets/course-packs/embedded/linear-intro-and-slope/0.1.1/archive.ocpack": true,
+    "assets/course-packs/embedded/linear-simultaneous-intersections/0.1.2/archive.ocpack": true,
+    "assets/course-packs/embedded/slope-and-intercept/0.1.8/archive.ocpack": true,
+    "assets/course-packs/embedded/surface-paraboloid-level-sets/0.2.6/archive.ocpack": true,
+    "assets/course-packs/embedded/surface-partial-derivative-slice/0.2.8/archive.ocpack": true,
+    "assets/course-packs/embedded/surface-saddle-point-analysis/0.2.8/archive.ocpack": true,
+    "assets/course-packs/embedded/trig-cosine-and-phase-shift/0.1.4/archive.ocpack": true,
+    "assets/course-packs/embedded/trig-quadrants-and-monotonicity/0.1.4/archive.ocpack": true,
+    "assets/course-packs/embedded/trig-unit-circle-to-sine/0.1.3/archive.ocpack": true
+  }
+}

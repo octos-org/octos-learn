@@ -109,6 +109,12 @@
   cursor: pointer;
   padding: 12px 0;
 }
+.setup-model-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
 .setup-form [role="status"] {
   line-height: 1.7;
   overflow-wrap: anywhere;

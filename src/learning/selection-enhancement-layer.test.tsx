@@ -728,6 +728,42 @@ describe("SelectionEnhancementLayer", () => {
     expect(document.querySelector(".learning-selection-enhancement")).toBeNull();
   });
 
+  it("keeps a card off its own source when the preferred side is not visible", () => {
+    // Ink paints above cards. The host no longer reserves learner ink, so the
+    // layer itself must keep each card clear of the handwriting it answers.
+    const source = { x: 700, y: 100, width: 200, height: 120 };
+    const pending: WhiteboardQuestionRecord = {
+      id: "edge-card",
+      sessionId: "learn-1",
+      text: "这一步为什么成立？",
+      origin: "selection",
+      createdAt: "2026-10-05T10:00:00.000Z",
+      status: "pending",
+      source: { sourceId: "edge-source", bounds: source },
+      answerPresentation: "card",
+    };
+    render(
+      <SelectionEnhancementLayer
+        artifacts={[]}
+        sources={[]}
+        questions={[pending]}
+        currentDocumentVersion={1}
+        visibleBoardBounds={{ x: 0, y: 0, width: 960, height: 540 }}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    const card = document.querySelector<HTMLElement>(
+      `[data-question-id="${pending.id}"]`,
+    )!;
+    const left = Number.parseFloat(card.style.left);
+    const top = Number.parseFloat(card.style.top);
+    const width = Number.parseFloat(card.style.width);
+    const overlaps = left < source.x + source.width && left + width > source.x
+      && top < source.y + source.height && top + 210 > source.y;
+    expect(overlaps).toBe(false);
+  });
+
   it("allows a question-only auxiliary card to be deleted", () => {
     const onDelete = vi.fn();
     const failed: WhiteboardQuestionRecord = {
@@ -753,6 +789,10 @@ describe("SelectionEnhancementLayer", () => {
         onDelete={onDelete}
       />,
     );
+
+    // The layer host no longer excludes ink; each card must exclude itself.
+    expect(document.querySelector(`[data-question-id="${failed.id}"]`)
+      ?.getAttribute("data-oll-ink-input")).toBe("ignore");
 
     fireEvent.click(screen.getByRole("button", {
       name: "删除这条辅助内容",

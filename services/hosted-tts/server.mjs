@@ -41,6 +41,7 @@ export function loadConfig(env = process.env) {
     cacheMaxEntries: parseInteger(env.HOSTED_TTS_CACHE_MAX_ENTRIES, 10_000, 1, 1_000_000),
     appid: env.VOLC_TTS_APPID?.trim() || "",
     token: env.VOLC_TTS_TOKEN?.trim() || "",
+    distributePlatformToken: env.OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE === "1",
     cluster: env.VOLC_TTS_CLUSTER?.trim() || "volcano_tts",
     voice: env.VOLC_TTS_VOICE?.trim() || "BV001_streaming",
     encoding: env.VOLC_TTS_ENCODING?.trim() || "mp3",
@@ -460,7 +461,14 @@ export function createHandler({
           appId = personalAppId;
           token = personalToken;
           cluster = cloud.cluster || config.cluster;
-        } else if (Boolean(config.appid && config.token) && limits.enabled) {
+        } else if (
+          Boolean(config.appid && config.token)
+          && limits.enabled
+          // The platform credentials must not be handed to client devices
+          // by default: distribute the raw platform token only when the
+          // operator explicitly opts in (rotation-ready; #2439).
+          && config.distributePlatformToken === true
+        ) {
           enabled = true;
           appId = config.appid;
           token = config.token;

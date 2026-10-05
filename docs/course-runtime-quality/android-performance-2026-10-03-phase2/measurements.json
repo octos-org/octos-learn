@@ -1,0 +1,127 @@
+{
+  "measuredAt": "2026-10-03T10:17:03.309Z",
+  "viewport": {
+    "width": 960,
+    "height": 540,
+    "dpr": 4
+  },
+  "camera": {
+    "panX": 20,
+    "panY": 80,
+    "scale": 0.45
+  },
+  "nodes": 16,
+  "graphs": 5,
+  "restored": true,
+  "layoutUnchanged": true,
+  "results": [
+    {
+      "phase": "cached",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.66700000000128,
+          "p95": 33.33400000000256,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0,
+          "minimumPreviewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 33.333000000005995,
+          "p95": 116.66600000000471,
+          "over34ms": 4,
+          "activeFrames": 59,
+          "previewCount": 5,
+          "minimumPreviewCount": 5
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 33.333000000005995,
+          "p95": 100,
+          "over34ms": 8,
+          "activeFrames": 58,
+          "previewCount": 5,
+          "minimumPreviewCount": 5
+        }
+      ]
+    },
+    {
+      "phase": "live",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.66700000000128,
+          "p95": 33.33299999999872,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0,
+          "minimumPreviewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 66.66599999999744,
+          "p95": 116.66599999999744,
+          "over34ms": 52,
+          "activeFrames": 0,
+          "previewCount": 0,
+          "minimumPreviewCount": 0
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 166.66599999999744,
+          "p95": 266.6670000000013,
+          "over34ms": 57,
+          "activeFrames": 0,
+          "previewCount": 0,
+          "minimumPreviewCount": 0
+        }
+      ]
+    },
+    {
+      "phase": "cached-repeat",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.66700000000128,
+          "p95": 33.33299999999872,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0,
+          "minimumPreviewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 33.33299999999872,
+          "p95": 83.33400000000256,
+          "over34ms": 5,
+          "activeFrames": 59,
+          "previewCount": 5,
+          "minimumPreviewCount": 5
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 33.33299999999872,
+          "p95": 150,
+          "over34ms": 7,
+          "activeFrames": 58,
+          "previewCount": 5,
+          "minimumPreviewCount": 5
+        }
+      ]
+    }
+  ]
+}

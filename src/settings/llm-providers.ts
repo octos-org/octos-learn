@@ -50,6 +50,7 @@ export const LLM_PROVIDERS: LlmProvider[] = [
     name: "Google Gemini",
     envKey: "GEMINI_API_KEY",
     models: [
+      { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash（推荐）" },
       { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro" },
       { id: "gemini-3-flash-preview", name: "Gemini 3 Flash" },
     ],
@@ -161,4 +162,13 @@ export function buildCredentialEnvPatch(
   const value = credentialInput.trim();
   if (!value) return undefined;
   return { ...existing, [provider!.envKey]: value };
+}
+
+/** Course generation adapters, independent of general chat provider support. */
+export const LESSON_CAPABLE_FAMILIES = ["google", "vertex"] as const;
+export function isLessonCapable(familyId: string, publicLinux: boolean): boolean {
+  const normalized = familyId.trim().toLowerCase();
+  const family = normalized === "gemini" ? "google" : normalized;
+  return LESSON_CAPABLE_FAMILIES.some((candidate) => candidate === family)
+    && !(publicLinux && family === "vertex");
 }

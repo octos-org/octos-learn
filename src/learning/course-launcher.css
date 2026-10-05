@@ -317,6 +317,29 @@
 [data-runtime-platform="android"] .course-launcher-card p { min-height: 48px; font-size: 11px; }
 [data-runtime-platform="android"] .course-launcher-empty { min-height: 145px; }
 
+/* Large Android displays can expose only 960 x 540 CSS pixels at high density.
+   Size the catalog for that viewport without changing whiteboard coordinates. */
+@media (min-width: 800px) and (orientation: landscape) {
+  [data-runtime-platform="android"] .course-collection-grid,
+  [data-runtime-platform="android"] .course-launcher-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+  [data-runtime-platform="android"] .course-collection-card > img { height: clamp(100px, 24vh, 160px); aspect-ratio: auto; object-fit: contain; }
+  [data-runtime-platform="android"] .course-collection-body { padding: 14px; }
+  [data-runtime-platform="android"] .course-collection-body h3 { margin: 6px 0 8px; font-size: 17px; }
+  [data-runtime-platform="android"] .course-collection-body p { margin-bottom: 12px; font-size: 12px; line-height: 1.6; }
+  [data-runtime-platform="android"] .course-collection-footer { min-height: 44px; padding-top: 6px; font-size: 11px; }
+  [data-runtime-platform="android"] .course-launcher-cover { height: clamp(100px, 24vh, 160px); aspect-ratio: auto; }
+  [data-runtime-platform="android"] .course-lesson-number { margin-top: 8px; }
+  [data-runtime-platform="android"] .course-launcher-card h3 { margin: 6px 0 8px; font-size: 15px; }
+  [data-runtime-platform="android"] .course-launcher-card p { margin-bottom: 10px; min-height: 0; }
+  [data-runtime-platform="android"] .course-launcher-card-footer { margin-top: 8px; padding-top: 8px; }
+  [data-runtime-platform="android"] .course-launcher-actions { gap: 4px; }
+  [data-runtime-platform="android"] .course-launcher-start,
+  [data-runtime-platform="android"] .course-launcher-preview { padding: 0 8px; }
+}
+
 @media (max-width: 640px) {
   .course-launcher-inner { width: calc(100% - 32px); }
   .course-launcher-header { min-height: 64px; }

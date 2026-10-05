@@ -1,0 +1,118 @@
+{
+  "measuredAt": "2026-10-03T09:49:48.615Z",
+  "viewport": {
+    "width": 960,
+    "height": 540,
+    "dpr": 4
+  },
+  "camera": {
+    "panX": 20,
+    "panY": 80,
+    "scale": 0.45
+  },
+  "nodes": 16,
+  "graphs": 5,
+  "restored": true,
+  "layoutUnchanged": true,
+  "results": [
+    {
+      "phase": "cached",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.66699999998673,
+          "p95": 33.33300000001327,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 33.33299999998417,
+          "p95": 83.33299999998417,
+          "over34ms": 4,
+          "activeFrames": 59,
+          "previewCount": 5
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 50,
+          "p95": 150,
+          "over34ms": 36,
+          "activeFrames": 58,
+          "previewCount": 5
+        }
+      ]
+    },
+    {
+      "phase": "live",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.666999999957625,
+          "p95": 33.33399999997346,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 66.66699999995762,
+          "p95": 116.66700000001583,
+          "over34ms": 45,
+          "activeFrames": 0,
+          "previewCount": 0
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 166.66599999996834,
+          "p95": 266.66700000001583,
+          "over34ms": 57,
+          "activeFrames": 0,
+          "previewCount": 0
+        }
+      ]
+    },
+    {
+      "phase": "cached-repeat",
+      "layoutUnchanged": true,
+      "samples": [
+        {
+          "name": "idle",
+          "intervals": 59,
+          "p50": 16.667000000015832,
+          "p95": 33.33299999998417,
+          "over34ms": 0,
+          "activeFrames": 0,
+          "previewCount": 0
+        },
+        {
+          "name": "pan",
+          "intervals": 59,
+          "p50": 33.33299999998417,
+          "p95": 183.33299999998417,
+          "over34ms": 8,
+          "activeFrames": 59,
+          "previewCount": 5
+        },
+        {
+          "name": "zoom",
+          "intervals": 59,
+          "p50": 50,
+          "p95": 133.33299999998417,
+          "over34ms": 40,
+          "activeFrames": 58,
+          "previewCount": 2
+        }
+      ]
+    }
+  ]
+}

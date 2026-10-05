@@ -1,0 +1,34 @@
+{
+  "build": {
+    "revision": "ca3903bd0a032222c149cddb65f89ce6759e009f",
+    "dirty": true,
+    "builtAt": "2026-10-04T04:36:18.057Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "viewport": {
+    "width": 960,
+    "height": 540,
+    "dpr": 4
+  },
+  "nodes": 8,
+  "inkComponents": 10,
+  "camera": {
+    "panX": -119.614,
+    "panY": 82.7753,
+    "scale": 0.352714
+  },
+  "runtimeStatus": {
+    "playing": false,
+    "completed": true,
+    "beatCount": 11
+  },
+  "sliders": [
+    {
+      "min": "0",
+      "max": "6.28",
+      "value": "3.4226",
+      "cls": ""
+    }
+  ]
+}

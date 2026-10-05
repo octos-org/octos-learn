@@ -1,0 +1,13 @@
+{
+  "apk": "/Users/alan0x/Documents/projects/octos-learn/delivery/e2e-closeout-20260930/octos-learn-0.1.0-v30.apk",
+  "sha256": "67fcd891edb02d23953b224757c1cc883540d3acdb9f815e5e6813d493a27935",
+  "bytes": 96296107,
+  "buildInfo": {
+    "revision": "ca4fcef05307149c4ecb15541289f9b36c343b3b",
+    "dirty": false,
+    "builtAt": "2026-09-30T17:21:48.723Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "ninePackHashesVerified": true
+}

@@ -6,6 +6,26 @@
 
 - [Makepad 原生迁移接手入口](makepad-migration/AGENT_HANDOFF.md)：macOS 原生应用现状、工作区重建、验证方法、剩余差异与交接维护规矩（每个工作阶段结束必须更新）。
 
+- [v0.1.1 发布记录](RELEASE_V0_1_1.md)：Android 性能与笔迹修复汇总、确切依赖和发布验证范围。
+
+- [课程画面复用与附件归属修复](course-runtime-quality/course-visual-layout-fixes-2026-10-04/REPORT.md)：从 main 分支修复跨组件重复和跨行附件重复占位，包含依赖顺序、回归、电视验证及生产部署验收。
+
+- [皓丽会议大屏“全部应用”入口](ANDROID_APP_DRAWER.md)：原生侧边栏自定义槽、独立 APK 构建安装、升级重绑、实机重启验收与回滚。
+- [笔迹与课程布局解耦](course-runtime-quality/android-ink-layout-independence-2026-10-03/REPORT.md)：移除笔迹固定/避障，保留播放隐藏并自动回浏览模式，以及浏览器和电视验证。
+- [Android 三维旋转优化](course-runtime-quality/android-orbit-performance-2026-10-03/REPORT.md)：按帧合并拖拽/滚轮、保留 SVG 图元、交线和投影缓存，以及电视对照与 Canvas/WebGL 路线评估。
+- [Android 滑块实时更新优化](course-runtime-quality/android-slider-performance-2026-10-03/REPORT.md)：共用布局复用、二维曲线增量更新、三维分层和网格复用，以及电视对照数据。
+
+- [Android 触屏拖拽起步诊断](course-runtime-quality/android-drag-start-2026-10-03/REPORT.md)：重复板书重排、合成层冷启动与暂停期间的预热修复。
+- [Android 导航缓存第二阶段](course-runtime-quality/android-performance-2026-10-03-phase2/REPORT.md)：正常预制课布局基线、导航覆盖图对齐及父卡片更新的缓存失效修复。
+- [Android 白板性能优化](course-runtime-quality/android-performance-2026-10-02/REPORT.md)：电视缓存开关对照、图形预览缓存、原生控件避让修复与 APK 交付记录；[预制课历史恢复布局修复](course-runtime-quality/android-performance-2026-10-02/HISTORY-LAYOUT.md)。
+
+- [Android 原生笔迹与课程坐标收尾](course-runtime-quality/android-native-ink-2026-10-02/REPORT.md)：电视验收、原生移交与坐标修复、正式运行时依赖和回归门槛。
+
+- [E2E 修复收尾](course-runtime-quality/e2e-closeout-2026-09-30/REPORT.md)：四仓合并、最终课程包、APK快照与分阶段上线。
+
+- [Android 课程目录与真机更新](course-runtime-quality/android-catalog-2026-09-28/REPORT.md)：最新主线 APK、三集九课内嵌快照与 960×540 真机布局验证。
+- [09-28 首轮 E2E 复测历史记录](course-runtime-quality/e2e-retest-2026-09-28/REPORT.md)：首轮四仓分支、课程版本与验证；后续版本以收尾记录为准。
+
 - [九门课程内容与发布收尾](course-runtime-quality/nine-course-content-closeout-2026-09-27/REPORT.md)：Claude 修复整合、八段旁白重录、九门公网包校验及 27 张真实截图。
 - [白板布局与镜头收尾](course-runtime-quality/whiteboard-closeout-2026-09-27/REPORT.md)：固定提交范围、15 门课真实截图、回归验证与异机协作边界。
 
@@ -26,6 +46,9 @@
 
 ## 专题计划
 
+- 课程模型路由：[Claude 设计依据](PROFILE_MODEL_LESSON_GENERATION_PLAN_CLAUDE.md) / [执行指令](PROFILE_MODEL_LESSON_GENERATION_EXECUTION.md) / [实施报告](PROFILE_MODEL_LESSON_GENERATION_REPORT.md) / [复核跟进](PROFILE_MODEL_LESSON_GENERATION_REVIEW_FOLLOWUP.md)。
+
+- [课程生成跟随设置主模型](PROFILE_MODEL_LESSON_GENERATION_PLAN.md)：基于最新 Octos 的技能模型路由、凭据传递与配置生效状态修改方案；Ark 仅用于 TTS。
 - [课程包平台架构与执行计划](course-pack-platform/ARCHITECTURE_AND_EXECUTION_PLAN.md)：CoursePack 分发平台的交付顺序与待决策项。
 - [白板辅助执行计划](WHITEBOARD_ASSISTANCE_EXECUTION_PLAN.md) / [实施状态](WHITEBOARD_ASSISTANCE_IMPLEMENTATION_STATUS.md) / [空间融合](WHITEBOARD_ASSISTANCE_SPATIAL_INTEGRATION.md) / [兼容性](WHITEBOARD_ASSISTANCE_COMPATIBILITY.md)：AI 手写板书（board_writing）专题。
 - [白板交互执行计划](WHITEBOARD_INTERACTION_EXECUTION_PLAN.md)：多指针手势、捏合、平移、误触抑制等 P1–P7。

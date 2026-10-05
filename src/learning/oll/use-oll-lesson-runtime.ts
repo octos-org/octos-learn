@@ -24,6 +24,7 @@ import {
   type Scene3dViewInputEvent,
   type Scene3dViewState,
   type StudentScene3dViewOperation,
+  type ReflectionSnapshot,
   type StudentTaskSnapshot,
   type StudentVariableInputEvent,
   type PlaybackFailure,
@@ -82,6 +83,8 @@ export interface OllLessonRuntimeController {
   currentBeatId?: string;
   attentionTargets: string[];
   compositionTargets: string[];
+  /** Cards the current Step wrote before the current Beat (camera context). */
+  stepContextTargets: string[];
   activeSpeech: string;
   nextNarration?: OllLessonNarration;
   playing: boolean;
@@ -92,6 +95,8 @@ export interface OllLessonRuntimeController {
   activeVariableAnimation?: PlaybackVariableAnimation;
   studentOperations: StudentOperation[];
   studentTasks: StudentTaskSnapshot[];
+  /** Thinking questions; available once the after-lesson window opens. */
+  reflections: ReflectionSnapshot[];
   studentTaskDefinitions: AuthoringStudentTask[];
   scene3dViews: Record<string, Scene3dViewState>;
   currentOperation?: PlaybackOperation;
@@ -173,6 +178,8 @@ function guardedStudentInput<T>(session: BrowserLessonSession | null, apply: () 
   catch (error) { session.reportFailure("input", error); return undefined; }
 }
 
+const EMPTY_TOPICS: OllLessonTopicDefinition[] = [];
+
 export function useOllLessonRuntime({
   source,
   storageKey,
@@ -182,7 +189,7 @@ export function useOllLessonRuntime({
   startupSpeed = 1,
   startupNarrationId,
   startAtEnd = false,
-  topics = [],
+  topics = EMPTY_TOPICS,
   deliveredProgram = null,
 }: OllLessonRuntimeOptions): OllLessonRuntimeController | null {
   const events = useMemo(
@@ -223,7 +230,7 @@ export function useOllLessonRuntime({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, incremental, narrationTiming, storageKey, playbackStore],
   );
-  const [, setRevision] = useState(0);
+  const [revision, setRevision] = useState(0);
   const acceleratedStartupRef = useRef<{
     session: BrowserLessonSession;
     narrationId: string;
@@ -519,8 +526,72 @@ export function useOllLessonRuntime({
     [session, startAtEnd],
   );
 
-  if (!events || !session) return null;
-  const projection: PlaybackProjection = session.projection;
+  // Session getters return fresh snapshots. Read them only when the session
+  // emits a change: host UI/ink updates must not trigger a full board reflow.
+  const snapshot = useMemo(() => {
+    if (!session) return null;
+    return {
+      projection: session.projection,
+      steps: session.outline,
+      attentionTargets: session.attentionTargets,
+      compositionTargets: session.compositionTargets,
+      stepContextTargets: session.stepContextTargets,
+      scene3dViews: session.scene3dViews,
+      studentOperations: session.studentOperations,
+      studentTasks: session.studentTasks,
+      reflections: session.reflections,
+    };
+    // The session is mutable; its subscription revision is the snapshot version.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session, revision]);
+  const steps = snapshot?.steps;
+  // Thread/status refreshes may recreate identical topic definitions. Only
+  // semantic ownership changes should invalidate the board region callback.
+  const topicsKey = JSON.stringify(topics);
+  const outline = useMemo(() => {
+    if (!events || !steps) return [];
+    const ungroupedSteps = new Set(steps.map((step) => step.id));
+    const grouped: OllLessonOutlineTopic[] = topics.flatMap((topic) => {
+      const topicSteps = topic.stepIds.flatMap((stepId) => {
+        const step = steps.find((candidate) => candidate.id === stepId);
+        if (!step) return [];
+        ungroupedSteps.delete(step.id);
+        return [step];
+      });
+      return topicSteps.length > 0
+        ? [
+            {
+              id: topic.id,
+              title: topic.title,
+              steps: topicSteps,
+              nodeIds: topic.nodeIds,
+              nodeSections: topic.nodeSections,
+              plannedSteps: topic.plannedSteps,
+              variableAliases: topic.variableAliases,
+              taskAliases: topic.taskAliases,
+              taskTargets: topic.taskTargets,
+              questionId: topic.questionId,
+            },
+          ]
+        : [];
+    });
+    const remainingSteps = steps.filter((step) => ungroupedSteps.has(step.id));
+    if (remainingSteps.length > 0) {
+      grouped.push({
+        id: events[0]?.lesson_id ?? "lesson",
+        title: events[0]?.lesson?.title ?? "本节课程",
+        steps: remainingSteps,
+        variableAliases: (events[0]?.lesson?.variables ?? []).map((variable) => variable.as),
+        taskAliases: (events[0]?.lesson?.tasks ?? []).map((task) => task.as),
+      });
+    }
+    return grouped;
+    // Topic definitions are plain lesson metadata; the key covers every field.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events, steps, topicsKey]);
+
+  if (!events || !session || !snapshot) return null;
+  const projection: PlaybackProjection = snapshot.projection;
   const beats = beatIds(session.operations);
   const currentBeatId =
     projection.current_beat_id ?? session.currentOperation?.beat_id;
@@ -539,46 +610,10 @@ export function useOllLessonRuntime({
           text: nextNarrationOperation.narration.text,
         }
       : undefined;
-  const steps = session.outline;
   const currentStepId =
     projection.current_step_id ??
     session.currentOperation?.step_id ??
-    (projection.cursor === 0 ? steps[0]?.id : steps.at(-1)?.id);
-  const ungroupedSteps = new Set(steps.map((step) => step.id));
-  const outline: OllLessonOutlineTopic[] = topics.flatMap((topic) => {
-    const topicSteps = topic.stepIds.flatMap((stepId) => {
-      const step = steps.find((candidate) => candidate.id === stepId);
-      if (!step) return [];
-      ungroupedSteps.delete(step.id);
-      return [step];
-    });
-    return topicSteps.length > 0
-      ? [
-          {
-            id: topic.id,
-            title: topic.title,
-            steps: topicSteps,
-            nodeIds: topic.nodeIds,
-            nodeSections: topic.nodeSections,
-            plannedSteps: topic.plannedSteps,
-            variableAliases: topic.variableAliases,
-            taskAliases: topic.taskAliases,
-            taskTargets: topic.taskTargets,
-            questionId: topic.questionId,
-          },
-        ]
-      : [];
-  });
-  const remainingSteps = steps.filter((step) => ungroupedSteps.has(step.id));
-  if (remainingSteps.length > 0) {
-    outline.push({
-      id: events[0]?.lesson_id ?? "lesson",
-      title: events[0]?.lesson?.title ?? "本节课程",
-      steps: remainingSteps,
-      variableAliases: (events[0]?.lesson?.variables ?? []).map((variable) => variable.as),
-      taskAliases: (events[0]?.lesson?.tasks ?? []).map((task) => task.as),
-    });
-  }
+    (projection.cursor === 0 ? snapshot.steps[0]?.id : snapshot.steps.at(-1)?.id);
   outlineRef.current = outline;
 
   return {
@@ -594,8 +629,9 @@ export function useOllLessonRuntime({
     outline,
     currentStepId,
     currentBeatId,
-    attentionTargets: session.attentionTargets,
-    compositionTargets: session.compositionTargets,
+    attentionTargets: snapshot.attentionTargets,
+    compositionTargets: snapshot.compositionTargets,
+    stepContextTargets: snapshot.stepContextTargets,
     activeSpeech: session.activePhaseTransition ? "" : projection.current_narration?.text ?? "",
     nextNarration,
     playing: session.isPlaying,
@@ -608,10 +644,11 @@ export function useOllLessonRuntime({
         : session.isDeliverySettled,
     board: projection.board,
     activeVariableAnimation: session.activeVariableAnimation,
-    studentOperations: session.studentOperations,
-    studentTasks: session.studentTasks,
+    studentOperations: snapshot.studentOperations,
+    studentTasks: snapshot.studentTasks,
+    reflections: snapshot.reflections,
     studentTaskDefinitions: events[0]?.lesson?.tasks ?? [],
-    scene3dViews: session.scene3dViews,
+    scene3dViews: snapshot.scene3dViews,
     currentOperation: session.currentOperation,
     play,
     pause,

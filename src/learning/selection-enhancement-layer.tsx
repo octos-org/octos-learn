@@ -702,6 +702,14 @@ export function SelectionEnhancementLayer({
     needsPersistence: boolean;
   }> = [];
   const reserved: WhiteboardRect[] = [...occupiedRects];
+  // Ink paints above these cards, so a card must not cover the handwriting it
+  // answers. Only card sources reserve space; other learner ink never does.
+  for (const sourceId of sourceIds) {
+    const bounds = sourceBoundsFor(sourceId)
+      ?? questionSourceById.get(sourceId)
+      ?? artifactSourceById.get(sourceId)?.bounds;
+    if (bounds) reserved.push(bounds);
+  }
   const placedCards: Array<WhiteboardRect & { automatic: boolean }> = [];
   const cardDragActive = draggingTurnId !== null;
   for (const { sourceIds: groupedSourceIds } of sourceGroups) {
@@ -923,6 +931,7 @@ export function SelectionEnhancementLayer({
               onPointerCancel={finishCardDrag}
               data-source-id={item.question.source?.sourceId}
               data-question-id={item.question.id}
+              data-oll-ink-input="ignore"
               data-card-x={item.layout.x}
               data-card-y={item.layout.y}
             >
@@ -1035,6 +1044,7 @@ export function SelectionEnhancementLayer({
             data-source-id={artifact.source.source_id}
             data-question-id={question?.id}
             data-enhancement-id={artifact.turn_id}
+            data-oll-ink-input="ignore"
             data-card-scale={cardScale.toFixed(2)}
             data-card-x={item.layout.x}
             data-card-y={item.layout.y}

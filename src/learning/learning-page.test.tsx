@@ -343,6 +343,32 @@ describe("LearningPage", () => {
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
   });
 
+  it.each(["preview", "learn"])("saves ink and returns a %s course to its source collection", async (mode) => {
+    window.history.replaceState({}, "", `/board?course-pack=contract-smoke&course-mode=${mode}&collection=linear-functions`);
+    coursePackLibraryMock.load.mockResolvedValue({
+      manifest: { packId: "contract-smoke", version: "0.0.2" },
+      archiveSha256: "a".repeat(64),
+    });
+    vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+      new Response(new ArrayBuffer(8), { status: 200 }),
+    );
+    let finishSave: (() => void) | undefined;
+    const save = vi.fn(() => new Promise<void>((resolve) => { finishSave = resolve; }));
+
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props?.coursePack).toBeTruthy());
+    act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
+    const back = screen.getByRole("button", { name: "返回", exact: true });
+    expect(back.getAttribute("title")).toBe("返回课程集");
+    expect(back.querySelector(".lucide-arrow-left")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "返回首页" })).toBeNull();
+    fireEvent.click(back);
+    expect(save).toHaveBeenCalledOnce();
+    expect(navigateMock).not.toHaveBeenCalled();
+    act(() => finishSave?.());
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/?collection=linear-functions"));
+  });
+
   it("offers history instead of settings and saves ink before switching sessions", async () => {
     const previous = createProvisionalLearningSession(100);
     promoteLearningSession(previous.id, "之前的数学课", 101);

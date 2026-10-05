@@ -16,6 +16,7 @@ export interface WhiteboardQuestionRecord {
   /** Surface reserved while a selection answer is being generated. */
   answerPresentation?: "card" | "board-writing" | "lesson";
   error?: string;
+  errorCode?: string;
   /** Exact session-scoped camera frame submitted with this question. */
   imagePath?: string;
   /** Profile that owned imagePath at upload time. */
@@ -66,6 +67,7 @@ function validQuestion(
     || typeof question.createdAt !== "string"
     || !["pending", "answered", "failed"].includes(String(question.status))
   ) return false;
+  if (question.errorCode !== undefined && typeof question.errorCode !== "string") return false;
   if (question.error !== undefined && typeof question.error !== "string") {
     return false;
   }

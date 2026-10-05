@@ -92,27 +92,38 @@ function sameCamera(left: CameraState, right: CameraState): boolean {
     && Math.abs(left.scale - right.scale) < 0.0001;
 }
 
+/**
+ * True when committed ink is shown by the SVG mirror, leaving the js-draw
+ * canvases transparent and used only for editing mechanics.
+ */
+function usesAndroidVectorInkMirror(
+  runtime: unknown,
+  viewport: HTMLElement,
+): boolean {
+  const inkRuntime = runtime as InkRuntimeWithDisplay;
+  const hostWindow = viewport.ownerDocument.defaultView as (
+    Window & { OctosNativeInk?: unknown }
+  ) | null;
+  // Keep ordinary Android-mode browser previews on js-draw. The SVG mirror is
+  // paired with the APK's native live-stroke overlay so ink stays visible from
+  // pointer-down through the committed vector handoff.
+  return Boolean(
+    hostWindow?.OctosNativeInk
+    && (inkRuntime.getVectorInkUpdate || inkRuntime.editor?.toSVG)
+    && inkRuntime.host
+    && inkRuntime.subscribe,
+  );
+}
+
 function configureAndroidVectorInkMirror(
   runtime: InkRuntimeWithDisplay,
   viewport: HTMLElement,
 ): AndroidVectorInkMirror | null {
-  const hostWindow = viewport.ownerDocument.defaultView as (
-    Window & { OctosNativeInk?: unknown }
-  ) | null;
+  if (!usesAndroidVectorInkMirror(runtime, viewport)) return null;
+  const hostWindow = viewport.ownerDocument.defaultView!;
   const editor = runtime.editor;
   const exportFullSvg = editor?.toSVG?.bind(editor);
-  const host = runtime.host;
-  // Keep ordinary Android-mode browser previews on js-draw. The SVG mirror is
-  // paired with the APK's native live-stroke overlay so ink stays visible from
-  // pointer-down through the committed vector handoff.
-  if (
-    !hostWindow?.OctosNativeInk
-    || (!runtime.getVectorInkUpdate && !exportFullSvg)
-    || !host
-    || !runtime.subscribe
-  ) {
-    return null;
-  }
+  const host = runtime.host!;
 
   let camera: CameraState = { panX: 0, panY: 0, scale: 1 };
   let vector: SVGElement | null = null;
@@ -219,7 +230,7 @@ function configureAndroidVectorInkMirror(
     });
   };
 
-  const unsubscribe = runtime.subscribe(onRuntimeState);
+  const unsubscribe = runtime.subscribe!(onRuntimeState);
   return {
     updateCamera(nextCamera) {
       camera = { ...nextCamera };
@@ -232,6 +243,15 @@ function configureAndroidVectorInkMirror(
       delete host.dataset.androidVectorInk;
     },
   };
+}
+
+export interface AndroidInkDensity {
+  destroy: () => void;
+  /**
+   * True when committed ink is shown by the SVG mirror, leaving the js-draw
+   * canvases transparent and used only for editing mechanics.
+   */
+  usesVectorMirror: boolean;
 }
 
 /**
@@ -248,10 +268,12 @@ export function configureAndroidInkDynamicDensity(
   viewport: HTMLElement,
   cameraSource: CameraSource,
   devicePixelRatio = window.devicePixelRatio || 1,
-): () => void {
+): AndroidInkDensity {
   const inkRuntime = runtime as InkRuntimeWithDisplay;
   const display = inkRuntime.editor?.display;
-  if (!display?.setDevicePixelRatio) return () => undefined;
+  if (!display?.setDevicePixelRatio) {
+    return { destroy: () => undefined, usesVectorMirror: false };
+  }
 
   const input = {
     cssWidth: viewport.clientWidth,
@@ -307,10 +329,13 @@ export function configureAndroidInkDynamicDensity(
     previousCamera = { ...camera };
   });
 
-  return () => {
-    if (restoreTimer !== undefined) clearTimeout(restoreTimer);
-    unsubscribeCamera();
-    vectorMirror?.destroy();
-    display.setDevicePixelRatio = originalSetDevicePixelRatio;
+  return {
+    usesVectorMirror: vectorMirror !== null,
+    destroy: () => {
+      if (restoreTimer !== undefined) clearTimeout(restoreTimer);
+      unsubscribeCamera();
+      vectorMirror?.destroy();
+      display.setDevicePixelRatio = originalSetDevicePixelRatio;
+    },
   };
 }

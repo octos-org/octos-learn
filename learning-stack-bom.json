@@ -1,25 +1,35 @@
 {
   "schema": "octos.learning-stack.release-bom.v1",
-  "release_train": "whiteboard-camera-closeout-2026-09-27",
-  "status": "development",
+  "release_train": "octos-learn-v0.1.1",
+  "status": "release-candidate",
   "components": {
     "learning_coach": {
       "repository": "alan0x/learning-coach",
-      "main_baseline_ref": "7bb8078b19aac033085e5ae435d31220c7e204f3",
+      "main_baseline_ref": "d44a7e636f9b5da0555011c8b8c46b335e3b892a",
       "package_version": "0.15.0",
-      "oll_authoring_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "oll_authoring_ref": "3145b5da8bac399edbbe73b6bea0ad1c7225f790",
+      "compiled_visual_reuse_ref": "0a0021cbe615b0c1ed3c9c1304edc5803c761fef"
     },
     "octos_lesson_language": {
       "repository": "alan0x/octos-lesson-language",
-      "reviewed_main_ref": "f2a1c654041735f566385f9e208c868b270b8095",
-      "authoring_profile_ref": "f2a1c654041735f566385f9e208c868b270b8095",
-      "web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "reviewed_main_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14",
+      "authoring_profile_ref": "3145b5da8bac399edbbe73b6bea0ad1c7225f790",
+      "web_runtime_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14"
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
-      "main_baseline_ref": "739b003c359446d718008823e3b6d8bc40dbc523",
-      "package_version": "0.1.0",
-      "oll_web_runtime_ref": "f2a1c654041735f566385f9e208c868b270b8095"
+      "main_baseline_ref": "4edd17b3da058c4f3a97bb5b72d96014ed109a38",
+      "package_version": "0.1.1",
+      "oll_web_runtime_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14"
+    },
+    "octos": {
+      "repository": "octos-org/octos",
+      "main_baseline_ref": "d6905a96ba195bf977ddfa63f7b1d0fdc65626ee"
+    },
+    "octos_course_library": {
+      "repository": "alan0x/octos-course-library",
+      "main_baseline_ref": "0781f74f8b31bc56dd013527d45f8379416e70b2",
+      "embedded_snapshot": "curated-e2e-closeout-2026-09-30"
     }
   },
   "contracts": {

@@ -1,0 +1,55 @@
+{
+  "plots": 1,
+  "geometry": 1,
+  "sliders": 1,
+  "attachments": [
+    "__legacy__:interaction:1",
+    "__legacy__:interaction:1:tasks"
+  ],
+  "changedVariables": {
+    "number_01": {
+      "value": 1.57,
+      "initial": 0,
+      "min": 0,
+      "max": 6.283185307179586,
+      "label": "旋转角度 θ",
+      "unit": "rad",
+      "control": {
+        "kind": "slider",
+        "step": 0.01
+      }
+    }
+  },
+  "retainedSvg": true,
+  "layoutStable": true,
+  "restoredVariables": {
+    "number_01": {
+      "value": 0,
+      "initial": 0,
+      "min": 0,
+      "max": 6.283185307179586,
+      "label": "旋转角度 θ",
+      "unit": "rad",
+      "control": {
+        "kind": "slider",
+        "step": 0.01
+      }
+    }
+  },
+  "initialVariables": {
+    "number_01": {
+      "value": 0,
+      "initial": 0,
+      "min": 0,
+      "max": 6.283185307179586,
+      "label": "旋转角度 θ",
+      "unit": "rad",
+      "control": {
+        "kind": "slider",
+        "step": 0.01
+      }
+    }
+  },
+  "restoredSvg": true,
+  "pointChanged": true
+}

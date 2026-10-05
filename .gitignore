@@ -63,3 +63,6 @@ android/.gradle/
 android/local.properties
 android/app/build/
 android/app/src/main/assets/
+
+# Private local acceptance fixtures and evidence
+.local-dev/

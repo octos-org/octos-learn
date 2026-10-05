@@ -6,8 +6,12 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  // Historical snapshots include vendored minified bundles, not application sources.
-  globalIgnores(['dist', 'docs/development-artifacts/**']),
+  // Generated packages and historical snapshots contain copies of compiled/vendor code.
+  globalIgnores([
+    'dist', 'docs/development-artifacts/**', 'scratch/**', 'delivery/**', '.local-dev/**',
+    'android/app/src/main/assets/**', 'android/app/build/**', 'public/vad/**',
+    'public/course-packs/**', 'playwright-report/**', 'test-results/**',
+  ]),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

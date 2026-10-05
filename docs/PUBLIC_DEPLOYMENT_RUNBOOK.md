@@ -69,9 +69,11 @@ publication procedure is documented in the library's
    and set `OCTOS_SKILLS_PATH=/opt/octos-learn/skills`. Do not install a copy in
    each user's profile: this is a product runtime dependency, not a user-managed
    extension.
-5. Set `OLL_PROVIDER` and `OLL_MODEL` to the provider and model exposed by this
-   deployment. User API keys remain profile-scoped and must not be copied into
-   the server environment file.
+5. Each user selects the lesson model in Settings. Do not set `OLL_PROVIDER`
+   or `OLL_MODEL` in the product service environment. User model API keys
+   remain profile-scoped. Verify that the service environment contains no
+   `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `VERTEX_*`, or `OCTOS_AUTH_TOKEN`;
+   administrator tokens belong in the server `config.json`.
 6. Set `allow_self_registration` to `true` for public email-verified signup.
    Set it to `false` to return to invite-only access. Never add `--solo` on a public server.
 7. Create `/var/lib/octos-learn/runtime`, owned by the Octos Learn service
@@ -92,6 +94,14 @@ publication procedure is documented in the library's
     `deploy/systemd/octos-learn-hosted-tts.service.example`; create
     `/var/lib/octos-learn/hosted-tts` owned by the service account. Do not place
     this credential in the Octos environment or an administrator profile.
+    The temporary public deployment policy (2026-10-04) explicitly sets
+    `OCTOS_LEARN_TTS_PLATFORM_TOKEN_DISTRIBUTE=1` to preserve Android direct
+    synthesis and avoid the Singapore audio round trip. Preserve this value
+    when upgrading the service, then verify native narration after restart;
+    do not replace the existing environment file with an unfilled example.
+    This opt-in distributes the shared platform credential to authenticated
+    clients outside hosted quota enforcement. See
+    [the TTS policy](PUBLIC_ONBOARDING_AND_TTS.md) before changing it.
 11. For CoursePacks, create `/opt/octos-learn/course-packs` on the publication
     filesystem, owned by a dedicated operator or the non-login service
     account. Nginx needs read/traverse access to `catalog.json` and
@@ -134,9 +144,10 @@ Then verify in a private browser window:
    user's courses, files, handwriting, images, or model settings. If the server
    is deliberately returned to invite-only mode, separately verify that an
    uninvited email cannot finish registration.
-3. Credentials for the deployment's configured model provider can be saved and
-   tested in Settings, then used to generate a lesson. Confirm that
-   `OLL_PROVIDER` and `OLL_MODEL` match that Settings option.
+3. Save and test a user-owned Gemini key and primary model in Settings, then
+   generate a lesson. Verify the trace uses that model and `route_source=profile`.
+   Change the saved model and confirm the next lesson follows the new selection;
+   an in-flight lesson keeps its original model.
 4. A newly registered user can generate a lesson without installing
    `learning-coach`; Settings has no Skills page and the hosted user Skill API
    returns `404`.
@@ -217,3 +228,21 @@ documented data migration explicitly requires it.
   Bridge secret, service token, or shared operator token into the public
   frontend. The service token belongs only in Octos's root-owned environment
   file.
+
+The profile-model lesson change requires Learning Coach commit `a37c9eb` or later
+(on `codex/profile-model-lessons` until reviewed). The code is not yet deployed.
+For startup-pinned local profiles, saved model changes require a service restart.
+
+
+For the profile-model feature, upgrade **Octos → Learning Coach → frontend**.
+Remove `OLL_*` at any time; profile-mode Coach ignores these overrides. Before
+upgrading Octos, confirm the actual live commit: this branch starts at
+`ae230ce0`; an older deployed version also brings intervening upstream changes,
+which need a separate review. The feature itself only needs an Octos that
+includes #2227 (`25ff2734`), which exports the profile model to skills.
+
+Strict BYOK is a deployment requirement, not Octos code: Octos falls back to
+the service process environment when a profile has no key. The service
+environment must therefore contain no model credentials (`GEMINI_API_KEY`,
+`GOOGLE_API_KEY`, `VERTEX_*`, `OPENAI_API_KEY`, ...) and no `OCTOS_AUTH_TOKEN`
+(keep the admin token in `config.json`). Check this before every start.

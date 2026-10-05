@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
 import {
@@ -64,8 +64,13 @@ function catalog(packs: unknown[]) {
   return { schemaVersion: 1, generatedAt: "2026-09-15T00:00:00Z", packs };
 }
 
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{location.pathname}{location.search}</output>;
+}
+
 function showLauncher(path = "/?collection=other") {
-  return render(<MemoryRouter initialEntries={[path]}><CourseLauncher /></MemoryRouter>);
+  return render(<MemoryRouter initialEntries={[path]}><CourseLauncher /><LocationProbe /></MemoryRouter>);
 }
 
 import { resetEmbeddedCoursePackCatalogCache } from "./course-pack/course-pack-catalog";
@@ -132,7 +137,7 @@ describe("shared course launcher", () => {
     showLauncher();
     const preview = await screen.findByRole("link", { name: /预览/u });
     expect(preview.getAttribute("href")).toBe(
-      "/course/grade-3-math?version=1.0.0&title=%E4%B8%89%E5%B9%B4%E7%BA%A7%E6%95%B0%E5%AD%A6&mode=preview",
+      "/course/grade-3-math?version=1.0.0&title=%E4%B8%89%E5%B9%B4%E7%BA%A7%E6%95%B0%E5%AD%A6&mode=preview&collection=other",
     );
     expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
     expect(screen.getByText("三年级数学")).toBeTruthy();
@@ -159,6 +164,23 @@ describe("shared course launcher", () => {
     fireEvent.click(screen.getByRole("button", { name: /开始互动/u }));
     expect(localStorage.getItem("octos_learning_sessions_v2:anonymous"))
       .toContain('"mode":"instance"');
+  });
+
+  it("does not resurrect withdrawn embedded courses in the online catalog", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const embedded = String(input).includes("/course-packs/embedded/catalog.json");
+      return new Response(JSON.stringify(catalog((embedded
+        ? [{ ...release, packId: "rectangle-area-from-tiles" }]
+        : [{ ...release, packId: "slope-and-intercept" }]
+      ).map(pack => ({ ...pack,
+        archiveUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/archive.ocpack`,
+        manifestUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/manifest.json`,
+        thumbnailUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/files/thumbnail.webp`,
+      })))), { status: 200 });
+    }));
+    showLauncher("/");
+    expect(await screen.findByRole("heading", { name: "读懂一次函数" })).toBeTruthy();
+    expect(screen.queryByText("其他课程")).toBeNull();
   });
 
   it("keeps only the single latest version per course when multiple versions exist in catalogs", async () => {
@@ -255,12 +277,17 @@ describe("shared course launcher", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
     showLauncher();
     fireEvent.click(await screen.findByRole("button", { name: /开始互动/u }));
+    const destination = new URL(screen.getByTestId("location").textContent!, "https://example.test");
+    expect(destination.pathname).toBe("/course/grade-3-math");
+    expect(destination.searchParams.get("collection")).toBe("other");
+    expect(destination.searchParams.get("mode")).toBe("learn");
 
     const raw = localStorage.getItem("octos_learning_sessions_v2:anonymous");
     expect(raw).toContain('"mode":"instance"');
     cleanup();
     showLauncher();
-    expect(await screen.findByRole("link", { name: /继续学习/u })).toBeTruthy();
+    const continueLink = await screen.findByRole("link", { name: /继续学习/u });
+    expect(continueLink.getAttribute("href")).toContain("&collection=other&instance=");
     fireEvent.click(screen.getByLabelText(/更多操作/u));
     expect(screen.getByRole("button", { name: /重新开始/u })).toBeTruthy();
     vi.spyOn(window, "confirm").mockReturnValue(true);

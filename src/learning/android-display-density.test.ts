@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { planFocusCamera } from "octos-lesson-language/web-runtime";
+import { boardChromeInsets } from "./oll/board-chrome-insets";
 
 const styles = readFileSync("src/learning/learning-workspace.css", "utf8");
 const appStyles = readFileSync("src/index.css", "utf8");
@@ -142,9 +143,21 @@ describe("Android meeting-display density", () => {
     expect(runtimeSource).toContain(
       'dataset.runtimePlatform === "android"',
     );
-    expect(runtimeSource).toMatch(/top:\s*androidRuntime \? 0/);
-    expect(runtimeSource).toMatch(/bottom:\s*androidRuntime \? 0/);
     expect(runtimeSource).toContain("focusMargin: 24");
+    // Measured 960×540 Android chrome: top bar, ink toolbar, input dock and
+    // the teacher avatar in the bottom-right corner.
+    const bands = boardChromeInsets(960, 540, [
+      { x: 6, y: 9, width: 65, height: 30 },
+      { x: 74, y: 6, width: 880, height: 36 },
+      { x: 8, y: 48, width: 309, height: 35 },
+      { x: 894, y: 430, width: 56, height: 56 },
+      { x: 220, y: 495, width: 520, height: 37 },
+    ]);
+    // Edge chrome becomes insets, so neither the layout nor the camera can
+    // place cards under the dock or shift the course beside the toolbar.
+    expect(bands.top).toBe(83);
+    expect(bands.bottom).toBe(45);
+    expect(bands.occlusions).toEqual([{ x: 894, y: 430, width: 56, height: 56 }]);
     expect(workspaceSource).toMatch(
       /learning-workspace-topbar[\s\S]*?data-learning-board-occlusion=""/,
     );
@@ -184,7 +197,7 @@ describe("Android meeting-display density", () => {
   });
 
   it("uses a direct home action instead of the legacy learning sidebar", () => {
-    expect(pageSource).toContain('aria-label="返回首页"');
+    expect(pageSource).toContain('aria-label={returnLabel}');
     expect(pageSource).toContain("<Home size={20} />");
     expect(pageSource).not.toContain("sidebarOpen");
     expect(appStyles).not.toContain(".learning-session-sidebar");

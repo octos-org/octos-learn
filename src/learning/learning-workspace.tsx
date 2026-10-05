@@ -1,6 +1,7 @@
+import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { LearningModelContext } from "./setup-state";
+import { LearningModelContext, LearningModelIssueContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
 import { compilePlaybackOperations, HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
@@ -233,6 +234,8 @@ function savePendingLessonJobs(
 }
 
 function lessonJobError(job: SkillActionJob): string {
+  const modelMessage = lessonModelErrorMessage(lessonModelErrorCode(job.result));
+  if (modelMessage) return modelMessage;
   const detail = `${job.error ?? ""} ${job.output ?? ""}`.trim();
   if (/\b429\b|resource exhausted|rate.?limit|quota/iu.test(detail)) {
     return "课程生成服务当前比较繁忙，请稍后再试。";
@@ -462,6 +465,8 @@ export function LearningWorkspace({
   // Voice readiness also reports false before the profile runtime starts.
   // That is not a missing model configuration and must not block text input.
   const aiUnavailable = !modelConfigured;
+  const modelIssue = useContext(LearningModelIssueContext);
+  const aiUnavailableMessage = modelIssue ?? "请先在设置中连接模型，笔迹和已有课程仍可使用。";
   const isEmbeddedCourse = Boolean(coursePack?.isEmbedded);
   const threads = useRenderThreads(sessionId);
   const learnTrace = useMemo(
@@ -607,6 +612,7 @@ export function LearningWorkspace({
       | "position"
       | "status"
       | "error"
+      | "errorCode"
       | "imagePath"
       | "imageProfileId"
       | "source"
@@ -621,6 +627,7 @@ export function LearningWorkspace({
           updated.text === question.text
           && updated.status === question.status
           && updated.error === question.error
+          && updated.errorCode === question.errorCode
           && updated.imagePath === question.imagePath
           && updated.imageProfileId === question.imageProfileId
           && updated.source?.sourceId === question.source?.sourceId
@@ -1029,6 +1036,7 @@ export function LearningWorkspace({
     pausedLessonSource !== ollOpenSource;
   const [textTurnPending, setTextTurnPending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [sendErrorCode, setSendErrorCode] = useState<string | undefined>();
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
@@ -1100,6 +1108,8 @@ export function LearningWorkspace({
       const failedResult = (invocation.results ?? [])
         .find((result) => !result.success);
       if (!invocation.ok || failedResult) {
+        const code = lessonModelErrorCode(failedResult);
+        if (code) throw new LessonModelError(code);
         throw new Error(
           failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
         );
@@ -1150,18 +1160,20 @@ export function LearningWorkspace({
   }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
+    const errorCode = error instanceof LessonModelError ? error.code : undefined;
+    setSendErrorCode(errorCode);
     const thread = threads.find((candidate) => candidate.id === turnId);
     const questionId = thread?.turnId ?? turnId;
     failedQuestionErrorsRef.current.set(turnId, message);
     failedQuestionErrorsRef.current.set(questionId, message);
-    updateWhiteboardQuestion(questionId, { status: "failed", error: message });
+    updateWhiteboardQuestion(questionId, { status: "failed", error: message, errorCode });
     setTextTurnPending(false);
     setCompletedTurnId(null);
     setPlainReply({ turnId: questionId, text: message });
     setPlainReplySpoken(false);
     setSendError(message);
     conversationOptions?.onTurnError?.(turnId, error);
-  }, [setTextTurnPending, setSendError, conversationOptions, threads, updateWhiteboardQuestion]);
+  }, [setTextTurnPending, setSendError, setSendErrorCode, conversationOptions, threads, updateWhiteboardQuestion]);
   const voiceConversationOptions = useMemo<VoiceConversationOptions>(
     () => {
       type PendingSelection = NonNullable<typeof pendingVoiceSelectionRef.current>;
@@ -1906,10 +1918,13 @@ export function LearningWorkspace({
         return;
       }
       const message = lessonJobError(job);
+      const errorCode = lessonModelErrorCode(job.result);
+      setSendErrorCode(errorCode);
       failedQuestionErrorsRef.current.set(pending.turnId, message);
       updateWhiteboardQuestion(pending.turnId, {
         status: "failed",
         error: message,
+        errorCode,
       });
       setPlainReply({ turnId: pending.turnId, text: message });
       setPlainReplySpoken(false);
@@ -2361,11 +2376,12 @@ export function LearningWorkspace({
       turnId: string;
       uploadedMediaPath: string;
     }) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       const selectionScope = selectionScopeRef.current;
       if (!selectionScope?.active || selectionScope.sessionId !== sessionId) return;
       unlockAudio();
       setSendError(null);
+      setSendErrorCode(undefined);
       setTextTurnPending(true);
       const turnId = delivery?.turnId ?? crypto.randomUUID();
       const answerPresentation = selectionAnswerPresentation(
@@ -2452,6 +2468,8 @@ export function LearningWorkspace({
         const failedResult = (invocation.results ?? [])
           .find((result) => !result.success);
         if (!invocation.ok || failedResult) {
+          const code = lessonModelErrorCode(failedResult);
+          if (code) throw new LessonModelError(code);
           throw new Error(
             failedResult?.output?.trim()
               || "选区辅助内容生成失败，请重试",
@@ -2489,15 +2507,16 @@ export function LearningWorkspace({
           ? cause.message
           : "选区问题发送失败";
         setTextTurnPending(false);
-        updateWhiteboardQuestion(turnId, { status: "failed", error: message });
+        updateWhiteboardQuestion(turnId, { status: "failed", error: message, errorCode: cause instanceof LessonModelError ? cause.code : undefined });
         // Selection failures stay attached to their question on the board.
         // Resolving here prevents the whiteboard toolbar and the workspace
         // shell from rendering duplicate error notices outside that card.
       }
     },
-    [setSendError, setTextTurnPending,
+    [setSendError, setSendErrorCode, setTextTurnPending,
       handleTurnComplete,
       aiUnavailable,
+      aiUnavailableMessage,
       addWhiteboardQuestion,
       ollLesson,
       onLearnerInput,
@@ -2679,12 +2698,13 @@ export function LearningWorkspace({
 
   const sendText = useCallback(
     async (text: string, applicationContext?: string) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       unlockAudio();
       const clientTiming: LearningClientTiming = {
         submitted_at_epoch_ms: Date.now(),
       };
       setSendError(null);
+      setSendErrorCode(undefined);
       const references = composerBoardReferences;
       const hasSelection = references.length > 0 || Boolean(activeVoiceInkSelectionCaptureRef.current);
       if (!applicationContext?.trim()) {
@@ -2880,6 +2900,7 @@ export function LearningWorkspace({
       } catch (cause) {
         setTextTurnPending(false);
         setWhiteboardQuestionStatus(turnId, "failed");
+        setSendErrorCode(cause instanceof LessonModelError ? cause.code : undefined);
         setSendError(cause instanceof Error ? cause.message : "发送失败");
         throw cause;
       }
@@ -2887,6 +2908,7 @@ export function LearningWorkspace({
     [
       buildTurnText,
       aiUnavailable,
+      aiUnavailableMessage,
       addWhiteboardQuestion,
       composerBoardReferences,
       conv,
@@ -2899,6 +2921,7 @@ export function LearningWorkspace({
       startDirectLessonGeneration,
       setComposerBoardReferences,
       setSendError,
+      setSendErrorCode,
       setTextTurnPending,
       setWhiteboardQuestionStatus,
       updateWhiteboardQuestion,
@@ -2907,9 +2930,10 @@ export function LearningWorkspace({
 
   const sendImage = useCallback(
     async (file: File) => {
-      if (aiUnavailable) { setSendError("请先在设置中连接模型，笔迹和已有课程仍可使用。"); return; }
+      if (aiUnavailable) { setSendError(aiUnavailableMessage); return; }
       unlockAudio();
       setSendError(null);
+      setSendErrorCode(undefined);
       const turnId = crypto.randomUUID();
       const prompt = "请看我上传的题目，把题目和关键步骤整理到白板上。";
       addWhiteboardQuestion({
@@ -2950,10 +2974,11 @@ export function LearningWorkspace({
         setSendError(cause instanceof Error ? cause.message : "图片发送失败");
       }
     },
-    [setSendError, setTextTurnPending,
+    [setSendError, setSendErrorCode, setTextTurnPending,
       addWhiteboardQuestion,
       buildTurnText,
       aiUnavailable,
+      aiUnavailableMessage,
       handleTurnComplete,
       onLearnerInput,
       sessionId,
@@ -2997,6 +3022,7 @@ export function LearningWorkspace({
 
   const handleUseVoiceMode = async () => {
     setSendError(null);
+    setSendErrorCode(undefined);
     try {
       await onUseVoiceMode?.();
     } catch (cause) {
@@ -3434,11 +3460,16 @@ export function LearningWorkspace({
             conv.error ??
             conv.cameraError ??
             ollNarrationTts.error}
+          {sendError && lessonModelErrorMessage(sendErrorCode) && (
+            <> <a href="/settings?tab=llm">前往设置</a></>
+          )}
         </div>
       )}
       {aiUnavailable && !isEmbeddedCourse && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
-          连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a>
+          {modelIssue
+            ? <>{modelIssue} <a href="/settings?tab=llm">前往设置</a></>
+            : <>连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a></>}
         </div>
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (

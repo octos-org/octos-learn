@@ -11,6 +11,8 @@ export interface WhiteboardCameraRequest {
   source: WhiteboardCameraRequestSource;
   courseId: string;
   rect: WhiteboardRect;
+  /** Cards inside `rect`; floating UI beside its empty corners is ignored. */
+  parts?: WhiteboardRect[];
 }
 
 export interface WhiteboardCameraDecision {

@@ -1,0 +1,120 @@
+{
+  "samples": [
+    {
+      "step": 0,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 1,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 2,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 3,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 4,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 5,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 6,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 7,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 8,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "step": 9,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 0,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 1,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 2,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 3,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 4,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 5,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 6,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 7,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 8,
+      "svgs": 1,
+      "active": true
+    },
+    {
+      "dialog": true,
+      "step": 9,
+      "svgs": 1,
+      "active": true
+    }
+  ],
+  "mainRestored": true,
+  "dialogRestored": true,
+  "parametersUnchanged": true,
+  "inkUnchanged": true,
+  "cameraUnchanged": true,
+  "finalSvgCount": 1
+}

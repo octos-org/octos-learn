@@ -58,6 +58,14 @@
   opacity: 1;
 }
 
+/*
+ * Learner ink is hidden while the lesson plays. `visibility` keeps js-draw's
+ * measured size, so showing the layer again needs no canvas resize.
+ */
+.learning-oll-board[data-ink-suspended] .oll-ink-layer {
+  visibility: hidden !important;
+}
+
 .oll-android-vector-ink {
   position: absolute;
   inset: 0;
@@ -1555,6 +1563,10 @@
   /* World-coordinate cards scale and move with their lesson content. */
   top: auto;
   max-width: none;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(54, 45, 34, 0.1);
   backdrop-filter: none;
 }
 
@@ -1603,8 +1615,8 @@
 
 .learning-variable-control-actions > button {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   place-items: center;
   border: 1px solid rgba(13, 112, 130, 0.2);
@@ -1622,10 +1634,25 @@
   color: #c35e42;
 }
 
+.learning-variable-controls > small.is-idle {
+  visibility: hidden;
+}
+
+/* The demonstration hint sits on the panel's top edge instead of taking a
+   line, so the docked panel stays one row tall per variable. */
 .learning-variable-controls > small {
-  color: #827b72;
+  position: absolute;
+  top: -9px;
+  right: 10px;
+  padding: 0 8px;
+  border: 1px solid rgba(195, 94, 66, 0.25);
+  border-radius: 999px;
+  background: #fff7f2;
+  color: #c35e42;
   font-size: 10px;
-  line-height: 1.35;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .learning-student-tasks {
@@ -1659,6 +1686,67 @@
   color: #827b72;
   font-size: 9px;
   text-align: right;
+}
+
+.learning-reflection-card {
+  position: absolute;
+  z-index: 15;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(154, 118, 38, 0.22);
+  border-radius: 18px;
+  background: rgba(255, 250, 235, 0.97);
+  box-shadow: 0 14px 36px rgba(54, 45, 34, 0.12);
+  pointer-events: auto;
+}
+
+.learning-reflection-card > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.learning-reflection-card > header > span {
+  color: #8a6212;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.learning-reflection-card > header > small {
+  color: #827b72;
+  font-size: 9px;
+  text-align: right;
+}
+
+.learning-reflection-card > p {
+  margin: 0;
+  color: #373c38;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.learning-reflection-card > button {
+  justify-self: start;
+  padding: 5px 12px;
+  border: 1px solid rgba(154, 118, 38, 0.3);
+  border-radius: 999px;
+  background: #fff;
+  color: #8a6212;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.learning-reflection-answer {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(245, 238, 216, 0.8);
+  color: #4a4336;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .learning-student-task {

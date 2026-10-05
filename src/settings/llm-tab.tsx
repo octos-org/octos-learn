@@ -22,12 +22,14 @@ import {
   fetchProviderModels,
   formatSettingsError,
   updateMyProfileConfig,
+  profileModelSaveMessage,
   type Profile,
   type LlmPrimary,
 } from "./settings-api";
 import {
   buildCredentialEnvPatch,
   findProvider,
+  isLessonCapable,
   providersForDeployment,
   showsBaseUrl,
   usesJsonCredential,
@@ -184,18 +186,31 @@ const labelClass = "mb-1.5 block text-xs font-medium text-muted";
 /* ─── Component ─── */
 
 export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
-  const [form, setForm] = useState<LlmFormState>(() => profileToForm(profile));
+  const [form, setFormState] = useState<LlmFormState>(() => profileToForm(profile));
   const [original, setOriginal] = useState<LlmFormState>(() =>
     profileToForm(profile),
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
   const [testMessage, setTestMessage] = useState<string | null>(null);
   const [providerModelIds, setProviderModelIds] = useState<Record<string, string[]>>({});
   const [modelCatalogLoading, setModelCatalogLoading] = useState(false);
   const [modelCatalogError, setModelCatalogError] = useState<string | null>(null);
+
+  // User edits invalidate the saved status; API/catalog hydration does not.
+  const setForm: typeof setFormState = (value) => {
+    setSaveMessage("");
+    setSaved(false);
+    setFormState(value);
+  };
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   const isDirty = JSON.stringify(form) !== JSON.stringify(original);
   const isCustom = form.family_id === "__custom_family__";
@@ -259,7 +274,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       .then((ids) => {
         setProviderModelIds((prev) => ({ ...prev, [provider.id]: ids }));
         if (ids.length > 0) {
-          setForm((current) =>
+          setFormState((current) =>
             current.family_id === provider.id && !current.model_id
               ? { ...current, model_id: ids[0] }
               : current,
@@ -391,10 +406,10 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       });
       onProfileUpdated(result);
       const newForm = profileToForm(result);
-      setForm(newForm);
+      setFormState(newForm);
       setOriginal(newForm);
+      setSaveMessage(profileModelSaveMessage(result));
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError(formatSettingsError(err, "Failed to update LLM config."));
     } finally {
@@ -441,6 +456,17 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div role="status" className="text-xs text-muted">
+            <p>{isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true")
+              ? "可用于课程生成" : "暂不支持课程生成"}</p>
+            {effectiveFamilyId && !isLessonCapable(effectiveFamilyId, import.meta.env.VITE_PUBLIC_DEPLOYMENT === "true") && (
+              <p>当前模型平台暂不支持生成课程，请选择 Gemini。原设置会保留，直到你保存新的选择。</p>
+            )}
+            {["google", "gemini"].includes(effectiveFamilyId) && effectiveModelId !== "gemini-3.6-flash" && (
+              <p>课程已针对 Gemini 3.6 Flash 调优，推荐选择该模型</p>
+            )}
           </div>
 
           {/* Custom provider ID (only when Custom selected) */}
@@ -1023,7 +1049,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
       </div>
 
       {/* ── Actions ── */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           onClick={handleSave}
           disabled={saving || !isDirty}
@@ -1039,6 +1065,7 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           )}
           {saved ? "Saved" : "Save Changes"}
         </button>
+        {saveMessage && <span role="status" className="text-sm text-muted">{saveMessage}</span>}
         {isDirty && (
           <button
             onClick={handleReset}

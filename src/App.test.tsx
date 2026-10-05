@@ -106,6 +106,13 @@ describe("Octos Learn routes", () => {
     ));
   });
 
+  it.each(["preview", "learn"])("preserves the source collection for %s entry", async (mode) => {
+    renderRoute(`/course/slope-and-intercept?version=1.0.0&mode=${mode}&collection=linear-functions`);
+    await waitFor(() => expect(screen.getByTestId("location").textContent).toBe(
+      `/board?course-pack=slope-and-intercept&course-version=1.0.0&course-mode=${mode}&collection=linear-functions`,
+    ));
+  });
+
   it("retains login and settings", () => {
     const login = renderRoute("/login");
     expect(screen.getByText("login-page")).toBeTruthy();
