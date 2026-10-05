@@ -294,6 +294,24 @@ pub fn plot_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         {}
     }}", badge("plot", "#aaa194")))
 }
+/// Geometry card (web `.board-node.kind-geometry`): fixed card size (web
+/// fixedVisualSize), padding 16/18, title, then the explorer body
+/// (`GeometryView`), clipped by the card like the web overflow.
+pub fn geometry_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let title = node_title(node);
+    let title_box = if title.is_empty() {
+        String::new()
+    } else {
+        text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
+    };
+    widget(cx, &format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:16 border_size:1 border_color:#d8d0c2}}
+        View{{width:Fill height:Fill flow:Down padding:Inset{{left:18 right:18 top:16 bottom:16}}
+            {title_box}
+            geometry := mod.widgets.GeometryView{{}}
+        }}
+        {}
+    }}", badge("geometry", "#aaa194")))
+}
 /// scene3d card (web `.board-node.kind-scene3d`): 16px/18px padding, bold
 /// 16px node title, SCENE3D badge pinned top-right, then the scene panel
 /// (Scene3dView), which fills calc(100% - 24px) and is clipped by the card
@@ -357,10 +375,11 @@ pub fn note_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         body.push_str(&text_box(paragraph, 14., 1.5, "#3f3a33", false, true, (0., 3.)));
     }
     for item in &items {
-        // ul.content-list li: 14px/21px with a bullet in the list indent.
+        // ul.content-list li: 14px/21px in the 20px list indent; the
+        // product's CSS reset removes list markers.
         body.push_str(&format!(
             "View{{width:Fill height:Fit flow:Right padding:Inset{{bottom:3}}
-                View{{width:18 height:21 align:Align{{x:0.3 y:0.5}} Label{{padding:0 text:\"•\" draw_text.text_style.font_size:10.5 draw_text.color:#3f3a33}}}}
+                View{{width:20 height:21}}
                 {}
             }}",
             text_box(item, 14., 1.5, "#3f3a33", false, true, (0., 0.))

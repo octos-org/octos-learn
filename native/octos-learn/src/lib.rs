@@ -1285,12 +1285,10 @@ impl App {
             return;
         }
         let mut value = request.value;
-        if request.commit && request.track_px > 0. {
+        if request.commit && request.snap_distance > 0. {
             if let Some(d) = session.board.variable_declarations().iter().find(|d| d["as"] == request.alias.as_str()) {
                 let (min, max) = (d["min"].as_f64().unwrap_or(0.), d["max"].as_f64().unwrap_or(1.));
-                let range = max - min;
-                // Web sliderTaskSnapDistance: 12px on screen, at most 4% of the range.
-                let distance = (range * 12. / request.track_px).min(range * 0.04);
+                let distance = request.snap_distance;
                 value = session.practice.snap(
                     session.complete(),
                     &request.alias,
@@ -1474,6 +1472,8 @@ impl AppMain for App {
         controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);
         octos_oll_preview::plot_view::script_mod(vm);
+        octos_oll_preview::geometry_view::script_mod(vm);
+        octos_oll_preview::group_view::script_mod(vm);
         svg_image::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)

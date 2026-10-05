@@ -299,7 +299,13 @@ impl Widget for ControlsCard {
         let label_w = self
             .rows
             .iter()
-            .map(|row| Self::text_width(&mut self.draw_bold, cx, &row.label, 12.))
+            // Glyphs missing from the bold face (θ, CJK) fall back to other
+            // fonts; take the wider of both measurements.
+            .map(|row| {
+                Self::text_width(&mut self.draw_bold, cx, &row.label, 12.)
+                    .max(Self::text_width(&mut self.draw_text, cx, &row.label, 12.))
+                    + 2.
+            })
             .fold(0., f64::max);
         // Output column: at least 5ch of the 12px bold figure font, and the
         // ch width that fits every label of each range (web min-width).

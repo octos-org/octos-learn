@@ -1,5 +1,6 @@
 use crate::board_view;
 use crate::controls_view::{self, ControlModel, ControlsCard, Part};
+use crate::geometry_view::GeometryView;
 use crate::plot_view::{PlotState, PlotView, Tool};
 use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
@@ -25,15 +26,17 @@ const REFLECTION_ESTIMATED_HEIGHT: f64 = 150.;
 
 /// A learner change of a lesson variable from a world control panel (web
 /// handleStudentVariableInput). `commit` ends the operation; `track_px` is
-/// the on-screen slider track width for task snapping (0: no snapping, e.g.
-/// the − + buttons which the web treats as keyboard input).
+/// the task snap distance (0: no snapping, e.g. the − + buttons which the web
+/// treats as keyboard input).
 #[derive(Clone, Debug, PartialEq)]
 pub struct ControlRequest {
     pub alias: String,
     pub value: f64,
     pub control: &'static str,
     pub commit: bool,
-    pub track_px: f64,
+    /// Task snap distance in variable units for a pointer commit (web
+    /// sliderTaskSnapDistance / geometryTaskSnapDistance); 0: no snapping.
+    pub snap_distance: f64,
 }
 /// A practice panel action.
 #[derive(Clone, Debug, PartialEq)]
@@ -209,6 +212,12 @@ pub struct SpatialBoard {
     /// Active explore-mode pan: node id, ranges and pointer at the start.
     #[rust]
     plot_drag: Option<(String, (oll_runtime::plot::Range, oll_runtime::plot::Range), DVec2)>,
+    /// Angle controls in world coordinates (debug snapshots), refreshed on draw.
+    #[rust]
+    angle_controls: Vec<Value>,
+    /// Active angle-control drag: node id, control, last value.
+    #[rust]
+    geometry_drag: Option<(String, oll_runtime::geometry::AngleControl, f64)>,
     /// 大图 requests for the host (node id).
     #[rust]
     plot_expand: Vec<String>,
@@ -394,6 +403,7 @@ impl SpatialBoard {
         self.task_requests.clear();
         self.plot_states.clear();
         self.plot_drag = None;
+        self.geometry_drag = None;
         self.camera = Camera::default();
         self.from = self.camera;
         self.destination = self.camera;
@@ -691,7 +701,7 @@ impl SpatialBoard {
                         board_view::text_node(cx, node)?
                     }
                     "plot" => board_view::plot_node(cx, node)?,
-                    "geometry" => board_view::chart_node(cx, node)?,
+                    "geometry" => board_view::geometry_node(cx, node)?,
                     "scene3d" => board_view::scene3d_node(cx, node)?,
                     "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
@@ -733,12 +743,26 @@ impl SpatialBoard {
             }
             for group in &p.groups {
                 let id = group["id"].as_str().unwrap();
-                if let Some(rect) = self.geometry.groups.get(id) {
-                    let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:8 draw_bg.color:#0000 draw_bg.border_size:2 draw_bg.border_color:#a8bdd0}")?;
-                    let title = board_view::label(cx, group["title"].as_str().unwrap_or(""))?;
-                    board_view::children(cx, &w, vec![title])?;
-                    self.groups.push((*rect, w));
+                let Some(rect) = self.geometry.groups.get(id).copied() else { continue };
+                // Web syncGroups: a frame renders only when its members form a
+                // contiguous block (no other card or attachment intrudes).
+                let members = group_members(p, id);
+                let overlap = |a: &WorldRect, slack: f64| {
+                    let ox = (a.x + a.width).min(rect.x + rect.width) - a.x.max(rect.x);
+                    let oy = (a.y + a.height).min(rect.y + rect.height) - a.y.max(rect.y);
+                    ox > slack && oy > slack
+                };
+                let intrudes = self.geometry.nodes.iter().any(|(nid, r)| !members.contains(nid) && overlap(r, 12.))
+                    || self.geometry.attachments.values().any(|r| overlap(r, 0.));
+                if intrudes {
+                    continue;
                 }
+                let w = board_view::widget(cx, "mod.widgets.GroupFrame{width:Fill height:Fill}")?;
+                if let Some(mut f) = w.borrow_mut::<crate::group_view::GroupFrame>() {
+                    f.title = group["title"].as_str().or(group["role"].as_str()).unwrap_or("知识组").to_owned();
+                    f.focused = p.focus.iter().any(|t| t == id);
+                }
+                self.groups.push((rect, w));
             }
             self.groups
                 .sort_by(|a, b| (b.0.width * b.0.height).total_cmp(&(a.0.width * a.0.height)));
@@ -809,7 +833,13 @@ impl SpatialBoard {
                 }
                 continue;
             }
-            if kind != "geometry" {
+            if kind == "geometry" {
+                let state = self.plot_states.get(id).cloned().unwrap_or_default();
+                let active = self.geometry_drag.as_ref().filter(|d| &d.0 == id).map(|d| d.1.variable.clone());
+                if let Some(mut g) = w.widget(cx, ids!(geometry)).borrow_mut::<GeometryView>() {
+                    g.set_node(cx, node, &state);
+                    g.active_control = active;
+                }
                 continue;
             }
             let plot_ref = w.widget(cx, ids!(plot));
@@ -963,6 +993,150 @@ impl SpatialBoard {
             let plot = w.widget(cx, ids!(plot));
             (inside && plot.borrow::<PlotView>().is_some()).then(|| (id.clone(), plot, world))
         })
+    }
+    /// Geometry card under a screen point: (node id, GeometryView, world point).
+    fn geometry_at(&self, cx: &mut Cx, abs: DVec2) -> Option<(String, WidgetRef, DVec2)> {
+        let world = self.world_point(abs);
+        self.entries.iter().find_map(|(id, r, w)| {
+            let inside = world.x >= r.x && world.x <= r.x + r.width && world.y >= r.y && world.y <= r.y + r.height;
+            let g = w.widget(cx, ids!(geometry));
+            (inside && g.borrow::<GeometryView>().is_some()).then(|| (id.clone(), g, world))
+        })
+    }
+    /// Angle value for a control at a world point (web angleControlValue),
+    /// with the variable's (min, max) for snapping.
+    fn angle_value(&self, control: &oll_runtime::geometry::AngleControl, angle: f64) -> Option<(f64, f64, f64, String)> {
+        let p = self.board.as_ref()?;
+        let d = p.variable_declarations().iter().find(|d| d["as"] == control.variable.as_str())?;
+        let (min, max) = (d["min"].as_f64()?, d["max"].as_f64()?);
+        let unit = d["unit"].as_str().unwrap_or("").to_owned();
+        let current = p.variables.get(&control.variable).copied().unwrap_or(min);
+        Some((oll_runtime::geometry::angle_control_value(angle, current, min, max, &unit), min, max, unit))
+    }
+    /// Geometry explorer input: toolbar, wheel zoom, explore pan, and
+    /// dragging angle-control points (control "geometry_point").
+    fn geometry_event(&mut self, cx: &mut Cx, hit: &Hit) -> bool {
+        use oll_runtime::plot;
+        match hit {
+            Hit::FingerDown(e) => {
+                let Some((id, view, world)) = self.geometry_at(cx, e.abs) else { return false };
+                let (tool, control, fraction, ranges, current) = {
+                    let g = view.borrow::<GeometryView>().unwrap();
+                    (g.tool_at(world), g.control_at(world), g.frame_fraction(world), g.current_ranges(), g.state.clone())
+                };
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or(current);
+                if let Some(tool) = tool {
+                    match tool {
+                        Tool::Explore => state.exploring = !state.exploring,
+                        Tool::Restore => state.ranges = None,
+                        Tool::Expand => self.plot_expand.push(id.clone()),
+                    }
+                    self.set_geometry_state(cx, &id, &view, state);
+                    return true;
+                }
+                if let Some(control) = control {
+                    let angle = view.borrow::<GeometryView>().unwrap().pointer_angle(&control, world);
+                    if let Some((value, ..)) = self.angle_value(&control, angle) {
+                        self.control_requests.push(ControlRequest {
+                            alias: control.variable.clone(),
+                            value,
+                            control: "geometry_point",
+                            commit: false,
+                            snap_distance: 0.,
+                        });
+                        self.geometry_drag = Some((id, control, value));
+                        cx.set_cursor(MouseCursor::Grabbing);
+                    }
+                    return true;
+                }
+                if state.exploring && fraction.is_some() {
+                    if let Some(r) = ranges {
+                        self.plot_drag = Some((id, r, e.abs));
+                        return true;
+                    }
+                }
+                false
+            }
+            Hit::FingerMove(e) => {
+                if let Some((id, control, _)) = self.geometry_drag.clone() {
+                    let world = self.world_point(e.abs);
+                    let Some((_, _, w)) = self.entries.iter().find(|(i, _, _)| *i == id) else { return true };
+                    let view = w.widget(cx, ids!(geometry));
+                    let angle = view.borrow::<GeometryView>().map(|g| g.pointer_angle(&control, world));
+                    if let Some((value, ..)) = angle.and_then(|a| self.angle_value(&control, a)) {
+                        self.control_requests.push(ControlRequest {
+                            alias: control.variable.clone(),
+                            value,
+                            control: "geometry_point",
+                            commit: false,
+                            snap_distance: 0.,
+                        });
+                        self.geometry_drag = Some((id, control, value));
+                    }
+                    return true;
+                }
+                let Some((id, start, at)) = self.plot_drag.clone() else { return false };
+                let Some((_, _, w)) = self.entries.iter().find(|(i, _, _)| *i == id) else { return false };
+                let view = w.widget(cx, ids!(geometry));
+                let Some((px, py)) = view.borrow::<GeometryView>().and_then(|g| g.data_per_world()) else { return false };
+                let delta = (e.abs - at) / self.camera.scale;
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or_default();
+                state.ranges = Some(plot::pan(start.0, start.1, -delta.x * px, delta.y * py));
+                self.set_geometry_view(cx, &id, &view, state);
+                true
+            }
+            Hit::FingerUp(_) => {
+                let Some((id, control, value)) = self.geometry_drag.take() else { return false };
+                // Commit (web geometry point commit) with the task snap
+                // distance: 12px along the circle, at most 4% of the range.
+                let radius = self
+                    .entries
+                    .iter()
+                    .find(|(i, _, _)| *i == id)
+                    .and_then(|(_, _, w)| w.widget(cx, ids!(geometry)).borrow::<GeometryView>().map(|g| g.control_radius(&control)))
+                    .unwrap_or(0.)
+                    * self.camera.scale;
+                let snap_distance = self.angle_value(&control, 0.).map_or(0., |(_, min, max, unit)| {
+                    let u = unit.to_lowercase();
+                    let degrees = !(u.contains('弧') || u.contains("rad")) && (u.contains('度') || u.contains('°') || u.contains("deg"));
+                    let turn = if degrees { 360. } else { std::f64::consts::TAU };
+                    if radius > 0. { (12. * turn / (std::f64::consts::TAU * radius)).min((max - min) * 0.04) } else { 0. }
+                });
+                self.control_requests.push(ControlRequest {
+                    alias: control.variable.clone(),
+                    value,
+                    control: "geometry_point",
+                    commit: true,
+                    snap_distance,
+                });
+                cx.set_cursor(MouseCursor::Grab);
+                self.replay_pending_camera(cx);
+                true
+            }
+            Hit::FingerScroll(e) => {
+                let Some((id, view, world)) = self.geometry_at(cx, e.abs) else { return false };
+                let (fraction, ranges, current) = {
+                    let g = view.borrow::<GeometryView>().unwrap();
+                    (g.frame_fraction(world), g.current_ranges(), g.state.clone())
+                };
+                let (Some(anchor), Some((x, y))) = (fraction, ranges) else { return false };
+                let mut state = self.plot_states.get(&id).cloned().unwrap_or(current);
+                state.ranges = Some(plot::zoom(x, y, plot::wheel_zoom_factor(e.scroll.y), anchor));
+                self.set_geometry_view(cx, &id, &view, state);
+                true
+            }
+            _ => false,
+        }
+    }
+    fn set_geometry_view(&mut self, cx: &mut Cx, id: &str, view: &WidgetRef, state: PlotState) {
+        if let Some(mut g) = view.borrow_mut::<GeometryView>() {
+            g.state = state.clone();
+            g.redraw(cx);
+        }
+        self.plot_states.insert(id.to_owned(), state);
+    }
+    fn set_geometry_state(&mut self, cx: &mut Cx, id: &str, view: &WidgetRef, state: PlotState) {
+        self.set_geometry_view(cx, id, view, state);
     }
     fn set_plot_state(&mut self, cx: &mut Cx, id: &str, plot: &WidgetRef, state: PlotState) {
         if let Some(mut v) = plot.borrow_mut::<PlotView>() {
@@ -1195,7 +1369,7 @@ impl SpatialBoard {
                         Part::Plus => (Self::stepped(&model, 1.), "slider", true),
                         Part::Reset => (model.initial, "reset", true),
                     };
-                    self.control_requests.push(ControlRequest { alias: model.alias, value, control, commit, track_px: 0. });
+                    self.control_requests.push(ControlRequest { alias: model.alias, value, control, commit, snap_distance: 0. });
                     if let (Part::Track(_), Some(mut c)) = (part, card.borrow_mut::<ControlsCard>()) {
                         c.set_dragging(cx, Some(row));
                     }
@@ -1215,7 +1389,7 @@ impl SpatialBoard {
                             value,
                             control: "slider",
                             commit: false,
-                            track_px: 0.,
+                            snap_distance: 0.,
                         });
                     }
                 }
@@ -1238,7 +1412,12 @@ impl SpatialBoard {
                             value,
                             control: "slider",
                             commit: true,
-                            track_px: c.track_width(row) * scale,
+                            // Web: 12px on screen, at most 4% of the range.
+                            snap_distance: {
+                                let range = model.max - model.min;
+                                let px = c.track_width(row) * scale;
+                                if px > 0. { (range * 12. / px).min(range * 0.04) } else { 0. }
+                            },
                         });
                     }
                 }
@@ -1248,6 +1427,26 @@ impl SpatialBoard {
             _ => false,
         }
     }
+}
+/// Node members of a group, recursively (web syncGroups collect).
+fn group_members(p: &Preview, id: &str) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    let mut stack = vec![id.to_owned()];
+    let mut seen = BTreeSet::new();
+    while let Some(g) = stack.pop() {
+        if !seen.insert(g.clone()) {
+            continue;
+        }
+        let Some(group) = p.groups.iter().find(|x| x["id"] == g.as_str()) else { continue };
+        for m in group["members"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+            if p.nodes.iter().any(|n| n["id"] == m) {
+                out.insert(m.to_owned());
+            } else {
+                stack.push(m.to_owned());
+            }
+        }
+    }
+    out
 }
 impl Widget for SpatialBoard {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
@@ -1295,7 +1494,11 @@ impl Widget for SpatialBoard {
             }
             return;
         }
-        if self.control_event(cx, &hit) || self.plot_event(cx, &hit) || self.scene_event(cx, &hit) {
+        if self.control_event(cx, &hit)
+            || self.geometry_event(cx, &hit)
+            || self.plot_event(cx, &hit)
+            || self.scene_event(cx, &hit)
+        {
             return;
         }
         match hit {
@@ -1416,6 +1619,15 @@ impl Widget for SpatialBoard {
                 }
             }
         }
+        self.angle_controls = self
+            .entries
+            .iter()
+            .filter_map(|(id, _, w)| {
+                let g = w.widget(cx, ids!(geometry));
+                let g = g.borrow::<GeometryView>()?;
+                Some(json!({"node": id, "controls": g.debug_controls()}))
+            })
+            .collect();
         if (remeasured && self.measure_passes < 3) || reflection_resized {
             if remeasured {
                 self.measure_passes += 1;
@@ -1540,7 +1752,7 @@ impl Widget for SpatialBoard {
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
         let (cursor, complete) = self.board.as_ref().map_or((0, false), |p| (p.cursor, p.complete()));
-        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"angle_controls":self.angle_controls,"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 
