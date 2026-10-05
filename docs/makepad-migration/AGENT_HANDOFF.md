@@ -132,6 +132,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 - 只推送不合并；push/发 PR 前先问。git 提交可直接做在 codex/ 分支。
 - 不切用户工作分支、不清用户工作区；持久仓库被其他会话占用（2026-10-05：octos-learn 在 `codex/android-native-ink-stroke-handoff`，OLL 在 `codex/native-ink-exclusion-smoothing`），不要切换——工作一律在 `.local-dev/oll-product` 工作区 clone 或自建 worktree。web 基准用工作区 clone 的 `git worktree add` 到临时目录构建。
+- 原生课程包锁定（`native/octos-learn/course-packs.lock.json`）始终与 main 的 `android/embedded-course-packs.json` 快照保持一致（用户 2026-10-05 确认）；合并 main 时同步，并在交付记录里写明。
 - 固定依赖版本不得擅自升级（runtime.json 组合）；WASM target 安装（rustup target add wasm32-unknown-unknown）**尚未获授权**；Android 真机安装**未获授权**（设备 192.168.1.63，只开发打包）。
 - 不确定就问用户；历史文档中的性能数字（8ms/35MB/3-10x）均不作数。
 
