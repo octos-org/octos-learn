@@ -38,6 +38,18 @@ pub struct ControlRequest {
     /// sliderTaskSnapDistance / geometryTaskSnapDistance); 0: no snapping.
     pub snap_distance: f64,
 }
+/// Handwriting tools (web ink toolbar modes).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum InkTool {
+    #[default]
+    Browse,
+    Pen,
+    /// js-draw eraser: removes whole strokes it touches.
+    Erase,
+    /// js-draw selection: marquee select, drag to move, Delete to remove.
+    Select,
+}
+
 /// Transient card highlight kinds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Highlight {
@@ -232,6 +244,23 @@ pub struct SpatialBoard {
     /// Transient card highlights (web .active / .focus-arrive) with start time.
     #[rust]
     highlights: BTreeMap<String, (Highlight, std::time::Instant)>,
+    #[rust]
+    ink_tool: InkTool,
+    /// Selection tool gesture: marquee start (world) or move start (world).
+    #[rust]
+    select_gesture: Option<(bool, DVec2)>,
+    /// Current marquee rect in world coordinates.
+    #[rust]
+    marquee: Option<(DVec2, DVec2)>,
+    /// Course preview hides learner ink (web: no ink session in preview).
+    #[rust]
+    ink_hidden: bool,
+    /// Last eraser point (world) of the current drag.
+    #[rust]
+    erase_last: Option<DVec2>,
+    /// Bumped on every ink change (for saving).
+    #[rust]
+    ink_revision: u64,
     /// Targets to frame once the next state is laid out.
     #[rust]
     pending_focus: Option<Vec<String>>,
@@ -390,10 +419,63 @@ impl SpatialBoard {
     }
     pub fn undo_ink(&mut self, cx: &mut Cx) {
         self.ink.undo();
+        self.ink_revision += 1;
         self.redraw(cx);
     }
     pub fn redo_ink(&mut self, cx: &mut Cx) {
         self.ink.redo();
+        self.ink_revision += 1;
+        self.redraw(cx);
+    }
+    pub fn set_ink_hidden(&mut self, cx: &mut Cx, hidden: bool) {
+        if self.ink_hidden != hidden {
+            self.ink_hidden = hidden;
+            self.redraw(cx);
+        }
+    }
+    pub fn ink_revision(&self) -> u64 {
+        self.ink_revision
+    }
+    /// Choose a handwriting tool (web ink toolbar).
+    pub fn set_ink_tool(&mut self, cx: &mut Cx, tool: InkTool) {
+        if tool != InkTool::Select {
+            self.ink.clear_selection();
+        }
+        self.ink_tool = tool;
+        self.set_drawing(cx, tool != InkTool::Browse);
+    }
+    /// 全选: select every stroke (selection tool).
+    pub fn select_all_ink(&mut self, cx: &mut Cx) {
+        self.ink_tool = InkTool::Select;
+        if !self.drawing {
+            self.set_drawing(cx, true);
+        }
+        self.ink.select_all();
+        self.redraw(cx);
+    }
+    /// Strokes and their pen styles (saved with learning progress).
+    pub fn ink_snapshot(&self) -> Value {
+        let mut v = self.ink.snapshot();
+        v["styles"] = json!(self
+            .stroke_styles
+            .iter()
+            .map(|(id, (c, w))| (id.to_string(), json!([c.x, c.y, c.z, c.w, w])))
+            .collect::<serde_json::Map<_, _>>());
+        v
+    }
+    pub fn restore_ink(&mut self, cx: &mut Cx, saved: &Value) {
+        self.ink.restore(saved);
+        self.stroke_styles = saved["styles"]
+            .as_object()
+            .into_iter()
+            .flatten()
+            .filter_map(|(id, s)| {
+                let a = s.as_array()?;
+                let f = |i: usize| a.get(i).and_then(Value::as_f64).unwrap_or(0.) as f32;
+                Some((id.parse().ok()?, (vec4(f(0), f(1), f(2), f(3)), a.get(4)?.as_f64()?)))
+            })
+            .collect();
+        self.stroke_id = self.ink.strokes.iter().map(|s| s.id).max().unwrap_or(0);
         self.redraw(cx);
     }
     fn desktop_ink(&mut self, cx: &mut Cx, action: &str, position: Vec2d, time: f64) {
@@ -1601,17 +1683,95 @@ impl Widget for SpatialBoard {
             return;
         }
         let hit = event.hits(cx, self.draw_bg.area());
-        if self.drawing {
-            match hit {
-                Hit::FingerDown(e) => {
-                    self.stroke_id += 1;
-                    let pen = self.pen();
-                    self.stroke_styles.insert(self.stroke_id, pen);
-                    self.desktop_ink(cx, "down", e.abs, e.time);
+        if self.drawing && self.ink_tool == InkTool::Select {
+            if let Event::KeyDown(k) = event {
+                if matches!(k.key_code, KeyCode::Delete | KeyCode::Backspace) && self.ink.delete_selection() {
+                    self.ink_revision += 1;
+                    self.redraw(cx);
                 }
-                Hit::FingerMove(e) => self.desktop_ink(cx, "move", e.abs, e.time),
-                Hit::FingerUp(e) => self.desktop_ink(cx, "up", e.abs, e.time),
-                _ => (),
+            }
+        }
+        if self.drawing {
+            match self.ink_tool {
+                InkTool::Erase => match hit {
+                    Hit::FingerDown(_) | Hit::FingerMove(_) => {
+                        let abs = match &hit {
+                            Hit::FingerDown(e) => e.abs,
+                            Hit::FingerMove(e) => e.abs,
+                            _ => unreachable!(),
+                        };
+                        // Erase along the path since the last pointer event,
+                        // so a fast stroke does not skip over lines.
+                        let w = self.world_point(abs);
+                        let radius = 8. / self.camera.scale;
+                        let from = self.erase_last.unwrap_or(w);
+                        let steps = ((w - from).length() / radius).ceil().max(1.) as usize;
+                        let mut changed = false;
+                        for i in 0..=steps {
+                            let p = from + (w - from) * (i as f64 / steps as f64);
+                            changed |= self.ink.erase_at(p.x, p.y, radius);
+                        }
+                        self.erase_last = Some(w);
+                        if changed {
+                            self.ink_revision += 1;
+                            self.redraw(cx);
+                        }
+                    }
+                    Hit::FingerUp(_) => {
+                        self.erase_last = None;
+                        self.ink.finish_erase();
+                    }
+                    _ => (),
+                },
+                InkTool::Select => match hit {
+                    Hit::FingerDown(e) => {
+                        let w = self.world_point(e.abs);
+                        let inside = self.ink.selection_bounds().is_some_and(|(x, y, bw, bh)| {
+                            w.x >= x && w.x <= x + bw && w.y >= y && w.y <= y + bh
+                        });
+                        self.select_gesture = Some((inside, w));
+                        if !inside {
+                            self.marquee = Some((w, w));
+                        }
+                    }
+                    Hit::FingerMove(e) => {
+                        let w = self.world_point(e.abs);
+                        match self.select_gesture {
+                            Some((true, start)) => self.ink.move_selection(w.x - start.x, w.y - start.y),
+                            Some((false, start)) => self.marquee = Some((start, w)),
+                            None => {}
+                        }
+                        self.redraw(cx);
+                    }
+                    Hit::FingerUp(_) => {
+                        match self.select_gesture.take() {
+                            Some((true, _)) => self.ink.commit_move(),
+                            Some((false, _)) => {
+                                if let Some((a, b)) = self.marquee.take() {
+                                    self.ink.select_rect(a.x, a.y, b.x - a.x, b.y - a.y);
+                                }
+                            }
+                            None => {}
+                        }
+                        self.ink_revision += 1;
+                        self.redraw(cx);
+                    }
+                    _ => (),
+                },
+                _ => match hit {
+                    Hit::FingerDown(e) => {
+                        self.stroke_id += 1;
+                        let pen = self.pen();
+                        self.stroke_styles.insert(self.stroke_id, pen);
+                        self.desktop_ink(cx, "down", e.abs, e.time);
+                    }
+                    Hit::FingerMove(e) => self.desktop_ink(cx, "move", e.abs, e.time),
+                    Hit::FingerUp(e) => {
+                        self.desktop_ink(cx, "up", e.abs, e.time);
+                        self.ink_revision += 1;
+                    }
+                    _ => (),
+                },
             }
             return;
         }
@@ -1800,23 +1960,42 @@ impl Widget for SpatialBoard {
                 }
             }
         }
-        for stroke in &self.ink.strokes {
+        let (mx, my) = self.ink.moving_offset();
+        for stroke in self.ink.strokes.iter().filter(|_| !self.ink_hidden) {
             let (color, width) = self
                 .stroke_styles
                 .get(&stroke.id)
                 .copied()
                 .unwrap_or_else(|| Self::default_pen());
+            let (ox, oy) = if self.ink.selection.contains(&stroke.id) { (mx, my) } else { (0., 0.) };
             self.draw_vector.set_color(color.x, color.y, color.z, color.w);
             if let Some(p) = stroke.points.first() {
-                self.draw_vector.move_to(p.x as f32, p.y as f32);
+                self.draw_vector.move_to((p.x + ox) as f32, (p.y + oy) as f32);
                 if stroke.points.len() == 1 {
-                    self.draw_vector.line_to((p.x + 0.01) as f32, p.y as f32);
+                    self.draw_vector.line_to((p.x + ox + 0.01) as f32, (p.y + oy) as f32);
                 }
                 for p in stroke.points.iter().skip(1) {
-                    self.draw_vector.line_to(p.x as f32, p.y as f32);
+                    self.draw_vector.line_to((p.x + ox) as f32, (p.y + oy) as f32);
                 }
                 self.draw_vector.stroke((width / self.camera.scale) as f32);
             }
+        }
+        // Selection box (js-draw selection) and the marquee being dragged.
+        let s = 1. / self.camera.scale;
+        let mut boxes = Vec::new();
+        if let Some(b) = self.ink.selection_bounds() {
+            boxes.push((b.0 - 6. * s, b.1 - 6. * s, b.2 + 12. * s, b.3 + 12. * s, 0.12f32));
+        }
+        if let Some((a, b)) = self.marquee {
+            boxes.push((a.x.min(b.x), a.y.min(b.y), (a.x - b.x).abs(), (a.y - b.y).abs(), 0.08));
+        }
+        for (x, y, w, h, fill) in boxes {
+            self.draw_vector.set_color_hex(0x168398, fill);
+            self.draw_vector.rect(x as f32, y as f32, w as f32, h as f32);
+            self.draw_vector.fill();
+            self.draw_vector.set_color_hex(0x168398, 0.9);
+            self.draw_vector.rect(x as f32, y as f32, w as f32, h as f32);
+            self.draw_vector.stroke((1.5 * s) as f32);
         }
         #[cfg(not(target_os = "android"))]
         if let Some(points) = self.ink.active_points() {

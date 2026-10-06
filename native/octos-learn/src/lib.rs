@@ -6,6 +6,7 @@
 use makepad_widgets::*;
 use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
+use octos_oll_preview::spatial_board::InkTool;
 mod svg_image;
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
@@ -522,6 +523,11 @@ pub struct App {
     #[rust]
     last_ink_count: usize,
     #[rust]
+    last_ink_revision: u64,
+    /// Current handwriting tool (web ink toolbar mode).
+    #[rust]
+    ink_tool: InkTool,
+    #[rust]
     course_cards: Vec<CourseCardRefs>,
     /// Selected collection (web ?collection=<id>); None = collections home.
     #[rust]
@@ -759,10 +765,15 @@ impl App {
     /// Progress-store replies carry no user-visible equivalent on the web
     /// learning page, so they no longer surface in the top bar.
     fn note(&mut self, _cx: &mut Cx, _message: &str) {}
-    fn save_progress(&mut self, _cx: &mut Cx) {
+    fn save_progress(&mut self, cx: &mut Cx) {
         if let Some(player) = &self.player {
             match player.checkpoint() {
-                Ok(value) => {
+                Ok(mut value) => {
+                    if !self.course_preview {
+                        if let Some(b) = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>() {
+                            value["native_ink"] = b.ink_snapshot();
+                        }
+                    }
                     self.pending_save =
                         Some(progress_store::Request::Save(self.course_key(), value));
                     self.last_save = Some(Instant::now());
@@ -799,11 +810,19 @@ impl App {
                     }
                     match saved {
                         Some(saved) => match Session::restore(&self.course_source, &saved) {
-                            Ok(player) => {
+                            Ok(mut player) => {
+                                // Pack narration clip timing and the voice toggle carry over.
+                                if let Some(old) = &self.player {
+                                    player.narration_durations = old.narration_durations.clone();
+                                    player.narration_enabled = old.narration_enabled;
+                                }
                                 let w = self.ui.widget(cx, ids!(spatial));
                                 if let Some(mut b) = w.borrow_mut::<spatial_board::SpatialBoard>()
                                 {
                                     b.clear(cx);
+                                    if saved["native_ink"].is_object() {
+                                        b.restore_ink(cx, &saved["native_ink"]);
+                                    }
                                 }
                                 self.player = Some(player);
                                 self.error.clear();
@@ -917,6 +936,9 @@ impl App {
             self.rebuild_ink_tools(cx);
         }
         self.ui.widget(cx, ids!(start_interaction)).set_visible(cx, preview);
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_ink_hidden(cx, preview);
+        }
         for id in [live_id!(voice), live_id!(camera), live_id!(ink_toolbar), live_id!(input_dock)] {
             self.ui.widget(cx, &[id]).set_visible(cx, !preview);
         }
@@ -935,8 +957,12 @@ impl App {
         self.ink_tool_buttons.clear();
         let mut widgets = Vec::new();
         for (index, (label, icon)) in INK_TOOLS.iter().enumerate() {
-            let active = (index == INK_TOOL_PEN) == self.drawing
-                && (index == INK_TOOL_PEN || index == INK_TOOL_BROWSE);
+            let active = match self.ink_tool {
+                spatial_board::InkTool::Browse => index == INK_TOOL_BROWSE,
+                spatial_board::InkTool::Pen => index == INK_TOOL_PEN,
+                spatial_board::InkTool::Erase => index == INK_TOOL_ERASE,
+                spatial_board::InkTool::Select => index == INK_TOOL_SELECT,
+            };
             let (bg, tint) = if active {
                 ("#e3eeec", "#0c7085")
             } else {
@@ -1961,8 +1987,20 @@ impl AppMain for App {
                 .borrow::<spatial_board::SpatialBoard>()
                 .map(|b| b.ink_count())
                 .unwrap_or(0);
-            if ink_count != self.last_ink_count {
+            let ink_revision = self
+                .ui
+                .widget(cx, ids!(spatial))
+                .borrow::<spatial_board::SpatialBoard>()
+                .map(|b| b.ink_revision())
+                .unwrap_or(0);
+            if ink_count != self.last_ink_count || ink_revision != self.last_ink_revision {
                 self.last_ink_count = ink_count;
+                // Handwriting is saved with the learning progress (web
+                // oll.student-ink per learning instance).
+                if ink_revision != self.last_ink_revision {
+                    self.last_ink_revision = ink_revision;
+                    self.save_progress(cx);
+                }
                 self.refresh(cx);
             }
         }
@@ -2079,24 +2117,31 @@ impl AppMain for App {
             let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
                 buttons.get(tool).is_some_and(|b| clicked(b, actions))
             };
-            let set_drawing = if ink_clicked(INK_TOOL_PEN, &self.ink_tool_buttons, actions) {
-                Some(true)
-            } else if ink_clicked(INK_TOOL_BROWSE, &self.ink_tool_buttons, actions) {
-                Some(false)
-            } else {
-                None
-            };
-            if let Some(drawing) = set_drawing {
-                self.drawing = drawing;
-                if drawing {
+
+            let tool = [
+                (INK_TOOL_BROWSE, InkTool::Browse),
+                (INK_TOOL_PEN, InkTool::Pen),
+                (INK_TOOL_ERASE, InkTool::Erase),
+                (INK_TOOL_SELECT, InkTool::Select),
+                (INK_TOOL_SELECT_ALL, InkTool::Select),
+            ]
+            .into_iter()
+            .find(|(i, _)| ink_clicked(*i, &self.ink_tool_buttons, actions));
+            if let Some((index, tool)) = tool {
+                self.ink_tool = tool;
+                self.drawing = tool != InkTool::Browse;
+                if self.drawing {
                     if let Some(session) = &mut self.player {
                         session.pause();
                     }
                 }
                 let w = self.ui.widget(cx, ids!(spatial));
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
-                    board.set_drawing(cx, drawing);
+                    board.set_ink_tool(cx, tool);
                     board.set_pen(cx, self.pen_color, self.pen_width);
+                    if index == INK_TOOL_SELECT_ALL {
+                        board.select_all_ink(cx);
+                    }
                 };
                 self.rebuild_ink_tools(cx);
             }
@@ -2111,14 +2156,7 @@ impl AppMain for App {
                     }
                 };
             }
-            // DIFF: oll-runtime Ink has no erase/select; strokes are also
-            // memory-only. Web-identical buttons explain via the toast.
-            if ink_clicked(INK_TOOL_ERASE, &self.ink_tool_buttons, actions)
-                || ink_clicked(INK_TOOL_SELECT, &self.ink_tool_buttons, actions)
-                || ink_clicked(INK_TOOL_SELECT_ALL, &self.ink_tool_buttons, actions)
-            {
-                self.toast(cx, "擦除与框选尚未迁移，仅网页版可用");
-            }
+
         }
         // Autosave once per second while playing, and once when playback pauses.
         if !skip_autosave
