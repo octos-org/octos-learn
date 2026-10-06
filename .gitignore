@@ -37,6 +37,7 @@ research/
 !.octos/AGENTS.md
 !AGENTS.md
 !README.md
+!NATIVE_MACOS_PROGRESS.md
 !docs/**/*.md
 
 # Local scratch and generated delivery packs (export-pdf.mjs / generate-delivery-pack.mjs)
