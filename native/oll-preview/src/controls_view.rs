@@ -243,11 +243,12 @@ impl ControlsCard {
             return None;
         }
         for (i, track) in self.tracks.iter().enumerate() {
-            // Generous vertical grab band, like a range input's full height.
+            // The whole range input (travel ± the 8px thumb radius) with a
+            // generous vertical grab band, like a range input's full height.
             let band = rect(
-                track.pos.x - 6.,
+                track.pos.x - 8.,
                 track.pos.y - 10.,
-                track.size.x + 12.,
+                track.size.x + 16.,
                 track.size.y + 20.,
             );
             if band.contains(p) {
@@ -360,12 +361,16 @@ impl Widget for ControlsCard {
             set(v, 0xd9dcd8, 1.);
             v.rounded_rect(tx as f32, (cy - 2.) as f32, track_w as f32, 4., 2.);
             v.fill();
+            // Like a browser range input the thumb stays inside the input:
+            // its centre travels between left + 8 and right - 8.
+            let travel = (track_w - 16.).max(1.);
+            let thumb = tx + 8. + travel * t;
             set(v, 0x168398, 1.);
-            v.rounded_rect(tx as f32, (cy - 2.) as f32, (track_w * t) as f32, 4., 2.);
+            v.rounded_rect(tx as f32, (cy - 2.) as f32, (thumb - tx) as f32, 4., 2.);
             v.fill();
-            v.circle((tx + track_w * t) as f32, cy as f32, 8.);
+            v.circle(thumb as f32, cy as f32, 8.);
             v.fill();
-            self.tracks.push(rect(tx, cy - 2., track_w, 4.));
+            self.tracks.push(rect(tx + 8., cy - 2., travel, 4.));
             let bx0 = x + w - PAD_X - actions_w;
             let mut bs = [Rect::default(); 3];
             for (k, b) in bs.iter_mut().enumerate() {
@@ -385,17 +390,19 @@ impl Widget for ControlsCard {
                 );
                 v.stroke(1.);
             }
-            // − and + glyphs as strokes (1.5px, 8px long), web font glyph size.
+            // "-" and "+" text glyphs of the web 12px button font: a ~4.5px
+            // hyphen and a ~6.5px plus, ~1.1px strokes.
             set(v, 0x0d7082, 1.);
             for (k, plus) in [(0usize, false), (1, true)] {
                 let (gx, gy) = (bs[k].pos.x + BUTTON / 2., cy);
-                v.move_to((gx - 4.) as f32, gy as f32);
-                v.line_to((gx + 4.) as f32, gy as f32);
-                v.stroke_opts(1.5, LineCap::Round, LineJoin::Round, 4., 1.);
+                let half = if plus { 3.25 } else { 2.25 };
+                v.move_to((gx - half) as f32, gy as f32);
+                v.line_to((gx + half) as f32, gy as f32);
+                v.stroke_opts(1.1, LineCap::Butt, LineJoin::Round, 4., 1.);
                 if plus {
-                    v.move_to(gx as f32, (gy - 4.) as f32);
-                    v.line_to(gx as f32, (gy + 4.) as f32);
-                    v.stroke_opts(1.5, LineCap::Round, LineJoin::Round, 4., 1.);
+                    v.move_to(gx as f32, (gy - half) as f32);
+                    v.line_to(gx as f32, (gy + half) as f32);
+                    v.stroke_opts(1.1, LineCap::Butt, LineJoin::Round, 4., 1.);
                 }
             }
             self.buttons.push(bs);
