@@ -125,7 +125,7 @@ script_mod! {
                             topbar := RoundedView {
                                 width: Fill height: 58 flow: Right spacing: 16 align: Align{y: 0.5}
                                 padding: Inset{left: 18 right: 9 top: 7 bottom: 7}
-                                draw_bg +: { color: #fffdf8d4 border_radius: 9 border_size: 1 border_color: #ece5d9 }
+                                draw_bg +: { color: #fffdf8d4 border_radius: 9 border_size: 0.5 border_color: #ece5d9 }
                                 View { width: Fill height: Fit flow: Down spacing: 2
                                     // Web span 9px and strong 20px/650;
                                     // Label sizes are points (px * 0.75).
@@ -175,11 +175,11 @@ script_mod! {
                             View { width: 96 height: Fit flow: Right spacing: 8
                                 back := Button { width: 40 height: 40 text: ""
                                     icon_walk: Walk{width: 20 height: 20} draw_icon +: { color: #x57534e }
-                                    draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
+                                    draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 0.5 border_color: #0000001a } }
                                 // 学习记录 (web Menu button) opens the history drawer.
                                 settings := Button { width: 40 height: 40 text: ""
                                     icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #x57534e }
-                                    draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
+                                    draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 0.5 border_color: #0000001a } }
                             }
                         }
                         // Handwriting toolbar (web .learning-ink-toolbar:
@@ -187,7 +187,7 @@ script_mod! {
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 20 top: 88}
                             ink_toolbar := RoundedView {
                                 width: Fit height: Fit flow: Right spacing: 3 padding: 5 align: Align{y: 0.5}
-                                draw_bg +: { color: #fffdf8f0 border_radius: 8 border_size: 1 border_color: #e4ded3 }
+                                draw_bg +: { color: #fffdf8f0 border_radius: 8 border_size: 0.5 border_color: #e4ded3 }
                                 // Buttons are built in Rust (rebuild_ink_tools) so the
                                 // browse/pen active state can be highlighted per mode.
                                 ink_tools := View { width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} }
@@ -201,13 +201,13 @@ script_mod! {
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
                             outline_trigger := Button { width: 48 height: 48 text: "" icon_walk: Walk{width: 15 height: 15}
                                 draw_icon +: { color: #466d78 }
-                                draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 8 border_size: 1 border_color: #cfe2e3 } }
+                                draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 8 border_size: 0.5 border_color: #cfe2e3 } }
                         }
                         // Course outline panel (web .oll-course-outline-panel: 344 wide,
                         // above the trigger, right edge 24px from the window).
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 264}
                             outline_panel := RoundedView { visible: false width: 344 height: Fit flow: Down
-                                draw_bg +: { color: #fffdf8f7 border_radius: 10 border_size: 1 border_color: #453d3221 }
+                                draw_bg +: { color: #fffdf8f7 border_radius: 10 border_size: 0.5 border_color: #453d3221 }
                                 View { width: Fill height: Fit flow: Right align: Align{y: 1.} padding: Inset{left: 20 right: 20 top: 20 bottom: 14}
                                     View { width: Fill height: Fit flow: Down
                                         Label { width: Fit padding: 0 text: "COURSE OUTLINE" draw_text.text_style.font_size: 7.5 draw_text.color: #8d8275 }
@@ -231,10 +231,10 @@ script_mod! {
                             // shift text but not DrawVector geometry.
                             View { width: Fill height: Fill
                                 enlarge_card := RoundedView { width: 1100 height: Fit flow: Down padding: 20
-                                    draw_bg +: { color: #fffdf7 border_radius: 8 border_size: 1 border_color: #cec8bd }
+                                    draw_bg +: { color: #fffdf7 border_radius: 8 border_size: 0.5 border_color: #cec8bd }
                                     enlarge_close := Button { height: 28 text: "关闭大图" padding: Inset{left: 8 right: 8 top: 4 bottom: 4}
                                         draw_text.color: #214c48 draw_text.text_style.font_size: 9
-                                        draw_bg +: { color: #fffdf7 color_hover: #f1efe9 border_radius: 3.5 border_size: 1 border_color: #cec8bd } }
+                                        draw_bg +: { color: #fffdf7 color_hover: #f1efe9 border_radius: 3.5 border_size: 0.5 border_color: #cec8bd } }
                                     enlarge_title := Label { width: Fill padding: Inset{top: 6 bottom: 6} text: "" draw_text.text_style.font_size: 13.5 draw_text.color: #214c48 }
                                     View { width: Fill height: Fit flow: Down padding: 12
                                         enlarge_plot_box := View { visible: false width: Fill height: Fit enlarge_plot := mod.widgets.PlotView {} }
@@ -249,7 +249,7 @@ script_mod! {
                                 narration_bubble := RoundedView {
                                     visible: false width: 360 height: Fit margin: Inset{bottom: 26}
                                     padding: Inset{left: 17 right: 17 top: 14 bottom: 14}
-                                    draw_bg +: { color: #fffdf8ee border_radius: 9 border_size: 1 border_color: #dce3e2 }
+                                    draw_bg +: { color: #fffdf8ee border_radius: 9 border_size: 0.5 border_color: #dce3e2 }
                                     // DIFF: the web bubble renders markdown; plain text here.
                                     narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 16 draw_text.color: #3c3832 }
                                 }
@@ -257,7 +257,7 @@ script_mod! {
                                     // Web .octos-teacher-avatar: 94px, radius 38–46% (~40px;
                                     // sdf.box draws 2 × border_radius), #f2fbfc→#d4edf2.
                                     RoundedView { width: Fill height: Fill
-                                        draw_bg +: { color: #e3f4f7 border_radius: 20 border_size: 1 border_color: #c2dde6 } }
+                                        draw_bg +: { color: #e3f4f7 border_radius: 20 border_size: 0.5 border_color: #c2dde6 } }
                                     // DIFF: static avatar; the organic skin animation is a later milestone.
                                     View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
                                         octos_art := Svg { width: 56 height: 56 } }
@@ -273,7 +273,7 @@ script_mod! {
                         View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 22}
                             input_dock := RoundedView {
                                 width: 720 height: Fit flow: Right spacing: 5 align: Align{y: 0.5} padding: 6
-                                draw_bg +: { color: #fffdf8e8 border_radius: 10.5 border_size: 1 border_color: #e7e0d4 }
+                                draw_bg +: { color: #fffdf8e8 border_radius: 10.5 border_size: 0.5 border_color: #e7e0d4 }
                                 ask_image := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 19 height: 19}
                                     draw_icon +: { color: #756c61 }
                                     draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 6.5 border_size: 0 border_color: #0000 } }
@@ -320,7 +320,7 @@ script_mod! {
                                     draw_text.color: #ffffff draw_text.text_style.font_size: 10.5
                                     draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x12606e border_radius: 5 border_size: 0 border_color: #0000 } }
                                 RoundedView { width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5} padding: 10
-                                    draw_bg +: { color: #0000 border_radius: 5 border_size: 1 border_color: #d7dfd9 }
+                                    draw_bg +: { color: #0000 border_radius: 5 border_size: 0.5 border_color: #d7dfd9 }
                                     history_search_icon := Svg { width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
                                     history_search := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "搜索学习记录"
                                         draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
@@ -339,7 +339,7 @@ script_mod! {
                     // 180 wide, placed above the button by Rust (set_walk).
                     View { width: Fill height: Fill
                         card_menu := RoundedView { visible: false width: 180 height: Fit flow: Down padding: 6
-                            draw_bg +: { color: #fffef9 border_radius: 6 border_size: 1 border_color: #d8ded6 }
+                            draw_bg +: { color: #fffef9 border_radius: 6 border_size: 0.5 border_color: #d8ded6 }
                             menu_restart := RoundedView { width: Fill height: 36 flow: Right spacing: 6 align: Align{y: 0.5} padding: Inset{left: 10}
                                 draw_bg +: { color: #0000 border_radius: 4 }
                                 menu_restart_icon := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
@@ -357,7 +357,7 @@ script_mod! {
                         SolidView { width: Fill height: Fill draw_bg.color: #152c2b55 }
                         View { width: Fill height: Fill align: Align{x: 0.5 y: 0.4}
                             RoundedView { width: 420 height: Fit flow: Down spacing: 18 padding: 22
-                                draw_bg +: { color: #fffef9 border_radius: 8 border_size: 1 border_color: #d8ded6 }
+                                draw_bg +: { color: #fffef9 border_radius: 8 border_size: 0.5 border_color: #d8ded6 }
                                 confirm_text := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.color: #243b40 }
                                 View { width: Fill height: Fit flow: Right spacing: 10 align: Align{x: 1.}
                                     confirm_cancel := Button { height: 36 text: "取消" padding: Inset{left: 16 right: 16}
@@ -375,7 +375,7 @@ script_mod! {
                     View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 96}
                         toast := RoundedView {
                             visible: false width: Fit height: Fit padding: Inset{left: 14 right: 14 top: 9 bottom: 9}
-                            draw_bg +: { color: #fffdf8f2 border_radius: 6 border_size: 1 border_color: #e3d9cb }
+                            draw_bg +: { color: #fffdf8f2 border_radius: 6 border_size: 0.5 border_color: #e3d9cb }
                             toast_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #5d5952 }
                         }
                     }
@@ -1275,7 +1275,7 @@ impl App {
             ""
         };
         let code = format!(
-            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:9 border_size:1 border_color:#dbded9}}
+            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:9 border_size:0.5 border_color:#dbded9}}
                 cover := View{{width:Fill height:201 flow:Overlay
                     cover_fallback := RoundedView{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:8.5}}
                         fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#166a79}}
@@ -1366,7 +1366,7 @@ impl App {
         let summary_label = web_text(&summary, 12., 1.5, "#667a7b", false, false, (0., 0.));
         let view_label = web_text("查看课程", 12., 1.5, "#166a79", true, false, (0., 0.));
         let code = format!(
-            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:10 border_size:1 border_color:#dbded9}}
+            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:10 border_size:0.5 border_color:#dbded9}}
                 cover := mod.widgets.SvgImage{{width:Fill height:222}}
                 View{{width:Fill height:Fit flow:Down padding:Inset{{left:23 right:23 top:24 bottom:23}}
                     {level_label}
@@ -1851,7 +1851,7 @@ impl App {
                             play := Button{{width:28 height:28 text:\"▶\" padding:0 draw_text.text_style.font_size:7 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                         }}
                         View{{width:Fill height:43 flow:Right spacing:10 align:Align{{y:0.5}} padding:Inset{{left:11 right:66}}
-                            RoundedView{{width:20 height:20 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:5 border_size:1 border_color:{circle_border}}}
+                            RoundedView{{width:20 height:20 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:5 border_size:0.5 border_color:{circle_border}}}
                                 Label{{width:Fit padding:0 text:\"{status}\" draw_text.text_style.font_size:7.5 draw_text.color:{circle_text}}}}}
                             Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#3f3932}}
                         }}

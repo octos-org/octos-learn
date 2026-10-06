@@ -853,7 +853,7 @@ impl SpatialBoard {
                     "scene3d" => board_view::scene3d_node(cx, node)?,
                     "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
-                        let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:1 draw_bg.border_color:#e3d9cb}")?;
+                        let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:0.5 draw_bg.border_color:#e3d9cb}")?;
                         let label = board_view::label(cx, &board_view::node_notes(node))?;
                         board_view::children(cx, &w, vec![label])?;
                         w
