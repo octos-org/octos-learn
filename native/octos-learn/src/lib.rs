@@ -615,6 +615,10 @@ pub struct App {
     #[rust]
     last_reflection_revision: u64,
     /// 学习记录 drawer: open flag, search text and (pack, version, row button).
+    /// Web pausedLessonSource: the learner paused the lesson (pause button
+    /// or a writing tool); play / next Beat / restart claim it back.
+    #[rust]
+    lesson_released: bool,
     #[rust]
     history_open: bool,
     #[rust]
@@ -1083,6 +1087,7 @@ impl App {
     fn open_course(&mut self, cx: &mut Cx, pack_id: &str, version: &str, autoplay: bool) {
         self.error.clear();
         self.drawing = false;
+        self.lesson_released = false;
         self.narration_muted = false;
         self.stop_narration_audio(cx);
         self.autoplay_pending = false;
@@ -1926,6 +1931,7 @@ impl App {
             board.focus_after_update(focus);
         }
         if play {
+            self.lesson_released = false;
             if let Err(e) = session.play() {
                 self.error = e;
             }
@@ -2051,11 +2057,12 @@ impl App {
         if let Some(session) = &self.player {
             let p = &session.board;
             self.ui.label(cx, ids!(course_title)).set_text(cx, &p.title);
-            // Web teacherStateLabel: the lesson owns the narration while it
-            // plays; once delivery settles the course is complete.
+            // Web teacherStateLabel: the lesson owns the narration unless the
+            // learner paused it (lessonOwnsNarration in live mode); once
+            // delivery settles the course is complete.
             let state = if session.complete() {
                 "课程完成"
-            } else if session.playing {
+            } else if session.playing || !self.lesson_released {
                 "课程播放中"
             } else {
                 "继续播放"
@@ -2352,8 +2359,11 @@ impl AppMain for App {
                 if let Some(session) = &mut self.player {
                     if session.playing {
                         session.pause();
+                        self.lesson_released = true;
                     } else if let Err(e) = session.play() {
                         self.error = e;
+                    } else {
+                        self.lesson_released = false;
                     }
                 }
                 self.last_tick = Some(Instant::now());
@@ -2374,6 +2384,7 @@ impl AppMain for App {
             if self.ui.button(cx, ids!(next_beat)).clicked(actions) {
                 // Web advanceBeat: jump to the end of the current Beat, paused.
                 self.awaiting_restore = false;
+                self.lesson_released = false;
                 if let Some(session) = &mut self.player {
                     if let Err(e) = session.advance_beat() {
                         self.error = e;
@@ -2384,6 +2395,7 @@ impl AppMain for App {
             if self.ui.button(cx, ids!(replay_topic)).clicked(actions) {
                 // Web restart: back to the start of the lesson and play.
                 self.awaiting_restore = false;
+                self.lesson_released = false;
                 if let Some(session) = &mut self.player {
                     if let Err(e) = session.restart() {
                         self.error = e;
@@ -2461,6 +2473,7 @@ impl AppMain for App {
                     if let Some(session) = &mut self.player {
                         session.pause();
                     }
+                    self.lesson_released = true;
                 }
                 let w = self.ui.widget(cx, ids!(spatial));
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
