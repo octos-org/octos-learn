@@ -223,26 +223,6 @@ script_mod! {
                                 }
                             }
                         }
-                        // 大图 dialog (web .oll-plot-dialog / .oll-coordinate-dialog):
-                        // backdrop #152c2b88, centered card 1100 wide, padding 20.
-                        enlarge_dialog := View { visible: false width: Fill height: Fill flow: Overlay
-                            enlarge_backdrop := SolidView { width: Fill height: Fill draw_bg.color: #152c2b88 }
-                            // Positioned absolutely by sync_enlarged: aligned layout would
-                            // shift text but not DrawVector geometry.
-                            View { width: Fill height: Fill
-                                enlarge_card := RoundedView { width: 1100 height: Fit flow: Down padding: 20
-                                    draw_bg +: { color: #fffdf7 border_radius: 8 border_size: 0.5 border_color: #cec8bd }
-                                    enlarge_close := Button { height: 28 text: "关闭大图" padding: Inset{left: 8 right: 8 top: 4 bottom: 4}
-                                        draw_text.color: #214c48 draw_text.text_style.font_size: 9
-                                        draw_bg +: { color: #fffdf7 color_hover: #f1efe9 border_radius: 3.5 border_size: 0.5 border_color: #cec8bd } }
-                                    enlarge_title := Label { width: Fill padding: Inset{top: 6 bottom: 6} text: "" draw_text.text_style.font_size: 13.5 draw_text.color: #214c48 }
-                                    View { width: Fill height: Fit flow: Down padding: 12
-                                        enlarge_plot_box := View { visible: false width: Fill height: Fit enlarge_plot := mod.widgets.PlotView {} }
-                                        enlarge_geometry_box := View { visible: false width: Fill height: Fit enlarge_geometry := mod.widgets.GeometryView {} }
-                                    }
-                                }
-                            }
-                        }
                         // Teacher (web .octos-teacher: right 24 bottom 98).
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
                             View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 1.}
@@ -299,6 +279,27 @@ script_mod! {
                                 visible: false width: Fit height: Fit padding: Inset{left: 16 right: 16 top: 10 bottom: 10}
                                 draw_bg +: { color: #f9e3df border_radius: 6 }
                                 error_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #8c3a2b }
+                            }
+                        }
+                        // 大图 dialog (web .oll-plot-dialog / .oll-coordinate-dialog):
+                        // backdrop #152c2b88, centered card 1100 wide, padding 20.
+                        enlarge_dialog := View { visible: false width: Fill height: Fill flow: Overlay
+                            enlarge_backdrop := SolidView { width: Fill height: Fill draw_bg.color: #152c2b88 }
+                            // Positioned absolutely by sync_enlarged: aligned layout would
+                            // shift text but not DrawVector geometry.
+                            View { width: Fill height: Fill
+                                enlarge_card := RoundedView { width: 1100 height: Fit flow: Down padding: 20
+                                    draw_bg +: { color: #fffdf7 border_radius: 8 border_size: 0.5 border_color: #cec8bd }
+                                    enlarge_close := Button { height: 28 text: "关闭大图" padding: Inset{left: 8 right: 8 top: 4 bottom: 4}
+                                        draw_text.color: #214c48 draw_text.text_style.font_size: 9
+                                        draw_bg +: { color: #fffdf7 color_hover: #f1efe9 border_radius: 3.5 border_size: 0.5 border_color: #cec8bd } }
+                                    enlarge_title := Label { width: Fill padding: Inset{top: 6 bottom: 6} text: "" draw_text.text_style.font_size: 13.5 draw_text.color: #214c48 }
+                                    // Web .plot-dialog-shell.oll-board-runtime: #f8f5ed, padding 12.
+                                    SolidView { width: Fill height: Fit flow: Down padding: 12 draw_bg.color: #f8f5ed
+                                        enlarge_plot_box := View { visible: false width: Fill height: Fit enlarge_plot := mod.widgets.PlotView {} }
+                                        enlarge_geometry_box := View { visible: false width: Fill height: Fit enlarge_geometry := mod.widgets.GeometryView {} }
+                                    }
+                                }
                             }
                         }
                         // 学习记录 drawer (web LearningHistory: overlay #152b324d,
