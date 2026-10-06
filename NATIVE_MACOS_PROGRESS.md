@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-06（互动模式细节）
+最后更新：2026-10-06（顶栏模式按钮字号）
 
 ## 0. 目标
 
@@ -105,7 +105,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `c88bcf5` 所有 RoundedView/Button 的 `border_radius` 减半：Makepad `sdf.box` 实际画 2×r 圆角，之前从 CSS 照抄的数值都圆了一倍（卡片、按钮、大纲按钮、开始互动学习等）；老师头像改为 Web 的圆角方形（94px，约 40px 圆角），状态字 10px
 - `153c5bc` 所有 DSL `border_size` 减半：sdf stroke 实际画 2×宽度的边框，1px CSS 边框之前画成了 2px（按钮、卡片边框偏深）
 - `5f92f8a` 课程完成后 ▷/› 图标 28% 透明度（同 Web disabled）；老师气泡文字 17px / 行高 1.55（之前约 21px）
-- （本次提交）互动模式：输入框占位文字 14px；麦克风按钮显示 Web 的禁用态（语音不可用，opacity .38）；手写工具栏「全选」与状态文字 10px
+- `52c5173` 互动模式：输入框占位文字 14px；麦克风按钮显示 Web 的禁用态（语音不可用，opacity .38）；手写工具栏「全选」与状态文字 10px
+- （本次提交）顶栏「启用语音 / 启用摄像头 / 开始互动学习」文字 9px（同 Web .learning-mode-button）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -137,6 +138,6 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `event.hits` 需要 Area：用 `cx.walk_turtle_with_area`。Makepad 会把 hit 发给所有 widget，模态层需要在 board 上 `set_input_blocked`。
 - 在 Fit 高度的 Overlay 里 `height: Fill` 的 Button 高度为 0，点不到；列表行用 View + `tapped()` 命中测试。
 - TextInput 刚显示时没有 area，`take_key_focus` 要延后到下一帧。
-- Label 的 `font_size` 是 pt（= px × 0.75）。latex_math 不渲染 CJK，`\text` 中文由 formula_view 拆成 Label。
+- Label 的 `font_size` 是 pt（= px × 0.75）。从 CSS 照抄 px 数值是常见错误，已全量核对 lib.rs 中的字号。latex_math 不渲染 CJK，`\text` 中文由 formula_view 拆成 Label。
 - `RefCell`：不要在持有 `borrow::<T>()` 时调用 `borrow_mut`。
 - Mac 睡眠会导致 API 中断（"Your computer went to sleep"），长任务可用 `caffeinate -dims`。

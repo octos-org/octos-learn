@@ -153,18 +153,18 @@ script_mod! {
                                     start_interaction := Button { visible: false height: 34 text: "开始互动学习" spacing: 6
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
                                         icon_walk: Walk{width: 15 height: 15} draw_icon +: { color: #0c7085 }
-                                        draw_text.color: #0c7085 draw_text.text_style.font_size: 9
+                                        draw_text.color: #0c7085 draw_text.text_style.font_size: 6.75
                                         draw_bg +: { color: #dbeceb color_hover: #cfe5e4 color_down: #c3dedd border_radius: 5 border_size: 0 border_color: #0000 } }
                                     // DIFF: voice/camera are not migrated; clicks show a toast.
                                     voice := Button { height: 34 text: "启用语音" spacing: 6
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
-                                        draw_text.color: #507784 draw_text.text_style.font_size: 9
+                                        draw_text.color: #507784 draw_text.text_style.font_size: 6.75
                                         draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 5 border_size: 0 border_color: #0000 } }
                                     camera := Button { height: 34 text: "启用摄像头" spacing: 6
                                         padding: Inset{left: 10 right: 10 top: 7 bottom: 7}
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #507784 }
-                                        draw_text.color: #507784 draw_text.text_style.font_size: 9
+                                        draw_text.color: #507784 draw_text.text_style.font_size: 6.75
                                         draw_bg +: { color: #ecf1ef color_hover: #dee8e8 color_down: #d2e0e0 border_radius: 5 border_size: 0 border_color: #0000 } }
                                 }
                             }
