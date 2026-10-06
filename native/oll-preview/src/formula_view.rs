@@ -96,6 +96,7 @@ pub fn runs(source: &str) -> Result<Vec<Run>, String> {
 /// brackets to `\lbrack`/`\rbrack`, keeping `\sqrt[n]` optional arguments
 /// and `\left[`/`\right]` delimiters, before anything reaches the parser.
 pub fn parser_safe(math: &str) -> String {
+    let math = function_spacing(math);
     let mut out = String::with_capacity(math.len() + 16);
     let mut chars = math.chars().peekable();
     let mut command = String::new();
@@ -166,6 +167,109 @@ pub fn parser_safe(math: &str) -> String {
         if !c.is_whitespace() {
             command.clear();
         }
+    }
+    out
+}
+
+/// latex_math pads operator names (\sin, \cos, …) with a thin space on
+/// both sides; TeX only puts one between the operator and an ordinary atom
+/// (\sin\theta, 2\sin x) and none next to brackets or relations
+/// (P=(\cos\theta, \sin\theta), \sin(x)). Rewrite the non-limit names to
+/// upright text and add \, where TeX would.
+fn function_spacing(math: &str) -> String {
+    const NAMES: [&str; 15] = ["sin", "cos", "tan", "cot", "sec", "csc", "arcsin", "arccos", "arctan", "sinh", "cosh", "tanh", "log", "ln", "exp"];
+    let chars: Vec<char> = math.chars().collect();
+    let mut out = String::with_capacity(math.len() + 16);
+    let mut braces: Vec<bool> = Vec::new();
+    let mut last_command = String::new();
+    let ordinary_before = |out: &str| {
+        let t = out.trim_end();
+        t.ends_with(|c: char| c.is_alphanumeric() || matches!(c, ')' | ']' | '}' | '|'))
+            && !t.ends_with("\\left(")
+    };
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '\\' && i + 1 < chars.len() && chars[i + 1].is_ascii_alphabetic() {
+            let mut j = i + 1;
+            while j < chars.len() && chars[j].is_ascii_alphabetic() {
+                j += 1;
+            }
+            let name: String = chars[i + 1..j].iter().collect();
+            if NAMES.contains(&name.as_str()) && !braces.iter().any(|t| *t) {
+                let before = if ordinary_before(&out) { "\\," } else { "" };
+                // Scripts stay attached to the operator.
+                let mut k = j;
+                let mut scripts = String::new();
+                loop {
+                    while k < chars.len() && chars[k] == ' ' {
+                        k += 1;
+                    }
+                    if k >= chars.len() || !matches!(chars[k], '^' | '_') {
+                        break;
+                    }
+                    scripts.push(chars[k]);
+                    k += 1;
+                    while k < chars.len() && chars[k] == ' ' {
+                        k += 1;
+                    }
+                    if k < chars.len() && chars[k] == '{' {
+                        let mut depth = 0;
+                        while k < chars.len() {
+                            scripts.push(chars[k]);
+                            if chars[k] == '{' { depth += 1 } else if chars[k] == '}' { depth -= 1 }
+                            k += 1;
+                            if depth == 0 { break }
+                        }
+                    } else if k < chars.len() && chars[k] == '\\' {
+                        scripts.push('\\');
+                        k += 1;
+                        while k < chars.len() && chars[k].is_ascii_alphabetic() {
+                            scripts.push(chars[k]);
+                            k += 1;
+                        }
+                    } else if k < chars.len() {
+                        scripts.push(chars[k]);
+                        k += 1;
+                    }
+                }
+                let mut n = k;
+                while n < chars.len() && chars[n] == ' ' {
+                    n += 1;
+                }
+                let next_command: String = if n < chars.len() && chars[n] == '\\' {
+                    chars[n + 1..].iter().take_while(|c| c.is_ascii_alphabetic()).collect()
+                } else {
+                    String::new()
+                };
+                let ordinary_after = n < chars.len()
+                    && (chars[n].is_alphanumeric()
+                        || chars[n] == '{'
+                        || (chars[n] == '\\' && !next_command.is_empty() && !matches!(next_command.as_str(), "left" | "right" | "quad" | "qquad")));
+                let after = if ordinary_after { "\\," } else { "" };
+                // \text, not \mathrm: latex_math draws its Roman variant italic.
+                out.push_str(&format!("{before}\\text{{{name}}}{scripts}{after}"));
+                i = k;
+                continue;
+            }
+            last_command = name.clone();
+            out.push('\\');
+            out.push_str(&name);
+            i = j;
+            continue;
+        }
+        match c {
+            '{' => braces.push(matches!(last_command.as_str(), "text" | "textrm" | "textit" | "textbf" | "mathrm" | "rm" | "operatorname")),
+            '}' => {
+                braces.pop();
+            }
+            _ => {}
+        }
+        if !c.is_whitespace() {
+            last_command.clear();
+        }
+        out.push(c);
+        i += 1;
     }
     out
 }
@@ -320,6 +424,9 @@ mod tests {
         assert_eq!(parser_safe(r"\sqrt[3]{x}"), r"\sqrt[3]{x}");
         assert_eq!(parser_safe(r"g'(x) = f''"), r"g\text{′}(x) = f\text{″}");
         assert_eq!(parser_safe(r"\text{don't}"), r"\text{don't}");
+        assert_eq!(super::function_spacing(r"P = (\cos\theta, \sin\theta)"), r"P = (\text{cos}\,\theta, \text{sin}\,\theta)");
+        assert_eq!(super::function_spacing(r"2\sin^2 x+\sin(x)"), r"2\,\text{sin}^2\,x+\text{sin}(x)");
+        assert_eq!(super::function_spacing(r"\lim_{x\to 0}\text{ sin }"), r"\lim_{x\to 0}\text{ sin }");
         assert_eq!(parser_safe(r"\left[x\right]"), r"\left[x\right]");
         assert_eq!(parser_safe(r"[a]"), r"\lbrack a\rbrack ");
     }
