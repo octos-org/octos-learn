@@ -1,4 +1,4 @@
-# 后续 Agent 接手入口（2026-10-05 更新：跟进 web 新排布/取景、课程包 0.3.0、预览模式；2026-09-28：scene3d、启动器课程集、白板排布与取景；2026-09-27 Kimi 交接版为底）
+# 后续 Agent 接手入口（2026-10-06 更新：v7 功能补齐与界面对齐，可交付测试；2026-10-05：跟进 web 新排布/取景、课程包 0.3.0、预览模式；2026-09-28：scene3d、启动器课程集、白板排布与取景；2026-09-27 Kimi 交接版为底）
 
 > 本文件是当前最新接手入口。GPT 的 2026-09-21 版入口见同目录 `AGENT_HANDOFF_CURRENT_2026-09-21.md`（历史）。方案基线仍是 `OLL_RUNTIME_MAKEPAD_PLAN_REVIEW.md`（v4+§13），产品迁移清单见 `OLL_MACOS_PRODUCT_MIGRATION_CHECKLIST.md`。
 >
@@ -17,6 +17,11 @@
 
 ## 0. 一句话现状
 
+**2026-10-06 v7（可交付测试）**：功能补齐并逐屏对齐 Web，记录见 `OLL_MACOS_PRODUCT_V7.md`，逐项进度和接手清单见仓库根目录 `NATIVE_MACOS_PROGRESS.md`（每完成一块就更新并推送）。
+- 新增：练习任务、plot / geometry 卡片、旁白音频、课程目录、大图、手写编辑、学习记录、卡片菜单。
+- 视觉巡检修掉了 Makepad 圆角 / 边框按 2 倍绘制、公式撇号与函数名间距、pt / px 字号混用等问题。
+- 待用户决定：中文字体（LXGW WenKai 与 Web 的 PingFang SC 不同）。
+
 **2026-10-05 v6**：v5 暂停期间 web 有较大变化，本轮已合并两仓 main 并跟进（记录见 `OLL_MACOS_PRODUCT_V6.md`）。改动涉及：
 - 停靠式控件面板、附件归属、回填列、短步骤叠放、思考题卡；
 - 相机上限/parts、保持判断、Beat/Step 上下文；
@@ -33,8 +38,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
-| `octos-lesson-language` | `codex/rust-runtime-product` | **v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
 两个仓库的持久路径：原机器在 `~/Documents/projects/`，新机器在 `~/Documents/projects/OctosLearn/`。新机器上的提交先落在工作区 clone，再用 `git pull --ff-only <工作区clone> <分支>` 同步回持久仓库。
@@ -78,9 +83,9 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 3. 验证方法
 
-- 测试：`cargo test --offline --locked --release --manifest-path <crate>/Cargo.toml`。基线（2026-10-05）：oll-runtime 40、oll-preview 17、octos-learn 4 全绿。
+- 测试：`cargo test --offline --locked --release --manifest-path <crate>/Cargo.toml`。基线（2026-10-06）：oll-runtime 45、oll-preview 17、octos-learn 4 全绿。
 - web 一致性 fixture：`oll/crates/oll-runtime/tools/teaching-reference.ts`（esbuild 打包真实 web 模块）重新生成 `tests/fixtures/teaching-reference.json`。用法写在该文件头；需要 `NODE_PATH` 指向已安装依赖的 OLL 检出。**web 主机规则变了就要同步改生成器里的主机输入（附件尺寸、归属、readingScale），再重新生成。**
-- 逐 Beat 对照 web 与原生：见 `OLL_MACOS_PRODUCT_V6.md` §3（脚本在 `macos-product-v6/beats/`）。要点：
+- 逐 Beat 对照 web 与原生：见 `OLL_MACOS_PRODUCT_V6.md` §3；最新脚本在 `macos-product-v7/beats/`（`web-beats.mjs` 支持 `WEB_H`，原生窗口被屏幕可见区域裁剪时让 Web 用相同高度），交互脚本在 `macos-product-v7/tasks/`。要点：
   - web 基准必须是 main 的独立 worktree（`pnpm install --frozen-lockfile`），用 `VITE_SKIP_AUTH=true vite build` 构建后 `vite preview`；
   - 原生用 `OCTOS_LEARN_OPEN=<packId>` 直接打开课程（预览模式），`OLL_PREVIEW_DATA_DIR` 隔离进度存档；
   - `OLL_FOCUS_DEBUG=1` 打印每次相机决策。
@@ -103,6 +108,8 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 - 启动器：`native/octos-learn/src/lib.rs` 的 `COURSE_COLLECTIONS` / `collection_card` / `course_card` / `card_grid` / `equalize_card_rows` / `handle_launcher_taps`；`src/svg_image.rs`（渲染带文字的 SVG 缩略图）。
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
+
+> 2026-10-06 起以 `OLL_MACOS_PRODUCT_V7.md` §4 和 `NATIVE_MACOS_PROGRESS.md` §6 为准。下面是历史条目，已完成的已在 V7 中实现：练习面板、思考题持久、目录、重播、橡皮/框选/持久化、旁白音频、卡片菜单、卡片 focused 描边。
 
 1. ~~**surface 三门课（3D）**~~：2026-09-28 完成（v3）。没有用 makepad-d3，而是照搬 web 的 CPU 投影 + SVG 画家算法，所以与网页版像素一致。遗留：
    - 学生调整过的场景相机没有写进进度存档；
@@ -130,7 +137,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 6. 授权与边界（用户已确认的规矩）
 
-- 只推送不合并；push/发 PR 前先问。git 提交可直接做在 codex/ 分支。
+- 只推送不合并；发 PR 前先问。2026-10-05 起用户授权：原生两条分支每完成一块就提交并推送，并更新根目录 `NATIVE_MACOS_PROGRESS.md`。git 提交可直接做在 codex/ 分支。
 - 不切用户工作分支、不清用户工作区；持久仓库被其他会话占用（2026-10-05：octos-learn 在 `codex/android-native-ink-stroke-handoff`，OLL 在 `codex/native-ink-exclusion-smoothing`），不要切换——工作一律在 `.local-dev/oll-product` 工作区 clone 或自建 worktree。web 基准用工作区 clone 的 `git worktree add` 到临时目录构建。
 - 原生课程包锁定（`native/octos-learn/course-packs.lock.json`）始终与 main 的 `android/embedded-course-packs.json` 快照保持一致（用户 2026-10-05 确认）；合并 main 时同步，并在交付记录里写明。
 - 固定依赖版本不得擅自升级（runtime.json 组合）；WASM target 安装（rustup target add wasm32-unknown-unknown）**尚未获授权**；Android 真机安装**未获授权**（设备 192.168.1.63，只开发打包）。
@@ -138,7 +145,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 7. 文件地图（本调研目录）
 
-新机器上没有原调研目录。v3 起，构建产物和证据放在 `~/Documents/projects/OctosLearn/.local-dev/macos-product-v3/`、`macos-product-v4/`、`macos-product-v5/`、`macos-product-v6/`（web-reference、native 截图、驱动脚本）。锁文件和 zbias 补丁已入库，见 `docs/makepad-migration/evidence/`。
+新机器上没有原调研目录。v3 起，构建产物和证据放在 `~/Documents/projects/OctosLearn/.local-dev/macos-product-v3/`、`macos-product-v4/`、`macos-product-v5/`、`macos-product-v6/`、`macos-product-v7/`（web-reference、native 截图、驱动脚本）。锁文件和 zbias 补丁已入库，见 `docs/makepad-migration/evidence/`。
 
 
-`OLL_MACOS_PRODUCT_V6.md`（最新交付记录，跟进 web 2026-10 改动）→ `OLL_MACOS_PRODUCT_V5.md`（白板排布与取景）→ `OLL_MACOS_PRODUCT_V4.md` → `OLL_MACOS_PRODUCT_V3.md` → `OLL_MACOS_PRODUCT_V2.md` → `OLL_MACOS_PRODUCT_V1.md` → `OLL_MACOS_PRODUCT_MIGRATION_CHECKLIST.md`（迁移清单+v1 状态）→ `OLL_RUNTIME_MAKEPAD_PLAN_REVIEW.md`（方案基线）→ `macos-product-v2/`（v2 .app+截图+web 基准）→ `macos-product-v1/`、`macos-validation-v1~v6/`（历史证据）→ `phase0-evidence/`（锁文件+zbias 补丁+构建日志）。
+`OLL_MACOS_PRODUCT_V7.md`（最新交付记录，功能补齐与界面对齐）→ `OLL_MACOS_PRODUCT_V6.md`（跟进 web 2026-10 改动）→ `OLL_MACOS_PRODUCT_V5.md`（白板排布与取景）→ `OLL_MACOS_PRODUCT_V4.md` → `OLL_MACOS_PRODUCT_V3.md` → `OLL_MACOS_PRODUCT_V2.md` → `OLL_MACOS_PRODUCT_V1.md` → `OLL_MACOS_PRODUCT_MIGRATION_CHECKLIST.md`（迁移清单+v1 状态）→ `OLL_RUNTIME_MAKEPAD_PLAN_REVIEW.md`（方案基线）→ `macos-product-v2/`（v2 .app+截图+web 基准）→ `macos-product-v1/`、`macos-validation-v1~v6/`（历史证据）→ `phase0-evidence/`（锁文件+zbias 补丁+构建日志）。
