@@ -38,6 +38,17 @@ pub struct ControlRequest {
     /// sliderTaskSnapDistance / geometryTaskSnapDistance); 0: no snapping.
     pub snap_distance: f64,
 }
+/// Transient card highlight kinds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Highlight {
+    /// Web .board-node.active: teal border + ring while the card is written.
+    Active,
+    /// Web .focus-arrive: a purple ring shrinking from 14px to 4px (.72s).
+    FocusArrive,
+}
+const ACTIVE_SECONDS: f64 = 0.6;
+const FOCUS_ARRIVE_SECONDS: f64 = 0.72;
+
 /// A practice panel action.
 #[derive(Clone, Debug, PartialEq)]
 pub enum TaskRequest {
@@ -218,6 +229,9 @@ pub struct SpatialBoard {
     /// A modal (e.g. the 大图 dialog) covers the board: ignore pointer input.
     #[rust]
     input_blocked: bool,
+    /// Transient card highlights (web .active / .focus-arrive) with start time.
+    #[rust]
+    highlights: BTreeMap<String, (Highlight, std::time::Instant)>,
     /// Targets to frame once the next state is laid out.
     #[rust]
     pending_focus: Option<Vec<String>>,
@@ -693,6 +707,26 @@ impl SpatialBoard {
         if self.last_action != p.cursor || reset {
             self.measure_passes = 0;
             self.operation_start = Some((self.policy.clone(), self.destination));
+            // Web .active (the card the action writes) and .focus-arrive (the
+            // targets a board.focus brings in) highlight once, briefly.
+            let now = std::time::Instant::now();
+            if !reset && p.cursor == self.last_action + 1 {
+                if let Some(a) = action {
+                    if a["op"] == "board.create" {
+                        if let Some(id) = a["node"]["id"].as_str() {
+                            self.highlights.insert(id.to_owned(), (Highlight::Active, now));
+                        }
+                    }
+                    if a["op"] == "board.focus" {
+                        for t in a["focus"]["targets"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+                            self.highlights.insert(t.to_owned(), (Highlight::FocusArrive, now));
+                        }
+                    }
+                }
+            }
+            if reset {
+                self.highlights.clear();
+            }
         }
         let remeasure = std::mem::take(&mut self.measure_relayout) && !self.manual;
         self.board = Some(p.clone());
@@ -930,6 +964,14 @@ impl SpatialBoard {
         Ok(())
     }
     pub fn advance(&mut self, cx: &mut Cx, dt: f64) {
+        // Keep transient highlights animating; drop finished ones.
+        let before = self.highlights.len();
+        self.highlights.retain(|_, (kind, at)| {
+            at.elapsed().as_secs_f64() < if *kind == Highlight::Active { ACTIVE_SECONDS } else { FOCUS_ARRIVE_SECONDS }
+        });
+        if before > 0 {
+            self.redraw(cx);
+        }
         if !self.manual && self.elapsed < 0.68 {
             self.elapsed = (self.elapsed + dt).min(0.68);
             self.camera = self.from.interpolate(self.destination, self.elapsed / 0.68);
@@ -1461,6 +1503,49 @@ impl SpatialBoard {
         }
     }
 }
+impl SpatialBoard {
+    /// Web card state classes drawn over the cards: .focused (purple border
+    /// + 4px ring), .emphasis-focus / -warning borders, .active (teal, while
+    /// written) and the .focus-arrive pulse.
+    fn draw_card_states(&mut self) {
+        let Some(p) = self.board.as_ref() else { return };
+        let v = &mut self.draw_vector;
+        let ring = |v: &mut DrawVector, r: &WorldRect, hex: u32, border_alpha: f32, ring_hex: u32, ring_alpha: f32, ring_w: f64| {
+            if ring_w > 0. {
+                v.set_color_hex(ring_hex, ring_alpha);
+                let o = ring_w / 2.;
+                v.rounded_rect((r.x - o) as f32, (r.y - o) as f32, (r.width + 2. * o) as f32, (r.height + 2. * o) as f32, (16. + o) as f32);
+                v.stroke(ring_w as f32);
+            }
+            v.set_color_hex(hex, border_alpha);
+            v.rounded_rect(r.x as f32 + 0.5, r.y as f32 + 0.5, r.width as f32 - 1., r.height as f32 - 1., 15.5);
+            v.stroke(1.);
+        };
+        for node in &p.nodes {
+            let Some(id) = node["id"].as_str() else { continue };
+            let Some(r) = self.geometry.nodes.get(id) else { continue };
+            let emphasis = oll_runtime::plot::latest_emphasis(node, "");
+            match emphasis.as_deref() {
+                Some("focus") => ring(v, r, 0xe19b35, 1., 0xe19b35, 0.18, 4.),
+                Some("warning") => ring(v, r, 0xd95361, 1., 0, 0., 0.),
+                _ if p.focus.iter().any(|f| f == id) => ring(v, r, 0x7a5aa3, 1., 0x7a5aa3, 0.13, 4.),
+                _ => {}
+            }
+            if let Some((kind, at)) = self.highlights.get(id) {
+                let t = at.elapsed().as_secs_f64();
+                match kind {
+                    Highlight::Active => ring(v, r, 0x2a9386, 1., 0x2a9386, 0.13, 3.),
+                    Highlight::FocusArrive => {
+                        let k = (t / FOCUS_ARRIVE_SECONDS).clamp(0., 1.);
+                        // cubic-bezier(.22,1,.36,1) ≈ ease-out
+                        let e = 1. - (1. - k).powi(3);
+                        ring(v, r, 0x7a5aa3, 1., 0x7a5aa3, (0.28 + (0.13 - 0.28) * e) as f32, 14. + (4. - 14.) * e);
+                    }
+                }
+            }
+        }
+    }
+}
 /// Node members of a group, recursively (web syncGroups collect).
 fn group_members(p: &Preview, id: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
@@ -1672,6 +1757,7 @@ impl Widget for SpatialBoard {
             self.relayout_frame = cx.new_next_frame();
         }
         self.draw_vector.begin();
+        self.draw_card_states();
         self.draw_vector.set_color(0.48, 0.74, 0.69, 1.);
         for route in &self.routes {
             if let Some(&(x, y)) = route.points.first() {
