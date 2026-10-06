@@ -570,6 +570,12 @@ pub struct App {
     last_ink_count: usize,
     #[rust]
     last_ink_revision: u64,
+    /// Per-device reflection answers left open, keyed "<pack>:<reflection>"
+    /// (web localStorage octos-learn:open-reflections:v1).
+    #[rust]
+    open_reflections: BTreeMap<String, bool>,
+    #[rust]
+    last_reflection_revision: u64,
     /// Current handwriting tool (web ink toolbar mode).
     #[rust]
     ink_tool: InkTool,
@@ -932,6 +938,19 @@ impl App {
         }
         self.last_tick = Some(Instant::now());
     }
+    fn open_reflections_path(&self) -> Option<std::path::PathBuf> {
+        self.store.as_ref().map(|s| s.dir().join("open-reflections.json"))
+    }
+    /// Record the current course's open reflections (per-device convenience,
+    /// like the web: a failed write is ignored).
+    fn save_open_reflections(&mut self, open: &BTreeSet<String>) {
+        let prefix = format!("{}:", self.pack_id);
+        self.open_reflections.retain(|k, _| !k.starts_with(&prefix));
+        self.open_reflections.extend(open.iter().map(|id| (format!("{prefix}{id}"), true)));
+        if let (Some(path), Ok(bytes)) = (self.open_reflections_path(), serde_json::to_vec(&self.open_reflections)) {
+            let _ = std::fs::create_dir_all(path.parent().unwrap()).and_then(|_| std::fs::write(path, bytes));
+        }
+    }
     fn open_course(&mut self, cx: &mut Cx, pack_id: &str, version: &str, autoplay: bool) {
         self.error.clear();
         self.drawing = false;
@@ -951,8 +970,17 @@ impl App {
         match Session::load(&source) {
             Ok(session) => {
                 let w = self.ui.widget(cx, ids!(spatial));
+                let prefix = format!("{pack_id}:");
+                let open = self
+                    .open_reflections
+                    .iter()
+                    .filter(|(_, open)| **open)
+                    .filter_map(|(k, _)| k.strip_prefix(&prefix).map(str::to_owned))
+                    .collect();
                 if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                     board.clear(cx);
+                    board.set_open_reflections(cx, open);
+                    self.last_reflection_revision = board.open_reflections().1;
                 };
                 self.pack_id = pack_id.into();
                 self.pack_version = version.into();
@@ -2004,6 +2032,11 @@ impl AppMain for App {
             if let Err(e) = progress_store::Store::start(cx).map(|s| self.store = Some(s)) {
                 self.error = e;
             }
+            self.open_reflections = self
+                .open_reflections_path()
+                .and_then(|p| std::fs::read(p).ok())
+                .and_then(|b| serde_json::from_slice(&b).ok())
+                .unwrap_or_default();
             self.pen_color = pen_vec4(PEN_COLORS[0]);
             self.pen_width = PEN_WIDTHS[1];
             self.last_tick = Some(Instant::now());
@@ -2112,6 +2145,15 @@ impl AppMain for App {
                 .borrow::<spatial_board::SpatialBoard>()
                 .map(|b| b.ink_revision())
                 .unwrap_or(0);
+            let reflections = self
+                .ui
+                .widget(cx, ids!(spatial))
+                .borrow::<spatial_board::SpatialBoard>()
+                .map(|b| (b.open_reflections().0.clone(), b.open_reflections().1));
+            if let Some((open, revision)) = reflections.filter(|(_, r)| *r != self.last_reflection_revision) {
+                self.last_reflection_revision = revision;
+                self.save_open_reflections(&open);
+            }
             if ink_count != self.last_ink_count || ink_revision != self.last_ink_revision {
                 self.last_ink_count = ink_count;
                 // Handwriting is saved with the learning progress (web

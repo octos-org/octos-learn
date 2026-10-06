@@ -280,6 +280,9 @@ pub struct SpatialBoard {
     /// Reflections whose answer the learner opened.
     #[rust]
     open_reflections: BTreeSet<String>,
+    /// Bumped whenever the learner toggles a reflection (host persists it).
+    #[rust]
+    reflection_revision: u64,
 }
 fn resolve_geometry(
     geometry: &BoardLayout,
@@ -435,6 +438,17 @@ impl SpatialBoard {
         if self.ink_hidden != hidden {
             self.ink_hidden = hidden;
             self.redraw(cx);
+        }
+    }
+    /// Reflections with their answer open, and a counter of learner toggles
+    /// (web keeps this per device: octos-learn:open-reflections:v1).
+    pub fn open_reflections(&self) -> (&BTreeSet<String>, u64) {
+        (&self.open_reflections, self.reflection_revision)
+    }
+    pub fn set_open_reflections(&mut self, cx: &mut Cx, open: BTreeSet<String>) {
+        if open != self.open_reflections {
+            self.open_reflections = open;
+            self.relayout_frame = cx.new_next_frame();
         }
     }
     pub fn ink_revision(&self) -> u64 {
@@ -1492,6 +1506,7 @@ impl SpatialBoard {
                     if !self.open_reflections.remove(&id) {
                         self.open_reflections.insert(id);
                     }
+                    self.reflection_revision += 1;
                     self.relayout_frame = cx.new_next_frame();
                     return true;
                 }
