@@ -1827,7 +1827,7 @@ impl App {
         let topic = board_view::widget(cx, &format!(
             "View{{width:Fill height:Fit flow:Right spacing:9 align:Align{{y:1.}} padding:Inset{{left:11 right:11 top:10 bottom:7}}
                 Label{{width:Fit padding:0 text:\"01\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#99a6a3}}
-                Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#6d6255}}}}",
+                Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#6d6255}}}}",
             session.board.title.replace(['"', '\\'], " ")
         ));
         if let Ok(t) = topic {
@@ -1848,22 +1848,24 @@ impl App {
                     View{{width:Fill height:Fit flow:Overlay
                         View{{width:3 height:43 show_bg:true draw_bg.color:{}}}
                         View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:5 right:5 top:3 bottom:3}}
-                            main := Button{{width:Fill height:37 text:\"\" padding:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
+                            main := Button{{width:Fill height:37 text:\"\" padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
                                 flow:Overlay}}
-                            expand := Button{{width:28 height:28 text:\"\" padding:0 icon_walk:Walk{{width:14 height:14}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
-                            play := Button{{width:28 height:28 text:\"▶\" padding:0 draw_text.text_style.font_size:7 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
+                            expand := Button{{width:28 height:28 text:\"\" padding:0 margin:0 icon_walk:Walk{{width:12 height:12}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
+                            play := Button{{width:28 height:28 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:7.5 draw_text.color:#2e2a25 draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                         }}
                         View{{width:Fill height:43 flow:Right spacing:10 align:Align{{y:0.5}} padding:Inset{{left:11 right:66}}
                             RoundedView{{width:20 height:20 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:5 border_size:0.5 border_color:{circle_border}}}
                                 Label{{width:Fit padding:0 text:\"{status}\" draw_text.text_style.font_size:7.5 draw_text.color:{circle_text}}}}}
-                            Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#3f3932}}
+                            Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#3f3932}}
                         }}
                     }}
-                    beats := View{{width:Fill height:Fit flow:Down margin:Inset{{left:39 right:7 bottom:7}}}}
+                    beats := View{{width:Fill height:Fit flow:Down margin:Inset{{left:39 right:7 bottom:{}}}}}
                 }}",
                 if st == "current" { "#17829a" } else { "#0000" },
                 "",
-                step.title.replace(['"', '\\'], " ")
+                step.title.replace(['"', '\\'], " "),
+                // Web .oll-course-beats (margin-bottom 7) exists only when expanded.
+                if expanded { 7 } else { 0 }
             );
             let Ok(row) = board_view::widget(cx, &code) else { continue };
             if let Some(mut b) = row.widget(cx, ids!(expand)).borrow_mut::<Button>() {
@@ -1880,11 +1882,11 @@ impl App {
                         "RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{} border_radius:4.5}}
                             View{{width:Fill height:Fit flow:Right spacing:5 padding:Inset{{left:16 right:29 top:6 bottom:6}}
                                 Label{{width:18 padding:0 text:\"{}\" draw_text.text_style.font_size:7.5 draw_text.color:#a49a8d}}
-                                Label{{width:Fill padding:0 text:\"{}\" draw_text.wrap:Words draw_text.text_style.font_size:7.5 draw_text.color:#71685d}}
+                                Label{{width:Fill padding:0 max_lines:2 text:\"{}\" draw_text.wrap:Words draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style.font_size:7.5 draw_text.color:#71685d}}
                             }}
                             View{{width:Fill height:Fill flow:Right align:Align{{y:0.5}}
-                                main := Button{{width:Fill height:Fill text:\"\" padding:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
-                                play := Button{{width:25 height:25 text:\"▶\" padding:0 draw_text.text_style.font_size:6 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
+                                main := Button{{width:Fill height:Fill text:\"\" padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
+                                play := Button{{width:25 height:25 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:6 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                             }}
                         }}",
                         if bs == "current" { "#ffffffad" } else { "#0000" },
