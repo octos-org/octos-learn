@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-06（边框宽度减半）
+最后更新：2026-10-06（课程完成态细节）
 
 ## 0. 目标
 
@@ -103,7 +103,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `7de3749` 公式小写希腊字母（\theta、\pi…）改用数学斜体码位，与 KaTeX 一致
 - `c86b7c0` 滑块面板：拇指在输入框内移动（左右各内缩 8px，同浏览器 range），−/+ 字形改为 Web 12px 文本字形粗细
 - `c88bcf5` 所有 RoundedView/Button 的 `border_radius` 减半：Makepad `sdf.box` 实际画 2×r 圆角，之前从 CSS 照抄的数值都圆了一倍（卡片、按钮、大纲按钮、开始互动学习等）；老师头像改为 Web 的圆角方形（94px，约 40px 圆角），状态字 10px
-- （本次提交）所有 DSL `border_size` 减半：sdf stroke 实际画 2×宽度的边框，1px CSS 边框之前画成了 2px（按钮、卡片边框偏深）
+- `153c5bc` 所有 DSL `border_size` 减半：sdf stroke 实际画 2×宽度的边框，1px CSS 边框之前画成了 2px（按钮、卡片边框偏深）
+- （本次提交）课程完成后 ▷/› 图标 28% 透明度（同 Web disabled）；老师气泡文字 17px / 行高 1.55（之前约 21px）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，

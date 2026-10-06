@@ -251,7 +251,8 @@ script_mod! {
                                     padding: Inset{left: 17 right: 17 top: 14 bottom: 14}
                                     draw_bg +: { color: #fffdf8ee border_radius: 9 border_size: 0.5 border_color: #dce3e2 }
                                     // DIFF: the web bubble renders markdown; plain text here.
-                                    narration := Label { width: Fill height: Fit text: "" draw_text.wrap: Words draw_text.text_style.font_size: 16 draw_text.color: #3c3832 }
+                                    // Web .octos-teacher-caption: 17px, line-height 1.55.
+                                    narration := Label { width: Fill height: Fit padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 12.75 draw_text.text_style.line_spacing: 1.31 draw_text.color: #3c3832 }
                                 }
                                 teacher_avatar := View { width: 94 height: 94 flow: Overlay
                                     // Web .octos-teacher-avatar: 94px, radius 38–46% (~40px;
@@ -2071,6 +2072,14 @@ impl App {
             };
             for id in [live_id!(play), live_id!(next_beat)] {
                 self.ui.button(cx, &[id]).set_enabled(cx, !session.complete());
+                // Web .learning-demo-controls > button:disabled { opacity: .28 }.
+                if let Some(mut b) = self.ui.widget(cx, &[id]).borrow_mut::<Button>() {
+                    let opacity = if session.complete() { 0.28 } else { 1. };
+                    if b.draw_icon.opacity != opacity {
+                        b.draw_icon.opacity = opacity;
+                        b.redraw(cx);
+                    }
+                }
             }
             if self.play_icon_state != Some(session.playing) {
                 self.play_icon_state = Some(session.playing);
