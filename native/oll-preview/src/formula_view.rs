@@ -100,8 +100,34 @@ pub fn parser_safe(math: &str) -> String {
     let mut chars = math.chars().peekable();
     let mut command = String::new();
     let mut sqrt_depth = 0usize;
+    // Open braces, marking those that start a \text-like group.
+    let mut braces: Vec<bool> = Vec::new();
     while let Some(c) = chars.next() {
         match c {
+            '{' => {
+                braces.push(matches!(command.as_str(), "text" | "textrm" | "textit" | "textbf" | "mathrm" | "rm" | "operatorname"));
+                out.push(c);
+            }
+            '}' => {
+                braces.pop();
+                out.push(c);
+            }
+            // latex_math parses ' as ‖ (U+2016); draw the prime glyph instead
+            // (KaTeX g' → g′, g'' → g″).
+            '\'' if !braces.iter().any(|t| *t) => {
+                let mut primes = 1;
+                while chars.peek() == Some(&'\'') {
+                    chars.next();
+                    primes += 1;
+                }
+                let glyph = match primes {
+                    1 => "′".to_owned(),
+                    2 => "″".to_owned(),
+                    3 => "‴".to_owned(),
+                    n => "′".repeat(n),
+                };
+                out.push_str(&format!("\\text{{{glyph}}}"));
+            }
             '\\' => {
                 out.push(c);
                 command.clear();
@@ -257,6 +283,8 @@ mod tests {
         use super::parser_safe;
         assert_eq!(parser_safe(r"x \in [0, \pi]"), r"x \in \lbrack 0, \pi\rbrack ");
         assert_eq!(parser_safe(r"\sqrt[3]{x}"), r"\sqrt[3]{x}");
+        assert_eq!(parser_safe(r"g'(x) = f''"), r"g\text{′}(x) = f\text{″}");
+        assert_eq!(parser_safe(r"\text{don't}"), r"\text{don't}");
         assert_eq!(parser_safe(r"\left[x\right]"), r"\left[x\right]");
         assert_eq!(parser_safe(r"[a]"), r"\lbrack a\rbrack ");
     }
