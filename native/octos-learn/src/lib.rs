@@ -295,6 +295,41 @@ script_mod! {
                             }
                         }
                     }
+                    // Course card "⋯" panel (web .course-launcher-more-panel):
+                    // 180 wide, placed above the button by Rust (set_walk).
+                    View { width: Fill height: Fill
+                        card_menu := RoundedView { visible: false width: 180 height: Fit flow: Down padding: 6
+                            draw_bg +: { color: #fffef9 border_radius: 12 border_size: 1 border_color: #d8ded6 }
+                            menu_restart := RoundedView { width: Fill height: 36 flow: Right spacing: 6 align: Align{y: 0.5} padding: Inset{left: 10}
+                                draw_bg +: { color: #0000 border_radius: 8 }
+                                menu_restart_icon := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                Label { width: Fit padding: 0 text: "重新开始" draw_text.text_style.font_size: 9.75 draw_text.color: #426568 }
+                            }
+                            menu_delete := RoundedView { width: Fill height: 36 flow: Right spacing: 6 align: Align{y: 0.5} padding: Inset{left: 10}
+                                draw_bg +: { color: #0000 border_radius: 8 }
+                                menu_delete_icon := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                Label { width: Fit padding: 0 text: "删除学习记录" draw_text.text_style.font_size: 9.75 draw_text.color: #a84836 }
+                            }
+                        }
+                    }
+                    // Confirmation (web window.confirm).
+                    confirm_dialog := View { visible: false width: Fill height: Fill flow: Overlay
+                        SolidView { width: Fill height: Fill draw_bg.color: #152c2b55 }
+                        View { width: Fill height: Fill align: Align{x: 0.5 y: 0.4}
+                            RoundedView { width: 420 height: Fit flow: Down spacing: 18 padding: 22
+                                draw_bg +: { color: #fffef9 border_radius: 16 border_size: 1 border_color: #d8ded6 }
+                                confirm_text := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.color: #243b40 }
+                                View { width: Fill height: Fit flow: Right spacing: 10 align: Align{x: 1.}
+                                    confirm_cancel := Button { height: 36 text: "取消" padding: Inset{left: 16 right: 16}
+                                        draw_text.color: #426568 draw_text.text_style.font_size: 9.75
+                                        draw_bg +: { color: #f0f3ee color_hover: #e6ebe4 border_radius: 9 border_size: 0 border_color: #0000 } }
+                                    confirm_ok := Button { height: 36 text: "确定" padding: Inset{left: 16 right: 16}
+                                        draw_text.color: #ffffff draw_text.text_style.font_size: 9.75
+                                        draw_bg +: { color: #166a79 color_hover: #x12606e border_radius: 9 border_size: 0 border_color: #0000 } }
+                                }
+                            }
+                        }
+                    }
                     // Neutral toast for "not migrated yet" notices (body level
                     // so it also shows on the launcher page).
                     View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 96}
@@ -316,6 +351,8 @@ struct CourseCardRefs {
     /// Tap targets (icon+label pills, hit-tested by area).
     preview: WidgetRef,
     start: WidgetRef,
+    /// "⋯" (only when progress is saved): 重新开始 / 删除学习记录.
+    more: Option<WidgetRef>,
 }
 
 /// Editorial collections (web src/learning/course-collections.ts); packs not
@@ -487,6 +524,15 @@ pub struct App {
     pen_width: f64,
     #[rust]
     narration_muted: bool,
+    /// Course whose "⋯" menu is open (pack, version).
+    #[rust]
+    card_menu_for: Option<(String, String)>,
+    /// Action waiting for confirmation: (restart?, pack, version).
+    #[rust]
+    pending_confirm: Option<(bool, String, String)>,
+    /// Open the next course without restoring saved progress (重新开始).
+    #[rust]
+    skip_restore: bool,
     /// Node shown in the 大图 dialog.
     #[rust]
     enlarged: Option<String>,
@@ -697,6 +743,8 @@ enum OutlineAction {
     PlayBeat(String),
 }
 
+const ICON_MORE: &str = include_str!("../assets/icons/more-horizontal.svg");
+const ICON_TRASH: &str = include_str!("../assets/icons/trash-2.svg");
 const ICON_CHEVRON_DOWN: &str = include_str!("../assets/icons/chevron-down.svg");
 const ICON_CHEVRON_RIGHT: &str = include_str!("../assets/icons/chevron-right.svg");
 /// Web LESSON_COMPLETION_SPEECH.
@@ -726,6 +774,14 @@ fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
     for (id, src) in icons {
         if let Some(mut button) = ui.widget(cx, &[id]).borrow_mut::<Button>() {
             button.draw_icon.load_from_str(src);
+        }
+    }
+    for (id, icon, color) in [
+        (live_id!(menu_restart_icon), include_str!("../assets/icons/rotate-ccw.svg"), "#426568"),
+        (live_id!(menu_delete_icon), ICON_TRASH, "#a84836"),
+    ] {
+        if let Some(mut svg) = ui.widget(cx, &[id]).borrow_mut::<Svg>() {
+            svg.draw_svg.load_from_str(&tinted(icon, color));
         }
     }
     if let Some(mut button) = ui.widget(cx, ids!(outline_trigger)).borrow_mut::<Button>() {
@@ -796,6 +852,10 @@ impl App {
                     if key == self.course_key() {
                         self.note(cx, "进度已保存");
                     }
+                }
+                progress_store::Reply::Deleted(_) => {
+                    // The card falls back to 开始互动.
+                    self.rebuild_launcher(cx);
                 }
                 progress_store::Reply::Loaded(key, saved) => {
                     if key != self.course_key() || !self.awaiting_restore {
@@ -908,7 +968,8 @@ impl App {
                 self.show_learning(cx, true);
                 self.note(cx, "");
                 self.autoplay_pending = autoplay;
-                if let Some(store) = &self.store {
+                let skip_restore = std::mem::take(&mut self.skip_restore);
+                if let Some(store) = self.store.as_ref().filter(|_| !skip_restore) {
                     self.awaiting_restore =
                         store.send(progress_store::Request::Load(self.course_key())).is_ok();
                 }
@@ -1030,6 +1091,12 @@ impl App {
         let offline_label = web_text("内置课程 · 可离线", 12., 1.5, "#667a7b", false, false, (0., 0.));
         let preview_label = web_text("预览", 13., 1.5, "#426568", false, false, (0., 0.));
         let start_text = web_text(start_label, 13., 1.5, "#ffffff", true, false, (0., 0.));
+        let more = if resume {
+            "more := RoundedView{width:40 height:44 align:Align{x:0.5 y:0.5} margin:Inset{right:8} draw_bg +: {color:#0000 border_radius:8}
+                more_icon := Svg{width:20 height:20 draw_svg +: {preserve_viewbox:true}}}"
+        } else {
+            ""
+        };
         let code = format!(
             "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:18 border_size:1 border_color:#dbded9}}
                 cover := View{{width:Fill height:201 flow:Overlay
@@ -1063,6 +1130,7 @@ impl App {
                             {preview_label}
                         }}
                         View{{width:Fill height:1}}
+                        {more}
                         start := RoundedView{{width:98 height:44 flow:Right spacing:6 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#166a79 border_radius:9}}
                             {start_text}
                             arrow := Svg{{width:16 height:16 draw_svg +: {{preserve_viewbox:true}}}}
@@ -1088,6 +1156,7 @@ impl App {
             (live_id!(clock), ICON_CLOCK, "#667a7b"),
             (live_id!(eye), ICON_EYE, "#426568"),
             (live_id!(arrow), ICON_ARROW_RIGHT, "#ffffff"),
+            (live_id!(more_icon), ICON_MORE, "#607477"),
         ] {
             if let Some(mut svg) = card.widget(cx, &[id]).borrow_mut::<Svg>() {
                 svg.draw_svg.load_from_str(&tinted(icon, color));
@@ -1102,6 +1171,7 @@ impl App {
                 version,
                 preview: card.widget(cx, ids!(preview)),
                 start: card.widget(cx, ids!(start)),
+                more: resume.then(|| card.widget(cx, ids!(more))),
             },
         ))
     }
@@ -1231,6 +1301,55 @@ impl App {
                 self.set_collection(cx, Some(id));
                 return;
             }
+        }
+        // "⋯" panel and its actions.
+        if self.card_menu_for.is_some() {
+            let restart = tapped(cx, event, &self.ui.widget(cx, ids!(menu_restart)));
+            let delete = tapped(cx, event, &self.ui.widget(cx, ids!(menu_delete)));
+            if restart || delete {
+                let (pack, version) = self.card_menu_for.take().unwrap();
+                self.ui.widget(cx, ids!(card_menu)).set_visible(cx, false);
+                let text = if restart {
+                    "从课程初始白板重新开始？原来的学习记录会保留。"
+                } else {
+                    "删除这门课程当前保存的学习记录？课程包本身不会被删除。"
+                };
+                self.ui.label(cx, ids!(confirm_text)).set_text(cx, text);
+                self.ui.widget(cx, ids!(confirm_dialog)).set_visible(cx, true);
+                self.pending_confirm = Some((restart, pack, version));
+                self.ui.redraw(cx);
+                return;
+            }
+            let outside = match event {
+                Event::MouseDown(e) => !self.ui.widget(cx, ids!(card_menu)).area().rect(cx).contains(e.abs),
+                _ => false,
+            };
+            if outside {
+                self.card_menu_for = None;
+                self.ui.widget(cx, ids!(card_menu)).set_visible(cx, false);
+                self.ui.redraw(cx);
+            }
+        }
+        let mut menu = None;
+        for card in &self.course_cards {
+            if let Some(more) = &card.more {
+                if tapped(cx, event, more) {
+                    menu = Some((card.pack_id.clone(), card.version.clone(), more.area().rect(cx)));
+                }
+            }
+        }
+        if let Some((pack, version, r)) = menu {
+            self.card_menu_for = Some((pack, version));
+            let menu_view = self.ui.view(cx, ids!(card_menu));
+            menu_view.set_walk(cx, Walk {
+                abs_pos: Some(dvec2(r.pos.x + r.size.x - 180., r.pos.y - 8. - 84.)),
+                width: Size::Fixed(180.),
+                height: Size::fit(),
+                ..Default::default()
+            });
+            self.ui.widget(cx, ids!(card_menu)).set_visible(cx, true);
+            self.ui.redraw(cx);
+            return;
         }
         let mut open = None;
         for card in &self.course_cards {
@@ -2215,6 +2334,22 @@ impl AppMain for App {
         if let Event::Actions(actions) = event {
             if self.enlarged.is_some() && self.ui.button(cx, ids!(enlarge_close)).clicked(actions) {
                 self.close_enlarged(cx);
+            }
+            let ok = self.ui.button(cx, ids!(confirm_ok)).clicked(actions);
+            if ok || self.ui.button(cx, ids!(confirm_cancel)).clicked(actions) {
+                self.ui.widget(cx, ids!(confirm_dialog)).set_visible(cx, false);
+                if let (true, Some((restart, pack, version))) = (ok, self.pending_confirm.take()) {
+                    if restart {
+                        // Web: a fresh learning instance from the course's
+                        // initial board (the saved record stays until replaced).
+                        self.skip_restore = true;
+                        self.open_course(cx, &pack, &version, true);
+                    } else if let Some(store) = &self.store {
+                        let _ = store.send(progress_store::Request::Delete(format!("{pack}@{version}")));
+                    }
+                }
+                self.pending_confirm = None;
+                self.ui.redraw(cx);
             }
         }
         let task_requests = self

@@ -158,6 +158,7 @@ impl App {
                             .set_text(cx, "进度已保存");
                     }
                 }
+                progress_store::Reply::Deleted(_) => {}
                 progress_store::Reply::Loaded(key, saved) => {
                     if key != self.course_key() {
                         continue;

@@ -8,9 +8,12 @@ use std::{
 pub enum Request {
     Save(String, Value),
     Load(String),
+    /// Remove a saved checkpoint (web 删除学习记录).
+    Delete(String),
 }
 pub enum Reply {
     Saved(String),
+    Deleted(String),
     Loaded(String, Option<Value>),
     Failed(String),
 }
@@ -56,6 +59,13 @@ impl Store {
                                 match result {
                                     Ok(()) => Reply::Saved(key),
                                     Err(e) => Reply::Failed(e),
+                                }
+                            }
+                            Request::Delete(key) => {
+                                match std::fs::remove_file(dir.join(format!("{key}.json"))) {
+                                    Ok(()) => Reply::Deleted(key),
+                                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => Reply::Deleted(key),
+                                    Err(e) => Reply::Failed(e.to_string()),
                                 }
                             }
                             Request::Load(key) => {
