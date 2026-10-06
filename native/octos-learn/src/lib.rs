@@ -220,6 +220,26 @@ script_mod! {
                                 }
                             }
                         }
+                        // 大图 dialog (web .oll-plot-dialog / .oll-coordinate-dialog):
+                        // backdrop #152c2b88, centered card 1100 wide, padding 20.
+                        enlarge_dialog := View { visible: false width: Fill height: Fill flow: Overlay
+                            enlarge_backdrop := SolidView { width: Fill height: Fill draw_bg.color: #152c2b88 }
+                            // Positioned absolutely by sync_enlarged: aligned layout would
+                            // shift text but not DrawVector geometry.
+                            View { width: Fill height: Fill
+                                enlarge_card := RoundedView { width: 1100 height: Fit flow: Down padding: 20
+                                    draw_bg +: { color: #fffdf7 border_radius: 16 border_size: 1 border_color: #cec8bd }
+                                    enlarge_close := Button { height: 28 text: "关闭大图" padding: Inset{left: 8 right: 8 top: 4 bottom: 4}
+                                        draw_text.color: #214c48 draw_text.text_style.font_size: 9
+                                        draw_bg +: { color: #fffdf7 color_hover: #f1efe9 border_radius: 7 border_size: 1 border_color: #cec8bd } }
+                                    enlarge_title := Label { width: Fill padding: Inset{top: 6 bottom: 6} text: "" draw_text.text_style.font_size: 13.5 draw_text.color: #214c48 }
+                                    View { width: Fill height: Fit flow: Down padding: 12
+                                        enlarge_plot_box := View { visible: false width: Fill height: Fit enlarge_plot := mod.widgets.PlotView {} }
+                                        enlarge_geometry_box := View { visible: false width: Fill height: Fit enlarge_geometry := mod.widgets.GeometryView {} }
+                                    }
+                                }
+                            }
+                        }
                         // Teacher (web .octos-teacher: right 24 bottom 98).
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
                             View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 1.}
@@ -466,6 +486,9 @@ pub struct App {
     pen_width: f64,
     #[rust]
     narration_muted: bool,
+    /// Node shown in the 大图 dialog.
+    #[rust]
+    enlarged: Option<String>,
     /// Course outline panel (web OllCourseOutline).
     #[rust]
     outline_open: bool,
@@ -1365,6 +1388,88 @@ impl App {
             self.refresh(cx);
         }
     }
+    /// Web expand: the 大图 dialog with the same explorer state, sized like
+    /// the web (plot ≤1000×520, geometry ≤900×700 viewBox).
+    fn open_enlarged(&mut self, cx: &mut Cx, id: String) {
+        self.enlarged = Some(id);
+        self.ui.widget(cx, ids!(enlarge_dialog)).set_visible(cx, true);
+        if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            b.set_input_blocked(true);
+        }
+        self.sync_enlarged(cx, true);
+    }
+    fn sync_enlarged(&mut self, cx: &mut Cx, reset_state: bool) {
+        let Some(id) = self.enlarged.clone() else { return };
+        let Some((node, state)) = self
+            .ui
+            .widget(cx, ids!(spatial))
+            .borrow::<spatial_board::SpatialBoard>()
+            .and_then(|b| b.explorer(&id))
+        else {
+            return;
+        };
+        let variables = self.player.as_ref().map(|s| s.board.variables.clone()).unwrap_or_default();
+        let plot = node["kind"] == "plot";
+        let board_rect = self.ui.widget(cx, ids!(spatial)).area().rect(cx);
+        let board = board_rect.size;
+        let win = dvec2(board.x.max(1100.), board.y.max(700.));
+        // Center the 1100-wide card (web: fixed, translate(-50%, -50%)).
+        let (vw, vh) = if plot {
+            ((win.x - 80.).clamp(360., 1000.), (win.y - 220.).clamp(260., 520.))
+        } else {
+            ((win.x - 80.).clamp(400., 900.), (win.y - 210.).clamp(360., 700.))
+        };
+        let card_h = 40. + 28. + 37. + 24. + 30. + vh * (1036. / vw) + if plot { 70. } else { 40. };
+        let pos = dvec2(
+            board_rect.pos.x + ((board.x - 1100.) / 2.).max(0.),
+            board_rect.pos.y + ((board.y - card_h) / 2.).max(8.),
+        );
+        self.ui.view(cx, ids!(enlarge_card)).set_walk(cx, Walk {
+            abs_pos: Some(pos),
+            width: Size::Fixed(1100.),
+            height: Size::fit(),
+            ..Default::default()
+        });
+        let title = node["content"]["title"].as_str().unwrap_or(if plot { "函数图" } else { "几何图" }).to_owned();
+        self.ui.label(cx, ids!(enlarge_title)).set_text(cx, &title);
+        self.ui.widget(cx, ids!(enlarge_plot_box)).set_visible(cx, plot);
+        self.ui.widget(cx, ids!(enlarge_geometry_box)).set_visible(cx, !plot);
+        if plot {
+            if let Some(mut v) = self.ui.widget(cx, ids!(enlarge_plot)).borrow_mut::<octos_oll_preview::plot_view::PlotView>() {
+                v.large = Some((vw, vh));
+                let current = if reset_state { state } else { v.state.clone() };
+                v.set_node(cx, &node, &variables, &current);
+            }
+        } else if let Some(mut v) = self.ui.widget(cx, ids!(enlarge_geometry)).borrow_mut::<octos_oll_preview::geometry_view::GeometryView>() {
+            v.large = Some((vw, vh));
+            let current = if reset_state { state } else { v.state.clone() };
+            v.set_node(cx, &node, &current);
+        }
+        self.ui.redraw(cx);
+    }
+    fn close_enlarged(&mut self, cx: &mut Cx) {
+        let Some(id) = self.enlarged.take() else { return };
+        let state = self
+            .ui
+            .widget(cx, ids!(enlarge_plot))
+            .borrow::<octos_oll_preview::plot_view::PlotView>()
+            .filter(|_| self.ui.widget(cx, ids!(enlarge_plot_box)).visible())
+            .map(|v| v.state.clone())
+            .or_else(|| {
+                self.ui
+                    .widget(cx, ids!(enlarge_geometry))
+                    .borrow::<octos_oll_preview::geometry_view::GeometryView>()
+                    .map(|v| v.state.clone())
+            });
+        if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            b.set_input_blocked(false);
+            if let Some(state) = state {
+                b.set_explorer_state(cx, &id, state);
+            }
+        }
+        self.ui.widget(cx, ids!(enlarge_dialog)).set_visible(cx, false);
+        self.ui.redraw(cx);
+    }
     /// Rebuild the outline panel (web OllCourseOutline) for the current
     /// lesson position; cheap no-op when nothing changed.
     fn rebuild_outline(&mut self, cx: &mut Cx) {
@@ -1621,6 +1726,10 @@ impl App {
         }
     }
     fn refresh(&mut self, cx: &mut Cx) {
+        if self.enlarged.is_some() {
+            // Variables may change while the dialog is open (sliders, animation).
+            self.sync_enlarged(cx, false);
+        }
         if self.outline_open {
             self.rebuild_outline(cx);
         }
@@ -2055,6 +2164,20 @@ impl AppMain for App {
             .unwrap_or_default();
         for request in requests {
             self.control_request(cx, request);
+        }
+        let expand = self
+            .ui
+            .widget(cx, ids!(spatial))
+            .borrow_mut::<spatial_board::SpatialBoard>()
+            .map(|mut b| b.take_plot_expand())
+            .unwrap_or_default();
+        if let Some(id) = expand.into_iter().last() {
+            self.open_enlarged(cx, id);
+        }
+        if let Event::Actions(actions) = event {
+            if self.enlarged.is_some() && self.ui.button(cx, ids!(enlarge_close)).clicked(actions) {
+                self.close_enlarged(cx);
+            }
         }
         let task_requests = self
             .ui

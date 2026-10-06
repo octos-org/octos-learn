@@ -215,6 +215,9 @@ pub struct SpatialBoard {
     /// Angle controls in world coordinates (debug snapshots), refreshed on draw.
     #[rust]
     angle_controls: Vec<Value>,
+    /// A modal (e.g. the 大图 dialog) covers the board: ignore pointer input.
+    #[rust]
+    input_blocked: bool,
     /// Targets to frame once the next state is laid out.
     #[rust]
     pending_focus: Option<Vec<String>>,
@@ -319,6 +322,9 @@ impl SpatialBoard {
     }
     pub fn take_control_requests(&mut self) -> Vec<ControlRequest> {
         std::mem::take(&mut self.control_requests)
+    }
+    pub fn set_input_blocked(&mut self, blocked: bool) {
+        self.input_blocked = blocked;
     }
     /// Frame these targets after the next state update (web host attention
     /// focus, e.g. after an outline seek).
@@ -997,6 +1003,18 @@ impl SpatialBoard {
         self.redraw(cx);
     }
     /// Web scene3d pointer handling; true when the event belongs to a scene.
+    /// A plot/geometry node and its explorer state (for the 大图 dialog).
+    pub fn explorer(&self, id: &str) -> Option<(Value, PlotState)> {
+        let node = self.board.as_ref()?.nodes.iter().find(|n| n["id"] == id)?.clone();
+        Some((node, self.plot_states.get(id).cloned().unwrap_or_default()))
+    }
+    /// Explorer state edited in the 大图 dialog (web: the card and the dialog
+    /// share one explorer state).
+    pub fn set_explorer_state(&mut self, cx: &mut Cx, id: &str, state: PlotState) {
+        self.plot_states.insert(id.to_owned(), state);
+        self.measure_relayout = true;
+        self.relayout_frame = cx.new_next_frame();
+    }
     pub fn take_plot_expand(&mut self) -> Vec<String> {
         std::mem::take(&mut self.plot_expand)
     }
@@ -1493,6 +1511,9 @@ impl Widget for SpatialBoard {
                     let _ = id;
                 }
             }
+        }
+        if self.input_blocked {
+            return;
         }
         let hit = event.hits(cx, self.draw_bg.area());
         if self.drawing {

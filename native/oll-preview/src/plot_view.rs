@@ -88,6 +88,11 @@ pub struct PlotView {
     details_rect: Rect,
     #[rust]
     tools: Vec<(Tool, Rect)>,
+    #[rust]
+    area: Area,
+    /// Explore-mode pan in the 大图 dialog: ranges and pointer at the start.
+    #[rust]
+    drag: Option<((Range, Range), DVec2)>,
     /// Drawn inside the 大图 dialog: no toolbar 大图 button, larger viewBox.
     #[rust]
     pub large: Option<(f64, f64)>,
@@ -133,19 +138,24 @@ fn dashed(v: &mut DrawVector, points: &[(f32, f32)], dash: &[f64], width: f32, c
         return;
     }
     let period: f64 = dash.iter().sum();
+    if !(period > 1e-6) || dash.iter().any(|d| !(*d > 0.)) {
+        return;
+    }
     let mut phase = 0.0f64;
     for w in points.windows(2) {
         let (a, b) = (w[0], w[1]);
         let len = (((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)) as f64).sqrt();
         let mut t = 0.;
-        while t < len {
+        let mut guard = 0;
+        while t < len && guard < 100_000 {
+            guard += 1;
             let mut p = phase % period;
             let mut index = 0;
             while p >= dash[index] {
                 p -= dash[index];
                 index = (index + 1) % dash.len();
             }
-            let step = (dash[index] - p).min(len - t);
+            let step = (dash[index] - p).max(1e-3).min(len - t);
             if index % 2 == 0 {
                 let at = |s: f64| (a.0 + (b.0 - a.0) * (s / len) as f32, a.1 + (b.1 - a.1) * (s / len) as f32);
                 let (s, e) = (at(t), at(t + step));
@@ -229,7 +239,45 @@ impl PlotView {
 }
 
 impl Widget for PlotView {
-    fn handle_event(&mut self, _cx: &mut Cx, _event: &Event, _scope: &mut Scope) {}
+    /// In the 大图 dialog the view lives in screen space and handles its own
+    /// input (web dialog toolbar, explore pan, wheel zoom).
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
+        if self.large.is_none() {
+            return;
+        }
+        match event.hits(cx, self.area) {
+            Hit::FingerDown(e) => {
+                if let Some(tool) = self.tool_at(e.abs) {
+                    match tool {
+                        Tool::Explore => self.state.exploring = !self.state.exploring,
+                        Tool::Restore => {
+                            self.state.ranges = None;
+                            self.state.hidden.clear();
+                        }
+                        Tool::Expand => {}
+                    }
+                    self.redraw(cx);
+                } else if self.state.exploring && self.frame_fraction(e.abs).is_some() {
+                    self.drag = self.current_ranges().map(|r| (r, e.abs));
+                }
+            }
+            Hit::FingerMove(e) => {
+                if let (Some((start, at)), Some((px, py))) = (self.drag, self.data_per_world()) {
+                    let d = e.abs - at;
+                    self.state.ranges = Some(oll_runtime::plot::pan(start.0, start.1, -d.x * px, d.y * py));
+                    self.redraw(cx);
+                }
+            }
+            Hit::FingerUp(_) => self.drag = None,
+            Hit::FingerScroll(e) => {
+                if let (Some(anchor), Some((x, y))) = (self.frame_fraction(e.abs), self.current_ranges()) {
+                    self.state.ranges = Some(oll_runtime::plot::zoom(x, y, oll_runtime::plot::wheel_zoom_factor(e.scroll.y), anchor));
+                    self.redraw(cx);
+                }
+            }
+            _ => {}
+        }
+    }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, _scope: &mut Scope, walk: Walk) -> DrawStep {
         let (vw, vh) = self.view_size();
@@ -263,8 +311,14 @@ impl Widget for PlotView {
         if !scene.legend.is_empty() {
             height += LEGEND_GAP + LEGEND_LINE;
         }
-        let rect = cx.walk_turtle(Walk { width: Size::Fixed(width), height: Size::Fixed(height), ..walk });
+        let rect = cx.walk_turtle_with_area(&mut self.area, Walk { width: Size::Fixed(width), height: Size::Fixed(height), ..walk });
         self.rect = rect;
+        // DrawVector maps through the current turtle: draw inside one pinned
+        // to this view (outside the board world it is not at the origin).
+        cx.begin_turtle(
+            Walk { abs_pos: Some(rect.pos), width: Size::Fixed(rect.size.x), height: Size::Fixed(rect.size.y), ..Default::default() },
+            Layout::default(),
+        );
         // Toolbar: right-aligned buttons, 42px right padding (room for the badge).
         let default = Range { min: -5., max: 5. };
         let axes = &self.node["content"]["axes"];
@@ -472,6 +526,7 @@ impl Widget for PlotView {
             }
         }
         self.scene = Some(scene);
+        cx.end_turtle();
         DrawStep::done()
     }
 }

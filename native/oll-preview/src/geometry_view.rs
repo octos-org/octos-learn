@@ -56,10 +56,18 @@ pub struct GeometryView {
     #[rust]
     tools: Vec<(Tool, Rect)>,
     #[rust]
+    area: Area,
+    /// Explore-mode pan in the 大图 dialog: ranges and pointer at the start.
+    #[rust]
+    drag: Option<((Range, Range), DVec2)>,
+    #[rust]
     scene: Option<geometry::GeometryScene>,
     /// The variable whose control point is being dragged (highlighted).
     #[rust]
     pub active_control: Option<String>,
+    /// Drawn inside the 大图 dialog: no 大图 button, larger viewBox.
+    #[rust]
+    pub large: Option<(f64, f64)>,
 }
 
 fn rgb(hex: u32) -> (f32, f32, f32) {
@@ -90,19 +98,24 @@ fn dashed(v: &mut DrawVector, pts: &[(f32, f32)], dash: &[f64], width: f32, cap:
         return;
     }
     let period: f64 = dash.iter().sum();
+    if !(period > 1e-6) || dash.iter().any(|d| !(*d > 0.)) {
+        return;
+    }
     let mut phase = 0.0f64;
     for w in pts.windows(2) {
         let (a, b) = (w[0], w[1]);
         let len = (((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)) as f64).sqrt();
         let mut t = 0.;
-        while t < len {
+        let mut guard = 0;
+        while t < len && guard < 100_000 {
+            guard += 1;
             let mut p = phase % period;
             let mut i = 0;
             while p >= dash[i] {
                 p -= dash[i];
                 i = (i + 1) % dash.len();
             }
-            let step = (dash[i] - p).min(len - t);
+            let step = (dash[i] - p).max(1e-3).min(len - t);
             if i % 2 == 0 {
                 let at = |s: f64| (a.0 + (b.0 - a.0) * (s / len) as f32, a.1 + (b.1 - a.1) * (s / len) as f32);
                 let (s, e) = (at(t), at(t + step));
@@ -137,8 +150,11 @@ impl GeometryView {
     pub fn tool_at(&self, p: DVec2) -> Option<Tool> {
         self.tools.iter().find(|(_, r)| r.contains(p)).map(|(t, _)| *t)
     }
+    fn view_size(&self) -> (f64, f64) {
+        self.large.unwrap_or((VIEW_W, VIEW_H))
+    }
     fn k(&self) -> f64 {
-        self.svg_rect.size.x / VIEW_W
+        self.svg_rect.size.x / self.view_size().0
     }
     fn to_world(&self, x: f64, y: f64) -> DVec2 {
         dvec2(self.svg_rect.pos.x + x * self.k(), self.svg_rect.pos.y + y * self.k())
@@ -194,21 +210,66 @@ impl GeometryView {
 }
 
 impl Widget for GeometryView {
-    fn handle_event(&mut self, _cx: &mut Cx, _event: &Event, _scope: &mut Scope) {}
+    /// In the 大图 dialog the view lives in screen space and handles its own
+    /// input (web dialog toolbar, explore pan, wheel zoom).
+    fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
+        if self.large.is_none() {
+            return;
+        }
+        match event.hits(cx, self.area) {
+            Hit::FingerDown(e) => {
+                if let Some(tool) = self.tool_at(e.abs) {
+                    match tool {
+                        Tool::Explore => self.state.exploring = !self.state.exploring,
+                        Tool::Restore => {
+                            self.state.ranges = None;
+                            self.state.hidden.clear();
+                        }
+                        Tool::Expand => {}
+                    }
+                    self.redraw(cx);
+                } else if self.state.exploring && self.frame_fraction(e.abs).is_some() {
+                    self.drag = self.current_ranges().map(|r| (r, e.abs));
+                }
+            }
+            Hit::FingerMove(e) => {
+                if let (Some((start, at)), Some((px, py))) = (self.drag, self.data_per_world()) {
+                    let d = e.abs - at;
+                    self.state.ranges = Some(oll_runtime::plot::pan(start.0, start.1, -d.x * px, d.y * py));
+                    self.redraw(cx);
+                }
+            }
+            Hit::FingerUp(_) => self.drag = None,
+            Hit::FingerScroll(e) => {
+                if let (Some(anchor), Some((x, y))) = (self.frame_fraction(e.abs), self.current_ranges()) {
+                    self.state.ranges = Some(oll_runtime::plot::zoom(x, y, oll_runtime::plot::wheel_zoom_factor(e.scroll.y), anchor));
+                    self.redraw(cx);
+                }
+            }
+            _ => {}
+        }
+    }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, _scope: &mut Scope, walk: Walk) -> DrawStep {
-        let width = cx.turtle().max_width(Walk { width: Size::fill(), ..walk }).unwrap_or(VIEW_W).max(40.);
-        let k = width / VIEW_W;
-        let scene = geometry::geometry_scene(&self.node, VIEW_W, VIEW_H, self.state.ranges, self.state.ticks);
+        let (vw, vh) = self.view_size();
+        let width = cx.turtle().max_width(Walk { width: Size::fill(), ..walk }).unwrap_or(vw).max(40.);
+        let k = width / vw;
+        let scene = geometry::geometry_scene(&self.node, vw, vh, self.state.ranges, self.state.ticks);
         let toolbar = TOOLBAR_TOP + TOOLBAR_H + TOOLBAR_BOTTOM;
-        let svg_h = VIEW_H * k;
+        let svg_h = vh * k;
         let caption_h = if scene.caption.is_some() { 6. + 12. * 1.5 * 2. } else { 0. };
-        let rect = cx.walk_turtle(Walk {
+        let rect = cx.walk_turtle_with_area(&mut self.area, Walk {
             width: Size::Fixed(width),
             height: Size::Fixed(toolbar + svg_h + caption_h),
             ..walk
         });
         self.rect = rect;
+        // DrawVector maps through the current turtle: draw inside one pinned
+        // to this view (outside the board world it is not at the origin).
+        cx.begin_turtle(
+            Walk { abs_pos: Some(rect.pos), width: Size::Fixed(rect.size.x), height: Size::Fixed(rect.size.y), ..Default::default() },
+            Layout::default(),
+        );
         // Toolbar (web .coordinate-toolbar).
         let default = Range { min: -1.25, max: 1.25 };
         let axes = &self.node["content"]["axes"];
@@ -218,7 +279,9 @@ impl Widget for GeometryView {
         if !restored {
             tools.push((Tool::Restore, "恢复"));
         }
-        tools.push((Tool::Expand, "大图"));
+        if self.large.is_none() {
+            tools.push((Tool::Expand, "大图"));
+        }
         let widths: Vec<f64> = tools
             .iter()
             .map(|(_, l)| (Self::text_width(&mut self.draw_text, cx, l, 12.) + 18.).max(44.))
@@ -384,6 +447,7 @@ impl Widget for GeometryView {
             t.draw_abs(cx, dvec2(ox, oy + svg_h + 6. + (18. - 12. * 1.18) / 2.), caption);
         }
         self.scene = Some(scene);
+        cx.end_turtle();
         DrawStep::done()
     }
 }
