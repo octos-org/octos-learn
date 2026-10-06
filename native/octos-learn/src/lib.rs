@@ -2138,6 +2138,7 @@ impl App {
             let tasks: Vec<_> = session.tasks().into_iter().filter(|t| t.available).collect();
             if let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() {
                 board.set_operation_boundary(boundary);
+                board.set_latest_operation(session.cursor.checked_sub(1).and_then(|i| session.operations.get(i)));
                 board.set_tasks(cx, session.practice.definitions(), tasks);
                 board.set_controls(cx, controls);
                 if let Err(e) = board.set_state(cx, p, action) {

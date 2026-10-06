@@ -256,6 +256,9 @@ pub struct SpatialBoard {
     /// Pointer pulse clock (web pointer-pulse animation).
     #[rust(Instant::now())]
     pointer_clock: Instant,
+    /// The latest applied operation is a teacher.point action.
+    #[rust]
+    latest_is_point: bool,
     /// Course preview hides learner ink (web: no ink session in preview).
     #[rust]
     ink_hidden: bool,
@@ -367,6 +370,9 @@ impl SpatialBoard {
     }
     /// Host playback position: true when the current operation is a
     /// `beat.end`/`step.commit` rather than an applied action.
+    pub fn set_latest_operation(&mut self, op: Option<&Value>) {
+        self.latest_is_point = op.is_some_and(|o| o["type"] == "action.apply" && o["action"]["op"] == "teacher.point");
+    }
     pub fn set_operation_boundary(&mut self, boundary: bool) {
         self.at_boundary = boundary;
     }
@@ -800,8 +806,10 @@ impl SpatialBoard {
         ])
         .to_string();
         let changed = signature != self.signature;
+        // Web renderPointer: only while the latest operation is the point
+        // action (a Beat jump ends on beat.end and shows none).
         self.pointer_target = action
-            .filter(|a| a["op"] == "teacher.point")
+            .filter(|a| a["op"] == "teacher.point" && self.latest_is_point)
             .map(|a| a["target"].clone());
         let anchor = (!reset && changed).then(|| self.reflow_anchor()).flatten();
         if self.last_action != p.cursor || reset {
