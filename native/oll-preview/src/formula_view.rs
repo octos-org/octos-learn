@@ -96,7 +96,7 @@ pub fn runs(source: &str) -> Result<Vec<Run>, String> {
 /// brackets to `\lbrack`/`\rbrack`, keeping `\sqrt[n]` optional arguments
 /// and `\left[`/`\right]` delimiters, before anything reaches the parser.
 pub fn parser_safe(math: &str) -> String {
-    let math = function_spacing(math);
+    let math = italic_greek(&function_spacing(math));
     let mut out = String::with_capacity(math.len() + 16);
     let mut chars = math.chars().peekable();
     let mut command = String::new();
@@ -167,6 +167,80 @@ pub fn parser_safe(math: &str) -> String {
         if !c.is_whitespace() {
             command.clear();
         }
+    }
+    out
+}
+
+/// KaTeX draws lowercase Greek in math italic (\theta → 𝜃); latex_math
+/// maps the commands to upright letters. Outside text groups, replace them
+/// with the Mathematical Italic code points (NewCM Math has the glyphs).
+fn italic_greek(math: &str) -> String {
+    fn italic(name: &str) -> Option<char> {
+        let code = match name {
+            "alpha" => 0x1D6FC, "beta" => 0x1D6FD, "gamma" => 0x1D6FE, "delta" => 0x1D6FF,
+            "varepsilon" => 0x1D700, "zeta" => 0x1D701, "eta" => 0x1D702, "theta" => 0x1D703,
+            "iota" => 0x1D704, "kappa" => 0x1D705, "lambda" => 0x1D706, "mu" => 0x1D707,
+            "nu" => 0x1D708, "xi" => 0x1D709, "pi" => 0x1D70B, "rho" => 0x1D70C,
+            "varsigma" => 0x1D70D, "sigma" => 0x1D70E, "tau" => 0x1D70F, "upsilon" => 0x1D710,
+            "varphi" => 0x1D711, "chi" => 0x1D712, "psi" => 0x1D713, "omega" => 0x1D714,
+            "epsilon" => 0x1D716, "vartheta" => 0x1D717, "phi" => 0x1D719, "varrho" => 0x1D71A,
+            "varpi" => 0x1D71B,
+            _ => return None,
+        };
+        char::from_u32(code)
+    }
+    let chars: Vec<char> = math.chars().collect();
+    let mut out = String::with_capacity(math.len());
+    let mut braces: Vec<bool> = Vec::new();
+    let mut last_command = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let c = chars[i];
+        if c == '\\' && i + 1 < chars.len() && chars[i + 1].is_ascii_alphabetic() {
+            let mut j = i + 1;
+            while j < chars.len() && chars[j].is_ascii_alphabetic() {
+                j += 1;
+            }
+            let name: String = chars[i + 1..j].iter().collect();
+            match italic(&name).filter(|_| !braces.iter().any(|t| *t)) {
+                Some(g) => {
+                    out.push(g);
+                    // A following space only separated the command.
+                    if j < chars.len() && chars[j] == ' ' {
+                        out.push(' ');
+                        j += 1;
+                    }
+                    last_command.clear();
+                }
+                None => {
+                    out.push('\\');
+                    out.push_str(&name);
+                    last_command = name;
+                }
+            }
+            i = j;
+            continue;
+        }
+        if c == '\\' && i + 1 < chars.len() {
+            // Escaped symbol (\{, \,, \\): copy both characters.
+            out.push(c);
+            out.push(chars[i + 1]);
+            i += 2;
+            last_command.clear();
+            continue;
+        }
+        match c {
+            '{' => braces.push(matches!(last_command.as_str(), "text" | "textrm" | "textit" | "textbf" | "mathrm" | "rm" | "operatorname")),
+            '}' => {
+                braces.pop();
+            }
+            _ => {}
+        }
+        if !c.is_whitespace() {
+            last_command.clear();
+        }
+        out.push(c);
+        i += 1;
     }
     out
 }
@@ -420,13 +494,14 @@ mod tests {
     #[test]
     fn plain_brackets_are_rewritten_but_sqrt_and_left_right_are_kept() {
         use super::parser_safe;
-        assert_eq!(parser_safe(r"x \in [0, \pi]"), r"x \in \lbrack 0, \pi\rbrack ");
+        assert_eq!(parser_safe(r"x \in [0, \pi]"), "x \\in \\lbrack 0, 𝜋\\rbrack ");
         assert_eq!(parser_safe(r"\sqrt[3]{x}"), r"\sqrt[3]{x}");
         assert_eq!(parser_safe(r"g'(x) = f''"), r"g\text{′}(x) = f\text{″}");
         assert_eq!(parser_safe(r"\text{don't}"), r"\text{don't}");
         assert_eq!(super::function_spacing(r"P = (\cos\theta, \sin\theta)"), r"P = (\text{cos}\,\theta, \text{sin}\,\theta)");
         assert_eq!(super::function_spacing(r"2\sin^2 x+\sin(x)"), r"2\,\text{sin}^2\,x+\text{sin}(x)");
         assert_eq!(super::function_spacing(r"\lim_{x\to 0}\text{ sin }"), r"\lim_{x\to 0}\text{ sin }");
+        assert_eq!(super::italic_greek(r"2\pi r+\Delta\theta \text{\theta}"), "2𝜋 r+\\Delta𝜃 \\text{\\theta}");
         assert_eq!(parser_safe(r"\left[x\right]"), r"\left[x\right]");
         assert_eq!(parser_safe(r"[a]"), r"\lbrack a\rbrack ");
     }
