@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-06（滑块面板）
+最后更新：2026-10-06（圆角减半、老师头像）
 
 ## 0. 目标
 
@@ -101,7 +101,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `e39954a` 连线：#6e8d86、圆角、16px 箭头（同 Web marker）
 - `e1729f7` `\sin` `\cos` 等函数名按 TeX 规则加间距：括号/关系符旁不加空，普通原子旁加 `\,`（latex_math 原本两侧总加细空）；函数名用 `\text{}` 绘制以保持正体
 - `7de3749` 公式小写希腊字母（\theta、\pi…）改用数学斜体码位，与 KaTeX 一致
-- （本次提交）滑块面板：拇指在输入框内移动（左右各内缩 8px，同浏览器 range），−/+ 字形改为 Web 12px 文本字形粗细
+- `c86b7c0` 滑块面板：拇指在输入框内移动（左右各内缩 8px，同浏览器 range），−/+ 字形改为 Web 12px 文本字形粗细
+- （本次提交）所有 RoundedView/Button 的 `border_radius` 减半：Makepad `sdf.box` 实际画 2×r 圆角，之前从 CSS 照抄的数值都圆了一倍（卡片、按钮、大纲按钮、开始互动学习等）；老师头像改为 Web 的圆角方形（94px，约 40px 圆角），状态字 10px
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -111,7 +112,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
    - 卡片标题 Web 为粗体，原生缺少 CJK 粗体字体（需要可用字体资源，先问用户是否允许加字体）
-   - 画布底部 outline 按钮形状（Web 圆角方块）待复核
+   - 带边框的 Button（左上 ⌂/☰、大纲按钮）边框看起来比 Web 深/粗，待查 sdf stroke 宽度语义
 2. 练习任务中 scene3d 视角提交（目前没有课程包使用，优先级低）。
 3. 再跑一次九门课全量对照，确认无回归。
 4. 写交付文档 `docs/makepad-migration/OLL_MACOS_PRODUCT_V7.md`，更新 AGENT_HANDOFF.md，推送后**通知用户可以测试**。
@@ -122,6 +123,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 学习记录抽屉只列本机课程进度记录（Web 还会同步服务器记录）。
 
 ## 8. Makepad 踩坑备忘
+
+- **`border_radius` 实际效果是 2×r**（`sdf.box` 内部 `k = min(2r, …)`）：CSS 写 16px 圆角，DSL 要写 8。DrawVector 的 `rounded_rect` 是真实半径，不受影响。
 
 - `#[derive(Script)]` 字段类型不能写 `::` 限定路径（如 `std::time::Instant`），要先 `use` 再写短名。
 - 自定义 widget 没有 DSL `visible`，需要包一层 View。DSL 颜色 `#12606e` 会被当成指数，写 `#x12606e`。
