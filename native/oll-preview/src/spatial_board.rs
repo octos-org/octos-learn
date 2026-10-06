@@ -16,6 +16,7 @@ use oll_runtime::{
 };
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
+use std::time::Instant;
 
 /// Camera scale the desktop host plans teaching rows for (web teachingReadingScale).
 const TEACHING_READING_SCALE: f64 = 0.9;
@@ -252,6 +253,9 @@ pub struct SpatialBoard {
     /// Current marquee rect in world coordinates.
     #[rust]
     marquee: Option<(DVec2, DVec2)>,
+    /// Pointer pulse clock (web pointer-pulse animation).
+    #[rust(Instant::now())]
+    pointer_clock: Instant,
     /// Course preview hides learner ink (web: no ink session in preview).
     #[rust]
     ink_hidden: bool,
@@ -1051,7 +1055,7 @@ impl SpatialBoard {
         self.highlights.retain(|_, (kind, at)| {
             at.elapsed().as_secs_f64() < if *kind == Highlight::Active { ACTIVE_SECONDS } else { FOCUS_ARRIVE_SECONDS }
         });
-        if before > 0 {
+        if before > 0 || self.pointer_target.is_some() {
             self.redraw(cx);
         }
         if !self.manual && self.elapsed < 0.68 {
@@ -1949,13 +1953,21 @@ impl Widget for SpatialBoard {
                 .or(t["connection_id"].as_str())
             {
                 if let Some(r) = self.resolve(id, &mut BTreeSet::new()) {
-                    self.draw_vector.set_color(1., 0.79, 0.26, 1.);
-                    let x = (r.x + r.width - 8.) as f32;
-                    let y = (r.y - 18.) as f32;
-                    self.draw_vector.move_to(x, y);
-                    self.draw_vector.line_to(x + 20., y - 5.);
-                    self.draw_vector.line_to(x + 5., y + 20.);
-                    self.draw_vector.close();
+                    // Web .teacher-pointer: a 26px box at (right - 8, top - 18)
+                    // with a 19px "●" in #ef5d69, pulsing to 1.25× every .8s
+                    // (alternate), with a soft drop shadow.
+                    let t = self.pointer_clock.elapsed().as_secs_f64() / 0.8;
+                    let phase = t % 2.;
+                    let k = if phase < 1. { phase } else { 2. - phase };
+                    let eased = k * k * (3. - 2. * k);
+                    let scale = 1. + 0.25 * eased;
+                    let (cx0, cy0) = ((r.x + r.width - 8. + 13.) as f32, (r.y - 18. + 13.) as f32);
+                    let radius = (5.7 * scale) as f32;
+                    self.draw_vector.set_color(0., 0., 0., 0.12);
+                    self.draw_vector.circle(cx0, cy0 + 3., radius + 1.5);
+                    self.draw_vector.fill();
+                    self.draw_vector.set_color_hex(0xef5d69, 1.);
+                    self.draw_vector.circle(cx0, cy0, radius);
                     self.draw_vector.fill();
                 }
             }
