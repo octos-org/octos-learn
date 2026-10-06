@@ -172,11 +172,11 @@ script_mod! {
                         View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
                             View { width: 96 height: Fit flow: Right spacing: 8
                                 back := Button { width: 40 height: 40 text: ""
-                                    icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #x57534e }
+                                    icon_walk: Walk{width: 20 height: 20} draw_icon +: { color: #x57534e }
                                     draw_bg +: { border_radius: 20 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
-                                // DIFF: settings page not migrated; click shows a toast.
+                                // 学习记录 (web Menu button) opens the history drawer.
                                 settings := Button { width: 40 height: 40 text: ""
-                                    icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #x57534e }
+                                    icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #x57534e }
                                     draw_bg +: { border_radius: 20 color: #ffffffcc color_hover: #f3ede2 border_size: 1 border_color: #0000001a } }
                             }
                         }
@@ -292,6 +292,42 @@ script_mod! {
                                 visible: false width: Fit height: Fit padding: Inset{left: 16 right: 16 top: 10 bottom: 10}
                                 draw_bg +: { color: #f9e3df border_radius: 12 }
                                 error_label := Label { width: Fit height: Fit text: "" draw_text.text_style.font_size: 11 draw_text.color: #8c3a2b }
+                            }
+                        }
+                        // 学习记录 drawer (web LearningHistory: overlay #152b324d,
+                        // 360px panel from the left, padding 24/18).
+                        history_drawer := View { visible: false width: Fill height: Fill flow: Overlay
+                            history_backdrop := SolidView { width: Fill height: Fill draw_bg.color: #152b324d }
+                            history_panel := SolidView { width: 360 height: Fill flow: Down padding: Inset{left: 18 right: 18 top: 24 bottom: 24}
+                                draw_bg.color: #fffef9
+                                View { width: Fill height: Fit flow: Right spacing: 12
+                                    View { width: Fill height: Fit flow: Down
+                                        Label { width: Fit padding: 0 text: "学习记录" draw_text.text_style: theme.font_bold{font_size: 16.5} draw_text.color: #243b40 }
+                                        Label { width: Fit padding: 0 margin: Inset{top: 8 bottom: 16} text: "继续之前的白板与课程" draw_text.text_style.font_size: 9.75 draw_text.color: #657c7c }
+                                    }
+                                    history_close := Button { width: 40 height: 40 text: "" icon_walk: Walk{width: 20 height: 20}
+                                        draw_icon +: { color: #243b40 }
+                                        draw_bg +: { color: #0000 color_hover: #edf4ef color_down: #e3ede6 border_radius: 8 border_size: 0 border_color: #0000 } }
+                                }
+                                // DIFF: blank whiteboards are not migrated; click shows a toast.
+                                history_new := Button { width: Fill height: 44 text: "新建白板" margin: Inset{top: 8 bottom: 18}
+                                    align: Align{x: 0.5 y: 0.5} spacing: 8 icon_walk: Walk{width: 18 height: 18}
+                                    draw_icon +: { color: #ffffff }
+                                    draw_text.color: #ffffff draw_text.text_style.font_size: 10.5
+                                    draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x12606e border_radius: 10 border_size: 0 border_color: #0000 } }
+                                RoundedView { width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5} padding: 10
+                                    draw_bg +: { color: #0000 border_radius: 10 border_size: 1 border_color: #d7dfd9 }
+                                    history_search_icon := Svg { width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
+                                    history_search := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "搜索学习记录"
+                                        draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                            border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                        draw_text +: { color: #243b40 color_hover: #243b40 color_focus: #243b40 color_down: #243b40
+                                            color_empty: #8a9a98 color_empty_hover: #8a9a98 color_empty_focus: #8a9a98 text_style.font_size: 10.5 }
+                                        draw_cursor +: { color: #243b40 } }
+                                }
+                                ScrollYView { width: Fill height: Fill margin: Inset{top: 16}
+                                    history_list := View { width: Fill height: Fit flow: Down }
+                                }
                             }
                         }
                     }
@@ -576,6 +612,15 @@ pub struct App {
     open_reflections: BTreeMap<String, bool>,
     #[rust]
     last_reflection_revision: u64,
+    /// 学习记录 drawer: open flag, search text and (pack, version, row button).
+    #[rust]
+    history_open: bool,
+    #[rust]
+    history_query: String,
+    #[rust]
+    history_focus_pending: bool,
+    #[rust]
+    history_items: Vec<(String, String, WidgetRef)>,
     /// Current handwriting tool (web ink toolbar mode).
     #[rust]
     ink_tool: InkTool,
@@ -764,14 +809,16 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 11] = [
+    let icons: [(LiveId, &str); 13] = [
         (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
         (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
         (live_id!(back), include_str!("../assets/icons/house.svg")),
-        (live_id!(settings), include_str!("../assets/icons/settings.svg")),
+        (live_id!(settings), include_str!("../assets/icons/menu.svg")),
+        (live_id!(history_close), include_str!("../assets/icons/x.svg")),
+        (live_id!(history_new), include_str!("../assets/icons/plus.svg")),
         (live_id!(ask_image), include_str!("../assets/icons/image-plus.svg")),
         (live_id!(ask_camera), include_str!("../assets/icons/camera-off.svg")),
         (live_id!(ask_mic), include_str!("../assets/icons/mic.svg")),
@@ -784,6 +831,7 @@ fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
     }
     for (id, icon, color) in [
         (live_id!(menu_restart_icon), include_str!("../assets/icons/rotate-ccw.svg"), "#426568"),
+        (live_id!(history_search_icon), include_str!("../assets/icons/search.svg"), "#657c7c"),
         (live_id!(menu_delete_icon), ICON_TRASH, "#a84836"),
     ] {
         if let Some(mut svg) = ui.widget(cx, &[id]).borrow_mut::<Svg>() {
@@ -828,6 +876,10 @@ impl App {
     /// learning page, so they no longer surface in the top bar.
     fn note(&mut self, _cx: &mut Cx, _message: &str) {}
     fn save_progress(&mut self, cx: &mut Cx) {
+        // Web: a pack preview is ephemeral and never enters the session index.
+        if self.course_preview {
+            return;
+        }
         if let Some(player) = &self.player {
             match player.checkpoint() {
                 Ok(mut value) => {
@@ -938,6 +990,81 @@ impl App {
         }
         self.last_tick = Some(Instant::now());
     }
+    /// Web LearningHistory: course learning records saved on this device,
+    /// newest first, filtered by the search text.
+    fn set_history_open(&mut self, cx: &mut Cx, open: bool) {
+        self.history_open = open;
+        self.ui.widget(cx, ids!(history_drawer)).set_visible(cx, open);
+        if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            b.set_input_blocked(open || self.enlarged.is_some());
+        }
+        if open {
+            self.history_query.clear();
+            self.ui.text_input(cx, ids!(history_search)).set_text(cx, "");
+            self.rebuild_history(cx);
+            // Web focuses the search box; it has no area until drawn.
+            self.history_focus_pending = true;
+        }
+        self.ui.redraw(cx);
+    }
+    fn rebuild_history(&mut self, cx: &mut Cx) {
+        let catalog = course_pack::catalog(&course_pack::pack_root()).unwrap_or_default();
+        let mut records: Vec<(String, String, String, std::time::SystemTime)> = self
+            .store
+            .as_ref()
+            .and_then(|s| std::fs::read_dir(s.dir()).ok())
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|entry| {
+                let name = entry.file_name().to_string_lossy().into_owned();
+                let (pack, version) = name.strip_suffix(".json")?.rsplit_once('@')?;
+                let title = catalog
+                    .iter()
+                    .find(|p| p["packId"] == pack)
+                    .and_then(|p| p["title"].as_str())
+                    .unwrap_or(pack)
+                    .to_owned();
+                let modified = entry.metadata().and_then(|m| m.modified()).ok()?;
+                Some((pack.to_owned(), version.to_owned(), title, modified))
+            })
+            .collect();
+        records.sort_by(|a, b| b.3.cmp(&a.3));
+        let query = self.history_query.trim().to_lowercase();
+        let current = (self.learning_visible && self.player.is_some()).then(|| (self.pack_id.clone(), self.pack_version.clone()));
+        self.history_items.clear();
+        let mut rows = Vec::new();
+        for (pack, version, title, modified) in records.into_iter().filter(|r| r.2.to_lowercase().contains(&query)) {
+            let is_current = current.as_ref().is_some_and(|(p, v)| *p == pack && *v == version);
+            let meta = format!("{} · 课程学习{}", zh_month_day_time(modified), if is_current { " · 当前" } else { "" });
+            let bg = if is_current { "#edf4ef" } else { "#0000" };
+            let code = format!(
+                "View{{width:Fill height:Fit flow:Down
+                    row := RoundedView{{width:Fill height:Fit flow:Down spacing:8 padding:Inset{{left:12 right:12 top:15 bottom:15}}
+                        draw_bg +: {{color:{bg} border_radius:8}}
+                        Label{{width:Fill padding:0 text:\"{}\" draw_text.wrap:Words draw_text.text_style: theme.font_bold{{font_size:10.5}} draw_text.color:#243b40}}
+                        Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style.font_size:9 draw_text.color:#69817d}}
+                    }}
+                    View{{width:Fill height:1 show_bg:true draw_bg.color:#e6ebe5}}
+                }}",
+                script_text(&title),
+                script_text(&meta)
+            );
+            if let Ok(row) = board_view::widget(cx, &code) {
+                self.history_items.push((pack, version, row.widget(cx, ids!(row))));
+                rows.push(row);
+            }
+        }
+        if rows.is_empty() {
+            let text = if query.is_empty() { "还没有保存的学习记录" } else { "没有找到匹配的学习记录" };
+            if let Ok(empty) = board_view::widget(cx, &format!(
+                "Label{{width:Fill padding:Inset{{top:8}} text:\"{text}\" draw_text.text_style.font_size:9.75 draw_text.color:#657c7c}}"
+            )) {
+                rows.push(empty);
+            }
+        }
+        let _ = board_view::children(cx, &self.ui.widget(cx, ids!(history_list)), rows);
+    }
     fn open_reflections_path(&self) -> Option<std::path::PathBuf> {
         self.store.as_ref().map(|s| s.dir().join("open-reflections.json"))
     }
@@ -996,7 +1123,7 @@ impl App {
                 self.show_learning(cx, true);
                 self.note(cx, "");
                 self.autoplay_pending = autoplay;
-                let skip_restore = std::mem::take(&mut self.skip_restore);
+                let skip_restore = std::mem::take(&mut self.skip_restore) || self.course_preview;
                 if let Some(store) = self.store.as_ref().filter(|_| !skip_restore) {
                     self.awaiting_restore =
                         store.send(progress_store::Request::Load(self.course_key())).is_ok();
@@ -1035,6 +1162,19 @@ impl App {
     }
     fn show_learning(&mut self, cx: &mut Cx, learning: bool) {
         self.learning_visible = learning;
+        if learning {
+            // Web: ArrowLeft (返回课程集) when opened from a collection, else Home.
+            let icon = if self.collection.is_some() {
+                include_str!("../assets/icons/arrow-left.svg")
+            } else {
+                include_str!("../assets/icons/house.svg")
+            };
+            if let Some(mut b) = self.ui.widget(cx, ids!(back)).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(icon);
+            }
+        } else if self.history_open {
+            self.set_history_open(cx, false);
+        }
         self.ui.widget(cx, ids!(launcher)).set_visible(cx, !learning);
         self.ui.widget(cx, ids!(learning)).set_visible(cx, learning);
     }
@@ -2081,6 +2221,15 @@ impl AppMain for App {
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
+        if self.timer.is_event(event).is_some() && self.history_focus_pending {
+            let search = self.ui.widget(cx, ids!(history_search));
+            if !search.area().rect(cx).size.x.eq(&0.) {
+                self.history_focus_pending = false;
+                if let Some(mut input) = search.borrow_mut::<TextInput>() {
+                    input.take_key_focus(cx);
+                }
+            }
+        }
         if self.timer.is_event(event).is_some() {
             if self
                 .toast_until
@@ -2244,8 +2393,11 @@ impl AppMain for App {
                 self.refresh(cx);
             }
             if self.ui.button(cx, ids!(start_interaction)).clicked(actions) {
-                self.course_preview = false;
-                self.apply_course_mode(cx);
+                // Web startCourseInteraction: a new learning instance of the
+                // pack replaces the preview board.
+                let (pack, version) = (self.pack_id.clone(), self.pack_version.clone());
+                self.skip_restore = true;
+                self.open_course(cx, &pack, &version, true);
             }
             if self.ui.button(cx, ids!(voice)).clicked(actions)
                 || self.ui.button(cx, ids!(camera)).clicked(actions)
@@ -2253,7 +2405,19 @@ impl AppMain for App {
                 self.toast(cx, "语音与摄像头尚未迁移，仅网页版可用");
             }
             if self.ui.button(cx, ids!(settings)).clicked(actions) {
-                self.toast(cx, "设置页尚未迁移，仅网页版可用");
+                self.set_history_open(cx, true);
+            }
+            if self.history_open {
+                if self.ui.button(cx, ids!(history_close)).clicked(actions) {
+                    self.set_history_open(cx, false);
+                }
+                if self.ui.button(cx, ids!(history_new)).clicked(actions) {
+                    self.toast(cx, "空白白板尚未迁移，仅网页版可用");
+                }
+                if let Some(query) = self.ui.text_input(cx, ids!(history_search)).changed(actions) {
+                    self.history_query = query;
+                    self.rebuild_history(cx);
+                }
             }
             if self.ui.button(cx, ids!(ask_image)).clicked(actions)
                 || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
@@ -2337,6 +2501,33 @@ impl AppMain for App {
             && self.completed_at.is_some_and(|t| (6.0..6.6).contains(&t.elapsed().as_secs_f64()));
         if (self.timer.is_event(event).is_some() && was_playing) || control_event || prompt_expired {
             self.refresh(cx);
+        }
+        // Web LearningHistory: a click on the overlay or Escape closes it.
+        if self.history_open {
+            let backdrop = self.ui.widget(cx, ids!(history_backdrop));
+            let panel = self.ui.widget(cx, ids!(history_panel)).area().rect(cx);
+            if let Event::MouseUp(e) = event {
+                if !panel.contains(e.abs) && backdrop.area().rect(cx).contains(e.abs) {
+                    self.set_history_open(cx, false);
+                }
+            }
+            if let Event::KeyDown(k) = event {
+                if k.key_code == KeyCode::Escape {
+                    self.set_history_open(cx, false);
+                }
+            }
+            let items = self.history_items.clone();
+            let picked = items.into_iter().find(|(_, _, row)| tapped(cx, event, row));
+            if let Some((pack, version, _)) = picked {
+                self.set_history_open(cx, false);
+                if pack != self.pack_id || version != self.pack_version {
+                    if let Some(session) = &mut self.player {
+                        session.pause();
+                    }
+                    self.save_progress(cx);
+                    self.open_course(cx, &pack, &version, true);
+                }
+            }
         }
         // Web OllCourseOutline: a pointer down outside the panel closes it.
         if self.outline_open {
@@ -2507,4 +2698,33 @@ fn board_chrome_insets(
         occlusions.push(r);
     }
     (top, bottom, occlusions)
+}
+
+/// Web toLocaleString("zh-CN", {month: "short", day: "numeric", hour:
+/// "2-digit", minute: "2-digit"}), e.g. "10月6日 11:05", in local time.
+fn zh_month_day_time(at: std::time::SystemTime) -> String {
+    #[repr(C)]
+    struct Tm {
+        sec: i32,
+        min: i32,
+        hour: i32,
+        mday: i32,
+        mon: i32,
+        year: i32,
+        wday: i32,
+        yday: i32,
+        isdst: i32,
+        gmtoff: std::ffi::c_long,
+        zone: *const std::ffi::c_char,
+    }
+    extern "C" {
+        fn localtime_r(time: *const i64, out: *mut Tm) -> *mut Tm;
+    }
+    let secs = at.duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs() as i64);
+    let mut tm = Tm { sec: 0, min: 0, hour: 0, mday: 1, mon: 0, year: 0, wday: 0, yday: 0, isdst: 0, gmtoff: 0, zone: std::ptr::null() };
+    // SAFETY: localtime_r only writes the caller-owned Tm.
+    if unsafe { localtime_r(&secs, &mut tm) }.is_null() {
+        return String::new();
+    }
+    format!("{}月{}日 {:02}:{:02}", tm.mon + 1, tm.mday, tm.hour, tm.min)
 }
