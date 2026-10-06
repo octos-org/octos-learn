@@ -127,8 +127,10 @@ script_mod! {
                                 padding: Inset{left: 18 right: 9 top: 7 bottom: 7}
                                 draw_bg +: { color: #fffdf8d4 border_radius: 18 border_size: 1 border_color: #ece5d9 }
                                 View { width: Fill height: Fit flow: Down spacing: 2
-                                    Label { height: 12 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 9 draw_text.color: #8a8074 }
-                                    course_title := Label { height: 26 text: "" draw_text.text_style.font_size: 20 draw_text.color: #332e28 }
+                                    // Web span 9px and strong 20px/650;
+                                    // Label sizes are points (px * 0.75).
+                                    Label { width: Fit height: Fit padding: 0 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 6.75 draw_text.color: #8a8074 }
+                                    course_title := Label { width: Fill height: Fit padding: 0 text: "" draw_text.text_style: theme.font_bold{font_size: 15} draw_text.color: #332e28 }
                                 }
                                 View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
                                     play := Button { width: 34 height: 34 text: ""

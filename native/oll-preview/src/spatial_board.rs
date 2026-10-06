@@ -1169,6 +1169,15 @@ impl SpatialBoard {
             (inside && plot.borrow::<PlotView>().is_some()).then(|| (id.clone(), plot, world))
         })
     }
+    fn update_plot_probe(&mut self, cx: &mut Cx, abs: Option<DVec2>) {
+        let target = abs.filter(|_| !self.input_blocked && self.plot_drag.is_none()).and_then(|a| self.plot_at(cx, a));
+        for (id, _, w) in &self.entries {
+            let plot = w.widget(cx, ids!(plot));
+            let Some(mut view) = plot.borrow_mut::<PlotView>() else { continue };
+            let at = target.as_ref().filter(|(t, _, _)| t == id).map(|(_, _, world)| *world);
+            view.set_probe(cx, at);
+        }
+    }
     /// Geometry card under a screen point: (node id, GeometryView, world point).
     fn geometry_at(&self, cx: &mut Cx, abs: DVec2) -> Option<(String, WidgetRef, DVec2)> {
         let world = self.world_point(abs);
@@ -1330,9 +1339,9 @@ impl SpatialBoard {
         match hit {
             Hit::FingerDown(e) => {
                 let Some((id, view, world)) = self.plot_at(cx, e.abs) else { return false };
-                let (tool, details, fraction, ranges, recommended_state) = {
+                let (tool, details, legend, fraction, ranges, recommended_state) = {
                     let v = view.borrow::<PlotView>().unwrap();
-                    (v.tool_at(world), v.details_contains(world), v.frame_fraction(world), v.current_ranges(), v.state.clone())
+                    (v.tool_at(world), v.details_contains(world), v.legend_at(world), v.frame_fraction(world), v.current_ranges(), v.state.clone())
                 };
                 let mut state = self.plot_states.get(&id).cloned().unwrap_or(recommended_state);
                 if let Some(tool) = tool {
@@ -1344,6 +1353,11 @@ impl SpatialBoard {
                         }
                         Tool::Expand => self.plot_expand.push(id.clone()),
                     }
+                    self.set_plot_state(cx, &id, &view, state);
+                    return true;
+                }
+                if let Some(index) = legend {
+                    state.toggle_curve(index);
                     self.set_plot_state(cx, &id, &view, state);
                     return true;
                 }
@@ -1793,6 +1807,13 @@ impl Widget for SpatialBoard {
                 },
             }
             return;
+        }
+        // Web plot-explorer pointer probe: hovering a plot frame reads the
+        // nearest curve (crosshair; readout row when it is shown).
+        match &hit {
+            Hit::FingerHoverIn(e) | Hit::FingerHoverOver(e) => self.update_plot_probe(cx, Some(e.abs)),
+            Hit::FingerHoverOut(_) => self.update_plot_probe(cx, None),
+            _ => {}
         }
         if self.control_event(cx, &hit)
             || self.geometry_event(cx, &hit)

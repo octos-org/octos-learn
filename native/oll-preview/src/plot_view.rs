@@ -32,6 +32,10 @@ const DETAILS_GAP: f64 = 2.;
 const DETAILS_LINE: f64 = 11. * 1.4;
 const LEGEND_GAP: f64 = 3.;
 const LEGEND_LINE: f64 = 14. * 1.4;
+/// .plot-probe-readout: min-height 16px, 11px/1.4.
+const READOUT_LINE: f64 = 16.;
+/// Chrome's default checkbox: 13px box, margin 3px 3px 3px 4px.
+const CHECK: f64 = 13.;
 /// .plot-toolbar: min-height 28, margin -3 0 5, padding-right 42, gap 5.
 const TOOLBAR_H: f64 = 28.;
 const TOOLBAR_TOP: f64 = -3.;
@@ -88,6 +92,12 @@ pub struct PlotView {
     details_rect: Rect,
     #[rust]
     tools: Vec<(Tool, Rect)>,
+    /// Legend entries (curve index, hit rect): click toggles the curve.
+    #[rust]
+    legend_rects: Vec<(usize, Rect)>,
+    /// Pointer probe position as frame fractions (x right, y up).
+    #[rust]
+    probe: Option<(f64, f64)>,
     #[rust]
     area: Area,
     /// Explore-mode pan in the 大图 dialog: ranges and pointer at the start.
@@ -169,7 +179,37 @@ fn dashed(v: &mut DrawVector, points: &[(f32, f32)], dash: &[f64], width: f32, c
     }
 }
 
+impl PlotState {
+    /// Web legend checkbox: show or hide curve `index`.
+    pub fn toggle_curve(&mut self, index: usize) {
+        if let Some(at) = self.hidden.iter().position(|i| *i == index) {
+            self.hidden.remove(at);
+        } else {
+            self.hidden.push(index);
+            self.hidden.sort_unstable();
+        }
+    }
+    /// The readout row is shown while exploring or with curves hidden.
+    fn readout_visible(&self) -> bool {
+        self.exploring || !self.hidden.is_empty()
+    }
+}
+
 impl PlotView {
+    /// Web plot-explorer pointer probe (hover over the frame). Returns true
+    /// when the reading changed.
+    pub fn set_probe(&mut self, cx: &mut Cx, at: Option<DVec2>) -> bool {
+        let fraction = at.and_then(|p| self.frame_fraction(p));
+        if fraction != self.probe {
+            self.probe = fraction;
+            self.redraw(cx);
+            return true;
+        }
+        false
+    }
+    pub fn legend_at(&self, p: DVec2) -> Option<usize> {
+        self.legend_rects.iter().find(|(_, r)| r.contains(p)).map(|(i, _)| *i)
+    }
     pub fn set_node(&mut self, cx: &mut Cx, node: &Value, variables: &Variables, state: &PlotState) {
         if &self.node != node || &self.variables != variables || &self.state != state {
             self.node = node.clone();
@@ -257,6 +297,9 @@ impl Widget for PlotView {
                         Tool::Expand => {}
                     }
                     self.redraw(cx);
+                } else if let Some(index) = self.legend_at(e.abs) {
+                    self.state.toggle_curve(index);
+                    self.redraw(cx);
                 } else if self.state.exploring && self.frame_fraction(e.abs).is_some() {
                     self.drag = self.current_ranges().map(|r| (r, e.abs));
                 }
@@ -267,6 +310,12 @@ impl Widget for PlotView {
                     self.state.ranges = Some(oll_runtime::plot::pan(start.0, start.1, -d.x * px, d.y * py));
                     self.redraw(cx);
                 }
+            }
+            Hit::FingerHoverIn(e) | Hit::FingerHoverOver(e) => {
+                self.set_probe(cx, Some(e.abs));
+            }
+            Hit::FingerHoverOut(_) => {
+                self.set_probe(cx, None);
             }
             Hit::FingerUp(_) => self.drag = None,
             Hit::FingerScroll(e) => {
@@ -310,6 +359,12 @@ impl Widget for PlotView {
         }
         if !scene.legend.is_empty() {
             height += LEGEND_GAP + LEGEND_LINE;
+        }
+        // In the 大图 dialog a reading also opens the row (web un-hides it);
+        // board cards keep their laid-out height and only draw the crosshair.
+        let readout = self.state.readout_visible() || (self.large.is_some() && self.probe.is_some());
+        if readout {
+            height += READOUT_LINE;
         }
         let rect = cx.walk_turtle_with_area(&mut self.area, Walk { width: Size::Fixed(width), height: Size::Fixed(height), ..walk });
         self.rect = rect;
@@ -447,6 +502,18 @@ impl Widget for PlotView {
                 v.fill();
             }
         }
+        // Probe crosshair (web dashed #7b8d88 lines appended to the SVG).
+        let reading = self.probe.and_then(|(fx, fy)| {
+            plot::probe(&self.node, &self.variables, scene.x, scene.y, &self.state.hidden, fx, fy).map(|p| (fx, p))
+        });
+        if let Some((fx, p)) = &reading {
+            let px = f.left + fx * f.width;
+            let py = f.bottom - (p.y - scene.y.min) / scene.y.span() * f.height;
+            set(v, 0x7b8d88, 1.);
+            let dash = [3. * k, 3. * k];
+            dashed(v, &[map(px, f.top), map(px, f.bottom)], &dash, k as f32, LineCap::Butt);
+            dashed(v, &[map(f.left, py), map(f.right, py)], &dash, k as f32, LineCap::Butt);
+        }
         v.end(cx);
         // SVG text: y is the baseline; draw_abs places the line top.
         for (x, y, text, anchor, style) in texts.into_iter().chain(scene.primitives.iter().filter_map(|p| match p {
@@ -501,8 +568,12 @@ impl Widget for PlotView {
         } else {
             self.details_rect = Rect::default();
         }
+        self.legend_rects.clear();
         if !scene.legend.is_empty() {
             y += LEGEND_GAP;
+            // Web plot-explorer legend: swatch, a checkbox when there are
+            // several curves, then the label (gap 5, items 12 apart).
+            let checkbox = scene.legend.len() > 1;
             let mut x = ox;
             let mid = y + LEGEND_LINE / 2.;
             let v = &mut self.draw_grid;
@@ -510,20 +581,59 @@ impl Widget for PlotView {
             let mut labels = Vec::new();
             for item in &scene.legend {
                 let w = Self::text_width(&mut self.draw_text, cx, &item.text, 14.);
-                set(v, series_color(item.series), if item.hidden { 0.35 } else { 1. });
+                let start = x;
+                set(v, series_color(item.series), 1.);
                 v.move_to(x as f32 + 1.5, mid as f32);
                 v.line_to((x + 15.) as f32 - 1.5, mid as f32);
                 v.stroke_opts(3., LineCap::Round, LineJoin::Round, 4., 1.);
-                labels.push((x + 20., item.text.clone(), item.hidden));
-                x += 20. + w + 12.;
+                x += 15. + 5.;
+                if checkbox {
+                    let (bx, by) = ((x + 4.) as f32, (mid - CHECK / 2.) as f32);
+                    let c = CHECK as f32;
+                    if item.hidden {
+                        set(v, 0xffffff, 1.);
+                        v.rounded_rect(bx, by, c, c, 2.);
+                        v.fill();
+                        set(v, 0x767676, 1.);
+                        v.rounded_rect(bx + 0.5, by + 0.5, c - 1., c - 1., 2.);
+                        v.stroke(1.);
+                    } else {
+                        set(v, 0x0075ff, 1.);
+                        v.rounded_rect(bx, by, c, c, 2.);
+                        v.fill();
+                        set(v, 0xffffff, 1.);
+                        v.move_to(bx + 2.8, by + 6.8);
+                        v.line_to(bx + 5.4, by + 9.4);
+                        v.line_to(bx + 10.3, by + 3.9);
+                        v.stroke_opts(1.8, LineCap::Butt, LineJoin::Miter, 4., 1.);
+                    }
+                    x += 4. + CHECK + 3. + 5.;
+                }
+                labels.push((x, item.text.clone()));
+                if checkbox {
+                    self.legend_rects.push((item.index, Rect { pos: dvec2(start, y), size: dvec2(x + w - start, LEGEND_LINE) }));
+                }
+                x += w + 12.;
             }
             v.end(cx);
-            for (lx, text, hidden) in labels {
+            for (lx, text) in labels {
                 let t = &mut self.draw_text;
-                t.color = color(if hidden { 0xb3ada3 } else { 0x625c53 });
+                t.color = color(0x625c53);
                 t.text_style.font_size = (14. * PT) as f32;
                 t.draw_abs(cx, dvec2(lx, y + (LEGEND_LINE - 14. * 1.18) / 2.), &text);
             }
+            y += LEGEND_LINE;
+        }
+        if readout {
+            let text = match &reading {
+                Some((_, p)) => p.text.clone(),
+                None if self.probe.is_some() => "当前位置没有可读曲线".to_owned(),
+                None => plot::readout_idle(self.state.exploring, !self.state.hidden.is_empty()).to_owned(),
+            };
+            let t = &mut self.draw_text;
+            t.color = color(0x4d645f);
+            t.text_style.font_size = (11. * PT) as f32;
+            t.draw_abs(cx, dvec2(ox, y + (READOUT_LINE - 11. * 1.18) / 2.), &text);
         }
         self.scene = Some(scene);
         cx.end_turtle();
