@@ -191,9 +191,10 @@ pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         // 72px (row 46 + padding/border).
         let min_row = if rows.len() == 1 { 46. } else { 0. };
         let row_height = (max_ascent + max_descent + 4.).max(min_row);
-        // Web: display lines of a split formula are centred; a single
-        // display formula is left-aligned (.katex-display text-align: left).
-        let align_x = if rows.len() > 1 { 0.5 } else { 0. };
+        // Web: KaTeX's .katex-display > .katex { text-align: center } wins
+        // over the runtime's text-align: left, and the display block spans
+        // the card, so a formula narrower than its (stretched) card is centred.
+        let align_x = 0.5;
         let line = widget(cx, &format!("View{{width:Fill height:{row_height} flow:Right spacing:0 align:Align{{x:{align_x} y:0.5}}}}"))?;
         let mut fragments = Vec::new();
         for (k, latex) in row.iter().enumerate() {

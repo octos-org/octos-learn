@@ -170,6 +170,14 @@ pub fn parser_safe(math: &str) -> String {
     out
 }
 
+/// A text run without its edge spaces, and how many were on each side
+/// (the layout drops them; they become margins instead).
+fn edge_spaces(text: &str) -> (String, usize, usize) {
+    let start = text.len() - text.trim_start().len();
+    let end = text.trim_end().len().max(start);
+    (text[start..end].to_owned(), text[..start].chars().count(), text[end..].chars().count())
+}
+
 /// Rebuild only when the source changes. Unhandled text nesting is shown verbatim
 /// with a visible diagnostic, never passed to MathView where glyphs could vanish.
 pub fn set_formula(cx: &mut Cx, container: &WidgetRef, source: &str) -> Result<(), String> {
@@ -201,11 +209,38 @@ pub fn set_formula_scaled(
         Ok(r) => (r, None),
         Err(e) => (vec![Run::Text(source.into())], Some(e)),
     };
+    // Runs sit in a flow-Right row with their tops aligned; offset each by
+    // (max ascent - own ascent) so the baselines line up like KaTeX's
+    // inline \text. MathView draws its baseline at the layout ascent; a
+    // Label's first baseline sits at the IBM Plex ascender (1.025em) less
+    // the theme's 0.1em fudge.
+    let font = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../makepad/widgets/resources/NewCMMath-Regular.otf"));
+    let ascent = |run: &Run| -> f64 {
+        match run {
+            Run::Math(text) => makepad_latex_math::layout(
+                &makepad_latex_math::parse(&parser_safe(text)),
+                font,
+                (math_size * 1.75) as f32,
+                makepad_latex_math::MathStyle::Display,
+            )
+            .map_or(0., |l| l.ascent as f64),
+            Run::Text(_) => text_size / 0.75 * 0.925,
+        }
+    };
+    let ascents: Vec<f64> = segments.iter().map(ascent).collect();
+    let top = ascents.iter().copied().fold(0., f64::max);
     let mut children = Vec::new();
     for (i, run) in segments.into_iter().enumerate() {
+        let margin = (top - ascents[i]).max(0.);
         let (code,value)=match run {
-            Run::Math(text)=>(format!("use mod.prelude.widgets.*\nreturn MathView{{font_size:{math_size} baseline_offset:0 color:{color}}}"),parser_safe(&text)),
-            Run::Text(text)=>(format!("use mod.prelude.widgets.*\nreturn Label{{padding:0 draw_text.color:{color} draw_text.text_style.font_size:{text_size}}}"),text),
+            Run::Math(text)=>(format!("use mod.prelude.widgets.*\nreturn MathView{{margin:Inset{{top:{margin:.2}}} font_size:{math_size} baseline_offset:0 color:{color}}}"),parser_safe(&text)),
+            // Edge spaces (\text{抛物面: }) would be dropped by the layout:
+            // keep them as 0.25em margins (a word space).
+            Run::Text(text)=>{
+                let (text, before, after) = edge_spaces(&text);
+                let space = text_size / 0.75 * 0.25;
+                (format!("use mod.prelude.widgets.*\nreturn Label{{margin:Inset{{top:{margin:.2} left:{:.2} right:{:.2}}} padding:0 draw_text.color:{color} draw_text.text_style.font_size:{text_size}}}", before as f64 * space, after as f64 * space),text)
+            }
         };
         let widget = cx.with_vm(|vm| {
             let value = vm
