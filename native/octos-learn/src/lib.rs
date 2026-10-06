@@ -7,7 +7,7 @@ use makepad_widgets::*;
 use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 mod svg_image;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
 mod course_pack;
@@ -195,11 +195,30 @@ script_mod! {
                         // .learning-variable-controls.is-world), drawn by SpatialBoard.
                         // Course outline trigger (web .oll-course-outline-trigger:
                         // 48px rounded square above the teacher avatar).
-                        // DIFF: the outline panel is not migrated; click shows a toast.
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
                             outline_trigger := Button { width: 48 height: 48 text: "" icon_walk: Walk{width: 15 height: 15}
                                 draw_icon +: { color: #466d78 }
                                 draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 16 border_size: 1 border_color: #cfe2e3 } }
+                        }
+                        // Course outline panel (web .oll-course-outline-panel: 344 wide,
+                        // above the trigger, right edge 24px from the window).
+                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 264}
+                            outline_panel := RoundedView { visible: false width: 344 height: Fit flow: Down
+                                draw_bg +: { color: #fffdf8f7 border_radius: 20 border_size: 1 border_color: #453d3221 }
+                                View { width: Fill height: Fit flow: Right align: Align{y: 1.} padding: Inset{left: 20 right: 20 top: 20 bottom: 14}
+                                    View { width: Fill height: Fit flow: Down
+                                        Label { width: Fit padding: 0 text: "COURSE OUTLINE" draw_text.text_style.font_size: 7.5 draw_text.color: #8d8275 }
+                                        Label { width: Fit padding: Inset{top: 2} text: "本课目录" draw_text.text_style: theme.font_bold{font_size: 15.75} draw_text.color: #2e2a25 }
+                                    }
+                                    outline_count := Label { width: Fit padding: 0 text: "" draw_text.text_style.font_size: 6.75 draw_text.color: #877c6e }
+                                }
+                                View { width: Fill height: 1 show_bg: true draw_bg.color: #433c3317 }
+                                outline_list := View { width: Fill height: Fit flow: Down padding: Inset{left: 10 right: 10 top: 8 bottom: 12} }
+                                View { width: Fill height: 1 show_bg: true draw_bg.color: #433c3314 }
+                                View { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 18 right: 18 top: 10 bottom: 12}
+                                    Label { width: Fit padding: 0 text: "点击查看完成画面，使用播放按钮从该段重新讲解" draw_text.text_style.font_size: 6.75 draw_text.color: #948a7d }
+                                }
+                            }
                         }
                         // Teacher (web .octos-teacher: right 24 bottom 98).
                         View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
@@ -447,6 +466,15 @@ pub struct App {
     pen_width: f64,
     #[rust]
     narration_muted: bool,
+    /// Course outline panel (web OllCourseOutline).
+    #[rust]
+    outline_open: bool,
+    #[rust]
+    outline_expanded: BTreeSet<String>,
+    #[rust]
+    outline_buttons: Vec<(WidgetRef, OutlineAction)>,
+    #[rust]
+    outline_signature: String,
     /// Recorded narration clips of the open course: Beat id -> audio file.
     #[rust]
     narration_audio: BTreeMap<String, std::path::PathBuf>,
@@ -630,6 +658,18 @@ fn bake_svg_classes(svg: &str) -> String {
 /// Lucide icons (24x24 stroke icons extracted from the web app's
 /// lucide-react package) rendered through Button::draw_icon; the script
 /// sets draw_icon.color so strokes tint to the control color.
+/// Course outline panel actions (web OllCourseOutline buttons).
+#[derive(Clone, Debug, PartialEq)]
+enum OutlineAction {
+    ViewStep(String),
+    PlayStep(String),
+    Toggle(String),
+    ViewBeat(String),
+    PlayBeat(String),
+}
+
+const ICON_CHEVRON_DOWN: &str = include_str!("../assets/icons/chevron-down.svg");
+const ICON_CHEVRON_RIGHT: &str = include_str!("../assets/icons/chevron-right.svg");
 /// Web LESSON_COMPLETION_SPEECH.
 const LESSON_COMPLETION_SPEECH: &str = "这节课讲完了，你可以缩放白板回顾刚才的内容。";
 const ICON_PLAY: &str = include_str!("../assets/icons/play.svg");
@@ -1325,6 +1365,157 @@ impl App {
             self.refresh(cx);
         }
     }
+    /// Rebuild the outline panel (web OllCourseOutline) for the current
+    /// lesson position; cheap no-op when nothing changed.
+    fn rebuild_outline(&mut self, cx: &mut Cx) {
+        self.ui.widget(cx, ids!(outline_panel)).set_visible(cx, self.outline_open);
+        let Some(session) = self.player.as_ref().filter(|_| self.outline_open) else {
+            self.outline_signature.clear();
+            return;
+        };
+        let outline = session.outline();
+        let (step_now, beat_now) = session.current_ids();
+        let cursor = session.cursor;
+        let signature = format!("{cursor}|{step_now:?}|{beat_now:?}|{:?}", self.outline_expanded);
+        if signature == self.outline_signature {
+            return;
+        }
+        self.outline_signature = signature;
+        self.ui.label(cx, ids!(outline_count)).set_text(cx, &format!("{} 个步骤", outline.len()));
+        self.outline_buttons.clear();
+        let mut rows = Vec::new();
+        let state = |id: &str, end: usize, current: &Option<String>| {
+            if current.as_deref() == Some(id) {
+                "current"
+            } else if cursor >= end {
+                "completed"
+            } else {
+                "upcoming"
+            }
+        };
+        // Topic header (packaged courses have one topic: the lesson).
+        let topic = board_view::widget(cx, &format!(
+            "View{{width:Fill height:Fit flow:Right spacing:9 align:Align{{y:1.}} padding:Inset{{left:11 right:11 top:10 bottom:7}}
+                Label{{width:Fit padding:0 text:\"01\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#99a6a3}}
+                Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#6d6255}}}}",
+            session.board.title.replace(['"', '\\'], " ")
+        ));
+        if let Ok(t) = topic {
+            rows.push(t);
+        }
+        for (index, step) in outline.iter().enumerate() {
+            let st = state(&step.id, step.end_cursor, &step_now);
+            let (circle_bg, circle_border, circle_text) = match st {
+                "current" => ("#17829a", "#17829a", "#ffffff"),
+                "completed" => ("#deefeab8", "#47857c5c", "#4d847d"),
+                _ => ("#0000", "#c9c2b8", "#8e8478"),
+            };
+            let status = if st == "completed" { "✓".to_owned() } else { (index + 1).to_string() };
+            let expanded = self.outline_expanded.contains(&step.id);
+            let row_bg = if st == "current" { "#e0f2f1d4" } else { "#0000" };
+            let code = format!(
+                "RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{top:3}} draw_bg +: {{color:{row_bg} border_radius:13}}
+                    View{{width:Fill height:Fit flow:Overlay
+                        View{{width:3 height:43 show_bg:true draw_bg.color:{}}}
+                        View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:5 right:5 top:3 bottom:3}}
+                            main := Button{{width:Fill height:37 text:\"\" padding:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
+                                flow:Overlay}}
+                            expand := Button{{width:28 height:28 text:\"\" padding:0 icon_walk:Walk{{width:14 height:14}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:8 border_size:0 border_color:#0000}}}}{}
+                            play := Button{{width:28 height:28 text:\"▶\" padding:0 draw_text.text_style.font_size:7 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:8 border_size:0 border_color:#0000}}}}
+                        }}
+                        View{{width:Fill height:43 flow:Right spacing:10 align:Align{{y:0.5}} padding:Inset{{left:11 right:66}}
+                            RoundedView{{width:20 height:20 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:10 border_size:1 border_color:{circle_border}}}
+                                Label{{width:Fit padding:0 text:\"{status}\" draw_text.text_style.font_size:7.5 draw_text.color:{circle_text}}}}}
+                            Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#3f3932}}
+                        }}
+                    }}
+                    beats := View{{width:Fill height:Fit flow:Down margin:Inset{{left:39 right:7 bottom:7}}}}
+                }}",
+                if st == "current" { "#17829a" } else { "#0000" },
+                "",
+                step.title.replace(['"', '\\'], " ")
+            );
+            let Ok(row) = board_view::widget(cx, &code) else { continue };
+            if let Some(mut b) = row.widget(cx, ids!(expand)).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(if expanded { ICON_CHEVRON_DOWN } else { ICON_CHEVRON_RIGHT });
+            }
+            self.outline_buttons.push((row.widget(cx, ids!(main)), OutlineAction::ViewStep(step.id.clone())));
+            self.outline_buttons.push((row.widget(cx, ids!(expand)), OutlineAction::Toggle(step.id.clone())));
+            self.outline_buttons.push((row.widget(cx, ids!(play)), OutlineAction::PlayStep(step.id.clone())));
+            if expanded {
+                let mut beats = Vec::new();
+                for (bi, beat) in step.beats.iter().enumerate() {
+                    let bs = state(&beat.id, beat.end_cursor, &beat_now);
+                    let code = format!(
+                        "RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{} border_radius:9}}
+                            View{{width:Fill height:Fit flow:Right spacing:5 padding:Inset{{left:16 right:29 top:6 bottom:6}}
+                                Label{{width:18 padding:0 text:\"{}\" draw_text.text_style.font_size:7.5 draw_text.color:#a49a8d}}
+                                Label{{width:Fill padding:0 text:\"{}\" draw_text.wrap:Words draw_text.text_style.font_size:7.5 draw_text.color:#71685d}}
+                            }}
+                            View{{width:Fill height:Fill flow:Right align:Align{{y:0.5}}
+                                main := Button{{width:Fill height:Fill text:\"\" padding:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
+                                play := Button{{width:25 height:25 text:\"▶\" padding:0 draw_text.text_style.font_size:6 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:8 border_size:0 border_color:#0000}}}}
+                            }}
+                        }}",
+                        if bs == "current" { "#ffffffad" } else { "#0000" },
+                        bi + 1,
+                        beat.title.replace(['"', '\\'], " ")
+                    );
+                    if let Ok(b) = board_view::widget(cx, &code) {
+                        self.outline_buttons.push((b.widget(cx, ids!(main)), OutlineAction::ViewBeat(beat.id.clone())));
+                        self.outline_buttons.push((b.widget(cx, ids!(play)), OutlineAction::PlayBeat(beat.id.clone())));
+                        beats.push(b);
+                    }
+                }
+                let _ = board_view::children(cx, &row.widget(cx, ids!(beats)), beats);
+            }
+            rows.push(row);
+        }
+        let list = self.ui.widget(cx, ids!(outline_list));
+        let _ = board_view::children(cx, &list, rows);
+        self.ui.redraw(cx);
+    }
+    /// Web viewStep / playStep / viewBeat / playBeat: seek to the end (view,
+    /// paused) or the start (play) of a step or Beat; the camera shows its
+    /// focus targets.
+    fn outline_action(&mut self, cx: &mut Cx, action: OutlineAction) {
+        if let OutlineAction::Toggle(id) = &action {
+            if !self.outline_expanded.remove(id) {
+                self.outline_expanded.insert(id.clone());
+            }
+            self.rebuild_outline(cx);
+            return;
+        }
+        let Some(session) = self.player.as_mut() else { return };
+        let outline = session.outline();
+        let step = |id: &str| outline.iter().find(|s| s.id == id);
+        let beat = |id: &str| outline.iter().flat_map(|s| &s.beats).find(|b| b.id == id);
+        let (cursor, focus, play) = match &action {
+            OutlineAction::ViewStep(id) => step(id).map(|s| (s.end_cursor, s.focus_targets.clone(), false)),
+            OutlineAction::PlayStep(id) => step(id).map(|s| (s.start_cursor, s.focus_targets.clone(), true)),
+            OutlineAction::ViewBeat(id) => beat(id).map(|b| (b.end_cursor, b.focus_targets.clone(), false)),
+            OutlineAction::PlayBeat(id) => beat(id).map(|b| (b.start_cursor, b.focus_targets.clone(), true)),
+            OutlineAction::Toggle(_) => None,
+        }
+        .unwrap_or((session.cursor, vec![], false));
+        self.awaiting_restore = false;
+        if let Err(e) = session.seek(cursor, focus.clone()) {
+            self.error = e;
+        }
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.focus_after_update(focus);
+        }
+        if play {
+            if let Err(e) = session.play() {
+                self.error = e;
+            }
+        }
+        self.outline_open = false;
+        self.rebuild_outline(cx);
+        self.stop_narration_audio(cx);
+        self.save_progress(cx);
+        self.refresh(cx);
+    }
     fn stop_narration_audio(&mut self, cx: &mut Cx) {
         if let Some((_, id, ..)) = self.audio_now.take() {
             cx.cleanup_video_playback_resources(id);
@@ -1430,6 +1621,9 @@ impl App {
         }
     }
     fn refresh(&mut self, cx: &mut Cx) {
+        if self.outline_open {
+            self.rebuild_outline(cx);
+        }
         if let Some(session) = &self.player {
             let p = &session.board;
             self.ui.label(cx, ids!(course_title)).set_text(cx, &p.title);
@@ -1729,7 +1923,17 @@ impl AppMain for App {
                 self.refresh(cx);
             }
             if self.ui.button(cx, ids!(replay_topic)).clicked(actions) {
-                self.toast(cx, "重播 Topic 尚未迁移，仅网页版可用");
+                // Web restart: back to the start of the lesson and play.
+                self.awaiting_restore = false;
+                if let Some(session) = &mut self.player {
+                    if let Err(e) = session.restart() {
+                        self.error = e;
+                    }
+                }
+                self.stop_narration_audio(cx);
+                self.last_tick = Some(Instant::now());
+                self.save_progress(cx);
+                self.refresh(cx);
             }
             if self.ui.button(cx, ids!(start_interaction)).clicked(actions) {
                 self.course_preview = false;
@@ -1751,7 +1955,16 @@ impl AppMain for App {
                 self.toast(cx, "语音与提问尚未迁移，仅网页版可用");
             }
             if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
-                self.toast(cx, "课程目录尚未迁移，仅网页版可用");
+                self.outline_open = !self.outline_open;
+                self.rebuild_outline(cx);
+            }
+            let chosen = self
+                .outline_buttons
+                .iter()
+                .find(|(w, _)| w.as_button().clicked(actions))
+                .map(|(_, a)| a.clone());
+            if let Some(action) = chosen {
+                self.outline_action(cx, action);
             }
             // Handwriting toolbar (dynamic buttons, INK_TOOLS order).
             let ink_clicked = |tool: usize, buttons: &[WidgetRef], actions: &Actions| {
@@ -1816,6 +2029,16 @@ impl AppMain for App {
             && self.completed_at.is_some_and(|t| (6.0..6.6).contains(&t.elapsed().as_secs_f64()));
         if (self.timer.is_event(event).is_some() && was_playing) || control_event || prompt_expired {
             self.refresh(cx);
+        }
+        // Web OllCourseOutline: a pointer down outside the panel closes it.
+        if self.outline_open {
+            if let Event::MouseDown(e) = event {
+                let inside = |id: LiveId, ui: &WidgetRef, cx: &mut Cx| ui.widget(cx, &[id]).area().rect(cx).contains(e.abs);
+                if !inside(live_id!(outline_panel), &self.ui, cx) && !inside(live_id!(outline_trigger), &self.ui, cx) {
+                    self.outline_open = false;
+                    self.rebuild_outline(cx);
+                }
+            }
         }
         // Launcher pills/cards are plain views: hit-test them before the UI
         // tree so the scroll view does not capture the finger first.

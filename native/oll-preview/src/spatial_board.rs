@@ -215,6 +215,9 @@ pub struct SpatialBoard {
     /// Angle controls in world coordinates (debug snapshots), refreshed on draw.
     #[rust]
     angle_controls: Vec<Value>,
+    /// Targets to frame once the next state is laid out.
+    #[rust]
+    pending_focus: Option<Vec<String>>,
     /// Active angle-control drag: node id, control, last value.
     #[rust]
     geometry_drag: Option<(String, oll_runtime::geometry::AngleControl, f64)>,
@@ -316,6 +319,11 @@ impl SpatialBoard {
     }
     pub fn take_control_requests(&mut self) -> Vec<ControlRequest> {
         std::mem::take(&mut self.control_requests)
+    }
+    /// Frame these targets after the next state update (web host attention
+    /// focus, e.g. after an outline seek).
+    pub fn focus_after_update(&mut self, targets: Vec<String>) {
+        self.pending_focus = Some(targets);
     }
     pub fn take_task_requests(&mut self) -> Vec<TaskRequest> {
         std::mem::take(&mut self.task_requests)
@@ -879,6 +887,13 @@ impl SpatialBoard {
             }
             to
         };
+        let mut planned = planned;
+        if let Some(targets) = self.pending_focus.take() {
+            let view = self.camera_view(&panels);
+            if let Some(to) = policy.focus_targets(p, &self.geometry, &targets, planned.unwrap_or(current), &view) {
+                planned = Some(to);
+            }
+        }
         self.policy = policy;
         if restart.is_some() {
             // Same operation, measured sizes: the decision replaces the one
