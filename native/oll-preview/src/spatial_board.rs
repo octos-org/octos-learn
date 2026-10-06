@@ -1958,28 +1958,47 @@ impl Widget for SpatialBoard {
         }
         self.draw_vector.begin();
         self.draw_card_states();
-        self.draw_vector.set_color(0.48, 0.74, 0.69, 1.);
+        // Web .connection-line: #6e8d86, width 2, corners rounded with
+        // quadratic curves (routePath CORNER_RADIUS 8), marker-end arrowhead
+        // M0,0 L8,4 L0,8 at refX 7 / refY 4 in stroke-width units (×2).
+        self.draw_vector.set_color_hex(0x6e8d86, 1.);
         for route in &self.routes {
-            if let Some(&(x, y)) = route.points.first() {
-                self.draw_vector.move_to(x as f32, y as f32);
-                for &(x, y) in route.points.iter().skip(1) {
-                    self.draw_vector.line_to(x as f32, y as f32);
+            let mut points: Vec<(f64, f64)> = Vec::new();
+            for &p in &route.points {
+                if points.last().is_none_or(|q| (q.0 - p.0).hypot(q.1 - p.1) > 1e-6) {
+                    points.push(p);
                 }
+            }
+            let Some(&(x, y)) = points.first() else { continue };
+            let dist = |a: (f64, f64), b: (f64, f64)| (b.0 - a.0).hypot(b.1 - a.1);
+            let toward = |from: (f64, f64), to: (f64, f64), d: f64| {
+                let l = dist(from, to).max(1e-9);
+                (from.0 + (to.0 - from.0) * d / l, from.1 + (to.1 - from.1) * d / l)
+            };
+            self.draw_vector.move_to(x as f32, y as f32);
+            for i in 1..points.len().saturating_sub(1) {
+                let (prior, corner, next) = (points[i - 1], points[i], points[i + 1]);
+                let r = 8f64.min(dist(prior, corner) / 2.).min(dist(corner, next) / 2.);
+                let (b, a) = (toward(corner, prior, r), toward(corner, next, r));
+                self.draw_vector.line_to(b.0 as f32, b.1 as f32);
+                self.draw_vector.quad_to(corner.0 as f32, corner.1 as f32, a.0 as f32, a.1 as f32);
+            }
+            if points.len() > 1 {
+                let end = points[points.len() - 1];
+                self.draw_vector.line_to(end.0 as f32, end.1 as f32);
                 self.draw_vector.stroke(2.);
-                if route.points.len() > 1 {
-                    let end = route.points[route.points.len() - 1];
-                    let before = route.points[route.points.len() - 2];
-                    let angle = (end.1 - before.1).atan2(end.0 - before.0);
-                    self.draw_vector.move_to(end.0 as f32, end.1 as f32);
-                    for offset in [-0.48_f64, 0.48] {
-                        self.draw_vector.line_to(
-                            (end.0 - 10. * (angle + offset).cos()) as f32,
-                            (end.1 - 10. * (angle + offset).sin()) as f32,
-                        );
-                    }
-                    self.draw_vector.close();
-                    self.draw_vector.fill();
-                }
+                let before = points[points.len() - 2];
+                let l = dist(before, end).max(1e-9);
+                let (dx, dy) = ((end.0 - before.0) / l, (end.1 - before.1) / l);
+                let tip = (end.0 + 2. * dx, end.1 + 2. * dy);
+                let base = (end.0 - 14. * dx, end.1 - 14. * dy);
+                self.draw_vector.move_to(tip.0 as f32, tip.1 as f32);
+                self.draw_vector.line_to((base.0 - 8. * dy) as f32, (base.1 + 8. * dx) as f32);
+                self.draw_vector.line_to((base.0 + 8. * dy) as f32, (base.1 - 8. * dx) as f32);
+                self.draw_vector.close();
+                self.draw_vector.fill();
+            } else {
+                self.draw_vector.stroke(2.);
             }
         }
         if let Some(t) = self.pointer_target.as_ref() {
