@@ -191,7 +191,7 @@ script_mod! {
                                 // Buttons are built in Rust (rebuild_ink_tools) so the
                                 // browse/pen active state can be highlighted per mode.
                                 ink_tools := View { width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} }
-                                ink_status := Label { width: Fit text: "0 项笔迹 · 已保存" draw_text.text_style.font_size: 10 draw_text.color: #6e766f margin: Inset{left: 8 right: 8} }
+                                ink_status := Label { width: Fit padding: 0 text: "0 项笔迹 · 已保存" draw_text.text_style.font_size: 7.5 draw_text.color: #6e766f margin: Inset{left: 8 right: 8} }
                             }
                         }
                         // Variable controls live in the board world (web
@@ -283,9 +283,11 @@ script_mod! {
                                     draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 6.5 border_size: 0 border_color: #0000 } }
                                 ask_mic := Button { width: 44 height: 44 text: "" icon_walk: Walk{width: 21 height: 21}
                                     draw_icon +: { color: #ffffff }
-                                    draw_bg +: { color: #167794 color_hover: #12627c color_down: #12627c border_radius: 6.5 border_size: 0 border_color: #0000 } }
-                                Label { width: Fill text: "问一个问题，或告诉 Octos 你卡在哪里…"
-                                    draw_text.text_style.font_size: 14 draw_text.color: #938a7e margin: Inset{left: 12} }
+                                    // Web .learning-mic-button:disabled (voice unavailable): #167794 at opacity .38.
+                                    draw_bg +: { color: #a6cad2 color_hover: #a6cad2 color_down: #a6cad2 border_radius: 6.5 border_size: 0 border_color: #0000 } }
+                                // Web placeholder: 14px #938a7e, input padding 0 12px.
+                                Label { width: Fill padding: 0 text: "问一个问题，或告诉 Octos 你卡在哪里…"
+                                    draw_text.text_style.font_size: 10.5 draw_text.color: #938a7e margin: Inset{left: 12} }
                                 ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
                                     draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 6.5 border_size: 0 border_color: #0000 } }
@@ -1211,7 +1213,7 @@ impl App {
                 format!(
                     "Button{{height:36 text:\"{label}\" padding:Inset{{left:9 right:9}}
                         draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0 border_color:#0000}}
-                        draw_text.color:{tint} draw_text.text_style.font_size:10}}"
+                        draw_text.color:{tint} draw_text.text_style.font_size:7.5}}"
                 )
             } else {
                 format!(
