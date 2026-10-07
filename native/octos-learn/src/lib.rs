@@ -352,6 +352,10 @@ script_mod! {
                                 draw_bg +: { color: #fffdf8e0 border_radius: 8 border_size: 0.5 border_color: #255c6c24 }
                                 camera_live := View { width: 192 height: Fit flow: Overlay
                                     camera_image := Image { width: 192 height: Fit fit: ImageFit.Horizontal }
+                                    // Web .learning-camera-frame-settings: top-right 30px.
+                                    View { width: Fill height: Fit flow: Right align: Align{x: 1.} padding: 6
+                                        camera_frame_settings := Button { width: 30 height: 30 text: "" margin: 0 padding: 0 icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #ffffff }
+                                            draw_bg +: { color: #x182326a8 color_hover: #x0f6987e0 color_down: #x0f6987e0 border_radius: 4.5 border_size: 0.5 border_color: #ffffff6b } } }
                                     View { width: Fill height: Fill flow: Down align: Align{y: 1.} padding: 5
                                         RoundedView { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 5 right: 5 top: 3 bottom: 3}
                                             draw_bg +: { color: #x1924269e border_radius: 3.5 }
@@ -364,6 +368,121 @@ script_mod! {
                                         RoundedView { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 5 right: 5 top: 3 bottom: 3}
                                             draw_bg +: { color: #x1924269e border_radius: 3.5 }
                                             Label { width: Fit padding: 0 text: "本轮已发送" draw_text.color: #ffffff draw_text.text_style.font_size: 6.75 } }
+                                    }
+                                }
+                            }
+                        }
+                        // Camera framing dialog (web CameraSettingsDialog).
+                        camera_dialog := SolidView { visible: false width: Fill height: Fill align: Align{x: 0.5 y: 0.5} draw_bg.color: #x221f1b6b
+                            RoundedView { width: 940 height: Fit flow: Down draw_bg +: { color: #fffdf8 border_radius: 13 border_size: 0.5 border_color: #x32484c33 }
+                                View { width: Fill height: Fit flow: Right padding: Inset{left: 24 right: 24 top: 22 bottom: 18}
+                                    View { width: Fill height: Fit flow: Down spacing: 4
+                                        Label { width: Fit padding: 0 text: "CAMERA FRAMING" draw_text.text_style: theme.font_code{font_size: 7.5} draw_text.color: #7a7064 }
+                                        Label { width: Fit padding: 0 text: "调整老师看到的画面" draw_text.text_style: theme.font_bold{font_size: 16.5} draw_text.color: #2f2a24 }
+                                        Label { width: Fit padding: 0 text: "这里的方向、缩放和取景会原样应用到发送给老师的图片。" draw_text.text_style.font_size: 9.75 draw_text.color: #6c645a }
+                                    }
+                                    camera_dialog_close := Button { width: 40 height: 40 text: "" margin: 0 icon_walk: Walk{width: 22 height: 22} draw_icon +: { color: #5e574f }
+                                        draw_bg +: { color: #0000 color_hover: #f0ebe2 color_down: #e6e0d6 border_radius: 6 border_size: 0 border_color: #0000 } }
+                                }
+                                SolidView { width: Fill height: 1 draw_bg.color: #x463e351a }
+                                View { width: Fill height: Fit flow: Right spacing: 22 padding: Inset{left: 24 right: 24 top: 22 bottom: 24}
+                                    RoundedView { width: Fill height: 400 flow: Overlay align: Align{x: 0.5 y: 0.5} draw_bg +: { color: #202625 border_radius: 10 }
+                                        View { width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                                            camera_dialog_image := Image { width: 520 height: 380 fit: ImageFit.Smallest } }
+                                        View { width: Fill height: Fill padding: 14
+                                            RoundedView { width: Fit height: Fit flow: Right spacing: 8 padding: Inset{left: 10 right: 10 top: 7 bottom: 7} draw_bg +: { color: #x0f1413ad border_radius: 5 }
+                                                Label { width: Fit padding: 0 text: "老师看到的画面" draw_text.text_style: theme.font_bold{font_size: 9} draw_text.color: #ffffff }
+                                                camera_dialog_meta := Label { width: Fit padding: 0 text: "0° · 1.0×" draw_text.text_style.font_size: 9 draw_text.color: #ffffffcc } } }
+                                    }
+                                    View { width: 324 height: Fit flow: Down spacing: 16
+                                        View { width: Fill height: Fit flow: Right spacing: 8
+                                            camera_dialog_left := Button { width: Fill height: 64 text: "左转" flow: Down spacing: 5 align: Align{x: 0.5 y: 0.5} margin: 0
+                                                icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #315f69 }
+                                                draw_text.color: #47413a draw_text.text_style.font_size: 9
+                                                draw_bg +: { color: #f2f6f3 color_hover: #e6efec color_down: #dbe8e4 border_radius: 7 border_size: 0.5 border_color: #x275b6626 } }
+                                            camera_dialog_right := Button { width: Fill height: 64 text: "右转" flow: Down spacing: 5 align: Align{x: 0.5 y: 0.5} margin: 0
+                                                icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #315f69 }
+                                                draw_text.color: #47413a draw_text.text_style.font_size: 9
+                                                draw_bg +: { color: #f2f6f3 color_hover: #e6efec color_down: #dbe8e4 border_radius: 7 border_size: 0.5 border_color: #x275b6626 } }
+                                            camera_dialog_mirror := Button { width: Fill height: 64 text: "镜像" flow: Down spacing: 5 align: Align{x: 0.5 y: 0.5} margin: 0
+                                                icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #315f69 }
+                                                draw_text.color: #47413a draw_text.text_style.font_size: 9
+                                                draw_bg +: { color: #f2f6f3 color_hover: #e6efec color_down: #dbe8e4 border_radius: 7 border_size: 0.5 border_color: #x275b6626 } }
+                                        }
+                                        View { width: Fill height: 46 flow: Right spacing: 10 align: Align{y: 0.5}
+                                            Label { width: 40 padding: 0 text: "缩放" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                            camera_dialog_zoom := SliderMinimal { width: Fill height: 30 text: "" min: 1.0 max: 3.0 step: 0.1 margin: 0
+                                                draw_bg +: { offset_y: 0.
+                                                    // Web <input type=range>: 4px track, teal fill, round thumb.
+                                                    pixel: fn() {
+                                                        let sdf = Sdf2d.viewport(self.pos * self.rect_size)
+                                                        let cy = self.rect_size.y * 0.5
+                                                        let r = 8.0
+                                                        let w = self.rect_size.x - r * 2.0
+                                                        sdf.box(r, cy - 2.0, w, 4.0, 1.0)
+                                                        sdf.fill(#d9d3c8)
+                                                        sdf.box(r, cy - 2.0, w * self.slide_pos, 4.0, 1.0)
+                                                        sdf.fill(#1f7a85)
+                                                        sdf.circle(r + w * self.slide_pos, cy, r - 1.0)
+                                                        sdf.fill_keep(#ffffff)
+                                                        sdf.stroke(#1f7a85, 1.5)
+                                                        return sdf.result
+                                                    } } }
+                                            camera_dialog_zoom_value := Label { width: 40 padding: 0 text: "1.0×" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                        }
+                                        View { width: Fill height: 46 flow: Right spacing: 10 align: Align{y: 0.5}
+                                            Label { width: 40 padding: 0 text: "左右" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                            camera_dialog_x := SliderMinimal { width: Fill height: 30 text: "" min: -1.0 max: 1.0 step: 0.05 margin: 0
+                                                draw_bg +: { offset_y: 0.
+                                                    // Web <input type=range>: 4px track, teal fill, round thumb.
+                                                    pixel: fn() {
+                                                        let sdf = Sdf2d.viewport(self.pos * self.rect_size)
+                                                        let cy = self.rect_size.y * 0.5
+                                                        let r = 8.0
+                                                        let w = self.rect_size.x - r * 2.0
+                                                        sdf.box(r, cy - 2.0, w, 4.0, 1.0)
+                                                        sdf.fill(#d9d3c8)
+                                                        sdf.box(r, cy - 2.0, w * self.slide_pos, 4.0, 1.0)
+                                                        sdf.fill(#1f7a85)
+                                                        sdf.circle(r + w * self.slide_pos, cy, r - 1.0)
+                                                        sdf.fill_keep(#ffffff)
+                                                        sdf.stroke(#1f7a85, 1.5)
+                                                        return sdf.result
+                                                    } } }
+                                            camera_dialog_x_value := Label { width: 40 padding: 0 text: "0" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                        }
+                                        View { width: Fill height: 46 flow: Right spacing: 10 align: Align{y: 0.5}
+                                            Label { width: 40 padding: 0 text: "上下" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                            camera_dialog_y := SliderMinimal { width: Fill height: 30 text: "" min: -1.0 max: 1.0 step: 0.05 margin: 0
+                                                draw_bg +: { offset_y: 0.
+                                                    // Web <input type=range>: 4px track, teal fill, round thumb.
+                                                    pixel: fn() {
+                                                        let sdf = Sdf2d.viewport(self.pos * self.rect_size)
+                                                        let cy = self.rect_size.y * 0.5
+                                                        let r = 8.0
+                                                        let w = self.rect_size.x - r * 2.0
+                                                        sdf.box(r, cy - 2.0, w, 4.0, 1.0)
+                                                        sdf.fill(#d9d3c8)
+                                                        sdf.box(r, cy - 2.0, w * self.slide_pos, 4.0, 1.0)
+                                                        sdf.fill(#1f7a85)
+                                                        sdf.circle(r + w * self.slide_pos, cy, r - 1.0)
+                                                        sdf.fill_keep(#ffffff)
+                                                        sdf.stroke(#1f7a85, 1.5)
+                                                        return sdf.result
+                                                    } } }
+                                            camera_dialog_y_value := Label { width: 40 padding: 0 text: "0" draw_text.text_style.font_size: 9 draw_text.color: #5e574f }
+                                        }
+                                        View { width: Fill height: Fit flow: Overlay
+                                            RoundedView { width: Fill height: 68 flow: Right align: Align{y: 0.5} padding: Inset{left: 14 right: 14} draw_bg +: { color: #f2f6f3 border_radius: 7.5 border_size: 0.5 border_color: #x275b6626 }
+                                                View { width: Fill height: Fit flow: Down spacing: 3
+                                                    Label { width: Fit padding: 0 text: "试卷清晰模式" draw_text.text_style: theme.font_bold{font_size: 10.5} draw_text.color: #47413a }
+                                                    Label { width: Fit padding: 0 text: "提高发送分辨率与文字清晰度" draw_text.text_style.font_size: 9 draw_text.color: #6c645a } }
+                                                camera_dialog_doc_state := Label { width: Fit padding: 0 text: "已开启" draw_text.text_style: theme.font_bold{font_size: 9.75} draw_text.color: #1f7a85 } }
+                                            camera_dialog_doc := Button { width: Fill height: 68 text: "" margin: 0 draw_bg +: { color: #0000 color_hover: #0000000a color_down: #00000014 border_radius: 7.5 border_size: 0 border_color: #0000 } }
+                                        }
+                                        camera_dialog_reset := Button { width: Fill height: 46 text: "恢复默认取景" spacing: 7 margin: 0 icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #5e574f }
+                                            draw_text.color: #5e574f draw_text.text_style.font_size: 10.5
+                                            draw_bg +: { color: #0000 color_hover: #f0ebe2 color_down: #e6e0d6 border_radius: 7 border_size: 0.5 border_color: #x463e3533 } }
                                     }
                                 }
                             }
@@ -1023,6 +1142,13 @@ pub struct App {
     camera: Camera,
     #[rust]
     camera_textures: Option<(Texture, Texture)>,
+    /// Camera framing dialog (web CameraSettingsDialog) and its preview.
+    #[rust]
+    camera_dialog_open: bool,
+    #[rust]
+    camera_dialog_texture: Option<Texture>,
+    #[rust]
+    camera_dialog_poll: u32,
     /// Ink selection questions (web selection toolbar + 问小章鱼 panel).
     #[rust]
     selection: Option<ink_question::SelectionState>,
@@ -1306,13 +1432,19 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 17] = [
+    let icons: [(LiveId, &str); 23] = [
         (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
         (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
         (live_id!(sel_ask), include_str!("../assets/icons/message-circle.svg")),
+        (live_id!(camera_frame_settings), include_str!("../assets/icons/settings-2.svg")),
+        (live_id!(camera_dialog_close), include_str!("../assets/icons/x.svg")),
+        (live_id!(camera_dialog_left), include_str!("../assets/icons/rotate-ccw.svg")),
+        (live_id!(camera_dialog_right), include_str!("../assets/icons/rotate-cw.svg")),
+        (live_id!(camera_dialog_mirror), include_str!("../assets/icons/flip-horizontal-2.svg")),
+        (live_id!(camera_dialog_reset), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(launcher_settings), include_str!("../assets/icons/settings.svg")),
         (live_id!(settings_back), include_str!("../assets/icons/arrow-left.svg")),
         (live_id!(settings_gear), include_str!("../assets/icons/settings.svg")),
@@ -2520,10 +2652,105 @@ impl App {
         }
         if !on {
             self.ui.widget(cx, ids!(camera_sent)).set_visible(cx, false);
+            self.set_camera_dialog(cx, false);
         }
         self.ui.widget(cx, ids!(camera_live)).set_visible(cx, on);
         self.ui.widget(cx, ids!(camera_monitor)).set_visible(cx, on);
         self.ui.redraw(cx);
+    }
+    fn camera_settings_path(&self) -> Option<std::path::PathBuf> {
+        self.store.as_ref().map(|s| s.dir().join("camera-frame-settings.json"))
+    }
+    /// Web loadCameraFrameSettings (localStorage there, the data dir here).
+    fn load_camera_settings(&mut self) {
+        let saved = self.camera_settings_path().and_then(|p| std::fs::read(p).ok()).and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok());
+        self.camera.settings = saved.map(|v| camera::FrameSettings::from_json(&v)).unwrap_or_default();
+    }
+    fn update_camera_settings(&mut self, cx: &mut Cx, next: camera::FrameSettings) {
+        self.camera.settings = next.normalized();
+        if let Some(path) = self.camera_settings_path() {
+            let _ = std::fs::create_dir_all(path.parent().unwrap()).and_then(|_| std::fs::write(path, self.camera.settings.to_json().to_string()));
+        }
+        self.camera.refresh_preview();
+        self.sync_camera_dialog(cx);
+    }
+    fn sync_camera_dialog(&mut self, cx: &mut Cx) {
+        let s = self.camera.settings;
+        self.ui.slider(cx, ids!(camera_dialog_zoom)).set_value(cx, s.zoom);
+        self.ui.slider(cx, ids!(camera_dialog_x)).set_value(cx, s.offset_x);
+        self.ui.slider(cx, ids!(camera_dialog_y)).set_value(cx, s.offset_y);
+        self.ui.label(cx, ids!(camera_dialog_zoom_value)).set_text(cx, &format!("{:.1}×", s.zoom));
+        self.ui.label(cx, ids!(camera_dialog_x_value)).set_text(cx, &format!("{}", (s.offset_x * 100.).round()));
+        self.ui.label(cx, ids!(camera_dialog_y_value)).set_text(cx, &format!("{}", (s.offset_y * 100.).round()));
+        self.ui.label(cx, ids!(camera_dialog_meta)).set_text(cx, &format!("{}° · {:.1}×", s.rotation, s.zoom));
+        self.ui.label(cx, ids!(camera_dialog_doc_state)).set_text(cx, if s.document_mode { "已开启" } else { "已关闭" });
+        self.update_camera_dialog_image(cx);
+        self.ui.redraw(cx);
+    }
+    fn update_camera_dialog_image(&mut self, cx: &mut Cx) {
+        let Some((w, h, data)) = self.camera.framed_preview(960) else { return };
+        let texture = self.camera_dialog_texture.get_or_insert_with(|| Texture::new_with_format(cx, TextureFormat::VecBGRAu8_32 { width: 1, height: 1, data: None, updated: TextureUpdated::Full })).clone();
+        texture.set_data_u32(cx, w, h, data);
+        self.ui.image(cx, ids!(camera_dialog_image)).set_texture(cx, Some(texture));
+        self.ui.widget(cx, ids!(camera_dialog)).redraw(cx);
+    }
+    fn set_camera_dialog(&mut self, cx: &mut Cx, open: bool) {
+        self.camera_dialog_open = open;
+        self.ui.widget(cx, ids!(camera_dialog)).set_visible(cx, open);
+        if open {
+            self.sync_camera_dialog(cx);
+        }
+        self.ui.redraw(cx);
+    }
+    fn camera_dialog_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if self.ui.button(cx, ids!(camera_frame_settings)).clicked(actions) {
+            self.set_camera_dialog(cx, true);
+        }
+        if !self.camera_dialog_open {
+            return;
+        }
+        if self.ui.button(cx, ids!(camera_dialog_close)).clicked(actions) {
+            self.set_camera_dialog(cx, false);
+            return;
+        }
+        let mut s = self.camera.settings;
+        let mut changed = false;
+        if self.ui.button(cx, ids!(camera_dialog_left)).clicked(actions) {
+            s.rotation = (s.rotation + 270) % 360;
+            changed = true;
+        }
+        if self.ui.button(cx, ids!(camera_dialog_right)).clicked(actions) {
+            s.rotation = (s.rotation + 90) % 360;
+            changed = true;
+        }
+        if self.ui.button(cx, ids!(camera_dialog_mirror)).clicked(actions) {
+            s.mirror = !s.mirror;
+            changed = true;
+        }
+        if let Some(v) = self.ui.slider(cx, ids!(camera_dialog_zoom)).slided(actions) {
+            s.zoom = v;
+            changed = true;
+        }
+        // Web: the position sliders are disabled at 1× zoom.
+        if let Some(v) = self.ui.slider(cx, ids!(camera_dialog_x)).slided(actions) {
+            s.offset_x = if s.zoom > 1. { v } else { 0. };
+            changed = true;
+        }
+        if let Some(v) = self.ui.slider(cx, ids!(camera_dialog_y)).slided(actions) {
+            s.offset_y = if s.zoom > 1. { v } else { 0. };
+            changed = true;
+        }
+        if self.ui.button(cx, ids!(camera_dialog_doc)).clicked(actions) {
+            s.document_mode = !s.document_mode;
+            changed = true;
+        }
+        if self.ui.button(cx, ids!(camera_dialog_reset)).clicked(actions) {
+            s = camera::FrameSettings::default();
+            changed = true;
+        }
+        if changed {
+            self.update_camera_settings(cx, s);
+        }
     }
     /// Push a BGRA frame into the live (or sent) monitor image.
     fn show_camera_frame(&mut self, cx: &mut Cx, sent: bool, (w, h, data): (usize, usize, Vec<u32>)) {
@@ -2532,7 +2759,7 @@ impl App {
             .camera_textures
             .get_or_insert_with(|| (Texture::new_with_format(cx, new()), Texture::new_with_format(cx, new())));
         let texture = if sent { textures.1.clone() } else { textures.0.clone() };
-        *texture.get_format(cx) = TextureFormat::VecBGRAu8_32 { width: w, height: h, data: Some(data), updated: TextureUpdated::Full };
+        texture.set_data_u32(cx, w, h, data);
         let image = self.ui.image(cx, if sent { ids!(camera_sent_image) } else { ids!(camera_image) });
         image.set_texture(cx, Some(texture));
         if sent {
@@ -4339,6 +4566,7 @@ impl AppMain for App {
             }
             load_icons(&self.ui, cx);
             self.load_teacher_skin(cx);
+            self.load_camera_settings();
         }
         self.poll_storage(cx);
         let control_event = matches!(event, Event::Actions(_));
@@ -4367,6 +4595,12 @@ impl AppMain for App {
         if self.timer.is_event(event).is_some() && self.camera.active {
             if let Some(frame) = self.camera.preview() {
                 self.show_camera_frame(cx, false, frame);
+                if self.camera_dialog_open {
+                    self.camera_dialog_poll = (self.camera_dialog_poll + 1) % 3;
+                    if self.camera_dialog_poll == 0 {
+                        self.update_camera_dialog_image(cx);
+                    }
+                }
             }
         }
         if let Event::AudioDevices(devices) = event {
@@ -4609,6 +4843,7 @@ impl AppMain for App {
             }
             self.setup_actions(cx, actions);
             self.settings_actions(cx, actions);
+            self.camera_dialog_actions(cx, actions);
             if self.ui.button(cx, ids!(ask_send)).clicked(actions)
                 || self.ui.text_input(cx, ids!(ask_input)).returned(actions).is_some()
             {
