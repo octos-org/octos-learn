@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-06（中文字体方案 A：Noto Sans SC）
+最后更新：2026-10-07（服务端功能：本地 octos 与课程生成格式）
 
 ## 0. 目标
 
@@ -55,6 +55,29 @@ cd octos-learn/native/octos-learn && cargo test   # 4 个
 常用环境变量：`OCTOS_LEARN_OPEN=<packId>`（直接以预览模式打开课程）、`OLL_PREVIEW_DATA_DIR=<dir>`（进度目录）、
 `MAKEPAD_HIDE_WINDOWS=1` + `--remote`（无窗口远程控制，HTTP 接口 `/click /m /k /snap /g /quit`）、
 `OLL_FOCUS_DEBUG=1`（镜头决策日志）、`OCTOS_AUDIO_DEBUG=1`（音频日志）。
+
+## 3.1 本地 octos 服务（服务端功能开发用，2026-10-07 起）
+
+- octos 克隆在工作区 `oll-product/octos`（用户的 `~/Documents/projects/OctosLearn/octos` 只读，不要在里面构建或切分支）。
+  构建：`cargo build --release -p octos-cli --no-default-features --features api`。
+- 数据目录 `.local-dev/octos-home`（`config.json`：`mode: local`，provider gemini）；learning-coach 复制到 `.local-dev/octos-skills/learning-coach`（来源是用户的 learning-coach 仓库，不在原仓库里运行）。
+- LLM key：用户放在 `~/.octos/llm.env`（`GEMINI_API_KEY=…`，权限 600）。**不要打印或提交其内容**；启动时用 `set -a; . ~/.octos/llm.env; set +a` 加载。
+- 启动：
+  ```sh
+  L=~/Documents/projects/OctosLearn/.local-dev
+  set -a; . ~/.octos/llm.env; set +a
+  OCTOS_SKILLS_PATH=$L/octos-skills OCTOS_HOME=$L/octos-home \
+    $L/oll-product/octos/target/release/octos serve --solo --data-dir $L/octos-home --config $L/octos-home/config.json --port 50080
+  ```
+- 登录：`POST /api/auth/solo`（没有本机档案时 404）→ `POST /api/auth/solo/create {"name": …}`，返回 token。
+- Web 对照：在 web-main worktree 运行 `npx vite --port 5173`（dev server 才代理 `/api` 和 WebSocket），抓包脚本 `.local-dev/macos-product-v8/protocol/capture-turn.mjs`（自动填 key 时只从文件读取，日志里会把 key 打码）。
+- 一次文字提问的协议（Web 实测）：WebSocket `/api/ui-protocol/ws?token=…`（JSON-RPC 2.0）
+  1. `session/open {session_id: "learn-<毫秒>-<随机>", profile_id}`；
+  2. `session/title.set`；
+  3. `skill/action/invoke {action_id: "learning.lesson.generate", arguments: {turn_id, learner_request, request_source: "self_contained", language: "zh-CN", input_modality: "text", client_timing}}`；
+  4. 服务端推送 `skill/action/job/updated`（queued → running → succeeded，`result.artifacts[].handle` 指向 `*.octos-lesson.json`，另有 `.part-00N` 渐进片段）；
+  5. `GET /api/files/<handle>` 下载 authoring 课程，原生用 `oll_runtime::authoring::materialize_jsonl` 转成 canonical JSONL 后交给 `Session::load`。
+- 首次进入白板时 Web 有「把白板准备好」设置页：`POST /api/my/test-provider` 测试 key，`PUT /api/my/profile` 保存模型（profile.config.llm.primary）。
 
 ## 4. 对照 Web 的验证工具
 
@@ -111,6 +134,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `8c5a19b` 老师指针只在最新操作是 teacher.point 时显示（同 Web renderPointer；下一 Beat 停在 beat.end，不显示）
 - `bcc7dc8` 大图对话框移到老师头像/输入栏之上（Web 模态遮住全部），plot 区域加 Web 的 #f8f5ed 底板
 - `a31aac5` 中文字体（用户选定方案 A）：随 app 打包 Noto Sans SC Regular/Bold（SIL OFL 1.1，`native/octos-learn/assets/fonts/`，约 17MB），`src/cjk_fonts.rs` 在启动时把它插到主题字体链里 LXGW 之前；`package-macos.sh` 复制到 `Resources/octos_learn/assets/fonts/`（已验证打包后不依赖源码目录）
+- OLL `adfa0ff` 课程生成格式：移植 Web `materializeOllLesson`（authoring → canonical），OLL 全部示例与 Web 输出一致，本地生成的课程可在原生播放到底
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
