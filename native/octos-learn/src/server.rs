@@ -44,6 +44,10 @@ enum Http {
     Solo,
     SoloCreate,
     File { turn_id: String },
+    Profile,
+    TestProvider,
+    SaveProfile,
+    Speech { purpose: String },
 }
 
 /// What a JSON-RPC call was for.
@@ -65,6 +69,25 @@ pub enum ServerEvent {
     Job(Value),
     /// The authoring lesson file of a turn was downloaded.
     LessonFile { turn_id: String, body: Result<String, String> },
+    /// GET /api/my/profile.
+    Profile(Result<Value, String>),
+    /// POST /api/my/test-provider.
+    ProviderTested(Result<(), String>),
+    /// PUT /api/my/profile.
+    ProfileSaved(Result<Value, String>),
+    /// POST /api/voice/synthesize (audio bytes).
+    Speech { purpose: String, audio: Result<Vec<u8>, String> },
+}
+
+/// Web formatSettingsError: the server's JSON error/message, else the text.
+fn error_text(status: u16, body: &str) -> String {
+    let v: Value = serde_json::from_str(body).unwrap_or(Value::Null);
+    v["error"]
+        .as_str()
+        .or(v["message"].as_str())
+        .map(str::to_owned)
+        .or_else(|| (!body.trim().is_empty()).then(|| body.trim().chars().take(200).collect()))
+        .unwrap_or_else(|| format!("HTTP {status}"))
 }
 
 pub struct Server {
@@ -203,6 +226,26 @@ impl Server {
             let _ = cx.net.ws_send(self.socket, WsSend::Text(frame));
         }
     }
+    pub fn get_profile(&mut self, cx: &mut Cx) {
+        let req = self.request("/api/my/profile", HttpMethod::GET);
+        self.http(cx, req, Http::Profile);
+    }
+    pub fn test_provider(&mut self, cx: &mut Cx, body: Value) {
+        let mut req = self.request("/api/my/test-provider", HttpMethod::POST);
+        req.set_body_string(&body.to_string());
+        self.http(cx, req, Http::TestProvider);
+    }
+    pub fn save_profile(&mut self, cx: &mut Cx, body: Value) {
+        let mut req = self.request("/api/my/profile", HttpMethod::PUT);
+        req.set_body_string(&body.to_string());
+        self.http(cx, req, Http::SaveProfile);
+    }
+    /// Web synthesizeSpeech (non-hosted route): the profile's TTS voice.
+    pub fn synthesize(&mut self, cx: &mut Cx, text: &str, purpose: &str) {
+        let mut req = self.request("/api/voice/synthesize", HttpMethod::POST);
+        req.set_body_string(&json!({"text": text}).to_string());
+        self.http(cx, req, Http::Speech { purpose: purpose.into() });
+    }
     /// Download a session artifact (web buildFileUrl: `ws/…` handles are
     /// session-scoped query URLs).
     pub fn fetch_file(&mut self, cx: &mut Cx, session_id: &str, handle: &str, turn_id: &str) {
@@ -266,6 +309,39 @@ impl Server {
                             turn_id,
                             body: if (200..300).contains(&status) { Ok(body) } else { Err(format!("课程文件下载失败（HTTP {status}）")) },
                         }),
+                        Http::Profile => out.push(ServerEvent::Profile(if (200..300).contains(&status) {
+                            serde_json::from_str(&body).map_err(|e| e.to_string())
+                        } else {
+                            Err(error_text(status, &body))
+                        })),
+                        Http::TestProvider => {
+                            let v: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
+                            out.push(ServerEvent::ProviderTested(if (200..300).contains(&status) && v["ok"] == true {
+                                Ok(())
+                            } else {
+                                Err(v["error"]
+                                    .as_str()
+                                    .or(v["message"].as_str())
+                                    .map(str::to_owned)
+                                    .unwrap_or_else(|| if (200..300).contains(&status) {
+                                        "连接测试失败，请检查模型名称和 API Key。".into()
+                                    } else {
+                                        error_text(status, &body)
+                                    }))
+                            }));
+                        }
+                        Http::SaveProfile => out.push(ServerEvent::ProfileSaved(if (200..300).contains(&status) {
+                            serde_json::from_str(&body).map_err(|e| e.to_string())
+                        } else {
+                            Err(error_text(status, &body))
+                        })),
+                        Http::Speech { purpose } => out.push(ServerEvent::Speech {
+                            purpose,
+                            audio: match response.body() {
+                                Some(bytes) if (200..300).contains(&status) && !bytes.is_empty() => Ok(bytes.to_vec()),
+                                _ => Err(error_text(status, &body)),
+                            },
+                        }),
                     }
                 }
                 NetworkResponse::HttpError { request_id, error } => {
@@ -282,6 +358,10 @@ impl Server {
                             turn_id,
                             body: Err(format!("课程文件下载失败：{}", error.message)),
                         }),
+                        Http::Profile => out.push(ServerEvent::Profile(Err(error.message.clone()))),
+                        Http::TestProvider => out.push(ServerEvent::ProviderTested(Err(error.message.clone()))),
+                        Http::SaveProfile => out.push(ServerEvent::ProfileSaved(Err(error.message.clone()))),
+                        Http::Speech { purpose } => out.push(ServerEvent::Speech { purpose, audio: Err(error.message.clone()) }),
                     }
                 }
                 NetworkResponse::WsOpened { socket_id } if *socket_id == self.socket => {

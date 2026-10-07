@@ -367,6 +367,153 @@ script_mod! {
                             }
                         }
                     }
+                    // Web SetupWhiteboard (/setup, `.setup-board`): the first live board
+                    // asks for a model (and optional narration TTS) before entering.
+                    setup_page := SolidView { visible: false width: Fill height: Fill draw_bg.color: #faf8f0
+                        ScrollYView { width: Fill height: Fill
+                            View { width: Fill height: Fit flow: Down padding: Inset{left: 58 right: 58 top: 32 bottom: 48}
+                                View { width: Fill height: Fit flow: Right spacing: 24 align: Align{y: 0.}
+                                    View { width: Fill height: Fit flow: Down
+                                        Label { width: Fit padding: 0 text: "O C T O S   L E A R N  ·  第 一 块 白 板" draw_text.text_style.font_size: 8.25 draw_text.color: #867e70 }
+                                        Label { width: Fill padding: 0 margin: Inset{top: 8} text: "把白板准备好，就可以开始了" draw_text.text_style: theme.font_bold{font_size: 27} draw_text.color: #303e3b }
+                                    }
+                                    setup_full_settings := Button { width: Fit height: Fit text: "完整设置" padding: 0 margin: Inset{top: 14}
+                                                draw_text.color: #287c77 draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                }
+                                Label { width: Fill padding: 0 margin: Inset{top: 22 bottom: 36} text: "写下问题、拍下纸上的题目，或直接开口问。Octos 会在同一块白板上讲解，并陪你一起推导。" draw_text.wrap: Words draw_text.text_style.font_size: 11.25 draw_text.text_style.line_spacing: 1.52 draw_text.color: #69706a }
+                                View { width: Fill height: Fit flow: Right spacing: 30
+                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                        draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
+                                        Label { width: Fit padding: 0 text: "01 · AI 讲解需要" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
+                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "连接你的模型" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        Label { width: Fill padding: 0 text: "使用自己的 API Key，模型费用由你的供应商账户承担。没有配置也能先写白板。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                        View { width: Fill height: Fit flow: Down margin: Inset{top: 20}
+                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "模型平台" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                            RoundedView { width: Fill height: Fit flow: Right padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                Label { width: Fill padding: 0 text: "Google Gemini" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                setup_platform_chevron := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                            }
+                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "模型名称" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                            RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                setup_model := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "gemini-3.6-flash" 
+                                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                                    draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                    draw_cursor +: { color: #303e3b } }
+                                            }
+                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "API Key" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                            RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                setup_key := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "粘贴你的 API Key" is_password: true
+                                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                                    draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                    draw_cursor +: { color: #303e3b } }
+                                            }
+                                            setup_save := Button { width: Fit height: Fit text: "测试连接并保存" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                                draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
+                                            setup_model_status := Label { width: Fill padding: 0 margin: Inset{top: 10} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.44 draw_text.color: #4b5a56 }
+                                            setup_full_model := Button { width: Fit height: Fit text: "打开完整模型设置 →" padding: 0 margin: Inset{top: 14}
+                                                draw_text.color: #287c77 draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                        }
+                                    }
+                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                        draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
+                                        Label { width: Fit padding: 0 text: "02 · 可选" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
+                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "听老师讲，也可以只看文字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        Label { width: Fill padding: 0 text: "平台提供有限额的旁白语音。你也可以配置自己的火山 TTS，不占平台额度。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                        View { width: Fill height: Fit flow: Down margin: Inset{top: 6}
+                                            setup_listen := Button { width: Fill height: Fit text: "试听当前旁白语音" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                                draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
+                                            setup_volc_toggle := Button { width: Fit height: Fit text: "▶ 使用自己的火山 TTS（可选）" padding: Inset{top: 12 bottom: 12} margin: Inset{top: 8}
+                                                draw_text.color: #303e3b draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                            setup_volc := View { visible: false width: Fill height: Fit flow: Down
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "App ID" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                setup_volc_appid := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "" 
+                                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                                    draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                    draw_cursor +: { color: #303e3b } }
+                                            }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "Access Token" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                setup_volc_token := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "留空保留已有凭据" is_password: true
+                                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                                    draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                    draw_cursor +: { color: #303e3b } }
+                                            }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "音色 ID" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
+                                                draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
+                                                setup_volc_voice := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "zh_female_xiaohe_uranus_bigtts" 
+                                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                                    draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                    draw_cursor +: { color: #303e3b } }
+                                            }
+                                                setup_volc_save := Button { width: Fit height: Fit text: "保存个人 TTS 并试听" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                                draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
+                                            }
+                                            setup_tts_status := Label { width: Fill padding: 0 margin: Inset{top: 10} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.44 draw_text.color: #4b5a56 }
+                                            setup_voice_settings := Button { width: Fit height: Fit text: "语音设置与用量 →" padding: 0 margin: Inset{top: 14}
+                                                draw_text.color: #287c77 draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                        }
+                                    }
+                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                        draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
+                                        Label { width: Fit padding: 0 text: "03 · 随时再开" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
+                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "语音和摄像头不影响打字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        
+                                        View { width: Fill height: Fit flow: Down
+                                            View { width: Fill height: Fit flow: Right spacing: 8 margin: Inset{bottom: 10}
+                                                Label { width: Fit padding: 0 text: "•" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fill padding: 0 text: "进入白板后点击「启用语音」，准备完成后再说话。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                            }
+                                            View { width: Fill height: Fit flow: Right spacing: 8 margin: Inset{bottom: 10}
+                                                Label { width: Fit padding: 0 text: "•" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fill padding: 0 text: "语音服务忙碌时，可以继续打字，无需等待。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                            }
+                                            View { width: Fill height: Fit flow: Right spacing: 8 margin: Inset{bottom: 10}
+                                                Label { width: Fit padding: 0 text: "•" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fill padding: 0 text: "启用摄像头后，发送问题时可附上纸上的题目。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                            }
+                                            View { width: Fill height: Fit flow: Right spacing: 8 margin: Inset{bottom: 10}
+                                                Label { width: Fit padding: 0 text: "•" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fill padding: 0 text: "框选笔迹后提问，Octos 会围绕选中内容辅助你。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
+                                            }
+                                        }
+                                        SolidView { width: Fill height: Fit padding: 16 draw_bg.color: #fff3bf
+                                            Label { width: Fill padding: 0 text: "只会在你主动启用时申请设备权限。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                        }
+                                    }
+                                }
+                                View { width: Fill height: Fit flow: Down align: Align{x: 0.5} margin: Inset{top: 30}
+                                    setup_enter := Button { width: Fit height: Fit text: "先用白板，稍后设置 AI" padding: Inset{left: 22 right: 22 top: 12 bottom: 12}
+                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                        draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
+                                    Label { width: Fit padding: 0 margin: Inset{top: 12} text: "以后从「设置 → 新手设置白板」回来，随时调整。API Key 仅发送到 Octos 服务端的凭据设置接口，不写进白板或课程内容。" draw_text.text_style.font_size: 9 draw_text.color: #69706a }
+                                }
+                            }
+                        }
+                    }
                     // Confirmation (web window.confirm).
                     confirm_dialog := View { visible: false width: Fill height: Fill flow: Overlay
                         SolidView { width: Fill height: Fill draw_bg.color: #152c2b55 }
@@ -678,6 +825,16 @@ pub struct App {
     /// A live (server-backed) learning board: 新建空白白板 and its questions.
     #[rust]
     live: Option<Live>,
+    /// Setup page (web SetupWhiteboard): check pending login, profile, form.
+    #[rust]
+    setup_check: bool,
+    #[rust]
+    setup_profile: Option<serde_json::Value>,
+    #[rust]
+    setup_volc_open: bool,
+    /// Which setup action a save/test belongs to: "model" | "volc".
+    #[rust]
+    setup_saving: Option<String>,
     #[rust]
     history_query: String,
     #[rust]
@@ -895,6 +1052,7 @@ fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
     for (id, icon, color) in [
         (live_id!(menu_restart_icon), include_str!("../assets/icons/rotate-ccw.svg"), "#426568"),
         (live_id!(history_search_icon), include_str!("../assets/icons/search.svg"), "#657c7c"),
+        (live_id!(setup_platform_chevron), include_str!("../assets/icons/chevron-down.svg"), "#69706a"),
         (live_id!(menu_delete_icon), ICON_TRASH, "#a84836"),
     ] {
         if let Some(mut svg) = ui.widget(cx, &[id]).borrow_mut::<Svg>() {
@@ -1253,7 +1411,151 @@ impl App {
         self.apply_course_mode(cx);
         self.show_learning(cx, true);
         self.server.ensure_login(cx);
+        self.setup_check = true;
+        if self.server.logged_in() {
+            self.check_setup(cx);
+        }
         self.sync_live(cx);
+    }
+    fn setup_skip_path(&self) -> Option<std::path::PathBuf> {
+        let profile = self.server.profile_id.clone()?;
+        self.store.as_ref().map(|s| s.dir().join(format!("setup-skipped-{profile}")))
+    }
+    /// Web LearningSetupGate: until the learner enters once, a live board
+    /// opens on the setup page.
+    fn check_setup(&mut self, cx: &mut Cx) {
+        if !std::mem::take(&mut self.setup_check) {
+            return;
+        }
+        if self.setup_skip_path().is_some_and(|p| p.exists()) {
+            return;
+        }
+        self.ui.widget(cx, ids!(setup_page)).set_visible(cx, true);
+        self.ui.label(cx, ids!(setup_model_status)).set_text(cx, "正在读取你的设置…");
+        self.server.get_profile(cx);
+        self.ui.redraw(cx);
+    }
+    /// Web hasLearningModel: a lesson-capable family, a model and its key.
+    fn profile_has_model(profile: &serde_json::Value) -> bool {
+        let primary = &profile["config"]["llm"]["primary"];
+        let family = primary["family_id"].as_str().unwrap_or("").to_lowercase();
+        let env = primary["route"]["api_key_env"].as_str().filter(|s| !s.is_empty()).unwrap_or("GEMINI_API_KEY");
+        matches!(family.as_str(), "google" | "gemini")
+            && primary["model_id"].as_str().is_some_and(|m| !m.trim().is_empty())
+            && profile["config"]["env_vars"][env].as_str().is_some_and(|k| !k.trim().is_empty())
+    }
+    fn apply_setup_profile(&mut self, cx: &mut Cx, profile: serde_json::Value) {
+        let model = profile["config"]["llm"]["primary"]["model_id"].as_str().filter(|m| !m.is_empty()).unwrap_or("gemini-3.6-flash").to_owned();
+        let key_saved = profile["config"]["env_vars"]["GEMINI_API_KEY"].as_str().is_some_and(|k| !k.is_empty());
+        let input = self.ui.text_input(cx, ids!(setup_model));
+        if input.text().is_empty() {
+            input.set_text(cx, &model);
+        }
+        if let Some(mut key) = self.ui.widget(cx, ids!(setup_key)).borrow_mut::<TextInput>() {
+            key.set_empty_text(cx, if key_saved { "已保存；留空继续使用".into() } else { "粘贴你的 API Key".into() });
+        }
+        let tts = &profile["config"]["tts_cloud"];
+        if let Some(appid) = tts["appid"].as_str() {
+            self.ui.text_input(cx, ids!(setup_volc_appid)).set_text(cx, appid);
+        }
+        if let Some(voice) = tts["voice"].as_str() {
+            self.ui.text_input(cx, ids!(setup_volc_voice)).set_text(cx, voice);
+        }
+        self.ui.button(cx, ids!(setup_enter)).set_text(
+            cx,
+            if Self::profile_has_model(&profile) { "进入我的白板" } else { "先用白板，稍后设置 AI" },
+        );
+        self.setup_profile = Some(profile);
+        self.ui.redraw(cx);
+    }
+    /// Web mergeProfileConfig + updateMyProfileConfig.
+    fn save_setup_profile(&mut self, cx: &mut Cx, patch: serde_json::Value) {
+        let Some(profile) = self.setup_profile.as_ref() else { return };
+        let mut config = profile["config"].clone();
+        if let (Some(c), Some(p)) = (config.as_object_mut(), patch.as_object()) {
+            for (k, v) in p {
+                c.insert(k.clone(), v.clone());
+            }
+        }
+        self.server.save_profile(cx, json!({"config": config}));
+    }
+    fn setup_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if !self.ui.widget(cx, ids!(setup_page)).visible() {
+            return;
+        }
+        if self.ui.button(cx, ids!(setup_save)).clicked(actions) && self.setup_saving.is_none() {
+            let model = self.ui.text_input(cx, ids!(setup_model)).text().trim().to_owned();
+            if !model.is_empty() {
+                let key = self.ui.text_input(cx, ids!(setup_key)).text().trim().to_owned();
+                self.setup_saving = Some("model".into());
+                self.ui.button(cx, ids!(setup_save)).set_text(cx, "正在测试并保存…");
+                self.ui.label(cx, ids!(setup_model_status)).set_text(cx, "");
+                let mut body = json!({
+                    "provider": "google",
+                    "model": model,
+                    "api_key_env": "GEMINI_API_KEY",
+                    "profile_id": self.server.profile_id,
+                });
+                if !key.is_empty() {
+                    body["api_key"] = json!(key);
+                }
+                self.server.test_provider(cx, body);
+            }
+        }
+        if self.ui.button(cx, ids!(setup_listen)).clicked(actions) {
+            self.ui.label(cx, ids!(setup_tts_status)).set_text(cx, "正在准备语音…");
+            self.server.synthesize(cx, "你好，我是你白板旁的学习伙伴。我们可以一起看图、推导和解决问题。", "preview");
+        }
+        if self.ui.button(cx, ids!(setup_volc_toggle)).clicked(actions) {
+            self.setup_volc_open = !self.setup_volc_open;
+            self.ui.widget(cx, ids!(setup_volc)).set_visible(cx, self.setup_volc_open);
+            self.ui.button(cx, ids!(setup_volc_toggle)).set_text(
+                cx,
+                if self.setup_volc_open { "▼ 使用自己的火山 TTS（可选）" } else { "▶ 使用自己的火山 TTS（可选）" },
+            );
+        }
+        if self.ui.button(cx, ids!(setup_volc_save)).clicked(actions) && self.setup_saving.is_none() {
+            let appid = self.ui.text_input(cx, ids!(setup_volc_appid)).text().trim().to_owned();
+            let token = self.ui.text_input(cx, ids!(setup_volc_token)).text().trim().to_owned();
+            let voice = self.ui.text_input(cx, ids!(setup_volc_voice)).text().trim().to_owned();
+            let voice = if voice.is_empty() { "zh_female_xiaohe_uranus_bigtts".to_owned() } else { voice };
+            let has_token = self.setup_profile.as_ref().is_some_and(|p| p["config"]["env_vars"]["VOLC_TTS_TOKEN"].as_str().is_some_and(|t| !t.is_empty()));
+            if appid.is_empty() || (token.is_empty() && !has_token) {
+                self.ui.label(cx, ids!(setup_tts_status)).set_text(cx, "请填写 App ID 和 Access Token。");
+            } else {
+                self.setup_saving = Some("volc".into());
+                let mut patch = json!({"tts_provider": "cloud", "tts_cloud": {"appid": appid, "voice": voice}});
+                if !token.is_empty() {
+                    let mut env = self.setup_profile.as_ref().map(|p| p["config"]["env_vars"].clone()).unwrap_or(json!({}));
+                    env["VOLC_TTS_TOKEN"] = json!(token);
+                    patch["env_vars"] = env;
+                }
+                self.save_setup_profile(cx, patch);
+            }
+        }
+        if self.ui.button(cx, ids!(setup_full_settings)).clicked(actions)
+            || self.ui.button(cx, ids!(setup_full_model)).clicked(actions)
+            || self.ui.button(cx, ids!(setup_voice_settings)).clicked(actions)
+        {
+            self.toast(cx, "完整设置页稍后支持，先在这里完成新手设置");
+        }
+        if self.ui.button(cx, ids!(setup_enter)).clicked(actions) {
+            if let Some(path) = self.setup_skip_path() {
+                let _ = std::fs::create_dir_all(path.parent().unwrap()).and_then(|_| std::fs::write(path, "yes"));
+            }
+            self.ui.widget(cx, ids!(setup_page)).set_visible(cx, false);
+            self.ui.redraw(cx);
+        }
+    }
+    /// Play synthesized speech bytes (setup preview / narration).
+    fn play_speech(&mut self, cx: &mut Cx, audio: &[u8], tag: &str) -> Result<(), String> {
+        let dir = self.store.as_ref().map(|s| s.dir().join("tts")).ok_or("没有本机存储目录")?;
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let path = dir.join(format!("{tag}.audio"));
+        std::fs::write(&path, audio).map_err(|e| e.to_string())?;
+        let id = LiveId::from_str(&format!("speech:{tag}:{}", server::uuid()));
+        cx.prepare_audio_playback(id, makepad_widgets::makepad_platform::event::VideoSource::Filesystem(path.to_string_lossy().into()), true, false);
+        Ok(())
     }
     /// Ask from the input dock (web StudentInputDock submit).
     fn submit_question(&mut self, cx: &mut Cx) {
@@ -1410,6 +1712,70 @@ impl App {
                 server::ServerEvent::LoggedIn => {
                     if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
                         self.send_question(cx, turn, text);
+                    }
+                    self.check_setup(cx);
+                }
+                server::ServerEvent::Profile(result) => match result {
+                    Ok(profile) => {
+                        self.ui.label(cx, ids!(setup_model_status)).set_text(cx, "");
+                        self.apply_setup_profile(cx, profile);
+                    }
+                    Err(e) => self.ui.label(cx, ids!(setup_model_status)).set_text(cx, &format!("读取设置失败：{e}")),
+                },
+                server::ServerEvent::ProviderTested(result) => match result {
+                    Ok(()) => {
+                        let model = self.ui.text_input(cx, ids!(setup_model)).text().trim().to_owned();
+                        let key = self.ui.text_input(cx, ids!(setup_key)).text().trim().to_owned();
+                        let mut patch = json!({"llm": {
+                            "primary": {"family_id": "google", "model_id": model, "route": {"api_key_env": "GEMINI_API_KEY", "base_url": null}},
+                            "fallbacks": [],
+                        }});
+                        if !key.is_empty() {
+                            let mut env = self.setup_profile.as_ref().map(|p| p["config"]["env_vars"].clone()).unwrap_or(json!({}));
+                            env["GEMINI_API_KEY"] = json!(key);
+                            patch["env_vars"] = env;
+                        }
+                        self.save_setup_profile(cx, patch);
+                    }
+                    Err(e) => {
+                        self.setup_saving = None;
+                        self.ui.button(cx, ids!(setup_save)).set_text(cx, "测试连接并保存");
+                        self.ui.label(cx, ids!(setup_model_status)).set_text(cx, &e);
+                    }
+                },
+                server::ServerEvent::ProfileSaved(result) => {
+                    let which = self.setup_saving.take().unwrap_or_default();
+                    self.ui.button(cx, ids!(setup_save)).set_text(cx, "测试连接并保存");
+                    let status = if which == "volc" { live_id!(setup_tts_status) } else { live_id!(setup_model_status) };
+                    match result {
+                        Ok(profile) => {
+                            // Web profileModelSaveMessage.
+                            let message = match profile["runtime_disposition"].as_str() {
+                                Some("reloaded") => "已生效，下一次生成使用新模型",
+                                Some("restart_required") => "已保存，服务重启后生效",
+                                Some("persisted_but_not_live") => "已保存。当前任务结束后，下一次生成将使用新模型",
+                                _ => "已保存，下一次生成课程时生效",
+                            };
+                            if which == "volc" {
+                                self.ui.text_input(cx, ids!(setup_volc_token)).set_text(cx, "");
+                                self.ui.label(cx, ids!(setup_tts_status)).set_text(cx, "正在准备语音…");
+                                self.server.synthesize(cx, "你好，我是你白板旁的学习伙伴。我们可以一起看图、推导和解决问题。", "preview");
+                            } else {
+                                self.ui.text_input(cx, ids!(setup_key)).set_text(cx, "");
+                                self.ui.label(cx, &[status]).set_text(cx, message);
+                            }
+                            self.apply_setup_profile(cx, profile);
+                        }
+                        Err(e) => self.ui.label(cx, &[status]).set_text(cx, &e),
+                    }
+                }
+                server::ServerEvent::Speech { purpose, audio } => {
+                    if purpose == "preview" {
+                        let message = match audio.and_then(|a| self.play_speech(cx, &a, "preview")) {
+                            Ok(()) => "试听已播放。如果没有听到，请检查音量和输出设备。".to_owned(),
+                            Err(e) => format!("旁白语音暂不可用：{e}"),
+                        };
+                        self.ui.label(cx, ids!(setup_tts_status)).set_text(cx, &message);
                     }
                 }
                 server::ServerEvent::Unavailable(message) => {
@@ -2851,6 +3217,7 @@ impl AppMain for App {
                     self.rebuild_history(cx);
                 }
             }
+            self.setup_actions(cx, actions);
             if self.ui.button(cx, ids!(ask_send)).clicked(actions)
                 || self.ui.text_input(cx, ids!(ask_input)).returned(actions).is_some()
             {
