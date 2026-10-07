@@ -11,6 +11,7 @@ mod svg_image;
 mod server;
 mod voice;
 mod camera;
+mod ink_question;
 use camera::Camera;
 use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogAction};
 use voice::Voice;
@@ -200,6 +201,16 @@ script_mod! {
                                 // Buttons are built in Rust (rebuild_ink_tools) so the
                                 // browse/pen active state can be highlighted per mode.
                                 ink_tools := View { width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} }
+                                // Web selection actions: classification status, quick
+                                // tools (rebuilt in Rust) and 问小章鱼.
+                                sel_actions := View { visible: false width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} margin: Inset{left: 4}
+                                    sel_status := Label { width: Fit padding: 0 text: "" draw_text.text_style.font_size: 7.5 draw_text.color: #647572 margin: Inset{left: 4 right: 4} }
+                                    sel_tools := View { width: Fit height: Fit flow: Right spacing: 3 align: Align{y: 0.5} }
+                                    sel_ask := Button { height: 36 text: "问小章鱼" spacing: 5 padding: Inset{left: 9 right: 9} margin: 0
+                                        icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #0c7085 }
+                                        draw_text.color: #0c7085 draw_text.text_style.font_size: 7.5
+                                        draw_bg +: { color: #e3eeec color_hover: #d5e6eb color_down: #c8dee4 border_radius: 5 border_size: 0 border_color: #0000 } }
+                                }
                                 ink_status := Label { width: Fit padding: 0 text: "0 项笔迹 · 已保存" draw_text.text_style.font_size: 7.5 draw_text.color: #6e766f margin: Inset{left: 8 right: 8} }
                             }
                         }
@@ -291,6 +302,39 @@ script_mod! {
                                 ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
                                     draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 6.5 border_size: 0 border_color: #0000 } }
+                            }
+                        }
+                        // Selection question panel (web .learning-selection-question:
+                        // top 142 left 18, 420 wide, 14 padding).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 18 top: 142}
+                            sel_panel := RoundedView { visible: false width: 420 height: Fit flow: Down padding: 14
+                                draw_bg +: { color: #fffef9fa border_radius: 8 border_size: 0.5 border_color: #27686233 }
+                                View { width: Fill height: Fit flow: Right spacing: 10 margin: Inset{bottom: 12}
+                                    Label { width: Fill padding: 0 text: "针对当前选区提问" draw_text.text_style: theme.font_bold{font_size: 10.5} draw_text.color: #253735 }
+                                    sel_panel_note := Label { width: 170 padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.text_style.line_spacing: 1.45 draw_text.color: #687976 }
+                                }
+                                sel_targets := View { width: Fill height: Fit flow: Down spacing: 5 }
+                                View { width: Fill height: Fit flow: Right spacing: 10 align: Align{y: 0.5} margin: Inset{top: 6}
+                                    Label { width: Fit padding: 0 text: "我写的内容更像" draw_text.text_style.font_size: 9.75 draw_text.color: #253735 }
+                                    sel_kinds := View { width: Fill height: Fit flow: Right spacing: 4 align: Align{x: 1.} }
+                                }
+                                sel_class_text := Label { width: Fill padding: 0 margin: Inset{top: 7} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 8.25 draw_text.text_style.line_spacing: 1.45 draw_text.color: #667a76 }
+                                View { width: Fill height: Fit flow: Down spacing: 2 margin: Inset{top: 12 bottom: 6}
+                                    Label { width: Fill padding: 0 text: "接下来让小章鱼做什么？" draw_text.text_style: theme.font_bold{font_size: 9} draw_text.color: #253735 }
+                                    Label { width: Fill padding: 0 text: "下面是操作，不会改变上面已经确认的选区。" draw_text.text_style.font_size: 8.25 draw_text.color: #70807d }
+                                }
+                                sel_suggestions := View { width: Fill height: Fit flow: Right spacing: 7 }
+                                View { width: Fill height: Fit flow: Right spacing: 7 align: Align{y: 0.5} margin: Inset{top: 10}
+                                    sel_input := TextInput { width: Fill height: Fit padding: Inset{left: 10 right: 10 top: 8 bottom: 8} margin: 0
+                                        empty_text: "例如：这一步为什么不对？"
+                                        draw_bg +: { color: #ffffff color_hover: #ffffff color_focus: #ffffff color_down: #ffffff color_empty: #ffffff border_radius: 5 border_size: 0.5
+                                            border_color: #x2768622e border_color_hover: #x2768622e border_color_focus: #27686266 border_color_down: #x2768622e border_color_empty: #x2768622e }
+                                        draw_text +: { color: #253735 color_hover: #253735 color_focus: #253735 color_down: #253735 color_empty: #9aa5a2 color_empty_hover: #9aa5a2 color_empty_focus: #9aa5a2 text_style.font_size: 9.75 }
+                                        draw_cursor +: { color: #253735 } }
+                                    sel_send := Button { height: 36 text: "发送" padding: Inset{left: 14 right: 14} margin: 0
+                                        draw_text.color: #253735 draw_text.text_style.font_size: 9.75
+                                        draw_bg +: { color: #ffffff color_hover: #f1f6f5 color_down: #e3eeec border_radius: 5 border_size: 0.5 border_color: #x2768622e } }
+                                }
                             }
                         }
                         // Camera monitor (web .learning-camera-monitor: top 86 right 24,
@@ -931,6 +975,19 @@ pub struct App {
     camera: Camera,
     #[rust]
     camera_textures: Option<(Texture, Texture)>,
+    /// Ink selection questions (web selection toolbar + 问小章鱼 panel).
+    #[rust]
+    selection: Option<ink_question::SelectionState>,
+    #[rust]
+    selection_poll: u32,
+    #[rust]
+    selection_buttons: Vec<(WidgetRef, SelectionAction)>,
+    /// The learning session of a course board before it has questions
+    /// (classification needs one; the classroom reuses it).
+    #[rust]
+    course_session: String,
+    #[rust]
+    opened_sessions: Vec<String>,
     #[rust]
     audio_inputs: Vec<AudioDeviceId>,
     /// A voice turn between utterance and transcript (turn id).
@@ -1136,6 +1193,14 @@ const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
 const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
 const ICON_MIC: &str = include_str!("../assets/icons/mic.svg");
+/// Dynamic buttons of the selection toolbar and panel.
+#[derive(Clone, Debug)]
+enum SelectionAction {
+    Tool(&'static str),
+    Target(Option<String>),
+    Kind(&'static str),
+}
+
 /// Web sendImage prompt.
 const IMAGE_PROMPT: &str = "请看我上传的题目，把题目和关键步骤整理到白板上。";
 const ICON_MIC_OFF: &str = include_str!("../assets/icons/mic-off.svg");
@@ -1145,12 +1210,13 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 13] = [
+    let icons: [(LiveId, &str); 14] = [
         (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
         (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
+        (live_id!(sel_ask), include_str!("../assets/icons/message-circle.svg")),
         (live_id!(back), include_str!("../assets/icons/house.svg")),
         (live_id!(settings), include_str!("../assets/icons/menu.svg")),
         (live_id!(history_close), include_str!("../assets/icons/x.svg")),
@@ -1439,6 +1505,9 @@ impl App {
     }
     fn open_course(&mut self, cx: &mut Cx, pack_id: &str, version: &str, autoplay: bool) {
         self.error.clear();
+        self.selection = None;
+        self.course_session.clear();
+        self.rebuild_selection_ui(cx);
         self.drawing = false;
         self.lesson_released = false;
         self.narration_muted = false;
@@ -1518,6 +1587,9 @@ impl App {
     /// become generated lessons (needs a reachable Octos server).
     fn open_live_board(&mut self, cx: &mut Cx) {
         self.save_progress(cx);
+        self.selection = None;
+        self.course_session.clear();
+        self.rebuild_selection_ui(cx);
         self.stop_narration_audio(cx);
         self.error.clear();
         self.drawing = false;
@@ -1744,6 +1816,15 @@ impl App {
         if text.is_empty() {
             return;
         }
+        if self.selection.is_some() {
+            // Web sendText with an active ink selection: the typed question
+            // becomes a lesson generated from that selection.
+            input.set_text(cx, "");
+            let targets = self.selection.as_ref().map(|s| s.chosen_targets()).unwrap_or_default();
+            let text = oll_runtime::selection::format_lesson_request(&text, &targets, None);
+            self.ask_selection_lesson(cx, text);
+            return;
+        }
         if !self.ensure_classroom(cx) {
             return;
         }
@@ -1776,12 +1857,290 @@ impl App {
             return false;
         }
         let mut live = Live::new();
+        if !self.course_session.is_empty() {
+            live.session_id = self.course_session.clone();
+            live.opened = self.opened_sessions.contains(&live.session_id);
+        }
         live.base = Some(self.course_source.clone());
         live.course = Some((self.pack_id.clone(), self.pack_version.clone()));
         live.titled = true;
         self.live = Some(live);
         self.server.ensure_login(cx);
         true
+    }
+    /// The board's learning session (web workspace sessionId): the
+    /// classroom's, or a course board's before it has questions.
+    fn board_session_id(&mut self) -> String {
+        if let Some(l) = &self.live {
+            return l.session_id.clone();
+        }
+        if self.course_session.is_empty() {
+            self.course_session = Live::new().session_id;
+        }
+        self.course_session.clone()
+    }
+    fn ensure_session_open(&mut self, cx: &mut Cx, session_id: &str) {
+        if let Some(l) = self.live.as_mut().filter(|l| l.session_id == session_id) {
+            if l.opened {
+                return;
+            }
+            l.opened = true;
+        } else if self.opened_sessions.iter().any(|s| s == session_id) {
+            return;
+        }
+        self.opened_sessions.push(session_id.to_owned());
+        let profile = self.server.profile_id.clone().unwrap_or_default();
+        self.server.call(cx, "session/open", json!({"session_id": session_id, "profile_id": profile}), server::Call::Fire);
+    }
+    /// Web selection toolbar state follows the ink selection: a new
+    /// selection is rendered, its board targets found and classified.
+    fn sync_selection(&mut self, cx: &mut Cx) {
+        let current = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().and_then(|b| b.ink_selection().map(|s| (s, b.node_rects())));
+        let Some((sel, rects)) = current.filter(|_| !self.course_preview) else {
+            if self.selection.take().is_some() {
+                self.rebuild_selection_ui(cx);
+            }
+            return;
+        };
+        let key = ink_question::SelectionState::key_of(&sel);
+        if self.selection.as_ref().is_some_and(|s| s.key == key) {
+            return;
+        }
+        let nodes = self.player.as_ref().map(|p| p.board.nodes.clone()).unwrap_or_default();
+        let candidates = oll_runtime::selection::node_candidates(&nodes, &rects, sel.bounds);
+        let panel_open = self.selection.as_ref().is_some_and(|s| s.panel_open);
+        self.selection = Some(ink_question::SelectionState {
+            key,
+            source_id: format!("ink-source:{}", server::uuid()),
+            png: ink_question::render_png(&sel),
+            selection: sel,
+            media: None,
+            candidates,
+            chosen: None,
+            class_status: "loading",
+            classification: None,
+            content_kind: "unknown".into(),
+            panel_open,
+            pending: false,
+        });
+        self.start_classification(cx);
+        self.rebuild_selection_ui(cx);
+    }
+    /// Web classifyInkSelection: upload the selection image, then
+    /// `learning.selection.classify` (answered synchronously).
+    fn start_classification(&mut self, cx: &mut Cx) {
+        let Some(state) = self.selection.as_ref() else { return };
+        if state.media.is_some() || state.class_status != "loading" {
+            return;
+        }
+        if !self.server.logged_in() {
+            self.server.ensure_login(cx);
+            return;
+        }
+        let Some(png) = state.png.clone() else { return };
+        let purpose = format!("selclass:{}", state.key);
+        let name = format!("{}.png", state.source_id.replace(':', "-"));
+        self.server.upload(cx, &name, "image/png", &png, Some("upload"), &purpose);
+    }
+    fn selection_source(&self) -> Option<serde_json::Value> {
+        let s = self.selection.as_ref()?;
+        Some(oll_runtime::selection::source_argument(
+            &s.source_id,
+            &format!("student-ink:{}", self.live.as_ref().map_or(self.course_session.as_str(), |l| l.session_id.as_str())),
+            0,
+            s.selection.bounds,
+            &ink_question::strokes_value(&s.selection),
+        ))
+    }
+    fn classify_selection(&mut self, cx: &mut Cx, key: &str, path: String) {
+        let session_id = self.board_session_id();
+        let Some(state) = self.selection.as_mut().filter(|s| s.key == key) else { return };
+        state.media = Some(path.clone());
+        let board = oll_runtime::selection::board_argument(
+            &format!("learning-board-{session_id}"),
+            self.player.as_ref().map_or(0, |p| p.board.cursor as u64),
+            &state.candidates.clone(),
+        );
+        let Some(source) = self.selection_source() else { return };
+        self.ensure_session_open(cx, &session_id);
+        self.server.call(
+            cx,
+            "skill/action/invoke",
+            json!({
+                "session_id": session_id,
+                "action_id": "learning.selection.classify",
+                "arguments": {"paths": [path], "turn_id": server::uuid(), "source": source, "board": board},
+            }),
+            server::Call::Metadata { purpose: format!("selclass:{key}") },
+        );
+    }
+    fn selection_chip(cx: &mut Cx, label: &str, active: bool, strong: bool) -> Option<WidgetRef> {
+        let (bg, tint, border) = if active { ("#e3eeec", "#0c7085", "#87bcb4") } else if strong { ("#e3eeec", "#0c7085", "#0000") } else { ("#ffffff", "#253735", "#x2768622e") };
+        let label = label.replace(['"', '\\', '\n'], " ");
+        board_view::widget(
+            cx,
+            &format!(
+                "Button{{height:34 text:\"{label}\" padding:Inset{{left:10 right:10}} margin:0
+                    draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0.5 border_color:{border}}}
+                    draw_text.color:{tint} draw_text.text_style.font_size:7.5}}"
+            ),
+        )
+        .ok()
+    }
+    /// Toolbar actions and the 问小章鱼 panel from the selection state.
+    fn rebuild_selection_ui(&mut self, cx: &mut Cx) {
+        self.selection_buttons.clear();
+        let Some(state) = self.selection.as_ref() else {
+            self.ui.widget(cx, ids!(sel_actions)).set_visible(cx, false);
+            self.ui.widget(cx, ids!(sel_panel)).set_visible(cx, false);
+            self.ui.redraw(cx);
+            return;
+        };
+        self.ui.widget(cx, ids!(sel_actions)).set_visible(cx, true);
+        self.ui.label(cx, ids!(sel_status)).set_text(cx, if state.class_status == "loading" { "正在识别选区…" } else { "" });
+        let mut tools = Vec::new();
+        for tool in state.quick_tools() {
+            if let Some(w) = Self::selection_chip(cx, tool.label, false, true) {
+                tools.push(w.clone());
+                self.selection_buttons.push((w, SelectionAction::Tool(tool.id)));
+            }
+        }
+        let _ = board_view::children(cx, &self.ui.widget(cx, ids!(sel_tools)), tools);
+        let state = self.selection.as_ref().unwrap();
+        self.ui.widget(cx, ids!(sel_panel)).set_visible(cx, state.panel_open);
+        self.ui.label(cx, ids!(sel_panel_note)).set_text(
+            cx,
+            &format!("将发送 {} 项选中笔迹，以及你在下面明确选择的局部白板内容；不会发送整块白板。", state.selection.strokes.len()),
+        );
+        // Board targets (web .learning-selection-targets).
+        let mut targets = Vec::new();
+        if state.candidates.is_empty() {
+            if let Ok(w) = board_view::widget(cx, "Label{width:Fill padding:0 margin:Inset{bottom:6} text:\"当前框选没有覆盖课程对象，本次只参考你的原始笔迹。\" draw_text.wrap:Words draw_text.text_style.font_size:8.25 draw_text.color:#70807d}") {
+                targets.push(w);
+            }
+        } else {
+            if let Ok(w) = board_view::widget(cx, "Label{width:Fill padding:0 text:\"这段笔迹是在问哪部分白板内容？\" draw_text.text_style.font_size:8.25 draw_text.color:#253735}") {
+                targets.push(w);
+            }
+            let mut options = vec![(None, "只看我的笔迹".to_owned())];
+            options.extend(state.candidates.iter().map(|c| {
+                (c["target_id"].as_str().map(str::to_owned), format!("{} · 整个内容块", c["label"].as_str().unwrap_or("白板内容")))
+            }));
+            let chosen = state.chosen.clone();
+            for (id, label) in options {
+                if let Some(w) = Self::selection_chip(cx, &label, id == chosen, false) {
+                    targets.push(w.clone());
+                    self.selection_buttons.push((w, SelectionAction::Target(id)));
+                }
+            }
+        }
+        let _ = board_view::children(cx, &self.ui.widget(cx, ids!(sel_targets)), targets);
+        let state = self.selection.as_ref().unwrap();
+        let mut kinds = Vec::new();
+        let current_kind = state.content_kind.clone();
+        for (id, label) in oll_runtime::selection::CONTENT_KINDS {
+            if let Some(w) = Self::selection_chip(cx, label, id == current_kind, false) {
+                kinds.push(w.clone());
+                self.selection_buttons.push((w, SelectionAction::Kind(id)));
+            }
+        }
+        let _ = board_view::children(cx, &self.ui.widget(cx, ids!(sel_kinds)), kinds);
+        let state = self.selection.as_ref().unwrap();
+        let kind_label = |k: &str| oll_runtime::selection::CONTENT_KINDS.iter().find(|(id, _)| *id == k).map_or("", |(_, l)| *l);
+        let class_text = match (&state.classification, state.class_status) {
+            (Some((kind, content, confidence)), _) => format!(
+                "自动识别为：{}{}{}",
+                kind_label(kind),
+                if content.is_empty() { String::new() } else { format!("（{content}）") },
+                if confidence == "low" { "；把握较低，请手动确认" } else { "" }
+            ),
+            (None, "error") => "没有可靠识别出内容，请手动选择类型。".into(),
+            _ => String::new(),
+        };
+        self.ui.label(cx, ids!(sel_class_text)).set_text(cx, &class_text);
+        self.ui.widget(cx, ids!(sel_class_text)).set_visible(cx, !class_text.is_empty());
+        let mut suggestions = Vec::new();
+        for tool in oll_runtime::selection::available_tools(&current_kind) {
+            if let Some(w) = Self::selection_chip(cx, tool.label, false, false) {
+                suggestions.push(w.clone());
+                self.selection_buttons.push((w, SelectionAction::Tool(tool.id)));
+            }
+        }
+        let _ = board_view::children(cx, &self.ui.widget(cx, ids!(sel_suggestions)), suggestions);
+        self.ui.redraw(cx);
+    }
+    fn selection_action(&mut self, cx: &mut Cx, action: SelectionAction) {
+        match action {
+            SelectionAction::Tool(id) => {
+                let Some(tool) = oll_runtime::selection::TOOLS.iter().find(|t| t.id == id) else { return };
+                self.ask_selection(cx, tool.prompt, tool.id);
+            }
+            SelectionAction::Target(id) => {
+                if let Some(s) = self.selection.as_mut() {
+                    s.chosen = id;
+                }
+                self.rebuild_selection_ui(cx);
+            }
+            SelectionAction::Kind(id) => {
+                if let Some(s) = self.selection.as_mut() {
+                    s.content_kind = id.into();
+                }
+                self.rebuild_selection_ui(cx);
+            }
+        }
+    }
+    /// Web askSelection: 解释这部分 (and requests for a lesson) generate a
+    /// lesson from the selection; other answers are selection cards.
+    fn ask_selection(&mut self, cx: &mut Cx, question: &str, tool_id: &str) {
+        let question = question.trim();
+        let Some(state) = self.selection.as_ref() else { return };
+        if question.is_empty() || state.pending {
+            return;
+        }
+        if oll_runtime::selection::answer_presentation(tool_id, question, false) != "lesson" {
+            // DIFF: selection enhancement cards (检查并建议 / 生成函数图像 /
+            // free questions answered beside the ink) are the next chunk.
+            self.toast(cx, "这类回答会以批注卡片显示，稍后支持；可以先点「解释这部分」");
+            return;
+        }
+        let recognized = state.classification.as_ref().map(|c| c.1.clone());
+        let text = oll_runtime::selection::format_lesson_request(question, &state.chosen_targets(), recognized.as_deref());
+        if let Some(s) = self.selection.as_mut() {
+            s.panel_open = false;
+        }
+        self.ui.text_input(cx, ids!(sel_input)).set_text(cx, "");
+        self.ask_selection_lesson(cx, text);
+        self.rebuild_selection_ui(cx);
+    }
+    /// Web startDirectLessonGeneration with an ink_selection visual: the
+    /// selection image goes along as `paths`.
+    fn ask_selection_lesson(&mut self, cx: &mut Cx, text: String) {
+        if !self.ensure_classroom(cx) {
+            return;
+        }
+        let Some(live) = self.live.as_mut() else { return };
+        if live.pending() {
+            self.toast(cx, "上一个问题还在准备中");
+            return;
+        }
+        let turn = server::uuid();
+        live.questions.push((turn.clone(), text.clone(), "pending".into()));
+        let media = self.selection.as_ref().and_then(|s| s.media.clone());
+        match media {
+            Some(path) if self.server.logged_in() => self.send_question(cx, turn, text, "text", Some(("ink_selection", path))),
+            _ => match self.selection.as_ref().and_then(|s| s.png.clone()) {
+                Some(png) => {
+                    if let Some(l) = self.live.as_mut() {
+                        l.uploading = Some((turn.clone(), text, "text".into()));
+                    }
+                    self.server.ensure_login(cx);
+                    self.server.upload(cx, "selection.png", "image/png", &png, Some("upload"), &format!("selection:{turn}"));
+                }
+                None => self.fail_question(cx, &turn, "选区图片生成失败，请重新框选后再试"),
+            },
+        }
+        self.sync_live(cx);
+        self.save_live(cx);
     }
     /// The newest saved classroom of this course (questions asked on it).
     fn restore_course_classroom(&mut self, cx: &mut Cx) -> bool {
@@ -2043,7 +2402,9 @@ impl App {
         }
         self.server.upload(cx, "camera-frame.jpg", "image/jpeg", &jpeg, Some("upload"), &format!("camera:{turn_id}"));
     }
-    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str, image: Option<String>) {
+    /// `visual`: ("camera" | "ink_selection", uploaded image path) — web
+    /// startDirectLessonGeneration visualContext.
+    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str, visual: Option<(&str, String)>) {
         let Some(live) = self.live.as_mut() else { return };
         let session_id = live.session_id.clone();
         let profile = self.server.profile_id.clone().unwrap_or_default();
@@ -2055,15 +2416,19 @@ impl App {
         let mut arguments = json!({
             "turn_id": turn_id,
             "learner_request": text,
-            "request_source": if image.is_some() { "current_image" } else { "self_contained" },
+            "request_source": match &visual { Some(("camera", _)) => "current_image", Some((kind, _)) => kind, None => "self_contained" },
             "language": "zh-CN",
             "input_modality": modality,
             "client_timing": {"submitted_at_epoch_ms": now, "skill_invocation_started_at_epoch_ms": now},
         });
-        if let Some(path) = &image {
+        if let Some((_, path)) = &visual {
             arguments["paths"] = json!([path]);
         }
-        let action = if image.is_some() { "learning.lesson.generate-from-camera" } else { "learning.lesson.generate" };
+        let action = match &visual {
+            Some(("camera", _)) => "learning.lesson.generate-from-camera",
+            Some(_) => "learning.lesson.generate-from-selection",
+            None => "learning.lesson.generate",
+        };
         self.server.call(
             cx,
             "skill/action/invoke",
@@ -2186,6 +2551,7 @@ impl App {
         for ev in self.server.handle(cx, event) {
             match ev {
                 server::ServerEvent::LoggedIn => {
+                    self.start_classification(cx);
                     if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
                         self.dispatch_question(cx, turn, text, "text");
                     }
@@ -2245,6 +2611,46 @@ impl App {
                         Err(e) => self.ui.label(cx, &[status]).set_text(cx, &e),
                     }
                 }
+                server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("selclass:") => {
+                    let key = purpose["selclass:".len()..].to_owned();
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => self.classify_selection(cx, &key, paths[0].clone()),
+                        _ => {
+                            if let Some(s) = self.selection.as_mut().filter(|s| s.key == key) {
+                                s.class_status = "error";
+                            }
+                            self.rebuild_selection_ui(cx);
+                        }
+                    }
+                }
+                server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("selection:") => {
+                    let turn = &purpose["selection:".len()..];
+                    let Some((turn, text, modality)) = self.live.as_mut().and_then(|l| l.uploading.take_if(|u| u.0 == turn)) else { continue };
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => {
+                            let path = paths[0].clone();
+                            self.send_question(cx, turn, text, &modality, Some(("ink_selection", path)));
+                        }
+                        _ => self.fail_question(cx, &turn, "选区图片上传失败，请重新框选后再试"),
+                    }
+                }
+                server::ServerEvent::Metadata { purpose, result } => {
+                    let Some(key) = purpose.strip_prefix("selclass:") else { continue };
+                    let Some(s) = self.selection.as_mut().filter(|s| s.key == key) else { continue };
+                    match result.and_then(|m| oll_runtime::selection::parse_classification(&m)) {
+                        Ok((kind, content, confidence)) => {
+                            s.content_kind = if confidence == "low" { "unknown".into() } else { kind.clone() };
+                            s.classification = Some((kind, content, confidence));
+                            s.class_status = "ready";
+                        }
+                        Err(_) => {
+                            s.classification = None;
+                            s.content_kind = "unknown".into();
+                            s.class_status = "error";
+                        }
+                    }
+                    self.rebuild_selection_ui(cx);
+                }
                 server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("image:") => {
                     let turn = purpose["image:".len()..].to_owned();
                     match paths {
@@ -2291,7 +2697,7 @@ impl App {
                     match paths {
                         Ok(paths) if !paths.is_empty() => {
                             let path = paths[0].clone();
-                            self.send_question(cx, turn, text, &modality, Some(path));
+                            self.send_question(cx, turn, text, &modality, Some(("camera", path)));
                         }
                         _ => self.fail_question(cx, &turn, "摄像头画面上传失败，请重试"),
                     }
@@ -3553,7 +3959,10 @@ impl App {
         // progress, which autosaves every second while playing).
         self.ui
             .label(cx, ids!(ink_status))
-            .set_text(cx, &format!("{stroke_count} 项笔迹 · 已保存"));
+            .set_text(cx, &match self.selection.as_ref().map(|s| s.selection.strokes.len()) {
+                Some(n) => format!("{stroke_count} 项笔迹 · 已选 {n} · 已保存"),
+                None => format!("{stroke_count} 项笔迹 · 已保存"),
+            });
         self.ui
             .widget(cx, ids!(error_bar))
             .set_visible(cx, !self.error.is_empty());
@@ -3645,6 +4054,13 @@ impl AppMain for App {
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
+        if self.timer.is_event(event).is_some() && self.learning_visible {
+            // Poll the ink selection a few times a second (web inkState).
+            self.selection_poll = (self.selection_poll + 1) % 12;
+            if self.selection_poll == 0 {
+                self.sync_selection(cx);
+            }
+        }
         if let Event::VideoInputs(inputs) = event {
             self.camera.on_video_inputs(cx, inputs);
         }
@@ -3908,6 +4324,21 @@ impl AppMain for App {
             }
             if self.ui.button(cx, ids!(ask_image)).clicked(actions) {
                 self.pick_question_image(cx);
+            }
+            // Ink selection toolbar and 问小章鱼 panel.
+            let chosen = self.selection_buttons.iter().find(|(w, _)| w.as_button().clicked(actions)).map(|(_, a)| a.clone());
+            if let Some(action) = chosen {
+                self.selection_action(cx, action);
+            }
+            if self.ui.button(cx, ids!(sel_ask)).clicked(actions) {
+                if let Some(s) = self.selection.as_mut() {
+                    s.panel_open = !s.panel_open;
+                }
+                self.rebuild_selection_ui(cx);
+            }
+            if self.ui.button(cx, ids!(sel_send)).clicked(actions) || self.ui.text_input(cx, ids!(sel_input)).returned(actions).is_some() {
+                let text = self.ui.text_input(cx, ids!(sel_input)).text();
+                self.ask_selection(cx, &text, "custom-question");
             }
             for action in actions.iter() {
                 if let Some(picked) = action.downcast_ref::<FileDialogAction>() {

@@ -59,6 +59,9 @@ pub enum Call {
     Admit { turn_id: String },
     /// `turn/start` (an agent chat turn).
     Turn { turn_id: String },
+    /// A synchronous skill action (selection classify): its first
+    /// successful result's structured metadata.
+    Metadata { purpose: String },
 }
 
 /// Progress of an agent chat turn (web sendMessage projection).
@@ -99,6 +102,8 @@ pub enum ServerEvent {
     /// voice/admit: Some(transcript) for speech, None for no_speech.
     Admitted { turn_id: String, result: Result<Option<String>, String> },
     Turn { turn_id: String, update: TurnUpdate },
+    /// Result of a `Call::Metadata` invocation.
+    Metadata { purpose: String, result: Result<Value, String> },
 }
 
 /// Web formatSettingsError: the server's JSON error/message, else the text.
@@ -496,6 +501,25 @@ impl Server {
                             },
                         };
                         out.push(ServerEvent::Admitted { turn_id, result });
+                        continue;
+                    }
+                    if let Call::Metadata { purpose } = call {
+                        let result = match msg.get("error") {
+                            Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("请求失败").to_owned()),
+                            _ => {
+                                let results = msg["result"]["results"].as_array().cloned().unwrap_or_default();
+                                if msg["result"]["ok"] == false || results.iter().any(|r| r["success"] == false) {
+                                    Err("暂时无法识别选区内容".to_owned())
+                                } else {
+                                    results
+                                        .iter()
+                                        .find(|r| r["success"] == true && !r["structured_metadata"].is_null())
+                                        .map(|r| r["structured_metadata"].clone())
+                                        .ok_or("选区识别没有返回可用结果".to_owned())
+                                }
+                            }
+                        };
+                        out.push(ServerEvent::Metadata { purpose, result });
                         continue;
                     }
                     if let Call::Turn { turn_id } = call {

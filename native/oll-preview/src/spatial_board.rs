@@ -40,6 +40,20 @@ pub struct ControlRequest {
     /// sliderTaskSnapDistance / geometryTaskSnapDistance); 0: no snapping.
     pub snap_distance: f64,
 }
+/// One selected stroke: world points, world width and pen color.
+#[derive(Clone, Debug)]
+pub struct SelectedStroke {
+    pub id: u64,
+    pub points: Vec<(f64, f64)>,
+    pub width: f64,
+    pub color: [f32; 4],
+}
+/// An ink selection in world units (web InkSelectionSnapshot source).
+#[derive(Clone, Debug)]
+pub struct InkSelection {
+    pub bounds: (f64, f64, f64, f64),
+    pub strokes: Vec<SelectedStroke>,
+}
 /// Handwriting tools (web ink toolbar modes).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InkTool {
@@ -502,6 +516,41 @@ impl SpatialBoard {
         }
         self.ink_tool = tool;
         self.set_drawing(cx, tool != InkTool::Browse);
+    }
+    /// The selected strokes while the selection tool is active and nothing
+    /// is being dragged (web inkState.mode == "select" && selected_count).
+    pub fn ink_selection(&self) -> Option<InkSelection> {
+        if self.ink_tool != InkTool::Select || self.ink.selection.is_empty() || self.select_gesture.is_some() {
+            return None;
+        }
+        let mut strokes = Vec::new();
+        let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
+        for stroke in self.ink.strokes.iter().filter(|s| self.ink.selection.contains(&s.id)) {
+            let (color, width) = self.stroke_styles.get(&stroke.id).copied().unwrap_or_else(|| Self::default_pen());
+            // Strokes keep a screen-constant width; in world units here.
+            let w = width / self.camera.scale.max(1e-6);
+            let points: Vec<(f64, f64)> = stroke.points.iter().map(|p| (p.x, p.y)).collect();
+            for (x, y) in &points {
+                x0 = x0.min(x - w / 2.);
+                y0 = y0.min(y - w / 2.);
+                x1 = x1.max(x + w / 2.);
+                y1 = y1.max(y + w / 2.);
+            }
+            strokes.push(SelectedStroke { id: stroke.id, points, width: w, color: [color.x, color.y, color.z, color.w] });
+        }
+        if strokes.is_empty() || x1 <= x0 || y1 <= y0 {
+            return None;
+        }
+        Some(InkSelection { bounds: (x0, y0, x1 - x0, y1 - y0), strokes })
+    }
+    /// Card rects in world units with their stacking order (board targets).
+    pub fn node_rects(&self) -> Vec<(String, f64, f64, f64, f64, usize)> {
+        self.entries.iter().enumerate().map(|(z, (id, r, _))| (id.clone(), r.x, r.y, r.width, r.height, z)).collect()
+    }
+    pub fn clear_ink_selection(&mut self, cx: &mut Cx) {
+        self.ink.clear_selection();
+        self.ink_revision += 1;
+        self.redraw(cx);
     }
     /// 全选: select every stroke (selection tool).
     pub fn select_all_ink(&mut self, cx: &mut Cx) {
