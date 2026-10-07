@@ -10,6 +10,8 @@ use octos_oll_preview::spatial_board::InkTool;
 mod svg_image;
 mod server;
 mod voice;
+mod camera;
+use camera::Camera;
 use voice::Voice;
 use server::Server;
 use serde_json::json;
@@ -288,6 +290,29 @@ script_mod! {
                                 ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
                                     draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 6.5 border_size: 0 border_color: #0000 } }
+                            }
+                        }
+                        // Camera monitor (web .learning-camera-monitor: top 86 right 24,
+                        // the live frame "老师看到的画面" and the last sent frame).
+                        View { width: Fill height: Fill flow: Down align: Align{x: 1. y: 0.} padding: Inset{top: 86 right: 24}
+                            camera_monitor := RoundedView { visible: false width: Fit height: Fit flow: Right spacing: 8 padding: 7
+                                draw_bg +: { color: #fffdf8e0 border_radius: 8 border_size: 0.5 border_color: #255c6c24 }
+                                camera_live := View { width: 192 height: Fit flow: Overlay
+                                    camera_image := Image { width: 192 height: Fit fit: ImageFit.Horizontal }
+                                    View { width: Fill height: Fill flow: Down align: Align{y: 1.} padding: 5
+                                        RoundedView { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 5 right: 5 top: 3 bottom: 3}
+                                            draw_bg +: { color: #x1924269e border_radius: 3.5 }
+                                            Label { width: Fit padding: 0 text: "老师看到的画面" draw_text.color: #ffffff draw_text.text_style.font_size: 6.75 } }
+                                    }
+                                }
+                                camera_sent := View { visible: false width: 192 height: Fit flow: Overlay
+                                    camera_sent_image := Image { width: 192 height: Fit fit: ImageFit.Horizontal }
+                                    View { width: Fill height: Fill flow: Down align: Align{y: 1.} padding: 5
+                                        RoundedView { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 5 right: 5 top: 3 bottom: 3}
+                                            draw_bg +: { color: #x1924269e border_radius: 3.5 }
+                                            Label { width: Fit padding: 0 text: "本轮已发送" draw_text.color: #ffffff draw_text.text_style.font_size: 6.75 } }
+                                    }
+                                }
                             }
                         }
                         // Error bar (web .learning-ink-error bottom toast, simplified).
@@ -705,6 +730,8 @@ struct Live {
     jobs: HashMap<String, String>,
     /// A question waiting for login before it can be sent.
     queued: Option<(String, String)>,
+    /// A question whose camera frame is uploading: (turn, text, modality).
+    uploading: Option<(String, String, String)>,
     /// The playing lesson: (turn id, canonical JSONL), cached for reopening.
     lesson: Option<(String, String)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
@@ -722,6 +749,7 @@ impl Live {
             questions: Vec::new(),
             jobs: HashMap::new(),
             queued: None,
+            uploading: None,
             lesson: None,
             tts_queue: Vec::new(),
             tts_inflight: None,
@@ -870,6 +898,11 @@ pub struct App {
     /// Voice questions (web 启用语音): capture, VAD state, default input.
     #[rust]
     voice: Voice,
+    /// Camera frames for questions (web 启用摄像头).
+    #[rust]
+    camera: Camera,
+    #[rust]
+    camera_textures: Option<(Texture, Texture)>,
     #[rust]
     audio_inputs: Vec<AudioDeviceId>,
     /// A voice turn between utterance and transcript (turn id).
@@ -1076,6 +1109,8 @@ const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
 const ICON_MIC: &str = include_str!("../assets/icons/mic.svg");
 const ICON_MIC_OFF: &str = include_str!("../assets/icons/mic-off.svg");
+const ICON_CAMERA: &str = include_str!("../assets/icons/camera.svg");
+const ICON_CAMERA_OFF: &str = include_str!("../assets/icons/camera-off.svg");
 const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
@@ -1678,13 +1713,59 @@ impl App {
         let turn_id = server::uuid();
         live.questions.push((turn_id.clone(), text.clone(), "pending".into()));
         if self.server.logged_in() {
-            self.send_question(cx, turn_id, text, "text");
+            self.dispatch_question(cx, turn_id, text, "text");
         } else {
             live.queued = Some((turn_id, text));
             self.server.ensure_login(cx);
         }
         self.sync_live(cx);
         self.save_live(cx);
+    }
+    /// Web 启用摄像头 / 关闭摄像头 (top bar and dock camera button).
+    fn toggle_camera(&mut self, cx: &mut Cx) {
+        if self.camera.active {
+            self.camera.disable(cx);
+        } else {
+            if self.live.is_none() {
+                // DIFF: camera questions on course boards need the course
+                // question flow (multi-lesson composition).
+                self.toast(cx, "课程内提问稍后支持，请在空白白板使用摄像头");
+                return;
+            }
+            if let Err(e) = self.camera.enable(cx) {
+                self.toast(cx, &e);
+                return;
+            }
+            self.server.ensure_login(cx);
+        }
+        let on = self.camera.active;
+        self.ui.button(cx, ids!(camera)).set_text(cx, if on { "关闭摄像头" } else { "启用摄像头" });
+        for id in [live_id!(camera), live_id!(ask_camera)] {
+            if let Some(mut b) = self.ui.widget(cx, &[id]).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(if on { ICON_CAMERA } else { ICON_CAMERA_OFF });
+            }
+        }
+        if !on {
+            self.ui.widget(cx, ids!(camera_sent)).set_visible(cx, false);
+        }
+        self.ui.widget(cx, ids!(camera_live)).set_visible(cx, on);
+        self.ui.widget(cx, ids!(camera_monitor)).set_visible(cx, on);
+        self.ui.redraw(cx);
+    }
+    /// Push a BGRA frame into the live (or sent) monitor image.
+    fn show_camera_frame(&mut self, cx: &mut Cx, sent: bool, (w, h, data): (usize, usize, Vec<u32>)) {
+        let new = || TextureFormat::VecBGRAu8_32 { width: w, height: h, data: None, updated: TextureUpdated::Full };
+        let textures = self
+            .camera_textures
+            .get_or_insert_with(|| (Texture::new_with_format(cx, new()), Texture::new_with_format(cx, new())));
+        let texture = if sent { textures.1.clone() } else { textures.0.clone() };
+        *texture.get_format(cx) = TextureFormat::VecBGRAu8_32 { width: w, height: h, data: Some(data), updated: TextureUpdated::Full };
+        let image = self.ui.image(cx, if sent { ids!(camera_sent_image) } else { ids!(camera_image) });
+        image.set_texture(cx, Some(texture));
+        if sent {
+            self.ui.widget(cx, ids!(camera_sent)).set_visible(cx, true);
+        }
+        self.ui.widget(cx, ids!(camera_monitor)).redraw(cx);
     }
     /// Web 启用语音 / 关闭语音 (and the dock mic button).
     fn toggle_voice(&mut self, cx: &mut Cx) {
@@ -1742,13 +1823,30 @@ impl App {
     fn ask_voice(&mut self, cx: &mut Cx, turn: String, text: String) {
         let Some(live) = self.live.as_mut() else { return };
         live.questions.push((turn.clone(), text.clone(), "pending".into()));
-        self.send_question(cx, turn, text, "voice");
+        self.dispatch_question(cx, turn, text, "voice");
         self.sync_live(cx);
         self.save_live(cx);
     }
     /// session/open (once) + session/title.set (first question) +
     /// skill/action/invoke learning.lesson.generate, as the web workspace.
-    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str) {
+    /// With the camera on, the current frame goes along (web sendText /
+    /// voice turn: grab → upload → generate-from-camera); else text only.
+    fn dispatch_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str) {
+        if !self.camera.active {
+            self.send_question(cx, turn_id, text, modality, None);
+            return;
+        }
+        let Some((rgb, jpeg)) = self.camera.grab() else {
+            self.fail_question(cx, &turn_id, "摄像头画面没有截取成功，请确认预览正常后重试");
+            return;
+        };
+        self.show_camera_frame(cx, true, camera::to_bgra(&camera::downscale(&rgb, camera::PREVIEW_W, camera::PREVIEW_H)));
+        if let Some(live) = self.live.as_mut() {
+            live.uploading = Some((turn_id.clone(), text, modality.to_owned()));
+        }
+        self.server.upload(cx, "camera-frame.jpg", "image/jpeg", &jpeg, Some("upload"), &format!("camera:{turn_id}"));
+    }
+    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str, image: Option<String>) {
         let Some(live) = self.live.as_mut() else { return };
         let session_id = live.session_id.clone();
         let profile = self.server.profile_id.clone().unwrap_or_default();
@@ -1757,21 +1855,22 @@ impl App {
             self.server.call(cx, "session/open", json!({"session_id": session_id, "profile_id": profile}), server::Call::Fire);
         }
         let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
+        let mut arguments = json!({
+            "turn_id": turn_id,
+            "learner_request": text,
+            "request_source": if image.is_some() { "current_image" } else { "self_contained" },
+            "language": "zh-CN",
+            "input_modality": modality,
+            "client_timing": {"submitted_at_epoch_ms": now, "skill_invocation_started_at_epoch_ms": now},
+        });
+        if let Some(path) = &image {
+            arguments["paths"] = json!([path]);
+        }
+        let action = if image.is_some() { "learning.lesson.generate-from-camera" } else { "learning.lesson.generate" };
         self.server.call(
             cx,
             "skill/action/invoke",
-            json!({
-                "session_id": session_id,
-                "action_id": "learning.lesson.generate",
-                "arguments": {
-                    "turn_id": turn_id,
-                    "learner_request": text,
-                    "request_source": "self_contained",
-                    "language": "zh-CN",
-                    "input_modality": modality,
-                    "client_timing": {"submitted_at_epoch_ms": now, "skill_invocation_started_at_epoch_ms": now},
-                },
-            }),
+            json!({"session_id": session_id, "action_id": action, "arguments": arguments}),
             server::Call::Invoke { turn_id },
         );
     }
@@ -1872,7 +1971,7 @@ impl App {
             match ev {
                 server::ServerEvent::LoggedIn => {
                     if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
-                        self.send_question(cx, turn, text, "text");
+                        self.dispatch_question(cx, turn, text, "text");
                     }
                     self.check_setup(cx);
                 }
@@ -1928,6 +2027,17 @@ impl App {
                             self.apply_setup_profile(cx, profile);
                         }
                         Err(e) => self.ui.label(cx, &[status]).set_text(cx, &e),
+                    }
+                }
+                server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("camera:") => {
+                    let turn = &purpose["camera:".len()..];
+                    let Some((turn, text, modality)) = self.live.as_mut().and_then(|l| l.uploading.take_if(|u| u.0 == turn)) else { continue };
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => {
+                            let path = paths[0].clone();
+                            self.send_question(cx, turn, text, &modality, Some(path));
+                        }
+                        _ => self.fail_question(cx, &turn, "摄像头画面上传失败，请重试"),
                     }
                 }
                 server::ServerEvent::Uploaded { purpose, paths } => {
@@ -2021,6 +2131,7 @@ impl App {
                         .unwrap_or_default();
                     if let Some(l) = self.live.as_mut() {
                         l.queued = None;
+                        l.uploading = None;
                     }
                     for turn in &pending {
                         self.fail_question(cx, turn, &message);
@@ -3258,6 +3369,23 @@ impl AppMain for App {
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
+        if let Event::VideoInputs(inputs) = event {
+            self.camera.on_video_inputs(cx, inputs);
+        }
+        if let Event::PermissionResult(result) = event {
+            if result.permission == makepad_widgets::makepad_platform::permission::Permission::Camera {
+                self.camera.on_permission(result.status);
+                if self.camera.active && self.camera.denied() {
+                    self.toggle_camera(cx);
+                    self.toast(cx, "摄像头权限被拒绝，请在系统设置 > 隐私与安全性 > 摄像头中允许 Octos Learn");
+                }
+            }
+        }
+        if self.timer.is_event(event).is_some() && self.camera.active {
+            if let Some(frame) = self.camera.preview() {
+                self.show_camera_frame(cx, false, frame);
+            }
+        }
         if let Event::AudioDevices(devices) = event {
             self.audio_inputs = devices.default_input();
             if self.voice.enabled && std::env::var_os("OCTOS_VOICE_TEST_WAV").is_none() {
@@ -3475,8 +3603,10 @@ impl AppMain for App {
             {
                 self.toggle_voice(cx);
             }
-            if self.ui.button(cx, ids!(camera)).clicked(actions) {
-                self.toast(cx, "摄像头稍后支持");
+            if self.ui.button(cx, ids!(camera)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
+            {
+                self.toggle_camera(cx);
             }
             if self.ui.button(cx, ids!(settings)).clicked(actions) {
                 self.set_history_open(cx, true);
@@ -3500,10 +3630,8 @@ impl AppMain for App {
             {
                 self.submit_question(cx);
             }
-            if self.ui.button(cx, ids!(ask_image)).clicked(actions)
-                || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
-            {
-                self.toast(cx, "图片与摄像头提问稍后支持");
+            if self.ui.button(cx, ids!(ask_image)).clicked(actions) {
+                self.toast(cx, "图片提问稍后支持");
             }
             if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
                 self.outline_open = !self.outline_open;
