@@ -57,6 +57,21 @@ pub enum Call {
     Fire,
     Invoke { turn_id: String },
     Admit { turn_id: String },
+    /// `turn/start` (an agent chat turn).
+    Turn { turn_id: String },
+}
+
+/// Progress of an agent chat turn (web sendMessage projection).
+#[derive(Clone, Debug)]
+pub enum TurnUpdate {
+    /// `turn/start` accepted or rejected.
+    Accepted(Result<(), String>),
+    /// A lesson file persisted with an assistant message (server path).
+    Lesson(String),
+    /// The assistant's persisted text reply.
+    Reply(String),
+    /// The turn ended: completed, or failed with a message.
+    Done(Result<(), String>),
 }
 
 /// Server results the app reacts to.
@@ -83,6 +98,7 @@ pub enum ServerEvent {
     Uploaded { purpose: String, paths: Result<Vec<String>, String> },
     /// voice/admit: Some(transcript) for speech, None for no_speech.
     Admitted { turn_id: String, result: Result<Option<String>, String> },
+    Turn { turn_id: String, update: TurnUpdate },
 }
 
 /// Web formatSettingsError: the server's JSON error/message, else the text.
@@ -145,18 +161,37 @@ pub fn query_escape(s: &str) -> String {
 
 /// A random UUID-shaped id (crypto.randomUUID stand-in for turn/request ids).
 pub fn uuid() -> String {
-    let a = LiveId::unique().0 ^ (std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos() as u64));
-    let b = LiveId::unique().0.rotate_left(17) ^ a.rotate_right(29);
+    let b = random_bytes::<16>();
+    let hex = |r: std::ops::Range<usize>| b[r].iter().map(|x| format!("{x:02x}")).collect::<String>();
+    // RFC 4122 v4 (web crypto.randomUUID).
     format!(
-        "{:08x}-{:04x}-4{:03x}-{:04x}-{:012x}",
-        (a >> 32) as u32,
-        (a >> 16) as u16,
-        a as u16 & 0x0fff,
-        ((b >> 48) as u16 & 0x3fff) | 0x8000,
-        b & 0xffff_ffff_ffff
+        "{}-{}-4{}-{:02x}{}-{}",
+        hex(0..4),
+        hex(4..6),
+        &hex(6..8)[1..],
+        (b[8] & 0x3f) | 0x80,
+        hex(9..10),
+        hex(10..16)
     )
+}
+
+/// OS randomness (/dev/urandom), mixed with the clock and Makepad's unique
+/// ids if it cannot be read.
+pub fn random_bytes<const N: usize>() -> [u8; N] {
+    use std::io::Read;
+    let mut out = [0u8; N];
+    if std::fs::File::open("/dev/urandom").and_then(|mut f| f.read_exact(&mut out)).is_ok() {
+        return out;
+    }
+    let mut x = LiveId::unique().0 ^ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_nanos() as u64);
+    for byte in &mut out {
+        // xorshift64*
+        x ^= x >> 12;
+        x ^= x << 25;
+        x ^= x >> 27;
+        *byte = (x.wrapping_mul(0x2545_f491_4f6c_dd1d) >> 56) as u8;
+    }
+    out
 }
 
 impl Server {
@@ -229,6 +264,9 @@ impl Server {
             return;
         }
         for frame in std::mem::take(&mut self.outbox) {
+            if std::env::var_os("OCTOS_SERVER_DEBUG").is_some() {
+                eprintln!("[octos-server] ws send {}", frame.chars().take(1200).collect::<String>());
+            }
             let _ = cx.net.ws_send(self.socket, WsSend::Text(frame));
         }
     }
@@ -284,12 +322,12 @@ impl Server {
         for r in responses {
             if debug {
                 let line = match r {
-                    NetworkResponse::HttpResponse { response, .. } => format!("http {}", response.status_code),
+                    NetworkResponse::HttpResponse { response, .. } => format!("http {} {}", response.status_code, response.get_string_body().unwrap_or_default().chars().take(300).collect::<String>()),
                     NetworkResponse::HttpError { error, .. } => format!("http error {}", error.message),
                     NetworkResponse::WsOpened { .. } => "ws opened".into(),
                     NetworkResponse::WsClosed { .. } => "ws closed".into(),
                     NetworkResponse::WsError { message, .. } => format!("ws error {message}"),
-                    NetworkResponse::WsMessage { message: WsMessage::Text(t), .. } => format!("ws text {}", t.chars().take(160).collect::<String>()),
+                    NetworkResponse::WsMessage { message: WsMessage::Text(t), .. } => format!("ws text {}", t.chars().take(600).collect::<String>()),
                     _ => "other".into(),
                 };
                 eprintln!("[octos-server] {line}");
@@ -408,8 +446,42 @@ impl Server {
                 NetworkResponse::WsMessage { socket_id, message: WsMessage::Text(text) } if *socket_id == self.socket => {
                     let Ok(msg) = serde_json::from_str::<Value>(text) else { continue };
                     if let Some(method) = msg["method"].as_str() {
-                        if method == "skill/action/job/updated" {
-                            out.push(ServerEvent::Job(msg["params"]["job"].clone()));
+                        let params = &msg["params"];
+                        let turn_id = params["turn_id"].as_str().unwrap_or("").to_owned();
+                        match method {
+                            "skill/action/job/updated" => out.push(ServerEvent::Job(params["job"].clone())),
+                            "projection/envelope" => {
+                                let payload = &params["payload"];
+                                match payload["type"].as_str() {
+                                    Some("assistant_persisted") => {
+                                        if let Some(text) = payload["data"]["text"].as_str().map(str::trim).filter(|t| !t.is_empty()) {
+                                            out.push(ServerEvent::Turn { turn_id: turn_id.clone(), update: TurnUpdate::Reply(text.to_owned()) });
+                                        }
+                                        // Final lesson only (prefix parts are .part-NNN.).
+                                        for path in payload["data"]["meta"]["media"].as_array().into_iter().flatten().filter_map(Value::as_str) {
+                                            let name = path.rsplit('/').next().unwrap_or(path);
+                                            if name.ends_with(".octos-lesson.json") && !name.contains(".part-") {
+                                                out.push(ServerEvent::Turn { turn_id: turn_id.clone(), update: TurnUpdate::Lesson(path.to_owned()) });
+                                            }
+                                        }
+                                    }
+                                    Some("turn_terminal") => {
+                                        let outcome = payload["data"]["outcome"].as_str().unwrap_or("");
+                                        let result = if outcome == "completed" {
+                                            Ok(())
+                                        } else {
+                                            Err(payload["data"]["error"].as_str().or(payload["data"]["message"].as_str()).unwrap_or("回答没有完成").to_owned())
+                                        };
+                                        out.push(ServerEvent::Turn { turn_id, update: TurnUpdate::Done(result) });
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            "turn/error" => {
+                                let message = params["message"].as_str().or(params["error"].as_str()).unwrap_or("回答没有完成").to_owned();
+                                out.push(ServerEvent::Turn { turn_id, update: TurnUpdate::Done(Err(message)) });
+                            }
+                            _ => {}
                         }
                         continue;
                     }
@@ -424,6 +496,15 @@ impl Server {
                             },
                         };
                         out.push(ServerEvent::Admitted { turn_id, result });
+                        continue;
+                    }
+                    if let Call::Turn { turn_id } = call {
+                        let result = match msg.get("error") {
+                            Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("提问发送失败").to_owned()),
+                            _ if msg["result"]["accepted"] == false => Err("提问没有被接受".to_owned()),
+                            _ => Ok(()),
+                        };
+                        out.push(ServerEvent::Turn { turn_id, update: TurnUpdate::Accepted(result) });
                         continue;
                     }
                     if let Call::Invoke { turn_id } = call {
@@ -442,5 +523,17 @@ impl Server {
             }
         }
         out
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn uuid_is_v4_and_random() {
+        let (a, b) = (super::uuid(), super::uuid());
+        assert_eq!(a.len(), 36);
+        assert_eq!(&a[14..15], "4");
+        assert!(matches!(&a[19..20], "8" | "9" | "a" | "b"));
+        assert_ne!(a[..8], b[..8]);
     }
 }

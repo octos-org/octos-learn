@@ -12,6 +12,7 @@ mod server;
 mod voice;
 mod camera;
 use camera::Camera;
+use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogAction};
 use voice::Voice;
 use server::Server;
 use serde_json::json;
@@ -732,6 +733,12 @@ struct Live {
     queued: Option<(String, String)>,
     /// A question whose camera frame is uploading: (turn, text, modality).
     uploading: Option<(String, String, String)>,
+    /// Image questions run as agent chat turns (web sendImage): turns
+    /// waiting for their lesson file, and those whose file was found.
+    chat_turns: Vec<String>,
+    chat_lessons: Vec<String>,
+    /// The latest assistant reply of a chat turn (shown if no lesson came).
+    chat_reply: Option<(String, String)>,
     /// The playing lesson: (turn id, canonical JSONL), cached for reopening.
     lesson: Option<(String, String)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
@@ -741,7 +748,8 @@ struct Live {
 impl Live {
     fn new() -> Self {
         let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis());
-        let suffix: String = server::uuid().chars().filter(|c| c.is_ascii_alphanumeric()).take(6).collect();
+        // Web createLearningSessionId: six random base-36 characters.
+        let suffix: String = server::random_bytes::<6>().iter().map(|b| char::from_digit((*b % 36) as u32, 36).unwrap_or('0')).collect();
         Self {
             session_id: format!("learn-{ms}-{suffix}"),
             opened: false,
@@ -750,6 +758,9 @@ impl Live {
             jobs: HashMap::new(),
             queued: None,
             uploading: None,
+            chat_turns: Vec::new(),
+            chat_lessons: Vec::new(),
+            chat_reply: None,
             lesson: None,
             tts_queue: Vec::new(),
             tts_inflight: None,
@@ -1108,6 +1119,8 @@ const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
 const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
 const ICON_MIC: &str = include_str!("../assets/icons/mic.svg");
+/// Web sendImage prompt.
+const IMAGE_PROMPT: &str = "请看我上传的题目，把题目和关键步骤整理到白板上。";
 const ICON_MIC_OFF: &str = include_str!("../assets/icons/mic-off.svg");
 const ICON_CAMERA: &str = include_str!("../assets/icons/camera.svg");
 const ICON_CAMERA_OFF: &str = include_str!("../assets/icons/camera-off.svg");
@@ -1721,6 +1734,83 @@ impl App {
         self.sync_live(cx);
         self.save_live(cx);
     }
+    /// Web dock image button: choose a picture of a problem.
+    fn pick_question_image(&mut self, cx: &mut Cx) {
+        if self.live.is_none() {
+            self.toast(cx, "课程内提问稍后支持，请在空白白板上传图片");
+            return;
+        }
+        if self.live.as_ref().is_some_and(|l| l.pending()) {
+            self.toast(cx, "上一个问题还在准备中");
+            return;
+        }
+        self.server.ensure_login(cx);
+        // Automation hook: a fixed file instead of the system picker.
+        if let Some(path) = std::env::var_os("OCTOS_IMAGE_TEST_FILE") {
+            self.ask_image(cx, std::path::Path::new(&path));
+            return;
+        }
+        let exts = ["png", "jpg", "jpeg", "gif", "webp", "heic"].iter().map(|e| e.to_string()).collect();
+        cx.open_select_file_dialog(
+            FileDialog::new().set_id(live_id!(ask_image_pick)).set_title("选择题目图片".into()).add_filter("图片".into(), exts),
+        );
+    }
+    /// Web sendImage: upload the picture, then an agent turn with the fixed
+    /// prompt and the picture as media; the lesson arrives as a persisted
+    /// assistant file.
+    fn ask_image(&mut self, cx: &mut Cx, path: &std::path::Path) {
+        let Ok(bytes) = std::fs::read(path) else {
+            self.toast(cx, "图片读取失败");
+            return;
+        };
+        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "image.png".into());
+        let ext = name.rsplit('.').next().unwrap_or("").to_lowercase();
+        let mime = match ext.as_str() {
+            "jpg" | "jpeg" => "image/jpeg",
+            "gif" => "image/gif",
+            "webp" => "image/webp",
+            "heic" => "image/heic",
+            _ => "image/png",
+        };
+        let Some(live) = self.live.as_mut() else { return };
+        let turn = server::uuid();
+        live.questions.push((turn.clone(), IMAGE_PROMPT.into(), "pending".into()));
+        self.server.upload(cx, &name, mime, &bytes, Some("upload"), &format!("image:{turn}"));
+        self.sync_live(cx);
+        self.save_live(cx);
+    }
+    fn send_image_turn(&mut self, cx: &mut Cx, turn_id: String, path: String) {
+        let Some(live) = self.live.as_mut() else { return };
+        let session_id = live.session_id.clone();
+        let profile = self.server.profile_id.clone().unwrap_or_default();
+        if !live.opened {
+            live.opened = true;
+            self.server.call(cx, "session/open", json!({"session_id": session_id, "profile_id": profile}), server::Call::Fire);
+            // Web workspace mount: hydrate the (empty) transcript first.
+            self.server.call(cx, "session/hydrate", json!({"session_id": session_id, "include": ["messages"]}), server::Call::Fire);
+        }
+        if !live.titled {
+            live.titled = true;
+            self.server.call(cx, "session/title.set", json!({"session_id": session_id, "title": IMAGE_PROMPT}), server::Call::Fire);
+        }
+        live.chat_turns.push(turn_id.clone());
+        // Web buildTurnText: learning session + context envelopes, then the prompt.
+        let text = format!(
+            "[[LEARNING_SESSION]]\nversion: 4\nsession_id: {session_id}\nentry: direct\nprovisional: true\nmode: inferred\npreferred_language: zh-CN\n[[/LEARNING_SESSION]]\n\
+             [[LEARNING_CONTEXT]]\nactive: true\nsession_id: {session_id}\nturn_id: {turn_id}\nlesson_artifact_tool: oll_generate_lesson\nlesson_artifact_policy: tool_only\ndirect_oll_json: forbidden\nprovisional: true\n[[/LEARNING_CONTEXT]]\n{IMAGE_PROMPT}"
+        );
+        self.server.call(
+            cx,
+            "turn/start",
+            json!({
+                "session_id": session_id,
+                "turn_id": turn_id,
+                "input": [{"kind": "text", "text": text}],
+                "media": [{"path": path, "mime": "application/octet-stream", "size_bytes": 0}],
+            }),
+            server::Call::Turn { turn_id },
+        );
+    }
     /// Web 启用摄像头 / 关闭摄像头 (top bar and dock camera button).
     fn toggle_camera(&mut self, cx: &mut Cx) {
         if self.camera.active {
@@ -2027,6 +2117,46 @@ impl App {
                             self.apply_setup_profile(cx, profile);
                         }
                         Err(e) => self.ui.label(cx, &[status]).set_text(cx, &e),
+                    }
+                }
+                server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("image:") => {
+                    let turn = purpose["image:".len()..].to_owned();
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => self.send_image_turn(cx, turn, paths[0].clone()),
+                        _ => self.fail_question(cx, &turn, "图片上传失败，请重试"),
+                    }
+                }
+                server::ServerEvent::Turn { turn_id, update } => {
+                    let Some(live) = self.live.as_mut() else { continue };
+                    if !live.chat_turns.contains(&turn_id) {
+                        continue;
+                    }
+                    match update {
+                        server::TurnUpdate::Accepted(Err(e)) => self.fail_question(cx, &turn_id, &e),
+                        server::TurnUpdate::Accepted(Ok(())) => {}
+                        server::TurnUpdate::Reply(text) => live.chat_reply = Some((turn_id, text)),
+                        server::TurnUpdate::Lesson(path) => {
+                            if !live.chat_lessons.contains(&turn_id) {
+                                live.chat_lessons.push(turn_id.clone());
+                                let session = live.session_id.clone();
+                                self.server.fetch_file(cx, &session, &path, &turn_id);
+                            }
+                        }
+                        server::TurnUpdate::Done(result) => {
+                            live.chat_turns.retain(|t| t != &turn_id);
+                            let got_lesson = live.chat_lessons.contains(&turn_id);
+                            let reply = live.chat_reply.take().filter(|r| r.0 == turn_id).map(|r| r.1);
+                            match result {
+                                Err(e) if !got_lesson => self.fail_question(cx, &turn_id, &e),
+                                // The agent answered without a board lesson:
+                                // show its reply (web shows the chat answer).
+                                Ok(()) if !got_lesson => {
+                                    let text: String = reply.unwrap_or_else(|| "老师这次没有生成白板课程".into()).chars().take(160).collect();
+                                    self.fail_question(cx, &turn_id, &text);
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
                 server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("camera:") => {
@@ -3631,7 +3761,16 @@ impl AppMain for App {
                 self.submit_question(cx);
             }
             if self.ui.button(cx, ids!(ask_image)).clicked(actions) {
-                self.toast(cx, "图片提问稍后支持");
+                self.pick_question_image(cx);
+            }
+            for action in actions.iter() {
+                if let Some(picked) = action.downcast_ref::<FileDialogAction>() {
+                    if picked.id() == live_id!(ask_image_pick) {
+                        if let Some(path) = picked.path().cloned() {
+                            self.ask_image(cx, &path);
+                        }
+                    }
+                }
             }
             if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
                 self.outline_open = !self.outline_open;

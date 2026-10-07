@@ -141,7 +141,9 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `45815b5` 生成课程旁白（Web useOllNarrationTts）：课程载入/恢复时按 Beat 逐个调用 `/api/voice/synthesize`，缓存到 `<数据目录>/tts/<session>/`，作为该 Beat 的旁白片段播放，WAV 时长作为 Beat 时长；TTS 不可用时保持无声、按文本计时。本机服务 TTS 返回 502，只验证了失败路径与 WAV 时长解析，**需在另一台电脑验证有声播放**
 - `d3832cd` 语音提问（Web 启用语音）：顶栏「启用语音 / 关闭语音」与输入栏麦克风按钮；`src/voice.rs` 用 Makepad 音频输入采集默认麦克风（系统回声消除），能量 VAD（≥300ms 语音、静音 700ms 结束，DIFF：Web 用 Silero 模型），转 16kHz WAV → `POST /api/upload`（recording）→ `voice/admit` 得到转写 → 以 `input_modality: "voice"` 提问；老师「我在听 / 正在想」。Info.plist 增加麦克风/摄像头用途说明。自动化测试用 `OCTOS_VOICE_TEST_WAV=<wav>` 注入一段语音（不打开真实麦克风）：本机 OminiX ASR 转写正确并生成课程。**真实麦克风采集需在另一台电脑验证**
 - `7fdb3a4`（OLL `2d7b4ec`）节点/连线图（Web renderDiagram）：生成的课程常含 `kind:"diagram"` + `elements/edges/regions`，之前原生拒绝加载（"supports sequence diagrams only"），导致语音提问的课程失败。OLL `src/diagram.rs` 移植 diagramLayout（2–8 个元素的单链 → 蛇形排列的圆角方框，中文按 2 单位折行；否则语义位置/环形圆点 300×190）、片段连线目标矩形与图内连线几何；原生 `oll-preview/src/diagram_view.rs`（DiagramView，viewBox meet 居中，区域多边形、边与边标签、强调色、图内片段连线与标签徽章），`board_view::diagram_node` 卡片（标题 + 图，高度 calc(100%-24px)）。用本次失败的课程复现并截图核对；`OCTOS_VOICE_TEST_WAV` 语音提问全流程重新跑通（转写 → 生成 → 播放）。DIFF：节点文字 Web 用 STKaiti 600，原生用主题粗体
-- （本次提交）摄像头提问（Web 启用摄像头）：顶栏「启用摄像头 / 关闭摄像头」与输入栏摄像头按钮（实时白板）；`src/camera.rs` 用 Makepad `camera_frame_input` 取默认摄像头（≤1080p，转 I420 保存最新一帧，约 15fps），右上角监视窗（Web .learning-camera-monitor：「老师看到的画面」+「本轮已发送」）；提问（文字或语音）时截取当前帧 → JPEG（文档模式：长边 1600、质量 .88）→ `POST /api/upload` → `learning.lesson.generate-from-camera`（`paths`、`request_source: "current_image"`）。新增依赖 `image 0.25`（仅 jpeg/png，已在依赖树中）。自动化测试用 `OCTOS_CAMERA_TEST_IMAGE=<png/jpg>` 代替摄像头：本机生成的课程正确识别图中题目（x²−5x+6=0 因式分解）。DIFF：Web 的画面调整对话框（旋转/镜像/缩放/偏移/文档模式）未做，使用 Web 默认值。**真实摄像头采集与系统权限弹窗需在另一台电脑验证**
+- `36a4117` 摄像头提问（Web 启用摄像头）：顶栏「启用摄像头 / 关闭摄像头」与输入栏摄像头按钮（实时白板）；`src/camera.rs` 用 Makepad `camera_frame_input` 取默认摄像头（≤1080p，转 I420 保存最新一帧，约 15fps），右上角监视窗（Web .learning-camera-monitor：「老师看到的画面」+「本轮已发送」）；提问（文字或语音）时截取当前帧 → JPEG（文档模式：长边 1600、质量 .88）→ `POST /api/upload` → `learning.lesson.generate-from-camera`（`paths`、`request_source: "current_image"`）。新增依赖 `image 0.25`（仅 jpeg/png，已在依赖树中）。自动化测试用 `OCTOS_CAMERA_TEST_IMAGE=<png/jpg>` 代替摄像头：本机生成的课程正确识别图中题目（x²−5x+6=0 因式分解）。DIFF：Web 的画面调整对话框（旋转/镜像/缩放/偏移/文档模式）未做，使用 Web 默认值。**真实摄像头采集与系统权限弹窗需在另一台电脑验证**
+- （本次提交）图片提问（Web sendImage，输入栏图片按钮）：系统文件选择框（Makepad `open_select_file_dialog`）→ `POST /api/upload` → 代理对话 `turn/start`（Web buildTurnText 的 LEARNING_SESSION/LEARNING_CONTEXT 前缀 + 固定提示「请看我上传的题目，把题目和关键步骤整理到白板上。」，图片作为 media）；从 `projection/envelope` 的 `assistant_persisted.meta.media` 取最终 `<turn>.octos-lesson.json`（忽略 `.part-NNN.`）→ `/api/files?path=<绝对路径>&session=` 下载 → 原生物化播放；`turn_terminal` 未带课程时，问题标为失败并提示代理的回复。同时：`server::uuid()` 改为 /dev/urandom 的 v4 UUID，会话号后缀改为 6 位随机 base36（与 Web createLearningSessionId 一致；之前的 id 高位取自时钟、互相同前缀）；`OCTOS_SERVER_DEBUG` 也记录发出的 WS 帧和 HTTP 响应前 300 字。测试钩子 `OCTOS_IMAGE_TEST_FILE=<图片>` 跳过选择框。
+  - **已知问题（服务端/技能，Web 同样复现）**：本机 gemini-3.6-flash 代理处理上传图片时，常以 `request_source: "current_image"` 且不带 `camera_media` 调用 `oll_generate_lesson`，技能报 `LESSON_CAMERA_IMAGE_REQUIRED`，代理重试后放弃，整轮没有课程。原生连续 6 次、Web 后来 1 次都这样（Web 早先 2 次走 self_contained 成功）。两端发送的 `turn/start`、上传文件、服务端提示长度（30405 字节、66 个工具）完全一致，所以不是原生协议问题；需要在技能或代理提示里修。课程下载这一步已用成功的 Web 会话直接验证（`/api/files` 绝对路径 200）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -175,7 +177,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 ## 7. 明确不做 / 占位（依赖后端或未迁移）
 
-（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）仍未做：图片提问（输入栏图片按钮）、课程内提问、完整设置页、摄像头画面调整对话框。
+（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）仍未做：课程内提问、完整设置页、摄像头画面调整对话框。
 学习记录抽屉只列本机课程进度记录（Web 还会同步服务器记录）。
 
 ## 8. Makepad 踩坑备忘
