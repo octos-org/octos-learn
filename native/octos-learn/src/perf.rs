@@ -4,11 +4,14 @@
 //! default; the disabled cost is one branch per event.
 //!
 //! It also turns on Makepad's PerfMonitor and appends a per-second split of
-//! the presented frames: count, mean/max gap, and the mean per-frame time in
+//! the recorded frame boundaries: count, mean/max gap, and the mean time in
 //! the platform channels — `draw` (CPU pass encode and GL driver calls),
 //! `wait` (eglSwapBuffers / drawable wait) and `gpu` (GPU frame time where
 //! the backend reports it). Event time above is app code only; these show
 //! the cost after the app returns.
+//! The pinned Android backend needs the app Draw boundary hook in lib.rs;
+//! those boundaries are not confirmed physical display presents. Android
+//! does not report GPU timer data, so an absent `gpu` channel means unavailable.
 use makepad_widgets::*;
 use std::collections::BTreeMap;
 use std::time::{Duration, Instant};

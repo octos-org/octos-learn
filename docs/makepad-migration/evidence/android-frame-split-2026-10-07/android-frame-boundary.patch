@@ -1,0 +1,39 @@
+diff --git a/native/octos-learn/src/lib.rs b/native/octos-learn/src/lib.rs
+index 1bfbc4a..31c672e 100644
+--- a/native/octos-learn/src/lib.rs
++++ b/native/octos-learn/src/lib.rs
+@@ -4567,6 +4567,14 @@ impl AppMain for App {
+         if !self.perf.enabled() {
+             return self.handle_app_event(cx, event);
+         }
++        // The pinned Android backend accumulates draw/swap timings but never
++        // closes PerfMonitor frames. Close them at app Draw boundaries so the
++        // previous frame's encoding/wait is readable without patching Makepad.
++        // These are app draw boundaries, not confirmed SurfaceFlinger presents.
++        #[cfg(target_os = "android")]
++        if let Event::Draw(draw) = event {
++            cx.perf_monitor.frame_boundary(draw.time);
++        }
+         let t0 = Instant::now();
+         self.handle_app_event(cx, event);
+         self.perf.record(cx, event.name(), t0.elapsed());
+diff --git a/native/octos-learn/src/perf.rs b/native/octos-learn/src/perf.rs
+index 93fbfae..5eb5e5f 100644
+--- a/native/octos-learn/src/perf.rs
++++ b/native/octos-learn/src/perf.rs
+@@ -4,11 +4,14 @@
+ //! default; the disabled cost is one branch per event.
+ //!
+ //! It also turns on Makepad's PerfMonitor and appends a per-second split of
+-//! the presented frames: count, mean/max gap, and the mean per-frame time in
++//! the recorded frame boundaries: count, mean/max gap, and the mean time in
+ //! the platform channels — `draw` (CPU pass encode and GL driver calls),
+ //! `wait` (eglSwapBuffers / drawable wait) and `gpu` (GPU frame time where
+ //! the backend reports it). Event time above is app code only; these show
+ //! the cost after the app returns.
++//! The pinned Android backend needs the app Draw boundary hook in lib.rs;
++//! those boundaries are not confirmed physical display presents. Android
++//! does not report GPU timer data, so an absent `gpu` channel means unavailable.
+ use makepad_widgets::*;
+ use std::collections::BTreeMap;
+ use std::time::{Duration, Instant};

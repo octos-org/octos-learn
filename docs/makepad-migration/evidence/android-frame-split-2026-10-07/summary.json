@@ -1,0 +1,170 @@
+[
+  {
+    "name": "4k-home-gutter",
+    "pid": 20037,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1224",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.335408625,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 8.350150435862442,
+      "meanMs": 119.75832144354838,
+      "medianMs": 116.6669315,
+      "p95Ms": 150.000466,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 20,
+    "steadyFrames": 176,
+    "weightedChannelsMs": {
+      "event": 8.591477272727273,
+      "draw": 3.9267045454545455,
+      "wait": 106.29602272727271,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 118.9659090909091,
+    "meanBusyPercent": 7.15,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  },
+  {
+    "name": "1080p-home",
+    "pid": 20660,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1282",
+    "mode": "scroll",
+    "scale": 2,
+    "actionEndSeconds": 24.467641957999998,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 24.966389214961847,
+      "meanMs": 40.053849653225804,
+      "medianMs": 33.333563999999996,
+      "p95Ms": 50.000278,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 21,
+    "steadyFrames": 545,
+    "weightedChannelsMs": {
+      "event": 8.807889908256879,
+      "draw": 3.673394495412845,
+      "wait": 25.233944954128436,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 39.07045871559632,
+    "meanBusyPercent": 22.38095238095238,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  },
+  {
+    "name": "4k-collection-matched",
+    "pid": 22109,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1380",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.522191166,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 6.014538638479412,
+      "meanMs": 166.26379180645162,
+      "medianMs": 166.6670255,
+      "p95Ms": 200.000624,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 18,
+    "steadyFrames": 121,
+    "weightedChannelsMs": {
+      "event": 14.126446280991736,
+      "draw": 5.273553719008265,
+      "wait": 142.8685950413223,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 162.83305785123966,
+    "meanBusyPercent": 8.666666666666666,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  },
+  {
+    "name": "1080p-collection-matched",
+    "pid": 21806,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1336",
+    "mode": "scroll",
+    "scale": 2,
+    "actionEndSeconds": 24.399187666,
+    "surface": {
+      "newFramesInRing": 127,
+      "fps": 18.712830815536996,
+      "meanMs": 53.439269015873016,
+      "medianMs": 50.0001305,
+      "p95Ms": 66.666968,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 20,
+    "steadyFrames": 378,
+    "weightedChannelsMs": {
+      "event": 14.288359788359786,
+      "draw": 5.179100529100529,
+      "wait": 31.952380952380956,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 53.82645502645503,
+    "meanBusyPercent": 26.7,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  },
+  {
+    "name": "4k-playback",
+    "pid": 20419,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1257",
+    "mode": "play",
+    "scale": 4,
+    "actionEndSeconds": 22.00923775,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 10.941153053302715,
+      "meanMs": 91.39804508064516,
+      "medianMs": 99.9999335,
+      "p95Ms": 100.000449,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 17,
+    "steadyFrames": 195,
+    "weightedChannelsMs": {
+      "event": 17.38307692307692,
+      "draw": 5.68923076923077,
+      "wait": 68.12461538461538,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 91.28205128205128,
+    "meanBusyPercent": 18.941176470588236,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  },
+  {
+    "name": "1080p-playback",
+    "pid": 21379,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1310",
+    "mode": "play",
+    "scale": 2,
+    "actionEndSeconds": 22.009799542,
+    "surface": {
+      "newFramesInRing": 126,
+      "fps": 32.32751678634111,
+      "meanMs": 30.93339976,
+      "medianMs": 33.3334,
+      "p95Ms": 33.333806,
+      "note": "Frequency derived from tail ring presentation timestamps; not whole-window or verified physical panel FPS."
+    },
+    "steadyWindows": 18,
+    "steadyFrames": 592,
+    "weightedChannelsMs": {
+      "event": 18.009459459459457,
+      "draw": 5.6868243243243235,
+      "wait": 6.744425675675677,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 30.5535472972973,
+    "meanBusyPercent": 58.77777777777778,
+    "gpuNote": "Android backend does not report GPU timer data; missing channel is unavailable, not zero."
+  }
+]

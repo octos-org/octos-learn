@@ -1,0 +1,64 @@
+         1791390297.717 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 79% | Draw 2x 567.8ms max 561.3ms | Startup 1x 217.4ms max 217.4ms | Actions 1x 8.3ms max 8.3ms | NextFrame 2x 4.4ms max 3.0ms | Timer 5x 3.8ms max 1.2ms | PermissionResult 1x 1.6ms max 1.6ms | Signal 2x 0.9ms max 0.6ms | Resume 1x 0.7ms max 0.7ms | VideoInputs 1x 0.7ms max 0.7ms | WindowGeomChange 1x 0.6ms max 0.6ms | WindowGotFocus 1x 0.5ms max 0.5ms || frames 2 gap 338.3ms max 676.6ms | event 282.6ms gc 14.2ms draw 12.5ms wait 1.2ms
+         1791390298.733 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.0ms max 0.9ms || frames 0
+         1791390299.734 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 42.4ms max 1.0ms || frames 0
+         1791390300.735 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 44.2ms max 1.9ms || frames 0
+         1791390301.750 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 5% | Timer 61x 42.7ms max 0.9ms | TouchUpdate 40x 9.2ms max 0.3ms || frames 0
+         1791390302.767 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 5% | Timer 61x 41.6ms max 0.8ms | TouchUpdate 46x 9.3ms max 0.3ms || frames 0
+         1791390303.767 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.5ms max 0.7ms || frames 0
+         1791390304.767 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.2ms max 0.8ms || frames 0
+         1791390305.784 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 44.3ms max 1.7ms || frames 0
+         1791390306.784 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 41.8ms max 0.9ms || frames 0
+         1791390307.867 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 7% | Draw 9x 61.1ms max 8.1ms | Timer 18x 11.5ms max 0.8ms | NextFrame 9x 4.2ms max 0.7ms | TouchUpdate 12x 3.8ms max 0.5ms || frames 9 gap 1149.2ms max 9559.5ms | event 53.6ms draw 5.3ms wait 82.4ms
+         1791390308.867 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 5% | Draw 5x 31.6ms max 8.0ms | Timer 23x 14.6ms max 0.7ms | NextFrame 5x 2.0ms max 0.5ms | TouchUpdate 5x 1.6ms max 0.5ms || frames 5 gap 143.0ms max 151.4ms | event 8.0ms draw 3.7ms wait 131.0ms
+         1791390309.884 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.0ms max 0.7ms || frames 0
+         1791390310.884 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 40.3ms max 0.8ms || frames 0
+         1791390311.884 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 41.8ms max 0.9ms || frames 0
+         1791390312.900 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 41.5ms max 0.8ms || frames 0
+         1791390313.900 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.4ms max 0.8ms || frames 0
+         1791390314.917 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.8ms max 0.7ms || frames 0
+         1791390315.934 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.9ms max 0.7ms || frames 0
+         1791390316.934 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 38.8ms max 0.7ms || frames 0
+         1791390317.950 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.5ms max 0.7ms || frames 0
+         1791390318.950 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.2ms max 0.7ms || frames 0
+         1791390319.950 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.4ms max 0.8ms || frames 0
+         1791390320.950 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 40.4ms max 0.8ms || frames 0
+         1791390321.967 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 38.8ms max 0.7ms || frames 0
+         1791390322.984 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.2ms max 0.7ms || frames 0
+         1791390324.000 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.0ms max 0.7ms || frames 0
+         1791390325.000 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.6ms max 0.7ms || frames 0
+         1791390326.017 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.0ms max 0.7ms || frames 0
+         1791390327.034 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.8ms max 0.7ms || frames 0
+         1791390328.050 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.9ms max 0.7ms || frames 0
+         1791390329.050 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.3ms max 0.7ms || frames 0
+         1791390330.067 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.8ms max 0.7ms || frames 0
+         1791390331.067 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.7ms max 0.7ms || frames 0
+         1791390332.067 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.6ms max 0.8ms || frames 0
+         1791390333.067 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 38.5ms max 0.7ms || frames 0
+         1791390334.084 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 41.0ms max 0.8ms || frames 0
+         1791390335.084 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.1ms max 0.8ms || frames 0
+         1791390336.100 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.9ms max 0.7ms || frames 0
+         1791390337.117 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.1ms max 0.7ms || frames 0
+         1791390338.117 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.0ms max 0.7ms || frames 0
+         1791390339.117 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.1ms max 0.7ms || frames 0
+         1791390340.134 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.7ms max 0.7ms || frames 0
+         1791390341.150 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.6ms max 0.7ms || frames 0
+         1791390342.150 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.3ms max 0.8ms || frames 0
+         1791390343.167 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.1ms max 0.7ms || frames 0
+         1791390344.183 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.0ms max 0.7ms || frames 0
+         1791390345.184 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.0ms max 0.7ms || frames 0
+         1791390346.200 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 38.7ms max 0.8ms || frames 0
+         1791390347.200 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.4ms max 0.7ms || frames 0
+         1791390348.217 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.0ms max 0.7ms || frames 0
+         1791390349.234 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.9ms max 0.8ms || frames 0
+         1791390350.250 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.0ms max 0.7ms || frames 0
+         1791390351.267 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 40.2ms max 0.7ms || frames 0
+         1791390352.267 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.2ms max 0.7ms || frames 0
+         1791390353.267 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.8ms max 0.9ms || frames 0
+         1791390354.284 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 41.1ms max 0.9ms || frames 0
+         1791390355.284 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 39.9ms max 0.8ms || frames 0
+         1791390356.300 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 39.6ms max 0.8ms || frames 0
+         1791390357.300 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 37.7ms max 0.7ms || frames 0
+         1791390358.301 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 36.9ms max 0.8ms || frames 0
+         1791390359.317 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 61x 37.4ms max 0.7ms || frames 0
+         1791390360.317 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 38.4ms max 0.8ms || frames 0
+         1791390361.317 22428 22454 I Makepad : src/perf.rs:51:13 - [perf] busy 4% | Timer 60x 38.8ms max 0.8ms || frames 0

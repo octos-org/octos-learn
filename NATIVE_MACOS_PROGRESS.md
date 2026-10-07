@@ -3,7 +3,9 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（Android UI 密度对齐与性能复测）
+最后更新：2026-10-07（Android 帧拆分与临时分辨率对照）
+
+最新性能对照：基于 Claude `deb8e88` + 默认关闭的 Android PerfMonitor Draw 边界入口，重打独立测试 APK。首页 / 课程集 / 播放 4K swap wait 为 106 / 143 / 68ms，1080p 为 25 / 32 / 7ms；应用每帧 event / 平台 draw 基本不变。确认优先排查渲染分辨率 / 呈现链路，正式方案未实现。三场景采完已恢复默认 4K 和原 density override 640，旧 Web APK 未覆盖。卡片起手拖动另有 capture 问题。源码与证据随本轮提交推送，详见 [帧拆分与分辨率对照](docs/makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)。下文旧测试结果与“未提交”状态为历史。
 
 最新交付：基于 Claude `0960f29` 保留独立 Android 打包与 macOS 音频修复，实现 Web Android 紧凑布局，重新构建安装「Octos Learn 原生测试」。首页空闲连续重绘已消失；课程播放仍约 15 FPS，尚未通过完整性能验收。产品 14 项测试通过（1 项忽略）、共享预览 17 项通过，旧 Web APK 安装身份不变。详见 [UI 对齐与修复后复测](docs/makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)。本轮代码与记录提交推送，下面未提交/未修复文字均是此前阶段历史。
 
@@ -106,6 +108,8 @@ cd octos-learn/native/octos-learn && cargo test   # 4 个
 
 ## 5. 已完成
 
+- 2026-10-07 Android 真机 `deb8e88` 三场景 4K / 1080p 对照完成；固定 Android 后端缺少 PerfMonitor frame_boundary，由应用 Draw 诊断入口补齐，默认关闭、未改 Makepad。每秒日志 / latency / APK hash 与恢复核对已入库，保留 Web APK；正式性能优化未验收。
+
 - 2026-10-07 本机旁白截断修复：产品层 `AVAudioPlayer`，11 项测试通过，修复版应用已打包；当前为本地未提交改动。下列历史提交已推送。
 
 V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之后：
@@ -177,6 +181,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 结束画面 ≤17px（slope-and-intercept 35px，源于 KaTeX 与 NewCM 字形宽度差异，属已知限制）。
 
 ## 6. 待做（按优先级）
+
+- Android：优先制定应用 surface 的低分辨率渲染方案并保持 UI / 触摸密度；修改固定 Makepad 需要新的用户授权。本轮只批准全系统临时对照，已恢复原值。另修卡片起手拖动不滚页，继续排查 1080p 课程集约 19 次 Draw/s；主题色偏蓝交 Claude，未在此轮修改。
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
    - ~~中文字体~~：2026-10-06 用户选方案 A，已改用打包的 Noto Sans SC。

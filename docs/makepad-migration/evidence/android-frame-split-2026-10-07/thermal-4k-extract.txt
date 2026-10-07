@@ -1,0 +1,6 @@
+Thermal Status: 0
+	Temperature{mValue=61.9, mType=0, mName=soc_thermal, mStatus=0}
+	Temperature{mValue=58.500004, mType=0, mName=soc_thermal, mStatus=0}
+	CoolingDevice{mValue=0, mType=2, mName=cpufreq-cpu0}
+	CoolingDevice{mValue=0, mType=3, mName=thermal-gpufreq-0}
+	{.type = CPU, .name = soc_thermal, .hotThrottlingThresholds = [NaN, 65.0, 75.0, 95.0, NaN, 105.0, 115.0], .coldThrottlingThresholds = [NaN, NaN, NaN, NaN, NaN, NaN, NaN], .vrThrottlingThreshold = 0.0}

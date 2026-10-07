@@ -4567,6 +4567,14 @@ impl AppMain for App {
         if !self.perf.enabled() {
             return self.handle_app_event(cx, event);
         }
+        // The pinned Android backend accumulates draw/swap timings but never
+        // closes PerfMonitor frames. Close them at app Draw boundaries so the
+        // previous frame's encoding/wait is readable without patching Makepad.
+        // These are app draw boundaries, not confirmed SurfaceFlinger presents.
+        #[cfg(target_os = "android")]
+        if let Event::Draw(draw) = event {
+            cx.perf_monitor.frame_boundary(draw.time);
+        }
         let t0 = Instant::now();
         self.handle_app_event(cx, event);
         self.perf.record(cx, event.name(), t0.elapsed());

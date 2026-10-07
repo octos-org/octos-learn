@@ -1,0 +1,17 @@
+{
+  "cardGestureLogical": [
+    910,
+    470,
+    910,
+    350
+  ],
+  "gutterGestureLogical": [
+    325,
+    470,
+    325,
+    350
+  ],
+  "durationMs": 1400,
+  "cardHeaderRegionDifferenceBox": null,
+  "observation": "Card gesture leaves home header fixed; gutter gesture scrolls header up approximately 120 logical px. Suspected card finger capture; not fixed."
+}

@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 帧拆分与 4K / 1080p 对照](makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)：三场景 swap 等待为主、低分辨率对照及原值恢复、Android 统计入口补丁、卡片拖动捕获问题。
+
 - [Android UI 密度对齐与修复后大屏复测](makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)：基于 Claude `0960f29` 的新 APK、安卓紧凑布局、首页重绘验证与课程播放剩余瓶颈。
 
 - [Android 原生 APK 编译打包交接](makepad-migration/ANDROID_APK_BUILD_HANDOFF_2026-10-07.md)：给 Claude 的实际源码版本、缓存工具与固定 Java host 的关系、Release 复建命令及产物身份。
