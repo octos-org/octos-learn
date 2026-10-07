@@ -8,6 +8,7 @@ use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 use octos_oll_preview::spatial_board::InkTool;
 mod svg_image;
+mod cjk_fonts;
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
@@ -2171,6 +2172,7 @@ impl App {
 impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
+        cjk_fonts::install(vm);
         makepad_plot::script_mod(vm);
         controls_view::script_mod(vm);
         scene3d_view::script_mod(vm);

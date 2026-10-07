@@ -18,6 +18,10 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/makepad_widgets" \
     "$app/Contents/Resources/course-packs"
 cp "$CARGO_TARGET_DIR/release/octos-learn" "$app/Contents/MacOS/octos-learn"
 cp -R "$checkout_parent/makepad/widgets/resources" "$app/Contents/Resources/makepad_widgets/"
+# Bundled CJK UI font (Noto Sans SC, SIL OFL 1.1; see src/cjk_fonts.rs). The
+# packaged dependency path is <crate>/<path>: octos_learn/assets/fonts/...
+mkdir -p "$app/Contents/Resources/octos_learn/assets"
+cp -R "$crate_dir/assets/fonts" "$app/Contents/Resources/octos_learn/assets/"
 
 # Course packs: verify every pinned archive's SHA-256 against
 # course-packs.lock.json, downloading missing archives from the pinned

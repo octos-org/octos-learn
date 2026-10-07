@@ -62,10 +62,7 @@
 
 ## 4. 剩余差异与待定事项
 
-1. **待用户决定：中文字体。**
-   - Web 在 macOS 上用 PingFang SC（无衬线）；原生用 Makepad 内置的 LXGW WenKai（楷体风格）。
-   - 固定版本的 Makepad 不能加载系统 `.ttc`。
-   - 可选：随 app 打包开源无衬线中文字体（Noto Sans SC / 思源黑体，OFL 许可，约 10–16MB），或保持现状。
+1. ~~中文字体~~：用户 2026-10-06 选方案 A。app 现在打包 Noto Sans SC Regular/Bold（OFL），作为 CJK 回退字体排在 LXGW 之前（`src/cjk_fonts.rs`，打包见 `scripts/package-macos.sh`）。
 2. 依赖后端的功能仍是占位（点击弹 toast）：语音、摄像头、提问输入、设置、登录、新建空白白板。学习记录只列本机记录，不同步服务器。
 3. 小差异：
    - 中文换行不避头尾；

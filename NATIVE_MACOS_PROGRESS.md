@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-06（v7 交付文档，可交付测试）
+最后更新：2026-10-06（中文字体方案 A：Noto Sans SC）
 
 ## 0. 目标
 
@@ -110,6 +110,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `bba039a` 课程目录：步骤标题单行（Web nowrap/ellipsis，Beat 标题最多 2 行）、行距 46px（去掉 Button 默认外边距与折叠时的 Beat 列表外边距）、▶ 与展开箭头尺寸/颜色同 Web
 - `8c5a19b` 老师指针只在最新操作是 teacher.point 时显示（同 Web renderPointer；下一 Beat 停在 beat.end，不显示）
 - `bcc7dc8` 大图对话框移到老师头像/输入栏之上（Web 模态遮住全部），plot 区域加 Web 的 #f8f5ed 底板
+- （本次提交）中文字体（用户选定方案 A）：随 app 打包 Noto Sans SC Regular/Bold（SIL OFL 1.1，`native/octos-learn/assets/fonts/`，约 17MB），`src/cjk_fonts.rs` 在启动时把它插到主题字体链里 LXGW 之前；`package-macos.sh` 复制到 `Resources/octos_learn/assets/fonts/`（已验证打包后不依赖源码目录）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -118,13 +119,24 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 ## 6. 待做（按优先级）
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
-   - **待用户决定**：中文字体。Web 在 macOS 上用 PingFang SC（无衬线），原生用 Makepad 内置的 LXGW WenKai（楷体风格，含粗体）。
-     Makepad 825dbb4 无法加载系统 .ttc 字体；可选：(a) 随 app 打包开源无衬线中文字体（Noto Sans SC / 思源黑体，OFL，约 10–16MB）并设为 CJK 回退；(b) 保持现状。
+   - ~~中文字体~~：2026-10-06 用户选方案 A，已改用打包的 Noto Sans SC。
    - 大图对话框里「探索」工具条 Web 在底板外上方，原生在底板内（PlotView 自带工具条）
    - 中文换行不避头尾（如「。」出现在行首），Makepad 文本换行限制
 2. 练习任务中 scene3d 视角提交（目前没有课程包使用，优先级低）。
 3. ~~再跑一次九门课全量对照~~（2026-10-06 完成，无回归）。
 4. ~~写交付文档 V7、更新 AGENT_HANDOFF.md、通知用户测试~~（2026-10-06 完成，见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V7.md`）。等待用户测试反馈与中文字体决定。
+
+## 6.1 依赖后端功能的建议路线（2026-10-06 提出，待用户确认）
+
+| 顺序 | 功能 | 依赖 | 说明 |
+|---|---|---|---|
+| 1 | 登录 + 原生 API 客户端 | 服务器地址、测试账号、原生端登录方式 | 其余功能的前提；对齐 Web `api/typesafe-client.ts` |
+| 2 | 提问输入栏（文字） | 1 | 老师回复、选区提问、白板助教卡，是互动学习的核心闭环 |
+| 3 | 学习记录服务器同步 | 1 | 学习记录抽屉合并服务器记录（Web `discoverServerLearningSessions`） |
+| 4 | 设置页 | 1 | 设备偏好、语音设置等 |
+| 5 | 语音对话 | 1、2 | 麦克风权限（entitlement）、音频流、TTS |
+| 6 | 摄像头 | 1、2 | 相机权限、拍照上传 |
+| 7 | 新建空白白板 | 部分可离线 | 本地手写白板可先做；AI 生成内容依赖 2 |
 
 ## 7. 明确不做 / 占位（依赖后端或未迁移）
 

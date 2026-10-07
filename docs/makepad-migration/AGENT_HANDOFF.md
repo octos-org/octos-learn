@@ -20,7 +20,7 @@
 **2026-10-06 v7（可交付测试）**：功能补齐并逐屏对齐 Web，记录见 `OLL_MACOS_PRODUCT_V7.md`，逐项进度和接手清单见仓库根目录 `NATIVE_MACOS_PROGRESS.md`（每完成一块就更新并推送）。
 - 新增：练习任务、plot / geometry 卡片、旁白音频、课程目录、大图、手写编辑、学习记录、卡片菜单。
 - 视觉巡检修掉了 Makepad 圆角 / 边框按 2 倍绘制、公式撇号与函数名间距、pt / px 字号混用等问题。
-- 待用户决定：中文字体（LXGW WenKai 与 Web 的 PingFang SC 不同）。
+- 中文字体：用户选方案 A，打包 Noto Sans SC（`native/octos-learn/assets/fonts/`，`src/cjk_fonts.rs`）。
 
 **2026-10-05 v6**：v5 暂停期间 web 有较大变化，本轮已合并两仓 main 并跟进（记录见 `OLL_MACOS_PRODUCT_V6.md`）。改动涉及：
 - 停靠式控件面板、附件归属、回填列、短步骤叠放、思考题卡；
