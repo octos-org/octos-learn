@@ -4569,7 +4569,7 @@ impl AppMain for App {
         }
         let t0 = Instant::now();
         self.handle_app_event(cx, event);
-        self.perf.record(event.name(), t0.elapsed());
+        self.perf.record(cx, event.name(), t0.elapsed());
     }
 }
 

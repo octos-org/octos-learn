@@ -170,6 +170,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   1. **Makepad `Svg` 默认 `animating: true`**：每帧重绘并请求下一帧，只要界面上有一个 Svg 图标就一直 120 Draw/s（主页、空白板都一样，所以“处处都卡”）。lib.rs/settings.rs 所有 Svg 加 `animating: false` 后，主页与课程静止时 0 次 Draw，主线程约 1%（只剩 60 Hz 定时器）。
   2. **白板点阵每次重绘都在 CPU 上细分约 2,000 个圆**（DrawVector），Mac 上每次 8–10 ms；课程播放时白板 60 次/秒重绘，主线程 57%。改为 SpatialBoard `draw_bg` 像素着色器（24px 网格、#d7d1c5、半径 1px，与 Web 一致），播放时降到 8%（每次 Draw 约 1 ms）。
   安卓需在另一台机器用本提交重新打包验证。遗留可优化点：定时器固定 60 Hz（设备显示 30 Hz）；播放时每个 tick 都整板 `refresh()`
+- （本次提交）`OCTOS_PERF` 增加每秒帧拆分（启用 Makepad PerfMonitor）：`|| frames N gap 均值/最大 | event / draw / wait / gpu`（每帧平均 ms）。`draw` = 应用返回后 Makepad 编码绘制命令与 GL 驱动调用的 CPU 时间，`wait` = eglSwapBuffers 等待（GPU 跟不上时变大），`gpu` 只有 Metal 上报。用途：判断安卓大屏剩余卡顿属于 CPU 编码/驱动还是 GPU 填充（4K、Mali-G52 单核）。Mac 参考：首页滚动每帧 draw 0.3ms、gpu 1.3ms；课程播放 event 1.5ms、draw 0.4ms、gpu 1.0ms
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
