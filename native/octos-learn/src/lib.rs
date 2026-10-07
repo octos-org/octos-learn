@@ -552,6 +552,8 @@ struct Live {
     jobs: HashMap<String, String>,
     /// A question waiting for login before it can be sent.
     queued: Option<(String, String)>,
+    /// The playing lesson: (turn id, canonical JSONL), cached for reopening.
+    lesson: Option<(String, String)>,
 }
 impl Live {
     fn new() -> Self {
@@ -564,6 +566,7 @@ impl Live {
             questions: Vec::new(),
             jobs: HashMap::new(),
             queued: None,
+            lesson: None,
         }
     }
     fn pending(&self) -> bool {
@@ -937,8 +940,11 @@ impl App {
     fn note(&mut self, _cx: &mut Cx, _message: &str) {}
     fn save_progress(&mut self, cx: &mut Cx) {
         // Web: a pack preview is ephemeral and never enters the session index.
-        // DIFF: live boards are not persisted locally yet (server sessions).
-        if self.course_preview || self.live.is_some() {
+        if self.live.is_some() {
+            self.save_live(cx);
+            return;
+        }
+        if self.course_preview {
             return;
         }
         if let Some(player) = &self.player {
@@ -1090,14 +1096,28 @@ impl App {
                 Some((pack.to_owned(), version.to_owned(), title, modified))
             })
             .collect();
+        // Live boards (web source-less sessions: 自由白板), id "live:<session>".
+        if let Some(dir) = self.live_dir() {
+            for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+                let Some(id) = entry.file_name().to_string_lossy().strip_suffix(".json").map(str::to_owned) else { continue };
+                let Some(record) = std::fs::read(entry.path()).ok().and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok()) else { continue };
+                let Ok(modified) = entry.metadata().and_then(|m| m.modified()) else { continue };
+                let title = record["title"].as_str().unwrap_or("学习白板").to_owned();
+                records.push((format!("live:{id}"), String::new(), title, modified));
+            }
+        }
         records.sort_by(|a, b| b.3.cmp(&a.3));
         let query = self.history_query.trim().to_lowercase();
-        let current = (self.learning_visible && self.player.is_some()).then(|| (self.pack_id.clone(), self.pack_version.clone()));
+        let current = match &self.live {
+            Some(l) => Some((format!("live:{}", l.session_id), String::new())),
+            None => (self.learning_visible && self.player.is_some()).then(|| (self.pack_id.clone(), self.pack_version.clone())),
+        };
         self.history_items.clear();
         let mut rows = Vec::new();
         for (pack, version, title, modified) in records.into_iter().filter(|r| r.2.to_lowercase().contains(&query)) {
             let is_current = current.as_ref().is_some_and(|(p, v)| *p == pack && *v == version);
-            let meta = format!("{} · 课程学习{}", zh_month_day_time(modified), if is_current { " · 当前" } else { "" });
+            let kind = if pack.starts_with("live:") { "自由白板" } else { "课程学习" };
+            let meta = format!("{} · {kind}{}", zh_month_day_time(modified), if is_current { " · 当前" } else { "" });
             let bg = if is_current { "#edf4ef" } else { "#0000" };
             let code = format!(
                 "View{{width:Fill height:Fit flow:Down
@@ -1262,6 +1282,7 @@ impl App {
             self.server.ensure_login(cx);
         }
         self.sync_live(cx);
+        self.save_live(cx);
     }
     /// session/open (once) + session/title.set (first question) +
     /// skill/action/invoke learning.lesson.generate, as the web workspace.
@@ -1298,6 +1319,90 @@ impl App {
         }
         self.toast(cx, message);
         self.sync_live(cx);
+        self.save_live(cx);
+    }
+    fn live_dir(&self) -> Option<std::path::PathBuf> {
+        self.store.as_ref().map(|s| s.dir().join("live"))
+    }
+    /// Web learning-session-store + learning-questions: a live board is kept
+    /// on this device (questions, the generated lesson, progress and ink) so
+    /// 学习记录 can reopen it offline.
+    fn save_live(&mut self, cx: &mut Cx) {
+        let (Some(live), Some(dir)) = (self.live.as_ref(), self.live_dir()) else { return };
+        if live.questions.is_empty() {
+            return;
+        }
+        let mut checkpoint = self.player.as_ref().and_then(|p| p.checkpoint().ok()).unwrap_or(serde_json::Value::Null);
+        if checkpoint.is_object() {
+            if let Some(b) = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>() {
+                checkpoint["native_ink"] = b.ink_snapshot();
+            }
+        }
+        let title = self
+            .player
+            .as_ref()
+            .map(|p| p.board.title.clone())
+            .filter(|t| !t.is_empty())
+            .or_else(|| live.questions.first().map(|q| q.1.clone()))
+            .unwrap_or_default();
+        let record = json!({
+            "session_id": live.session_id,
+            "title": title,
+            "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
+            "lesson": live.lesson.as_ref().map(|(t, src)| json!({"turn_id": t, "source": src})),
+            "checkpoint": checkpoint,
+        });
+        let path = dir.join(format!("{}.json", live.session_id));
+        let _ = std::fs::create_dir_all(&dir).and_then(|_| std::fs::write(path, record.to_string()));
+    }
+    /// Reopen a saved live board from 学习记录 (paused at its saved state).
+    fn open_live_record(&mut self, cx: &mut Cx, session_id: &str) {
+        let Some(dir) = self.live_dir() else { return };
+        let Some(record) = std::fs::read(dir.join(format!("{session_id}.json")))
+            .ok()
+            .and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())
+        else {
+            self.toast(cx, "这条学习记录已损坏或不存在");
+            return;
+        };
+        self.open_live_board(cx);
+        let Some(live) = self.live.as_mut() else { return };
+        live.session_id = session_id.to_owned();
+        live.titled = true;
+        live.questions = record["questions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|q| {
+                let status = match q[2].as_str()? {
+                    // A generation that was in flight when the app closed.
+                    "pending" => "failed",
+                    s => s,
+                };
+                Some((q[0].as_str()?.to_owned(), q[1].as_str()?.to_owned(), status.to_owned()))
+            })
+            .collect();
+        let lesson = record["lesson"]["source"].as_str().map(|src| {
+            (record["lesson"]["turn_id"].as_str().unwrap_or("").to_owned(), src.to_owned())
+        });
+        live.lesson = lesson.clone();
+        if let Some((_, source)) = lesson {
+            let checkpoint = &record["checkpoint"];
+            let session = if checkpoint.is_object() { Session::restore(&source, checkpoint) } else { Session::load(&source) };
+            match session {
+                Ok(session) => {
+                    if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                        if checkpoint["native_ink"].is_object() {
+                            b.restore_ink(cx, &checkpoint["native_ink"]);
+                        }
+                    }
+                    self.player = Some(session);
+                }
+                Err(e) => self.toast(cx, &format!("无法恢复这节课：{e}")),
+            }
+        }
+        self.sync_live(cx);
+        self.refresh(cx);
     }
     fn handle_server(&mut self, cx: &mut Cx, event: &Event) {
         for ev in self.server.handle(cx, event) {
@@ -1390,9 +1495,12 @@ impl App {
         let loaded = serde_json::from_str::<serde_json::Value>(body)
             .map_err(|e| format!("课程文件损坏：{e}"))
             .and_then(|doc| oll_runtime::authoring::materialize_jsonl(&doc, &host))
-            .and_then(|jsonl| Session::load(&jsonl));
+            .and_then(|jsonl| Session::load(&jsonl).map(|s| (s, jsonl)));
         match loaded {
-            Ok(session) => {
+            Ok((session, jsonl)) => {
+                if let Some(l) = self.live.as_mut() {
+                    l.lesson = Some((turn_id.to_owned(), jsonl));
+                }
                 if let Some(q) = self.live.as_mut().and_then(|l| l.questions.iter_mut().find(|q| q.0 == turn_id)) {
                     q.2 = "answered".into();
                 }
@@ -1406,6 +1514,7 @@ impl App {
                 self.sync_live(cx);
                 self.start_playback(cx);
                 self.refresh(cx);
+                self.save_live(cx);
             }
             Err(e) => self.fail_question(cx, turn_id, &format!("没有生成成功：{e}")),
         }
@@ -2848,7 +2957,15 @@ impl AppMain for App {
             let picked = items.into_iter().find(|(_, _, row)| tapped(cx, event, row));
             if let Some((pack, version, _)) = picked {
                 self.set_history_open(cx, false);
-                if pack != self.pack_id || version != self.pack_version {
+                if let Some(session) = pack.strip_prefix("live:") {
+                    if self.live.as_ref().is_none_or(|l| l.session_id != session) {
+                        if let Some(p) = &mut self.player {
+                            p.pause();
+                        }
+                        self.save_progress(cx);
+                        self.open_live_record(cx, session);
+                    }
+                } else if pack != self.pack_id || version != self.pack_version {
                     if let Some(session) = &mut self.player {
                         session.pause();
                     }
