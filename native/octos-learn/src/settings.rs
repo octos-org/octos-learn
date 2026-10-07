@@ -834,7 +834,7 @@ impl App {
                     format!("skin_png_{key} := Image{{width:80 height:80 fit:ImageFit.Smallest}}")
                 } else {
                     page.names.push(format!("skin_svg_{key}"));
-                    format!("skin_svg_{key} := Svg{{width:64 height:64}}")
+                    format!("skin_svg_{key} := Svg{{animating:false width:64 height:64}}")
                 };
                 let pill = |text: &str, strong: bool| format!(
                     "RoundedView{{width:Fit height:Fit padding:Inset{{left:8 right:8 top:4 bottom:4}} draw_bg +: {{color:{} border_radius:3 border_size:0.5 border_color:#bdbcb8}} Label{{width:Fit padding:0 text:\"{text}\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#3b3b39}}}}",

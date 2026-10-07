@@ -13,6 +13,8 @@ mod voice;
 mod camera;
 mod ink_question;
 mod settings;
+mod perf;
+use perf::Perf;
 use settings::SettingsState;
 use camera::Camera;
 use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogAction};
@@ -59,7 +61,7 @@ script_mod! {
                                             }
                                             // The logo file is a multi-motif artboard sheet;
                                             // preserve_viewbox crops to the intended motif.
-                                            logo_svg := Svg { width: 34 height: 34 draw_svg +: { preserve_viewbox: true } }
+                                            logo_svg := Svg { animating: false width: 34 height: 34 draw_svg +: { preserve_viewbox: true } }
                                             View { width: Fit height: Fit padding: Inset{top: 3.04 bottom: 3.04 left: 0}
     Label { width: Fit padding: 0 text: "Octos Learn" draw_text.text_style: theme.font_bold{font_size: 14.25 line_spacing: 1.271} draw_text.color: #243b40 } }
                                             View { width: Fill height: 1 }
@@ -84,10 +86,10 @@ script_mod! {
                                         // DIFF: blank whiteboard needs the session system; a tap shows a toast.
                                         blank_board := RoundedView { width: Fit height: 52 flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 32}
                                             padding: Inset{left: 20 right: 20} draw_bg +: { color: #166a79 border_radius: 7.5 }
-                                            blank_plus := Svg { width: 20 height: 20 draw_svg +: { preserve_viewbox: true } }
+                                            blank_plus := Svg { animating: false width: 20 height: 20 draw_svg +: { preserve_viewbox: true } }
                                             View { width: Fit height: Fit padding: Inset{top: 2.56 bottom: 2.56 left: 0}
     Label { width: Fit padding: 0 text: "新建空白白板" draw_text.text_style: theme.font_bold{font_size: 12.00 line_spacing: 1.271} draw_text.color: #ffffff } }
-                                            blank_arrow := Svg { width: 18 height: 18 draw_svg +: { preserve_viewbox: true } margin: Inset{left: 18} }
+                                            blank_arrow := Svg { animating: false width: 18 height: 18 draw_svg +: { preserve_viewbox: true } margin: Inset{left: 18} }
                                         }
                                     }
                                     // 3. Library (web .course-launcher-library): the
@@ -96,7 +98,7 @@ script_mod! {
                                     // whiteboards (web: blank boards only) are not migrated.
                                     View { width: Fill height: Fit flow: Down
                                         collection_back := View { visible: false width: Fit height: 44 flow: Right spacing: 8 align: Align{y: 0.5} margin: Inset{top: 28 bottom: 28}
-                                            back_icon := Svg { width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
+                                            back_icon := Svg { animating: false width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
                                             View { width: Fit height: Fit padding: Inset{top: 2.24 bottom: 2.24 left: 0}
     Label { width: Fit padding: 0 text: "全部课程集" draw_text.text_style: theme.font_regular{font_size: 10.50 line_spacing: 1.271} draw_text.color: #426568 } }
                                         }
@@ -109,7 +111,7 @@ script_mod! {
                                                 View { width: Fit height: Fit padding: Inset{top: 6.27 bottom: 0.27 left: 0}
     library_title := Label { width: Fit padding: 0 text: "课程集" draw_text.text_style: theme.font_regular{font_size: 20.25 line_spacing: 1.017} draw_text.color: #243b40 } }
                                             }
-                                            library_icon := Svg { width: 23 height: 23 draw_svg +: { preserve_viewbox: true } }
+                                            library_icon := Svg { animating: false width: 23 height: 23 draw_svg +: { preserve_viewbox: true } }
                                         }
                                         SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } margin: Inset{bottom: 22} }
                                         collection_intro := View { visible: false width: Fill height: Fit flow: Down margin: Inset{bottom: 30}
@@ -132,7 +134,16 @@ script_mod! {
                         visible: false
                         width: Fill height: Fill
                         flow: Overlay
-                        spatial := SpatialBoard { width: Fill height: Fill dot_grid: true draw_bg +: { color: #f8f5ed } }
+                        spatial := SpatialBoard { width: Fill height: Fill draw_bg +: { color: #f8f5ed
+                            // Web board paper: #d7d1c5 dots (r 1px) at 24px cell centres,
+                            // screen-anchored. Drawn per pixel on the GPU: the old CPU
+                            // path tessellated ~2,000 circles on every board redraw.
+                            pixel: fn() {
+                                let p = self.pos * self.rect_size
+                                let cell = (fract(p / 24.0) - vec2(0.5, 0.5)) * 24.0
+                                let dot = clamp(1.5 - length(cell), 0.0, 1.0)
+                                return mix(self.color, #d7d1c5, dot)
+                            } } }
                         // Top bar (web .learning-workspace-topbar: left 116,
                         // right 14, top 14; 3-column grid: title block /
                         // centered icon demo controls / mode buttons).
@@ -266,7 +277,7 @@ script_mod! {
                                         draw_bg +: { color: #e3f4f7 border_radius: 20 border_size: 0.5 border_color: #c2dde6 } }
                                     // DIFF: static avatar; the organic skin animation is a later milestone.
                                     octos_art_holder := View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
-                                        octos_art := Svg { width: 56 height: 56 } }
+                                        octos_art := Svg { animating: false width: 56 height: 56 } }
                                     // 3D companions (web model-viewer) show their thumbnail.
                                     octos_png := View { visible: false width: Fill height: Fill align: Align{x: 0.5 y: 0.25}
                                         octos_png_image := Image { width: 62 height: 62 fit: ImageFit.Smallest } }
@@ -539,7 +550,7 @@ script_mod! {
                                     draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x12606e border_radius: 5 border_size: 0 border_color: #0000 } }
                                 RoundedView { width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5} padding: 10
                                     draw_bg +: { color: #0000 border_radius: 5 border_size: 0.5 border_color: #d7dfd9 }
-                                    history_search_icon := Svg { width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
+                                    history_search_icon := Svg { animating: false width: 17 height: 17 draw_svg +: { preserve_viewbox: true } }
                                     history_search := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "搜索学习记录"
                                         draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                             border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
@@ -560,12 +571,12 @@ script_mod! {
                             draw_bg +: { color: #fffef9 border_radius: 6 border_size: 0.5 border_color: #d8ded6 }
                             menu_restart := RoundedView { width: Fill height: 36 flow: Right spacing: 6 align: Align{y: 0.5} padding: Inset{left: 10}
                                 draw_bg +: { color: #0000 border_radius: 4 }
-                                menu_restart_icon := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                menu_restart_icon := Svg { animating: false width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
                                 Label { width: Fit padding: 0 text: "重新开始" draw_text.text_style.font_size: 9.75 draw_text.color: #426568 }
                             }
                             menu_delete := RoundedView { width: Fill height: 36 flow: Right spacing: 6 align: Align{y: 0.5} padding: Inset{left: 10}
                                 draw_bg +: { color: #0000 border_radius: 4 }
-                                menu_delete_icon := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                menu_delete_icon := Svg { animating: false width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
                                 Label { width: Fit padding: 0 text: "删除学习记录" draw_text.text_style.font_size: 9.75 draw_text.color: #a84836 }
                             }
                         }
@@ -596,7 +607,7 @@ script_mod! {
                                             RoundedView { width: Fill height: Fit flow: Right padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 Label { width: Fill padding: 0 text: "Google Gemini" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
-                                                setup_platform_chevron := Svg { width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
+                                                setup_platform_chevron := Svg { animating: false width: 14 height: 14 draw_svg +: { preserve_viewbox: true } }
                                             }
                                             Label { width: Fit padding: 0 margin: Inset{top: 10} text: "模型名称" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
                                             RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
@@ -1171,6 +1182,9 @@ pub struct App {
     /// Show the setup whiteboard even after it was skipped (新手设置白板).
     #[rust]
     setup_force: bool,
+    /// OCTOS_PERF=1 main-thread profiling.
+    #[rust]
+    perf: Perf,
     /// Web useTeacherSkin (saved in the data directory).
     #[rust]
     teacher_skin: String,
@@ -3591,7 +3605,7 @@ impl App {
         let start_text = web_text(start_label, 13., 1.5, "#ffffff", true, false, (0., 0.));
         let more = if resume {
             "more := RoundedView{width:40 height:44 align:Align{x:0.5 y:0.5} margin:Inset{right:8} draw_bg +: {color:#0000 border_radius:4}
-                more_icon := Svg{width:20 height:20 draw_svg +: {preserve_viewbox:true}}}"
+                more_icon := Svg{animating:false width:20 height:20 draw_svg +: {preserve_viewbox:true}}}"
         } else {
             ""
         };
@@ -3616,7 +3630,7 @@ impl App {
                     spacer := View{{width:Fill height:0}}
                     View{{width:Fill height:Fit flow:Right spacing:14 align:Align{{y:0.5}} padding:Inset{{top:8}}
                         View{{width:Fit height:Fit flow:Right spacing:5 align:Align{{y:0.5}}
-                            clock := Svg{{width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
+                            clock := Svg{{animating:false width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
                             {minutes_label}
                         }}
                         {offline_label}
@@ -3624,14 +3638,14 @@ impl App {
                     SolidView{{width:Fill height:1 margin:Inset{{top:16}} draw_bg +: {{color:#e7e9e3}}}}
                     View{{width:Fill height:44 flow:Right align:Align{{y:0.5}} margin:Inset{{top:16}}
                         preview := RoundedView{{width:70 height:44 flow:Right spacing:6 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#f0f3ee border_radius:4.5}}
-                            eye := Svg{{width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
+                            eye := Svg{{animating:false width:14 height:14 draw_svg +: {{preserve_viewbox:true}}}}
                             {preview_label}
                         }}
                         View{{width:Fill height:1}}
                         {more}
                         start := RoundedView{{width:98 height:44 flow:Right spacing:6 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#166a79 border_radius:4.5}}
                             {start_text}
-                            arrow := Svg{{width:16 height:16 draw_svg +: {{preserve_viewbox:true}}}}
+                            arrow := Svg{{animating:false width:16 height:16 draw_svg +: {{preserve_viewbox:true}}}}
                         }}
                     }}
                 }}
@@ -3700,7 +3714,7 @@ impl App {
                         View{{width:Fill height:1}}
                         View{{width:Fit height:Fit flow:Right spacing:6 align:Align{{y:0.5}}
                             {view_label}
-                            arrow := Svg{{width:17 height:17 draw_svg +: {{preserve_viewbox:true}}}}
+                            arrow := Svg{{animating:false width:17 height:17 draw_svg +: {{preserve_viewbox:true}}}}
                         }}
                     }}
                 }}
@@ -4506,6 +4520,17 @@ impl AppMain for App {
         self::script_mod(vm)
     }
     fn handle_event(&mut self, cx: &mut Cx, event: &Event) {
+        if !self.perf.enabled() {
+            return self.handle_app_event(cx, event);
+        }
+        let t0 = Instant::now();
+        self.handle_app_event(cx, event);
+        self.perf.record(event.name(), t0.elapsed());
+    }
+}
+
+impl App {
+    fn handle_app_event(&mut self, cx: &mut Cx, event: &Event) {
         if let Event::VideoPlaybackPrepared(e) = event {
             if std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() {
                 eprintln!("[audio] prepared {:?} duration {}ms", e.video_id, e.duration);
