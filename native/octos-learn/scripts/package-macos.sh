@@ -79,6 +79,8 @@ cat > "$app/Contents/Info.plist" <<'PLIST'
 <key>CFBundleName</key><string>Octos Learn</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>0.1.0</string>
+<key>NSMicrophoneUsageDescription</key><string>启用语音后，Octos 会听你说出的问题并转成文字提问。</string>
+<key>NSCameraUsageDescription</key><string>启用摄像头后，提问时可以附上纸上的题目画面。</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST

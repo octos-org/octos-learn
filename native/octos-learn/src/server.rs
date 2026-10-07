@@ -48,6 +48,7 @@ enum Http {
     TestProvider,
     SaveProfile,
     Speech { purpose: String },
+    Upload { purpose: String },
 }
 
 /// What a JSON-RPC call was for.
@@ -55,6 +56,7 @@ enum Http {
 pub enum Call {
     Fire,
     Invoke { turn_id: String },
+    Admit { turn_id: String },
 }
 
 /// Server results the app reacts to.
@@ -77,6 +79,10 @@ pub enum ServerEvent {
     ProfileSaved(Result<Value, String>),
     /// POST /api/voice/synthesize (audio bytes).
     Speech { purpose: String, audio: Result<Vec<u8>, String> },
+    /// POST /api/upload: server-side paths of the uploaded files.
+    Uploaded { purpose: String, paths: Result<Vec<String>, String> },
+    /// voice/admit: Some(transcript) for speech, None for no_speech.
+    Admitted { turn_id: String, result: Result<Option<String>, String> },
 }
 
 /// Web formatSettingsError: the server's JSON error/message, else the text.
@@ -246,6 +252,23 @@ impl Server {
         req.set_body_string(&json!({"text": text}).to_string());
         self.http(cx, req, Http::Speech { purpose: purpose.into() });
     }
+    /// Web uploadFiles: multipart `file` parts (plus audio_upload_mode).
+    pub fn upload(&mut self, cx: &mut Cx, name: &str, mime: &str, bytes: &[u8], audio_mode: Option<&str>, purpose: &str) {
+        let boundary = format!("octos{}", uuid().replace('-', ""));
+        let mut body = Vec::new();
+        if let Some(mode) = audio_mode {
+            body.extend_from_slice(format!("--{boundary}\r\nContent-Disposition: form-data; name=\"audio_upload_mode\"\r\n\r\n{mode}\r\n").as_bytes());
+        }
+        body.extend_from_slice(
+            format!("--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\nContent-Type: {mime}\r\n\r\n").as_bytes(),
+        );
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(format!("\r\n--{boundary}--\r\n").as_bytes());
+        let mut req = self.request("/api/upload", HttpMethod::POST);
+        req.headers.insert("Content-Type".into(), vec![format!("multipart/form-data; boundary={boundary}")]);
+        req.set_body(body);
+        self.http(cx, req, Http::Upload { purpose: purpose.into() });
+    }
     /// Download a session artifact (web buildFileUrl: `ws/…` handles are
     /// session-scoped query URLs).
     pub fn fetch_file(&mut self, cx: &mut Cx, session_id: &str, handle: &str, turn_id: &str) {
@@ -335,6 +358,14 @@ impl Server {
                         } else {
                             Err(error_text(status, &body))
                         })),
+                        Http::Upload { purpose } => out.push(ServerEvent::Uploaded {
+                            purpose,
+                            paths: if (200..300).contains(&status) {
+                                serde_json::from_str::<Vec<String>>(&body).map_err(|e| e.to_string())
+                            } else {
+                                Err(error_text(status, &body))
+                            },
+                        }),
                         Http::Speech { purpose } => out.push(ServerEvent::Speech {
                             purpose,
                             audio: match response.body() {
@@ -362,6 +393,7 @@ impl Server {
                         Http::TestProvider => out.push(ServerEvent::ProviderTested(Err(error.message.clone()))),
                         Http::SaveProfile => out.push(ServerEvent::ProfileSaved(Err(error.message.clone()))),
                         Http::Speech { purpose } => out.push(ServerEvent::Speech { purpose, audio: Err(error.message.clone()) }),
+                        Http::Upload { purpose } => out.push(ServerEvent::Uploaded { purpose, paths: Err(error.message.clone()) }),
                     }
                 }
                 NetworkResponse::WsOpened { socket_id } if *socket_id == self.socket => {
@@ -383,6 +415,17 @@ impl Server {
                     }
                     let Some(id) = msg["id"].as_str() else { continue };
                     let Some(call) = self.calls.remove(id) else { continue };
+                    if let Call::Admit { turn_id } = call {
+                        let result = match msg.get("error") {
+                            Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("语音识别失败").to_owned()),
+                            _ => match msg["result"]["status"].as_str() {
+                                Some("speech") => Ok(msg["result"]["transcript"].as_str().map(|t| t.trim().to_owned()).filter(|t| !t.is_empty())),
+                                _ => Ok(None),
+                            },
+                        };
+                        out.push(ServerEvent::Admitted { turn_id, result });
+                        continue;
+                    }
                     if let Call::Invoke { turn_id } = call {
                         let result = match msg.get("error") {
                             Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("生成请求失败").to_owned()),

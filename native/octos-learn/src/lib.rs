@@ -9,6 +9,8 @@ use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view,
 use octos_oll_preview::spatial_board::InkTool;
 mod svg_image;
 mod server;
+mod voice;
+use voice::Voice;
 use server::Server;
 use serde_json::json;
 mod cjk_fonts;
@@ -270,6 +272,10 @@ script_mod! {
                                     draw_icon +: { color: #ffffff }
                                     // Web .learning-mic-button:disabled (voice unavailable): #167794 at opacity .38.
                                     draw_bg +: { color: #a6cad2 color_hover: #a6cad2 color_down: #a6cad2 border_radius: 6.5 border_size: 0 border_color: #0000 } }
+                                ask_mic_on := Button { visible: false width: 44 height: 44 text: "" icon_walk: Walk{width: 21 height: 21}
+                                    draw_icon +: { color: #ffffff }
+                                    // Voice on: web .learning-mic-button.
+                                    draw_bg +: { color: #167794 color_hover: #12627c color_down: #12627c border_radius: 6.5 border_size: 0 border_color: #0000 } }
                                 // Web .learning-input-dock input: 14px #322d27, placeholder
                                 // #938a7e, padding 0 12px; Enter or the send button asks.
                                 ask_input := TextInput { width: Fill height: Fit padding: Inset{left: 12 right: 12} margin: 0
@@ -861,6 +867,14 @@ pub struct App {
     #[rust]
     live: Option<Live>,
     /// Setup page (web SetupWhiteboard): check pending login, profile, form.
+    /// Voice questions (web 启用语音): capture, VAD state, default input.
+    #[rust]
+    voice: Voice,
+    #[rust]
+    audio_inputs: Vec<AudioDeviceId>,
+    /// A voice turn between utterance and transcript (turn id).
+    #[rust]
+    voice_turn: Option<String>,
     #[rust]
     setup_check: bool,
     #[rust]
@@ -1060,6 +1074,8 @@ const ICON_CLOCK: &str = include_str!("../assets/icons/clock-3.svg");
 const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
 const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
+const ICON_MIC: &str = include_str!("../assets/icons/mic.svg");
+const ICON_MIC_OFF: &str = include_str!("../assets/icons/mic-off.svg");
 const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
@@ -1662,7 +1678,7 @@ impl App {
         let turn_id = server::uuid();
         live.questions.push((turn_id.clone(), text.clone(), "pending".into()));
         if self.server.logged_in() {
-            self.send_question(cx, turn_id, text);
+            self.send_question(cx, turn_id, text, "text");
         } else {
             live.queued = Some((turn_id, text));
             self.server.ensure_login(cx);
@@ -1670,9 +1686,69 @@ impl App {
         self.sync_live(cx);
         self.save_live(cx);
     }
+    /// Web 启用语音 / 关闭语音 (and the dock mic button).
+    fn toggle_voice(&mut self, cx: &mut Cx) {
+        if self.voice.enabled {
+            self.voice.disable();
+            self.voice_turn = None;
+            cx.use_audio_inputs(&[]);
+        } else {
+            if self.live.is_none() {
+                // DIFF: voice questions on course boards need the course
+                // question flow (multi-lesson composition).
+                self.toast(cx, "课程内提问稍后支持，请在空白白板使用语音");
+                return;
+            }
+            self.server.ensure_login(cx);
+            self.voice.enabled = true;
+            // The automation hook replays a file instead of the microphone.
+            if std::env::var_os("OCTOS_VOICE_TEST_WAV").is_none() {
+                self.voice.enable(cx);
+                // Voice processing: the OS removes what the speakers play.
+                cx.use_audio_inputs_with_options(&self.audio_inputs, AudioInputOptions { echo_cancellation: true });
+            }
+        }
+        let on = self.voice.enabled;
+        self.ui.button(cx, ids!(voice)).set_text(cx, if on { "关闭语音" } else { "启用语音" });
+        for id in [live_id!(voice), live_id!(ask_mic), live_id!(ask_mic_on)] {
+            if let Some(mut b) = self.ui.widget(cx, &[id]).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(if on { ICON_MIC } else { ICON_MIC_OFF });
+            }
+        }
+        // Web .learning-mic-button: #167794 while voice is on, .38 opacity off.
+        self.ui.widget(cx, ids!(ask_mic)).set_visible(cx, !on);
+        self.ui.widget(cx, ids!(ask_mic_on)).set_visible(cx, on);
+        self.sync_live(cx);
+    }
+    /// A finished utterance: upload it and ask the server to transcribe
+    /// (web use-voice-conversation: uploadFiles + voice/admit).
+    fn voice_utterance(&mut self, cx: &mut Cx, wav: Vec<u8>) {
+        let Some(live) = self.live.as_mut() else { return };
+        if self.voice_turn.is_some() || live.pending() || !self.server.logged_in() {
+            return;
+        }
+        let turn = server::uuid();
+        self.voice_turn = Some(turn.clone());
+        if !live.opened {
+            live.opened = true;
+            let session = live.session_id.clone();
+            let profile = self.server.profile_id.clone().unwrap_or_default();
+            self.server.call(cx, "session/open", json!({"session_id": session, "profile_id": profile}), server::Call::Fire);
+        }
+        self.server.upload(cx, "utterance.wav", "audio/wav", &wav, Some("recording"), &format!("voice:{turn}"));
+        self.sync_live(cx);
+    }
+    /// Ask a transcribed voice question on the live board.
+    fn ask_voice(&mut self, cx: &mut Cx, turn: String, text: String) {
+        let Some(live) = self.live.as_mut() else { return };
+        live.questions.push((turn.clone(), text.clone(), "pending".into()));
+        self.send_question(cx, turn, text, "voice");
+        self.sync_live(cx);
+        self.save_live(cx);
+    }
     /// session/open (once) + session/title.set (first question) +
     /// skill/action/invoke learning.lesson.generate, as the web workspace.
-    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String) {
+    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String, modality: &str) {
         let Some(live) = self.live.as_mut() else { return };
         let session_id = live.session_id.clone();
         let profile = self.server.profile_id.clone().unwrap_or_default();
@@ -1692,7 +1768,7 @@ impl App {
                     "learner_request": text,
                     "request_source": "self_contained",
                     "language": "zh-CN",
-                    "input_modality": "text",
+                    "input_modality": modality,
                     "client_timing": {"submitted_at_epoch_ms": now, "skill_invocation_started_at_epoch_ms": now},
                 },
             }),
@@ -1796,7 +1872,7 @@ impl App {
             match ev {
                 server::ServerEvent::LoggedIn => {
                     if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
-                        self.send_question(cx, turn, text);
+                        self.send_question(cx, turn, text, "text");
                     }
                     self.check_setup(cx);
                 }
@@ -1852,6 +1928,48 @@ impl App {
                             self.apply_setup_profile(cx, profile);
                         }
                         Err(e) => self.ui.label(cx, &[status]).set_text(cx, &e),
+                    }
+                }
+                server::ServerEvent::Uploaded { purpose, paths } => {
+                    let Some(turn) = purpose.strip_prefix("voice:").map(str::to_owned) else { continue };
+                    if self.voice_turn.as_deref() != Some(turn.as_str()) {
+                        continue;
+                    }
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => {
+                            let session = self.live.as_ref().map(|l| l.session_id.clone()).unwrap_or_default();
+                            self.server.call(
+                                cx,
+                                "voice/admit",
+                                // Web buildTurnStartExtras media refs (server reads path).
+                                json!({
+                                    "session_id": session,
+                                    "request_id": turn,
+                                    "turn_id": turn,
+                                    "media": paths.iter().map(|p| json!({"path": p, "mime": "application/octet-stream", "size_bytes": 0})).collect::<Vec<_>>(),
+                                }),
+                                server::Call::Admit { turn_id: turn },
+                            );
+                        }
+                        Ok(_) | Err(_) => {
+                            self.voice_turn = None;
+                            self.toast(cx, "语音上传失败，请再说一次或改用打字");
+                            self.sync_live(cx);
+                        }
+                    }
+                }
+                server::ServerEvent::Admitted { turn_id, result } => {
+                    if self.voice_turn.as_deref() != Some(turn_id.as_str()) {
+                        continue;
+                    }
+                    self.voice_turn = None;
+                    match result {
+                        Ok(Some(text)) => self.ask_voice(cx, turn_id, text),
+                        Ok(None) => self.sync_live(cx),
+                        Err(e) => {
+                            self.toast(cx, &format!("语音识别失败：{e}"));
+                            self.sync_live(cx);
+                        }
                     }
                 }
                 server::ServerEvent::Speech { purpose, audio } => {
@@ -2032,7 +2150,14 @@ impl App {
         self.ui.widget(cx, ids!(outline_trigger)).set_visible(cx, has_lesson);
         if !has_lesson {
             // Web teacherStateLabel / teacherSpeech before a lesson exists.
-            self.ui.label(cx, ids!(teacher_state)).set_text(cx, if pending { "正在想" } else { "轻触开始" });
+            let label = if pending || self.voice_turn.is_some() {
+                "正在想"
+            } else if self.voice.enabled {
+                "我在听"
+            } else {
+                "轻触开始"
+            };
+            self.ui.label(cx, ids!(teacher_state)).set_text(cx, label);
             let speech = if pending { "我正在整理这道题，马上写到白板上。" } else { "" };
             self.ui.label(cx, ids!(narration)).set_text(cx, speech);
             self.ui.widget(cx, ids!(narration_bubble)).set_visible(cx, !speech.is_empty());
@@ -3132,6 +3257,34 @@ impl AppMain for App {
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
+        if let Event::AudioDevices(devices) = event {
+            self.audio_inputs = devices.default_input();
+            if self.voice.enabled && std::env::var_os("OCTOS_VOICE_TEST_WAV").is_none() {
+                cx.use_audio_inputs_with_options(&self.audio_inputs, AudioInputOptions { echo_cancellation: true });
+            }
+        }
+        if self.timer.is_event(event).is_some() && self.voice.enabled {
+            // Test hook (no microphone in automation): inject one utterance.
+            static INJECTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+            if let Some(path) = std::env::var_os("OCTOS_VOICE_TEST_WAV") {
+                if self.voice_turn.is_none()
+                    && self.server.logged_in()
+                    && self.live.as_ref().is_some_and(|l| l.questions.is_empty())
+                    && !INJECTED.swap(true, std::sync::atomic::Ordering::Relaxed)
+                {
+                    if let Ok(wav) = std::fs::read(path) {
+                        self.voice_utterance(cx, wav);
+                    }
+                }
+            }
+            let speaking = self.voice.state() == voice::VadState::Speaking;
+            if let Some(wav) = self.voice.poll() {
+                self.voice_utterance(cx, wav);
+            }
+            if speaking != (self.voice.state() == voice::VadState::Speaking) {
+                self.sync_live(cx);
+            }
+        }
         if self.timer.is_event(event).is_some() && self.history_focus_pending {
             let search = self.ui.widget(cx, ids!(history_search));
             if !search.area().rect(cx).size.x.eq(&0.) {
@@ -3316,9 +3469,13 @@ impl AppMain for App {
                 self.open_course(cx, &pack, &version, true);
             }
             if self.ui.button(cx, ids!(voice)).clicked(actions)
-                || self.ui.button(cx, ids!(camera)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_mic)).clicked(actions)
+                || self.ui.button(cx, ids!(ask_mic_on)).clicked(actions)
             {
-                self.toast(cx, "语音与摄像头尚未迁移，仅网页版可用");
+                self.toggle_voice(cx);
+            }
+            if self.ui.button(cx, ids!(camera)).clicked(actions) {
+                self.toast(cx, "摄像头稍后支持");
             }
             if self.ui.button(cx, ids!(settings)).clicked(actions) {
                 self.set_history_open(cx, true);
@@ -3344,9 +3501,8 @@ impl AppMain for App {
             }
             if self.ui.button(cx, ids!(ask_image)).clicked(actions)
                 || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
-                || self.ui.button(cx, ids!(ask_mic)).clicked(actions)
             {
-                self.toast(cx, "图片、摄像头与语音提问稍后支持");
+                self.toast(cx, "图片与摄像头提问稍后支持");
             }
             if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
                 self.outline_open = !self.outline_open;
