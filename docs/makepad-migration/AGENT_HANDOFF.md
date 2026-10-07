@@ -50,13 +50,13 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装的诊断 APK：`deb8e88f37dc43647ab87c91b94dfe2ecf1936ff` + 本轮 8 行 Android Draw 边界补丁，构建时 `productDirty=true`，源码与证据随本轮提交推送。保留 `72f29b3` 的 Android 密度/独立打包/macOS 音频代码；同分支提交推送，不合并、不开 PR。配套 OLL 仍为 `d59b607`，Makepad 仍为固定 `825dbb4`，未修改其 Rust 或 Java 源码。APK hash、复建命令及证据见最新帧拆分报告。
+当前安装的诊断 APK：`deb8e88f37dc43647ab87c91b94dfe2ecf1936ff` + 本轮 8 行 Android Draw 边界补丁，构建时 `productDirty=true`，源码及主报告已提交为 `3fffb158f4c3f5d7b6180db302c61db190e12cf5`（随后仅整理证据空白与提交指针），本轮推送。保留 `72f29b3` 的 Android 密度/独立打包/macOS 音频代码；同分支提交推送，不合并、不开 PR。配套 OLL 仍为 `d59b607`，Makepad 仍为固定 `825dbb4`，未修改其 Rust 或 Java 源码。APK hash、复建命令及证据见最新帧拆分报告。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新基线 `deb8e88` + 本轮 Android 统计补丁及证据（本文件所在提交）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新诊断源码 / 证据 `3fffb15`；后续仅文档收尾（本文件所在提交），本轮推送**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
 | `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 

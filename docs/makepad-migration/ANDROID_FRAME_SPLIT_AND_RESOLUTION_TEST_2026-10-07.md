@@ -11,7 +11,7 @@
 ## 1. 测试产物与唯一诊断补丁
 
 - 产品基线：`deb8e88f37dc43647ab87c91b94dfe2ecf1936ff`，包含此前 `72f29b3` 的 Android 紧凑 UI、独立打包、macOS 音频实现。
-- 实际 APK：上述基线 + `native/octos-learn/src/lib.rs` 的 8 行统计补丁；构建时 `productDirty=true`，不是未修改的 `deb8e88`。补丁与本报告一起提交，完整 diff 见 [android-frame-boundary.patch](evidence/android-frame-split-2026-10-07/android-frame-boundary.patch)。`perf.rs` 仅修正统计口径注释，未改变运行代码。
+- 实际 APK：上述基线 + `native/octos-learn/src/lib.rs` 的 8 行统计补丁；构建时 `productDirty=true`，不是未修改的 `deb8e88`。补丁与主报告已提交为 `3fffb158f4c3f5d7b6180db302c61db190e12cf5`，后续只整理文档 / 日志空白；完整 diff 见 [android-frame-boundary.patch](evidence/android-frame-split-2026-10-07/android-frame-boundary.patch)。`perf.rs` 仅修正统计口径注释，未改变运行代码。
 - 原因：固定 Makepad Android 后端会累加 `draw`、`wait`，但没有调用 `PerfMonitor::frame_boundary`。该调用只见于 macOS 后端。因此原版 `deb8e88` 在 Android 已有 Draw 时仍打印 `frames 0`，不能直接拿来做帧拆分。[原版日志](evidence/android-frame-split-2026-10-07/original-deb8e88-frames-zero.txt)
 - 补丁：仅在 Android 且 `OCTOS_PERF` 已启用时，进入应用 `Event::Draw` 时调用 `cx.perf_monitor.frame_boundary(draw.time)`，将上帧累计项折入 ring。关闭统计时仍走原有提前返回；无新定时器或 redraw。**这是应用 Draw 边界，不是已确认物理屏幕呈现。** 后端如果只重画已有 pass 而不调用应用 Draw，此口径不覆盖独立的那次 repaint。
 - 固定 Makepad：`825dbb422c6d7926e111e2ee7831d697870d8671`，源码工作区干净；OLL `d59b60790e6a2775bff4b2ec16f7223f9354df6d`。配套依赖和工具链沿用 [APK 构建交接](ANDROID_APK_BUILD_HANDOFF_2026-10-07.md)。
@@ -75,7 +75,7 @@ Android release 编译、Java / D8、zipalign 和 v2 / v3 签名验证通过。�
 
 **不能把 32.33 写成物理屏幕实际显示 32 FPS。** 设备声明 30 Hz、latency 第一行也是 33333333ns，但 SurfaceFlinger 同时有 `HwcVsync mode(soft) period(16666666)`；1080p 播放 ring 中 18/125 个相邻间隔约 16.67ms。这是设备呈现时间戳 / software-vsync 与声明屏幕模式不一致的证据，尚未确认物理面板时序。应用节奏和这些时间戳均显示播放大幅改善、中位间隔接近 30 Hz 周期；不得据此声称已验证真实 33 FPS 或全程满帧。
 
-完整汇总与每秒日志见 [summary.json](evidence/android-frame-split-2026-10-07/summary.json)，各场景同名目录保存 `result.json`、`perf.txt`、前后 latency 原文，便于异机重新计算。
+完整汇总与每秒日志见 [summary.json](evidence/android-frame-split-2026-10-07/summary.json)，各场景同名目录保存 `result.json`、`perf.txt`、前后 latency 数值原文（入库时去掉行尾空白），便于异机重新计算。
 
 ## 5. 卡片拖动不滚动的独立复现
 

@@ -5,7 +5,7 @@
 
 最后更新：2026-10-07（Android 帧拆分与临时分辨率对照）
 
-最新性能对照：基于 Claude `deb8e88` + 默认关闭的 Android PerfMonitor Draw 边界入口，重打独立测试 APK。首页 / 课程集 / 播放 4K swap wait 为 106 / 143 / 68ms，1080p 为 25 / 32 / 7ms；应用每帧 event / 平台 draw 基本不变。确认优先排查渲染分辨率 / 呈现链路，正式方案未实现。三场景采完已恢复默认 4K 和原 density override 640，旧 Web APK 未覆盖。卡片起手拖动另有 capture 问题。源码与证据随本轮提交推送，详见 [帧拆分与分辨率对照](docs/makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)。下文旧测试结果与“未提交”状态为历史。
+最新性能对照：基于 Claude `deb8e88` + 默认关闭的 Android PerfMonitor Draw 边界入口，重打独立测试 APK。首页 / 课程集 / 播放 4K swap wait 为 106 / 143 / 68ms，1080p 为 25 / 32 / 7ms；应用每帧 event / 平台 draw 基本不变。确认优先排查渲染分辨率 / 呈现链路，正式方案未实现。三场景采完已恢复默认 4K 和原 density override 640，旧 Web APK 未覆盖。卡片起手拖动另有 capture 问题。诊断源码与主证据提交 `3fffb15`，后续仅文档收尾，本轮推送；详见 [帧拆分与分辨率对照](docs/makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)。下文旧测试结果与“未提交”状态为历史。
 
 最新交付：基于 Claude `0960f29` 保留独立 Android 打包与 macOS 音频修复，实现 Web Android 紧凑布局，重新构建安装「Octos Learn 原生测试」。首页空闲连续重绘已消失；课程播放仍约 15 FPS，尚未通过完整性能验收。产品 14 项测试通过（1 项忽略）、共享预览 17 项通过，旧 Web APK 安装身份不变。详见 [UI 对齐与修复后复测](docs/makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)。本轮代码与记录提交推送，下面未提交/未修复文字均是此前阶段历史。
 
