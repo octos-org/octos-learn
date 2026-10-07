@@ -20,9 +20,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
 
 /// Camera scale the desktop host plans teaching rows for (web teachingReadingScale).
-const TEACHING_READING_SCALE: f64 = 0.9;
+const TEACHING_READING_SCALE: f64 = if cfg!(target_os = "android") { 0.68 } else { 0.9 };
 /// Zoom ceiling of automatic teaching focus (web teachingCameraCeiling).
-const TEACHING_CAMERA_CEILING: f64 = 1.1;
+const TEACHING_CAMERA_CEILING: f64 = if cfg!(target_os = "android") { 0.8 } else { 1.1 };
 /// Reflection card height reserved before it is measured.
 const REFLECTION_ESTIMATED_HEIGHT: f64 = 150.;
 

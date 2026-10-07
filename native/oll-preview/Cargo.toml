@@ -3,6 +3,15 @@ name = "octos-oll-preview"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["standalone"]
+standalone = []
+
+[[bin]]
+name = "octos-oll-preview"
+path = "src/main.rs"
+required-features = ["standalone"]
+
 [dependencies]
 oll-runtime = { path = "../../../oll/crates/oll-runtime" }
 makepad-widgets = { path = "../../../makepad/widgets" }

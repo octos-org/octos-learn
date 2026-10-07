@@ -4,6 +4,20 @@
 
 ## 当前使用
 
+- [Android UI 密度对齐与修复后大屏复测](makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)：基于 Claude `0960f29` 的新 APK、安卓紧凑布局、首页重绘验证与课程播放剩余瓶颈。
+
+- [Android 原生 APK 编译打包交接](makepad-migration/ANDROID_APK_BUILD_HANDOFF_2026-10-07.md)：给 Claude 的实际源码版本、缓存工具与固定 Java host 的关系、Release 复建命令及产物身份。
+
+- [局域网安卓大屏原生性能测试版](makepad-migration/ANDROID_LAN_PERFORMANCE_TEST_2026-10-07.md)：独立包名安装、保留 Web APK、构建入口与大屏验证范围。
+
+- [安卓原生界面卡顿探索](makepad-migration/ANDROID_UI_STUTTER_INVESTIGATION_2026-10-07.md)：实际约 12 FPS、原生线程满单核的现场证据，以及仍待函数采样确认的热点。
+
+- [macOS Makepad 原生版本机测试环境](makepad-migration/LOCAL_TEST_ENVIRONMENT_2026-10-07.md)：启动脚本、固定依赖版本、九课与本地后端验证及测试范围。
+
+- [macOS 旁白截断修复](makepad-migration/NARRATION_AUDIO_FIX_2026-10-07.md)：无视频帧回退的原因、产品层纯音频播放修复与真实 MP3 回归。
+
+- [原生旁白与跨平台音频探索结果](makepad-migration/NARRATION_AUDIO_INVESTIGATION_2026-10-07.md)：给 Claude 的源码证据、Android/Windows 空实现、已有本地修复及接手验收范围。
+
 - [Makepad 原生迁移接手入口](makepad-migration/AGENT_HANDOFF.md)：macOS 原生应用现状、工作区重建、验证方法、剩余差异与交接维护规矩（每个工作阶段结束必须更新）。
 
 - [v0.1.1 发布记录](RELEASE_V0_1_1.md)：Android 性能与笔迹修复汇总、确切依赖和发布验证范围。

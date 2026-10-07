@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 oll-runtime = { path = "../../../oll/crates/oll-runtime" }
-octos-oll-preview = { path = "../oll-preview" }
+octos-oll-preview = { path = "../oll-preview", default-features = false }
 makepad-widgets = { path = "../../../makepad/widgets" }
 makepad-latex-math = { path = "../../../makepad/libs/latex_math" }
 makepad-plot = { path = "../../../octoscript-makepad/crates/makepad-plot" }

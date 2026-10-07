@@ -1,0 +1,349 @@
+Threads: 36 total,   0 running,  36 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3606348K used,   297300K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 141%user   0%nice  31%sys 217%idle   0%iow   7%irq   3%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15908 u0_a74       10 -10  15G 345M 169M S 65.5   9.0   0:11.17 Thread-1        cc.pitun.learn.makepadtest
+15930 u0_a74       20   0  15G 345M 169M S 62.0   9.0   0:00.00 Thread-1        cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 345M 169M S  3.4   9.0   0:03.10 arn.makepadtest cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 345M 169M S  0.0   9.0   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 345M 169M S  0.0   9.0   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 345M 169M S  0.0   9.0   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 345M 169M S  0.0   9.0   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 345M 169M S  0.0   9.0   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.02 mali-cmar-backe cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 345M 169M S  0.0   9.0   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 345M 169M S  0.0   9.0   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 345M 169M S  0.0   9.0   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 345M 169M S  0.0   9.0   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 345M 169M S  0.0   9.0   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 345M 169M S  0.0   9.0   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 345M 169M S  0.0   9.0   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 345M 169M S  0.0   9.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 345M 169M S  0.0   9.0   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 345M 169M S  0.0   9.0   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 345M 169M S  0.0   9.0   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   1 running,  35 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3610880K used,   292768K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 150%user   0%nice  24%sys 217%idle   0%iow   6%irq   3%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 366M 188M R 97.0   9.5   0:00.18 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 366M 188M S 35.0   9.5   0:11.36 Thread-1        cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 366M 188M S  3.0   9.5   0:00.02 mali-cmar-backe cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 366M 188M S  2.0   9.5   0:03.11 arn.makepadtest cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 366M 188M S  1.0   9.5   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 366M 188M S  0.0   9.5   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 366M 188M S  0.0   9.5   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 366M 188M S  0.0   9.5   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 366M 188M S  0.0   9.5   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 366M 188M S  0.0   9.5   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 366M 188M S  0.0   9.5   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 366M 188M S  0.0   9.5   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 366M 188M S  0.0   9.5   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 366M 188M S  0.0   9.5   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 366M 188M S  0.0   9.5   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 366M 188M S  0.0   9.5   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 366M 188M S  0.0   9.5   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 366M 188M S  0.0   9.5   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 366M 188M S  0.0   9.5   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 366M 188M S  0.0   9.5   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 366M 188M S  0.0   9.5   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   1 running,  35 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3610600K used,   293048K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 145%user   0%nice  32%sys 212%idle   1%iow   6%irq   4%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 382M 204M R 96.0  10.0   0:01.15 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 382M 204M S 35.0  10.0   0:11.71 Thread-1        cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 382M 204M S  3.0  10.0   0:00.01 mali-utility-wo cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 382M 204M S  2.0  10.0   0:00.05 mali-cmar-backe cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 382M 204M S  1.0  10.0   0:03.13 arn.makepadtest cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 382M 204M S  0.0  10.0   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 382M 204M S  0.0  10.0   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 382M 204M S  0.0  10.0   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 382M 204M S  0.0  10.0   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 382M 204M S  0.0  10.0   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 382M 204M S  0.0  10.0   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 382M 204M S  0.0  10.0   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 382M 204M S  0.0  10.0   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 382M 204M S  0.0  10.0   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 382M 204M S  0.0  10.0   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 382M 204M S  0.0  10.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 382M 204M S  0.0  10.0   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 382M 204M S  0.0  10.0   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 382M 204M S  0.0  10.0   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 382M 204M S  0.0  10.0   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 382M 204M S  0.0  10.0   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   2 running,  34 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3611308K used,   292340K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 152%user   3%nice  21%sys 215%idle   0%iow   6%irq   3%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 382M 205M R 97.0  10.0   0:02.11 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 382M 205M R 40.0  10.0   0:12.06 Thread-1        cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 382M 205M S  5.0  10.0   0:00.04 mali-utility-wo cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 382M 205M S  3.0  10.0   0:00.07 mali-cmar-backe cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 382M 205M S  2.0  10.0   0:00.00 binder:15882_4  cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 382M 205M S  2.0  10.0   0:03.14 arn.makepadtest cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 382M 205M S  0.0  10.0   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 382M 205M S  0.0  10.0   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 382M 205M S  0.0  10.0   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 382M 205M S  0.0  10.0   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 382M 205M S  0.0  10.0   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 382M 205M S  0.0  10.0   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 382M 205M S  0.0  10.0   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 382M 205M S  0.0  10.0   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 382M 205M S  0.0  10.0   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 382M 205M S  0.0  10.0   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 382M 205M S  0.0  10.0   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 382M 205M S  0.0  10.0   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 382M 205M S  0.0  10.0   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 382M 205M S  0.0  10.0   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 382M 205M S  0.0  10.0   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 382M 205M S  0.0  10.0   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   1 running,  35 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3611432K used,   292216K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 138%user   0%nice  21%sys 233%idle   0%iow   6%irq   2%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 385M 207M R 96.0  10.1   0:03.08 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 385M 207M S 27.0  10.1   0:12.46 Thread-1        cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:00.09 mali-utility-wo cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:03.16 arn.makepadtest cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:00.10 mali-cmar-backe cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.02 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   3 running,  33 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3611068K used,   292580K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 141%user   0%nice  25%sys 226%idle   0%iow   5%irq   3%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 385M 207M R 96.0  10.1   0:04.04 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 385M 207M R 28.0  10.1   0:12.73 Thread-1        cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 385M 207M S  3.0  10.1   0:00.11 mali-utility-wo cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:00.11 mali-cmar-backe cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:00.02 makepad-log     cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:03.18 arn.makepadtest cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.02 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 385M 207M R  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   1 running,  35 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3611528K used,   292120K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 137%user   1%nice  21%sys 233%idle   0%iow   6%irq   2%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 385M 207M R 99.0  10.1   0:05.00 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 385M 207M S 27.0  10.1   0:13.01 Thread-1        cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:00.13 mali-cmar-backe cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:00.14 mali-utility-wo cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 385M 207M S  2.0  10.1   0:03.19 arn.makepadtest cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 385M 207M S  1.0  10.1   0:00.02 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.03 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest
+
+
+
+Threads: 36 total,   1 running,  35 sleeping,   0 stopped,   0 zombie
+  Mem:  3903648K total,  3611500K used,   292148K free,     1464K buffers
+ Swap:   524284K total,   524272K used,       12K free,   518216K cached
+400%cpu 140%user   0%nice  21%sys 230%idle   0%iow   5%irq   4%sirq   0%host
+  TID USER         PR  NI VIRT  RES  SHR S[%CPU] %MEM     TIME+ THREAD          PROCESS
+15930 u0_a74       20   0  15G 385M 207M R 97.0  10.1   0:05.99 Thread-1        cc.pitun.learn.makepadtest
+15908 u0_a74       10 -10  15G 385M 207M S 28.0  10.1   0:13.28 Thread-1        cc.pitun.learn.makepadtest
+15920 u0_a74       10 -10  15G 385M 207M S  3.0  10.1   0:00.15 mali-cmar-backe cc.pitun.learn.makepadtest
+15919 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:00.16 mali-utility-wo cc.pitun.learn.makepadtest
+15915 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:00.00 mali-mem-purge  cc.pitun.learn.makepadtest
+15882 u0_a74       10 -10  15G 385M 207M S  1.0  10.1   0:03.21 arn.makepadtest cc.pitun.learn.makepadtest
+16155 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.03 binder:15882_4  cc.pitun.learn.makepadtest
+15933 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.02 mali-compiler   cc.pitun.learn.makepadtest
+15931 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 C2N-mgr-looper  cc.pitun.learn.makepadtest
+15929 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 oll-progress-st cc.pitun.learn.makepadtest
+15928 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15926 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask1       cc.pitun.learn.makepadtest
+15925 u0_a74       18  -2  15G 385M 207M S  0.0  10.1   0:00.00 hwuiTask0       cc.pitun.learn.makepadtest
+15922 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-1  cc.pitun.learn.makepadtest
+15923 u0_a74       25   5  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-2  cc.pitun.learn.makepadtest
+15921 u0_a74       21   1  15G 385M 207M S  0.0  10.1   0:00.00 makepad-pool-0  cc.pitun.learn.makepadtest
+15917 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15918 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15916 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.00 mali-utility-wo cc.pitun.learn.makepadtest
+15913 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 AsyncTask #2    cc.pitun.learn.makepadtest
+15909 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 VideoPlayerThre cc.pitun.learn.makepadtest
+15907 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.03 makepad-log     cc.pitun.learn.makepadtest
+15905 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 WebSocketsThrea cc.pitun.learn.makepadtest
+15902 u0_a74       10 -10  15G 385M 207M S  0.0  10.1   0:00.24 RenderThread    cc.pitun.learn.makepadtest
+15901 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Profile Saver   cc.pitun.learn.makepadtest
+15899 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_3  cc.pitun.learn.makepadtest
+15895 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerDaemon cc.pitun.learn.makepadtest
+15896 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 FinalizerWatchd cc.pitun.learn.makepadtest
+15897 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_1  cc.pitun.learn.makepadtest
+15898 u0_a74       20   0  15G 385M 207M S  0.0  10.1   0:00.00 binder:15882_2  cc.pitun.learn.makepadtest
+15894 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.00 ReferenceQueueD cc.pitun.learn.makepadtest
+15893 u0_a74       24   4  15G 385M 207M S  0.0  10.1   0:00.02 HeapTaskDaemon  cc.pitun.learn.makepadtest
+15892 u0_a74       29   9  15G 385M 207M S  0.0  10.1   0:00.00 Jit thread pool cc.pitun.learn.makepadtest
+15890 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 perfetto_hprof_ cc.pitun.learn.makepadtest
+15891 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 ADB-JDWP Connec cc.pitun.learn.makepadtest
+15889 u0_a74        0 -20  15G 385M 207M S  0.0  10.1   0:00.00 Signal Catcher  cc.pitun.learn.makepadtest

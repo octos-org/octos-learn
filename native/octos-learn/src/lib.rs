@@ -16,6 +16,8 @@ mod settings;
 mod perf;
 use perf::Perf;
 use settings::SettingsState;
+mod audio_playback;
+use audio_playback::Players;
 use camera::Camera;
 use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogAction};
 use voice::Voice;
@@ -26,6 +28,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::time::Instant;
 
 mod course_pack;
+mod android_ui;
 
 app_main!(App);
 
@@ -48,13 +51,13 @@ script_mod! {
                         draw_bg +: { color: #f7f4ec }
                         launcher_scroll := ScrollYView { width: Fill height: Fill flow: Down
                             View { width: Fill height: Fit flow: Down align: Align{x: 0.5}
-                                View { width: 1120 height: Fit flow: Down padding: Inset{bottom: 72}
+                                launcher_inner := View { width: 1120 height: Fit flow: Down padding: Inset{bottom: 72}
                                     // Text boxes follow the web CSS: font_size = px * 0.75,
                                     // line_spacing = CSS line-height / 1.18, spacing on a
                                     // wrapping View (see web_text).
                                     // 1. Header (web .course-launcher-header).
                                     View { width: Fill height: Fit flow: Down
-                                        View { width: Fill height: 82 flow: Right align: Align{y: 0.5} spacing: 10
+                                        launcher_header := View { width: Fill height: 82 flow: Right align: Align{y: 0.5} spacing: 10
                                             logo_fallback := RoundedView { width: 34 height: 34 align: Align{x: 0.5 y: 0.5}
                                                 draw_bg +: { color: #166a79 border_radius: 4.5 }
                                                 Label { text: "O" draw_text.text_style.font_size: 15 draw_text.color: #ffffff }
@@ -63,7 +66,7 @@ script_mod! {
                                             // preserve_viewbox crops to the intended motif.
                                             logo_svg := Svg { animating: false width: 34 height: 34 draw_svg +: { preserve_viewbox: true } }
                                             View { width: Fit height: Fit padding: Inset{top: 3.04 bottom: 3.04 left: 0}
-    Label { width: Fit padding: 0 text: "Octos Learn" draw_text.text_style: theme.font_bold{font_size: 14.25 line_spacing: 1.271} draw_text.color: #243b40 } }
+    launcher_brand := Label { width: Fit padding: 0 text: "Octos Learn" draw_text.text_style: theme.font_bold{font_size: 14.25 line_spacing: 1.271} draw_text.color: #243b40 } }
                                             View { width: Fill height: 1 }
                                             // Web course-launcher nav (signed in): 设置. DIFF: the solo
                                             // owner is signed in automatically, so there is no 退出.
@@ -79,16 +82,16 @@ script_mod! {
                                     home_sections := View { width: Fill height: Fit flow: Down padding: Inset{top: 56 bottom: 44}
                                         View { width: Fit height: Fit padding: Inset{top: 1.76 bottom: 1.76 left: 0}
     Label { width: Fit padding: 0 text: "LEARN ON A LIVING WHITEBOARD" draw_text.text_style: theme.font_code{font_size: 8.25 line_spacing: 1.271} draw_text.color: #5a8d94 } }
-                                        View { width: Fill height: Fit padding: Inset{top: 20.92 bottom: 21.92 left: 0}
-    Label { width: Fill padding: 0 text: "从一组课程，开始新的探索。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 36.72 line_spacing: 1.136} draw_text.color: #243b40 } }
+                                        hero_title_box := View { width: Fill height: Fit padding: Inset{top: 20.92 bottom: 21.92 left: 0}
+    hero_title := Label { width: Fill padding: 0 text: "从一组课程，开始新的探索。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 36.72 line_spacing: 1.136} draw_text.color: #243b40 } }
                                         View { width: Fill height: Fit padding: Inset{top: 4.42 bottom: 4.42 left: 0}
-    Label { width: Fill padding: 0 text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 12.75 line_spacing: 1.441} draw_text.color: #607477 } }
+    hero_description := Label { width: Fill padding: 0 text: "跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。" draw_text.wrap: Words draw_text.text_style: theme.font_regular{font_size: 12.75 line_spacing: 1.441} draw_text.color: #607477 } }
                                         // DIFF: blank whiteboard needs the session system; a tap shows a toast.
                                         blank_board := RoundedView { width: Fit height: 52 flow: Right spacing: 12 align: Align{y: 0.5} margin: Inset{top: 32}
                                             padding: Inset{left: 20 right: 20} draw_bg +: { color: #166a79 border_radius: 7.5 }
                                             blank_plus := Svg { animating: false width: 20 height: 20 draw_svg +: { preserve_viewbox: true } }
                                             View { width: Fit height: Fit padding: Inset{top: 2.56 bottom: 2.56 left: 0}
-    Label { width: Fit padding: 0 text: "新建空白白板" draw_text.text_style: theme.font_bold{font_size: 12.00 line_spacing: 1.271} draw_text.color: #ffffff } }
+    blank_label := Label { width: Fit padding: 0 text: "新建空白白板" draw_text.text_style: theme.font_bold{font_size: 12.00 line_spacing: 1.271} draw_text.color: #ffffff } }
                                             blank_arrow := Svg { animating: false width: 18 height: 18 draw_svg +: { preserve_viewbox: true } margin: Inset{left: 18} }
                                         }
                                     }
@@ -147,7 +150,7 @@ script_mod! {
                         // Top bar (web .learning-workspace-topbar: left 116,
                         // right 14, top 14; 3-column grid: title block /
                         // centered icon demo controls / mode buttons).
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 116 right: 14 top: 14}
+                        topbar_anchor := View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 116 right: 14 top: 14}
                             topbar := RoundedView {
                                 width: Fill height: 58 flow: Right spacing: 16 align: Align{y: 0.5}
                                 padding: Inset{left: 18 right: 9 top: 7 bottom: 7}
@@ -155,7 +158,7 @@ script_mod! {
                                 View { width: Fill height: Fit flow: Down spacing: 2
                                     // Web span 9px and strong 20px/650;
                                     // Label sizes are points (px * 0.75).
-                                    Label { width: Fit height: Fit padding: 0 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 6.75 draw_text.color: #8a8074 }
+                                    canvas_eyebrow := Label { width: Fit height: Fit padding: 0 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 6.75 draw_text.color: #8a8074 }
                                     course_title := Label { width: Fill height: Fit padding: 0 text: "" draw_text.text_style: theme.font_bold{font_size: 15} draw_text.color: #332e28 }
                                 }
                                 demo_controls := View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
@@ -197,8 +200,8 @@ script_mod! {
                         }
                         // Top-left round page buttons (web .learning-top-action-group:
                         // left 12 top 24, 40px circles with House/Settings icons).
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
-                            View { width: 96 height: Fit flow: Right spacing: 8
+                        page_actions_anchor := View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
+                            page_actions := View { width: 96 height: Fit flow: Right spacing: 8
                                 back := Button { width: 40 height: 40 text: ""
                                     icon_walk: Walk{width: 20 height: 20} draw_icon +: { color: #x57534e }
                                     draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 0.5 border_color: #0000001a } }
@@ -210,7 +213,7 @@ script_mod! {
                         }
                         // Handwriting toolbar (web .learning-ink-toolbar:
                         // horizontal capsule, top 88 left 20).
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 20 top: 88}
+                        ink_anchor := View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 20 top: 88}
                             ink_toolbar := RoundedView {
                                 width: Fit height: Fit flow: Right spacing: 3 padding: 5 align: Align{y: 0.5}
                                 draw_bg +: { color: #fffdf8f0 border_radius: 8 border_size: 0.5 border_color: #e4ded3 }
@@ -234,14 +237,14 @@ script_mod! {
                         // .learning-variable-controls.is-world), drawn by SpatialBoard.
                         // Course outline trigger (web .oll-course-outline-trigger:
                         // 48px rounded square above the teacher avatar).
-                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
+                        outline_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
                             outline_trigger := Button { width: 48 height: 48 text: "" icon_walk: Walk{width: 15 height: 15}
                                 draw_icon +: { color: #466d78 }
                                 draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 8 border_size: 0.5 border_color: #cfe2e3 } }
                         }
                         // Course outline panel (web .oll-course-outline-panel: 344 wide,
                         // above the trigger, right edge 24px from the window).
-                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 264}
+                        outline_panel_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 264}
                             outline_panel := RoundedView { visible: false width: 344 height: Fit flow: Down
                                 draw_bg +: { color: #fffdf8f7 border_radius: 10 border_size: 0.5 border_color: #453d3221 }
                                 View { width: Fill height: Fit flow: Right align: Align{y: 1.} padding: Inset{left: 20 right: 20 top: 20 bottom: 14}
@@ -260,7 +263,7 @@ script_mod! {
                             }
                         }
                         // Teacher (web .octos-teacher: right 24 bottom 98).
-                        View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
+                        teacher_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 98}
                             View { width: Fit height: Fit flow: Right spacing: 12 align: Align{y: 1.}
                                 narration_bubble := RoundedView {
                                     visible: false width: 360 height: Fit margin: Inset{bottom: 26}
@@ -291,7 +294,7 @@ script_mod! {
                         // 22, centered, max-width 720). Text questions go to the
                         // Octos server on a live board; image/camera/voice are
                         // separate milestones.
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 22}
+                        input_anchor := View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 22}
                             input_dock := RoundedView {
                                 width: 720 height: Fit flow: Right spacing: 5 align: Align{y: 0.5} padding: 6
                                 draw_bg +: { color: #fffdf8e8 border_radius: 10.5 border_size: 0.5 border_color: #e7e0d4 }
@@ -316,7 +319,7 @@ script_mod! {
                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                     draw_text +: { color: #322d27 color_hover: #322d27 color_focus: #322d27 color_down: #322d27
-                                        color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: 10.5 }
+                                        color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                     draw_cursor +: { color: #322d27 } }
                                 ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
@@ -585,22 +588,22 @@ script_mod! {
                     // asks for a model (and optional narration TTS) before entering.
                     setup_page := SolidView { visible: false width: Fill height: Fill draw_bg.color: #faf8f0
                         ScrollYView { width: Fill height: Fill
-                            View { width: Fill height: Fit flow: Down padding: Inset{left: 58 right: 58 top: 32 bottom: 48}
+                            setup_inner := View { width: Fill height: Fit flow: Down padding: Inset{left: 58 right: 58 top: 32 bottom: 48}
                                 View { width: Fill height: Fit flow: Right spacing: 24 align: Align{y: 0.}
                                     View { width: Fill height: Fit flow: Down
                                         Label { width: Fit padding: 0 text: "O C T O S   L E A R N  ·  第 一 块 白 板" draw_text.text_style.font_size: 8.25 draw_text.color: #867e70 }
-                                        Label { width: Fill padding: 0 margin: Inset{top: 8} text: "把白板准备好，就可以开始了" draw_text.text_style: theme.font_bold{font_size: 27} draw_text.color: #303e3b }
+                                        setup_heading := Label { width: Fill padding: 0 margin: Inset{top: 8} text: "把白板准备好，就可以开始了" draw_text.text_style: theme.font_bold{font_size: 27} draw_text.color: #303e3b }
                                     }
                                     setup_full_settings := Button { width: Fit height: Fit text: "完整设置" padding: 0 margin: Inset{top: 14}
                                                 draw_text.color: #287c77 draw_text.text_style.font_size: 10.5
                                                 draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
                                 }
-                                Label { width: Fill padding: 0 margin: Inset{top: 22 bottom: 36} text: "写下问题、拍下纸上的题目，或直接开口问。Octos 会在同一块白板上讲解，并陪你一起推导。" draw_text.wrap: Words draw_text.text_style.font_size: 11.25 draw_text.text_style.line_spacing: 1.52 draw_text.color: #69706a }
-                                View { width: Fill height: Fit flow: Right spacing: 30
-                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                setup_intro := Label { width: Fill padding: 0 margin: Inset{top: 22 bottom: 36} text: "写下问题、拍下纸上的题目，或直接开口问。Octos 会在同一块白板上讲解，并陪你一起推导。" draw_text.wrap: Words draw_text.text_style.font_size: 11.25 draw_text.text_style.line_spacing: 1.52 draw_text.color: #69706a }
+                                setup_cards := View { width: Fill height: Fit flow: Right spacing: 30
+                                    setup_model_card := RoundedView { width: Fill height: Fit flow: Down padding: 26
                                         draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
                                         Label { width: Fit padding: 0 text: "01 · AI 讲解需要" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
-                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "连接你的模型" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        setup_model_heading := Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "连接你的模型" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
                                         Label { width: Fill padding: 0 text: "使用自己的 API Key，模型费用由你的供应商账户承担。没有配置也能先写白板。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
                                         View { width: Fill height: Fit flow: Down margin: Inset{top: 20}
                                             Label { width: Fit padding: 0 margin: Inset{top: 10} text: "模型平台" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
@@ -616,21 +619,21 @@ script_mod! {
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "API Key" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "API Key" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                             RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_key := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "粘贴你的 API Key" is_password: true
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
                                             setup_save := Button { width: Fit height: Fit text: "测试连接并保存" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
-                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
                                                 draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                             setup_model_status := Label { width: Fill padding: 0 margin: Inset{top: 10} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.44 draw_text.color: #4b5a56 }
                                             setup_full_model := Button { width: Fit height: Fit text: "打开完整模型设置 →" padding: 0 margin: Inset{top: 14}
@@ -638,14 +641,14 @@ script_mod! {
                                                 draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
                                         }
                                     }
-                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                    setup_tts_card := RoundedView { width: Fill height: Fit flow: Down padding: 26
                                         draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
                                         Label { width: Fit padding: 0 text: "02 · 可选" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
-                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "听老师讲，也可以只看文字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        setup_tts_heading := Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "听老师讲，也可以只看文字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
                                         Label { width: Fill padding: 0 text: "平台提供有限额的旁白语音。你也可以配置自己的火山 TTS，不占平台额度。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
                                         View { width: Fill height: Fit flow: Down margin: Inset{top: 6}
                                             setup_listen := Button { width: Fill height: Fit text: "试听当前旁白语音" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
-                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
                                                 draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                             setup_volc_toggle := Button { width: Fit height: Fit text: "▶ 使用自己的火山 TTS（可选）" padding: Inset{top: 12 bottom: 12} margin: Inset{top: 8}
                                                 draw_text.color: #303e3b draw_text.text_style.font_size: 10.5
@@ -658,27 +661,27 @@ script_mod! {
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "Access Token" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "Access Token" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                                 RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_volc_token := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "留空保留已有凭据" is_password: true
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "音色 ID" draw_text.text_style.font_size: 10.5 draw_text.color: #303e3b }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "音色 ID" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                                 RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_volc_voice := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "zh_female_xiaohe_uranus_bigtts" 
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: 10.5 }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
                                                 setup_volc_save := Button { width: Fit height: Fit text: "保存个人 TTS 并试听" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
@@ -691,10 +694,10 @@ script_mod! {
                                                 draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
                                         }
                                     }
-                                    RoundedView { width: Fill height: Fit flow: Down padding: 26
+                                    setup_skin_card := RoundedView { width: Fill height: Fit flow: Down padding: 26
                                         draw_bg +: { color: #fffdf6 border_radius: 10 border_size: 0.5 border_color: #ded8c9 }
                                         Label { width: Fit padding: 0 text: "03 · 随时再开" draw_text.text_style.font_size: 9 draw_text.color: #987231 }
-                                        Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "语音和摄像头不影响打字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
+                                        setup_skin_heading := Label { width: Fill padding: 0 margin: Inset{top: 12 bottom: 12} text: "语音和摄像头不影响打字" draw_text.text_style: theme.font_bold{font_size: 17.25} draw_text.color: #303e3b }
                                         
                                         View { width: Fill height: Fit flow: Down
                                             View { width: Fill height: Fit flow: Right spacing: 8 margin: Inset{bottom: 10}
@@ -721,7 +724,7 @@ script_mod! {
                                 }
                                 View { width: Fill height: Fit flow: Down align: Align{x: 0.5} margin: Inset{top: 30}
                                     setup_enter := Button { width: Fit height: Fit text: "先用白板，稍后设置 AI" padding: Inset{left: 22 right: 22 top: 12 bottom: 12}
-                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
                                         draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                     Label { width: Fit padding: 0 margin: Inset{top: 12} text: "以后从「设置 → 新手设置白板」回来，随时调整。API Key 仅发送到 Octos 服务端的凭据设置接口，不写进白板或课程内容。" draw_text.text_style.font_size: 9 draw_text.color: #69706a }
                                 }
@@ -1108,6 +1111,10 @@ pub struct App {
     #[rust]
     audio_now: Option<(String, LiveId, bool, Option<u64>)>,
     #[rust]
+    audio_players: Players,
+    #[rust]
+    speech_audio: Option<LiveId>,
+    #[rust]
     store: Option<progress_store::Store>,
     #[rust]
     pending_save: Option<progress_store::Request>,
@@ -1185,6 +1192,10 @@ pub struct App {
     /// OCTOS_PERF=1 main-thread profiling.
     #[rust]
     perf: Perf,
+    #[rust]
+    android_viewport: Option<Vec2d>,
+    #[rust]
+    android_geometry_logged: bool,
     /// Web useTeacherSkin (saved in the data directory).
     #[rust]
     teacher_skin: String,
@@ -2053,8 +2064,12 @@ impl App {
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let path = dir.join(format!("{tag}.audio"));
         std::fs::write(&path, audio).map_err(|e| e.to_string())?;
+        if let Some(id) = self.speech_audio.take() {
+            self.audio_players.stop(cx, id);
+        }
         let id = LiveId::from_str(&format!("speech:{tag}:{}", server::uuid()));
-        cx.prepare_audio_playback(id, makepad_widgets::makepad_platform::event::VideoSource::Filesystem(path.to_string_lossy().into()), true, false);
+        self.audio_players.prepare(cx, id, &path.to_string_lossy(), None)?;
+        self.speech_audio = Some(id);
         Ok(())
     }
     /// Ask from the input dock (web StudentInputDock submit).
@@ -3556,6 +3571,14 @@ impl App {
             };
             match board_view::widget(cx, &code) {
                 Ok(button) => {
+                    if cfg!(target_os = "android") {
+                        let style = if icon.is_empty() {
+                            "{height:27 min_height:27 width:Fit}"
+                        } else {
+                            "{width:27 height:27 min_height:27 flow:Overlay spacing:0 padding:0 margin:0 align:Align{x:0.5 y:0.5} label_walk:Walk{width:0 height:0} icon_walk:Walk{width:16 height:16}}"
+                        };
+                        if let Err(error) = android_ui::patch(cx, &button, style) { self.error = error; }
+                    }
                     if !icon.is_empty() {
                         if let Some(mut b) = button.borrow_mut::<Button>() {
                             b.draw_icon.load_from_str(icon);
@@ -3584,6 +3607,7 @@ impl App {
         pack: &serde_json::Value,
         index: usize,
         resume: bool,
+        profile: android_ui::Catalog,
     ) -> Result<(WidgetRef, WidgetRef, CourseCardRefs), String> {
         let pack_id = pack["packId"].as_str().unwrap_or("").to_owned();
         let version = pack["version"].as_str().unwrap_or("").to_owned();
@@ -3596,9 +3620,9 @@ impl App {
         let first_char = title.chars().next().unwrap_or('课');
         let tags_label = web_text(&tags, 11., 1.5, "#285c60", false, false, (0., 0.));
         let version_label = web_text(&format!("课程包 v{version}"), 11., 1.5, "#778583", false, false, (0., 0.));
-        let lesson_label = web_text(&lesson, 11., 1.5, "#648682", false, false, (22., 0.));
-        let title_label = web_text(&title, 20., 1.5, "#243b40", false, true, (8., 12.));
-        let desc_label = web_text(&desc, 13., 1.8, "#627579", false, true, (0., 24.));
+        let lesson_label = web_text(&lesson, 11., 1.5, "#648682", false, false, (profile.lesson_margin, 0.));
+        let title_label = web_text(&title, profile.course_title, 1.5, "#243b40", false, true, (8., 12.));
+        let desc_label = web_text(&desc, profile.course_description, 1.8, "#627579", false, true, (0., profile.description_margin));
         let minutes_label = web_text(&format!("{minutes} 分钟"), 12., 1.5, "#667a7b", false, false, (0., 0.));
         let offline_label = web_text("内置课程 · 可离线", 12., 1.5, "#667a7b", false, false, (0., 0.));
         let preview_label = web_text("预览", 13., 1.5, "#426568", false, false, (0., 0.));
@@ -3611,13 +3635,13 @@ impl App {
         };
         let code = format!(
             "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:9 border_size:0.5 border_color:#dbded9}}
-                cover := View{{width:Fill height:201 flow:Overlay
+                cover := View{{width:Fill height:{cover_height} flow:Overlay
                     cover_fallback := RoundedView{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:8.5}}
                         fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#166a79}}
                     }}
                     thumb := mod.widgets.SvgImage{{width:Fill height:Fill}}
                 }}
-                View{{width:Fill height:Fit flow:Down padding:Inset{{left:21 right:21 top:22 bottom:21}}
+                View{{width:Fill height:Fit flow:Down padding:Inset{{left:{body_x} right:{body_x} top:{body_top} bottom:{body_y}}}
                     View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}}
                         RoundedView{{width:Fit height:Fit padding:Inset{{left:8 right:8 top:4 bottom:4}} draw_bg +: {{color:#eaf2ee border_radius:3}}
                             {tags_label}
@@ -3649,7 +3673,8 @@ impl App {
                         }}
                     }}
                 }}
-            }}"
+            }}",
+            cover_height = profile.course_cover, body_x = profile.course_padding_x, body_top = profile.course_padding_y, body_y = if cfg!(target_os = "android") { profile.course_padding_y } else { 21. }
         );
         let card = board_view::widget(cx, &code)?;
         // Thumbnail: the pack SVG with its text runs (SvgImage); the accent
@@ -3690,20 +3715,20 @@ impl App {
     /// Collection card (web .course-collection-card): 16:10 cover art,
     /// level, title, description and the lesson count / 查看课程 footer; the
     /// whole card is the tap target.
-    fn collection_card(cx: &mut Cx, group: &CollectionGroup) -> Result<(WidgetRef, WidgetRef), String> {
+    fn collection_card(cx: &mut Cx, group: &CollectionGroup, profile: android_ui::Catalog) -> Result<(WidgetRef, WidgetRef), String> {
         let title = script_text(&group.title);
         let level = script_text(&group.level);
         let desc = script_text(&group.description);
         let summary = collection_summary(&group.packs);
         let level_label = web_text(&level, 12., 1.5, "#517a75", false, false, (0., 0.));
-        let title_label = web_text(&title, 23., 1.45, "#243b40", false, true, (10., 12.));
-        let desc_label = web_text(&desc, 14., 1.8, "#627579", false, true, (0., 28.));
+        let title_label = web_text(&title, profile.collection_title, 1.45, "#243b40", false, true, (profile.title_margin, profile.title_bottom));
+        let desc_label = web_text(&desc, profile.collection_description, profile.description_line_height, "#627579", false, true, (0., profile.collection_description_margin));
         let summary_label = web_text(&summary, 12., 1.5, "#667a7b", false, false, (0., 0.));
         let view_label = web_text("查看课程", 12., 1.5, "#166a79", true, false, (0., 0.));
         let code = format!(
             "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:10 border_size:0.5 border_color:#dbded9}}
-                cover := mod.widgets.SvgImage{{width:Fill height:222}}
-                View{{width:Fill height:Fit flow:Down padding:Inset{{left:23 right:23 top:24 bottom:23}}
+                cover := mod.widgets.SvgImage{{width:Fill height:{cover_height}}}
+                View{{width:Fill height:Fit flow:Down padding:Inset{{left:{body_x} right:{body_x} top:{body_top} bottom:{body_y}}}
                     {level_label}
                     {title_label}
                     {desc_label}
@@ -3718,7 +3743,8 @@ impl App {
                         }}
                     }}
                 }}
-            }}"
+            }}",
+            cover_height = profile.collection_cover, body_x = profile.collection_padding, body_top = if cfg!(target_os = "android") { profile.collection_padding } else { 24. }, body_y = profile.collection_padding
         );
         let card = board_view::widget(cx, &code)?;
         if let Some(mut svg) = card.widget(cx, ids!(cover)).borrow_mut::<svg_image::SvgImage>() {
@@ -3740,14 +3766,15 @@ impl App {
     ) -> Result<Vec<WidgetRef>, String> {
         let mut rows = Vec::new();
         self.card_rows.clear();
-        for chunk in cards.chunks(3) {
+        let columns = self.launcher_profile(cx).columns;
+        for chunk in cards.chunks(columns) {
             let row = board_view::widget(
                 cx,
                 &format!("View{{width:Fill height:Fit flow:Right spacing:{gap}}}"),
             )?;
             let mut members: Vec<WidgetRef> = chunk.iter().map(|(c, _)| c.clone()).collect();
             // Keep column widths when the last row is short.
-            for _ in chunk.len()..3 {
+            for _ in chunk.len()..columns {
                 members.push(board_view::widget(cx, "View{width:Fill height:1}")?);
             }
             board_view::children(cx, &row, members)?;
@@ -3891,6 +3918,13 @@ impl App {
     }
     /// Rebuild the launcher library from the pack catalog.
     /// Called at startup and whenever the user returns from the learning page.
+    fn launcher_viewport(&self, cx: &mut Cx) -> Vec2d {
+        let size = self.ui.window(cx, ids!(main_window)).get_inner_size(cx);
+        if size.x > 0. && size.y > 0. { size } else { dvec2(960., 540.) }
+    }
+    fn launcher_profile(&self, cx: &mut Cx) -> android_ui::Catalog {
+        android_ui::Catalog::new(self.launcher_viewport(cx), cfg!(target_os = "android"))
+    }
     fn rebuild_launcher(&mut self, cx: &mut Cx) {
         self.course_cards.clear();
         let root = course_pack::pack_root();
@@ -3931,6 +3965,7 @@ impl App {
                 .as_ref()
                 .is_some_and(|d| d.join(format!("{pack_id}@{version}.json")).is_file())
         };
+        let profile = self.launcher_profile(cx);
         let mut cards = Vec::new();
         let mut gap = 24.;
         if let Some(group) = selected {
@@ -3945,7 +3980,7 @@ impl App {
                     pack["packId"].as_str().unwrap_or(""),
                     pack["version"].as_str().unwrap_or(""),
                 );
-                match Self::course_card(cx, &root, pack, index, resume) {
+                match Self::course_card(cx, &root, pack, index, resume, profile) {
                     Ok((widget, spacer, refs)) => {
                         cards.push((widget, spacer));
                         self.course_cards.push(refs);
@@ -3957,7 +3992,7 @@ impl App {
             self.set_status(cx, "这个课程集暂不可用，请选择其他课程集。");
         } else {
             for group in &groups {
-                match Self::collection_card(cx, group) {
+                match Self::collection_card(cx, group, profile) {
                     Ok((widget, spacer)) => {
                         self.collection_cards.push((group.id.clone(), widget.clone()));
                         cards.push((widget, spacer));
@@ -3966,6 +4001,7 @@ impl App {
                 }
             }
         }
+        let gap = if cfg!(target_os = "android") { profile.gap } else { gap };
         match self.card_grid(cx, cards, gap) {
             Ok(rows) => {
                 if let Err(e) = board_view::children(cx, &self.ui.widget(cx, ids!(course_list)), rows) {
@@ -4283,7 +4319,7 @@ impl App {
     }
     fn stop_narration_audio(&mut self, cx: &mut Cx) {
         if let Some((_, id, ..)) = self.audio_now.take() {
-            cx.cleanup_video_playback_resources(id);
+            self.audio_players.stop(cx, id);
         }
     }
     /// Play the recorded clip of the narration being spoken (web packaged
@@ -4301,14 +4337,14 @@ impl App {
         match (&mut self.audio_now, desired) {
             (Some((beat, id, playing, _)), Some((want, _))) if *beat == want => {
                 if !*playing {
-                    cx.resume_video_playback(*id);
+                    self.audio_players.resume(cx, *id);
                     *playing = true;
                 }
             }
             (Some((beat, id, playing, _)), None) if paused_same.as_deref() == Some(beat.as_str()) && !self.narration_muted => {
                 // Paused mid-narration: keep the clip at its position.
                 if *playing {
-                    cx.pause_video_playback(*id);
+                    self.audio_players.pause(cx, *id);
                     *playing = false;
                 }
             }
@@ -4317,9 +4353,11 @@ impl App {
                 if let Some((beat, ms)) = desired {
                     let path = self.narration_audio[&beat].to_string_lossy().to_string();
                     let id = LiveId::from_str(&format!("narration:{beat}:{}", self.audio_epoch()));
-                    cx.prepare_audio_playback(id, makepad_widgets::makepad_platform::event::VideoSource::Filesystem(path), true, false);
                     let seek = (ms > 250.).then_some(ms as u64);
-                    self.audio_now = Some((beat, id, true, seek));
+                    match self.audio_players.prepare(cx, id, &path, seek) {
+                        Ok(()) => self.audio_now = Some((beat, id, true, seek)),
+                        Err(e) => self.error = e,
+                    }
                 }
             }
         }
@@ -4376,6 +4414,12 @@ impl App {
         // Desktop keeps modest bands as floors; chrome along the top edge and
         // the dock across the bottom middle widen them (web boardChromeInsets).
         let (top, bottom, occlusions) = board_chrome_insets(board.size.x, board.size.y, occlusions);
+        if cfg!(target_os = "android") {
+            return oll_runtime::camera::Insets {
+                top: top.round(), bottom: bottom.round(), left: 8., right: 8.,
+                focus_margin: None, occlusions,
+            };
+        }
         oll_runtime::camera::Insets {
             top: top.max(if compact { 78. } else { 92. }).round(),
             right: if compact { 18. } else { 28. },
@@ -5031,6 +5075,29 @@ impl App {
             self.handle_launcher_taps(cx, event);
         }
         self.ui.handle_event(cx, event, &mut Scope::empty());
+        if cfg!(target_os = "android") && !self.android_geometry_logged
+            && matches!(event, Event::Draw(_)) && std::env::var_os("OCTOS_PERF").is_some()
+        {
+            android_ui::log_geometry(cx, &self.ui);
+            self.android_geometry_logged = true;
+        }
+        if cfg!(target_os = "android")
+            && matches!(event, Event::Startup | Event::WindowGeomChange(_) | Event::LiveEdit | Event::ScriptReapply)
+        {
+            let size = self.launcher_viewport(cx);
+            if self.android_viewport != Some(size) || matches!(event, Event::Startup | Event::LiveEdit | Event::ScriptReapply) {
+                if let Err(error) = android_ui::apply(cx, &self.ui, size) {
+                    self.error = error;
+                }
+                self.android_viewport = Some(size);
+                // Applying icon walks can invalidate the SVG document. Reload
+                // it once after the profile, rather than on each timer tick.
+                load_icons(&self.ui, cx);
+                self.load_teacher_skin(cx);
+                self.rebuild_launcher(cx);
+                self.rebuild_ink_tools(cx);
+            }
+        }
         // World control panels (drawn and hit-tested by the board).
         let requests = self
             .ui

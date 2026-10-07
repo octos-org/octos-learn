@@ -1,0 +1,9 @@
+10-07 23:12:39.257 15195 15221 I Makepad : src/android_ui.rs:323:9 - [android-ui] viewport 960x540 catalog 918px/3cols chrome 36/27/29px
+10-07 23:12:40.317 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 77% | Draw 2x 556.0ms max 549.8ms | Startup 1x 205.6ms max 205.6ms | Actions 1x 8.2ms max 8.2ms | Timer 6x 4.0ms max 0.9ms | NextFrame 2x 2.3ms max 1.5ms | PermissionResult 1x 1.6ms max 1.6ms | Signal 2x 0.9ms max 0.5ms | VideoInputs 1x 0.7ms max 0.7ms | WindowGotFocus 1x 0.5ms max 0.5ms | WindowGeomChange 1x 0.5ms max 0.5ms | Resume 1x 0.4ms max 0.4ms
+10-07 23:12:41.334 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 61x 39.8ms max 0.9ms
+10-07 23:12:42.334 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 60x 37.9ms max 0.8ms
+10-07 23:12:43.350 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 61x 39.2ms max 0.8ms
+10-07 23:12:44.367 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 61x 39.4ms max 0.7ms
+10-07 23:12:45.367 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 60x 40.1ms max 1.0ms
+10-07 23:12:46.384 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 61x 39.3ms max 0.7ms
+10-07 23:12:47.384 15195 15221 I Makepad : src/perf.rs:36:13 - [perf] busy 4% | Timer 60x 37.6ms max 0.7ms

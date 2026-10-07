@@ -32,6 +32,9 @@ impl Perf {
             for (k, (n, total, max)) in kinds {
                 line.push_str(&format!(" | {k} {n}x {:.1}ms max {:.1}ms", total.as_secs_f64() * 1e3, max.as_secs_f64() * 1e3));
             }
+            #[cfg(target_os = "android")]
+            makepad_widgets::log!("{line}");
+            #[cfg(not(target_os = "android"))]
             eprintln!("{line}");
             self.by_kind.clear();
             self.window_start = Some(now);

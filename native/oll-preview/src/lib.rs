@@ -18,6 +18,7 @@ pub mod loading_fx;
 pub mod geometry_view;
 pub mod group_view;
 pub mod spatial_board;
+#[cfg(feature = "standalone")]
 app_main!(App);
 const FORMULAS: &str = include_str!("../courses/formulas.json");
 const QUADRATIC: &str = include_str!("../courses/quadratic.jsonl");

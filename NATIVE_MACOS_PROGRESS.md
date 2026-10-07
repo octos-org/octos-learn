@@ -3,7 +3,19 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（语音提问）
+最后更新：2026-10-07（Android UI 密度对齐与性能复测）
+
+最新交付：基于 Claude `0960f29` 保留独立 Android 打包与 macOS 音频修复，实现 Web Android 紧凑布局，重新构建安装「Octos Learn 原生测试」。首页空闲连续重绘已消失；课程播放仍约 15 FPS，尚未通过完整性能验收。产品 14 项测试通过（1 项忽略）、共享预览 17 项通过，旧 Web APK 安装身份不变。详见 [UI 对齐与修复后复测](docs/makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)。本轮代码与记录提交推送，下面未提交/未修复文字均是此前阶段历史。
+
+Android 编译打包背景已补充给 Claude：见 [APK 构建交接](docs/makepad-migration/ANDROID_APK_BUILD_HANDOFF_2026-10-07.md)，包含实际源码和工具版本、独立 checkout 同步、Release 复建命令、固定 Java host 重编译与产物校验。本轮只更新文档，未重新构建或安装，性能问题仍待定位。
+
+安卓后续反馈：全界面卡顿，现场采样约 12 FPS、原生事件/绘制线程近满单核。尚未定位具体热点或修复；本轮只读调查，未改应用/设备设置。见 [安卓卡顿探索](docs/makepad-migration/ANDROID_UI_STUTTER_INVESTIGATION_2026-10-07.md)，安卓版本未通过性能验收。
+
+2026-10-07 后续用户明确授权：安装局域网 Android 大屏用于性能测试，必须保留 Web APK。已将独立 `cc.pitun.learn.makepadtest`（「Octos Learn 原生测试」）release 版安装到 `192.168.1.63:5555` 并启动，九课及中文字体已打包；旧 Web `cc.pitun.learn` 的安装身份与更新时间均未改变。只增加打包/启动适配并分离预览 JNI 入口，未继续修改音频实现。详情见 [安卓大屏性能测试记录](docs/makepad-migration/ANDROID_LAN_PERFORMANCE_TEST_2026-10-07.md)。所有本轮改动仍未提交推送。
+
+最新用户指示：停止继续修改实现，交由 Claude 处理。已整理 [旁白与跨平台音频探索结果](docs/makepad-migration/NARRATION_AUDIO_INVESTIGATION_2026-10-07.md)，包含 macOS 根因、Android/Windows 纯音频空实现、未提交修复和验证边界。本轮仅更新文档，现有本地实现未改动。
+
+2026-10-07 alan0x 本地测试环境已准备：产品 `bc9d240` + OLL `d59b607`，Octos solo 后端健康运行。用户发现旁白只读前几个字后，产品层改用 macOS `AVAudioPlayer`，绕过固定 Makepad 视频播放器的无视频帧回退；产品 11 项测试（含真实课程 MP3）通过，应用内连续多段旁白验证通过，修复版已重新打包。当前源码与交接文档为本地未提交改动，未推送。启动与版本见 [本机测试环境](docs/makepad-migration/LOCAL_TEST_ENVIRONMENT_2026-10-07.md)，修复证据见 [旁白截断修复](docs/makepad-migration/NARRATION_AUDIO_FIX_2026-10-07.md)。
 
 ## 0. 目标
 
@@ -17,7 +29,7 @@
 - 不切换用户持久仓库的工作分支，也不清理它们的工作区（其他会话在用）：
   - `~/Documents/projects/OctosLearn/octos-learn` 在 `codex/android-native-ink-stroke-handoff`
   - OLL 持久仓库在 `codex/native-ink-exclusion-smoothing`
-- 未授权：安装 WASM target、往 Android 设备安装。
+- 未授权：安装 WASM target。2026-10-07 用户明确授权本次向局域网大屏安装独立原生性能测试包，保留已有 Web 版；该安装已完成。
 - 课程包锁定：`native/octos-learn/course-packs.lock.json` 始终与 main 的 `android/embedded-course-packs.json` 保持一致。
 - 每次工作结束，按 AGENT_HANDOFF.md 里的「交接维护规矩」更新交接文档（以及本文件）。
 - 拿不准的事先问用户。
@@ -92,7 +104,9 @@ cd octos-learn/native/octos-learn && cargo test   # 4 个
   - `tasks/`：单项交互脚本（task/angle/audio/outline/enlarge/ink/launcher/hist/legend/refl）。
 - 远程截图坐标为窗口点坐标，包含 32px 标题栏；`/g?scale=1` 为 2x 像素。
 
-## 5. 已完成（全部已提交并推送）
+## 5. 已完成
+
+- 2026-10-07 本机旁白截断修复：产品层 `AVAudioPlayer`，11 项测试通过，修复版应用已打包；当前为本地未提交改动。下列历史提交已推送。
 
 V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之后：
 

@@ -17,6 +17,18 @@
 
 ## 0. 一句话现状
 
+**最新交付（2026-10-07）**：已合入 Claude `0960f29`，保留此前 Android 独立打包与 macOS 音频修复，并实现 Web Android 的紧凑 UI 密度。新 APK 继续使用 `cc.pitun.learn.makepadtest`，旧 Web `cc.pitun.learn` 保留。首页空闲不再连续 Draw；一次函数播放仍约 15 FPS，性能尚未完全验收。源码和记录随本轮提交推送；后续优先读 [Android UI 对齐与复测](ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)，下列早期“未提交”等状态为历史。
+
+**Android 构建背景补充（2026-10-07）**：用户要求向 Claude 说明已安装 APK 的编译打包过程。已补充 [构建交接](ANDROID_APK_BUILD_HANDOFF_2026-10-07.md)，包括独立 checkout 同步、Release 工具链、固定 Makepad Java host 重编译、唯一 JNI 入口、课程/字体封装与 APK hash。本轮仅更新文档，未重新构建安装；实现改动仍未提交推送。
+
+**最新安卓测试反馈**：用户报告全界面卡顿，包括首页与按钮。只读采样确认实际约 12 FPS，Makepad 原生事件/绘制线程约 93.5–96% 单核 CPU；具体热点函数尚未定位。本轮未改实现或设备设置，当前安卓版本未通过性能验收。证据见 [卡顿探索记录](ANDROID_UI_STUTTER_INVESTIGATION_2026-10-07.md)。
+
+**后续用户授权（2026-10-07）**：安装局域网安卓大屏用于性能测试，保留已有 Web APK。独立 `cc.pitun.learn.makepadtest` release APK 已安装并启动；九课与中文字体就绪，Web 包安装身份完全保留。安卓打包与预览 JNI 入口适配为本地未提交改动，旁白跨平台实现仍未继续处理。见 [安卓大屏性能测试记录](ANDROID_LAN_PERFORMANCE_TEST_2026-10-07.md)。
+
+**最新用户指示（2026-10-07）**：停止继续修改实现，整理问题探索结果交给 Claude。已确认固定 Makepad 的 Android/Windows 纯音频入口为空实现；原有 macOS 本地修复保留且未提交推送。本轮只新增报告并更新文档，详见 [旁白与跨平台音频探索结果](NARRATION_AUDIO_INVESTIGATION_2026-10-07.md)。
+
+**2026-10-07 alan0x 本机复测**：`bc9d240` + OLL `d59b607` 的本地测试环境已准备。旁白约一秒截断已在产品层绕过固定 Makepad 视频播放器，改用 macOS `AVAudioPlayer`；产品 11 项测试与连续多段实际播放通过，修复版已重新打包。源码改动尚未提交推送。见 [旁白截断修复](NARRATION_AUDIO_FIX_2026-10-07.md)。
+
 **2026-10-06 v7（可交付测试）**：功能补齐并逐屏对齐 Web，记录见 `OLL_MACOS_PRODUCT_V7.md`，逐项进度和接手清单见仓库根目录 `NATIVE_MACOS_PROGRESS.md`（每完成一块就更新并推送）。
 - 新增：练习任务、plot / geometry 卡片、旁白音频、课程目录、大图、手写编辑、学习记录、卡片菜单。
 - 视觉巡检修掉了 Makepad 圆角 / 边框按 2 倍绘制、公式撇号与函数名间距、pt / px 字号混用等问题。
@@ -36,6 +48,10 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
+当前产品代码：`0960f2940f558ebea25184989f613c0388e701dd`（Claude 性能修复）加本轮已提交的 Android 密度/独立打包/macOS 音频代码。确切 APK 源码提交见新复测记录；同分支推送，不合并、不开 PR。配套 OLL 仍为 `d59b607`，Makepad 仍为固定 `825dbb4`。
+
+2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
+
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
 | `octos-learn` | `codex/macos-product-ui` | **v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
@@ -47,6 +63,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
 ## 2. 工作区重建
+
+2026-10-07 alan0x 本机新增持久测试目录 `/Users/alan0x/Documents/projects/octos-learn/.local-dev/oll-product/`，含五个固定依赖 checkout 和本地后端源码快照；启动脚本在 `.local-dev/start-macos.command`，原生进度在 `.local-dev/app-data`。脚本直接启动包内可执行文件，避开本机 LaunchServices 在构建目录资源访问时的阻塞。构建、九课测试、后端与可见窗口均已验证，步骤见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。下面保留历史机器的重建步骤。
 
 当前工作区：原机器在 `/private/tmp/oll-product`（2026-09-27）；**新机器（yangyang，2026-09-28）在 `~/Documents/projects/OctosLearn/.local-dev/oll-product`**（持久目录，不会被系统清空；持久仓库在 `~/Documents/projects/OctosLearn/{octos-learn,octos-lesson-language}`，已分别检出 `codex/macos-product-ui` / `codex/rust-runtime-product`）。2026-09-28 在新机器按下列步骤实测走通：锁文件与 zbias 补丁已入库（`docs/makepad-migration/evidence/`），无需调研目录；Homebrew Rust 1.98.1 构建/测试全绿（原机 1.96.0）；空 cargo 缓存时先在 crate 目录跑一次 `cargo fetch --locked`，再走离线打包。/private/tmp 会被系统定期清空，重建步骤如下（已实测可走通）。所有代码提交都在 §1 的持久分支里，证据与锁文件在本调研目录。重建工作区：
 
@@ -109,6 +127,13 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
 
+- 首页静态图标的重绘风暴已在大屏验证消失；一次函数课程播放仍约 15 FPS。给 Claude 的日志与后续定位边界见新复测记录；60 Hz 定时器及无差别 refresh 仍保留。
+- Android 紧凑首页、顶栏、手写工具、输入栏、老师头像与取景密度已实现；未宣称所有页面逐像素一致。窄屏、相机实画面、AI/ASR、Android 有声旁白仍需专项实测。
+
+2026-10-07 本机反馈：旁白只读前几个字已修复，见 [音频修复记录](NARRATION_AUDIO_FIX_2026-10-07.md)。固定依赖无改动；接手时保留并同步当前本地未提交音频模块后再构建。真实 MP3 与连续片段已验证，服务端实时 TTS 的实际有声输出仍待验证。
+
+2026-10-07 本地测试环境已准备，尚待用户功能测试反馈；本次机器未启动 ASR 服务，实际摄像头/麦克风与模型生成未实测。参见 [本机测试环境的测试范围](LOCAL_TEST_ENVIRONMENT_2026-10-07.md#测试范围)。
+
 > 2026-10-06 起以 `OLL_MACOS_PRODUCT_V7.md` §4 和 `NATIVE_MACOS_PROGRESS.md` §6 为准。下面是历史条目，已完成的已在 V7 中实现：练习面板、思考题持久、目录、重播、橡皮/框选/持久化、旁白音频、卡片菜单、卡片 focused 描边。
 
 1. ~~**surface 三门课（3D）**~~：2026-09-28 完成（v3）。没有用 makepad-d3，而是照搬 web 的 CPU 投影 + SVG 画家算法，所以与网页版像素一致。遗留：
@@ -140,7 +165,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 - 只推送不合并；发 PR 前先问。2026-10-05 起用户授权：原生两条分支每完成一块就提交并推送，并更新根目录 `NATIVE_MACOS_PROGRESS.md`。git 提交可直接做在 codex/ 分支。
 - 不切用户工作分支、不清用户工作区；持久仓库被其他会话占用（2026-10-05：octos-learn 在 `codex/android-native-ink-stroke-handoff`，OLL 在 `codex/native-ink-exclusion-smoothing`），不要切换——工作一律在 `.local-dev/oll-product` 工作区 clone 或自建 worktree。web 基准用工作区 clone 的 `git worktree add` 到临时目录构建。
 - 原生课程包锁定（`native/octos-learn/course-packs.lock.json`）始终与 main 的 `android/embedded-course-packs.json` 快照保持一致（用户 2026-10-05 确认）；合并 main 时同步，并在交付记录里写明。
-- 固定依赖版本不得擅自升级（runtime.json 组合）；WASM target 安装（rustup target add wasm32-unknown-unknown）**尚未获授权**；Android 真机安装**未获授权**（设备 192.168.1.63，只开发打包）。
+- 固定依赖版本不得擅自升级（runtime.json 组合）；WASM target 安装（rustup target add wasm32-unknown-unknown）**尚未获授权**。2026-10-07 用户明确授权在 `192.168.1.63` 安装独立原生性能测试包，要求保留 Web APK；本次安装已完成，具体身份与验证见 Android 性能测试记录。
 - 不确定就问用户；历史文档中的性能数字（8ms/35MB/3-10x）均不作数。
 
 ## 7. 文件地图（本调研目录）
