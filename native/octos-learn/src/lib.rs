@@ -1043,8 +1043,11 @@ fn wav_duration_ms(bytes: &[u8]) -> Option<f64> {
     None
 }
 
+/// Tap on a plain view. Co-captures the press (capture overload) so a
+/// scroll view that took the finger first can still drag-scroll when the
+/// press starts on the view; a press that moved 8px or more is not a tap.
 fn tapped(cx: &mut Cx, event: &Event, target: &WidgetRef) -> bool {
-    match event.hits(cx, target.area()) {
+    match event.hits_with_capture_overload(cx, target.area(), true) {
         Hit::FingerHoverIn(_) => {
             cx.set_cursor(MouseCursor::Hand);
             false
@@ -5077,12 +5080,13 @@ impl App {
             }
         }
         self.handle_server(cx, event);
-        // Launcher pills/cards are plain views: hit-test them before the UI
-        // tree so the scroll view does not capture the finger first.
+        self.ui.handle_event(cx, event, &mut Scope::empty());
+        // Launcher pills/cards are plain views, hit-tested after the UI tree:
+        // the scroll view captures the finger first (touch drag-scroll works
+        // from a card) and `tapped` co-captures the same press.
         if !self.learning_visible {
             self.handle_launcher_taps(cx, event);
         }
-        self.ui.handle_event(cx, event, &mut Scope::empty());
         if cfg!(target_os = "android") && !self.android_geometry_logged
             && matches!(event, Event::Draw(_)) && std::env::var_os("OCTOS_PERF").is_some()
         {
