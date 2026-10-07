@@ -739,13 +739,23 @@ struct Live {
     chat_lessons: Vec<String>,
     /// The latest assistant reply of a chat turn (shown if no lesson came).
     chat_reply: Option<(String, String)>,
-    /// The playing lesson: (turn id, canonical JSONL), cached for reopening.
-    lesson: Option<(String, String)>,
+    /// Answered lessons in order: (turn id, canonical JSONL materialized
+    /// with the web host ids), composed into one classroom for playback.
+    lessons: Vec<(String, String)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
     tts_queue: Vec<(String, String)>,
     tts_inflight: Option<String>,
 }
 impl Live {
+    /// Web composeOllClassroomEvents over the answered lessons.
+    fn classroom(&self) -> Result<String, String> {
+        let lessons = self
+            .lessons
+            .iter()
+            .map(|(_, src)| src.lines().filter(|l| !l.trim().is_empty()).map(|l| serde_json::from_str(l).map_err(|e| e.to_string())).collect())
+            .collect::<Result<Vec<Vec<serde_json::Value>>, String>>()?;
+        Ok(oll_runtime::classroom::to_jsonl(&oll_runtime::classroom::compose(&lessons, &self.session_id)))
+    }
     fn new() -> Self {
         let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis());
         // Web createLearningSessionId: six random base-36 characters.
@@ -761,7 +771,7 @@ impl Live {
             chat_turns: Vec::new(),
             chat_lessons: Vec::new(),
             chat_reply: None,
-            lesson: None,
+            lessons: Vec::new(),
             tts_queue: Vec::new(),
             tts_inflight: None,
         }
@@ -2000,7 +2010,7 @@ impl App {
             "session_id": live.session_id,
             "title": title,
             "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
-            "lesson": live.lesson.as_ref().map(|(t, src)| json!({"turn_id": t, "source": src})),
+            "lessons": live.lessons.iter().map(|(t, src)| json!({"turn_id": t, "source": src})).collect::<Vec<_>>(),
             "checkpoint": checkpoint,
         });
         let path = dir.join(format!("{}.json", live.session_id));
@@ -2033,13 +2043,31 @@ impl App {
                 Some((q[0].as_str()?.to_owned(), q[1].as_str()?.to_owned(), status.to_owned()))
             })
             .collect();
-        let lesson = record["lesson"]["source"].as_str().map(|src| {
-            (record["lesson"]["turn_id"].as_str().unwrap_or("").to_owned(), src.to_owned())
-        });
-        live.lesson = lesson.clone();
-        if let Some((_, source)) = lesson {
+        // Records before topic composition kept one "lesson".
+        let entries = record["lessons"].as_array().cloned().unwrap_or_else(|| record["lesson"].is_object().then(|| vec![record["lesson"].clone()]).unwrap_or_default());
+        live.lessons = entries
+            .iter()
+            .filter_map(|l| Some((l["turn_id"].as_str().unwrap_or("").to_owned(), l["source"].as_str()?.to_owned())))
+            .collect();
+        if !live.lessons.is_empty() {
             let checkpoint = &record["checkpoint"];
-            let session = if checkpoint.is_object() { Session::restore(&source, checkpoint) } else { Session::load(&source) };
+            let session = live.classroom().and_then(|source| {
+                // A checkpoint of another program (older format) falls back
+                // to the composed classroom at its end.
+                checkpoint
+                    .is_object()
+                    .then(|| Session::restore(&source, checkpoint).ok())
+                    .flatten()
+                    .map_or_else(
+                        || {
+                            let mut s = Session::load_incremental(&source, true)?;
+                            let end = s.outline().last().map_or(0, |st| st.end_cursor);
+                            s.seek(end, vec![])?;
+                            Ok(s)
+                        },
+                        Ok,
+                    )
+            });
             match session {
                 Ok(session) => {
                     if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
@@ -2327,29 +2355,44 @@ impl App {
     /// materialized into canonical JSONL and played on this board.
     fn load_live_lesson(&mut self, cx: &mut Cx, turn_id: &str, body: &str) {
         let Some(live) = self.live.as_ref() else { return };
-        let host = oll_runtime::authoring::Host {
-            lesson_id: turn_id.into(),
-            board_id: live.session_id.clone(),
-            base_revision: 0,
-            region_intent: "new_topic".into(),
-            region_id: None,
-        };
+        let session_id = live.session_id.clone();
+        // Web loadOllLessonArtifact + composeOllClassroomEvents: the answer
+        // becomes the next topic of this board's classroom; earlier topics
+        // stay on the board and playback starts at the new topic.
         let loaded = serde_json::from_str::<serde_json::Value>(body)
             .map_err(|e| format!("课程文件损坏：{e}"))
-            .and_then(|doc| oll_runtime::authoring::materialize_jsonl(&doc, &host))
-            .and_then(|jsonl| Session::load(&jsonl).map(|s| (s, jsonl)));
+            .and_then(|doc| {
+                let host = oll_runtime::classroom::live_host(&session_id, turn_id, &doc);
+                oll_runtime::authoring::materialize_jsonl(&doc, &host)
+            })
+            .and_then(|jsonl| {
+                // Validate on its own first (web materialize asserts).
+                Session::load(&jsonl)?;
+                let mut candidate = self.live.as_ref().map(|l| l.lessons.clone()).unwrap_or_default();
+                candidate.retain(|(t, _)| t != turn_id);
+                candidate.push((turn_id.to_owned(), jsonl.clone()));
+                let probe = Live { lessons: candidate.clone(), session_id: session_id.clone(), ..Live::new() };
+                let source = probe.classroom()?;
+                let mut session = Session::load_incremental(&source, true)?;
+                let first_step = jsonl
+                    .lines()
+                    .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+                    .find(|e| e["event"] == "lesson.step")
+                    .and_then(|e| e["step"]["id"].as_str().map(str::to_owned));
+                if let Some(start) = first_step.and_then(|id| session.outline().into_iter().find(|s| s.id == id)).map(|s| s.start_cursor) {
+                    if start > 0 {
+                        session.seek(start, vec![])?;
+                    }
+                }
+                Ok((session, candidate))
+            });
         match loaded {
-            Ok((session, jsonl)) => {
+            Ok((session, lessons)) => {
                 if let Some(l) = self.live.as_mut() {
-                    l.lesson = Some((turn_id.to_owned(), jsonl));
+                    l.lessons = lessons;
                 }
                 if let Some(q) = self.live.as_mut().and_then(|l| l.questions.iter_mut().find(|q| q.0 == turn_id)) {
                     q.2 = "answered".into();
-                }
-                // DIFF: one lesson per live board for now; a newer answer
-                // replaces the previous lesson (web composes topics).
-                if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
-                    board.clear(cx);
                 }
                 self.player = Some(session);
                 self.lesson_released = false;
