@@ -742,6 +742,10 @@ struct Live {
     /// Answered lessons in order: (turn id, canonical JSONL materialized
     /// with the web host ids), composed into one classroom for playback.
     lessons: Vec<(String, String)>,
+    /// A course board that received questions (web composes the pack's
+    /// events with the answers): the pack's canonical source and its key.
+    base: Option<String>,
+    course: Option<(String, String)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
     tts_queue: Vec<(String, String)>,
     tts_inflight: Option<String>,
@@ -750,9 +754,10 @@ impl Live {
     /// Web composeOllClassroomEvents over the answered lessons.
     fn classroom(&self) -> Result<String, String> {
         let lessons = self
-            .lessons
+            .base
             .iter()
-            .map(|(_, src)| src.lines().filter(|l| !l.trim().is_empty()).map(|l| serde_json::from_str(l).map_err(|e| e.to_string())).collect())
+            .chain(self.lessons.iter().map(|(_, src)| src))
+            .map(|src| src.lines().filter(|l| !l.trim().is_empty()).map(|l| serde_json::from_str(l).map_err(|e| e.to_string())).collect())
             .collect::<Result<Vec<Vec<serde_json::Value>>, String>>()?;
         Ok(oll_runtime::classroom::to_jsonl(&oll_runtime::classroom::compose(&lessons, &self.session_id)))
     }
@@ -772,6 +777,8 @@ impl Live {
             chat_lessons: Vec::new(),
             chat_reply: None,
             lessons: Vec::new(),
+            base: None,
+            course: None,
             tts_queue: Vec::new(),
             tts_inflight: None,
         }
@@ -1369,6 +1376,10 @@ impl App {
                 let Some(id) = entry.file_name().to_string_lossy().strip_suffix(".json").map(str::to_owned) else { continue };
                 let Some(record) = std::fs::read(entry.path()).ok().and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok()) else { continue };
                 let Ok(modified) = entry.metadata().and_then(|m| m.modified()) else { continue };
+                // Course classrooms reopen with their course.
+                if record["course"].is_array() {
+                    continue;
+                }
                 let title = record["title"].as_str().unwrap_or("学习白板").to_owned();
                 records.push((format!("live:{id}"), String::new(), title, modified));
             }
@@ -1479,7 +1490,12 @@ impl App {
                 self.show_learning(cx, true);
                 self.note(cx, "");
                 self.autoplay_pending = autoplay;
-                let skip_restore = std::mem::take(&mut self.skip_restore) || self.course_preview;
+                let mut skip_restore = std::mem::take(&mut self.skip_restore) || self.course_preview;
+                // A course that received questions resumes as its classroom.
+                if !skip_restore && self.restore_course_classroom(cx) {
+                    skip_restore = true;
+                    self.note(cx, "已恢复进度和提问");
+                }
                 if let Some(store) = self.store.as_ref().filter(|_| !skip_restore) {
                     self.awaiting_restore =
                         store.send(progress_store::Request::Load(self.course_key())).is_ok();
@@ -1674,8 +1690,14 @@ impl App {
             .filter(|(_, text)| !text.trim().is_empty())
             .collect();
         let dir = self.live_tts_dir();
+        // Course classrooms keep the pack's own narration; only answers
+        // (beats of `learn-<session>-…` lessons) are synthesized.
+        let answer_prefix = self.live.as_ref().filter(|l| l.base.is_some()).map(|l| format!("learn-{}-", l.session_id));
         let mut queue = Vec::new();
         for (beat, text) in beats {
+            if self.narration_audio.contains_key(&beat) || answer_prefix.as_ref().is_some_and(|p| !beat.starts_with(p.as_str())) {
+                continue;
+            }
             let cached = dir.as_ref().map(|d| d.join(format!("{}.audio", tts_file_key(&beat))));
             match cached.filter(|p| p.exists()) {
                 Some(path) => self.register_narration_clip(&beat, path),
@@ -1722,12 +1744,10 @@ impl App {
         if text.is_empty() {
             return;
         }
-        let Some(live) = self.live.as_mut() else {
-            // DIFF: questions inside a course board need multi-lesson
-            // composition (web board_context references), a later milestone.
-            self.toast(cx, "课程内提问稍后支持，请在空白白板提问");
+        if !self.ensure_classroom(cx) {
             return;
-        };
+        }
+        let Some(live) = self.live.as_mut() else { return };
         if live.pending() {
             self.toast(cx, "上一个问题还在准备中");
             return;
@@ -1744,10 +1764,93 @@ impl App {
         self.sync_live(cx);
         self.save_live(cx);
     }
+    /// Questions need a classroom: a live board already is one; an
+    /// interactive course board becomes one whose first lesson is the pack
+    /// (web activeOllEvents = compose([packagedOllEvents, ...answers])).
+    fn ensure_classroom(&mut self, cx: &mut Cx) -> bool {
+        if self.live.is_some() {
+            return true;
+        }
+        if self.player.is_none() || self.pack_id.is_empty() || self.course_preview {
+            self.toast(cx, "请先打开一门课程或新建空白白板");
+            return false;
+        }
+        let mut live = Live::new();
+        live.base = Some(self.course_source.clone());
+        live.course = Some((self.pack_id.clone(), self.pack_version.clone()));
+        live.titled = true;
+        self.live = Some(live);
+        self.server.ensure_login(cx);
+        true
+    }
+    /// The newest saved classroom of this course (questions asked on it).
+    fn restore_course_classroom(&mut self, cx: &mut Cx) -> bool {
+        let Some(dir) = self.live_dir() else { return false };
+        let key = json!([self.pack_id, self.pack_version]);
+        let newest = std::fs::read_dir(&dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| {
+                let record = std::fs::read(e.path()).ok().and_then(|b| serde_json::from_slice::<serde_json::Value>(&b).ok())?;
+                (record["course"] == key).then_some(())?;
+                Some((e.metadata().and_then(|m| m.modified()).ok()?, record))
+            })
+            .max_by_key(|(t, _)| *t)
+            .map(|(_, r)| r);
+        let Some(record) = newest else { return false };
+        let mut live = Live::new();
+        live.session_id = record["session_id"].as_str().unwrap_or(&live.session_id).to_owned();
+        live.titled = true;
+        live.base = Some(self.course_source.clone());
+        live.course = Some((self.pack_id.clone(), self.pack_version.clone()));
+        live.questions = record["questions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|q| {
+                let status = if q[2] == "pending" { "failed" } else { q[2].as_str()? };
+                Some((q[0].as_str()?.to_owned(), q[1].as_str()?.to_owned(), status.to_owned()))
+            })
+            .collect();
+        live.lessons = record["lessons"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|l| Some((l["turn_id"].as_str().unwrap_or("").to_owned(), l["source"].as_str()?.to_owned())))
+            .collect();
+        let restored = live.classroom().and_then(|source| {
+            let checkpoint = &record["checkpoint"];
+            match checkpoint.is_object().then(|| Session::restore(&source, checkpoint).ok()).flatten() {
+                Some(s) => Ok(s),
+                None => Session::load_incremental(&source, true),
+            }
+        });
+        match restored {
+            Ok(mut session) => {
+                if let Some(old) = &self.player {
+                    session.narration_durations = old.narration_durations.clone();
+                }
+                if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                    if record["checkpoint"]["native_ink"].is_object() {
+                        b.restore_ink(cx, &record["checkpoint"]["native_ink"]);
+                    }
+                }
+                self.player = Some(session);
+                self.live = Some(live);
+                self.start_live_tts(cx);
+                self.sync_live(cx);
+                true
+            }
+            Err(e) => {
+                self.note(cx, &format!("无法恢复课程里的提问：{e}"));
+                false
+            }
+        }
+    }
     /// Web dock image button: choose a picture of a problem.
     fn pick_question_image(&mut self, cx: &mut Cx) {
-        if self.live.is_none() {
-            self.toast(cx, "课程内提问稍后支持，请在空白白板上传图片");
+        if !self.ensure_classroom(cx) {
             return;
         }
         if self.live.as_ref().is_some_and(|l| l.pending()) {
@@ -1826,10 +1929,7 @@ impl App {
         if self.camera.active {
             self.camera.disable(cx);
         } else {
-            if self.live.is_none() {
-                // DIFF: camera questions on course boards need the course
-                // question flow (multi-lesson composition).
-                self.toast(cx, "课程内提问稍后支持，请在空白白板使用摄像头");
+            if !self.ensure_classroom(cx) {
                 return;
             }
             if let Err(e) = self.camera.enable(cx) {
@@ -1874,10 +1974,7 @@ impl App {
             self.voice_turn = None;
             cx.use_audio_inputs(&[]);
         } else {
-            if self.live.is_none() {
-                // DIFF: voice questions on course boards need the course
-                // question flow (multi-lesson composition).
-                self.toast(cx, "课程内提问稍后支持，请在空白白板使用语音");
+            if !self.ensure_classroom(cx) {
                 return;
             }
             self.server.ensure_login(cx);
@@ -2011,6 +2108,7 @@ impl App {
             "title": title,
             "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
             "lessons": live.lessons.iter().map(|(t, src)| json!({"turn_id": t, "source": src})).collect::<Vec<_>>(),
+            "course": live.course.as_ref().map(|(p, v)| json!([p, v])),
             "checkpoint": checkpoint,
         });
         let path = dir.join(format!("{}.json", live.session_id));
@@ -2371,9 +2469,15 @@ impl App {
                 let mut candidate = self.live.as_ref().map(|l| l.lessons.clone()).unwrap_or_default();
                 candidate.retain(|(t, _)| t != turn_id);
                 candidate.push((turn_id.to_owned(), jsonl.clone()));
-                let probe = Live { lessons: candidate.clone(), session_id: session_id.clone(), ..Live::new() };
+                let base = self.live.as_ref().and_then(|l| l.base.clone());
+                let probe = Live { lessons: candidate.clone(), session_id: session_id.clone(), base, ..Live::new() };
                 let source = probe.classroom()?;
                 let mut session = Session::load_incremental(&source, true)?;
+                // Pack clip timing and the voice toggle carry over.
+                if let Some(old) = &self.player {
+                    session.narration_durations = old.narration_durations.clone();
+                    session.narration_enabled = old.narration_enabled;
+                }
                 let first_step = jsonl
                     .lines()
                     .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
@@ -2396,7 +2500,6 @@ impl App {
                 }
                 self.player = Some(session);
                 self.lesson_released = false;
-                self.narration_audio.clear();
                 self.start_live_tts(cx);
                 self.sync_live(cx);
                 self.start_playback(cx);

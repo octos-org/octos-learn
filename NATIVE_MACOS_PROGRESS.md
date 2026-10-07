@@ -144,7 +144,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `36a4117` 摄像头提问（Web 启用摄像头）：顶栏「启用摄像头 / 关闭摄像头」与输入栏摄像头按钮（实时白板）；`src/camera.rs` 用 Makepad `camera_frame_input` 取默认摄像头（≤1080p，转 I420 保存最新一帧，约 15fps），右上角监视窗（Web .learning-camera-monitor：「老师看到的画面」+「本轮已发送」）；提问（文字或语音）时截取当前帧 → JPEG（文档模式：长边 1600、质量 .88）→ `POST /api/upload` → `learning.lesson.generate-from-camera`（`paths`、`request_source: "current_image"`）。新增依赖 `image 0.25`（仅 jpeg/png，已在依赖树中）。自动化测试用 `OCTOS_CAMERA_TEST_IMAGE=<png/jpg>` 代替摄像头：本机生成的课程正确识别图中题目（x²−5x+6=0 因式分解）。DIFF：Web 的画面调整对话框（旋转/镜像/缩放/偏移/文档模式）未做，使用 Web 默认值。**真实摄像头采集与系统权限弹窗需在另一台电脑验证**
 - `2c895ea` 图片提问（Web sendImage，输入栏图片按钮）：系统文件选择框（Makepad `open_select_file_dialog`）→ `POST /api/upload` → 代理对话 `turn/start`（Web buildTurnText 的 LEARNING_SESSION/LEARNING_CONTEXT 前缀 + 固定提示「请看我上传的题目，把题目和关键步骤整理到白板上。」，图片作为 media）；从 `projection/envelope` 的 `assistant_persisted.meta.media` 取最终 `<turn>.octos-lesson.json`（忽略 `.part-NNN.`）→ `/api/files?path=<绝对路径>&session=` 下载 → 原生物化播放；`turn_terminal` 未带课程时，问题标为失败并提示代理的回复。同时：`server::uuid()` 改为 /dev/urandom 的 v4 UUID，会话号后缀改为 6 位随机 base36（与 Web createLearningSessionId 一致；之前的 id 高位取自时钟、互相同前缀）；`OCTOS_SERVER_DEBUG` 也记录发出的 WS 帧和 HTTP 响应前 300 字。测试钩子 `OCTOS_IMAGE_TEST_FILE=<图片>` 跳过选择框。
   - **已知问题（服务端/技能，Web 同样复现）**：本机 gemini-3.6-flash 代理处理上传图片时，常以 `request_source: "current_image"` 且不带 `camera_media` 调用 `oll_generate_lesson`，技能报 `LESSON_CAMERA_IMAGE_REQUIRED`，代理重试后放弃，整轮没有课程。原生连续 6 次、Web 后来 1 次都这样（Web 早先 2 次走 self_contained 成功）。两端发送的 `turn/start`、上传文件、服务端提示长度（30405 字节、66 个工具）完全一致，所以不是原生协议问题；需要在技能或代理提示里修。课程下载这一步已用成功的 Web 会话直接验证（`/api/files` 绝对路径 200）
-- （本次提交，OLL `ba16c14`、`b692425`）同一白板多次提问拼成一个课堂（Web composeOllClassroomEvents）：OLL `src/classroom.rs` 移植 namespaceCanonicalLesson（后续课程的变量/任务加 `v<hash>_` 前缀）、composeOllClassroomEvents（`learning-session-<id>`、无 lesson.close、节点放进各自 topic 区域）与 loadOllLessonArtifact 的 host（`learn-<session>-<turn>.octos-lesson.json`、`learning-board-<session>`、`topic-…`）；`tests/classroom.rs` 用 Web 代码（esbuild 打包 web-main 的 oll-artifacts/oll-materialization）生成的三课 fixture 逐事件比对，一致。原生实时白板保存 `lessons` 列表（兼容旧的单个 `lesson`），新回答到达后重新组合、增量加载、跳到新 topic 第一步继续播放，前面的 topic 保留在白板上。另修：生成课程里的 `lesson.phase.start`（Beat 开始时把变量回放到起始值，Web beginPhaseTransition）之前被原生拒绝导致「没有生成成功」，现在按 brief 1.8s easeInOutQuad 动画播放（`tests/authoring.rs` 新增回放用例）。已用本机服务连续问「相反数」「绝对值」验证
+- `79ef62b`（OLL `ba16c14`、`b692425`）同一白板多次提问拼成一个课堂（Web composeOllClassroomEvents）：OLL `src/classroom.rs` 移植 namespaceCanonicalLesson（后续课程的变量/任务加 `v<hash>_` 前缀）、composeOllClassroomEvents（`learning-session-<id>`、无 lesson.close、节点放进各自 topic 区域）与 loadOllLessonArtifact 的 host（`learn-<session>-<turn>.octos-lesson.json`、`learning-board-<session>`、`topic-…`）；`tests/classroom.rs` 用 Web 代码（esbuild 打包 web-main 的 oll-artifacts/oll-materialization）生成的三课 fixture 逐事件比对，一致。原生实时白板保存 `lessons` 列表（兼容旧的单个 `lesson`），新回答到达后重新组合、增量加载、跳到新 topic 第一步继续播放，前面的 topic 保留在白板上。另修：生成课程里的 `lesson.phase.start`（Beat 开始时把变量回放到起始值，Web beginPhaseTransition）之前被原生拒绝导致「没有生成成功」，现在按 brief 1.8s easeInOutQuad 动画播放（`tests/authoring.rs` 新增回放用例）。已用本机服务连续问「相反数」「绝对值」验证
+- （本次提交）课程内提问（Web activeOllEvents = compose([课程包事件, ...回答])）：互动模式的课程白板上，文字、语音、摄像头、图片提问都可用；第一次提问时课程变成「课堂」（`Live.base` = 课程 canonical，`Live.course` = 包 id/版本），回答作为新 topic 接在课程后面，跳到回答的第一步播放（Web 用 6 倍速快进到回答旁白，原生直接定位，终态一致）。课程自带旁白音频保留，服务端 TTS 只合成回答的 Beat。课堂保存在 `live/<session>.json`（带 `course` 字段，不在学习记录里单独列出）；从学习记录或启动器再打开这门课时恢复最新课堂（进度、提问、回答、笔迹）；「开始互动学习」仍是新的实例。已用本机服务在 linear-intro-and-slope 上提问并重新打开验证
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -172,13 +173,13 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 | 6 | 摄像头 | 1、2 | 相机权限、拍照上传 |
 | 7 | 新建空白白板 | 部分可离线 | 本地手写白板可先做；AI 生成内容依赖 2 |
 
-已知限制（服务端第一块）：课程内提问（基于课程白板的 board_context）还没做；加载卡没有粒子与流光动画。
+已知限制（服务端第一块）：框选笔迹提问（ink_selection / board_context 引用）还没做；加载卡没有粒子与流光动画。
 
 服务端语音现状（本机）：octos 通过 `OMINIX_API_URL=http://127.0.0.1:8080` 接上 OminiX 后 ASR 就绪；TTS 的本机路线固定用 GPT-SoVITS 引擎，本机 OminiX 只有 Qwen3-TTS，所以 `/api/voice/synthesize` 返回 502（云端路线需要火山 TTS key）。课程旁白 TTS 在本机无法实测，需要在用户的另一台电脑验证。
 
 ## 7. 明确不做 / 占位（依赖后端或未迁移）
 
-（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）仍未做：课程内提问、完整设置页、摄像头画面调整对话框。
+（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）仍未做：完整设置页、摄像头画面调整对话框。
 学习记录抽屉只列本机课程进度记录（Web 还会同步服务器记录）。
 
 ## 8. Makepad 踩坑备忘
