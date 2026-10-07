@@ -2,8 +2,8 @@
 //! grouped sidebar with search, and the Profile / Voice / LLM / API Keys
 //! tabs backed by `/api/my/profile` (secrets arrive masked; sending a masked
 //! value back keeps the stored secret, as the web does).
-//! DIFF: no dark theme toggle; Learning Companion, Authentication and
-//! Developer Options are separate milestones (they show a short note).
+//! DIFF: no dark theme toggle; Developer Options only stores its switches
+//! (the web debug overlays are not part of the native app).
 use crate::{board_view, server, App};
 use makepad_widgets::*;
 use serde_json::{json, Value};
@@ -58,6 +58,11 @@ const ICON_SLIDERS: &str = include_str!("../assets/icons/sliders-horizontal.svg"
 const ICON_FILE: &str = include_str!("../assets/icons/file-text.svg");
 const ICON_SERVER: &str = include_str!("../assets/icons/server.svg");
 const ICON_RADIO: &str = include_str!("../assets/icons/radio.svg");
+const ICON_MAIL: &str = include_str!("../assets/icons/mail.svg");
+const ICON_USER_PLUS: &str = include_str!("../assets/icons/user-plus.svg");
+const ICON_SEND: &str = include_str!("../assets/icons/send.svg");
+const ICON_LAYERS: &str = include_str!("../assets/icons/layers.svg");
+const ICON_SPARKLES: &str = include_str!("../assets/icons/sparkles.svg");
 
 /// Web llm-providers.ts LLM_PROVIDERS: (id, name, env key, presets).
 pub struct Provider {
@@ -172,6 +177,10 @@ pub struct SettingsState {
     /// The tab that issued the in-flight request.
     busy_tab: Tab,
     loading: bool,
+    /// Authentication tab: SMTP form, registration mode, allowed emails.
+    auth: Value,
+    /// Developer tab (web useDebugSettings), saved in the data directory.
+    debug: Value,
 }
 
 /// A page being built: DSL text plus the values to apply afterwards.
@@ -346,6 +355,10 @@ impl App {
             self.server.get_profile(cx);
         }
         self.reset_settings_forms();
+        self.load_debug_settings();
+        if tab == Tab::Authentication && self.server.logged_in() {
+            self.load_auth(cx);
+        }
         self.rebuild_settings(cx);
     }
     pub(crate) fn close_settings(&mut self, cx: &mut Cx) {
@@ -449,7 +462,8 @@ impl App {
         let mut page = Page::default();
         let body = match (&self.settings.profile, self.settings.tab) {
             (_, Tab::Companion) => self.companion_tab(&mut page),
-            (_, Tab::Authentication) | (_, Tab::Developer) => self.later_tab(&mut page),
+            (_, Tab::Authentication) => self.auth_tab(&mut page),
+            (_, Tab::Developer) => self.developer_tab(&mut page),
             (None, _) => page.note(if self.settings.loading { "正在读取设置…" } else { "Failed to load profile." }, "#6b6b67"),
             (Some(_), Tab::Profile) => self.profile_tab(&mut page),
             (Some(_), Tab::Llm) => self.llm_tab(&mut page),
@@ -479,6 +493,23 @@ impl App {
             w.widget(cx, &[LiveId::from_str(name)]).as_check_box().set_active(cx, *on, Animate::No);
         }
         self.settings.controls = page.names.iter().map(|n| (n.clone(), w.widget(cx, &[LiveId::from_str(n)]))).collect();
+        for (id, _, _, png) in SKINS {
+            let key = id.replace('-', "_");
+            match png {
+                Some(bytes) => {
+                    if let Some(img) = self.control(&format!("skin_png_{key}")) {
+                        let _ = img.as_image().load_png_from_data(cx, bytes);
+                    }
+                }
+                None => {
+                    if let Some(w) = self.control(&format!("skin_svg_{key}")) {
+                        if let Some(mut svg) = w.borrow_mut::<Svg>() {
+                            svg.draw_svg.load_from_str(&avatar_svg(id));
+                        }
+                    }
+                }
+            }
+        }
         self.ui.redraw(cx);
     }
     fn settings_message(&self, page: &Page, tab: Tab) -> String {
@@ -791,22 +822,259 @@ impl App {
         out
     }
     fn companion_tab(&mut self, page: &mut Page) -> String {
-        page.card(
-            ICON_CAP,
-            "Learning Companion",
-            "Choose the Octos teacher shown in the lower-right corner of the learning canvas.",
-            &page.note("原生应用目前提供 Ocean 老师形象；其余形象将在后续版本加入。", "#6b6b67"),
-        )
+        // Web TeacherSkinPicker: a 4-column grid of skin cards.
+        let mut rows = String::new();
+        for chunk in SKINS.chunks(4) {
+            let mut row = String::from("View{width:Fill height:Fit flow:Right spacing:12 margin:Inset{bottom:12}");
+            for (id, label, desc, png) in chunk {
+                let active = self.teacher_skin == *id;
+                let key = id.replace('-', "_");
+                let art = if png.is_some() {
+                    page.names.push(format!("skin_png_{key}"));
+                    format!("skin_png_{key} := Image{{width:80 height:80 fit:ImageFit.Smallest}}")
+                } else {
+                    page.names.push(format!("skin_svg_{key}"));
+                    format!("skin_svg_{key} := Svg{{width:64 height:64}}")
+                };
+                let pill = |text: &str, strong: bool| format!(
+                    "RoundedView{{width:Fit height:Fit padding:Inset{{left:8 right:8 top:4 bottom:4}} draw_bg +: {{color:{} border_radius:3 border_size:0.5 border_color:#bdbcb8}} Label{{width:Fit padding:0 text:\"{text}\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#3b3b39}}}}",
+                    if strong { "#e2e1dd" } else { "#efeeea" }
+                );
+                let kind = if png.is_some() { "3D · Animated" } else { "2D · SVG" };
+                let active_pill = if active { pill("✓ Active", true) } else { String::new() };
+                page.names.push(format!("skin_hit_{key}"));
+                row.push_str(&format!(
+                    "View{{width:Fill height:256 flow:Overlay
+                        RoundedView{{width:Fill height:Fill draw_bg +: {{color:{} border_radius:6 border_size:0.5 border_color:{}}}}}
+                        View{{width:Fill height:Fill flow:Down padding:16
+                            {}
+                            View{{width:Fill height:Fit margin:Inset{{top:6}} {}}}
+                            View{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} {art}}}
+                            View{{width:Fill height:Fit flow:Right spacing:8 {} {active_pill}}}
+                        }}
+                        skin_hit_{key} := Button{{width:Fill height:Fill text:\"\" margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
+                    }}",
+                    if active { "#fbfaf8" } else { "#f6f5f2" },
+                    if active { "#8f8e8a" } else { "#dcdbd7" },
+                    page.label(label, 14., "#1c1c1b", true),
+                    page.label(desc, 12., "#5f5f5b", false),
+                    pill(kind, false),
+                ));
+            }
+            for _ in chunk.len()..4 {
+                row.push_str("View{width:Fill height:1}");
+            }
+            row.push('}');
+            rows.push_str(&row);
+        }
+        page.card(ICON_CAP, "Learning Companion", "Choose the Octos teacher shown in the lower-right corner of the learning canvas.", &rows)
     }
-    fn later_tab(&mut self, page: &mut Page) -> String {
-        let (icon, title, desc) = if self.settings.tab == Tab::Authentication {
-            (ICON_SHIELD, "Authentication", "Registration access, email OTP delivery and allowed emails")
-        } else {
-            (ICON_BUG, "Developer Options / 开发者与调试选项", "控制全局调试模式及白板实验性诊断工具。")
+    /// Web authentication-tab: registration access, SMTP for login codes,
+    /// allowed emails and a test email (admin REST endpoints).
+    fn auth_tab(&mut self, page: &mut Page) -> String {
+        let a = self.settings.auth.clone();
+        if !a["loaded"].as_bool().unwrap_or(false) {
+            return page.note(a["error"].as_str().unwrap_or("Loading authentication settings..."), "#6b6b67");
+        }
+        let open = a["open"].as_bool().unwrap_or(false);
+        let mut reg = String::from("View{width:Fill height:Fit flow:Right spacing:12");
+        for (id, title, desc, selected) in [
+            ("s_auth_open", "Open registration", "Anyone who verifies an email OTP can create their own user and profile.", open),
+            ("s_auth_restricted", "Restricted registration", "Only existing users and addresses listed under Users → Allowed Emails can sign in.", !open),
+        ] {
+            page.names.push(id.into());
+            reg.push_str(&format!(
+                "View{{width:Fill height:Fit flow:Overlay
+                    RoundedView{{width:Fill height:Fit flow:Right spacing:12 padding:16 draw_bg +: {{color:{} border_radius:6 border_size:0.5 border_color:{}}}
+                        RoundedView{{width:14 height:14 margin:Inset{{top:3}} draw_bg +: {{color:{} border_radius:7 border_size:{} border_color:#8a8a85}}}}
+                        View{{width:Fill height:Fit flow:Down spacing:6 {} {}}}
+                    }}
+                    {id} := Button{{width:Fill height:Fill text:\"\" margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
+                }}",
+                if selected { "#eeedea" } else { "#dedddb" },
+                if selected { "#5f5f5b" } else { "#0000" },
+                if selected { "#2563eb" } else { "#ffffff" },
+                if selected { "3" } else { "0.5" },
+                page.label(title, 14., "#1c1c1b", true),
+                page.label(desc, 12., "#5f5f5b", false),
+            ));
+        }
+        reg.push('}');
+        let mut out = page.card(ICON_SHIELD, "Registration Access", "Choose who can create a user through email verification", &reg);
+        // SMTP.
+        let col = |page: &mut Page, label: &str, name: &str, value: &str, placeholder: &str, password: bool| {
+            format!("View{{width:Fill height:Fit flow:Down {} {}}}", page.field_label(label), page.input(name, value, placeholder, password, false))
         };
-        page.card(icon, title, desc, &page.note("该设置项暂时只能在网页版中修改。", "#6b6b67"))
+        let host = col(page, "SMTP host", "s_auth_host", &s(&a["host"]), "smtp.example.com", false);
+        let port = col(page, "SMTP port", "s_auth_port", &a["port"].as_i64().map(|p| p.to_string()).unwrap_or_default(), "465", false);
+        let user = col(page, "SMTP username", "s_auth_user", &s(&a["username"]), "", false);
+        let password_set = a["password_configured"].as_bool().unwrap_or(false);
+        let pass = col(page, "SMTP password", "s_auth_pass", "", if password_set { "Configured; leave blank to keep" } else { "Enter SMTP password" }, true);
+        let hint = page.note("Leave blank only when the server already provides SMTP credentials, such as through SMTP_PASSWORD.", "#7a7a75");
+        let from = col(page, "From address", "s_auth_from", &s(&a["from_address"]), "Octos <login@example.com>", false);
+        let save = page.button("s_auth_save", if self.settings.busy == Some("auth-save") { "Saving…" } else { "Save authentication settings" }, Some(ICON_SHIELD), "primary", self.settings.busy.is_none());
+        let message = match &self.settings.message {
+            Some((Tab::Authentication, m, ok)) if m.starts_with("[smtp]") => page.note(&m[6..], if *ok { "#16a34a" } else { "#dc2626" }),
+            _ => String::new(),
+        };
+        let smtp = format!(
+            "View{{width:Fill height:Fit flow:Right spacing:16 {host} {port}}}
+             View{{width:Fill height:Fit flow:Right spacing:16 {user} View{{width:Fill height:Fit flow:Down {pass} {hint}}}}}
+             {from}
+             {message}
+             View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} {save}}}"
+        );
+        out.push_str(&page.card(ICON_MAIL, "Email OTP Delivery", "SMTP used to send login verification codes", &smtp));
+        // Allowed emails.
+        let email = col(page, "Allowed email", "s_auth_email", "", "learner@example.com", false);
+        let note = col(page, "Invitation note", "s_auth_note", "", "Optional context", false);
+        let add = page.button("s_auth_add", "Add allowed email", Some(ICON_USER_PLUS), "primary", self.settings.busy.is_none());
+        let mut list = String::new();
+        let entries = a["emails"].as_array().cloned().unwrap_or_default();
+        if entries.is_empty() {
+            list.push_str("View{width:Fill height:Fit padding:Inset{top:24 bottom:24} align:Align{x:0.5}");
+            list.push_str(&page.label("No email addresses have been invited yet.", 12., "#6b6b67", false).replace("width:Fill", "width:Fit"));
+            list.push('}');
+        }
+        for (i, entry) in entries.iter().enumerate() {
+            let registered = entry["registered"].as_bool().unwrap_or(false) || !entry["claimed_user_id"].is_null();
+            let sub = if registered {
+                format!("Registered{}", entry["registered_name"].as_str().map(|n| format!(" as {n}")).unwrap_or_default())
+            } else {
+                entry["note"].as_str().filter(|n| !n.is_empty()).unwrap_or("Invitation not claimed").to_owned()
+            };
+            let action = if registered {
+                "RoundedView{width:Fit height:Fit padding:Inset{left:10 right:10 top:4 bottom:4} draw_bg +: {color:#e9e8e4 border_radius:9} Label{width:Fit padding:0 text:\"Registered\" draw_text.text_style.font_size:8.25 draw_text.color:#3b3b39}}".to_owned()
+            } else {
+                page.button(&format!("s_auth_remove_{i}"), "", Some(ICON_TRASH), "outline", self.settings.busy.is_none())
+            };
+            list.push_str(&format!(
+                "View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:16 right:16 top:12 bottom:12}} View{{width:Fill height:Fit flow:Down spacing:2 {} {}}} {action}}}",
+                page.label(&s(&entry["email"]), 14., "#1c1c1b", false),
+                page.label(&sub, 12., "#6b6b67", false),
+            ));
+        }
+        let message = match &self.settings.message {
+            Some((Tab::Authentication, m, ok)) if m.starts_with("[email]") => page.note(&m[7..], if *ok { "#16a34a" } else { "#dc2626" }),
+            _ => String::new(),
+        };
+        let allowed = format!(
+            "View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}} {email} {note} View{{width:Fit height:Fit margin:Inset{{bottom:16}} {add}}}}}
+             {message}
+             RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{top:4}} draw_bg +: {{color:#fffffe border_radius:6 border_size:0.5 border_color:#d4d3cf}} {list}}}"
+        );
+        out.push_str(&page.card(ICON_USER_PLUS, "Allowed Emails", "Invite specific people when registration is restricted", &allowed));
+        // Test email.
+        let to = col(page, "Test recipient", "s_auth_test_to", "", "you@example.com", false);
+        let send = page.button("s_auth_test", if self.settings.busy == Some("auth-test") { "Sending…" } else { "Send test email" }, Some(ICON_SEND), "outline", self.settings.busy.is_none());
+        let message = match &self.settings.message {
+            Some((Tab::Authentication, m, ok)) if m.starts_with("[test]") => page.note(&m[6..], if *ok { "#16a34a" } else { "#dc2626" }),
+            _ => String::new(),
+        };
+        out.push_str(&page.card(
+            ICON_SEND,
+            "Test Login Email",
+            "Uses the currently saved SMTP configuration",
+            &format!("View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}} {to} View{{width:Fit height:Fit margin:Inset{{bottom:16}} {send}}}}} {message}"),
+        ));
+        out
     }
-
+    /// Web developer-tab (useDebugSettings).
+    fn developer_tab(&mut self, page: &mut Page) -> String {
+        let d = self.settings.debug.clone();
+        let on = d["debugMode"].as_bool().unwrap_or(false);
+        let tile = page.tile(ICON_BUG);
+        let mut out = format!(
+            "RoundedView{{width:Fill height:Fit flow:Right spacing:12 padding:20 margin:Inset{{bottom:24}} draw_bg +: {{color:#fffffe border_radius:8 border_size:0.5 border_color:#d4d3cf}}
+                {tile}
+                View{{width:Fill height:Fit flow:Down spacing:4 {} {}}}
+            }}",
+            page.label("Developer Options / 开发者与调试选项", 16., "#1c1c1b", true),
+            page.label("控制全局调试模式、TypeSafe Jev System One 实时准入监控浮窗及白板实验性诊断工具。", 14., "#5f5f5b", false),
+        );
+        let pill = |text: &str| format!("RoundedView{{width:Fit height:Fit padding:Inset{{left:8 right:8 top:4 bottom:4}} draw_bg +: {{color:#efeeea border_radius:3 border_size:0.5 border_color:#bdbcb8}} Label{{width:Fit padding:0 text:\"{text}\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#3b3b39}}}}");
+        out.push_str(&format!(
+            "RoundedView{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:20 margin:Inset{{bottom:24}} draw_bg +: {{color:#fffffe border_radius:8 border_size:0.5 border_color:#d4d3cf}}
+                View{{width:Fill height:Fit flow:Down spacing:6
+                    View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}} View{{width:Fit height:Fit {}}} {}}}
+                    {}
+                }}
+                {}
+            }}",
+            page.label("调试模式 (Debug Mode)", 14., "#1c1c1b", true).replace("width:Fill", "width:Fit"),
+            pill(if on { "已启用 · Active" } else { "已停用 · Inactive" }),
+            page.label("全站调试总开关。关闭时将隐藏白板上的所有调试浮层与测试探针；开启后可在下方按需启用各项具体调试工具。", 12., "#5f5f5b", false),
+            self.toggle_widget(page, "s_dbg_mode", on),
+        ));
+        let mut features = format!(
+            "View{{width:Fill height:Fit flow:Down spacing:4 margin:Inset{{bottom:16}} {} {}}}",
+            page.label("调试功能清单 (Debug Features)", 14., "#1c1c1b", true),
+            page.label(if on { "调试模式已开启，以下配置实时生效。" } else { "调试模式当前处于停用状态。开启总开关后，以下配置将实时生效。" }, 12., "#5f5f5b", false),
+        );
+        for (key, icon, title, desc) in [
+            ("showJevAdmissionDebugger", ICON_SPARKLES, "TypeSafe Jev 准入监视浮窗", "在学习白板右下角显示 Jev System One 快速门禁决策（准入排课 / 静默拦截 / 追问）、时延置信度监控与真机快速注入测试工具。"),
+            ("showLearningTraceInspector", ICON_ACTIVITY, "白板学习链路追踪探针 (Learn Trace)", "在白板侧边记录提问、手写框选、LLM 课时生成全链路事件与关键时序数据。"),
+        ] {
+            let value = d[key].as_bool().unwrap_or(true);
+            let tile = page.tile(icon);
+            let toggle = self.toggle_widget(page, &format!("s_dbg_{key}"), value);
+            features.push_str(&format!(
+                "View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:0.5}} padding:Inset{{top:12 bottom:12}}
+                    {tile}
+                    View{{width:Fill height:Fit flow:Down spacing:4 View{{width:Fill height:Fit flow:Right spacing:8 align:Align{{y:0.5}} View{{width:Fit height:Fit {}}} {}}} {}}}
+                    {toggle}
+                }}",
+                page.label(title, 14., "#1c1c1b", true).replace("width:Fill", "width:Fit"),
+                pill(if on && value { "显示中" } else { "已隐藏" }),
+                page.label(desc, 12., "#5f5f5b", false),
+            ));
+        }
+        let tile = page.tile(ICON_LAYERS);
+        features.push_str(&format!(
+            "View{{width:Fill height:Fit flow:Right spacing:12 padding:Inset{{top:12 bottom:4}} {tile} View{{width:Fill height:Fit flow:Down spacing:4 {} {}}}}}",
+            page.label("预留调试扩展槽 (Extensible Debug Slots)", 14., "#1c1c1b", true),
+            page.label("调试设置已采用统一的键值扩展模型。未来新增的实验性功能（如 ACS 多模态视觉诊断、弱网/丢包时延模拟、笔迹实时渲染 FPS 监控等）将在此无缝挂载。", 12., "#5f5f5b", false),
+        ));
+        out.push_str(&format!("RoundedView{{width:Fill height:Fit flow:Down padding:20 margin:Inset{{bottom:16}} draw_bg +: {{color:#fffffe border_radius:8 border_size:0.5 border_color:#d4d3cf}} {features}}}"));
+        let reset = page.button("s_dbg_reset", "重置调试选项", Some(ICON_RESTART), "outline", true);
+        out.push_str(&format!(
+            "View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} View{{width:Fill height:Fit flow:Down spacing:4 {} {}}} {reset}}}",
+            page.label("设置修改后通过内部事件总线实时生效，无需刷新页面。", 12., "#5f5f5b", false),
+            page.label("原生应用暂无这两个调试浮层，这里的开关只会被保存。", 12., "#b45309", false),
+        ));
+        out
+    }
+    fn toggle_widget(&self, page: &mut Page, name: &str, on: bool) -> String {
+        page.names.push(name.into());
+        page.toggles.push((name.into(), on));
+        format!("{name} := Toggle{{text:\"\" width:44 height:26 padding:0 margin:0 draw_bg +: {{size:24 border_radius:5 border_size:0
+            color:#d4d3cf color_hover:#cbcac6 color_focus:#d4d3cf color_down:#c4c3bf color_active:#1b1b1a color_disabled:#e4e3e0
+            border_color:#0000 border_color_hover:#0000 border_color_focus:#0000 border_color_down:#0000 border_color_active:#0000 border_color_disabled:#0000
+            mark_color:#ffffff mark_color_hover:#ffffff mark_color_down:#ffffff mark_color_active:#ffffff mark_color_active_hover:#ffffff}}}}")
+    }
+    fn debug_path(&self) -> Option<std::path::PathBuf> {
+        self.store.as_ref().map(|s| s.dir().join("debug-settings.json"))
+    }
+    fn load_debug_settings(&mut self) {
+        let saved = self.debug_path().and_then(|p| std::fs::read(p).ok()).and_then(|b| serde_json::from_slice::<Value>(&b).ok());
+        let mut d = json!({"debugMode": false, "showJevAdmissionDebugger": true, "showLearningTraceInspector": true});
+        if let Some(Value::Object(m)) = saved {
+            for (k, v) in m {
+                d[k] = v;
+            }
+        }
+        self.settings.debug = d;
+    }
+    fn save_debug_settings(&self) {
+        if let Some(p) = self.debug_path() {
+            let _ = std::fs::create_dir_all(p.parent().unwrap()).and_then(|_| std::fs::write(p, self.settings.debug.to_string()));
+        }
+    }
+    fn load_auth(&mut self, cx: &mut Cx) {
+        self.settings.auth = json!({"loaded": false});
+        self.server.json(cx, HttpMethod::GET, "/api/admin/smtp", None, "settings:smtp");
+        self.server.json(cx, HttpMethod::GET, "/api/admin/allowed-emails", None, "settings:emails");
+    }
     fn control(&self, name: &str) -> Option<WidgetRef> {
         self.settings.controls.iter().find(|(n, _)| n == name).map(|(_, w)| w.clone())
     }
@@ -853,6 +1121,14 @@ impl App {
             f["fallbacks"] = json!(rows);
         }
         self.settings.llm = f;
+    }
+    fn capture_auth_form(&mut self) {
+        for (key, name) in [("host", "s_auth_host"), ("port", "s_auth_port"), ("username", "s_auth_user"), ("from_address", "s_auth_from")] {
+            if self.control(name).is_some() {
+                let text = self.control_text(name);
+                self.settings.auth[key] = if key == "port" { text.trim().parse::<i64>().map(Value::from).unwrap_or(json!(text)) } else { json!(text) };
+            }
+        }
     }
     fn capture_voice_form(&mut self) {
         let mut v = self.settings.voice.clone();
@@ -957,6 +1233,12 @@ impl App {
                 self.settings.tab = tab;
                 self.settings.message = None;
                 self.reset_settings_forms();
+                if tab == Tab::Authentication && self.server.logged_in() {
+                    self.load_auth(cx);
+                }
+                if tab == Tab::Developer {
+                    self.load_debug_settings();
+                }
                 self.rebuild_settings(cx);
             }
             return;
@@ -1190,7 +1472,89 @@ impl App {
                     }
                 }
             }
-            _ => {}
+            Tab::Authentication => {
+                for (name, open) in [("s_auth_open", true), ("s_auth_restricted", false)] {
+                    if clicked(self, name) {
+                        self.capture_auth_form();
+                        self.settings.auth["open"] = json!(open);
+                        self.rebuild_settings(cx);
+                        return;
+                    }
+                }
+                if clicked(self, "s_auth_save") {
+                    self.capture_auth_form();
+                    let a = &self.settings.auth;
+                    let Ok(port) = s(&a["port"]).trim().parse::<u16>() else {
+                        self.settings.message = Some((Tab::Authentication, "[smtp]SMTP port must be a number.".into(), false));
+                        self.rebuild_settings(cx);
+                        return;
+                    };
+                    let mut body = json!({"host": s(&a["host"]).trim(), "port": port, "username": s(&a["username"]).trim(), "from_address": s(&a["from_address"]).trim(), "allow_self_registration": a["open"].as_bool().unwrap_or(false)});
+                    let password = self.control_text("s_auth_pass");
+                    if !password.is_empty() {
+                        body["password"] = json!(password);
+                    }
+                    self.settings.busy = Some("auth-save");
+                    self.server.json(cx, HttpMethod::POST, "/api/admin/smtp", Some(body), "settings:smtp-save");
+                    self.rebuild_settings(cx);
+                }
+                if clicked(self, "s_auth_add") {
+                    let email = self.control_text("s_auth_email").trim().to_owned();
+                    if email.contains('@') {
+                        self.capture_auth_form();
+                        let note = self.control_text("s_auth_note").trim().to_owned();
+                        let mut body = json!({"email": email});
+                        if !note.is_empty() {
+                            body["note"] = json!(note);
+                        }
+                        self.settings.busy = Some("auth-email");
+                        self.server.json(cx, HttpMethod::POST, "/api/admin/allowed-emails", Some(body), "settings:email-add");
+                        self.rebuild_settings(cx);
+                    } else {
+                        self.settings.message = Some((Tab::Authentication, "[email]Enter a valid email address.".into(), false));
+                        self.rebuild_settings(cx);
+                    }
+                }
+                let emails: Vec<String> = self.settings.auth["emails"].as_array().into_iter().flatten().map(|e| s(&e["email"])).collect();
+                if let Some(email) = emails.iter().enumerate().find(|(i, _)| clicked(self, &format!("s_auth_remove_{i}"))).map(|(_, e)| e.clone()) {
+                    self.capture_auth_form();
+                    self.settings.busy = Some("auth-email");
+                    self.server.json(cx, HttpMethod::DELETE, &format!("/api/admin/allowed-emails/{}", server::query_escape(&email)), None, "settings:email-remove");
+                    self.rebuild_settings(cx);
+                }
+                if clicked(self, "s_auth_test") {
+                    let to = self.control_text("s_auth_test_to").trim().to_owned();
+                    self.capture_auth_form();
+                    self.settings.busy = Some("auth-test");
+                    self.server.json(cx, HttpMethod::POST, "/api/admin/smtp/test", Some(json!({"to": to})), "settings:smtp-test");
+                    self.rebuild_settings(cx);
+                }
+            }
+            Tab::Developer => {
+                let mut changed = false;
+                for key in ["debugMode", "showJevAdmissionDebugger", "showLearningTraceInspector"] {
+                    let name = if key == "debugMode" { "s_dbg_mode".to_owned() } else { format!("s_dbg_{key}") };
+                    if let Some(on) = self.control(&name).and_then(|w| w.as_check_box().changed(actions)) {
+                        self.settings.debug[key] = json!(on);
+                        changed = true;
+                    }
+                }
+                if clicked(self, "s_dbg_reset") {
+                    self.settings.debug = json!({"debugMode": false, "showJevAdmissionDebugger": true, "showLearningTraceInspector": true});
+                    changed = true;
+                }
+                if changed {
+                    self.save_debug_settings();
+                    self.rebuild_settings(cx);
+                }
+            }
+            Tab::Companion => {
+                let picked = SKINS.iter().find(|(id, _, _, _)| clicked(self, &format!("skin_hit_{}", id.replace('-', "_")))).map(|k| k.0);
+                if let Some(id) = picked {
+                    self.set_teacher_skin(cx, id);
+                    self.rebuild_settings(cx);
+                }
+            }
         }
     }
 
@@ -1202,6 +1566,9 @@ impl App {
         match ev {
             server::ServerEvent::LoggedIn => {
                 self.server.get_profile(cx);
+                if self.settings.tab == Tab::Authentication {
+                    self.load_auth(cx);
+                }
                 false
             }
             server::ServerEvent::Profile(result) => {
@@ -1258,6 +1625,53 @@ impl App {
                 self.rebuild_settings(cx);
                 true
             }
+            server::ServerEvent::Json { purpose, result } if purpose.starts_with("settings:") => {
+                let a = &mut self.settings.auth;
+                match (purpose.as_str(), result) {
+                    ("settings:smtp", Ok(v)) => {
+                        for k in ["host", "port", "username", "from_address", "password_configured"] {
+                            a[k] = v[k].clone();
+                        }
+                        a["open"] = v["allow_self_registration"].clone();
+                        a["loaded"] = json!(true);
+                    }
+                    ("settings:smtp", Err(e)) => a["error"] = json!(format!("Failed to load authentication settings: {e}")),
+                    ("settings:emails", Ok(v)) => {
+                        a["emails"] = v.get("entries").or(v.get("emails")).cloned().unwrap_or_else(|| if v.is_array() { v.clone() } else { json!([]) });
+                    }
+                    ("settings:smtp-save", r) => {
+                        self.settings.busy = None;
+                        self.settings.message = Some(match r {
+                            Ok(_) => (Tab::Authentication, "[smtp]Authentication settings saved and applied.".into(), true),
+                            Err(e) => (Tab::Authentication, format!("[smtp]{e}"), false),
+                        });
+                        if r.is_ok() && !self.control_text("s_auth_pass").is_empty() {
+                            self.settings.auth["password_configured"] = json!(true);
+                        }
+                    }
+                    ("settings:email-add" | "settings:email-remove", r) => {
+                        self.settings.busy = None;
+                        match r {
+                            Ok(_) => {
+                                self.settings.message = None;
+                                self.server.json(cx, HttpMethod::GET, "/api/admin/allowed-emails", None, "settings:emails");
+                            }
+                            Err(e) => self.settings.message = Some((Tab::Authentication, format!("[email]{e}"), false)),
+                        }
+                    }
+                    ("settings:smtp-test", r) => {
+                        self.settings.busy = None;
+                        self.settings.message = Some(match r {
+                            Ok(v) if v["ok"] != false => (Tab::Authentication, format!("[test]{}", v["message"].as_str().unwrap_or("Test email sent.")), true),
+                            Ok(v) => (Tab::Authentication, format!("[test]{}", v["error"].as_str().or(v["message"].as_str()).unwrap_or("Test email failed.")), false),
+                            Err(e) => (Tab::Authentication, format!("[test]{e}"), false),
+                        });
+                    }
+                    _ => {}
+                }
+                self.rebuild_settings(cx);
+                true
+            }
             server::ServerEvent::Speech { purpose, audio } if purpose == "settings-tts" => {
                 self.settings.busy = None;
                 let message = match audio.clone().and_then(|a| self.play_speech(cx, &a, "preview")) {
@@ -1279,4 +1693,84 @@ fn normalize_appid(value: &str) -> Option<String> {
     RE.get_or_init(|| regex::Regex::new(r"(?i)^(?:app\s*id\s*[:：]\s*)?(\d+)$").unwrap())
         .captures(value.trim())
         .map(|c| c[1].to_owned())
+}
+
+/// Web use-teacher-skin TEACHER_SKINS: (id, label, description, 3D thumbnail).
+pub const SKINS: [(&str, &str, &str, Option<&[u8]>); 7] = [
+    ("ocean", "Ocean", "The calm blue Octos classroom companion.", None),
+    ("coral", "Coral", "A warm, cheerful look inspired by coral reefs.", None),
+    ("scholar", "Scholar", "Round glasses and a tiny cap for focused study.", None),
+    ("starlight", "Starlight", "A deep-space Octos with a soft cosmic glow.", None),
+    ("panda-3d", "Panda Pal", "A round little study buddy who nods, dances, and jumps.", Some(include_bytes!("../assets/companions/panda-thumbnail.png"))),
+    ("penguin-3d", "Pocket Penguin", "A tiny, bright-eyed penguin with a gentle breathing idle.", Some(include_bytes!("../assets/companions/penguin-thumbnail.png"))),
+    ("bee-3d", "Bumble Buddy", "A cheerful flying helper who hovers beside each lesson.", Some(include_bytes!("../assets/companions/bee-thumbnail.png"))),
+];
+
+/// Web OctosAvatar (octos-avatar.tsx + octos-avatar.css) for a 2D skin,
+/// with the skin's CSS variables inlined.
+pub fn avatar_svg(skin: &str) -> String {
+    let (start, end, shadow, detail) = match skin {
+        "coral" => ("#ffaaa0", "#ed6577", "#a9475c", "#9d3d58"),
+        "scholar" => ("#b5a7ee", "#766bd2", "#4d438f", "#383265"),
+        "starlight" => ("#6677d8", "#273678", "#182052", "#eef1ff"),
+        _ => ("#76d8e4", "#2d9fbd", "#246f82", "#176b80"),
+    };
+    let stars = if skin == "starlight" {
+        r##"<g fill="#fff4b9"><path d="m29 35 1.5 3 3 .5-2.2 2.2.5 3.1-2.8-1.5-2.8 1.5.5-3.1-2.2-2.2 3-.5Z"/><circle cx="66" cy="33" r="2"/><circle cx="70" cy="53" r="1.3"/></g>"##.to_owned()
+    } else {
+        String::new()
+    };
+    let scholar = if skin == "scholar" {
+        format!(
+            r##"<g fill="none" stroke="{detail}" stroke-width="2.3"><circle cx="38" cy="49" r="9"/><circle cx="59" cy="49" r="9"/><path d="M47 48h3"/></g><path d="m24 24 25-12 25 12-25 11-25-11Z" fill="{detail}"/><path d="M67 26v12" fill="none" stroke="{detail}" stroke-width="2"/><circle cx="67" cy="39" r="2.5" fill="{detail}"/>"##
+        )
+    } else {
+        String::new()
+    };
+    let coral = if skin == "coral" {
+        r##"<g fill="#fff0a8"><circle cx="68" cy="25" r="4"/><circle cx="62" cy="23" r="4"/><circle cx="65" cy="18" r="4"/><circle cx="71" cy="20" r="4"/></g><circle cx="66.5" cy="21.5" r="2.5" fill="#cf6d61"/>"##.to_owned()
+    } else {
+        String::new()
+    };
+    format!(
+        r##"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><defs><linearGradient id="octos-g" x1="22" y1="14" x2="76" y2="84" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="{start}"/><stop offset="1" stop-color="{end}"/></linearGradient></defs><g opacity="0.18" fill="{shadow}"><ellipse cx="48" cy="82" rx="31" ry="6"/></g><g fill="url(#octos-g)"><path d="M20 63c-8 4-9 15-2 18 6 3 11-1 12-7 1-3 4-4 7-2l1-10c-7-4-12-3-18 1Z"/><path d="M35 66c-5 7-3 17 4 18 6 1 9-5 8-11l-1-9-11 2Z"/><path d="M50 65v10c0 7 4 11 9 9 6-2 7-11 2-18l-11-1Z"/><path d="M60 63c8-3 14-1 17 5 4 8-2 15-8 12-4-2-4-7-8-8-2-1-4 0-6 2l5-11Z"/><path d="M18 49c0-21 12-35 30-35s30 14 30 35c0 17-12 27-30 27S18 66 18 49Z"/></g><path d="M27 40c2-10 9-17 18-19" fill="none" stroke="#ffffff6b" stroke-linecap="round" stroke-width="4"/>{stars}<g><ellipse cx="38" cy="49" rx="7" ry="8" fill="#ffffff"/><ellipse cx="59" cy="49" rx="7" ry="8" fill="#ffffff"/><circle cx="40" cy="51" r="3" fill="#21383f"/><circle cx="57" cy="51" r="3" fill="#21383f"/><path d="M43 62c3 3 7 3 10 0" fill="none" stroke="#21383f" stroke-linecap="round" stroke-width="2.5"/></g>{scholar}{coral}</svg>"##
+    )
+}
+
+impl App {
+    fn skin_path(&self) -> Option<std::path::PathBuf> {
+        self.store.as_ref().map(|s| s.dir().join("teacher-skin"))
+    }
+    /// Web useTeacherSkin: the saved companion (default ocean).
+    pub(crate) fn load_teacher_skin(&mut self, cx: &mut Cx) {
+        let saved = self.skin_path().and_then(|p| std::fs::read_to_string(p).ok()).map(|s| s.trim().to_owned());
+        self.teacher_skin = saved.filter(|s| SKINS.iter().any(|k| k.0 == s)).unwrap_or_else(|| "ocean".into());
+        self.apply_teacher_skin(cx);
+    }
+    pub(crate) fn set_teacher_skin(&mut self, cx: &mut Cx, skin: &str) {
+        self.teacher_skin = skin.to_owned();
+        if let Some(path) = self.skin_path() {
+            let _ = std::fs::create_dir_all(path.parent().unwrap()).and_then(|_| std::fs::write(path, skin));
+        }
+        self.apply_teacher_skin(cx);
+    }
+    /// The lower-right teacher: 2D skins as SVG, 3D companions as their
+    /// thumbnail. DIFF: the GLB models (and their animations) are not drawn.
+    pub(crate) fn apply_teacher_skin(&mut self, cx: &mut Cx) {
+        let Some(def) = SKINS.iter().find(|k| k.0 == self.teacher_skin) else { return };
+        let png = def.3;
+        self.ui.widget(cx, ids!(octos_art_holder)).set_visible(cx, png.is_none());
+        self.ui.widget(cx, ids!(octos_png)).set_visible(cx, png.is_some());
+        match png {
+            Some(bytes) => {
+                let _ = self.ui.image(cx, ids!(octos_png_image)).load_png_from_data(cx, bytes);
+            }
+            None => {
+                if let Some(mut svg) = self.ui.widget(cx, ids!(octos_art)).borrow_mut::<Svg>() {
+                    svg.draw_svg.load_from_str(&avatar_svg(def.0));
+                }
+            }
+        }
+        self.ui.redraw(cx);
+    }
 }

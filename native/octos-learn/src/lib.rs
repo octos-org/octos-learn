@@ -265,8 +265,11 @@ script_mod! {
                                     RoundedView { width: Fill height: Fill
                                         draw_bg +: { color: #e3f4f7 border_radius: 20 border_size: 0.5 border_color: #c2dde6 } }
                                     // DIFF: static avatar; the organic skin animation is a later milestone.
-                                    View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
+                                    octos_art_holder := View { width: Fill height: Fill align: Align{x: 0.5 y: 0.3}
                                         octos_art := Svg { width: 56 height: 56 } }
+                                    // 3D companions (web model-viewer) show their thumbnail.
+                                    octos_png := View { visible: false width: Fill height: Fill align: Align{x: 0.5 y: 0.25}
+                                        octos_png_image := Image { width: 62 height: 62 fit: ImageFit.Smallest } }
                                     View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 7}
                                         teacher_state := Label { width: Fit padding: 0 text: "继续播放" draw_text.text_style.font_size: 7.5 draw_text.color: #316979 }
                                     }
@@ -1042,6 +1045,9 @@ pub struct App {
     /// Show the setup whiteboard even after it was skipped (新手设置白板).
     #[rust]
     setup_force: bool,
+    /// Web useTeacherSkin (saved in the data directory).
+    #[rust]
+    teacher_skin: String,
     #[rust]
     audio_inputs: Vec<AudioDeviceId>,
     /// A voice turn between utterance and transcript (turn id).
@@ -4332,6 +4338,7 @@ impl AppMain for App {
                 self.ui.widget(cx, ids!(logo_fallback)).set_visible(cx, false);
             }
             load_icons(&self.ui, cx);
+            self.load_teacher_skin(cx);
         }
         self.poll_storage(cx);
         let control_event = matches!(event, Event::Actions(_));
