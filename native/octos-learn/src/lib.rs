@@ -3186,6 +3186,7 @@ impl AppMain for App {
         scene3d_view::script_mod(vm);
         octos_oll_preview::plot_view::script_mod(vm);
         octos_oll_preview::geometry_view::script_mod(vm);
+        octos_oll_preview::diagram_view::script_mod(vm);
         octos_oll_preview::group_view::script_mod(vm);
         svg_image::script_mod(vm);
         spatial_board::script_mod(vm);

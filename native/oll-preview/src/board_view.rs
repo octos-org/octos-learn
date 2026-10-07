@@ -313,6 +313,25 @@ pub fn geometry_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         {}
     }}", badge("geometry", "#aaa194")))
 }
+/// Diagram card with elements (web renderDiagram): fixed card size, the
+/// node title, then the `.diagram-preview` SVG at calc(100% - 24px) of the
+/// content box (min 168), clipped by the card like the web overflow.
+pub fn diagram_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
+    let title = node_title(node);
+    let title_box = if title.is_empty() {
+        String::new()
+    } else {
+        text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
+    };
+    let svg_h = (estimate(node).1 - 32. - 24.).max(168.);
+    widget(cx, &format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+        View{{width:Fill height:Fill flow:Down clip_x:true clip_y:true padding:Inset{{left:18 right:18 top:16 bottom:16}}
+            {title_box}
+            diagram := mod.widgets.DiagramView{{width:Fill height:{svg_h:.2}}}
+        }}
+        {}
+    }}", badge("diagram", "#aaa194")))
+}
 /// scene3d card (web `.board-node.kind-scene3d`): 16px/18px padding, bold
 /// 16px node title, SCENE3D badge pinned top-right, then the scene panel
 /// (Scene3dView), which fills calc(100% - 24px) and is clipped by the card

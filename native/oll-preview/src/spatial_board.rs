@@ -1,5 +1,6 @@
 use crate::board_view;
 use crate::controls_view::{self, ControlModel, ControlsCard, Part};
+use crate::diagram_view::{DiagramView, Overlay};
 use crate::geometry_view::GeometryView;
 use crate::plot_view::{PlotState, PlotView, Tool};
 use crate::scene3d_view::Scene3dView;
@@ -328,6 +329,22 @@ fn resolve_geometry(
         rects.push(resolve_geometry(geometry, board, id, &mut seen.clone())?);
     }
     WorldRect::union(&rects, 0.)
+}
+
+/// Geometry of a connection between two fragments of the same diagram.
+fn diagram_internal(board: &Preview, connection: &Value) -> Option<oll_runtime::diagram::InternalConnection> {
+    let id = connection["from"]["node_id"].as_str()?;
+    if connection["to"]["node_id"].as_str() != Some(id)
+        || !connection["from"]["fragment_id"].is_string()
+        || !connection["to"]["fragment_id"].is_string()
+    {
+        return None;
+    }
+    let node = board.nodes.iter().find(|n| n["id"] == id)?;
+    if node["kind"] != "diagram" || !node["content"]["elements"].is_array() {
+        return None;
+    }
+    oll_runtime::diagram::internal_connection(&node["content"], connection)
 }
 
 impl SpatialBoard {
@@ -940,6 +957,7 @@ impl SpatialBoard {
                     "plot" => board_view::plot_node(cx, node)?,
                     "geometry" => board_view::geometry_node(cx, node)?,
                     "scene3d" => board_view::scene3d_node(cx, node)?,
+                    "diagram" if node["content"]["elements"].is_array() => board_view::diagram_node(cx, node)?,
                     "note" | "diagram" => board_view::note_node(cx, node)?,
                     _ => {
                         let w=board_view::widget(cx,"RectView{width:Fill height:Fill flow:Down padding:14 draw_bg.color:#fffdf8 draw_bg.border_size:0.5 draw_bg.border_color:#e3d9cb}")?;
@@ -1008,7 +1026,24 @@ impl SpatialBoard {
             self.badges.clear();
             let mut occupied_labels = self.geometry.nodes.values().copied().collect::<Vec<_>>();
             for connection in &p.connections {
+                // Fragment-to-fragment links inside one diagram are drawn by
+                // its DiagramView (web renderInternalDiagramConnection).
+                if diagram_internal(p, connection).is_some() {
+                    continue;
+                }
                 let resolve_target = |t: &Value| {
+                    if let (Some(node), Some(fragment)) = (
+                        t["node_id"].as_str().and_then(|id| p.nodes.iter().find(|n| n["id"] == id)),
+                        t["fragment_id"].as_str(),
+                    ) {
+                        let card = node["id"].as_str().and_then(|id| self.geometry.nodes.get(id));
+                        if let (true, Some(card)) = (node["kind"] == "diagram", card) {
+                            let (x, y, w, h) = (card.x, card.y, card.width, card.height);
+                            if let Some((x, y, width, height)) = oll_runtime::diagram::fragment_rect(&node["content"], fragment, (x, y, w, h)) {
+                                return Some(WorldRect { x, y, width, height });
+                            }
+                        }
+                    }
                     let id = t["node_id"]
                         .as_str()
                         .or(t["group_id"].as_str())
@@ -1068,6 +1103,24 @@ impl SpatialBoard {
                 let state = self.plot_states.get(id).cloned().unwrap_or_default();
                 if let Some(mut plot) = w.widget(cx, ids!(plot)).borrow_mut::<PlotView>() {
                     plot.set_node(cx, node, &p.variables, &state);
+                }
+                continue;
+            }
+            if kind == "diagram" {
+                let overlays = p
+                    .connections
+                    .iter()
+                    .filter(|c| c["from"]["node_id"] == id.as_str())
+                    .filter_map(|c| {
+                        Some(Overlay {
+                            geometry: diagram_internal(p, c)?,
+                            emphasis: oll_runtime::plot::latest_emphasis(c, ""),
+                            focused: c["id"].as_str().is_some_and(|cid| p.focus.iter().any(|f| f == cid)),
+                        })
+                    })
+                    .collect();
+                if let Some(mut d) = w.widget(cx, ids!(diagram)).borrow_mut::<DiagramView>() {
+                    d.set_node(cx, node, overlays);
                 }
                 continue;
             }

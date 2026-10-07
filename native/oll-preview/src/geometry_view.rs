@@ -73,15 +73,15 @@ pub struct GeometryView {
 fn rgb(hex: u32) -> (f32, f32, f32) {
     (((hex >> 16) & 0xff) as f32 / 255., ((hex >> 8) & 0xff) as f32 / 255., (hex & 0xff) as f32 / 255.)
 }
-fn set(v: &mut DrawVector, hex: u32, alpha: f32) {
+pub(crate) fn set(v: &mut DrawVector, hex: u32, alpha: f32) {
     let (r, g, b) = rgb(hex);
     v.set_color(r, g, b, alpha);
 }
-fn color(hex: u32) -> Vec4 {
+pub(crate) fn color(hex: u32) -> Vec4 {
     let (r, g, b) = rgb(hex);
     vec4(r, g, b, 1.)
 }
-fn polyline(v: &mut DrawVector, pts: &[(f32, f32)], closed: bool) {
+pub(crate) fn polyline(v: &mut DrawVector, pts: &[(f32, f32)], closed: bool) {
     let Some(first) = pts.first() else { return };
     v.move_to(first.0, first.1);
     for p in &pts[1..] {
@@ -91,7 +91,7 @@ fn polyline(v: &mut DrawVector, pts: &[(f32, f32)], closed: bool) {
         v.close();
     }
 }
-fn dashed(v: &mut DrawVector, pts: &[(f32, f32)], dash: &[f64], width: f32, cap: LineCap) {
+pub(crate) fn dashed(v: &mut DrawVector, pts: &[(f32, f32)], dash: &[f64], width: f32, cap: LineCap) {
     if dash.is_empty() {
         polyline(v, pts, false);
         v.stroke_opts(width, cap, LineJoin::Round, 4., 1.);
