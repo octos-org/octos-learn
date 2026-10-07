@@ -78,6 +78,17 @@ script_mod! {
         draw_dots +: {draw_depth:0.0}
     }
 }
+/// Host-owned world cards around a live lesson (web WhiteboardQuestionCard
+/// and WhiteboardLoadingBlock, rendered by the learning host, not OLL).
+#[derive(Clone, Debug, PartialEq)]
+pub enum HostCard {
+    Question { id: String, text: String, status: String },
+    Loading { id: String, title: String, detail: String },
+}
+const QUESTION_CARD_WIDTH: f64 = 270.;
+const LOADING_CARD_WIDTH: f64 = 360.;
+const HOST_CARD_GAP: f64 = 24.;
+
 #[derive(Script, ScriptHook, Widget)]
 pub struct SpatialBoard {
     #[uid]
@@ -230,6 +241,13 @@ pub struct SpatialBoard {
     /// lesson: (attachment id, reflection id, rect, card).
     #[rust]
     reflection_cards: Vec<(String, String, WorldRect, WidgetRef)>,
+    #[rust]
+    host_specs: Vec<HostCard>,
+    #[rust]
+    host_cards: Vec<(String, WorldRect, WidgetRef)>,
+    /// Frame the host cards once the viewport is known (no lesson yet).
+    #[rust]
+    host_frame_pending: bool,
     /// Plot explorer state by node id (web PlotExplorer state).
     #[rust]
     plot_states: BTreeMap<String, PlotState>,
@@ -508,6 +526,69 @@ impl SpatialBoard {
             eprintln!("Ink: {e}");
             self.ink.cancel();
         }
+    }
+    /// Web learning host cards: the learner's questions and the lesson
+    /// loading block. Without a lesson they are centred in the safe area;
+    /// with one, the question card sits left of the lesson (web: region left
+    /// - card width - 24).
+    pub fn set_host_cards(&mut self, cx: &mut Cx, cards: Vec<HostCard>) {
+        if cards == self.host_specs {
+            return;
+        }
+        self.host_specs = cards.clone();
+        self.host_cards.clear();
+        for card in cards {
+            let built = match &card {
+                HostCard::Question { id, text, status } => board_view::question_card(cx, text, status)
+                    .map(|w| (format!("host:question:{id}"), QUESTION_CARD_WIDTH, w)),
+                HostCard::Loading { id, title, detail } => board_view::loading_card(cx, title, detail)
+                    .map(|w| (format!("host:loading:{id}"), LOADING_CARD_WIDTH, w)),
+            };
+            if let Ok((id, width, w)) = built {
+                self.host_cards.push((id, WorldRect { x: 0., y: 0., width, height: 120. }, w));
+            }
+        }
+        self.place_host_cards();
+        if self.board.is_none() {
+            self.host_frame_pending = true;
+        }
+        self.redraw(cx);
+    }
+    fn place_host_cards(&mut self) {
+        // The lesson's content origin (layout bounds include outer padding).
+        let origin = self
+            .board
+            .is_some()
+            .then(|| {
+                self.geometry.nodes.values().fold(None, |acc: Option<(f64, f64)>, r| {
+                    Some(acc.map_or((r.x, r.y), |(x, y)| (x.min(r.x), y.min(r.y))))
+                })
+            })
+            .flatten();
+        let (mut x, y) = match origin {
+            Some((ox, oy)) => (ox - self.host_cards.iter().map(|(_, r, _)| r.width + HOST_CARD_GAP).sum::<f64>(), oy),
+            None => (0., 0.),
+        };
+        for (_, r, _) in &mut self.host_cards {
+            r.x = x;
+            r.y = y;
+            x += r.width + HOST_CARD_GAP;
+        }
+    }
+    /// Centre the host cards at scale 1 in the safe area (blank board).
+    fn frame_host_cards(&mut self) {
+        let Some(first) = self.host_cards.first().map(|c| c.1) else { return };
+        let (mut x0, mut y0, mut x1, mut y1) = (first.x, first.y, first.x + first.width, first.y + first.height);
+        for (_, r, _) in &self.host_cards {
+            x0 = x0.min(r.x);
+            y0 = y0.min(r.y);
+            x1 = x1.max(r.x + r.width);
+            y1 = y1.max(r.y + r.height);
+        }
+        let i = &self.insets;
+        let cx0 = i.left + (self.viewport.size.x - i.left - i.right) / 2.;
+        let cy0 = i.top + (self.viewport.size.y - i.top - i.bottom) / 2.;
+        self.jump_to(Camera { x: cx0 - (x0 + x1) / 2., y: cy0 - (y0 + y1) / 2., scale: 1. });
     }
     pub fn clear(&mut self, cx: &mut Cx) {
         self.drawing = false;
@@ -888,6 +969,7 @@ impl SpatialBoard {
                 let card = board_view::tasks_card(cx, &snapshots)?;
                 self.task_cards.push((spec.id.clone(), ids, rect, card));
             }
+            self.place_host_cards();
             self.reflection_cards.clear();
             let region = p.nodes.first().and_then(|n| n["region_id"].as_str()).filter(|r| !r.is_empty()).unwrap_or("__legacy__");
             let texts = p.reflections();
@@ -1897,7 +1979,9 @@ impl Widget for SpatialBoard {
         }
         let mut list = self.list.take().unwrap_or_else(|| DrawList2d::new(cx));
         list.begin_always(cx);
-        cx.begin_root_turtle(dvec2(131072., 131072.), Layout::flow_overlay());
+        // Unclipped root: world content may sit at negative coordinates (host
+        // cards left of the lesson); the camera view clip below bounds it.
+        cx.begin_unclipped_root_turtle(dvec2(131072., 131072.), Layout::flow_overlay());
         let (x, y) = self.camera.view_to_world(0., 0.);
         cx.push_clip_rect(rect(
             x,
@@ -1947,6 +2031,24 @@ impl Widget for SpatialBoard {
                     remeasured = true;
                 }
             }
+        }
+        let mut host_resized = false;
+        for (_, r, w) in &mut self.host_cards {
+            w.draw_walk_all(
+                cx,
+                scope,
+                Walk { abs_pos: Some(dvec2(r.x, r.y)), width: Size::Fixed(r.width), height: Size::fit(), ..Default::default() },
+            );
+            let h = w.area().rect(cx).size.y;
+            if h > 0. && (h - r.height).abs() > 1. {
+                r.height = h;
+                host_resized = true;
+            }
+        }
+        if self.host_frame_pending && self.board.is_none() && self.viewport.size.x > 0. && !self.host_cards.is_empty() {
+            self.host_frame_pending = host_resized;
+            self.frame_host_cards();
+            self.redraw(cx);
         }
         self.angle_controls = self
             .entries
@@ -2103,7 +2205,7 @@ impl Widget for SpatialBoard {
             );
         }
         cx.pop_clip_rect();
-        cx.end_pass_sized_turtle();
+        cx.end_pass_sized_turtle_no_clip();
         list.end(cx);
         let mut matrix = Mat4f::identity();
         matrix.v[0] = self.camera.scale as f32;
@@ -2128,7 +2230,7 @@ impl Widget for SpatialBoard {
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
         let (cursor, complete) = self.board.as_ref().map_or((0, false), |p| (p.cursor, p.complete()));
-        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"angle_controls":self.angle_controls,"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"angle_controls":self.angle_controls,"host":self.host_cards.iter().map(|(id,r,_)|json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height})).collect::<Vec<_>>(),"bounds":{"x":self.geometry.bounds.x,"y":self.geometry.bounds.y,"width":self.geometry.bounds.width},"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 

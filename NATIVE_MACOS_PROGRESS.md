@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（服务端功能：本地 octos 与课程生成格式）
+最后更新：2026-10-07（空白白板文字提问 → 生成课程）
 
 ## 0. 目标
 
@@ -135,6 +135,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `bcc7dc8` 大图对话框移到老师头像/输入栏之上（Web 模态遮住全部），plot 区域加 Web 的 #f8f5ed 底板
 - `a31aac5` 中文字体（用户选定方案 A）：随 app 打包 Noto Sans SC Regular/Bold（SIL OFL 1.1，`native/octos-learn/assets/fonts/`，约 17MB），`src/cjk_fonts.rs` 在启动时把它插到主题字体链里 LXGW 之前；`package-macos.sh` 复制到 `Resources/octos_learn/assets/fonts/`（已验证打包后不依赖源码目录）
 - OLL `adfa0ff` 课程生成格式：移植 Web `materializeOllLesson`（authoring → canonical），OLL 全部示例与 Web 输出一致，本地生成的课程可在原生播放到底
+- （本次提交）服务端第一块：`src/server.rs`（solo 登录、ui-protocol WebSocket JSON-RPC、协商 ui_feature、会话文件下载）；「新建空白白板」打开实时白板（启动器按钮与学习记录抽屉）；输入栏改成真正的文本框，回车或发送按钮提问 → `skill/action/invoke learning.lesson.generate` → 等待 job → 下载 `.octos-lesson.json` → 原生物化后播放；「我的问题」卡（正在准备回答 / 已回答 / 没有生成成功）与「正在搭建这节课」加载卡（同 Web 位置），老师「正在想 / 轻触开始」；白板根 turtle 改为不裁剪（世界坐标可为负）；含中文 `\text` 的公式卡宽度估计加余量。已用本地 octos 实测（勾股定理、质数、相反数、绝对值、倒数）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -161,6 +162,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 | 5 | 语音对话 | 1、2 | 麦克风权限（entitlement）、音频流、TTS |
 | 6 | 摄像头 | 1、2 | 相机权限、拍照上传 |
 | 7 | 新建空白白板 | 部分可离线 | 本地手写白板可先做；AI 生成内容依赖 2 |
+
+已知限制（服务端第一块）：每个实时白板只保留最新一节课（Web 会把多个主题拼到同一块白板）；课程内提问（基于课程白板的 board_context）还没做；实时白板暂不保存到本机进度、也不进学习记录；加载卡没有粒子与流光动画。
 
 ## 7. 明确不做 / 占位（依赖后端或未迁移）
 

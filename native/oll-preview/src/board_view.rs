@@ -422,6 +422,55 @@ pub fn reflection_card(cx: &mut Cx, prompt: &str, answer: &str, open: bool) -> R
         text_box(if open { "收起答案" } else { "查看答案" }, 12., 1.18, "#8a6212", true, false, (0., 0.)),
     ))
 }
+/// Web WhiteboardQuestionCard (`.learning-whiteboard-question-card`): 270
+/// wide, 4px gold left edge, 我的问题 + status pill, the question (4 lines).
+pub fn question_card(cx: &mut Cx, text: &str, status: &str) -> Result<WidgetRef, String> {
+    let (label, fg, bg) = match status {
+        "answered" => ("已回答", "#66736f", "#52706814"),
+        "failed" => ("没有生成成功", "#9a4c38", "#ac4c331a"),
+        _ => ("正在准备回答", "#23786f", "#23786f1a"),
+    };
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit draw_bg +: {{color:#c7aa58 border_radius:7.5}}
+        RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{left:4}} padding:Inset{{left:12 right:16 top:15 bottom:14}}
+            draw_bg +: {{color:#fffaf0 border_radius:7.5 border_size:0.5 border_color:#6f613e38}}
+            View{{width:Fill height:Fit flow:Right spacing:10 align:Align{{y:0.5}}
+                View{{width:Fill height:Fit {}}}
+                RoundedView{{width:Fit height:Fit padding:Inset{{left:7 right:7 top:3 bottom:3}} draw_bg +: {{color:{bg} border_radius:6}}
+                    {}}}
+            }}
+            View{{width:Fill height:Fit margin:Inset{{top:10}}
+                Label{{width:Fill padding:0 max_lines:4 text:\"{}\" draw_text.wrap:Words draw_text.text_style.font_size:9.75 draw_text.text_style.line_spacing:1.37 draw_text.color:#3f4946}}}}
+        }}
+    }}",
+        text_box("我的问题", 13., 1.18, "#5a4c2b", true, false, (0., 0.)),
+        text_box(label, 10., 1.18, fg, false, false, (0., 0.)),
+        script_text(text),
+    ))
+}
+
+/// Web WhiteboardLoadingBlock (`.learning-whiteboard-loading-block`, lesson
+/// kind): 360 wide, min 194 tall, OCTOS 正在准备 / title / detail and three
+/// placeholder lines. DIFF: no particles or shimmer animation.
+pub fn loading_card(cx: &mut Cx, title: &str, detail: &str) -> Result<WidgetRef, String> {
+    let line = |w: f64| format!("RoundedView{{width:{w} height:5 draw_bg +: {{color:#5b71681a border_radius:2.5}}}}");
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:24 right:24 top:22 bottom:21}}
+        draw_bg +: {{color:#fffdf7 border_radius:9 border_size:0.5 border_color:#2d676033}}
+        View{{width:Fill height:Fit flow:Down spacing:7
+            {}
+            {}
+            View{{width:290 height:Fit {}}}
+        }}
+        View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:17}}
+            {} {} {}
+        }}
+    }}",
+        text_box("O C T O S  正 在 准 备", 9., 1.18, "#4b827b", true, false, (0., 0.)),
+        text_box(title, 18., 1.18, "#334d49", true, false, (0., 0.)),
+        text_box(detail, 12., 1.7, "#687873", false, true, (0., 0.)),
+        line(312.), line(243.), line(175.),
+    ))
+}
+
 const ICON_LIGHTBULB: &str = include_str!("../../octos-learn/assets/icons/lightbulb.svg");
 const ICON_CHECK: &str = include_str!("../../octos-learn/assets/icons/circle-check.svg");
 const ICON_RETRY: &str = include_str!("../../octos-learn/assets/icons/rotate-ccw.svg");
@@ -600,6 +649,10 @@ fn line_width(latex: &str) -> Result<f64, String> {
     let mut width = 0.;
     match formula_view::runs(latex) {
         Ok(runs) => {
+            // Empirical slack where a \text run meets a math run (Label vs
+            // MathView side bearings): mixed CJK/math cards clipped by ~0.6em
+            // otherwise. Errs toward a slightly wider card.
+            width += runs.len().saturating_sub(1) as f64 * 0.3 * KATEX_EM as f64;
             for run in runs {
                 width += match run {
                     formula_view::Run::Math(m) => formula_metrics(&m)?.0 as f64,

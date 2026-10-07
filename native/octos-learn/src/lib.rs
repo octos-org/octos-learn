@@ -8,8 +8,11 @@ use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 use octos_oll_preview::spatial_board::InkTool;
 mod svg_image;
+mod server;
+use server::Server;
+use serde_json::json;
 mod cjk_fonts;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::time::Instant;
 
 mod course_pack;
@@ -133,7 +136,7 @@ script_mod! {
                                     Label { width: Fit height: Fit padding: 0 text: "OCTOS LEARNING CANVAS" draw_text.text_style.font_size: 6.75 draw_text.color: #8a8074 }
                                     course_title := Label { width: Fill height: Fit padding: 0 text: "" draw_text.text_style: theme.font_bold{font_size: 15} draw_text.color: #332e28 }
                                 }
-                                View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
+                                demo_controls := View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
                                     play := Button { width: 34 height: 34 text: ""
                                         icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 5.5 border_size: 0 border_color: #0000 } }
@@ -250,8 +253,9 @@ script_mod! {
                             }
                         }
                         // Student input dock (web .learning-input-dock: bottom
-                        // 22, centered, max-width 720). DIFF: ask/voice input is
-                        // not migrated; every control shows the toast.
+                        // 22, centered, max-width 720). Text questions go to the
+                        // Octos server on a live board; image/camera/voice are
+                        // separate milestones.
                         View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 22}
                             input_dock := RoundedView {
                                 width: 720 height: Fit flow: Right spacing: 5 align: Align{y: 0.5} padding: 6
@@ -266,9 +270,15 @@ script_mod! {
                                     draw_icon +: { color: #ffffff }
                                     // Web .learning-mic-button:disabled (voice unavailable): #167794 at opacity .38.
                                     draw_bg +: { color: #a6cad2 color_hover: #a6cad2 color_down: #a6cad2 border_radius: 6.5 border_size: 0 border_color: #0000 } }
-                                // Web placeholder: 14px #938a7e, input padding 0 12px.
-                                Label { width: Fill padding: 0 text: "问一个问题，或告诉 Octos 你卡在哪里…"
-                                    draw_text.text_style.font_size: 10.5 draw_text.color: #938a7e margin: Inset{left: 12} }
+                                // Web .learning-input-dock input: 14px #322d27, placeholder
+                                // #938a7e, padding 0 12px; Enter or the send button asks.
+                                ask_input := TextInput { width: Fill height: Fit padding: Inset{left: 12 right: 12} margin: 0
+                                    empty_text: "问一个问题，或告诉 Octos 你卡在哪里…"
+                                    draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
+                                        border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
+                                    draw_text +: { color: #322d27 color_hover: #322d27 color_focus: #322d27 color_down: #322d27
+                                        color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: 10.5 }
+                                    draw_cursor +: { color: #322d27 } }
                                 ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
                                     draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 6.5 border_size: 0 border_color: #0000 } }
@@ -530,6 +540,37 @@ fn round_cover_top(svg: &str, radius_px: f64, width_px: f64) -> String {
     )
 }
 /// A tap on an icon+label pill or card (FingerUp over it, little travel).
+/// A server-backed learning board (web LearningWorkspace with a learn-*
+/// session): the learner's questions and the lesson generated for them.
+struct Live {
+    session_id: String,
+    opened: bool,
+    titled: bool,
+    /// (turn id, question, status: pending | answered | failed).
+    questions: Vec<(String, String, String)>,
+    /// job id -> turn id.
+    jobs: HashMap<String, String>,
+    /// A question waiting for login before it can be sent.
+    queued: Option<(String, String)>,
+}
+impl Live {
+    fn new() -> Self {
+        let ms = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis());
+        let suffix: String = server::uuid().chars().filter(|c| c.is_ascii_alphanumeric()).take(6).collect();
+        Self {
+            session_id: format!("learn-{ms}-{suffix}"),
+            opened: false,
+            titled: false,
+            questions: Vec::new(),
+            jobs: HashMap::new(),
+            queued: None,
+        }
+    }
+    fn pending(&self) -> bool {
+        self.questions.iter().any(|q| q.2 == "pending")
+    }
+}
+
 fn tapped(cx: &mut Cx, event: &Event, target: &WidgetRef) -> bool {
     match event.hits(cx, target.area()) {
         Hit::FingerHoverIn(_) => {
@@ -628,6 +669,12 @@ pub struct App {
     lesson_released: bool,
     #[rust]
     history_open: bool,
+    /// Octos server client (solo login, ui-protocol socket, files).
+    #[rust]
+    server: Server,
+    /// A live (server-backed) learning board: 新建空白白板 and its questions.
+    #[rust]
+    live: Option<Live>,
     #[rust]
     history_query: String,
     #[rust]
@@ -890,7 +937,8 @@ impl App {
     fn note(&mut self, _cx: &mut Cx, _message: &str) {}
     fn save_progress(&mut self, cx: &mut Cx) {
         // Web: a pack preview is ephemeral and never enters the session index.
-        if self.course_preview {
+        // DIFF: live boards are not persisted locally yet (server sessions).
+        if self.course_preview || self.live.is_some() {
             return;
         }
         if let Some(player) = &self.player {
@@ -1096,6 +1144,13 @@ impl App {
         self.drawing = false;
         self.lesson_released = false;
         self.narration_muted = false;
+        if self.live.take().is_some() {
+            if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                board.set_host_cards(cx, Vec::new());
+            }
+        }
+        self.ui.widget(cx, ids!(outline_trigger)).set_visible(cx, true);
+        self.sync_live(cx);
         self.stop_narration_audio(cx);
         self.autoplay_pending = false;
         let root = course_pack::pack_root();
@@ -1156,6 +1211,240 @@ impl App {
         self.refresh(cx);
     }
     /// Web learning-workspace chrome for preview vs interactive learning.
+    /// Web /board?new-board=1: an empty learning whiteboard where questions
+    /// become generated lessons (needs a reachable Octos server).
+    fn open_live_board(&mut self, cx: &mut Cx) {
+        self.save_progress(cx);
+        self.stop_narration_audio(cx);
+        self.error.clear();
+        self.drawing = false;
+        self.player = None;
+        self.pack_id.clear();
+        self.pack_version.clear();
+        self.course_preview = false;
+        self.lesson_released = false;
+        self.narration_audio.clear();
+        self.live = Some(Live::new());
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.clear(cx);
+            board.set_host_cards(cx, Vec::new());
+        }
+        self.ui.label(cx, ids!(course_title)).set_text(cx, "新的学习白板");
+        self.apply_course_mode(cx);
+        self.show_learning(cx, true);
+        self.server.ensure_login(cx);
+        self.sync_live(cx);
+    }
+    /// Ask from the input dock (web StudentInputDock submit).
+    fn submit_question(&mut self, cx: &mut Cx) {
+        let input = self.ui.text_input(cx, ids!(ask_input));
+        let text = input.text().trim().to_owned();
+        if text.is_empty() {
+            return;
+        }
+        let Some(live) = self.live.as_mut() else {
+            // DIFF: questions inside a course board need multi-lesson
+            // composition (web board_context references), a later milestone.
+            self.toast(cx, "课程内提问稍后支持，请在空白白板提问");
+            return;
+        };
+        if live.pending() {
+            self.toast(cx, "上一个问题还在准备中");
+            return;
+        }
+        input.set_text(cx, "");
+        let turn_id = server::uuid();
+        live.questions.push((turn_id.clone(), text.clone(), "pending".into()));
+        if self.server.logged_in() {
+            self.send_question(cx, turn_id, text);
+        } else {
+            live.queued = Some((turn_id, text));
+            self.server.ensure_login(cx);
+        }
+        self.sync_live(cx);
+    }
+    /// session/open (once) + session/title.set (first question) +
+    /// skill/action/invoke learning.lesson.generate, as the web workspace.
+    fn send_question(&mut self, cx: &mut Cx, turn_id: String, text: String) {
+        let Some(live) = self.live.as_mut() else { return };
+        let session_id = live.session_id.clone();
+        let profile = self.server.profile_id.clone().unwrap_or_default();
+        if !live.opened {
+            live.opened = true;
+            self.server.call(cx, "session/open", json!({"session_id": session_id, "profile_id": profile}), server::Call::Fire);
+        }
+        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_millis() as u64);
+        self.server.call(
+            cx,
+            "skill/action/invoke",
+            json!({
+                "session_id": session_id,
+                "action_id": "learning.lesson.generate",
+                "arguments": {
+                    "turn_id": turn_id,
+                    "learner_request": text,
+                    "request_source": "self_contained",
+                    "language": "zh-CN",
+                    "input_modality": "text",
+                    "client_timing": {"submitted_at_epoch_ms": now, "skill_invocation_started_at_epoch_ms": now},
+                },
+            }),
+            server::Call::Invoke { turn_id },
+        );
+    }
+    fn fail_question(&mut self, cx: &mut Cx, turn_id: &str, message: &str) {
+        if let Some(q) = self.live.as_mut().and_then(|l| l.questions.iter_mut().find(|q| q.0 == turn_id)) {
+            q.2 = "failed".into();
+        }
+        self.toast(cx, message);
+        self.sync_live(cx);
+    }
+    fn handle_server(&mut self, cx: &mut Cx, event: &Event) {
+        for ev in self.server.handle(cx, event) {
+            match ev {
+                server::ServerEvent::LoggedIn => {
+                    if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
+                        self.send_question(cx, turn, text);
+                    }
+                }
+                server::ServerEvent::Unavailable(message) => {
+                    let pending: Vec<String> = self
+                        .live
+                        .as_ref()
+                        .map(|l| l.questions.iter().filter(|q| q.2 == "pending").map(|q| q.0.clone()).collect())
+                        .unwrap_or_default();
+                    if let Some(l) = self.live.as_mut() {
+                        l.queued = None;
+                    }
+                    for turn in &pending {
+                        self.fail_question(cx, turn, &message);
+                    }
+                    if pending.is_empty() && self.live.is_some() {
+                        self.toast(cx, &message);
+                    }
+                }
+                server::ServerEvent::Invoked { turn_id, result } => match result {
+                    Ok(job) => {
+                        if let Some(l) = self.live.as_mut() {
+                            l.jobs.insert(job, turn_id);
+                        }
+                    }
+                    Err(e) => self.fail_question(cx, &turn_id, &format!("没有生成成功：{e}")),
+                },
+                server::ServerEvent::Job(job) => {
+                    let Some(live) = self.live.as_ref() else { continue };
+                    if job["session_id"] != live.session_id.as_str() {
+                        continue;
+                    }
+                    let Some(turn) = job["job_id"].as_str().and_then(|j| live.jobs.get(j)).cloned() else { continue };
+                    match job["status"].as_str() {
+                        Some("succeeded") => {
+                            let name = format!("{turn}.octos-lesson.json");
+                            let handle = job["result"]["artifacts"]
+                                .as_array()
+                                .into_iter()
+                                .flatten()
+                                .find(|a| a["display_name"] == name.as_str())
+                                .and_then(|a| a["handle"].as_str())
+                                .map(str::to_owned);
+                            let session = live.session_id.clone();
+                            // Web setSessionTitle: the session exists on the
+                            // server once its first turn has run.
+                            if !live.titled {
+                                let title = live.questions.first().map(|q| q.1.clone()).unwrap_or_default();
+                                if let Some(l) = self.live.as_mut() {
+                                    l.titled = true;
+                                }
+                                self.server.call(cx, "session/title.set", json!({"session_id": session, "title": title}), server::Call::Fire);
+                            }
+                            match handle {
+                                Some(h) => self.server.fetch_file(cx, &session, &h, &turn),
+                                None => self.fail_question(cx, &turn, "没有生成成功：没有收到课程文件"),
+                            }
+                        }
+                        Some("failed") | Some("cancelled") => {
+                            let detail = job["error"].as_str().or(job["result"]["output"].as_str()).unwrap_or("生成失败").to_owned();
+                            self.fail_question(cx, &turn, &format!("没有生成成功：{detail}"));
+                        }
+                        _ => {}
+                    }
+                }
+                server::ServerEvent::LessonFile { turn_id, body } => match body {
+                    Ok(body) => self.load_live_lesson(cx, &turn_id, &body),
+                    Err(e) => self.fail_question(cx, &turn_id, &e),
+                },
+            }
+        }
+    }
+    /// Web materializeOllLesson + player: the generated authoring lesson is
+    /// materialized into canonical JSONL and played on this board.
+    fn load_live_lesson(&mut self, cx: &mut Cx, turn_id: &str, body: &str) {
+        let Some(live) = self.live.as_ref() else { return };
+        let host = oll_runtime::authoring::Host {
+            lesson_id: turn_id.into(),
+            board_id: live.session_id.clone(),
+            base_revision: 0,
+            region_intent: "new_topic".into(),
+            region_id: None,
+        };
+        let loaded = serde_json::from_str::<serde_json::Value>(body)
+            .map_err(|e| format!("课程文件损坏：{e}"))
+            .and_then(|doc| oll_runtime::authoring::materialize_jsonl(&doc, &host))
+            .and_then(|jsonl| Session::load(&jsonl));
+        match loaded {
+            Ok(session) => {
+                if let Some(q) = self.live.as_mut().and_then(|l| l.questions.iter_mut().find(|q| q.0 == turn_id)) {
+                    q.2 = "answered".into();
+                }
+                // DIFF: one lesson per live board for now; a newer answer
+                // replaces the previous lesson (web composes topics).
+                if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                    board.clear(cx);
+                }
+                self.player = Some(session);
+                self.lesson_released = false;
+                self.sync_live(cx);
+                self.start_playback(cx);
+                self.refresh(cx);
+            }
+            Err(e) => self.fail_question(cx, turn_id, &format!("没有生成成功：{e}")),
+        }
+    }
+    /// Live-board chrome: question/loading cards, demo controls only with a
+    /// lesson, teacher idle/thinking copy before the lesson.
+    fn sync_live(&mut self, cx: &mut Cx) {
+        let Some(live) = self.live.as_ref() else {
+            self.ui.widget(cx, ids!(demo_controls)).set_visible(cx, true);
+            return;
+        };
+        let has_lesson = self.player.is_some();
+        // Web shows the latest question; while it is pending, the loading block.
+        let mut cards = Vec::new();
+        if let Some((turn, text, status)) = live.questions.last() {
+            cards.push(spatial_board::HostCard::Question { id: turn.clone(), text: text.clone(), status: status.clone() });
+            if status == "pending" {
+                cards.push(spatial_board::HostCard::Loading {
+                    id: turn.clone(),
+                    title: "正在搭建这节课".into(),
+                    detail: "先整理重点，再把讲解和互动画面放到白板上。".into(),
+                });
+            }
+        }
+        let pending = live.pending();
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_host_cards(cx, cards);
+        }
+        self.ui.widget(cx, ids!(demo_controls)).set_visible(cx, has_lesson);
+        self.ui.widget(cx, ids!(outline_trigger)).set_visible(cx, has_lesson);
+        if !has_lesson {
+            // Web teacherStateLabel / teacherSpeech before a lesson exists.
+            self.ui.label(cx, ids!(teacher_state)).set_text(cx, if pending { "正在想" } else { "轻触开始" });
+            let speech = if pending { "我正在整理这道题，马上写到白板上。" } else { "" };
+            self.ui.label(cx, ids!(narration)).set_text(cx, speech);
+            self.ui.widget(cx, ids!(narration_bubble)).set_visible(cx, !speech.is_empty());
+        }
+        self.ui.redraw(cx);
+    }
     fn apply_course_mode(&mut self, cx: &mut Cx) {
         let preview = self.course_preview;
         if preview && self.drawing {
@@ -1469,7 +1758,7 @@ impl App {
     fn handle_launcher_taps(&mut self, cx: &mut Cx, event: &Event) {
         let blank = self.ui.widget(cx, ids!(blank_board));
         if self.collection.is_none() && tapped(cx, event, &blank) {
-            self.toast(cx, "空白白板尚未迁移，仅网页版可用");
+            self.open_live_board(cx);
             return;
         }
         let back = self.ui.widget(cx, ids!(collection_back));
@@ -2445,19 +2734,24 @@ impl AppMain for App {
                     self.set_history_open(cx, false);
                 }
                 if self.ui.button(cx, ids!(history_new)).clicked(actions) {
-                    self.toast(cx, "空白白板尚未迁移，仅网页版可用");
+                    self.set_history_open(cx, false);
+                    self.open_live_board(cx);
                 }
                 if let Some(query) = self.ui.text_input(cx, ids!(history_search)).changed(actions) {
                     self.history_query = query;
                     self.rebuild_history(cx);
                 }
             }
+            if self.ui.button(cx, ids!(ask_send)).clicked(actions)
+                || self.ui.text_input(cx, ids!(ask_input)).returned(actions).is_some()
+            {
+                self.submit_question(cx);
+            }
             if self.ui.button(cx, ids!(ask_image)).clicked(actions)
                 || self.ui.button(cx, ids!(ask_camera)).clicked(actions)
                 || self.ui.button(cx, ids!(ask_mic)).clicked(actions)
-                || self.ui.button(cx, ids!(ask_send)).clicked(actions)
             {
-                self.toast(cx, "语音与提问尚未迁移，仅网页版可用");
+                self.toast(cx, "图片、摄像头与语音提问稍后支持");
             }
             if self.ui.button(cx, ids!(outline_trigger)).clicked(actions) {
                 self.outline_open = !self.outline_open;
@@ -2573,6 +2867,7 @@ impl AppMain for App {
                 }
             }
         }
+        self.handle_server(cx, event);
         // Launcher pills/cards are plain views: hit-test them before the UI
         // tree so the scroll view does not capture the finger first.
         if !self.learning_visible {
