@@ -161,6 +161,16 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 3. ~~再跑一次九门课全量对照~~（2026-10-06 完成，无回归）。
 4. ~~写交付文档 V7、更新 AGENT_HANDOFF.md、通知用户测试~~（2026-10-06 完成，见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V7.md`）。等待用户测试反馈与中文字体决定。
 
+5. 2026-10-07 用户要求继续做（每完成一块提交推送并更新本文档）：
+   - [ ] 框选笔迹提问（Web ink_selection：框选 → 选区截图 + board_context → `learning.lesson.generate-from-selection`）
+   - [ ] 完整设置页（Web 设置：模型、语音、设备偏好）
+   - [ ] 摄像头画面调整对话框（旋转/镜像/缩放/偏移/文档模式）
+   - [ ] 加载卡粒子与流光动画
+
+## 6.2 本分支合并之后再做（用户 2026-10-07 指示：先记录，合并后开始）
+
+- **图片提问时技能拒绝（服务端/技能问题，Web 同样复现）**：上传图片走代理对话 `turn/start` 时，代理（本机 gemini-3.6-flash）调用 `oll_generate_lesson` 用 `request_source: "current_image"` 却不带 `camera_media`，learning-coach 报 `LESSON_CAMERA_IMAGE_REQUIRED`，代理重试几次后放弃，整轮没有课程。原生 6/6 次、Web 后来 1/1 次都如此（Web 早先 2 次代理选了 self_contained 才成功）。两端 `turn/start`、上传文件、服务端提示（30405 字节、66 个工具）一致。可选修法：(a) 技能在 `current_image` 缺 `camera_media` 时回退到本轮 user_message 的图片附件；(b) 工具描述/代理提示明确上传图片应走 self_contained 或带上 `camera_media`；(c) 客户端改用 skill action（类似摄像头 `generate-from-camera` 直接带 `paths`）。复现：本机 octos solo + `OCTOS_IMAGE_TEST_FILE=<图片>` 点输入栏图片按钮；技能源码 `octos-skills/learning-coach/src/main.ts` 中 `LESSON_CAMERA_IMAGE_REQUIRED`。
+
 ## 6.1 依赖后端功能的建议路线（2026-10-06 提出，待用户确认）
 
 | 顺序 | 功能 | 依赖 | 说明 |
