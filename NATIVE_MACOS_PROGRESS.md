@@ -110,7 +110,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `bba039a` 课程目录：步骤标题单行（Web nowrap/ellipsis，Beat 标题最多 2 行）、行距 46px（去掉 Button 默认外边距与折叠时的 Beat 列表外边距）、▶ 与展开箭头尺寸/颜色同 Web
 - `8c5a19b` 老师指针只在最新操作是 teacher.point 时显示（同 Web renderPointer；下一 Beat 停在 beat.end，不显示）
 - `bcc7dc8` 大图对话框移到老师头像/输入栏之上（Web 模态遮住全部），plot 区域加 Web 的 #f8f5ed 底板
-- （本次提交）中文字体（用户选定方案 A）：随 app 打包 Noto Sans SC Regular/Bold（SIL OFL 1.1，`native/octos-learn/assets/fonts/`，约 17MB），`src/cjk_fonts.rs` 在启动时把它插到主题字体链里 LXGW 之前；`package-macos.sh` 复制到 `Resources/octos_learn/assets/fonts/`（已验证打包后不依赖源码目录）
+- `a31aac5` 中文字体（用户选定方案 A）：随 app 打包 Noto Sans SC Regular/Bold（SIL OFL 1.1，`native/octos-learn/assets/fonts/`，约 17MB），`src/cjk_fonts.rs` 在启动时把它插到主题字体链里 LXGW 之前；`package-macos.sh` 复制到 `Resources/octos_learn/assets/fonts/`（已验证打包后不依赖源码目录）
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
