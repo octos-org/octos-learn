@@ -4599,6 +4599,12 @@ impl App {
             }
         }
         if matches!(event, Event::Startup) {
+            // Android host renders into a smaller GL buffer on 4K panels
+            // (MakepadApp.RENDER_LONG_SIDE): lay out in the same logical
+            // points at the reduced pixel density.
+            if let Some(dpi) = std::env::var("OCTOS_RENDER_DPI").ok().and_then(|v| v.parse::<f64>().ok()) {
+                cx.set_window_dpi_override(CxWindowPool::id_zero(), Some(dpi));
+            }
             if let Err(e) = progress_store::Store::start(cx).map(|s| self.store = Some(s)) {
                 self.error = e;
             }
