@@ -150,7 +150,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - `bc9d240` 框选笔迹提问第二部分＝批注卡片（Web SelectionEnhancementLayer）：「检查并建议」「生成函数图像」和面板里的自由提问调用 `learning.selection.enhance`（`delivery_mode: card`；原生没有 AI 板书，相当于 Web 无 board_writing 能力时的表现），从结果里找到 `<turn>.octos-selection-enhancement.json` 下载后显示为白板上的卡片：放在选区右侧 30（避开已有卡片向下找空位），330 宽；卡片含「我的问题」+状态、「小章鱼辅助 / 来自当前选区」、标题、正文、要点列表、函数图（`selection_plot.rs`，Web SelectionPlot 300×164，显式/隐式曲线）、「当前无法生成这个图像」+替代建议、「系统理解：」；生成中/失败占位；虚线连线从选区指向卡片；右上角「最小化 / 删除」，最小化后是「?」圆钮，点击展开。卡片随课堂保存（位置、状态、结果）。本机实测：x+1=3 检查并建议、y=x² 生成函数图像、最小化/展开/删除。DIFF：Markdown 只显示纯文本（去掉 ** 与 $，公式不排版）；卡片拖动与缩放未做；3D（scene3d）结果只显示文字
 - `1e75cd1` 完整设置页第一部分（Web /settings）：启动器右上「设置」（替换原来的「登录」占位；solo 自动登录，无「退出」）、新手设置页的「完整设置 / 打开完整模型设置 / 语音设置与用量」都打开它；顶栏（返回、齿轮、OCTOS LEARN / Settings / 副标题、「新手设置白板」= 打开新白板并强制显示新手设置）；左侧分组导航（PERSONAL / LEARNING / ACCESS / DEVELOPER，Authentication 带 ADMIN 标记，搜索框过滤）；内容区 768 宽卡片。已做的 tab（`src/settings.rs`，按 Web 字段与文案）：Profile（Profile ID、Display Name、Auto-start Gateway、Admin Mode、Created、Save Changes；Gateway Status 与 Start/Stop/Restart；Environment Variables 编辑/新增/删除）、LLM（Provider 下拉 + 是否可用于课程生成提示、Model 预设/自定义、Custom Provider ID、Service Account JSON、Base URL、Key 是否已在 API Keys 配置、Test Connection、Fallback Models 增删、Adaptive Routing 开关与说明、Prompt & Output、Gateway Parameters、Save Changes/Reset 及 Web 的保存提示文案）、API Keys（LLM Providers / Channels / Infrastructure 三组，Configured/Not set，保存时空值删除、未改的掩码值原样回传）、Voice（识别语言、TTS 路线及说明、Auto/Cloud 时的火山凭据卡：App ID、Token、Voice、Advanced（Cluster/Encoding）、校验提示；Save、Test TTS（先保存再试听））。`server.rs` 新增通用 `json()` REST 调用。本机实测：各 tab 截图与 Web 对照、Test Connection 显示 Connected、Profile 保存显示 Saved 且之后连接测试仍通过（掩码密钥未被破坏）。DIFF：无深色主题切换；Stop/Restart 没有确认弹窗；Profile 的 Danger Zone（删除 profile）未做；下拉菜单弹层用 Makepad 默认样式
 - `d083a40` 完整设置页第二部分：Learning Companion（Web TeacherSkinPicker 七个形象卡：Ocean/Coral/Scholar/Starlight 按 Web OctosAvatar 生成 SVG（CSS 颜色内联），Panda Pal/Pocket Penguin/Bumble Buddy 用随包 CC0 缩略图（`assets/companions/`，含 ATTRIBUTION.md）；选择保存在数据目录 `teacher-skin`，白板右下角老师即时换装）；Authentication（Registration Access 开放/受限、Email OTP Delivery SMTP 表单与保存、Allowed Emails 添加/列表/删除、Test Login Email，接 `/api/admin/smtp`、`/api/admin/allowed-emails`、`/api/admin/smtp/test`）；Developer Options（调试总开关与两个调试项、重置，保存在数据目录 `debug-settings.json`）。本机实测各 tab 截图与 Web 对照、换 Coral 后白板老师变为 Coral。DIFF：3D 形象只显示静态缩略图（无 GLB 动画）；Developer 的两个调试浮层原生没有，开关只保存（页面上有说明）；新手设置页里的老师形象选择器仍未做
-- （本次提交）摄像头画面调整对话框（Web CameraSettingsDialog）：摄像头监视窗右上角设置按钮打开；左侧深色预览（最长 960 px，「老师看到的画面 · 角度 · 缩放」），右侧左转/右转/镜像、缩放（1–3×）、左右/上下（-1…1，1× 时不生效）、试卷清晰模式开关、恢复默认取景。`camera.rs` 的 `FrameSettings`/`frame_transform` 按 Web drawCameraFrame + computeCameraFrameGeometry 先旋转再镜像再按偏移裁剪，同时用于监视窗、对话框预览和发送的 JPEG；试卷清晰模式开 = 1600 px/.88，关 = 768 px/.70（Web 同）。设置保存在数据目录 `camera-frame-settings.json`。单元测试覆盖旋转/镜像/裁剪；用测试图片验证 180°+镜像后监视窗与预览一致。DIFF：Web 在摄像头未开时可临时开启预览，原生只能在摄像头开启后打开对话框
+- `93284b2` 摄像头画面调整对话框（Web CameraSettingsDialog）：摄像头监视窗右上角设置按钮打开；左侧深色预览（最长 960 px，「老师看到的画面 · 角度 · 缩放」），右侧左转/右转/镜像、缩放（1–3×）、左右/上下（-1…1，1× 时不生效）、试卷清晰模式开关、恢复默认取景。`camera.rs` 的 `FrameSettings`/`frame_transform` 按 Web drawCameraFrame + computeCameraFrameGeometry 先旋转再镜像再按偏移裁剪，同时用于监视窗、对话框预览和发送的 JPEG；试卷清晰模式开 = 1600 px/.88，关 = 768 px/.70（Web 同）。设置保存在数据目录 `camera-frame-settings.json`。单元测试覆盖旋转/镜像/裁剪；用测试图片验证 180°+镜像后监视窗与预览一致。DIFF：Web 在摄像头未开时可临时开启预览，原生只能在摄像头开启后打开对话框
+- （本次提交）加载卡动画（Web .learning-whiteboard-loading-block）：`oll-preview/src/loading_fx.rs` 的 `LoadingFx`（斜向扫光 2.8s、顶部光束 2.7s、六个漂浮光点 3.6s，按 Web 关键帧与延迟）与 `LoadingLine`（三条占位线的流光 1.8s，延迟 0/-0.55/-1.05s），渐变用 DrawVector 线性渐变绘制，扫光按卡片 18px 圆角裁剪；卡片最小高度 194（Web min-height）。SpatialBoard 在有加载卡时每帧重绘。本机实测两帧截图对比确认动画在动
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -170,7 +171,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
    - [x] 框选笔迹提问（两部分均完成；剩余 DIFF：卡片拖动/缩放、Markdown 公式排版、scene3d 卡片、面板语音提问、片段级 target）
    - [x] 完整设置页（七个 tab 均完成）
    - [x] 摄像头画面调整对话框
-   - [ ] 加载卡粒子与流光动画
+   - [x] 加载卡粒子与流光动画
 
 ## 6.2 本分支合并之后再做（用户 2026-10-07 指示：先记录，合并后开始）
 
@@ -188,13 +189,13 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 | 6 | 摄像头 | 1、2 | 相机权限、拍照上传 |
 | 7 | 新建空白白板 | 部分可离线 | 本地手写白板可先做；AI 生成内容依赖 2 |
 
-已知限制（服务端第一块）：框选笔迹提问（ink_selection / board_context 引用）还没做；加载卡没有粒子与流光动画。
+已知限制（服务端第一块）：框选笔迹提问（ink_selection / board_context 引用）还没做；
 
 服务端语音现状（本机）：octos 通过 `OMINIX_API_URL=http://127.0.0.1:8080` 接上 OminiX 后 ASR 就绪；TTS 的本机路线固定用 GPT-SoVITS 引擎，本机 OminiX 只有 Qwen3-TTS，所以 `/api/voice/synthesize` 返回 502（云端路线需要火山 TTS key）。课程旁白 TTS 在本机无法实测，需要在用户的另一台电脑验证。
 
 ## 7. 明确不做 / 占位（依赖后端或未迁移）
 
-（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）仍未做：加载卡动画。
+（2026-10-07 起语音、摄像头、提问输入框、新手设置、solo 登录、新建空白白板已接入本地 octos，见 §5。）（2026-10-07 用户列出的四项均已完成。）
 学习记录抽屉只列本机课程进度记录（Web 还会同步服务器记录）。
 
 ## 8. Makepad 踩坑备忘

@@ -1334,7 +1334,8 @@ impl SpatialBoard {
         self.highlights.retain(|_, (kind, at)| {
             at.elapsed().as_secs_f64() < if *kind == Highlight::Active { ACTIVE_SECONDS } else { FOCUS_ARRIVE_SECONDS }
         });
-        if before > 0 || self.pointer_target.is_some() {
+        // The loading card animates (web learning-loading-* keyframes).
+        if before > 0 || self.pointer_target.is_some() || self.host_specs.iter().any(|c| matches!(c, HostCard::Loading { .. })) {
             self.redraw(cx);
         }
         if !self.manual && self.elapsed < 0.68 {

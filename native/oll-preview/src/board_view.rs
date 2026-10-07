@@ -584,22 +584,27 @@ pub fn question_card(cx: &mut Cx, text: &str, status: &str) -> Result<WidgetRef,
 /// kind): 360 wide, min 194 tall, OCTOS 正在准备 / title / detail and three
 /// placeholder lines. DIFF: no particles or shimmer animation.
 pub fn loading_card(cx: &mut Cx, title: &str, detail: &str) -> Result<WidgetRef, String> {
-    let line = |w: f64| format!("RoundedView{{width:{w} height:5 draw_bg +: {{color:#5b71681a border_radius:2.5}}}}");
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:24 right:24 top:22 bottom:21}}
+    // Web min-height 194 comes from the effect layer; line widths 100% / 78% /
+    // 56% with shimmer delays 0 / -0.55 / -1.05s.
+    let line = |w: f64, delay: f64| format!("mod.widgets.LoadingLine{{width:{w} delay:{delay}}}");
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay
         draw_bg +: {{color:#fffdf7 border_radius:9 border_size:0.5 border_color:#2d676033}}
-        View{{width:Fill height:Fit flow:Down spacing:7
-            {}
-            {}
-            View{{width:290 height:Fit {}}}
-        }}
-        View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:17}}
-            {} {} {}
+        mod.widgets.LoadingFx{{height:194}}
+        View{{width:Fill height:Fit flow:Down padding:Inset{{left:24 right:24 top:22 bottom:21}}
+            View{{width:Fill height:Fit flow:Down spacing:7
+                {}
+                {}
+                View{{width:290 height:Fit {}}}
+            }}
+            View{{width:Fill height:Fit flow:Down spacing:8 margin:Inset{{top:17}}
+                {} {} {}
+            }}
         }}
     }}",
         text_box("O C T O S  正 在 准 备", 9., 1.18, "#4b827b", true, false, (0., 0.)),
         text_box(title, 18., 1.18, "#334d49", true, false, (0., 0.)),
         text_box(detail, 12., 1.7, "#687873", false, true, (0., 0.)),
-        line(312.), line(243.), line(175.),
+        line(312., 0.), line(243., 0.55), line(175., 1.05),
     ))
 }
 

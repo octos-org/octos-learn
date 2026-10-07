@@ -14,6 +14,7 @@ pub mod scene3d_view;
 pub mod plot_view;
 pub mod diagram_view;
 pub mod selection_plot;
+pub mod loading_fx;
 pub mod geometry_view;
 pub mod group_view;
 pub mod spatial_board;
@@ -924,6 +925,7 @@ impl AppMain for App {
         geometry_view::script_mod(vm);
         diagram_view::script_mod(vm);
         selection_plot::script_mod(vm);
+        loading_fx::script_mod(vm);
         group_view::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
