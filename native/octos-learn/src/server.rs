@@ -62,6 +62,8 @@ pub enum Call {
     /// A synchronous skill action (selection classify): its first
     /// successful result's structured metadata.
     Metadata { purpose: String },
+    /// A synchronous skill action whose whole result is needed.
+    Result { purpose: String },
 }
 
 /// Progress of an agent chat turn (web sendMessage projection).
@@ -104,6 +106,7 @@ pub enum ServerEvent {
     Turn { turn_id: String, update: TurnUpdate },
     /// Result of a `Call::Metadata` invocation.
     Metadata { purpose: String, result: Result<Value, String> },
+    ActionResult { purpose: String, result: Result<Value, String> },
 }
 
 /// Web formatSettingsError: the server's JSON error/message, else the text.
@@ -501,6 +504,21 @@ impl Server {
                             },
                         };
                         out.push(ServerEvent::Admitted { turn_id, result });
+                        continue;
+                    }
+                    if let Call::Result { purpose } = call {
+                        let result = match msg.get("error") {
+                            Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("请求失败").to_owned()),
+                            _ => {
+                                let failed = msg["result"]["results"].as_array().into_iter().flatten().find(|r| r["success"] == false);
+                                match failed {
+                                    Some(r) => Err(r["output"].as_str().map(str::trim).filter(|s| !s.is_empty()).unwrap_or("选区辅助内容生成失败，请重试").to_owned()),
+                                    None if msg["result"]["ok"] == false => Err("选区辅助内容生成失败，请重试".to_owned()),
+                                    None => Ok(msg["result"].clone()),
+                                }
+                            }
+                        };
+                        out.push(ServerEvent::ActionResult { purpose, result });
                         continue;
                     }
                     if let Call::Metadata { purpose } = call {

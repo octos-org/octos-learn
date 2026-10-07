@@ -412,6 +412,119 @@ pub fn note_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         {}
     }}", badge("note", "#aaa194")))
 }
+/// Web MarkdownContent, reduced to plain text: emphasis markers, inline
+/// math delimiters and heading marks are dropped.
+pub fn plain_markdown(text: &str) -> String {
+    text.lines()
+        .map(|l| l.trim_start_matches('#').trim_start().replace("**", "").replace("__", "").replace("$$", "").replace('$', "").replace('`', ""))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+/// Width of a selection enhancement card (web CARD_WIDTH).
+pub const SELECTION_CARD_WIDTH: f64 = 330.;
+/// Selection enhancement card (web .learning-selection-enhancement): the
+/// question, the 小章鱼辅助 header, then the pending/failed placeholder or
+/// the result (title, text, items, plot, unsupported, 系统理解 footer).
+/// `card`: {question, status, error?, artifact?}. The minimize/delete
+/// glyphs sit top-right; SpatialBoard hit-tests them.
+pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
+    let status = card["status"].as_str().unwrap_or("pending");
+    let failed = status == "failed";
+    let pill = match status { "answered" => "已回答", "pending" => "正在准备回答", _ => "没有生成成功" };
+    let mut body = String::new();
+    // Question section.
+    body.push_str(&format!(
+        "View{{width:Fill height:Fit flow:Down padding:Inset{{bottom:13 right:56}}
+            View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}}
+                {}
+                View{{width:Fill height:1}}
+                RoundedView{{width:Fit height:Fit padding:Inset{{left:7 right:7 top:3 bottom:3}} draw_bg +: {{color:#5270681a border_radius:6}}
+                    Label{{width:Fit padding:0 text:\"{pill}\" draw_text.text_style.font_size:7.6 draw_text.color:#66736f}}}}
+            }}
+            {}
+        }}
+        SolidView{{width:Fill height:1 margin:Inset{{bottom:14}} draw_bg.color:#6f613e29}}",
+        text_box("我的问题", 12.7, 1.4, "#5a4c2b", true, false, (0., 4.)),
+        text_box(&plain_markdown(card["question"].as_str().unwrap_or("")), 13., 1.5, "#263936", false, true, (0., 0.)),
+    ));
+    // Header.
+    body.push_str(&format!(
+        "View{{width:Fill height:Fit flow:Down spacing:2 margin:Inset{{bottom:10}}
+            {}
+            {}
+        }}",
+        text_box("小章鱼辅助", 13., 1.3, "#23786f", true, false, (0., 0.)),
+        text_box("来自当前选区", 11., 1.3, "#71817e", false, false, (0., 0.)),
+    ));
+    let artifact = &card["artifact"];
+    if !artifact.is_object() {
+        let (title, text) = if failed {
+            ("回答生成失败", card["error"].as_str().unwrap_or("选区辅助内容生成失败，请重试"))
+        } else {
+            ("正在生成小章鱼辅助", "正在理解这部分内容，完成后会在这里展示。")
+        };
+        body.push_str(&text_box(title, 13., 1.4, "#263936", true, true, (0., 4.)));
+        body.push_str(&text_box(text, 13., 1.5, "#60716d", false, true, (0., 0.)));
+        if !failed {
+            body.push_str("RoundedView{width:174 height:4 margin:Inset{top:16} draw_bg +: {color:#77bcb1 border_radius:2}}");
+        }
+    } else {
+        let response = &artifact["response"];
+        body.push_str(&text_box(&plain_markdown(response["title"].as_str().unwrap_or("")), 14., 1.4, "#263936", true, true, (0., 0.)));
+        body.push_str(&text_box(&plain_markdown(response["text"].as_str().unwrap_or("")), 13., 1.55, "#263936", false, true, (6., 0.)));
+        for item in values(response, "items").iter().filter_map(Value::as_str) {
+            body.push_str(&format!(
+                "View{{width:Fill height:Fit flow:Right padding:Inset{{top:3}}
+                    Label{{width:16 padding:0 text:\"•\" draw_text.text_style.font_size:9.75 draw_text.color:#263936}}
+                    {}
+                }}",
+                text_box(&plain_markdown(item), 13., 1.55, "#263936", false, true, (0., 0.))
+            ));
+        }
+        if response["kind"] == "plot" {
+            body.push_str("View{width:Fill height:Fit margin:Inset{top:10} plot := mod.widgets.SelectionPlotView{}}");
+        }
+        if response["kind"] == "unsupported" {
+            let mut alternatives = String::new();
+            for a in values(response, "alternatives").iter().filter_map(Value::as_str) {
+                alternatives.push_str(&text_box(&format!("• {}", plain_markdown(a)), 13., 1.5, "#823a2b", false, true, (2., 0.)));
+            }
+            body.push_str(&format!(
+                "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:12 right:12 top:10 bottom:10}} margin:Inset{{top:10}}
+                    draw_bg +: {{color:#fff2ece6 border_radius:5 border_size:0.5 border_color:#9f452d38}}
+                    {}
+                    {alternatives}
+                }}",
+                text_box("当前无法生成这个图像", 13., 1.4, "#823a2b", true, true, (0., 5.))
+            ));
+        }
+        let understood = artifact["interpretation"]["content"].as_str().filter(|s| !s.trim().is_empty()).unwrap_or("未能可靠识别");
+        body.push_str(&format!(
+            "SolidView{{width:Fill height:1 margin:Inset{{top:10}} draw_bg.color:#2470681f}}
+            View{{width:Fill height:Fit flow:Right padding:Inset{{top:8}}
+                {}
+                {}
+            }}",
+            text_box("系统理解：", 11., 1.4, "#71817e", false, false, (0., 0.)),
+            text_box(&plain_markdown(understood), 11., 1.4, "#71817e", false, true, (0., 0.)),
+        ));
+    }
+    let (bg, border) = if failed { ("#fff9f4", "#b04c3761") } else { ("#fffdf6", "#24706840") };
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{bg} border_radius:8 border_size:0.5 border_color:{border}}}
+        View{{width:Fill height:Fit flow:Down padding:Inset{{left:16 right:16 top:16 bottom:25}}
+            {body}
+        }}
+        View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} padding:Inset{{right:6 top:8}} spacing:4
+            View{{width:26 height:26 align:Align{{x:0.5 y:0.5}} Label{{width:Fit padding:0 text:\"－\" draw_text.text_style.font_size:10.5 draw_text.color:#6d7c79}}}}
+            View{{width:26 height:26 align:Align{{x:0.5 y:0.5}} Label{{width:Fit padding:0 text:\"✕\" draw_text.text_style.font_size:9.75 draw_text.color:#6d7c79}}}}
+        }}
+    }}"))
+}
+/// A minimized selection card (web .learning-selection-enhancement-pin).
+pub fn selection_pin(cx: &mut Cx) -> Result<WidgetRef, String> {
+    widget(cx, "RoundedView{width:26 height:26 align:Align{x:0.5 y:0.5} draw_bg +: {color:#fffdf6 border_radius:13 border_size:0.5 border_color:#2470684d}
+        Label{width:Fit padding:0 text:\"?\" draw_text.text_style: theme.font_bold{font_size:11.25} draw_text.color:#23786f}}")
+}
 /// Thinking-question card (web `.learning-reflection-card.is-world`): header
 /// "想一想" with a hint, the prompt, and a "查看答案" toggle; the reference
 /// answer shows only when open. The toggle is `toggle` for hit-testing.

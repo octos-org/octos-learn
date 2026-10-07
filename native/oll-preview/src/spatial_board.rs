@@ -100,6 +100,17 @@ pub enum HostCard {
     Question { id: String, text: String, status: String },
     Loading { id: String, title: String, detail: String },
 }
+/// A selection enhancement card on the board (web SelectionEnhancementLayer
+/// item): world source bounds, a saved position (else placed right of the
+/// source like the web), minimized state and the card body.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SelectionCardSpec {
+    pub id: String,
+    pub source: (f64, f64, f64, f64),
+    pub pos: Option<(f64, f64)>,
+    pub minimized: bool,
+    pub body: Value,
+}
 const QUESTION_CARD_WIDTH: f64 = 270.;
 const LOADING_CARD_WIDTH: f64 = 360.;
 const HOST_CARD_GAP: f64 = 24.;
@@ -258,6 +269,13 @@ pub struct SpatialBoard {
     reflection_cards: Vec<(String, String, WorldRect, WidgetRef)>,
     #[rust]
     host_specs: Vec<HostCard>,
+    #[rust]
+    selection_specs: Vec<SelectionCardSpec>,
+    #[rust]
+    selection_cards: Vec<(SelectionCardSpec, WorldRect, WidgetRef)>,
+    /// Card actions for the app: (card id, "minimize" | "expand" | "delete").
+    #[rust]
+    selection_requests: Vec<(String, &'static str)>,
     #[rust]
     host_cards: Vec<(String, WorldRect, WidgetRef)>,
     /// Frame the host cards once the viewport is known (no lesson yet).
@@ -640,6 +658,61 @@ impl SpatialBoard {
             r.y = y;
             x += r.width + HOST_CARD_GAP;
         }
+    }
+    /// Web SelectionEnhancementLayer: cards keep their position once placed.
+    pub fn set_selection_cards(&mut self, cx: &mut Cx, specs: Vec<SelectionCardSpec>) {
+        if specs == self.selection_specs {
+            return;
+        }
+        self.selection_specs = specs.clone();
+        let previous = std::mem::take(&mut self.selection_cards);
+        for spec in specs {
+            let built = if spec.minimized {
+                board_view::selection_pin(cx)
+            } else {
+                board_view::selection_card(cx, &spec.body)
+            };
+            let Ok(w) = built else { continue };
+            if let Some(mut plot) = w.widget(cx, ids!(plot)).borrow_mut::<crate::selection_plot::SelectionPlotView>() {
+                plot.set_response(cx, &spec.body["artifact"]["response"]);
+            }
+            let (width, height) = if spec.minimized {
+                (26., 26.)
+            } else {
+                let old = previous.iter().find(|(s, _, _)| s.id == spec.id && !s.minimized).map(|(_, r, _)| r.height);
+                (board_view::SELECTION_CARD_WIDTH, old.unwrap_or(if spec.body["artifact"]["response"]["kind"] == "plot" { 410. } else { 300. }))
+            };
+            let pos = spec
+                .pos
+                .or_else(|| previous.iter().find(|(s, _, _)| s.id == spec.id).map(|(_, r, _)| (r.x, r.y)))
+                .unwrap_or_else(|| self.open_position(spec.source, width, height));
+            self.selection_cards.push((spec, WorldRect { x: pos.0, y: pos.1, width, height }, w));
+        }
+        self.redraw(cx);
+    }
+    /// Web findOpenWhiteboardPosition (simplified): right of the source,
+    /// moving down past cards and other selection cards.
+    fn open_position(&self, source: (f64, f64, f64, f64), width: f64, height: f64) -> (f64, f64) {
+        let (sx, sy, sw, _) = source;
+        let occupied: Vec<WorldRect> = self
+            .geometry
+            .nodes
+            .values()
+            .copied()
+            .chain(self.host_cards.iter().map(|(_, r, _)| *r))
+            .chain(self.selection_cards.iter().map(|(_, r, _)| *r))
+            .collect();
+        let free = |x: f64, y: f64| {
+            occupied.iter().all(|r| x + width + 24. <= r.x || r.x + r.width + 24. <= x || y + height + 24. <= r.y || r.y + r.height + 24. <= y)
+        };
+        let x = sx + sw + 30.;
+        (0..80).map(|i| sy + i as f64 * 24.).find(|y| free(x, *y)).map_or((x, sy), |y| (x, y))
+    }
+    pub fn selection_card_positions(&self) -> Vec<(String, f64, f64)> {
+        self.selection_cards.iter().map(|(s, r, _)| (s.id.clone(), r.x, r.y)).collect()
+    }
+    pub fn take_selection_requests(&mut self) -> Vec<(String, &'static str)> {
+        std::mem::take(&mut self.selection_requests)
     }
     /// Centre the host cards at scale 1 in the safe area (blank board).
     fn frame_host_cards(&mut self) {
@@ -1908,6 +1981,27 @@ impl Widget for SpatialBoard {
             return;
         }
         let hit = event.hits(cx, self.draw_bg.area());
+        // Selection card glyphs (minimize / delete) and minimized pins.
+        if let Hit::FingerDown(e) = &hit {
+            let w = self.world_point(e.abs);
+            let inside = |x: f64, y: f64, s: f64| w.x >= x && w.x <= x + s && w.y >= y && w.y <= y + s;
+            let tapped = self.selection_cards.iter().find_map(|(spec, r, _)| {
+                if spec.minimized {
+                    inside(r.x, r.y, 26.).then(|| (spec.id.clone(), "expand"))
+                } else if inside(r.x + r.width - 62., r.y + 8., 26.) {
+                    Some((spec.id.clone(), "minimize"))
+                } else if inside(r.x + r.width - 32., r.y + 8., 26.) {
+                    Some((spec.id.clone(), "delete"))
+                } else {
+                    None
+                }
+            });
+            if let Some(request) = tapped {
+                self.selection_requests.push(request);
+                self.redraw(cx);
+                return;
+            }
+        }
         if self.drawing && self.ink_tool == InkTool::Select {
             if let Event::KeyDown(k) = event {
                 if matches!(k.key_code, KeyCode::Delete | KeyCode::Backspace) && self.ink.delete_selection() {
@@ -2147,6 +2241,17 @@ impl Widget for SpatialBoard {
                 host_resized = true;
             }
         }
+        for (spec, r, w) in &mut self.selection_cards {
+            w.draw_walk_all(
+                cx,
+                scope,
+                Walk { abs_pos: Some(dvec2(r.x, r.y)), width: Size::Fixed(r.width), height: if spec.minimized { Size::Fixed(26.) } else { Size::fit() }, ..Default::default() },
+            );
+            let h = w.area().rect(cx).size.y;
+            if h > 0. && (h - r.height).abs() > 1. {
+                r.height = h;
+            }
+        }
         if self.host_frame_pending && self.board.is_none() && self.viewport.size.x > 0. && !self.host_cards.is_empty() {
             self.host_frame_pending = host_resized;
             self.frame_host_cards();
@@ -2238,6 +2343,17 @@ impl Widget for SpatialBoard {
                     self.draw_vector.fill();
                 }
             }
+        }
+        // Web SelectionSourceLink: dashed path from the source ink to its card.
+        for (spec, r, _) in &self.selection_cards {
+            let (sx, sy, sw, sh) = spec.source;
+            let start = ((sx + sw + 4.) as f32, (sy + sh / 2.) as f32);
+            let end_y = (r.y + if spec.minimized { 13. } else { 24. }) as f32;
+            let mid = ((sx + sw + r.x) / 2.) as f32;
+            let pts = [start, (mid, start.1), (mid, end_y), (r.x as f32, end_y)];
+            self.draw_vector.set_color(36. / 255., 112. / 255., 104. / 255., 0.68);
+            let s = 1. / self.camera.scale;
+            crate::geometry_view::dashed(&mut self.draw_vector, &pts, &[8. * s, 6. * s], (3. * s) as f32, makepad_widgets::makepad_draw::vector::LineCap::Round);
         }
         let (mx, my) = self.ink.moving_offset();
         for stroke in self.ink.strokes.iter().filter(|_| !self.ink_hidden) {
@@ -2332,7 +2448,7 @@ impl Widget for SpatialBoard {
             .map(|(id, r)| json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height}))
             .collect::<Vec<_>>();
         let (cursor, complete) = self.board.as_ref().map_or((0, false), |p| (p.cursor, p.complete()));
-        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"angle_controls":self.angle_controls,"host":self.host_cards.iter().map(|(id,r,_)|json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height})).collect::<Vec<_>>(),"bounds":{"x":self.geometry.bounds.x,"y":self.geometry.bounds.y,"width":self.geometry.bounds.width},"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
+        json!({"cursor":cursor,"complete":complete,"camera":{"x":self.camera.x,"y":self.camera.y,"scale":self.camera.scale},"destination":{"x":self.destination.x,"y":self.destination.y,"scale":self.destination.scale},"attachments":attachments,"tracks":self.attachment_cards.iter().filter_map(|(a, _, _, card)| card.borrow::<ControlsCard>().map(|c| json!({"id": a.id, "rows": c.rows().iter().map(|r| &r.alias).collect::<Vec<_>>(), "tracks": c.track_rects()}))).collect::<Vec<_>>(),"angle_controls":self.angle_controls,"host":self.host_cards.iter().map(|(id,r,_)|json!({"id":id,"x":r.x,"y":r.y,"width":r.width,"height":r.height})).collect::<Vec<_>>(),"selection_cards":self.selection_cards.iter().map(|(spec,r,_)|{let (vx,vy)=self.camera.world_to_view(r.x,r.y);json!({"id":spec.id,"minimized":spec.minimized,"screen":[self.viewport.pos.x+vx,self.viewport.pos.y+vy,r.width*self.camera.scale,r.height*self.camera.scale]})}).collect::<Vec<_>>(),"bounds":{"x":self.geometry.bounds.x,"y":self.geometry.bounds.y,"width":self.geometry.bounds.width},"tasks":self.tasks.iter().map(|t| json!({"id": t.progress.task_id, "status": t.progress.status.as_str(), "attempts": t.progress.attempts.len(), "hint": t.current_hint})).collect::<Vec<_>>(),"insets":{"top":self.insets.top,"right":self.insets.right,"bottom":self.insets.bottom,"left":self.insets.left,"occlusions":self.insets.occlusions.iter().map(|o|json!([o.x,o.y,o.width,o.height])).collect::<Vec<_>>()},"manual":self.manual,"targets":self.targets,"nodes":nodes,"ink":self.ink.snapshot(),"drawing":self.drawing,"groups":self.geometry.groups.len(),"connections":self.routes.len(),"connection_segments":self.routes.iter().map(|r|r.points.len().saturating_sub(1)).sum::<usize>(),"transition":!self.manual && self.elapsed<0.68,"viewport":{"x":self.viewport.pos.x,"y":self.viewport.pos.y,"width":self.viewport.size.x,"height":self.viewport.size.y}}).to_string()
     }
 }
 

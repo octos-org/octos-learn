@@ -790,6 +790,9 @@ struct Live {
     /// events with the answers): the pack's canonical source and its key.
     base: Option<String>,
     course: Option<(String, String)>,
+    /// Selection enhancement cards (web selection questions answered
+    /// beside the ink).
+    selection_cards: Vec<SelCard>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
     tts_queue: Vec<(String, String)>,
     tts_inflight: Option<String>,
@@ -823,6 +826,7 @@ impl Live {
             lessons: Vec::new(),
             base: None,
             course: None,
+            selection_cards: Vec::new(),
             tts_queue: Vec::new(),
             tts_inflight: None,
         }
@@ -988,6 +992,9 @@ pub struct App {
     course_session: String,
     #[rust]
     opened_sessions: Vec<String>,
+    /// learning.selection.enhance arguments waiting for their image upload.
+    #[rust]
+    enhance_pending: Vec<(String, serde_json::Value)>,
     #[rust]
     audio_inputs: Vec<AudioDeviceId>,
     /// A voice turn between utterance and transcript (turn id).
@@ -1193,6 +1200,42 @@ const ICON_EYE: &str = include_str!("../assets/icons/eye.svg");
 const ICON_ARROW_RIGHT: &str = include_str!("../assets/icons/arrow-right.svg");
 const ICON_PAUSE: &str = include_str!("../assets/icons/pause.svg");
 const ICON_MIC: &str = include_str!("../assets/icons/mic.svg");
+/// One selection question answered beside the ink (web
+/// SelectionEnhancementLayer item).
+#[derive(Clone, Debug)]
+struct SelCard {
+    turn: String,
+    question: String,
+    /// pending | answered | failed
+    status: String,
+    error: Option<String>,
+    source: (f64, f64, f64, f64),
+    artifact: Option<serde_json::Value>,
+    pos: Option<(f64, f64)>,
+    minimized: bool,
+}
+impl SelCard {
+    fn to_json(&self) -> serde_json::Value {
+        json!({"turn": self.turn, "question": self.question, "status": self.status, "error": self.error,
+            "source": [self.source.0, self.source.1, self.source.2, self.source.3], "artifact": self.artifact,
+            "pos": self.pos.map(|(x, y)| json!([x, y])), "minimized": self.minimized})
+    }
+    fn from_json(v: &serde_json::Value) -> Option<Self> {
+        let n = |v: &serde_json::Value, i: usize| v[i].as_f64().unwrap_or(0.);
+        Some(Self {
+            turn: v["turn"].as_str()?.to_owned(),
+            question: v["question"].as_str().unwrap_or("").to_owned(),
+            // An answer in flight when the app closed cannot resume.
+            status: match v["status"].as_str() { Some("answered") => "answered", _ => "failed" }.to_owned(),
+            error: v["error"].as_str().map(str::to_owned).or_else(|| (v["status"] == "pending").then(|| "回答没有完成，请重新提问".to_owned())),
+            source: (n(&v["source"], 0), n(&v["source"], 1), n(&v["source"], 2), n(&v["source"], 3)),
+            artifact: v["artifact"].is_object().then(|| v["artifact"].clone()),
+            pos: v["pos"].is_array().then(|| (n(&v["pos"], 0), n(&v["pos"], 1))),
+            minimized: v["minimized"].as_bool().unwrap_or(false),
+        })
+    }
+}
+
 /// Dynamic buttons of the selection toolbar and panel.
 #[derive(Clone, Debug)]
 enum SelectionAction {
@@ -2098,9 +2141,9 @@ impl App {
             return;
         }
         if oll_runtime::selection::answer_presentation(tool_id, question, false) != "lesson" {
-            // DIFF: selection enhancement cards (检查并建议 / 生成函数图像 /
-            // free questions answered beside the ink) are the next chunk.
-            self.toast(cx, "这类回答会以批注卡片显示，稍后支持；可以先点「解释这部分」");
+            // DIFF: no AI board writing natively, so answers are cards
+            // (web without the board_writing capability).
+            self.ask_selection_card(cx, question, tool_id);
             return;
         }
         let recognized = state.classification.as_ref().map(|c| c.1.clone());
@@ -2111,6 +2154,117 @@ impl App {
         self.ui.text_input(cx, ids!(sel_input)).set_text(cx, "");
         self.ask_selection_lesson(cx, text);
         self.rebuild_selection_ui(cx);
+    }
+    /// Web sendSelectionQuestion card branch: `learning.selection.enhance`
+    /// with the selection image; the answer artifact becomes a card next to
+    /// the ink.
+    fn ask_selection_card(&mut self, cx: &mut Cx, question: &str, tool_id: &str) {
+        if !self.ensure_classroom(cx) {
+            return;
+        }
+        let session_id = self.board_session_id();
+        let Some(source) = self.selection_source() else { return };
+        let Some(state) = self.selection.as_ref() else { return };
+        let tool = oll_runtime::selection::TOOLS.iter().find(|t| t.id == tool_id);
+        let content_hint = tool.and_then(|t| t.request_content_kind).map(str::to_owned).unwrap_or_else(|| state.content_kind.clone());
+        let board = oll_runtime::selection::board_argument(
+            &format!("learning-board-{session_id}"),
+            self.player.as_ref().map_or(0, |p| p.board.cursor as u64),
+            &state.chosen_targets(),
+        );
+        let turn = server::uuid();
+        let mut args = json!({
+            "turn_id": turn,
+            "learner_request": question,
+            "source": source,
+            "content_hint": content_hint,
+            "tool_id": tool_id,
+            "delivery_mode": "card",
+            "board": board,
+        });
+        if let Some((_, content, confidence)) = &state.classification {
+            if !content.is_empty() {
+                args["recognized_content"] = json!(content);
+            }
+            args["recognition_confidence"] = json!(confidence);
+        }
+        if let Some(p) = &self.player {
+            if !p.board.title.is_empty() {
+                args["lesson_title"] = json!(p.board.title);
+                args["board_summary"] = json!(format!("{}；进度 {}/{}", p.board.title, p.cursor, p.operations.len()));
+            }
+        }
+        let card = SelCard {
+            turn: turn.clone(),
+            question: question.to_owned(),
+            status: "pending".into(),
+            error: None,
+            source: state.selection.bounds,
+            artifact: None,
+            pos: None,
+            minimized: false,
+        };
+        let media = state.media.clone();
+        let png = state.png.clone();
+        if let Some(live) = self.live.as_mut() {
+            live.selection_cards.push(card);
+        }
+        self.ui.text_input(cx, ids!(sel_input)).set_text(cx, "");
+        if let Some(s) = self.selection.as_mut() {
+            s.panel_open = false;
+        }
+        match (media, png) {
+            (Some(path), _) if self.server.logged_in() => self.invoke_enhance(cx, &turn, args, path),
+            (_, Some(png)) => {
+                self.enhance_pending.push((turn.clone(), args));
+                self.server.ensure_login(cx);
+                self.server.upload(cx, "selection.png", "image/png", &png, Some("upload"), &format!("selenh:{turn}"));
+            }
+            _ => self.fail_selection_card(cx, &turn, "选区图片生成失败，请重新框选后再试"),
+        }
+        self.rebuild_selection_ui(cx);
+        self.sync_live(cx);
+        self.save_live(cx);
+    }
+    fn invoke_enhance(&mut self, cx: &mut Cx, turn: &str, mut args: serde_json::Value, path: String) {
+        args["paths"] = json!([path]);
+        let session_id = self.board_session_id();
+        self.ensure_session_open(cx, &session_id);
+        self.server.call(
+            cx,
+            "skill/action/invoke",
+            json!({"session_id": session_id, "action_id": "learning.selection.enhance", "arguments": args}),
+            server::Call::Result { purpose: format!("selenh:{turn}") },
+        );
+    }
+    fn fail_selection_card(&mut self, cx: &mut Cx, turn: &str, message: &str) {
+        if let Some(card) = self.live.as_mut().and_then(|l| l.selection_cards.iter_mut().find(|c| c.turn == turn)) {
+            card.status = "failed".into();
+            card.error = Some(message.to_owned());
+        }
+        self.sync_live(cx);
+        self.save_live(cx);
+    }
+    /// Card glyph taps reported by the board (minimize / expand / delete).
+    fn handle_selection_card_requests(&mut self, cx: &mut Cx) {
+        let requests = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>().map(|mut b| b.take_selection_requests()).unwrap_or_default();
+        if requests.is_empty() {
+            return;
+        }
+        if let Some(live) = self.live.as_mut() {
+            for (id, action) in requests {
+                match action {
+                    "delete" => live.selection_cards.retain(|c| c.turn != id),
+                    _ => {
+                        if let Some(c) = live.selection_cards.iter_mut().find(|c| c.turn == id) {
+                            c.minimized = action == "minimize";
+                        }
+                    }
+                }
+            }
+        }
+        self.sync_live(cx);
+        self.save_live(cx);
     }
     /// Web startDirectLessonGeneration with an ink_selection visual: the
     /// selection image goes along as `paths`.
@@ -2172,6 +2326,7 @@ impl App {
                 Some((q[0].as_str()?.to_owned(), q[1].as_str()?.to_owned(), status.to_owned()))
             })
             .collect();
+        live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
         live.lessons = record["lessons"]
             .as_array()
             .into_iter()
@@ -2451,8 +2606,16 @@ impl App {
     /// on this device (questions, the generated lesson, progress and ink) so
     /// 学习记录 can reopen it offline.
     fn save_live(&mut self, cx: &mut Cx) {
+        let positions = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().map(|b| b.selection_card_positions()).unwrap_or_default();
+        if let Some(live) = self.live.as_mut() {
+            for card in &mut live.selection_cards {
+                if let Some((_, x, y)) = positions.iter().find(|(id, _, _)| *id == card.turn) {
+                    card.pos = Some((*x, *y));
+                }
+            }
+        }
         let (Some(live), Some(dir)) = (self.live.as_ref(), self.live_dir()) else { return };
-        if live.questions.is_empty() {
+        if live.questions.is_empty() && live.selection_cards.is_empty() {
             return;
         }
         let mut checkpoint = self.player.as_ref().and_then(|p| p.checkpoint().ok()).unwrap_or(serde_json::Value::Null);
@@ -2473,6 +2636,7 @@ impl App {
             "title": title,
             "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
             "lessons": live.lessons.iter().map(|(t, src)| json!({"turn_id": t, "source": src})).collect::<Vec<_>>(),
+            "selection_cards": live.selection_cards.iter().map(SelCard::to_json).collect::<Vec<_>>(),
             "course": live.course.as_ref().map(|(p, v)| json!([p, v])),
             "checkpoint": checkpoint,
         });
@@ -2506,6 +2670,7 @@ impl App {
                 Some((q[0].as_str()?.to_owned(), q[1].as_str()?.to_owned(), status.to_owned()))
             })
             .collect();
+        live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
         // Records before topic composition kept one "lesson".
         let entries = record["lessons"].as_array().cloned().unwrap_or_else(|| record["lesson"].is_object().then(|| vec![record["lesson"].clone()]).unwrap_or_default());
         live.lessons = entries
@@ -2632,6 +2797,52 @@ impl App {
                             self.send_question(cx, turn, text, &modality, Some(("ink_selection", path)));
                         }
                         _ => self.fail_question(cx, &turn, "选区图片上传失败，请重新框选后再试"),
+                    }
+                }
+                server::ServerEvent::Uploaded { purpose, paths } if purpose.starts_with("selenh:") => {
+                    let turn = purpose["selenh:".len()..].to_owned();
+                    let Some(index) = self.enhance_pending.iter().position(|(t, _)| *t == turn) else { continue };
+                    let (_, args) = self.enhance_pending.remove(index);
+                    match paths {
+                        Ok(paths) if !paths.is_empty() => self.invoke_enhance(cx, &turn, args, paths[0].clone()),
+                        _ => self.fail_selection_card(cx, &turn, "选区图片上传失败，请重新框选后再试"),
+                    }
+                }
+                server::ServerEvent::ActionResult { purpose, result } => {
+                    let Some(turn) = purpose.strip_prefix("selenh:").map(str::to_owned) else { continue };
+                    // The enhancement artifact (web collectPersistedSelectionEnhancementArtifacts).
+                    fn find_artifact(v: &serde_json::Value, turn: &str) -> Option<String> {
+                        match v {
+                            serde_json::Value::String(s) if s.ends_with(".octos-selection-enhancement.json") && s.contains(turn) => Some(s.clone()),
+                            serde_json::Value::Array(a) => a.iter().find_map(|x| find_artifact(x, turn)),
+                            serde_json::Value::Object(o) => o.get("handle").and_then(|h| h.as_str()).filter(|_| o.values().any(|x| x.as_str().is_some_and(|s| s.ends_with(".octos-selection-enhancement.json")))).map(str::to_owned).or_else(|| o.values().find_map(|x| find_artifact(x, turn))),
+                            _ => None,
+                        }
+                    }
+                    match result {
+                        Ok(value) => match find_artifact(&value, &turn) {
+                            Some(handle) => {
+                                let session = self.board_session_id();
+                                self.server.fetch_file(cx, &session, &handle, &format!("selenh:{turn}"));
+                            }
+                            None => self.fail_selection_card(cx, &turn, "没有生成可显示的选区结果。这个内容可能暂不支持，请重试或改用“问小章鱼”查看原因。"),
+                        },
+                        Err(e) => self.fail_selection_card(cx, &turn, &e),
+                    }
+                }
+                server::ServerEvent::LessonFile { turn_id, body } if turn_id.starts_with("selenh:") => {
+                    let turn = &turn_id["selenh:".len()..];
+                    let artifact = body.ok().and_then(|b| serde_json::from_str::<serde_json::Value>(&b).ok()).filter(|a| a["profile"] == "octos.selection-enhancement" && a["response"].is_object());
+                    match artifact {
+                        Some(artifact) => {
+                            if let Some(card) = self.live.as_mut().and_then(|l| l.selection_cards.iter_mut().find(|c| c.turn == turn)) {
+                                card.status = "answered".into();
+                                card.artifact = Some(artifact);
+                            }
+                            self.sync_live(cx);
+                            self.save_live(cx);
+                        }
+                        None => self.fail_selection_card(cx, turn, "选区辅助内容格式无效"),
                     }
                 }
                 server::ServerEvent::Metadata { purpose, result } => {
@@ -2938,6 +3149,20 @@ impl App {
         let pending = live.pending();
         if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
             board.set_host_cards(cx, cards);
+        }
+        let specs: Vec<spatial_board::SelectionCardSpec> = live
+            .selection_cards
+            .iter()
+            .map(|c| spatial_board::SelectionCardSpec {
+                id: c.turn.clone(),
+                source: c.source,
+                pos: c.pos,
+                minimized: c.minimized,
+                body: json!({"question": c.question, "status": c.status, "error": c.error, "artifact": c.artifact}),
+            })
+            .collect();
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_selection_cards(cx, specs);
         }
         self.ui.widget(cx, ids!(demo_controls)).set_visible(cx, has_lesson);
         self.ui.widget(cx, ids!(outline_trigger)).set_visible(cx, has_lesson);
@@ -3983,6 +4208,7 @@ impl AppMain for App {
         octos_oll_preview::plot_view::script_mod(vm);
         octos_oll_preview::geometry_view::script_mod(vm);
         octos_oll_preview::diagram_view::script_mod(vm);
+        octos_oll_preview::selection_plot::script_mod(vm);
         octos_oll_preview::group_view::script_mod(vm);
         svg_image::script_mod(vm);
         spatial_board::script_mod(vm);
@@ -4060,6 +4286,7 @@ impl AppMain for App {
             if self.selection_poll == 0 {
                 self.sync_selection(cx);
             }
+            self.handle_selection_card_requests(cx);
         }
         if let Event::VideoInputs(inputs) = event {
             self.camera.on_video_inputs(cx, inputs);
