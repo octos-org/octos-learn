@@ -701,6 +701,9 @@ struct Live {
     queued: Option<(String, String)>,
     /// The playing lesson: (turn id, canonical JSONL), cached for reopening.
     lesson: Option<(String, String)>,
+    /// Narration still to synthesize (beat id, text) and the one in flight.
+    tts_queue: Vec<(String, String)>,
+    tts_inflight: Option<String>,
 }
 impl Live {
     fn new() -> Self {
@@ -714,11 +717,43 @@ impl Live {
             jobs: HashMap::new(),
             queued: None,
             lesson: None,
+            tts_queue: Vec::new(),
+            tts_inflight: None,
         }
     }
     fn pending(&self) -> bool {
         self.questions.iter().any(|q| q.2 == "pending")
     }
+}
+
+/// File-safe name for a Beat's narration clip.
+fn tts_file_key(beat: &str) -> String {
+    beat.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect()
+}
+/// Length of a PCM WAV clip in milliseconds (None for other formats).
+fn wav_duration_ms(bytes: &[u8]) -> Option<f64> {
+    if bytes.len() < 44 || &bytes[0..4] != b"RIFF" || &bytes[8..12] != b"WAVE" {
+        return None;
+    }
+    let u16_at = |i: usize| u16::from_le_bytes([bytes[i], bytes[i + 1]]) as f64;
+    let u32_at = |i: usize| u32::from_le_bytes([bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]]) as f64;
+    let (mut pos, mut rate, mut block) = (12usize, 0., 0.);
+    while pos + 8 <= bytes.len() {
+        let size = u32_at(pos + 4) as usize;
+        match &bytes[pos..pos + 4] {
+            b"fmt " if pos + 24 <= bytes.len() => {
+                rate = u32_at(pos + 12);
+                block = u16_at(pos + 20);
+            }
+            b"data" if rate > 0. && block > 0. => {
+                let size = size.min(bytes.len() - pos - 8);
+                return Some(size as f64 / (rate * block) * 1000.);
+            }
+            _ => {}
+        }
+        pos += 8 + size + (size & 1);
+    }
+    None
 }
 
 fn tapped(cx: &mut Cx, event: &Event, target: &WidgetRef) -> bool {
@@ -1547,6 +1582,55 @@ impl App {
             self.ui.redraw(cx);
         }
     }
+    fn live_tts_dir(&self) -> Option<std::path::PathBuf> {
+        let live = self.live.as_ref()?;
+        self.store.as_ref().map(|s| s.dir().join("tts").join(&live.session_id))
+    }
+    /// Web useOllNarrationTts for generated lessons: every narrated Beat is
+    /// synthesized with the profile's TTS (/api/voice/synthesize), cached on
+    /// this device and played as the Beat's narration clip. Without a
+    /// working TTS route the lesson keeps its text-timed, silent narration.
+    fn start_live_tts(&mut self, cx: &mut Cx) {
+        let Some(player) = self.player.as_ref() else { return };
+        let beats: Vec<(String, String)> = player
+            .operations
+            .iter()
+            .filter(|op| op["type"] == "narration.begin")
+            .filter_map(|op| Some((op["beat_id"].as_str()?.to_owned(), op["narration"]["text"].as_str()?.to_owned())))
+            .filter(|(_, text)| !text.trim().is_empty())
+            .collect();
+        let dir = self.live_tts_dir();
+        let mut queue = Vec::new();
+        for (beat, text) in beats {
+            let cached = dir.as_ref().map(|d| d.join(format!("{}.audio", tts_file_key(&beat))));
+            match cached.filter(|p| p.exists()) {
+                Some(path) => self.register_narration_clip(&beat, path),
+                None => queue.push((beat, text)),
+            }
+        }
+        if let Some(live) = self.live.as_mut() {
+            live.tts_queue = queue;
+            live.tts_inflight = None;
+        }
+        self.next_live_tts(cx);
+    }
+    fn next_live_tts(&mut self, cx: &mut Cx) {
+        let Some(live) = self.live.as_mut() else { return };
+        if live.tts_inflight.is_some() || live.tts_queue.is_empty() || self.narration_muted {
+            return;
+        }
+        let (beat, text) = live.tts_queue.remove(0);
+        live.tts_inflight = Some(beat.clone());
+        self.server.synthesize(cx, &text, &format!("narration:{beat}"));
+    }
+    fn register_narration_clip(&mut self, beat: &str, path: std::path::PathBuf) {
+        if let Some(ms) = std::fs::read(&path).ok().and_then(|b| wav_duration_ms(&b)) {
+            if let Some(p) = self.player.as_mut() {
+                p.narration_durations.insert(beat.to_owned(), ms);
+            }
+        }
+        self.narration_audio.insert(beat.to_owned(), path);
+    }
     /// Play synthesized speech bytes (setup preview / narration).
     fn play_speech(&mut self, cx: &mut Cx, audio: &[u8], tag: &str) -> Result<(), String> {
         let dir = self.store.as_ref().map(|s| s.dir().join("tts")).ok_or("没有本机存储目录")?;
@@ -1699,6 +1783,7 @@ impl App {
                         }
                     }
                     self.player = Some(session);
+                    self.start_live_tts(cx);
                 }
                 Err(e) => self.toast(cx, &format!("无法恢复这节课：{e}")),
             }
@@ -1770,6 +1855,38 @@ impl App {
                     }
                 }
                 server::ServerEvent::Speech { purpose, audio } => {
+                    if let Some(beat) = purpose.strip_prefix("narration:") {
+                        let current = self.live.as_ref().and_then(|l| l.tts_inflight.clone());
+                        if current.as_deref() != Some(beat) {
+                            continue;
+                        }
+                        if let Some(l) = self.live.as_mut() {
+                            l.tts_inflight = None;
+                        }
+                        match audio {
+                            Ok(bytes) => {
+                                if let Some(dir) = self.live_tts_dir() {
+                                    let path = dir.join(format!("{}.audio", tts_file_key(beat)));
+                                    if std::fs::create_dir_all(&dir).and_then(|_| std::fs::write(&path, &bytes)).is_ok() {
+                                        self.register_narration_clip(beat, path);
+                                        self.sync_narration_audio(cx);
+                                    }
+                                }
+                                self.next_live_tts(cx);
+                            }
+                            Err(e) => {
+                                // No TTS route (e.g. no on-device voice): keep
+                                // the silent, text-timed narration.
+                                if let Some(l) = self.live.as_mut() {
+                                    l.tts_queue.clear();
+                                }
+                                if std::env::var_os("OCTOS_SERVER_DEBUG").is_some() {
+                                    eprintln!("[octos-server] narration TTS unavailable: {e}");
+                                }
+                            }
+                        }
+                        continue;
+                    }
                     if purpose == "preview" {
                         let message = match audio.and_then(|a| self.play_speech(cx, &a, "preview")) {
                             Ok(()) => "试听已播放。如果没有听到，请检查音量和输出设备。".to_owned(),
@@ -1877,6 +1994,8 @@ impl App {
                 }
                 self.player = Some(session);
                 self.lesson_released = false;
+                self.narration_audio.clear();
+                self.start_live_tts(cx);
                 self.sync_live(cx);
                 self.start_playback(cx);
                 self.refresh(cx);
@@ -3435,6 +3554,27 @@ impl AppMain for App {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn wav_duration_reads_pcm_headers() {
+        // 16 kHz mono 16-bit, 32000 data bytes = 1000 ms.
+        let mut wav = Vec::new();
+        wav.extend_from_slice(b"RIFF");
+        wav.extend_from_slice(&(36u32 + 32000).to_le_bytes());
+        wav.extend_from_slice(b"WAVEfmt ");
+        wav.extend_from_slice(&16u32.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes());
+        wav.extend_from_slice(&1u16.to_le_bytes());
+        wav.extend_from_slice(&16000u32.to_le_bytes());
+        wav.extend_from_slice(&32000u32.to_le_bytes());
+        wav.extend_from_slice(&2u16.to_le_bytes());
+        wav.extend_from_slice(&16u16.to_le_bytes());
+        wav.extend_from_slice(b"data");
+        wav.extend_from_slice(&32000u32.to_le_bytes());
+        wav.resize(wav.len() + 32000, 0);
+        assert_eq!(super::wav_duration_ms(&wav), Some(1000.));
+        assert_eq!(super::wav_duration_ms(b"ID3 not a wav file at all, mp3 bytes........"), None);
+    }
+
     use serde_json::json;
     #[test]
     fn packs_group_into_editorial_collections_like_the_web() {

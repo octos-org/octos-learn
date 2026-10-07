@@ -3,7 +3,7 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（新手设置页）
+最后更新：2026-10-07（生成课程的旁白 TTS）
 
 ## 0. 目标
 
@@ -137,7 +137,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - OLL `adfa0ff` 课程生成格式：移植 Web `materializeOllLesson`（authoring → canonical），OLL 全部示例与 Web 输出一致，本地生成的课程可在原生播放到底
 - `9eb25c7` 服务端第一块：`src/server.rs`（solo 登录、ui-protocol WebSocket JSON-RPC、协商 ui_feature、会话文件下载）；「新建空白白板」打开实时白板（启动器按钮与学习记录抽屉）；输入栏改成真正的文本框，回车或发送按钮提问 → `skill/action/invoke learning.lesson.generate` → 等待 job → 下载 `.octos-lesson.json` → 原生物化后播放；「我的问题」卡（正在准备回答 / 已回答 / 没有生成成功）与「正在搭建这节课」加载卡（同 Web 位置），老师「正在想 / 轻触开始」；白板根 turtle 改为不裁剪（世界坐标可为负）；含中文 `\text` 的公式卡宽度估计加余量。已用本地 octos 实测（勾股定理、质数、相反数、绝对值、倒数）
 - `ba269da` 实时白板保存到本机（`<数据目录>/live/<session>.json`：问题、生成的课程 canonical、播放进度与笔迹），学习记录里显示为「自由白板」，点开恢复到保存时的状态（离线可用；生成中的问题恢复为「没有生成成功」）
-- （本次提交）新手设置页（Web SetupWhiteboard）：首次打开实时白板时显示，三张卡片——连接模型（Google Gemini、模型名称、API Key，`/api/my/test-provider` 测试后 `PUT /api/my/profile` 保存，显示 Web 的保存结果文案）、旁白语音（试听 `/api/voice/synthesize`，可展开填写个人火山 TTS 并保存试听）、使用提示；「进入我的白板 / 先用白板，稍后设置 AI」记住跳过（`setup-skipped-<profile>`）。DIFF：老师形象选择器未做（原生只有 Ocean），「完整设置」入口为提示
+- `7962cd9` 新手设置页（Web SetupWhiteboard）：首次打开实时白板时显示，三张卡片——连接模型（Google Gemini、模型名称、API Key，`/api/my/test-provider` 测试后 `PUT /api/my/profile` 保存，显示 Web 的保存结果文案）、旁白语音（试听 `/api/voice/synthesize`，可展开填写个人火山 TTS 并保存试听）、使用提示；「进入我的白板 / 先用白板，稍后设置 AI」记住跳过（`setup-skipped-<profile>`）。DIFF：老师形象选择器未做（原生只有 Ocean），「完整设置」入口为提示
+- （本次提交）生成课程旁白（Web useOllNarrationTts）：课程载入/恢复时按 Beat 逐个调用 `/api/voice/synthesize`，缓存到 `<数据目录>/tts/<session>/`，作为该 Beat 的旁白片段播放，WAV 时长作为 Beat 时长；TTS 不可用时保持无声、按文本计时。本机服务 TTS 返回 502，只验证了失败路径与 WAV 时长解析，**需在另一台电脑验证有声播放**
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
