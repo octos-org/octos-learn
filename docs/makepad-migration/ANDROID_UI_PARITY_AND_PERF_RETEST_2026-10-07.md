@@ -107,3 +107,12 @@ ADB=/opt/homebrew/bin/adb
 - 共享预览：同样命令，17 passed。Android release构建、javac/D8、zipalign、签名和aapt身份检查通过。
 - 完整本机证据：`/Users/alan0x/Documents/projects/octos-learn/.local-dev/android-update-0960f29/`。APK、截图、完整日志不进 git；可分享的 profiler/尺寸/线程/帧统计和保留证据在 `evidence/android-retest-2026-10-07/`，不含用户输入或凭据。
 - 最终交付启动会关闭 perf、回到原生首页，保留旧Web应用；用户从「Octos Learn 原生测试」继续测试即可。
+
+## 最终交付身份
+
+- APK 从干净、已提交源码 `72f29b3e9a55093127499c616b54230110b717f2` 构建，`productDirty=false`。本节及最终证据是后续文档提交，未再改源码。
+- 大小 `83,667,282` bytes；SHA-256 `752dcce00fbe8c0c120d828b39d57483d28f2e305eb44d64084103de69abcdf2`。
+- 安装成功后重新 pull 设备上的 `base.apk`，SHA-256 与上述文件完全相同；包版本经 `dumpsys package` 确认为 `202610071 / 0.1.0-makepad-test-20261007.2`。
+- 最终首页诊断：初始化阶段 Draw 2次合计570ms、Startup270ms；随后数十秒仅Timer、没有新Draw，busy约4%、原生UI线程约4–5%单核。最终证据为 `final-home-perf.txt` / `final-home-top.txt`，区别于上面的早期同源码诊断样本。
+- Web 包安装身份再次比较完全相同。诊断结束后无extra正常启动，perf默认关闭，ADB reverse50080仍在，旧Web包保留。
+- [产物清单](evidence/android-retest-2026-10-07/apk-build.json)、[最终首页日志](evidence/android-retest-2026-10-07/final-home-perf.txt)、[课程播放日志](evidence/android-retest-2026-10-07/playback-perf.txt)、[帧统计](evidence/android-retest-2026-10-07/frame-analysis-final.json)、[Web保留证据](evidence/android-retest-2026-10-07/web-preservation.json)。
