@@ -12,6 +12,8 @@ mod server;
 mod voice;
 mod camera;
 mod ink_question;
+mod settings;
+use settings::SettingsState;
 use camera::Camera;
 use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogAction};
 use voice::Voice;
@@ -61,9 +63,12 @@ script_mod! {
                                             View { width: Fit height: Fit padding: Inset{top: 3.04 bottom: 3.04 left: 0}
     Label { width: Fit padding: 0 text: "Octos Learn" draw_text.text_style: theme.font_bold{font_size: 14.25 line_spacing: 1.271} draw_text.color: #243b40 } }
                                             View { width: Fill height: 1 }
-                                            // DIFF: no login/account system in this version.
-                                            View { width: Fit height: Fit padding: Inset{top: 2.24 bottom: 2.24 left: 0}
-    Label { width: Fit padding: 0 text: "登录" draw_text.text_style: theme.font_regular{font_size: 10.50 line_spacing: 1.271} draw_text.color: #244f5a } }
+                                            // Web course-launcher nav (signed in): 设置. DIFF: the solo
+                                            // owner is signed in automatically, so there is no 退出.
+                                            launcher_settings := Button { height: 36 text: "设置" spacing: 6 padding: Inset{left: 10 right: 10} margin: 0
+                                                icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #244f5a }
+                                                draw_text.color: #244f5a draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #e9ece6 color_down: #dfe4dd border_radius: 5 border_size: 0 border_color: #0000 } }
                                         }
                                         SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } }
                                     }
@@ -591,6 +596,42 @@ script_mod! {
                         }
                     }
                     // Confirmation (web window.confirm).
+                    // Settings (web /settings: StudioTopbar + sidebar + tab body).
+                    settings_page := SolidView { visible: false width: Fill height: Fill flow: Down draw_bg.color: #f1f0ed
+                        SolidView { width: Fill height: 82 flow: Right align: Align{y: 0.5} padding: Inset{left: 20 right: 20} spacing: 12 draw_bg.color: #f7f6f3
+                            settings_back := Button { width: 36 height: 36 text: "" margin: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #3b3b39 }
+                                draw_bg +: { color: #0000 color_hover: #e9e8e4 color_down: #deddd9 border_radius: 6 border_size: 0 border_color: #0000 } }
+                            RoundedView { width: 40 height: 40 align: Align{x: 0.5 y: 0.5} draw_bg +: { color: #e6e5e1 border_radius: 20 }
+                                settings_gear := Button { width: 40 height: 40 text: "" margin: 0 padding: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #2b2b29 }
+                                    draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } } }
+                            View { width: Fill height: Fit flow: Down spacing: 2
+                                Label { width: Fit padding: 0 text: "OCTOS LEARN" draw_text.text_style: theme.font_code{font_size: 8.25} draw_text.color: #5f5f5b }
+                                Label { width: Fit padding: 0 text: "Settings" draw_text.text_style: theme.font_bold{font_size: 13.5} draw_text.color: #1c1c1b }
+                                Label { width: Fit padding: 0 text: "Profile, companion, models, voice, and access" draw_text.text_style.font_size: 9 draw_text.color: #5f5f5b }
+                            }
+                            settings_setup := Button { height: 36 text: "新手设置白板" margin: 0 padding: Inset{left: 10 right: 10}
+                                draw_text.color: #1c1c1b draw_text.text_style.font_size: 10.5
+                                draw_bg +: { color: #0000 color_hover: #e9e8e4 color_down: #deddd9 border_radius: 6 border_size: 0 border_color: #0000 } }
+                        }
+                        SolidView { width: Fill height: 1 draw_bg.color: #dcdbd7 }
+                        View { width: Fill height: Fill flow: Right
+                            SolidView { width: 240 height: Fill flow: Down padding: Inset{left: 12 right: 12 top: 16} draw_bg.color: #ebeae6
+                                settings_search := TextInput { width: Fill height: Fit padding: Inset{left: 14 right: 12 top: 10 bottom: 10} margin: Inset{left: 4 right: 0 bottom: 12}
+                                    empty_text: "Find a setting..."
+                                    draw_bg +: { color: #e6e5e1 color_hover: #e6e5e1 color_focus: #e6e5e1 color_down: #e6e5e1 color_empty: #e6e5e1 border_radius: 6 border_size: 0.5
+                                        border_color: #cfceca border_color_hover: #cfceca border_color_focus: #a9a8a4 border_color_down: #cfceca border_color_empty: #cfceca }
+                                    draw_text +: { color: #1c1c1b color_hover: #1c1c1b color_focus: #1c1c1b color_down: #1c1c1b color_empty: #8a8a85 color_empty_hover: #8a8a85 color_empty_focus: #8a8a85 text_style.font_size: 10.5 }
+                                    draw_cursor +: { color: #1c1c1b } }
+                                settings_nav := View { width: Fill height: Fit flow: Down }
+                            }
+                            SolidView { width: 1 height: Fill draw_bg.color: #dcdbd7 }
+                            ScrollYView { width: Fill height: Fill flow: Down
+                                View { width: Fill height: Fit flow: Down align: Align{x: 0.5} padding: Inset{top: 24 bottom: 48}
+                                    settings_body := View { width: 768 height: Fit flow: Down }
+                                }
+                            }
+                        }
+                    }
                     confirm_dialog := View { visible: false width: Fill height: Fill flow: Overlay
                         SolidView { width: Fill height: Fill draw_bg.color: #152c2b55 }
                         View { width: Fill height: Fill align: Align{x: 0.5 y: 0.4}
@@ -995,6 +1036,12 @@ pub struct App {
     /// learning.selection.enhance arguments waiting for their image upload.
     #[rust]
     enhance_pending: Vec<(String, serde_json::Value)>,
+    /// Settings page (web /settings).
+    #[rust]
+    settings: SettingsState,
+    /// Show the setup whiteboard even after it was skipped (新手设置白板).
+    #[rust]
+    setup_force: bool,
     #[rust]
     audio_inputs: Vec<AudioDeviceId>,
     /// A voice turn between utterance and transcript (turn id).
@@ -1253,13 +1300,16 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 14] = [
+    let icons: [(LiveId, &str); 17] = [
         (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
         (live_id!(voice), include_str!("../assets/icons/mic-off.svg")),
         (live_id!(camera), include_str!("../assets/icons/camera-off.svg")),
         (live_id!(sel_ask), include_str!("../assets/icons/message-circle.svg")),
+        (live_id!(launcher_settings), include_str!("../assets/icons/settings.svg")),
+        (live_id!(settings_back), include_str!("../assets/icons/arrow-left.svg")),
+        (live_id!(settings_gear), include_str!("../assets/icons/settings.svg")),
         (live_id!(back), include_str!("../assets/icons/house.svg")),
         (live_id!(settings), include_str!("../assets/icons/menu.svg")),
         (live_id!(history_close), include_str!("../assets/icons/x.svg")),
@@ -1667,7 +1717,7 @@ impl App {
         if !std::mem::take(&mut self.setup_check) {
             return;
         }
-        if self.setup_skip_path().is_some_and(|p| p.exists()) {
+        if !std::mem::take(&mut self.setup_force) && self.setup_skip_path().is_some_and(|p| p.exists()) {
             return;
         }
         self.ui.widget(cx, ids!(setup_page)).set_visible(cx, true);
@@ -1773,11 +1823,14 @@ impl App {
                 self.save_setup_profile(cx, patch);
             }
         }
-        if self.ui.button(cx, ids!(setup_full_settings)).clicked(actions)
-            || self.ui.button(cx, ids!(setup_full_model)).clicked(actions)
-            || self.ui.button(cx, ids!(setup_voice_settings)).clicked(actions)
-        {
-            self.toast(cx, "完整设置页稍后支持，先在这里完成新手设置");
+        if self.ui.button(cx, ids!(setup_full_settings)).clicked(actions) {
+            self.open_settings(cx, settings::Tab::Profile);
+        }
+        if self.ui.button(cx, ids!(setup_full_model)).clicked(actions) {
+            self.open_settings(cx, settings::Tab::Llm);
+        }
+        if self.ui.button(cx, ids!(setup_voice_settings)).clicked(actions) {
+            self.open_settings(cx, settings::Tab::Voice);
         }
         if self.ui.button(cx, ids!(setup_enter)).clicked(actions) {
             if let Some(path) = self.setup_skip_path() {
@@ -2714,6 +2767,9 @@ impl App {
     }
     fn handle_server(&mut self, cx: &mut Cx, event: &Event) {
         for ev in self.server.handle(cx, event) {
+            if self.settings_server_event(cx, &ev) {
+                continue;
+            }
             match ev {
                 server::ServerEvent::LoggedIn => {
                     self.start_classification(cx);
@@ -2845,6 +2901,7 @@ impl App {
                         None => self.fail_selection_card(cx, turn, "选区辅助内容格式无效"),
                     }
                 }
+                server::ServerEvent::Json { .. } => {}
                 server::ServerEvent::Metadata { purpose, result } => {
                     let Some(key) = purpose.strip_prefix("selclass:") else { continue };
                     let Some(s) = self.selection.as_mut().filter(|s| s.key == key) else { continue };
@@ -4544,6 +4601,7 @@ impl AppMain for App {
                 }
             }
             self.setup_actions(cx, actions);
+            self.settings_actions(cx, actions);
             if self.ui.button(cx, ids!(ask_send)).clicked(actions)
                 || self.ui.text_input(cx, ids!(ask_input)).returned(actions).is_some()
             {

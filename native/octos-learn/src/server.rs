@@ -49,6 +49,7 @@ enum Http {
     SaveProfile,
     Speech { purpose: String },
     Upload { purpose: String },
+    Json { purpose: String },
 }
 
 /// What a JSON-RPC call was for.
@@ -107,6 +108,8 @@ pub enum ServerEvent {
     /// Result of a `Call::Metadata` invocation.
     Metadata { purpose: String, result: Result<Value, String> },
     ActionResult { purpose: String, result: Result<Value, String> },
+    /// A generic REST call (`Server::json`).
+    Json { purpose: String, result: Result<Value, String> },
 }
 
 /// Web formatSettingsError: the server's JSON error/message, else the text.
@@ -287,6 +290,14 @@ impl Server {
         req.set_body_string(&body.to_string());
         self.http(cx, req, Http::TestProvider);
     }
+    /// Any JSON REST endpoint of the profile API (gateway start/stop, …).
+    pub fn json(&mut self, cx: &mut Cx, method: HttpMethod, path: &str, body: Option<Value>, purpose: &str) {
+        let mut req = self.request(path, method);
+        if let Some(body) = body {
+            req.set_body_string(&body.to_string());
+        }
+        self.http(cx, req, Http::Json { purpose: purpose.into() });
+    }
     pub fn save_profile(&mut self, cx: &mut Cx, body: Value) {
         let mut req = self.request("/api/my/profile", HttpMethod::PUT);
         req.set_body_string(&body.to_string());
@@ -404,6 +415,14 @@ impl Server {
                         } else {
                             Err(error_text(status, &body))
                         })),
+                        Http::Json { purpose } => out.push(ServerEvent::Json {
+                            purpose,
+                            result: if (200..300).contains(&status) {
+                                Ok(serde_json::from_str(&body).unwrap_or(Value::Null))
+                            } else {
+                                Err(error_text(status, &body))
+                            },
+                        }),
                         Http::Upload { purpose } => out.push(ServerEvent::Uploaded {
                             purpose,
                             paths: if (200..300).contains(&status) {
@@ -440,6 +459,7 @@ impl Server {
                         Http::SaveProfile => out.push(ServerEvent::ProfileSaved(Err(error.message.clone()))),
                         Http::Speech { purpose } => out.push(ServerEvent::Speech { purpose, audio: Err(error.message.clone()) }),
                         Http::Upload { purpose } => out.push(ServerEvent::Uploaded { purpose, paths: Err(error.message.clone()) }),
+                        Http::Json { purpose } => out.push(ServerEvent::Json { purpose, result: Err(error.message.clone()) }),
                     }
                 }
                 NetworkResponse::WsOpened { socket_id } if *socket_id == self.socket => {

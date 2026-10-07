@@ -833,6 +833,7 @@ dependencies = [
  "makepad-widgets",
  "octos-oll-preview",
  "oll-runtime",
+ "regex",
  "serde_json",
 ]
 

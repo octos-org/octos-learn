@@ -10,6 +10,7 @@ makepad-widgets = { path = "../../../makepad/widgets" }
 makepad-latex-math = { path = "../../../makepad/libs/latex_math" }
 makepad-plot = { path = "../../../octoscript-makepad/crates/makepad-plot" }
 serde_json = { version = "1", features = ["float_roundtrip"] }
+regex = "1"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 
 [patch."https://github.com/OctoSense-org/makepad.git"]
