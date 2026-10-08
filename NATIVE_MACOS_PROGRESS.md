@@ -194,6 +194,12 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - （本次提交）启动器（首页 / 课程集）滚动改为纹理缓存：新组件 `src/scroll_cache.rs` 的 `ScrollCache` 取代 `launcher_scroll` 的 ScrollYView。内容只在自身重绘（换页、hover、重建）或宽度变化时渲染一次到纹理（独立 pass，原点固定），滚动只移动一个按设备像素对齐的纹理四边形；触摸拖动 / 惯性 / 滚轮沿用 Makepad ScrollBar。内容指针事件按滚动偏移映射（按下期间用按下时的偏移，拖动滚页不会被当成点击）；`handle_launcher_taps` 用映射后的事件，“⋯”菜单位置用 `to_screen` 换算。依据：GPT 真机分段（`docs/makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md`）——`tinyredraw,batch` 时 CPU 事件 12.6→3.2ms 而帧间隔仍约 40ms，静止页面每帧 GPU 重绘本身就超出 33ms；卡片文字、缩略图、卡片背景分别贡献约 8.5 / 7.5 / 4ms wait。Mac 同构建 A/B（课程集滚动，`OCTOS_BISECT=nocache` 为每帧重渲染）：每帧 GPU 1.25→0.3ms，应用 Draw 0.13→0.03ms；窗口 pass 由约 64 次 draw call / 631 实例降到 6 / 20。新增 `OCTOS_CENSUS=1`（每秒按 shader 统计主 pass draw call、实例与覆盖面积）。已知限制：内容高度超过 8192 物理像素不缓存完整（目前页面远小于此，会打日志）；发现应用对任何 widget action 都重绘整个 UI（会让缓存失效，ScrollCache 因此不发 action），记为后续优化。Mac 实测：滚轮 / 拖动滚动、滚动后点卡片、⋯ 菜单位置、预览 / 开始互动、从课程返回后滚动均正常；cargo test 14 passed
 - （本次提交）修 GPT 真机复测（`docs/makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md`，缓存后课程集 Draw 间隔 17.7ms / nocache 70.4ms，首页 18.2 / 54.9ms）发现的三个问题：①首页从卡片起手竖直拖动抬手误开课程集——ScrollCache 在 UI 处理完抬手事件后就清掉按下时的偏移，启动器点击判定随后用滚动后的偏移映射，手指位移被抵消成「点击」；改为保留到下一个事件。②「⋯」菜单点外部不关闭——外部判定只认 MouseDown（安卓触摸从来不走这里，原有问题），且本次改动后用了内容坐标；改为屏幕坐标并支持触摸按下。③菜单「重新开始 / 删除学习记录」无反应——菜单浮在缓存外的屏幕空间，却用内容坐标判定（本次改动引入）；`handle_launcher_taps` 现在同时拿屏幕与内容两种事件。Mac 实测三项均正常；触摸关闭菜单需真机确认
 - （本次提交）问题 15 颜色失真：Web `#168398` 在安卓上显示为 `#1683d8`、`#7a5aa3` 为 `#7a5ae3`（蓝 +64）。根因：Makepad `pack_unorm8x4` 把 RGBA 按位存进一个 f32（alpha 在最高字节），不透明且蓝 ≥ 0x80 时这个 f32 是 NaN；GLES 顶点属性按 float 读取时驱动（Mali）把 NaN「静默化」，置位 bit22 = 蓝通道 bit6。Mac（Metal）同一构建颜色正确（像素计数 #168398 5378 / #1683d8 0），证明是 GL 读取环节。修复（Makepad 补丁 `native/patches/makepad-825dbb4-vector-color-unorm8.patch`，7 个文件 +52/-10）：`VectorVertexPacked.color` 改为 `UNorm8x4`（`#[repr(C)]`），GPU 直接按归一化字节读颜色、不再经过 float；矢量、SVG、地图三个着色器改读 `self.geom.color`；几何布局检查允许未分类型的 `Vec<f32>` 缓冲匹配「f32 通道 + 位打包 U8x4Norm 颜色」的布局（仍拒绝其他紧凑布局）。缓冲字节不变、CPU 打包不变，覆盖滑块、卡片状态边框和所有 DrawVector / Svg 颜色，透明度语义不变。Makepad 测试：布局测试更新 + 新增 #168398/#7a5aa3 等颜色字节精确测试、几何布局匹配测试，全部通过；Mac 渲染与补丁前逐像素相同。`build.rs` 检查 Makepad 已打补丁。**安卓需按补丁重新打包验证颜色**
+- （本次提交）问题清单第二块（视觉）：
+  - 5/6 图标偏左：Makepad Button 布局是「图标 + spacing（theme.space_2）+ 文字」再整体居中，空文字时图标向左偏半个 spacing。所有纯图标按钮（`text:""`，28 处：白板左上、顶栏播放组、工具栏、输入栏、设置页等）加 `spacing: 0`。
+  - 3「探索 / 大图」上部被切、12「老师正在演示这个变量…」提示被切：两者都按 Web 画在视图上沿之外（工具条 margin-top -3px；提示在面板上沿 y-9），而 DrawVector / DrawText 按所在 turtle 裁剪。`geometry_view` / `plot_view` / `controls_view` 的绘制 turtle 向上扩出相应高度，位置不变。
+  - 7 hover 后白字：Makepad 主题按钮文字 hover / focus / 按下时变白（`color_label_inner_hover`）。新增 `src/button_theme.rs` 在 makepad_widgets 之后重定义 `mod.widgets.Button` 的文字颜色：除禁用外始终用 `color`（Web 只变底色）。
+  - 9 选区快捷按钮 hover 出现边框：按钮 hover / 按下 / 焦点边框色跟随主题，另有主题斜面渐变。快捷按钮的这几种边框色固定为常态色，关掉 `border_color_2` 渐变。
+  - 4 卡片边界：与 Web（`.board-node`：1px #d8d0c2 + `box-shadow 0 8px 24px rgba(68,57,41,.08)`）逐像素对比：原生边框只有约一半粗细与深度、没有阴影。白板卡片根改为 RoundedShadowView（同 Web 阴影），`board_view.rs` 全部边框 0.5→1.0；对比后原生边框中心像素与 Web 同为 #d8d0c2。另发现工具栏 / 顶栏等浮层的边框同样偏浅且缺 Web 阴影，不在问题 4 范围，留待用户决定是否统一
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -213,7 +219,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 6. 2026-10-08 用户问题清单（先问清再修；每完成一块提交推送并更新本文档）。用户决定：问题 15 允许最小 Makepad 补丁；问题 1/2 用 Rust 解码 MP3 + Makepad 音频输出（三平台同一路径，课程时钟跟随音频采样位置，可加解码 crate）；Windows 只实现 + `cargo check`（可装 Windows target，实测由用户/GPT 做）；问题 4 先对齐 Web，仍不清楚再出对比图让用户决定。
    - [x] 15 颜色失真（蓝通道 +64）
-   - [ ] 3 GEOMETRY/PLOT「探索」「大图」上部被切；5 白板左上 home/menu/back 图标偏左；6 工具栏图标偏左；7 带文字按钮 hover 后白字浅底；9 选区快捷按钮 hover 边框（Web 无）；12 滑块「老师正在控制」提示被切；4 卡片边界不清楚
+   - [x] 3 GEOMETRY/PLOT「探索」「大图」上部被切；5 白板左上 home/menu/back 图标偏左；6 工具栏图标偏左；7 带文字按钮 hover 后白字浅底；9 选区快捷按钮 hover 边框（Web 无）；12 滑块「老师正在控制」提示被切；4 卡片边界不清楚（已按 Web 对齐，待用户看效果）
    - [ ] 8 小章鱼辅助卡片右上两按钮无效、删除图标不对、不能拖动；10 「我的问题」与课程卡片没避开笔迹与辅助卡；11 擦除笔迹后关联辅助卡不消失；13 空白板的辅助卡带到预制课程白板（笔迹却消失）
    - [ ] 14 安卓白板双指缩放
    - [ ] 1 旁白读不完（Android/Windows 纯音频入口为空实现）；2 课程时钟与音频末尾几十到一百多毫秒偏差
@@ -251,7 +257,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 ## 8. Makepad 踩坑备忘
 
-- **`border_size` 实际画 2×宽度**（`stroke_keep` 取 |d| < width）：1px 边框写 0.5。
+- ~~`border_size` 实际画 2×宽度，1px 边框写 0.5~~（2026-10-08 与 Web 逐像素对比推翻：RoundedView `border_size: 0.5` 只有约 0.5px、颜色约为 Web 一半深；Web 1px 边框要写 `1.0`。白板卡片已改，其余界面待统一）
 - **`border_radius` 实际效果是 2×r**（`sdf.box` 内部 `k = min(2r, …)`）：CSS 写 16px 圆角，DSL 要写 8。DrawVector 的 `rounded_rect` 是真实半径，不受影响。
 
 - `#[derive(Script)]` 字段类型不能写 `::` 限定路径（如 `std::time::Instant`），要先 `use` 再写短名。

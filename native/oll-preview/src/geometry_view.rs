@@ -267,7 +267,10 @@ impl Widget for GeometryView {
         // DrawVector maps through the current turtle: draw inside one pinned
         // to this view (outside the board world it is not at the origin).
         cx.begin_turtle(
-            Walk { abs_pos: Some(rect.pos), width: Size::Fixed(rect.size.x), height: Size::Fixed(rect.size.y), ..Default::default() },
+            // Starts above the view: the toolbar pills sit TOOLBAR_TOP (-3) above
+            // it plus their 1px stroke (web margin-top -3px), and DrawVector clips
+            // to this turtle.
+            Walk { abs_pos: Some(rect.pos - dvec2(0., 1. - TOOLBAR_TOP)), width: Size::Fixed(rect.size.x), height: Size::Fixed(rect.size.y + 1. - TOOLBAR_TOP), ..Default::default() },
             Layout::default(),
         );
         // Toolbar (web .coordinate-toolbar).

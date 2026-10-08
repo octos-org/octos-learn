@@ -24,6 +24,7 @@ use makepad_widgets::makepad_platform::file_dialogs::{FileDialog, FileDialogActi
 use voice::Voice;
 use server::Server;
 use serde_json::json;
+mod button_theme;
 mod cjk_fonts;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::time::Instant;
@@ -164,17 +165,17 @@ script_mod! {
                                     course_title := Label { width: Fill height: Fit padding: 0 text: "" draw_text.text_style: theme.font_bold{font_size: 15} draw_text.color: #332e28 }
                                 }
                                 demo_controls := View { width: Fit height: Fit flow: Right spacing: 4 align: Align{y: 0.5}
-                                    play := Button { width: 34 height: 34 text: ""
+                                    play := Button { width: 34 height: 34 text: "" spacing: 0
                                         icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 5.5 border_size: 0 border_color: #0000 } }
                                     // DIFF: runtime has no per-beat seek/restart; clicks show a toast.
-                                    next_beat := Button { width: 34 height: 34 text: ""
+                                    next_beat := Button { width: 34 height: 34 text: "" spacing: 0
                                         icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #665e54 }
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 5.5 border_size: 0 border_color: #0000 } }
-                                    replay_topic := Button { width: 34 height: 34 text: ""
+                                    replay_topic := Button { width: 34 height: 34 text: "" spacing: 0
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 5.5 border_size: 0 border_color: #0000 } }
-                                    narration_toggle := Button { width: 34 height: 34 text: ""
+                                    narration_toggle := Button { width: 34 height: 34 text: "" spacing: 0
                                         icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #665e54 }
                                         draw_bg +: { color: #0000 color_hover: #eaf0ee color_down: #dde9e6 border_radius: 5.5 border_size: 0 border_color: #0000 } }
                                 }
@@ -204,11 +205,11 @@ script_mod! {
                         // left 12 top 24, 40px circles with House/Settings icons).
                         page_actions_anchor := View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 12 top: 24}
                             page_actions := View { width: 96 height: Fit flow: Right spacing: 8
-                                back := Button { width: 40 height: 40 text: ""
+                                back := Button { width: 40 height: 40 text: "" spacing: 0
                                     icon_walk: Walk{width: 20 height: 20} draw_icon +: { color: #x57534e }
                                     draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 0.5 border_color: #0000001a } }
                                 // 学习记录 (web Menu button) opens the history drawer.
-                                settings := Button { width: 40 height: 40 text: ""
+                                settings := Button { width: 40 height: 40 text: "" spacing: 0
                                     icon_walk: Walk{width: 19 height: 19} draw_icon +: { color: #x57534e }
                                     draw_bg +: { border_radius: 10 color: #ffffffcc color_hover: #f3ede2 border_size: 0.5 border_color: #0000001a } }
                             }
@@ -240,7 +241,7 @@ script_mod! {
                         // Course outline trigger (web .oll-course-outline-trigger:
                         // 48px rounded square above the teacher avatar).
                         outline_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
-                            outline_trigger := Button { width: 48 height: 48 text: "" icon_walk: Walk{width: 15 height: 15}
+                            outline_trigger := Button { width: 48 height: 48 text: "" spacing: 0 icon_walk: Walk{width: 15 height: 15}
                                 draw_icon +: { color: #466d78 }
                                 draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 8 border_size: 0.5 border_color: #cfe2e3 } }
                         }
@@ -300,17 +301,17 @@ script_mod! {
                             input_dock := RoundedView {
                                 width: 720 height: Fit flow: Right spacing: 5 align: Align{y: 0.5} padding: 6
                                 draw_bg +: { color: #fffdf8e8 border_radius: 10.5 border_size: 0.5 border_color: #e7e0d4 }
-                                ask_image := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 19 height: 19}
+                                ask_image := Button { width: 39 height: 39 text: "" spacing: 0 icon_walk: Walk{width: 19 height: 19}
                                     draw_icon +: { color: #756c61 }
                                     draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 6.5 border_size: 0 border_color: #0000 } }
-                                ask_camera := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 19 height: 19}
+                                ask_camera := Button { width: 39 height: 39 text: "" spacing: 0 icon_walk: Walk{width: 19 height: 19}
                                     draw_icon +: { color: #756c61 }
                                     draw_bg +: { color: #0000 color_hover: #e9f0f2 color_down: #dde9ec border_radius: 6.5 border_size: 0 border_color: #0000 } }
-                                ask_mic := Button { width: 44 height: 44 text: "" icon_walk: Walk{width: 21 height: 21}
+                                ask_mic := Button { width: 44 height: 44 text: "" spacing: 0 icon_walk: Walk{width: 21 height: 21}
                                     draw_icon +: { color: #ffffff }
                                     // Web .learning-mic-button:disabled (voice unavailable): #167794 at opacity .38.
                                     draw_bg +: { color: #a6cad2 color_hover: #a6cad2 color_down: #a6cad2 border_radius: 6.5 border_size: 0 border_color: #0000 } }
-                                ask_mic_on := Button { visible: false width: 44 height: 44 text: "" icon_walk: Walk{width: 21 height: 21}
+                                ask_mic_on := Button { visible: false width: 44 height: 44 text: "" spacing: 0 icon_walk: Walk{width: 21 height: 21}
                                     draw_icon +: { color: #ffffff }
                                     // Voice on: web .learning-mic-button.
                                     draw_bg +: { color: #167794 color_hover: #12627c color_down: #12627c border_radius: 6.5 border_size: 0 border_color: #0000 } }
@@ -323,7 +324,7 @@ script_mod! {
                                     draw_text +: { color: #322d27 color_hover: #322d27 color_focus: #322d27 color_down: #322d27
                                         color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
                                     draw_cursor +: { color: #322d27 } }
-                                ask_send := Button { width: 39 height: 39 text: "" icon_walk: Walk{width: 18 height: 18}
+                                ask_send := Button { width: 39 height: 39 text: "" spacing: 0 icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
                                     draw_bg +: { color: #b3b0ab color_hover: #b3b0ab color_down: #b3b0ab border_radius: 6.5 border_size: 0 border_color: #0000 } }
                             }
@@ -370,7 +371,7 @@ script_mod! {
                                     camera_image := Image { width: 192 height: Fit fit: ImageFit.Horizontal }
                                     // Web .learning-camera-frame-settings: top-right 30px.
                                     View { width: Fill height: Fit flow: Right align: Align{x: 1.} padding: 6
-                                        camera_frame_settings := Button { width: 30 height: 30 text: "" margin: 0 padding: 0 icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #ffffff }
+                                        camera_frame_settings := Button { width: 30 height: 30 text: "" spacing: 0 margin: 0 padding: 0 icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #ffffff }
                                             draw_bg +: { color: #x182326a8 color_hover: #x0f6987e0 color_down: #x0f6987e0 border_radius: 4.5 border_size: 0.5 border_color: #ffffff6b } } }
                                     View { width: Fill height: Fill flow: Down align: Align{y: 1.} padding: 5
                                         RoundedView { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 5 right: 5 top: 3 bottom: 3}
@@ -397,7 +398,7 @@ script_mod! {
                                         Label { width: Fit padding: 0 text: "调整老师看到的画面" draw_text.text_style: theme.font_bold{font_size: 16.5} draw_text.color: #2f2a24 }
                                         Label { width: Fit padding: 0 text: "这里的方向、缩放和取景会原样应用到发送给老师的图片。" draw_text.text_style.font_size: 9.75 draw_text.color: #6c645a }
                                     }
-                                    camera_dialog_close := Button { width: 40 height: 40 text: "" margin: 0 icon_walk: Walk{width: 22 height: 22} draw_icon +: { color: #5e574f }
+                                    camera_dialog_close := Button { width: 40 height: 40 text: "" spacing: 0 margin: 0 icon_walk: Walk{width: 22 height: 22} draw_icon +: { color: #5e574f }
                                         draw_bg +: { color: #0000 color_hover: #f0ebe2 color_down: #e6e0d6 border_radius: 6 border_size: 0 border_color: #0000 } }
                                 }
                                 SolidView { width: Fill height: 1 draw_bg.color: #x463e351a }
@@ -494,7 +495,7 @@ script_mod! {
                                                     Label { width: Fit padding: 0 text: "试卷清晰模式" draw_text.text_style: theme.font_bold{font_size: 10.5} draw_text.color: #47413a }
                                                     Label { width: Fit padding: 0 text: "提高发送分辨率与文字清晰度" draw_text.text_style.font_size: 9 draw_text.color: #6c645a } }
                                                 camera_dialog_doc_state := Label { width: Fit padding: 0 text: "已开启" draw_text.text_style: theme.font_bold{font_size: 9.75} draw_text.color: #1f7a85 } }
-                                            camera_dialog_doc := Button { width: Fill height: 68 text: "" margin: 0 draw_bg +: { color: #0000 color_hover: #0000000a color_down: #00000014 border_radius: 7.5 border_size: 0 border_color: #0000 } }
+                                            camera_dialog_doc := Button { width: Fill height: 68 text: "" spacing: 0 margin: 0 draw_bg +: { color: #0000 color_hover: #0000000a color_down: #00000014 border_radius: 7.5 border_size: 0 border_color: #0000 } }
                                         }
                                         camera_dialog_reset := Button { width: Fill height: 46 text: "恢复默认取景" spacing: 7 margin: 0 icon_walk: Walk{width: 16 height: 16} draw_icon +: { color: #5e574f }
                                             draw_text.color: #5e574f draw_text.text_style.font_size: 10.5
@@ -543,7 +544,7 @@ script_mod! {
                                         Label { width: Fit padding: 0 text: "学习记录" draw_text.text_style: theme.font_bold{font_size: 16.5} draw_text.color: #243b40 }
                                         Label { width: Fit padding: 0 margin: Inset{top: 8 bottom: 16} text: "继续之前的白板与课程" draw_text.text_style.font_size: 9.75 draw_text.color: #657c7c }
                                     }
-                                    history_close := Button { width: 40 height: 40 text: "" icon_walk: Walk{width: 20 height: 20}
+                                    history_close := Button { width: 40 height: 40 text: "" spacing: 0 icon_walk: Walk{width: 20 height: 20}
                                         draw_icon +: { color: #243b40 }
                                         draw_bg +: { color: #0000 color_hover: #edf4ef color_down: #e3ede6 border_radius: 4 border_size: 0 border_color: #0000 } }
                                 }
@@ -737,10 +738,10 @@ script_mod! {
                     // Settings (web /settings: StudioTopbar + sidebar + tab body).
                     settings_page := SolidView { visible: false width: Fill height: Fill flow: Down draw_bg.color: #f1f0ed
                         SolidView { width: Fill height: 82 flow: Right align: Align{y: 0.5} padding: Inset{left: 20 right: 20} spacing: 12 draw_bg.color: #f7f6f3
-                            settings_back := Button { width: 36 height: 36 text: "" margin: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #3b3b39 }
+                            settings_back := Button { width: 36 height: 36 text: "" spacing: 0 margin: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #3b3b39 }
                                 draw_bg +: { color: #0000 color_hover: #e9e8e4 color_down: #deddd9 border_radius: 6 border_size: 0 border_color: #0000 } }
                             RoundedView { width: 40 height: 40 align: Align{x: 0.5 y: 0.5} draw_bg +: { color: #e6e5e1 border_radius: 20 }
-                                settings_gear := Button { width: 40 height: 40 text: "" margin: 0 padding: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #2b2b29 }
+                                settings_gear := Button { width: 40 height: 40 text: "" spacing: 0 margin: 0 padding: 0 icon_walk: Walk{width: 18 height: 18} draw_icon +: { color: #2b2b29 }
                                     draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } } }
                             View { width: Fill height: Fit flow: Down spacing: 2
                                 Label { width: Fit padding: 0 text: "OCTOS LEARN" draw_text.text_style: theme.font_code{font_size: 8.25} draw_text.color: #5f5f5b }
@@ -2249,7 +2250,7 @@ impl App {
             cx,
             &format!(
                 "Button{{height:34 text:\"{label}\" padding:Inset{{left:10 right:10}} margin:0
-                    draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0.5 border_color:{border}}}
+                    draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0.5 border_color:{border} border_color_hover:{border} border_color_down:{border} border_color_focus:{border} border_color_2:vec4(-1.0, -1.0, -1.0, -1.0)}}
                     draw_text.color:{tint} draw_text.text_style.font_size:7.5}}"
             ),
         )
@@ -3569,7 +3570,7 @@ impl App {
                 )
             } else {
                 format!(
-                    "Button{{width:36 height:36 text:\"\" icon_walk:Walk{{width:16 height:16}}
+                    "Button{{width:36 height:36 text:\"\" spacing:0 icon_walk:Walk{{width:16 height:16}}
                         draw_icon +: {{color:{tint}}}
                         draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0 border_color:#0000}}}}"
                 )
@@ -4240,9 +4241,9 @@ impl App {
                     View{{width:Fill height:Fit flow:Overlay
                         View{{width:3 height:43 show_bg:true draw_bg.color:{}}}
                         View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:5 right:5 top:3 bottom:3}}
-                            main := Button{{width:Fill height:37 text:\"\" padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
+                            main := Button{{width:Fill height:37 text:\"\" spacing:0 padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
                                 flow:Overlay}}
-                            expand := Button{{width:28 height:28 text:\"\" padding:0 margin:0 icon_walk:Walk{{width:12 height:12}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
+                            expand := Button{{width:28 height:28 text:\"\" spacing:0 padding:0 margin:0 icon_walk:Walk{{width:12 height:12}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
                             play := Button{{width:28 height:28 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:7.5 draw_text.color:#2e2a25 draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                         }}
                         View{{width:Fill height:43 flow:Right spacing:10 align:Align{{y:0.5}} padding:Inset{{left:11 right:66}}
@@ -4277,7 +4278,7 @@ impl App {
                                 Label{{width:Fill padding:0 max_lines:2 text:\"{}\" draw_text.wrap:Words draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style.font_size:7.5 draw_text.color:#71685d}}
                             }}
                             View{{width:Fill height:Fill flow:Right align:Align{{y:0.5}}
-                                main := Button{{width:Fill height:Fill text:\"\" padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
+                                main := Button{{width:Fill height:Fill text:\"\" spacing:0 padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
                                 play := Button{{width:25 height:25 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:6 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                             }}
                         }}",
@@ -4573,6 +4574,7 @@ impl App {
 impl AppMain for App {
     fn script_mod(vm: &mut ScriptVm) -> ScriptValue {
         makepad_widgets::script_mod(vm);
+        button_theme::script_mod(vm);
         cjk_fonts::install(vm);
         makepad_plot::script_mod(vm);
         controls_view::script_mod(vm);

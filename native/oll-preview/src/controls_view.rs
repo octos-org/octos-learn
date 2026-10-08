@@ -325,11 +325,13 @@ impl Widget for ControlsCard {
         let inner_w = w - 2. * PAD_X;
         let track_w = (inner_w - label_w - output_w - actions_w - 3. * COL_GAP).max(20.);
 
+        // Starts 10px above the card: the demonstration hint pill sits on
+        // its top edge (y - 9, web), and DrawVector / DrawText clip to this turtle.
         cx.begin_turtle(
             Walk {
-                abs_pos: Some(r.pos),
+                abs_pos: Some(r.pos - dvec2(0., 10.)),
                 width: Size::Fixed(w),
-                height: Size::Fixed(h),
+                height: Size::Fixed(h + 10.),
                 ..Default::default()
             },
             Layout::default(),

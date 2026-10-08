@@ -170,7 +170,7 @@ pub fn math_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
     } else {
         text_box(caption, 14., 1.5, "#6b6258", false, true, (0., 0.))
     };
-    let root = widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fffdf7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    let root = widget(cx, &format!("RoundedShadowView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fffdf7 border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:18 right:18 top:12 bottom:12}}
             lines := View{{width:Fill height:Fit flow:Down}}
             {caption_box}
@@ -249,15 +249,15 @@ pub fn chart_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
             })
             .unwrap_or(""),
     );
-    widget(cx,&format!("RoundedView{{width:Fill height:Fill flow:Down draw_bg +: {{color: #ffffff border_radius: 8 border_size: 0.5 border_color: #e7e2d8}}
+    widget(cx,&format!("RoundedView{{width:Fill height:Fill flow:Down draw_bg +: {{color: #ffffff border_radius: 8 border_size: 1.0 border_color: #e7e2d8}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:18 right:14 top:12 bottom:2}}
             View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}}
                 card_title := Label{{width:Fill height:20 text:\"{title}\" draw_text.text_style.font_size:15 draw_text.color:#243b40}}
                 kind_badge := Label{{width:Fit text:\"{badge}\" draw_text.text_style.font_size:8 draw_text.color:#a8b0ac}}
             }}
             View{{width:Fill height:Fit flow:Right spacing:6 align:Align{{x:1. y:0.5}} margin:Inset{{top:4}}
-                card_explore := Button{{text:\"探索\" padding:Inset{{left:9 right:9 top:3 bottom:3}} draw_text.text_style.font_size:11 draw_text.color:#6b6258 draw_bg +: {{color:#0000 color_hover:#f1efe9 border_radius:4 border_size:0.5 border_color:#dcd8cf}}}}
-                card_expand := Button{{text:\"大图\" padding:Inset{{left:9 right:9 top:3 bottom:3}} draw_text.text_style.font_size:11 draw_text.color:#6b6258 draw_bg +: {{color:#0000 color_hover:#f1efe9 border_radius:4 border_size:0.5 border_color:#dcd8cf}}}}
+                card_explore := Button{{text:\"探索\" padding:Inset{{left:9 right:9 top:3 bottom:3}} draw_text.text_style.font_size:11 draw_text.color:#6b6258 draw_bg +: {{color:#0000 color_hover:#f1efe9 border_radius:4 border_size:1.0 border_color:#dcd8cf}}}}
+                card_expand := Button{{text:\"大图\" padding:Inset{{left:9 right:9 top:3 bottom:3}} draw_text.text_style.font_size:11 draw_text.color:#6b6258 draw_bg +: {{color:#0000 color_hover:#f1efe9 border_radius:4 border_size:1.0 border_color:#dcd8cf}}}}
             }}
         }}
         plot := mod.plot.LinePlot{{width:Fill height:Fill demo_data:false interactive:false plot_margin:Inset{{left:52 right:16 top:8 bottom:40}}}}
@@ -287,7 +287,7 @@ pub fn plot_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
     } else {
         text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
     };
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    widget(cx, &format!("RoundedShadowView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:18 right:18 top:16 bottom:24}}
             {title_box}
             plot := mod.widgets.PlotView{{}}
@@ -305,7 +305,7 @@ pub fn geometry_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
     } else {
         text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
     };
-    widget(cx, &format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    widget(cx, &format!("RoundedShadowView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fill flow:Down padding:Inset{{left:18 right:18 top:16 bottom:16}}
             {title_box}
             geometry := mod.widgets.GeometryView{{}}
@@ -324,7 +324,7 @@ pub fn diagram_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
         text_box(&title, 16., 1.4, "#243b40", true, true, (0., 8.))
     };
     let svg_h = (estimate(node).1 - 32. - 24.).max(168.);
-    widget(cx, &format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    widget(cx, &format!("RoundedShadowView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7f7 border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fill flow:Down clip_x:true clip_y:true padding:Inset{{left:18 right:18 top:16 bottom:16}}
             {title_box}
             diagram := mod.widgets.DiagramView{{width:Fill height:{svg_h:.2}}}
@@ -344,7 +344,7 @@ pub fn scene3d_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
             .or(node["content"]["label"].as_str())
             .unwrap_or(""),
     );
-    widget(cx,&format!("RoundedView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7 border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    widget(cx,&format!("RoundedShadowView{{width:Fill height:Fill flow:Overlay draw_bg +: {{color:#fffdf7 border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fill flow:Down padding:Inset{{left:18 right:18 top:16 bottom:6}}
             card_title := Label{{width:Fill height:24 text:\"{title}\" draw_text.text_style: theme.font_bold{{font_size:12}} draw_text.color:#243b40}}
             scene := mod.widgets.Scene3dView{{width:Fill height:Fill margin:Inset{{top:10}}}}
@@ -405,7 +405,7 @@ pub fn note_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
             text_box(item, 14., 1.5, "#3f3a33", false, true, (0., 0.))
         ));
     }
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fff7cd border_radius:8 border_size:0.5 border_color:#d8d0c2}}
+    widget(cx, &format!("RoundedShadowView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:#fff7cd border_radius:8 border_size:1.0 border_color:#d8d0c2 shadow_color:#44392914 shadow_radius:12. shadow_offset:vec2(0.,8.)}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:18 right:18 top:16 bottom:13}}
             {body}
         }}
@@ -491,7 +491,7 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
             }
             body.push_str(&format!(
                 "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:12 right:12 top:10 bottom:10}} margin:Inset{{top:10}}
-                    draw_bg +: {{color:#fff2ece6 border_radius:5 border_size:0.5 border_color:#9f452d38}}
+                    draw_bg +: {{color:#fff2ece6 border_radius:5 border_size:1.0 border_color:#9f452d38}}
                     {}
                     {alternatives}
                 }}",
@@ -510,7 +510,7 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
         ));
     }
     let (bg, border) = if failed { ("#fff9f4", "#b04c3761") } else { ("#fffdf6", "#24706840") };
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{bg} border_radius:8 border_size:0.5 border_color:{border}}}
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{bg} border_radius:8 border_size:1.0 border_color:{border}}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:16 right:16 top:16 bottom:25}}
             {body}
         }}
@@ -522,7 +522,7 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
 }
 /// A minimized selection card (web .learning-selection-enhancement-pin).
 pub fn selection_pin(cx: &mut Cx) -> Result<WidgetRef, String> {
-    widget(cx, "RoundedView{width:26 height:26 align:Align{x:0.5 y:0.5} draw_bg +: {color:#fffdf6 border_radius:13 border_size:0.5 border_color:#2470684d}
+    widget(cx, "RoundedView{width:26 height:26 align:Align{x:0.5 y:0.5} draw_bg +: {color:#fffdf6 border_radius:13 border_size:1.0 border_color:#2470684d}
         Label{width:Fit padding:0 text:\"?\" draw_text.text_style: theme.font_bold{font_size:11.25} draw_text.color:#23786f}}")
 }
 /// Thinking-question card (web `.learning-reflection-card.is-world`): header
@@ -537,13 +537,13 @@ pub fn reflection_card(cx: &mut Cx, prompt: &str, answer: &str, open: bool) -> R
     } else {
         String::new()
     };
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:8 padding:14 draw_bg +: {{color:#fffaebf7 border_radius:9 border_size:0.5 border_color:#9a762638}}
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:8 padding:14 draw_bg +: {{color:#fffaebf7 border_radius:9 border_size:1.0 border_color:#9a762638}}
         View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}}
             {}
             View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} {}}}
         }}
         {}
-        toggle := RoundedView{{width:Fit height:Fit padding:Inset{{left:12 right:12 top:5 bottom:5}} draw_bg +: {{color:#ffffff border_radius:6 border_size:0.5 border_color:#9a76264d}}
+        toggle := RoundedView{{width:Fit height:Fit padding:Inset{{left:12 right:12 top:5 bottom:5}} draw_bg +: {{color:#ffffff border_radius:6 border_size:1.0 border_color:#9a76264d}}
             {}
         }}
         {answer_box}
@@ -564,7 +564,7 @@ pub fn question_card(cx: &mut Cx, text: &str, status: &str) -> Result<WidgetRef,
     };
     widget(cx, &format!("RoundedView{{width:Fill height:Fit draw_bg +: {{color:#c7aa58 border_radius:7.5}}
         RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{left:4}} padding:Inset{{left:12 right:16 top:15 bottom:14}}
-            draw_bg +: {{color:#fffaf0 border_radius:7.5 border_size:0.5 border_color:#6f613e38}}
+            draw_bg +: {{color:#fffaf0 border_radius:7.5 border_size:1.0 border_color:#6f613e38}}
             View{{width:Fill height:Fit flow:Right spacing:10 align:Align{{y:0.5}}
                 View{{width:Fill height:Fit {}}}
                 RoundedView{{width:Fit height:Fit padding:Inset{{left:7 right:7 top:3 bottom:3}} draw_bg +: {{color:{bg} border_radius:6}}
@@ -588,7 +588,7 @@ pub fn loading_card(cx: &mut Cx, title: &str, detail: &str) -> Result<WidgetRef,
     // 56% with shimmer delays 0 / -0.55 / -1.05s.
     let line = |w: f64, delay: f64| format!("mod.widgets.LoadingLine{{width:{w} delay:{delay}}}");
     widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay
-        draw_bg +: {{color:#fffdf7 border_radius:9 border_size:0.5 border_color:#2d676033}}
+        draw_bg +: {{color:#fffdf7 border_radius:9 border_size:1.0 border_color:#2d676033}}
         mod.widgets.LoadingFx{{height:194}}
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:24 right:24 top:22 bottom:21}}
             View{{width:Fill height:Fit flow:Down spacing:7
@@ -614,14 +614,14 @@ const ICON_RETRY: &str = include_str!("../../octos-learn/assets/icons/rotate-ccw
 
 /// An icon-only Button used as a static glyph inside a world card.
 fn glyph(name: &str, size: f64, color: &str) -> String {
-    format!("{name} := Button{{width:{size} height:{size} padding:0 text:\"\" icon_walk:Walk{{width:{size} height:{size}}} draw_icon +: {{color:{color}}} draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}")
+    format!("{name} := Button{{width:{size} height:{size} padding:0 text:\"\" spacing:0 icon_walk:Walk{{width:{size} height:{size}}} draw_icon +: {{color:{color}}} draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}")
 }
 /// A practice action button (web .learning-student-task-actions > button).
 fn action_button(name: &str, label: &str) -> String {
     format!("{name} := Button{{height:30 text:\"{}\" spacing:5 padding:Inset{{left:9 right:9 top:5 bottom:5}}
         icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#0d7082}}
         draw_text.color:#0d7082 draw_text.text_style.font_size:7.5
-        draw_bg +: {{color:#16839812 color_hover:#16839824 color_down:#16839830 border_radius:4.5 border_size:0.5 border_color:#0d70822e}}}}", script_text(label))
+        draw_bg +: {{color:#16839812 color_hover:#16839824 color_down:#16839830 border_radius:4.5 border_size:1.0 border_color:#0d70822e}}}}", script_text(label))
 }
 
 /// Practice panel (web `.learning-student-tasks.is-world`, "动手试一试"):
@@ -681,12 +681,12 @@ pub fn tasks_card(cx: &mut Cx, tasks: &[oll_runtime::tasks::Snapshot]) -> Result
             ("#f5faf7d1", "#176b6224")
         };
         body.push_str(&format!(
-            "RoundedView{{width:Fill height:Fit flow:Down spacing:9 padding:12 draw_bg +: {{color:{bg} border_radius:7 border_size:0.5 border_color:{border}}}
+            "RoundedView{{width:Fill height:Fit flow:Down spacing:9 padding:12 draw_bg +: {{color:{bg} border_radius:7 border_size:1.0 border_color:{border}}}
                 {} {feedback} {hint} {actions}}}\n",
             text_box(&t.prompt, 14., 1.5, "#373c38", true, true, (0., 0.))
         ));
     }
-    let card = widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:10 padding:14 draw_bg +: {{color:#fffdf8f5 border_radius:9 border_size:0.5 border_color:#3f494324}}
+    let card = widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Down spacing:10 padding:14 draw_bg +: {{color:#fffdf8f5 border_radius:9 border_size:1.0 border_color:#3f494324}}
         View{{width:Fill height:Fit flow:Right spacing:12 align:Align{{y:1.}}
             {}
             View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} {}}}
@@ -878,7 +878,7 @@ pub fn node_notes(node: &Value) -> String {
 
 /// Fragment cards retain the original text and emphasis; wrapping is owned by Makepad.
 pub fn text_node(cx: &mut Cx, node: &Value) -> Result<WidgetRef, String> {
-    let row=widget(cx,"RectView{width:Fill height:Fit flow:Down padding:14 spacing:8 draw_bg.color:#fffdf8 draw_bg.border_size:0.5 draw_bg.border_color:#e3d9cb}")?;
+    let row=widget(cx,"RectView{width:Fill height:Fit flow:Down padding:14 spacing:8 draw_bg.color:#fffdf8 draw_bg.border_size:1.0 draw_bg.border_color:#e3d9cb}")?;
     let flow = widget(
         cx,
         "View{width:Fill height:Fit flow:Flow.Right{wrap:true} spacing:0}",

@@ -209,7 +209,7 @@ impl Page {
     fn tile(&mut self, icon: &'static str) -> String {
         let name = self.icon_name(icon);
         format!("RoundedView{{width:40 height:40 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e9e8e4 border_radius:6}}
-            {name} := Button{{width:40 height:40 text:\"\" margin:0 padding:0 icon_walk:Walk{{width:20 height:20}} draw_icon +: {{color:#2b2b29}}
+            {name} := Button{{width:40 height:40 text:\"\" spacing:0 margin:0 padding:0 icon_walk:Walk{{width:20 height:20}} draw_icon +: {{color:#2b2b29}}
                 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}}}")
     }
     fn label(&self, text: &str, size: f64, color: &str, bold: bool) -> String {
@@ -439,11 +439,11 @@ impl App {
                     RoundedView{{width:Fill height:46 draw_bg +: {{color:{bg} border_radius:6 border_size:{} border_color:#bdbcb8}}}}
                     SolidView{{width:3 height:46 draw_bg.color:{border}}}
                     View{{width:Fill height:46 flow:Right align:Align{{y:0.5}} padding:Inset{{left:14 right:10}} spacing:8
-                        nav_icon := Button{{width:18 height:18 text:\"\" margin:0 padding:0 icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#3b3b39}} draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
+                        nav_icon := Button{{width:18 height:18 text:\"\" spacing:0 margin:0 padding:0 icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#3b3b39}} draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
                         Label{{width:Fill padding:0 text:\"{}\" draw_text.text_style: theme.font_regular{{font_size:10.5}} draw_text.color:#2b2b29}}
                         {admin}
                     }}
-                    nav_hit := Button{{width:Fill height:46 text:\"\" margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
+                    nav_hit := Button{{width:Fill height:46 text:\"\" spacing:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
                 }}",
                 if active { "0.5" } else { "0" },
                 def.label
@@ -852,7 +852,7 @@ impl App {
                             View{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} {art}}}
                             View{{width:Fill height:Fit flow:Right spacing:8 {} {active_pill}}}
                         }}
-                        skin_hit_{key} := Button{{width:Fill height:Fill text:\"\" margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
+                        skin_hit_{key} := Button{{width:Fill height:Fill text:\"\" spacing:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
                     }}",
                     if active { "#fbfaf8" } else { "#f6f5f2" },
                     if active { "#8f8e8a" } else { "#dcdbd7" },
@@ -889,7 +889,7 @@ impl App {
                         RoundedView{{width:14 height:14 margin:Inset{{top:3}} draw_bg +: {{color:{} border_radius:7 border_size:{} border_color:#8a8a85}}}}
                         View{{width:Fill height:Fit flow:Down spacing:6 {} {}}}
                     }}
-                    {id} := Button{{width:Fill height:Fill text:\"\" margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
+                    {id} := Button{{width:Fill height:Fill text:\"\" spacing:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000000a color_down:#00000014 border_radius:6 border_size:0 border_color:#0000}}}}
                 }}",
                 if selected { "#eeedea" } else { "#dedddb" },
                 if selected { "#5f5f5b" } else { "#0000" },
