@@ -227,6 +227,10 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - 任务恢复（Web 在每次连接时 list 任务）：有问题在等待时，每次连接上和之后每 20 秒用 `skill/action/job/list` 列出本会话全部任务并按更新处理；列表里没有这个问题的任务（如服务器重启丢了任务）就立即标记「没有生成成功：服务器上已没有这个生成任务，请重新提问」。只处理仍在等待的问题，正在下载课程文件的不重复下载。兜底：等待超过 10 分钟的问题标记失败。
   - `OCTOS_SERVER_DEBUG` 日志中的 `"token"` 值打码。
   - Mac 实测（本机服务）：提问后杀掉并重启 octos，应用退避重连、不崩溃，列表为空后问题立即显示没有生成成功；正常提问时轮询不影响，课程正常生成
+- （本次提交）公网邮箱登录（用户 2026-10-08 决定：默认连 `https://learn.pitun.cc`，用 Web 的邮箱验证码登录；本机 solo 只在设置 `OCTOS_SERVER_URL` 时用于开发）：
+  - `server.rs`：默认服务器改为 `PUBLIC_SERVER`；登录先查 `/api/auth/status`——开了 solo 的本机服务照旧自动 solo 登录，否则发出「需要登录」事件。`send_code` / `verify` / `logout` 对应 Web `/api/auth/send-code`、`/api/auth/verify`、`/api/auth/logout`；登录成功的 token 存在数据目录 `auth.json`（权限 600，含服务器地址，换服务器不复用），下次启动用 `/api/auth/me` 校验（401/403 清除；离线时先沿用）；使用中遇到 401 清除登录并重新要求登录。
+  - 界面：Web 登录页（Octos logo、Octos、按服务器是否允许自助注册显示的说明、邮箱 → Send Code → 6 位验证码 → Verify、Back、60 秒倒计时 Resend code、错误提示）。DIFF：Web 是整页，原生是模态框并加「暂不登录」（离线课程仍可用；等待中的提问标记「需要登录后才能提问」）。启动器在邮箱登录后显示「退出」（Web 导航同）。
+  - Mac 实测：本机服务（设 `OCTOS_SERVER_URL`）仍自动 solo 登录并生成课程；不设时对 learn.pitun.cc 显示登录框。**完整的邮箱验证码登录需要用户输入收到的验证码，尚未实测**
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，

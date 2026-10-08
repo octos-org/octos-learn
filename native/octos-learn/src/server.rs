@@ -2,10 +2,14 @@
 //! `/api/ui-protocol/ws` JSON-RPC bridge), on Makepad's network runtime so
 //! every reply arrives as an `Event::NetworkResponses` on the UI thread.
 //!
-//! The local single-user flow: `POST /api/auth/solo` (404 when this machine
-//! has no profile yet -> `POST /api/auth/solo/create`), then a WebSocket to
+//! Login follows the server's `/api/auth/status` (web login page): a host
+//! with local solo login (`octos serve --solo`) signs in automatically
+//! (`POST /api/auth/solo`, 404 -> `/api/auth/solo/create`); otherwise the
+//! learner signs in by email code (`/api/auth/send-code`, `/api/auth/verify`),
+//! and the token is kept in the data directory (`auth.json`) and checked with
+//! `/api/auth/me` on the next launch. Then a WebSocket to
 //! `/api/ui-protocol/ws?token=…`. Server URL: `OCTOS_SERVER_URL`, default
-//! `http://127.0.0.1:50080` (`octos serve --solo`).
+//! the public `https://learn.pitun.cc` (as the WebView app).
 use makepad_widgets::makepad_platform::makepad_network::{WsMessage, WsSend};
 use makepad_widgets::*;
 use serde_json::{json, Value};
@@ -52,7 +56,17 @@ enum Http {
     Json { purpose: String },
     /// Reachability check before reopening the socket after a drop.
     Probe,
+    /// `/api/auth/status`: which login the server offers.
+    Status,
+    SendCode,
+    Verify,
+    /// `/api/auth/me` for a token restored from disk.
+    Me,
+    Logout,
 }
+
+/// Public server (web app / WebView APK).
+pub const PUBLIC_SERVER: &str = "https://learn.pitun.cc";
 
 /// What a JSON-RPC call was for.
 #[derive(Clone, Debug)]
@@ -95,6 +109,12 @@ pub enum TurnUpdate {
 #[derive(Clone, Debug)]
 pub enum ServerEvent {
     LoggedIn,
+    /// The server needs an email-code login (web login page).
+    LoginRequired { self_registration: bool },
+    /// `/api/auth/send-code` result.
+    CodeSent(Result<(), String>),
+    /// `/api/auth/verify` rejected the code.
+    LoginFailed(String),
     /// Login or connection failure (user-facing Chinese message).
     Unavailable(String),
     /// `skill/action/invoke` accepted (or rejected) the turn.
@@ -155,7 +175,15 @@ pub struct Server {
     pub base: String,
     token: Option<String>,
     pub profile_id: Option<String>,
+    /// Signed-in email (email-code login), for the UI.
+    pub email: Option<String>,
     logging_in: bool,
+    /// Waiting for the learner to sign in by email code.
+    awaiting_login: bool,
+    login_event: Option<bool>,
+    auth_file: Option<std::path::PathBuf>,
+    /// Token being checked with /api/auth/me.
+    pending_token: Option<String>,
     socket: LiveId,
     ws: Ws,
     outbox: Vec<(String, String)>,
@@ -179,10 +207,15 @@ impl Default for Server {
                 .ok()
                 .map(|s| s.trim_end_matches('/').to_owned())
                 .filter(|s| !s.is_empty())
-                .unwrap_or_else(|| "http://127.0.0.1:50080".into()),
+                .unwrap_or_else(|| PUBLIC_SERVER.into()),
             token: None,
             profile_id: None,
+            email: None,
             logging_in: false,
+            awaiting_login: false,
+            login_event: None,
+            auth_file: None,
+            pending_token: None,
             socket: LiveId::unique(),
             ws: Ws::Closed,
             outbox: Vec::new(),
@@ -266,14 +299,95 @@ impl Server {
         self.http.insert(id, purpose);
         cx.http_request(id, req);
     }
-    /// Web login page solo flow (re-login the local owner, creating it once).
+    /// Sign in if needed: ask the server which login it offers (solo signs
+    /// in at once; email login asks the app to show the login page).
     pub fn ensure_login(&mut self, cx: &mut Cx) {
         if self.token.is_some() || self.logging_in {
             return;
         }
+        if let Some(self_registration) = self.awaiting_login.then_some(self.login_event.unwrap_or(true)) {
+            // Still waiting for the learner: show the login page again.
+            self.login_event = Some(self_registration);
+            return;
+        }
         self.logging_in = true;
-        let req = self.request("/api/auth/solo", HttpMethod::POST);
-        self.http(cx, req, Http::Solo);
+        let req = self.request("/api/auth/status", HttpMethod::GET);
+        self.http(cx, req, Http::Status);
+    }
+    /// Where the email-login token is kept; restores it (checked with /me).
+    pub fn restore_login(&mut self, cx: &mut Cx, path: std::path::PathBuf) {
+        let saved: Value = std::fs::read_to_string(&path).ok().and_then(|t| serde_json::from_str(&t).ok()).unwrap_or(Value::Null);
+        self.auth_file = Some(path);
+        if saved["base"] != self.base.as_str() {
+            return;
+        }
+        if let Some(token) = saved["token"].as_str() {
+            self.token = Some(token.to_owned());
+            self.profile_id = saved["profile_id"].as_str().map(str::to_owned);
+            self.email = saved["email"].as_str().map(str::to_owned);
+            self.logging_in = true;
+            let req = self.request("/api/auth/me", HttpMethod::GET);
+            self.token = None; // not usable until /me confirms it
+            let mut req = req;
+            req.set_header("Authorization".into(), format!("Bearer {token}"));
+            self.pending_token = Some(token.to_owned());
+            self.http(cx, req, Http::Me);
+        }
+    }
+    fn save_login(&self) {
+        let Some(path) = &self.auth_file else { return };
+        let body = json!({"base": self.base, "token": self.token, "profile_id": self.profile_id, "email": self.email}).to_string();
+        let _ = std::fs::write(path, body);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600));
+        }
+    }
+    /// Drop the session locally (expired token / sign out).
+    fn forget_login(&mut self, cx: &mut Cx) {
+        self.token = None;
+        self.email = None;
+        self.pending_token = None;
+        if let Some(path) = &self.auth_file {
+            let _ = std::fs::remove_file(path);
+        }
+        if self.ws != Ws::Closed {
+            let _ = cx.net.ws_close(self.socket);
+            self.ws = Ws::Closed;
+        }
+    }
+    /// Web sendCode.
+    pub fn send_code(&mut self, cx: &mut Cx, email: &str) {
+        let mut req = self.request("/api/auth/send-code", HttpMethod::POST);
+        req.set_body_string(&json!({"email": email}).to_string());
+        self.email = Some(email.to_owned());
+        self.http(cx, req, Http::SendCode);
+    }
+    /// Web verify (email code).
+    pub fn verify(&mut self, cx: &mut Cx, email: &str, code: &str) {
+        let mut req = self.request("/api/auth/verify", HttpMethod::POST);
+        req.set_body_string(&json!({"email": email, "code": code}).to_string());
+        self.email = Some(email.to_owned());
+        self.http(cx, req, Http::Verify);
+    }
+    /// Web logout (退出).
+    pub fn logout(&mut self, cx: &mut Cx) {
+        if self.token.is_some() {
+            let req = self.request("/api/auth/logout", HttpMethod::POST);
+            self.http(cx, req, Http::Logout);
+        }
+        self.forget_login(cx);
+        self.awaiting_login = false;
+    }
+    /// The learner closed the login page: stop asking until next time.
+    pub fn cancel_login(&mut self) {
+        self.awaiting_login = false;
+        self.login_event = None;
+    }
+    /// Signed in by email (sign-out is offered), as opposed to local solo.
+    pub fn email_login(&self) -> bool {
+        self.token.is_some() && self.email.is_some()
     }
     fn ensure_socket(&mut self, cx: &mut Cx) {
         let Some(token) = self.token.clone() else {
@@ -445,6 +559,9 @@ impl Server {
 
     pub fn handle(&mut self, cx: &mut Cx, event: &Event) -> Vec<ServerEvent> {
         let mut out = Vec::new();
+        if let Some(self_registration) = self.login_event.take() {
+            out.push(ServerEvent::LoginRequired { self_registration });
+        }
         self.maintain(cx, &mut out);
         let Event::NetworkResponses(responses) = event else { return out };
         let debug = std::env::var_os("OCTOS_SERVER_DEBUG").is_some();
@@ -465,6 +582,80 @@ impl Server {
                 NetworkResponse::HttpResponse { request_id, response } => {
                     let Some(purpose) = self.http.remove(request_id) else { continue };
                     let status = response.status_code;
+                    let body = response.body_string().unwrap_or_default();
+                    let ok = (200..300).contains(&status);
+                    let v: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
+                    match purpose {
+                        Http::Status => {
+                            self.logging_in = false;
+                            if !ok {
+                                out.push(ServerEvent::Unavailable(format!("连接不到学习服务（HTTP {status}）")));
+                            } else if v["local_solo_enabled"] == true {
+                                self.logging_in = true;
+                                let req = self.request("/api/auth/solo", HttpMethod::POST);
+                                self.http(cx, req, Http::Solo);
+                            } else if v["email_login_enabled"] == true {
+                                self.awaiting_login = true;
+                                let self_registration = v["allow_self_registration"] == true;
+                                self.login_event = Some(self_registration);
+                                out.push(ServerEvent::LoginRequired { self_registration });
+                                self.login_event = None;
+                            } else {
+                                out.push(ServerEvent::Unavailable("这个服务器没有开启登录".into()));
+                            }
+                            continue;
+                        }
+                        Http::SendCode => {
+                            out.push(ServerEvent::CodeSent(if ok && v["ok"] != false {
+                                Ok(())
+                            } else {
+                                Err(v["message"].as_str().map(str::to_owned).unwrap_or_else(|| error_text(status, &body)))
+                            }));
+                            continue;
+                        }
+                        Http::Verify => {
+                            match v["token"].as_str().filter(|_| ok && v["ok"] != false) {
+                                Some(token) => {
+                                    self.token = Some(token.to_owned());
+                                    self.profile_id = v["user"]["id"].as_str().map(str::to_owned);
+                                    self.awaiting_login = false;
+                                    self.save_login();
+                                    out.push(ServerEvent::LoggedIn);
+                                    self.flush(cx);
+                                }
+                                None => out.push(ServerEvent::LoginFailed(
+                                    v["message"].as_str().map(str::to_owned).unwrap_or_else(|| "验证码不正确或已过期".into()),
+                                )),
+                            }
+                            continue;
+                        }
+                        Http::Me => {
+                            self.logging_in = false;
+                            match self.pending_token.take() {
+                                Some(token) if ok => {
+                                    self.token = Some(token);
+                                    if let Some(id) = v["user"]["id"].as_str() {
+                                        self.profile_id = Some(id.to_owned());
+                                    }
+                                    out.push(ServerEvent::LoggedIn);
+                                    self.flush(cx);
+                                }
+                                // Expired or revoked: sign in again when needed.
+                                _ if status == 401 || status == 403 => self.forget_login(cx),
+                                // Offline: keep it and try again next launch.
+                                _ => {}
+                            }
+                            continue;
+                        }
+                        Http::Logout => continue,
+                        _ => {}
+                    }
+                    // A session that expired while in use: sign in again.
+                    if status == 401 && self.email.is_some() && !matches!(purpose, Http::Probe) {
+                        self.forget_login(cx);
+                        self.awaiting_login = true;
+                        out.push(ServerEvent::LoginRequired { self_registration: true });
+                    }
                     if let Http::Probe = purpose {
                         if (200..500).contains(&status) {
                             self.ensure_socket(cx);
@@ -473,9 +664,8 @@ impl Server {
                         }
                         continue;
                     }
-                    let body = response.body_string().unwrap_or_default();
                     match purpose {
-                        Http::Probe => {}
+                        Http::Probe | Http::Status | Http::SendCode | Http::Verify | Http::Me | Http::Logout => {}
                         Http::Solo | Http::SoloCreate if (200..300).contains(&status) => {
                             let v: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
                             self.token = v["token"].as_str().map(str::to_owned);
@@ -563,6 +753,18 @@ impl Server {
                     let Some(purpose) = self.http.remove(request_id) else { continue };
                     match purpose {
                         Http::Probe => self.schedule_reconnect(),
+                        Http::Status => {
+                            self.logging_in = false;
+                            out.push(ServerEvent::Unavailable(format!("连接不到学习服务（{}）：{}", self.base, error.message)));
+                        }
+                        Http::SendCode => out.push(ServerEvent::CodeSent(Err(format!("发送验证码失败：{}", error.message)))),
+                        Http::Verify => out.push(ServerEvent::LoginFailed(format!("验证失败：{}", error.message))),
+                        // Offline at launch: keep the saved session; a 401 later signs out.
+                        Http::Me => {
+                            self.logging_in = false;
+                            self.token = self.pending_token.take();
+                        }
+                        Http::Logout => {}
                         Http::Solo | Http::SoloCreate => {
                             self.logging_in = false;
                             out.push(ServerEvent::Unavailable(format!(

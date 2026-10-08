@@ -77,6 +77,11 @@ script_mod! {
                                                 icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #244f5a }
                                                 draw_text.color: #244f5a draw_text.text_style.font_size: 10.5
                                                 draw_bg +: { color: #0000 color_hover: #e9ece6 color_down: #dfe4dd border_radius: 5 border_size: 0 border_color: #0000 } }
+                                            // Web course-launcher nav when signed in by email: 退出.
+                                            launcher_logout := Button { visible: false height: 36 text: "退出" spacing: 6 padding: Inset{left: 10 right: 10} margin: 0
+                                                icon_walk: Walk{width: 17 height: 17} draw_icon +: { color: #244f5a }
+                                                draw_text.color: #244f5a draw_text.text_style.font_size: 10.5
+                                                draw_bg +: { color: #0000 color_hover: #e9ece6 color_down: #dfe4dd border_radius: 5 border_size: 0 border_color: #0000 } }
                                         }
                                         SolidView { width: Fill height: 1 draw_bg +: { color: #dbddd6 } }
                                     }
@@ -788,6 +793,56 @@ script_mod! {
                             }
                         }
                     }
+                    // Web login page (email code), shown when the server
+                    // needs a sign-in (learn.pitun.cc). DIFF: a page on the
+                    // web; here a modal with 暂不登录 (offline courses stay usable).
+                    login_dialog := View { visible: false width: Fill height: Fill flow: Overlay
+                        SolidView { width: Fill height: Fill draw_bg.color: #f7f4ecf2 }
+                        View { width: Fill height: Fill align: Align{x: 0.5 y: 0.45}
+                            RoundedView { width: 384 height: Fit flow: Down padding: 32
+                                draw_bg +: { color: #fffef9 border_radius: 8 border_size: 1.0 border_color: #dbded9 }
+                                login_logo := Svg { animating: false width: 44 height: 44 margin: Inset{bottom: 16} draw_svg +: { preserve_viewbox: true } }
+                                Label { width: Fit padding: 0 text: "Octos" draw_text.text_style: theme.font_bold{font_size: 18} draw_text.color: #243b40 }
+                                login_subtitle := Label { width: Fill padding: 0 margin: Inset{top: 8 bottom: 24} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.color: #607477 }
+                                login_email_step := View { width: Fill height: Fit flow: Down spacing: 16
+                                    RoundedView { width: Fill height: 46 align: Align{y: 0.5} padding: Inset{left: 16 right: 16}
+                                        draw_bg +: { color: #ffffff border_radius: 4 border_size: 1.0 border_color: #dbded9 }
+                                        login_email := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "Email address"
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 border_size: 0 }
+                                            draw_text +: { color: #243b40 text_style.font_size: 10.5 } } }
+                                    login_send := Button { width: Fill height: 46 text: "Send Code" margin: 0
+                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                        draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x0f5560 border_radius: 4 border_size: 0 border_color: #0000 } }
+                                }
+                                login_code_step := View { visible: false width: Fill height: Fit flow: Down spacing: 16
+                                    login_code_sent := Label { width: Fill padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.color: #607477 }
+                                    RoundedView { width: Fill height: 56 align: Align{x: 0.5 y: 0.5} padding: Inset{left: 16 right: 16}
+                                        draw_bg +: { color: #ffffff border_radius: 4 border_size: 1.0 border_color: #dbded9 }
+                                        login_code := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "6-digit code"
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 border_size: 0 }
+                                            draw_text +: { color: #243b40 text_style.font_size: 18 } } }
+                                    login_verify := Button { width: Fill height: 46 text: "Verify" margin: 0
+                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
+                                        draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x0f5560 border_radius: 4 border_size: 0 border_color: #0000 } }
+                                    View { width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                                        login_back := Button { height: 28 text: "Back" padding: 0 margin: 0
+                                            draw_text.color: #607477 draw_text.text_style.font_size: 10.5
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                        View { width: Fill height: 1 }
+                                        login_resend := Button { height: 28 text: "Resend code" padding: 0 margin: 0
+                                            draw_text.color: #607477 draw_text.text_style.font_size: 10.5
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                    }
+                                }
+                                login_error := Label { visible: false width: Fill padding: 0 margin: Inset{top: 14} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 9.75 draw_text.color: #b04c37 }
+                                View { width: Fill height: Fit align: Align{x: 0.5} margin: Inset{top: 18}
+                                    login_later := Button { height: 28 text: "暂不登录" padding: 0 margin: 0
+                                        draw_text.color: #8a9693 draw_text.text_style.font_size: 9.75
+                                        draw_bg +: { color: #0000 color_hover: #0000 color_down: #0000 border_size: 0 border_color: #0000 } }
+                                }
+                            }
+                        }
+                    }
                     // Neutral toast for "not migrated yet" notices (body level
                     // so it also shows on the launcher page).
                     View { width: Fill height: Fill flow: Down align: Align{x: 0.5 y: 1.} padding: Inset{bottom: 96}
@@ -1077,6 +1132,11 @@ pub struct App {
     ui: WidgetRef,
     #[rust]
     player: Option<Session>,
+    /// Web login page state: shown, code step, the email, resend countdown.
+    #[rust]
+    login: LoginUi,
+    #[rust]
+    login_tick: Option<u64>,
     #[rust]
     course_source: String,
     // Currently open pack (recorded so progress keys and reopen stay stable).
@@ -1471,6 +1531,20 @@ fn load_topic_origins(record: &serde_json::Value, questions: &[(String, String, 
     origins
 }
 
+#[derive(Default)]
+struct LoginUi {
+    open: bool,
+    code_step: bool,
+    email: String,
+    sending: bool,
+    resend_at: Option<Instant>,
+}
+
+fn valid_email(email: &str) -> bool {
+    let e = email.trim();
+    e.split_once('@').is_some_and(|(user, host)| !user.is_empty() && host.contains('.') && !host.starts_with('.') && !host.ends_with('.')) && !e.contains(' ')
+}
+
 /// Dynamic buttons of the selection toolbar and panel.
 #[derive(Clone, Debug)]
 enum SelectionAction {
@@ -1488,7 +1562,8 @@ const ICON_VOLUME_ON: &str = include_str!("../assets/icons/volume-2.svg");
 const ICON_VOLUME_OFF: &str = include_str!("../assets/icons/volume-x.svg");
 
 fn load_icons(ui: &WidgetRef, cx: &mut Cx) {
-    let icons: [(LiveId, &str); 23] = [
+    let icons: [(LiveId, &str); 24] = [
+        (live_id!(launcher_logout), include_str!("../assets/icons/log-out.svg")),
         (live_id!(start_interaction), ICON_PLAY),
         (live_id!(next_beat), include_str!("../assets/icons/chevron-right.svg")),
         (live_id!(replay_topic), include_str!("../assets/icons/rotate-ccw.svg")),
@@ -2575,6 +2650,120 @@ impl App {
             self.fail_question(cx, &turn, "没有生成成功：服务器上已没有这个生成任务，请重新提问");
         }
     }
+    /// Web login page: email step (subtitle from the server's registration mode).
+    fn show_login(&mut self, cx: &mut Cx, self_registration: bool) {
+        if !self.login.open {
+            self.login = LoginUi { open: true, ..Default::default() };
+        }
+        let subtitle = if self_registration {
+            "输入邮箱获取验证码。新邮箱验证后会自动注册，随后在设置白板连接你自己的模型。"
+        } else {
+            "Use an allowed or registered email to sign in."
+        };
+        self.ui.label(cx, ids!(login_subtitle)).set_text(cx, subtitle);
+        self.set_login_error(cx, "");
+        self.sync_login(cx);
+    }
+    fn set_login_error(&mut self, cx: &mut Cx, message: &str) {
+        self.ui.label(cx, ids!(login_error)).set_text(cx, message);
+        self.ui.widget(cx, ids!(login_error)).set_visible(cx, !message.is_empty());
+    }
+    fn sync_login(&mut self, cx: &mut Cx) {
+        let l = &self.login;
+        self.ui.widget(cx, ids!(login_dialog)).set_visible(cx, l.open);
+        self.ui.widget(cx, ids!(login_email_step)).set_visible(cx, !l.code_step);
+        self.ui.widget(cx, ids!(login_code_step)).set_visible(cx, l.code_step);
+        self.ui.button(cx, ids!(login_send)).set_text(cx, if l.sending { "Sending..." } else { "Send Code" });
+        self.ui.button(cx, ids!(login_verify)).set_text(cx, if l.sending { "Verifying..." } else { "Verify" });
+        self.ui.label(cx, ids!(login_code_sent)).set_text(cx, &format!("Code sent to {}", l.email));
+        let left = l.resend_at.map_or(0, |t| t.saturating_duration_since(Instant::now()).as_secs_f64().ceil() as u64);
+        self.ui.button(cx, ids!(login_resend)).set_text(cx, &if left > 0 { format!("Resend code ({left}s)") } else { "Resend code".into() });
+        let blocked = l.open || self.history_open || self.enlarged.is_some();
+        if let Some(mut b) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            b.set_input_blocked(blocked);
+        }
+        self.ui.redraw(cx);
+    }
+    /// Launcher nav (web): 退出 when signed in by email.
+    fn sync_account(&mut self, cx: &mut Cx) {
+        let email = self.server.email_login();
+        self.ui.widget(cx, ids!(launcher_logout)).set_visible(cx, email);
+        self.ui.redraw(cx);
+    }
+    fn handle_login_actions(&mut self, cx: &mut Cx, actions: &Actions) {
+        if !self.login.open {
+            if self.ui.button(cx, ids!(launcher_logout)).clicked(actions) {
+                self.server.logout(cx);
+                self.sync_account(cx);
+                self.toast(cx, "已退出登录");
+            }
+            return;
+        }
+        let email_input = self.ui.text_input(cx, ids!(login_email));
+        let code_input = self.ui.text_input(cx, ids!(login_code));
+        let send = self.ui.button(cx, ids!(login_send)).clicked(actions) || email_input.returned(actions).is_some();
+        if send && !self.login.sending {
+            let email = email_input.text().trim().to_owned();
+            if valid_email(&email) {
+                self.login.email = email.clone();
+                self.login.sending = true;
+                self.server.send_code(cx, &email);
+            } else {
+                self.set_login_error(cx, "请输入正确的邮箱地址");
+            }
+            self.sync_login(cx);
+        }
+        // Web: digits only, six of them.
+        if let Some(text) = code_input.changed(actions) {
+            let digits: String = text.chars().filter(char::is_ascii_digit).take(6).collect();
+            if digits != text {
+                code_input.set_text(cx, &digits);
+            }
+        }
+        let verify = self.ui.button(cx, ids!(login_verify)).clicked(actions) || code_input.returned(actions).is_some();
+        if verify && !self.login.sending {
+            let code = code_input.text();
+            if code.len() == 6 {
+                self.login.sending = true;
+                self.server.verify(cx, &self.login.email.clone(), &code);
+                self.sync_login(cx);
+            }
+        }
+        if self.ui.button(cx, ids!(login_back)).clicked(actions) {
+            self.login.code_step = false;
+            self.set_login_error(cx, "");
+            self.sync_login(cx);
+        }
+        if self.ui.button(cx, ids!(login_resend)).clicked(actions)
+            && !self.login.sending
+            && self.login.resend_at.is_none_or(|t| Instant::now() >= t)
+        {
+            self.login.sending = true;
+            self.server.send_code(cx, &self.login.email.clone());
+            self.sync_login(cx);
+        }
+        if self.ui.button(cx, ids!(login_later)).clicked(actions) {
+            self.login = LoginUi::default();
+            self.server.cancel_login();
+            self.sync_login(cx);
+            self.fail_waiting_for_login(cx);
+        }
+    }
+    /// Questions that were waiting for a sign-in the learner declined.
+    fn fail_waiting_for_login(&mut self, cx: &mut Cx) {
+        let pending: Vec<String> = self
+            .live
+            .as_ref()
+            .map(|l| l.questions.iter().filter(|q| q.2 == "pending").map(|q| q.0.clone()).collect())
+            .unwrap_or_default();
+        if let Some(l) = self.live.as_mut() {
+            l.queued = None;
+            l.uploading = None;
+        }
+        for turn in &pending {
+            self.fail_question(cx, turn, "需要登录后才能提问");
+        }
+    }
     /// A question still waiting after this long failed somewhere we cannot
     /// see (e.g. the server restarted and lost its job): let the learner retry.
     fn expire_pending_questions(&mut self, cx: &mut Cx) {
@@ -3197,7 +3386,31 @@ impl App {
                 continue;
             }
             match ev {
+                server::ServerEvent::LoginRequired { self_registration } => self.show_login(cx, self_registration),
+                server::ServerEvent::CodeSent(result) => {
+                    self.login.sending = false;
+                    match result {
+                        Ok(()) => {
+                            self.login.code_step = true;
+                            self.login.resend_at = Some(Instant::now() + std::time::Duration::from_secs(60));
+                            self.set_login_error(cx, "");
+                            self.ui.text_input(cx, ids!(login_code)).set_text(cx, "");
+                        }
+                        Err(e) => self.set_login_error(cx, &e),
+                    }
+                    self.sync_login(cx);
+                }
+                server::ServerEvent::LoginFailed(e) => {
+                    self.login.sending = false;
+                    self.set_login_error(cx, &e);
+                    self.sync_login(cx);
+                }
                 server::ServerEvent::LoggedIn => {
+                    if self.login.open {
+                        self.login = LoginUi::default();
+                        self.sync_login(cx);
+                    }
+                    self.sync_account(cx);
                     self.start_classification(cx);
                     if let Some((turn, text)) = self.live.as_mut().and_then(|l| l.queued.take()) {
                         self.dispatch_question(cx, turn, text, "text");
@@ -4758,6 +4971,10 @@ impl App {
             if let Err(e) = progress_store::Store::start(cx).map(|s| self.store = Some(s)) {
                 self.error = e;
             }
+            // Email-login token from the last session (checked with /me).
+            if let Some(path) = self.store.as_ref().map(|s| s.dir().join("auth.json")) {
+                self.server.restore_login(cx, path);
+            }
             self.open_reflections = self
                 .open_reflections_path()
                 .and_then(|p| std::fs::read(p).ok())
@@ -4800,6 +5017,9 @@ impl App {
                 if let Some(mut svg) = logo.borrow_mut::<Svg>() {
                     svg.draw_svg.load_from_str(&bake_svg_classes(LAUNCHER_LOGO_SVG));
                     loaded = svg.draw_svg.content_size.x > 0.;
+                }
+                if let Some(mut svg) = self.ui.widget(cx, ids!(login_logo)).borrow_mut::<Svg>() {
+                    svg.draw_svg.load_from_str(&bake_svg_classes(LAUNCHER_LOGO_SVG));
                 }
                 loaded
             };
@@ -4998,6 +5218,17 @@ impl App {
             }
         }
         let mut skip_autosave = false;
+        if let Event::Actions(actions) = event {
+            self.handle_login_actions(cx, actions);
+        }
+        // Resend countdown (web: a second-by-second label).
+        if self.login.open && self.login.code_step && self.timer.is_event(event).is_some() {
+            let tick = self.login.resend_at.map(|t| t.saturating_duration_since(Instant::now()).as_secs());
+            if tick != self.login_tick {
+                self.login_tick = tick;
+                self.sync_login(cx);
+            }
+        }
         if let Event::Actions(actions) = event {
             if self.ui.button(cx, ids!(back)).clicked(actions) {
                 skip_autosave = true;
