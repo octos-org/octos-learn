@@ -218,6 +218,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - 调试：`OCTOS_AUDIO_DEBUG=1` 打印解码、每秒片段状态、播完与停止时刻。忽略的测试：`OCTOS_AUDIO_TEST_FILE`（解码一段课程 MP3）、`OCTOS_AUDIO_PACK_ROOT`（全部课程声明与解码时长对比）。
   - Windows：按用户授权只做编译检查。Homebrew 的 rustc 不能用官方 Windows std，故在 `.local-dev/win-sysroot` 隔离安装官方 1.98.1 工具链（rustup，不改 PATH、不影响 Homebrew），`cargo check --release --target x86_64-pc-windows-msvc` 通过。**Android / Windows 的实际出声需要真机验证**
 - （本次提交）安卓笔迹比卡片大（GPT 反馈 4）：笔模式下 Java 原生笔迹层（`MakepadAppExtension` / `NativeInkBridge`）用屏幕像素，除以配置的 ratio 得到逻辑坐标；ratio 原来取 Makepad 渲染 DPI，4K 屏降到 1080p 渲染后变成 2（实际密度 4），于是笔迹按 2 倍大小、以左上角为原点放大记录，捕获区域也只剩左上 1/4。改为传窗口原生密度（`native_dpi_factor`）。只影响安卓，需真机验证
+- （本次提交）预制课程白板上提问的位置（GPT 2026-10-08 安卓反馈 3）：之前只修了空白板第一课题；有课程时问题卡 / 加载卡仍放在课程左边、压住笔迹，且第一次提问时 `set_topic_context`（换成课堂会话）会把刚设的选区清掉。现按 Web regionLayoutConstraints：每个课题都是 teaching 区域——课程在 (20,20)，每个回答从它的问题卡位置 +294 开始，带各自的控件 / 练习 / 反思附件；问题原点按问题保存（`topic_origins`，旧记录的 `topic_origin` 归第一个问题）。新问题放在白板上所有已排内容（课程与之前的回答）、辅助卡和选区笔迹最右边 +180、选区高度处，并让镜头先对准问题卡；已回答但没有保存原点的旧记录仍放在其回答左侧。Mac 端到端实测（本机服务）：slope-and-intercept 互动模式手写 → 解释这部分，问题卡与加载卡在课程右侧，回答课程排在问题卡右侧
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，

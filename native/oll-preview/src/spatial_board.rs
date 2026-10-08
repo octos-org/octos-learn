@@ -273,11 +273,11 @@ pub struct SpatialBoard {
     /// the app then drops selection cards whose source ink is gone.
     #[rust]
     ink_erased: bool,
-    /// Web course region placement for a live board's first topic: the
-    /// question card's position (lesson region starts COURSE_RUNTIME_OFFSET_X
-    /// right of it). Keyed by the board session it was computed for.
+    /// Web course regions: each question's card position (its answer topic
+    /// starts COURSE_RUNTIME_OFFSET_X right of it), by question turn id.
+    /// Keyed by the board session they were computed for.
     #[rust]
-    topic_origin: Option<(f64, f64)>,
+    topic_origins: BTreeMap<String, (f64, f64)>,
     #[rust]
     topic_session: String,
     /// The pending question's selection source (world), reserved like the web.
@@ -297,6 +297,10 @@ pub struct SpatialBoard {
     /// Frame the host cards once the viewport is known (no lesson yet).
     #[rust]
     host_frame_pending: bool,
+    /// A new question was placed as a new topic: frame its cards once (on
+    /// a board with a lesson the camera would otherwise stay on the course).
+    #[rust]
+    host_frame_new_topic: bool,
     /// Plot explorer state by node id (web PlotExplorer state).
     #[rust]
     plot_states: BTreeMap<String, PlotState>,
@@ -669,56 +673,89 @@ impl SpatialBoard {
         }
         self.redraw(cx);
     }
-    /// The live board session and its saved topic origin. A new session
-    /// resets the origin; the same session keeps one computed here.
-    pub fn set_topic_context(&mut self, session: &str, origin: Option<(f64, f64)>) {
+    /// The live board session and its saved question origins. A new session
+    /// replaces them; the same session keeps the ones computed here.
+    pub fn set_topic_context(&mut self, session: &str, origins: &BTreeMap<String, (f64, f64)>) {
         if self.topic_session != session {
             self.topic_session = session.to_owned();
-            self.topic_origin = origin;
-            self.question_source = None;
-        } else if origin.is_some() {
-            self.topic_origin = origin;
+            self.topic_origins = origins.clone();
+        } else {
+            for (turn, o) in origins {
+                self.topic_origins.entry(turn.clone()).or_insert(*o);
+            }
         }
     }
-    pub fn topic_origin(&self) -> Option<(f64, f64)> {
-        self.topic_origin
+    pub fn topic_origins(&self) -> &BTreeMap<String, (f64, f64)> {
+        &self.topic_origins
     }
+    /// The next question's selection source (world), reserved when it is placed.
     pub fn set_question_source(&mut self, source: Option<(f64, f64, f64, f64)>) {
         self.question_source = source;
     }
     /// Web findNewTopicWhiteboardPosition: right of everything already on the
-    /// board (selection cards, the question's source ink) by the region
-    /// gutter, at the source's height. None when the board is empty.
+    /// board (laid-out lesson nodes, selection cards, the question's source
+    /// ink) by the region gutter, at the source's height (else 90). None when
+    /// the board is empty.
     fn new_topic_origin(&self) -> Option<(f64, f64)> {
         const COURSE_REGION_GUTTER: f64 = 180.;
         let occupied: Vec<(f64, f64, f64, f64)> = self
-            .selection_cards
-            .iter()
-            .map(|(_, r, _)| (r.x, r.y, r.width, r.height))
+            .geometry
+            .nodes
+            .values()
+            .map(|r| (r.x, r.y, r.width, r.height))
+            .chain(self.selection_cards.iter().map(|(_, r, _)| (r.x, r.y, r.width, r.height)))
             .chain(self.question_source)
             .filter(|r| r.2 > 0. && r.3 > 0.)
             .collect();
         let right = occupied.iter().map(|r| r.0 + r.2).fold(f64::NEG_INFINITY, f64::max);
         right.is_finite().then(|| (right + COURSE_REGION_GUTTER, self.question_source.map_or(90., |s| s.1)))
     }
+    /// Laid-out bounds of one region's nodes (min x, min y), if any.
+    fn region_origin(&self, region: &str) -> Option<(f64, f64)> {
+        let p = self.board.as_ref()?;
+        p.nodes
+            .iter()
+            .filter(|n| n["region_id"].as_str() == Some(region))
+            .filter_map(|n| self.geometry.nodes.get(n["id"].as_str()?))
+            .fold(None, |acc: Option<(f64, f64)>, r| Some(acc.map_or((r.x, r.y), |(x, y)| (x.min(r.x), y.min(r.y)))))
+    }
     fn place_host_cards(&mut self) {
-        if self.board.is_none() && self.topic_origin.is_none() && !self.host_cards.is_empty() {
-            self.topic_origin = self.new_topic_origin();
+        // Host cards show the latest question (its card and loading block).
+        let turn = self.host_cards.first().and_then(|(id, _, _)| {
+            id.strip_prefix("host:question:").or_else(|| id.strip_prefix("host:loading:")).map(str::to_owned)
+        });
+        let widths: f64 = self.host_cards.iter().map(|(_, r, _)| r.width + HOST_CARD_GAP).sum();
+        let mut origin = turn.as_ref().and_then(|t| self.topic_origins.get(t).copied());
+        if origin.is_none() {
+            if let Some(t) = &turn {
+                match self.region_origin(&format!("topic-{t}.octos-lesson.json")) {
+                    // Answered before origins were saved: left of its content.
+                    Some((ox, oy)) => origin = Some((ox - widths, oy)),
+                    // A new question: a new topic clear of everything.
+                    None => {
+                        if let Some(o) = self.new_topic_origin() {
+                            self.topic_origins.insert(t.clone(), o);
+                            self.question_source = None;
+                            self.host_frame_new_topic = true;
+                            origin = Some(o);
+                        }
+                    }
+                }
+            }
         }
-        // The lesson's content origin (layout bounds include outer padding).
-        let origin = self
-            .board
-            .is_some()
-            .then(|| {
+        // Empty board (nothing to avoid): the web's default spot; otherwise
+        // left of the lesson content.
+        let (mut x, y) = origin.unwrap_or_else(|| {
+            let lesson = self.board.is_some().then(|| {
                 self.geometry.nodes.values().fold(None, |acc: Option<(f64, f64)>, r| {
                     Some(acc.map_or((r.x, r.y), |(x, y)| (x.min(r.x), y.min(r.y))))
                 })
-            })
-            .flatten();
-        let (mut x, y) = match origin {
-            Some((ox, oy)) => (ox - self.host_cards.iter().map(|(_, r, _)| r.width + HOST_CARD_GAP).sum::<f64>(), oy),
-            None => self.topic_origin.unwrap_or((0., 0.)),
-        };
+            });
+            match lesson.flatten() {
+                Some((ox, oy)) => (ox - widths, oy),
+                None => (0., 0.),
+            }
+        });
         for (_, r, _) in &mut self.host_cards {
             r.x = x;
             r.y = y;
@@ -951,79 +988,99 @@ impl SpatialBoard {
         &self,
         p: &Preview,
     ) -> Result<(BoardLayout, Vec<(teaching::Attachment, Vec<String>)>, Vec<(teaching::Attachment, Vec<String>)>), String> {
-        let region = p
-            .nodes
-            .first()
-            .and_then(|n| n["region_id"].as_str())
-            .filter(|r| !r.is_empty())
-            .unwrap_or("__legacy__")
-            .to_owned();
+        // Web regionLayoutConstraints: every topic is a teaching region. The
+        // course (or first topic) sits at (20, 20) unless it answers a placed
+        // question; an answer topic starts COURSE_RUNTIME_OFFSET_X right of
+        // its question card. An answer whose question is not placed yet keeps
+        // the generic placement (web: no relocation before the region exists).
+        let mut regions: Vec<(String, (f64, f64))> = Vec::new();
+        for n in &p.nodes {
+            let region = n["region_id"].as_str().filter(|r| !r.is_empty()).unwrap_or("__legacy__").to_owned();
+            if regions.iter().any(|(r, _)| *r == region) {
+                continue;
+            }
+            let origin = answer_turn(&region).and_then(|t| self.topic_origins.get(t)).map(|(x, y)| (x + 294., *y));
+            match (regions.is_empty(), origin) {
+                (_, Some(o)) => regions.push((region, o)),
+                (true, None) => regions.push((region, (20., 20.))),
+                (false, None) => {}
+            }
+        }
+        if regions.is_empty() {
+            regions.push(("__legacy__".into(), (20., 20.)));
+        }
         let sections = p.node_sections();
         let course_nodes: Vec<String> = sections.iter().map(|(id, _)| id.clone()).collect();
-        let interaction = teaching::interaction_clusters(p, &region, &course_nodes, p.variable_declarations(), &self.task_defs);
-        let clusters: Vec<(teaching::Attachment, Vec<String>)> = interaction
-            .iter()
-            .filter(|c| !c.sliders.is_empty())
-            .map(|c| (c.controls_attachment(), c.sliders.clone()))
-            .collect();
-        // Practice panels: a cluster's available tasks, measured once rendered.
-        let task_panels: Vec<(teaching::Attachment, Vec<String>)> = interaction
-            .iter()
-            .filter_map(|c| {
-                let open: Vec<String> = c
-                    .task_ids
-                    .iter()
-                    .filter(|id| self.tasks.iter().any(|t| &t.progress.task_id == *id))
-                    .cloned()
-                    .collect();
-                if open.is_empty() {
-                    return None;
-                }
-                let id = format!("{}:tasks", c.id);
-                let measured = self.task_heights.get(&id).copied();
-                Some((c.tasks_attachment(open.len(), measured), open))
-            })
-            .collect();
         let insets = &self.insets;
-        let reflections: Vec<Value> = self
-            .reflection_specs(p, &region)
-            .into_iter()
-            .map(|(id, _, anchor)| json!({
-                "id": id, "kind": "reflection", "anchorNodeId": anchor, "width": 330,
-                "height": self.reflection_heights.get(&id).copied().unwrap_or(REFLECTION_ESTIMATED_HEIGHT),
-            }))
-            .collect();
-        // Web COURSE_RUNTIME_OFFSET_X: the lesson starts right of its question card.
-        let (rx, ry) = self.topic_origin.map_or((20., 20.), |(x, y)| (x + 294., y));
-        let options = json!({"regions": {region: {
-            "x": rx, "y": ry, "flow": "teaching",
-            "nodeSections": sections.iter().map(|(id, s)| (id.clone(), json!(s))).collect::<serde_json::Map<_, _>>(),
-            "plannedSteps": p.planned_steps().iter().map(|(s, c)| (s.clone(), json!({"visual": c.visual, "math": c.math, "text": c.text}))).collect::<serde_json::Map<_, _>>(),
-            "composition": {
-                "width": self.viewport.size.x.max(320.),
-                "height": self.viewport.size.y.max(240.),
-                "mode": if p.complete() { "overview" } else { "progressive" },
-                "insets": {"top": insets.top, "right": insets.right, "bottom": insets.bottom, "left": insets.left},
-                "readingScale": TEACHING_READING_SCALE,
-            },
-            "reservedWidth": 1300,
-            // The host reports the rendered panel height (web measured size).
-            "attachments": clusters.iter().map(|(a, aliases)| json!({
-                "id": a.id, "kind": "control", "anchorNodeId": a.anchor_node_id,
-                "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
-                "width": a.width, "height": controls_view::panel_height(aliases.len()),
-                "focusHeight": controls_view::panel_height(aliases.len()), "gap": 24,
-            }))
-            // Thinking questions open with the after-lesson window, under the
-            // card that poses them.
-            .chain(task_panels.iter().map(|(a, _)| json!({
-                "id": a.id, "kind": "task", "anchorNodeId": a.anchor_node_id,
-                "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
-                "width": a.width, "height": a.height, "gap": 28,
-            })))
-            .chain(reflections)
-            .collect::<Vec<_>>(),
-        }}});
+        let mut clusters: Vec<(teaching::Attachment, Vec<String>)> = Vec::new();
+        let mut task_panels: Vec<(teaching::Attachment, Vec<String>)> = Vec::new();
+        let mut constraints = serde_json::Map::new();
+        for (region, (rx, ry)) in &regions {
+            let interaction = teaching::interaction_clusters(p, region, &course_nodes, p.variable_declarations(), &self.task_defs);
+            let region_clusters: Vec<(teaching::Attachment, Vec<String>)> = interaction
+                .iter()
+                .filter(|c| !c.sliders.is_empty())
+                .map(|c| (c.controls_attachment(), c.sliders.clone()))
+                .collect();
+            // Practice panels: a cluster's available tasks, measured once rendered.
+            let region_tasks: Vec<(teaching::Attachment, Vec<String>)> = interaction
+                .iter()
+                .filter_map(|c| {
+                    let open: Vec<String> = c
+                        .task_ids
+                        .iter()
+                        .filter(|id| self.tasks.iter().any(|t| &t.progress.task_id == *id))
+                        .cloned()
+                        .collect();
+                    if open.is_empty() {
+                        return None;
+                    }
+                    let id = format!("{}:tasks", c.id);
+                    let measured = self.task_heights.get(&id).copied();
+                    Some((c.tasks_attachment(open.len(), measured), open))
+                })
+                .collect();
+            let reflections: Vec<Value> = self
+                .reflection_specs(p, region)
+                .into_iter()
+                .map(|(id, _, anchor)| json!({
+                    "id": id, "kind": "reflection", "anchorNodeId": anchor, "width": 330,
+                    "height": self.reflection_heights.get(&id).copied().unwrap_or(REFLECTION_ESTIMATED_HEIGHT),
+                }))
+                .collect();
+            constraints.insert(region.clone(), json!({
+                "x": rx, "y": ry, "flow": "teaching",
+                "nodeSections": sections.iter().map(|(id, s)| (id.clone(), json!(s))).collect::<serde_json::Map<_, _>>(),
+                "plannedSteps": p.planned_steps().iter().map(|(s, c)| (s.clone(), json!({"visual": c.visual, "math": c.math, "text": c.text}))).collect::<serde_json::Map<_, _>>(),
+                "composition": {
+                    "width": self.viewport.size.x.max(320.),
+                    "height": self.viewport.size.y.max(240.),
+                    "mode": if p.complete() { "overview" } else { "progressive" },
+                    "insets": {"top": insets.top, "right": insets.right, "bottom": insets.bottom, "left": insets.left},
+                    "readingScale": TEACHING_READING_SCALE,
+                },
+                "reservedWidth": 1300,
+                // The host reports the rendered panel height (web measured size).
+                "attachments": region_clusters.iter().map(|(a, aliases)| json!({
+                    "id": a.id, "kind": "control", "anchorNodeId": a.anchor_node_id,
+                    "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
+                    "width": a.width, "height": controls_view::panel_height(aliases.len()),
+                    "focusHeight": controls_view::panel_height(aliases.len()), "gap": 24,
+                }))
+                // Thinking questions open with the after-lesson window, under the
+                // card that poses them.
+                .chain(region_tasks.iter().map(|(a, _)| json!({
+                    "id": a.id, "kind": "task", "anchorNodeId": a.anchor_node_id,
+                    "ownerNodeId": a.owner_node_id, "anchorNodeIds": a.anchor_node_ids,
+                    "width": a.width, "height": a.height, "gap": 28,
+                })))
+                .chain(reflections)
+                .collect::<Vec<_>>(),
+            }));
+            clusters.extend(region_clusters);
+            task_panels.extend(region_tasks);
+        }
+        let options = json!({"regions": constraints});
         // Web render(): provisional layout from measureSemanticNode estimates,
         // then syncNodes sizes: rendered heights for content cards, rendered
         // formula width for math (capped at the layout width on later
@@ -1451,6 +1508,11 @@ impl SpatialBoard {
         self.manual = true;
         self.redraw(cx);
     }
+}
+/// The question turn of an answer topic's region (`topic-<turn>.octos-lesson.json`,
+/// OLL classroom::live_host).
+fn answer_turn(region: &str) -> Option<&str> {
+    region.strip_prefix("topic-")?.strip_suffix(".octos-lesson.json")
 }
 /// Two-finger pinch (web board: zoom around the fingers, pan with their
 /// midpoint): the world point under the start midpoint stays under the
@@ -2398,7 +2460,8 @@ impl Widget for SpatialBoard {
                 r.height = h;
             }
         }
-        if self.host_frame_pending && self.board.is_none() && self.viewport.size.x > 0. && !self.host_cards.is_empty() {
+        if ((self.host_frame_pending && self.board.is_none()) || self.host_frame_new_topic) && self.viewport.size.x > 0. && !self.host_cards.is_empty() {
+            self.host_frame_new_topic = false;
             self.host_frame_pending = host_resized;
             self.frame_host_cards();
             self.redraw(cx);

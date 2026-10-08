@@ -973,9 +973,10 @@ struct Live {
     /// Selection enhancement cards (web selection questions answered
     /// beside the ink).
     selection_cards: Vec<SelCard>,
-    /// Where the first topic's question card went (web course region
-    /// origin), so the lesson keeps clear of ink and helper cards on reopen.
-    topic_origin: Option<(f64, f64)>,
+    /// Where each question's card went (web course region origin, by turn
+    /// id), so its lesson keeps clear of the course, ink and helper cards
+    /// on reopen.
+    topic_origins: BTreeMap<String, (f64, f64)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
     tts_queue: Vec<(String, String)>,
     tts_inflight: Option<String>,
@@ -1010,7 +1011,7 @@ impl Live {
             base: None,
             course: None,
             selection_cards: Vec::new(),
-            topic_origin: None,
+            topic_origins: BTreeMap::new(),
             tts_queue: Vec::new(),
             tts_inflight: None,
         }
@@ -1448,6 +1449,20 @@ impl SelCard {
             minimized: v["minimized"].as_bool().unwrap_or(false),
         })
     }
+}
+
+/// Saved question origins (`topic_origins`); records from before per-question
+/// origins kept one `topic_origin`, which belongs to the first question.
+fn load_topic_origins(record: &serde_json::Value, questions: &[(String, String, String)]) -> BTreeMap<String, (f64, f64)> {
+    let pair = |v: &serde_json::Value| v.as_array().filter(|a| a.len() == 2).and_then(|a| Some((a[0].as_f64()?, a[1].as_f64()?)));
+    let mut origins: BTreeMap<String, (f64, f64)> = record["topic_origins"]
+        .as_object()
+        .map(|m| m.iter().filter_map(|(t, v)| Some((t.clone(), pair(v)?))).collect())
+        .unwrap_or_default();
+    if let (Some(o), Some(first)) = (pair(&record["topic_origin"]), questions.first()) {
+        origins.entry(first.0.clone()).or_insert(o);
+    }
+    origins
 }
 
 /// Dynamic buttons of the selection toolbar and panel.
@@ -2587,7 +2602,7 @@ impl App {
             })
             .collect();
         live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
-        live.topic_origin = record["topic_origin"].as_array().filter(|a| a.len() == 2).and_then(|a| Some((a[0].as_f64()?, a[1].as_f64()?)));
+        live.topic_origins = load_topic_origins(&record, &live.questions);
         live.lessons = record["lessons"]
             .as_array()
             .into_iter()
@@ -2963,10 +2978,10 @@ impl App {
     /// 学习记录 can reopen it offline.
     fn save_live(&mut self, cx: &mut Cx) {
         let positions = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().map(|b| b.selection_card_positions()).unwrap_or_default();
-        let origin = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().and_then(|b| b.topic_origin());
+        let origins = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().map(|b| b.topic_origins().clone()).unwrap_or_default();
         if let Some(live) = self.live.as_mut() {
-            if live.topic_origin.is_none() {
-                live.topic_origin = origin;
+            for (turn, o) in origins {
+                live.topic_origins.entry(turn).or_insert(o);
             }
             for card in &mut live.selection_cards {
                 if let Some((_, x, y)) = positions.iter().find(|(id, _, _)| *id == card.turn) {
@@ -2997,7 +3012,7 @@ impl App {
             "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
             "lessons": live.lessons.iter().map(|(t, src)| json!({"turn_id": t, "source": src})).collect::<Vec<_>>(),
             "selection_cards": live.selection_cards.iter().map(SelCard::to_json).collect::<Vec<_>>(),
-            "topic_origin": live.topic_origin.map(|(x, y)| json!([x, y])),
+            "topic_origins": live.topic_origins.iter().map(|(t, (x, y))| (t.clone(), json!([x, y]))).collect::<serde_json::Map<_, _>>(),
             "course": live.course.as_ref().map(|(p, v)| json!([p, v])),
             "checkpoint": checkpoint,
         });
@@ -3032,7 +3047,7 @@ impl App {
             })
             .collect();
         live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
-        live.topic_origin = record["topic_origin"].as_array().filter(|a| a.len() == 2).and_then(|a| Some((a[0].as_f64()?, a[1].as_f64()?)));
+        live.topic_origins = load_topic_origins(&record, &live.questions);
         // Records before topic composition kept one "lesson".
         let entries = record["lessons"].as_array().cloned().unwrap_or_else(|| record["lesson"].is_object().then(|| vec![record["lesson"].clone()]).unwrap_or_default());
         live.lessons = entries
@@ -3500,7 +3515,7 @@ impl App {
             // No live board (e.g. a course opened after a free whiteboard): drop
             // the previous board's question / loading and selection cards.
             if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
-                board.set_topic_context("", None);
+                board.set_topic_context("", &BTreeMap::new());
                 board.set_host_cards(cx, Vec::new());
                 board.set_selection_cards(cx, Vec::new());
             }
@@ -3521,7 +3536,7 @@ impl App {
         }
         let pending = live.pending();
         if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
-            board.set_topic_context(&live.session_id, live.topic_origin);
+            board.set_topic_context(&live.session_id, &live.topic_origins);
             board.set_host_cards(cx, cards);
         }
         let specs: Vec<spatial_board::SelectionCardSpec> = live
