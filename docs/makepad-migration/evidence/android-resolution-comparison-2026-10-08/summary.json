@@ -1,0 +1,262 @@
+[
+  {
+    "name": "scale-0.5-collection",
+    "scale": 0.5,
+    "scene": "collection",
+    "buffer": "1920x1080:2816,RGBA_1010102",
+    "gapMs": 18.597881729920566,
+    "waitMs": 5.176257722859665,
+    "drawMs": 1.879258605472198,
+    "eventMs": 3.6507502206531326,
+    "steadyFrames": 1133,
+    "steadyWindows": 21,
+    "windowGapMaxMs": 150.0,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 56.36351507959982,
+      "meanMs": 17.741973661290324,
+      "medianMs": 16.666704,
+      "p95Ms": 16.666918
+    }
+  },
+  {
+    "name": "scale-0.5-home",
+    "scale": 0.5,
+    "scene": "home",
+    "buffer": "1920x1080:2816,RGBA_1010102",
+    "gapMs": 17.83384223918575,
+    "waitMs": 5.2676844783715016,
+    "drawMs": 2.17557251908397,
+    "eventMs": 2.9202714164546224,
+    "steadyFrames": 1179,
+    "steadyWindows": 21,
+    "windowGapMaxMs": 150.0,
+    "surfaceRing": {
+      "newFramesInRing": 126,
+      "timestampRatePerSecond": 56.390856139669616,
+      "meanMs": 17.73337148,
+      "medianMs": 16.666697,
+      "p95Ms": 16.666981
+    }
+  },
+  {
+    "name": "scale-0.5-playback",
+    "scale": 0.5,
+    "scene": "playback",
+    "buffer": "1920x1080:2816,RGBA_1010102",
+    "gapMs": 33.19180327868853,
+    "waitMs": 8.395901639344263,
+    "drawMs": 5.8568852459016405,
+    "eventMs": 18.81032786885246,
+    "steadyFrames": 610,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 47.2,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 29.407051507442254,
+      "meanMs": 34.00544933064516,
+      "medianMs": 33.3334055,
+      "p95Ms": 50.000103
+    }
+  },
+  {
+    "name": "scale-0.55-playback",
+    "scale": 0.55,
+    "scene": "playback",
+    "buffer": "2112x1188:2816,RGBA_1010102",
+    "gapMs": 38.141398865784495,
+    "waitMs": 13.71758034026465,
+    "drawMs": 5.861625708884688,
+    "eventMs": 18.43289224952741,
+    "steadyFrames": 529,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 49.7,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 25.92329187634364,
+      "meanMs": 38.57534779032258,
+      "medianMs": 33.333566000000005,
+      "p95Ms": 50.000272
+    }
+  },
+  {
+    "name": "scale-0.667-collection",
+    "scale": 0.667,
+    "scene": "collection",
+    "buffer": "2561x1441:2816,RGBA_1010102",
+    "gapMs": 20.494279877425942,
+    "waitMs": 5.949948927477017,
+    "drawMs": 1.7148110316649643,
+    "eventMs": 3.321144024514811,
+    "steadyFrames": 979,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 149.8,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 48.627346155089484,
+      "meanMs": 20.56456045967742,
+      "medianMs": 16.666707,
+      "p95Ms": 33.333594
+    }
+  },
+  {
+    "name": "scale-0.667-home",
+    "scale": 0.667,
+    "scene": "home",
+    "buffer": "2561x1441:2816,RGBA_1010102",
+    "gapMs": 20.240524193548385,
+    "waitMs": 6.429737903225806,
+    "drawMs": 1.7569556451612902,
+    "eventMs": 3.1710685483870966,
+    "steadyFrames": 992,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 148.6,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 48.627346841591724,
+      "meanMs": 20.564560169354838,
+      "medianMs": 16.666721000000003,
+      "p95Ms": 33.333557
+    }
+  },
+  {
+    "name": "scale-0.667-playback",
+    "scale": 0.667,
+    "scene": "playback",
+    "buffer": "2561x1441:2816,RGBA_1010102",
+    "gapMs": 50.897619047619045,
+    "waitMs": 26.648677248677245,
+    "drawMs": 5.857407407407407,
+    "eventMs": 18.286243386243388,
+    "steadyFrames": 378,
+    "steadyWindows": 19,
+    "windowGapMaxMs": 65.6,
+    "surfaceRing": {
+      "newFramesInRing": 126,
+      "timestampRatePerSecond": 19.582202904195594,
+      "meanMs": 51.066777568,
+      "medianMs": 50.000108,
+      "p95Ms": 66.666931
+    }
+  },
+  {
+    "name": "scale-0.75-collection",
+    "scale": 0.75,
+    "scene": "collection",
+    "buffer": "2880x1620:2816,RGBA_1010102",
+    "gapMs": 21.229926238145417,
+    "waitMs": 15.965858798735512,
+    "drawMs": 1.4302423603793466,
+    "eventMs": 2.0233930453108533,
+    "steadyFrames": 949,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 195.3,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 47.692207813818634,
+      "meanMs": 20.967785846774195,
+      "medianMs": 16.666729,
+      "p95Ms": 33.333499
+    }
+  },
+  {
+    "name": "scale-0.75-home",
+    "scale": 0.75,
+    "scene": "home",
+    "buffer": "2880x1620:2816,RGBA_1010102",
+    "gapMs": 21.78045602605863,
+    "waitMs": 16.184690553745927,
+    "drawMs": 1.4302931596091204,
+    "eventMs": 1.830618892508143,
+    "steadyFrames": 921,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 192.1,
+    "surfaceRing": {
+      "newFramesInRing": 127,
+      "timestampRatePerSecond": 47.249901655235945,
+      "meanMs": 21.164065214285714,
+      "medianMs": 16.666718,
+      "p95Ms": 33.333567
+    }
+  },
+  {
+    "name": "scale-0.75-playback",
+    "scale": 0.75,
+    "scene": "playback",
+    "buffer": "2880x1620:2816,RGBA_1010102",
+    "gapMs": 61.33164556962025,
+    "waitMs": 37.052215189873415,
+    "drawMs": 6.007911392405063,
+    "eventMs": 18.16835443037975,
+    "steadyFrames": 316,
+    "steadyWindows": 19,
+    "windowGapMaxMs": 75.6,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 15.89740181585216,
+      "meanMs": 62.90336066129032,
+      "medianMs": 66.666773,
+      "p95Ms": 66.667211
+    }
+  },
+  {
+    "name": "scale-1.0-collection",
+    "scale": 1.0,
+    "scene": "collection",
+    "buffer": "3840x2160:2816,RGBA_1010102",
+    "gapMs": 29.79016152716593,
+    "waitMs": 24.762848751835534,
+    "drawMs": 1.430396475770925,
+    "eventMs": 1.915271659324523,
+    "steadyFrames": 681,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 176.1,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 33.818107366081264,
+      "meanMs": 29.569957572580645,
+      "medianMs": 33.333338499999996,
+      "p95Ms": 33.333778
+    }
+  },
+  {
+    "name": "scale-1.0-home",
+    "scale": 1.0,
+    "scene": "home",
+    "buffer": "3840x2160:2816,RGBA_1010102",
+    "gapMs": 29.781958041958045,
+    "waitMs": 24.9951048951049,
+    "drawMs": 1.4325874125874125,
+    "eventMs": 1.7104895104895106,
+    "steadyFrames": 715,
+    "steadyWindows": 21,
+    "windowGapMaxMs": 174.9,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 33.81811045582001,
+      "meanMs": 29.56995487096774,
+      "medianMs": 33.333353,
+      "p95Ms": 33.333702
+    }
+  },
+  {
+    "name": "scale-1.0-playback",
+    "scale": 1.0,
+    "scene": "playback",
+    "buffer": "3840x2160:2816,RGBA_1010102",
+    "gapMs": 100.42941176470588,
+    "waitMs": 75.36176470588235,
+    "drawMs": 6.525980392156862,
+    "eventMs": 18.420098039215684,
+    "steadyFrames": 204,
+    "steadyWindows": 20,
+    "windowGapMaxMs": 121.8,
+    "surfaceRing": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 9.358470370105527,
+      "meanMs": 106.85506930645161,
+      "medianMs": 108.3334945,
+      "p95Ms": 116.667114
+    }
+  }
+]

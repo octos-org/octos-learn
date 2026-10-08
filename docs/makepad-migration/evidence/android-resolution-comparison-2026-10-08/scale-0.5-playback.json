@@ -1,0 +1,443 @@
+{
+  "name": "scale-0.5-playback",
+  "pid": 32403,
+  "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#2959",
+  "mode": "probe",
+  "scale": 4,
+  "bisect": "",
+  "actionEndSeconds": 24.007804958,
+  "deviceStartEpoch": 1791473498.435583,
+  "gestures": [],
+  "surface": {
+    "newFramesInRing": 125,
+    "timestampRatePerSecond": 29.407051507442254,
+    "meanMs": 34.00544933064516,
+    "medianMs": 33.3334055,
+    "p95Ms": 50.000103
+  },
+  "steadyWindows": 20,
+  "steadyFrames": 610,
+  "weightedChannelsMs": {
+    "event": 18.81032786885246,
+    "draw": 5.8568852459016405,
+    "wait": 8.395901639344263,
+    "gpu": null,
+    "gc": 0.0
+  },
+  "weightedGapMs": 33.19180327868853,
+  "meanBusyPercent": 56.5,
+  "samples": [
+    {
+      "elapsed": -0.4035830497741699,
+      "receivedElapsed": 0.172111417,
+      "line": "1791473498.032 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 68% | Draw 32x 568.4ms max 21.8ms | Timer 32x 99.9ms max 23.3ms | NextFrame 1x 13.8ms max 13.8ms | Signal 5x 2.1ms max 0.6ms || frames 32 gap 36.6ms max 192.3ms | event 25.1ms draw 7.5ms wait 2.4ms"
+    },
+    {
+      "elapsed": 0.597416877746582,
+      "receivedElapsed": 0.595138167,
+      "line": "1791473499.033 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 68% | Draw 33x 599.0ms max 25.9ms | Timer 33x 82.2ms max 4.5ms | Signal 3x 1.0ms max 0.4ms || frames 33 gap 30.5ms max 40.2ms | event 20.8ms draw 7.5ms wait 2.0ms"
+    },
+    {
+      "elapsed": 1.599416971206665,
+      "receivedElapsed": 1.5930869170000004,
+      "line": "1791473500.035 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 64% | Draw 34x 572.8ms max 19.8ms | Timer 33x 70.7ms max 3.1ms | Signal 2x 1.0ms max 0.8ms || frames 34 gap 29.7ms max 37.7ms | event 19.0ms draw 6.7ms wait 3.9ms"
+    },
+    {
+      "elapsed": 2.608416795730591,
+      "receivedElapsed": 2.6067560000000003,
+      "line": "1791473501.044 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 62% | Draw 34x 552.0ms max 19.4ms | Timer 34x 75.8ms max 5.0ms || frames 34 gap 29.7ms max 33.1ms | event 18.5ms draw 5.7ms wait 5.4ms"
+    },
+    {
+      "elapsed": 3.6144168376922607,
+      "receivedElapsed": 3.607511375,
+      "line": "1791473502.050 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 62% | Draw 34x 551.8ms max 19.3ms | Timer 34x 72.5ms max 3.3ms || frames 34 gap 29.6ms max 30.7ms | event 18.4ms draw 5.7ms wait 5.3ms"
+    },
+    {
+      "elapsed": 4.621416807174683,
+      "receivedElapsed": 4.6171282080000005,
+      "line": "1791473503.057 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 34x 542.5ms max 19.9ms | Timer 34x 72.8ms max 3.6ms || frames 34 gap 29.6ms max 31.8ms | event 18.1ms draw 5.8ms wait 5.6ms"
+    },
+    {
+      "elapsed": 5.6334168910980225,
+      "receivedElapsed": 5.62727525,
+      "line": "1791473504.069 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 62% | Draw 34x 556.2ms max 19.8ms | Timer 34x 75.0ms max 4.0ms || frames 34 gap 29.7ms max 31.5ms | event 18.5ms draw 5.9ms wait 5.2ms"
+    },
+    {
+      "elapsed": 6.644416809082031,
+      "receivedElapsed": 6.6375215,
+      "line": "1791473505.080 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 64% | Draw 35x 563.5ms max 20.2ms | Timer 36x 80.3ms max 4.2ms || frames 35 gap 28.6ms max 32.2ms | event 18.4ms draw 5.8ms wait 4.3ms"
+    },
+    {
+      "elapsed": 7.649416923522949,
+      "receivedElapsed": 7.643872667,
+      "line": "1791473506.085 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 68% | Draw 38x 604.8ms max 23.1ms | Timer 38x 82.6ms max 3.3ms || frames 38 gap 26.4ms max 34.3ms | event 18.1ms draw 5.9ms wait 2.3ms"
+    },
+    {
+      "elapsed": 8.666416883468628,
+      "receivedElapsed": 8.660685333,
+      "line": "1791473507.102 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 55% | Draw 28x 467.4ms max 19.9ms | Timer 28x 78.0ms max 14.7ms | NextFrame 1x 11.5ms max 11.5ms || frames 28 gap 36.1ms max 43.6ms | event 19.9ms draw 6.0ms wait 10.0ms"
+    },
+    {
+      "elapsed": 9.682416915893555,
+      "receivedElapsed": 9.675823708,
+      "line": "1791473508.118 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 455.4ms max 20.0ms | Timer 28x 63.9ms max 4.4ms || frames 28 gap 36.3ms max 39.4ms | event 18.6ms draw 5.9ms wait 11.7ms"
+    },
+    {
+      "elapsed": 10.700416803359985,
+      "receivedElapsed": 10.693139083,
+      "line": "1791473509.136 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 53% | Draw 28x 473.7ms max 21.3ms | Timer 28x 66.5ms max 5.0ms || frames 28 gap 36.3ms max 39.3ms | event 19.2ms draw 5.8ms wait 11.1ms"
+    },
+    {
+      "elapsed": 11.71541690826416,
+      "receivedElapsed": 11.709153624999999,
+      "line": "1791473510.151 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 469.0ms max 21.3ms | Timer 28x 62.4ms max 3.7ms || frames 28 gap 36.3ms max 38.4ms | event 19.0ms draw 5.9ms wait 11.2ms"
+    },
+    {
+      "elapsed": 12.732416868209839,
+      "receivedElapsed": 12.747896667,
+      "line": "1791473511.168 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 455.3ms max 19.2ms | Timer 28x 63.3ms max 5.2ms || frames 28 gap 36.3ms max 39.3ms | event 18.6ms draw 5.9ms wait 11.7ms"
+    },
+    {
+      "elapsed": 13.747416973114014,
+      "receivedElapsed": 13.740924917000001,
+      "line": "1791473512.183 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 461.5ms max 19.6ms | Timer 28x 66.2ms max 4.7ms || frames 28 gap 36.3ms max 39.4ms | event 18.9ms draw 5.8ms wait 11.5ms"
+    },
+    {
+      "elapsed": 14.765416860580444,
+      "receivedElapsed": 14.758239917000001,
+      "line": "1791473513.201 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 53% | Draw 28x 479.9ms max 26.7ms | Timer 28x 63.8ms max 3.9ms || frames 28 gap 36.3ms max 38.2ms | event 19.5ms draw 5.7ms wait 11.0ms"
+    },
+    {
+      "elapsed": 15.783416986465454,
+      "receivedElapsed": 15.777340917,
+      "line": "1791473514.219 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 468.9ms max 22.4ms | Timer 28x 65.1ms max 4.6ms || frames 28 gap 36.4ms max 39.1ms | event 19.0ms draw 5.9ms wait 11.4ms"
+    },
+    {
+      "elapsed": 16.803416967391968,
+      "receivedElapsed": 16.807712583,
+      "line": "1791473515.239 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 469.1ms max 19.3ms | Timer 28x 61.8ms max 3.2ms || frames 28 gap 36.4ms max 39.0ms | event 19.0ms draw 5.9ms wait 11.4ms"
+    },
+    {
+      "elapsed": 17.8214168548584,
+      "receivedElapsed": 17.814439625,
+      "line": "1791473516.257 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 457.8ms max 18.8ms | Timer 28x 62.6ms max 4.2ms || frames 28 gap 36.4ms max 38.4ms | event 18.6ms draw 6.0ms wait 11.6ms"
+    },
+    {
+      "elapsed": 18.82241678237915,
+      "receivedElapsed": 18.815663792,
+      "line": "1791473517.258 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 32x 533.4ms max 19.3ms | Timer 31x 81.0ms max 14.3ms || frames 32 gap 32.0ms max 42.1ms | event 19.3ms draw 5.9ms wait 6.6ms"
+    },
+    {
+      "elapsed": 19.82741689682007,
+      "receivedElapsed": 19.858267292,
+      "line": "1791473518.263 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 32x 545.0ms max 20.9ms | Timer 33x 71.4ms max 2.8ms || frames 32 gap 30.9ms max 32.3ms | event 19.2ms draw 5.9ms wait 5.8ms"
+    },
+    {
+      "elapsed": 20.830416917800903,
+      "receivedElapsed": 20.822988291999998,
+      "line": "1791473519.266 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 60% | Draw 33x 531.8ms max 18.9ms | Timer 32x 71.0ms max 3.6ms || frames 33 gap 30.8ms max 32.4ms | event 18.4ms draw 5.6ms wait 6.7ms"
+    },
+    {
+      "elapsed": 21.838416814804077,
+      "receivedElapsed": 21.832764708,
+      "line": "1791473520.274 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 55% | Draw 29x 475.2ms max 19.3ms | Timer 29x 82.5ms max 14.3ms || frames 29 gap 34.7ms max 47.2ms | event 19.2ms draw 5.9ms wait 9.4ms"
+    },
+    {
+      "elapsed": 22.854416847229004,
+      "receivedElapsed": 22.868422792,
+      "line": "1791473521.290 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 54% | Draw 29x 481.5ms max 19.0ms | Timer 29x 62.3ms max 2.8ms || frames 29 gap 35.1ms max 36.2ms | event 18.9ms draw 6.0ms wait 10.1ms"
+    },
+    {
+      "elapsed": 23.85741686820984,
+      "receivedElapsed": 23.851760125,
+      "line": "1791473522.293 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 454.2ms max 19.3ms | Timer 29x 67.0ms max 4.4ms || frames 28 gap 35.2ms max 37.4ms | event 18.6ms draw 5.7ms wait 10.8ms"
+    },
+    {
+      "elapsed": 24.8764169216156,
+      "receivedElapsed": 24.869354417,
+      "line": "1791473523.312 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 53% | Draw 29x 480.8ms max 22.4ms | Timer 29x 63.8ms max 3.7ms || frames 29 gap 35.1ms max 36.8ms | event 18.8ms draw 6.0ms wait 10.3ms"
+    }
+  ],
+  "steadySamples": [
+    {
+      "elapsed": 3.6144168376922607,
+      "receivedElapsed": 3.607511375,
+      "line": "1791473502.050 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 62% | Draw 34x 551.8ms max 19.3ms | Timer 34x 72.5ms max 3.3ms || frames 34 gap 29.6ms max 30.7ms | event 18.4ms draw 5.7ms wait 5.3ms",
+      "frames": 34,
+      "gap": 29.6,
+      "gapMax": 30.7,
+      "channels": {
+        "event": 18.4,
+        "draw": 5.7,
+        "wait": 5.3
+      },
+      "busy": 62
+    },
+    {
+      "elapsed": 4.621416807174683,
+      "receivedElapsed": 4.6171282080000005,
+      "line": "1791473503.057 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 34x 542.5ms max 19.9ms | Timer 34x 72.8ms max 3.6ms || frames 34 gap 29.6ms max 31.8ms | event 18.1ms draw 5.8ms wait 5.6ms",
+      "frames": 34,
+      "gap": 29.6,
+      "gapMax": 31.8,
+      "channels": {
+        "event": 18.1,
+        "draw": 5.8,
+        "wait": 5.6
+      },
+      "busy": 61
+    },
+    {
+      "elapsed": 5.6334168910980225,
+      "receivedElapsed": 5.62727525,
+      "line": "1791473504.069 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 62% | Draw 34x 556.2ms max 19.8ms | Timer 34x 75.0ms max 4.0ms || frames 34 gap 29.7ms max 31.5ms | event 18.5ms draw 5.9ms wait 5.2ms",
+      "frames": 34,
+      "gap": 29.7,
+      "gapMax": 31.5,
+      "channels": {
+        "event": 18.5,
+        "draw": 5.9,
+        "wait": 5.2
+      },
+      "busy": 62
+    },
+    {
+      "elapsed": 6.644416809082031,
+      "receivedElapsed": 6.6375215,
+      "line": "1791473505.080 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 64% | Draw 35x 563.5ms max 20.2ms | Timer 36x 80.3ms max 4.2ms || frames 35 gap 28.6ms max 32.2ms | event 18.4ms draw 5.8ms wait 4.3ms",
+      "frames": 35,
+      "gap": 28.6,
+      "gapMax": 32.2,
+      "channels": {
+        "event": 18.4,
+        "draw": 5.8,
+        "wait": 4.3
+      },
+      "busy": 64
+    },
+    {
+      "elapsed": 7.649416923522949,
+      "receivedElapsed": 7.643872667,
+      "line": "1791473506.085 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 68% | Draw 38x 604.8ms max 23.1ms | Timer 38x 82.6ms max 3.3ms || frames 38 gap 26.4ms max 34.3ms | event 18.1ms draw 5.9ms wait 2.3ms",
+      "frames": 38,
+      "gap": 26.4,
+      "gapMax": 34.3,
+      "channels": {
+        "event": 18.1,
+        "draw": 5.9,
+        "wait": 2.3
+      },
+      "busy": 68
+    },
+    {
+      "elapsed": 8.666416883468628,
+      "receivedElapsed": 8.660685333,
+      "line": "1791473507.102 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 55% | Draw 28x 467.4ms max 19.9ms | Timer 28x 78.0ms max 14.7ms | NextFrame 1x 11.5ms max 11.5ms || frames 28 gap 36.1ms max 43.6ms | event 19.9ms draw 6.0ms wait 10.0ms",
+      "frames": 28,
+      "gap": 36.1,
+      "gapMax": 43.6,
+      "channels": {
+        "event": 19.9,
+        "draw": 6.0,
+        "wait": 10.0
+      },
+      "busy": 55
+    },
+    {
+      "elapsed": 9.682416915893555,
+      "receivedElapsed": 9.675823708,
+      "line": "1791473508.118 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 455.4ms max 20.0ms | Timer 28x 63.9ms max 4.4ms || frames 28 gap 36.3ms max 39.4ms | event 18.6ms draw 5.9ms wait 11.7ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 39.4,
+      "channels": {
+        "event": 18.6,
+        "draw": 5.9,
+        "wait": 11.7
+      },
+      "busy": 51
+    },
+    {
+      "elapsed": 10.700416803359985,
+      "receivedElapsed": 10.693139083,
+      "line": "1791473509.136 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 53% | Draw 28x 473.7ms max 21.3ms | Timer 28x 66.5ms max 5.0ms || frames 28 gap 36.3ms max 39.3ms | event 19.2ms draw 5.8ms wait 11.1ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 39.3,
+      "channels": {
+        "event": 19.2,
+        "draw": 5.8,
+        "wait": 11.1
+      },
+      "busy": 53
+    },
+    {
+      "elapsed": 11.71541690826416,
+      "receivedElapsed": 11.709153624999999,
+      "line": "1791473510.151 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 469.0ms max 21.3ms | Timer 28x 62.4ms max 3.7ms || frames 28 gap 36.3ms max 38.4ms | event 19.0ms draw 5.9ms wait 11.2ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 38.4,
+      "channels": {
+        "event": 19.0,
+        "draw": 5.9,
+        "wait": 11.2
+      },
+      "busy": 52
+    },
+    {
+      "elapsed": 12.732416868209839,
+      "receivedElapsed": 12.747896667,
+      "line": "1791473511.168 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 455.3ms max 19.2ms | Timer 28x 63.3ms max 5.2ms || frames 28 gap 36.3ms max 39.3ms | event 18.6ms draw 5.9ms wait 11.7ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 39.3,
+      "channels": {
+        "event": 18.6,
+        "draw": 5.9,
+        "wait": 11.7
+      },
+      "busy": 51
+    },
+    {
+      "elapsed": 13.747416973114014,
+      "receivedElapsed": 13.740924917000001,
+      "line": "1791473512.183 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 461.5ms max 19.6ms | Timer 28x 66.2ms max 4.7ms || frames 28 gap 36.3ms max 39.4ms | event 18.9ms draw 5.8ms wait 11.5ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 39.4,
+      "channels": {
+        "event": 18.9,
+        "draw": 5.8,
+        "wait": 11.5
+      },
+      "busy": 52
+    },
+    {
+      "elapsed": 14.765416860580444,
+      "receivedElapsed": 14.758239917000001,
+      "line": "1791473513.201 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 53% | Draw 28x 479.9ms max 26.7ms | Timer 28x 63.8ms max 3.9ms || frames 28 gap 36.3ms max 38.2ms | event 19.5ms draw 5.7ms wait 11.0ms",
+      "frames": 28,
+      "gap": 36.3,
+      "gapMax": 38.2,
+      "channels": {
+        "event": 19.5,
+        "draw": 5.7,
+        "wait": 11.0
+      },
+      "busy": 53
+    },
+    {
+      "elapsed": 15.783416986465454,
+      "receivedElapsed": 15.777340917,
+      "line": "1791473514.219 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 468.9ms max 22.4ms | Timer 28x 65.1ms max 4.6ms || frames 28 gap 36.4ms max 39.1ms | event 19.0ms draw 5.9ms wait 11.4ms",
+      "frames": 28,
+      "gap": 36.4,
+      "gapMax": 39.1,
+      "channels": {
+        "event": 19.0,
+        "draw": 5.9,
+        "wait": 11.4
+      },
+      "busy": 52
+    },
+    {
+      "elapsed": 16.803416967391968,
+      "receivedElapsed": 16.807712583,
+      "line": "1791473515.239 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 52% | Draw 28x 469.1ms max 19.3ms | Timer 28x 61.8ms max 3.2ms || frames 28 gap 36.4ms max 39.0ms | event 19.0ms draw 5.9ms wait 11.4ms",
+      "frames": 28,
+      "gap": 36.4,
+      "gapMax": 39.0,
+      "channels": {
+        "event": 19.0,
+        "draw": 5.9,
+        "wait": 11.4
+      },
+      "busy": 52
+    },
+    {
+      "elapsed": 17.8214168548584,
+      "receivedElapsed": 17.814439625,
+      "line": "1791473516.257 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 51% | Draw 28x 457.8ms max 18.8ms | Timer 28x 62.6ms max 4.2ms || frames 28 gap 36.4ms max 38.4ms | event 18.6ms draw 6.0ms wait 11.6ms",
+      "frames": 28,
+      "gap": 36.4,
+      "gapMax": 38.4,
+      "channels": {
+        "event": 18.6,
+        "draw": 6.0,
+        "wait": 11.6
+      },
+      "busy": 51
+    },
+    {
+      "elapsed": 18.82241678237915,
+      "receivedElapsed": 18.815663792,
+      "line": "1791473517.258 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 32x 533.4ms max 19.3ms | Timer 31x 81.0ms max 14.3ms || frames 32 gap 32.0ms max 42.1ms | event 19.3ms draw 5.9ms wait 6.6ms",
+      "frames": 32,
+      "gap": 32.0,
+      "gapMax": 42.1,
+      "channels": {
+        "event": 19.3,
+        "draw": 5.9,
+        "wait": 6.6
+      },
+      "busy": 61
+    },
+    {
+      "elapsed": 19.82741689682007,
+      "receivedElapsed": 19.858267292,
+      "line": "1791473518.263 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 61% | Draw 32x 545.0ms max 20.9ms | Timer 33x 71.4ms max 2.8ms || frames 32 gap 30.9ms max 32.3ms | event 19.2ms draw 5.9ms wait 5.8ms",
+      "frames": 32,
+      "gap": 30.9,
+      "gapMax": 32.3,
+      "channels": {
+        "event": 19.2,
+        "draw": 5.9,
+        "wait": 5.8
+      },
+      "busy": 61
+    },
+    {
+      "elapsed": 20.830416917800903,
+      "receivedElapsed": 20.822988291999998,
+      "line": "1791473519.266 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 60% | Draw 33x 531.8ms max 18.9ms | Timer 32x 71.0ms max 3.6ms || frames 33 gap 30.8ms max 32.4ms | event 18.4ms draw 5.6ms wait 6.7ms",
+      "frames": 33,
+      "gap": 30.8,
+      "gapMax": 32.4,
+      "channels": {
+        "event": 18.4,
+        "draw": 5.6,
+        "wait": 6.7
+      },
+      "busy": 60
+    },
+    {
+      "elapsed": 21.838416814804077,
+      "receivedElapsed": 21.832764708,
+      "line": "1791473520.274 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 55% | Draw 29x 475.2ms max 19.3ms | Timer 29x 82.5ms max 14.3ms || frames 29 gap 34.7ms max 47.2ms | event 19.2ms draw 5.9ms wait 9.4ms",
+      "frames": 29,
+      "gap": 34.7,
+      "gapMax": 47.2,
+      "channels": {
+        "event": 19.2,
+        "draw": 5.9,
+        "wait": 9.4
+      },
+      "busy": 55
+    },
+    {
+      "elapsed": 22.854416847229004,
+      "receivedElapsed": 22.868422792,
+      "line": "1791473521.290 32403 32427 I Makepad : src/perf.rs:60:13 - [perf] busy 54% | Draw 29x 481.5ms max 19.0ms | Timer 29x 62.3ms max 2.8ms || frames 29 gap 35.1ms max 36.2ms | event 18.9ms draw 6.0ms wait 10.1ms",
+      "frames": 29,
+      "gap": 35.1,
+      "gapMax": 36.2,
+      "channels": {
+        "event": 18.9,
+        "draw": 6.0,
+        "wait": 10.1
+      },
+      "busy": 54
+    }
+  ]
+}

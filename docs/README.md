@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [安卓大屏四比例清晰度 /性能对照](makepad-migration/ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)：同APK比较1080p、约1440p、1620p、4K；缓存滚动流畅，高分辨率播放仍受限。
+
 - [安卓大屏选区提问调查](makepad-migration/ANDROID_SELECTION_FLOW_INVESTIGATION_2026-10-08.md)：2666794现场加载等待、面板安卓密度遗漏、预制课程选区卡片避让及大小问题；只读调查，未修改实现。
 
 - [Mac / Android 最新修复重建](makepad-migration/LOCAL_REBUILD_2026-10-08.md)：2666794、OLL4263b22与固定Makepad颜色补丁，两个版本已准备供用户重新测试。
