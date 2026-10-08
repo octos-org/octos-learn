@@ -6,6 +6,7 @@ use crate::plot_view::{PlotState, PlotView, Tool};
 use crate::scene3d_view::Scene3dView;
 use makepad_plot::LinePlot;
 use makepad_widgets::*;
+use makepad_widgets::makepad_platform::event::TouchState;
 use oll_runtime::ink::Ink;
 use oll_runtime::scene3d::View as SceneView;
 use oll_runtime::{
@@ -282,6 +283,12 @@ pub struct SpatialBoard {
     /// The pending question's selection source (world), reserved like the web.
     #[rust]
     question_source: Option<(f64, f64, f64, f64)>,
+    /// Touches down on the board (uid -> position) and the two-finger
+    /// pinch in progress: (start camera, start midpoint, start distance).
+    #[rust]
+    touches: Vec<(u64, DVec2)>,
+    #[rust]
+    pinch: Option<(Camera, DVec2, f64)>,
     /// Card actions for the app: (card id, "minimize" | "expand" | "delete").
     #[rust]
     selection_requests: Vec<(String, &'static str)>,
@@ -1442,7 +1449,56 @@ impl SpatialBoard {
         self.redraw(cx);
     }
 }
+/// Two-finger pinch (web board: zoom around the fingers, pan with their
+/// midpoint): the world point under the start midpoint stays under the
+/// current midpoint at start scale * distance ratio (clamped like zoom_at).
+/// Midpoints are viewport-local.
+fn pinch_camera(start: Camera, start_mid: DVec2, start_dist: f64, mid: DVec2, dist: f64) -> Camera {
+    let (wx, wy) = start.view_to_world(start_mid.x, start_mid.y);
+    let scale = (start.scale * dist / start_dist.max(1.)).clamp(0.18, 2.5);
+    Camera { x: mid.x - wx * scale, y: mid.y - wy * scale, scale }
+}
 impl SpatialBoard {
+    /// Android / touch screens: two fingers on the board zoom and pan it.
+    /// Consumes those touch events so single-finger drag and ink stay out.
+    fn pinch_event(&mut self, cx: &mut Cx, event: &Event) -> bool {
+        let Event::TouchUpdate(e) = event else { return false };
+        let rect = self.draw_bg.area().clipped_rect(cx);
+        for t in &e.touches {
+            match t.state {
+                TouchState::Start if rect.contains(t.abs) => {
+                    self.touches.retain(|(id, _)| *id != t.uid);
+                    self.touches.push((t.uid, t.abs));
+                }
+                TouchState::Stop => self.touches.retain(|(id, _)| *id != t.uid),
+                _ => {
+                    if let Some(entry) = self.touches.iter_mut().find(|(id, _)| *id == t.uid) {
+                        entry.1 = t.abs;
+                    }
+                }
+            }
+        }
+        if self.touches.len() != 2 {
+            // Back to one finger: it does not resume dragging (no jump).
+            return std::mem::take(&mut self.pinch).is_some();
+        }
+        let (a, b) = (self.touches[0].1, self.touches[1].1);
+        let mid = (a + b) * 0.5 - self.viewport.pos;
+        let dist = (a - b).length();
+        match self.pinch {
+            None => {
+                self.pinch = Some((self.camera, mid, dist));
+                self.drag = None;
+                self.card_drag = None;
+                self.manual = true;
+            }
+            Some((start, start_mid, start_dist)) => {
+                self.jump_to(pinch_camera(start, start_mid, start_dist, mid, dist));
+                self.redraw(cx);
+            }
+        }
+        true
+    }
     /// The scene3d panel under a screen position, if any (topmost card last).
     fn scene_at(&self, cx: &mut Cx, abs: DVec2) -> Option<(String, WidgetRef, DVec2)> {
         let local = abs - self.viewport.pos;
@@ -2039,6 +2095,9 @@ impl Widget for SpatialBoard {
         if self.input_blocked {
             return;
         }
+        if self.pinch_event(cx, event) {
+            return;
+        }
         let hit = event.hits(cx, self.draw_bg.area());
         // Selection cards (web SelectionEnhancementLayer) sit above ink and
         // board input: header buttons, minimized pins, and dragging the card
@@ -2560,6 +2619,19 @@ impl Widget for SpatialBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn pinch_keeps_the_world_point_under_the_fingers() {
+        let start = Camera { x: 100., y: 50., scale: 1. };
+        let start_mid = dvec2(400., 300.);
+        let world = start.view_to_world(start_mid.x, start_mid.y);
+        // Spread to double distance and move the midpoint.
+        let c = pinch_camera(start, start_mid, 100., dvec2(450., 320.), 200.);
+        assert!((c.scale - 2.).abs() < 1e-9);
+        let (vx, vy) = c.world_to_view(world.0, world.1);
+        assert!((vx - 450.).abs() < 1e-9 && (vy - 320.).abs() < 1e-9);
+        // Clamped like zoom_at.
+        assert!((pinch_camera(start, start_mid, 100., start_mid, 10_000.).scale - 2.5).abs() < 1e-9);
+    }
     #[test]
     fn connection_focus_can_use_two_fragments_of_the_same_node_and_rejects_cycles() {
         let mut p = Preview::load(crate::QUADRATIC).unwrap();
