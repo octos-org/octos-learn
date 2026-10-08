@@ -50,6 +50,8 @@ enum Http {
     Speech { purpose: String },
     Upload { purpose: String },
     Json { purpose: String },
+    /// Reachability check before reopening the socket after a drop.
+    Probe,
 }
 
 /// What a JSON-RPC call was for.
@@ -65,7 +67,16 @@ pub enum Call {
     Metadata { purpose: String },
     /// A synchronous skill action whose whole result is needed.
     Result { purpose: String },
+    /// `skill/action/job/list` of a session (job recovery).
+    JobList { session: String },
 }
+
+/// A sent JSON-RPC call gets no reply within this: it fails (no hung UI).
+const CALL_TIMEOUT_SECS: f64 = 90.;
+/// While a lesson is being generated, re-read its jobs this often (web
+/// re-lists jobs on every bridge connect; updates can be missed).
+const JOB_POLL_SECS: f64 = 20.;
+
 
 /// Progress of an agent chat turn (web sendMessage projection).
 #[derive(Clone, Debug)]
@@ -90,6 +101,8 @@ pub enum ServerEvent {
     Invoked { turn_id: String, result: Result<String, String> },
     /// `skill/action/job/updated` (web SkillActionJob).
     Job(Value),
+    /// A session's full job listing (reconnect / poll).
+    JobsListed { session: String, jobs: Vec<Value> },
     /// The authoring lesson file of a turn was downloaded.
     LessonFile { turn_id: String, body: Result<String, String> },
     /// GET /api/my/profile.
@@ -112,6 +125,21 @@ pub enum ServerEvent {
     Json { purpose: String, result: Result<Value, String> },
 }
 
+/// Debug logs never carry credentials: `"token":"…"` values are masked.
+fn redact(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut rest = line;
+    while let Some(i) = rest.find("\"token\":\"") {
+        let start = i + "\"token\":\"".len();
+        out.push_str(&rest[..start]);
+        out.push_str("***");
+        rest = &rest[start..];
+        rest = rest.find('"').map_or("", |j| &rest[j..]);
+    }
+    out.push_str(rest);
+    out
+}
+
 /// Web formatSettingsError: the server's JSON error/message, else the text.
 fn error_text(status: u16, body: &str) -> String {
     let v: Value = serde_json::from_str(body).unwrap_or(Value::Null);
@@ -130,10 +158,18 @@ pub struct Server {
     logging_in: bool,
     socket: LiveId,
     ws: Ws,
-    outbox: Vec<String>,
+    outbox: Vec<(String, String)>,
     calls: HashMap<String, Call>,
+    /// Calls written to the socket and still unanswered: id -> sent at.
+    sent: HashMap<String, std::time::Instant>,
     http: HashMap<LiveId, Http>,
     seq: u64,
+    /// Reconnect after a drop: when, and the next backoff (seconds).
+    reconnect_at: Option<std::time::Instant>,
+    backoff: f64,
+    /// Session whose lesson jobs are watched (a question is pending).
+    watched: Option<String>,
+    last_poll: Option<std::time::Instant>,
 }
 
 impl Default for Server {
@@ -151,8 +187,13 @@ impl Default for Server {
             ws: Ws::Closed,
             outbox: Vec::new(),
             calls: HashMap::new(),
+            sent: HashMap::new(),
             http: HashMap::new(),
             seq: 0,
+            reconnect_at: None,
+            backoff: 1.,
+            watched: None,
+            last_poll: None,
         }
     }
 }
@@ -265,18 +306,86 @@ impl Server {
         self.seq += 1;
         let id = uuid();
         self.calls.insert(id.clone(), purpose);
-        self.outbox.push(json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}).to_string());
+        self.outbox.push((id.clone(), json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}).to_string()));
         self.flush(cx);
         id
+    }
+    /// The session whose lesson jobs to recover / poll (None: nothing pending).
+    pub fn set_watched(&mut self, session: Option<String>) {
+        if self.watched != session {
+            self.watched = session;
+            self.last_poll = None;
+        }
+    }
+    /// Web listSkillActionJobs for every lesson action of the watched session.
+    fn poll_jobs(&mut self, cx: &mut Cx) {
+        let Some(session) = self.watched.clone() else { return };
+        self.last_poll = Some(std::time::Instant::now());
+        // All of the session's actions in one listing, so a job missing from
+        // it is known to be gone.
+        self.call(cx, "skill/action/job/list", json!({"session_id": session.clone()}), Call::JobList { session });
+    }
+    /// What a call that will never be answered reports to the app.
+    fn failed(call: Call, message: &str) -> Option<ServerEvent> {
+        let err = Err(message.to_owned());
+        match call {
+            Call::Fire | Call::JobList { .. } => None,
+            Call::Invoke { turn_id } => Some(ServerEvent::Invoked { turn_id, result: err }),
+            Call::Admit { turn_id } => Some(ServerEvent::Admitted { turn_id, result: Err(message.to_owned()) }),
+            Call::Turn { turn_id } => Some(ServerEvent::Turn { turn_id, update: TurnUpdate::Accepted(Err(message.to_owned())) }),
+            Call::Metadata { purpose } => Some(ServerEvent::Metadata { purpose, result: Err(message.to_owned()) }),
+            Call::Result { purpose } => Some(ServerEvent::ActionResult { purpose, result: Err(message.to_owned()) }),
+        }
+    }
+    fn schedule_reconnect(&mut self) {
+        self.reconnect_at = Some(std::time::Instant::now() + std::time::Duration::from_secs_f64(self.backoff));
+        self.backoff = (self.backoff * 2.).min(15.);
+    }
+    /// Reconnects, call timeouts and job polling (cheap; runs on every event).
+    fn maintain(&mut self, cx: &mut Cx, out: &mut Vec<ServerEvent>) {
+        let now = std::time::Instant::now();
+        let expired: Vec<String> = self
+            .sent
+            .iter()
+            .filter(|(_, t)| now.duration_since(**t).as_secs_f64() > CALL_TIMEOUT_SECS)
+            .map(|(id, _)| id.clone())
+            .collect();
+        for id in expired {
+            self.sent.remove(&id);
+            if let Some(ev) = self.calls.remove(&id).and_then(|c| Self::failed(c, "服务器长时间没有回应，请重试")) {
+                out.push(ev);
+            }
+        }
+        if self.ws == Ws::Closed
+            && self.token.is_some()
+            && self.reconnect_at.is_some_and(|t| now >= t)
+            && (!self.outbox.is_empty() || self.watched.is_some())
+        {
+            self.reconnect_at = None;
+            // Makepad's Apple backend reports a socket open at once and
+            // crashes sending on one whose connect then fails: reopen only
+            // once the server answers HTTP.
+            let req = self.request("/api/auth/status", HttpMethod::GET);
+            self.http(cx, req, Http::Probe);
+        }
+        if self.ws == Ws::Open
+            && self.watched.is_some()
+            && self.last_poll.is_none_or(|t| now.duration_since(t).as_secs_f64() >= JOB_POLL_SECS)
+        {
+            self.poll_jobs(cx);
+        }
     }
     fn flush(&mut self, cx: &mut Cx) {
         if self.ws != Ws::Open {
             self.ensure_socket(cx);
             return;
         }
-        for frame in std::mem::take(&mut self.outbox) {
+        for (id, frame) in std::mem::take(&mut self.outbox) {
             if std::env::var_os("OCTOS_SERVER_DEBUG").is_some() {
-                eprintln!("[octos-server] ws send {}", frame.chars().take(1200).collect::<String>());
+                eprintln!("[octos-server] ws send {}", redact(&frame.chars().take(1200).collect::<String>()));
+            }
+            if self.calls.contains_key(&id) {
+                self.sent.insert(id, std::time::Instant::now());
             }
             let _ = cx.net.ws_send(self.socket, WsSend::Text(frame));
         }
@@ -335,8 +444,9 @@ impl Server {
     }
 
     pub fn handle(&mut self, cx: &mut Cx, event: &Event) -> Vec<ServerEvent> {
-        let Event::NetworkResponses(responses) = event else { return vec![] };
         let mut out = Vec::new();
+        self.maintain(cx, &mut out);
+        let Event::NetworkResponses(responses) = event else { return out };
         let debug = std::env::var_os("OCTOS_SERVER_DEBUG").is_some();
         for r in responses {
             if debug {
@@ -349,14 +459,23 @@ impl Server {
                     NetworkResponse::WsMessage { message: WsMessage::Text(t), .. } => format!("ws text {}", t.chars().take(600).collect::<String>()),
                     _ => "other".into(),
                 };
-                eprintln!("[octos-server] {line}");
+                eprintln!("[octos-server] {}", redact(&line));
             }
             match r {
                 NetworkResponse::HttpResponse { request_id, response } => {
                     let Some(purpose) = self.http.remove(request_id) else { continue };
                     let status = response.status_code;
+                    if let Http::Probe = purpose {
+                        if (200..500).contains(&status) {
+                            self.ensure_socket(cx);
+                        } else {
+                            self.schedule_reconnect();
+                        }
+                        continue;
+                    }
                     let body = response.body_string().unwrap_or_default();
                     match purpose {
+                        Http::Probe => {}
                         Http::Solo | Http::SoloCreate if (200..300).contains(&status) => {
                             let v: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
                             self.token = v["token"].as_str().map(str::to_owned);
@@ -443,6 +562,7 @@ impl Server {
                 NetworkResponse::HttpError { request_id, error } => {
                     let Some(purpose) = self.http.remove(request_id) else { continue };
                     match purpose {
+                        Http::Probe => self.schedule_reconnect(),
                         Http::Solo | Http::SoloCreate => {
                             self.logging_in = false;
                             out.push(ServerEvent::Unavailable(format!(
@@ -464,12 +584,27 @@ impl Server {
                 }
                 NetworkResponse::WsOpened { socket_id } if *socket_id == self.socket => {
                     self.ws = Ws::Open;
+                    self.backoff = 1.;
+                    // Web: re-list lesson jobs on every connect (updates sent
+                    // while the socket was down are not replayed).
+                    if self.watched.is_some() {
+                        self.poll_jobs(cx);
+                    }
                     self.flush(cx);
                 }
                 NetworkResponse::WsClosed { socket_id } | NetworkResponse::WsError { socket_id, .. }
                     if *socket_id == self.socket =>
                 {
                     self.ws = Ws::Closed;
+                    // Calls already sent will never be answered on a new socket.
+                    for id in std::mem::take(&mut self.sent).into_keys() {
+                        if let Some(ev) = self.calls.remove(&id).and_then(|c| Self::failed(c, "与服务器的连接中断，请重试")) {
+                            out.push(ev);
+                        }
+                    }
+                    // Drop the dead socket from the network layer.
+                    let _ = cx.net.ws_close(*socket_id);
+                    self.schedule_reconnect();
                 }
                 NetworkResponse::WsMessage { socket_id, message: WsMessage::Text(text) } if *socket_id == self.socket => {
                     let Ok(msg) = serde_json::from_str::<Value>(text) else { continue };
@@ -514,7 +649,15 @@ impl Server {
                         continue;
                     }
                     let Some(id) = msg["id"].as_str() else { continue };
+                    self.sent.remove(id);
                     let Some(call) = self.calls.remove(id) else { continue };
+                    if let Call::JobList { session } = call {
+                        // An error reply says nothing about the jobs: skip it.
+                        if let Some(jobs) = msg["result"]["jobs"].as_array() {
+                            out.push(ServerEvent::JobsListed { session, jobs: jobs.clone() });
+                        }
+                        continue;
+                    }
                     if let Call::Admit { turn_id } = call {
                         let result = match msg.get("error") {
                             Some(e) if !e.is_null() => Err(e["message"].as_str().unwrap_or("语音识别失败").to_owned()),
@@ -590,6 +733,11 @@ impl Server {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn debug_lines_mask_tokens() {
+        assert_eq!(super::redact(r#"http 200 {"token":"abc123","user":{"id":"x"}}"#), r#"http 200 {"token":"***","user":{"id":"x"}}"#);
+        assert_eq!(super::redact("no secrets"), "no secrets");
+    }
     #[test]
     fn uuid_is_v4_and_random() {
         let (a, b) = (super::uuid(), super::uuid());

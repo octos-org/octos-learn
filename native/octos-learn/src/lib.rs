@@ -953,6 +953,10 @@ struct Live {
     questions: Vec<(String, String, String)>,
     /// job id -> turn id.
     jobs: HashMap<String, String>,
+    /// Turns whose lesson file is downloading (job updates repeat).
+    fetching: BTreeSet<String>,
+    /// When each pending question was first seen pending (give-up deadline).
+    pending_since: HashMap<String, Instant>,
     /// A question waiting for login before it can be sent.
     queued: Option<(String, String)>,
     /// A question whose camera frame is uploading: (turn, text, modality).
@@ -1002,6 +1006,8 @@ impl Live {
             titled: false,
             questions: Vec::new(),
             jobs: HashMap::new(),
+            fetching: BTreeSet::new(),
+            pending_since: HashMap::new(),
             queued: None,
             uploading: None,
             chat_turns: Vec::new(),
@@ -2495,6 +2501,99 @@ impl App {
     /// independent content): erasing a selection's ink also deletes its
     /// 小章鱼辅助 card. Only runs after an actual erase, so boards restored
     /// without their ink keep their cards.
+    /// One skill action job state (web applyLessonJobUpdate): live update or
+    /// re-listed after a reconnect / poll.
+    fn apply_job(&mut self, cx: &mut Cx, job: &serde_json::Value) {
+        let Some(live) = self.live.as_ref() else { return };
+        if job["session_id"] != live.session_id.as_str() {
+            return;
+        }
+        let Some(turn) = job["job_id"].as_str().and_then(|j| live.jobs.get(j)).cloned() else { return };
+        // Jobs are re-listed after reconnects and while polling:
+        // only act while its question or selection card waits.
+        let waiting = live.questions.iter().any(|q| q.0 == turn && q.2 == "pending")
+            || live.selection_cards.iter().any(|c| c.turn == turn && c.status == "pending");
+        if !waiting || live.fetching.contains(&turn) {
+            return;
+        }
+        match job["status"].as_str() {
+            Some("succeeded") => {
+                let name = format!("{turn}.octos-lesson.json");
+                let handle = job["result"]["artifacts"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .find(|a| a["display_name"] == name.as_str())
+                    .and_then(|a| a["handle"].as_str())
+                    .map(str::to_owned);
+                let session = live.session_id.clone();
+                // Web setSessionTitle: the session exists on the
+                // server once its first turn has run.
+                if !live.titled {
+                    let title = live.questions.first().map(|q| q.1.clone()).unwrap_or_default();
+                    if let Some(l) = self.live.as_mut() {
+                        l.titled = true;
+                    }
+                    self.server.call(cx, "session/title.set", json!({"session_id": session, "title": title}), server::Call::Fire);
+                }
+                match handle {
+                    Some(h) => {
+                        if let Some(l) = self.live.as_mut() {
+                            l.fetching.insert(turn.clone());
+                        }
+                        self.server.fetch_file(cx, &session, &h, &turn)
+                    }
+                    None => self.fail_question(cx, &turn, "没有生成成功：没有收到课程文件"),
+                }
+            }
+            Some("failed") | Some("cancelled") => {
+                let detail = job["error"].as_str().or(job["result"]["output"].as_str()).unwrap_or("生成失败").to_owned();
+                self.fail_question(cx, &turn, &format!("没有生成成功：{detail}"));
+            }
+            _ => {}
+        }
+    }
+    /// A full job listing of this board's session: every pending question
+    /// whose job the server no longer has (e.g. it restarted) fails now.
+    fn apply_job_listing(&mut self, cx: &mut Cx, session: &str, jobs: &[serde_json::Value]) {
+        for job in jobs {
+            self.apply_job(cx, job);
+        }
+        let Some(live) = self.live.as_ref().filter(|l| l.session_id == session) else { return };
+        let listed: BTreeSet<&str> = jobs.iter().filter_map(|j| j["job_id"].as_str()).collect();
+        let lost: Vec<String> = live
+            .jobs
+            .iter()
+            .filter(|(job, turn)| {
+                !listed.contains(job.as_str())
+                    && !live.fetching.contains(*turn)
+                    && live.questions.iter().any(|q| q.0 == **turn && q.2 == "pending")
+            })
+            .map(|(_, turn)| turn.clone())
+            .collect();
+        for turn in lost {
+            self.fail_question(cx, &turn, "没有生成成功：服务器上已没有这个生成任务，请重新提问");
+        }
+    }
+    /// A question still waiting after this long failed somewhere we cannot
+    /// see (e.g. the server restarted and lost its job): let the learner retry.
+    fn expire_pending_questions(&mut self, cx: &mut Cx) {
+        const GIVE_UP_SECS: f64 = 600.;
+        let Some(live) = self.live.as_mut() else { return };
+        let now = Instant::now();
+        let pending: Vec<String> = live.questions.iter().filter(|q| q.2 == "pending").map(|q| q.0.clone()).collect();
+        live.pending_since.retain(|t, _| pending.contains(t));
+        let mut expired = Vec::new();
+        for turn in pending {
+            let since = *live.pending_since.entry(turn.clone()).or_insert(now);
+            if now.duration_since(since).as_secs_f64() > GIVE_UP_SECS {
+                expired.push(turn);
+            }
+        }
+        for turn in expired {
+            self.fail_question(cx, &turn, "没有生成成功：等待时间过长，请重新提问");
+        }
+    }
     fn drop_orphaned_selection_cards(&mut self, cx: &mut Cx) {
         let orphaned: Vec<String> = {
             let w = self.ui.widget(cx, ids!(spatial));
@@ -3090,6 +3189,9 @@ impl App {
         self.refresh(cx);
     }
     fn handle_server(&mut self, cx: &mut Cx, event: &Event) {
+        // Recover / poll this board's lesson jobs while a question waits.
+        let watched = self.live.as_ref().filter(|l| l.pending()).map(|l| l.session_id.clone());
+        self.server.set_watched(watched);
         for ev in self.server.handle(cx, event) {
             if self.settings_server_event(cx, &ev) {
                 continue;
@@ -3402,45 +3504,14 @@ impl App {
                     }
                     Err(e) => self.fail_question(cx, &turn_id, &format!("没有生成成功：{e}")),
                 },
-                server::ServerEvent::Job(job) => {
-                    let Some(live) = self.live.as_ref() else { continue };
-                    if job["session_id"] != live.session_id.as_str() {
-                        continue;
+                server::ServerEvent::Job(job) => self.apply_job(cx, &job),
+                server::ServerEvent::JobsListed { session, jobs } => self.apply_job_listing(cx, &session, &jobs),
+                server::ServerEvent::LessonFile { turn_id, body } => match {
+                    if let Some(l) = self.live.as_mut() {
+                        l.fetching.remove(&turn_id);
                     }
-                    let Some(turn) = job["job_id"].as_str().and_then(|j| live.jobs.get(j)).cloned() else { continue };
-                    match job["status"].as_str() {
-                        Some("succeeded") => {
-                            let name = format!("{turn}.octos-lesson.json");
-                            let handle = job["result"]["artifacts"]
-                                .as_array()
-                                .into_iter()
-                                .flatten()
-                                .find(|a| a["display_name"] == name.as_str())
-                                .and_then(|a| a["handle"].as_str())
-                                .map(str::to_owned);
-                            let session = live.session_id.clone();
-                            // Web setSessionTitle: the session exists on the
-                            // server once its first turn has run.
-                            if !live.titled {
-                                let title = live.questions.first().map(|q| q.1.clone()).unwrap_or_default();
-                                if let Some(l) = self.live.as_mut() {
-                                    l.titled = true;
-                                }
-                                self.server.call(cx, "session/title.set", json!({"session_id": session, "title": title}), server::Call::Fire);
-                            }
-                            match handle {
-                                Some(h) => self.server.fetch_file(cx, &session, &h, &turn),
-                                None => self.fail_question(cx, &turn, "没有生成成功：没有收到课程文件"),
-                            }
-                        }
-                        Some("failed") | Some("cancelled") => {
-                            let detail = job["error"].as_str().or(job["result"]["output"].as_str()).unwrap_or("生成失败").to_owned();
-                            self.fail_question(cx, &turn, &format!("没有生成成功：{detail}"));
-                        }
-                        _ => {}
-                    }
-                }
-                server::ServerEvent::LessonFile { turn_id, body } => match body {
+                    body
+                } {
                     Ok(body) => self.load_live_lesson(cx, &turn_id, &body),
                     Err(e) => self.fail_question(cx, &turn_id, &e),
                 },
@@ -4749,6 +4820,9 @@ impl App {
             } else if perf::bisect("fullredraw") {
                 self.ui.redraw(cx);
             }
+        }
+        if self.timer.is_event(event).is_some() {
+            self.expire_pending_questions(cx);
         }
         if self.timer.is_event(event).is_some() && self.learning_visible {
             self.drop_orphaned_selection_cards(cx);
