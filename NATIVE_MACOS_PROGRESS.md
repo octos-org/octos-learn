@@ -217,6 +217,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - 评估（问题 2）：九门课 95 个旁白片段，解码时长 − 清单 durationMs 恒为 −22.04ms（= 529 个滤波器组延迟采样 @24kHz，清单时长含此延迟），声明时长本身只差约 22ms；原先几十到一百多毫秒的偏差来自播放器与课程时钟各走各的（及 60 次无帧轮询截断）。现在 Mac 实测每个 Beat 都在片段播完那一刻结束（如 9890/9890ms、11066/11066ms），之前会在结束前 2–7ms 提前切走。
   - 调试：`OCTOS_AUDIO_DEBUG=1` 打印解码、每秒片段状态、播完与停止时刻。忽略的测试：`OCTOS_AUDIO_TEST_FILE`（解码一段课程 MP3）、`OCTOS_AUDIO_PACK_ROOT`（全部课程声明与解码时长对比）。
   - Windows：按用户授权只做编译检查。Homebrew 的 rustc 不能用官方 Windows std，故在 `.local-dev/win-sysroot` 隔离安装官方 1.98.1 工具链（rustup，不改 PATH、不影响 Homebrew），`cargo check --release --target x86_64-pc-windows-msvc` 通过。**Android / Windows 的实际出声需要真机验证**
+- （本次提交）安卓笔迹比卡片大（GPT 反馈 4）：笔模式下 Java 原生笔迹层（`MakepadAppExtension` / `NativeInkBridge`）用屏幕像素，除以配置的 ratio 得到逻辑坐标；ratio 原来取 Makepad 渲染 DPI，4K 屏降到 1080p 渲染后变成 2（实际密度 4），于是笔迹按 2 倍大小、以左上角为原点放大记录，捕获区域也只剩左上 1/4。改为传窗口原生密度（`native_dpi_factor`）。只影响安卓，需真机验证
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，

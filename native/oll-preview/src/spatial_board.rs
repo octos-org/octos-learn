@@ -518,7 +518,10 @@ impl SpatialBoard {
     fn configure_ink(&self, cx: &mut Cx) {
         #[cfg(target_os = "android")]
         {
-            let ratio = cx.get_dpi_factor_of(&self.draw_bg.area());
+            // The Java ink layer works in screen (view) pixels: it needs the
+            // native density, not the render DPI (lower when the app renders
+            // a 4K panel at 1080p), or strokes are recorded at 2x size.
+            let ratio = cx.windows[CxWindowPool::id_zero()].native_dpi_factor();
             let v = self.viewport;
             cx.android_integration("oll.ink",&json!({"op":"configure","enabled":self.drawing,"ratio":ratio,"left":v.pos.x,"top":v.pos.y,"right":v.pos.x+v.size.x,"bottom":v.pos.y+v.size.y}).to_string());
         }
