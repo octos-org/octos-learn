@@ -1,0 +1,21 @@
+{
+  "name": "nocardtext",
+  "bisect": "nocardtext",
+  "mode": "scroll",
+  "pid": 12193,
+  "surfaceBuffer": [
+    1920,
+    1080
+  ],
+  "systemSize": [
+    3840,
+    2160
+  ],
+  "densityOverride": 640,
+  "entryTapPhysical": [
+    500,
+    1800
+  ],
+  "scrollXLogical": 325,
+  "preheatSeconds": 4
+}

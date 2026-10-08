@@ -1,0 +1,24 @@
+{
+  "size": "Physical size: 3840x2160\n",
+  "density": "Physical density: 480\nOverride density: 640\n",
+  "sizeUnchanged": true,
+  "densityUnchanged": true,
+  "web": {
+    "codePath": "/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag==",
+    "versionCode": "33 minSdk=26 targetSdk=35",
+    "versionName": "0.1.2",
+    "firstInstallTime": "2026-09-13 01:58:13",
+    "lastUpdateTime": "2026-10-06 02:10:22"
+  },
+  "webIdentityUnchanged": true,
+  "finalPid": 14361,
+  "finalPerfLogLines": 0,
+  "finalCrashLines": 0,
+  "renderScale": [
+    "0.5"
+  ],
+  "adbReverse": "host-106 tcp:50080 tcp:50080\n\n",
+  "backendHealth": "healthy",
+  "deviceApkSha256": "14c74100d43fd65d053a919ac0ebae09a72281b821345244223e880e3a2c998b",
+  "localApkSha256": "14c74100d43fd65d053a919ac0ebae09a72281b821345244223e880e3a2c998b"
+}

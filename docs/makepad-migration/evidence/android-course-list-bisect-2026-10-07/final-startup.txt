@@ -1,0 +1,2 @@
+         1791434750.208 14361 14361 I OctosNativeTest: Course assets ready in 15ms; cached=true
+         1791434750.353 14361 14361 I OctosNativeTest: Render scale 0.5

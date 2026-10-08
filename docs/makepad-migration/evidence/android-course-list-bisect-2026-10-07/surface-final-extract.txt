@@ -1,0 +1,18 @@
+* Layer 0xb4000071fe7cc990 (SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#2049)
+      isSecure=false geomUsesSourceCrop=true geomBufferUsesDisplayInverseTransform=false geomLayerTransform (ROT_0) (SCALE )
+    2.0000  0.0000  0.0000
+    0.0000  2.0000  0.0000
+    0.0000  0.0000  1.0000
+
+      geomBufferSize=[0 0 1920 1080] geomContentCrop=[0 0 1920 1080] geomCrop=[0 0 -1 -1] geomBufferTransform=0
+        Region transparentRegionHint (this=0xb40000715e6e1ca0, count=1)
+    [  0,   0,   0,   0]
+      geomLayerBounds=[0.000000 0.000000 1920.000000 1080.000000]       shadowRadius=0.000000
+      blend=NONE (1) alpha=1.000000 backgroundBlurRadius=0 composition type=DEVICE (2)
+      buffer: buffer=0xb40000711e6e96b0
+      sideband stream=0x0
+      color=[0.000000 0.000000 0.000000]
+      isOpaque=true hasProtectedContent=false isColorspaceAgnostic=false dataspace=UNKNOWN (0) hdr metadata types=0 dimming enabled=true colorTransform=[[1.000,0.000,0.000,0.000][0.000,1.000,0.000,0.000][0.000,0.000,1.000,0.000][0.000,0.000,0.000,1.000]]
+
+  refresh-rate              : 30.00 Hz
+HwcVsync mode(soft) period(16666666)

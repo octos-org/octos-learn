@@ -1,0 +1,259 @@
+{
+  "source": "b6da998faa00cdd93bd014ef6bf7023adc57be21",
+  "dirtyBuild": false,
+  "physicalSize": [
+    3840,
+    2160
+  ],
+  "surfaceSize": [
+    1920,
+    1080
+  ],
+  "gpuTimer": "unavailable",
+  "frameBoundary": "app Event::Draw, not physical presents",
+  "surfaceTimestampNote": "tail ring only; timestamp rate is not verified physical FPS",
+  "executionOrder": [
+    "baseline",
+    "nosvg",
+    "nocardtext",
+    "nocardbg",
+    "batch",
+    "tinyredraw",
+    "tinyredraw-batch",
+    "nosvgtext",
+    "noshapes",
+    "baseline-repeat"
+  ],
+  "runs": [
+    {
+      "name": "baseline",
+      "mode": "scroll",
+      "bisect": "",
+      "steadyWindows": 20,
+      "steadyFrames": 390,
+      "weightedChannelsMs": {
+        "event": 14.64333333333333,
+        "draw": 5.045641025641025,
+        "wait": 30.693846153846156,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 51.88717948717948,
+      "surface": {
+        "newFramesInRing": 125,
+        "timestampRatePerSecond": 19.42554560049381,
+        "meanMs": 51.47860557258065,
+        "medianMs": 50.00014899999999,
+        "p95Ms": 66.666876
+      },
+      "actionEndSeconds": 24.663324
+    },
+    {
+      "name": "nosvg",
+      "mode": "scroll",
+      "bisect": "nosvg",
+      "steadyWindows": 20,
+      "steadyFrames": 491,
+      "weightedChannelsMs": {
+        "event": 12.212627291242363,
+        "draw": 4.55071283095723,
+        "wait": 23.209775967413442,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 41.06395112016293,
+      "surface": {
+        "newFramesInRing": 126,
+        "timestampRatePerSecond": 23.510920780665092,
+        "meanMs": 42.533425608,
+        "medianMs": 49.999855,
+        "p95Ms": 50.000403
+      },
+      "actionEndSeconds": 24.571600584000002
+    },
+    {
+      "name": "nocardtext",
+      "mode": "scroll",
+      "bisect": "nocardtext",
+      "steadyWindows": 21,
+      "steadyFrames": 589,
+      "weightedChannelsMs": {
+        "event": 8.18251273344652,
+        "draw": 4.186078098471986,
+        "wait": 22.22563667232598,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 36.058234295415964,
+      "surface": {
+        "newFramesInRing": 125,
+        "timestampRatePerSecond": 27.969863856653845,
+        "meanMs": 35.75276608870968,
+        "medianMs": 33.333425000000005,
+        "p95Ms": 50.000092
+      },
+      "actionEndSeconds": 24.542404583
+    },
+    {
+      "name": "nocardbg",
+      "mode": "scroll",
+      "bisect": "nocardbg",
+      "steadyWindows": 21,
+      "steadyFrames": 462,
+      "weightedChannelsMs": {
+        "event": 14.232467532467531,
+        "draw": 3.8751082251082254,
+        "wait": 26.52705627705628,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 45.993506493506494,
+      "surface": {
+        "newFramesInRing": 125,
+        "timestampRatePerSecond": 21.196534205495364,
+        "meanMs": 47.17752394354839,
+        "medianMs": 50.0000155,
+        "p95Ms": 66.666825
+      },
+      "actionEndSeconds": 24.578082834
+    },
+    {
+      "name": "batch",
+      "mode": "scroll",
+      "bisect": "batch",
+      "steadyWindows": 20,
+      "steadyFrames": 375,
+      "weightedChannelsMs": {
+        "event": 14.236266666666667,
+        "draw": 5.065333333333334,
+        "wait": 32.0176,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 54.26346666666665,
+      "surface": {
+        "newFramesInRing": 127,
+        "timestampRatePerSecond": 18.438984827378164,
+        "meanMs": 54.23292059523809,
+        "medianMs": 50.0001825,
+        "p95Ms": 66.666978
+      },
+      "actionEndSeconds": 24.69555975
+    },
+    {
+      "name": "tinyredraw",
+      "mode": "probe",
+      "bisect": "tinyredraw",
+      "steadyWindows": 20,
+      "steadyFrames": 500,
+      "weightedChannelsMs": {
+        "event": 12.555,
+        "draw": 4.900000000000001,
+        "wait": 22.665,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 40.205000000000005,
+      "surface": {
+        "newFramesInRing": 126,
+        "timestampRatePerSecond": 24.834382853392412,
+        "meanMs": 40.2667546,
+        "medianMs": 33.333608,
+        "p95Ms": 50.000272
+      },
+      "actionEndSeconds": 24.014179208999998
+    },
+    {
+      "name": "tinyredraw-batch",
+      "mode": "probe",
+      "bisect": "tinyredraw,batch",
+      "steadyWindows": 19,
+      "steadyFrames": 494,
+      "weightedChannelsMs": {
+        "event": 3.236842105263159,
+        "draw": 4.936842105263158,
+        "wait": 31.25789473684211,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 39.50526315789473,
+      "surface": {
+        "newFramesInRing": 125,
+        "timestampRatePerSecond": 25.306068846594172,
+        "meanMs": 39.516212733870965,
+        "medianMs": 33.3335285,
+        "p95Ms": 50.000285
+      },
+      "actionEndSeconds": 24.014683167
+    },
+    {
+      "name": "nosvgtext",
+      "mode": "scroll",
+      "bisect": "nosvgtext",
+      "steadyWindows": 20,
+      "steadyFrames": 436,
+      "weightedChannelsMs": {
+        "event": 11.816972477064219,
+        "draw": 4.674082568807338,
+        "wait": 27.35160550458716,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 46.45183486238532,
+      "surface": {
+        "newFramesInRing": 126,
+        "timestampRatePerSecond": 21.367476751499396,
+        "meanMs": 46.800097720000004,
+        "medianMs": 49.999982,
+        "p95Ms": 66.666835
+      },
+      "actionEndSeconds": 24.479315999999997
+    },
+    {
+      "name": "noshapes",
+      "mode": "scroll",
+      "bisect": "noshapes",
+      "steadyWindows": 20,
+      "steadyFrames": 421,
+      "weightedChannelsMs": {
+        "event": 14.086698337292159,
+        "draw": 4.871258907363421,
+        "wait": 27.860570071258906,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 48.2273159144893,
+      "surface": {
+        "newFramesInRing": 126,
+        "timestampRatePerSecond": 20.60434987519206,
+        "meanMs": 48.533441048,
+        "medianMs": 50.000097,
+        "p95Ms": 66.666954
+      },
+      "actionEndSeconds": 24.485737125
+    },
+    {
+      "name": "baseline-repeat",
+      "mode": "scroll",
+      "bisect": "",
+      "steadyWindows": 20,
+      "steadyFrames": 396,
+      "weightedChannelsMs": {
+        "event": 13.95959595959596,
+        "draw": 5.052020202020202,
+        "wait": 31.35075757575758,
+        "gpu": null,
+        "gc": 0.0
+      },
+      "weightedGapMs": 51.54090909090909,
+      "surface": {
+        "newFramesInRing": 125,
+        "timestampRatePerSecond": 19.42554632780904,
+        "meanMs": 51.47860364516129,
+        "medianMs": 50.000123,
+        "p95Ms": 66.66698
+      },
+      "actionEndSeconds": 24.514224833
+    }
+  ]
+}

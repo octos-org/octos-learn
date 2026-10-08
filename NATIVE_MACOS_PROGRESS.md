@@ -3,7 +3,9 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（Android 应用 surface 缩放与触摸真机复测）
+最后更新：2026-10-07（Android 课程集列表成本拆分）
+
+最新 Android 诊断：`b6da998` 干净源码重打独立 APK，七组要求对照 + 封面文字 / 图形拆分 + 末尾基线，共十组。默认列表滚动约 19 次 Draw/s，batch 约 18、没有改善；静止 tinyredraw,batch 的 event 12.55→3.24ms，但 gap 仍约 40ms、wait 吸收节省时间。nocardtext 总体改善最大（约 28），占位替换会改变排版，需保持几何再验证。诊断开关已关闭，系统 / Web 包不变；未改产品实现或固定 Makepad。详见 [成本拆分报告](docs/makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)，报告与证据随本轮文档提交推送。
 
 最新 Android 验收：`72e90eb`（含 `053cfaf`）+ 一处 Java fallback checked ErrnoException 编译适配，新独立 APK 已安装。真机默认 surface 1920×1080 放大至 4K、逻辑布局 960×540，系统 size / density 全程不变；同 APK 六组 A/B 确认：首页约 8→25、课程集约 6→18 次 Draw/s，播放中位呈现间隔 100→33ms。卡片拖动 / 点击、边缘按钮、三处笔迹、滑块、3D 旋转与复位通过 ADB 触屏检查；旧 Web 包保留。课程集和现场清晰度仍待继续验收。代码 / 证据随本轮提交推送，详见 [新复测报告](docs/makepad-migration/ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)。下文性能数字为各阶段历史。
 
@@ -110,6 +112,8 @@ cd octos-learn/native/octos-learn && cargo test   # 4 个
 
 ## 5. 已完成
 
+- 2026-10-07 `b6da998` Android 课程列表十组有效成本拆分完成，已排除无效冷启动样本；默认基线前后稳定约 19 次 Draw/s。现有 batch 不能修复实际滚动；证据、截图与 APK 已交接。
+
 - 2026-10-07 `72e90eb` Android 应用自身 surface 缩放与卡片 capture 顺序修复已通过大屏复测；新 Java wrapper 实际编进 DEX，checked exception 编译问题已在产品层修正，fixed Makepad 未改。六组同 APK A/B、触摸坐标检查和原包 / 系统设置核对已完成，证据入库。
 
 - 2026-10-07 Android 真机 `deb8e88` 三场景 4K / 1080p 对照完成；固定 Android 后端缺少 PerfMonitor frame_boundary，由应用 Draw 诊断入口补齐，默认关闭、未改 Makepad。每秒日志 / latency / APK hash 与恢复核对已入库，保留 Web APK；正式性能优化未验收。
@@ -189,7 +193,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 ## 6. 待做（按优先级）
 
-- Android：应用自身 surface 降采样与卡片起手拖动已真机验证。继续 profile 默认缩放下课程集约 18 次 Draw/s 的剩余成本；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交 Claude，本轮未改。
+- Android：应用自身 surface 降采样与卡片起手拖动已真机验证。继续基于 b6da998 真机十组对照排查默认课程列表约 19 次 Draw/s；先控制 nocardtext 的排版影响，并核对 batch 滚动失效 / GPU 与呈现成本；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交 Claude，本轮未改。
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
    - ~~中文字体~~：2026-10-06 用户选方案 A，已改用打包的 Noto Sans SC。

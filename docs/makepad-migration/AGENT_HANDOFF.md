@@ -17,6 +17,8 @@
 
 ## 0. 一句话现状
 
+**最新 Android 成本拆分（2026-10-07）**：干净 `b6da998` 已重打独立诊断 APK，十组有效对照完成。默认滚动约 19 次 Draw/s，现有 batch 无改善；静止 tinyredraw,batch 的 event 12.55→3.24ms，而 gap 40.21→39.51ms、wait 增至31.26ms。nocardtext 总体改善最大（约28），但占位替换改变排版，需先保持几何验证。系统4K / density640未变、Web包保留；当前开关全关、默认应用1080p。未改产品 / Makepad 源码，报告和证据随本轮提交推送。优先读 [课程列表成本拆分](ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)。下列数字为此前阶段结果。
+
 **最新 Android 修复验收（2026-10-07）**：已拉取 Claude `72e90eb`（含 `053cfaf`），补一处 Java checked ErrnoException 编译处理后重打独立 APK。默认只将应用 surface 设为 1920×1080，实际显示仍 4K，逻辑 UI 960×540；同 APK 原生 4K / 默认缩放三场景对照完成：首页约 8→25、课程集约 6→18 次 Draw/s，播放中位呈现间隔 100→33ms。卡片起手拖动 / 点击、边缘按钮、三处笔迹、滑块、3D 旋转 / 复位通过 ADB 触屏输入检查。系统显示设置全程不变、旧 Web APK 未覆盖；当前大屏留下默认缩放且关闭性能日志的新包。本地后端与 reverse 50080 已恢复。优先读 [surface 缩放与触摸复测](ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)；清晰度需用户现场判断，课程集仍需优化。
 
 **最新性能调查（2026-10-07）**：已基于 Claude `deb8e88` 重打独立 APK，完成三场景 4K / 临时 1080p 对照。4K 每帧 swap 等待：首页 106ms、课程集 143ms、播放 68ms；1080p 分别降到 25 / 32 / 7ms，应用 event / 平台 draw 单帧时间几乎不变。恢复 4K 重测课程集仍约 6 次 Draw/s。已恢复原始 3840×2160 与 density override 640，Web APK 安装身份不变。只加默认关闭的 Android PerfMonitor Draw 边界诊断补丁，未改固定 Makepad、正式渲染分辨率或主题色。另确认卡片区域起手拖动不滚页；交给 Claude 修复。优先读 [帧拆分与分辨率对照](ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)，含日志 / 产物 hash / 统计限制。
@@ -52,13 +54,13 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装 APK 产品基线：`72e90eb28e7f945766326f15f2edf94d501c86ba` + 本轮 Java fallback 的 checked ErrnoException 处理；构建时 `productDirty=true`，其余 Rust / Java 渲染与触摸实现保持 Claude 提交。包名仍 `cc.pitun.learn.makepadtest`；SHA-256 `fcd527ec204b64bd03e760078e754d6b1596b1443ac3e80cc2aa2e238c3974a1`，设备 pull 一致。本轮编译适配与证据提交推送，同分支不合并、不开 PR；OLL `d59b607`、Makepad `825dbb4` 不变。
+当前安装 APK：干净 `b6da998faa00cdd93bd014ef6bf7023adc57be21`，`productDirty=false`；SHA-256 `14c74100d43fd65d053a919ac0ebae09a72281b821345244223e880e3a2c998b`，设备 pull 一致。包名仍 `cc.pitun.learn.makepadtest`，默认 perf / bisect 关闭。本轮仅报告、证据与工具提交推送，同分支不合并 / 不开 PR；OLL `d59b607`、Makepad `825dbb4` 不变。安装使用 `adb install --no-incremental -r`，避免本轮设备增量安装未保留测试包的异常。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `72e90eb` + Java 编译适配 / 真机报告（本文件所在提交，本轮推送）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `b6da998` + 十组真机成本拆分报告（本文件所在文档提交，本轮推送）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
 | `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
@@ -67,6 +69,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
 ## 2. 工作区重建
+
+2026-10-07 b6da998 诊断补充：主 / 独立构建 checkout 已同步，版本目录 `.local-dev/android-b6da998-bisect/` 保存 APK、截图和日志。首次完整安装启动出现约39s平台初始化停顿，空帧样本废弃；有效采样等至少三个 perf 窗口再导航。本机后端 healthy、reverse 50080 保持有效。
 
 2026-10-07 surface 复测补充：主 checkout 与独立构建 checkout 已同步 `72e90eb` 和本轮编译适配；新 APK / 原始截图日志在 `.local-dev/android-72e90eb-retest/`。本机 Octos solo 后端重新启动于 127.0.0.1:50080，并恢复大屏 `adb reverse tcp:50080 tcp:50080`；测试后仍运行。
 
@@ -133,7 +137,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
 
-- 应用自身 surface 的 1080p 缩放已在大屏验收，系统仍为 4K；无需改 fixed Makepad。首页约 25 次 Draw/s、播放中位间隔约 33ms，课程集仍约 18 次 Draw/s，需要继续 profile / 优化。60 Hz Timer / 整板 refresh 仍保留。
+- 应用自身 surface 的 1080p 缩放已在大屏验收，系统仍为 4K；无需改 fixed Makepad。首页约 25 次 Draw/s、播放中位间隔约 33ms，当前课程集约 19 次 Draw/s；b6da998 的 batch 滚动未改善，静止仅省 CPU，文字隐藏有明显总体收益但改变排版，需依据最新成本拆分报告继续验证。60 Hz Timer / 整板 refresh 仍保留。
 - 卡片区域起手拖动已由 `053cfaf` 修复并在 Android 验证，点击也正常。主题色偏蓝另案交给 Claude，本轮保持现状。
 - Android 紧凑首页、顶栏、手写工具、输入栏、老师头像与取景密度已实现；未宣称所有页面逐像素一致。窄屏、相机实画面、AI/ASR、Android 有声旁白仍需专项实测。
 
