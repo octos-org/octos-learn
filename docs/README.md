@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [安卓大屏选区提问调查](makepad-migration/ANDROID_SELECTION_FLOW_INVESTIGATION_2026-10-08.md)：2666794现场加载等待、面板安卓密度遗漏、预制课程选区卡片避让及大小问题；只读调查，未修改实现。
+
 - [Mac / Android 最新修复重建](makepad-migration/LOCAL_REBUILD_2026-10-08.md)：2666794、OLL4263b22与固定Makepad颜色补丁，两个版本已准备供用户重新测试。
 
 - [Android 缓存滚动触摸修复验收](makepad-migration/ANDROID_TOUCH_FIX_RETEST_2026-10-08.md)：`425d25b` 大屏卡片拖动、菜单外部触摸及重置 / 删除确认按钮通过，默认缓存首页 / 课程集绘制间隔仍约18ms。
