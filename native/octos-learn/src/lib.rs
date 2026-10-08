@@ -7,6 +7,7 @@ use makepad_widgets::*;
 use oll_runtime::session::Session;
 use octos_oll_preview::{board_view, controls_view, progress_store, scene3d_view, spatial_board};
 use octos_oll_preview::spatial_board::InkTool;
+mod scroll_cache;
 mod svg_image;
 mod server;
 mod voice;
@@ -49,7 +50,8 @@ script_mod! {
                         visible: true
                         width: Fill height: Fill
                         draw_bg +: { color: #f7f4ec }
-                        launcher_scroll := ScrollYView { width: Fill height: Fill flow: Down
+                        // Content renders once into a texture; scrolling moves it (Android GPU cost).
+                        launcher_scroll := mod.widgets.ScrollCache { width: Fill height: Fit flow: Down
                             View { width: Fill height: Fit flow: Down align: Align{x: 0.5}
                                 launcher_inner := View { width: 1120 height: Fit flow: Down padding: Inset{bottom: 72}
                                     // Text boxes follow the web CSS: font_size = px * 0.75,
@@ -3886,7 +3888,9 @@ impl App {
         for card in &self.course_cards {
             if let Some(more) = &card.more {
                 if tapped(cx, event, more) {
-                    menu = Some((card.pack_id.clone(), card.version.clone(), more.area().rect(cx)));
+                    let r = more.area().rect(cx);
+                    let r = self.ui.widget(cx, ids!(launcher_scroll)).borrow::<scroll_cache::ScrollCache>().map_or(r, |s| s.to_screen(r));
+                    menu = Some((card.pack_id.clone(), card.version.clone(), r));
                 }
             }
         }
@@ -3925,8 +3929,8 @@ impl App {
         self.collection = collection;
         self.rebuild_launcher(cx);
         // Web scrolls the launcher to the top on every collection change.
-        if let Some(mut scroll) = self.ui.widget(cx, ids!(launcher_scroll)).borrow_mut::<View>() {
-            scroll.set_scroll_pos(cx, dvec2(0., 0.));
+        if let Some(mut scroll) = self.ui.widget(cx, ids!(launcher_scroll)).borrow_mut::<scroll_cache::ScrollCache>() {
+            scroll.set_scroll_pos(cx, 0.);
         }
     }
     /// Rebuild the launcher library from the pack catalog.
@@ -4573,6 +4577,7 @@ impl AppMain for App {
         octos_oll_preview::loading_fx::script_mod(vm);
         octos_oll_preview::group_view::script_mod(vm);
         svg_image::script_mod(vm);
+        scroll_cache::script_mod(vm);
         spatial_board::script_mod(vm);
         self::script_mod(vm)
     }
@@ -5108,7 +5113,9 @@ impl App {
         // the scroll view captures the finger first (touch drag-scroll works
         // from a card) and `tapped` co-captures the same press.
         if !self.learning_visible {
-            self.handle_launcher_taps(cx, event);
+            // Launcher content lives in the ScrollCache's own coordinate space.
+            let mapped = self.ui.widget(cx, ids!(launcher_scroll)).borrow::<scroll_cache::ScrollCache>().and_then(|s| s.map_event(event));
+            self.handle_launcher_taps(cx, mapped.as_ref().unwrap_or(event));
         }
         if cfg!(target_os = "android") && !self.android_geometry_logged
             && matches!(event, Event::Draw(_)) && std::env::var_os("OCTOS_PERF").is_some()
