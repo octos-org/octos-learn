@@ -2,6 +2,8 @@
 //! leave the board's coordinate space and Android's physical DPI untouched.
 use makepad_widgets::*;
 
+pub use octos_oll_preview::{dim, ANDROID_UI};
+
 #[derive(Clone, Copy, Debug)]
 pub struct Catalog {
     pub inner_width: f64,
@@ -301,7 +303,7 @@ pub fn apply(cx: &mut Cx, ui: &WidgetRef, size: Vec2d) -> Result<(), String> {
         (live_id!(camera_image), "{width:128}".into()),
         (live_id!(camera_sent), "{width:128}".into()),
         (live_id!(camera_sent_image), "{width:128}".into()),
-        (live_id!(sel_panel), "{width:300 padding:9}".into()),
+        (live_id!(sel_panel), format!("{{width:{}}}", 300f64.min(size.x - 16.))),
     ];
     for id in [
         live_id!(setup_model_heading),

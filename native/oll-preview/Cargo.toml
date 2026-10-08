@@ -6,6 +6,8 @@ edition = "2021"
 [features]
 default = ["standalone"]
 standalone = []
+# Android large-screen chrome on desktop builds (layout preview only).
+android-ui = []
 
 [[bin]]
 name = "octos-oll-preview"

@@ -227,7 +227,15 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - 任务恢复（Web 在每次连接时 list 任务）：有问题在等待时，每次连接上和之后每 20 秒用 `skill/action/job/list` 列出本会话全部任务并按更新处理；列表里没有这个问题的任务（如服务器重启丢了任务）就立即标记「没有生成成功：服务器上已没有这个生成任务，请重新提问」。只处理仍在等待的问题，正在下载课程文件的不重复下载。兜底：等待超过 10 分钟的问题标记失败。
   - `OCTOS_SERVER_DEBUG` 日志中的 `"token"` 值打码。
   - Mac 实测（本机服务）：提问后杀掉并重启 octos，应用退避重连、不崩溃，列表为空后问题立即显示没有生成成功；正常提问时轮询不影响，课程正常生成
-- （本次提交）公网邮箱登录（用户 2026-10-08 决定：默认连 `https://learn.pitun.cc`，用 Web 的邮箱验证码登录；本机 solo 只在设置 `OCTOS_SERVER_URL` 时用于开发）：
+- （本次提交）安卓大屏面板对齐 Web `[data-runtime-platform="android"]`（GPT 2026-10-08 安卓报告第 2 项：提问面板、目录太大）：
+  - 共享开关：`octos_oll_preview::ANDROID_UI`（安卓，或桌面 `--features android-ui` 预览：窗口 960×540，与 Web 安卓 WebView 视口相同）+ `dim(桌面, 安卓)`；原来 lib.rs 里 UI 尺寸用的 `cfg!(target_os = "android")` 都改用它（棋盘坐标/相机常量不变）。
+  - 课程目录：面板圆角 14、标题区 11/13/8、COURSE OUTLINE 7px、本课目录 15px、步数 8px、列表 5/7/8、主题行 6/3/3 与 8/10px 字、步骤行 34 高（按钮 24、状态圈 17、标题 10px）、节拍缩进 31 与 8px 字、底部说明 7/12/8 与 8px 字。
+  - 选区提问面板：top 88 left 8、宽 min(300, 视口−16)、padding 8、圆角 10、标题 10px、说明/标签/按钮/输入 9px、按钮与输入 padding 5×7、间距 6、表头下距 7；工具栏快捷按钮 27 高、padding 6、9px 字。
+  - 小章鱼辅助卡（棋盘上）：padding 10/底 17、圆角 11、问题区 8/9、标签 2×5、表头间距 7/下距 6、按钮 21、正文行高 1.42、结果上距 4、页脚 6/5；字号不变（与 Web 相同）。
+  - 登录框邮箱/验证码输入框空态背景改透明（之前占位文字后有一条灰底）。
+  - Mac 预览（`--features android-ui`）实测：目录 260×257（Web 安卓同视口 260×283），提问面板 300×235，位置与 Web 一致；桌面默认构建尺寸不变。安卓真机待 GPT 验证。
+  - 墨迹相对卡片偏大：按用户决定与 Web 保持一致（只修比例，`2f8789a`），卡片随棋盘缩放。
+- `b9057db` 公网邮箱登录（用户 2026-10-08 决定：默认连 `https://learn.pitun.cc`，用 Web 的邮箱验证码登录；本机 solo 只在设置 `OCTOS_SERVER_URL` 时用于开发）：
   - `server.rs`：默认服务器改为 `PUBLIC_SERVER`；登录先查 `/api/auth/status`——开了 solo 的本机服务照旧自动 solo 登录，否则发出「需要登录」事件。`send_code` / `verify` / `logout` 对应 Web `/api/auth/send-code`、`/api/auth/verify`、`/api/auth/logout`；登录成功的 token 存在数据目录 `auth.json`（权限 600，含服务器地址，换服务器不复用），下次启动用 `/api/auth/me` 校验（401/403 清除；离线时先沿用）；使用中遇到 401 清除登录并重新要求登录。
   - 界面：Web 登录页（Octos logo、Octos、按服务器是否允许自助注册显示的说明、邮箱 → Send Code → 6 位验证码 → Verify、Back、60 秒倒计时 Resend code、错误提示）。DIFF：Web 是整页，原生是模态框并加「暂不登录」（离线课程仍可用；等待中的提问标记「需要登录后才能提问」）。启动器在邮箱登录后显示「退出」（Web 导航同）。
   - Mac 实测：本机服务（设 `OCTOS_SERVER_URL`）仍自动 solo 登录并生成课程；不设时对 learn.pitun.cc 显示登录框。**完整的邮箱验证码登录需要用户输入收到的验证码，尚未实测**

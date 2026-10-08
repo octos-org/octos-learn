@@ -31,6 +31,7 @@ use std::time::Instant;
 
 mod course_pack;
 mod android_ui;
+use android_ui::dim;
 
 app_main!(App);
 
@@ -40,7 +41,7 @@ script_mod! {
     startup() do #(App::script_component(vm)) {
         ui: Root {
             main_window := Window {
-                window.inner_size: vec2(1440, 900)
+                window.inner_size: vec2(#(dim(1440., 960.)), #(dim(900., 540.)))
                 body +: {
                     flow: Overlay
                     // Launcher (web course-launcher.tsx): header, hero, recent
@@ -248,25 +249,28 @@ script_mod! {
                         outline_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 47 bottom: 204}
                             outline_trigger := Button { width: 48 height: 48 text: "" spacing: 0 icon_walk: Walk{width: 15 height: 15}
                                 draw_icon +: { color: #466d78 }
-                                draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: 8 border_size: 0.5 border_color: #cfe2e3 } }
+                                draw_bg +: { color: #f0f9f8f0 color_hover: #e0f2f2 border_radius: #(dim(8., 5.)) border_size: 0.5 border_color: #cfe2e3 } }
                         }
                         // Course outline panel (web .oll-course-outline-panel: 344 wide,
                         // above the trigger, right edge 24px from the window).
                         outline_panel_anchor := View { width: Fill height: Fill flow: Right align: Align{x: 1. y: 1.} padding: Inset{right: 24 bottom: 264}
                             outline_panel := RoundedView { visible: false width: 344 height: Fit flow: Down
-                                draw_bg +: { color: #fffdf8f7 border_radius: 10 border_size: 0.5 border_color: #453d3221 }
-                                View { width: Fill height: Fit flow: Right align: Align{y: 1.} padding: Inset{left: 20 right: 20 top: 20 bottom: 14}
+                                draw_bg +: { color: #fffdf8f7 border_radius: #(dim(10., 7.)) border_size: 0.5 border_color: #453d3221 }
+                                View { width: Fill height: Fit flow: Right align: Align{y: 1.}
+                                    padding: Inset{left: #(dim(20., 13.)) right: #(dim(20., 13.)) top: #(dim(20., 11.)) bottom: #(dim(14., 8.))}
                                     View { width: Fill height: Fit flow: Down
-                                        Label { width: Fit padding: 0 text: "COURSE OUTLINE" draw_text.text_style.font_size: 7.5 draw_text.color: #8d8275 }
-                                        Label { width: Fit padding: Inset{top: 2} text: "本课目录" draw_text.text_style: theme.font_bold{font_size: 15.75} draw_text.color: #2e2a25 }
+                                        Label { width: Fit padding: 0 text: "COURSE OUTLINE" draw_text.text_style.font_size: #(dim(7.5, 5.25)) draw_text.color: #8d8275 }
+                                        Label { width: Fit padding: Inset{top: #(dim(2., 1.))} text: "本课目录" draw_text.text_style: theme.font_bold{font_size: #(dim(15.75, 11.25))} draw_text.color: #2e2a25 }
                                     }
-                                    outline_count := Label { width: Fit padding: 0 text: "" draw_text.text_style.font_size: 6.75 draw_text.color: #877c6e }
+                                    outline_count := Label { width: Fit padding: 0 text: "" draw_text.text_style.font_size: #(dim(6.75, 6.)) draw_text.color: #877c6e }
                                 }
                                 View { width: Fill height: 1 show_bg: true draw_bg.color: #433c3317 }
-                                outline_list := View { width: Fill height: Fit flow: Down padding: Inset{left: 10 right: 10 top: 8 bottom: 12} }
+                                outline_list := View { width: Fill height: Fit flow: Down
+                                    padding: Inset{left: #(dim(10., 7.)) right: #(dim(10., 7.)) top: #(dim(8., 5.)) bottom: #(dim(12., 8.))} }
                                 View { width: Fill height: 1 show_bg: true draw_bg.color: #433c3314 }
-                                View { width: Fill height: Fit align: Align{x: 0.5} padding: Inset{left: 18 right: 18 top: 10 bottom: 12}
-                                    Label { width: Fit padding: 0 text: "点击查看完成画面，使用播放按钮从该段重新讲解" draw_text.text_style.font_size: 6.75 draw_text.color: #948a7d }
+                                View { width: Fill height: Fit align: Align{x: 0.5}
+                                    padding: Inset{left: #(dim(18., 12.)) right: #(dim(18., 12.)) top: #(dim(10., 7.)) bottom: #(dim(12., 8.))}
+                                    Label { width: Fit padding: 0 text: "点击查看完成画面，使用播放按钮从该段重新讲解" draw_text.text_style.font_size: #(dim(6.75, 6.)) draw_text.color: #948a7d }
                                 }
                             }
                         }
@@ -327,7 +331,7 @@ script_mod! {
                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                     draw_text +: { color: #322d27 color_hover: #322d27 color_focus: #322d27 color_down: #322d27
-                                        color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                        color_empty: #938a7e color_empty_hover: #938a7e color_empty_focus: #938a7e text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                     draw_cursor +: { color: #322d27 } }
                                 ask_send := Button { width: 39 height: 39 text: "" spacing: 0 icon_walk: Walk{width: 18 height: 18}
                                     draw_icon +: { color: #ffffff }
@@ -336,33 +340,33 @@ script_mod! {
                         }
                         // Selection question panel (web .learning-selection-question:
                         // top 142 left 18, 420 wide, 14 padding).
-                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: 18 top: 142}
-                            sel_panel := RoundedView { visible: false width: 420 height: Fit flow: Down padding: 14
-                                draw_bg +: { color: #fffef9fa border_radius: 8 border_size: 0.5 border_color: #27686233 }
-                                View { width: Fill height: Fit flow: Right spacing: 10 margin: Inset{bottom: 12}
-                                    Label { width: Fill padding: 0 text: "针对当前选区提问" draw_text.text_style: theme.font_bold{font_size: 10.5} draw_text.color: #253735 }
-                                    sel_panel_note := Label { width: 170 padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: 9 draw_text.text_style.line_spacing: 1.45 draw_text.color: #687976 }
+                        View { width: Fill height: Fill flow: Down align: Align{x: 0. y: 0.} padding: Inset{left: #(dim(18., 8.)) top: #(dim(142., 88.))}
+                            sel_panel := RoundedView { visible: false width: 420 height: Fit flow: Down padding: #(dim(14., 8.))
+                                draw_bg +: { color: #fffef9fa border_radius: #(dim(8., 5.)) border_size: 0.5 border_color: #27686233 }
+                                View { width: Fill height: Fit flow: Right spacing: #(dim(10., 7.)) margin: Inset{bottom: #(dim(12., 7.))}
+                                    Label { width: Fill padding: 0 text: "针对当前选区提问" draw_text.text_style: theme.font_bold{font_size: #(dim(10.5, 7.5))} draw_text.color: #253735 }
+                                    sel_panel_note := Label { width: #(dim(170., 128.)) padding: 0 text: "" draw_text.wrap: Words draw_text.text_style.font_size: #(dim(9., 6.75)) draw_text.text_style.line_spacing: 1.45 draw_text.color: #687976 }
                                 }
                                 sel_targets := View { width: Fill height: Fit flow: Down spacing: 5 }
                                 View { width: Fill height: Fit flow: Right spacing: 10 align: Align{y: 0.5} margin: Inset{top: 6}
-                                    Label { width: Fit padding: 0 text: "我写的内容更像" draw_text.text_style.font_size: 9.75 draw_text.color: #253735 }
+                                    Label { width: Fit padding: 0 text: "我写的内容更像" draw_text.text_style.font_size: #(dim(9.75, 6.75)) draw_text.color: #253735 }
                                     sel_kinds := View { width: Fill height: Fit flow: Right spacing: 4 align: Align{x: 1.} }
                                 }
                                 sel_class_text := Label { width: Fill padding: 0 margin: Inset{top: 7} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 8.25 draw_text.text_style.line_spacing: 1.45 draw_text.color: #667a76 }
-                                View { width: Fill height: Fit flow: Down spacing: 2 margin: Inset{top: 12 bottom: 6}
-                                    Label { width: Fill padding: 0 text: "接下来让小章鱼做什么？" draw_text.text_style: theme.font_bold{font_size: 9} draw_text.color: #253735 }
-                                    Label { width: Fill padding: 0 text: "下面是操作，不会改变上面已经确认的选区。" draw_text.text_style.font_size: 8.25 draw_text.color: #70807d }
+                                View { width: Fill height: Fit flow: Down spacing: 2 margin: Inset{top: #(dim(12., 8.)) bottom: #(dim(6., 4.))}
+                                    Label { width: Fill padding: 0 text: "接下来让小章鱼做什么？" draw_text.text_style: theme.font_bold{font_size: #(dim(9., 6.75))} draw_text.color: #253735 }
+                                    Label { width: Fill padding: 0 text: "下面是操作，不会改变上面已经确认的选区。" draw_text.text_style.font_size: #(dim(8.25, 6.75)) draw_text.color: #70807d }
                                 }
-                                sel_suggestions := View { width: Fill height: Fit flow: Right spacing: 7 }
-                                View { width: Fill height: Fit flow: Right spacing: 7 align: Align{y: 0.5} margin: Inset{top: 10}
-                                    sel_input := TextInput { width: Fill height: Fit padding: Inset{left: 10 right: 10 top: 8 bottom: 8} margin: 0
+                                sel_suggestions := View { width: Fill height: Fit flow: Right spacing: #(dim(7., 6.)) }
+                                View { width: Fill height: Fit flow: Right spacing: #(dim(7., 6.)) align: Align{y: 0.5} margin: Inset{top: #(dim(10., 7.))}
+                                    sel_input := TextInput { width: Fill height: Fit padding: Inset{left: #(dim(10., 7.)) right: #(dim(10., 7.)) top: #(dim(8., 5.)) bottom: #(dim(8., 5.))} margin: 0
                                         empty_text: "例如：这一步为什么不对？"
                                         draw_bg +: { color: #ffffff color_hover: #ffffff color_focus: #ffffff color_down: #ffffff color_empty: #ffffff border_radius: 5 border_size: 0.5
                                             border_color: #x2768622e border_color_hover: #x2768622e border_color_focus: #27686266 border_color_down: #x2768622e border_color_empty: #x2768622e }
-                                        draw_text +: { color: #253735 color_hover: #253735 color_focus: #253735 color_down: #253735 color_empty: #9aa5a2 color_empty_hover: #9aa5a2 color_empty_focus: #9aa5a2 text_style.font_size: 9.75 }
+                                        draw_text +: { color: #253735 color_hover: #253735 color_focus: #253735 color_down: #253735 color_empty: #9aa5a2 color_empty_hover: #9aa5a2 color_empty_focus: #9aa5a2 text_style.font_size: #(dim(9.75, 6.75)) }
                                         draw_cursor +: { color: #253735 } }
-                                    sel_send := Button { height: 36 text: "发送" padding: Inset{left: 14 right: 14} margin: 0
-                                        draw_text.color: #253735 draw_text.text_style.font_size: 9.75
+                                    sel_send := Button { height: #(dim(36., 23.)) text: "发送" padding: Inset{left: #(dim(14., 7.)) right: #(dim(14., 7.))} margin: 0
+                                        draw_text.color: #253735 draw_text.text_style.font_size: #(dim(9.75, 6.75))
                                         draw_bg +: { color: #ffffff color_hover: #f1f6f5 color_down: #e3eeec border_radius: 5 border_size: 0.5 border_color: #x2768622e } }
                                 }
                             }
@@ -627,21 +631,21 @@ script_mod! {
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "API Key" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
+                                            Label { width: Fit padding: 0 margin: Inset{top: 10} text: "API Key" draw_text.text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                             RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_key := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "粘贴你的 API Key" is_password: true
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
                                             setup_save := Button { width: Fit height: Fit text: "测试连接并保存" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
-                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 })}
                                                 draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                             setup_model_status := Label { width: Fill padding: 0 margin: Inset{top: 10} text: "" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.44 draw_text.color: #4b5a56 }
                                             setup_full_model := Button { width: Fit height: Fit text: "打开完整模型设置 →" padding: 0 margin: Inset{top: 14}
@@ -656,7 +660,7 @@ script_mod! {
                                         Label { width: Fill padding: 0 text: "平台提供有限额的旁白语音。你也可以配置自己的火山 TTS，不占平台额度。" draw_text.wrap: Words draw_text.text_style.font_size: 10.5 draw_text.text_style.line_spacing: 1.52 draw_text.color: #303e3b }
                                         View { width: Fill height: Fit flow: Down margin: Inset{top: 6}
                                             setup_listen := Button { width: Fill height: Fit text: "试听当前旁白语音" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
-                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
+                                                draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 })}
                                                 draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                             setup_volc_toggle := Button { width: Fit height: Fit text: "▶ 使用自己的火山 TTS（可选）" padding: Inset{top: 12 bottom: 12} margin: Inset{top: 8}
                                                 draw_text.color: #303e3b draw_text.text_style.font_size: 10.5
@@ -669,27 +673,27 @@ script_mod! {
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "Access Token" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "Access Token" draw_text.text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                                 RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_volc_token := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "留空保留已有凭据" is_password: true
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
-                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "音色 ID" draw_text.text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
+                                                Label { width: Fit padding: 0 margin: Inset{top: 10} text: "音色 ID" draw_text.text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) draw_text.color: #303e3b }
                                                 RoundedView { width: Fill height: Fit padding: Inset{left: 12 right: 12 top: 10 bottom: 10} margin: Inset{top: 7}
                                                 draw_bg +: { color: #ffffff border_radius: 5 border_size: 0.5 border_color: #cbcfc9 }
                                                 setup_volc_voice := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "zh_female_xiaohe_uranus_bigtts" 
                                                     draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000
                                                         border_size: 0. border_color: #0000 border_color_hover: #0000 border_color_focus: #0000 border_color_down: #0000 border_color_empty: #0000 }
                                                     draw_text +: { color: #303e3b color_hover: #303e3b color_focus: #303e3b color_down: #303e3b
-                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 }) }
+                                                        color_empty: #9aa09a color_empty_hover: #9aa09a color_empty_focus: #9aa09a text_style.font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 }) }
                                                     draw_cursor +: { color: #303e3b } }
                                             }
                                                 setup_volc_save := Button { width: Fit height: Fit text: "保存个人 TTS 并试听" padding: Inset{left: 18 right: 18 top: 12 bottom: 12} margin: Inset{top: 14}
@@ -732,7 +736,7 @@ script_mod! {
                                 }
                                 View { width: Fill height: Fit flow: Down align: Align{x: 0.5} margin: Inset{top: 30}
                                     setup_enter := Button { width: Fit height: Fit text: "先用白板，稍后设置 AI" padding: Inset{left: 22 right: 22 top: 12 bottom: 12}
-                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if cfg!(target_os = "android") { 7.5 } else { 10.5 })}
+                                        draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: #(if android_ui::ANDROID_UI { 7.5 } else { 10.5 })}
                                         draw_bg +: { color: #216e68 color_hover: #1b5c57 color_down: #1b5c57 border_radius: 6 border_size: 0 border_color: #0000 } }
                                     Label { width: Fit padding: 0 margin: Inset{top: 12} text: "以后从「设置 → 新手设置白板」回来，随时调整。API Key 仅发送到 Octos 服务端的凭据设置接口，不写进白板或课程内容。" draw_text.text_style.font_size: 9 draw_text.color: #69706a }
                                 }
@@ -808,8 +812,8 @@ script_mod! {
                                     RoundedView { width: Fill height: 46 align: Align{y: 0.5} padding: Inset{left: 16 right: 16}
                                         draw_bg +: { color: #ffffff border_radius: 4 border_size: 1.0 border_color: #dbded9 }
                                         login_email := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "Email address"
-                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 border_size: 0 }
-                                            draw_text +: { color: #243b40 text_style.font_size: 10.5 } } }
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000 border_size: 0 }
+                                            draw_text +: { color: #243b40 color_hover: #243b40 color_focus: #243b40 color_down: #243b40 color_empty: #8a9a9c color_empty_hover: #8a9a9c color_empty_focus: #8a9a9c text_style.font_size: 10.5 } } }
                                     login_send := Button { width: Fill height: 46 text: "Send Code" margin: 0
                                         draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
                                         draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x0f5560 border_radius: 4 border_size: 0 border_color: #0000 } }
@@ -819,8 +823,8 @@ script_mod! {
                                     RoundedView { width: Fill height: 56 align: Align{x: 0.5 y: 0.5} padding: Inset{left: 16 right: 16}
                                         draw_bg +: { color: #ffffff border_radius: 4 border_size: 1.0 border_color: #dbded9 }
                                         login_code := TextInput { width: Fill height: Fit padding: 0 margin: 0 empty_text: "6-digit code"
-                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 border_size: 0 }
-                                            draw_text +: { color: #243b40 text_style.font_size: 18 } } }
+                                            draw_bg +: { color: #0000 color_hover: #0000 color_focus: #0000 color_down: #0000 color_empty: #0000 border_size: 0 }
+                                            draw_text +: { color: #243b40 color_hover: #243b40 color_focus: #243b40 color_down: #243b40 color_empty: #8a9a9c color_empty_hover: #8a9a9c color_empty_focus: #8a9a9c text_style.font_size: 18 } } }
                                     login_verify := Button { width: Fill height: 46 text: "Verify" margin: 0
                                         draw_text.color: #ffffff draw_text.text_style: theme.font_bold{font_size: 10.5}
                                         draw_bg +: { color: #166a79 color_hover: #x12606e color_down: #x0f5560 border_radius: 4 border_size: 0 border_color: #0000 } }
@@ -2346,12 +2350,19 @@ impl App {
     fn selection_chip(cx: &mut Cx, label: &str, active: bool, strong: bool) -> Option<WidgetRef> {
         let (bg, tint, border) = if active { ("#e3eeec", "#0c7085", "#87bcb4") } else if strong { ("#e3eeec", "#0c7085", "#0000") } else { ("#ffffff", "#253735", "#x2768622e") };
         let label = label.replace(['"', '\\', '\n'], " ");
+        // Web Android: toolbar quick actions are 27px tall with 6px padding;
+        // panel buttons are 9px text with 5px 7px padding.
+        let (height, pad, font) = match (android_ui::ANDROID_UI, strong) {
+            (false, _) => (34., 10., 7.5),
+            (true, true) => (27., 6., 6.75),
+            (true, false) => (23., 7., 6.75),
+        };
         board_view::widget(
             cx,
             &format!(
-                "Button{{height:34 text:\"{label}\" padding:Inset{{left:10 right:10}} margin:0
+                "Button{{height:{height} text:\"{label}\" padding:Inset{{left:{pad} right:{pad}}} margin:0
                     draw_bg +: {{color:{bg} color_hover:#e3eeec color_down:#d5e6eb border_radius:5 border_size:0.5 border_color:{border} border_color_hover:{border} border_color_down:{border} border_color_focus:{border} border_color_2:vec4(-1.0, -1.0, -1.0, -1.0)}}
-                    draw_text.color:{tint} draw_text.text_style.font_size:7.5}}"
+                    draw_text.color:{tint} draw_text.text_style.font_size:{font}}}"
             ),
         )
         .ok()
@@ -3925,7 +3936,7 @@ impl App {
             };
             match board_view::widget(cx, &code) {
                 Ok(button) => {
-                    if cfg!(target_os = "android") {
+                    if android_ui::ANDROID_UI {
                         let style = if icon.is_empty() {
                             "{height:27 min_height:27 width:Fit}"
                         } else {
@@ -4029,7 +4040,7 @@ impl App {
                 }}
             }}",
             batch = if perf::bisect("batch") { "new_batch:true" } else { "" },
-            cover_height = profile.course_cover, body_x = profile.course_padding_x, body_top = profile.course_padding_y, body_y = if cfg!(target_os = "android") { profile.course_padding_y } else { 21. }
+            cover_height = profile.course_cover, body_x = profile.course_padding_x, body_top = profile.course_padding_y, body_y = if android_ui::ANDROID_UI { profile.course_padding_y } else { 21. }
         );
         let mut code = code;
         if perf::bisect("nocardtext") {
@@ -4108,7 +4119,7 @@ impl App {
                     }}
                 }}
             }}",
-            cover_height = profile.collection_cover, body_x = profile.collection_padding, body_top = if cfg!(target_os = "android") { profile.collection_padding } else { 24. }, body_y = profile.collection_padding
+            cover_height = profile.collection_cover, body_x = profile.collection_padding, body_top = if android_ui::ANDROID_UI { profile.collection_padding } else { 24. }, body_y = profile.collection_padding
         );
         let card = board_view::widget(cx, &code)?;
         if let Some(mut svg) = card.widget(cx, ids!(cover)).borrow_mut::<svg_image::SvgImage>() {
@@ -4296,7 +4307,7 @@ impl App {
         if size.x > 0. && size.y > 0. { size } else { dvec2(960., 540.) }
     }
     fn launcher_profile(&self, cx: &mut Cx) -> android_ui::Catalog {
-        android_ui::Catalog::new(self.launcher_viewport(cx), cfg!(target_os = "android"))
+        android_ui::Catalog::new(self.launcher_viewport(cx), android_ui::ANDROID_UI)
     }
     fn rebuild_launcher(&mut self, cx: &mut Cx) {
         self.course_cards.clear();
@@ -4374,7 +4385,7 @@ impl App {
                 }
             }
         }
-        let gap = if cfg!(target_os = "android") { profile.gap } else { gap };
+        let gap = if android_ui::ANDROID_UI { profile.gap } else { gap };
         match self.card_grid(cx, cards, gap) {
             Ok(rows) => {
                 if let Err(e) = board_view::children(cx, &self.ui.widget(cx, ids!(course_list)), rows) {
@@ -4564,11 +4575,20 @@ impl App {
                 "upcoming"
             }
         };
+        // Desktop / Android (web [data-runtime-platform="android"] .oll-course-*).
+        let (topic_x, topic_top, topic_bottom, topic_gap) = (dim(11., 8.), dim(10., 6.), dim(7., 4.), dim(9., 6.));
+        let (small_font, title_font) = (dim(7.5, 6.), dim(9., 7.5));
+        let (row_h, row_px, row_py, row_radius) = (dim(43., 34.), dim(5., 3.), dim(3., 2.), dim(6.5, 4.5));
+        let (main_h, action, action_icon) = (dim(37., 30.), dim(28., 24.), dim(12., 10.));
+        let (label_left, label_right, label_gap, status_side) = (dim(11., 7.), dim(66., 54.), dim(10., 7.), dim(20., 17.));
+        let (beats_left, beats_right, beats_bottom) = (dim(39., 31.), dim(7., 5.), dim(7., 5.));
+        let (beat_left, beat_right, beat_py, beat_num, beat_gap, beat_play, beat_play_font) =
+            (dim(16., 11.), dim(29., 25.), dim(6., 4.), dim(18., 14.), dim(5., 4.), dim(25., 22.), dim(6., 5.));
         // Topic header (packaged courses have one topic: the lesson).
         let topic = board_view::widget(cx, &format!(
-            "View{{width:Fill height:Fit flow:Right spacing:9 align:Align{{y:1.}} padding:Inset{{left:11 right:11 top:10 bottom:7}}
-                Label{{width:Fit padding:0 text:\"01\" draw_text.text_style: theme.font_bold{{font_size:7.5}} draw_text.color:#99a6a3}}
-                Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#6d6255}}}}",
+            "View{{width:Fill height:Fit flow:Right spacing:{topic_gap} align:Align{{y:1.}} padding:Inset{{left:{topic_x} right:{topic_x} top:{topic_top} bottom:{topic_bottom}}}
+                Label{{width:Fit padding:0 text:\"01\" draw_text.text_style: theme.font_bold{{font_size:{small_font}}} draw_text.color:#99a6a3}}
+                Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:{title_font}}} draw_text.color:#6d6255}}}}",
             session.board.title.replace(['"', '\\'], " ")
         ));
         if let Ok(t) = topic {
@@ -4585,28 +4605,28 @@ impl App {
             let expanded = self.outline_expanded.contains(&step.id);
             let row_bg = if st == "current" { "#e0f2f1d4" } else { "#0000" };
             let code = format!(
-                "RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{top:3}} draw_bg +: {{color:{row_bg} border_radius:6.5}}
+                "RoundedView{{width:Fill height:Fit flow:Down margin:Inset{{top:3}} draw_bg +: {{color:{row_bg} border_radius:{row_radius}}}
                     View{{width:Fill height:Fit flow:Overlay
-                        View{{width:3 height:43 show_bg:true draw_bg.color:{}}}
-                        View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:5 right:5 top:3 bottom:3}}
-                            main := Button{{width:Fill height:37 text:\"\" spacing:0 padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
+                        View{{width:3 height:{row_h} show_bg:true draw_bg.color:{}}}
+                        View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}} padding:Inset{{left:{row_px} right:{row_px} top:{row_py} bottom:{row_py}}}
+                            main := Button{{width:Fill height:{main_h} text:\"\" spacing:0 padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}
                                 flow:Overlay}}
-                            expand := Button{{width:28 height:28 text:\"\" spacing:0 padding:0 margin:0 icon_walk:Walk{{width:12 height:12}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
-                            play := Button{{width:28 height:28 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:7.5 draw_text.color:#2e2a25 draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
+                            expand := Button{{width:{action} height:{action} text:\"\" spacing:0 padding:0 margin:0 icon_walk:Walk{{width:{action_icon} height:{action_icon}}} draw_icon +: {{color:#948a7e}} draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}{}
+                            play := Button{{width:{action} height:{action} text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:{small_font} draw_text.color:#2e2a25 draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                         }}
-                        View{{width:Fill height:43 flow:Right spacing:10 align:Align{{y:0.5}} padding:Inset{{left:11 right:66}}
-                            RoundedView{{width:20 height:20 align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:5 border_size:0.5 border_color:{circle_border}}}
-                                Label{{width:Fit padding:0 text:\"{status}\" draw_text.text_style.font_size:7.5 draw_text.color:{circle_text}}}}}
-                            Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:9}} draw_text.color:#3f3932}}
+                        View{{width:Fill height:{row_h} flow:Right spacing:{label_gap} align:Align{{y:0.5}} padding:Inset{{left:{label_left} right:{label_right}}}
+                            RoundedView{{width:{status_side} height:{status_side} align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:{circle_bg} border_radius:5 border_size:0.5 border_color:{circle_border}}}
+                                Label{{width:Fit padding:0 text:\"{status}\" draw_text.text_style.font_size:{small_font} draw_text.color:{circle_text}}}}}
+                            Label{{width:Fill padding:0 max_lines:1 text:\"{}\" draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style: theme.font_bold{{font_size:{title_font}}} draw_text.color:#3f3932}}
                         }}
                     }}
-                    beats := View{{width:Fill height:Fit flow:Down margin:Inset{{left:39 right:7 bottom:{}}}}}
+                    beats := View{{width:Fill height:Fit flow:Down margin:Inset{{left:{beats_left} right:{beats_right} bottom:{}}}}}
                 }}",
                 if st == "current" { "#17829a" } else { "#0000" },
                 "",
                 step.title.replace(['"', '\\'], " "),
                 // Web .oll-course-beats (margin-bottom 7) exists only when expanded.
-                if expanded { 7 } else { 0 }
+                if expanded { beats_bottom } else { 0. }
             );
             let Ok(row) = board_view::widget(cx, &code) else { continue };
             if let Some(mut b) = row.widget(cx, ids!(expand)).borrow_mut::<Button>() {
@@ -4621,13 +4641,13 @@ impl App {
                     let bs = state(&beat.id, beat.end_cursor, &beat_now);
                     let code = format!(
                         "RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{} border_radius:4.5}}
-                            View{{width:Fill height:Fit flow:Right spacing:5 padding:Inset{{left:16 right:29 top:6 bottom:6}}
-                                Label{{width:18 padding:0 text:\"{}\" draw_text.text_style.font_size:7.5 draw_text.color:#a49a8d}}
-                                Label{{width:Fill padding:0 max_lines:2 text:\"{}\" draw_text.wrap:Words draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style.font_size:7.5 draw_text.color:#71685d}}
+                            View{{width:Fill height:Fit flow:Right spacing:{beat_gap} padding:Inset{{left:{beat_left} right:{beat_right} top:{beat_py} bottom:{beat_py}}}
+                                Label{{width:{beat_num} padding:0 text:\"{}\" draw_text.text_style.font_size:{small_font} draw_text.color:#a49a8d}}
+                                Label{{width:Fill padding:0 max_lines:2 text:\"{}\" draw_text.wrap:Words draw_text.text_overflow:TextOverflow.Ellipsis draw_text.text_style.font_size:{small_font} draw_text.color:#71685d}}
                             }}
                             View{{width:Fill height:Fill flow:Right align:Align{{y:0.5}}
                                 main := Button{{width:Fill height:Fill text:\"\" spacing:0 padding:0 margin:0 draw_bg +: {{color:#0000 color_hover:#0000 color_down:#0000 border_size:0 border_color:#0000}}}}
-                                play := Button{{width:25 height:25 text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:6 draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
+                                play := Button{{width:{beat_play} height:{beat_play} text:\"▶\" padding:0 margin:0 draw_text.text_style.font_size:{beat_play_font} draw_text.color:#948a7e draw_bg +: {{color:#0000 color_hover:#13708917 border_radius:4 border_size:0 border_color:#0000}}}}
                             }}
                         }}",
                         if bs == "current" { "#ffffffad" } else { "#0000" },
@@ -4790,7 +4810,7 @@ impl App {
         // Desktop keeps modest bands as floors; chrome along the top edge and
         // the dock across the bottom middle widen them (web boardChromeInsets).
         let (top, bottom, occlusions) = board_chrome_insets(board.size.x, board.size.y, occlusions);
-        if cfg!(target_os = "android") {
+        if android_ui::ANDROID_UI {
             return oll_runtime::camera::Insets {
                 top: top.round(), bottom: bottom.round(), left: 8., right: 8.,
                 focus_margin: None, occlusions,
@@ -5512,13 +5532,13 @@ impl App {
             let mapped = self.ui.widget(cx, ids!(launcher_scroll)).borrow::<scroll_cache::ScrollCache>().and_then(|s| s.map_event(event));
             self.handle_launcher_taps(cx, event, mapped.as_ref().unwrap_or(event));
         }
-        if cfg!(target_os = "android") && !self.android_geometry_logged
+        if android_ui::ANDROID_UI && !self.android_geometry_logged
             && matches!(event, Event::Draw(_)) && std::env::var_os("OCTOS_PERF").is_some()
         {
             android_ui::log_geometry(cx, &self.ui);
             self.android_geometry_logged = true;
         }
-        if cfg!(target_os = "android")
+        if android_ui::ANDROID_UI
             && matches!(event, Event::Startup | Event::WindowGeomChange(_) | Event::LiveEdit | Event::ScriptReapply)
         {
             let size = self.launcher_viewport(cx);

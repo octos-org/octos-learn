@@ -3,6 +3,10 @@ name = "octos-learn"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+# Android large-screen UI dimensions on desktop builds (layout preview only).
+android-ui = ["octos-oll-preview/android-ui"]
+
 [dependencies]
 oll-runtime = { path = "../../../oll/crates/oll-runtime" }
 # Pure-Rust MP3 / Ogg / FLAC decoding from the pinned Makepad tree (narration).

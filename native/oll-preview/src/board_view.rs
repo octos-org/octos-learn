@@ -1,6 +1,7 @@
 //! Native card construction and font measurement for the spatial board.
 use crate::formula_view;
 use makepad_widgets::*;
+use crate::dim;
 use oll_runtime::preview::Preview;
 use serde_json::Value;
 
@@ -431,25 +432,31 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
     let status = card["status"].as_str().unwrap_or("pending");
     let failed = status == "failed";
     let pill = match status { "answered" => "已回答", "pending" => "正在准备回答", _ => "没有生成成功" };
+    // Web Android tightens the card chrome (padding, gaps, buttons, line
+    // height) but keeps its type sizes.
+    let lh = |desktop: f64| if crate::ANDROID_UI { 1.42 } else { desktop };
+    let (pad, pad_bottom, radius) = (dim(16., 10.), dim(25., 17.), dim(8., 5.5));
+    let (q_bottom, q_rule, pill_x, pill_y) = (dim(13., 8.), dim(14., 9.), dim(7., 5.), dim(3., 2.));
+    let (head_gap, head_bottom, foot_top, foot_pad) = (dim(12., 7.), dim(10., 6.), dim(10., 6.), dim(8., 5.));
     let mut body = String::new();
     // Question section.
     body.push_str(&format!(
-        "View{{width:Fill height:Fit flow:Down padding:Inset{{bottom:13}}
+        "View{{width:Fill height:Fit flow:Down padding:Inset{{bottom:{q_bottom}}}
             View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}}
                 {}
                 View{{width:Fill height:1}}
-                RoundedView{{width:Fit height:Fit padding:Inset{{left:7 right:7 top:3 bottom:3}} draw_bg +: {{color:#5270681a border_radius:6}}
+                RoundedView{{width:Fit height:Fit padding:Inset{{left:{pill_x} right:{pill_x} top:{pill_y} bottom:{pill_y}}} draw_bg +: {{color:#5270681a border_radius:6}}
                     Label{{width:Fit padding:0 text:\"{pill}\" draw_text.text_style.font_size:7.6 draw_text.color:#66736f}}}}
             }}
             {}
         }}
-        SolidView{{width:Fill height:1 margin:Inset{{bottom:14}} draw_bg.color:#6f613e29}}",
-        text_box("我的问题", 12.7, 1.4, "#5a4c2b", true, false, (0., 4.)),
-        text_box(&plain_markdown(card["question"].as_str().unwrap_or("")), 13., 1.5, "#263936", false, true, (0., 0.)),
+        SolidView{{width:Fill height:1 margin:Inset{{bottom:{q_rule}}} draw_bg.color:#6f613e29}}",
+        text_box("我的问题", 12.7, 1.4, "#5a4c2b", true, false, (0., dim(4., 5.))),
+        text_box(&plain_markdown(card["question"].as_str().unwrap_or("")), 13., lh(1.5), "#263936", false, true, (0., 0.)),
     ));
     // Header (web header: titles left, Minimize2 / Trash2 28px buttons right).
     body.push_str(&format!(
-        "View{{width:Fill height:Fit flow:Right spacing:12 margin:Inset{{bottom:10}}
+        "View{{width:Fill height:Fit flow:Right spacing:{head_gap} margin:Inset{{bottom:{head_bottom}}}
             View{{width:Fill height:Fit flow:Down spacing:2
                 {}
                 {}
@@ -472,21 +479,21 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
             ("正在生成小章鱼辅助", "正在理解这部分内容，完成后会在这里展示。")
         };
         body.push_str(&text_box(title, 13., 1.4, "#263936", true, true, (0., 4.)));
-        body.push_str(&text_box(text, 13., 1.5, "#60716d", false, true, (0., 0.)));
+        body.push_str(&text_box(text, 13., lh(1.5), "#60716d", false, true, (0., 0.)));
         if !failed {
             body.push_str("RoundedView{width:174 height:4 margin:Inset{top:16} draw_bg +: {color:#77bcb1 border_radius:2}}");
         }
     } else {
         let response = &artifact["response"];
         body.push_str(&text_box(&plain_markdown(response["title"].as_str().unwrap_or("")), 14., 1.4, "#263936", true, true, (0., 0.)));
-        body.push_str(&text_box(&plain_markdown(response["text"].as_str().unwrap_or("")), 13., 1.55, "#263936", false, true, (6., 0.)));
+        body.push_str(&text_box(&plain_markdown(response["text"].as_str().unwrap_or("")), 13., lh(1.55), "#263936", false, true, (dim(6., 4.), 0.)));
         for item in values(response, "items").iter().filter_map(Value::as_str) {
             body.push_str(&format!(
                 "View{{width:Fill height:Fit flow:Right padding:Inset{{top:3}}
                     Label{{width:16 padding:0 text:\"•\" draw_text.text_style.font_size:9.75 draw_text.color:#263936}}
                     {}
                 }}",
-                text_box(&plain_markdown(item), 13., 1.55, "#263936", false, true, (0., 0.))
+                text_box(&plain_markdown(item), 13., lh(1.55), "#263936", false, true, (0., 0.))
             ));
         }
         if response["kind"] == "plot" {
@@ -508,8 +515,8 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
         }
         let understood = artifact["interpretation"]["content"].as_str().filter(|s| !s.trim().is_empty()).unwrap_or("未能可靠识别");
         body.push_str(&format!(
-            "SolidView{{width:Fill height:1 margin:Inset{{top:10}} draw_bg.color:#2470681f}}
-            View{{width:Fill height:Fit flow:Right padding:Inset{{top:8}}
+            "SolidView{{width:Fill height:1 margin:Inset{{top:{foot_top}}} draw_bg.color:#2470681f}}
+            View{{width:Fill height:Fit flow:Right padding:Inset{{top:{foot_pad}}}
                 {}
                 {}
             }}",
@@ -518,8 +525,8 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
         ));
     }
     let (bg, border) = if failed { ("#fff9f4", "#b04c3761") } else { ("#fffdf6", "#24706840") };
-    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{bg} border_radius:8 border_size:1.0 border_color:{border}}}
-        View{{width:Fill height:Fit flow:Down padding:Inset{{left:16 right:16 top:16 bottom:25}}
+    widget(cx, &format!("RoundedView{{width:Fill height:Fit flow:Overlay draw_bg +: {{color:{bg} border_radius:{radius} border_size:1.0 border_color:{border}}}
+        View{{width:Fill height:Fit flow:Down padding:Inset{{left:{pad} right:{pad} top:{pad} bottom:{pad_bottom}}}
             {body}
         }}
     }}"))
@@ -534,7 +541,9 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
 /// Selection card header action (web header button: 28px, 15px icon, #6d7c79,
 /// hover rgba(36,112,104,.1)). SpatialBoard hit-tests it by its drawn rect.
 fn card_action(name: &str) -> String {
-    format!("{name} := Button{{width:28 height:28 padding:0 margin:0 text:\"\" spacing:0 icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#6d7c79}} draw_bg +: {{color:#0000 color_hover:#2470681a color_down:#24706826 border_radius:4.5 border_size:0 border_color:#0000}}}}")
+    let side = dim(28., 21.);
+    let icon = dim(15., 13.);
+    format!("{name} := Button{{width:{side} height:{side} padding:0 margin:0 text:\"\" spacing:0 icon_walk:Walk{{width:{icon} height:{icon}}} draw_icon +: {{color:#6d7c79}} draw_bg +: {{color:#0000 color_hover:#2470681a color_down:#24706826 border_radius:{} border_size:0 border_color:#0000}}}}", dim(4.5, 3.))
 }
 const ICON_MINIMIZE: &str = include_str!("../../octos-learn/assets/icons/minimize-2.svg");
 const ICON_TRASH: &str = include_str!("../../octos-learn/assets/icons/trash-2.svg");

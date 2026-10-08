@@ -4,6 +4,13 @@ use makepad_widgets::*;
 use oll_runtime::{expression::evaluate, preview::Preview, session::Session};
 use serde_json::Value;
 use std::time::Instant;
+/// Android large-screen chrome (web `[data-runtime-platform="android"]`);
+/// the `android-ui` feature previews it on desktop.
+pub const ANDROID_UI: bool = cfg!(any(target_os = "android", feature = "android-ui"));
+/// The desktop or the Android value of one chrome dimension.
+pub const fn dim(desktop: f64, android: f64) -> f64 {
+    if ANDROID_UI { android } else { desktop }
+}
 pub mod board_view;
 pub mod controls_view;
 pub mod formula_view;
