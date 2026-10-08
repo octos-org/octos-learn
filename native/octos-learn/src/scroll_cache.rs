@@ -74,6 +74,10 @@ pub struct ScrollCache {
     /// the press ends.
     #[rust]
     press_scroll: Option<f64>,
+    /// The press ended; keep `press_scroll` until the next event so a host
+    /// that maps the release after the UI ran (launcher taps) still uses it.
+    #[rust]
+    release_pending: bool,
 }
 
 impl ScrollCache {
@@ -130,11 +134,16 @@ impl ScrollCache {
             ),
             _ => (false, false),
         };
-        if !after && down && self.press_scroll.is_none() {
-            self.press_scroll = Some(self.scroll());
+        if !after {
+            if std::mem::take(&mut self.release_pending) {
+                self.press_scroll = None;
+            }
+            if down && self.press_scroll.is_none() {
+                self.press_scroll = Some(self.scroll());
+            }
         }
         if after && up {
-            self.press_scroll = None;
+            self.release_pending = true;
         }
     }
 }

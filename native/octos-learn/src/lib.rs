@@ -3838,7 +3838,11 @@ impl App {
     /// Launcher navigation (web links): collection cards open a collection,
     /// 全部课程集 returns home; course pills open the course (预览 paused,
     /// 开始互动/继续学习 autoplay).
-    fn handle_launcher_taps(&mut self, cx: &mut Cx, event: &Event) {
+    /// `content` is `screen` mapped into the launcher ScrollCache's space: the
+    /// page widgets are hit-tested with it; the "⋯" panel floats above the
+    /// cache in screen space and uses `screen`.
+    fn handle_launcher_taps(&mut self, cx: &mut Cx, screen: &Event, content: &Event) {
+        let event = content;
         let blank = self.ui.widget(cx, ids!(blank_board));
         if self.collection.is_none() && tapped(cx, event, &blank) {
             self.open_live_board(cx);
@@ -3858,8 +3862,8 @@ impl App {
         }
         // "⋯" panel and its actions.
         if self.card_menu_for.is_some() {
-            let restart = tapped(cx, event, &self.ui.widget(cx, ids!(menu_restart)));
-            let delete = tapped(cx, event, &self.ui.widget(cx, ids!(menu_delete)));
+            let restart = tapped(cx, screen, &self.ui.widget(cx, ids!(menu_restart)));
+            let delete = tapped(cx, screen, &self.ui.widget(cx, ids!(menu_delete)));
             if restart || delete {
                 let (pack, version) = self.card_menu_for.take().unwrap();
                 self.ui.widget(cx, ids!(card_menu)).set_visible(cx, false);
@@ -3874,10 +3878,13 @@ impl App {
                 self.ui.redraw(cx);
                 return;
             }
-            let outside = match event {
-                Event::MouseDown(e) => !self.ui.widget(cx, ids!(card_menu)).area().rect(cx).contains(e.abs),
-                _ => false,
+            // A press anywhere outside the panel closes it (mouse or touch).
+            let press = match screen {
+                Event::MouseDown(e) => Some(e.abs),
+                Event::TouchUpdate(e) => e.touches.iter().find(|t| t.state == makepad_widgets::makepad_platform::event::TouchState::Start).map(|t| t.abs),
+                _ => None,
             };
+            let outside = press.is_some_and(|p| !self.ui.widget(cx, ids!(card_menu)).area().rect(cx).contains(p));
             if outside {
                 self.card_menu_for = None;
                 self.ui.widget(cx, ids!(card_menu)).set_visible(cx, false);
@@ -5115,7 +5122,7 @@ impl App {
         if !self.learning_visible {
             // Launcher content lives in the ScrollCache's own coordinate space.
             let mapped = self.ui.widget(cx, ids!(launcher_scroll)).borrow::<scroll_cache::ScrollCache>().and_then(|s| s.map_event(event));
-            self.handle_launcher_taps(cx, mapped.as_ref().unwrap_or(event));
+            self.handle_launcher_taps(cx, event, mapped.as_ref().unwrap_or(event));
         }
         if cfg!(target_os = "android") && !self.android_geometry_logged
             && matches!(event, Event::Draw(_)) && std::env::var_os("OCTOS_PERF").is_some()
