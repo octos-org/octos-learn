@@ -1,0 +1,17 @@
+{
+  "runtime-tests.log": {
+    "passed": 61,
+    "failed": 0,
+    "ignored": 0
+  },
+  "native-tests.log": {
+    "passed": 15,
+    "failed": 0,
+    "ignored": 2
+  },
+  "preview-tests.log": {
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  }
+}

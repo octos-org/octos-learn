@@ -1,0 +1,8 @@
+{
+  "octos-learn": "2666794d20cea9083a756f19ef447000a77bc4fa",
+  "oll": "4263b2216f3968f2200b05f40b2dc1e94db5d802",
+  "makepad": "825dbb422c6d7926e111e2ee7831d697870d8671",
+  "octoscript": "68f6a9df55692b5d8ef8873a12721e279a3f40d6",
+  "octoscript-makepad": "c9ed4078e107f13a3d26b1ffed54d11e065e3406",
+  "makepadPatch": "native/patches/makepad-825dbb4-vector-color-unorm8.patch"
+}

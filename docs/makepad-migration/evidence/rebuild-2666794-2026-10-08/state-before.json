@@ -1,0 +1,19 @@
+{
+  "collectedHostTime": 1791467638.7182121,
+  "size": "Physical size: 3840x2160",
+  "density": "Physical density: 480\nOverride density: 640",
+  "cc.pitun.learn": [
+    "codePath=/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag==",
+    "versionCode=33 minSdk=26 targetSdk=35",
+    "versionName=0.1.2",
+    "lastUpdateTime=2026-10-06 02:10:22",
+    "firstInstallTime=2026-09-13 01:58:13"
+  ],
+  "cc.pitun.learn.makepadtest": [
+    "codePath=/data/app/~~FjbgB9ml3xdSxgCTJ3rQ8w==/cc.pitun.learn.makepadtest-5b0ala0TMD6LbeHUwJHcYg==",
+    "versionCode=202610071 minSdk=26 targetSdk=35",
+    "versionName=0.1.0-makepad-test-20261007.2",
+    "lastUpdateTime=2026-10-08 17:03:54",
+    "firstInstallTime=2026-10-08 12:33:34"
+  ]
+}

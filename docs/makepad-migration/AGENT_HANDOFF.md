@@ -17,6 +17,8 @@
 
 ## 0. 一句话现状
 
+**最新双平台测试准备（2026-10-08）**：产品干净 `2666794` + OLL `4263b22` 已重新打包；固定Makepad825dbb4应用用户授权颜色补丁（native/patches/，以后构建不能遗漏）。Mac新版已打开，大屏独立原生APK已更新，首页正常，Web / 系统 / 学习数据保留。runtime61、产品15（2 ignored）、共享白板18测试通过。本轮为用户准备新版本，不是十五项功能验收；最新入口、哈希及范围见 [双平台重建记录](LOCAL_REBUILD_2026-10-08.md)。下面为历史复测。
+
 **最新 Android 触摸修复验收（2026-10-08）**：干净 `425d25b` 已重打安装；第一 / 第三首页卡片起手上拖不再误导航，菜单外部触摸可关闭，重新开始 / 删除记录的条目及取消 / 确定均通过ADB检查。仅重置 / 删除本轮创建的第二课测试记录；重启后删除状态保持，第一课原有记录仍可继续。卡片点击 / 预览 / 互动 / 返回后滚动 / 甩动通过。默认缓存课程集gap18.35ms、首页18.49ms，快速节奏保留。系统 / Web包不变，当前默认缓存1080p、诊断全关，未改产品 / 固定依赖。报告和证据随本轮文档提交推送。优先读 [触摸修复验收](ANDROID_TOUCH_FIX_RETEST_2026-10-08.md)。下列为历史阶段结果。
 
 **最新 Android 缓存复测（2026-10-07）**：干净 `bf83cf2` 已重打并安装独立APK，课程集缓存gap17.69ms /wait2.89ms，nocache70.43 /47.72ms；首页缓存gap18.22ms，nocache54.93ms。性能显著改善；首页卡片起手拖动抬手误打开课程集，在第一 / 第三卡片各复现一次。预览、开始互动、菜单打开与位置、返回后滚动、甩动通过；菜单触摸外部不关闭、条目触摸无响应，是否新增未确定。系统 / Web包不变，默认缓存、应用1080p、诊断全关。未改产品 / pinned Makepad；报告和证据已于2026-10-08经用户明确授权推送（ac4beac、3dba03a）。优先读 [纹理缓存复测](ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)。下列为历史阶段结果。
@@ -58,14 +60,14 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装 APK：干净 `425d25b1ca2213d5cf6ea4c2d7eb47c4653d43c7`，`productDirty=false`；SHA-256 `3719bd12bdc7e33ab772a35566cfc945eaf841bc728d9cbbeec02abc7fba5b06`，设备pull一致。包名仍 `cc.pitun.learn.makepadtest`，默认缓存、perf / bisect关闭。本轮报告、证据与工具随本文件所在文档提交推送（已有用户上传授权）；同分支不合并 / 不开PR；OLL `d59b607`、Makepad `825dbb4`不变。安装使用 `adb install --no-incremental -r`，本次原生包firstInstallTime保留。
+当前安装 APK：干净 `2666794d20cea9083a756f19ef447000a77bc4fa`，`productDirty=false`；SHA-256 `632660cf51afe3843c1f9e1438ff31ca12054e22de84e4f4202f19be4265bf61`，设备pull一致。包名仍 `cc.pitun.learn.makepadtest`，默认缓存 /1080p、perf / bisect关闭。OLL `4263b22`，固定Makepad825dbb4 + 本地矢量颜色补丁。本轮交接记录同分支提交推送，不合并 / 不开PR。安装 `adb install --no-incremental -r`，firstInstallTime保留。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `425d25b` + Android触摸修复验收报告（本文件所在文档提交，本轮推送）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
-| `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `2666794` + 双平台重建记录（本文件所在文档提交）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-lesson-language` | `codex/rust-runtime-product` | **当前构建依赖4263b22（含40162b3，音频时钟同步）**； **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
 两个仓库的持久路径：原机器在 `~/Documents/projects/`，新机器在 `~/Documents/projects/OctosLearn/`。新机器上的提交先落在工作区 clone，再用 `git pull --ff-only <工作区clone> <分支>` 同步回持久仓库。
@@ -73,6 +75,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
 ## 2. 工作区重建
+
+2026-10-08十五项修复后重建：`.local-dev/oll-product/oll`快进4263b22，独立makepad checkout应用native/patches/makepad-825dbb4-vector-color-unorm8.patch。Mac / APK与日志在`.local-dev/rebuild-2666794/`，调研镜像同名目录。日常Mac启动仍用`.local-dev/start-macos.command`；大屏新版已留首页，后端及reverse50080正常。详见最新重建记录。
 
 2026-10-08 425d25b触摸修复验收：主 / 独立构建checkout同步，`.local-dev/android-425d25b-touch/`保存APK、功能原始截图和两组默认缓存性能样本；调研镜像版本目录同名。完整非增量更新、firstInstallTime保留、资源cached=true。后端healthy / reverse50080有效；上轮三项交互问题本轮ADB触屏复测通过，详见最新报告。
 
