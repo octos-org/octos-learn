@@ -207,6 +207,12 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - 10：Web 新课题放置（findNewTopicWhiteboardPosition：所有已占用区域最右边 + 180，高度取选区笔迹的 y；课程区域从问题卡右移 294 开始）。原生原来问题卡固定在 (0,0)、课程区域固定在 (20,20)，会压住笔迹和辅助卡。现在白板上已有辅助卡或问题带选区时，按 Web 规则算出第一个课题的原点（问题卡位置），课程 teaching 区域从原点 +294 排；原点存进实时白板（`topic_origin`），重开不跳。Mac 端到端实测（本机服务）：手写 x+1=3 → 检查并建议生成辅助卡 → 再选「解释这部分」，问题卡与课程都放在辅助卡与笔迹右侧，镜头对准新课程
   - 测试钩子 `OCTOS_LIVE_OPEN=<session>`：启动后直接打开保存的自由白板
 - （本次提交）问题 14 安卓白板双指缩放：SpatialBoard 原来只有单指拖动和滚轮 / 触控板缩放。新增 `pinch_event`：跟踪落在白板上的触点（`Event::TouchUpdate`），两指时以起始中点下的世界点为锚，按两指距离比例缩放（与 zoom_at 同样限制在 0.18–2.5），并随中点平移；两指期间吞掉事件（单指拖动、笔迹、卡片拖动不响应），抬起一指后剩下的手指不续拖，避免跳动。单元测试覆盖锚点不动与缩放上限。Mac 无法模拟多点触控，**需真机验证**；若安卓笔迹由 Java 原生层接管触摸（`oll.ink`），笔模式下双指可能到不了白板，届时再处理
+- （本次提交，OLL `40162b3`、`4263b22`）问题 1/2 旁白与课程时钟：
+  - 新音频引擎（`src/audio_playback.rs`，三平台同一路径，取代 macOS AVAudioPlayer 与 Android/Windows 空的视频路径）：MP3 用固定 Makepad 树里的纯 Rust 解码器 `makepad-audio-decode`（path 依赖，无新外部 crate；处理 LAME 无缝信息与滤波器组延迟），WAV（PCM 8/16/24/32、float）自行解析；解码在工作线程、按路径缓存；混音器线性重采样到设备采样率写入 `cx.audio_output`，`AudioDevices` 事件选默认输出设备。暂停 / 继续 / 定位 / 停止与原接口相同；新增 `state(id)`（就绪、位置、总长、播完）。
+  - 课程时钟跟随音频：OLL `Session::sync_narration_audio(beat, position, total, finished)`，每个 tick 在 `session.tick` 前用片段实际送到设备的采样位置设定剩余旁白时间；未播完时永不放行（+40ms 保护，跨过一个 tick），播完立即放行；解码中则等待；解码失败退回原时钟。OLL 测试：长于声明时长的片段会把 Beat 留到播完，短于的不再等满估计时长。
+  - 评估（问题 2）：九门课 95 个旁白片段，解码时长 − 清单 durationMs 恒为 −22.04ms（= 529 个滤波器组延迟采样 @24kHz，清单时长含此延迟），声明时长本身只差约 22ms；原先几十到一百多毫秒的偏差来自播放器与课程时钟各走各的（及 60 次无帧轮询截断）。现在 Mac 实测每个 Beat 都在片段播完那一刻结束（如 9890/9890ms、11066/11066ms），之前会在结束前 2–7ms 提前切走。
+  - 调试：`OCTOS_AUDIO_DEBUG=1` 打印解码、每秒片段状态、播完与停止时刻。忽略的测试：`OCTOS_AUDIO_TEST_FILE`（解码一段课程 MP3）、`OCTOS_AUDIO_PACK_ROOT`（全部课程声明与解码时长对比）。
+  - Windows：按用户授权只做编译检查。Homebrew 的 rustc 不能用官方 Windows std，故在 `.local-dev/win-sysroot` 隔离安装官方 1.98.1 工具链（rustup，不改 PATH、不影响 Homebrew），`cargo check --release --target x86_64-pc-windows-msvc` 通过。**Android / Windows 的实际出声需要真机验证**
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -229,7 +235,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
    - [x] 3 GEOMETRY/PLOT「探索」「大图」上部被切；5 白板左上 home/menu/back 图标偏左；6 工具栏图标偏左；7 带文字按钮 hover 后白字浅底；9 选区快捷按钮 hover 边框（Web 无）；12 滑块「老师正在控制」提示被切；4 卡片边界不清楚（已按 Web 对齐，待用户看效果）
    - [x] 8 小章鱼辅助卡片右上两按钮无效、删除图标不对、不能拖动；10 「我的问题」与课程卡片没避开笔迹与辅助卡；11 擦除笔迹后关联辅助卡不消失（用户 2026-10-08 选择：与笔迹一起删除卡片，不同于 Web）；13 空白板的辅助卡带到预制课程白板（笔迹却消失）
    - [x] 14 安卓白板双指缩放（待真机验证）
-   - [ ] 1 旁白读不完（Android/Windows 纯音频入口为空实现）；2 课程时钟与音频末尾几十到一百多毫秒偏差
+   - [x] 1 旁白读不完（Android/Windows 纯音频入口为空实现）；2 课程时钟与音频末尾几十到一百多毫秒偏差（Android / Windows 待真机验证有声）
 
 5. 2026-10-07 用户要求继续做（每完成一块提交推送并更新本文档）：
    - [x] 框选笔迹提问（两部分均完成；剩余 DIFF：卡片拖动/缩放、Markdown 公式排版、scene3d 卡片、面板语音提问、片段级 target）

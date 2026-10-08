@@ -4392,7 +4392,10 @@ impl App {
         self.refresh(cx);
     }
     fn stop_narration_audio(&mut self, cx: &mut Cx) {
-        if let Some((_, id, ..)) = self.audio_now.take() {
+        if let Some((beat, id, ..)) = self.audio_now.take() {
+            if std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() {
+                eprintln!("[audio] stop {beat} at {:?}", self.audio_players.state(id));
+            }
             self.audio_players.stop(cx, id);
         }
     }
@@ -4659,18 +4662,6 @@ impl AppMain for App {
 
 impl App {
     fn handle_app_event(&mut self, cx: &mut Cx, event: &Event) {
-        if let Event::VideoPlaybackPrepared(e) = event {
-            if std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() {
-                eprintln!("[audio] prepared {:?} duration {}ms", e.video_id, e.duration);
-            }
-            if let Some((_, id, _, seek)) = &mut self.audio_now {
-                if *id == e.video_id {
-                    if let Some(ms) = seek.take() {
-                        cx.seek_video_playback(*id, ms);
-                    }
-                }
-            }
-        }
         if matches!(event, Event::Startup) {
             // Android host renders into a smaller GL buffer on 4K panels
             // (MakepadApp.RENDER_LONG_SIDE): lay out in the same logical
@@ -4777,6 +4768,7 @@ impl App {
             }
         }
         if let Event::AudioDevices(devices) = event {
+            self.audio_players.handle_audio_devices(cx, devices);
             self.audio_inputs = devices.default_input();
             if self.voice.enabled && std::env::var_os("OCTOS_VOICE_TEST_WAV").is_none() {
                 cx.use_audio_inputs_with_options(&self.audio_inputs, AudioInputOptions { echo_cancellation: true });
@@ -4836,6 +4828,25 @@ impl App {
                 };
             }
             if was_playing {
+                // The narration clip is the lesson clock while it plays
+                // (exact end; a clip still decoding holds the Beat).
+                if std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() {
+                    static LAST: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
+                    let mut last = LAST.lock().unwrap();
+                    if last.is_none_or(|t| t.elapsed().as_secs_f64() >= 1.) {
+                        *last = Some(Instant::now());
+                        eprintln!("[audio] now {:?} state {:?} narration {:?}", self.audio_now.as_ref().map(|a| (&a.0, a.2)), self.audio_now.as_ref().and_then(|a| self.audio_players.state(a.1)), self.player.as_ref().and_then(|s| s.narration_position().map(|(b, ms)| (b.to_owned(), ms))));
+                    }
+                }
+                if let (Some((beat, id, true, _)), Some(session)) = (&self.audio_now, &mut self.player) {
+                    if let Some(st) = self.audio_players.state(*id).filter(|st| !st.failed) {
+                        let total = if st.ready { st.total_ms } else { 0. };
+                        session.sync_narration_audio(beat, st.position_ms, total, st.finished);
+                        if st.finished && std::env::var_os("OCTOS_AUDIO_DEBUG").is_some() && session.narration_position().is_some_and(|(b, _)| b == beat) {
+                            eprintln!("[audio] {beat} clip finished at {:.0}/{:.0}ms", st.position_ms, st.total_ms);
+                        }
+                    }
+                }
                 if let Some(session) = &mut self.player {
                     if let Err(e) = session.tick(dt) {
                         self.error = e;

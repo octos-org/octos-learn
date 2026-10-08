@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 oll-runtime = { path = "../../../oll/crates/oll-runtime" }
+# Pure-Rust MP3 / Ogg / FLAC decoding from the pinned Makepad tree (narration).
+makepad-audio-decode = { path = "../../../makepad/libs/audio_decode" }
 octos-oll-preview = { path = "../oll-preview", default-features = false }
 makepad-widgets = { path = "../../../makepad/widgets" }
 makepad-latex-math = { path = "../../../makepad/libs/latex_math" }

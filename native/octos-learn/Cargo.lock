@@ -327,6 +327,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "makepad-audio-decode"
+version = "0.1.0"
+
+[[package]]
 name = "makepad-byteorder-lite"
 version = "0.1.0"
 
@@ -828,6 +832,7 @@ name = "octos-learn"
 version = "0.1.0"
 dependencies = [
  "image",
+ "makepad-audio-decode",
  "makepad-latex-math",
  "makepad-plot",
  "makepad-widgets",
