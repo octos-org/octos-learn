@@ -265,6 +265,23 @@ pub struct SpatialBoard {
     selection_specs: Vec<SelectionCardSpec>,
     #[rust]
     selection_cards: Vec<(SelectionCardSpec, WorldRect, WidgetRef)>,
+    /// Selection card being dragged: id, pointer start (world), card start.
+    #[rust]
+    card_drag: Option<(String, DVec2, (f64, f64))>,
+    /// Set when the learner removed strokes (eraser, delete selection);
+    /// the app then drops selection cards whose source ink is gone.
+    #[rust]
+    ink_erased: bool,
+    /// Web course region placement for a live board's first topic: the
+    /// question card's position (lesson region starts COURSE_RUNTIME_OFFSET_X
+    /// right of it). Keyed by the board session it was computed for.
+    #[rust]
+    topic_origin: Option<(f64, f64)>,
+    #[rust]
+    topic_session: String,
+    /// The pending question's selection source (world), reserved like the web.
+    #[rust]
+    question_source: Option<(f64, f64, f64, f64)>,
     /// Card actions for the app: (card id, "minimize" | "expand" | "delete").
     #[rust]
     selection_requests: Vec<(String, &'static str)>,
@@ -395,6 +412,18 @@ impl SpatialBoard {
     }
     pub fn ink_count(&self) -> usize {
         self.ink.strokes.len()
+    }
+    /// True once after the learner erased strokes (see `ink_erased`).
+    pub fn take_ink_erased(&mut self) -> bool {
+        std::mem::take(&mut self.ink_erased)
+    }
+    /// Whether any stroke point lies in the world rect (x, y, w, h), grown by
+    /// `pad` on every side.
+    pub fn ink_in_rect(&self, rect: (f64, f64, f64, f64), pad: f64) -> bool {
+        let (x, y, w, h) = rect;
+        self.ink.strokes.iter().any(|s| {
+            s.points.iter().any(|p| p.x >= x - pad && p.x <= x + w + pad && p.y >= y - pad && p.y <= y + h + pad)
+        })
     }
     pub fn ink_batch(&mut self, cx: &mut Cx, batch: &Value) -> Result<(), String> {
         if let Some(id) = batch["pointerId"].as_u64() {
@@ -630,7 +659,42 @@ impl SpatialBoard {
         }
         self.redraw(cx);
     }
+    /// The live board session and its saved topic origin. A new session
+    /// resets the origin; the same session keeps one computed here.
+    pub fn set_topic_context(&mut self, session: &str, origin: Option<(f64, f64)>) {
+        if self.topic_session != session {
+            self.topic_session = session.to_owned();
+            self.topic_origin = origin;
+            self.question_source = None;
+        } else if origin.is_some() {
+            self.topic_origin = origin;
+        }
+    }
+    pub fn topic_origin(&self) -> Option<(f64, f64)> {
+        self.topic_origin
+    }
+    pub fn set_question_source(&mut self, source: Option<(f64, f64, f64, f64)>) {
+        self.question_source = source;
+    }
+    /// Web findNewTopicWhiteboardPosition: right of everything already on the
+    /// board (selection cards, the question's source ink) by the region
+    /// gutter, at the source's height. None when the board is empty.
+    fn new_topic_origin(&self) -> Option<(f64, f64)> {
+        const COURSE_REGION_GUTTER: f64 = 180.;
+        let occupied: Vec<(f64, f64, f64, f64)> = self
+            .selection_cards
+            .iter()
+            .map(|(_, r, _)| (r.x, r.y, r.width, r.height))
+            .chain(self.question_source)
+            .filter(|r| r.2 > 0. && r.3 > 0.)
+            .collect();
+        let right = occupied.iter().map(|r| r.0 + r.2).fold(f64::NEG_INFINITY, f64::max);
+        right.is_finite().then(|| (right + COURSE_REGION_GUTTER, self.question_source.map_or(90., |s| s.1)))
+    }
     fn place_host_cards(&mut self) {
+        if self.board.is_none() && self.topic_origin.is_none() && !self.host_cards.is_empty() {
+            self.topic_origin = self.new_topic_origin();
+        }
         // The lesson's content origin (layout bounds include outer padding).
         let origin = self
             .board
@@ -643,7 +707,7 @@ impl SpatialBoard {
             .flatten();
         let (mut x, y) = match origin {
             Some((ox, oy)) => (ox - self.host_cards.iter().map(|(_, r, _)| r.width + HOST_CARD_GAP).sum::<f64>(), oy),
-            None => (0., 0.),
+            None => self.topic_origin.unwrap_or((0., 0.)),
         };
         for (_, r, _) in &mut self.host_cards {
             r.x = x;
@@ -919,8 +983,10 @@ impl SpatialBoard {
                 "height": self.reflection_heights.get(&id).copied().unwrap_or(REFLECTION_ESTIMATED_HEIGHT),
             }))
             .collect();
+        // Web COURSE_RUNTIME_OFFSET_X: the lesson starts right of its question card.
+        let (rx, ry) = self.topic_origin.map_or((20., 20.), |(x, y)| (x + 294., y));
         let options = json!({"regions": {region: {
-            "x": 20, "y": 20, "flow": "teaching",
+            "x": rx, "y": ry, "flow": "teaching",
             "nodeSections": sections.iter().map(|(id, s)| (id.clone(), json!(s))).collect::<serde_json::Map<_, _>>(),
             "plannedSteps": p.planned_steps().iter().map(|(s, c)| (s.clone(), json!({"visual": c.visual, "math": c.math, "text": c.text}))).collect::<serde_json::Map<_, _>>(),
             "composition": {
@@ -1974,31 +2040,72 @@ impl Widget for SpatialBoard {
             return;
         }
         let hit = event.hits(cx, self.draw_bg.area());
-        // Selection card glyphs (minimize / delete) and minimized pins.
-        if let Hit::FingerDown(e) = &hit {
-            let w = self.world_point(e.abs);
-            let inside = |x: f64, y: f64, s: f64| w.x >= x && w.x <= x + s && w.y >= y && w.y <= y + s;
-            let tapped = self.selection_cards.iter().find_map(|(spec, r, _)| {
-                if spec.minimized {
-                    inside(r.x, r.y, 26.).then(|| (spec.id.clone(), "expand"))
-                } else if inside(r.x + r.width - 62., r.y + 8., 26.) {
-                    Some((spec.id.clone(), "minimize"))
-                } else if inside(r.x + r.width - 32., r.y + 8., 26.) {
-                    Some((spec.id.clone(), "delete"))
-                } else {
-                    None
+        // Selection cards (web SelectionEnhancementLayer) sit above ink and
+        // board input: header buttons, minimized pins, and dragging the card
+        // from anywhere else (web beginCardDrag; ink ignores the card).
+        match &hit {
+            Hit::FingerDown(e) => {
+                let w = self.world_point(e.abs);
+                let in_rect = |r: Rect| r.size.x > 0. && r.contains(w);
+                let mut request = None;
+                let mut drag = None;
+                // Topmost (last drawn) first.
+                for (spec, r, card) in self.selection_cards.iter().rev() {
+                    let inside_card = w.x >= r.x && w.x <= r.x + r.width && w.y >= r.y && w.y <= r.y + r.height;
+                    if spec.minimized {
+                        if inside_card {
+                            request = Some((spec.id.clone(), "expand"));
+                            break;
+                        }
+                        continue;
+                    }
+                    if in_rect(card.widget(cx, ids!(sel_min)).area().rect(cx)) {
+                        request = Some((spec.id.clone(), "minimize"));
+                        break;
+                    }
+                    if in_rect(card.widget(cx, ids!(sel_del)).area().rect(cx)) {
+                        request = Some((spec.id.clone(), "delete"));
+                        break;
+                    }
+                    if inside_card {
+                        drag = Some((spec.id.clone(), w, (r.x, r.y)));
+                        break;
+                    }
                 }
-            });
-            if let Some(request) = tapped {
-                self.selection_requests.push(request);
+                if let Some(request) = request {
+                    self.selection_requests.push(request);
+                    self.redraw(cx);
+                    return;
+                }
+                if drag.is_some() {
+                    self.card_drag = drag;
+                    return;
+                }
+            }
+            Hit::FingerMove(e) if self.card_drag.is_some() => {
+                let w = self.world_point(e.abs);
+                let (id, start, origin) = self.card_drag.clone().unwrap();
+                if let Some((_, r, _)) = self.selection_cards.iter_mut().find(|(s, _, _)| s.id == id) {
+                    r.x = origin.0 + w.x - start.x;
+                    r.y = origin.1 + w.y - start.y;
+                }
                 self.redraw(cx);
                 return;
             }
+            Hit::FingerUp(_) if self.card_drag.is_some() => {
+                let (id, _, origin) = self.card_drag.take().unwrap();
+                if self.selection_cards.iter().any(|(s, r, _)| s.id == id && (r.x, r.y) != origin) {
+                    self.selection_requests.push((id, "moved"));
+                }
+                return;
+            }
+            _ => {}
         }
         if self.drawing && self.ink_tool == InkTool::Select {
             if let Event::KeyDown(k) = event {
                 if matches!(k.key_code, KeyCode::Delete | KeyCode::Backspace) && self.ink.delete_selection() {
                     self.ink_revision += 1;
+                    self.ink_erased = true;
                     self.redraw(cx);
                 }
             }
@@ -2026,6 +2133,7 @@ impl Widget for SpatialBoard {
                         self.erase_last = Some(w);
                         if changed {
                             self.ink_revision += 1;
+                            self.ink_erased = true;
                             self.redraw(cx);
                         }
                     }
@@ -2323,10 +2431,31 @@ impl Widget for SpatialBoard {
         // Web SelectionSourceLink: dashed path from the source ink to its card.
         for (spec, r, _) in &self.selection_cards {
             let (sx, sy, sw, sh) = spec.source;
-            let start = ((sx + sw + 4.) as f32, (sy + sh / 2.) as f32);
+            // A card dragged over its own source has no visible link to draw.
+            if r.x < sx + sw && sx < r.x + r.width && r.y < sy + sh && sy < r.y + r.height {
+                continue;
+            }
+            // Attach to the card side facing the source (cards can be dragged
+            // anywhere; the link must not cross the card).
             let end_y = (r.y + if spec.minimized { 13. } else { 24. }) as f32;
-            let mid = ((sx + sw + r.x) / 2.) as f32;
-            let pts = [start, (mid, start.1), (mid, end_y), (r.x as f32, end_y)];
+            let pts: Vec<(f32, f32)> = if r.x >= sx + sw {
+                let start = ((sx + sw + 4.) as f32, (sy + sh / 2.) as f32);
+                let mid = ((sx + sw + r.x) / 2.) as f32;
+                vec![start, (mid, start.1), (mid, end_y), (r.x as f32, end_y)]
+            } else if r.x + r.width <= sx {
+                let start = ((sx - 4.) as f32, (sy + sh / 2.) as f32);
+                let right = (r.x + r.width) as f32;
+                let mid = ((sx + r.x + r.width) / 2.) as f32;
+                vec![start, (mid, start.1), (mid, end_y), (right, end_y)]
+            } else {
+                // Overlapping columns: vertical link between facing edges.
+                let x = (sx + sw / 2.).clamp(r.x + 12., r.x + r.width - 12.) as f32;
+                if r.y >= sy + sh {
+                    vec![((sx + sw / 2.) as f32, (sy + sh + 4.) as f32), (x, r.y as f32)]
+                } else {
+                    vec![((sx + sw / 2.) as f32, (sy - 4.) as f32), (x, (r.y + r.height) as f32)]
+                }
+            };
             self.draw_vector.set_color(36. / 255., 112. / 255., 104. / 255., 0.68);
             let s = 1. / self.camera.scale;
             crate::geometry_view::dashed(&mut self.draw_vector, &pts, &[8. * s, 6. * s], (3. * s) as f32, makepad_widgets::makepad_draw::vector::LineCap::Round);

@@ -434,7 +434,7 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
     let mut body = String::new();
     // Question section.
     body.push_str(&format!(
-        "View{{width:Fill height:Fit flow:Down padding:Inset{{bottom:13 right:56}}
+        "View{{width:Fill height:Fit flow:Down padding:Inset{{bottom:13}}
             View{{width:Fill height:Fit flow:Right align:Align{{y:0.5}}
                 {}
                 View{{width:Fill height:1}}
@@ -447,14 +447,22 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
         text_box("我的问题", 12.7, 1.4, "#5a4c2b", true, false, (0., 4.)),
         text_box(&plain_markdown(card["question"].as_str().unwrap_or("")), 13., 1.5, "#263936", false, true, (0., 0.)),
     ));
-    // Header.
+    // Header (web header: titles left, Minimize2 / Trash2 28px buttons right).
     body.push_str(&format!(
-        "View{{width:Fill height:Fit flow:Down spacing:2 margin:Inset{{bottom:10}}
-            {}
-            {}
+        "View{{width:Fill height:Fit flow:Right spacing:12 margin:Inset{{bottom:10}}
+            View{{width:Fill height:Fit flow:Down spacing:2
+                {}
+                {}
+            }}
+            View{{width:Fit height:Fit flow:Right spacing:2
+                {}
+                {}
+            }}
         }}",
         text_box("小章鱼辅助", 13., 1.3, "#23786f", true, false, (0., 0.)),
         text_box("来自当前选区", 11., 1.3, "#71817e", false, false, (0., 0.)),
+        card_action("sel_min"),
+        card_action("sel_del"),
     ));
     let artifact = &card["artifact"];
     if !artifact.is_object() {
@@ -514,12 +522,22 @@ pub fn selection_card(cx: &mut Cx, card: &Value) -> Result<WidgetRef, String> {
         View{{width:Fill height:Fit flow:Down padding:Inset{{left:16 right:16 top:16 bottom:25}}
             {body}
         }}
-        View{{width:Fill height:Fit flow:Right align:Align{{x:1.}} padding:Inset{{right:6 top:8}} spacing:4
-            View{{width:26 height:26 align:Align{{x:0.5 y:0.5}} Label{{width:Fit padding:0 text:\"－\" draw_text.text_style.font_size:10.5 draw_text.color:#6d7c79}}}}
-            View{{width:26 height:26 align:Align{{x:0.5 y:0.5}} Label{{width:Fit padding:0 text:\"✕\" draw_text.text_style.font_size:9.75 draw_text.color:#6d7c79}}}}
-        }}
     }}"))
+    .inspect(|card| {
+        for (id, icon) in [(live_id!(sel_min), ICON_MINIMIZE), (live_id!(sel_del), ICON_TRASH)] {
+            if let Some(mut b) = card.widget(cx, &[id]).borrow_mut::<Button>() {
+                b.draw_icon.load_from_str(icon);
+            }
+        }
+    })
 }
+/// Selection card header action (web header button: 28px, 15px icon, #6d7c79,
+/// hover rgba(36,112,104,.1)). SpatialBoard hit-tests it by its drawn rect.
+fn card_action(name: &str) -> String {
+    format!("{name} := Button{{width:28 height:28 padding:0 margin:0 text:\"\" spacing:0 icon_walk:Walk{{width:15 height:15}} draw_icon +: {{color:#6d7c79}} draw_bg +: {{color:#0000 color_hover:#2470681a color_down:#24706826 border_radius:4.5 border_size:0 border_color:#0000}}}}")
+}
+const ICON_MINIMIZE: &str = include_str!("../../octos-learn/assets/icons/minimize-2.svg");
+const ICON_TRASH: &str = include_str!("../../octos-learn/assets/icons/trash-2.svg");
 /// A minimized selection card (web .learning-selection-enhancement-pin).
 pub fn selection_pin(cx: &mut Cx) -> Result<WidgetRef, String> {
     widget(cx, "RoundedView{width:26 height:26 align:Align{x:0.5 y:0.5} draw_bg +: {color:#fffdf6 border_radius:13 border_size:1.0 border_color:#2470684d}

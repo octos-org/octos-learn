@@ -973,6 +973,9 @@ struct Live {
     /// Selection enhancement cards (web selection questions answered
     /// beside the ink).
     selection_cards: Vec<SelCard>,
+    /// Where the first topic's question card went (web course region
+    /// origin), so the lesson keeps clear of ink and helper cards on reopen.
+    topic_origin: Option<(f64, f64)>,
     /// Narration still to synthesize (beat id, text) and the one in flight.
     tts_queue: Vec<(String, String)>,
     tts_inflight: Option<String>,
@@ -1007,6 +1010,7 @@ impl Live {
             base: None,
             course: None,
             selection_cards: Vec::new(),
+            topic_origin: None,
             tts_queue: Vec::new(),
             tts_inflight: None,
         }
@@ -2472,6 +2476,29 @@ impl App {
         self.save_live(cx);
     }
     /// Card glyph taps reported by the board (minimize / expand / delete).
+    /// User decision 2026-10-08 (differs from the web, which keeps cards as
+    /// independent content): erasing a selection's ink also deletes its
+    /// 小章鱼辅助 card. Only runs after an actual erase, so boards restored
+    /// without their ink keep their cards.
+    fn drop_orphaned_selection_cards(&mut self, cx: &mut Cx) {
+        let orphaned: Vec<String> = {
+            let w = self.ui.widget(cx, ids!(spatial));
+            let Some(mut board) = w.borrow_mut::<spatial_board::SpatialBoard>() else { return };
+            if !board.take_ink_erased() {
+                return;
+            }
+            let Some(live) = self.live.as_ref() else { return };
+            live.selection_cards.iter().filter(|c| !board.ink_in_rect(c.source, 2.)).map(|c| c.turn.clone()).collect()
+        };
+        if orphaned.is_empty() {
+            return;
+        }
+        if let Some(live) = self.live.as_mut() {
+            live.selection_cards.retain(|c| !orphaned.contains(&c.turn));
+        }
+        self.save_live(cx);
+        self.sync_live(cx);
+    }
     fn handle_selection_card_requests(&mut self, cx: &mut Cx) {
         let requests = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>().map(|mut b| b.take_selection_requests()).unwrap_or_default();
         if requests.is_empty() {
@@ -2481,6 +2508,8 @@ impl App {
             for (id, action) in requests {
                 match action {
                     "delete" => live.selection_cards.retain(|c| c.turn != id),
+                    // Dragged: save_live below reads the new board position.
+                    "moved" => {}
                     _ => {
                         if let Some(c) = live.selection_cards.iter_mut().find(|c| c.turn == id) {
                             c.minimized = action == "minimize";
@@ -2489,14 +2518,19 @@ impl App {
                 }
             }
         }
-        self.sync_live(cx);
         self.save_live(cx);
+        self.sync_live(cx);
     }
     /// Web startDirectLessonGeneration with an ink_selection visual: the
     /// selection image goes along as `paths`.
     fn ask_selection_lesson(&mut self, cx: &mut Cx, text: String) {
         if !self.ensure_classroom(cx) {
             return;
+        }
+        // Web reserves the question's source ink when placing its course.
+        let source = self.selection.as_ref().map(|s| s.selection.bounds);
+        if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_question_source(source);
         }
         let Some(live) = self.live.as_mut() else { return };
         if live.pending() {
@@ -2553,6 +2587,7 @@ impl App {
             })
             .collect();
         live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
+        live.topic_origin = record["topic_origin"].as_array().filter(|a| a.len() == 2).and_then(|a| Some((a[0].as_f64()?, a[1].as_f64()?)));
         live.lessons = record["lessons"]
             .as_array()
             .into_iter()
@@ -2928,7 +2963,11 @@ impl App {
     /// 学习记录 can reopen it offline.
     fn save_live(&mut self, cx: &mut Cx) {
         let positions = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().map(|b| b.selection_card_positions()).unwrap_or_default();
+        let origin = self.ui.widget(cx, ids!(spatial)).borrow::<spatial_board::SpatialBoard>().and_then(|b| b.topic_origin());
         if let Some(live) = self.live.as_mut() {
+            if live.topic_origin.is_none() {
+                live.topic_origin = origin;
+            }
             for card in &mut live.selection_cards {
                 if let Some((_, x, y)) = positions.iter().find(|(id, _, _)| *id == card.turn) {
                     card.pos = Some((*x, *y));
@@ -2958,6 +2997,7 @@ impl App {
             "questions": live.questions.iter().map(|(t, q, st)| json!([t, q, st])).collect::<Vec<_>>(),
             "lessons": live.lessons.iter().map(|(t, src)| json!({"turn_id": t, "source": src})).collect::<Vec<_>>(),
             "selection_cards": live.selection_cards.iter().map(SelCard::to_json).collect::<Vec<_>>(),
+            "topic_origin": live.topic_origin.map(|(x, y)| json!([x, y])),
             "course": live.course.as_ref().map(|(p, v)| json!([p, v])),
             "checkpoint": checkpoint,
         });
@@ -2992,6 +3032,7 @@ impl App {
             })
             .collect();
         live.selection_cards = record["selection_cards"].as_array().into_iter().flatten().filter_map(SelCard::from_json).collect();
+        live.topic_origin = record["topic_origin"].as_array().filter(|a| a.len() == 2).and_then(|a| Some((a[0].as_f64()?, a[1].as_f64()?)));
         // Records before topic composition kept one "lesson".
         let entries = record["lessons"].as_array().cloned().unwrap_or_else(|| record["lesson"].is_object().then(|| vec![record["lesson"].clone()]).unwrap_or_default());
         live.lessons = entries
@@ -3456,6 +3497,13 @@ impl App {
     fn sync_live(&mut self, cx: &mut Cx) {
         let Some(live) = self.live.as_ref() else {
             self.ui.widget(cx, ids!(demo_controls)).set_visible(cx, true);
+            // No live board (e.g. a course opened after a free whiteboard): drop
+            // the previous board's question / loading and selection cards.
+            if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+                board.set_topic_context("", None);
+                board.set_host_cards(cx, Vec::new());
+                board.set_selection_cards(cx, Vec::new());
+            }
             return;
         };
         let has_lesson = self.player.is_some();
@@ -3473,6 +3521,7 @@ impl App {
         }
         let pending = live.pending();
         if let Some(mut board) = self.ui.widget(cx, ids!(spatial)).borrow_mut::<spatial_board::SpatialBoard>() {
+            board.set_topic_context(&live.session_id, live.topic_origin);
             board.set_host_cards(cx, cards);
         }
         let specs: Vec<spatial_board::SelectionCardSpec> = live
@@ -4663,6 +4712,11 @@ impl App {
                 };
                 self.open_course(cx, pack, &version, false);
             }
+            // Verification hook: OCTOS_LIVE_OPEN=<session id> reopens a saved
+            // free whiteboard (as the history drawer does).
+            if let Ok(session) = std::env::var("OCTOS_LIVE_OPEN") {
+                self.open_live_record(cx, &session);
+            }
             let logo_loaded = {
                 let logo = self.ui.widget(cx, ids!(logo_svg));
                 let mut loaded = false;
@@ -4691,6 +4745,7 @@ impl App {
             }
         }
         if self.timer.is_event(event).is_some() && self.learning_visible {
+            self.drop_orphaned_selection_cards(cx);
             // Poll the ink selection a few times a second (web inkState).
             self.selection_poll = (self.selection_poll + 1) % 12;
             if self.selection_poll == 0 {
