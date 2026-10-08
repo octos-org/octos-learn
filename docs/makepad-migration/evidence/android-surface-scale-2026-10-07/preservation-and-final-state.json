@@ -1,0 +1,27 @@
+{
+  "sizeUnchanged": true,
+  "densityUnchanged": true,
+  "webBefore": {
+    "codePath": "/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag==",
+    "versionCode": "33 minSdk=26 targetSdk=35",
+    "versionName": "0.1.2",
+    "firstInstallTime": "2026-09-13 01:58:13",
+    "lastUpdateTime": "2026-10-06 02:10:22"
+  },
+  "webAfter": {
+    "codePath": "/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag==",
+    "versionCode": "33 minSdk=26 targetSdk=35",
+    "versionName": "0.1.2",
+    "firstInstallTime": "2026-09-13 01:58:13",
+    "lastUpdateTime": "2026-10-06 02:10:22"
+  },
+  "webIdentityUnchanged": true,
+  "deviceApkSha256": "fcd527ec204b64bd03e760078e754d6b1596b1443ac3e80cc2aa2e238c3974a1",
+  "localApkSha256": "fcd527ec204b64bd03e760078e754d6b1596b1443ac3e80cc2aa2e238c3974a1",
+  "finalRenderScale": 0.5,
+  "finalPerfLogLines": 0,
+  "finalCrashLogLines": 0,
+  "backendHealth": "healthy",
+  "backendPort": 50080,
+  "adbReversePort": 50080
+}

@@ -1,0 +1,94 @@
+{
+  "gesturePhysical": [
+    800,
+    700,
+    1400,
+    900
+  ],
+  "durationMs": 1200,
+  "strokePixels": 9227,
+  "bounds": [
+    798,
+    694,
+    1403,
+    905
+  ],
+  "probes": [
+    {
+      "physicalX": 850,
+      "expectedY": 716.6666666666666,
+      "observedY": 716.0,
+      "deltaY": -0.6666666666666288
+    },
+    {
+      "physicalX": 1000,
+      "expectedY": 766.6666666666666,
+      "observedY": 766.0,
+      "deltaY": -0.6666666666666288
+    },
+    {
+      "physicalX": 1100,
+      "expectedY": 800.0,
+      "observedY": 799.5,
+      "deltaY": -0.5
+    },
+    {
+      "physicalX": 1250,
+      "expectedY": 850.0,
+      "observedY": 849.5,
+      "deltaY": -0.5
+    },
+    {
+      "physicalX": 1350,
+      "expectedY": 883.3333333333334,
+      "observedY": 883.0,
+      "deltaY": -0.33333333333337123
+    }
+  ],
+  "additionalGesturesPhysical": [
+    [
+      200,
+      1700,
+      750,
+      1700
+    ],
+    [
+      3000,
+      1600,
+      3500,
+      1900
+    ]
+  ],
+  "additionalProbes": [
+    {
+      "physicalX": 300,
+      "expectedY": 1700,
+      "observedY": 1699.5,
+      "deltaY": -0.5
+    },
+    {
+      "physicalX": 600,
+      "expectedY": 1700,
+      "observedY": 1699.5,
+      "deltaY": -0.5
+    },
+    {
+      "physicalX": 3100,
+      "expectedY": 1660,
+      "observedY": 1660.0,
+      "deltaY": 0.0
+    },
+    {
+      "physicalX": 3250,
+      "expectedY": 1750,
+      "observedY": 1750.0,
+      "deltaY": 0.0
+    },
+    {
+      "physicalX": 3400,
+      "expectedY": 1840,
+      "observedY": 1840.0,
+      "deltaY": 0.0
+    }
+  ]
+}

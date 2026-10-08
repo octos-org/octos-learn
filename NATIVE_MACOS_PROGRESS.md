@@ -3,7 +3,9 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（Android 帧拆分与临时分辨率对照）
+最后更新：2026-10-07（Android 应用 surface 缩放与触摸真机复测）
+
+最新 Android 验收：`72e90eb`（含 `053cfaf`）+ 一处 Java fallback checked ErrnoException 编译适配，新独立 APK 已安装。真机默认 surface 1920×1080 放大至 4K、逻辑布局 960×540，系统 size / density 全程不变；同 APK 六组 A/B 确认：首页约 8→25、课程集约 6→18 次 Draw/s，播放中位呈现间隔 100→33ms。卡片拖动 / 点击、边缘按钮、三处笔迹、滑块、3D 旋转与复位通过 ADB 触屏检查；旧 Web 包保留。课程集和现场清晰度仍待继续验收。代码 / 证据随本轮提交推送，详见 [新复测报告](docs/makepad-migration/ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)。下文性能数字为各阶段历史。
 
 最新性能对照：基于 Claude `deb8e88` + 默认关闭的 Android PerfMonitor Draw 边界入口，重打独立测试 APK。首页 / 课程集 / 播放 4K swap wait 为 106 / 143 / 68ms，1080p 为 25 / 32 / 7ms；应用每帧 event / 平台 draw 基本不变。确认优先排查渲染分辨率 / 呈现链路，正式方案未实现。三场景采完已恢复默认 4K 和原 density override 640，旧 Web APK 未覆盖。卡片起手拖动另有 capture 问题。诊断源码与主证据提交 `3fffb15`，后续仅文档收尾，本轮推送；详见 [帧拆分与分辨率对照](docs/makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)。下文旧测试结果与“未提交”状态为历史。
 
@@ -108,6 +110,8 @@ cd octos-learn/native/octos-learn && cargo test   # 4 个
 
 ## 5. 已完成
 
+- 2026-10-07 `72e90eb` Android 应用自身 surface 缩放与卡片 capture 顺序修复已通过大屏复测；新 Java wrapper 实际编进 DEX，checked exception 编译问题已在产品层修正，fixed Makepad 未改。六组同 APK A/B、触摸坐标检查和原包 / 系统设置核对已完成，证据入库。
+
 - 2026-10-07 Android 真机 `deb8e88` 三场景 4K / 1080p 对照完成；固定 Android 后端缺少 PerfMonitor frame_boundary，由应用 Draw 诊断入口补齐，默认关闭、未改 Makepad。每秒日志 / latency / APK hash 与恢复核对已入库，保留 Web APK；正式性能优化未验收。
 
 - 2026-10-07 本机旁白截断修复：产品层 `AVAudioPlayer`，11 项测试通过，修复版应用已打包；当前为本地未提交改动。下列历史提交已推送。
@@ -184,7 +188,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 ## 6. 待做（按优先级）
 
-- Android：优先制定应用 surface 的低分辨率渲染方案并保持 UI / 触摸密度；修改固定 Makepad 需要新的用户授权。本轮只批准全系统临时对照，已恢复原值。另修卡片起手拖动不滚页，继续排查 1080p 课程集约 19 次 Draw/s；主题色偏蓝交 Claude，未在此轮修改。
+- Android：应用自身 surface 降采样与卡片起手拖动已真机验证。继续 profile 默认缩放下课程集约 18 次 Draw/s 的剩余成本；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交 Claude，本轮未改。
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
    - ~~中文字体~~：2026-10-06 用户选方案 A，已改用打包的 Noto Sans SC。

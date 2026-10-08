@@ -1,0 +1,170 @@
+[
+  {
+    "name": "native-home",
+    "pid": 28702,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1556",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.563423375,
+    "deviceStartEpoch": 1791422739.3414109,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 8.387806135322515,
+      "meanMs": 119.22068582258065,
+      "medianMs": 116.6669245,
+      "p95Ms": 150.000503,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 20,
+    "steadyFrames": 179,
+    "weightedChannelsMs": {
+      "event": 8.447486033519553,
+      "draw": 3.947486033519554,
+      "wait": 105.2977653631285,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 118.01955307262568,
+    "meanBusyPercent": 7.05
+  },
+  {
+    "name": "auto-home",
+    "pid": 29333,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1608",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.602811584,
+    "deviceStartEpoch": 1791422938.238648,
+    "surface": {
+      "newFramesInRing": 126,
+      "fps": 24.83438667228777,
+      "meanMs": 40.266748408,
+      "medianMs": 33.33353,
+      "p95Ms": 50.000285,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 20,
+    "steadyFrames": 516,
+    "weightedChannelsMs": {
+      "event": 9.443023255813953,
+      "draw": 3.558333333333333,
+      "wait": 24.51143410852713,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 38.99573643410852,
+    "meanBusyPercent": 24.1
+  },
+  {
+    "name": "native-collection",
+    "pid": 28702,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1556",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.433255709,
+    "deviceStartEpoch": 1791422820.6063738,
+    "surface": {
+      "newFramesInRing": 125,
+      "fps": 6.148747194313701,
+      "meanMs": 162.6347560564516,
+      "medianMs": 166.6667195,
+      "p95Ms": 200.000473,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 18,
+    "steadyFrames": 123,
+    "weightedChannelsMs": {
+      "event": 14.94308943089431,
+      "draw": 5.365853658536586,
+      "wait": 139.3569105691057,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 159.8439024390244,
+    "meanBusyPercent": 9.277777777777779
+  },
+  {
+    "name": "auto-collection",
+    "pid": 28216,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1502",
+    "mode": "scroll",
+    "scale": 4,
+    "actionEndSeconds": 24.994050959,
+    "deviceStartEpoch": 1791422608.0816722,
+    "surface": {
+      "newFramesInRing": 126,
+      "fps": 17.942545286934784,
+      "meanMs": 55.733452752,
+      "medianMs": 50.000126,
+      "p95Ms": 66.667008,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 20,
+    "steadyFrames": 372,
+    "weightedChannelsMs": {
+      "event": 14.623118279569892,
+      "draw": 5.294354838709677,
+      "wait": 31.070430107526875,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 54.597849462365595,
+    "meanBusyPercent": 26.65
+  },
+  {
+    "name": "native-playback",
+    "pid": 29169,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1582",
+    "mode": "play",
+    "scale": 4,
+    "actionEndSeconds": 22.00938525,
+    "deviceStartEpoch": 1791422870.7971735,
+    "surface": {
+      "newFramesInRing": 126,
+      "fps": 10.948881476847856,
+      "meanMs": 91.333530472,
+      "medianMs": 99.99988,
+      "p95Ms": 100.000556,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 18,
+    "steadyFrames": 208,
+    "weightedChannelsMs": {
+      "event": 17.31730769230769,
+      "draw": 5.717788461538461,
+      "wait": 67.5125,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 90.65865384615383,
+    "meanBusyPercent": 19.11111111111111
+  },
+  {
+    "name": "auto-playback",
+    "pid": 28535,
+    "layer": "SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1529",
+    "mode": "play",
+    "scale": 4,
+    "actionEndSeconds": 22.011062542,
+    "deviceStartEpoch": 1791422665.7275553,
+    "surface": {
+      "newFramesInRing": 126,
+      "fps": 31.64550031260172,
+      "meanMs": 31.600069208,
+      "medianMs": 33.333394,
+      "p95Ms": 33.333607,
+      "note": "Tail presentation timestamp ring frequency; not verified physical panel FPS."
+    },
+    "steadyWindows": 18,
+    "steadyFrames": 586,
+    "weightedChannelsMs": {
+      "event": 18.4716723549488,
+      "draw": 5.819624573378839,
+      "wait": 6.563993174061435,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 30.950000000000003,
+    "meanBusyPercent": 59.55555555555556
+  }
+]

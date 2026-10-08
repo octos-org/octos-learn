@@ -1,0 +1,19 @@
+{
+  "dragPhysical": [
+    1588,
+    1748,
+    1760,
+    1748
+  ],
+  "observedValueBefore": 1.0,
+  "observedValueAfter": 3.45,
+  "knobCenterPhysical": [
+    1759.5004048582996,
+    1746.5497975708502
+  ],
+  "resetClickedPhysical": [
+    2230,
+    1748
+  ],
+  "resetObservedValue": 1.0
+}

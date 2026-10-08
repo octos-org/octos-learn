@@ -1,0 +1,31 @@
+{
+  "pack": "surface-paraboloid-level-sets",
+  "dragPhysical": [
+    2400,
+    1100,
+    2640,
+    1000
+  ],
+  "logicalDelta": [
+    60,
+    -25
+  ],
+  "durationMs": 1200,
+  "resetPhysical": [
+    2170,
+    1532
+  ],
+  "sceneCrop": [
+    1680,
+    706,
+    3030,
+    1480
+  ],
+  "dragDifferenceBox": [
+    417,
+    49,
+    923,
+    725
+  ],
+  "resetDifferenceBox": null
+}

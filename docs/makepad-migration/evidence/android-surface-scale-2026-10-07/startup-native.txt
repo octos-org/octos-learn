@@ -1,0 +1,2 @@
+10-08 09:25:32.211 28702 28702 I OctosNativeTest: Render scale 1.0
+10-08 09:25:33.438 28702 28725 I Makepad : src/android_ui.rs:369:9 - [android-ui] viewport 960x540 catalog 918px/3cols chrome 36/27/29px

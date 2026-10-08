@@ -1,0 +1,4 @@
+/Users/alan0x/Documents/projects/octos-learn/.local-dev/oll-product/octos-learn/native/octos-learn/resources/android/java/MakepadApp.java:66: error: unreported exception ErrnoException; must be caught or declared to be thrown
+                Os.unsetenv("OCTOS_RENDER_DPI");
+                           ^
+Note: Some input files use or override a deprecated API.

@@ -1,0 +1,43 @@
+{
+  "inputMethod": "adb input touchscreen / tap; hardware pen pressure, palm rejection and multitouch not tested",
+  "cardDrag": {
+    "gesturePhysical": [
+      3640,
+      1880,
+      3640,
+      1400
+    ],
+    "durationMs": 1400,
+    "pageScrolled": true,
+    "didNotOpenCourse": true,
+    "subsequentTapPhysical": [
+      500,
+      1550
+    ],
+    "openedCollection": "读懂一次函数"
+  },
+  "topRightSettingsTapPhysical": [
+    3600,
+    112
+  ],
+  "topLeftSettingsReturnPhysical": [
+    190,
+    160
+  ],
+  "topLeftBoardReturnPhysical": [
+    84,
+    96
+  ],
+  "bottomLeftPreviewPhysical": [
+    300,
+    2100
+  ],
+  "bottomLeftPreviewOpenedPack": "linear-intro-and-slope",
+  "bottomRightOutlinePhysical": [
+    3700,
+    1628
+  ],
+  "outlineOpened": true,
+  "inkTestStrokesUndone": 3,
+  "screenSharpness": "Text readable in screenshots; edges/small text softer than native 4K; physical viewing distance awaits user assessment"
+}

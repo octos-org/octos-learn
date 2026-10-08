@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 应用 surface 缩放与触摸复测](makepad-migration/ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)：`72e90eb` 新 Java wrapper 的编译适配、仅应用 1080p 生效、六组性能 A/B、卡片 / 笔迹 / 滑块 / 3D 真机检查。
+
 - [Android 帧拆分与 4K / 1080p 对照](makepad-migration/ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)：三场景 swap 等待为主、低分辨率对照及原值恢复、Android 统计入口补丁、卡片拖动捕获问题。
 
 - [Android UI 密度对齐与修复后大屏复测](makepad-migration/ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)：基于 Claude `0960f29` 的新 APK、安卓紧凑布局、首页重绘验证与课程播放剩余瓶颈。

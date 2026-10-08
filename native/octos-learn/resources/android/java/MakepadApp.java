@@ -2,6 +2,7 @@ package cc.pitun.learn.makepadtest;
 
 import android.graphics.Matrix;
 import android.os.Bundle;
+import android.system.ErrnoException;
 import android.system.Os;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -63,7 +64,11 @@ public final class MakepadApp extends MakepadActivity {
             SurfaceView surface = findMakepadSurface(getWindow().getDecorView());
             if (surface == null) {
                 Log.w("OctosNativeTest", "Makepad surface not found; rendering at full resolution");
-                Os.unsetenv("OCTOS_RENDER_DPI");
+                try {
+                    Os.unsetenv("OCTOS_RENDER_DPI");
+                } catch (ErrnoException error) {
+                    throw new IllegalStateException("Cannot clear native render DPI", error);
+                }
             } else {
                 scaleSurface(surface);
             }

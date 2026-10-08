@@ -17,6 +17,8 @@
 
 ## 0. 一句话现状
 
+**最新 Android 修复验收（2026-10-07）**：已拉取 Claude `72e90eb`（含 `053cfaf`），补一处 Java checked ErrnoException 编译处理后重打独立 APK。默认只将应用 surface 设为 1920×1080，实际显示仍 4K，逻辑 UI 960×540；同 APK 原生 4K / 默认缩放三场景对照完成：首页约 8→25、课程集约 6→18 次 Draw/s，播放中位呈现间隔 100→33ms。卡片起手拖动 / 点击、边缘按钮、三处笔迹、滑块、3D 旋转 / 复位通过 ADB 触屏输入检查。系统显示设置全程不变、旧 Web APK 未覆盖；当前大屏留下默认缩放且关闭性能日志的新包。本地后端与 reverse 50080 已恢复。优先读 [surface 缩放与触摸复测](ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)；清晰度需用户现场判断，课程集仍需优化。
+
 **最新性能调查（2026-10-07）**：已基于 Claude `deb8e88` 重打独立 APK，完成三场景 4K / 临时 1080p 对照。4K 每帧 swap 等待：首页 106ms、课程集 143ms、播放 68ms；1080p 分别降到 25 / 32 / 7ms，应用 event / 平台 draw 单帧时间几乎不变。恢复 4K 重测课程集仍约 6 次 Draw/s。已恢复原始 3840×2160 与 density override 640，Web APK 安装身份不变。只加默认关闭的 Android PerfMonitor Draw 边界诊断补丁，未改固定 Makepad、正式渲染分辨率或主题色。另确认卡片区域起手拖动不滚页；交给 Claude 修复。优先读 [帧拆分与分辨率对照](ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)，含日志 / 产物 hash / 统计限制。
 
 **最新交付（2026-10-07）**：已合入 Claude `0960f29`，保留此前 Android 独立打包与 macOS 音频修复，并实现 Web Android 的紧凑 UI 密度。新 APK 继续使用 `cc.pitun.learn.makepadtest`，旧 Web `cc.pitun.learn` 保留。首页空闲不再连续 Draw；一次函数播放仍约 15 FPS，性能尚未完全验收。源码和记录随本轮提交推送；后续优先读 [Android UI 对齐与复测](ANDROID_UI_PARITY_AND_PERF_RETEST_2026-10-07.md)，下列早期“未提交”等状态为历史。
@@ -50,13 +52,13 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装的诊断 APK：`deb8e88f37dc43647ab87c91b94dfe2ecf1936ff` + 本轮 8 行 Android Draw 边界补丁，构建时 `productDirty=true`，源码及主报告已提交为 `3fffb158f4c3f5d7b6180db302c61db190e12cf5`（随后仅整理证据空白与提交指针），本轮推送。保留 `72f29b3` 的 Android 密度/独立打包/macOS 音频代码；同分支提交推送，不合并、不开 PR。配套 OLL 仍为 `d59b607`，Makepad 仍为固定 `825dbb4`，未修改其 Rust 或 Java 源码。APK hash、复建命令及证据见最新帧拆分报告。
+当前安装 APK 产品基线：`72e90eb28e7f945766326f15f2edf94d501c86ba` + 本轮 Java fallback 的 checked ErrnoException 处理；构建时 `productDirty=true`，其余 Rust / Java 渲染与触摸实现保持 Claude 提交。包名仍 `cc.pitun.learn.makepadtest`；SHA-256 `fcd527ec204b64bd03e760078e754d6b1596b1443ac3e80cc2aa2e238c3974a1`，设备 pull 一致。本轮编译适配与证据提交推送，同分支不合并、不开 PR；OLL `d59b607`、Makepad `825dbb4` 不变。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新诊断源码 / 证据 `3fffb15`；后续仅文档收尾（本文件所在提交），本轮推送**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `72e90eb` + Java 编译适配 / 真机报告（本文件所在提交，本轮推送）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
 | `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
@@ -65,6 +67,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
 ## 2. 工作区重建
+
+2026-10-07 surface 复测补充：主 checkout 与独立构建 checkout 已同步 `72e90eb` 和本轮编译适配；新 APK / 原始截图日志在 `.local-dev/android-72e90eb-retest/`。本机 Octos solo 后端重新启动于 127.0.0.1:50080，并恢复大屏 `adb reverse tcp:50080 tcp:50080`；测试后仍运行。
 
 2026-10-07 alan0x 本机新增持久测试目录 `/Users/alan0x/Documents/projects/octos-learn/.local-dev/oll-product/`，含五个固定依赖 checkout 和本地后端源码快照；启动脚本在 `.local-dev/start-macos.command`，原生进度在 `.local-dev/app-data`。脚本直接启动包内可执行文件，避开本机 LaunchServices 在构建目录资源访问时的阻塞。构建、九课测试、后端与可见窗口均已验证，步骤见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。下面保留历史机器的重建步骤。
 
@@ -129,8 +133,8 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
 
-- 首页静态图标重绘风暴已消失；真实滚动与播放的 4K 瓶颈主要在 swap 等待，1080p 对照显著改善但课程集仍约 19 次 Draw/s。后续制定应用自身渲染分辨率方案；修改 pinned Makepad 尚未获授权。见 [新对照报告](ANDROID_FRAME_SPLIT_AND_RESOLUTION_TEST_2026-10-07.md)。60 Hz 定时器及无差别 refresh 仍保留。
-- 卡片区域起手拖动不滚页、卡片间空隙可以；疑似点击 hit-test 先 capture。主题色偏蓝另案交给 Claude，两者本轮未修复。
+- 应用自身 surface 的 1080p 缩放已在大屏验收，系统仍为 4K；无需改 fixed Makepad。首页约 25 次 Draw/s、播放中位间隔约 33ms，课程集仍约 18 次 Draw/s，需要继续 profile / 优化。60 Hz Timer / 整板 refresh 仍保留。
+- 卡片区域起手拖动已由 `053cfaf` 修复并在 Android 验证，点击也正常。主题色偏蓝另案交给 Claude，本轮保持现状。
 - Android 紧凑首页、顶栏、手写工具、输入栏、老师头像与取景密度已实现；未宣称所有页面逐像素一致。窄屏、相机实画面、AI/ASR、Android 有声旁白仍需专项实测。
 
 2026-10-07 本机反馈：旁白只读前几个字已修复，见 [音频修复记录](NARRATION_AUDIO_FIX_2026-10-07.md)。固定依赖无改动；接手时保留并同步当前本地未提交音频模块后再构建。真实 MP3 与连续片段已验证，服务端实时 TTS 的实际有声输出仍待验证。

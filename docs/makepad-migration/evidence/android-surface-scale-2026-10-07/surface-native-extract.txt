@@ -1,0 +1,22 @@
+* Layer 0xb4000071fe7c1350 (SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#1556)
+      isSecure=false geomUsesSourceCrop=true geomBufferUsesDisplayInverseTransform=false geomLayerTransform (ROT_0) (IDENTITY)
+
+      geomBufferSize=[0 0 3840 2160] geomContentCrop=[0 0 3840 2160] geomCrop=[0 0 -1 -1] geomBufferTransform=0
+        Region transparentRegionHint (this=0xb40000715e6ed1e0, count=1)
+    [  0,   0,   0,   0]
+      geomLayerBounds=[0.000000 0.000000 3840.000000 2160.000000]       shadowRadius=0.000000
+      blend=NONE (1) alpha=1.000000 backgroundBlurRadius=0 composition type=DEVICE (2)
+      buffer: buffer=0xb40000711e6d8790
+      sideband stream=0x0
+      color=[0.000000 0.000000 0.000000]
+      isOpaque=true hasProtectedContent=false isColorspaceAgnostic=false dataspace=UNKNOWN (0) hdr metadata types=0 dimming enabled=true colorTransform=[[1.000,0.000,0.000,0.000][0.000,1.000,0.000,0.000][0.000,0.000,1.000,0.000][0.000,0.000,0.000,1.000]]
+* Layer 0xb4000071fe7b5d10 (cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#1553)
+      isSecure=false geomUsesSourceCrop=true geomBufferUsesDisplayInverseTransform=false geomLayerTransform (ROT_0) (IDENTITY)
+
+      geomBufferSize=[0 0 3840 2160] geomContentCrop=[0 0 3840 2160] geomCrop=[0 0 -1 -1] geomBufferTransform=0
+        Region transparentRegionHint (this=0xb40000715e6d54a0, count=1)
+  refresh-rate              : 30.00 Hz
+HwcVsync mode(soft) period(16666666)
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116007711, size:32907.00KiB, w/h:3840x2160, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116007710, size:32907.00KiB, w/h:3840x2160, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116007712, size:32907.00KiB, w/h:3840x2160, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true

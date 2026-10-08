@@ -1,0 +1,13 @@
+diff --git a/native/octos-learn/resources/android/java/MakepadApp.java b/native/octos-learn/resources/android/java/MakepadApp.java
+index 3f5e665..d16a967 100644
+--- a/native/octos-learn/resources/android/java/MakepadApp.java
++++ b/native/octos-learn/resources/android/java/MakepadApp.java
+@@ -4,0 +5 @@ import android.os.Bundle;
++import android.system.ErrnoException;
+@@ -66 +67,5 @@ public final class MakepadApp extends MakepadActivity {
+-                Os.unsetenv("OCTOS_RENDER_DPI");
++                try {
++                    Os.unsetenv("OCTOS_RENDER_DPI");
++                } catch (ErrnoException error) {
++                    throw new IllegalStateException("Cannot clear native render DPI", error);
++                }

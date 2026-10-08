@@ -1,0 +1,7 @@
+10-08 09:28:54.116 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 60x 40.1ms max 0.8ms || frames 0
+10-08 09:28:57.149 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 60x 42.0ms max 1.0ms || frames 0
+10-08 09:28:58.166 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 61x 43.7ms max 1.3ms || frames 0
+10-08 09:29:24.399 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 60x 40.5ms max 0.8ms || frames 0
+10-08 09:29:25.416 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 61x 42.9ms max 1.0ms || frames 0
+10-08 09:29:26.432 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 61x 43.1ms max 1.5ms || frames 0
+10-08 09:29:27.432 29333 29357 I Makepad : src/perf.rs:54:13 - [perf] busy 4% | Timer 60x 39.5ms max 0.8ms || frames 0
