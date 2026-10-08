@@ -5,7 +5,7 @@
 
 最后更新：2026-10-07（Android 纹理缓存真机复测）
 
-最新 Android 缓存复测：干净 `bf83cf2` 已重打安装，课程集缓存 / nocache gap17.69 /70.43ms、wait2.89 /47.72ms，首页gap18.22 /54.93ms，缓存显著改善。首页卡片起手拖动抬手误导航两次复现，交互未全部验收；预览 / 开始互动 / 菜单打开和位置 / 返回后滚动 / 甩动通过，菜单外部触摸不关闭、条目触摸无响应。默认缓存新包留在设备，所有诊断extra关闭，系统 / Web包不变。未改产品或固定Makepad。见 [纹理缓存复测报告](docs/makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)；下列诊断数据为此前阶段。
+最新 Android 缓存复测：干净 `bf83cf2` 已重打安装，课程集缓存 / nocache gap17.69 /70.43ms、wait2.89 /47.72ms，首页gap18.22 /54.93ms，缓存显著改善。首页卡片起手拖动抬手误导航两次复现，交互未全部验收；预览 / 开始互动 / 菜单打开和位置 / 返回后滚动 / 甩动通过，菜单外部触摸不关闭、条目触摸无响应。默认缓存新包留在设备，所有诊断extra关闭，系统 / Web包不变。未改产品或固定Makepad。见 [纹理缓存复测报告](docs/makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)；报告已本地提交，GitHub推送被自动审批拒绝、待用户授权。下列诊断数据为此前阶段。
 
 最新 Android 诊断：`b6da998` 干净源码重打独立 APK，七组要求对照 + 封面文字 / 图形拆分 + 末尾基线，共十组。默认列表滚动约 19 次 Draw/s，batch 约 18、没有改善；静止 tinyredraw,batch 的 event 12.55→3.24ms，但 gap 仍约 40ms、wait 吸收节省时间。nocardtext 总体改善最大（约 28），占位替换会改变排版，需保持几何再验证。诊断开关已关闭，系统 / Web 包不变；未改产品实现或固定 Makepad。详见 [成本拆分报告](docs/makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)，报告与证据随本轮文档提交推送。
 

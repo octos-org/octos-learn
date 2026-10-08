@@ -88,4 +88,4 @@ python3 .local-dev/oll-product/octos-learn/native/octos-learn/scripts/package-an
 
 系统 size / density 前后逐字一致；旧 Web `cc.pitun.learn` 的 codePath、versionCode / Name、firstInstallTime、lastUpdateTime 均一致。新原生包更新后 firstInstallTime 保留、资源缓存命中、设备 APK hash 与构建产物一致。Mac后端health=healthy，reverse50080有效。[前状态](evidence/android-scroll-cache-2026-10-07/state-before.json) / [后状态](evidence/android-scroll-cache-2026-10-07/state-after.json) / [最终启动](evidence/android-scroll-cache-2026-10-07/final-startup.txt)
 
-本轮报告、perf证据和复测工具提交推送到同一 `codex/macos-product-ui` 分支；没有产品实现改动、PR或合并。APK / 原始截图与日志同步到既有调研目录版本镜像。
+本轮报告、perf证据和复测工具已在同一 `codex/macos-product-ui` 分支本地提交；没有产品实现改动、PR或合并。GitHub推送被自动审批拒绝：报告含设备地址、应用安装身份和性能日志，向该远端传输这些数据待用户明确授权；目前未推送。APK / 原始截图与日志已同步到既有本地调研目录版本镜像。

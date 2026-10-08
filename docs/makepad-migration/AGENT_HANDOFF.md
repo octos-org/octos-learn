@@ -17,7 +17,7 @@
 
 ## 0. 一句话现状
 
-**最新 Android 缓存复测（2026-10-07）**：干净 `bf83cf2` 已重打并安装独立APK，课程集缓存gap17.69ms /wait2.89ms，nocache70.43 /47.72ms；首页缓存gap18.22ms，nocache54.93ms。性能显著改善；首页卡片起手拖动抬手误打开课程集，在第一 / 第三卡片各复现一次。预览、开始互动、菜单打开与位置、返回后滚动、甩动通过；菜单触摸外部不关闭、条目触摸无响应，是否新增未确定。系统 / Web包不变，默认缓存、应用1080p、诊断全关。未改产品 / pinned Makepad；报告和证据随本轮提交推送。优先读 [纹理缓存复测](ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)。下列为历史阶段结果。
+**最新 Android 缓存复测（2026-10-07）**：干净 `bf83cf2` 已重打并安装独立APK，课程集缓存gap17.69ms /wait2.89ms，nocache70.43 /47.72ms；首页缓存gap18.22ms，nocache54.93ms。性能显著改善；首页卡片起手拖动抬手误打开课程集，在第一 / 第三卡片各复现一次。预览、开始互动、菜单打开与位置、返回后滚动、甩动通过；菜单触摸外部不关闭、条目触摸无响应，是否新增未确定。系统 / Web包不变，默认缓存、应用1080p、诊断全关。未改产品 / pinned Makepad；报告和证据已本地提交，GitHub推送待授权。优先读 [纹理缓存复测](ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)。下列为历史阶段结果。
 
 **最新 Android 成本拆分（2026-10-07）**：干净 `b6da998` 已重打独立诊断 APK，十组有效对照完成。默认滚动约 19 次 Draw/s，现有 batch 无改善；静止 tinyredraw,batch 的 event 12.55→3.24ms，而 gap 40.21→39.51ms、wait 增至31.26ms。nocardtext 总体改善最大（约28），但占位替换改变排版，需先保持几何验证。系统4K / density640未变、Web包保留；当前开关全关、默认应用1080p。未改产品 / Makepad 源码，报告和证据随本轮提交推送。优先读 [课程列表成本拆分](ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)。下列数字为此前阶段结果。
 
@@ -56,13 +56,13 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装 APK：干净 `bf83cf2ba838000bbba4b835b49647cb04cb5868`，`productDirty=false`；SHA-256 `5f058bd296944ad628e40f31d3039c33316311a51740d52a626e5f03176c3728`，设备 pull 一致。包名仍 `cc.pitun.learn.makepadtest`，默认缓存、perf / bisect 关闭。本轮仅报告、证据与工具提交推送，同分支不合并 / 不开 PR；OLL `d59b607`、Makepad `825dbb4` 不变。安装使用 `adb install --no-incremental -r`，本次原生包 firstInstallTime 保留。
+当前安装 APK：干净 `bf83cf2ba838000bbba4b835b49647cb04cb5868`，`productDirty=false`；SHA-256 `5f058bd296944ad628e40f31d3039c33316311a51740d52a626e5f03176c3728`，设备 pull 一致。包名仍 `cc.pitun.learn.makepadtest`，默认缓存、perf / bisect 关闭。本轮报告、证据与工具已本地提交，GitHub推送被自动审批拒绝、待用户明确授权；同分支不合并 / 不开 PR；OLL `d59b607`、Makepad `825dbb4` 不变。安装使用 `adb install --no-incremental -r`，本次原生包 firstInstallTime 保留。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `bf83cf2` + 纹理缓存真机复测报告（本文件所在文档提交，本轮推送）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新产品基线 `bf83cf2` + 纹理缓存真机复测报告（本地提交，推送待授权）**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
 | `octos-lesson-language` | `codex/rust-runtime-product` | **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
