@@ -1,0 +1,86 @@
+[
+  {
+    "name": "collection-cache",
+    "steadyWindows": 20,
+    "steadyFrames": 1134,
+    "weightedChannelsMs": {
+      "event": 3.4122574955908287,
+      "draw": 2.1776895943562606,
+      "wait": 2.8860670194003526,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 17.691622574955908,
+    "meanBusyPercent": 18.9,
+    "surface": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 56.363511185401975,
+      "meanMs": 17.741974887096774,
+      "medianMs": 16.6666995,
+      "p95Ms": 16.667066
+    }
+  },
+  {
+    "name": "collection-nocache",
+    "steadyWindows": 19,
+    "steadyFrames": 281,
+    "weightedChannelsMs": {
+      "event": 14.81779359430605,
+      "draw": 5.594306049822064,
+      "wait": 47.7153024911032,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 70.42633451957295,
+    "meanBusyPercent": 21.105263157894736,
+    "surface": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 14.171398382301046,
+      "meanMs": 70.56466645161291,
+      "medianMs": 66.6668485,
+      "p95Ms": 83.333674
+    }
+  },
+  {
+    "name": "home-cache",
+    "steadyWindows": 20,
+    "steadyFrames": 1100,
+    "weightedChannelsMs": {
+      "event": 2.9169090909090913,
+      "draw": 2.1528181818181817,
+      "wait": 3.421454545454545,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 18.217818181818185,
+    "meanBusyPercent": 15.75,
+    "surface": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 56.79377004769987,
+      "meanMs": 17.60756504032258,
+      "medianMs": 16.6667045,
+      "p95Ms": 16.666974
+    }
+  },
+  {
+    "name": "home-nocache",
+    "steadyWindows": 20,
+    "steadyFrames": 374,
+    "weightedChannelsMs": {
+      "event": 8.884759358288768,
+      "draw": 4.1288770053475945,
+      "wait": 39.790641711229945,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 54.932352941176454,
+    "meanBusyPercent": 16.1,
+    "surface": {
+      "newFramesInRing": 125,
+      "timestampRatePerSecond": 18.325083975846333,
+      "meanMs": 54.570009137096775,
+      "medianMs": 50.000171,
+      "p95Ms": 66.66695
+    }
+  }
+]

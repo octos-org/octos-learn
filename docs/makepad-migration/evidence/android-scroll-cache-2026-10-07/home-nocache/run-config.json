@@ -1,0 +1,19 @@
+{
+  "name": "home-nocache",
+  "page": "home",
+  "bisect": "nocache",
+  "mode": "scroll",
+  "pid": 22623,
+  "surfaceBuffer": [
+    1920,
+    1080
+  ],
+  "systemSize": [
+    3840,
+    2160
+  ],
+  "densityOverride": 640,
+  "entryTapPhysical": null,
+  "scrollXLogical": 16,
+  "preheatSeconds": 4
+}

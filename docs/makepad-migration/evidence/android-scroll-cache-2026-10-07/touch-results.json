@@ -1,0 +1,153 @@
+{
+  "inputMethod": "adb shell input touchscreen (physical coordinates)",
+  "defaultCache": true,
+  "checks": [
+    {
+      "check": "home drag starts on third collection card",
+      "gesture": [
+        3640,
+        1880,
+        3640,
+        1400
+      ],
+      "durationMs": 1400,
+      "result": "fail: opens 用截面理解多元函数 after release",
+      "evidence": [
+        "touch-card-drag-before.png",
+        "touch-card-drag-after.png"
+      ]
+    },
+    {
+      "check": "home drag starts on first collection card",
+      "gesture": [
+        500,
+        1880,
+        500,
+        1400
+      ],
+      "durationMs": 1400,
+      "result": "fail: opens 读懂一次函数 after release",
+      "evidence": [
+        "touch-card-drag-repeat-before.png",
+        "touch-card-drag-repeat-after.png"
+      ]
+    },
+    {
+      "check": "home gutter drag then tap first card",
+      "gesture": [
+        64,
+        1880,
+        64,
+        1400
+      ],
+      "tap": [
+        500,
+        1550
+      ],
+      "result": "pass: scroll stays home, subsequent tap opens 读懂一次函数",
+      "evidence": [
+        "touch-home-gutter-after.png",
+        "touch-home-scrolled-card-tap.png"
+      ]
+    },
+    {
+      "check": "preview after collection scroll",
+      "tap": [
+        300,
+        1864
+      ],
+      "result": "pass: correct first course, paused preview, return retains offset",
+      "evidence": [
+        "touch-preview-after-scroll.png",
+        "touch-return-from-preview.png"
+      ]
+    },
+    {
+      "check": "start interactive after collection scroll",
+      "tap": [
+        1013,
+        1864
+      ],
+      "result": "pass: correct first course starts playing; pause/return updates card to 继续学习",
+      "evidence": [
+        "touch-start-after-scroll.png",
+        "touch-return-from-interaction.png"
+      ]
+    },
+    {
+      "check": "more menu after collection scroll",
+      "tap": [
+        702,
+        1864
+      ],
+      "result": "pass opening and placement: panel above tapped first-card more button",
+      "evidence": [
+        "touch-menu-after-scroll.png"
+      ]
+    },
+    {
+      "check": "touch outside open menu",
+      "tap": [
+        1300,
+        600
+      ],
+      "result": "fail: menu stays visible; subsequent page scroll moves content while popup stays at old position",
+      "evidence": [
+        "touch-menu-outside.png",
+        "touch-scroll-after-return.png"
+      ],
+      "introducedByCache": "not established"
+    },
+    {
+      "check": "fling from home gutter",
+      "gesture": [
+        64,
+        1880,
+        64,
+        1760
+      ],
+      "durationMs": 80,
+      "result": "pass: after release page continues moving; later screenshot content shifts upward 166 physical pixels from release screenshot, then settles",
+      "evidence": [
+        "touch-fling-release.png",
+        "touch-fling-later.png",
+        "touch-fling-settled.png"
+      ]
+    },
+    {
+      "check": "return from preview and scroll again without popup",
+      "gesture": [
+        1300,
+        1600,
+        1300,
+        1900
+      ],
+      "durationMs": 1400,
+      "result": "pass: list position moves and contents remain visible",
+      "evidence": [
+        "touch-return-scroll-before.png",
+        "touch-return-scroll-after.png"
+      ]
+    },
+    {
+      "check": "touch restart menu item after scrolling",
+      "taps": [
+        [
+          250,
+          1500
+        ],
+        [
+          500,
+          1500
+        ]
+      ],
+      "result": "fail: no confirmation dialog; menu remains visible after both taps",
+      "evidence": [
+        "touch-menu-item-before.png",
+        "touch-menu-item-after.png",
+        "touch-menu-item-repeat-after.png"
+      ],
+      "introducedByCache": "not established; no reset or deletion executed"
+    }
+  ]
+}

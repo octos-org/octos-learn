@@ -1,0 +1,22 @@
+{
+  "name": "collection-nocache",
+  "page": "collection",
+  "bisect": "nocache",
+  "mode": "scroll",
+  "pid": 22054,
+  "surfaceBuffer": [
+    1920,
+    1080
+  ],
+  "systemSize": [
+    3840,
+    2160
+  ],
+  "densityOverride": 640,
+  "entryTapPhysical": [
+    500,
+    1800
+  ],
+  "scrollXLogical": 325,
+  "preheatSeconds": 4
+}

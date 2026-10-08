@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 启动器纹理缓存复测](makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)：`bf83cf2` 真机首页 / 课程集缓存对照，绘制间隔约18ms；首页卡片拖动误导航两次复现，菜单触摸外部不关闭、条目触摸无响应。
+
 - [Android 课程集列表成本拆分](makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)：`b6da998` 十组真机对照，静止 batch 节省 CPU 但未改善呈现节奏，卡片文字隐藏有最大总体收益、布局影响仍需控制。
 
 - [Android 应用 surface 缩放与触摸复测](makepad-migration/ANDROID_SURFACE_SCALE_AND_TOUCH_RETEST_2026-10-07.md)：`72e90eb` 新 Java wrapper 的编译适配、仅应用 1080p 生效、六组性能 A/B、卡片 / 笔迹 / 滑块 / 3D 真机检查。

@@ -1,0 +1,76 @@
+{
+  "collection": {
+    "pair": [
+      "collection-cache/before.png",
+      "collection-nocache/before.png"
+    ],
+    "size": [
+      3840,
+      2160
+    ],
+    "diffBBox": [
+      83,
+      11,
+      3829,
+      2131
+    ],
+    "changedPixels": 451174,
+    "changedFraction": 0.05439501350308642,
+    "meanAbsoluteChannelDelta": 1.6063547292952676,
+    "maxChannelDelta": 166
+  },
+  "alignedHeaderAndBody": {
+    "nocache": {
+      "roi": [
+        100,
+        0,
+        3650,
+        1300
+      ],
+      "verticalOffsetPx": -2,
+      "meanAbsoluteChannelDelta": 0.0005646823932811042,
+      "maxChannelDelta": 34,
+      "changedPixelFraction": 6.076520757828946e-05
+    },
+    "previous-b6da998": {
+      "roi": [
+        100,
+        0,
+        3650,
+        1300
+      ],
+      "verticalOffsetPx": 0,
+      "meanAbsoluteChannelDelta": 0.11123076923076923,
+      "maxChannelDelta": 91,
+      "changedPixelFraction": 0.02274907908992416
+    }
+  },
+  "homeCacheVsNoCache": {
+    "reference": "home-cache/before.png",
+    "comparison": "home-nocache/before.png",
+    "roi": [
+      100,
+      20,
+      3650,
+      1300
+    ],
+    "dy": 2,
+    "meanAbsoluteChannelDifference": 0.0007392165492957747,
+    "maxChannelDifference": 34,
+    "changedPixelFraction": 0.00028058978873239437
+  },
+  "flingReleaseToLater": {
+    "reference": "touch-fling-release.png",
+    "comparison": "touch-fling-later.png",
+    "roi": [
+      200,
+      1100,
+      3500,
+      1500
+    ],
+    "dy": -166,
+    "meanAbsoluteChannelDifference": 0.001654040404040404,
+    "maxChannelDifference": 1,
+    "changedPixelFraction": 0.004140909090909091
+  }
+}

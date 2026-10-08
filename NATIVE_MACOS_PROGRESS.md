@@ -3,7 +3,9 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-07（Android 课程集列表成本拆分）
+最后更新：2026-10-07（Android 纹理缓存真机复测）
+
+最新 Android 缓存复测：干净 `bf83cf2` 已重打安装，课程集缓存 / nocache gap17.69 /70.43ms、wait2.89 /47.72ms，首页gap18.22 /54.93ms，缓存显著改善。首页卡片起手拖动抬手误导航两次复现，交互未全部验收；预览 / 开始互动 / 菜单打开和位置 / 返回后滚动 / 甩动通过，菜单外部触摸不关闭、条目触摸无响应。默认缓存新包留在设备，所有诊断extra关闭，系统 / Web包不变。未改产品或固定Makepad。见 [纹理缓存复测报告](docs/makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)；下列诊断数据为此前阶段。
 
 最新 Android 诊断：`b6da998` 干净源码重打独立 APK，七组要求对照 + 封面文字 / 图形拆分 + 末尾基线，共十组。默认列表滚动约 19 次 Draw/s，batch 约 18、没有改善；静止 tinyredraw,batch 的 event 12.55→3.24ms，但 gap 仍约 40ms、wait 吸收节省时间。nocardtext 总体改善最大（约 28），占位替换会改变排版，需保持几何再验证。诊断开关已关闭，系统 / Web 包不变；未改产品实现或固定 Makepad。详见 [成本拆分报告](docs/makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)，报告与证据随本轮文档提交推送。
 
@@ -194,7 +196,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 
 ## 6. 待做（按优先级）
 
-- Android：应用自身 surface 降采样与卡片起手拖动已真机验证。继续基于 b6da998 真机十组对照排查默认课程列表约 19 次 Draw/s；先控制 nocardtext 的排版影响，并核对 batch 滚动失效 / GPU 与呈现成本；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交 Claude，本轮未改。
+- Android：应用自身 surface 降采样已真机验证；bf83cf2 纹理缓存显著改善首页 / 课程集滚动，gap约18ms。首页卡片起手拖动抬手误导航两次复现，菜单外部触摸不关闭、条目触摸无响应，当前交互未全部通过；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交 Claude，本轮未改。
 
 1. 继续逐课视觉巡检（native vs web 截图）。已知小差异：
    - ~~中文字体~~：2026-10-06 用户选方案 A，已改用打包的 Noto Sans SC。
