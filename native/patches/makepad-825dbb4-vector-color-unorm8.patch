@@ -1,0 +1,173 @@
+diff --git a/draw/src/geometry/geometry_gen.rs b/draw/src/geometry/geometry_gen.rs
+index 18ff0d265..8cb4183c0 100644
+--- a/draw/src/geometry/geometry_gen.rs
++++ b/draw/src/geometry/geometry_gen.rs
+@@ -76,6 +76,7 @@ pub struct VectorVertex {
+ /// precision-critical slots (positions, stroke_mult sentinels, param4
+ /// icon-floor composite, param5 depth ladder, zbias 1e-6 steps) stay f32.
+ #[derive(Clone, Script, ScriptHook)]
++#[repr(C)]
+ pub struct VectorVertexPacked {
+     #[live]
+     pub x: f32,
+@@ -84,9 +85,11 @@ pub struct VectorVertexPacked {
+     /// f16(u) | f16(v)
+     #[live]
+     pub uv: f32,
+-    /// unorm8 r|g|b|a
++    /// unorm8 r|g|b|a, fetched as normalized bytes. Not an f32 bitcast:
++    /// opaque colors with blue >= 0x80 are NaN bit patterns, and GLES
++    /// drivers (Mali) quiet them on float attribute fetch, setting blue bit 6.
+     #[live]
+-    pub color: f32,
++    pub color: UNorm8x4,
+     #[live]
+     pub stroke_mult: f32,
+     #[live]
+diff --git a/draw/src/geometry/typed_vertex_test.rs b/draw/src/geometry/typed_vertex_test.rs
+index da170ce28..3b0cb48c5 100644
+--- a/draw/src/geometry/typed_vertex_test.rs
++++ b/draw/src/geometry/typed_vertex_test.rs
+@@ -216,7 +216,9 @@ fn legacy_vector_vertex_packed_layout_stays_twelve_f32_lanes() {
+         live_id!(param5),
+         live_id!(zbias),
+     ] {
+-        inputs.push(id, 1, DrawShaderAttrFormat::F32x1);
++        // color is fetched as normalized bytes, never as an f32 bitcast.
++        let format = if id == live_id!(color) { DrawShaderAttrFormat::U8x4Norm } else { DrawShaderAttrFormat::F32x1 };
++        inputs.push(id, format.logical_slots(), format);
+     }
+     inputs.finalize();
+     assert_eq!(size_of::<VectorVertexPacked>(), 48);
+@@ -237,13 +239,27 @@ fn legacy_vector_vertex_packed_layout_stays_twelve_f32_lanes() {
+         ],
+         [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44]
+     );
+-    assert_eq!(inputs.total_slots, 12);
+     assert_eq!(inputs.stride_bytes, 48);
+     assert_eq!(
+         inputs.inputs.iter().map(|input| input.byte_offset).collect::<Vec<_>>(),
+         (0..12).map(|index| index * 4).collect::<Vec<_>>()
+     );
+-    assert!(inputs.all_f32_lanes());
++    assert!(!inputs.all_f32_lanes());
++}
++
++/// Opaque colors with blue >= 0x80 pack to NaN bit patterns (alpha is the
++/// top byte, blue's bit 7 is the exponent's low bit). They must survive as
++/// bytes; the vertex layout above fetches them as U8x4Norm so no float
++/// conversion (and no NaN quieting, which set blue bit 6) happens.
++#[test]
++fn packed_vector_color_bytes_are_exact() {
++    use crate::vector::pack_unorm8x4;
++    for (rgb, a) in [(0x168398u32, 1.0f32), (0x7a5aa3, 1.0), (0x7a5aa3, 0.13), (0xffffff, 1.0), (0x000080, 0.5)] {
++        let c = |shift: u32| ((rgb >> shift) & 0xff) as f32 / 255.0;
++        let bits = pack_unorm8x4(c(16), c(8), c(0), a).to_bits();
++        assert_eq!(bits & 0xff_ffff, ((rgb & 0xff) << 16) | (rgb & 0xff00) | ((rgb >> 16) & 0xff));
++        assert_eq!(bits >> 24, (a * 255.0 + 0.5) as u32);
++    }
+ }
+ 
+ #[test]
+diff --git a/draw/src/shader/draw_svg.rs b/draw/src/shader/draw_svg.rs
+index 0de4d6713..7d86b7f61 100644
+--- a/draw/src/shader/draw_svg.rs
++++ b/draw/src/shader/draw_svg.rs
+@@ -54,7 +54,7 @@
+             let transformed_local = self.transform_svg_point(pos * self.svg_scale + self.svg_offset);
+             let transformed = transformed_local + self.rect_pos;
+             let g_uv = unpack2f16(self.geom.uv)
+-            let g_color = unpack4u8(self.geom.color)
++            let g_color = self.geom.color
+             let g_p0s = unpack2f16(self.geom.p0s)
+             let g_p12 = unpack2f16(self.geom.p12)
+             let g_p3c = unpack2f16(self.geom.p3c)
+diff --git a/draw/src/shader/draw_vector.rs b/draw/src/shader/draw_vector.rs
+index ca5c4ab70..fa8ae3d20 100644
+--- a/draw/src/shader/draw_vector.rs
++++ b/draw/src/shader/draw_vector.rs
+@@ -36,7 +36,7 @@
+             // uv.y <= 1 is cap coverage; round-cap carriers use
+             // uv.y = 1 + cap_axis, where cap_axis runs 0..1 from centre to tip.
+             let g_uv = unpack2f16(self.geom.uv)
+-            let g_color = unpack4u8(self.geom.color)
++            let g_color = self.geom.color
+             let g_p0s = unpack2f16(self.geom.p0s)
+             let g_p12 = unpack2f16(self.geom.p12)
+             let g_p3c = unpack2f16(self.geom.p3c)
+diff --git a/platform/src/draw_shader.rs b/platform/src/draw_shader.rs
+index e6909abf1..0d1cbdaf7 100644
+--- a/platform/src/draw_shader.rs
++++ b/platform/src/draw_shader.rs
+@@ -531,6 +531,19 @@ pub fn has_compact(&self) -> bool {
+         self.inputs.iter().any(|i| i.attr_format.is_compact())
+     }
+ 
++    /// True when an untyped `Vec<f32>` vertex buffer is a valid image of
++    /// this layout: every input is an f32 lane, or a `U8x4Norm` color that
++    /// the producer bit-packs into one f32 slot (`pack_unorm8x4`). Fetching
++    /// such colors as bytes rather than as a float keeps opaque colors whose
++    /// bit pattern is a NaN exact (GLES drivers quiet NaN float attributes).
++    pub fn f32_buffer_compatible(&self) -> bool {
++        self.stride_bytes % 4 == 0
++            && self.inputs.iter().all(|i| {
++                i.byte_offset % 4 == 0
++                    && (i.attr_format.is_f32_lane() || matches!(i.attr_format, DrawShaderAttrFormat::U8x4Norm))
++            })
++    }
++
+     pub fn all_f32_lanes(&self) -> bool {
+         !self.inputs.is_empty() && self.inputs.iter().all(|i| i.attr_format.is_f32_lane())
+     }
+diff --git a/platform/src/geometry.rs b/platform/src/geometry.rs
+index fddd0c8c8..55b49adf0 100644
+--- a/platform/src/geometry.rs
++++ b/platform/src/geometry.rs
+@@ -579,7 +579,7 @@ pub fn geometry_layout_matches_shader(
+         Some(signature) => {
+             geom.vertex_stride == shader_stride && signature == shader_layout.layout_signature()
+         }
+-        None => !shader_layout.has_compact(),
++        None => !shader_layout.has_compact() || shader_layout.f32_buffer_compatible(),
+     };
+     if shader_stride == 0 || matches {
+         return true;
+@@ -839,6 +839,16 @@ fn draw_validation_rejects_legacy_or_different_same_stride_compact_layouts() {
+     f32_layout.push(live_id!(pos), 4, DrawShaderAttrFormat::F32x4);
+     f32_layout.finalize();
+     assert!(geometry_layout_matches_shader(&mut legacy, &f32_layout));
++
++    // f32 lanes plus a unorm8x4 color bit-packed into one f32 slot (the
++    // packed vector vertex) is a valid untyped f32 image.
++    let mut packed_color = DrawShaderInputs::new(DrawShaderInputPacking::Attribute);
++    packed_color.push(live_id!(x), 1, DrawShaderAttrFormat::F32x1);
++    packed_color.push(live_id!(color), 4, DrawShaderAttrFormat::U8x4Norm);
++    packed_color.push(live_id!(zbias), 1, DrawShaderAttrFormat::F32x1);
++    packed_color.finalize();
++    assert_eq!(packed_color.stride_bytes, 12);
++    assert!(geometry_layout_matches_shader(&mut legacy, &packed_color));
+ }
+ 
+ #[cfg(test)]
+diff --git a/widgets/src/map/view.rs b/widgets/src/map/view.rs
+index 4581c70af..d557221f9 100644
+--- a/widgets/src/map/view.rs
++++ b/widgets/src/map/view.rs
+@@ -903,7 +903,7 @@ fn archive_mtime(path: &Path) -> Option<u128> {
+         vertex: fn() {
+             // Packed-vertex preamble: f16 pairs / unorm8x4 unpack once.
+             let g_uv = unpack2f16(self.geom.uv)
+-            let g_color = unpack4u8(self.geom.color)
++            let g_color = self.geom.color
+             let g_p0s = unpack2f16(self.geom.p0s)
+             let g_p12 = unpack2f16(self.geom.p12)
+             let g_p3c = unpack2f16(self.geom.p3c)
+@@ -2051,7 +2051,7 @@ fn archive_mtime(path: &Path) -> Option<u128> {
+ 
+         vertex: fn() {
+             let g_uv = unpack2f16(self.geom.uv)
+-            let g_color = unpack4u8(self.geom.color)
++            let g_color = self.geom.color
+             let g_p0s = unpack2f16(self.geom.p0s)
+             let g_p12 = unpack2f16(self.geom.p12)
+             let g_p3c = unpack2f16(self.geom.p3c)

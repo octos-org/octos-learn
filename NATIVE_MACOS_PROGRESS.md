@@ -35,7 +35,8 @@ Android 编译打包背景已补充给 Claude：见 [APK 构建交接](docs/make
 ## 1. 工作规矩（用户要求，必须遵守）
 
 - 只在 `codex/` 分支开发。可以本地提交；**push 已获授权（每完成一块就推送），但不合并、不开 PR**（开 PR 前先问用户）。
-- 不擅自升级固定依赖版本（makepad 固定在 `825dbb4`，所以不改 makepad 源码，需要绕过的问题在本仓库里处理）。
+- 不擅自升级固定依赖版本（makepad 固定在 `825dbb4`）。原则上不改 makepad 源码；2026-10-08 用户授权**最小本地补丁**：补丁文件放在 `native/patches/`，任何构建机都要先 `git -C <makepad> apply native/patches/<补丁>`，`native/octos-learn/build.rs` 检查未打补丁就构建失败。当前补丁：
+  - `makepad-825dbb4-vector-color-unorm8.patch`（问题 15，矢量颜色蓝通道 +64，见第 5 节）
 - 不切换用户持久仓库的工作分支，也不清理它们的工作区（其他会话在用）：
   - `~/Documents/projects/OctosLearn/octos-learn` 在 `codex/android-native-ink-stroke-handoff`
   - OLL 持久仓库在 `codex/native-ink-exclusion-smoothing`
@@ -192,6 +193,7 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 - （本次提交）课程集列表滚动的真机分段诊断开关 `OCTOS_BISECT`（逗号分隔，安卓用 intent extra `octos.OCTOS_BISECT` 传入，默认关闭、无开销）：`nosvg` / `noshapes` / `nosvgtext`（缩略图与封面整体 / 矢量 / 文字）、`nocardtext`、`nocardbg`（课程卡片文字 / 背景）、`batch`（课程卡片自带 draw list，候选优化，视觉不变）、`tinyredraw` / `fullredraw`（启动器页无输入时每 tick 重绘）。Mac 结论：GPU 计时在此负载下被时钟波动淹没，不能用来归因；应用 Draw CPU 拆分：卡片文字约 35%，缩略图约 10%，`batch` 省约 20%。另发现 Makepad 重绘任何一个小控件都会重新编码整个窗口 draw list（`tinyredraw` 与 `fullredraw` 耗时相同）。测试的「读懂一次函数」课程集缩略图只有 2 个 path、5 段文字，密集网格不是该页原因。需真机按开关逐项采样后再定优化
 - （本次提交）启动器（首页 / 课程集）滚动改为纹理缓存：新组件 `src/scroll_cache.rs` 的 `ScrollCache` 取代 `launcher_scroll` 的 ScrollYView。内容只在自身重绘（换页、hover、重建）或宽度变化时渲染一次到纹理（独立 pass，原点固定），滚动只移动一个按设备像素对齐的纹理四边形；触摸拖动 / 惯性 / 滚轮沿用 Makepad ScrollBar。内容指针事件按滚动偏移映射（按下期间用按下时的偏移，拖动滚页不会被当成点击）；`handle_launcher_taps` 用映射后的事件，“⋯”菜单位置用 `to_screen` 换算。依据：GPT 真机分段（`docs/makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md`）——`tinyredraw,batch` 时 CPU 事件 12.6→3.2ms 而帧间隔仍约 40ms，静止页面每帧 GPU 重绘本身就超出 33ms；卡片文字、缩略图、卡片背景分别贡献约 8.5 / 7.5 / 4ms wait。Mac 同构建 A/B（课程集滚动，`OCTOS_BISECT=nocache` 为每帧重渲染）：每帧 GPU 1.25→0.3ms，应用 Draw 0.13→0.03ms；窗口 pass 由约 64 次 draw call / 631 实例降到 6 / 20。新增 `OCTOS_CENSUS=1`（每秒按 shader 统计主 pass draw call、实例与覆盖面积）。已知限制：内容高度超过 8192 物理像素不缓存完整（目前页面远小于此，会打日志）；发现应用对任何 widget action 都重绘整个 UI（会让缓存失效，ScrollCache 因此不发 action），记为后续优化。Mac 实测：滚轮 / 拖动滚动、滚动后点卡片、⋯ 菜单位置、预览 / 开始互动、从课程返回后滚动均正常；cargo test 14 passed
 - （本次提交）修 GPT 真机复测（`docs/makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md`，缓存后课程集 Draw 间隔 17.7ms / nocache 70.4ms，首页 18.2 / 54.9ms）发现的三个问题：①首页从卡片起手竖直拖动抬手误开课程集——ScrollCache 在 UI 处理完抬手事件后就清掉按下时的偏移，启动器点击判定随后用滚动后的偏移映射，手指位移被抵消成「点击」；改为保留到下一个事件。②「⋯」菜单点外部不关闭——外部判定只认 MouseDown（安卓触摸从来不走这里，原有问题），且本次改动后用了内容坐标；改为屏幕坐标并支持触摸按下。③菜单「重新开始 / 删除学习记录」无反应——菜单浮在缓存外的屏幕空间，却用内容坐标判定（本次改动引入）；`handle_launcher_taps` 现在同时拿屏幕与内容两种事件。Mac 实测三项均正常；触摸关闭菜单需真机确认
+- （本次提交）问题 15 颜色失真：Web `#168398` 在安卓上显示为 `#1683d8`、`#7a5aa3` 为 `#7a5ae3`（蓝 +64）。根因：Makepad `pack_unorm8x4` 把 RGBA 按位存进一个 f32（alpha 在最高字节），不透明且蓝 ≥ 0x80 时这个 f32 是 NaN；GLES 顶点属性按 float 读取时驱动（Mali）把 NaN「静默化」，置位 bit22 = 蓝通道 bit6。Mac（Metal）同一构建颜色正确（像素计数 #168398 5378 / #1683d8 0），证明是 GL 读取环节。修复（Makepad 补丁 `native/patches/makepad-825dbb4-vector-color-unorm8.patch`，7 个文件 +52/-10）：`VectorVertexPacked.color` 改为 `UNorm8x4`（`#[repr(C)]`），GPU 直接按归一化字节读颜色、不再经过 float；矢量、SVG、地图三个着色器改读 `self.geom.color`；几何布局检查允许未分类型的 `Vec<f32>` 缓冲匹配「f32 通道 + 位打包 U8x4Norm 颜色」的布局（仍拒绝其他紧凑布局）。缓冲字节不变、CPU 打包不变，覆盖滑块、卡片状态边框和所有 DrawVector / Svg 颜色，透明度语义不变。Makepad 测试：布局测试更新 + 新增 #168398/#7a5aa3 等颜色字节精确测试、几何布局匹配测试，全部通过；Mac 渲染与补丁前逐像素相同。`build.rs` 检查 Makepad 已打补丁。**安卓需按补丁重新打包验证颜色**
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
@@ -208,6 +210,13 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 2. 练习任务中 scene3d 视角提交（目前没有课程包使用，优先级低）。
 3. ~~再跑一次九门课全量对照~~（2026-10-06 完成，无回归）。
 4. ~~写交付文档 V7、更新 AGENT_HANDOFF.md、通知用户测试~~（2026-10-06 完成，见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V7.md`）。等待用户测试反馈与中文字体决定。
+
+6. 2026-10-08 用户问题清单（先问清再修；每完成一块提交推送并更新本文档）。用户决定：问题 15 允许最小 Makepad 补丁；问题 1/2 用 Rust 解码 MP3 + Makepad 音频输出（三平台同一路径，课程时钟跟随音频采样位置，可加解码 crate）；Windows 只实现 + `cargo check`（可装 Windows target，实测由用户/GPT 做）；问题 4 先对齐 Web，仍不清楚再出对比图让用户决定。
+   - [x] 15 颜色失真（蓝通道 +64）
+   - [ ] 3 GEOMETRY/PLOT「探索」「大图」上部被切；5 白板左上 home/menu/back 图标偏左；6 工具栏图标偏左；7 带文字按钮 hover 后白字浅底；9 选区快捷按钮 hover 边框（Web 无）；12 滑块「老师正在控制」提示被切；4 卡片边界不清楚
+   - [ ] 8 小章鱼辅助卡片右上两按钮无效、删除图标不对、不能拖动；10 「我的问题」与课程卡片没避开笔迹与辅助卡；11 擦除笔迹后关联辅助卡不消失；13 空白板的辅助卡带到预制课程白板（笔迹却消失）
+   - [ ] 14 安卓白板双指缩放
+   - [ ] 1 旁白读不完（Android/Windows 纯音频入口为空实现）；2 课程时钟与音频末尾几十到一百多毫秒偏差
 
 5. 2026-10-07 用户要求继续做（每完成一块提交推送并更新本文档）：
    - [x] 框选笔迹提问（两部分均完成；剩余 DIFF：卡片拖动/缩放、Markdown 公式排版、scene3d 卡片、面板语音提问、片段级 target）
