@@ -1,0 +1,3 @@
+         1791450591.601  3180  3180 I OctosNativeTest: Course assets ready in 18ms; cached=true
+         1791450591.737  3180  3180 I OctosNativeTest: Render scale 0.5
+         1791450592.929  3180  3204 I Makepad : src/android_ui.rs:369:9 - [android-ui] viewport 960x540 catalog 918px/3cols chrome 36/27/29px

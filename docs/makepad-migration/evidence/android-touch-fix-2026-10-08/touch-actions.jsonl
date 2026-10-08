@@ -1,0 +1,74 @@
+{"hostMonotonic": 2.7860115, "kind": "screenshot", "name": "before-install-home.png"}
+{"hostMonotonic": 0.57258725, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 7.962639833, "kind": "screenshot", "name": "home-first-drag-before.png"}
+{"hostMonotonic": 9.488958916, "kind": "swipe", "physical": [500, 1880, 500, 1400], "durationMs": 1400}
+{"hostMonotonic": 13.425651083, "kind": "screenshot", "name": "home-first-drag-after.png"}
+{"hostMonotonic": 14.95414475, "kind": "swipe", "physical": [500, 1400, 500, 1880], "durationMs": 1400}
+{"hostMonotonic": 18.888335583, "kind": "screenshot", "name": "home-first-drag-down-after.png"}
+{"hostMonotonic": 19.390196458, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 26.6388985, "kind": "screenshot", "name": "home-third-drag-before.png"}
+{"hostMonotonic": 28.152831083, "kind": "swipe", "physical": [3640, 1880, 3640, 1400], "durationMs": 1400}
+{"hostMonotonic": 32.104077291, "kind": "screenshot", "name": "home-third-drag-after.png"}
+{"hostMonotonic": 32.221985125, "kind": "tap", "physical": [3500, 1550]}
+{"hostMonotonic": 36.212423916, "kind": "screenshot", "name": "home-third-tap-after-scroll.png"}
+{"hostMonotonic": 36.721569083, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 43.253870958, "kind": "swipe", "physical": [64, 1880, 64, 1400], "durationMs": 1400}
+{"hostMonotonic": 44.87197475, "kind": "tap", "physical": [500, 1550]}
+{"hostMonotonic": 48.707818166, "kind": "screenshot", "name": "home-first-tap-after-scroll.png"}
+{"hostMonotonic": 50.237425916, "kind": "swipe", "physical": [1300, 1880, 1300, 800], "durationMs": 1400}
+{"hostMonotonic": 54.36753675, "kind": "screenshot", "name": "collection-records-before.png"}
+{"hostMonotonic": 0.113981541, "kind": "tap", "physical": [702, 1864]}
+{"hostMonotonic": 4.244444958, "kind": "screenshot", "name": "menu-outside-before.png"}
+{"hostMonotonic": 4.363448916, "kind": "tap", "physical": [1300, 600]}
+{"hostMonotonic": 8.40112, "kind": "screenshot", "name": "menu-outside-after.png"}
+{"hostMonotonic": 8.515200958, "kind": "tap", "physical": [1540, 1864]}
+{"hostMonotonic": 12.677125333, "kind": "screenshot", "name": "second-preview-after-scroll.png"}
+{"hostMonotonic": 12.795945708, "kind": "tap", "physical": [84, 96]}
+{"hostMonotonic": 17.4123715, "kind": "screenshot", "name": "return-from-second-preview.png"}
+{"hostMonotonic": 17.528738666, "kind": "tap", "physical": [2260, 1864]}
+{"hostMonotonic": 23.511458208, "kind": "screenshot", "name": "second-start-after-scroll.png"}
+{"hostMonotonic": 23.667297958, "kind": "tap", "physical": [1885, 96]}
+{"hostMonotonic": 24.79981675, "kind": "tap", "physical": [2000, 96]}
+{"hostMonotonic": 25.933554375, "kind": "tap", "physical": [2000, 96]}
+{"hostMonotonic": 29.27147725, "kind": "screenshot", "name": "second-test-progress-created.png"}
+{"hostMonotonic": 29.393003916, "kind": "tap", "physical": [84, 96]}
+{"hostMonotonic": 33.957081208, "kind": "screenshot", "name": "second-test-progress-card.png"}
+{"hostMonotonic": 34.104650791, "kind": "tap", "physical": [1945, 1864]}
+{"hostMonotonic": 38.283754208, "kind": "screenshot", "name": "second-menu-open.png"}
+{"hostMonotonic": 38.395302041, "kind": "tap", "physical": [1530, 1500]}
+{"hostMonotonic": 42.480785791, "kind": "screenshot", "name": "restart-confirm-dialog.png"}
+{"hostMonotonic": 0.121038125, "kind": "tap", "physical": [2290, 985]}
+{"hostMonotonic": 4.199480625, "kind": "screenshot", "name": "restart-cancel-after.png"}
+{"hostMonotonic": 4.313709166, "kind": "tap", "physical": [1945, 1864]}
+{"hostMonotonic": 6.146629583, "kind": "tap", "physical": [1530, 1500]}
+{"hostMonotonic": 10.259565333, "kind": "screenshot", "name": "restart-confirm-again.png"}
+{"hostMonotonic": 10.37604025, "kind": "tap", "physical": [2556, 985]}
+{"hostMonotonic": 14.191975416, "kind": "screenshot", "name": "restart-ok-effect.png"}
+{"hostMonotonic": 14.346799041, "kind": "tap", "physical": [1885, 96]}
+{"hostMonotonic": 17.638991375, "kind": "screenshot", "name": "restart-ok-paused.png"}
+{"hostMonotonic": 17.766049916, "kind": "tap", "physical": [84, 96]}
+{"hostMonotonic": 22.27561125, "kind": "screenshot", "name": "restart-return-record.png"}
+{"hostMonotonic": 22.395310041, "kind": "tap", "physical": [1945, 1864]}
+{"hostMonotonic": 24.0382205, "kind": "tap", "physical": [1530, 1650]}
+{"hostMonotonic": 28.190259416, "kind": "screenshot", "name": "delete-confirm-dialog.png"}
+{"hostMonotonic": 28.321802708, "kind": "tap", "physical": [2290, 985]}
+{"hostMonotonic": 32.360043833, "kind": "screenshot", "name": "delete-cancel-after.png"}
+{"hostMonotonic": 32.476882083, "kind": "tap", "physical": [1945, 1864]}
+{"hostMonotonic": 34.345580041, "kind": "tap", "physical": [1530, 1650]}
+{"hostMonotonic": 38.49808575, "kind": "screenshot", "name": "delete-confirm-again.png"}
+{"hostMonotonic": 38.623918916, "kind": "tap", "physical": [2556, 985]}
+{"hostMonotonic": 43.211081375, "kind": "screenshot", "name": "delete-ok-effect.png"}
+{"hostMonotonic": 43.733297708, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 48.900892791, "kind": "tap", "physical": [500, 1800]}
+{"hostMonotonic": 51.930613416, "kind": "swipe", "physical": [1300, 1880, 1300, 800], "durationMs": 1400}
+{"hostMonotonic": 55.997681375, "kind": "screenshot", "name": "delete-persisted-after-relaunch.png"}
+{"hostMonotonic": 1.537307875, "kind": "swipe", "physical": [1300, 1600, 1300, 1900], "durationMs": 1400}
+{"hostMonotonic": 5.598075625, "kind": "screenshot", "name": "collection-scroll-after-confirmations.png"}
+{"hostMonotonic": 6.1088755, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 13.569002416, "kind": "screenshot", "name": "fling-before.png"}
+{"hostMonotonic": 13.768448208, "kind": "swipe", "physical": [64, 1880, 64, 1760], "durationMs": 80}
+{"hostMonotonic": 16.370554375, "kind": "screenshot", "name": "fling-release.png"}
+{"hostMonotonic": 19.155700875, "kind": "screenshot", "name": "fling-later.png"}
+{"hostMonotonic": 22.824856791, "kind": "screenshot", "name": "fling-settled.png"}
+{"hostMonotonic": 0.542113708, "kind": "start", "perf": false, "bisect": "", "result": "Starting: Intent { cmp=cc.pitun.learn.makepadtest/.MakepadApp }\n"}
+{"hostMonotonic": 7.900461708, "kind": "screenshot", "name": "final-default-home.png"}

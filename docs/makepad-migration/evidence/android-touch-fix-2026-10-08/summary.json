@@ -1,0 +1,44 @@
+[
+  {
+    "name": "collection-cache",
+    "steadyWindows": 20,
+    "steadyFrames": 1094,
+    "weightedChannelsMs": {
+      "event": 3.652559414990859,
+      "draw": 2.349360146252285,
+      "wait": 5.797897623400365,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 18.353107861060327,
+    "surface": {
+      "newFramesInRing": 127,
+      "timestampRatePerSecond": 55.588112002955114,
+      "meanMs": 17.98945788888889,
+      "medianMs": 16.6667045,
+      "p95Ms": 16.66725
+    },
+    "meanBusyPercent": 19.55
+  },
+  {
+    "name": "home-cache",
+    "steadyWindows": 20,
+    "steadyFrames": 1084,
+    "weightedChannelsMs": {
+      "event": 3.942158671586717,
+      "draw": 1.6416051660516606,
+      "wait": 6.380535055350553,
+      "gpu": null,
+      "gc": 0.0
+    },
+    "weightedGapMs": 18.491605166051663,
+    "surface": {
+      "newFramesInRing": 127,
+      "timestampRatePerSecond": 56.41777507878326,
+      "meanMs": 17.724910253968254,
+      "medianMs": 16.666703,
+      "p95Ms": 16.66711
+    },
+    "meanBusyPercent": 21
+  }
+]

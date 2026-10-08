@@ -1,0 +1,20 @@
+{
+  "size": "Physical size: 3840x2160\n",
+  "density": "Physical density: 480\nOverride density: 640\n",
+  "web": {
+    "codePath": "/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag==",
+    "versionCode": "33 minSdk=26 targetSdk=35",
+    "versionName": "0.1.2",
+    "firstInstallTime": "2026-09-13 01:58:13",
+    "lastUpdateTime": "2026-10-06 02:10:22"
+  },
+  "nativeTest": {
+    "codePath": "/data/app/~~kg95wl8iooIqEdCi9xyQmQ==/cc.pitun.learn.makepadtest-WkW5J-09zeDpao5Oxe1-mA==",
+    "versionCode": "202610071 minSdk=26 targetSdk=35",
+    "versionName": "0.1.0-makepad-test-20261007.2",
+    "firstInstallTime": "2026-10-08 12:33:34",
+    "lastUpdateTime": "2026-10-08 14:32:21"
+  },
+  "reverse": "host-106 tcp:50080 tcp:50080\n\n",
+  "backendHealth": "{\"status\":\"healthy\",\"service\":\"octos\",\"version\":\"2.0.3-rc.13+d6905a96\"}"
+}

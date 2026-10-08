@@ -1,0 +1,220 @@
+{
+  "testedProductCommit": "425d25b1ca2213d5cf6ea4c2d7eb47c4653d43c7",
+  "inputMethod": "ADB synthetic touch; physical coordinates at system 3840x2160",
+  "defaultCache": true,
+  "testRecordCourse": "linear-function second course version 0.1.8; initially no saved progress; only this newly created test record reset/deleted",
+  "checks": [
+    {
+      "check": "home first card drag up",
+      "physicalActions": [
+        500,
+        1880,
+        500,
+        1400
+      ],
+      "screenshots": [
+        "home-first-drag-before.png",
+        "home-first-drag-after.png"
+      ],
+      "result": "pass",
+      "observed": "page scrolls and stays home; no navigation"
+    },
+    {
+      "check": "home first card drag down",
+      "physicalActions": [
+        500,
+        1400,
+        500,
+        1880
+      ],
+      "screenshots": [
+        "home-first-drag-down-after.png"
+      ],
+      "result": "pass",
+      "observed": "returns toward top; no navigation"
+    },
+    {
+      "check": "home third card drag up",
+      "physicalActions": [
+        3640,
+        1880,
+        3640,
+        1400
+      ],
+      "screenshots": [
+        "home-third-drag-before.png",
+        "home-third-drag-after.png"
+      ],
+      "result": "pass",
+      "observed": "page scrolls and stays home; no navigation"
+    },
+    {
+      "check": "tap third card after scroll",
+      "physicalActions": [
+        3500,
+        1550
+      ],
+      "screenshots": [
+        "home-third-tap-after-scroll.png"
+      ],
+      "result": "pass",
+      "observed": "opens correct multivariable-calculus collection"
+    },
+    {
+      "check": "tap first card after gutter scroll",
+      "physicalActions": [
+        500,
+        1550
+      ],
+      "screenshots": [
+        "home-first-tap-after-scroll.png"
+      ],
+      "result": "pass",
+      "observed": "opens correct linear-function collection"
+    },
+    {
+      "check": "touch outside first-card more menu",
+      "physicalActions": [
+        702,
+        1864,
+        1300,
+        600
+      ],
+      "screenshots": [
+        "menu-outside-before.png",
+        "menu-outside-after.png"
+      ],
+      "result": "pass",
+      "observed": "menu opens above more button and closes after outside touch"
+    },
+    {
+      "check": "second course preview after scroll",
+      "physicalActions": [
+        1540,
+        1864
+      ],
+      "screenshots": [
+        "second-preview-after-scroll.png",
+        "return-from-second-preview.png"
+      ],
+      "result": "pass",
+      "observed": "correct course opens in paused preview; return keeps list scroll position"
+    },
+    {
+      "check": "second course interactive start after scroll",
+      "physicalActions": [
+        2260,
+        1864
+      ],
+      "screenshots": [
+        "second-start-after-scroll.png",
+        "second-test-progress-created.png",
+        "second-test-progress-card.png"
+      ],
+      "result": "pass",
+      "observed": "correct course autoplays; pause and two next-beat taps create test progress; card becomes resumable"
+    },
+    {
+      "check": "restart menu item and cancel",
+      "physicalActions": [
+        1945,
+        1864,
+        1530,
+        1500,
+        2290,
+        985
+      ],
+      "screenshots": [
+        "second-menu-open.png",
+        "restart-confirm-dialog.png",
+        "restart-cancel-after.png"
+      ],
+      "result": "pass",
+      "observed": "confirmation appears; cancel dismisses it and record remains resumable"
+    },
+    {
+      "check": "restart menu item and confirm",
+      "physicalActions": [
+        1945,
+        1864,
+        1530,
+        1500,
+        2556,
+        985
+      ],
+      "screenshots": [
+        "restart-confirm-again.png",
+        "restart-ok-effect.png",
+        "restart-ok-paused.png"
+      ],
+      "result": "pass",
+      "observed": "confirmation accepts touch; correct course restarts and earlier formula/note cards are absent"
+    },
+    {
+      "check": "delete menu item and cancel",
+      "physicalActions": [
+        1945,
+        1864,
+        1530,
+        1650,
+        2290,
+        985
+      ],
+      "screenshots": [
+        "delete-confirm-dialog.png",
+        "delete-cancel-after.png"
+      ],
+      "result": "pass",
+      "observed": "confirmation appears; cancel dismisses it and record remains resumable"
+    },
+    {
+      "check": "delete menu item and confirm",
+      "physicalActions": [
+        1945,
+        1864,
+        1530,
+        1650,
+        2556,
+        985
+      ],
+      "screenshots": [
+        "delete-confirm-again.png",
+        "delete-ok-effect.png",
+        "delete-persisted-after-relaunch.png"
+      ],
+      "result": "pass",
+      "observed": "test record disappears from launcher; after force-stop/relaunch second card has start action and no more menu; first card remains resumable"
+    },
+    {
+      "check": "scroll after confirmation flows",
+      "physicalActions": [
+        1300,
+        1600,
+        1300,
+        1900
+      ],
+      "screenshots": [
+        "collection-scroll-after-confirmations.png"
+      ],
+      "result": "pass",
+      "observed": "list still scrolls and content remains visible"
+    },
+    {
+      "check": "home fling",
+      "physicalActions": [
+        64,
+        1880,
+        64,
+        1760
+      ],
+      "screenshots": [
+        "fling-before.png",
+        "fling-release.png",
+        "fling-later.png",
+        "fling-settled.png"
+      ],
+      "result": "pass",
+      "observed": "80 ms swipe; after release content moves another 168 physical pixels, then settles"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "package": "cc.pitun.learn.makepadtest",
+  "label": "Octos Learn 原生测试",
+  "makepad": "825dbb422c6d7926e111e2ee7831d697870d8671",
+  "versionCode": 202610071,
+  "versionName": "0.1.0-makepad-test-20261007.2",
+  "productHead": "425d25b1ca2213d5cf6ea4c2d7eb47c4653d43c7",
+  "productDirty": false,
+  "rustProfile": "release",
+  "abi": "arm64-v8a",
+  "minSdk": 26,
+  "coursePacks": 9,
+  "apk": "/Users/alan0x/Documents/projects/octos-learn/.local-dev/android-makepad/Octos-Learn-Makepad-Test.apk",
+  "apkBytes": 83708242,
+  "sha256": "3719bd12bdc7e33ab772a35566cfc945eaf841bc728d9cbbeec02abc7fba5b06",
+  "cachedBuildTool": "/Users/alan0x/Documents/projects/makepad/target/debug/cargo-makepad",
+  "javaHostSource": "/Users/alan0x/Documents/projects/octos-learn/.local-dev/oll-product/makepad"
+}

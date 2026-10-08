@@ -1,0 +1,16 @@
+{
+  "flingReleaseToLater": {
+    "reference": "fling-release.png",
+    "comparison": "fling-later.png",
+    "roi": [
+      200,
+      1100,
+      3500,
+      1500
+    ],
+    "dy": -168,
+    "meanAbsoluteChannelDifference": 0.0012282828282828282,
+    "maxChannelDifference": 1
+  },
+  "laterToSettledEqual": true
+}

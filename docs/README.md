@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 缓存滚动触摸修复验收](makepad-migration/ANDROID_TOUCH_FIX_RETEST_2026-10-08.md)：`425d25b` 大屏卡片拖动、菜单外部触摸及重置 / 删除确认按钮通过，默认缓存首页 / 课程集绘制间隔仍约18ms。
+
 - [Android 启动器纹理缓存复测](makepad-migration/ANDROID_SCROLL_CACHE_RETEST_2026-10-07.md)：`bf83cf2` 真机首页 / 课程集缓存对照，绘制间隔约18ms；首页卡片拖动误导航两次复现，菜单触摸外部不关闭、条目触摸无响应。
 
 - [Android 课程集列表成本拆分](makepad-migration/ANDROID_COURSE_LIST_BISECTION_2026-10-07.md)：`b6da998` 十组真机对照，静止 batch 节省 CPU 但未改善呈现节奏，卡片文字隐藏有最大总体收益、布局影响仍需控制。
