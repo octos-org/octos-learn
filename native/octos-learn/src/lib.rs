@@ -3637,7 +3637,7 @@ impl App {
             ""
         };
         let code = format!(
-            "RoundedView{{width:Fill height:Fit flow:Down padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:9 border_size:0.5 border_color:#dbded9}}
+            "RoundedView{{width:Fill height:Fit flow:Down {batch} padding:Inset{{left:1 right:1 top:1 bottom:1}} draw_bg +: {{color:#fffef9 border_radius:9 border_size:0.5 border_color:#dbded9}}
                 cover := View{{width:Fill height:{cover_height} flow:Overlay
                     cover_fallback := RoundedView{{width:Fill height:Fill align:Align{{x:0.5 y:0.5}} draw_bg +: {{color:#e4f2ee border_radius:8.5}}
                         fallback_char := Label{{text:\"{first_char}\" draw_text.text_style.font_size:40 draw_text.color:#166a79}}
@@ -3677,8 +3677,18 @@ impl App {
                     }}
                 }}
             }}",
+            batch = if perf::bisect("batch") { "new_batch:true" } else { "" },
             cover_height = profile.course_cover, body_x = profile.course_padding_x, body_top = profile.course_padding_y, body_y = if cfg!(target_os = "android") { profile.course_padding_y } else { 21. }
         );
+        let mut code = code;
+        if perf::bisect("nocardtext") {
+            for l in [&tags_label, &version_label, &lesson_label, &title_label, &desc_label, &minutes_label, &offline_label, &preview_label, &start_text] {
+                code = code.replace(l.as_str(), "View{width:10 height:18}");
+            }
+        }
+        if perf::bisect("nocardbg") {
+            code = code.replace("RoundedView{", "View{show_bg:false ").replace("SolidView{", "View{show_bg:false ");
+        }
         let card = board_view::widget(cx, &code)?;
         // Thumbnail: the pack SVG with its text runs (SvgImage); the accent
         // block with the first title character stays when it is missing.
@@ -4659,6 +4669,13 @@ impl App {
         let control_event = matches!(event, Event::Actions(_));
         let was_playing = self.player.as_ref().is_some_and(|s| s.playing);
         let in_learning = self.player.is_some();
+        if self.timer.is_event(event).is_some() && !self.learning_visible {
+            if perf::bisect("tinyredraw") {
+                self.ui.widget(cx, ids!(launcher_brand)).redraw(cx);
+            } else if perf::bisect("fullredraw") {
+                self.ui.redraw(cx);
+            }
+        }
         if self.timer.is_event(event).is_some() && self.learning_visible {
             // Poll the ink selection a few times a second (web inkState).
             self.selection_poll = (self.selection_poll + 1) % 12;

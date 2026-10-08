@@ -99,7 +99,9 @@ impl Widget for SvgImage {
         if !self.loaded || self.size.0 <= 0. || self.size.1 <= 0. {
             return DrawStep::done();
         }
-        self.draw_svg.draw_abs(cx, rect);
+        if crate::perf::bisect("nosvg") { return DrawStep::done(); }
+        if !crate::perf::bisect("noshapes") { self.draw_svg.draw_abs(cx, rect); }
+        if crate::perf::bisect("nosvgtext") { return DrawStep::done(); }
         // Same contain fit DrawSvg applies to the viewBox bounds.
         let s = (rect.size.x / self.size.0).min(rect.size.y / self.size.1);
         let ox = rect.pos.x + (rect.size.x - self.size.0 * s) / 2.;

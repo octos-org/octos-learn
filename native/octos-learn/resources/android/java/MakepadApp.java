@@ -49,7 +49,7 @@ public final class MakepadApp extends MakepadActivity {
             } else {
                 Os.unsetenv("OCTOS_RENDER_DPI");
             }
-            for (String name : new String[]{"OCTOS_PERF", "OCTOS_LEARN_OPEN"}) {
+            for (String name : new String[]{"OCTOS_PERF", "OCTOS_LEARN_OPEN", "OCTOS_BISECT"}) {
                 String value = getIntent().getStringExtra("octos." + name);
                 if (value != null && !value.isEmpty()) Os.setenv(name, value, true);
                 else Os.unsetenv(name);

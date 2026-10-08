@@ -81,3 +81,25 @@ impl Perf {
         out
     }
 }
+
+/// Diagnostic switches for device bisection (`OCTOS_BISECT=a,b,...`; the
+/// Android host passes intent extra `octos.OCTOS_BISECT`). Off by default.
+/// Content: `nosvg` (thumbnails/covers), `noshapes` / `nosvgtext` (their
+/// vector or text part), `nocardtext`, `nocardbg` (course cards), `batch`
+/// (course cards keep their own draw list). Redraw probes, launcher only,
+/// every timer tick without input: `tinyredraw` (one label: GPU and present
+/// cost of the unchanged scene) and `fullredraw` (whole UI re-encoded).
+pub fn bisect(token: &str) -> bool {
+    static TOKENS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
+    TOKENS
+        .get_or_init(|| {
+            std::env::var("OCTOS_BISECT")
+                .unwrap_or_default()
+                .split(',')
+                .map(|t| t.trim().to_owned())
+                .filter(|t| !t.is_empty())
+                .collect()
+        })
+        .iter()
+        .any(|t| t == token)
+}
