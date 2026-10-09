@@ -22,11 +22,20 @@ test('unopened practice does not separate the two calculus visuals', async ({pag
     const circle=root.querySelector<HTMLElement>('.board-node.kind-geometry')!;
     return Math.abs(parseFloat(circle.style.top)-parseFloat(scene.style.top));
   })).toBeLessThan(1);
+  // A single visual's controls dock under it at its width (OLL DOCK_GAP = 8),
+  // and must stay clear of the neighbouring circle.
   await expect.poll(async()=>page.locator('.oll-board-runtime').evaluate(root=>{
-    const diagrams=[...root.querySelectorAll<HTMLElement>('.board-node.kind-scene3d,.board-node.kind-geometry')];
-    const control=root.querySelector<HTMLElement>('[data-interaction-controls-id]')!;
-    return parseFloat(control.style.top)-Math.max(...diagrams.map(n=>parseFloat(n.style.top)+parseFloat(n.style.height)));
-  })).toBe(24);
+    const box=(el: HTMLElement)=>({x:parseFloat(el.style.left),y:parseFloat(el.style.top),w:parseFloat(el.style.width),h:parseFloat(el.style.height)});
+    const scene=box(root.querySelector<HTMLElement>('.board-node.kind-scene3d')!);
+    const circle=box(root.querySelector<HTMLElement>('.board-node.kind-geometry')!);
+    const control=box(root.querySelector<HTMLElement>('[data-interaction-controls-id]')!);
+    return {
+      gap: control.y-(scene.y+scene.h),
+      left: Math.abs(control.x-scene.x),
+      width: Math.abs(control.w-scene.w),
+      clearOfCircle: control.x+control.w<=circle.x || circle.x+circle.w<=control.x,
+    };
+  })).toEqual({gap:8,left:0,width:0,clearOfCircle:true});
   const spacing = await page.locator('.oll-board-runtime').evaluate(root => {
     const scene = root.querySelector<HTMLElement>('.board-node.kind-scene3d')!;
     const circle = root.querySelector<HTMLElement>('.board-node.kind-geometry')!;
