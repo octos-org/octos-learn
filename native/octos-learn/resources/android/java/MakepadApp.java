@@ -21,9 +21,10 @@ public final class MakepadApp extends MakepadActivity {
     private static final String ASSETS = "makepad/octos_learn/resources/course-packs";
     /** Longest side of the app's render buffer. 4K panels with weak GPUs
      *  (Mali-G52 MC1) spend most of each frame in eglSwapBuffers at full
-     *  resolution; rendering at 1080p and letting the compositor scale up
-     *  cut the swap wait 4-10x in the 2026-10-07 device test. */
-    private static final int RENDER_LONG_SIDE = 1920;
+     *  resolution, so the compositor scales a smaller buffer up. 1440p since
+     *  2026-10-08 (user: 1080p too blurry, some stutter acceptable; device
+     *  test: about 43-51ms per animated frame at 1440p vs 33ms at 1080p). */
+    private static final int RENDER_LONG_SIDE = 2560;
     private float renderScale = 1f;
 
     @Override public void onCreate(Bundle state) {
