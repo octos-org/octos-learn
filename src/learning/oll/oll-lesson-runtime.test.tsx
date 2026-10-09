@@ -1246,6 +1246,32 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
   });
 
+  it("tells a queued task to wait for the active practice, not for playback", async () => {
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "queued-task-message", startAtEnd: true });
+      if (!runtime) return null;
+      const [task] = runtime.studentTasks;
+      if (!task) return null;
+      // The practice window is open and an earlier task is the active one.
+      return <OllLessonBoard runtime={{ ...runtime,
+        studentTasks: [
+          { ...task, task_id: "earlier-task", available: true },
+          { ...task, available: false },
+        ],
+      }} />;
+    }
+    await renderLearning(<Probe />);
+    const queued = await waitFor(() => {
+      const article = screen.getByTestId("oll-student-tasks").querySelector("article");
+      expect(article).toBeTruthy();
+      return article!;
+    });
+    expect(queued.getAttribute("aria-disabled")).toBe("true");
+    expect(queued.textContent).toContain("先完成前面的练习，这一题就会开放。");
+    expect(queued.textContent).not.toContain("全部播放完后");
+  });
+
   it("surfaces rejected input and prevents later input from becoming a successful operation", async () => {
     function Probe() {
       const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
