@@ -3,12 +3,14 @@
 > 任何 Agent 接手前先读本文件，再读 `docs/makepad-migration/AGENT_HANDOFF.md`（详细交接规矩与历史版本 V1–V6）。
 > 每完成一块工作：更新本文件的「已完成」「待做」两节，随代码一起提交并推送。
 
-最后更新：2026-10-08（播放时去掉无变化的刷新 + 白板测量开关）
+最后更新：2026-10-08（8439a78安卓真机复测完成，双指缩放零复用待定位）
 
-最新白板播放优化（用户 2026-10-08 决定：先测量并去掉无变化的刷新，**不做整块白板贴图缓存**——交互卡片多、以后还会加交互，风险高）：播放时 60Hz 定时器不再每次 `refresh()` + 整界面重绘，只在 `TickKey`（播放位置 / 变量 / 旁白 / 滑块 / 任务 / 笔迹 / 白板 revision 等）变化时刷新；动画由白板 `advance` 自己重绘。Mac 同课程播放帧数约少 84–85%，四门课 32 个时间点截图新旧一致（马鞍面首张数学卡测量后镜头低约 10 单位：新版按设计用测量后尺寸重新规划，旧版是时序竞态）。新增 `nogrid / noshadow / nocards / novector / nocamanim / nopulse / tickredraw` 开关和每秒计数。第二个提交：镜头过渡、拖动和缩放帧复用卡片列表，只更新镜头矩阵（安卓全窗口时启用）；高亮光圈和指示点改到独立动画层；画面外、尺寸已定的卡片不遍历。Mac 上截图、拖动和滑块与旧行为逐像素一致（开关 `nocamreuse / nocull / fullwindow`）。真机测量请求见 [白板播放成本拆分](docs/makepad-migration/ANDROID_BOARD_PLAYBACK_COST_SPLIT_PLAN_2026-10-08.md)，待 GPT 测。
+**最新安卓白板复测（2026-10-08）**：干净8439a78（含ae38705）已重打安装；约1440p稳态Draw382→46、busy35.0→7.8%。单指复用90/完整遍历1，gap46.2ms；双指却完整遍历106/复用0、refresh107，Actions来源未定位。1080p平移33.3 /缩放35.9ms，1440p46.2 /43.4ms，1620p55.6 /52.4ms；1440p尚未达33ms预算。短录屏抽帧未见缺块 /明显闪烁；I组census因Java未转发extra未采到。系统 / Web包保持、默认0.5、诊断关闭，临时手势工具已移除。见 [镜头复用与播放成本复测](docs/makepad-migration/ANDROID_BOARD_CAMERA_REUSE_RETEST_2026-10-08.md)。
+
+最新白板播放优化（用户 2026-10-08 决定：先测量并去掉无变化的刷新，**不做整块白板贴图缓存**——交互卡片多、以后还会加交互，风险高）：播放时 60Hz 定时器不再每次 `refresh()` + 整界面重绘，只在 `TickKey`（播放位置 / 变量 / 旁白 / 滑块 / 任务 / 笔迹 / 白板 revision 等）变化时刷新；动画由白板 `advance` 自己重绘。Mac 同课程播放帧数约少 84–85%，四门课 32 个时间点截图新旧一致（马鞍面首张数学卡测量后镜头低约 10 单位：新版按设计用测量后尺寸重新规划，旧版是时序竞态）。新增 `nogrid / noshadow / nocards / novector / nocamanim / nopulse / tickredraw` 开关和每秒计数。第二个提交：镜头过渡、拖动和缩放帧复用卡片列表，只更新镜头矩阵（安卓全窗口时启用）；高亮光圈和指示点改到独立动画层；画面外、尺寸已定的卡片不遍历。Mac 上截图、拖动和滑块与旧行为逐像素一致（开关 `nocamreuse / nocull / fullwindow`）。真机测量请求见 [白板播放成本拆分](docs/makepad-migration/ANDROID_BOARD_PLAYBACK_COST_SPLIT_PLAN_2026-10-08.md)，本轮真机结果见上。
 
 
-最新分辨率对照：同一2666794的首页 /课程集缓存滚动在1080p到4K均≤30ms；播放gap分别33.2 /50.9 /61.3 /100.4ms，补测2112×1188为38.1ms。当前未找到提高分辨率仍保持约33ms播放的比例。无产品改动，默认0.5 /诊断关闭，系统和Web APK保持。见 [四比例实测](docs/makepad-migration/ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)。
+上一轮分辨率对照：同一2666794的首页 /课程集缓存滚动在1080p到4K均≤30ms；播放gap分别33.2 /50.9 /61.3 /100.4ms，补测2112×1188为38.1ms。当前未找到提高分辨率仍保持约33ms播放的比例。无产品改动，默认0.5 /诊断关闭，系统和Web APK保持。见 [四比例实测](docs/makepad-migration/ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)。
 
 最新大屏反馈调查：2666794在「马鞍面与鞍点」完成总览中，选区解释后问题 /加载卡与笔迹重叠，至少跨约12分钟仍加载；原生提问面板Android紧凑规则不完整，预制课程选区避让路径未覆盖。快捷工具依赖识别成功，并非从代码删除；实际请求停在哪阶段尚未确认。只读截图 /日志 /代码，未操作课程或改实现，详见 [选区提问调查](docs/makepad-migration/ANDROID_SELECTION_FLOW_INVESTIGATION_2026-10-08.md)。
 
@@ -250,6 +252,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
 结束画面 ≤17px（slope-and-intercept 35px，源于 KaTeX 与 NewCM 字形宽度差异，属已知限制）。
 
 ## 6. 待做（按优先级）
+
+- 2026-10-08安卓实测：双指缩放期间每窗口Actions /refresh与Draw接近，board_reuse为0；具体action来源未定位。约1440p平移46.2ms /缩放43.4ms，清晰度提高与33ms帧预算尚未同时达成。Java未转发OCTOS_CENSUS，本轮缺shader census数据；短录屏仅抽帧观察，未做现场正常距离拍照。详见最新复测。
 
 - Android：应用自身surface降采样 / 启动器纹理缓存性能已真机验证，425d25b修复的首页拖动 / 菜单 / 确认流程已通过ADB触屏检查；首页 / 课程集gap仍约18ms。全UI action重绘、60Hz timer仍未改；播放时无变化的整板refresh已去掉（待真机测，见白板播放成本拆分）；现场观看距离的清晰度由用户确认。真实触笔 / 多点、IME / copy-paste、非零 safe-area 和屏幕旋转仍待专项测试。主题色偏蓝交Claude，本轮未改。
 
