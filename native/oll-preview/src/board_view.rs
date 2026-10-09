@@ -6,6 +6,11 @@ use oll_runtime::preview::Preview;
 use serde_json::Value;
 
 pub fn widget(cx: &mut Cx, code: &str) -> Result<WidgetRef, String> {
+    let code = if crate::perf_probe::bisect("noshadow") {
+        code.replace("shadow_radius:12. shadow_offset:vec2(0.,8.)", "shadow_radius:0. shadow_offset:vec2(0.,0.)")
+    } else {
+        code.to_owned()
+    };
     cx.with_vm(|vm| {
         let value = vm
             .eval_checked(

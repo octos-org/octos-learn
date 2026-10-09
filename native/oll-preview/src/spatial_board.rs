@@ -19,6 +19,7 @@ use oll_runtime::{
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
+use crate::perf_probe;
 
 /// Camera scale the desktop host plans teaching rows for (web teachingReadingScale).
 const TEACHING_READING_SCALE: f64 = if cfg!(target_os = "android") { 0.68 } else { 0.9 };
@@ -327,6 +328,17 @@ pub struct SpatialBoard {
     /// Pointer pulse clock (web pointer-pulse animation).
     #[rust(Instant::now())]
     pointer_clock: Instant,
+    /// Bumped when the board's own state moved on since the host's last
+    /// `set_state` (a relayout after measuring, or a call that changed the
+    /// composition or camera plan), so a host that skips unchanged ticks
+    /// calls `set_state` again until it settles.
+    #[rust]
+    revision: u64,
+    /// The host's latest applied action: a relayout re-runs `set_state`
+    /// with it, so the camera decision and the teacher pointer stay those
+    /// of the current operation.
+    #[rust]
+    host_action: Option<Value>,
     /// The latest applied operation is a teacher.point action.
     #[rust]
     latest_is_point: bool,
@@ -420,6 +432,9 @@ impl SpatialBoard {
         self.pen_color = color;
         self.pen_width = width;
         self.redraw(cx);
+    }
+    pub fn revision(&self) -> u64 {
+        self.revision
     }
     pub fn ink_count(&self) -> usize {
         self.ink.strokes.len()
@@ -909,6 +924,11 @@ impl SpatialBoard {
             self.pending_camera = Some(to);
             return;
         }
+        if perf_probe::bisect("nocamanim") {
+            self.jump_to(to);
+            self.manual = false;
+            return;
+        }
         self.from = self.camera;
         self.destination = to;
         self.elapsed = 0.;
@@ -1126,6 +1146,9 @@ impl SpatialBoard {
         p: &Preview,
         action: Option<&Value>,
     ) -> Result<(), String> {
+        let set_state_start = Instant::now();
+        self.host_action = action.cloned();
+        let settled = (self.signature.clone(), self.destination, self.manual, self.pointer_target.clone(), self.measure_relayout);
         let reset = self
             .board
             .as_ref()
@@ -1450,6 +1473,10 @@ impl SpatialBoard {
         }
         self.last_action = p.cursor;
         self.targets = self.policy.last_attention().to_vec();
+        perf_probe::time("board_set_state", set_state_start.elapsed());
+        if settled != (self.signature.clone(), self.destination, self.manual, self.pointer_target.clone(), self.measure_relayout) {
+            self.revision += 1;
+        }
         self.redraw(cx);
         Ok(())
     }
@@ -1460,12 +1487,16 @@ impl SpatialBoard {
             at.elapsed().as_secs_f64() < if *kind == Highlight::Active { ACTIVE_SECONDS } else { FOCUS_ARRIVE_SECONDS }
         });
         // The loading card animates (web learning-loading-* keyframes).
-        if before > 0 || self.pointer_target.is_some() || self.host_specs.iter().any(|c| matches!(c, HostCard::Loading { .. })) {
+        let pulse = self.pointer_target.is_some() && !perf_probe::bisect("nopulse");
+        let loading = self.host_specs.iter().any(|c| matches!(c, HostCard::Loading { .. }));
+        if before > 0 || pulse || loading {
+            perf_probe::count(if loading { "redraw_loading" } else if pulse { "redraw_pointer" } else { "redraw_highlight" });
             self.redraw(cx);
         }
         if !self.manual && self.elapsed < 0.68 {
             self.elapsed = (self.elapsed + dt).min(0.68);
             self.camera = self.from.interpolate(self.destination, self.elapsed / 0.68);
+            perf_probe::count("redraw_camera");
             self.redraw(cx);
         }
     }
@@ -2129,10 +2160,12 @@ fn group_members(p: &Preview, id: &str) -> BTreeSet<String> {
 impl Widget for SpatialBoard {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, _scope: &mut Scope) {
         if self.relayout_frame.is_event(event).is_some() {
+            self.revision += 1;
             // The composition follows the viewport and host insets.
             if let Some(p) = self.board.clone() {
                 self.signature.clear();
-                if let Err(e) = self.set_state(cx, &p, None) {
+                let action = self.host_action.clone();
+                if let Err(e) = self.set_state(cx, &p, action.as_ref()) {
                     eprintln!("Board relayout: {e}");
                 }
                 if std::mem::take(&mut self.reframe_pending) && !self.manual {
@@ -2368,7 +2401,13 @@ impl Widget for SpatialBoard {
         }
     }
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
+        let walk_start = Instant::now();
+        if perf_probe::bisect("nogrid") {
+            self.draw_bg.color.w = 0.;
+        }
         self.draw_bg.draw_walk(cx, walk);
+        let cards = !perf_probe::bisect("nocards");
+        let vectors = !perf_probe::bisect("novector");
         let viewport = self.draw_bg.area().rect(cx);
         let viewport_changed = self.viewport != viewport;
         if self.viewport.size != viewport.size {
@@ -2403,6 +2442,7 @@ impl Widget for SpatialBoard {
             .chain(self.attachment_cards.iter().map(|(_, _, r, w)| (None, r, w)))
             .chain(self.reflection_cards.iter().map(|(id, _, r, w)| (Some(id), r, w)))
             .chain(self.task_cards.iter().map(|(id, _, r, w)| (Some(id), r, w)))
+            .filter(|_| cards)
         {
             let reflection = id.is_some_and(|id| id.starts_with("reflection:") || id.ends_with(":tasks"));
             let natural = reflection || id.is_some_and(|id| self.content_ids.contains(id));
@@ -2437,7 +2477,7 @@ impl Widget for SpatialBoard {
             }
         }
         let mut host_resized = false;
-        for (_, r, w) in &mut self.host_cards {
+        for (_, r, w) in self.host_cards.iter_mut().filter(|_| cards) {
             w.draw_walk_all(
                 cx,
                 scope,
@@ -2449,7 +2489,7 @@ impl Widget for SpatialBoard {
                 host_resized = true;
             }
         }
-        for (spec, r, w) in &mut self.selection_cards {
+        for (spec, r, w) in self.selection_cards.iter_mut().filter(|_| cards) {
             w.draw_walk_all(
                 cx,
                 scope,
@@ -2483,12 +2523,14 @@ impl Widget for SpatialBoard {
             self.relayout_frame = cx.new_next_frame();
         }
         self.draw_vector.begin();
-        self.draw_card_states();
+        if vectors {
+            self.draw_card_states();
+        }
         // Web .connection-line: #6e8d86, width 2, corners rounded with
         // quadratic curves (routePath CORNER_RADIUS 8), marker-end arrowhead
         // M0,0 L8,4 L0,8 at refX 7 / refY 4 in stroke-width units (×2).
         self.draw_vector.set_color_hex(0x6e8d86, 1.);
-        for route in &self.routes {
+        for route in self.routes.iter().filter(|_| vectors) {
             let mut points: Vec<(f64, f64)> = Vec::new();
             for &p in &route.points {
                 if points.last().is_none_or(|q| (q.0 - p.0).hypot(q.1 - p.1) > 1e-6) {
@@ -2527,7 +2569,7 @@ impl Widget for SpatialBoard {
                 self.draw_vector.stroke(2.);
             }
         }
-        if let Some(t) = self.pointer_target.as_ref() {
+        if let Some(t) = self.pointer_target.as_ref().filter(|_| vectors) {
             if let Some(id) = t["node_id"]
                 .as_str()
                 .or(t["group_id"].as_str())
@@ -2537,7 +2579,7 @@ impl Widget for SpatialBoard {
                     // Web .teacher-pointer: a 26px box at (right - 8, top - 18)
                     // with a 19px "●" in #ef5d69, pulsing to 1.25× every .8s
                     // (alternate), with a soft drop shadow.
-                    let t = self.pointer_clock.elapsed().as_secs_f64() / 0.8;
+                    let t = if perf_probe::bisect("nopulse") { 0. } else { self.pointer_clock.elapsed().as_secs_f64() / 0.8 };
                     let phase = t % 2.;
                     let k = if phase < 1. { phase } else { 2. - phase };
                     let eased = k * k * (3. - 2. * k);
@@ -2554,7 +2596,7 @@ impl Widget for SpatialBoard {
             }
         }
         // Web SelectionSourceLink: dashed path from the source ink to its card.
-        for (spec, r, _) in &self.selection_cards {
+        for (spec, r, _) in self.selection_cards.iter().filter(|_| vectors) {
             let (sx, sy, sw, sh) = spec.source;
             // A card dragged over its own source has no visible link to draw.
             if r.x < sx + sw && sx < r.x + r.width && r.y < sy + sh && sy < r.y + r.height {
@@ -2586,7 +2628,7 @@ impl Widget for SpatialBoard {
             crate::geometry_view::dashed(&mut self.draw_vector, &pts, &[8. * s, 6. * s], (3. * s) as f32, makepad_widgets::makepad_draw::vector::LineCap::Round);
         }
         let (mx, my) = self.ink.moving_offset();
-        for stroke in self.ink.strokes.iter().filter(|_| !self.ink_hidden) {
+        for stroke in self.ink.strokes.iter().filter(|_| !self.ink_hidden && vectors) {
             let (color, width) = self
                 .stroke_styles
                 .get(&stroke.id)
@@ -2614,7 +2656,7 @@ impl Widget for SpatialBoard {
         if let Some((a, b)) = self.marquee {
             boxes.push((a.x.min(b.x), a.y.min(b.y), (a.x - b.x).abs(), (a.y - b.y).abs(), 0.08));
         }
-        for (x, y, w, h, fill) in boxes {
+        for (x, y, w, h, fill) in boxes.into_iter().filter(|_| vectors) {
             self.draw_vector.set_color_hex(0x168398, fill);
             self.draw_vector.rect(x as f32, y as f32, w as f32, h as f32);
             self.draw_vector.fill();
@@ -2640,7 +2682,7 @@ impl Widget for SpatialBoard {
             self.ink_ack_pass = 0;
             self.ink_ack_frame = cx.new_next_frame();
         }
-        for (r, w) in &self.badges {
+        for (r, w) in self.badges.iter().filter(|_| cards) {
             w.draw_walk_all(
                 cx,
                 scope,
@@ -2662,6 +2704,7 @@ impl Widget for SpatialBoard {
         matrix.v[13] = (viewport.pos.y + self.camera.y) as f32;
         list.set_view_transform(cx, &matrix);
         self.list = Some(list);
+        perf_probe::time("board_walk", walk_start.elapsed());
         DrawStep::done()
     }
     fn text(&self) -> String {

@@ -24,6 +24,7 @@ pub mod selection_plot;
 pub mod loading_fx;
 pub mod geometry_view;
 pub mod group_view;
+pub mod perf_probe;
 pub mod spatial_board;
 #[cfg(feature = "standalone")]
 app_main!(App);

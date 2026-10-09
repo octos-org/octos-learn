@@ -151,6 +151,10 @@ script_mod! {
                             // screen-anchored. Drawn per pixel on the GPU: the old CPU
                             // path tessellated ~2,000 circles on every board redraw.
                             pixel: fn() {
+                                // Alpha 0: plain paper (OCTOS_BISECT=nogrid).
+                                if self.color.w < 0.5 {
+                                    return vec4(self.color.xyz, 1.0)
+                                }
                                 let p = self.pos * self.rect_size
                                 let cell = (fract(p / 24.0) - vec2(0.5, 0.5)) * 24.0
                                 let dot = clamp(1.5 - length(cell), 0.0, 1.0)
@@ -1224,6 +1228,10 @@ pub struct App {
     /// or a writing tool); play / next Beat / restart claim it back.
     #[rust]
     lesson_released: bool,
+    /// What the last refresh rendered from; a playing tick with the same key
+    /// has nothing new to show and skips the refresh (and its redraw).
+    #[rust]
+    tick_key: Option<TickKey>,
     #[rust]
     history_open: bool,
     /// Octos server client (solo login, ui-protocol socket, files).
@@ -1533,6 +1541,30 @@ fn load_topic_origins(record: &serde_json::Value, questions: &[(String, String, 
         origins.entry(first.0.clone()).or_insert(o);
     }
     origins
+}
+
+/// Everything `refresh` reads that can change while the lesson plays.
+#[derive(Clone, Debug, PartialEq)]
+struct TickKey {
+    cursor: usize,
+    board_cursor: usize,
+    playing: bool,
+    complete: bool,
+    practice_transition: bool,
+    released: bool,
+    completion_prompt: bool,
+    muted: bool,
+    title: String,
+    narration: String,
+    variables: oll_runtime::expression::Variables,
+    controls: Vec<controls_view::ControlModel>,
+    tasks: Vec<oll_runtime::tasks::Snapshot>,
+    strokes: usize,
+    board_revision: u64,
+    selected: Option<usize>,
+    outline_open: bool,
+    enlarged: Option<String>,
+    error: String,
 }
 
 #[derive(Default)]
@@ -4825,7 +4857,43 @@ impl App {
             occlusions,
         }
     }
+    fn tick_key(&self, cx: &mut Cx) -> Option<TickKey> {
+        let session = self.player.as_ref()?;
+        let p = &session.board;
+        let board = self.ui.widget(cx, ids!(spatial));
+        let (strokes, board_revision) = board
+            .borrow::<spatial_board::SpatialBoard>()
+            .map(|b| (b.ink_count(), b.revision()))
+            .unwrap_or_default();
+        Some(TickKey {
+            cursor: session.cursor,
+            board_cursor: p.cursor,
+            playing: session.playing,
+            complete: session.complete(),
+            practice_transition: session.practice_transition(),
+            released: self.lesson_released,
+            completion_prompt: self.completed_at.is_some_and(|t| t.elapsed().as_secs_f64() < 6.),
+            muted: self.narration_muted,
+            title: p.title.clone(),
+            narration: p.narration.clone(),
+            variables: p.variables.clone(),
+            controls: self.control_models(),
+            tasks: session.tasks().into_iter().filter(|t| t.available).collect(),
+            strokes,
+            board_revision,
+            selected: self.selection.as_ref().map(|s| s.selection.strokes.len()),
+            outline_open: self.outline_open,
+            enlarged: self.enlarged.clone(),
+            error: self.error.clone(),
+        })
+    }
     fn refresh(&mut self, cx: &mut Cx) {
+        let started = Instant::now();
+        self.refresh_inner(cx);
+        self.tick_key = self.tick_key(cx);
+        octos_oll_preview::perf_probe::time("refresh", started.elapsed());
+    }
+    fn refresh_inner(&mut self, cx: &mut Cx) {
         if self.enlarged.is_some() {
             // Variables may change while the dialog is open (sliders, animation).
             self.sync_enlarged(cx, false);
@@ -5474,8 +5542,16 @@ impl App {
         // The completion prompt hides after 6s (web LESSON_COMPLETION_BUBBLE_DURATION_MS).
         let prompt_expired = self.timer.is_event(event).is_some()
             && self.completed_at.is_some_and(|t| (6.0..6.6).contains(&t.elapsed().as_secs_f64()));
-        if (self.timer.is_event(event).is_some() && was_playing) || control_event || prompt_expired {
+        let playing_tick = self.timer.is_event(event).is_some() && was_playing;
+        if control_event || prompt_expired || (playing_tick && perf::bisect("tickredraw")) {
             self.refresh(cx);
+        } else if playing_tick {
+            if self.tick_key.is_some() && self.tick_key == self.tick_key(cx) {
+                octos_oll_preview::perf_probe::count("tick_unchanged");
+            } else {
+                octos_oll_preview::perf_probe::count("tick_refresh");
+                self.refresh(cx);
+            }
         }
         // Web LearningHistory: a click on the overlay or Escape closes it.
         if self.history_open {

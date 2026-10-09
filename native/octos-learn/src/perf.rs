@@ -50,6 +50,7 @@ impl Perf {
                 line.push_str(&format!(" | {k} {n}x {:.1}ms max {:.1}ms", total.as_secs_f64() * 1e3, max.as_secs_f64() * 1e3));
             }
             line.push_str(&self.frame_split(cx));
+            line.push_str(&octos_oll_preview::perf_probe::take_line());
             if std::env::var_os("OCTOS_CENSUS").is_some() {
                 if let Some(c) = census(cx) {
                     line.push('\n');
@@ -96,20 +97,13 @@ impl Perf {
 /// re-renders its content every frame, the pre-cache cost). Redraw probes, launcher only,
 /// every timer tick without input: `tinyredraw` (one label: GPU and present
 /// cost of the unchanged scene) and `fullredraw` (whole UI re-encoded).
-pub fn bisect(token: &str) -> bool {
-    static TOKENS: std::sync::OnceLock<Vec<String>> = std::sync::OnceLock::new();
-    TOKENS
-        .get_or_init(|| {
-            std::env::var("OCTOS_BISECT")
-                .unwrap_or_default()
-                .split(',')
-                .map(|t| t.trim().to_owned())
-                .filter(|t| !t.is_empty())
-                .collect()
-        })
-        .iter()
-        .any(|t| t == token)
-}
+/// Learning board (`octos_oll_preview::perf_probe`): `nogrid` (plain paper,
+/// no dot pattern), `noshadow` (cards without drop shadows), `nocards` (no
+/// card widgets: paper, links and ink only), `novector` (no links, pointer
+/// or ink), `nocamanim` (camera jumps instead of the 680ms transition),
+/// `nopulse` (teacher pointer drawn still, no per-tick redraw), and
+/// `tickredraw` (the old per-tick full refresh while playing, for A/B).
+pub use octos_oll_preview::perf_probe::bisect;
 
 /// `OCTOS_CENSUS=1`: per shader, the main window pass's draw calls,
 /// instances and on-screen covered area (instance rects clipped to their
