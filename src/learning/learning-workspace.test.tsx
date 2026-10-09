@@ -29,6 +29,8 @@ import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
 import { SelectionRequestState } from "./selection-request-state";
 import { saveWhiteboardQuestions } from "./whiteboard-questions";
 import * as admissionFastGate from "./admission-fast-gate";
+import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
+import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
 
 const conversationMock = vi.hoisted(() => ({
   state: "idle" as "idle" | "starting",
@@ -70,6 +72,24 @@ const inkRuntimeMock = vi.hoisted(() => ({
   mountInkRuntime: vi.fn(),
 }));
 
+const ollRuntimeOpens = vi.hoisted(() => [] as Array<{
+  source: string | null;
+  deliveredStepIds: string[];
+}>);
+vi.mock("./oll/use-oll-lesson-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./oll/use-oll-lesson-runtime")>();
+  return {
+    ...actual,
+    useOllLessonRuntime: (options: Parameters<typeof actual.useOllLessonRuntime>[0]) => {
+      ollRuntimeOpens.push({
+        source: options.source,
+        deliveredStepIds: (options.deliveredProgram ?? []).flatMap((event) =>
+          event.step ? [event.step.id] : []),
+      });
+      return actual.useOllLessonRuntime(options);
+    },
+  };
+});
 vi.mock("@/api/chat", () => ({ uploadFiles: vi.fn() }));
 vi.mock("@/api/sessions", () => ({
   getSessionFiles: sessionFilesMock.getSessionFiles,
@@ -1905,6 +1925,76 @@ describe("LearningWorkspace", () => {
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-course-pack-job",
     )).toBeNull();
+  });
+
+  it("opens a reloaded CoursePack only after its saved generated lessons load", async () => {
+    // The Runtime rejects a checkpoint that runs past the program it opens
+    // with. Opening the pack before its generated lesson loads would drop
+    // progress in that lesson and replay the pack from its first Step.
+    ollRuntimeOpens.length = 0;
+    const packEvents = parseCanonicalJsonl(mathTwoPointsSource);
+    let resolveFiles!: (files: unknown[]) => void;
+    sessionFilesMock.getSessionFiles.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveFiles = resolve as (files: unknown[]) => void;
+    }));
+    let resolveLesson!: () => void;
+    const lessonReady = new Promise<void>((resolve) => { resolveLesson = resolve; });
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      await lessonReady;
+      return {
+        ok: true,
+        json: async () => ({
+          dsl: "octos.lesson", version: "0.1", profile: "authoring",
+          lesson: { mode: "explain", language: "zh-CN", title: "解释 y = sin x", goals: ["理解正弦"] },
+          steps: [{ key: "explain", purpose: "解释", beats: [{
+            key: "intro", say: "看这个公式。", actions: [{
+              do: "write", as: "formula", kind: "math", role: "concept",
+              content: { latex: "y=\\sin x" }, place: { relation: "new_region" },
+            }],
+          }] }],
+          close: { summary: "总结", focus: ["formula"] },
+        }),
+      };
+    }));
+
+    await renderLearning(
+      <LearningWorkspace
+        sessionId="learn-pack-reload"
+        voiceEnabled={false}
+        coursePack={{
+          id: "math-two-points",
+          pack: {
+            archiveSha256: "c".repeat(64),
+            events: packEvents,
+            manifest: {
+              packId: "math-two-points",
+              version: "1.0.0",
+              narration: { voiceId: "fixture", segments: [] },
+            },
+          },
+        }}
+        onBack={vi.fn()}
+      />,
+    );
+    expect(ollRuntimeOpens.some((call) => call.source !== null)).toBe(false);
+
+    await act(async () => {
+      resolveFiles([{
+        filename: "sin-turn.octos-lesson.json",
+        path: "study/oll/sin-turn.octos-lesson.json",
+        size_bytes: 100,
+        modified_at: "2026-10-09T10:00:00Z",
+      }]);
+    });
+    expect(ollRuntimeOpens.some((call) => call.source !== null)).toBe(false);
+
+    await act(async () => { resolveLesson(); });
+    await waitFor(() =>
+      expect(ollRuntimeOpens.some((call) => call.source !== null)).toBe(true));
+    const packStepIds = packEvents.flatMap((event) => event.step ? [event.step.id] : []);
+    const firstOpen = ollRuntimeOpens.find((call) => call.source !== null)!;
+    expect(firstOpen.deliveredStepIds.slice(0, packStepIds.length)).toEqual(packStepIds);
+    expect(firstOpen.deliveredStepIds.length).toBeGreaterThan(packStepIds.length);
   });
 
   it("does not speak a generic reply for a voice turn with no learner transcript", async () => {
