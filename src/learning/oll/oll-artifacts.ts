@@ -332,6 +332,7 @@ export async function loadOllLessonArtifact(
 export function composeOllClassroomEvents(
   lessons: CanonicalEvent[][],
   sessionId: string,
+  options: { keepFirstLessonIdentity?: boolean } = {},
 ): CanonicalEvent[] {
   // Keep the first lesson's public variable names stable for existing saved
   // checkpoints. Later independent lessons are scoped before their metadata
@@ -346,17 +347,25 @@ export function composeOllClassroomEvents(
     (event) => event.event === "lesson.open",
   );
   if (!firstOpen) return [];
-  const lessonId = `learning-session-${sessionId}`;
-  const result: CanonicalEvent[] = [{
-    ...structuredClone(firstOpen),
-    lesson_id: lessonId,
-    sequence: 0,
-    board: {
-      board_id: `learning-board-${sessionId}`,
-      base_revision: 0,
-      region_intent: "new_topic",
-    },
-  }];
+  // A CoursePack's checkpoint is saved against its own lesson.open. Keeping
+  // that identity lets a later generated lesson extend the saved prefix;
+  // renaming it would make the Runtime discard the checkpoint and replay the
+  // pack from its first Step.
+  const lessonId = options.keepFirstLessonIdentity
+    ? firstOpen.lesson_id
+    : `learning-session-${sessionId}`;
+  const result: CanonicalEvent[] = [options.keepFirstLessonIdentity
+    ? structuredClone(firstOpen)
+    : {
+        ...structuredClone(firstOpen),
+        lesson_id: lessonId,
+        sequence: 0,
+        board: {
+          board_id: `learning-board-${sessionId}`,
+          base_revision: 0,
+          region_intent: "new_topic",
+        },
+      }];
   const variables = classroomLessons.flatMap((lesson) =>
     lesson.find((event) => event.event === "lesson.open")?.lesson?.variables ?? []);
   const tasks = classroomLessons.flatMap((lesson) =>

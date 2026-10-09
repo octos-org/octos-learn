@@ -880,10 +880,14 @@ export function LearningWorkspace({
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
   const activeOllEvents = useMemo(() => {
     if (!packagedOllEvents) return deliveredOllEvents;
-    if (deliveredOllLessons.length === 0) return packagedOllEvents;
+    // Compose even before the first generated lesson arrives. The pack keeps
+    // its lesson.open identity and drops lesson.close, so the program the
+    // Runtime checkpoints before generation is a prefix of the one after it.
+    // Otherwise the Runtime is rebuilt and replays the pack from the start.
     return composeOllClassroomEvents(
       [packagedOllEvents, ...deliveredOllLessons],
       sessionId,
+      { keepFirstLessonIdentity: true },
     );
   }, [deliveredOllEvents, deliveredOllLessons, packagedOllEvents, sessionId]);
   const appendedOllEventCountRef = useRef(1);
