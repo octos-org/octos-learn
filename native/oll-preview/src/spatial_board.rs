@@ -129,6 +129,12 @@ pub struct SpatialBoard {
     draw_bg: DrawColor,
     #[live]
     draw_vector: DrawVector,
+    /// Animated decorations (arrival highlights, teacher pointer) in their
+    /// own list above the board, so their frames keep the card list.
+    #[live]
+    draw_fx: DrawVector,
+    #[rust]
+    fx_list: Option<DrawList2d>,
     #[rust]
     routes: Vec<oll_runtime::connections::Route>,
     #[rust]
@@ -339,6 +345,20 @@ pub struct SpatialBoard {
     /// of the current operation.
     #[rust]
     host_action: Option<Value>,
+    /// A board redraw other than a camera move was requested since the last
+    /// walk (see `redraw_content`).
+    #[rust]
+    content_dirty: bool,
+    /// The camera of the last full walk (camera-only reuse on a board that
+    /// does not fill the window needs it unchanged).
+    #[rust]
+    walk_camera: Option<Camera>,
+    /// World rect the last full walk drew (its clip), and the camera scale
+    /// then: a camera-only frame inside it reuses the recorded draw list.
+    #[rust]
+    walk_clip: Option<Rect>,
+    #[rust]
+    walk_scale: f64,
     /// The latest applied operation is a teacher.point action.
     #[rust]
     latest_is_point: bool,
@@ -431,7 +451,67 @@ impl SpatialBoard {
     pub fn set_pen(&mut self, cx: &mut Cx, color: Vec4, width: f64) {
         self.pen_color = color;
         self.pen_width = width;
+        self.redraw_content(cx);
+    }
+    /// Redraw for a change of board content (anything but the camera).
+    fn redraw_content(&mut self, cx: &mut Cx) {
+        self.content_dirty = true;
         self.redraw(cx);
+    }
+    /// Redraw for a camera move only. A board frame without `content_dirty`
+    /// keeps the recorded card list when the new view lies inside the rect
+    /// it drew (and stroke widths still match), updating its view transform.
+    fn redraw_camera(&mut self, cx: &mut Cx) {
+        self.redraw(cx);
+    }
+    /// Redraw for the animated decorations only (`draw_fx`, redrawn every
+    /// board frame).
+    fn redraw_fx(&mut self, cx: &mut Cx) {
+        self.redraw(cx);
+    }
+    /// World rect the viewport shows through camera `c`.
+    fn view_rect(&self, c: Camera, size: DVec2) -> Rect {
+        let (x, y) = c.view_to_world(0., 0.);
+        rect(x, y, size.x / c.scale, size.y / c.scale)
+    }
+    /// Clip of a full walk on a full-window board: the current view plus the
+    /// rest of a running camera transition, so its frames reuse the list.
+    fn walk_clip_rect(&self, size: DVec2) -> Rect {
+        let mut r = self.view_rect(self.camera, size);
+        if !self.manual && self.elapsed < 0.68 {
+            let t0 = self.elapsed / 0.68;
+            for i in 1..=24 {
+                let t = t0 + (1. - t0) * i as f64 / 24.;
+                r = rect_union(r, self.view_rect(self.from.interpolate(self.destination, t), size));
+            }
+            // Samples bound the path closely; a small margin covers between them.
+            let m = 0.02 * r.size.x.max(r.size.y);
+            r = rect(r.pos.x - m, r.pos.y - m, r.size.x + 2. * m, r.size.y + 2. * m);
+        }
+        if self.drag.is_some() || self.pinch.is_some() {
+            // A finger pan or pinch: a quarter view each side, so most of its
+            // frames move the recorded list instead of walking the board.
+            let (mx, my) = (r.size.x / 4., r.size.y / 4.);
+            r = rect(r.pos.x - mx, r.pos.y - my, r.size.x + 2. * mx, r.size.y + 2. * my);
+        }
+        r
+    }
+    /// Content whose drawn width depends on the camera scale (screen-constant
+    /// strokes): a scale change needs a full walk while any is shown.
+    fn scale_dependent(&self) -> bool {
+        (!self.ink_hidden && !self.ink.strokes.is_empty())
+            || !self.selection_cards.is_empty()
+            || self.ink.selection_bounds().is_some()
+            || self.marquee.is_some()
+            || self.ink.active_points().is_some()
+    }
+    fn camera_matrix(&self, viewport: Rect) -> Mat4f {
+        let mut matrix = Mat4f::identity();
+        matrix.v[0] = self.camera.scale as f32;
+        matrix.v[5] = self.camera.scale as f32;
+        matrix.v[12] = (viewport.pos.x + self.camera.x) as f32;
+        matrix.v[13] = (viewport.pos.y + self.camera.y) as f32;
+        matrix
     }
     pub fn revision(&self) -> u64 {
         self.revision
@@ -463,7 +543,7 @@ impl SpatialBoard {
         )? {
             self.ink_to_ack.push(id);
         }
-        self.redraw(cx);
+        self.redraw_content(cx);
         Ok(())
     }
     /// Host floating UI (web learningBoardInsets). A change re-composes the
@@ -532,7 +612,7 @@ impl SpatialBoard {
         self.manual = true;
         self.drag = None;
         self.configure_ink(cx);
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     fn configure_ink(&self, cx: &mut Cx) {
         #[cfg(target_os = "android")]
@@ -550,17 +630,17 @@ impl SpatialBoard {
     pub fn undo_ink(&mut self, cx: &mut Cx) {
         self.ink.undo();
         self.ink_revision += 1;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     pub fn redo_ink(&mut self, cx: &mut Cx) {
         self.ink.redo();
         self.ink_revision += 1;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     pub fn set_ink_hidden(&mut self, cx: &mut Cx, hidden: bool) {
         if self.ink_hidden != hidden {
             self.ink_hidden = hidden;
-            self.redraw(cx);
+            self.redraw_content(cx);
         }
     }
     /// Reflections with their answer open, and a counter of learner toggles
@@ -618,7 +698,7 @@ impl SpatialBoard {
     pub fn clear_ink_selection(&mut self, cx: &mut Cx) {
         self.ink.clear_selection();
         self.ink_revision += 1;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     /// 全选: select every stroke (selection tool).
     pub fn select_all_ink(&mut self, cx: &mut Cx) {
@@ -627,7 +707,7 @@ impl SpatialBoard {
             self.set_drawing(cx, true);
         }
         self.ink.select_all();
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     /// Strokes and their pen styles (saved with learning progress).
     pub fn ink_snapshot(&self) -> Value {
@@ -652,7 +732,7 @@ impl SpatialBoard {
             })
             .collect();
         self.stroke_id = self.ink.strokes.iter().map(|s| s.id).max().unwrap_or(0);
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     fn desktop_ink(&mut self, cx: &mut Cx, action: &str, position: Vec2d, time: f64) {
         let batch = json!({"action":action,"pointerId":self.stroke_id,"points":[{"x":position.x,"y":position.y,"time":time*1000.,"pressure":0.5}]});
@@ -686,7 +766,7 @@ impl SpatialBoard {
         if self.board.is_none() {
             self.host_frame_pending = true;
         }
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     /// The live board session and its saved question origins. A new session
     /// replaces them; the same session keeps the ones computed here.
@@ -806,7 +886,7 @@ impl SpatialBoard {
                 .unwrap_or_else(|| self.open_position(spec.source, width, height));
             self.selection_cards.push((spec, WorldRect { x: pos.0, y: pos.1, width, height }, w));
         }
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     /// Web findOpenWhiteboardPosition (simplified): right of the source,
     /// moving down past cards and other selection cards.
@@ -885,7 +965,7 @@ impl SpatialBoard {
         self.pending_camera = None;
         self.scene_views.clear();
         self.orbit = None;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
 
     fn resolve(&self, id: &str, seen: &mut BTreeSet<String>) -> Option<WorldRect> {
@@ -1477,7 +1557,7 @@ impl SpatialBoard {
         if settled != (self.signature.clone(), self.destination, self.manual, self.pointer_target.clone(), self.measure_relayout) {
             self.revision += 1;
         }
-        self.redraw(cx);
+        self.redraw_content(cx);
         Ok(())
     }
     pub fn advance(&mut self, cx: &mut Cx, dt: f64) {
@@ -1489,15 +1569,18 @@ impl SpatialBoard {
         // The loading card animates (web learning-loading-* keyframes).
         let pulse = self.pointer_target.is_some() && !perf_probe::bisect("nopulse");
         let loading = self.host_specs.iter().any(|c| matches!(c, HostCard::Loading { .. }));
-        if before > 0 || pulse || loading {
-            perf_probe::count(if loading { "redraw_loading" } else if pulse { "redraw_pointer" } else { "redraw_highlight" });
-            self.redraw(cx);
+        if loading {
+            perf_probe::count("redraw_loading");
+            self.redraw_content(cx);
+        } else if before > 0 || pulse {
+            perf_probe::count(if pulse { "redraw_pointer" } else { "redraw_highlight" });
+            self.redraw_fx(cx);
         }
         if !self.manual && self.elapsed < 0.68 {
             self.elapsed = (self.elapsed + dt).min(0.68);
             self.camera = self.from.interpolate(self.destination, self.elapsed / 0.68);
             perf_probe::count("redraw_camera");
-            self.redraw(cx);
+            self.redraw_camera(cx);
         }
     }
     /// Whole-course frame (web course framing: small margin, no floor).
@@ -1525,25 +1608,36 @@ impl SpatialBoard {
             self.animate_to(to);
         }
         self.manual = true;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     pub fn follow(&mut self, cx: &mut Cx) {
         self.manual = false;
         self.reframe();
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     pub fn zoom(&mut self, cx: &mut Cx, factor: f64) {
         self.camera =
             self.camera
                 .zoom_at(factor, self.viewport.size.x / 2., self.viewport.size.y / 2.);
         self.manual = true;
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
 }
 /// The question turn of an answer topic's region (`topic-<turn>.octos-lesson.json`,
 /// OLL classroom::live_host).
 fn answer_turn(region: &str) -> Option<&str> {
     region.strip_prefix("topic-")?.strip_suffix(".octos-lesson.json")
+}
+fn rect_union(a: Rect, b: Rect) -> Rect {
+    let (x0, y0) = (a.pos.x.min(b.pos.x), a.pos.y.min(b.pos.y));
+    let (x1, y1) = ((a.pos.x + a.size.x).max(b.pos.x + b.size.x), (a.pos.y + a.size.y).max(b.pos.y + b.size.y));
+    rect(x0, y0, x1 - x0, y1 - y0)
+}
+fn rect_contains(outer: Rect, inner: Rect) -> bool {
+    inner.pos.x >= outer.pos.x
+        && inner.pos.y >= outer.pos.y
+        && inner.pos.x + inner.size.x <= outer.pos.x + outer.size.x
+        && inner.pos.y + inner.size.y <= outer.pos.y + outer.size.y
 }
 /// Two-finger pinch (web board: zoom around the fingers, pan with their
 /// midpoint): the world point under the start midpoint stays under the
@@ -1590,7 +1684,7 @@ impl SpatialBoard {
             }
             Some((start, start_mid, start_dist)) => {
                 self.jump_to(pinch_camera(start, start_mid, start_dist, mid, dist));
-                self.redraw(cx);
+                self.redraw_camera(cx);
             }
         }
         true
@@ -1618,7 +1712,7 @@ impl SpatialBoard {
         if let Some(mut s) = scene.borrow_mut::<Scene3dView>() {
             s.set_view(cx, Some(view));
         }
-        self.redraw(cx);
+        self.redraw_content(cx);
     }
     /// Web scene3d pointer handling; true when the event belongs to a scene.
     /// A plot/geometry node and its explorer state (for the 大图 dialog).
@@ -1958,7 +2052,7 @@ impl SpatialBoard {
     fn replay_pending_camera(&mut self, cx: &mut Cx) {
         if let Some(to) = self.pending_camera.take() {
             self.animate_to(to);
-            self.redraw(cx);
+            self.redraw_content(cx);
         }
     }
     fn world_point(&self, abs: DVec2) -> DVec2 {
@@ -2098,6 +2192,85 @@ impl SpatialBoard {
     /// Web card state classes drawn over the cards: .focused (purple border
     /// + 4px ring), .emphasis-focus / -warning borders, .active (teal, while
     /// written) and the .focus-arrive pulse.
+    /// The animated decorations above the card list, redrawn every board
+    /// frame (a few rings and the pointer dot).
+    fn draw_fx_list(&mut self, cx: &mut Cx2d, viewport: Rect) {
+        let mut list = self.fx_list.take().unwrap_or_else(|| DrawList2d::new(cx));
+        list.begin_always(cx);
+        cx.begin_unclipped_root_turtle(dvec2(131072., 131072.), Layout::flow_overlay());
+        cx.push_clip_rect(self.view_rect(self.camera, viewport.size));
+        self.draw_fx.begin();
+        self.draw_highlights();
+        if let Some(t) = self.pointer_target.as_ref().filter(|_| !perf_probe::bisect("novector")) {
+            if let Some(id) = t["node_id"]
+                .as_str()
+                .or(t["group_id"].as_str())
+                .or(t["connection_id"].as_str())
+            {
+                if let Some(r) = self.resolve(id, &mut BTreeSet::new()) {
+                    // Web .teacher-pointer: a 26px box at (right - 8, top - 18)
+                    // with a 19px "●" in #ef5d69, pulsing to 1.25× every .8s
+                    // (alternate), with a soft drop shadow.
+                    let t = if perf_probe::bisect("nopulse") { 0. } else { self.pointer_clock.elapsed().as_secs_f64() / 0.8 };
+                    let phase = t % 2.;
+                    let k = if phase < 1. { phase } else { 2. - phase };
+                    let eased = k * k * (3. - 2. * k);
+                    let scale = 1. + 0.25 * eased;
+                    let (cx0, cy0) = ((r.x + r.width - 8. + 13.) as f32, (r.y - 18. + 13.) as f32);
+                    let radius = (5.7 * scale) as f32;
+                    self.draw_fx.set_color(0., 0., 0., 0.12);
+                    self.draw_fx.circle(cx0, cy0 + 3., radius + 1.5);
+                    self.draw_fx.fill();
+                    self.draw_fx.set_color_hex(0xef5d69, 1.);
+                    self.draw_fx.circle(cx0, cy0, radius);
+                    self.draw_fx.fill();
+                }
+            }
+        }
+        self.draw_fx.end(cx);
+        cx.pop_clip_rect();
+        cx.end_pass_sized_turtle_no_clip();
+        list.end(cx);
+        let matrix = self.camera_matrix(viewport);
+        list.set_view_transform(cx, &matrix);
+        self.fx_list = Some(list);
+    }
+    /// Web .active / .focus-arrive: brief rings on the cards an operation
+    /// writes or brings into focus.
+    fn draw_highlights(&mut self) {
+        if perf_probe::bisect("novector") {
+            return;
+        }
+        let Some(p) = self.board.as_ref() else { return };
+        let v = &mut self.draw_fx;
+        let ring = |v: &mut DrawVector, r: &WorldRect, hex: u32, border_alpha: f32, ring_hex: u32, ring_alpha: f32, ring_w: f64| {
+            if ring_w > 0. {
+                v.set_color_hex(ring_hex, ring_alpha);
+                let o = ring_w / 2.;
+                v.rounded_rect((r.x - o) as f32, (r.y - o) as f32, (r.width + 2. * o) as f32, (r.height + 2. * o) as f32, (16. + o) as f32);
+                v.stroke(ring_w as f32);
+            }
+            v.set_color_hex(hex, border_alpha);
+            v.rounded_rect(r.x as f32 + 0.5, r.y as f32 + 0.5, r.width as f32 - 1., r.height as f32 - 1., 15.5);
+            v.stroke(1.);
+        };
+        for node in &p.nodes {
+            let Some(id) = node["id"].as_str() else { continue };
+            let Some(r) = self.geometry.nodes.get(id) else { continue };
+            if let Some((kind, at)) = self.highlights.get(id) {
+                let t = at.elapsed().as_secs_f64();
+                match kind {
+                    Highlight::Active => ring(v, r, 0x2a9386, 1., 0x2a9386, 0.13, 3.),
+                    Highlight::FocusArrive => {
+                        let k = (t / FOCUS_ARRIVE_SECONDS).clamp(0., 1.);
+                        // cubic-bezier(.22,1,.36,1) ≈ ease-out
+                        let e = 1. - (1. - k).powi(3);
+                        ring(v, r, 0x7a5aa3, 1., 0x7a5aa3, (0.28 + (0.13 - 0.28) * e) as f32, 14. + (4. - 14.) * e);
+                    }
+                }
+            }
+        }
+    }
     fn draw_card_states(&mut self) {
         let Some(p) = self.board.as_ref() else { return };
         let v = &mut self.draw_vector;
@@ -2121,18 +2294,6 @@ impl SpatialBoard {
                 Some("warning") => ring(v, r, 0xd95361, 1., 0, 0., 0.),
                 _ if p.focus.iter().any(|f| f == id) => ring(v, r, 0x7a5aa3, 1., 0x7a5aa3, 0.13, 4.),
                 _ => {}
-            }
-            if let Some((kind, at)) = self.highlights.get(id) {
-                let t = at.elapsed().as_secs_f64();
-                match kind {
-                    Highlight::Active => ring(v, r, 0x2a9386, 1., 0x2a9386, 0.13, 3.),
-                    Highlight::FocusArrive => {
-                        let k = (t / FOCUS_ARRIVE_SECONDS).clamp(0., 1.);
-                        // cubic-bezier(.22,1,.36,1) ≈ ease-out
-                        let e = 1. - (1. - k).powi(3);
-                        ring(v, r, 0x7a5aa3, 1., 0x7a5aa3, (0.28 + (0.13 - 0.28) * e) as f32, 14. + (4. - 14.) * e);
-                    }
-                }
             }
         }
     }
@@ -2171,7 +2332,7 @@ impl Widget for SpatialBoard {
                 if std::mem::take(&mut self.reframe_pending) && !self.manual {
                     self.reframe();
                 }
-                self.redraw(cx);
+                self.redraw_content(cx);
             }
         }
         if self.ink_ack_frame.is_event(event).is_some() {
@@ -2231,7 +2392,7 @@ impl Widget for SpatialBoard {
                 }
                 if let Some(request) = request {
                     self.selection_requests.push(request);
-                    self.redraw(cx);
+                    self.redraw_content(cx);
                     return;
                 }
                 if drag.is_some() {
@@ -2246,7 +2407,7 @@ impl Widget for SpatialBoard {
                     r.x = origin.0 + w.x - start.x;
                     r.y = origin.1 + w.y - start.y;
                 }
-                self.redraw(cx);
+                self.redraw_content(cx);
                 return;
             }
             Hit::FingerUp(_) if self.card_drag.is_some() => {
@@ -2263,7 +2424,7 @@ impl Widget for SpatialBoard {
                 if matches!(k.key_code, KeyCode::Delete | KeyCode::Backspace) && self.ink.delete_selection() {
                     self.ink_revision += 1;
                     self.ink_erased = true;
-                    self.redraw(cx);
+                    self.redraw_content(cx);
                 }
             }
         }
@@ -2291,7 +2452,7 @@ impl Widget for SpatialBoard {
                         if changed {
                             self.ink_revision += 1;
                             self.ink_erased = true;
-                            self.redraw(cx);
+                            self.redraw_content(cx);
                         }
                     }
                     Hit::FingerUp(_) => {
@@ -2318,7 +2479,7 @@ impl Widget for SpatialBoard {
                             Some((false, start)) => self.marquee = Some((start, w)),
                             None => {}
                         }
-                        self.redraw(cx);
+                        self.redraw_content(cx);
                     }
                     Hit::FingerUp(_) => {
                         match self.select_gesture.take() {
@@ -2331,7 +2492,7 @@ impl Widget for SpatialBoard {
                             None => {}
                         }
                         self.ink_revision += 1;
-                        self.redraw(cx);
+                        self.redraw_content(cx);
                     }
                     _ => (),
                 },
@@ -2380,7 +2541,7 @@ impl Widget for SpatialBoard {
                         y: start.y + delta.y,
                         ..start
                     });
-                    self.redraw(cx);
+                    self.redraw_camera(cx);
                 }
             }
             Hit::FingerUp(_) => {
@@ -2395,7 +2556,7 @@ impl Widget for SpatialBoard {
                     .zoom_at(if e.scroll.y < 0. { 1.1 } else { 0.9 }, at.x, at.y);
                 self.jump_to(to);
                 self.manual = true;
-                self.redraw(cx);
+                self.redraw_content(cx);
             }
             _ => (),
         }
@@ -2421,17 +2582,54 @@ impl Widget for SpatialBoard {
             self.configure_ink(cx);
         }
         let mut list = self.list.take().unwrap_or_else(|| DrawList2d::new(cx));
-        list.begin_always(cx);
+        // A full-window board may draw beyond its view (the window bounds
+        // it), so its walks clip to a wider rect that camera frames reuse.
+        let full_window = viewport.pos.x.abs() < 0.5
+            && viewport.pos.y.abs() < 0.5
+            && (viewport.size - cx.current_pass_size()).length() < 0.5;
+        let content_dirty = std::mem::take(&mut self.content_dirty);
+        // Card widgets that redrew themselves dirty the list.
+        let list_dirty = cx.will_redraw_check_axis(&mut list, viewport.size.x, Vec2Index::X);
+        let view = self.view_rect(self.camera, viewport.size);
+        // Diagnostic: treat a board under a caption bar as full-window
+        // (content then spills over the caption during camera moves).
+        let full_window = full_window || perf_probe::bisect("fullwindow");
+        let camera_same = self.walk_camera == Some(self.camera);
+        let reuse = !content_dirty
+            && !list_dirty
+            && !viewport_changed
+            && !perf_probe::bisect("nocamreuse")
+            && (camera_same
+                || (full_window
+                    && self.walk_clip.is_some_and(|c| rect_contains(c, view))
+                    && (self.camera.scale == self.walk_scale || !self.scale_dependent())));
+        if reuse && list.begin_maybe(cx, false).is_not_redrawing() {
+            let matrix = self.camera_matrix(viewport);
+            list.set_view_transform(cx, &matrix);
+            self.list = Some(list);
+            self.draw_fx_list(cx, viewport);
+            perf_probe::time("board_reuse", walk_start.elapsed());
+            return DrawStep::done();
+        }
+        if !reuse {
+            list.begin_always(cx);
+        }
         // Unclipped root: world content may sit at negative coordinates (host
         // cards left of the lesson); the camera view clip below bounds it.
         cx.begin_unclipped_root_turtle(dvec2(131072., 131072.), Layout::flow_overlay());
-        let (x, y) = self.camera.view_to_world(0., 0.);
-        cx.push_clip_rect(rect(
-            x,
-            y,
-            viewport.size.x / self.camera.scale,
-            viewport.size.y / self.camera.scale,
-        ));
+        let clip = if full_window { self.walk_clip_rect(viewport.size) } else { view };
+        self.walk_clip = Some(clip);
+        self.walk_scale = self.camera.scale;
+        self.walk_camera = Some(self.camera);
+        cx.push_clip_rect(clip);
+        // Cards outside the clip whose size is settled are not walked.
+        let cull = !perf_probe::bisect("nocull");
+        let outside = |r: &WorldRect| {
+            cull && (r.x > clip.pos.x + clip.size.x
+                || r.x + r.width < clip.pos.x
+                || r.y > clip.pos.y + clip.size.y
+                || r.y + r.height < clip.pos.y)
+        };
         let mut remeasured = false;
         let mut reflection_resized = false;
         for (id, r, w) in self
@@ -2446,6 +2644,21 @@ impl Widget for SpatialBoard {
         {
             let reflection = id.is_some_and(|id| id.starts_with("reflection:") || id.ends_with(":tasks"));
             let natural = reflection || id.is_some_and(|id| self.content_ids.contains(id));
+            if outside(r) {
+                let settled = match id {
+                    _ if !natural => true,
+                    Some(id) if reflection => self
+                        .reflection_heights
+                        .get(id)
+                        .or_else(|| self.task_heights.get(id))
+                        .is_some_and(|h| (h - r.height).abs() <= 1.),
+                    Some(id) => self.measured.get(id).is_some_and(|&(w, h)| w == r.width && (h - r.height).abs() < 1.),
+                    None => true,
+                };
+                if settled {
+                    continue;
+                }
+            }
             w.draw_walk_all(
                 cx,
                 scope,
@@ -2504,7 +2717,7 @@ impl Widget for SpatialBoard {
             self.host_frame_new_topic = false;
             self.host_frame_pending = host_resized;
             self.frame_host_cards();
-            self.redraw(cx);
+            self.redraw_content(cx);
         }
         self.angle_controls = self
             .entries
@@ -2567,32 +2780,6 @@ impl Widget for SpatialBoard {
                 self.draw_vector.fill();
             } else {
                 self.draw_vector.stroke(2.);
-            }
-        }
-        if let Some(t) = self.pointer_target.as_ref().filter(|_| vectors) {
-            if let Some(id) = t["node_id"]
-                .as_str()
-                .or(t["group_id"].as_str())
-                .or(t["connection_id"].as_str())
-            {
-                if let Some(r) = self.resolve(id, &mut BTreeSet::new()) {
-                    // Web .teacher-pointer: a 26px box at (right - 8, top - 18)
-                    // with a 19px "●" in #ef5d69, pulsing to 1.25× every .8s
-                    // (alternate), with a soft drop shadow.
-                    let t = if perf_probe::bisect("nopulse") { 0. } else { self.pointer_clock.elapsed().as_secs_f64() / 0.8 };
-                    let phase = t % 2.;
-                    let k = if phase < 1. { phase } else { 2. - phase };
-                    let eased = k * k * (3. - 2. * k);
-                    let scale = 1. + 0.25 * eased;
-                    let (cx0, cy0) = ((r.x + r.width - 8. + 13.) as f32, (r.y - 18. + 13.) as f32);
-                    let radius = (5.7 * scale) as f32;
-                    self.draw_vector.set_color(0., 0., 0., 0.12);
-                    self.draw_vector.circle(cx0, cy0 + 3., radius + 1.5);
-                    self.draw_vector.fill();
-                    self.draw_vector.set_color_hex(0xef5d69, 1.);
-                    self.draw_vector.circle(cx0, cy0, radius);
-                    self.draw_vector.fill();
-                }
             }
         }
         // Web SelectionSourceLink: dashed path from the source ink to its card.
@@ -2682,7 +2869,7 @@ impl Widget for SpatialBoard {
             self.ink_ack_pass = 0;
             self.ink_ack_frame = cx.new_next_frame();
         }
-        for (r, w) in self.badges.iter().filter(|_| cards) {
+        for (r, w) in self.badges.iter().filter(|(r, _)| cards && !outside(r)) {
             w.draw_walk_all(
                 cx,
                 scope,
@@ -2697,13 +2884,10 @@ impl Widget for SpatialBoard {
         cx.pop_clip_rect();
         cx.end_pass_sized_turtle_no_clip();
         list.end(cx);
-        let mut matrix = Mat4f::identity();
-        matrix.v[0] = self.camera.scale as f32;
-        matrix.v[5] = self.camera.scale as f32;
-        matrix.v[12] = (viewport.pos.x + self.camera.x) as f32;
-        matrix.v[13] = (viewport.pos.y + self.camera.y) as f32;
+        let matrix = self.camera_matrix(viewport);
         list.set_view_transform(cx, &matrix);
         self.list = Some(list);
+        self.draw_fx_list(cx, viewport);
         perf_probe::time("board_walk", walk_start.elapsed());
         DrawStep::done()
     }
@@ -2728,6 +2912,16 @@ impl Widget for SpatialBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn camera_reuse_rects() {
+        let a = rect(0., 0., 100., 50.);
+        let b = rect(-20., 30., 50., 50.);
+        let u = rect_union(a, b);
+        assert_eq!((u.pos.x, u.pos.y, u.size.x, u.size.y), (-20., 0., 120., 80.));
+        assert!(rect_contains(u, a) && rect_contains(u, b));
+        assert!(!rect_contains(a, b));
+        assert!(rect_contains(a, a));
+    }
     #[test]
     fn pinch_keeps_the_world_point_under_the_fingers() {
         let start = Camera { x: 100., y: 50., scale: 1. };

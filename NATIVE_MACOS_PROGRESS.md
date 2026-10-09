@@ -5,7 +5,7 @@
 
 最后更新：2026-10-08（播放时去掉无变化的刷新 + 白板测量开关）
 
-最新白板播放优化（用户 2026-10-08 决定：先测量并去掉无变化的刷新，**不做整块白板贴图缓存**——交互卡片多、以后还会加交互，风险高）：播放时 60Hz 定时器不再每次 `refresh()` + 整界面重绘，只在 `TickKey`（播放位置 / 变量 / 旁白 / 滑块 / 任务 / 笔迹 / 白板 revision 等）变化时刷新；动画由白板 `advance` 自己重绘。Mac 同课程播放帧数约少 84–85%，四门课 32 个时间点截图新旧一致（马鞍面首张数学卡测量后镜头低约 10 单位：新版按设计用测量后尺寸重新规划，旧版是时序竞态）。新增 `nogrid / noshadow / nocards / novector / nocamanim / nopulse / tickredraw` 开关和每秒计数，真机测量请求见 [白板播放成本拆分](docs/makepad-migration/ANDROID_BOARD_PLAYBACK_COST_SPLIT_PLAN_2026-10-08.md)，待 GPT 测。
+最新白板播放优化（用户 2026-10-08 决定：先测量并去掉无变化的刷新，**不做整块白板贴图缓存**——交互卡片多、以后还会加交互，风险高）：播放时 60Hz 定时器不再每次 `refresh()` + 整界面重绘，只在 `TickKey`（播放位置 / 变量 / 旁白 / 滑块 / 任务 / 笔迹 / 白板 revision 等）变化时刷新；动画由白板 `advance` 自己重绘。Mac 同课程播放帧数约少 84–85%，四门课 32 个时间点截图新旧一致（马鞍面首张数学卡测量后镜头低约 10 单位：新版按设计用测量后尺寸重新规划，旧版是时序竞态）。新增 `nogrid / noshadow / nocards / novector / nocamanim / nopulse / tickredraw` 开关和每秒计数。第二个提交：镜头过渡、拖动和缩放帧复用卡片列表，只更新镜头矩阵（安卓全窗口时启用）；高亮光圈和指示点改到独立动画层；画面外、尺寸已定的卡片不遍历。Mac 上截图、拖动和滑块与旧行为逐像素一致（开关 `nocamreuse / nocull / fullwindow`）。真机测量请求见 [白板播放成本拆分](docs/makepad-migration/ANDROID_BOARD_PLAYBACK_COST_SPLIT_PLAN_2026-10-08.md)，待 GPT 测。
 
 
 最新分辨率对照：同一2666794的首页 /课程集缓存滚动在1080p到4K均≤30ms；播放gap分别33.2 /50.9 /61.3 /100.4ms，补测2112×1188为38.1ms。当前未找到提高分辨率仍保持约33ms播放的比例。无产品改动，默认0.5 /诊断关闭，系统和Web APK保持。见 [四比例实测](docs/makepad-migration/ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)。
@@ -242,7 +242,8 @@ V6 之前的内容见 `docs/makepad-migration/OLL_MACOS_PRODUCT_V6.md`。V6 之�
   - `server.rs`：默认服务器改为 `PUBLIC_SERVER`；登录先查 `/api/auth/status`——开了 solo 的本机服务照旧自动 solo 登录，否则发出「需要登录」事件。`send_code` / `verify` / `logout` 对应 Web `/api/auth/send-code`、`/api/auth/verify`、`/api/auth/logout`；登录成功的 token 存在数据目录 `auth.json`（权限 600，含服务器地址，换服务器不复用），下次启动用 `/api/auth/me` 校验（401/403 清除；离线时先沿用）；使用中遇到 401 清除登录并重新要求登录。
   - 界面：Web 登录页（Octos logo、Octos、按服务器是否允许自助注册显示的说明、邮箱 → Send Code → 6 位验证码 → Verify、Back、60 秒倒计时 Resend code、错误提示）。DIFF：Web 是整页，原生是模态框并加「暂不登录」（离线课程仍可用；等待中的提问标记「需要登录后才能提问」）。启动器在邮箱登录后显示「退出」（Web 导航同）。
   - Mac 实测：本机服务（设 `OCTOS_SERVER_URL`）仍自动 solo 登录并生成课程；不设时对 learn.pitun.cc 显示登录框。**完整的邮箱验证码登录需要用户输入收到的验证码，尚未实测**
-- （本次提交）播放时去掉无变化的刷新（`lib.rs` `TickKey` / `tick_key()`；`refresh()` 拆成计时外壳 + `refresh_inner()`）；白板 `revision()`（内部重新布局或构图 / 镜头规划变化时加一，宿主据此再刷新到稳定）；内部重新布局沿用宿主最近的 action（原为 `None`，会暂时丢指示点、用错镜头规划）。`perf::bisect` 移到 `oll-preview/src/perf_probe.rs`，新增白板开关和 `[perf]` 行尾计数（`tick_*`、`refresh`、`board_set_state`、`board_walk`、`redraw_*`）。`OCTOS_BISECT=tickredraw` 恢复旧行为做 A/B。Mac 测试脚本：`.local-dev/macos-product-v10/perfboard.py`（计数 A/B）、`shotboard.py` + `diffshots.py`（时间线截图逐像素对照）。
+- （本次提交）白板镜头帧复用：`spatial_board.rs` `redraw_content` / `redraw_camera` / `redraw_fx`，`walk_clip_rect`（过渡路径和拖动余量）、`draw_fx_list`（高亮和指示点）、裁剪范围外已定尺寸卡片跳过；复用条件见 `draw_walk` 中的 `reuse`。
+- `ae38705` 播放时去掉无变化的刷新（`lib.rs` `TickKey` / `tick_key()`；`refresh()` 拆成计时外壳 + `refresh_inner()`）；白板 `revision()`（内部重新布局或构图 / 镜头规划变化时加一，宿主据此再刷新到稳定）；内部重新布局沿用宿主最近的 action（原为 `None`，会暂时丢指示点、用错镜头规划）。`perf::bisect` 移到 `oll-preview/src/perf_probe.rs`，新增白板开关和 `[perf]` 行尾计数（`tick_*`、`refresh`、`board_set_state`、`board_walk`、`redraw_*`）。`OCTOS_BISECT=tickredraw` 恢复旧行为做 A/B。Mac 测试脚本：`.local-dev/macos-product-v10/perfboard.py`（计数 A/B）、`shotboard.py` + `diffshots.py`（时间线截图逐像素对照）。
 - `acdfc1e` 老师状态文字跟随 Web lessonOwnsNarration（下一 Beat 后显示「课程播放中」，用户暂停后「继续播放」）
 
 **九门课逐 Beat 对照（2026-10-06，同视口高）**：布局与 Web 差 1e-6 以内；屏幕位置大多 ≤15px，
