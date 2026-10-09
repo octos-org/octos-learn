@@ -1832,6 +1832,17 @@
   background: rgba(22, 131, 152, 0.14);
 }
 
+.learning-student-task-actions > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  background: rgba(22, 131, 152, 0.07);
+}
+
+/* An earlier course keeps its practice in place while a later lesson plays. */
+.learning-student-task.is-locked {
+  opacity: 0.62;
+}
+
 .learning-student-task-error {
   color: #a33e32;
   font-size: 10px;

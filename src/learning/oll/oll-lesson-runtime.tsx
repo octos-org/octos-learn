@@ -1062,9 +1062,16 @@ export function LearningWhiteboard({
   }, [playbackCourseTarget]);
   const variableControls = runtime ? variableControlModels(runtime.board) : [];
   const studentTasks = runtime?.studentTasks ?? [];
-  const availableStudentTasks = runtime
-    ? studentTasks.filter((task) => task.available)
-    : [];
+  // The Runtime opens practice only when the whole board has finished, so a
+  // later lesson closes the practice of every earlier course. Once a course
+  // has played to its end, keep its practice and thinking cards in the
+  // layout (practice locked until the window reopens); removing them would
+  // pull that course's lower cards up while the next lesson plays.
+  const runtimeCursor = runtime?.cursor ?? 0;
+  const topicPlaybackEnded = (topic: { steps: { end_cursor: number }[] }) => {
+    const end = topic.steps.at(-1)?.end_cursor;
+    return typeof end === "number" && runtimeCursor >= end;
+  };
   const degradedVisuals = runtime ? degradedVisualStatuses(runtime.board) : [];
   const quickSelectionTools = selectionClassificationStatus === "ready"
     && selectionClassification
@@ -1127,8 +1134,10 @@ export function LearningWhiteboard({
       topic.variableAliases?.includes(control.alias));
     const reservedTopicTasks = studentTasks.filter((task) =>
       topic.taskAliases?.includes(task.task_id));
-    const topicTasks = availableStudentTasks.filter((task) =>
-      topic.taskAliases?.includes(task.task_id));
+    const topicEnded = topicPlaybackEnded(topic);
+    const topicTasks = studentTasks.filter((task) =>
+      topic.taskAliases?.includes(task.task_id)
+      && (task.available || topicEnded));
     const clusters = buildInteractionClusters(
       runtime?.board ?? null,
       {
@@ -1186,15 +1195,17 @@ export function LearningWhiteboard({
   const [reflectionHeights, setReflectionHeights] = useState<Record<string, number>>({});
   const [openReflections, setOpenReflections] = useState<Record<string, boolean>>(readOpenReflections);
   const reflectionCards = useMemo(() => (runtime?.reflections ?? [])
-    .filter((reflection) => reflection.available)
     .flatMap((reflection) => {
       const outline = runtime?.outline ?? [];
       const topic = outline.find((candidate) => candidate.nodeIds?.includes(reflection.anchor))
         ?? (outline.length === 1 ? outline[0] : undefined);
       if (!topic) return [];
+      const end = topic.steps.at(-1)?.end_cursor;
+      const topicEnded = typeof end === "number" && runtimeCursor >= end;
+      if (!reflection.available && !topicEnded) return [];
       const key = `${topic.id}:${reflection.id}`;
       return [{ ...reflection, topic, key, attachmentId: `reflection:${key}` }];
-    }), [runtime?.reflections, runtime?.outline]);
+    }), [runtime?.reflections, runtime?.outline, runtimeCursor]);
   const toggleReflection = useCallback((key: string) => {
     setOpenReflections((current) => {
       const next = { ...current, [key]: !current[key] };
@@ -3853,14 +3864,21 @@ export function LearningWhiteboard({
                         {presentation.tasks.map((task) => {
                           const lastAttempt = task.attempts.at(-1);
                           const attempts = task.attempts.length;
+                          const locked = !task.available;
                           return (
                             <article
                               key={task.task_id}
-                              className={`learning-student-task is-${task.status}`}
+                              className={`learning-student-task is-${task.status}${locked ? " is-locked" : ""}`}
                               aria-live="polite"
+                              aria-disabled={locked || undefined}
                             >
                               <p>{task.prompt}</p>
-                              {task.status === "succeeded" ? (
+                              {locked && task.status !== "succeeded" ? (
+                                <div className="learning-student-task-feedback">
+                                  <span>白板上的课程全部播放完后，就可以继续操作。</span>
+                                  {attempts > 0 ? <small>已尝试 {attempts} 次</small> : null}
+                                </div>
+                              ) : task.status === "succeeded" ? (
                                 <div className="learning-student-task-feedback is-success">
                                   <CheckCircle2 size={17} />
                                   <span>
@@ -3896,6 +3914,7 @@ export function LearningWhiteboard({
                                   {task.hints_revealed < task.hints.length ? (
                                     <button
                                       type="button"
+                                      disabled={locked}
                                       onClick={() => requestTaskHint(task.task_id)}
                                     >
                                       <Lightbulb size={15} />
@@ -3904,6 +3923,7 @@ export function LearningWhiteboard({
                                   ) : null}
                                   <button
                                     type="button"
+                                    disabled={locked}
                                     onClick={() => retryTask(task.task_id)}
                                   >
                                     <RotateCcw size={15} />
