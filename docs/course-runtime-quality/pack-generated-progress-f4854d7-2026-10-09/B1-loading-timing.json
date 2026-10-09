@@ -1,0 +1,57 @@
+[
+  {
+    "elapsedMs": 179,
+    "playerPresent": false,
+    "loading": true
+  },
+  {
+    "elapsedMs": 184,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 188,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 193,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 198,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 258,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 271,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 297,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 310,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 333,
+    "playerPresent": false,
+    "loading": false
+  },
+  {
+    "elapsedMs": 394,
+    "playerPresent": true,
+    "loading": false
+  }
+]

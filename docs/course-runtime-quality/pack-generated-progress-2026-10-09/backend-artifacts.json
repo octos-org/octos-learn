@@ -1,0 +1,146 @@
+[
+  {
+    "session_id": "learn-1791541838519-s1dmo6",
+    "lessons": [
+      {
+        "filename": "b72508ef-0433-435f-98b0-2273bb9da077.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图象性质",
+        "steps": 2,
+        "closed": true
+      },
+      {
+        "filename": "b72508ef-0433-435f-98b0-2273bb9da077.part-002.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图象性质",
+        "steps": 2,
+        "closed": true
+      },
+      {
+        "filename": "b72508ef-0433-435f-98b0-2273bb9da077.part-001.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图象性质",
+        "steps": 1,
+        "closed": true
+      }
+    ],
+    "traces": [
+      {
+        "filename": "b72508ef-0433-435f-98b0-2273bb9da077.generation-trace.jsonl",
+        "lastStages": [
+          {
+            "stage": "model-call",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "completed",
+            "elapsed_ms": 6152
+          },
+          {
+            "stage": "lesson-prefix-published",
+            "status": "completed",
+            "elapsed_ms": 12403
+          },
+          {
+            "stage": "lesson-plan-generation",
+            "status": "completed",
+            "elapsed_ms": 12409
+          }
+        ]
+      },
+      {
+        "filename": "996277ff-7901-46e1-b317-76a3b167745a.generation-trace.jsonl",
+        "lastStages": [
+          {
+            "stage": "tool-invocation",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "completed",
+            "elapsed_ms": 2221
+          },
+          {
+            "stage": "selection-classification",
+            "status": "completed",
+            "elapsed_ms": 2226
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "session_id": "learn-1791542099752-dnhrjp",
+    "lessons": [
+      {
+        "filename": "67671b42-a46c-4871-b1a0-cfd372adf1c1.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图像性质",
+        "steps": 2,
+        "closed": true
+      },
+      {
+        "filename": "67671b42-a46c-4871-b1a0-cfd372adf1c1.part-002.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图像性质",
+        "steps": 2,
+        "closed": true
+      },
+      {
+        "filename": "67671b42-a46c-4871-b1a0-cfd372adf1c1.part-001.octos-lesson.json",
+        "title": "正弦函数 y = sin x 的几何意义与图像性质",
+        "steps": 1,
+        "closed": true
+      }
+    ],
+    "traces": [
+      {
+        "filename": "67671b42-a46c-4871-b1a0-cfd372adf1c1.generation-trace.jsonl",
+        "lastStages": [
+          {
+            "stage": "model-call",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "completed",
+            "elapsed_ms": 5030
+          },
+          {
+            "stage": "lesson-prefix-published",
+            "status": "completed",
+            "elapsed_ms": 10992
+          },
+          {
+            "stage": "lesson-plan-generation",
+            "status": "completed",
+            "elapsed_ms": 10998
+          }
+        ]
+      },
+      {
+        "filename": "27288f08-5160-45b3-a1f0-ec7b2d98d73b.generation-trace.jsonl",
+        "lastStages": [
+          {
+            "stage": "tool-invocation",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "started"
+          },
+          {
+            "stage": "model-call",
+            "status": "completed",
+            "elapsed_ms": 2550
+          },
+          {
+            "stage": "selection-classification",
+            "status": "completed",
+            "elapsed_ms": 2555
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -4,6 +4,10 @@
 
 ## 当前使用
 
+- [刷新恢复修复复测](course-runtime-quality/pack-generated-progress-f4854d7-2026-10-09/REPORT.md)：f4854d7 两种刷新场景、A 与 C–F 播放通过；加载约 0.4–0.5 秒；布局位移仍存在，main 对照未执行。
+
+- [预制课追加生成课首次验收](course-runtime-quality/pack-generated-progress-2026-10-09/REPORT.md)：2f36122 主流程与 C–F 播放通过；B 刷新丢失进度，两种预制课复现。“下一课”原失败判定已撤回，最新结论见刷新恢复修复复测。
+
 - [v0.1.2 发布记录](RELEASE_V0_1_2.md)：辅助卡片原稿避让修复和完整九课 APK。
 
 - [v0.1.1 发布记录](RELEASE_V0_1_1.md)：Android 性能与笔迹修复汇总、确切依赖和发布验证范围。

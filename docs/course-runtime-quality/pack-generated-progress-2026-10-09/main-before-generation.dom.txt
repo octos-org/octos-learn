@@ -1,0 +1,143 @@
+- main:
+  - button "返回":
+  - button "打开学习记录":
+  - strong: 从单位圆旋转到正弦曲线
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: geometry
+        - generic: 单位圆与投影
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 正弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, sin(θ))
+        - generic: y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: P
+          - generic: =
+          - generic: (
+          - generic: cos
+          - generic: ⁡
+          - generic: θ
+          - generic: ","
+          - generic: sin
+          - generic: ⁡
+          - generic: θ
+          - generic: )
+        - generic: P =
+        - text: (
+        - generic: cos
+        - text: θ,
+        - generic: sin
+        - text: θ)
+      - article:
+        - text: note
+        - generic: 正弦值的几何意义
+        - list:
+          - listitem: 单位圆半径 r = 1
+          - listitem: 动点 P 的高度（纵坐标）即为 sin θ
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: θ
+        - generic: y =
+        - generic: sin
+        - text: θ
+      - article:
+        - text: note
+        - generic: 正弦函数 y = sin x 的性质
+        - list:
+          - listitem: 周期性：T = 2π
+          - listitem: 值域：[-1, 1]
+          - listitem: 波峰位置：x = π/2 + 2kπ
+      - generic "从单位圆旋转到正弦曲线的课程变量控制":
+        - generic: 旋转角 θ
+        - slider "旋转角 θ": "6.2486"
+        - status: 6.28 rad
+        - button "减小旋转角 θ": −
+        - button "增大旋转角 θ": +
+        - button "复位旋转角 θ":
+      - region "从单位圆旋转到正弦曲线的动手任务":
+        - generic: 动手试一试
+        - generic: 直接操作白板上的图形、视角或控制器
+        - article:
+          - paragraph: 拖动滑块，把旋转角 θ 调到波峰位置（π/2，约 1.57），观察动点 P 的高度达到最大值 1，并与正弦曲线的最高点对应。
+          - generic: 轮到你操作了，完成后这里会立即反馈。
+      - textbox "按“t”将视口内容朗读为文本。使用方向键移动视口，点击并拖拽绘制笔画。按“w”放大，按“s”缩小。"
+      - generic: 已选 14 个元素
+      - button "以文本形式重绘"
+      - group "选择工具：使用方向键移动所选项目，使用小写/大写 “i” 和 “o” 调整大小。"
+      - button "开启声音探索"
+    - generic "白板书写工具":
+      - button "浏览白板":
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹" [active] [pressed]:
+      - button "显示调色板":
+      - button "解释这部分"
+      - button "检查并建议"
+      - button "生成函数图像"
+      - button "问小章鱼":
+        - text: 问小章鱼
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 14 项笔迹 · 已选 14 · 已保存
+  - button "和 Octos 说话":
+    - img "ocean Octos skin"
+    - generic: 课程完成
+  - button "打开本课目录":
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:

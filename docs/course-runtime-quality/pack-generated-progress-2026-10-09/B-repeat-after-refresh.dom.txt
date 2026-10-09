@@ -1,0 +1,160 @@
+- main:
+  - button "返回":
+  - button "打开学习记录":
+  - generic: Octos Learning Canvas
+  - strong: 余弦函数与单位圆投影
+  - button "暂停 OLL 课程":
+  - button "下一 OLL Beat":
+  - button "重新播放 OLL 课程":
+  - button "关闭课程旁白语音" [pressed]:
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: geometry
+        - generic: 单位圆与 x 轴投影
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 余弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, cos(θ))
+        - generic: y = cos(x)
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 请结合我识别出的内容【y = \sin x】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。
+        - generic: 引用的白板选区
+        - button "放大查看本次问题图片":
+        - img "本次问题引用的白板选区"
+        - button "展开完整问题"
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 请结合我识别出的内容【y = 2 x】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。
+        - generic: 引用的白板选区
+        - button "放大查看本次问题图片":
+        - img "本次问题引用的白板选区"
+        - button "展开完整问题"
+      - generic "余弦函数与单位圆投影的课程变量控制":
+        - generic: 旋转角度 θ
+        - slider "旋转角度 θ": "0"
+        - status: "0"
+        - button "减小旋转角度 θ": −
+        - button "增大旋转角度 θ": +
+        - button "复位旋转角度 θ":
+    - generic "白板书写工具":
+      - button "浏览白板" [pressed]:
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹":
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 24 项笔迹 · 已保存
+  - paragraph: 在单位圆中，当动点 P 沿着圆周旋转时，它在 x 轴上的横坐标投影长度，就代表了该角度的余弦值 cos θ。
+  - button "Octos 正在准备下一步":
+    - img "ocean Octos skin"
+    - generic: 稍等一下
+  - button "打开本课目录" [expanded] [active]:
+  - dialog "本课目录":
+    - text: COURSE OUTLINE
+    - heading "本课目录" [level=2]
+    - generic: 8 个步骤
+    - navigation "课程步骤":
+      - generic: "01"
+      - heading "余弦函数与单位圆投影" [level=3]
+      - list:
+        - button "查看步骤：建立单位圆中动点 x 轴投影表示余弦值 cos θ 的几何直觉":
+          - generic: "1"
+          - generic: 建立单位圆中动点 x 轴投影表示余弦值 cos θ 的几何直觉
+        - button "展开建立单位圆中动点 x 轴投影表示余弦值 cos θ 的几何直觉的讲解片段":
+        - button "从步骤开始播放：建立单位圆中动点 x 轴投影表示余弦值 cos θ 的几何直觉":
+        - button "查看步骤：从单位圆旋转推导余弦曲线 y = cos θ 的关键点变化与展开过程":
+          - generic: "2"
+          - generic: 从单位圆旋转推导余弦曲线 y = cos θ 的关键点变化与展开过程
+        - button "展开从单位圆旋转推导余弦曲线 y = cos θ 的关键点变化与展开过程的讲解片段":
+        - button "从步骤开始播放：从单位圆旋转推导余弦曲线 y = cos θ 的关键点变化与展开过程":
+        - button "查看步骤：对比正余弦波形，推导平移关系与诱导公式 cos θ = sin(θ + π/2)":
+          - generic: "3"
+          - generic: 对比正余弦波形，推导平移关系与诱导公式 cos θ = sin(θ + π/2)
+        - button "展开对比正余弦波形，推导平移关系与诱导公式 cos θ = sin(θ + π/2)的讲解片段":
+        - button "从步骤开始播放：对比正余弦波形，推导平移关系与诱导公式 cos θ = sin(θ + π/2)":
+        - button "查看步骤：通过寻找余弦波峰与零点的交互练习巩固认知":
+          - generic: "4"
+          - generic: 通过寻找余弦波峰与零点的交互练习巩固认知
+        - button "展开通过寻找余弦波峰与零点的交互练习巩固认知的讲解片段":
+        - button "从步骤开始播放：通过寻找余弦波峰与零点的交互练习巩固认知":
+      - generic: "02"
+      - heading "正弦函数 y = sin x 的几何意义与图像性质" [level=3]
+      - list:
+        - button "查看步骤：认识 y = sin x 的性质类型及其几何来源，建立单位圆纵坐标到正弦曲线的对应":
+          - generic: "1"
+          - generic: 认识 y = sin x 的性质类型及其几何来源，建立单位圆纵坐标到正弦曲线的对应
+        - button "展开认识 y = sin x 的性质类型及其几何来源，建立单位圆纵坐标到正弦曲线的对应的讲解片段":
+        - button "从步骤开始播放：认识 y = sin x 的性质类型及其几何来源，建立单位圆纵坐标到正弦曲线的对应":
+        - button "查看步骤：探究正弦函数的关键图像特征（最值、零点与周期性）":
+          - generic: "2"
+          - generic: 探究正弦函数的关键图像特征（最值、零点与周期性）
+        - button "展开探究正弦函数的关键图像特征（最值、零点与周期性）的讲解片段":
+        - button "从步骤开始播放：探究正弦函数的关键图像特征（最值、零点与周期性）":
+      - generic: "03"
+      - heading "正比例函数 y = 2x 的图象与性质" [level=3]
+      - list:
+        - button "查看步骤：识别 y=2x 为正比例函数公式，并理解其自变量与因变量的数量对应关系":
+          - generic: "1"
+          - generic: 识别 y=2x 为正比例函数公式，并理解其自变量与因变量的数量对应关系
+        - button "展开识别 y=2x 为正比例函数公式，并理解其自变量与因变量的数量对应关系的讲解片段":
+        - button "从步骤开始播放：识别 y=2x 为正比例函数公式，并理解其自变量与因变量的数量对应关系":
+        - button "查看步骤：在直角坐标系中画出 y=2x 的图象，探索斜率/系数 2 的几何意义及应用":
+          - generic: "2"
+          - generic: 在直角坐标系中画出 y=2x 的图象，探索斜率/系数 2 的几何意义及应用
+        - button "展开在直角坐标系中画出 y=2x 的图象，探索斜率/系数 2 的几何意义及应用的讲解片段":
+        - button "从步骤开始播放：在直角坐标系中画出 y=2x 的图象，探索斜率/系数 2 的几何意义及应用":
+    - paragraph: 点击查看完成画面，使用播放按钮从该段重新讲解
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "打开摄像头":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:

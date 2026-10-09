@@ -1,0 +1,188 @@
+- main:
+  - button "返回首页":
+  - button "打开学习记录":
+  - generic: Octos Learning Canvas
+  - strong: 正比例函数 y = x 的图像与斜率
+  - button "播放 OLL 课程" [disabled]:
+  - button "下一 OLL Beat" [disabled]:
+  - button "重新播放 OLL 课程":
+  - button "关闭课程旁白语音" [pressed]:
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: plot
+        - generic: 正比例函数 y = kx 图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-4"
+          - generic: "-2"
+          - generic: "0"
+          - generic: "2"
+          - generic: "4"
+          - generic: "-5"
+          - generic: "0"
+          - generic: "5"
+          - generic: x
+          - generic: "y"
+          - generic: A
+          - generic: B
+        - generic: Δx = 1 · Δy = 1 · 割线斜率 ≈ 1
+        - generic "说明"
+        - generic: y = kx（y = x）
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: x
+          - generic: (
+          - generic: k
+          - generic: =
+          - generic: "1"
+          - generic: )
+        - generic: y =
+        - generic: x (k =
+        - generic: 1)
+      - article:
+        - text: note
+        - generic: 斜率的定义与性质
+        - list:
+          - listitem: 斜率 k = Δy / Δx
+          - listitem: 对于 y = x，Δy / Δx = 1 / 1 = 1
+          - listitem: 图像与 x 轴正半轴夹角为 45°
+      - article:
+        - text: note
+        - generic: 斜率 k 的变化规律
+        - list:
+          - listitem: k > 0 时，直线经过一、三象限，k 越大越陡峭
+          - listitem: k < 0 时，直线经过二、四象限，k 的绝对值越大越陡峭
+      - article:
+        - text: plot
+        - generic: y = x 与 y = 2x 对比
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "-10"
+          - generic: "-5"
+          - generic: "0"
+          - generic: "5"
+          - generic: "10"
+          - generic: x
+          - generic: "y"
+        - checkbox "y = x" [checked]
+        - text: y = x
+        - checkbox "y = 2x" [checked]
+        - text: y = 2x
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: "2"
+          - generic: x
+          - generic: vs
+          - generic: "y"
+          - generic: =
+          - generic: x
+        - generic: y =
+        - text: 2x
+        - generic: vs
+        - text: y =
+        - generic: x
+      - article:
+        - text: note
+        - generic: 核心区别
+        - list:
+          - listitem: 1. 当 x > 0 时，y = 2x 的图像在 y = x 的上方
+          - listitem: 2. y = 2x 的直线比 y = x 更陡峭（倾斜程度更大）
+      - article:
+        - text: note
+        - generic: 斜率 k 的几何意义
+        - list:
+          - listitem: k 表示直线的斜率，反映直线的倾斜程度
+          - listitem: "|k| 越大，直线越陡峭，增长（或下降）越快"
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 讲解 y = x 的图像和斜率
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 接着讲解 y = 2x 与 y = x 的区别
+      - generic "正比例函数 y = x 的图像与斜率的课程变量控制":
+        - generic: 斜率 k
+        - slider "斜率 k": "1"
+        - status: "1.00"
+        - button "减小斜率 k": −
+        - button "增大斜率 k": +
+        - button "复位斜率 k":
+      - region "正比例函数 y = x 的图像与斜率的动手任务":
+        - generic: 动手试一试
+        - generic: 直接操作白板上的图形、视角或控制器
+        - article:
+          - paragraph: 尝试将斜率 k 调整为 2，观察直线的倾斜程度
+          - generic: 轮到你操作了，完成后这里会立即反馈。
+      - region "想一想":
+        - generic: 想一想
+        - generic: 先独立思考，再展开答案核对
+        - paragraph: 当斜率 k 无限接近于 0 时，直线的形态会发生怎样的变化？
+        - button "查看答案"
+      - textbox "按“t”将视口内容朗读为文本。使用方向键移动视口，点击并拖拽绘制笔画。按“w”放大，按“s”缩小。"
+      - generic: 画笔 1 已禁用
+      - button "以文本形式重绘"
+      - button "开启声音探索"
+    - generic "白板书写工具":
+      - button "浏览白板" [pressed]:
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹":
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 0 项笔迹 · 已保存
+  - button "和 Octos 说话":
+    - img "ocean Octos skin"
+    - generic: 课程完成
+  - button "打开本课目录" [expanded] [active]:
+  - dialog "本课目录":
+    - text: COURSE OUTLINE
+    - heading "本课目录" [level=2]
+    - generic: 4 个步骤
+    - navigation "课程步骤":
+      - generic: "01"
+      - heading "正比例函数 y = x 的图像与斜率" [level=3]
+      - list:
+        - button "查看步骤：认识 y = x 的图像形态并理解斜率为 1 的具体含义":
+          - generic: 认识 y = x 的图像形态并理解斜率为 1 的具体含义
+        - button "展开认识 y = x 的图像形态并理解斜率为 1 的具体含义的讲解片段":
+        - button "从步骤开始播放：认识 y = x 的图像形态并理解斜率为 1 的具体含义":
+        - button "查看步骤：通过改变斜率 k 观察直线的倾斜程度与方向变化":
+          - generic: 通过改变斜率 k 观察直线的倾斜程度与方向变化
+        - button "展开通过改变斜率 k 观察直线的倾斜程度与方向变化的讲解片段":
+        - button "从步骤开始播放：通过改变斜率 k 观察直线的倾斜程度与方向变化":
+      - generic: "02"
+      - heading "一次函数 y = 2x 与 y = x 的区别与斜率直觉" [level=3]
+      - list:
+        - button "查看步骤：对比 y = x 与 y = 2x 的图像特征与变化速度":
+          - generic: 对比 y = x 与 y = 2x 的图像特征与变化速度
+        - button "展开对比 y = x 与 y = 2x 的图像特征与变化速度的讲解片段":
+        - button "从步骤开始播放：对比 y = x 与 y = 2x 的图像特征与变化速度":
+        - button "查看步骤：深入理解斜率 k 的几何意义与陡峭程度关系":
+          - generic: "2"
+          - generic: 深入理解斜率 k 的几何意义与陡峭程度关系
+        - button "展开深入理解斜率 k 的几何意义与陡峭程度关系的讲解片段":
+        - button "从步骤开始播放：深入理解斜率 k 的几何意义与陡峭程度关系":
+    - paragraph: 点击查看完成画面，使用播放按钮从该段重新讲解
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "打开摄像头":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:

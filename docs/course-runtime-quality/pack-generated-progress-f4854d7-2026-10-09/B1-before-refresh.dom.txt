@@ -1,0 +1,263 @@
+- main:
+  - button "返回":
+  - button "打开学习记录":
+  - generic: Octos Learning Canvas
+  - strong: 从单位圆旋转到正弦曲线
+  - button "暂停 OLL 课程":
+  - button "下一 OLL Beat":
+  - button "重新播放 OLL 课程":
+  - button "关闭课程旁白语音" [pressed]:
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: geometry
+        - generic: 单位圆与投影
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 正弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, sin(θ))
+        - generic: y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: P
+          - generic: =
+          - generic: (
+          - generic: cos
+          - generic: ⁡
+          - generic: θ
+          - generic: ","
+          - generic: sin
+          - generic: ⁡
+          - generic: θ
+          - generic: )
+        - generic: P =
+        - text: (
+        - generic: cos
+        - text: θ,
+        - generic: sin
+        - text: θ)
+      - article:
+        - text: note
+        - generic: 正弦值的几何意义
+        - list:
+          - listitem: 单位圆半径 r = 1
+          - listitem: 动点 P 的高度（纵坐标）即为 sin θ
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: θ
+        - generic: y =
+        - generic: sin
+        - text: θ
+      - article:
+        - text: note
+        - generic: 正弦函数 y = sin x 的性质
+        - list:
+          - listitem: 周期性：T = 2π
+          - listitem: 值域：[-1, 1]
+          - listitem: 波峰位置：x = π/2 + 2kπ
+      - article:
+        - text: geometry
+        - generic: 正弦函数 y = sin x 的几何生成
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 正弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, sin(θ))
+        - generic: y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: x
+        - generic: y =
+        - generic: sin
+        - text: x
+      - article:
+        - text: note
+        - generic: 正弦函数定义
+        - list:
+          - listitem: x 表示角（弧度制）
+          - listitem: y 表示单位圆上动点的纵坐标 y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: x
+        - generic: y =
+        - generic: sin
+        - text: x
+      - article:
+        - text: note
+        - generic: 正弦函数 y = sin x 的核心性质
+        - list:
+          - listitem: 定义域：x ∈ R，值域：y ∈ [-1, 1]
+          - listitem: 周期性：最小正周期 T = 2π
+          - listitem: 关键点：(0,0), (π/2,1), (π,0), (3π/2,-1), (2π,0)
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 请结合我识别出的内容【y = sin x】给我上一节课。请先判断它是公式、题目、解题过程还是其他学习内容，再围绕其含义、关键知识和解题或应用方法进行讲解，目标是让我理解并会用。
+        - generic: 引用的白板选区
+        - button "放大查看本次问题图片":
+        - img "本次问题引用的白板选区"
+        - button "展开完整问题"
+      - generic "从单位圆旋转到正弦曲线的课程变量控制":
+        - generic: 旋转角 θ
+        - slider "旋转角 θ": "6.2486"
+        - status: 6.28 rad
+        - button "减小旋转角 θ": −
+        - button "增大旋转角 θ": +
+        - button "复位旋转角 θ":
+      - generic "正弦函数 y = sin x 的图像与性质的课程变量控制":
+        - generic: 角度 x (弧度)
+        - slider "角度 x (弧度)": "6.2486"
+        - status: 6.28 rad
+        - button "减小角度 x (弧度)": −
+        - button "增大角度 x (弧度)": +
+        - button "复位角度 x (弧度)":
+    - generic "白板书写工具":
+      - button "浏览白板" [pressed]:
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹":
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 14 项笔迹 · 已保存
+  - paragraph: 我们来看它的核心性质。正弦函数的定义域为全体实数 R，值域在 -1 到 1 之间。它的最小正周期是 2π，这意味着每经过 2π 长度，函数图像就会完全重复。
+  - button "打断 Octos":
+    - img "ocean Octos skin"
+    - generic: 课程播放中
+  - button "打开本课目录" [expanded] [active]:
+  - dialog "本课目录":
+    - text: COURSE OUTLINE
+    - heading "本课目录" [level=2]
+    - generic: 5 个步骤
+    - navigation "课程步骤":
+      - generic: "01"
+      - heading "从单位圆旋转到正弦曲线" [level=3]
+      - list:
+        - button "查看步骤：在单位圆中引入动点 P 与纵坐标 sin θ 的几何含义":
+          - generic: 在单位圆中引入动点 P 与纵坐标 sin θ 的几何含义
+        - button "展开在单位圆中引入动点 P 与纵坐标 sin θ 的几何含义的讲解片段":
+        - button "从步骤开始播放：在单位圆中引入动点 P 与纵坐标 sin θ 的几何含义":
+        - button "查看步骤：动态演练动点 P 旋转一周的高度变化，并展开形成正弦曲线 y = sin x":
+          - generic: 动态演练动点 P 旋转一周的高度变化，并展开形成正弦曲线 y = sin x
+        - button "展开动态演练动点 P 旋转一周的高度变化，并展开形成正弦曲线 y = sin x的讲解片段":
+        - button "从步骤开始播放：动态演练动点 P 旋转一周的高度变化，并展开形成正弦曲线 y = sin x":
+        - button "查看步骤：总结正弦函数的周期性与值域，并进行波峰位置的互动操作":
+          - generic: 总结正弦函数的周期性与值域，并进行波峰位置的互动操作
+        - button "展开总结正弦函数的周期性与值域，并进行波峰位置的互动操作的讲解片段":
+        - button "从步骤开始播放：总结正弦函数的周期性与值域，并进行波峰位置的互动操作":
+      - generic: "02"
+      - heading "正弦函数 y = sin x 的图像与性质" [level=3]
+      - list:
+        - button "查看步骤：从单位圆点的纵坐标投影建立正弦函数 y = sin x 的几何定义与图像展开过程":
+          - generic: 从单位圆点的纵坐标投影建立正弦函数 y = sin x 的几何定义与图像展开过程
+        - button "展开从单位圆点的纵坐标投影建立正弦函数 y = sin x 的几何定义与图像展开过程的讲解片段":
+        - button "从步骤开始播放：从单位圆点的纵坐标投影建立正弦函数 y = sin x 的几何定义与图像展开过程":
+        - button "查看步骤：剖析正弦函数的关键性质（定义域、值域、周期性及特殊点），并掌握其应用":
+          - generic: "2"
+          - generic: 剖析正弦函数的关键性质（定义域、值域、周期性及特殊点），并掌握其应用
+        - button "展开剖析正弦函数的关键性质（定义域、值域、周期性及特殊点），并掌握其应用的讲解片段":
+        - button "从步骤开始播放：剖析正弦函数的关键性质（定义域、值域、周期性及特殊点），并掌握其应用":
+    - paragraph: 点击查看完成画面，使用播放按钮从该段重新讲解
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "打开摄像头":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:
+  - alert: 课程语音暂时不可用，旁白仍会显示。

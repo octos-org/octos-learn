@@ -1,0 +1,77 @@
+[
+  {
+    "elapsedMs": 183,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 186,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 192,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 199,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 204,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 208,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 213,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 256,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 294,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 307,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 320,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 352,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 383,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 410,
+    "playerPresent": false,
+    "completed": false
+  },
+  {
+    "elapsedMs": 504,
+    "playerPresent": true,
+    "completed": true
+  }
+]

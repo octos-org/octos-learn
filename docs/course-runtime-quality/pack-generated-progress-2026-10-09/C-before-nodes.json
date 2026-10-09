@@ -1,0 +1,46 @@
+[
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle",
+    "style": "left: 20px; top: 20px; width: 440px; height: 380px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot",
+    "style": "left: 476px; top: 20px; width: 440px; height: 360px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01",
+    "style": "left: 20px; top: 596px; width: 440px; height: 360px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02",
+    "style": "left: 488px; top: 596px; width: 268px; height: 72px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01",
+    "style": "left: 488px; top: 684px; width: 268px; height: 72px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02",
+    "style": "left: 796px; top: 596px; width: 440px; height: 114px;"
+  },
+  {
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02",
+    "style": "left: 796px; top: 726px; width: 440px; height: 135px;"
+  },
+  {
+    "id": "learn-learn-1791542099752-dnhrjp-67671b42-a46c-4871-b1a0-cfd372adf1c1.octos-lesson.json:node:section-01-moment-01-item-01",
+    "style": "left: 1390px; top: 501.45px; width: 240px; height: 72px;"
+  },
+  {
+    "id": "learn-learn-1791542099752-dnhrjp-67671b42-a46c-4871-b1a0-cfd372adf1c1.octos-lesson.json:node:section-01-moment-01-item-02",
+    "style": "left: 1390px; top: 589.45px; width: 240px; height: 135px;"
+  },
+  {
+    "id": "learn-learn-1791542099752-dnhrjp-67671b42-a46c-4871-b1a0-cfd372adf1c1.octos-lesson.json:node:section-01-moment-02-item-01-circle",
+    "style": "left: 1658px; top: 501.45px; width: 440px; height: 380px;"
+  },
+  {
+    "id": "learn-learn-1791542099752-dnhrjp-67671b42-a46c-4871-b1a0-cfd372adf1c1.octos-lesson.json:node:section-01-moment-02-item-01-plot",
+    "style": "left: 2114px; top: 501.45px; width: 440px; height: 360px;"
+  }
+]
