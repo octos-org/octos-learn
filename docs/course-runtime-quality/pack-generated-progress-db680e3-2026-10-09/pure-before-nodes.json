@@ -1,0 +1,58 @@
+[
+  {
+    "height": "72px",
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-01-item-01",
+    "left": "537.949px",
+    "text": "y=kxy = kxy=kx",
+    "top": "279.615px",
+    "width": "113px"
+  },
+  {
+    "height": "385px",
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-02-item-01",
+    "left": "678.949px",
+    "text": "正比例函数 y = kx 图像探索恢复大图-4-2024-10010xyy = x (k=1)（y = x）y = 2x (k=2)（y = 2x）y = 3x (k=3)（y = 3x）指向曲线查看坐标",
+    "top": "279.615px",
+    "width": "440px"
+  },
+  {
+    "height": "135px",
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-03-item-01",
+    "left": "1146.95px",
+    "text": "正比例函数斜率性质k > 0 时，直线经过第一、三象限，从左到右上升k < 0 时，直线经过第二、四象限，从左到右下降|k| 越大，直线越陡峭（越靠近 y 轴）",
+    "top": "279.615px",
+    "width": "432px"
+  },
+  {
+    "height": "380px",
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-01-circle",
+    "left": "2111.98px",
+    "text": "单位圆与投影探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+    "top": "90px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-01-plot",
+    "left": "2567.98px",
+    "text": "正弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, sin(θ))y = sin(x)指向曲线查看坐标",
+    "top": "90px",
+    "width": "440px"
+  },
+  {
+    "height": "72px",
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-02",
+    "left": "3035.98px",
+    "text": "y=sin⁡(θ)y = \\sin(\\theta)y=sin(θ)",
+    "top": "90px",
+    "width": "248.4px"
+  },
+  {
+    "height": "135px",
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-03",
+    "left": "3035.98px",
+    "text": "单位圆与正弦值单位圆半径 r = 1动点纵坐标 y = sin(θ)θ 从 0 变化到 2π",
+    "top": "178px",
+    "width": "248.4px"
+  }
+]

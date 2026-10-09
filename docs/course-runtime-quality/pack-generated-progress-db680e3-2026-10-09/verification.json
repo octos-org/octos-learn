@@ -1,0 +1,25 @@
+{
+  "testedCommit": "db680e35ed1fe4d0d014e1558f394ef9b5cd5199",
+  "branch": "codex/pack-generated-lesson-keeps-progress",
+  "date": "2026-10-09",
+  "unitTests": {
+    "passed": 1130,
+    "files": 118,
+    "exitCode": 0
+  },
+  "tscExitCode": 0,
+  "realByokGeneratedLessons": 8,
+  "sessions": {
+    "sine": "learn-1791562104267-057zjx",
+    "cosine": "learn-1791562126580-46n45l",
+    "pure": "learn-1791562141708-nw34nr",
+    "midCourse": "learn-1791562183144-n38jkj"
+  },
+  "layout": {
+    "sineNodes": 6,
+    "cosineNodes": 7,
+    "pureOldNodes": 7,
+    "allFourDimensionsUnchanged": true
+  },
+  "failure": "Generated lesson practices remain locked after entire board completion; survives refresh."
+}

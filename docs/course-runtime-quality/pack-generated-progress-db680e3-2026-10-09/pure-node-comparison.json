@@ -1,0 +1,107 @@
+[
+  {
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-01-item-01",
+    "before": {
+      "left": "537.949px",
+      "top": "279.615px",
+      "width": "113px",
+      "height": "72px"
+    },
+    "after": {
+      "left": "537.949px",
+      "top": "279.615px",
+      "width": "113px",
+      "height": "72px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-02-item-01",
+    "before": {
+      "left": "678.949px",
+      "top": "279.615px",
+      "width": "440px",
+      "height": "385px"
+    },
+    "after": {
+      "left": "678.949px",
+      "top": "279.615px",
+      "width": "440px",
+      "height": "385px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:node:section-01-moment-03-item-01",
+    "before": {
+      "left": "1146.95px",
+      "top": "279.615px",
+      "width": "432px",
+      "height": "135px"
+    },
+    "after": {
+      "left": "1146.95px",
+      "top": "279.615px",
+      "width": "432px",
+      "height": "135px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-01-circle",
+    "before": {
+      "left": "2111.98px",
+      "top": "90px",
+      "width": "440px",
+      "height": "380px"
+    },
+    "after": {
+      "left": "2111.98px",
+      "top": "90px",
+      "width": "440px",
+      "height": "380px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-01-plot",
+    "before": {
+      "left": "2567.98px",
+      "top": "90px",
+      "width": "440px",
+      "height": "360px"
+    },
+    "after": {
+      "left": "2567.98px",
+      "top": "90px",
+      "width": "440px",
+      "height": "360px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-02",
+    "before": {
+      "left": "3035.98px",
+      "top": "90px",
+      "width": "248.4px",
+      "height": "72px"
+    },
+    "after": {
+      "left": "3035.98px",
+      "top": "90px",
+      "width": "248.4px",
+      "height": "72px"
+    }
+  },
+  {
+    "id": "learn-learn-1791562141708-nw34nr-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:node:section-01-moment-01-item-03",
+    "before": {
+      "left": "3035.98px",
+      "top": "178px",
+      "width": "248.4px",
+      "height": "135px"
+    },
+    "after": {
+      "left": "3035.98px",
+      "top": "178px",
+      "width": "248.4px",
+      "height": "135px"
+    }
+  }
+]

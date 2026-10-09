@@ -1,0 +1,106 @@
+[
+  {
+    "height": "380px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle",
+    "left": "20px",
+    "text": "单位圆与 x 轴投影探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+    "top": "20px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot",
+    "left": "476px",
+    "text": "余弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, cos(θ))y = cos(x)指向曲线查看坐标",
+    "top": "20px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01",
+    "left": "20px",
+    "text": "正弦与余弦曲线对比探索恢复大图-6-4-20246-101xyy = cos xy = sin x指向曲线查看坐标",
+    "top": "596px",
+    "width": "440px"
+  },
+  {
+    "height": "72px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02",
+    "left": "488px",
+    "text": "y=cos⁡x,y=sin⁡xy = \\cos x, \\quad y = \\sin xy=cosx,y=sinx",
+    "top": "596px",
+    "width": "268px"
+  },
+  {
+    "height": "72px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01",
+    "left": "488px",
+    "text": "cos⁡θ=sin⁡(θ+π2)\\cos\\theta = \\sin\\left(\\theta + \\frac{\\pi}{2}\\right)cosθ=sin(θ+2π​)",
+    "top": "684px",
+    "width": "268px"
+  },
+  {
+    "height": "114px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02",
+    "left": "796px",
+    "text": "余弦函数的几何意义单位圆上动点 P 的横坐标等于 cos θ投影在 x 轴上的符号与长度反映 cos θ 的变化",
+    "top": "596px",
+    "width": "440px"
+  },
+  {
+    "height": "135px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02",
+    "left": "796px",
+    "text": "余弦曲线的关键特征点波峰位置：θ = 0, 2π（cos θ = 1）零点位置：θ = π/2, 3π/2（cos θ = 0）波谷位置：θ = π（cos θ = -1）",
+    "top": "726px",
+    "width": "440px"
+  },
+  {
+    "height": "72px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-01-item-01",
+    "left": "1710px",
+    "text": "y=sin⁡xy = \\sin xy=sinx",
+    "top": "828.9px",
+    "width": "240px"
+  },
+  {
+    "height": "114px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-01-item-02",
+    "left": "1710px",
+    "text": "正弦函数 y = sin xx 表示自变量（弧度角）y 表示应变量（正弦值）",
+    "top": "916.9px",
+    "width": "240px"
+  },
+  {
+    "height": "380px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-02-item-01-circle",
+    "left": "1978px",
+    "text": "单位圆与正弦曲线联动探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+    "top": "828.9px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-02-item-01-plot",
+    "left": "2434px",
+    "text": "正弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, sin(θ))y = sin(x)指向曲线查看坐标",
+    "top": "828.9px",
+    "width": "440px"
+  },
+  {
+    "height": "72px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-02-moment-01-item-01",
+    "left": "1710px",
+    "text": "y=sin⁡x(x∈R,y∈[−1,1])y = \\sin x \\quad (x \\in \\mathbb{R}, y \\in [-1, 1])y=sinx(x∈R,y∈[−1,1])",
+    "top": "1507.9px",
+    "width": "440px"
+  },
+  {
+    "height": "135px",
+    "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-02-moment-01-item-02",
+    "left": "1710px",
+    "text": "正弦函数的性质与五点法定义域: R，值域: [-1, 1]最小正周期: 2π五点法关键点: (0,0), (π/2,1), (π,0), (3π/2,-1), (2π,0)",
+    "top": "1595.9px",
+    "width": "440px"
+  }
+]

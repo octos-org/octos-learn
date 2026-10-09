@@ -1,0 +1,50 @@
+[
+  {
+    "elapsedMs": 277,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 282,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 289,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 295,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 307,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 311,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 392,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 407,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 450,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 470,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 490,
+    "playerPresent": false
+  },
+  {
+    "elapsedMs": 553,
+    "playerPresent": true
+  }
+]

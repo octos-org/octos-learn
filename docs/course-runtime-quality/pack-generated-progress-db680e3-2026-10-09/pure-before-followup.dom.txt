@@ -1,0 +1,194 @@
+- main:
+  - button "返回首页":
+  - button "打开学习记录":
+  - generic: Octos Learning Canvas
+  - strong: 正比例函数 y = kx 的斜率与倾斜程度
+  - button "播放 OLL 课程" [disabled]:
+  - button "下一 OLL Beat" [disabled]:
+  - button "重新播放 OLL 课程":
+  - button "关闭课程旁白语音" [pressed]:
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: k
+          - generic: x
+        - generic: y =
+        - generic: kx
+      - article:
+        - text: plot
+        - generic: 正比例函数 y = kx 图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-4"
+          - generic: "-2"
+          - generic: "0"
+          - generic: "2"
+          - generic: "4"
+          - generic: "-10"
+          - generic: "0"
+          - generic: "10"
+          - generic: x
+          - generic: "y"
+        - checkbox "y = x (k=1)（y = x）" [checked]
+        - text: y = x (k=1)（y = x）
+        - checkbox "y = 2x (k=2)（y = 2x）" [checked]
+        - text: y = 2x (k=2)（y = 2x）
+        - checkbox "y = 3x (k=3)（y = 3x）" [checked]
+        - text: y = 3x (k=3)（y = 3x）
+      - article:
+        - text: note
+        - generic: 正比例函数斜率性质
+        - list:
+          - listitem: k > 0 时，直线经过第一、三象限，从左到右上升
+          - listitem: k < 0 时，直线经过第二、四象限，从左到右下降
+          - listitem: "|k| 越大，直线越陡峭（越靠近 y 轴）"
+      - article:
+        - text: geometry
+        - generic: 单位圆与投影
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 正弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, sin(θ))
+        - generic: y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: (
+          - generic: θ
+          - generic: )
+        - generic: y =
+        - generic: sin
+        - text: (θ)
+      - article:
+        - text: note
+        - generic: 单位圆与正弦值
+        - list:
+          - listitem: 单位圆半径 r = 1
+          - listitem: 动点纵坐标 y = sin(θ)
+          - listitem: θ 从 0 变化到 2π
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 讲解正比例函数 y = kx 的斜率。安排课后动手练习：把斜率滑块 k 调到 3，观察图像变化，并提供提示。再加一道可以展开答案的“想一想”题。
+      - article:
+        - strong: 我的问题
+        - generic: 已回答
+        - paragraph: 再上一节用单位圆理解正弦的交互练习课。请给我一个角度滑块，课后让我调到 π/2，判断正弦值是否达到 1，并在操作错误时给提示。
+      - generic "用单位圆理解正弦函数的课程变量控制":
+        - generic: 角度 θ
+        - slider "角度 θ": "0"
+        - status: "0"
+        - button "减小角度 θ": −
+        - button "增大角度 θ": +
+        - button "复位角度 θ":
+      - region "用单位圆理解正弦函数的动手任务":
+        - generic: 动手试一试
+        - generic: 直接操作白板上的图形、视角或控制器
+        - article:
+          - paragraph: 请拖动角度滑块，将角度 θ 调整到大约 1.57（即 π/2 弧度），观察正弦值是否达到 1。
+          - generic: 轮到你操作了，完成后这里会立即反馈。
+      - region "想一想":
+        - generic: 想一想
+        - generic: 先独立思考，再展开答案核对
+        - paragraph: 当斜率 k 变为负数时，直线的倾斜方向会发生怎样的变化？
+        - button "查看答案"
+      - textbox "按“t”将视口内容朗读为文本。使用方向键移动视口，点击并拖拽绘制笔画。按“w”放大，按“s”缩小。"
+      - generic: 画笔 1 已禁用
+      - button "以文本形式重绘"
+      - button "开启声音探索"
+    - generic "白板书写工具":
+      - button "浏览白板" [pressed]:
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹":
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 0 项笔迹 · 已保存
+  - button "和 Octos 说话":
+    - img "ocean Octos skin"
+    - generic: 课程完成
+  - button "打开本课目录" [expanded] [active]:
+  - dialog "本课目录":
+    - text: COURSE OUTLINE
+    - heading "本课目录" [level=2]
+    - generic: 3 个步骤
+    - navigation "课程步骤":
+      - generic: "01"
+      - heading "正比例函数 y = kx 的斜率与倾斜程度" [level=3]
+      - list:
+        - button "查看步骤：建立正比例函数 y = kx 中斜率 k 与直线倾斜程度的直觉":
+          - generic: 建立正比例函数 y = kx 中斜率 k 与直线倾斜程度的直觉
+        - button "展开建立正比例函数 y = kx 中斜率 k 与直线倾斜程度的直觉的讲解片段":
+        - button "从步骤开始播放：建立正比例函数 y = kx 中斜率 k 与直线倾斜程度的直觉":
+        - button "查看步骤：深入探讨斜率正负与绝对值的变化规律，并进行互动实践与思考":
+          - generic: 深入探讨斜率正负与绝对值的变化规律，并进行互动实践与思考
+        - button "展开深入探讨斜率正负与绝对值的变化规律，并进行互动实践与思考的讲解片段":
+        - button "从步骤开始播放：深入探讨斜率正负与绝对值的变化规律，并进行互动实践与思考":
+      - generic: "02"
+      - heading "用单位圆理解正弦函数" [level=3]
+      - list:
+        - button "查看步骤：掌握单位圆上动点的 y 坐标与正弦函数值的对应，并通过交互操作体验 θ=π/2 时正弦值为 1 的特性":
+          - generic: "1"
+          - generic: 掌握单位圆上动点的 y 坐标与正弦函数值的对应，并通过交互操作体验 θ=π/2 时正弦值为 1 的特性
+        - button "展开掌握单位圆上动点的 y 坐标与正弦函数值的对应，并通过交互操作体验 θ=π/2 时正弦值为 1 的特性的讲解片段":
+        - button "从步骤开始播放：掌握单位圆上动点的 y 坐标与正弦函数值的对应，并通过交互操作体验 θ=π/2 时正弦值为 1 的特性":
+    - paragraph: 点击查看完成画面，使用播放按钮从该段重新讲解
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "打开摄像头":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:

@@ -1,0 +1,92 @@
+[
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-01-moment-01-item-01-circle",
+    "before": {
+      "left": "20px",
+      "top": "20px",
+      "width": "440px",
+      "height": "380px"
+    },
+    "after": {
+      "left": "20px",
+      "top": "20px",
+      "width": "440px",
+      "height": "380px"
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-01-moment-01-item-01-plot",
+    "before": {
+      "left": "476px",
+      "top": "20px",
+      "width": "440px",
+      "height": "360px"
+    },
+    "after": {
+      "left": "476px",
+      "top": "20px",
+      "width": "440px",
+      "height": "360px"
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-01-moment-02-item-01",
+    "before": {
+      "left": "944px",
+      "top": "20px",
+      "width": "240px",
+      "height": "72px"
+    },
+    "after": {
+      "left": "944px",
+      "top": "20px",
+      "width": "240px",
+      "height": "72px"
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-01-moment-03-item-01",
+    "before": {
+      "left": "944px",
+      "top": "108px",
+      "width": "240px",
+      "height": "135px"
+    },
+    "after": {
+      "left": "944px",
+      "top": "108px",
+      "width": "240px",
+      "height": "135px"
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-03-moment-03-item-01",
+    "before": {
+      "left": "944px",
+      "top": "283px",
+      "width": "240px",
+      "height": "72px"
+    },
+    "after": {
+      "left": "944px",
+      "top": "283px",
+      "width": "240px",
+      "height": "72px"
+    }
+  },
+  {
+    "id": "trig-unit-circle-to-sine-0.1.3:node:section-03-moment-04-item-01",
+    "before": {
+      "left": "20px",
+      "top": "617px",
+      "width": "302.4px",
+      "height": "135px"
+    },
+    "after": {
+      "left": "20px",
+      "top": "617px",
+      "width": "302.4px",
+      "height": "135px"
+    }
+  }
+]

@@ -1,0 +1,55 @@
+[
+  {
+    "buttons": [],
+    "class": "learning-student-tasks is-world",
+    "course": "trig-cosine-and-phase-shift-0.1.4-region",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "screenHeight": 111.46414184570312,
+    "style": "left: 476px; top: 408px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-not_started",
+        "disabled": null,
+        "text": "拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。轮到你操作了，完成后这里会立即反馈。"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。轮到你操作了，完成后这里会立即反馈。"
+  },
+  {
+    "buttons": [],
+    "class": "learning-student-tasks is-world",
+    "course": "edc3cffb-dd62-488e-bfb1-cd5deb51fa1e",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "screenHeight": 186.7332763671875,
+    "style": "left: 2434px; top: 1216.9px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-not_started is-locked",
+        "disabled": "true",
+        "text": "请将角度 x 调整至约 1.57（即 π/2 弧度），观察 y 的最大值。白板上的课程全部播放完后，就可以继续操作。"
+      },
+      {
+        "class": "learning-student-task is-not_started is-locked",
+        "disabled": "true",
+        "text": "请将角度 x 调整到半个周期 π (约为 3.14 rad)，观察此时 y 的值。白板上的课程全部播放完后，就可以继续操作。"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器请将角度 x 调整至约 1.57（即 π/2 弧度），观察 y 的最大值。白板上的课程全部播放完后，就可以继续操作。请将角度 x 调整到半个周期 π (约为 3.14 rad)，观察此时 y 的值。白板上的课程全部播放完后，就可以继续操作。"
+  },
+  {
+    "buttons": [],
+    "class": "learning-student-tasks is-world",
+    "course": "f3a88797-df49-4285-98bd-3f1d503d10c3",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "screenHeight": 96.1087646484375,
+    "style": "left: 4347.89px; top: 1571.55px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-not_started is-locked",
+        "disabled": "true",
+        "text": "请把斜率 k调到 -5。白板上的课程全部播放完后，就可以继续操作。"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器请把斜率 k调到 -5。白板上的课程全部播放完后，就可以继续操作。"
+  }
+]

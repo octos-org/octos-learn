@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [练习面板保留与布局修复复测](course-runtime-quality/pack-generated-progress-db680e3-2026-10-09/REPORT.md)：db680e3 正弦/余弦布局位移为 0，刷新与播放回归通过；发现混合会话全部完成后生成课练习仍锁定，附坐标表、截图和 Console。
+
 - [刷新恢复修复复测](course-runtime-quality/pack-generated-progress-f4854d7-2026-10-09/REPORT.md)：f4854d7 两种刷新场景、A 与 C–F 播放通过；加载约 0.4–0.5 秒；布局位移仍存在，main 对照未执行。
 
 - [预制课追加生成课首次验收](course-runtime-quality/pack-generated-progress-2026-10-09/REPORT.md)：2f36122 主流程与 C–F 播放通过；B 刷新丢失进度，两种预制课复现。“下一课”原失败判定已撤回，最新结论见刷新恢复修复复测。

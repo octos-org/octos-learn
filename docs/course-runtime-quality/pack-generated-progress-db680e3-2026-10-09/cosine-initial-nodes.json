@@ -1,0 +1,58 @@
+[
+  {
+    "height": "380px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle",
+    "left": "20px",
+    "text": "单位圆与 x 轴投影探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+    "top": "20px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot",
+    "left": "476px",
+    "text": "余弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, cos(θ))y = cos(x)指向曲线查看坐标",
+    "top": "20px",
+    "width": "440px"
+  },
+  {
+    "height": "360px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01",
+    "left": "20px",
+    "text": "正弦与余弦曲线对比探索恢复大图-6-4-20246-101xyy = cos xy = sin x指向曲线查看坐标",
+    "top": "596px",
+    "width": "440px"
+  },
+  {
+    "height": "72px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02",
+    "left": "488px",
+    "text": "y=cos⁡x,y=sin⁡xy = \\cos x, \\quad y = \\sin xy=cosx,y=sinx",
+    "top": "596px",
+    "width": "268px"
+  },
+  {
+    "height": "72px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01",
+    "left": "488px",
+    "text": "cos⁡θ=sin⁡(θ+π2)\\cos\\theta = \\sin\\left(\\theta + \\frac{\\pi}{2}\\right)cosθ=sin(θ+2π​)",
+    "top": "684px",
+    "width": "268px"
+  },
+  {
+    "height": "114px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02",
+    "left": "796px",
+    "text": "余弦函数的几何意义单位圆上动点 P 的横坐标等于 cos θ投影在 x 轴上的符号与长度反映 cos θ 的变化",
+    "top": "596px",
+    "width": "440px"
+  },
+  {
+    "height": "135px",
+    "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02",
+    "left": "796px",
+    "text": "余弦曲线的关键特征点波峰位置：θ = 0, 2π（cos θ = 1）零点位置：θ = π/2, 3π/2（cos θ = 0）波谷位置：θ = π（cos θ = -1）",
+    "top": "726px",
+    "width": "440px"
+  }
+]

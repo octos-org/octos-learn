@@ -1,0 +1,34 @@
+[
+  {
+    "buttons": [],
+    "class": "learning-student-tasks is-world",
+    "course": "trig-unit-circle-to-sine-0.1.3-region",
+    "id": "trig-unit-circle-to-sine-0.1.3-region:interaction:1",
+    "screenHeight": 107.62295532226562,
+    "style": "left: 476px; top: 408px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-succeeded is-locked",
+        "disabled": "true",
+        "text": "拖动滑块，把旋转角 θ 调到波峰位置（π/2，约 1.57），观察动点 P 的高度达到最大值 1，并与正弦曲线的最高点对应。很好！你已经掌握了单位圆旋转与正弦曲线的对应关系。"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器拖动滑块，把旋转角 θ 调到波峰位置（π/2，约 1.57），观察动点 P 的高度达到最大值 1，并与正弦曲线的最高点对应。很好！你已经掌握了单位圆旋转与正弦曲线的对应关系。"
+  },
+  {
+    "buttons": [],
+    "class": "learning-student-tasks is-world",
+    "course": "55aef1d4-2674-4681-8449-d63593ade101",
+    "id": "topic-55aef1d4-2674-4681-8449-d63593ade101.octos-lesson.json:interaction:1",
+    "screenHeight": 86.63116455078125,
+    "style": "left: 2114px; top: 1040.65px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-not_started is-locked",
+        "disabled": "true",
+        "text": "请拖动滑块将角度 x 调整到约为 π/2（约 1.57 弧度），观察此时正弦函数 y 的值。白板上的课程全部播放完后，就可以继续操作。"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器请拖动滑块将角度 x 调整到约为 π/2（约 1.57 弧度），观察此时正弦函数 y 的值。白板上的课程全部播放完后，就可以继续操作。"
+  }
+]

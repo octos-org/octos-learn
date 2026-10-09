@@ -1,0 +1,42 @@
+[
+  {
+    "buttons": [
+      {
+        "disabled": false,
+        "text": "下一个提示"
+      },
+      {
+        "disabled": false,
+        "text": "重新开始"
+      }
+    ],
+    "class": "learning-student-tasks is-world",
+    "course": "571bc7d4-7903-4206-a966-696ddd0630d9",
+    "id": "topic-571bc7d4-7903-4206-a966-696ddd0630d9.octos-lesson.json:interaction:1",
+    "screenHeight": 212.643310546875,
+    "style": "left: 2567.98px; top: 478px; width: 330px;",
+    "tasks": [
+      {
+        "class": "learning-student-task is-needs_hint",
+        "disabled": null,
+        "text": "请拖动角度滑块，将角度 θ 调整到大约 1.57（即 π/2 弧度），观察正弦值是否达到 1。还没达到目标，可以查看提示后再试。已尝试 1 次π/2 大约等于 1.57 弧度。下一个提示重新开始"
+      }
+    ],
+    "text": "动手试一试直接操作白板上的图形、视角或控制器请拖动角度滑块，将角度 θ 调整到大约 1.57（即 π/2 弧度），观察正弦值是否达到 1。还没达到目标，可以查看提示后再试。已尝试 1 次π/2 大约等于 1.57 弧度。下一个提示重新开始"
+  },
+  {
+    "buttons": [
+      {
+        "disabled": false,
+        "text": "查看答案"
+      }
+    ],
+    "class": "learning-reflection-card is-world",
+    "course": "9e9c3028-1d01-4ad9-a903-d65ea8843a54",
+    "id": "reflection:topic-9e9c3028-1d01-4ad9-a903-d65ea8843a54.octos-lesson.json:section-01-reflection-01",
+    "screenHeight": 106.12240600585938,
+    "style": "left: 1146.95px; top: 430.615px; width: 432px;",
+    "tasks": [],
+    "text": "想一想先独立思考，再展开答案核对当斜率 k 变为负数时，直线的倾斜方向会发生怎样的变化？查看答案"
+  }
+]
