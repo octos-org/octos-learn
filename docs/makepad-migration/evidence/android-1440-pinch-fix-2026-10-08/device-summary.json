@@ -1,0 +1,41 @@
+{
+  "size": "Physical size: 3840x2160\n",
+  "density": "Physical density: 480\nOverride density: 640\n",
+  "webIdentity": {
+    "codePath": [
+      "/data/app/~~3BWSRxKrS7tLlOrelmOqKg==/cc.pitun.learn-B0DjVGs77Db8ny0JnstIag=="
+    ],
+    "versionCode": [
+      "33 minSdk=26 targetSdk=35"
+    ],
+    "versionName": [
+      "0.1.2"
+    ],
+    "firstInstallTime": [
+      "2026-09-13 01:58:13"
+    ],
+    "lastUpdateTime": [
+      "2026-10-06 02:10:22"
+    ]
+  },
+  "nativeIdentity": {
+    "codePath": [
+      "/data/app/~~XGNTI2BPFIJDslI2ilLpzQ==/cc.pitun.learn.makepadtest--iaFzz4M6LNwPCll9ajA3w=="
+    ],
+    "versionCode": [
+      "202610071 minSdk=26 targetSdk=35"
+    ],
+    "versionName": [
+      "0.1.0-makepad-test-20261007.2"
+    ],
+    "firstInstallTime": [
+      "2026-10-08 12:33:34"
+    ],
+    "lastUpdateTime": [
+      "2026-10-09 14:12:58"
+    ]
+  },
+  "installedSha256": "148869d60193918d32dbfe0c1fa99817546f1ded0b0b529bc2e248fe98b64ae3",
+  "helperUninstall": "Success\n",
+  "crashRows": []
+}

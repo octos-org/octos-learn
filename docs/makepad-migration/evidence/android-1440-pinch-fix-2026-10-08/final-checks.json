@@ -1,0 +1,11 @@
+{
+  "sameSystemSize": true,
+  "sameSystemDensity": true,
+  "sameWebIdentity": true,
+  "nativeFirstInstallRetained": true,
+  "installedSha256Matches": true,
+  "helperRemoved": true,
+  "normalNoPerfRows": true,
+  "noCrashRows": true,
+  "defaultSurface2560x1440": true
+}

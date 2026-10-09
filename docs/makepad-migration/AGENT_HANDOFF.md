@@ -17,7 +17,9 @@
 
 ## 0. 一句话现状
 
-**最新安卓白板复测（2026-10-08）**：干净8439a78（含ae38705）已重打安装；约1440p稳态Draw382→46、busy35.0→7.8%。单指复用90/完整遍历1，gap46.2ms；双指却完整遍历106/复用0、refresh107，Actions来源未定位。1080p平移33.3 /缩放35.9ms，1440p46.2 /43.4ms，1620p55.6 /52.4ms；1440p尚未达33ms预算。短录屏抽帧未见缺块 /明显闪烁；I组census因Java未转发extra未采到。系统 / Web包保持、默认0.5、诊断关闭，临时手势工具已移除。见 [镜头复用与播放成本复测](ANDROID_BOARD_CAMERA_REUSE_RETEST_2026-10-08.md)。
+**最新安卓交付（2026-10-08）**：干净 `3b32127`（基于 `5bbadde`）已安装，默认精确2560×1440。双指动作来源是真机 `main_window` 外层 View；安卓白板UI分发过滤其原始指针动作，保留子控件 /键盘 /窗口 /服务动作，固定Makepad未改。双指完整遍历 /复用112/0→5/100，busy37.2→12.4%，gap仍约43ms，未达到稳定33ms。按钮、滑块、笔迹与框选坐标通过触屏检查；最终无extra，系统 /Web包保留，临时工具已移除。见 [1440p与双指修复](ANDROID_1440P_PINCH_FIX_2026-10-08.md)。
+
+**上轮安卓白板复测（2026-10-08，历史）**：干净8439a78（含ae38705）已重打安装；约1440p稳态Draw382→46、busy35.0→7.8%。单指复用90/完整遍历1，gap46.2ms；双指却完整遍历106/复用0、refresh107，Actions来源未定位。1080p平移33.3 /缩放35.9ms，1440p46.2 /43.4ms，1620p55.6 /52.4ms；1440p尚未达33ms预算。短录屏抽帧未见缺块 /明显闪烁；I组census因Java未转发extra未采到。系统 / Web包保持、默认0.5、诊断关闭，临时手势工具已移除。见 [镜头复用与播放成本复测](ANDROID_BOARD_CAMERA_REUSE_RETEST_2026-10-08.md)。
 
 上一轮分辨率对照：同一2666794的首页 /课程集缓存滚动在1080p到4K均≤30ms；播放gap分别33.2 /50.9 /61.3 /100.4ms，补测2112×1188为38.1ms。当前未找到提高分辨率仍保持约33ms播放的比例。无产品改动，默认0.5 /诊断关闭，系统和Web APK保持。见 [四比例实测](ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)。
 
@@ -66,13 +68,13 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 
 ## 1. 分支与提交
 
-当前安装 APK：干净 `8439a78a265c46fa1eaa493bc0f065ee676a93ae`，`productDirty=false`；SHA-256 `f7e6ac7777bc1d35721b8c8460adb6edc2d769b3d785f8ea609a3d73e2193107`，设备文件一致。包名 `cc.pitun.learn.makepadtest`，默认缓存 /1080p、perf / bisect关闭。OLL4263b22，固定Makepad825dbb4 + 已授权矢量颜色补丁。新公共服务默认 /邮箱登录包含在本次APK中，本轮未测试登录及生成流程。交接及性能证据同分支推送，不合并 /不开PR。
+当前安装 APK：干净 `3b321277f0a3482d10b1a64db15a12d92c2eeceb`，`productDirty=false`；SHA-256 `148869d60193918d32dbfe0c1fa99817546f1ded0b0b529bc2e248fe98b64ae3`，设备文件一致。包名 `cc.pitun.learn.makepadtest`，默认1440p /缓存、perf /bisect关闭。OLL4263b22，固定Makepad825dbb4 + 授权颜色补丁，公网learn.pitun.cc /邮箱登录保持。本轮产品修复与验证记录同分支推送，不合并 /不开PR；Mac已运行包仍2666794。
 
 2026-10-07 在 alan0x 本机准备测试环境：持久 `octos-learn` 经用户明确要求切换到本分支并拉取到 `bc9d240`；测试源码快照为 `bc9d240`，现已同步本地未提交的旁白修复，配套 OLL 从远端拉到 `d59b607`。其他持久仓库分支未切换，未推送或合并；未创建 PR。具体版本、启动入口与验证见 [本机测试环境](LOCAL_TEST_ENVIRONMENT_2026-10-07.md)。
 
 | 仓库 | 分支 | HEAD | 远端 |
 |---|---|---|---|
-| `octos-learn` | `codex/macos-product-ui` | **最新已安装产品基线 `8439a78` + 本轮复测文档；此前Mac本地包仍2666794**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
+| `octos-learn` | `codex/macos-product-ui` | **最新已安装产品基线 `3b32127` + 本轮证据文档；此前Mac本地包仍2666794**；**v7 已推送**（每块单独提交，详见 V7 §1–2 与 NATIVE_MACOS_PROGRESS.md）。**v6 已推送**：合并 main `5e7b331`（`499e0d5`）+ v6 原生改动与 V6 文档 `490de05`。此前截至 v5 文档全部已推送：v4 启动器 `0dee7c6`、合并 main `f006919`（`183838c`）、v5 原生排布/相机 `3ca18ba` 和 `fde93a7`，以及 V5 文档 | octos-org/octos-learn 同名分支 |
 | `octos-lesson-language` | `codex/rust-runtime-product` | **当前构建依赖4263b22（含40162b3，音频时钟同步）**； **v7 已推送**：练习 `ab2a0ca`、plot `8b3e132`、geometry `556f3ae`、旁白 `527fc6d`、目录 `bb158ad`、手写 `bf79296`、plot 探针 `30c1eff`。**v6 已推送**：合并 main `67d1476`（`8bcfe46`）+ v6 runtime 移植与 fixture `9a86f8e`。此前 `d4d5af1`（已推送）：teaching/camera/focus `962f9e1`、控件分组 `08e5a32`、Beat 步进 `d4d5af1`；此前 `b7d079f` 为 scene3d；基于 main `f2a1c65` | alan0x/octos-lesson-language 同名分支 |
 | `~/Documents/projects/octoscript-makepad` | `fix/plot-zbias-band` | `87f0d59`（基于上游 main `b0628d0`） | fork alan0x/Octoscript-Makepad，**PR #35 待评审** |
 
@@ -81,6 +83,8 @@ macOS 产品应用 **v5（白板排布与取景）已推送**（记录见 `OLL_M
 用户指示：分支只推送不合并；PR 由用户自己跟进。GPT 时代的验证分支 `codex/macos-oll-validation`（v6 回归工具）与 `codex/rust-runtime-macos-validation` 仍在，不要删。
 
 ## 2. 工作区重建
+
+2026-10-08 默认1440p与双指修复：主checkout和独立构建checkout同步 `3b32127`，固定依赖 /颜色补丁保留；`.local-dev/android-1440-pinch-fix/`及调研镜像保存APK /截图 /构建和动作 /性能原始日志 /脚本。产品18 passed（2 ignored）、共享白板19 passed；临时动作trace已移除，最终APK源码干净，临时Instrumentation已卸载。详见最新交付报告。
 
 2026-10-08 8439a78安卓复测：主checkout与独立构建checkout均同步新产品提交，固定依赖和授权颜色补丁保留；APK /脚本 /截图 /录屏 /原始日志在`.local-dev/android-8439a78-camera/`及调研镜像同名目录。仅更新安卓独立测试包，Mac已运行包未重打；临时Instrumentation工具测试后卸载，系统显示与WebAPK保留。
 
@@ -157,7 +161,7 @@ OCTOS_PACK_ARCHIVES=$WS/course-packs bash scripts/package-macos.sh   # 产出 di
 
 ## 5. 与网页版的剩余差异 / 待办（按用户关注排序）
 
-- 8439a78已真机验证：无变化播放tick不再刷新、单指镜头复用生效；双指缩放仍每帧Actions / refresh / 完整遍历，具体action来源未定位。约1440p平移46.2ms /缩放43.4ms，尚未达33ms预算；默认0.5保持，60Hz Timer仍在。census extra没有经过Java转发。详见本轮复测，尚未测试登录、提问生成和全部安卓UI。
+- ~~双指缩放零复用 /动作来源未定位~~：3b32127已定位并过滤main_window外层View指针动作，真机复用100 /完整遍历5、refresh0。默认精确1440p、单指45.7ms /双指43.0ms，用户接受一定卡顿；GPU等待与60Hz Timer仍待优化，其他控件Actions仍可能触发全UI刷新。census extra仍未转发；登录 /生成 /全部安卓UI未完整验收。
 - 应用自身1080p surface与启动器纹理缓存此前已真机验证，系统仍4K；425d25b首页 /课程集gap18.49 /18.35ms，软件Draw节奏不等同面板FPS。
 - ~~bf83cf2首页卡片起手拖动误导航、菜单外部触摸不关闭 / 条目无响应~~：425d25b已修，2026-10-08第一 / 第三卡片拖动、触摸关闭菜单、菜单条目及重置 / 删除的取消 / 确定均通过ADB检查。卡片点击 / 预览 / 互动 / 惯性 / 返回后滚动也通过。仅删除本轮创建的第二课测试记录，第一课仍可继续。主题色偏蓝另案交Claude，本轮保持现状。
 - Android 紧凑首页、顶栏、手写工具、输入栏、老师头像与取景密度已实现；未宣称所有页面逐像素一致。窄屏、相机实画面、AI/ASR、Android 有声旁白仍需专项实测。

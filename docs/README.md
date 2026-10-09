@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [安卓默认1440p与双指缩放修复](makepad-migration/ANDROID_1440P_PINCH_FIX_2026-10-08.md)：3b32127真机确认2560×1440，定位窗口View动作并修复复用失效；触摸坐标与对照数据。
+
 - [安卓白板镜头复用与播放成本复测](makepad-migration/ANDROID_BOARD_CAMERA_REUSE_RETEST_2026-10-08.md)：8439a78减少静止重画，单指复用生效，双指仍整板刷新；约1440p连续触摸未达33ms预算。
 
 - [安卓大屏四比例清晰度 /性能对照](makepad-migration/ANDROID_RESOLUTION_COMPARISON_2026-10-08.md)：同APK比较1080p、约1440p、1620p、4K；缓存滚动流畅，高分辨率播放仍受限。

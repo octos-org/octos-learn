@@ -1,0 +1,48 @@
+{
+  "name": "before-path",
+  "scale": null,
+  "mode": "pinch",
+  "bisect": "traceactions",
+  "visualOnly": false,
+  "deviceStartEpoch": 1791525695.8515718,
+  "actionStart": 0.003527791999999863,
+  "actionEnd": 6.348197667000001,
+  "samples": [
+    {
+      "elapsed": -0.7765717506408691,
+      "line": "1791525695.075  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 48.3ms max 1.0ms || frames 0"
+    },
+    {
+      "elapsed": 0.2244281768798828,
+      "line": "1791525696.076  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 50.0ms max 1.5ms || frames 0"
+    },
+    {
+      "elapsed": 1.2274281978607178,
+      "line": "1791525697.079  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 51.9ms max 1.5ms | TouchUpdate 2x 0.7ms max 0.4ms || frames 0"
+    },
+    {
+      "elapsed": 2.2314281463623047,
+      "line": "1791525698.083  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 31% | Draw 16x 258.9ms max 21.5ms | Actions 17x 40.1ms max 3.0ms | Timer 16x 7.8ms max 1.0ms | TouchUpdate 16x 4.1ms max 0.5ms | NextFrame 5x 3.4ms max 1.1ms | KeyFocus 1x 0.7ms max 0.7ms || frames 16 gap 418.5ms max 5722.3ms | event 37.4ms draw 7.2ms wait 45.1ms | board_set_state 17x 15.9ms | board_walk 16x 207.6ms | refresh 17x 25.5ms"
+    },
+    {
+      "elapsed": 3.2394282817840576,
+      "line": "1791525699.091  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 45% | Draw 24x 369.0ms max 17.7ms | Actions 24x 61.6ms max 4.0ms | Timer 30x 18.7ms max 1.2ms | TouchUpdate 24x 6.8ms max 0.9ms || frames 24 gap 42.1ms max 68.2ms | event 19.1ms draw 6.0ms wait 14.8ms | board_set_state 24x 24.1ms | board_walk 24x 301.5ms | refresh 24x 39.3ms"
+    },
+    {
+      "elapsed": 4.286428213119507,
+      "line": "1791525700.138  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 45% | Draw 24x 389.8ms max 19.7ms | Actions 24x 58.0ms max 3.6ms | Timer 28x 20.6ms max 3.4ms | TouchUpdate 25x 6.4ms max 0.4ms || frames 24 gap 41.6ms max 66.7ms | event 19.9ms draw 6.3ms wait 13.8ms | board_set_state 24x 21.3ms | board_walk 24x 314.4ms | refresh 24x 37.6ms"
+    },
+    {
+      "elapsed": 5.301428318023682,
+      "line": "1791525701.153  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 34% | Draw 18x 285.9ms max 18.6ms | Actions 18x 42.4ms max 3.1ms | Timer 18x 10.2ms max 1.4ms | TouchUpdate 18x 4.7ms max 0.5ms || frames 18 gap 58.1ms max 68.2ms | event 19.0ms draw 6.1ms wait 32.8ms | board_set_state 18x 16.5ms | board_walk 18x 226.6ms | refresh 18x 27.6ms"
+    },
+    {
+      "elapsed": 6.3054282665252686,
+      "line": "1791525702.157  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 63% | Draw 30x 521.2ms max 27.5ms | Actions 31x 79.0ms max 4.6ms | Timer 37x 23.6ms max 1.8ms | TouchUpdate 31x 8.6ms max 0.9ms || frames 30 gap 33.7ms max 48.2ms | event 20.7ms draw 6.2ms wait 4.9ms | board_set_state 31x 27.8ms | board_walk 30x 420.2ms | refresh 31x 48.8ms"
+    },
+    {
+      "elapsed": 7.3064281940460205,
+      "line": "1791525703.158  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 47.8ms max 1.0ms || frames 0"
+    }
+  ]
+}

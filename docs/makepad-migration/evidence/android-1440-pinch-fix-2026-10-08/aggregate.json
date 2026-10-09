@@ -1,0 +1,1982 @@
+[
+  {
+    "name": "after-pan",
+    "all": {
+      "windows": 8,
+      "frames": 109,
+      "zeroDrawWindows": 2,
+      "gapMs": 96.80091743119266,
+      "channelsMs": {
+        "event": 7.0504587155963305,
+        "draw": 5.4513761467889905,
+        "wait": 36.55229357798165
+      },
+      "meanBusyPercent": 7.625,
+      "counters": {
+        "board_reuse": {
+          "count": 108,
+          "ms": 6.2,
+          "msPerOccurrence": 0.05740740740740741
+        },
+        "board_walk": {
+          "count": 1,
+          "ms": 20.2,
+          "msPerOccurrence": 20.2
+        }
+      }
+    },
+    "steady": {
+      "windows": 5,
+      "frames": 101,
+      "zeroDrawWindows": 0,
+      "gapMs": 100.84851485148513,
+      "channelsMs": {
+        "event": 7.276237623762376,
+        "draw": 5.463366336633663,
+        "wait": 36.58811881188119
+      },
+      "meanBusyPercent": 9,
+      "counters": {
+        "board_reuse": {
+          "count": 100,
+          "ms": 5.7,
+          "msPerOccurrence": 0.057
+        },
+        "board_walk": {
+          "count": 1,
+          "ms": 20.2,
+          "msPerOccurrence": 20.2
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 5,
+      "frames": 96,
+      "zeroDrawWindows": 0,
+      "gapMs": 45.65416666666667,
+      "channelsMs": {
+        "event": 4.2,
+        "draw": 5.322916666666667,
+        "wait": 36.03125
+      },
+      "meanBusyPercent": 8.4,
+      "counters": {
+        "board_reuse": {
+          "count": 96,
+          "ms": 5.6000000000000005,
+          "msPerOccurrence": 0.05833333333333334
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": -0.24978971481323242,
+        "line": "1791526242.342  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 49.8ms max 1.5ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 0.7662103176116943,
+        "line": "1791526243.358  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 51.7ms max 1.7ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 1.783210277557373,
+        "line": "1791526244.375  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 13x 63.2ms max 23.0ms | Timer 36x 28.8ms max 1.5ms | TouchUpdate 15x 3.6ms max 0.3ms || frames 13 gap 474.5ms max 5598.0ms | event 28.1ms draw 6.4ms wait 40.4ms | board_reuse 12x 0.6ms | board_walk 1x 20.2ms",
+        "frames": 13,
+        "gapMs": 474.5,
+        "maxGapMs": 5598.0,
+        "channels": {
+          "event": 28.1,
+          "draw": 6.4,
+          "wait": 40.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 12,
+            "ms": 0.6
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 20.2
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 2.788210391998291,
+        "line": "1791526245.380  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 22x 70.8ms max 4.5ms | Timer 22x 14.8ms max 1.0ms | TouchUpdate 23x 5.6ms max 0.3ms || frames 22 gap 45.7ms max 47.2ms | event 4.2ms draw 5.4ms wait 36.0ms | board_reuse 22x 1.2ms",
+        "frames": 22,
+        "gapMs": 45.7,
+        "maxGapMs": 47.2,
+        "channels": {
+          "event": 4.2,
+          "draw": 5.4,
+          "wait": 36.0
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 22,
+            "ms": 1.2
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 3.792210340499878,
+        "line": "1791526246.384  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 22x 72.0ms max 4.0ms | Timer 22x 14.6ms max 1.0ms | TouchUpdate 22x 6.1ms max 0.5ms || frames 22 gap 45.6ms max 47.0ms | event 4.2ms draw 5.2ms wait 36.1ms | board_reuse 22x 1.5ms",
+        "frames": 22,
+        "gapMs": 45.6,
+        "maxGapMs": 47.0,
+        "channels": {
+          "event": 4.2,
+          "draw": 5.2,
+          "wait": 36.1
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 22,
+            "ms": 1.5
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 4.796210289001465,
+        "line": "1791526247.388  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 22x 69.6ms max 3.9ms | Timer 22x 14.9ms max 1.0ms | TouchUpdate 22x 5.8ms max 0.5ms || frames 22 gap 45.6ms max 47.2ms | event 4.1ms draw 5.3ms wait 36.1ms | board_reuse 22x 1.2ms",
+        "frames": 22,
+        "gapMs": 45.6,
+        "maxGapMs": 47.2,
+        "channels": {
+          "event": 4.1,
+          "draw": 5.3,
+          "wait": 36.1
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 22,
+            "ms": 1.2
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 5.802210330963135,
+        "line": "1791526248.394  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 22x 72.6ms max 4.3ms | Timer 22x 15.4ms max 1.0ms | TouchUpdate 24x 5.8ms max 0.4ms || frames 22 gap 45.7ms max 47.3ms | event 4.3ms draw 5.4ms wait 35.9ms | board_reuse 22x 1.2ms",
+        "frames": 22,
+        "gapMs": 45.7,
+        "maxGapMs": 47.3,
+        "channels": {
+          "event": 4.3,
+          "draw": 5.4,
+          "wait": 35.9
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 22,
+            "ms": 1.2
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 6.8162102699279785,
+        "line": "1791526249.408  4412  4436 I Makepad : src/perf.rs:78:13 - [perf] busy 6% | Timer 48x 36.3ms max 0.9ms | Draw 8x 25.6ms max 3.7ms | TouchUpdate 8x 2.0ms max 0.3ms || frames 8 gap 45.7ms max 47.2ms | event 4.2ms draw 5.3ms wait 36.1ms | board_reuse 8x 0.5ms",
+        "frames": 8,
+        "gapMs": 45.7,
+        "maxGapMs": 47.2,
+        "channels": {
+          "event": 4.2,
+          "draw": 5.3,
+          "wait": 36.1
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 8,
+            "ms": 0.5
+          }
+        },
+        "busyPercent": 6
+      }
+    ]
+  },
+  {
+    "name": "after-pinch",
+    "all": {
+      "windows": 8,
+      "frames": 112,
+      "zeroDrawWindows": 2,
+      "gapMs": 95.64107142857145,
+      "channelsMs": {
+        "event": 8.449107142857143,
+        "draw": 5.010714285714286,
+        "wait": 27.91696428571429
+      },
+      "meanBusyPercent": 9.875,
+      "counters": {
+        "board_reuse": {
+          "count": 107,
+          "ms": 5.8999999999999995,
+          "msPerOccurrence": 0.055140186915887845
+        },
+        "board_walk": {
+          "count": 5,
+          "ms": 63.0,
+          "msPerOccurrence": 12.6
+        }
+      }
+    },
+    "steady": {
+      "windows": 6,
+      "frames": 110,
+      "zeroDrawWindows": 1,
+      "gapMs": 96.8418181818182,
+      "channelsMs": {
+        "event": 8.51909090909091,
+        "draw": 5.027272727272727,
+        "wait": 28.180909090909093
+      },
+      "meanBusyPercent": 11.5,
+      "counters": {
+        "board_reuse": {
+          "count": 105,
+          "ms": 5.699999999999999,
+          "msPerOccurrence": 0.05428571428571428
+        },
+        "board_walk": {
+          "count": 5,
+          "ms": 63.0,
+          "msPerOccurrence": 12.6
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 4,
+      "frames": 96,
+      "zeroDrawWindows": 0,
+      "gapMs": 42.84583333333333,
+      "channelsMs": {
+        "event": 5.765625,
+        "draw": 4.827083333333333,
+        "wait": 23.730208333333334
+      },
+      "meanBusyPercent": 13.75,
+      "counters": {
+        "board_reuse": {
+          "count": 92,
+          "ms": 5.0,
+          "msPerOccurrence": 0.05434782608695652
+        },
+        "board_walk": {
+          "count": 4,
+          "ms": 47.4,
+          "msPerOccurrence": 11.85
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": 0.06334280967712402,
+        "line": "1791526197.958  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 48.3ms max 1.1ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 1.0803427696228027,
+        "line": "1791526198.975  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 50.6ms max 1.2ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 2.0823428630828857,
+        "line": "1791526199.977  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 9% | Draw 14x 65.2ms max 19.1ms | Timer 19x 14.2ms max 1.3ms | TouchUpdate 16x 5.2ms max 1.1ms | NextFrame 5x 3.5ms max 0.9ms | KeyFocus 1x 0.7ms max 0.7ms || frames 14 gap 467.1ms max 5701.9ms | event 27.4ms draw 6.4ms wait 58.7ms | board_reuse 13x 0.7ms | board_walk 1x 15.6ms",
+        "frames": 14,
+        "gapMs": 467.1,
+        "maxGapMs": 5701.9,
+        "channels": {
+          "event": 27.4,
+          "draw": 6.4,
+          "wait": 58.7
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 13,
+            "ms": 0.7
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 15.6
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 3.0973429679870605,
+        "line": "1791526200.992  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 17% | Draw 23x 129.4ms max 15.6ms | Timer 33x 30.9ms max 5.0ms | TouchUpdate 24x 10.1ms max 3.3ms || frames 23 gap 45.5ms max 67.4ms | event 7.3ms draw 5.0ms wait 28.1ms | board_reuse 19x 1.0ms | board_walk 4x 47.4ms",
+        "frames": 23,
+        "gapMs": 45.5,
+        "maxGapMs": 67.4,
+        "channels": {
+          "event": 7.3,
+          "draw": 5.0,
+          "wait": 28.1
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 19,
+            "ms": 1.0
+          },
+          "board_walk": {
+            "count": 4,
+            "ms": 47.4
+          }
+        },
+        "busyPercent": 17
+      },
+      {
+        "elapsed": 4.13234281539917,
+        "line": "1791526202.027  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 13% | Draw 26x 94.7ms max 6.0ms | Timer 41x 37.4ms max 2.6ms | TouchUpdate 28x 6.8ms max 0.4ms || frames 26 gap 38.5ms max 66.8ms | event 5.5ms draw 4.6ms wait 14.5ms | board_reuse 26x 1.4ms",
+        "frames": 26,
+        "gapMs": 38.5,
+        "maxGapMs": 66.8,
+        "channels": {
+          "event": 5.5,
+          "draw": 4.6,
+          "wait": 14.5
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 26,
+            "ms": 1.4
+          }
+        },
+        "busyPercent": 13
+      },
+      {
+        "elapsed": 5.133342981338501,
+        "line": "1791526203.028  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 8% | Draw 16x 59.2ms max 4.6ms | Timer 16x 11.9ms max 1.4ms | TouchUpdate 17x 4.1ms max 0.3ms || frames 16 gap 64.2ms max 71.5ms | event 4.7ms draw 5.0ms wait 54.4ms | board_reuse 16x 0.9ms",
+        "frames": 16,
+        "gapMs": 64.2,
+        "maxGapMs": 71.5,
+        "channels": {
+          "event": 4.7,
+          "draw": 5.0,
+          "wait": 54.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 16,
+            "ms": 0.9
+          }
+        },
+        "busyPercent": 8
+      },
+      {
+        "elapsed": 6.134342908859253,
+        "line": "1791526204.029  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 17% | Draw 31x 114.3ms max 4.9ms | Timer 48x 40.9ms max 2.6ms | TouchUpdate 30x 10.6ms max 3.2ms || frames 31 gap 33.5ms max 46.5ms | event 5.4ms draw 4.8ms wait 12.4ms | board_reuse 31x 1.7ms",
+        "frames": 31,
+        "gapMs": 33.5,
+        "maxGapMs": 46.5,
+        "channels": {
+          "event": 5.4,
+          "draw": 4.8,
+          "wait": 12.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 31,
+            "ms": 1.7
+          }
+        },
+        "busyPercent": 17
+      },
+      {
+        "elapsed": 7.146342754364014,
+        "line": "1791526205.041  4200  4224 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 59x 46.3ms max 1.1ms | Draw 2x 6.0ms max 3.0ms | TouchUpdate 4x 0.8ms max 0.3ms || frames 2 gap 29.6ms max 33.1ms | event 4.6ms draw 4.1ms wait 13.4ms | board_reuse 2x 0.2ms",
+        "frames": 2,
+        "gapMs": 29.6,
+        "maxGapMs": 33.1,
+        "channels": {
+          "event": 4.6,
+          "draw": 4.1,
+          "wait": 13.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 2,
+            "ms": 0.2
+          }
+        },
+        "busyPercent": 5
+      }
+    ]
+  },
+  {
+    "name": "before-path",
+    "all": {
+      "windows": 9,
+      "frames": 112,
+      "zeroDrawWindows": 4,
+      "gapMs": 96.08571428571427,
+      "channelsMs": {
+        "event": 22.298214285714284,
+        "draw": 6.305357142857142,
+        "wait": 19.155357142857145
+      },
+      "meanBusyPercent": 26.444444444444443,
+      "counters": {
+        "board_set_state": {
+          "count": 114,
+          "ms": 105.6,
+          "msPerOccurrence": 0.9263157894736842
+        },
+        "board_walk": {
+          "count": 112,
+          "ms": 1470.3,
+          "msPerOccurrence": 13.127678571428572
+        },
+        "refresh": {
+          "count": 114,
+          "ms": 178.8,
+          "msPerOccurrence": 1.568421052631579
+        }
+      }
+    },
+    "steady": {
+      "windows": 6,
+      "frames": 112,
+      "zeroDrawWindows": 1,
+      "gapMs": 96.08571428571427,
+      "channelsMs": {
+        "event": 22.298214285714284,
+        "draw": 6.305357142857142,
+        "wait": 19.155357142857145
+      },
+      "meanBusyPercent": 37.166666666666664,
+      "counters": {
+        "board_set_state": {
+          "count": 114,
+          "ms": 105.6,
+          "msPerOccurrence": 0.9263157894736842
+        },
+        "board_walk": {
+          "count": 112,
+          "ms": 1470.3,
+          "msPerOccurrence": 13.127678571428572
+        },
+        "refresh": {
+          "count": 114,
+          "ms": 178.8,
+          "msPerOccurrence": 1.568421052631579
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 4,
+      "frames": 96,
+      "zeroDrawWindows": 0,
+      "gapMs": 42.35,
+      "channelsMs": {
+        "event": 19.78125,
+        "draw": 6.15625,
+        "wait": 14.831250000000002
+      },
+      "meanBusyPercent": 46.75,
+      "counters": {
+        "board_set_state": {
+          "count": 97,
+          "ms": 89.7,
+          "msPerOccurrence": 0.9247422680412372
+        },
+        "board_walk": {
+          "count": 96,
+          "ms": 1262.7,
+          "msPerOccurrence": 13.153125000000001
+        },
+        "refresh": {
+          "count": 97,
+          "ms": 153.3,
+          "msPerOccurrence": 1.5804123711340208
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": -0.7765717506408691,
+        "line": "1791525695.075  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 48.3ms max 1.0ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 0.2244281768798828,
+        "line": "1791525696.076  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 50.0ms max 1.5ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 1.2274281978607178,
+        "line": "1791525697.079  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 51.9ms max 1.5ms | TouchUpdate 2x 0.7ms max 0.4ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 2.2314281463623047,
+        "line": "1791525698.083  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 31% | Draw 16x 258.9ms max 21.5ms | Actions 17x 40.1ms max 3.0ms | Timer 16x 7.8ms max 1.0ms | TouchUpdate 16x 4.1ms max 0.5ms | NextFrame 5x 3.4ms max 1.1ms | KeyFocus 1x 0.7ms max 0.7ms || frames 16 gap 418.5ms max 5722.3ms | event 37.4ms draw 7.2ms wait 45.1ms | board_set_state 17x 15.9ms | board_walk 16x 207.6ms | refresh 17x 25.5ms",
+        "frames": 16,
+        "gapMs": 418.5,
+        "maxGapMs": 5722.3,
+        "channels": {
+          "event": 37.4,
+          "draw": 7.2,
+          "wait": 45.1
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 17,
+            "ms": 15.9
+          },
+          "board_walk": {
+            "count": 16,
+            "ms": 207.6
+          },
+          "refresh": {
+            "count": 17,
+            "ms": 25.5
+          }
+        },
+        "busyPercent": 31
+      },
+      {
+        "elapsed": 3.2394282817840576,
+        "line": "1791525699.091  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 45% | Draw 24x 369.0ms max 17.7ms | Actions 24x 61.6ms max 4.0ms | Timer 30x 18.7ms max 1.2ms | TouchUpdate 24x 6.8ms max 0.9ms || frames 24 gap 42.1ms max 68.2ms | event 19.1ms draw 6.0ms wait 14.8ms | board_set_state 24x 24.1ms | board_walk 24x 301.5ms | refresh 24x 39.3ms",
+        "frames": 24,
+        "gapMs": 42.1,
+        "maxGapMs": 68.2,
+        "channels": {
+          "event": 19.1,
+          "draw": 6.0,
+          "wait": 14.8
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 24,
+            "ms": 24.1
+          },
+          "board_walk": {
+            "count": 24,
+            "ms": 301.5
+          },
+          "refresh": {
+            "count": 24,
+            "ms": 39.3
+          }
+        },
+        "busyPercent": 45
+      },
+      {
+        "elapsed": 4.286428213119507,
+        "line": "1791525700.138  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 45% | Draw 24x 389.8ms max 19.7ms | Actions 24x 58.0ms max 3.6ms | Timer 28x 20.6ms max 3.4ms | TouchUpdate 25x 6.4ms max 0.4ms || frames 24 gap 41.6ms max 66.7ms | event 19.9ms draw 6.3ms wait 13.8ms | board_set_state 24x 21.3ms | board_walk 24x 314.4ms | refresh 24x 37.6ms",
+        "frames": 24,
+        "gapMs": 41.6,
+        "maxGapMs": 66.7,
+        "channels": {
+          "event": 19.9,
+          "draw": 6.3,
+          "wait": 13.8
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 24,
+            "ms": 21.3
+          },
+          "board_walk": {
+            "count": 24,
+            "ms": 314.4
+          },
+          "refresh": {
+            "count": 24,
+            "ms": 37.6
+          }
+        },
+        "busyPercent": 45
+      },
+      {
+        "elapsed": 5.301428318023682,
+        "line": "1791525701.153  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 34% | Draw 18x 285.9ms max 18.6ms | Actions 18x 42.4ms max 3.1ms | Timer 18x 10.2ms max 1.4ms | TouchUpdate 18x 4.7ms max 0.5ms || frames 18 gap 58.1ms max 68.2ms | event 19.0ms draw 6.1ms wait 32.8ms | board_set_state 18x 16.5ms | board_walk 18x 226.6ms | refresh 18x 27.6ms",
+        "frames": 18,
+        "gapMs": 58.1,
+        "maxGapMs": 68.2,
+        "channels": {
+          "event": 19.0,
+          "draw": 6.1,
+          "wait": 32.8
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 18,
+            "ms": 16.5
+          },
+          "board_walk": {
+            "count": 18,
+            "ms": 226.6
+          },
+          "refresh": {
+            "count": 18,
+            "ms": 27.6
+          }
+        },
+        "busyPercent": 34
+      },
+      {
+        "elapsed": 6.3054282665252686,
+        "line": "1791525702.157  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 63% | Draw 30x 521.2ms max 27.5ms | Actions 31x 79.0ms max 4.6ms | Timer 37x 23.6ms max 1.8ms | TouchUpdate 31x 8.6ms max 0.9ms || frames 30 gap 33.7ms max 48.2ms | event 20.7ms draw 6.2ms wait 4.9ms | board_set_state 31x 27.8ms | board_walk 30x 420.2ms | refresh 31x 48.8ms",
+        "frames": 30,
+        "gapMs": 33.7,
+        "maxGapMs": 48.2,
+        "channels": {
+          "event": 20.7,
+          "draw": 6.2,
+          "wait": 4.9
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 31,
+            "ms": 27.8
+          },
+          "board_walk": {
+            "count": 30,
+            "ms": 420.2
+          },
+          "refresh": {
+            "count": 31,
+            "ms": 48.8
+          }
+        },
+        "busyPercent": 63
+      },
+      {
+        "elapsed": 7.3064281940460205,
+        "line": "1791525703.158  3457  3482 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 47.8ms max 1.0ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      }
+    ]
+  },
+  {
+    "name": "before-pinch",
+    "all": {
+      "windows": 8,
+      "frames": 112,
+      "zeroDrawWindows": 2,
+      "gapMs": 98.31428571428569,
+      "channelsMs": {
+        "event": 22.194642857142856,
+        "draw": 6.198214285714286,
+        "wait": 19.669642857142858
+      },
+      "meanBusyPercent": 29,
+      "counters": {
+        "board_set_state": {
+          "count": 116,
+          "ms": 105.60000000000001,
+          "msPerOccurrence": 0.9103448275862069
+        },
+        "board_walk": {
+          "count": 112,
+          "ms": 1478.8,
+          "msPerOccurrence": 13.203571428571427
+        },
+        "refresh": {
+          "count": 116,
+          "ms": 179.70000000000002,
+          "msPerOccurrence": 1.5491379310344828
+        }
+      }
+    },
+    "steady": {
+      "windows": 5,
+      "frames": 103,
+      "zeroDrawWindows": 0,
+      "gapMs": 103.79417475728152,
+      "channelsMs": {
+        "event": 22.40388349514563,
+        "draw": 6.233009708737864,
+        "wait": 20.619417475728156
+      },
+      "meanBusyPercent": 40,
+      "counters": {
+        "board_set_state": {
+          "count": 106,
+          "ms": 93.7,
+          "msPerOccurrence": 0.8839622641509435
+        },
+        "board_walk": {
+          "count": 103,
+          "ms": 1353.3,
+          "msPerOccurrence": 13.13883495145631
+        },
+        "refresh": {
+          "count": 106,
+          "ms": 161.9,
+          "msPerOccurrence": 1.5273584905660378
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 5,
+      "frames": 101,
+      "zeroDrawWindows": 0,
+      "gapMs": 43.588118811881195,
+      "channelsMs": {
+        "event": 19.645544554455444,
+        "draw": 6.045544554455446,
+        "wait": 16.51881188118812
+      },
+      "meanBusyPercent": 40,
+      "counters": {
+        "board_set_state": {
+          "count": 104,
+          "ms": 95.20000000000002,
+          "msPerOccurrence": 0.9153846153846156
+        },
+        "board_walk": {
+          "count": 101,
+          "ms": 1343.5,
+          "msPerOccurrence": 13.301980198019802
+        },
+        "refresh": {
+          "count": 104,
+          "ms": 161.70000000000002,
+          "msPerOccurrence": 1.5548076923076926
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": -0.060825347900390625,
+        "line": "1791525520.091  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 61x 48.9ms max 1.4ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 0.9401745796203613,
+        "line": "1791525521.092  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 5% | Timer 60x 50.1ms max 1.5ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 1.9421746730804443,
+        "line": "1791525522.094  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 22% | Draw 11x 167.7ms max 16.7ms | Actions 12x 28.5ms max 3.0ms | Timer 27x 20.2ms max 1.3ms | TouchUpdate 13x 3.2ms max 0.3ms | KeyFocus 1x 1.4ms max 1.4ms | NextFrame 4x 1.4ms max 0.4ms || frames 11 gap 600.8ms max 5963.2ms | event 45.6ms draw 7.6ms wait 48.6ms | board_set_state 12x 10.4ms | board_walk 11x 135.3ms | refresh 12x 18.0ms",
+        "frames": 11,
+        "gapMs": 600.8,
+        "maxGapMs": 5963.2,
+        "channels": {
+          "event": 45.6,
+          "draw": 7.6,
+          "wait": 48.6
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 12,
+            "ms": 10.4
+          },
+          "board_walk": {
+            "count": 11,
+            "ms": 135.3
+          },
+          "refresh": {
+            "count": 12,
+            "ms": 18.0
+          }
+        },
+        "busyPercent": 22
+      },
+      {
+        "elapsed": 2.9431746006011963,
+        "line": "1791525523.095  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 38% | Draw 20x 311.6ms max 18.4ms | Actions 22x 51.0ms max 3.2ms | Timer 21x 9.9ms max 1.0ms | TouchUpdate 22x 5.7ms max 0.7ms || frames 20 gap 51.8ms max 69.3ms | event 18.9ms draw 5.8ms wait 27.0ms | board_set_state 22x 19.1ms | board_walk 20x 254.2ms | refresh 22x 33.2ms",
+        "frames": 20,
+        "gapMs": 51.8,
+        "maxGapMs": 69.3,
+        "channels": {
+          "event": 18.9,
+          "draw": 5.8,
+          "wait": 27.0
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 22,
+            "ms": 19.1
+          },
+          "board_walk": {
+            "count": 20,
+            "ms": 254.2
+          },
+          "refresh": {
+            "count": 22,
+            "ms": 33.2
+          }
+        },
+        "busyPercent": 38
+      },
+      {
+        "elapsed": 3.973174571990967,
+        "line": "1791525524.125  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 54% | Draw 28x 459.2ms max 20.4ms | Actions 27x 70.8ms max 5.5ms | Timer 36x 22.7ms max 1.7ms | TouchUpdate 28x 7.5ms max 0.9ms || frames 28 gap 36.1ms max 52.1ms | event 20.2ms draw 6.8ms wait 6.4ms | board_set_state 27x 24.8ms | board_walk 28x 372.5ms | refresh 27x 41.9ms",
+        "frames": 28,
+        "gapMs": 36.1,
+        "maxGapMs": 52.1,
+        "channels": {
+          "event": 20.2,
+          "draw": 6.8,
+          "wait": 6.4
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 27,
+            "ms": 24.8
+          },
+          "board_walk": {
+            "count": 28,
+            "ms": 372.5
+          },
+          "refresh": {
+            "count": 27,
+            "ms": 41.9
+          }
+        },
+        "busyPercent": 54
+      },
+      {
+        "elapsed": 4.978174686431885,
+        "line": "1791525525.130  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 30% | Draw 16x 254.7ms max 17.7ms | Actions 17x 37.7ms max 3.0ms | Timer 16x 7.0ms max 1.4ms | TouchUpdate 16x 4.6ms max 0.9ms || frames 16 gap 64.9ms max 68.0ms | event 18.9ms draw 5.6ms wait 40.2ms | board_set_state 17x 15.2ms | board_walk 16x 210.6ms | refresh 17x 25.2ms",
+        "frames": 16,
+        "gapMs": 64.9,
+        "maxGapMs": 68.0,
+        "channels": {
+          "event": 18.9,
+          "draw": 5.6,
+          "wait": 40.2
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 17,
+            "ms": 15.2
+          },
+          "board_walk": {
+            "count": 16,
+            "ms": 210.6
+          },
+          "refresh": {
+            "count": 17,
+            "ms": 25.2
+          }
+        },
+        "busyPercent": 30
+      },
+      {
+        "elapsed": 5.979174613952637,
+        "line": "1791525526.131  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 56% | Draw 28x 462.6ms max 19.6ms | Actions 28x 66.5ms max 3.8ms | Timer 33x 20.3ms max 1.9ms | TouchUpdate 29x 7.1ms max 0.4ms || frames 28 gap 35.6ms max 54.3ms | event 20.0ms draw 5.8ms wait 8.1ms | board_set_state 28x 24.2ms | board_walk 28x 380.7ms | refresh 28x 43.6ms",
+        "frames": 28,
+        "gapMs": 35.6,
+        "maxGapMs": 54.3,
+        "channels": {
+          "event": 20.0,
+          "draw": 5.8,
+          "wait": 8.1
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 28,
+            "ms": 24.2
+          },
+          "board_walk": {
+            "count": 28,
+            "ms": 380.7
+          },
+          "refresh": {
+            "count": 28,
+            "ms": 43.6
+          }
+        },
+        "busyPercent": 56
+      },
+      {
+        "elapsed": 6.9901745319366455,
+        "line": "1791525527.142  3067  3091 I Makepad : src/perf.rs:78:13 - [perf] busy 22% | Draw 9x 153.0ms max 26.7ms | Timer 53x 39.3ms max 1.1ms | Actions 10x 27.3ms max 5.8ms | TouchUpdate 10x 2.3ms max 0.3ms || frames 9 gap 35.6ms max 46.3ms | event 19.8ms draw 5.8ms wait 8.8ms | board_set_state 10x 11.9ms | board_walk 9x 125.5ms | refresh 10x 17.8ms",
+        "frames": 9,
+        "gapMs": 35.6,
+        "maxGapMs": 46.3,
+        "channels": {
+          "event": 19.8,
+          "draw": 5.8,
+          "wait": 8.8
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 10,
+            "ms": 11.9
+          },
+          "board_walk": {
+            "count": 9,
+            "ms": 125.5
+          },
+          "refresh": {
+            "count": 10,
+            "ms": 17.8
+          }
+        },
+        "busyPercent": 22
+      }
+    ]
+  },
+  {
+    "name": "final-pinch",
+    "all": {
+      "windows": 8,
+      "frames": 113,
+      "zeroDrawWindows": 2,
+      "gapMs": 94.2,
+      "channelsMs": {
+        "event": 8.394690265486725,
+        "draw": 4.914159292035398,
+        "wait": 27.463716814159294
+      },
+      "meanBusyPercent": 10,
+      "counters": {
+        "board_reuse": {
+          "count": 108,
+          "ms": 6.100000000000001,
+          "msPerOccurrence": 0.056481481481481494
+        },
+        "board_walk": {
+          "count": 5,
+          "ms": 62.699999999999996,
+          "msPerOccurrence": 12.54
+        }
+      }
+    },
+    "steady": {
+      "windows": 5,
+      "frames": 105,
+      "zeroDrawWindows": 0,
+      "gapMs": 98.90857142857142,
+      "channelsMs": {
+        "event": 8.569523809523808,
+        "draw": 4.968571428571428,
+        "wait": 29.06857142857143
+      },
+      "meanBusyPercent": 12.4,
+      "counters": {
+        "board_reuse": {
+          "count": 100,
+          "ms": 5.700000000000001,
+          "msPerOccurrence": 0.05700000000000001
+        },
+        "board_walk": {
+          "count": 5,
+          "ms": 62.699999999999996,
+          "msPerOccurrence": 12.54
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 5,
+      "frames": 101,
+      "zeroDrawWindows": 0,
+      "gapMs": 42.96831683168316,
+      "channelsMs": {
+        "event": 5.625742574257425,
+        "draw": 4.808910891089109,
+        "wait": 24.287128712871286
+      },
+      "meanBusyPercent": 12.2,
+      "counters": {
+        "board_reuse": {
+          "count": 97,
+          "ms": 5.5,
+          "msPerOccurrence": 0.05670103092783505
+        },
+        "board_walk": {
+          "count": 4,
+          "ms": 50.8,
+          "msPerOccurrence": 12.7
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": -0.14173197746276855,
+        "line": "1791526475.691  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 51.1ms max 1.5ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 0.8592679500579834,
+        "line": "1791526476.692  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 53.2ms max 1.6ms || frames 0",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {},
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 1.9132680892944336,
+        "line": "1791526477.746  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 9% | Draw 12x 59.1ms max 21.8ms | Timer 29x 29.3ms max 6.2ms | NextFrame 5x 4.1ms max 1.2ms | TouchUpdate 15x 4.0ms max 0.5ms | KeyFocus 1x 0.7ms max 0.7ms || frames 12 gap 525.4ms max 5619.6ms | event 31.7ms draw 5.8ms wait 54.2ms | board_reuse 11x 0.6ms | board_walk 1x 11.9ms",
+        "frames": 12,
+        "gapMs": 525.4,
+        "maxGapMs": 5619.6,
+        "channels": {
+          "event": 31.7,
+          "draw": 5.8,
+          "wait": 54.2
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 11,
+            "ms": 0.6
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 11.9
+          }
+        },
+        "busyPercent": 9
+      },
+      {
+        "elapsed": 2.9132680892944336,
+        "line": "1791526478.746  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 15% | Draw 22x 125.7ms max 16.6ms | Timer 22x 15.1ms max 0.8ms | TouchUpdate 22x 6.3ms max 1.0ms || frames 22 gap 48.3ms max 68.1ms | event 6.7ms draw 5.1ms wait 36.4ms | board_reuse 18x 1.0ms | board_walk 4x 50.8ms",
+        "frames": 22,
+        "gapMs": 48.3,
+        "maxGapMs": 68.1,
+        "channels": {
+          "event": 6.7,
+          "draw": 5.1,
+          "wait": 36.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 18,
+            "ms": 1.0
+          },
+          "board_walk": {
+            "count": 4,
+            "ms": 50.8
+          }
+        },
+        "busyPercent": 15
+      },
+      {
+        "elapsed": 3.938267946243286,
+        "line": "1791526479.771  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 16% | Draw 27x 100.8ms max 5.7ms | Timer 49x 51.7ms max 4.7ms | TouchUpdate 28x 7.8ms max 0.5ms || frames 27 gap 36.0ms max 53.6ms | event 6.0ms draw 4.5ms wait 9.4ms | board_reuse 27x 1.6ms",
+        "frames": 27,
+        "gapMs": 36.0,
+        "maxGapMs": 53.6,
+        "channels": {
+          "event": 6.0,
+          "draw": 4.5,
+          "wait": 9.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 27,
+            "ms": 1.6
+          }
+        },
+        "busyPercent": 16
+      },
+      {
+        "elapsed": 4.942268133163452,
+        "line": "1791526480.775  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 7% | Draw 16x 51.1ms max 4.4ms | Timer 16x 10.3ms max 0.7ms | TouchUpdate 15x 5.1ms max 1.0ms || frames 16 gap 66.1ms max 71.3ms | event 4.2ms draw 4.9ms wait 56.9ms | board_reuse 16x 0.9ms",
+        "frames": 16,
+        "gapMs": 66.1,
+        "maxGapMs": 71.3,
+        "channels": {
+          "event": 4.2,
+          "draw": 4.9,
+          "wait": 56.9
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 16,
+            "ms": 0.9
+          }
+        },
+        "busyPercent": 7
+      },
+      {
+        "elapsed": 5.944267988204956,
+        "line": "1791526481.777  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 15% | Draw 28x 103.8ms max 5.1ms | Timer 42x 36.2ms max 2.3ms | TouchUpdate 28x 7.1ms max 0.3ms || frames 28 gap 35.3ms max 51.8ms | event 5.1ms draw 5.0ms wait 15.6ms | board_reuse 28x 1.6ms",
+        "frames": 28,
+        "gapMs": 35.3,
+        "maxGapMs": 51.8,
+        "channels": {
+          "event": 5.1,
+          "draw": 5.0,
+          "wait": 15.6
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 28,
+            "ms": 1.6
+          }
+        },
+        "busyPercent": 15
+      },
+      {
+        "elapsed": 6.9582679271698,
+        "line": "1791526482.791  5056  5081 I Makepad : src/perf.rs:61:13 - [perf] busy 8% | Timer 58x 48.1ms max 3.1ms | Draw 8x 29.1ms max 5.0ms | TouchUpdate 10x 2.6ms max 0.4ms || frames 8 gap 32.4ms max 40.2ms | event 6.1ms draw 4.2ms wait 6.4ms | board_reuse 8x 0.4ms",
+        "frames": 8,
+        "gapMs": 32.4,
+        "maxGapMs": 40.2,
+        "channels": {
+          "event": 6.1,
+          "draw": 4.2,
+          "wait": 6.4
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 8,
+            "ms": 0.4
+          }
+        },
+        "busyPercent": 8
+      }
+    ]
+  },
+  {
+    "name": "final-playback",
+    "all": {
+      "windows": 26,
+      "frames": 48,
+      "zeroDrawWindows": 16,
+      "gapMs": 464.6270833333333,
+      "channelsMs": {
+        "event": 37.331250000000004,
+        "draw": 6.237500000000001,
+        "wait": 21.360416666666666
+      },
+      "meanBusyPercent": 7.384615384615385,
+      "counters": {
+        "board_set_state": {
+          "count": 28,
+          "ms": 64.2,
+          "msPerOccurrence": 2.292857142857143
+        },
+        "board_walk": {
+          "count": 30,
+          "ms": 382.2,
+          "msPerOccurrence": 12.74
+        },
+        "refresh": {
+          "count": 27,
+          "ms": 67.89999999999999,
+          "msPerOccurrence": 2.5148148148148146
+        },
+        "tick_refresh": {
+          "count": 27,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "tick_unchanged": {
+          "count": 1501,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "board_reuse": {
+          "count": 18,
+          "ms": 3.0,
+          "msPerOccurrence": 0.16666666666666666
+        },
+        "redraw_highlight": {
+          "count": 11,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "redraw_pointer": {
+          "count": 10,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        }
+      }
+    },
+    "steady": {
+      "windows": 19,
+      "frames": 46,
+      "zeroDrawWindows": 10,
+      "gapMs": 463.5673913043478,
+      "channelsMs": {
+        "event": 37.08043478260869,
+        "draw": 6.230434782608698,
+        "wait": 21.61086956521739
+      },
+      "meanBusyPercent": 7.947368421052632,
+      "counters": {
+        "tick_unchanged": {
+          "count": 1070,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "board_set_state": {
+          "count": 27,
+          "ms": 63.4,
+          "msPerOccurrence": 2.348148148148148
+        },
+        "board_walk": {
+          "count": 28,
+          "ms": 354.40000000000003,
+          "msPerOccurrence": 12.657142857142858
+        },
+        "refresh": {
+          "count": 26,
+          "ms": 66.6,
+          "msPerOccurrence": 2.5615384615384613
+        },
+        "tick_refresh": {
+          "count": 26,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "board_reuse": {
+          "count": 18,
+          "ms": 3.0,
+          "msPerOccurrence": 0.16666666666666666
+        },
+        "redraw_highlight": {
+          "count": 11,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "redraw_pointer": {
+          "count": 10,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        }
+      }
+    },
+    "continuousWindows": {
+      "windows": 2,
+      "frames": 20,
+      "zeroDrawWindows": 0,
+      "gapMs": 55.80999999999999,
+      "channelsMs": {
+        "event": 7.910000000000001,
+        "draw": 5.575,
+        "wait": 35.105
+      },
+      "meanBusyPercent": 10,
+      "counters": {
+        "board_reuse": {
+          "count": 16,
+          "ms": 2.7,
+          "msPerOccurrence": 0.16875
+        },
+        "redraw_highlight": {
+          "count": 6,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "tick_unchanged": {
+          "count": 79,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "board_set_state": {
+          "count": 4,
+          "ms": 14.0,
+          "msPerOccurrence": 3.5
+        },
+        "board_walk": {
+          "count": 4,
+          "ms": 51.9,
+          "msPerOccurrence": 12.975
+        },
+        "redraw_pointer": {
+          "count": 10,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        },
+        "refresh": {
+          "count": 4,
+          "ms": 16.1,
+          "msPerOccurrence": 4.025
+        },
+        "tick_refresh": {
+          "count": 4,
+          "ms": 0.0,
+          "msPerOccurrence": 0.0
+        }
+      }
+    },
+    "rows": [
+      {
+        "elapsed": -0.05896568298339844,
+        "receivedElapsed": 0.14973374999999978,
+        "line": "1791526414.542  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 10% | Timer 63x 63.3ms max 2.1ms | Draw 2x 33.7ms max 17.3ms | Signal 5x 2.4ms max 0.6ms || frames 2 gap 489.0ms max 951.6ms | event 43.1ms draw 6.4ms wait 15.6ms | board_set_state 1x 0.8ms | board_walk 2x 27.8ms | refresh 1x 1.3ms | tick_refresh 1 | tick_unchanged 62",
+        "frames": 2,
+        "gapMs": 489.0,
+        "maxGapMs": 951.6,
+        "channels": {
+          "event": 43.1,
+          "draw": 6.4,
+          "wait": 15.6
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 1,
+            "ms": 0.8
+          },
+          "board_walk": {
+            "count": 2,
+            "ms": 27.8
+          },
+          "refresh": {
+            "count": 1,
+            "ms": 1.3
+          },
+          "tick_refresh": {
+            "count": 1,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 62,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 10
+      },
+      {
+        "elapsed": 0.9410343170166016,
+        "receivedElapsed": 0.9252190420000002,
+        "line": "1791526415.542  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 6% | Timer 65x 58.8ms max 1.5ms | Signal 5x 2.8ms max 0.7ms || frames 0 | tick_unchanged 65",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 65,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 6
+      },
+      {
+        "elapsed": 1.9570343494415283,
+        "receivedElapsed": 1.9421814169999996,
+        "line": "1791526416.558  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.0ms max 1.4ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 2.974034309387207,
+        "receivedElapsed": 2.957658125,
+        "line": "1791526417.575  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.4ms max 1.5ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 3.990034341812134,
+        "receivedElapsed": 3.975175709,
+        "line": "1791526418.591  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.4ms max 1.2ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 5.0070343017578125,
+        "receivedElapsed": 4.991481292,
+        "line": "1791526419.608  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.4ms max 1.4ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 6.024034261703491,
+        "receivedElapsed": 6.008919959,
+        "line": "1791526420.625  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 13% | Draw 5x 74.0ms max 17.1ms | Timer 56x 54.6ms max 2.3ms || frames 5 gap 1248.0ms max 5990.1ms | event 85.8ms draw 8.8ms wait 19.8ms | board_set_state 4x 3.4ms | board_walk 5x 60.5ms | refresh 4x 5.6ms | tick_refresh 4 | tick_unchanged 52",
+        "frames": 5,
+        "gapMs": 1248.0,
+        "maxGapMs": 5990.1,
+        "channels": {
+          "event": 85.8,
+          "draw": 8.8,
+          "wait": 19.8
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 4,
+            "ms": 3.4
+          },
+          "board_walk": {
+            "count": 5,
+            "ms": 60.5
+          },
+          "refresh": {
+            "count": 4,
+            "ms": 5.6
+          },
+          "tick_refresh": {
+            "count": 4,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 52,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 13
+      },
+      {
+        "elapsed": 7.073034286499023,
+        "receivedElapsed": 7.0699126670000005,
+        "line": "1791526421.674  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 21% | Draw 10x 139.0ms max 23.1ms | Timer 51x 70.8ms max 11.9ms | NextFrame 1x 13.0ms max 13.0ms || frames 10 gap 134.1ms max 700.0ms | event 25.2ms draw 6.2ms wait 10.5ms | board_reuse 2x 0.3ms | board_set_state 8x 26.5ms | board_walk 8x 106.8ms | redraw_highlight 5 | refresh 7x 19.5ms | tick_refresh 7 | tick_unchanged 44",
+        "frames": 10,
+        "gapMs": 134.1,
+        "maxGapMs": 700.0,
+        "channels": {
+          "event": 25.2,
+          "draw": 6.2,
+          "wait": 10.5
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 2,
+            "ms": 0.3
+          },
+          "board_set_state": {
+            "count": 8,
+            "ms": 26.5
+          },
+          "board_walk": {
+            "count": 8,
+            "ms": 106.8
+          },
+          "redraw_highlight": {
+            "count": 5,
+            "ms": 0.0
+          },
+          "refresh": {
+            "count": 7,
+            "ms": 19.5
+          },
+          "tick_refresh": {
+            "count": 7,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 44,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 21
+      },
+      {
+        "elapsed": 8.074034214019775,
+        "receivedElapsed": 8.057847,
+        "line": "1791526422.675  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 6% | Timer 43x 38.4ms max 1.5ms | Draw 7x 24.5ms max 5.1ms || frames 7 gap 57.5ms max 58.8ms | event 4.4ms draw 5.9ms wait 47.0ms | board_reuse 7x 0.9ms | redraw_highlight 6 | tick_unchanged 43",
+        "frames": 7,
+        "gapMs": 57.5,
+        "maxGapMs": 58.8,
+        "channels": {
+          "event": 4.4,
+          "draw": 5.9,
+          "wait": 47.0
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 7,
+            "ms": 0.9
+          },
+          "redraw_highlight": {
+            "count": 6,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 43,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 6
+      },
+      {
+        "elapsed": 9.074034214019775,
+        "receivedElapsed": 9.0586305,
+        "line": "1791526423.675  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 7% | Timer 60x 55.8ms max 2.4ms | Draw 1x 15.2ms max 15.2ms || frames 1 gap 1173.5ms max 1173.5ms | event 66.8ms draw 6.9ms wait 44.5ms | board_set_state 1x 1.0ms | board_walk 1x 12.2ms | refresh 1x 1.5ms | tick_refresh 1 | tick_unchanged 59",
+        "frames": 1,
+        "gapMs": 1173.5,
+        "maxGapMs": 1173.5,
+        "channels": {
+          "event": 66.8,
+          "draw": 6.9,
+          "wait": 44.5
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 1,
+            "ms": 1.0
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 12.2
+          },
+          "refresh": {
+            "count": 1,
+            "ms": 1.5
+          },
+          "tick_refresh": {
+            "count": 1,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 59,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 7
+      },
+      {
+        "elapsed": 10.090034246444702,
+        "receivedElapsed": 10.074218,
+        "line": "1791526424.691  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 53.1ms max 1.0ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 11.090034246444702,
+        "receivedElapsed": 11.075303959,
+        "line": "1791526425.691  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 6% | Timer 60x 55.3ms max 1.6ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 6
+      },
+      {
+        "elapsed": 12.10703420639038,
+        "receivedElapsed": 12.104566625,
+        "line": "1791526426.708  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 53.7ms max 1.4ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 13.12403416633606,
+        "receivedElapsed": 13.1076375,
+        "line": "1791526427.725  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 53.4ms max 1.0ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 14.12403416633606,
+        "receivedElapsed": 14.107859375,
+        "line": "1791526428.725  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 53.0ms max 1.6ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 15.12403416633606,
+        "receivedElapsed": 15.108643042,
+        "line": "1791526429.725  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 54.4ms max 1.5ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 16.12403416633606,
+        "receivedElapsed": 16.12238125,
+        "line": "1791526430.725  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 53.7ms max 1.5ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 17.133034229278564,
+        "receivedElapsed": 17.118189417,
+        "line": "1791526431.734  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 7% | Timer 60x 55.2ms max 2.3ms | Draw 1x 14.9ms max 14.9ms || frames 1 gap 8516.6ms max 8516.6ms | event 478.1ms draw 7.3ms wait 1.5ms | board_set_state 1x 1.0ms | board_walk 1x 12.3ms | refresh 1x 1.5ms | tick_refresh 1 | tick_unchanged 59",
+        "frames": 1,
+        "gapMs": 8516.6,
+        "maxGapMs": 8516.6,
+        "channels": {
+          "event": 478.1,
+          "draw": 7.3,
+          "wait": 1.5
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 1,
+            "ms": 1.0
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 12.3
+          },
+          "refresh": {
+            "count": 1,
+            "ms": 1.5
+          },
+          "tick_refresh": {
+            "count": 1,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 59,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 7
+      },
+      {
+        "elapsed": 18.141034364700317,
+        "receivedElapsed": 18.124891375,
+        "line": "1791526432.742  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 14% | Draw 13x 89.2ms max 16.4ms | Timer 40x 52.5ms max 13.2ms || frames 13 gap 54.9ms max 149.8ms | event 9.8ms draw 5.4ms wait 28.7ms | board_reuse 9x 1.8ms | board_set_state 4x 14.0ms | board_walk 4x 51.9ms | redraw_pointer 10 | refresh 4x 16.1ms | tick_refresh 4 | tick_unchanged 36",
+        "frames": 13,
+        "gapMs": 54.9,
+        "maxGapMs": 149.8,
+        "channels": {
+          "event": 9.8,
+          "draw": 5.4,
+          "wait": 28.7
+        },
+        "counters": {
+          "board_reuse": {
+            "count": 9,
+            "ms": 1.8
+          },
+          "board_set_state": {
+            "count": 4,
+            "ms": 14.0
+          },
+          "board_walk": {
+            "count": 4,
+            "ms": 51.9
+          },
+          "redraw_pointer": {
+            "count": 10,
+            "ms": 0.0
+          },
+          "refresh": {
+            "count": 4,
+            "ms": 16.1
+          },
+          "tick_refresh": {
+            "count": 4,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 36,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 14
+      },
+      {
+        "elapsed": 19.141034364700317,
+        "receivedElapsed": 19.124417625,
+        "line": "1791526433.742  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 7% | Timer 60x 53.6ms max 2.1ms | Draw 1x 14.1ms max 14.1ms || frames 1 gap 686.6ms max 686.6ms | event 51.6ms draw 6.6ms wait 25.9ms | board_set_state 1x 0.9ms | board_walk 1x 11.9ms | refresh 1x 1.4ms | tick_refresh 1 | tick_unchanged 59",
+        "frames": 1,
+        "gapMs": 686.6,
+        "maxGapMs": 686.6,
+        "channels": {
+          "event": 51.6,
+          "draw": 6.6,
+          "wait": 25.9
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 1,
+            "ms": 0.9
+          },
+          "board_walk": {
+            "count": 1,
+            "ms": 11.9
+          },
+          "refresh": {
+            "count": 1,
+            "ms": 1.4
+          },
+          "tick_refresh": {
+            "count": 1,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 59,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 7
+      },
+      {
+        "elapsed": 20.158034324645996,
+        "receivedElapsed": 20.141113584,
+        "line": "1791526434.759  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 14% | Draw 5x 74.9ms max 17.4ms | Timer 61x 64.9ms max 2.9ms || frames 5 gap 303.4ms max 1200.8ms | event 32.7ms draw 6.0ms wait 1.6ms | board_set_state 5x 4.7ms | board_walk 5x 60.1ms | refresh 5x 7.3ms | tick_refresh 5 | tick_unchanged 56",
+        "frames": 5,
+        "gapMs": 303.4,
+        "maxGapMs": 1200.8,
+        "channels": {
+          "event": 32.7,
+          "draw": 6.0,
+          "wait": 1.6
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 5,
+            "ms": 4.7
+          },
+          "board_walk": {
+            "count": 5,
+            "ms": 60.1
+          },
+          "refresh": {
+            "count": 5,
+            "ms": 7.3
+          },
+          "tick_refresh": {
+            "count": 5,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 56,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 14
+      },
+      {
+        "elapsed": 21.174034357070923,
+        "receivedElapsed": 21.159451125,
+        "line": "1791526435.775  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 11% | Timer 60x 67.5ms max 11.5ms | Draw 3x 49.4ms max 19.1ms || frames 3 gap 244.4ms max 490.9ms | event 35.5ms draw 6.1ms wait 2.7ms | board_set_state 3x 11.9ms | board_walk 3x 38.7ms | refresh 3x 13.7ms | tick_refresh 3 | tick_unchanged 57",
+        "frames": 3,
+        "gapMs": 244.4,
+        "maxGapMs": 490.9,
+        "channels": {
+          "event": 35.5,
+          "draw": 6.1,
+          "wait": 2.7
+        },
+        "counters": {
+          "board_set_state": {
+            "count": 3,
+            "ms": 11.9
+          },
+          "board_walk": {
+            "count": 3,
+            "ms": 38.7
+          },
+          "refresh": {
+            "count": 3,
+            "ms": 13.7
+          },
+          "tick_refresh": {
+            "count": 3,
+            "ms": 0.0
+          },
+          "tick_unchanged": {
+            "count": 57,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 11
+      },
+      {
+        "elapsed": 22.174034357070923,
+        "receivedElapsed": 22.158264959,
+        "line": "1791526436.775  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 53.0ms max 1.5ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 23.19003415107727,
+        "receivedElapsed": 23.193878042,
+        "line": "1791526437.791  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.1ms max 1.5ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 24.1910343170166,
+        "receivedElapsed": 24.174253709,
+        "line": "1791526438.792  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 60x 52.9ms max 1.4ms || frames 0 | tick_unchanged 60",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 60,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      },
+      {
+        "elapsed": 25.20703434944153,
+        "receivedElapsed": 25.19161925,
+        "line": "1791526439.808  4840  4864 I Makepad : src/perf.rs:61:13 - [perf] busy 5% | Timer 61x 54.4ms max 1.5ms || frames 0 | tick_unchanged 61",
+        "frames": 0,
+        "gapMs": null,
+        "maxGapMs": null,
+        "channels": {},
+        "counters": {
+          "tick_unchanged": {
+            "count": 61,
+            "ms": 0.0
+          }
+        },
+        "busyPercent": 5
+      }
+    ]
+  }
+]

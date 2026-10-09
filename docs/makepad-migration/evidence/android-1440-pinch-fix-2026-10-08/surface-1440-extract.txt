@@ -1,0 +1,42 @@
+* Layer 0xb4000071fe7be5c0 (Background for SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#4123)
+    1.5000  0.0000  0.0000
+    0.0000  1.5000  0.0000
+      geomLayerBounds=[0.000000 0.000000 2560.000000 1440.000000]       shadowRadius=0.000000 
+* Layer 0xb4000071fe79f090 (SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#4122)
+    1.5000  0.0000  0.0000
+    0.0000  1.5000  0.0000
+      geomBufferSize=[0 0 2560 1440] geomContentCrop=[0 0 2560 1440] geomCrop=[0 0 -1 -1] geomBufferTransform=0 
+      geomLayerBounds=[0.000000 0.000000 2560.000000 1440.000000]       shadowRadius=0.000000 
+* Layer 0xb4000071fe7c40e0 (cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4119)
+  - Output Layer 0xb40000717e6ddbb0(SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#4122)
+ SurfaceView[cc.pitun.learn.makepadte[...].makepadtest.MakepadApp](BLAST)#4122
+  rel      0 |            0 |     CLIENT |          0 |    0    0 3840 2160 |    0.0    0.0 2560.0 1440.0 |                                              [*]
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116009549, size:14625.00KiB, w/h:2560x1440, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true
+	planes: R/G/B/A:	 w/h:2560x1440, stride:10240 bytes, size:14976000
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116009547, size:14625.00KiB, w/h:2560x1440, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true
+	planes: R/G/B/A:	 w/h:2560x1440, stride:10240 bytes, size:14976000
++ name:SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#1(BLAST Consumer)1, id:1181116009548, size:14625.00KiB, w/h:2560x1440, usage: 0x40000000000b00, req fmt:43, fourcc/mod:808665665/576460752303423602, dataspace: 0x0, compressed: true
+	planes: R/G/B/A:	 w/h:2560x1440, stride:10240 bytes, size:14976000
++ ContainerLayer (46c41e2 ActivityRecordInputSink cc.pitun.learn.makepadtest/.MakepadApp#4116) uid=1000
+      parent=ActivityRecord{34ab4a9 u0 cc.pitun.learn.makepadtest/.MakepadApp}#4110
++ ContainerLayer (ActivityRecord{34ab4a9 u0 cc.pitun.learn.makepadtest/.MakepadApp}#4110) uid=1000
++ ContainerLayer (458c78e cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4118) uid=1000
+      parent=ActivityRecord{34ab4a9 u0 cc.pitun.learn.makepadtest/.MakepadApp}#4110
++ EffectLayer (Background for SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#4123) uid=10075
+      parent=SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#4121
+      zOrderRelativeOf=cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4119
++ ContainerLayer (SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#4121) uid=10075
+      layerStack=   0, z=       -2, pos=(0,0), size=(  -1,  -1), crop=[  0,   0, 2560, 1440], cornerRadius=0.000000, isProtected=0, isTrustedOverlay=0, isOpaque=0, invalidate=1, dataspace=Default, defaultPixelFormat=Unknown/None, backgroundBlurRadius=0, color=(0.000,0.000,0.000,1.000), flags=0x00000000, tr=[1.50, 0.00][0.00, 1.50]
+      parent=Bounds for - cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4120
+      zOrderRelativeOf=cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4119
++ BufferStateLayer (SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp](BLAST)#4122) uid=10075
+      layerStack=   0, z=        0, pos=(0,0), size=(2560,1440), crop=[  0,   0,  -1,  -1], cornerRadius=0.000000, isProtected=0, isTrustedOverlay=0, isOpaque=1, invalidate=0, dataspace=Default, defaultPixelFormat=RGBA_1010102, backgroundBlurRadius=0, color=(0.000,0.000,0.000,1.000), flags=0x00000102, tr=[1.50, 0.00][0.00, 1.50]
+      parent=SurfaceView[cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp]#4121
+      activeBuffer=[2560x1440:2816,RGBA_1010102], tr=[0.00, 0.00][0.00, 0.00] queued-frames=0 metadata={dequeueTime:480635052920180}, cornerRadiusCrop=[0.00, 0.00, 0.00, 0.00],  shadowRadius=0.000, 
++ BufferStateLayer (cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4119) uid=10075
+      parent=458c78e cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4118
++ ContainerLayer (Bounds for - cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4120) uid=10075
+      parent=cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4119
+      parent=ActivityRecord{34ab4a9 u0 cc.pitun.learn.makepadtest/.MakepadApp}#4110
+      zOrderRelativeOf=458c78e cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp#4118
+Layer Surface(name=458c78e cc.pitun.learn.makepadtest/cc.pitun.learn.makepadtest.MakepadApp)/@0xf7c0916 - animation-leash of starting_reveal#4127 (EffectLayer) callingPid:546 callingUid:1000 ownerUid:1000
