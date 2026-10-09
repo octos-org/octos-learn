@@ -4,7 +4,9 @@
 
 ## 当前使用
 
-- [练习面板保留与布局修复复测](course-runtime-quality/pack-generated-progress-db680e3-2026-10-09/REPORT.md)：db680e3 正弦/余弦布局位移为 0，刷新与播放回归通过；发现混合会话全部完成后生成课练习仍锁定，附坐标表、截图和 Console。
+- [练习顺序与锁定提示复测](course-runtime-quality/pack-generated-progress-da08658-2026-10-09/REPORT.md)：da08658 四题依次开放、判分和刷新恢复通过；撤回上轮练习锁定误判；完成余弦练习后五个节点下移 16，附各阶段坐标和截图。
+
+- [练习面板保留与布局修复复测](course-runtime-quality/pack-generated-progress-db680e3-2026-10-09/REPORT.md)：db680e3 追加课程时正弦/余弦布局位移为 0，刷新与播放回归通过；生成课练习锁定的原失败判定已撤回，最新结论见练习顺序复测。
 
 - [刷新恢复修复复测](course-runtime-quality/pack-generated-progress-f4854d7-2026-10-09/REPORT.md)：f4854d7 两种刷新场景、A 与 C–F 播放通过；加载约 0.4–0.5 秒；布局位移仍存在，main 对照未执行。
 

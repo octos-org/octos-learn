@@ -1,0 +1,285 @@
+- main:
+  - button "返回":
+  - button "打开学习记录":
+  - generic: Octos Learning Canvas
+  - strong: 余弦函数与单位圆投影
+  - button "暂停 OLL 课程":
+  - button "下一 OLL Beat":
+  - button "重新播放 OLL 课程" [active]:
+  - button "关闭课程旁白语音" [pressed]:
+  - button "启用语音":
+    - generic: 启用语音
+  - button "启用摄像头":
+    - generic: 启用摄像头
+  - main:
+    - generic "OLL 无限白板":
+      - article:
+        - text: geometry
+        - generic: 单位圆与 x 轴投影
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 余弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, cos(θ))
+        - generic: y = cos(x)
+      - article:
+        - text: plot
+        - generic: 正弦与余弦曲线对比
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-6"
+          - generic: "-4"
+          - generic: "-2"
+          - generic: "0"
+          - generic: "2"
+          - generic: "4"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "0"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+        - checkbox "y = cos x" [checked]
+        - text: y = cos x
+        - checkbox "y = sin x" [checked]
+        - text: y = sin x
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: cos
+          - generic: ⁡
+          - generic: x
+          - generic: ","
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: x
+        - generic: y =
+        - generic: cos
+        - text: x, y =
+        - generic: sin
+        - text: x
+      - article:
+        - text: math
+        - math:
+          - generic: cos
+          - generic: ⁡
+          - generic: θ
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: (
+          - generic: θ
+          - generic: +
+          - generic: π
+          - generic: "2"
+          - generic: )
+        - generic: cos
+        - text: θ =
+        - generic: sin
+        - generic: (
+        - text: θ +
+        - generic: "2"
+        - generic: π
+        - generic: )
+      - article:
+        - text: note
+        - generic: 余弦函数的几何意义
+        - list:
+          - listitem: 单位圆上动点 P 的横坐标等于 cos θ
+          - listitem: 投影在 x 轴上的符号与长度反映 cos θ 的变化
+      - article:
+        - text: note
+        - generic: 余弦曲线的关键特征点
+        - list:
+          - listitem: 波峰位置：θ = 0, 2π（cos θ = 1）
+          - listitem: 零点位置：θ = π/2, 3π/2（cos θ = 0）
+          - listitem: 波谷位置：θ = π（cos θ = -1）
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: x
+        - generic: y =
+        - generic: sin
+        - text: x
+      - article:
+        - text: note
+        - generic: 正弦函数 y = sin x
+        - list:
+          - listitem: x 表示自变量（弧度角）
+          - listitem: y 表示应变量（正弦值）
+      - article:
+        - text: geometry
+        - generic: 单位圆与正弦曲线联动
+        - button "切换图内拖动和平移": 探索
+        - button "放大查看几何图": 大图
+        - img "几何图；滚轮缩放，探索模式可拖动平移":
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: x
+          - generic: "y"
+          - generic: r = 1
+          - generic: sin θ
+          - generic: θ
+          - generic: O
+          - generic "P(cos θ, sin θ)：拖动改变角度"
+          - generic: P(cos θ, sin θ)
+      - article:
+        - text: plot
+        - generic: 正弦函数图像
+        - button "切换图内平移和缩放": 探索
+        - button "放大查看函数图": 大图
+        - img "函数图；滚轮缩放，探索模式可拖动平移":
+          - generic: "0"
+          - generic: "1"
+          - generic: "2"
+          - generic: "3"
+          - generic: "4"
+          - generic: "5"
+          - generic: "6"
+          - generic: "-1"
+          - generic: "-0.5"
+          - generic: "0"
+          - generic: "0.5"
+          - generic: "1"
+          - generic: θ
+          - generic: "y"
+          - generic: P(θ, sin(θ))
+        - generic: y = sin(x)
+      - article:
+        - text: math
+        - math:
+          - generic: "y"
+          - generic: =
+          - generic: sin
+          - generic: ⁡
+          - generic: x
+          - generic: (
+          - generic: x
+          - generic: ∈
+          - generic: R
+          - generic: ","
+          - generic: "y"
+          - generic: ∈
+          - generic: "["
+          - generic: −
+          - generic: "1"
+          - generic: ","
+          - generic: "1"
+          - generic: "]"
+          - generic: )
+        - generic: y =
+        - generic: sin
+        - text: x (x ∈
+        - generic: R, y ∈
+        - generic: "[−1, 1])"
+      - article:
+        - text: note
+        - generic: 正弦函数的性质与五点法
+        - list:
+          - listitem: "定义域: R，值域: [-1, 1]"
+          - listitem: "最小正周期: 2π"
+          - listitem: "五点法关键点: (0,0), (π/2,1), (π,0), (3π/2,-1), (2π,0)"
+      - generic "余弦函数与单位圆投影的课程变量控制":
+        - generic: 旋转角度 θ
+        - slider "旋转角度 θ": "6.2486"
+        - status: 6.28 rad
+        - button "减小旋转角度 θ": −
+        - button "增大旋转角度 θ": +
+        - button "复位旋转角度 θ":
+      - region "余弦函数与单位圆投影的动手任务":
+        - generic: 动手试一试
+        - generic: 直接操作白板上的图形、视角或控制器
+        - article:
+          - paragraph: 拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。
+          - generic: 白板上的课程全部播放完后，就可以继续操作。
+      - generic "正弦函数 y = sin x 的概念与图像解析的课程变量控制":
+        - generic: 角度 x
+        - slider "角度 x": "6.2486"
+        - status: 6.28 rad
+        - button "减小角度 x": −
+        - button "增大角度 x": +
+        - button "复位角度 x":
+      - region "正弦函数 y = sin x 的概念与图像解析的动手任务":
+        - generic: 动手试一试
+        - generic: 直接操作白板上的图形、视角或控制器
+        - article:
+          - paragraph: 请将角度 x 调整至约 1.57（即 π/2 弧度），观察 y 的最大值。
+          - generic: 白板上的课程全部播放完后，就可以继续操作。
+        - article:
+          - paragraph: 请将角度 x 调整到半个周期 π (约为 3.14 rad)，观察此时 y 的值。
+          - generic: 白板上的课程全部播放完后，就可以继续操作。
+    - generic "白板书写工具":
+      - button "浏览白板" [pressed]:
+      - button "书写笔迹":
+      - button "擦除笔迹":
+      - button "框选多个笔迹":
+      - button "选择全部笔迹": 全选
+      - button "撤销笔迹":
+      - button "重做笔迹":
+      - status: 0 项笔迹 · 等待恢复笔迹
+  - paragraph: 你手写的“Y = 2X”是一个典型的正比例函数解析式，也是一种最基础的一次函数。
+  - button "Octos 正在准备下一步":
+    - img "ocean Octos skin"
+    - generic: 稍等一下
+  - button "打开本课目录":
+  - button "Choose File"
+  - button "上传题目图片":
+  - button "打开摄像头":
+  - button "语音提问" [disabled]:
+  - textbox "输入学习问题":
+    - /placeholder: 问一个问题，或告诉 Octos 你卡在哪里…
+  - button "发送问题" [disabled]:

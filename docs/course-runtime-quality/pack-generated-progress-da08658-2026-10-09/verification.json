@@ -1,0 +1,20 @@
+{
+  "commit": "da0865804a59e67cb6affeca08b6be44bbebd0e2",
+  "session": "learn-1791562126580-46n45l",
+  "reusedPreviousRealByokLessons": true,
+  "newModelCalls": 0,
+  "checks": {
+    "sequentialPractice": "passed",
+    "playingMessage": "passed",
+    "panelPosition": "passed",
+    "prepackNodePosition": "failed: 5 nodes top +16 after first task succeeds",
+    "refreshStateAndMessages": "passed"
+  },
+  "unitTests": {
+    "passed": 1131,
+    "files": 118,
+    "exitCode": 0
+  },
+  "tscExitCode": 0,
+  "previousGeneratedPracticeFailureWithdrawn": true
+}

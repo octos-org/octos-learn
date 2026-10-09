@@ -1,0 +1,212 @@
+{
+  "label": "01-all-completed-queued",
+  "nodes": [
+    {
+      "height": "380px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-circle",
+      "left": "20px",
+      "text": "单位圆与 x 轴投影探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+      "top": "20px",
+      "width": "440px"
+    },
+    {
+      "height": "360px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-01-moment-01-item-01-plot",
+      "left": "476px",
+      "text": "余弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, cos(θ))y = cos(x)指向曲线查看坐标",
+      "top": "20px",
+      "width": "440px"
+    },
+    {
+      "height": "360px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-01",
+      "left": "20px",
+      "text": "正弦与余弦曲线对比探索恢复大图-6-4-20246-101xyy = cos xy = sin x指向曲线查看坐标",
+      "top": "596px",
+      "width": "440px"
+    },
+    {
+      "height": "72px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-02-item-02",
+      "left": "488px",
+      "text": "y=cos⁡x,y=sin⁡xy = \\cos x, \\quad y = \\sin xy=cosx,y=sinx",
+      "top": "596px",
+      "width": "268px"
+    },
+    {
+      "height": "72px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-03-moment-04-item-01",
+      "left": "488px",
+      "text": "cos⁡θ=sin⁡(θ+π2)\\cos\\theta = \\sin\\left(\\theta + \\frac{\\pi}{2}\\right)cosθ=sin(θ+2π​)",
+      "top": "684px",
+      "width": "268px"
+    },
+    {
+      "height": "114px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-01-item-02",
+      "left": "796px",
+      "text": "余弦函数的几何意义单位圆上动点 P 的横坐标等于 cos θ投影在 x 轴上的符号与长度反映 cos θ 的变化",
+      "top": "596px",
+      "width": "440px"
+    },
+    {
+      "height": "135px",
+      "id": "trig-cosine-and-phase-shift-0.1.4:node:section-04-moment-02-item-02",
+      "left": "796px",
+      "text": "余弦曲线的关键特征点波峰位置：θ = 0, 2π（cos θ = 1）零点位置：θ = π/2, 3π/2（cos θ = 0）波谷位置：θ = π（cos θ = -1）",
+      "top": "726px",
+      "width": "440px"
+    },
+    {
+      "height": "72px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-01-item-01",
+      "left": "1710px",
+      "text": "y=sin⁡xy = \\sin xy=sinx",
+      "top": "828.9px",
+      "width": "240px"
+    },
+    {
+      "height": "114px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-01-item-02",
+      "left": "1710px",
+      "text": "正弦函数 y = sin xx 表示自变量（弧度角）y 表示应变量（正弦值）",
+      "top": "916.9px",
+      "width": "240px"
+    },
+    {
+      "height": "380px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-02-item-01-circle",
+      "left": "1978px",
+      "text": "单位圆与正弦曲线联动探索恢复大图-1-0.500.51-1-0.500.51xyr = 1sin θθOP(cos θ, sin θ)",
+      "top": "828.9px",
+      "width": "440px"
+    },
+    {
+      "height": "360px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-01-moment-02-item-01-plot",
+      "left": "2434px",
+      "text": "正弦函数图像探索恢复大图0123456-1-0.500.51θyP(θ, sin(θ))y = sin(x)指向曲线查看坐标",
+      "top": "828.9px",
+      "width": "440px"
+    },
+    {
+      "height": "72px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-02-moment-01-item-01",
+      "left": "1710px",
+      "text": "y=sin⁡x(x∈R,y∈[−1,1])y = \\sin x \\quad (x \\in \\mathbb{R}, y \\in [-1, 1])y=sinx(x∈R,y∈[−1,1])",
+      "top": "1539.9px",
+      "width": "440px"
+    },
+    {
+      "height": "135px",
+      "id": "learn-learn-1791562126580-46n45l-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:node:section-02-moment-01-item-02",
+      "left": "1710px",
+      "text": "正弦函数的性质与五点法定义域: R，值域: [-1, 1]最小正周期: 2π五点法关键点: (0,0), (π/2,1), (π,0), (3π/2,-1), (2π,0)",
+      "top": "1627.9px",
+      "width": "440px"
+    },
+    {
+      "height": "72px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-01-moment-01-item-01",
+      "left": "4006.69px",
+      "text": "Y=2XY = 2XY=2X",
+      "top": "1571.55px",
+      "width": "313.2px"
+    },
+    {
+      "height": "156px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-01-moment-01-item-02",
+      "left": "4006.69px",
+      "text": "Y = 2X 的属性分析类型：正比例函数（一次函数的特殊形式）特征：自变量 X 与因变量 Y 成正比，比例系数为 2",
+      "top": "1659.55px",
+      "width": "313.2px"
+    },
+    {
+      "height": "399px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-01-moment-02-item-01",
+      "left": "4705.89px",
+      "text": "正比例函数 Y = kX探索恢复大图-4-2024-10-50510XYABΔx = 1 · Δy = 2 · 割线斜率 ≈ 2说明A、B的横坐标固定；曲线参数变化时同步观察两点与割线。Y = kX指向曲线查看坐标",
+      "top": "1571.55px",
+      "width": "440px"
+    },
+    {
+      "height": "94px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-02-moment-03-item-01",
+      "left": "4006.69px",
+      "text": "X=3X = 3X=3⇒Y=2×3=6对应点 (3,6)\\Rightarrow Y = 2 \\times 3 = 6 \\quad \\text{对应点 } (3, 6)⇒Y=2×3=6对应点 (3,6)",
+      "top": "2048.55px",
+      "width": "387px"
+    },
+    {
+      "height": "130px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-02-moment-04-item-01",
+      "left": "4006.69px",
+      "text": "Y=8Y = 8Y=8⇒8=2X\\Rightarrow 8 = 2X⇒8=2X⇒X=4\\Rightarrow X = 4⇒X=4",
+      "top": "2158.55px",
+      "width": "387px"
+    },
+    {
+      "height": "135px",
+      "id": "learn-learn-1791562126580-46n45l-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:node:section-02-moment-04-item-02",
+      "left": "4006.69px",
+      "text": "坐标代入计算要点已知 X 求 Y：直接代入解析式计算已知 Y 求 X：列一元一次方程求解满足解析式的点 (X, Y) 必在函数图像上",
+      "top": "2304.55px",
+      "width": "387px"
+    }
+  ],
+  "panels": [
+    {
+      "buttons": [],
+      "course": "trig-cosine-and-phase-shift-0.1.4-region",
+      "height": 152,
+      "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+      "left": "476px",
+      "tasks": [
+        {
+          "class": "learning-student-task is-not_started",
+          "disabled": null,
+          "text": "拖动角度滑块至约 1.57 rad (π/2)，观察此时余弦曲线对应的零点。轮到你操作了，完成后这里会立即反馈。"
+        }
+      ],
+      "top": "408px",
+      "width": "330px"
+    },
+    {
+      "buttons": [],
+      "course": "edc3cffb-dd62-488e-bfb1-cd5deb51fa1e",
+      "height": 287,
+      "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+      "left": "2434px",
+      "tasks": [
+        {
+          "class": "learning-student-task is-not_started is-locked",
+          "disabled": "true",
+          "text": "请将角度 x 调整至约 1.57（即 π/2 弧度），观察 y 的最大值。先完成「余弦函数与单位圆投影」里的练习，这一题就会开放。"
+        },
+        {
+          "class": "learning-student-task is-not_started is-locked",
+          "disabled": "true",
+          "text": "请将角度 x 调整到半个周期 π (约为 3.14 rad)，观察此时 y 的值。先完成「余弦函数与单位圆投影」里的练习，这一题就会开放。"
+        }
+      ],
+      "top": "1216.9px",
+      "width": "330px"
+    },
+    {
+      "buttons": [],
+      "course": "f3a88797-df49-4285-98bd-3f1d503d10c3",
+      "height": 147,
+      "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+      "left": "4347.89px",
+      "tasks": [
+        {
+          "class": "learning-student-task is-not_started is-locked",
+          "disabled": "true",
+          "text": "请把斜率 k调到 -5。先完成「余弦函数与单位圆投影」里的练习，这一题就会开放。"
+        }
+      ],
+      "top": "1571.55px",
+      "width": "330px"
+    }
+  ]
+}

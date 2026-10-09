@@ -1,0 +1,290 @@
+[
+  {
+    "stage": "01-all-completed-queued",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 152,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "01-all-completed-queued",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 287,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "01-all-completed-queued",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "02-generated-playing",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 152,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "02-generated-playing",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 255,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "03-completed-before-first",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 152,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "03-completed-before-first",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 287,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "03-completed-before-first",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "04-pack-task-succeeded",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "04-pack-task-succeeded",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 255,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "04-pack-task-succeeded",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "05-pack-succeeded-after-refresh",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "05-pack-succeeded-after-refresh",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 255,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "05-pack-succeeded-after-refresh",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "06-sine-first-succeeded",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "06-sine-first-succeeded",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 257,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "06-sine-first-succeeded",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "07-sine-first-after-refresh",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "07-sine-first-after-refresh",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 257,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "07-sine-first-after-refresh",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 147,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "08-sine-second-succeeded",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "08-sine-second-succeeded",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 273,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "08-sine-second-succeeded",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 131,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "09-sine-second-after-refresh",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "09-sine-second-after-refresh",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 273,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "09-sine-second-after-refresh",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 131,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "10-all-tasks-succeeded",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "10-all-tasks-succeeded",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 273,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "10-all-tasks-succeeded",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 134,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "11-all-succeeded-after-refresh",
+    "id": "trig-cosine-and-phase-shift-0.1.4-region:interaction:1",
+    "left": "476px",
+    "top": "408px",
+    "width": "330px",
+    "height": 168,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "11-all-succeeded-after-refresh",
+    "id": "topic-edc3cffb-dd62-488e-bfb1-cd5deb51fa1e.octos-lesson.json:interaction:1",
+    "left": "2434px",
+    "top": "1216.9px",
+    "width": "330px",
+    "height": 273,
+    "positionUnchanged": true
+  },
+  {
+    "stage": "11-all-succeeded-after-refresh",
+    "id": "topic-f3a88797-df49-4285-98bd-3f1d503d10c3.octos-lesson.json:interaction:1",
+    "left": "4347.89px",
+    "top": "1571.55px",
+    "width": "330px",
+    "height": 134,
+    "positionUnchanged": true
+  }
+]
