@@ -1126,6 +1126,22 @@ export function LearningWhiteboard({
           : []),
     }));
   })();
+  // Practice is sequential across the whole board: once the window is open
+  // only the first unfinished task is available, so a locked task is either
+  // waiting for playback to finish or queued behind that task.
+  const activeStudentTask = studentTasks.find((task) =>
+    task.available && task.status !== "succeeded");
+  const activeStudentTaskTopic = activeStudentTask
+    ? presentationTopics.find((topic) =>
+        topic.taskAliases?.includes(activeStudentTask.task_id))
+    : undefined;
+  const lockedTaskMessage = (topicId: string) => {
+    if (!activeStudentTask) return "白板上的课程全部播放完后，就可以继续操作。";
+    if (!activeStudentTaskTopic || activeStudentTaskTopic.id === topicId) {
+      return "先完成前面的练习，这一题就会开放。";
+    }
+    return `先完成「${activeStudentTaskTopic.title}」里的练习，这一题就会开放。`;
+  };
   const presentationTopicsRef = useRef(presentationTopics);
   presentationTopicsRef.current = presentationTopics;
 
@@ -3875,7 +3891,7 @@ export function LearningWhiteboard({
                               <p>{task.prompt}</p>
                               {locked && task.status !== "succeeded" ? (
                                 <div className="learning-student-task-feedback">
-                                  <span>白板上的课程全部播放完后，就可以继续操作。</span>
+                                  <span>{lockedTaskMessage(presentation.topic.id)}</span>
                                   {attempts > 0 ? <small>已尝试 {attempts} 次</small> : null}
                                 </div>
                               ) : task.status === "succeeded" ? (
