@@ -31,6 +31,7 @@ use std::time::Instant;
 
 mod course_pack;
 mod android_ui;
+mod board_actions;
 use android_ui::dim;
 
 app_main!(App);
@@ -5599,7 +5600,18 @@ impl App {
             }
         }
         self.handle_server(cx, event);
-        self.ui.handle_event(cx, event, &mut Scope::empty());
+        if android_ui::ANDROID_UI && self.learning_visible {
+            let window = self.ui.widget(cx, ids!(main_window)).widget_uid();
+            cx.map_actions(
+                |cx| self.ui.handle_event(cx, event, &mut Scope::empty()),
+                |_, mut actions| {
+                    actions.retain(|action| !board_actions::is_window_pointer(action, window));
+                    actions
+                },
+            );
+        } else {
+            self.ui.handle_event(cx, event, &mut Scope::empty());
+        }
         // Launcher pills/cards are plain views, hit-tested after the UI tree:
         // the scroll view captures the finger first (touch drag-scroll works
         // from a card) and `tapped` co-captures the same press.
