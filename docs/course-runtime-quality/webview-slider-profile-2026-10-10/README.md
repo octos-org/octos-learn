@@ -14,6 +14,12 @@ node scripts/profile-slider-drag.mjs --cpu 1,4 --out slider-profile-out
 `--packs a,b`、`--steps N`、`--width/--height` 可调。每个 课×CPU 降速 输出 JSON，另有 `SUMMARY.md`。
 真机/电视请用 Android WebView 的 CDP（参考 `scripts/measure-android-whiteboard.mjs`）抓同一类 profile。
 
+## Android 大屏实测
+
+[2026-10-10 大屏报告](android-tv/REPORT.md)与[机器可读汇总](android-tv/metrics.json)已补齐：真实 4 卡 / 64 条已保存 SVG path、余弦历史合成白板、三维课、20/36 卡数量对照，以及关闭 CPU profiler 的对照。新增 `scripts/profile-android-slider-drag.mjs` 通过可信触摸事件采样，原始与符号还原后的 V8 profile 均在 `android-tv/`。
+
+4 卡斜率课关闭 CPU profiler 后 render 中位数 51.4ms、syncNodes 47.5ms、帧间隔 p90 116.7ms；带采样暖机组分别为 70.7ms、64.6ms、166.7ms。TV CPU profiler 开销显著；React 与 BoardView 的 inclusive 桶存在嵌套，不可直接相加。数量对照支持无关卡片也增加开销，但不证明严格线性增长。
+
 ## Mac 基线（`baseline-mac/`，Chromium 无头，1440×900，90 步往返）
 
 - 这些单课白板只有 3–10 张卡，Mac 上 1× 每次更新约 5ms，4× 降速约 20ms；电视再慢一个量级，与 10-03 报告的 render 中位数 ~60–160ms 吻合。

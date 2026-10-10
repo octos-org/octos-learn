@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [WebView 滑块拖动 CPU profile](course-runtime-quality/webview-slider-profile-2026-10-10/README.md)：Mac 基线及[Android 大屏实测](course-runtime-quality/webview-slider-profile-2026-10-10/android-tv/REPORT.md)，含真实触摸、64 条笔迹白板、卡片数量对照、profiler 开销和原始调用栈。
+
 - [v0.1.2 发布记录](RELEASE_V0_1_2.md)：辅助卡片原稿避让修复和完整九课 APK。
 
 - [v0.1.1 发布记录](RELEASE_V0_1_1.md)：Android 性能与笔迹修复汇总、确切依赖和发布验证范围。

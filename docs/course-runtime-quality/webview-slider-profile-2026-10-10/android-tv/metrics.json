@@ -1,0 +1,760 @@
+[
+  {
+    "label": "cosine-final-touch",
+    "cards": 16,
+    "inputEvents": 82,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 264,
+      "p50": 83.33299999999872,
+      "p90": 350,
+      "p95": 400,
+      "max": 1833.3340000000026,
+      "over34ms": 168
+    },
+    "chrome": {
+      "layoutCount": 216,
+      "layoutSeconds": 2.612712,
+      "recalcStyleCount": 370,
+      "recalcStyleSeconds": 4.345409,
+      "scriptSeconds": 21.630303,
+      "taskSeconds": 37.724034
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 7700,
+      "Other JavaScript": 4277,
+      "Async storage / document store": 343,
+      "React and host work (excluding BoardView / storage)": 9658,
+      "Runtime variable update (including sync persist)": 3031,
+      "GC": 903,
+      "BoardView.render": 11088
+    },
+    "structuredCloneMs": 561,
+    "calls": {
+      "render": {
+        "count": 89,
+        "p50Ms": 117.40000009536743,
+        "totalMs": 11191.20000064373,
+        "maxMs": 450.10000002384186
+      },
+      "syncNodes": {
+        "count": 92,
+        "p50Ms": 102.29999995231628,
+        "totalMs": 9633.900000929832,
+        "maxMs": 321.39999997615814
+      },
+      "positionNodes": {
+        "count": 89,
+        "p50Ms": 2.0999999046325684,
+        "totalMs": 248.30000019073486,
+        "maxMs": 24.200000047683716
+      },
+      "syncGroups": {
+        "count": 89,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 26.700000047683716,
+        "maxMs": 2.299999952316284
+      },
+      "renderConnections": {
+        "count": 89,
+        "p50Ms": 3.5,
+        "totalMs": 464.1999999284744,
+        "maxMs": 36
+      },
+      "getRegionBoundsMap": {
+        "count": 250,
+        "p50Ms": 0.2999999523162842,
+        "totalMs": 121.80000054836273,
+        "maxMs": 10.700000047683716
+      },
+      "getAttachmentBoundsMap": {
+        "count": 250,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 71.19999969005585,
+        "maxMs": 5
+      },
+      "IDB.put": {
+        "count": 68,
+        "p50Ms": 4.299999952316284,
+        "totalMs": 320.7999997138977,
+        "maxMs": 15.5
+      }
+    }
+  },
+  {
+    "label": "cosine-first-touch",
+    "cards": 2,
+    "inputEvents": 87,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 312,
+      "p50": 33.33400000000256,
+      "p90": 233.33300000000236,
+      "p95": 266.6670000000013,
+      "max": 1899.9989999999998,
+      "over34ms": 135
+    },
+    "chrome": {
+      "layoutCount": 180,
+      "layoutSeconds": 2.372309,
+      "recalcStyleCount": 393,
+      "recalcStyleSeconds": 2.895209,
+      "scriptSeconds": 15.743607,
+      "taskSeconds": 27.935677000000002
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 5986,
+      "Other JavaScript": 2114,
+      "React and host work (excluding BoardView / storage)": 7318,
+      "Runtime variable update (including sync persist)": 2185,
+      "Async storage / document store": 178,
+      "GC": 613,
+      "BoardView.render": 9017
+    },
+    "structuredCloneMs": 301,
+    "calls": {}
+  },
+  {
+    "label": "cosine-warm-touch",
+    "cards": 2,
+    "inputEvents": 86,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 307,
+      "p50": 33.33399999998801,
+      "p90": 233.333999999988,
+      "p95": 266.66699999998673,
+      "max": 666.6670000000013,
+      "over34ms": 128
+    },
+    "chrome": {
+      "layoutCount": 182,
+      "layoutSeconds": 2.349695,
+      "recalcStyleCount": 383,
+      "recalcStyleSeconds": 2.8447289999999996,
+      "scriptSeconds": 15.503548,
+      "taskSeconds": 26.889889
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 5053,
+      "GC": 1140,
+      "Other JavaScript": 2114,
+      "React and host work (excluding BoardView / storage)": 6832,
+      "Runtime variable update (including sync persist)": 2386,
+      "Async storage / document store": 158,
+      "BoardView.render": 8717
+    },
+    "structuredCloneMs": 384,
+    "calls": {
+      "render": {
+        "count": 87,
+        "p50Ms": 96.89999997615814,
+        "totalMs": 8738.200000166893,
+        "maxMs": 262.60000002384186
+      },
+      "syncNodes": {
+        "count": 87,
+        "p50Ms": 89.30000007152557,
+        "totalMs": 8015.200000405312,
+        "maxMs": 244.70000004768372
+      },
+      "positionNodes": {
+        "count": 87,
+        "p50Ms": 0.6999999284744263,
+        "totalMs": 83.5999995470047,
+        "maxMs": 4.100000023841858
+      },
+      "syncGroups": {
+        "count": 87,
+        "p50Ms": 0.10000002384185791,
+        "totalMs": 24.000000476837158,
+        "maxMs": 3.8000000715255737
+      },
+      "renderConnections": {
+        "count": 87,
+        "p50Ms": 2.5,
+        "totalMs": 278.7999997138977,
+        "maxMs": 14.699999928474426
+      },
+      "getRegionBoundsMap": {
+        "count": 244,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 96.40000069141388,
+        "maxMs": 7.900000095367432
+      },
+      "getAttachmentBoundsMap": {
+        "count": 244,
+        "p50Ms": 0.10000002384185791,
+        "totalMs": 49.200000286102295,
+        "maxMs": 1.399999976158142
+      },
+      "IDB.put": {
+        "count": 25,
+        "p50Ms": 4.700000047683716,
+        "totalMs": 146.0999995470047,
+        "maxMs": 15.5
+      }
+    }
+  },
+  {
+    "label": "pizza-first-touch",
+    "cards": 9,
+    "inputEvents": 88,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 271,
+      "p50": 116.66699999989942,
+      "p90": 316.6669999998994,
+      "p95": 366.6669999998994,
+      "max": 633.3330000001006,
+      "over34ms": 204
+    },
+    "chrome": {
+      "layoutCount": 159,
+      "layoutSeconds": 2.175124,
+      "recalcStyleCount": 348,
+      "recalcStyleSeconds": 6.904216,
+      "scriptSeconds": 19.029959,
+      "taskSeconds": 38.89304
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 17347,
+      "Other JavaScript": 3088,
+      "React and host work (excluding BoardView / storage)": 10054,
+      "Runtime variable update (including sync persist)": 2517,
+      "BoardView.render": 3988,
+      "Async storage / document store": 364,
+      "GC": 761
+    },
+    "structuredCloneMs": 526,
+    "calls": {}
+  },
+  {
+    "label": "slope64-first-touch",
+    "cards": 4,
+    "inputEvents": 88,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 313,
+      "p50": 33.333999999995285,
+      "p90": 200,
+      "p95": 250,
+      "max": 1316.6659999999974,
+      "over34ms": 130
+    },
+    "chrome": {
+      "layoutCount": 197,
+      "layoutSeconds": 1.623759,
+      "recalcStyleCount": 405,
+      "recalcStyleSeconds": 2.989521,
+      "scriptSeconds": 14.127606,
+      "taskSeconds": 25.074881
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 5473,
+      "Other JavaScript": 2319,
+      "React and host work (excluding BoardView / storage)": 7420,
+      "Runtime variable update (including sync persist)": 1171,
+      "Async storage / document store": 115,
+      "BoardView.render": 7131,
+      "GC": 582
+    },
+    "structuredCloneMs": 344,
+    "calls": {}
+  },
+  {
+    "label": "slope64-no-cpu",
+    "cards": 4,
+    "inputEvents": 87,
+    "steps": 90,
+    "profile": false,
+    "frame": {
+      "count": 352,
+      "p50": 33.33300000001327,
+      "p90": 116.66700000001583,
+      "p95": 150,
+      "max": 233.33300000001327,
+      "over34ms": 113
+    },
+    "chrome": {
+      "layoutCount": 188,
+      "layoutSeconds": 1.039366,
+      "recalcStyleCount": 434,
+      "recalcStyleSeconds": 1.987446,
+      "scriptSeconds": 9.631177000000001,
+      "taskSeconds": 16.538923
+    },
+    "cpuDisjoint": null,
+    "structuredCloneMs": null,
+    "calls": {
+      "render": {
+        "count": 87,
+        "p50Ms": 51.39999997615814,
+        "totalMs": 4819.800000071526,
+        "maxMs": 170
+      },
+      "syncNodes": {
+        "count": 87,
+        "p50Ms": 47.5,
+        "totalMs": 4351.299999833107,
+        "maxMs": 157.19999992847443
+      },
+      "positionNodes": {
+        "count": 87,
+        "p50Ms": 0.5,
+        "totalMs": 63.80000054836273,
+        "maxMs": 3.5
+      },
+      "syncGroups": {
+        "count": 87,
+        "p50Ms": 0,
+        "totalMs": 3.699999451637268,
+        "maxMs": 0.3999999761581421
+      },
+      "renderConnections": {
+        "count": 87,
+        "p50Ms": 0.8999999761581421,
+        "totalMs": 97.2000002861023,
+        "maxMs": 4.799999952316284
+      },
+      "getRegionBoundsMap": {
+        "count": 260,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 76.69999766349792,
+        "maxMs": 3.5
+      },
+      "getAttachmentBoundsMap": {
+        "count": 260,
+        "p50Ms": 0.10000002384185791,
+        "totalMs": 42.90000092983246,
+        "maxMs": 2.399999976158142
+      },
+      "IDB.put": {
+        "count": 56,
+        "p50Ms": 1.5,
+        "totalMs": 111.00000011920929,
+        "maxMs": 7.100000023841858
+      }
+    }
+  },
+  {
+    "label": "slope64-warm-instrumented",
+    "cards": 4,
+    "inputEvents": 87,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 343,
+      "p50": 33.33300000001327,
+      "p90": 166.66699999998673,
+      "p95": 200,
+      "max": 533.3329999999987,
+      "over34ms": 135
+    },
+    "chrome": {
+      "layoutCount": 186,
+      "layoutSeconds": 1.453899,
+      "recalcStyleCount": 422,
+      "recalcStyleSeconds": 2.753,
+      "scriptSeconds": 12.875288000000001,
+      "taskSeconds": 22.58707
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 4862,
+      "Other JavaScript": 2283,
+      "React and host work (excluding BoardView / storage)": 6447,
+      "Runtime variable update (including sync persist)": 1293,
+      "Async storage / document store": 148,
+      "BoardView.render": 6544,
+      "GC": 684
+    },
+    "structuredCloneMs": 374,
+    "calls": {
+      "render": {
+        "count": 89,
+        "p50Ms": 70.69999992847443,
+        "totalMs": 6608.099999904633,
+        "maxMs": 168.60000002384186
+      },
+      "syncNodes": {
+        "count": 89,
+        "p50Ms": 64.59999990463257,
+        "totalMs": 5972.300000309944,
+        "maxMs": 164.70000004768372
+      },
+      "positionNodes": {
+        "count": 89,
+        "p50Ms": 0.7000000476837158,
+        "totalMs": 135.2000002861023,
+        "maxMs": 51.89999997615814
+      },
+      "syncGroups": {
+        "count": 89,
+        "p50Ms": 0,
+        "totalMs": 3.100000023841858,
+        "maxMs": 0.5
+      },
+      "renderConnections": {
+        "count": 89,
+        "p50Ms": 1.0999999046325684,
+        "totalMs": 128.49999976158142,
+        "maxMs": 7
+      },
+      "getRegionBoundsMap": {
+        "count": 257,
+        "p50Ms": 0.2999999523162842,
+        "totalMs": 120.89999961853027,
+        "maxMs": 14.099999904632568
+      },
+      "getAttachmentBoundsMap": {
+        "count": 257,
+        "p50Ms": 0.19999992847442627,
+        "totalMs": 65.50000143051147,
+        "maxMs": 6.100000023841858
+      },
+      "IDB.put": {
+        "count": 68,
+        "p50Ms": 1.5,
+        "totalMs": 133.00000023841858,
+        "maxMs": 9.899999976158142
+      }
+    }
+  },
+  {
+    "label": "stress20-touch",
+    "cards": 20,
+    "inputEvents": 58,
+    "steps": 60,
+    "profile": true,
+    "frame": {
+      "count": 223,
+      "p50": 33.333000000005995,
+      "p90": 233.33299999999872,
+      "p95": 266.6670000000013,
+      "max": 1750,
+      "over34ms": 89
+    },
+    "chrome": {
+      "layoutCount": 123,
+      "layoutSeconds": 0.992655,
+      "recalcStyleCount": 280,
+      "recalcStyleSeconds": 1.93364,
+      "scriptSeconds": 11.160428999999999,
+      "taskSeconds": 19.594773
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 4842,
+      "Other JavaScript": 1722,
+      "GC": 391,
+      "React and host work (excluding BoardView / storage)": 5544,
+      "BoardView.render": 5480,
+      "Runtime variable update (including sync persist)": 1134,
+      "Async storage / document store": 132
+    },
+    "structuredCloneMs": 230,
+    "calls": {
+      "render": {
+        "count": 61,
+        "p50Ms": 88.20000004768372,
+        "totalMs": 5553.600000500679,
+        "maxMs": 285.59999990463257
+      },
+      "syncNodes": {
+        "count": 61,
+        "p50Ms": 73.70000004768372,
+        "totalMs": 4605.199999451637,
+        "maxMs": 223.89999997615814
+      },
+      "positionNodes": {
+        "count": 61,
+        "p50Ms": 2.1999999284744263,
+        "totalMs": 190.89999961853027,
+        "maxMs": 14
+      },
+      "syncGroups": {
+        "count": 61,
+        "p50Ms": 0,
+        "totalMs": 3.4000000953674316,
+        "maxMs": 0.5
+      },
+      "renderConnections": {
+        "count": 61,
+        "p50Ms": 1.2000000476837158,
+        "totalMs": 122.7000002861023,
+        "maxMs": 12.700000047683716
+      },
+      "getRegionBoundsMap": {
+        "count": 168,
+        "p50Ms": 0.2999999523162842,
+        "totalMs": 67.40000057220459,
+        "maxMs": 4
+      },
+      "getAttachmentBoundsMap": {
+        "count": 168,
+        "p50Ms": 0.19999992847442627,
+        "totalMs": 54.59999978542328,
+        "maxMs": 6.100000023841858
+      },
+      "IDB.put": {
+        "count": 36,
+        "p50Ms": 2.200000047683716,
+        "totalMs": 124.99999988079071,
+        "maxMs": 13.200000047683716
+      }
+    }
+  },
+  {
+    "label": "stress36-touch",
+    "cards": 36,
+    "inputEvents": 58,
+    "steps": 60,
+    "profile": true,
+    "frame": {
+      "count": 219,
+      "p50": 33.333999999995285,
+      "p90": 266.66599999999744,
+      "p95": 333.3329999999987,
+      "max": 700,
+      "over34ms": 86
+    },
+    "chrome": {
+      "layoutCount": 120,
+      "layoutSeconds": 1.102391,
+      "recalcStyleCount": 271,
+      "recalcStyleSeconds": 1.972278,
+      "scriptSeconds": 12.542966,
+      "taskSeconds": 20.303626
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 4107,
+      "Other JavaScript": 1824,
+      "React and host work (excluding BoardView / storage)": 5641,
+      "Runtime variable update (including sync persist)": 1606,
+      "Async storage / document store": 152,
+      "BoardView.render": 5722,
+      "GC": 819
+    },
+    "structuredCloneMs": 322,
+    "calls": {
+      "render": {
+        "count": 59,
+        "p50Ms": 90.39999997615814,
+        "totalMs": 5994.60000038147,
+        "maxMs": 257.5
+      },
+      "syncNodes": {
+        "count": 59,
+        "p50Ms": 76.09999990463257,
+        "totalMs": 4928.100000500679,
+        "maxMs": 245.89999997615814
+      },
+      "positionNodes": {
+        "count": 59,
+        "p50Ms": 4,
+        "totalMs": 338.399999499321,
+        "maxMs": 22.90000009536743
+      },
+      "syncGroups": {
+        "count": 59,
+        "p50Ms": 0,
+        "totalMs": 1.9999998807907104,
+        "maxMs": 0.19999992847442627
+      },
+      "renderConnections": {
+        "count": 59,
+        "p50Ms": 1.399999976158142,
+        "totalMs": 126.7999997138977,
+        "maxMs": 7.299999952316284
+      },
+      "getRegionBoundsMap": {
+        "count": 156,
+        "p50Ms": 0.2999999523162842,
+        "totalMs": 57.70000123977661,
+        "maxMs": 3.399999976158142
+      },
+      "getAttachmentBoundsMap": {
+        "count": 156,
+        "p50Ms": 0.19999992847442627,
+        "totalMs": 44.1999990940094,
+        "maxMs": 6.699999928474426
+      },
+      "IDB.put": {
+        "count": 54,
+        "p50Ms": 2.5,
+        "totalMs": 173.200000166893,
+        "maxMs": 13.300000071525574
+      }
+    }
+  },
+  {
+    "label": "stress4-repeat-touch",
+    "cards": 4,
+    "inputEvents": 58,
+    "steps": 60,
+    "profile": true,
+    "frame": {
+      "count": 239,
+      "p50": 33.33299999999872,
+      "p90": 150,
+      "p95": 166.66700000000128,
+      "max": 533.3329999999987,
+      "over34ms": 78
+    },
+    "chrome": {
+      "layoutCount": 124,
+      "layoutSeconds": 0.85157,
+      "recalcStyleCount": 294,
+      "recalcStyleSeconds": 1.755204,
+      "scriptSeconds": 7.115293,
+      "taskSeconds": 13.761365
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 3519,
+      "Other JavaScript": 1476,
+      "React and host work (excluding BoardView / storage)": 3711,
+      "Runtime variable update (including sync persist)": 675,
+      "Async storage / document store": 136,
+      "BoardView.render": 3755,
+      "GC": 151
+    },
+    "structuredCloneMs": 176,
+    "calls": {
+      "render": {
+        "count": 60,
+        "p50Ms": 64.19999992847443,
+        "totalMs": 3787.599999308586,
+        "maxMs": 105.29999995231628
+      },
+      "syncNodes": {
+        "count": 60,
+        "p50Ms": 58.199999928474426,
+        "totalMs": 3455.2999995946884,
+        "maxMs": 100
+      },
+      "positionNodes": {
+        "count": 60,
+        "p50Ms": 0.7000000476837158,
+        "totalMs": 52.200000405311584,
+        "maxMs": 3.200000047683716
+      },
+      "syncGroups": {
+        "count": 60,
+        "p50Ms": 0,
+        "totalMs": 2,
+        "maxMs": 0.10000002384185791
+      },
+      "renderConnections": {
+        "count": 60,
+        "p50Ms": 1.100000023841858,
+        "totalMs": 79.59999990463257,
+        "maxMs": 3.5
+      },
+      "getRegionBoundsMap": {
+        "count": 171,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 63.50000083446503,
+        "maxMs": 4.799999952316284
+      },
+      "getAttachmentBoundsMap": {
+        "count": 171,
+        "p50Ms": 0.19999992847442627,
+        "totalMs": 46.399999141693115,
+        "maxMs": 3.5999999046325684
+      },
+      "IDB.put": {
+        "count": 58,
+        "p50Ms": 1.7000000476837158,
+        "totalMs": 126.29999995231628,
+        "maxMs": 11
+      }
+    }
+  },
+  {
+    "label": "surface-final-touch",
+    "cards": 9,
+    "inputEvents": 83,
+    "steps": 90,
+    "profile": true,
+    "frame": {
+      "count": 286,
+      "p50": 33.33400000000256,
+      "p90": 200,
+      "p95": 233.33299999999872,
+      "max": 1433.3329999999987,
+      "over34ms": 134
+    },
+    "chrome": {
+      "layoutCount": 119,
+      "layoutSeconds": 0.619822,
+      "recalcStyleCount": 302,
+      "recalcStyleSeconds": 1.363988,
+      "scriptSeconds": 14.739286,
+      "taskSeconds": 23.12442
+    },
+    "cpuDisjoint": {
+      "Browser native / unattributed": 5751,
+      "Other JavaScript": 3125,
+      "React and host work (excluding BoardView / storage)": 6751,
+      "BoardView.render": 4758,
+      "GC": 410,
+      "Runtime variable update (including sync persist)": 1581,
+      "Async storage / document store": 345
+    },
+    "structuredCloneMs": 360,
+    "calls": {
+      "render": {
+        "count": 87,
+        "p50Ms": 47.60000002384186,
+        "totalMs": 4828.900000214577,
+        "maxMs": 351.60000002384186
+      },
+      "syncNodes": {
+        "count": 90,
+        "p50Ms": 37.5,
+        "totalMs": 3964.699999690056,
+        "maxMs": 154.60000002384186
+      },
+      "positionNodes": {
+        "count": 87,
+        "p50Ms": 1.3000000715255737,
+        "totalMs": 157.89999997615814,
+        "maxMs": 8.099999904632568
+      },
+      "syncGroups": {
+        "count": 87,
+        "p50Ms": 0,
+        "totalMs": 5.3999998569488525,
+        "maxMs": 0.6000000238418579
+      },
+      "renderConnections": {
+        "count": 87,
+        "p50Ms": 1.6999999284744263,
+        "totalMs": 185.69999969005585,
+        "maxMs": 13.700000047683716
+      },
+      "getRegionBoundsMap": {
+        "count": 249,
+        "p50Ms": 0.2999999523162842,
+        "totalMs": 85.00000083446503,
+        "maxMs": 3.8000000715255737
+      },
+      "getAttachmentBoundsMap": {
+        "count": 249,
+        "p50Ms": 0.20000004768371582,
+        "totalMs": 73.79999959468842,
+        "maxMs": 3.399999976158142
+      },
+      "IDB.put": {
+        "count": 86,
+        "p50Ms": 2.200000047683716,
+        "totalMs": 220.30000066757202,
+        "maxMs": 6.700000047683716
+      }
+    }
+  }
+]
