@@ -507,6 +507,7 @@ export function LearningWorkspace({
   const [persistedOllArtifacts, setPersistedOllArtifacts] = useState<
     ReturnType<typeof collectPersistedOllLessonArtifacts>
   >([]);
+  const [ollArtifactListChecked, setOllArtifactListChecked] = useState(false);
   const [ollGenerationSessionId, setOllGenerationSessionId] = useState<
     string | null
   >(null);
@@ -880,10 +881,14 @@ export function LearningWorkspace({
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
   const activeOllEvents = useMemo(() => {
     if (!packagedOllEvents) return deliveredOllEvents;
-    if (deliveredOllLessons.length === 0) return packagedOllEvents;
+    // Compose even before the first generated lesson arrives. The pack keeps
+    // its lesson.open identity and drops lesson.close, so the program the
+    // Runtime checkpoints before generation is a prefix of the one after it.
+    // Otherwise the Runtime is rebuilt and replays the pack from the start.
     return composeOllClassroomEvents(
       [packagedOllEvents, ...deliveredOllLessons],
       sessionId,
+      { keepFirstLessonIdentity: true },
     );
   }, [deliveredOllEvents, deliveredOllLessons, packagedOllEvents, sessionId]);
   const appendedOllEventCountRef = useRef(1);
@@ -939,8 +944,22 @@ export function LearningWorkspace({
   const ollOpenSource = activeOllEvents?.[0]
     ? JSON.stringify(activeOllEvents[0])
     : null;
+  // The Runtime validates its saved checkpoint against the program delivered
+  // when it opens, and discards a checkpoint that runs past that program. On
+  // reload a CoursePack is ready before the session's generated lessons are
+  // listed and loaded, so opening early would drop progress made in those
+  // lessons and replay the pack. Hold the first open until every saved lesson
+  // is either loaded or rejected; later lessons append to the open Runtime.
+  const ollArtifactsLoading = ollArtifacts.some((artifact) => {
+    const identity = ollArtifactIdentity(artifact);
+    return !loadedOllArtifacts[identity] && !rejectedOllArtifactIds.has(identity);
+  });
+  const [ollRestoreReady, setOllRestoreReady] = useState(false);
+  if (!ollRestoreReady && ollArtifactListChecked && !ollArtifactsLoading) {
+    setOllRestoreReady(true);
+  }
   const ollLesson = useOllLessonRuntime({
-    source: ollOpenSource,
+    source: ollRestoreReady ? ollOpenSource : null,
     storageKey: ollPlaybackStorageKey(
       sessionId,
       ollFixture,
@@ -968,10 +987,7 @@ export function LearningWorkspace({
       ollGenerationSessionId === sessionId ||
       whiteboardQuestions.some((question) =>
         isCourseWhiteboardQuestion(question) && question.status === "pending") ||
-      ollArtifacts.some((artifact) => {
-        const identity = ollArtifactIdentity(artifact);
-        return !loadedOllArtifacts[identity] && !rejectedOllArtifactIds.has(identity);
-      })
+      ollArtifactsLoading
     ),
   );
   const activeStepId = ollLesson?.currentStepId;
@@ -1784,6 +1800,7 @@ export function LearningWorkspace({
           collectPersistedSelectionEnhancementArtifacts(files),
         );
         setFileListError(null);
+        setOllArtifactListChecked(true);
       } catch (cause) {
         if (cancelled || version !== requestVersion) return;
         if (!packagedPlayback) {
@@ -1793,6 +1810,7 @@ export function LearningWorkspace({
               : "无法读取已保存的白板课程",
           );
         }
+        setOllArtifactListChecked(true);
       }
     };
     const handleToolProgress = (event: Event) => {

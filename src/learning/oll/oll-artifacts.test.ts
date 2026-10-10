@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { reduceCanonicalEvents } from "octos-lesson-language";
+import {
+  BrowserLessonSession,
+  parseCanonicalJsonl,
+  type PlaybackStore,
+} from "octos-lesson-language/web-runtime";
 import type { Thread } from "@/store/thread-store";
 import {
   buildOllLessonTopics,
@@ -15,6 +20,7 @@ import {
 } from "./oll-artifacts";
 import { materializeOllLessonWithReport } from "./oll-materialization";
 import { buildInteractionClusters } from "./interaction-clusters";
+import mathTwoPointsSource from "./fixtures/math-two-points.canonical.jsonl?raw";
 
 function threadWithLesson(path: string): Thread {
   return {
@@ -444,6 +450,61 @@ describe("OLL lesson artifacts", () => {
       .find((action) => action.op === "board.create")?.node;
     expect(createdNode?.region_id).toBe(`topic-${artifactIdentity}`);
     vi.unstubAllGlobals();
+  });
+
+  it("keeps a CoursePack checkpoint when a generated lesson joins its classroom", async () => {
+    const pack = parseCanonicalJsonl(mathTwoPointsSource);
+    expect(pack.at(-1)?.event).toBe("lesson.close");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => authoringLesson,
+    }));
+    const [artifact] = collectOllLessonArtifacts([
+      threadWithLesson("study/oll/turn.octos-lesson.json"),
+    ]);
+    const generated = await loadOllLessonArtifact(artifact!, "session-1");
+    vi.unstubAllGlobals();
+    const options = { keepFirstLessonIdentity: true };
+    const packOnly = composeOllClassroomEvents([pack], "session-1", options);
+    const withGenerated = composeOllClassroomEvents(
+      [pack, generated],
+      "session-1",
+      options,
+    );
+
+    // lesson.open is the Runtime's source; it must survive the first
+    // generated lesson, and no lesson.close may block the append.
+    expect(withGenerated[0]).toEqual(packOnly[0]);
+    expect(packOnly[0]?.lesson_id).toBe(pack[0]?.lesson_id);
+    expect(packOnly[0]?.board).toEqual(pack[0]?.board);
+    expect(packOnly.map((event) => event.event)).not.toContain("lesson.close");
+    expect(withGenerated.slice(0, packOnly.length)).toEqual(packOnly);
+
+    const saved = new Map<string, unknown>();
+    const store: PlaybackStore = {
+      load: (key) => structuredClone(saved.get(key)) as ReturnType<PlaybackStore["load"]>,
+      save: (key, checkpoint) => { saved.set(key, structuredClone(checkpoint)); },
+      remove: (key) => { saved.delete(key); },
+    };
+    const open = (program: typeof packOnly) => new BrowserLessonSession(
+      [structuredClone(program[0]!)],
+      store,
+      "pack-session",
+      { incremental: true, deliveredProgram: structuredClone(program) },
+    );
+    const before = open(packOnly);
+    before.appendEvents(structuredClone(packOnly.slice(1)));
+    while (before.advance()) { /* play the whole pack */ }
+    const packEnd = before.cursor;
+    expect(packEnd).toBe(before.operations.length);
+    before.pause();
+
+    const after = open(withGenerated);
+    expect(after.cursor).toBe(packEnd);
+    // The workspace re-submits the whole delivered prefix after a reopen.
+    after.appendEvents(structuredClone(withGenerated.slice(1)));
+    expect(after.cursor).toBe(packEnd);
+    expect(after.operations.length).toBeGreaterThan(packEnd);
   });
 
   it("composes multiple teaching turns as one open incremental classroom", async () => {

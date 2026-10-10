@@ -1208,14 +1208,16 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByTestId("oll-lesson-board")).toBeTruthy();
   });
 
-  it("only reserves visible tasks and shrinks again when tasks close", async () => {
+  it("keeps a finished course's practice in place, locked, while tasks are closed", async () => {
     const layouts = vi.spyOn(InfiniteBoardView.prototype, "setRegionLayouts");
     function Probe() {
       const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
         storageKey: "visible-task-layout", startAtEnd: true });
       const [available, setAvailable] = useState(false);
       if (!runtime) return null;
+      const firstStepId = runtime.outline[0]?.steps[0]?.id;
       return <><button onClick={() => setAvailable(value => !value)}>切换练习</button>
+        <button onClick={() => { runtime.pause(); if (firstStepId) runtime.playStep(firstStepId); }}>重播</button>
         <OllLessonBoard runtime={{ ...runtime,
           studentTasks: runtime.studentTasks.map(task => ({...task, available})),
         }} /></>;
@@ -1226,11 +1228,48 @@ describe("OLL lesson Runtime integration", () => {
       return Object.values(latest ?? {}).flatMap(region =>
         (region.attachments ?? []).map(attachment => attachment.height));
     };
-    await waitFor(() => expect(heights()).toEqual([36]));
-    fireEvent.click(screen.getByText("切换练习"));
+    // A later lesson closes the practice window after this course ended:
+    // the panel keeps its space so the cards below it do not move.
     await waitFor(() => expect(heights()).toEqual([36, 280]));
+    const task = () => screen.getByTestId("oll-student-tasks").querySelector("article");
+    expect(task()?.getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByText("白板上的课程全部播放完后，就可以继续操作。")).toBeTruthy();
     fireEvent.click(screen.getByText("切换练习"));
+    await waitFor(() => expect(task()?.getAttribute("aria-disabled")).toBeNull());
+    expect(heights()).toEqual([36, 280]);
+    fireEvent.click(screen.getByText("切换练习"));
+    await waitFor(() => expect(task()?.getAttribute("aria-disabled")).toBe("true"));
+    expect(heights()).toEqual([36, 280]);
+    // Replaying the course rewinds it before its end, so practice waits again.
+    fireEvent.click(screen.getByText("重播"));
     await waitFor(() => expect(heights()).toEqual([36]));
+    expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+  });
+
+  it("tells a queued task to wait for the active practice, not for playback", async () => {
+    function Probe() {
+      const runtime = useOllLessonRuntime({ source: unitCircleSineLessonSource,
+        storageKey: "queued-task-message", startAtEnd: true });
+      if (!runtime) return null;
+      const [task] = runtime.studentTasks;
+      if (!task) return null;
+      // The practice window is open and an earlier task is the active one.
+      return <OllLessonBoard runtime={{ ...runtime,
+        studentTasks: [
+          { ...task, task_id: "earlier-task", available: true },
+          { ...task, available: false },
+        ],
+      }} />;
+    }
+    await renderLearning(<Probe />);
+    const queued = await waitFor(() => {
+      const article = screen.getByTestId("oll-student-tasks").querySelector("article");
+      expect(article).toBeTruthy();
+      return article!;
+    });
+    expect(queued.getAttribute("aria-disabled")).toBe("true");
+    expect(queued.textContent).toContain("先完成前面的练习，这一题就会开放。");
+    expect(queued.textContent).not.toContain("全部播放完后");
   });
 
   it("surfaces rejected input and prevents later input from becoming a successful operation", async () => {
