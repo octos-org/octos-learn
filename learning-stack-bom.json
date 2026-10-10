@@ -1,11 +1,11 @@
 {
   "schema": "octos.learning-stack.release-bom.v1",
-  "release_train": "octos-learn-v0.1.2",
+  "release_train": "octos-learn-v0.1.3",
   "status": "release-candidate",
   "components": {
     "learning_coach": {
       "repository": "alan0x/learning-coach",
-      "main_baseline_ref": "d44a7e636f9b5da0555011c8b8c46b335e3b892a",
+      "main_baseline_ref": "ed211feeeae7bbac98b7db6062f2ca31c4a175ba",
       "package_version": "0.15.0",
       "oll_authoring_ref": "3145b5da8bac399edbbe73b6bea0ad1c7225f790",
       "compiled_visual_reuse_ref": "0a0021cbe615b0c1ed3c9c1304edc5803c761fef"
@@ -18,8 +18,8 @@
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
-      "main_baseline_ref": "5e7b331d7d3370962b89eed05cb25f7b29b29827",
-      "package_version": "0.1.2",
+      "main_baseline_ref": "c03232610b477185074862d9814ba28b973fc58a",
+      "package_version": "0.1.3",
       "oll_web_runtime_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55"
     },
     "octos": {
