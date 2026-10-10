@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [Android 滑块优化最终验证](course-runtime-quality/webview-slider-performance-2026-10-10/REPORT.md)：完整 Runtime pin、几何扫描优化、电视最终结果、持续存档与布局恢复验证。
+
 - [v0.1.2 发布记录](RELEASE_V0_1_2.md)：辅助卡片原稿避让修复和完整九课 APK。
 
 - [v0.1.1 发布记录](RELEASE_V0_1_1.md)：Android 性能与笔迹修复汇总、确切依赖和发布验证范围。

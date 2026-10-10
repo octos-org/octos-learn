@@ -19,7 +19,9 @@ for (const [title, beats] of courses) {
     await expect(page.getByTestId('oll-controls')).toBeVisible();
     const pause = page.getByRole('button',{name:'暂停 OLL 课程'});
     if (await pause.isVisible()) await pause.click();
-    for(let i=0;i<=beats;i++) await page.getByRole('button',{name:'下一 OLL Beat',exact:true}).click();
+    const next = page.getByRole('button',{name:'下一 OLL Beat',exact:true});
+    for(let i=0;i<=beats && await next.isEnabled();i++) await next.click();
+    await expect(next).toBeDisabled();
     if (title.startsWith('水平')) {
       const slider = page.getByRole('slider');
       await expect(slider).toHaveValue('1');
