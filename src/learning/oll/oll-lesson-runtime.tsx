@@ -1404,8 +1404,21 @@ export function LearningWhiteboard({
     }];
   });
 
+  // `coursePresentations` is rebuilt on every render, including each slider
+  // frame. Re-running this effect then reads offsetWidth/offsetHeight right
+  // after the board changed and forces a second browser layout per frame; the
+  // ResizeObserver already reports real size changes of the observed docks.
+  const renderedBoundsRef = useRef<{ view: unknown; revision: number | undefined; board: string | undefined } | null>(null);
+  const coursePresentationsRef = useRef(coursePresentations);
+  coursePresentationsRef.current = coursePresentations;
+  const interactionMeasureKey = JSON.stringify(coursePresentations.map((presentation) => [
+    presentation.id,
+    presentation.signature,
+    presentation.controls.map((control) => control.alias),
+    presentation.tasks.map((task) => task.task_id),
+  ]));
   useLayoutEffect(() => {
-    if (!enhancementLayer || coursePresentations.length === 0) return;
+    if (!enhancementLayer || coursePresentationsRef.current.length === 0) return;
     let frame = 0;
     const measure = () => {
       window.cancelAnimationFrame(frame);
@@ -1416,7 +1429,7 @@ export function LearningWhiteboard({
       const taskElements = [...enhancementLayer.querySelectorAll<HTMLElement>(
         "[data-interaction-tasks-id]",
       )];
-      const next = Object.fromEntries(coursePresentations.flatMap((presentation) => {
+      const next = Object.fromEntries(coursePresentationsRef.current.flatMap((presentation) => {
         const controlsElement = controlsElements.find((element) =>
           element.dataset.interactionControlsId === presentation.id);
         const tasksElement = taskElements.find((element) =>
@@ -1448,7 +1461,7 @@ export function LearningWhiteboard({
     enhancementLayer.querySelectorAll('[data-interaction-controls-id],[data-interaction-tasks-id]').forEach(element=>observer?.observe(element));
     measure();
     return () => { window.cancelAnimationFrame(frame); observer?.disconnect(); };
-  }, [coursePresentations, enhancementLayer]);
+  }, [interactionMeasureKey, enhancementLayer]);
 
   const occupiedRectsForQuestion = useCallback((questionId: string) => {
     const elements: HTMLElement[] = [];
@@ -2770,6 +2783,19 @@ export function LearningWhiteboard({
         cursor: activeRuntime.cursor,
       });
     }
+    // Card bounds only move with the layout. A slider frame that reused the
+    // previous layout would otherwise read card sizes right after the board
+    // repainted and force another browser layout. Older Runtimes without the
+    // revision always measure.
+    const layoutRevision = (view as { layoutRevision?: number } | undefined)?.layoutRevision;
+    const renderedBounds = renderedBoundsRef.current;
+    const boundsStale = layoutRevision === undefined
+      || !renderedBounds
+      || renderedBounds.view !== view
+      || renderedBounds.revision !== layoutRevision
+      || renderedBounds.board !== activeRuntime.board?.board_id;
+    renderedBoundsRef.current = { view, revision: layoutRevision, board: activeRuntime.board?.board_id };
+    if (boundsStale) {
     const nextRegionBounds = view?.getRegionBoundsMap() ?? {};
     setRuntimeRegionBounds((current) =>
       JSON.stringify(current) === JSON.stringify(nextRegionBounds)
@@ -2794,6 +2820,7 @@ export function LearningWhiteboard({
       JSON.stringify(current) === JSON.stringify(nextNodeBounds)
         ? current
         : nextNodeBounds);
+    }
     const viewport = viewportRef.current;
     if (viewport) ensureScene3dInteractionHints(viewport);
     const variableAnimationActive = Boolean(activeRuntime.activeVariableAnimation);
