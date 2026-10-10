@@ -1,0 +1,27 @@
+{
+  "fixture": "delivery/slider-fast-path/unit-circle.canonical.jsonl",
+  "clock": "node:test mock Date/setTimeout",
+  "frameIntervalMs": 16,
+  "dragDurationMs": 3008,
+  "duringContinuousDrag": [],
+  "afterPause": [
+    {
+      "timeMs": 3508,
+      "value": 1.88
+    }
+  ],
+  "afterCommit": [
+    {
+      "timeMs": 3508,
+      "value": 1.88
+    },
+    {
+      "timeMs": 3508,
+      "value": 2.5
+    }
+  ],
+  "periodic400msObserved": false,
+  "pauseSavesFinalValue": true,
+  "commitSavesImmediately": true,
+  "restoredValue": 2.5
+}

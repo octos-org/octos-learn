@@ -1,0 +1,61 @@
+{
+  "scope": "Actual optimized TV Runtime and IndexedDB; direct session input to isolate save semantics, separate from touch performance samples",
+  "alias": "number_01",
+  "storageKey": "octos-learning-oll:v4:learn-1791032820967-ds9ofl:none",
+  "dragDurationMs": 8170.699999928474,
+  "requestedIntervalMs": 50,
+  "updates": 60,
+  "during": [
+    {
+      "timeMs": 6.799999952316284,
+      "value": 1
+    }
+  ],
+  "afterPause": [
+    {
+      "timeMs": 6.799999952316284,
+      "value": 1
+    },
+    {
+      "timeMs": 8401.799999952316,
+      "value": 1.5899999999999999
+    }
+  ],
+  "pausedCheckpointValue": 1.5899999999999999,
+  "afterCommit": [
+    {
+      "timeMs": 6.799999952316284,
+      "value": 1
+    },
+    {
+      "timeMs": 8401.799999952316,
+      "value": 1.5899999999999999
+    },
+    {
+      "timeMs": 8731.299999952316,
+      "value": 2
+    }
+  ],
+  "immediateValue": 2,
+  "durableValue": 2,
+  "completedStudentGesture": {
+    "profile": "octos.student.operation",
+    "version": "0.1",
+    "id": "learning-session-learn-1791032820967-ds9ofl:student-operation:8",
+    "sequence": 8,
+    "lesson_id": "learning-session-learn-1791032820967-ds9ofl",
+    "kind": "variable_change",
+    "target": {
+      "kind": "lesson_variable",
+      "alias": "number_01"
+    },
+    "before": {
+      "value": -3.2
+    },
+    "after": {
+      "value": 2
+    },
+    "control": "slider",
+    "input": "touch"
+  }
+}
