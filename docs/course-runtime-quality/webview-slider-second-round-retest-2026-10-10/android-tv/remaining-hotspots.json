@@ -1,0 +1,321 @@
+{
+  "note": "200us CPU sampling is diagnostic only. Native layout can move from a geometry getter to later browser work. Inclusive buckets overlap; disjoint groups can be summed.",
+  "rows": [
+    {
+      "label": "A1-cosine-cpu",
+      "inputs": 55,
+      "activeMs": 20333,
+      "renderedWorldRectSelfMs": 3357.3059999999978,
+      "renderedWorldRectPercent": 16.511611665765002,
+      "geometryParents": [
+        {
+          "frame": "element ../../../../src/learning/oll/oll-lesson-runtime.tsx:3226",
+          "ms": 3169.297999999992
+        },
+        {
+          "frame": "element ../../../../src/learning/oll/oll-lesson-runtime.tsx:370",
+          "ms": 95.54899999999998
+        },
+        {
+          "frame": "measureVisualRegionBounds ../../../../src/learning/oll/oll-lesson-runtime.tsx:339",
+          "ms": 50.545
+        },
+        {
+          "frame": "(anonymous) ../../../../src/learning/oll/oll-lesson-runtime.tsx:2888",
+          "ms": 41.335000000000015
+        },
+        {
+          "frame": "(anonymous) ../../../../src/learning/oll/oll-lesson-runtime.tsx:2631",
+          "ms": 0.579
+        }
+      ],
+      "disjoint": {
+        "Browser native / unattributed": 4059,
+        "Other JavaScript": 4134,
+        "React and host work (excluding BoardView / storage)": 5986,
+        "Runtime variable update (including sync persist)": 619,
+        "Async storage / document store": 21,
+        "BoardView.render": 5092,
+        "GC": 423
+      },
+      "buckets": {
+        "structuredClone (runtime/player snapshots)": 261,
+        "JSON.stringify": 0,
+        "IndexedDB write": 71,
+        "BoardView.render": 5092,
+        "BoardView.syncNodes": 3989,
+        "computeBoardLayout": 442,
+        "positionNodes/syncGroups/renderConnections": 468,
+        "updatePlotExplorer": 1015,
+        "updateScene3d": 0,
+        "measureVisualRegionBounds/measureBoardNodeBounds": 450,
+        "getBoundingClientRect/offset*/scrollHeight": 74,
+        "persist / checkpoint": 100,
+        "applyManualVariable": 619,
+        "KaTeX": 0,
+        "React commit/render": 10732,
+        "ink runtime": 0
+      },
+      "topSelf": [
+        {
+          "name": "(program) :0",
+          "ms": 4058.5
+        },
+        {
+          "name": "renderedWorldRect oll-lesson-runtime.tsx:297",
+          "ms": 3357.3
+        },
+        {
+          "name": "syncNodes board-view.js:2111",
+          "ms": 1005.9
+        },
+        {
+          "name": "get snapshot index.js:196",
+          "ms": 696
+        },
+        {
+          "name": "(garbage collector) :0",
+          "ms": 422.5
+        },
+        {
+          "name": "querySelectorAll :0",
+          "ms": 414
+        },
+        {
+          "name": "setRect board-view.js:19",
+          "ms": 297.2
+        },
+        {
+          "name": "structuredClone :0",
+          "ms": 260.6
+        },
+        {
+          "name": "setAttribute :0",
+          "ms": 207
+        },
+        {
+          "name": "remove :0",
+          "ms": 195.8
+        },
+        {
+          "name": "createElementNS :0",
+          "ms": 182.8
+        },
+        {
+          "name": "x plot.js:35",
+          "ms": 168.1
+        },
+        {
+          "name": "LearningWorkspace learning-workspace.tsx:441",
+          "ms": 163.5
+        },
+        {
+          "name": "LearningWhiteboard oll-lesson-runtime.tsx:666",
+          "ms": 160.5
+        },
+        {
+          "name": "updateProperties react-dom-client.production.js:13577",
+          "ms": 141.7
+        },
+        {
+          "name": "append :0",
+          "ms": 139.3
+        },
+        {
+          "name": "querySelector :0",
+          "ms": 132.9
+        },
+        {
+          "name": "drawGeometry board-view.js:745",
+          "ms": 132.1
+        },
+        {
+          "name": "setLessonVariables index.js:1788",
+          "ms": 130.3
+        },
+        {
+          "name": "replaceChildren :0",
+          "ms": 122.7
+        },
+        {
+          "name": "setVariable index.js:332",
+          "ms": 121.1
+        },
+        {
+          "name": "computeBoardLayout layout.js:73",
+          "ms": 115.9
+        },
+        {
+          "name": "(anonymous) plot.js:150",
+          "ms": 114.4
+        },
+        {
+          "name": "appendGeometryLabel board-view.js:736",
+          "ms": 109.8
+        },
+        {
+          "name": "useOllLessonRuntime use-oll-lesson-runtime.ts:183",
+          "ms": 108.7
+        }
+      ]
+    },
+    {
+      "label": "B2-cosine-cpu",
+      "inputs": 55,
+      "activeMs": 20060,
+      "renderedWorldRectSelfMs": 415.76800000000037,
+      "renderedWorldRectPercent": 2.0726221335992046,
+      "geometryParents": [
+        {
+          "frame": "element ../../../../src/learning/oll/oll-lesson-runtime.tsx:3239",
+          "ms": 255.97500000000014
+        },
+        {
+          "frame": "element ../../../../src/learning/oll/oll-lesson-runtime.tsx:370",
+          "ms": 113.84600000000006
+        },
+        {
+          "frame": "measureVisualRegionBounds ../../../../src/learning/oll/oll-lesson-runtime.tsx:339",
+          "ms": 44.09099999999999
+        },
+        {
+          "frame": "(anonymous) ../../../../src/learning/oll/oll-lesson-runtime.tsx:2889",
+          "ms": 1.571
+        },
+        {
+          "frame": "(anonymous) ../../../../src/learning/oll/oll-lesson-runtime.tsx:2632",
+          "ms": 0.285
+        }
+      ],
+      "disjoint": {
+        "Browser native / unattributed": 6489,
+        "Other JavaScript": 1294,
+        "React and host work (excluding BoardView / storage)": 5623,
+        "Runtime variable update (including sync persist)": 657,
+        "Async storage / document store": 376,
+        "GC": 428,
+        "BoardView.render": 5193
+      },
+      "buckets": {
+        "structuredClone (runtime/player snapshots)": 283,
+        "JSON.stringify": 0,
+        "IndexedDB write": 439,
+        "BoardView.render": 5193,
+        "BoardView.syncNodes": 4054,
+        "computeBoardLayout": 464,
+        "positionNodes/syncGroups/renderConnections": 496,
+        "updatePlotExplorer": 859,
+        "updateScene3d": 0,
+        "measureVisualRegionBounds/measureBoardNodeBounds": 449,
+        "getBoundingClientRect/offset*/scrollHeight": 72,
+        "persist / checkpoint": 650,
+        "applyManualVariable": 657,
+        "KaTeX": 0,
+        "React commit/render": 10593,
+        "ink runtime": 0
+      },
+      "topSelf": [
+        {
+          "name": "(program) :0",
+          "ms": 6489.1
+        },
+        {
+          "name": "syncNodes board-view.js:2111",
+          "ms": 1026.6
+        },
+        {
+          "name": "get snapshot index.js:196",
+          "ms": 774.4
+        },
+        {
+          "name": "(garbage collector) :0",
+          "ms": 427.7
+        },
+        {
+          "name": "renderedWorldRect oll-lesson-runtime.tsx:297",
+          "ms": 415.8
+        },
+        {
+          "name": "setRect board-view.js:19",
+          "ms": 324.9
+        },
+        {
+          "name": "querySelectorAll :0",
+          "ms": 297.2
+        },
+        {
+          "name": "structuredClone :0",
+          "ms": 283
+        },
+        {
+          "name": "createElementNS :0",
+          "ms": 261.2
+        },
+        {
+          "name": "setAttribute :0",
+          "ms": 244.3
+        },
+        {
+          "name": "write learning-document-store.ts:82",
+          "ms": 177.9
+        },
+        {
+          "name": "remove :0",
+          "ms": 169
+        },
+        {
+          "name": "LearningWorkspace learning-workspace.tsx:441",
+          "ms": 166.4
+        },
+        {
+          "name": "append :0",
+          "ms": 165
+        },
+        {
+          "name": "updateProperties react-dom-client.production.js:13577",
+          "ms": 160.8
+        },
+        {
+          "name": "setLessonVariables index.js:1788",
+          "ms": 152.7
+        },
+        {
+          "name": "s learning-document-store.ts:134",
+          "ms": 152.4
+        },
+        {
+          "name": "drawGeometry board-view.js:745",
+          "ms": 147.6
+        },
+        {
+          "name": "replaceChildren :0",
+          "ms": 146.4
+        },
+        {
+          "name": "LearningWhiteboard oll-lesson-runtime.tsx:666",
+          "ms": 138.1
+        },
+        {
+          "name": "(anonymous) Icon.js:14",
+          "ms": 132.8
+        },
+        {
+          "name": "renderedMathIntrinsicWidth board-view.js:330",
+          "ms": 129.4
+        },
+        {
+          "name": "evaluateContentBindings index.js:1641",
+          "ms": 129.3
+        },
+        {
+          "name": "x plot.js:35",
+          "ms": 128.6
+        },
+        {
+          "name": "setVariable index.js:332",
+          "ms": 123.9
+        }
+      ]
+    }
+  ]
+}

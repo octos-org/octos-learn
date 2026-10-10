@@ -1,0 +1,1143 @@
+{
+  "note": "Per-group method medians and counters; paired aggregate is the arithmetic mean of group summaries. Task per input includes host work and drain; it is not touch hardware latency. CPU groups excluded from speed comparisons.",
+  "results": [
+    {
+      "label": "A1-slope-no-cpu",
+      "measuredAt": "2026-10-10T18:06:05.646Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "理解直线的斜率",
+      "cards": 4,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 9922,
+      "taskMsPerInput": 167.8330344827586,
+      "scriptMsPerInput": 106.56808620689654,
+      "renderCalls": 63,
+      "renderMedianMs": 24.5,
+      "renderMeanMs": 28.014285708230638,
+      "syncMedianMs": 19.800000071525574,
+      "syncMeanMs": 22.850793647387672,
+      "regionBoundsCalls": 118,
+      "attachmentBoundsCalls": 118,
+      "idbPuts": 2,
+      "layoutCount": 87,
+      "styleCount": 265,
+      "frameP90Ms": 83.33300000000236,
+      "frameMaxMs": 216.66700000000128,
+      "twoRafP50Ms": 74.60000002384186,
+      "twoRafP90Ms": 116.60000002384186,
+      "cpu": null
+    },
+    {
+      "label": "A1-cosine-no-cpu",
+      "measuredAt": "2026-10-10T18:07:03.407Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": false,
+      "dragMs": 13803,
+      "taskMsPerInput": 259.96098181818184,
+      "scriptMsPerInput": 161.91050909090907,
+      "renderCalls": 64,
+      "renderMedianMs": 45.799999952316284,
+      "renderMeanMs": 51.89999999664724,
+      "syncMedianMs": 34.90000009536743,
+      "syncMeanMs": 38.204477617989724,
+      "regionBoundsCalls": 114,
+      "attachmentBoundsCalls": 114,
+      "idbPuts": 52,
+      "layoutCount": 117,
+      "styleCount": 239,
+      "frameP90Ms": 200,
+      "frameMaxMs": 383.3329999999987,
+      "twoRafP50Ms": 145.10000002384186,
+      "twoRafP90Ms": 258.39999997615814,
+      "cpu": null
+    },
+    {
+      "label": "A1-surface-no-cpu",
+      "measuredAt": "2026-10-10T18:07:37.675Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "偏导数：固定输入，求截线斜率",
+      "cards": 9,
+      "inkComponents": 0,
+      "inputs": 56,
+      "cpuProfiler": false,
+      "dragMs": 10150,
+      "taskMsPerInput": 156.86498214285712,
+      "scriptMsPerInput": 104.92407142857142,
+      "renderCalls": 59,
+      "renderMedianMs": 27.799999952316284,
+      "renderMeanMs": 33.09491525262089,
+      "syncMedianMs": 22,
+      "syncMeanMs": 25.061290327579744,
+      "regionBoundsCalls": 117,
+      "attachmentBoundsCalls": 117,
+      "idbPuts": 5,
+      "layoutCount": 119,
+      "styleCount": 292,
+      "frameP90Ms": 66.66699999999764,
+      "frameMaxMs": 300,
+      "twoRafP50Ms": 61.299999952316284,
+      "twoRafP90Ms": 102.19999992847443,
+      "cpu": null
+    },
+    {
+      "label": "A1-stress36-no-cpu",
+      "measuredAt": "2026-10-10T18:08:17.235Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "理解直线的斜率",
+      "cards": 36,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 11757,
+      "taskMsPerInput": 202.18508620689656,
+      "scriptMsPerInput": 140.34627586206895,
+      "renderCalls": 62,
+      "renderMedianMs": 35.800000071525574,
+      "renderMeanMs": 42.503225803375244,
+      "syncMedianMs": 25.600000023841858,
+      "syncMeanMs": 28.390322581414253,
+      "regionBoundsCalls": 116,
+      "attachmentBoundsCalls": 116,
+      "idbPuts": 2,
+      "layoutCount": 75,
+      "styleCount": 235,
+      "frameP90Ms": 133.33299999999872,
+      "frameMaxMs": 333.33400000000256,
+      "twoRafP50Ms": 109.89999997615814,
+      "twoRafP90Ms": 193.89999997615814,
+      "cpu": null
+    },
+    {
+      "label": "A1-cosine-cpu",
+      "measuredAt": "2026-10-10T18:09:36.377Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": true,
+      "dragMs": 18433,
+      "taskMsPerInput": 376.1787818181818,
+      "scriptMsPerInput": 222.1170727272727,
+      "renderCalls": 68,
+      "renderMedianMs": 64.40000009536743,
+      "renderMeanMs": 75.37205881932202,
+      "syncMedianMs": 48.199999928474426,
+      "syncMeanMs": 56.96056338095329,
+      "regionBoundsCalls": 115,
+      "attachmentBoundsCalls": 115,
+      "idbPuts": 5,
+      "layoutCount": 127,
+      "styleCount": 234,
+      "frameP90Ms": 266.6670000000013,
+      "frameMaxMs": 1350,
+      "twoRafP50Ms": 205.5,
+      "twoRafP90Ms": 319.89999997615814,
+      "cpu": {
+        "activeMs": 20333,
+        "idleMs": 443,
+        "topSelf": [
+          {
+            "name": "(program) :0",
+            "ms": 4058.5
+          },
+          {
+            "name": "renderedWorldRect oll-lesson-runtime.tsx:297",
+            "ms": 3357.3
+          },
+          {
+            "name": "syncNodes board-view.js:2111",
+            "ms": 1005.9
+          },
+          {
+            "name": "get snapshot index.js:196",
+            "ms": 696
+          },
+          {
+            "name": "(garbage collector) :0",
+            "ms": 422.5
+          },
+          {
+            "name": "querySelectorAll :0",
+            "ms": 414
+          },
+          {
+            "name": "setRect board-view.js:19",
+            "ms": 297.2
+          },
+          {
+            "name": "structuredClone :0",
+            "ms": 260.6
+          },
+          {
+            "name": "setAttribute :0",
+            "ms": 207
+          },
+          {
+            "name": "remove :0",
+            "ms": 195.8
+          },
+          {
+            "name": "createElementNS :0",
+            "ms": 182.8
+          },
+          {
+            "name": "x plot.js:35",
+            "ms": 168.1
+          },
+          {
+            "name": "LearningWorkspace learning-workspace.tsx:441",
+            "ms": 163.5
+          },
+          {
+            "name": "LearningWhiteboard oll-lesson-runtime.tsx:666",
+            "ms": 160.5
+          },
+          {
+            "name": "updateProperties react-dom-client.production.js:13577",
+            "ms": 141.7
+          },
+          {
+            "name": "append :0",
+            "ms": 139.3
+          },
+          {
+            "name": "querySelector :0",
+            "ms": 132.9
+          },
+          {
+            "name": "drawGeometry board-view.js:745",
+            "ms": 132.1
+          },
+          {
+            "name": "setLessonVariables index.js:1788",
+            "ms": 130.3
+          },
+          {
+            "name": "replaceChildren :0",
+            "ms": 122.7
+          },
+          {
+            "name": "setVariable index.js:332",
+            "ms": 121.1
+          },
+          {
+            "name": "computeBoardLayout layout.js:73",
+            "ms": 115.9
+          },
+          {
+            "name": "(anonymous) plot.js:150",
+            "ms": 114.4
+          },
+          {
+            "name": "appendGeometryLabel board-view.js:736",
+            "ms": 109.8
+          },
+          {
+            "name": "useOllLessonRuntime use-oll-lesson-runtime.ts:183",
+            "ms": 108.7
+          }
+        ],
+        "topInclusive": [
+          {
+            "name": "(root) :0",
+            "ms": 20333.3
+          },
+          {
+            "name": "performWorkUntilDeadline scheduler.production.js:121",
+            "ms": 7077
+          },
+          {
+            "name": "flushPassiveEffects react-dom-client.production.js:11741",
+            "ms": 5666.6
+          },
+          {
+            "name": "commitPassiveMountOnFiber react-dom-client.production.js:10109",
+            "ms": 5633.5
+          },
+          {
+            "name": "recursivelyTraversePassiveMountEffects react-dom-client.production.js:10093",
+            "ms": 5632.9
+          },
+          {
+            "name": "commitHookEffectListMount react-dom-client.production.js:8571",
+            "ms": 5625
+          },
+          {
+            "name": "board.<computed> :38",
+            "ms": 5222.5
+          },
+          {
+            "name": "performWorkOnRoot react-dom-client.production.js:10681",
+            "ms": 5196.4
+          },
+          {
+            "name": "render board-view.js:1516",
+            "ms": 5092.2
+          },
+          {
+            "name": "(anonymous) oll-lesson-runtime.tsx:2717",
+            "ms": 4499.3
+          },
+          {
+            "name": "renderRootSync react-dom-client.production.js:11120",
+            "ms": 4183.5
+          },
+          {
+            "name": "workLoopSync react-dom-client.production.js:11181",
+            "ms": 4166
+          },
+          {
+            "name": "performUnitOfWork react-dom-client.production.js:11304",
+            "ms": 4134.4
+          },
+          {
+            "name": "beginWork react-dom-client.production.js:7392",
+            "ms": 4069.5
+          },
+          {
+            "name": "(program) :0",
+            "ms": 4058.5
+          },
+          {
+            "name": "syncNodes board-view.js:2111",
+            "ms": 3989.3
+          },
+          {
+            "name": "(anonymous) react-dom-client.production.js:11497",
+            "ms": 3724.9
+          },
+          {
+            "name": "renderWithHooks react-dom-client.production.js:4333",
+            "ms": 3578.1
+          },
+          {
+            "name": "dispatchEvent react-dom-client.production.js:15297",
+            "ms": 3486
+          },
+          {
+            "name": "dispatchEventForPluginEventSystem react-dom-client.production.js:12408",
+            "ms": 3421.3
+          },
+          {
+            "name": "batchedUpdates$1 react-dom-client.production.js:1494",
+            "ms": 3413.6
+          },
+          {
+            "name": "dispatchDiscreteEvent react-dom-client.production.js:15263",
+            "ms": 3398.4
+          },
+          {
+            "name": "flushSyncWorkAcrossRoots_impl react-dom-client.production.js:11918",
+            "ms": 3389.3
+          },
+          {
+            "name": "performSyncWorkOnRoot react-dom-client.production.js:12084",
+            "ms": 3386.9
+          },
+          {
+            "name": "renderedWorldRect oll-lesson-runtime.tsx:297",
+            "ms": 3379.2
+          }
+        ],
+        "buckets": {
+          "structuredClone (runtime/player snapshots)": 261,
+          "JSON.stringify": 0,
+          "IndexedDB write": 71,
+          "BoardView.render": 5092,
+          "BoardView.syncNodes": 3989,
+          "computeBoardLayout": 442,
+          "positionNodes/syncGroups/renderConnections": 468,
+          "updatePlotExplorer": 1015,
+          "updateScene3d": 0,
+          "measureVisualRegionBounds/measureBoardNodeBounds": 450,
+          "getBoundingClientRect/offset*/scrollHeight": 74,
+          "persist / checkpoint": 100,
+          "applyManualVariable": 619,
+          "KaTeX": 0,
+          "React commit/render": 10732,
+          "ink runtime": 0
+        }
+      },
+      "cpuDisjoint": {
+        "Browser native / unattributed": 4059,
+        "Other JavaScript": 4134,
+        "React and host work (excluding BoardView / storage)": 5986,
+        "Runtime variable update (including sync persist)": 619,
+        "Async storage / document store": 21,
+        "BoardView.render": 5092,
+        "GC": 423
+      }
+    },
+    {
+      "label": "B1-slope-no-cpu",
+      "measuredAt": "2026-10-10T18:10:29.529Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "理解直线的斜率",
+      "cards": 4,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 9534,
+      "taskMsPerInput": 164.75541379310346,
+      "scriptMsPerInput": 101.79350000000001,
+      "renderCalls": 62,
+      "renderMedianMs": 24.799999952316284,
+      "renderMeanMs": 26.167741948558437,
+      "syncMedianMs": 19.90000009536743,
+      "syncMeanMs": 21.458064511899025,
+      "regionBoundsCalls": 118,
+      "attachmentBoundsCalls": 118,
+      "idbPuts": 19,
+      "layoutCount": 78,
+      "styleCount": 260,
+      "frameP90Ms": 83.33300000000236,
+      "frameMaxMs": 183.33300000000054,
+      "twoRafP50Ms": 76.5,
+      "twoRafP90Ms": 134.20000004768372,
+      "cpu": null
+    },
+    {
+      "label": "B1-cosine-no-cpu",
+      "measuredAt": "2026-10-10T18:11:25.576Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": false,
+      "dragMs": 13079,
+      "taskMsPerInput": 245.6902363636364,
+      "scriptMsPerInput": 153.6508181818182,
+      "renderCalls": 61,
+      "renderMedianMs": 47.200000047683716,
+      "renderMeanMs": 52.94426230133557,
+      "syncMedianMs": 36.10000002384186,
+      "syncMeanMs": 38.74375000037253,
+      "regionBoundsCalls": 109,
+      "attachmentBoundsCalls": 109,
+      "idbPuts": 51,
+      "layoutCount": 107,
+      "styleCount": 220,
+      "frameP90Ms": 183.33399999999529,
+      "frameMaxMs": 400,
+      "twoRafP50Ms": 151.59999990463257,
+      "twoRafP90Ms": 224.80000007152557,
+      "cpu": null
+    },
+    {
+      "label": "B1-surface-no-cpu",
+      "measuredAt": "2026-10-10T18:12:01.666Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "偏导数：固定输入，求截线斜率",
+      "cards": 9,
+      "inkComponents": 0,
+      "inputs": 56,
+      "cpuProfiler": false,
+      "dragMs": 10559,
+      "taskMsPerInput": 162.5007857142857,
+      "scriptMsPerInput": 107.23203571428571,
+      "renderCalls": 59,
+      "renderMedianMs": 28.199999928474426,
+      "renderMeanMs": 33.60847458799007,
+      "syncMedianMs": 21.800000071525574,
+      "syncMeanMs": 25.346774183934734,
+      "regionBoundsCalls": 116,
+      "attachmentBoundsCalls": 116,
+      "idbPuts": 26,
+      "layoutCount": 113,
+      "styleCount": 297,
+      "frameP90Ms": 66.66700000000128,
+      "frameMaxMs": 416.66599999999744,
+      "twoRafP50Ms": 63,
+      "twoRafP90Ms": 87,
+      "cpu": null
+    },
+    {
+      "label": "B1-stress36-no-cpu",
+      "measuredAt": "2026-10-10T18:12:29.372Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "理解直线的斜率",
+      "cards": 36,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 11550,
+      "taskMsPerInput": 199.2693103448276,
+      "scriptMsPerInput": 132.88536206896552,
+      "renderCalls": 62,
+      "renderMedianMs": 36.799999952316284,
+      "renderMeanMs": 41.337096773809,
+      "syncMedianMs": 24,
+      "syncMeanMs": 28.891935479256414,
+      "regionBoundsCalls": 113,
+      "attachmentBoundsCalls": 113,
+      "idbPuts": 21,
+      "layoutCount": 70,
+      "styleCount": 226,
+      "frameP90Ms": 133.33299999999872,
+      "frameMaxMs": 300,
+      "twoRafP50Ms": 106.5,
+      "twoRafP90Ms": 196.60000002384186,
+      "cpu": null
+    },
+    {
+      "label": "A2-slope-no-cpu",
+      "measuredAt": "2026-10-10T18:13:58.453Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "理解直线的斜率",
+      "cards": 4,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 9977,
+      "taskMsPerInput": 173.89860344827588,
+      "scriptMsPerInput": 108.43429310344828,
+      "renderCalls": 64,
+      "renderMedianMs": 26.5,
+      "renderMeanMs": 28.13906250335276,
+      "syncMedianMs": 20.399999976158142,
+      "syncMeanMs": 22.787500001490116,
+      "regionBoundsCalls": 118,
+      "attachmentBoundsCalls": 118,
+      "idbPuts": 2,
+      "layoutCount": 83,
+      "styleCount": 256,
+      "frameP90Ms": 100,
+      "frameMaxMs": 316.6670000000013,
+      "twoRafP50Ms": 81.80000007152557,
+      "twoRafP90Ms": 128.39999997615814,
+      "cpu": null
+    },
+    {
+      "label": "A2-cosine-no-cpu",
+      "measuredAt": "2026-10-10T18:14:55.041Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": false,
+      "dragMs": 14100,
+      "taskMsPerInput": 262.67900000000003,
+      "scriptMsPerInput": 163.14960000000002,
+      "renderCalls": 65,
+      "renderMedianMs": 45.199999928474426,
+      "renderMeanMs": 51.61692306811993,
+      "syncMedianMs": 35,
+      "syncMeanMs": 38.57499999684446,
+      "regionBoundsCalls": 114,
+      "attachmentBoundsCalls": 114,
+      "idbPuts": 56,
+      "layoutCount": 117,
+      "styleCount": 239,
+      "frameP90Ms": 200,
+      "frameMaxMs": 383.3329999999987,
+      "twoRafP50Ms": 149.20000004768372,
+      "twoRafP90Ms": 267.5,
+      "cpu": null
+    },
+    {
+      "label": "A2-surface-no-cpu",
+      "measuredAt": "2026-10-10T18:15:28.803Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "偏导数：固定输入，求截线斜率",
+      "cards": 9,
+      "inkComponents": 0,
+      "inputs": 56,
+      "cpuProfiler": false,
+      "dragMs": 10434,
+      "taskMsPerInput": 156.11567857142856,
+      "scriptMsPerInput": 102.72696428571429,
+      "renderCalls": 58,
+      "renderMedianMs": 27.90000009536743,
+      "renderMeanMs": 32.10689654226961,
+      "syncMedianMs": 22.100000023841858,
+      "syncMeanMs": 24.60983606440122,
+      "regionBoundsCalls": 116,
+      "attachmentBoundsCalls": 116,
+      "idbPuts": 6,
+      "layoutCount": 127,
+      "styleCount": 315,
+      "frameP90Ms": 66.66600000000108,
+      "frameMaxMs": 483.33300000000236,
+      "twoRafP50Ms": 58.39999997615814,
+      "twoRafP90Ms": 91.10000002384186,
+      "cpu": null
+    },
+    {
+      "label": "A2-stress36-no-cpu",
+      "measuredAt": "2026-10-10T18:15:55.975Z",
+      "revision": "7c4501877ade6bf95c6a55080166d970ad9fd578",
+      "scene": "理解直线的斜率",
+      "cards": 36,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 11650,
+      "taskMsPerInput": 200.8003275862069,
+      "scriptMsPerInput": 141.4387068965517,
+      "renderCalls": 63,
+      "renderMedianMs": 36.199999928474426,
+      "renderMeanMs": 41.011111109975786,
+      "syncMedianMs": 24.399999976158142,
+      "syncMeanMs": 26.9968253941763,
+      "regionBoundsCalls": 118,
+      "attachmentBoundsCalls": 118,
+      "idbPuts": 2,
+      "layoutCount": 72,
+      "styleCount": 233,
+      "frameP90Ms": 133.33300000000054,
+      "frameMaxMs": 366.6670000000013,
+      "twoRafP50Ms": 109.69999992847443,
+      "twoRafP90Ms": 159.69999992847443,
+      "cpu": null
+    },
+    {
+      "label": "B2-slope-no-cpu",
+      "measuredAt": "2026-10-10T18:16:48.077Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "理解直线的斜率",
+      "cards": 4,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 9498,
+      "taskMsPerInput": 163.28958620689656,
+      "scriptMsPerInput": 101.64936206896552,
+      "renderCalls": 60,
+      "renderMedianMs": 24.700000047683716,
+      "renderMeanMs": 27.231666680177053,
+      "syncMedianMs": 19.399999976158142,
+      "syncMeanMs": 22.02666666706403,
+      "regionBoundsCalls": 115,
+      "attachmentBoundsCalls": 115,
+      "idbPuts": 19,
+      "layoutCount": 77,
+      "styleCount": 249,
+      "frameP90Ms": 100,
+      "frameMaxMs": 333.3329999999987,
+      "twoRafP50Ms": 67.5,
+      "twoRafP90Ms": 113.60000002384186,
+      "cpu": null
+    },
+    {
+      "label": "B2-cosine-no-cpu",
+      "measuredAt": "2026-10-10T18:17:42.085Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": false,
+      "dragMs": 13348,
+      "taskMsPerInput": 251.97503636363638,
+      "scriptMsPerInput": 157.10687272727273,
+      "renderCalls": 61,
+      "renderMedianMs": 41.299999952316284,
+      "renderMeanMs": 48.77704917798277,
+      "syncMedianMs": 30.90000009536743,
+      "syncMeanMs": 36.165625002235174,
+      "regionBoundsCalls": 108,
+      "attachmentBoundsCalls": 108,
+      "idbPuts": 45,
+      "layoutCount": 110,
+      "styleCount": 232,
+      "frameP90Ms": 183.33400000000256,
+      "frameMaxMs": 350,
+      "twoRafP50Ms": 151.69999992847443,
+      "twoRafP90Ms": 208.39999997615814,
+      "cpu": null
+    },
+    {
+      "label": "B2-surface-no-cpu",
+      "measuredAt": "2026-10-10T18:18:17.765Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "偏导数：固定输入，求截线斜率",
+      "cards": 9,
+      "inkComponents": 0,
+      "inputs": 56,
+      "cpuProfiler": false,
+      "dragMs": 10668,
+      "taskMsPerInput": 158.26837499999996,
+      "scriptMsPerInput": 103.81092857142856,
+      "renderCalls": 59,
+      "renderMedianMs": 27.100000023841858,
+      "renderMeanMs": 32.932203397912495,
+      "syncMedianMs": 21,
+      "syncMeanMs": 24.974193553770743,
+      "regionBoundsCalls": 116,
+      "attachmentBoundsCalls": 116,
+      "idbPuts": 26,
+      "layoutCount": 120,
+      "styleCount": 290,
+      "frameP90Ms": 66.66700000000128,
+      "frameMaxMs": 550,
+      "twoRafP50Ms": 56.799999952316284,
+      "twoRafP90Ms": 103.79999995231628,
+      "cpu": null
+    },
+    {
+      "label": "B2-stress36-no-cpu",
+      "measuredAt": "2026-10-10T18:18:46.368Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "理解直线的斜率",
+      "cards": 36,
+      "inkComponents": 66,
+      "inputs": 58,
+      "cpuProfiler": false,
+      "dragMs": 12152,
+      "taskMsPerInput": 207.5705344827586,
+      "scriptMsPerInput": 140.67674137931036,
+      "renderCalls": 64,
+      "renderMedianMs": 37.200000047683716,
+      "renderMeanMs": 42.5859375,
+      "syncMedianMs": 25.5,
+      "syncMeanMs": 29.685937497764826,
+      "regionBoundsCalls": 115,
+      "attachmentBoundsCalls": 115,
+      "idbPuts": 19,
+      "layoutCount": 75,
+      "styleCount": 243,
+      "frameP90Ms": 133.33300000000236,
+      "frameMaxMs": 583.3330000000024,
+      "twoRafP50Ms": 101.59999990463257,
+      "twoRafP90Ms": 167,
+      "cpu": null
+    },
+    {
+      "label": "B2-cosine-cpu",
+      "measuredAt": "2026-10-10T18:21:11.205Z",
+      "revision": "f10db84a4b711335bcf10a195afbbbe7bd80a97c",
+      "scene": "余弦函数与单位圆投影",
+      "cards": 16,
+      "inkComponents": 3,
+      "inputs": 55,
+      "cpuProfiler": true,
+      "dragMs": 18114,
+      "taskMsPerInput": 373.56625454545446,
+      "scriptMsPerInput": 226.22401818181817,
+      "renderCalls": 67,
+      "renderMedianMs": 62.10000002384186,
+      "renderMeanMs": 78.89253731627963,
+      "syncMedianMs": 48.60000002384186,
+      "syncMeanMs": 58.11285714421953,
+      "regionBoundsCalls": 113,
+      "attachmentBoundsCalls": 113,
+      "idbPuts": 14,
+      "layoutCount": 118,
+      "styleCount": 213,
+      "frameP90Ms": 283.33300000000236,
+      "frameMaxMs": 1166.666000000001,
+      "twoRafP50Ms": 214.90000009536743,
+      "twoRafP90Ms": 373.7000000476837,
+      "cpu": {
+        "activeMs": 20060,
+        "idleMs": 378,
+        "topSelf": [
+          {
+            "name": "(program) :0",
+            "ms": 6489.1
+          },
+          {
+            "name": "syncNodes board-view.js:2111",
+            "ms": 1026.6
+          },
+          {
+            "name": "get snapshot index.js:196",
+            "ms": 774.4
+          },
+          {
+            "name": "(garbage collector) :0",
+            "ms": 427.7
+          },
+          {
+            "name": "renderedWorldRect oll-lesson-runtime.tsx:297",
+            "ms": 415.8
+          },
+          {
+            "name": "setRect board-view.js:19",
+            "ms": 324.9
+          },
+          {
+            "name": "querySelectorAll :0",
+            "ms": 297.2
+          },
+          {
+            "name": "structuredClone :0",
+            "ms": 283
+          },
+          {
+            "name": "createElementNS :0",
+            "ms": 261.2
+          },
+          {
+            "name": "setAttribute :0",
+            "ms": 244.3
+          },
+          {
+            "name": "write learning-document-store.ts:82",
+            "ms": 177.9
+          },
+          {
+            "name": "remove :0",
+            "ms": 169
+          },
+          {
+            "name": "LearningWorkspace learning-workspace.tsx:441",
+            "ms": 166.4
+          },
+          {
+            "name": "append :0",
+            "ms": 165
+          },
+          {
+            "name": "updateProperties react-dom-client.production.js:13577",
+            "ms": 160.8
+          },
+          {
+            "name": "setLessonVariables index.js:1788",
+            "ms": 152.7
+          },
+          {
+            "name": "s learning-document-store.ts:134",
+            "ms": 152.4
+          },
+          {
+            "name": "drawGeometry board-view.js:745",
+            "ms": 147.6
+          },
+          {
+            "name": "replaceChildren :0",
+            "ms": 146.4
+          },
+          {
+            "name": "LearningWhiteboard oll-lesson-runtime.tsx:666",
+            "ms": 138.1
+          },
+          {
+            "name": "(anonymous) Icon.js:14",
+            "ms": 132.8
+          },
+          {
+            "name": "renderedMathIntrinsicWidth board-view.js:330",
+            "ms": 129.4
+          },
+          {
+            "name": "evaluateContentBindings index.js:1641",
+            "ms": 129.3
+          },
+          {
+            "name": "x plot.js:35",
+            "ms": 128.6
+          },
+          {
+            "name": "setVariable index.js:332",
+            "ms": 123.9
+          }
+        ],
+        "topInclusive": [
+          {
+            "name": "(root) :0",
+            "ms": 20059.7
+          },
+          {
+            "name": "(program) :0",
+            "ms": 6489.1
+          },
+          {
+            "name": "flushPassiveEffects react-dom-client.production.js:11741",
+            "ms": 5835.8
+          },
+          {
+            "name": "commitPassiveMountOnFiber react-dom-client.production.js:10109",
+            "ms": 5823.9
+          },
+          {
+            "name": "recursivelyTraversePassiveMountEffects react-dom-client.production.js:10093",
+            "ms": 5823.3
+          },
+          {
+            "name": "commitHookEffectListMount react-dom-client.production.js:8571",
+            "ms": 5818.4
+          },
+          {
+            "name": "performWorkUntilDeadline scheduler.production.js:121",
+            "ms": 5359.1
+          },
+          {
+            "name": "board.<computed> :38",
+            "ms": 5292.6
+          },
+          {
+            "name": "render board-view.js:1516",
+            "ms": 5193.3
+          },
+          {
+            "name": "performWorkOnRoot react-dom-client.production.js:10681",
+            "ms": 5124
+          },
+          {
+            "name": "dispatchEvent react-dom-client.production.js:15297",
+            "ms": 5049.1
+          },
+          {
+            "name": "flushSyncWorkAcrossRoots_impl react-dom-client.production.js:11918",
+            "ms": 5045.9
+          },
+          {
+            "name": "performSyncWorkOnRoot react-dom-client.production.js:12084",
+            "ms": 5043.2
+          },
+          {
+            "name": "dispatchEventForPluginEventSystem react-dom-client.production.js:12408",
+            "ms": 5024.5
+          },
+          {
+            "name": "batchedUpdates$1 react-dom-client.production.js:1494",
+            "ms": 5016.2
+          },
+          {
+            "name": "dispatchDiscreteEvent react-dom-client.production.js:15263",
+            "ms": 4991.8
+          },
+          {
+            "name": "flushSyncWork$1 react-dom-client.production.js:10987",
+            "ms": 4862.9
+          },
+          {
+            "name": "(anonymous) oll-lesson-runtime.tsx:2718",
+            "ms": 4575.4
+          },
+          {
+            "name": "syncNodes board-view.js:2111",
+            "ms": 4054.4
+          },
+          {
+            "name": "renderRootSync react-dom-client.production.js:11120",
+            "ms": 3995.6
+          },
+          {
+            "name": "workLoopSync react-dom-client.production.js:11181",
+            "ms": 3986.1
+          },
+          {
+            "name": "performUnitOfWork react-dom-client.production.js:11304",
+            "ms": 3948
+          },
+          {
+            "name": "beginWork react-dom-client.production.js:7392",
+            "ms": 3865.6
+          },
+          {
+            "name": "flushPendingEffects react-dom-client.production.js:11735",
+            "ms": 3535
+          },
+          {
+            "name": "renderWithHooks react-dom-client.production.js:4333",
+            "ms": 3348.8
+          }
+        ],
+        "buckets": {
+          "structuredClone (runtime/player snapshots)": 283,
+          "JSON.stringify": 0,
+          "IndexedDB write": 439,
+          "BoardView.render": 5193,
+          "BoardView.syncNodes": 4054,
+          "computeBoardLayout": 464,
+          "positionNodes/syncGroups/renderConnections": 496,
+          "updatePlotExplorer": 859,
+          "updateScene3d": 0,
+          "measureVisualRegionBounds/measureBoardNodeBounds": 449,
+          "getBoundingClientRect/offset*/scrollHeight": 72,
+          "persist / checkpoint": 650,
+          "applyManualVariable": 657,
+          "KaTeX": 0,
+          "React commit/render": 10593,
+          "ink runtime": 0
+        }
+      },
+      "cpuDisjoint": {
+        "Browser native / unattributed": 6489,
+        "Other JavaScript": 1294,
+        "React and host work (excluding BoardView / storage)": 5623,
+        "Runtime variable update (including sync persist)": 657,
+        "Async storage / document store": 376,
+        "GC": 428,
+        "BoardView.render": 5193
+      }
+    }
+  ],
+  "comparisons": [
+    {
+      "scene": "slope",
+      "baseline": [
+        "A1-slope-no-cpu",
+        "A2-slope-no-cpu"
+      ],
+      "candidate": [
+        "B1-slope-no-cpu",
+        "B2-slope-no-cpu"
+      ],
+      "taskMsPerInput": {
+        "before": 170.86581896551724,
+        "after": 164.0225,
+        "changePercent": -4.005083642210671
+      },
+      "scriptMsPerInput": {
+        "before": 107.50118965517241,
+        "after": 101.72143103448276,
+        "changePercent": -5.376460148235718
+      },
+      "renderMedianMs": {
+        "before": 25.5,
+        "after": 24.75,
+        "changePercent": -2.941176470588236
+      },
+      "syncMedianMs": {
+        "before": 20.100000023841858,
+        "after": 19.650000035762787,
+        "changePercent": -2.2388059081855594
+      },
+      "frameP90Ms": {
+        "before": 91.66650000000118,
+        "after": 91.66650000000118,
+        "changePercent": 0
+      },
+      "twoRafP90Ms": {
+        "before": 122.5,
+        "after": 123.90000003576279,
+        "changePercent": 1.1428571720512481
+      }
+    },
+    {
+      "scene": "cosine",
+      "baseline": [
+        "A1-cosine-no-cpu",
+        "A2-cosine-no-cpu"
+      ],
+      "candidate": [
+        "B1-cosine-no-cpu",
+        "B2-cosine-no-cpu"
+      ],
+      "taskMsPerInput": {
+        "before": 261.31999090909096,
+        "after": 248.83263636363637,
+        "changePercent": -4.778568414155027
+      },
+      "scriptMsPerInput": {
+        "before": 162.53005454545456,
+        "after": 155.37884545454546,
+        "changePercent": -4.399930284222686
+      },
+      "renderMedianMs": {
+        "before": 45.499999940395355,
+        "after": 44.25,
+        "changePercent": -2.7472526198524028
+      },
+      "syncMedianMs": {
+        "before": 34.950000047683716,
+        "after": 33.500000059604645,
+        "changePercent": -4.148783937341283
+      },
+      "frameP90Ms": {
+        "before": 200,
+        "after": 183.33399999999892,
+        "changePercent": -8.333000000000535
+      },
+      "twoRafP90Ms": {
+        "before": 262.94999998807907,
+        "after": 216.60000002384186,
+        "changePercent": -17.626925258162586
+      }
+    },
+    {
+      "scene": "surface",
+      "baseline": [
+        "A1-surface-no-cpu",
+        "A2-surface-no-cpu"
+      ],
+      "candidate": [
+        "B1-surface-no-cpu",
+        "B2-surface-no-cpu"
+      ],
+      "taskMsPerInput": {
+        "before": 156.49033035714285,
+        "after": 160.38458035714285,
+        "changePercent": 2.488492414267718
+      },
+      "scriptMsPerInput": {
+        "before": 103.82551785714286,
+        "after": 105.52148214285714,
+        "changePercent": 1.633475392868089
+      },
+      "renderMedianMs": {
+        "before": 27.850000023841858,
+        "after": 27.649999976158142,
+        "changePercent": -0.7181330251795348
+      },
+      "syncMedianMs": {
+        "before": 22.05000001192093,
+        "after": 21.400000035762787,
+        "changePercent": -2.947845695268625
+      },
+      "frameP90Ms": {
+        "before": 66.66649999999936,
+        "after": 66.66700000000128,
+        "changePercent": 0.0007500018778916484
+      },
+      "twoRafP90Ms": {
+        "before": 96.64999997615814,
+        "after": 95.39999997615814,
+        "changePercent": -1.2933264359113794
+      }
+    },
+    {
+      "scene": "stress36",
+      "baseline": [
+        "A1-stress36-no-cpu",
+        "A2-stress36-no-cpu"
+      ],
+      "candidate": [
+        "B1-stress36-no-cpu",
+        "B2-stress36-no-cpu"
+      ],
+      "taskMsPerInput": {
+        "before": 201.49270689655174,
+        "after": 203.4199224137931,
+        "changePercent": 0.9564691183740148
+      },
+      "scriptMsPerInput": {
+        "before": 140.89249137931034,
+        "after": 136.78105172413794,
+        "changePercent": -2.918139650255458
+      },
+      "renderMedianMs": {
+        "before": 36,
+        "after": 37,
+        "changePercent": 2.777777777777768
+      },
+      "syncMedianMs": {
+        "before": 25,
+        "after": 24.75,
+        "changePercent": -1.0000000000000009
+      },
+      "frameP90Ms": {
+        "before": 133.33299999999963,
+        "after": 133.33300000000054,
+        "changePercent": 6.883382752675971e-13
+      },
+      "twoRafP90Ms": {
+        "before": 176.79999995231628,
+        "after": 181.80000001192093,
+        "changePercent": 2.8280543331183017
+      }
+    }
+  ]
+}

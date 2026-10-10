@@ -24,24 +24,31 @@ test('observe continuous drag, pause, commit and checkpoint restoration', async 
   while (!session.activeVariableAnimation) assert.ok(session.advance());
   writes.length = 0;
   const gesture = session.beginStudentVariableOperation('theta', { control: 'slider', input: 'mouse' });
-  // The short 320ms upstream test cannot distinguish throttling from debouncing.
-  for (let frame = 1; frame <= 188; frame++) {
-    session.updateStudentVariableOperation(gesture, frame / 100);
+  // Run beyond 10 seconds and leave a pending latest value for the pause check.
+  for (let frame = 1; frame <= 638; frame++) {
+    session.updateStudentVariableOperation(gesture, 1 + frame / 1000);
     context.mock.timers.tick(16);
   }
   const duringContinuousDrag = structuredClone(writes);
+  assert.ok(duringContinuousDrag.length >= 24 && duringContinuousDrag.length <= 26);
+  for (const write of duringContinuousDrag) {
+    assert.equal(write.value, 1 + Math.ceil(write.timeMs / 16) / 1000);
+  }
+  for (let i = 1; i < duringContinuousDrag.length; i++) {
+    assert.equal(duringContinuousDrag[i].timeMs - duringContinuousDrag[i - 1].timeMs, 400);
+  }
   context.mock.timers.tick(500);
   const afterPause = structuredClone(writes);
-  assert.equal(values.get('cadence-probe').projection.board.variables.theta.value, 1.88);
+  assert.equal(values.get('cadence-probe').projection.board.variables.theta.value, 1.638);
   session.updateStudentVariableOperation(gesture, 2.5);
   session.commitStudentVariableOperation(gesture, 2.5);
   assert.equal(values.get('cadence-probe').projection.board.variables.theta.value, 2.5);
   const restored = new BrowserLessonSession(events, store, 'cadence-probe');
   assert.equal(restored.projection.board.variables.theta.value, 2.5);
   const result = {
-    fixture, clock: 'node:test mock Date/setTimeout', frameIntervalMs: 16, dragDurationMs: 3008,
+    fixture, clock: 'node:test mock Date/setTimeout', frameIntervalMs: 16, dragDurationMs: 10208,
     duringContinuousDrag, afterPause, afterCommit: writes,
-    periodic400msObserved: duringContinuousDrag.length >= 7,
+    periodic400msObserved: duringContinuousDrag.length >= 24,
     pauseSavesFinalValue: true, commitSavesImmediately: true, restoredValue: 2.5,
   };
   await writeFile(output, JSON.stringify(result, null, 2) + '\n');

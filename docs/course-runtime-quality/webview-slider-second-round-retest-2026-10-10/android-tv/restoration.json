@@ -1,0 +1,36 @@
+{
+  "restoredAt": "2026-10-10T18:22:08.496Z",
+  "databaseRecords": 91,
+  "localKeys": 264,
+  "databaseAndLocalExactlyRestored": true,
+  "backupHash": "da051e4266aa41ef9f4d3041f3880e4974a31786170f42e34d5ee65eb716b471",
+  "restoredHash": "da051e4266aa41ef9f4d3041f3880e4974a31786170f42e34d5ee65eb716b471",
+  "finalScene": {
+    "title": "披萨尺寸与面积比例：为什么直径差一点，面积差很多？",
+    "playing": false,
+    "camera": {
+      "panX": -526.321,
+      "panY": 56.8677,
+      "scale": 0.534313
+    },
+    "inputOwner": "runtime",
+    "cards": 13,
+    "variables": {
+      "number_01": {
+        "value": 14.65,
+        "initial": 10,
+        "min": 5,
+        "max": 15,
+        "label": "披萨半径",
+        "unit": "cm",
+        "control": {
+          "kind": "slider",
+          "step": 0.05
+        }
+      }
+    },
+    "inkComponents": 47,
+    "temporaryNodes": 0,
+    "probeInstalled": false
+  }
+}

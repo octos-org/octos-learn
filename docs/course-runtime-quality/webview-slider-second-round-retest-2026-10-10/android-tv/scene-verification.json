@@ -1,0 +1,81 @@
+[
+  {
+    "scenario": "slope",
+    "labels": [
+      "A1-slope-no-cpu",
+      "B1-slope-no-cpu",
+      "A2-slope-no-cpu",
+      "B2-slope-no-cpu"
+    ],
+    "inputs": 58,
+    "cards": {
+      "note": 1,
+      "plot": 1,
+      "math": 2
+    },
+    "inkComponents": 66,
+    "initialSliderValue": "-3.2",
+    "geometryAndAllInputValuesMatched": true,
+    "allInputsTrusted": true
+  },
+  {
+    "scenario": "cosine",
+    "labels": [
+      "A1-cosine-no-cpu",
+      "B1-cosine-no-cpu",
+      "A2-cosine-no-cpu",
+      "B2-cosine-no-cpu"
+    ],
+    "inputs": 55,
+    "cards": {
+      "geometry": 1,
+      "plot": 3,
+      "math": 7,
+      "note": 4,
+      "diagram": 1
+    },
+    "inkComponents": 3,
+    "initialSliderValue": "6.2486",
+    "geometryAndAllInputValuesMatched": true,
+    "allInputsTrusted": true
+  },
+  {
+    "scenario": "surface",
+    "labels": [
+      "A1-surface-no-cpu",
+      "B1-surface-no-cpu",
+      "A2-surface-no-cpu",
+      "B2-surface-no-cpu"
+    ],
+    "inputs": 56,
+    "cards": {
+      "math": 4,
+      "scene3d": 1,
+      "note": 3,
+      "plot": 1
+    },
+    "inkComponents": 0,
+    "initialSliderValue": "0",
+    "geometryAndAllInputValuesMatched": true,
+    "allInputsTrusted": true
+  },
+  {
+    "scenario": "stress36",
+    "labels": [
+      "A1-stress36-no-cpu",
+      "B1-stress36-no-cpu",
+      "A2-stress36-no-cpu",
+      "B2-stress36-no-cpu"
+    ],
+    "inputs": 58,
+    "cards": {
+      "note": 33,
+      "plot": 1,
+      "math": 2
+    },
+    "inkComponents": 66,
+    "initialSliderValue": "-3.2",
+    "geometryAndAllInputValuesMatched": true,
+    "allInputsTrusted": true
+  }
+]

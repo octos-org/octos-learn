@@ -6,6 +6,7 @@
 
 - [WebView 滑块拖动 CPU profile](course-runtime-quality/webview-slider-profile-2026-10-10/README.md)：Mac 基线及[Android 大屏实测](course-runtime-quality/webview-slider-profile-2026-10-10/android-tv/REPORT.md)，含真实触摸、64 条笔迹白板、卡片数量对照、profiler 开销和原始调用栈。
 - [滑块 fast path 大屏复测](course-runtime-quality/webview-slider-fast-path-retest-2026-10-10/REPORT.md)：learn + OLL 完整组合的交错 A/B、64 笔迹与多卡场景、剩余几何观察器热点、持续存档频率及重载/图例换行验证。
+- [滑块第二轮大屏复测](course-runtime-quality/webview-slider-second-round-retest-2026-10-10/REPORT.md)：存档 throttle 与几何扫描收窄的同期交错 A/B、TaskDuration/input 和 p90 帧间隔、10 秒连续触摸存档及异步重排验证。
 
 - [v0.1.2 发布记录](RELEASE_V0_1_2.md)：辅助卡片原稿避让修复和完整九课 APK。
 

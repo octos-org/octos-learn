@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-10-10T18:24:01.304125+00:00",
+  "learnUnit": {
+    "files": 118,
+    "passed": 1131
+  },
+  "playwright": {
+    "sliderRendering": 2,
+    "completionCamera": 3,
+    "courseOverviewAfterFixtureLoopRepair": 4,
+    "allDistinctCasesPassed": 9
+  },
+  "lint": {
+    "trackedTypescriptErrors": 0,
+    "existingWarnings": 36,
+    "modifiedOverviewTestErrors": 0
+  },
+  "build": {
+    "productionWeb": true,
+    "androidDebugApk": true,
+    "hiddenSourceMapByteIdenticalToApk": true
+  },
+  "deterministicCheckpointTest": {
+    "durationMs": 10208,
+    "periodicWrites": 25,
+    "intervalMs": 400,
+    "latestValuesAssertedExactly": true
+  },
+  "deviceFunctional": {
+    "layoutAndHostBounds": true,
+    "unchangedLayoutRevisionOnNextInput": true,
+    "exactPlotSvgRestored": true,
+    "continuousPeriodicLatestValues": true,
+    "pauseAndImmediateCommitAndDurableIdb": true,
+    "reloadedValueAnd64InkPaths": true,
+    "originalDatabaseAndLearningLocalStorageRestored": true,
+    "originalScene": {
+      "title": "披萨尺寸与面积比例：为什么直径差一点，面积差很多？",
+      "playing": false,
+      "camera": {
+        "panX": -526.321,
+        "panY": 56.8677,
+        "scale": 0.534313
+      },
+      "inputOwner": "runtime",
+      "cards": 13,
+      "variables": {
+        "number_01": {
+          "value": 14.65,
+          "initial": 10,
+          "min": 5,
+          "max": 15,
+          "label": "披萨半径",
+          "unit": "cm",
+          "control": {
+            "kind": "slider",
+            "step": 0.05
+          }
+        }
+      },
+      "inkComponents": 47,
+      "temporaryNodes": 0,
+      "probeInstalled": false
+    },
+    "checkedAt": "2026-10-10T18:22:31.052Z"
+  }
+}
