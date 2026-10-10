@@ -300,6 +300,17 @@ export function AdminSettingsPage() {
           </main>
         </div>
       )}
+      <footer
+        aria-label="应用版本"
+        className="flex shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border px-4 py-3 text-xs text-muted"
+      >
+        <span>
+          当前版本 <span className="font-medium text-text-strong">{import.meta.env.VITE_APP_VERSION ? `v${import.meta.env.VITE_APP_VERSION}` : "开发版"}</span>
+        </span>
+        {import.meta.env.VITE_BUILD_REVISION && (
+          <span>构建 {import.meta.env.VITE_BUILD_REVISION}</span>
+        )}
+      </footer>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { localCoursePackServer } from "./build/local-course-pack-server";
 import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import {
   addLegacySupportsForSrgbColorMixes,
   downlevelOklchColors,
@@ -12,6 +13,25 @@ import {
 
 const localCertificate = path.resolve(__dirname, ".cert/octos-learn.pem");
 const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem");
+const appVersion = JSON.parse(
+  readFileSync(path.resolve(__dirname, "package.json"), "utf8"),
+).version as string;
+
+function appBuildRevision(): string {
+  try {
+    const git = (...args: string[]) => execFileSync("git", args, {
+      cwd: __dirname,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    const revision = git("rev-parse", "--short=7", "HEAD");
+    const modified = git("status", "--porcelain").length > 0;
+    return modified ? `${revision}（本地修改）` : revision;
+  } catch {
+    // Source archives can be built without Git metadata.
+    return "";
+  }
+}
 
 /**
  * OLL scopes its board internals with CSS `@scope`, which is only available in
@@ -105,6 +125,10 @@ export default defineConfig(({ mode, command }) => {
   }
 
   return {
+    define: {
+      "import.meta.env.VITE_APP_VERSION": JSON.stringify(appVersion),
+      "import.meta.env.VITE_BUILD_REVISION": JSON.stringify(appBuildRevision()),
+    },
     optimizeDeps: {
       // OLL is pinned to an exact repository revision. Serve its ESM output
       // directly so a browser refresh cannot mix freshly HMR-ed host code with
