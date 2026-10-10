@@ -12,15 +12,15 @@
     },
     "octos_lesson_language": {
       "repository": "alan0x/octos-lesson-language",
-      "reviewed_main_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14",
+      "reviewed_main_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55",
       "authoring_profile_ref": "3145b5da8bac399edbbe73b6bea0ad1c7225f790",
-      "web_runtime_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14"
+      "web_runtime_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55"
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
       "main_baseline_ref": "5e7b331d7d3370962b89eed05cb25f7b29b29827",
       "package_version": "0.1.2",
-      "oll_web_runtime_ref": "67d1476c012393c5e01995e2e2c9785e5fe19a14"
+      "oll_web_runtime_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55"
     },
     "octos": {
       "repository": "octos-org/octos",
