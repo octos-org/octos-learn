@@ -20,7 +20,7 @@ const base = option("--base", "http://127.0.0.1:5187");
 const packs = option("--packs", "linear-intro-and-slope,slope-and-intercept,trig-cosine-and-phase-shift,surface-partial-derivative-slice").split(",");
 const cpuRates = option("--cpu", "1,4").split(",").map(Number);
 const steps = Number(option("--steps", "90"));
-const outDir = option("--out", "slider-profile-out");
+const outDir = option("--out", "delivery/slider-profile");
 const viewport = { width: Number(option("--width", "1440")), height: Number(option("--height", "900")) };
 
 // Function-name buckets; a stack is counted once per bucket (inclusive time).
