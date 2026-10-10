@@ -1,0 +1,258 @@
+{
+  "packId": "surface-paraboloid-level-sets",
+  "cpuRate": 4,
+  "steps": 90,
+  "dragMs": 2576,
+  "cards": {
+    "note": 1,
+    "scene3d": 1,
+    "geometry": 1,
+    "math": 2
+  },
+  "sliderInputEvents": 91,
+  "frameIntervalMs": {
+    "count": 315,
+    "p50": 8.3,
+    "p90": 9.2,
+    "max": 575.2000000000007
+  },
+  "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+  },
+  "chrome": {
+    "layoutCount": 185,
+    "layoutSeconds": 0.116,
+    "recalcStyleCount": 113,
+    "recalcStyleSeconds": 0.206,
+    "scriptSeconds": 0.797,
+    "taskSeconds": 2.106
+  },
+  "cpu": {
+    "activeMs": 2071,
+    "idleMs": 1093,
+    "topSelf": [
+      {
+        "name": "(program) :0",
+        "ms": 912.6
+      },
+      {
+        "name": "get offsetWidth :0",
+        "ms": 311
+      },
+      {
+        "name": "meshPlaneSegments scene3d.js:383",
+        "ms": 30.1
+      },
+      {
+        "name": "querySelectorAll :0",
+        "ms": 27.5
+      },
+      {
+        "name": "fingerprintEvents index.js:12",
+        "ms": 22.3
+      },
+      {
+        "name": "(garbage collector) :0",
+        "ms": 20.7
+      },
+      {
+        "name": "replaceChildren :0",
+        "ms": 20.5
+      },
+      {
+        "name": "write learning-document-store.ts:98",
+        "ms": 19.2
+      },
+      {
+        "name": "get snapshot index.js:196",
+        "ms": 18.9
+      },
+      {
+        "name": "save learning-document-store.ts:153",
+        "ms": 18.6
+      },
+      {
+        "name": "LearningWorkspace learning-workspace.tsx:316",
+        "ms": 16
+      },
+      {
+        "name": "get canonicalEvents index.js:191",
+        "ms": 14.2
+      },
+      {
+        "name": "LearningWhiteboard oll-lesson-runtime.tsx:435",
+        "ms": 13.8
+      },
+      {
+        "name": "syncNodeFragmentEmphasis board-view.js:2187",
+        "ms": 13.6
+      },
+      {
+        "name": "syncNodes board-view.js:2093",
+        "ms": 12.8
+      },
+      {
+        "name": "renderedWorldRect oll-lesson-runtime.tsx:184",
+        "ms": 12.7
+      },
+      {
+        "name": "range scene3d.js:495",
+        "ms": 11.5
+      },
+      {
+        "name": "setAttribute :0",
+        "ms": 11.2
+      },
+      {
+        "name": "remove :0",
+        "ms": 10.8
+      },
+      {
+        "name": "(anonymous) :0",
+        "ms": 10.7
+      },
+      {
+        "name": "(anonymous) learning-document-store.ts:104",
+        "ms": 10.5
+      },
+      {
+        "name": "append :0",
+        "ms": 9.6
+      },
+      {
+        "name": "setRegionLayouts board-view.js:1875",
+        "ms": 9.5
+      },
+      {
+        "name": "structuredClone :0",
+        "ms": 9.4
+      },
+      {
+        "name": "createElementNS :0",
+        "ms": 8.8
+      }
+    ],
+    "topInclusive": [
+      {
+        "name": "(root) :0",
+        "ms": 2071
+      },
+      {
+        "name": "(program) :0",
+        "ms": 912.6
+      },
+      {
+        "name": "performWorkUntilDeadline react-dom_client.js:102",
+        "ms": 492.3
+      },
+      {
+        "name": "commitHookEffectListMount react-dom_client.js:6478",
+        "ms": 329.8
+      },
+      {
+        "name": "flushPassiveEffects react-dom_client.js:8881",
+        "ms": 329.4
+      },
+      {
+        "name": "commitPassiveMountOnFiber react-dom_client.js:7631",
+        "ms": 326.5
+      },
+      {
+        "name": "recursivelyTraversePassiveMountEffects react-dom_client.js:7621",
+        "ms": 326.5
+      },
+      {
+        "name": "(anonymous) oll-lesson-runtime.tsx:978",
+        "ms": 319.9
+      },
+      {
+        "name": "(anonymous) oll-lesson-runtime.tsx:985",
+        "ms": 314.7
+      },
+      {
+        "name": "get offsetWidth :0",
+        "ms": 311
+      },
+      {
+        "name": "(anonymous) react-dom_client.js:8714",
+        "ms": 300.4
+      },
+      {
+        "name": "(anonymous) oll-lesson-runtime.tsx:2048",
+        "ms": 284.6
+      },
+      {
+        "name": "performWorkOnRoot react-dom_client.js:8093",
+        "ms": 281.7
+      },
+      {
+        "name": "render board-view.js:1502",
+        "ms": 271.6
+      },
+      {
+        "name": "syncNodes board-view.js:2093",
+        "ms": 219.5
+      },
+      {
+        "name": "renderRootSync react-dom_client.js:8410",
+        "ms": 211.6
+      },
+      {
+        "name": "workLoopSync react-dom_client.js:8460",
+        "ms": 209.7
+      },
+      {
+        "name": "beginWork react-dom_client.js:5691",
+        "ms": 204.8
+      },
+      {
+        "name": "performWorkOnRootViaSchedulerTask react-dom_client.js:9111",
+        "ms": 187.2
+      },
+      {
+        "name": "renderWithHooks react-dom_client.js:3508",
+        "ms": 173
+      },
+      {
+        "name": "updateFunctionComponent react-dom_client.js:5145",
+        "ms": 161.1
+      },
+      {
+        "name": "handleStudentVariableInput learning-workspace.tsx:1247",
+        "ms": 115.3
+      },
+      {
+        "name": "(anonymous) use-oll-lesson-runtime.ts:265",
+        "ms": 114
+      },
+      {
+        "name": "updateStudentVariableOperation runtime.js:843",
+        "ms": 110.6
+      },
+      {
+        "name": "(anonymous) oll-lesson-runtime.tsx:1262",
+        "ms": 110.6
+      }
+    ],
+    "buckets": {
+      "structuredClone (runtime/player snapshots)": 9,
+      "JSON.stringify": 0,
+      "IndexedDB write": 63,
+      "BoardView.render": 272,
+      "BoardView.syncNodes": 220,
+      "computeBoardLayout": 28,
+      "positionNodes/syncGroups/renderConnections": 12,
+      "updatePlotExplorer": 0,
+      "updateScene3d": 99,
+      "measureVisualRegionBounds/measureBoardNodeBounds": 36,
+      "getBoundingClientRect/offset*/scrollHeight": 315,
+      "persist / checkpoint": 82,
+      "applyManualVariable": 110,
+      "KaTeX": 0,
+      "React commit/render": 556,
+      "ink runtime": 0
+    }
+  }
+}

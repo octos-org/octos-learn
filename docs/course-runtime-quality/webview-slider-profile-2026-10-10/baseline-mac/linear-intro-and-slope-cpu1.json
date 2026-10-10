@@ -1,0 +1,257 @@
+{
+  "packId": "linear-intro-and-slope",
+  "cpuRate": 1,
+  "steps": 90,
+  "dragMs": 2287,
+  "cards": {
+    "plot": 1,
+    "math": 1,
+    "note": 1
+  },
+  "sliderInputEvents": 91,
+  "frameIntervalMs": {
+    "count": 277,
+    "p50": 8.3,
+    "p90": 9.2,
+    "max": 125.79999999999927
+  },
+  "longTasks": {
+    "count": 0,
+    "totalMs": 0,
+    "maxMs": 0
+  },
+  "chrome": {
+    "layoutCount": 276,
+    "layoutSeconds": 0.029,
+    "recalcStyleCount": 203,
+    "recalcStyleSeconds": 0.041,
+    "scriptSeconds": 0.171,
+    "taskSeconds": 0.478
+  },
+  "cpu": {
+    "activeMs": 464,
+    "idleMs": 1959,
+    "topSelf": [
+      {
+        "name": "(program) :0",
+        "ms": 208.9
+      },
+      {
+        "name": "syncNodes board-view.js:2093",
+        "ms": 49.8
+      },
+      {
+        "name": "get offsetWidth :0",
+        "ms": 24.3
+      },
+      {
+        "name": "(garbage collector) :0",
+        "ms": 6.9
+      },
+      {
+        "name": "get snapshot index.js:196",
+        "ms": 4.9
+      },
+      {
+        "name": "get canonicalEvents index.js:191",
+        "ms": 4.9
+      },
+      {
+        "name": "remove :0",
+        "ms": 4.4
+      },
+      {
+        "name": "save learning-document-store.ts:153",
+        "ms": 4.3
+      },
+      {
+        "name": "LearningWorkspace learning-workspace.tsx:316",
+        "ms": 3.6
+      },
+      {
+        "name": "fingerprintEvents index.js:12",
+        "ms": 3.5
+      },
+      {
+        "name": "(anonymous) plot.js:150",
+        "ms": 3.4
+      },
+      {
+        "name": "querySelectorAll :0",
+        "ms": 3.3
+      },
+      {
+        "name": "write learning-document-store.ts:98",
+        "ms": 3.3
+      },
+      {
+        "name": "setAttribute :0",
+        "ms": 2.8
+      },
+      {
+        "name": "paint plot-explorer.js:148",
+        "ms": 2.7
+      },
+      {
+        "name": "LearningWhiteboard oll-lesson-runtime.tsx:435",
+        "ms": 2.6
+      },
+      {
+        "name": "setRegionLayouts board-view.js:1875",
+        "ms": 2.3
+      },
+      {
+        "name": "(anonymous) :0",
+        "ms": 2.3
+      },
+      {
+        "name": "(anonymous) board-occlusion-observer.ts:8",
+        "ms": 2.3
+      },
+      {
+        "name": "structuredClone :0",
+        "ms": 2
+      },
+      {
+        "name": "(anonymous) plot.js:149",
+        "ms": 2
+      },
+      {
+        "name": "drawPlot board-view.js:473",
+        "ms": 2
+      },
+      {
+        "name": "setLessonVariables index.js:1788",
+        "ms": 1.8
+      },
+      {
+        "name": "setDefaultValue react-dom_client.js:1211",
+        "ms": 1.8
+      },
+      {
+        "name": "renderedWorldRect oll-lesson-runtime.tsx:184",
+        "ms": 1.8
+      }
+    ],
+    "topInclusive": [
+      {
+        "name": "(root) :0",
+        "ms": 464
+      },
+      {
+        "name": "(program) :0",
+        "ms": 208.9
+      },
+      {
+        "name": "performWorkUntilDeadline react-dom_client.js:102",
+        "ms": 140.6
+      },
+      {
+        "name": "commitHookEffectListMount react-dom_client.js:6478",
+        "ms": 103.2
+      },
+      {
+        "name": "flushPassiveEffects react-dom_client.js:8881",
+        "ms": 102.6
+      },
+      {
+        "name": "commitPassiveMountOnFiber react-dom_client.js:7631",
+        "ms": 101.9
+      },
+      {
+        "name": "recursivelyTraversePassiveMountEffects react-dom_client.js:7621",
+        "ms": 101.9
+      },
+      {
+        "name": "(anonymous) react-dom_client.js:8714",
+        "ms": 97.8
+      },
+      {
+        "name": "(anonymous) oll-lesson-runtime.tsx:2048",
+        "ms": 94.4
+      },
+      {
+        "name": "render board-view.js:1502",
+        "ms": 90.6
+      },
+      {
+        "name": "syncNodes board-view.js:2093",
+        "ms": 80.4
+      },
+      {
+        "name": "performWorkOnRoot react-dom_client.js:8093",
+        "ms": 66.1
+      },
+      {
+        "name": "workLoopSync react-dom_client.js:8460",
+        "ms": 49.9
+      },
+      {
+        "name": "renderRootSync react-dom_client.js:8410",
+        "ms": 49.9
+      },
+      {
+        "name": "beginWork react-dom_client.js:5691",
+        "ms": 47.1
+      },
+      {
+        "name": "performWorkOnRootViaSchedulerTask react-dom_client.js:9111",
+        "ms": 41.8
+      },
+      {
+        "name": "renderWithHooks react-dom_client.js:3508",
+        "ms": 40.5
+      },
+      {
+        "name": "updateFunctionComponent react-dom_client.js:5145",
+        "ms": 36.1
+      },
+      {
+        "name": "dispatchEvent react-dom_client.js:11442",
+        "ms": 30.5
+      },
+      {
+        "name": "dispatchEventForPluginEventSystem react-dom_client.js:9370",
+        "ms": 29.9
+      },
+      {
+        "name": "batchedUpdates$1 react-dom_client.js:1458",
+        "ms": 29.8
+      },
+      {
+        "name": "dispatchDiscreteEvent react-dom_client.js:11422",
+        "ms": 27.9
+      },
+      {
+        "name": "update plot-explorer.js:323",
+        "ms": 27.2
+      },
+      {
+        "name": "updatePlotExplorer plot-explorer.js:9",
+        "ms": 27.2
+      },
+      {
+        "name": "refresh plot-explorer.js:88",
+        "ms": 27
+      }
+    ],
+    "buckets": {
+      "structuredClone (runtime/player snapshots)": 2,
+      "JSON.stringify": 0,
+      "IndexedDB write": 13,
+      "BoardView.render": 91,
+      "BoardView.syncNodes": 80,
+      "computeBoardLayout": 5,
+      "positionNodes/syncGroups/renderConnections": 3,
+      "updatePlotExplorer": 27,
+      "updateScene3d": 0,
+      "measureVisualRegionBounds/measureBoardNodeBounds": 4,
+      "getBoundingClientRect/offset*/scrollHeight": 25,
+      "persist / checkpoint": 18,
+      "applyManualVariable": 23,
+      "KaTeX": 0,
+      "React commit/render": 155,
+      "ink runtime": 0
+    }
+  }
+}
