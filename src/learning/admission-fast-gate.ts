@@ -284,6 +284,24 @@ export async function evaluateAdmissionFastGate(
     if (rawChoice === "ignore") disposition = "ignore";
     else if (rawChoice === "clarify") disposition = "clarify";
 
+    // This gate sees only text and context flags, not the selected pixels or
+    // camera frame. A deictic request can be complete with that image even
+    // when the text alone is not. Let the visual handler decide whether it
+    // needs clarification; keep the gate's noise filtering intact.
+    if (disposition === "clarify" && (input.hasSelection || input.hasCameraFrame)) {
+      const elapsedMs = Date.now() - startedAt;
+      return finish(input, {
+        disposition: "generate_lesson",
+        confidence,
+        subject: subjectAnswer?.choice as AdmissionSubjectDomain | undefined,
+        isSelfContained,
+        reason: "文字预判无法读取视觉上下文，交由选区或图片处理流程判断",
+        source: "passthrough",
+        elapsedMs,
+        latencyMs: elapsedMs,
+      });
+    }
+
     let clarificationPrompt: string | undefined;
     if (disposition === "clarify") {
       clarificationPrompt = `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`;
