@@ -874,6 +874,25 @@ describe("LearningWorkspace", () => {
   });
 
   it("routes a spoken lesson request with an active ink selection to course generation", async () => {
+    const evaluateGate = admissionFastGate.evaluateAdmissionFastGate;
+    const gateFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        answers: {
+          disposition: {
+            choice: "clarify",
+            probabilities: { clarify: 0.95, ignore: 0.04, generate_lesson: 0.01 },
+            confidence: 0.94,
+          },
+          is_self_contained: { noul: 0.05 },
+        },
+      }),
+    });
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate")
+      .mockImplementation((input) => evaluateGate(input, {
+        apiKey: "test-key",
+        fetchFn: gateFetch,
+      }));
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       status: 200,
@@ -977,7 +996,7 @@ describe("LearningWorkspace", () => {
     const handled = await frozenOptions.onAdmittedSpeech?.({
       sessionId: "learn-direct-selection-voice",
       turnId: "selection-voice-turn",
-      transcript: "老师，请结合这个公式给我上一课",
+      transcript: "这种公式应该如何解，请给我上一节课",
       admissionId: "selection-voice-admission",
       mediaPaths: ["uploads/utterance.wav", "uploads/selection.png"],
       currentFramePath: undefined,
@@ -985,13 +1004,18 @@ describe("LearningWorkspace", () => {
     });
 
     expect(handled).toBe(true);
+    expect(gateSpy).toHaveBeenCalledWith(expect.objectContaining({
+      text: "这种公式应该如何解，请给我上一节课",
+      hasSelection: true,
+    }));
+    expect(gateFetch).toHaveBeenCalledTimes(1);
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledTimes(1);
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-direct-selection-voice",
       "learning.lesson.generate-from-selection",
       expect.objectContaining({
         paths: ["uploads/selection.png"],
-        learner_request: "老师，请结合这个公式给我上一课",
+        learner_request: "这种公式应该如何解，请给我上一节课",
         request_source: "ink_selection",
         input_modality: "voice",
       }),

@@ -137,6 +137,61 @@ describe("admission-fast-gate", () => {
     expect(result.source).toBe("jev_direct");
   });
 
+  it.each([
+    { modality: "voice" as const, hasSelection: true },
+    { modality: "text" as const, hasSelection: true },
+    { modality: "voice" as const, hasCameraFrame: true },
+    { modality: "text" as const, hasCameraFrame: true },
+  ])("defers text-only clarification to the visual request handler for %j", async (context) => {
+    const fetchFn = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        answers: {
+          disposition: {
+            choice: "clarify",
+            probabilities: { clarify: 0.95, ignore: 0.04, generate_lesson: 0.01 },
+            confidence: 0.94,
+          },
+          is_self_contained: { noul: 0.05 },
+        },
+      }),
+    });
+
+    const result = await evaluateAdmissionFastGate(
+      { text: "这种公式应该如何解，请给我上一节课", ...context },
+      { fetchFn, apiKey: dummyKey },
+    );
+
+    expect(result.disposition).toBe("generate_lesson");
+    expect(result.source).toBe("passthrough");
+    expect(result.isSelfContained).toBe(false);
+    expect(result.clarificationPrompt).toBeUndefined();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("still ignores filler with an active selection", async () => {
+    const fetchFn = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        answers: {
+          disposition: {
+            choice: "ignore",
+            probabilities: { ignore: 0.98, clarify: 0.02, generate_lesson: 0 },
+            confidence: 0.96,
+          },
+          is_self_contained: { noul: 0.01 },
+        },
+      }),
+    });
+
+    const result = await evaluateAdmissionFastGate(
+      { text: "呃……嗯", modality: "voice", hasSelection: true },
+      { fetchFn, apiKey: dummyKey },
+    );
+
+    expect(result.disposition).toBe("ignore");
+  });
+
   it("falls back to passthrough if confidence is below threshold and lesson probability is significant", async () => {
     const mockResponse = {
       answers: {

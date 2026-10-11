@@ -1,6 +1,6 @@
 {
   "schema": "octos.learning-stack.release-bom.v1",
-  "release_train": "octos-learn-v0.1.3",
+  "release_train": "octos-learn-v0.1.4",
   "status": "release-candidate",
   "components": {
     "learning_coach": {
@@ -18,8 +18,8 @@
     },
     "octos_learn": {
       "repository": "octos-org/octos-learn",
-      "main_baseline_ref": "c03232610b477185074862d9814ba28b973fc58a",
-      "package_version": "0.1.3",
+      "main_baseline_ref": "597757d9ed055f35f260b53936433922310dddf3",
+      "package_version": "0.1.4",
       "oll_web_runtime_ref": "15ee0095f317fe868c0f0af4bfae55abd8e70b55"
     },
     "octos": {
