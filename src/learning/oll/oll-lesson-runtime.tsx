@@ -1074,12 +1074,16 @@ export function LearningWhiteboard({
     return typeof end === "number" && runtimeCursor >= end;
   };
   const degradedVisuals = runtime ? degradedVisualStatuses(runtime.board) : [];
-  const quickSelectionTools = selectionClassificationStatus === "ready"
-    && selectionClassification
-    && selectionClassification.confidence !== "low"
-    && selectionClassification.kind !== "unknown"
-    ? availableSelectionTools(selectionClassification.kind)
-    : [];
+  // Tools that accept unknown content are usable immediately. Recognition
+  // only adds actions that require a confident content type, such as plotting.
+  const quickSelectionTools = availableSelectionTools(
+    selectionClassificationStatus === "ready"
+      && selectionClassification
+      && selectionClassification.confidence !== "low"
+      && selectionClassification.kind !== "unknown"
+      ? selectionClassification.kind
+      : "unknown",
+  );
   const loadingStateId = loadingState?.id;
   const courseQuestions = questions.filter(isCourseWhiteboardQuestion);
   const pendingCourseQuestion = [...courseQuestions].reverse().find(
@@ -2546,6 +2550,14 @@ export function LearningWhiteboard({
             setSelectionQuestionOpen(false);
             setPreparedSelection(null);
             setSelectedBoardTargetIds([]);
+            if (
+              previous.selectedCount !== next.selected_count
+              || previous.selectionRevision !== next.selection_revision
+            ) {
+              setSelectionClassification(null);
+              setSelectionClassificationStatus("idle");
+              setSelectionContentKind("unknown");
+            }
           }
           inkSelectionVersionRef.current = {
             documentVersion: next.document_version,

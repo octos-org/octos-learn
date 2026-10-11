@@ -2190,6 +2190,100 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByRole("status").textContent).toContain("1 项笔迹");
   });
 
+  it.each([
+    { label: "解释这部分", toolId: "explain" },
+    { label: "检查并建议", toolId: "check-and-suggest" },
+  ])("can run $label while selection recognition is still pending", async ({ label, toolId }) => {
+    let snapshot: InkSelectionSnapshot = {
+      format: INK_SELECTION_FORMAT,
+      format_version: INK_SELECTION_FORMAT_VERSION,
+      source_id: "source-pending-recognition",
+      document_id: "learning-session:learn-selection-1:student-ink",
+      document_version: 1,
+      created_at: "2026-10-11T14:00:00.000Z",
+      bounds: { x: 0, y: 0, width: 100, height: 50 },
+      component_ids: ["stroke:pending-recognition"],
+      checksum: { algorithm: "sha-256", value: "a".repeat(64) },
+      svg: '<svg data-oll-ink-selection="1"><path d="M0 0L10 10"/></svg>',
+    };
+    let state: InkRuntimeState = {
+      mode: "select", component_count: 1, selected_count: 1,
+      selection_revision: 1, document_version: 1, saved: true,
+    };
+    let emit: (next: InkRuntimeState) => void = () => undefined;
+    mountInkRuntimeMock.mockReturnValue({
+      ready: Promise.resolve(),
+      subscribe: (listener: (next: InkRuntimeState) => void) => {
+        emit = listener;
+        listener(state);
+        return () => undefined;
+      },
+      setMode: vi.fn(),
+      captureSelectionSnapshot: vi.fn(async () => snapshot),
+      destroy: vi.fn(() => Promise.resolve()),
+    });
+    let resolveClassification!: (value: SelectionClassification) => void;
+    const onClassify = vi.fn(() => new Promise<SelectionClassification>((resolve) => {
+      resolveClassification = resolve;
+    }));
+    const onAsk = vi.fn(async () => undefined);
+    await renderLearning(<SelectionInkRuntimeProbe onAsk={onAsk} onClassify={onClassify} />);
+
+    // No classifier result is available, even after its network request starts.
+    expect(await screen.findByRole("button", { name: "解释这部分" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "问小章鱼" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+    await waitFor(() => expect(onClassify).toHaveBeenCalledOnce());
+    expect(screen.getByText("正在识别选区…")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: label }));
+    await waitFor(() => expect(onAsk).toHaveBeenCalledWith(expect.objectContaining({
+      snapshot,
+      toolId,
+      contentKind: "unknown",
+      recognizedContent: undefined,
+      recognitionConfidence: undefined,
+      contextImage: expect.any(File),
+    })));
+
+    await act(async () => resolveClassification({ kind: "math", content: "y=x^2", confidence: "high" }));
+    expect(await screen.findByRole("button", { name: "生成函数图像" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+    expect(onClassify).toHaveBeenCalledOnce();
+
+    const uncertainResults: Array<SelectionClassification | Error> = [
+      { kind: "unknown", content: "", confidence: "high" },
+      { kind: "math", content: "y=x^3?", confidence: "low" },
+      new Error("classification unavailable"),
+    ];
+    for (const [index, result] of uncertainResults.entries()) {
+      if (result instanceof Error) onClassify.mockRejectedValueOnce(result);
+      else onClassify.mockResolvedValueOnce(result);
+      snapshot = { ...snapshot, source_id: `source-uncertain-${index}` };
+      act(() => {
+        state = { ...state, selection_revision: state.selection_revision + 1 };
+        emit(state);
+      });
+      // Reselection must not reuse the previous formula or hide common actions.
+      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+      expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
+      expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+      fireEvent.click(screen.getByRole("button", { name: label }));
+      await waitFor(() => expect(onAsk).toHaveBeenLastCalledWith(expect.objectContaining({
+        snapshot,
+        toolId,
+        contentKind: "unknown",
+        recognizedContent: undefined,
+        recognitionConfidence: undefined,
+      })));
+      await waitFor(() => expect(onClassify).toHaveBeenCalledTimes(index + 2));
+      await waitFor(() => expect(screen.queryByText("正在识别选区…")).toBeNull());
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
+    }
+  });
+
   it("asks about an immutable ink selection without modifying the source", async () => {
     const listeners = new Set<(state: InkRuntimeState) => void>();
     let state: InkRuntimeState & { pen_color: string; selection_color: string | null } = {
@@ -2388,6 +2482,9 @@ describe("OLL lesson Runtime integration", () => {
       state = { ...state, selection_revision: 2 };
       listeners.forEach((listener) => listener(state));
     });
+    expect(screen.getByRole("button", { name: "解释这部分" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "检查并建议" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
     await waitFor(() => expect(onClassify).toHaveBeenCalledTimes(2));
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "生成函数图像" })).toBeNull();
