@@ -1792,6 +1792,7 @@
 }
 
 .learning-student-task-feedback.is-success {
+  align-items: center;
   justify-content: flex-start;
   color: #167251;
   font-weight: 650;
@@ -1801,6 +1802,11 @@
 .learning-student-task-hint svg {
   flex: 0 0 auto;
   margin-top: 1px;
+}
+
+.learning-student-task-feedback.is-success > svg {
+  display: block;
+  margin-top: 0;
 }
 
 .learning-student-task-hint {

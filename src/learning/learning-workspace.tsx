@@ -3492,7 +3492,9 @@ export function LearningWorkspace({
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
-          语音暂不可用，你可以继续打字、上传题目和阅读课程。
+          {runtime.state === "asr_not_ready_cloud"
+            ? runtime.label
+            : "语音暂不可用，你可以继续打字、上传题目和阅读课程。"}
         </div>
       )}
       {import.meta.env.DEV && import.meta.env.MODE !== "test" && isTraceInspectorVisible ? (

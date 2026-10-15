@@ -1,3 +1,5 @@
+import "./lib/android-dom-compatibility";
+import "./lib/android-layout-compatibility.css";
 import { LearningStorageBoundary } from "./learning/learning-storage-boundary";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

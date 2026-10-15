@@ -148,6 +148,32 @@ describe("useVoiceCapture", () => {
     unmount();
   });
 
+  it("does not start native recording after voice is stopped during permission acquisition", async () => {
+    const request = vi.fn();
+    const startVoiceCapture = vi.fn(() => JSON.stringify({ ok: true }));
+    window.OctosNativeAudio = {
+      hasMicrophonePermission: () => false,
+      requestMicrophonePermission: request,
+      startVoiceCapture,
+      stopVoiceCapture: vi.fn(),
+    };
+    const { result, unmount } = renderHook(() => useVoiceCapture());
+    let pending!: Promise<boolean>;
+    act(() => { pending = result.current.start(vi.fn()); });
+    expect(request).toHaveBeenCalledOnce();
+    expect(startVoiceCapture).not.toHaveBeenCalled();
+    await act(async () => { await result.current.stop(); });
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("octos-native-microphone-permission", {
+        detail: { granted: true },
+      }));
+      expect(await pending).toBe(false);
+    });
+    expect(startVoiceCapture).not.toHaveBeenCalled();
+    expect(result.current.capturing).toBe(false);
+    unmount();
+  });
+
   it("always passes a callable onSpeechRealStart to MicVAD", async () => {
     const { result, unmount } = renderHook(() => useVoiceCapture());
 

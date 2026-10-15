@@ -25,6 +25,7 @@ import {
   type Profile,
 } from "./settings-api";
 import { ConfirmDialog } from "./confirm-dialog";
+import { SettingsToggle } from "./settings-toggle";
 
 // ── Labels (no hardcoded user-visible strings in JSX) ──
 
@@ -358,20 +359,7 @@ export function ProfileTab({
               </p>
               <p className="text-xs text-muted mt-0.5">{LABELS.autoStartDesc}</p>
             </div>
-            <button
-              role="switch"
-              aria-checked={autoStart}
-              onClick={() => setAutoStart((v) => !v)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                autoStart ? "bg-accent" : "bg-surface-dark"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  autoStart ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
+            <SettingsToggle label={LABELS.autoStart} checked={autoStart} onChange={setAutoStart} />
           </div>
 
           {/* Admin Mode (toggle) */}
@@ -382,26 +370,17 @@ export function ProfileTab({
               </p>
               <p className="text-xs text-muted mt-0.5">{LABELS.adminModeDesc}</p>
             </div>
-            <button
-              role="switch"
-              aria-checked={adminMode}
-              onClick={() => {
-                if (adminMode) {
+            <SettingsToggle
+              label={LABELS.adminMode}
+              checked={adminMode}
+              onChange={(checked) => {
+                if (!checked) {
                   setConfirmAdminOff(true);
                 } else {
                   setAdminMode(true);
                 }
               }}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                adminMode ? "bg-accent" : "bg-surface-dark"
-              }`}
-            >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
-                  adminMode ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
+            />
           </div>
 
           {/* Created at */}

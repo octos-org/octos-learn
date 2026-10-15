@@ -18,6 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { request } from "@/api/client";
+import { SettingsToggle } from "./settings-toggle";
 import {
   fetchProviderModels,
   formatSettingsError,
@@ -864,29 +865,16 @@ export function LlmTab({ profile, onProfileUpdated }: LlmTabProps) {
           {/* Toggle row */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-text">Enable adaptive routing</span>
-            <button
-              role="switch"
-              aria-checked={form.adaptive_routing_enabled}
-              onClick={() =>
+            <SettingsToggle
+              label="Enable adaptive routing"
+              checked={form.adaptive_routing_enabled}
+              onChange={(checked) =>
                 setForm((f) => ({
                   ...f,
-                  adaptive_routing_enabled: !f.adaptive_routing_enabled,
+                  adaptive_routing_enabled: checked,
                 }))
               }
-              className={[
-                "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none",
-                form.adaptive_routing_enabled ? "bg-accent" : "bg-surface-dark",
-              ].join(" ")}
-            >
-              <span
-                className={[
-                  "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform",
-                  form.adaptive_routing_enabled
-                    ? "translate-x-5"
-                    : "translate-x-0",
-                ].join(" ")}
-              />
-            </button>
+            />
           </div>
 
           {/* Info panel (shown when enabled) */}

@@ -1,0 +1,54 @@
+.settings-toggle {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #655f58;
+  vertical-align: middle;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+
+[data-theme="light"] .settings-toggle {
+  background: #b7bdb6;
+}
+
+.settings-toggle[aria-checked="true"] {
+  background: var(--color-accent, #b87a4a);
+}
+
+.settings-toggle > span {
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+  transform: translateX(0);
+  transition: transform 150ms ease;
+}
+
+.settings-toggle[aria-checked="true"] > span {
+  transform: translateX(20px);
+}
+
+.settings-toggle:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.settings-toggle:focus-visible {
+  outline: 2px solid var(--color-accent, #b87a4a);
+  outline-offset: 3px;
+}

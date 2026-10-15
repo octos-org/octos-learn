@@ -1,0 +1,76 @@
+{
+  "file": "/Volumes/MSI DISK/Octos-Learn-v0.1.5.apk",
+  "bytes": 105308835,
+  "sha256": "f4e7bbf3bc27fa4a85ff294e6efbceb71320c6244d42e5508a11eed06ca21b95",
+  "package": "cc.pitun.learn",
+  "versionName": "0.1.5",
+  "versionCode": 36,
+  "signatureValid": false,
+  "signatureFailure": "APK Signature Scheme v3 CHUNKED_SHA256 digest mismatch",
+  "buildInfo": {
+    "revision": "a72572d7547a495cdfa0eedd847202509e2f97ec",
+    "dirty": false,
+    "builtAt": "2026-10-11T14:48:19.868Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "reference": {
+    "file": "/private/tmp/Octos-Learn-v0.1.5.apk",
+    "bytes": 105308835,
+    "sha256": "69221f70df613b8ea59533d9688bba5d6c55eab86de51b7f3c516f7bdf775e51",
+    "signatureValid": true,
+    "signerSha256": "7aa6d10fe65e2cd576cbb7e7eb0b6a8f7ea94723ec1a9826c0127dfe2b3a9aa3"
+  },
+  "entries": 288,
+  "identicalReadableEntries": 281,
+  "differentReadableEntries": [],
+  "unreadableEntries": [
+    {
+      "name": "res/yn.png",
+      "error": "Bad CRC-32 for file 'res/yn.png'"
+    },
+    {
+      "name": "res/z-.9.png",
+      "error": "Bad magic number for file header"
+    },
+    {
+      "name": "res/zR.png",
+      "error": "Bad magic number for file header"
+    },
+    {
+      "name": "resources.arsc",
+      "error": "Bad magic number for file header"
+    },
+    {
+      "name": "META-INF/ANDROIDD.SF",
+      "error": "Bad magic number for file header"
+    },
+    {
+      "name": "META-INF/ANDROIDD.RSA",
+      "error": "Bad magic number for file header"
+    },
+    {
+      "name": "META-INF/MANIFEST.MF",
+      "error": "Bad magic number for file header"
+    }
+  ],
+  "codeMatches": {
+    "classes.dex": "0ad2ff58ac6b5eb424dc76f738d92121154caa9f79bbaf3867d9369df9d24f59",
+    "assets/assets/index-alrYndz2.js": "2104a9c181b73038bb324d52e064a4d25c81cbe75ff1afc27bb05b84958304e8",
+    "assets/assets/index-legacy-DXiBsV3g.js": "33bcaf6f00abea34dd13bfec90c0a11b2c744e35a453128b055fc193ccb5fe09"
+  },
+  "routing": {
+    "readiness": "/api/voice/readiness",
+    "asrSession": "/private-asr/api/v1/sessions",
+    "transports": [
+      "LiveKit",
+      "native Agora"
+    ],
+    "directArkAsrLocated": false,
+    "nativeVolcanoEndpoint": "https://openspeech.bytedance.com/api/v1/tts"
+  },
+  "inspectionOnly": true,
+  "installed": false,
+  "sourceChanged": false,
+  "audioCollected": false
+}

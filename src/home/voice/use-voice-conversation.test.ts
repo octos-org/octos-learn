@@ -18,6 +18,7 @@ import {
 } from "./use-voice-conversation";
 import type { Thread } from "@/store/thread-store";
 import * as VoiceTranscriptStore from "@/store/voice-transcript-store";
+import { ensureSelectedProfileId } from "@/api/client";
 
 describe("voice transcript admission", () => {
   it("drops punctuation and hesitation-only results without rejecting real commands", () => {
@@ -51,6 +52,8 @@ const {
   privateAsrConstructorMock,
   privateAsrInstance,
   captureState,
+  cloudAsrEnabledMock,
+  transcribeCloudSpeechMock,
 } = vi.hoisted(() => ({
   captureStartMock: vi.fn(async () => {}),
   captureStopMock: vi.fn(async () => {}),
@@ -66,6 +69,8 @@ const {
   interruptActiveTurnMock: vi.fn(async () => true),
   uploadFilesMock: vi.fn(async () => [] as string[]),
   privateAsrEnabledMock: vi.fn(() => false),
+  cloudAsrEnabledMock: vi.fn(() => false),
+  transcribeCloudSpeechMock: vi.fn(async () => ({ status: "speech" as "speech" | "no_speech", transcript: "请解释这个公式" })),
   nativePrivateAsrAvailableMock: vi.fn(() => false),
   preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
   preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
@@ -97,6 +102,12 @@ vi.mock("./private-asr-client", () => ({
 
 vi.mock("./microphone", () => ({
   nativePrivateAsrAvailable: nativePrivateAsrAvailableMock,
+  nativeAudioCaptureAvailable: vi.fn(() => false),
+}));
+
+vi.mock("@/api/cloud-asr", () => ({
+  isCloudAsrEnabled: cloudAsrEnabledMock,
+  transcribeCloudSpeech: transcribeCloudSpeechMock,
 }));
 
 vi.mock("./use-voice-capture", () => ({
@@ -216,6 +227,10 @@ vi.mock("@/api/client", () => ({
 }));
 
 afterEach(() => {
+  cloudAsrEnabledMock.mockReset();
+  cloudAsrEnabledMock.mockReturnValue(false);
+  transcribeCloudSpeechMock.mockReset();
+  transcribeCloudSpeechMock.mockResolvedValue({ status: "speech", transcript: "请解释这个公式" });
   supportsVoiceAdmissionMock.mockReset();
   supportsVoiceAdmissionMock.mockReturnValue(true);
   admitVoiceMessageMock.mockReset();
@@ -930,6 +945,111 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("bypasses private RTC and generic transcription for direct cloud ASR", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true);
+    cloudAsrEnabledMock.mockReturnValue(true);
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-asr", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => {
+      await result.current.start({ initialAudio: new Blob(["speech"], { type: "audio/wav" }) });
+    });
+    expect(privateAsrInstance.start).not.toHaveBeenCalled();
+    expect(preloadPrivateAsrRuntimeMock).not.toHaveBeenCalled();
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({
+      transcript: "请解释这个公式", admissionId: expect.stringMatching(/^cloud-asr:/), mediaPaths: [],
+    }));
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it.each(["", "嗯……"])("does not submit cloud silence or hesitation: %s", async (transcript) => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAsrEnabledMock.mockReturnValue(true);
+    transcribeCloudSpeechMock.mockResolvedValueOnce({ status: transcript ? "speech" : "no_speech", transcript });
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-silence", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => {
+      await result.current.start({ initialAudio: new Blob(["noise"], { type: "audio/wav" }) });
+    });
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it("discards a cloud transcript after stopping and aborts the request", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAsrEnabledMock.mockReturnValue(true);
+    let resolveRecognition!: (value: { status: "speech"; transcript: string }) => void;
+    transcribeCloudSpeechMock.mockImplementationOnce(() => new Promise((resolve) => { resolveRecognition = resolve; }));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-cancel", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.start({ initialAudio: new Blob(["speech"], { type: "audio/wav" }) });
+      await vi.waitFor(() => expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce());
+    });
+    const signal = transcribeCloudSpeechMock.mock.calls[0]?.[1] as AbortSignal;
+    act(() => result.current.stop());
+    expect(signal.aborted).toBe(true);
+    await act(async () => {
+      resolveRecognition({ status: "speech", transcript: "迟到的结果" });
+      await starting;
+    });
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("idle");
+    unmount();
+  });
+
+  it("does not send audio if stopped while the routing profile is still resolving", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAsrEnabledMock.mockReturnValue(true);
+    let resolveProfile!: (value: string) => void;
+    vi.mocked(ensureSelectedProfileId).mockImplementationOnce(() => new Promise((resolve) => { resolveProfile = resolve; }));
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-profile-cancel", undefined, undefined, {
+      onAdmittedSpeech: vi.fn(async () => true), playReplyAudio: false,
+    }));
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.start({ initialAudio: new Blob(["speech"], { type: "audio/wav" }) });
+      await vi.waitFor(() => expect(resolveProfile).toBeTypeOf("function"));
+    });
+    act(() => result.current.stop());
+    await act(async () => { resolveProfile("voice-profile"); await starting; });
+    expect(transcribeCloudSpeechMock).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("surfaces a cloud permission failure without falling back to the offline Mac", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAsrEnabledMock.mockReturnValue(true);
+    transcribeCloudSpeechMock.mockRejectedValueOnce(new Error("火山 ASR 认证失败"));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-error", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => {
+      await result.current.start({ initialAudio: new Blob(["speech"], { type: "audio/wav" }) });
+    });
+    expect(result.current.error).toContain("火山 ASR 认证失败");
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(privateAsrInstance.start).not.toHaveBeenCalled();
     unmount();
   });
 

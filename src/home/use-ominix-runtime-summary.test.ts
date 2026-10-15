@@ -20,6 +20,28 @@ function stripRefresh(summary: Omit<OminixRuntimeSummary, "refresh">) {
 }
 
 describe("summarizeVoiceReadiness", () => {
+  it("uses direct cloud ASR readiness when the Mac bridge is offline", () => {
+    expect(summarizeVoiceReadiness(readiness({ ready: false,
+      asr: { ready: false, mode: "private", detail: "bridge offline" },
+      tts: { ready: false, mode: "local", detail: "local TTS unavailable" },
+    }), true, { available: true, detail: "configured" })).toMatchObject({
+      ready: true, inputReady: true, ttsReady: true,
+    });
+  });
+
+  it("does not let generic readiness bypass a missing direct cloud credential", () => {
+    expect(summarizeVoiceReadiness(readiness(), true, {
+      available: false, detail: "正在取得语音配置",
+    })).toMatchObject({ inputReady: false, label: "正在取得语音配置", canRepair: false });
+  });
+
+  it("still requires the configured LLM when direct ASR is available", () => {
+    expect(summarizeVoiceReadiness(readiness({ ready: false,
+      llm: { ready: false, detail: "LLM provider not configured" },
+    }), true, { available: true, detail: "configured" })).toMatchObject({
+      inputReady: false, state: "llm_not_ready",
+    });
+  });
   it("marks a fully-ready pipeline as ready", () => {
     expect(stripRefresh(summarizeVoiceReadiness(readiness()))).toMatchObject({
       label: "Voice engine ready",

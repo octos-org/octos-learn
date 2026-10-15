@@ -1,0 +1,125 @@
+{
+  "cards": {
+    "url": "https://learn.pitun.cc/",
+    "cards": [
+      {
+        "card": {
+          "x": 157,
+          "y": 394,
+          "width": 232.5,
+          "height": 62
+        },
+        "button": {
+          "x": 158,
+          "y": 395,
+          "width": 141.5,
+          "height": 60
+        },
+        "title": {
+          "x": 171,
+          "y": 408,
+          "width": 115.5,
+          "height": 18
+        },
+        "actions": {
+          "x": 299.5,
+          "y": 395,
+          "width": 89,
+          "height": 60
+        },
+        "scrollWidth": 347,
+        "clientWidth": 115,
+        "ellipsis": "ellipsis",
+        "display": "flex",
+        "whiteSpace": "nowrap"
+      }
+    ]
+  },
+  "toggles": {
+    "url": "https://learn.pitun.cc/settings",
+    "states": [
+      {
+        "checked": false,
+        "disabled": false,
+        "width": 44,
+        "height": 24,
+        "background": "rgb(183, 189, 182)",
+        "borderStyle": "solid",
+        "borderWidth": "2px",
+        "opacity": "1",
+        "thumb": {
+          "width": 20,
+          "height": 20,
+          "left": 2,
+          "top": 2,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "boxShadow": "rgba(0, 0, 0, 0.28) 0px 1px 3px 0px"
+        }
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "width": 44,
+        "height": 24,
+        "background": "rgb(28, 27, 27)",
+        "borderStyle": "solid",
+        "borderWidth": "2px",
+        "opacity": "1",
+        "thumb": {
+          "width": 20,
+          "height": 20,
+          "left": 22,
+          "top": 2,
+          "transform": "matrix(1, 0, 0, 1, 20, 0)",
+          "boxShadow": "rgba(0, 0, 0, 0.28) 0px 1px 3px 0px"
+        }
+      },
+      {
+        "checked": false,
+        "disabled": true,
+        "width": 44,
+        "height": 24,
+        "background": "rgb(183, 189, 182)",
+        "borderStyle": "solid",
+        "borderWidth": "2px",
+        "opacity": "0.4",
+        "thumb": {
+          "width": 20,
+          "height": 20,
+          "left": 2,
+          "top": 2,
+          "transform": "matrix(1, 0, 0, 1, 0, 0)",
+          "boxShadow": "rgba(0, 0, 0, 0.28) 0px 1px 3px 0px"
+        }
+      },
+      {
+        "checked": true,
+        "disabled": true,
+        "width": 44,
+        "height": 24,
+        "background": "rgb(28, 27, 27)",
+        "borderStyle": "solid",
+        "borderWidth": "2px",
+        "opacity": "0.4",
+        "thumb": {
+          "width": 20,
+          "height": 20,
+          "left": 22,
+          "top": 2,
+          "transform": "matrix(1, 0, 0, 1, 20, 0)",
+          "boxShadow": "rgba(0, 0, 0, 0.28) 0px 1px 3px 0px"
+        }
+      }
+    ],
+    "realSwitches": [
+      {
+        "checked": "false",
+        "disabled": false
+      },
+      {
+        "checked": "false",
+        "disabled": false
+      }
+    ]
+  }
+}

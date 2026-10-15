@@ -1,0 +1,13 @@
+allprojects {
+    afterEvaluate { project ->
+        if (project.path == ':app') {
+            project.android.buildToolsVersion = '35.0.0'
+            project.android.defaultConfig.applicationId = 'cc.pitun.learn.compat'
+            project.android.defaultConfig.versionName = '0.1.5-compat-webview74'
+            project.android.sourceSets.debug.res.srcDir(new File(
+                project.rootProject.projectDir.parentFile,
+                'docs/course-runtime-quality/philips-webview74-2026-10-15/test-res'
+            ))
+        }
+    }
+}

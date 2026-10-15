@@ -9,6 +9,7 @@ import type {
 } from "livekit-client";
 import { requestPrivateAsrGrant } from "@/api/private-asr";
 import {
+  ensureNativeMicrophonePermission,
   getEchoCancelledMicStream,
   nativeAudioCaptureAvailable,
   nativePrivateAsrAvailable,
@@ -551,6 +552,8 @@ export class PrivateAsrClient {
     if (!session.agora) {
       throw new Error("Private ASR session missing Agora credentials");
     }
+    await ensureNativeMicrophonePermission();
+    if (this.closed) throw new Error("Private ASR stopped during microphone permission");
     const result = startNativePrivateAsr(session.agora);
     if (!result.ok || !result.joined) {
       throw new Error(result.error || "Android Agora 原生音频频道未连接");

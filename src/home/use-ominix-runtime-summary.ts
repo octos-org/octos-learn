@@ -7,6 +7,7 @@ import {
   fetchHostedTtsStatus,
   isHostedTtsEnabled,
 } from "@/api/voice";
+import { fetchCloudAsrStatus, isCloudAsrEnabled, type CloudAsrStatus } from "@/api/cloud-asr";
 
 export type OminixRuntimeTone = "default" | "success" | "warning" | "danger";
 
@@ -75,11 +76,11 @@ function emit(summary: OminixRuntimeSnapshot) {
 export function summarizeVoiceReadiness(
   readiness: VoiceReadiness,
   hostedTtsAvailable = false,
+  cloudAsr?: Pick<CloudAsrStatus, "available" | "detail">,
 ): OminixRuntimeSnapshot {
   const ttsReady = readiness.tts.ready || hostedTtsAvailable;
-  const pipelineReady = readiness.ready || (
-    readiness.asr.ready && readiness.llm.ready && ttsReady
-  );
+  const asrReady = cloudAsr ? cloudAsr.available : readiness.asr.ready;
+  const pipelineReady = asrReady && readiness.llm.ready && ttsReady;
   if (pipelineReady) {
     return {
       label: "Voice engine ready",
@@ -95,10 +96,10 @@ export function summarizeVoiceReadiness(
   }
 
   // Report the first failing leg, in pipeline order: ASR → LLM → TTS.
-  if (!readiness.asr.ready) {
-    const localAsr = readiness.asr.mode === "ominix";
+  if (!asrReady) {
+    const localAsr = !cloudAsr && readiness.asr.mode === "ominix";
     return {
-      label: readiness.asr.detail,
+      label: cloudAsr?.detail || readiness.asr.detail,
       tone: "warning",
       ready: false,
       inputReady: false,
@@ -106,7 +107,7 @@ export function summarizeVoiceReadiness(
       ttsReady,
       loading: false,
       canRepair: localAsr,
-      state: `asr_not_ready_${readiness.asr.mode}`,
+      state: `asr_not_ready_${cloudAsr ? "cloud" : readiness.asr.mode}`,
     };
   }
 
@@ -140,19 +141,18 @@ export function summarizeVoiceReadiness(
 
 export function refreshOminixRuntimeSummary(): Promise<void> {
   if (inFlight) return inFlight;
-  inFlight = fetchVoiceReadiness()
-    .then(async (readiness) => {
-      let hostedTtsAvailable = false;
-      if (isHostedTtsEnabled()) {
-        try {
-          const status = await fetchHostedTtsStatus();
-          hostedTtsAvailable = status.uses_platform && status.available;
-        } catch {
-          // The generic personal-TTS result remains authoritative when the
-          // optional product service cannot be reached.
-        }
-      }
-      emit(summarizeVoiceReadiness(readiness, hostedTtsAvailable));
+  inFlight = Promise.all([
+    fetchVoiceReadiness(),
+    isHostedTtsEnabled() ? fetchHostedTtsStatus().then(
+      (status) => status.uses_platform && status.available,
+      () => false,
+    ) : Promise.resolve(false),
+    isCloudAsrEnabled() ? fetchCloudAsrStatus().catch(() => ({
+      available: false, detail: "云端语音识别暂不可用，请检查网络或服务器配置。",
+    })) : Promise.resolve(undefined),
+  ])
+    .then(([readiness, hostedTtsAvailable, cloudAsr]) => {
+      emit(summarizeVoiceReadiness(readiness, hostedTtsAvailable, cloudAsr));
     })
     .catch(() => {
       emit({
@@ -187,10 +187,17 @@ export function useOminixRuntimeSummary() {
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    const onSpeechConfigured = () => {
+      // A probe may have sampled the native bridge before configuration arrived.
+      if (inFlight) void inFlight.then(() => refreshOminixRuntimeSummary());
+      else void refreshOminixRuntimeSummary();
+    };
+    window.addEventListener("octos:native-speech-configured", onSpeechConfigured);
     return () => {
       listeners.delete(setSummary);
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("octos:native-speech-configured", onSpeechConfigured);
     };
   }, []);
 

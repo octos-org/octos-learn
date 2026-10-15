@@ -290,11 +290,6 @@ function WhiteboardSessionCard({
   session: LearningSessionRecord;
   onChanged: () => void;
 }) {
-  const navigate = useNavigate();
-  const open = () => {
-    updateLearningSession(session.id, { status: "active" });
-    navigate(learningSessionHref(session));
-  };
   const rename = () => {
     const title = window.prompt("重命名学习白板", session.title)?.trim();
     if (!title || title === session.title) return;
@@ -313,10 +308,14 @@ function WhiteboardSessionCard({
   };
   return (
     <article className="course-launcher-session-card">
-      <button type="button" className="course-launcher-session-open" onClick={open}>
+      <Link
+        to={learningSessionHref(session)}
+        className="course-launcher-session-open"
+        onClick={() => updateLearningSession(session.id, { status: "active" })}
+      >
         <span>{session.title}</span>
         <small>{session.status === "completed" ? "已完成" : "继续学习"}</small>
-      </button>
+      </Link>
       <div className="course-launcher-session-actions">
         <button type="button" onClick={rename} aria-label={`重命名 ${session.title}`}>
           <Pencil size={15} aria-hidden="true" />

@@ -6,10 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import {
-  addLegacySupportsForSrgbColorMixes,
-  downlevelOklchColors,
-} from "./build/android-legacy-css";
+import { androidLegacyOptions, downlevelAndroidCss } from "./build/android-compatibility";
 
 const localCertificate = path.resolve(__dirname, ".cert/octos-learn.pem");
 const localCertificateKey = path.resolve(__dirname, ".cert/octos-learn-key.pem");
@@ -81,8 +78,8 @@ function downlevelOllBoardScope(source: string): string {
 
 function androidLegacyColorPlugin(): Plugin {
   return {
-    name: "android-legacy-css-colors",
-    generateBundle(_options, bundle) {
+    name: "android-legacy-css",
+    async generateBundle(_options, bundle) {
       for (const output of Object.values(bundle)) {
         if (
           output.type !== "asset"
@@ -91,9 +88,7 @@ function androidLegacyColorPlugin(): Plugin {
         const source = typeof output.source === "string"
           ? output.source
           : Buffer.from(output.source).toString("utf8");
-        output.source = downlevelOklchColors(
-          addLegacySupportsForSrgbColorMixes(source),
-        );
+        output.source = await downlevelAndroidCss(source);
       }
     },
   };
@@ -170,14 +165,7 @@ export default defineConfig(({ mode, command }) => {
       tailwindcss(),
       ...(useAndroidLegacyBuild ? [androidLegacyColorPlugin()] : []),
       ...(useAndroidLegacyBuild
-        ? [legacy({
-            // Android 8 devices often ship a Chromium 60/61-era WebView and
-            // may not have a working system-WebView updater. Those engines
-            // receive the SystemJS legacy bundle; newer WebViews keep the
-            // faster native-ESM bundle.
-            targets: ["Chrome >= 55"],
-            modernTargets: ["Chrome >= 64"],
-          })]
+        ? [legacy(androidLegacyOptions)]
         : []),
     ],
     worker: { format: "es" },

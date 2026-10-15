@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [飞利浦大屏 WebView 74 兼容修复](course-runtime-quality/philips-webview74-2026-10-15/REPORT.md)：接口、首页留白与全局间距修复，独立兼容 APK、二维/三维实机验证、火山 ASR 直连恢复、卡片截断与设置开关修复及验证边界。
+
 - [Android 滑块优化最终验证](course-runtime-quality/webview-slider-performance-2026-10-10/REPORT.md)：完整 Runtime pin、几何扫描优化、电视最终结果、持续存档与布局恢复验证。
 
 - [v0.1.5 发布记录](RELEASE_V0_1_5.md)：选区通用按钮立即可用，后台识别补充专用操作，附验证范围与交付约定。

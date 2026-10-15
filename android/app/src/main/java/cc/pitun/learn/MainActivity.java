@@ -31,17 +31,23 @@ public final class MainActivity extends Activity {
     private static final String TRUSTED_HOST = "learn.pitun.cc";
     private static final String START_URL = "https://" + TRUSTED_HOST + "/";
     private static final int MEDIA_PERMISSION_REQUEST = 1001;
+    private static final int MICROPHONE_PERMISSION_REQUEST = 1002;
 
     private WebView webView;
     private NativeInkOverlayView nativeInkOverlay;
     private NativeInkBridge nativeInkBridge;
     private NativeAudioBridge nativeAudioBridge;
     private NativeTtsBridge nativeTtsBridge;
+    private NativeAsrBridge nativeAsrBridge;
     private PermissionRequest pendingWebPermission;
+    private boolean microphonePermissionPending;
+    private boolean microphonePermissionWaiting;
+    private VendorToolbarController vendorToolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        vendorToolbar = new VendorToolbarController(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         enterImmersiveMode();
 
@@ -91,6 +97,8 @@ public final class MainActivity extends Activity {
         webView.addJavascriptInterface(nativeAudioBridge, "OctosNativeAudio");
         nativeTtsBridge = new NativeTtsBridge(webView);
         webView.addJavascriptInterface(nativeTtsBridge, "OctosNativeTts");
+        nativeAsrBridge = new NativeAsrBridge(webView, nativeTtsBridge);
+        webView.addJavascriptInterface(nativeAsrBridge, "OctosNativeAsr");
 
         CookieManager cookieManager = CookieManager.getInstance();
         cookieManager.setAcceptCookie(true);
@@ -238,12 +246,31 @@ public final class MainActivity extends Activity {
             return;
         }
 
+        if (microphonePermissionPending) {
+            if (pendingWebPermission != null) pendingWebPermission.deny();
+            pendingWebPermission = request;
+            return;
+        }
+
         if (pendingWebPermission != null) pendingWebPermission.deny();
         pendingWebPermission = request;
         requestPermissions(
                 androidPermissions.toArray(new String[0]),
                 MEDIA_PERMISSION_REQUEST
         );
+    }
+
+    void requestMicrophonePermission() {
+        if (nativeAudioBridge.hasMicrophonePermission()) {
+            nativeAudioBridge.onMicrophonePermissionResult(true);
+        } else if (pendingWebPermission != null) {
+            // Android only accepts one runtime-permission dialog at a time.
+            microphonePermissionWaiting = true;
+        } else if (!microphonePermissionPending) {
+            microphonePermissionPending = true;
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO},
+                    MICROPHONE_PERMISSION_REQUEST);
+        }
     }
 
     private void grantTrustedResources(PermissionRequest request) {
@@ -270,10 +297,25 @@ public final class MainActivity extends Activity {
             @NonNull int[] grantResults
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode != MEDIA_PERMISSION_REQUEST || pendingWebPermission == null) return;
-        PermissionRequest request = pendingWebPermission;
-        pendingWebPermission = null;
-        grantTrustedResources(request);
+        if (requestCode == MICROPHONE_PERMISSION_REQUEST) {
+            microphonePermissionPending = false;
+            nativeAudioBridge.onMicrophonePermissionResult(
+                    nativeAudioBridge.hasMicrophonePermission());
+            PermissionRequest queued = pendingWebPermission;
+            pendingWebPermission = null;
+            if (queued != null) handleWebPermissionRequest(queued);
+            return;
+        }
+        if (requestCode != MEDIA_PERMISSION_REQUEST) return;
+        if (pendingWebPermission != null) {
+            PermissionRequest request = pendingWebPermission;
+            pendingWebPermission = null;
+            grantTrustedResources(request);
+        }
+        if (microphonePermissionWaiting) {
+            microphonePermissionWaiting = false;
+            requestMicrophonePermission();
+        }
     }
 
     private static boolean isTrustedHttps(Uri uri) {
@@ -296,11 +338,13 @@ public final class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         enterImmersiveMode();
+        vendorToolbar.hide();
         webView.onResume();
     }
 
     @Override
     protected void onPause() {
+        vendorToolbar.restore();
         webView.onPause();
         super.onPause();
     }
@@ -321,6 +365,7 @@ public final class MainActivity extends Activity {
     protected void onDestroy() {
         if (pendingWebPermission != null) pendingWebPermission.deny();
         if (nativeAudioBridge != null) nativeAudioBridge.release();
+        if (nativeAsrBridge != null) nativeAsrBridge.release();
         if (nativeTtsBridge != null) nativeTtsBridge.release();
         webView.stopLoading();
         webView.destroy();

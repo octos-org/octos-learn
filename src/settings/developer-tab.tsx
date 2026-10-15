@@ -1,47 +1,6 @@
 import { Activity, Bug, Layers, RotateCcw, Sparkles } from "lucide-react";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
-
-interface ToggleSwitchProps {
-  id: string;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: (next: boolean) => void;
-  label: string;
-  testId?: string;
-}
-
-function ToggleSwitch({
-  id,
-  checked,
-  disabled = false,
-  onChange,
-  label,
-  testId,
-}: ToggleSwitchProps) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      disabled={disabled}
-      data-testid={testId}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-        checked ? "bg-accent" : "bg-border-strong/60 dark:bg-border"
-      }`}
-    >
-      <span className="sr-only">{label}</span>
-      <span
-        aria-hidden="true"
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-          checked ? "translate-x-5" : "translate-x-0"
-        }`}
-      />
-    </button>
-  );
-}
+import { SettingsToggle as ToggleSwitch } from "./settings-toggle";
 
 export function DeveloperTab() {
   const {

@@ -305,7 +305,7 @@ describe("shared course launcher", () => {
     showLauncher("/");
 
     expect(await screen.findByRole("heading", { name: "最近白板" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "代数白板 继续学习" }));
+    fireEvent.click(screen.getByRole("link", { name: "代数白板 继续学习" }));
     expect(getLearningSession(session.id)?.status).toBe("active");
     fireEvent.click(screen.getByRole("button", { name: "退出" }));
     expect(auth.logout).toHaveBeenCalledTimes(1);
@@ -325,6 +325,6 @@ describe("shared course launcher", () => {
 
     showLauncher("/");
 
-    expect(await screen.findByRole("button", { name: "几何证明 继续学习" })).toBeTruthy();
+    expect(await screen.findByRole("link", { name: "几何证明 继续学习" })).toBeTruthy();
   });
 });

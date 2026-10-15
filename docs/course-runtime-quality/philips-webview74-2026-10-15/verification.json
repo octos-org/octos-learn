@@ -1,0 +1,1006 @@
+{
+  "date": "2026-10-15",
+  "baseRelease": "v0.1.5",
+  "branch": "codex/philips-webview74",
+  "package": "cc.pitun.learn.compat",
+  "versionName": "0.1.5-compat-webview74",
+  "debuggable": true,
+  "sha256": "f8aee88f56e7d1b177cfae9834acd1e9dd0c1b75c7aa749065c974abf9dd41e6",
+  "bytes": 107440001,
+  "buildInfo": {
+    "revision": "a72572d7547a495cdfa0eedd847202509e2f97ec",
+    "dirty": true,
+    "builtAt": "2026-10-15T03:32:24.285Z",
+    "embeddedSnapshot": "curated-e2e-closeout-2026-09-30",
+    "embeddedLockSha256": "d445b2a0d4af7be803174d45c6114a0ae78e23e8fc71be19fa1a6fe3b08b2efa"
+  },
+  "signerSha256": "c28b3138226040831df64dd108b48e0ddf43c1fb357000f78edc9d65b582ad7a",
+  "productionSignature": false,
+  "embeddedPacks": [
+    {
+      "packId": "linear-intro-and-slope",
+      "version": "0.1.1",
+      "sha256": "a8ef5819d3815f5ce807f68bb02f07f1d25ff5709ba3d20d3fb04d7c13922472"
+    },
+    {
+      "packId": "linear-simultaneous-intersections",
+      "version": "0.1.2",
+      "sha256": "8f05895e956e99c0878bde49b7a9e2d48d69361fdd9ad65f1c526e7a91403c3e"
+    },
+    {
+      "packId": "slope-and-intercept",
+      "version": "0.1.8",
+      "sha256": "e852bd217080b10fd6daab84e094e76fe5a3d9903540f914c60dc3ab7301c35b"
+    },
+    {
+      "packId": "surface-paraboloid-level-sets",
+      "version": "0.2.6",
+      "sha256": "3e7806e5506db793066f9ca8a74934cab986d50065f83ddf53b5edae83d593d4"
+    },
+    {
+      "packId": "surface-partial-derivative-slice",
+      "version": "0.2.8",
+      "sha256": "6f946b5bc600df75e57cabdd4b4d24bcb0d63721ddcd154e1dc526b0500adffd"
+    },
+    {
+      "packId": "surface-saddle-point-analysis",
+      "version": "0.2.8",
+      "sha256": "4b8de9d785f542f9e5ece0f4e4b13035ba6ddb768cea7e8edb80c63c24fee55d"
+    },
+    {
+      "packId": "trig-cosine-and-phase-shift",
+      "version": "0.1.4",
+      "sha256": "6fa55948301af53bc66a716f7ce5ee0b611c640938e5ee46c4301e22a9a62d28"
+    },
+    {
+      "packId": "trig-quadrants-and-monotonicity",
+      "version": "0.1.4",
+      "sha256": "8ce209e7905f561d530065c40aa47baee3f4b63f407be40b23dd24783232bcb3"
+    },
+    {
+      "packId": "trig-unit-circle-to-sine",
+      "version": "0.1.3",
+      "sha256": "2c06f174c0f4a9d0300733e7a87d6aa374bfaebdccc55c2fdfdd1b1dd3b7dc5a"
+    }
+  ],
+  "home": {
+    "url": "https://learn.pitun.cc/",
+    "ua": "Mozilla/5.0 (Linux; Android 8.0.0; 65BDL2051T/93 Build/OPR6.170623.013; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.157 Safari/537.36",
+    "viewport": {
+      "width": 1280,
+      "height": 720,
+      "dpr": 1.5
+    },
+    "apis": {
+      "hasOwn": "function",
+      "at": "function",
+      "structuredClone": "function",
+      "replaceChildren": "function"
+    },
+    "wrapper": {
+      "left": 157,
+      "width": 960
+    },
+    "spacing": {
+      "left": "16px",
+      "top": "8px"
+    },
+    "flexGap": "unsupported"
+  },
+  "scene3d": {
+    "url": "https://learn.pitun.cc/board?course-pack=surface-paraboloid-level-sets&course-version=0.2.6&course-mode=preview",
+    "nodes": 2,
+    "scene3d": true,
+    "sceneSvg": 1,
+    "text": "水平截线与等高线：以 z=x²+y² 为例\n开始互动学习\n研究曲面方法\n固定输出高度 z = h\n观察截面交线及其投影\n曲面 z=x²+y² 与截面 z=h\n等轴\n正视\n俯视\n复位\nx\ny\nz\n\n静态说明：函数曲面 z=x^2 + y^2 与可变截面。\n\n拖动画面旋转 · 滚动缩放\n截面高度 h\n1.00\n−\n+\n课程播放中",
+    "controls": [
+      {
+        "value": "1",
+        "min": "0",
+        "max": "4"
+      }
+    ],
+    "error": false
+  },
+  "scene3dControls": {
+    "before": "1",
+    "after": "1.02",
+    "sliceChanged": true,
+    "viewChanged": true,
+    "sceneRect": {
+      "left": 578.4000244140625,
+      "top": 258.6000061035156,
+      "width": 337.5999755859375,
+      "height": 241.60000610351562
+    },
+    "error": false
+  },
+  "checks": {
+    "unitTests": 1144,
+    "unitFiles": 120,
+    "browserRegressions": 12,
+    "eslintErrors": 0,
+    "eslintWarnings": 36,
+    "androidBuild": true,
+    "publicBuild": true,
+    "typecheck": true
+  },
+  "validationScope": [
+    "cold-start API and spacing checks",
+    "2D preview and slider SVG update",
+    "3D preview, slice slider and view button",
+    "nine embedded archive hashes"
+  ],
+  "nineCourseFullPlaybackVerified": false,
+  "followup": {
+    "fixed": [
+      "crypto.randomUUID for committed vector ink and persistence",
+      "WebView 74 grid-button centering",
+      "WebKit range track and thumb",
+      "Philips toolbar foreground hide and background restore"
+    ],
+    "boardBefore": {
+      "url": "https://learn.pitun.cc/board",
+      "uuid": "function",
+      "viewport": [
+        1280,
+        720,
+        1.5
+      ],
+      "inkPaths": 4,
+      "inkStatus": "加载完成\n以文本形式重绘\n开启声音探索\n全选\n4 项笔迹 · 已保存",
+      "alignment": [
+        {
+          "label": "浏览白板",
+          "display": "flex",
+          "rect": {
+            "x": 12,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 17,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "书写笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 41,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 46,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "擦除笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 70,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 75,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "框选多个笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 99,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 104,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "选择全部笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 128,
+            "y": 52,
+            "width": 33,
+            "height": 27
+          },
+          "icon": null,
+          "centerError": null
+        },
+        {
+          "label": "撤销笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 163,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 168,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "重做笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 192,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 197,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "和 Octos 说话",
+          "display": "flex",
+          "rect": {
+            "x": 1214,
+            "y": 610,
+            "width": 56,
+            "height": 56
+          },
+          "icon": {
+            "x": 1222.5,
+            "y": 616,
+            "width": 39,
+            "height": 39
+          },
+          "centerError": 0
+        },
+        {
+          "label": "发送问题",
+          "display": "flex",
+          "rect": {
+            "x": 867,
+            "y": 679,
+            "width": 29,
+            "height": 29
+          },
+          "icon": {
+            "x": 872.5,
+            "y": 684.5,
+            "width": 18,
+            "height": 18
+          },
+          "centerError": 0
+        }
+      ],
+      "ranges": [],
+      "errors": []
+    },
+    "boardAfter": {
+      "url": "https://learn.pitun.cc/board",
+      "uuid": "function",
+      "viewport": [
+        1280,
+        720,
+        1.5
+      ],
+      "inkPaths": 6,
+      "inkStatus": "已添加 笔画.\n以文本形式重绘\n开启声音探索\n全选\n6 项笔迹 · 保存中",
+      "alignment": [
+        {
+          "label": "浏览白板",
+          "display": "flex",
+          "rect": {
+            "x": 12,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 17,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "书写笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 41,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 46,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "擦除笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 70,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 75,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "框选多个笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 99,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 104,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "显示调色板",
+          "display": "flex",
+          "rect": {
+            "x": 128,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 133,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "选择全部笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 157,
+            "y": 52,
+            "width": 33,
+            "height": 27
+          },
+          "icon": null,
+          "centerError": null
+        },
+        {
+          "label": "撤销笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 192,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 197,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "重做笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 221,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 226,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "和 Octos 说话",
+          "display": "flex",
+          "rect": {
+            "x": 1214,
+            "y": 610,
+            "width": 56,
+            "height": 56
+          },
+          "icon": {
+            "x": 1222.5,
+            "y": 616,
+            "width": 39,
+            "height": 39
+          },
+          "centerError": 0
+        },
+        {
+          "label": "发送问题",
+          "display": "flex",
+          "rect": {
+            "x": 867,
+            "y": 679,
+            "width": 29,
+            "height": 29
+          },
+          "icon": {
+            "x": 872.5,
+            "y": 684.5,
+            "width": 18,
+            "height": 18
+          },
+          "centerError": 0
+        }
+      ],
+      "ranges": [],
+      "errors": []
+    },
+    "boardRestored": {
+      "url": "https://learn.pitun.cc/board",
+      "uuid": "function",
+      "viewport": [
+        1280,
+        720,
+        1.5
+      ],
+      "inkPaths": 6,
+      "inkStatus": "加载完成\n以文本形式重绘\n开启声音探索\n全选\n6 项笔迹 · 已保存",
+      "alignment": [
+        {
+          "label": "浏览白板",
+          "display": "flex",
+          "rect": {
+            "x": 12,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 17,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "书写笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 41,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 46,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "擦除笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 70,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 75,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "框选多个笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 99,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 104,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "选择全部笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 128,
+            "y": 52,
+            "width": 33,
+            "height": 27
+          },
+          "icon": null,
+          "centerError": null
+        },
+        {
+          "label": "撤销笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 163,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 168,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "重做笔迹",
+          "display": "flex",
+          "rect": {
+            "x": 192,
+            "y": 52,
+            "width": 27,
+            "height": 27
+          },
+          "icon": {
+            "x": 197,
+            "y": 57,
+            "width": 17,
+            "height": 17
+          },
+          "centerError": 0
+        },
+        {
+          "label": "和 Octos 说话",
+          "display": "flex",
+          "rect": {
+            "x": 1214,
+            "y": 610,
+            "width": 56,
+            "height": 56
+          },
+          "icon": {
+            "x": 1222.5,
+            "y": 616,
+            "width": 39,
+            "height": 39
+          },
+          "centerError": 0
+        },
+        {
+          "label": "发送问题",
+          "display": "flex",
+          "rect": {
+            "x": 867,
+            "y": 679,
+            "width": 29,
+            "height": 29
+          },
+          "icon": {
+            "x": 872.5,
+            "y": 684.5,
+            "width": 18,
+            "height": 18
+          },
+          "centerError": 0
+        }
+      ],
+      "ranges": [],
+      "errors": []
+    },
+    "course": {
+      "url": "https://learn.pitun.cc/board?course-pack=surface-paraboloid-level-sets&course-version=0.2.6&course-mode=preview",
+      "uuid": "function",
+      "viewport": [
+        1280,
+        720,
+        1.5
+      ],
+      "inkPaths": 0,
+      "inkStatus": "",
+      "alignment": [
+        {
+          "label": "课程预览",
+          "display": "flex",
+          "rect": {
+            "x": 1214,
+            "y": 610,
+            "width": 56,
+            "height": 56
+          },
+          "icon": {
+            "x": 1222.3359375,
+            "y": 615.06201171875,
+            "width": 39.328125,
+            "height": 39.328086853027344
+          },
+          "centerError": 0
+        },
+        {
+          "label": "打开本课目录",
+          "display": "flex",
+          "rect": {
+            "x": 1229,
+            "y": 570,
+            "width": 34,
+            "height": 34
+          },
+          "icon": {
+            "x": 1238.5,
+            "y": 579.5,
+            "width": 15,
+            "height": 15
+          },
+          "centerError": 0
+        }
+      ],
+      "ranges": [
+        {
+          "appearance": "none",
+          "height": "24px",
+          "value": "1"
+        }
+      ],
+      "errors": []
+    },
+    "courseControls": {
+      "before": "1",
+      "after": "1.02",
+      "sliceChanged": true,
+      "viewChanged": true,
+      "sceneRect": {
+        "left": 578.4000244140625,
+        "top": 258.6000061035156,
+        "width": 337.5999755859375,
+        "height": 241.60000610351562
+      },
+      "error": false
+    },
+    "vendorToolbar": {
+      "backgroundVisible": true,
+      "foregroundWindowAbsent": true,
+      "service": "com.tpv.xm.wb/.services.toolbar.ToolBarService",
+      "hideAction": "com.tpv.toolbarservice.ToolBarService.HideBottomToolBar",
+      "showAction": "com.tpv.toolbarservice.ToolBarService.ShowBottomToolBar"
+    },
+    "display": {
+      "reportedPanel": "4K*2K",
+      "systemResolutionProperty": "1080",
+      "systemDisplay4k2k": false,
+      "wmSize": "1920x1080",
+      "wmDensity": 240,
+      "systemDisplaySettingsChanged": false,
+      "inkIdleRatio": 1.5,
+      "inkInteractionRatio": 1.5
+    },
+    "checks": {
+      "targetedUnitTests": 16,
+      "browserRegressions": 10,
+      "typecheck": true,
+      "androidBuild": true,
+      "changedTypeScriptLint": true
+    },
+    "inkInputValidation": "ADB touchscreen swipe with pen tool selected; lift, save and page reload verified; human stylus feel not assessed"
+  },
+  "spacingFollowup": {
+    "measurements": {
+      "url": "https://learn.pitun.cc/board?session=learn-1792027013549-lctz0c",
+      "flexGap": "unsupported",
+      "gaps": [
+        [
+          {
+            "left": "播放 OLL 课程",
+            "right": "下一 OLL Beat",
+            "screenGap": 4,
+            "margin": "4px"
+          },
+          {
+            "left": "下一 OLL Beat",
+            "right": "重新播放 OLL 课程",
+            "screenGap": 4,
+            "margin": "4px"
+          },
+          {
+            "left": "重新播放 OLL 课程",
+            "right": "关闭课程旁白语音",
+            "screenGap": 4,
+            "margin": "4px"
+          }
+        ],
+        [
+          {
+            "left": "启用语音",
+            "right": "启用摄像头",
+            "screenGap": 4,
+            "margin": "4px"
+          }
+        ],
+        [
+          {
+            "left": "探索",
+            "right": "大图",
+            "screenGap": 3.450967788696289,
+            "margin": "5px"
+          }
+        ],
+        [
+          {
+            "left": "探索",
+            "right": "大图",
+            "screenGap": 3.450946807861328,
+            "margin": "5px"
+          }
+        ]
+      ],
+      "feedback": {
+        "icon": {
+          "x": 672.7807006835938,
+          "y": 527.39013671875,
+          "width": 11.733317375183105,
+          "height": 11.733317375183105
+        },
+        "text": {
+          "x": 689.3453979492188,
+          "y": 527.96533203125,
+          "width": 145.0775604248047,
+          "height": 10.582967758178711
+        },
+        "centerError": 2.0503997802734375e-05,
+        "gap": 4.8313798904418945
+      },
+      "focus": {
+        "pointer": "rgb(13, 112, 130) none 0px",
+        "keyboard": "rgb(22, 131, 152) solid 2px",
+        "afterPointer": "rgb(13, 112, 130) none 0px"
+      }
+    },
+    "interaction": {
+      "threeButtonGaps": [
+        3.451007843017578,
+        3.450946807861328
+      ],
+      "hiddenRestorePreserved": true,
+      "largeGraphOpened": true,
+      "largeGraphClosed": true,
+      "focusedOutline": "rgb(33, 76, 72) none 0px",
+      "focusModality": "pointer",
+      "inlineStyleInjections": 0
+    },
+    "checks": {
+      "targetedUnitTests": 7,
+      "changedTypeScriptLint": true,
+      "androidBuild": true,
+      "typecheck": true
+    },
+    "courseSessionRetained": true,
+    "savedInkComponentsRetained": 9,
+    "validation": "Final APK installed and cold-started; no stylesheet injection in final process; current sine lesson restored"
+  },
+  "mediaFollowup": {
+    "device": "UGREEN Camera 2K",
+    "usbVendorId": 3141,
+    "usbProductId": 25455,
+    "camera": {
+      "camera": [
+        {
+          "w": 1920,
+          "h": 1080,
+          "ready": 4,
+          "paused": false,
+          "tracks": [
+            {
+              "label": "camera 0, facing back",
+              "state": "live"
+            }
+          ]
+        }
+      ],
+      "buttons": [
+        {
+          "label": "启用语音",
+          "active": "false"
+        },
+        {
+          "label": "关闭摄像头",
+          "active": "true"
+        }
+      ],
+      "inputs": {
+        "recordAudioPermission": true,
+        "inputs": [
+          {
+            "id": 13,
+            "type": "usb-device",
+            "product": "USB-Audio - UGREEN Camera 2K",
+            "source": true
+          },
+          {
+            "id": 3,
+            "type": "builtin-mic",
+            "product": "65BDL2051T/93",
+            "source": true
+          }
+        ],
+        "nativeCapture": true,
+        "capturing": false,
+        "nativePrivateAsr": true,
+        "privateAsrJoined": false,
+        "privateAsrListening": false,
+        "privateAsrFramesPushed": 0
+      }
+    },
+    "microphone": {
+      "permissionEvents": [
+        {
+          "granted": true
+        }
+      ],
+      "start": {
+        "ok": true,
+        "nativeCapture": true,
+        "sampleRate": 16000,
+        "device": "USB-Audio - UGREEN Camera 2K"
+      },
+      "chunks": 21,
+      "samples": 26880,
+      "rms": 459.8436755598374,
+      "peak": 11510,
+      "devices": {
+        "recordAudioPermission": true,
+        "inputs": [
+          {
+            "id": 13,
+            "type": "usb-device",
+            "product": "USB-Audio - UGREEN Camera 2K",
+            "source": true
+          },
+          {
+            "id": 3,
+            "type": "builtin-mic",
+            "product": "65BDL2051T/93",
+            "source": true
+          }
+        ],
+        "nativeCapture": true,
+        "capturing": true,
+        "nativePrivateAsr": true,
+        "privateAsrJoined": false,
+        "privateAsrListening": false,
+        "privateAsrFramesPushed": 0
+      }
+    },
+    "microphonePermissionGrantedVia": "Android system permission dialog Allow button, not adb pm grant",
+    "testAudioSaved": false,
+    "testAudioUploaded": false,
+    "speechRecognitionEndToEndVerified": false,
+    "speechRecognitionApproval": "Automatic approval review rejected live audio transmission test; explicit user approval requested",
+    "checks": {
+      "targetedUnitTests": 146,
+      "unitFiles": 7,
+      "typecheck": true,
+      "changedTypeScriptLint": true,
+      "androidBuild": true,
+      "stopDuringPermissionRegression": true
+    }
+  },
+  "voiceReadinessDiagnosis": {
+    "asrMode": "private",
+    "asrReady": false,
+    "asrCheckHttpStatus": 503,
+    "controlPlaneAlive": true,
+    "bridgeOnline": false,
+    "activeSessions": 0,
+    "rtcProvider": "livekit",
+    "llmReady": true,
+    "hostedTtsAvailable": true,
+    "devicePermissionGranted": true,
+    "microphoneCaptureRunning": false,
+    "arkAsrImplementationLocated": false,
+    "productionRouteModified": false,
+    "newAudioCollected": false,
+    "remoteBranchInspectionBlocked": "Automatic approval review usage limit; not executed"
+  },
+  "cloudAsr": {
+    "route": "Android native -> Volcengine flash ASR",
+    "endpoint": "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash",
+    "resourceId": "volc.bigasr.auc_turbo",
+    "credentialSource": "Existing NativeTtsBridge encrypted server-delivered configuration",
+    "dependsOnMac": false,
+    "dependsOnRtcBridge": false,
+    "ambientAudioCapturedByAgent": false,
+    "syntheticAudio": {
+      "source": "macOS Tingting TTS",
+      "durationSeconds": 4.9161875,
+      "expected": "请解释一下，为什么三角形的内角和是一百八十度。",
+      "transcript": "请解释一下为什么三角形的内角和是180度？",
+      "elapsedMs": 1000,
+      "status": "speech",
+      "finalInstalledApkResult": {
+        "requestId": "asr-synthetic-check-1792034658424",
+        "status": "speech",
+        "transcript": "请解释一下为什么三角形的内角和是180度？",
+        "elapsedMs": 1058
+      },
+      "finalInstalledApkSha256": "e7df30b0a35df9d44e063824f301c23f5e68e4e89e27908df9430901afbeda51"
+    },
+    "tests": {
+      "fullSuite": {
+        "files": 121,
+        "passed": 1163
+      },
+      "finalFocusedSuite": {
+        "files": 4,
+        "passed": 89
+      },
+      "typescript": "passed",
+      "apkBuild": "passed",
+      "eslintErrors": 0
+    },
+    "limits": "Live learner speech / subsequent lesson generation still needs user confirmation; synthetic ASR call did not submit a question."
+  },
+  "cardsAndToggles": {
+    "deviceEvidence": "cards-toggles-verification.json",
+    "testsPassed": 31,
+    "typescript": "passed",
+    "lintErrors": 0,
+    "apkBuild": "passed",
+    "api26SignatureVerification": "passed"
+  }
+}
