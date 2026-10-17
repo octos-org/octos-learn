@@ -45,8 +45,22 @@ ASR 云端使用火山语音 `volc.bigasr.auc_turbo`，不是 Ark LLM 接口。�
 
 ## 验证与边界
 
-本轮仅开发与本地模拟验证，未修改公网服务、VPS 配置、正式 APK 或大屏安装，没有录制或发送现场音频。私有 LiveKit 实机播放和真实云端资源权限需要在部署环境做集成验收；不要把模拟测试当作生产已恢复。
+2026-10-17 开发阶段只做本地模拟验证；2026-10-18 公网部署与真实云端验收见下节。私有 LiveKit worker 当前离线，实机播放、进行中故障降级和恢复仍未在生产环境验收。没有录制或发送现场音频。
 
 验证记录见 [verification.json](unified-voice-fallback-2026-10-17.json)。当前机器此前临时 Android SDK/JDK 已清理，本轮只构建 APK 内嵌网页资源，不宣称原生 APK 编译或设备验收通过。
 
 参考：[火山语音录音文件极速版 API](https://www.volcengine.com/docs/6561/1631584?lang=zh)。
+
+## 2026-10-18 公网部署
+
+已将 `8d0f5deb41721f04225dbe03882c46c8ff00eaa1` 发布到 `https://learn.pitun.cc`。网页使用 `scripts/deploy-public-web.sh` 完整镜像发布，60 项公网资源检查通过；网页与语音服务共 161 个文件的 SHA-256 与构建清单完全一致。浏览器实际打开首页，启动正常、没有脚本异常。Octos 后端二进制仍为 `2.0.3-rc.13+d6905a9`，没有更新技能或课程包。
+
+服务器 hosted-TTS 环境已启用 `HOSTED_ASR_ENABLED=1`，沿用现有 TTS 凭据；其他既有 TTS 设置保持一致，包括原生凭据分发开关。平台 ASR 每天 3600 秒、每用户每天 600 秒。新路由仅为 `/api/learn/asr/batch/` → 50081；原 50082 的流式状态、会话、WebSocket 和服务保持原样。
+
+通过真实公网 HTTPS 接口验证：未登录拒绝、无效 WAV 拒绝、云端 ASR 可用；合成中文音频正确识别“三角形内角和为什么是180度”，云端 TTS 返回 41280 字节 MP3，原生 TTS 配置仍启用。当前私有 bridge 离线，新网页会使用云端后备；没有执行真实浏览器麦克风录音测试，也没有构建或安装 APK。
+
+发布前已短暂停止 Octos 与 hosted-TTS，以加密方式备份持久化数据和敏感配置；全部四项服务已恢复。备份目录 `/opt/octos-learn/backups/unified-voice-20261018T0020Z` 同时保留原网页、语音服务代码和 Nginx 配置。目录名是发布标签，实际验收时间见 JSON。加密备份已确认可解密，密钥仅留在服务器 `/etc/octos-learn/backup-keys/`，未复制到本机或 git。
+
+备份对照中 1560 个持久化文件有 1547 个字节一致，13 个由运行时维护的记忆数据库、目录、UI 日志和审计文件在重启期间变化。没有恢复或覆盖用户数据。回滚应恢复备份中的网页、hosted-TTS 源码和 Nginx，并仅从加密归档恢复旧 hosted-TTS 环境文件，然后重启语音服务、校验并 reload Nginx；不要还原整个用户数据目录。
+
+完整结果见 [公网部署验收](public-voice-deployment-2026-10-18.json)。

@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-18",
+  "timezone": "Asia/Shanghai",
+  "publicUrl": "https://learn.pitun.cc",
+  "branch": "codex/unified-voice-fallback",
+  "deployedCommit": "8d0f5deb41721f04225dbe03882c46c8ff00eaa1",
+  "backendVersionUnchanged": "2.0.3-rc.13+d6905a9",
+  "publicWebDeployed": true,
+  "voiceSidecarDeployed": true,
+  "cloudAsrEnabled": true,
+  "asrRoutePrefix": "/api/learn/asr/batch/",
+  "legacyStreamingAsrPreserved": true,
+  "legacyStreamingPort": 50082,
+  "newVoiceSidecarPort": 50081,
+  "backup": {
+    "directory": "/opt/octos-learn/backups/unified-voice-20261018T0020Z",
+    "persistentDataAndSecretsEncrypted": true,
+    "encryptedBackupReadable": true,
+    "sha256": "343ac99c4b90fa8b894e9f6d1e27e91f0c85553dc3d36eb518f868923d953ce2"
+  },
+  "verification": {
+    "server": {
+      "verifiedAt": "2026-10-17T16:21:56.315Z",
+      "checks": {
+        "anonymousAsrRejected": true,
+        "/api/learn/asr/batch/status available": true,
+        "/api/learn/tts/status available": true,
+        "legacyStreamingStatusPreserved": true,
+        "voiceReadinessResponds": true,
+        "invalidAudioRejected": true,
+        "syntheticSpeechRecognized": true,
+        "cloudTtsSynthesized": true,
+        "nativeTtsConfigurationStillEnabled": true
+      },
+      "liveMicrophoneCaptured": false,
+      "/api/learn/asr/batch/status": {
+        "available": true,
+        "configured": true,
+        "detail": "云端 ASR 已配置。"
+      },
+      "/api/learn/tts/status": {
+        "configured": true,
+        "available": true,
+        "uses_platform": false,
+        "month": "2026-10",
+        "limits": {
+          "enabled": true,
+          "platform_monthly_chars": 100000,
+          "user_monthly_chars": 10000
+        },
+        "user_used_chars": 0,
+        "platform_used_chars": 3050,
+        "can_manage": true
+      },
+      "legacyStreaming": {
+        "enabled": true,
+        "provider": "volcano",
+        "fallback": "private"
+      },
+      "privateAsr": {
+        "ready": false,
+        "mode": "private"
+      },
+      "syntheticTranscript": "请解释三角形内角和为什么是180度。",
+      "cloudTts": {
+        "http": 200,
+        "bytes": 41280,
+        "contentType": "audio/mpeg"
+      },
+      "nativeTts": {
+        "http": 200,
+        "enabled": true
+      }
+    },
+    "browser": {
+      "checkedAt": "2026-10-17T16:26:31.671Z",
+      "http": 200,
+      "title": "Octos Learn",
+      "booted": true,
+      "pageErrors": [],
+      "entryScript": "/assets/index-DWW-gY7T.js"
+    },
+    "artifactFilesChecked": 161,
+    "artifactMismatches": [],
+    "publicAssetsReachable": 60,
+    "existingTtsConfigurationPreserved": true,
+    "allFourServicesActive": true,
+    "persistentFilesCompared": 1560,
+    "unchangedPersistentFiles": 1547,
+    "runtimeManagedFilesChanged": 13,
+    "runtimeChangeKinds": [
+      "memory databases and refresh state",
+      "model catalog",
+      "UI protocol ledgers",
+      "admin audit and fleet databases"
+    ]
+  },
+  "validation": {
+    "serverTestsPassed": 42,
+    "targetedFrontendTestsPassed": 20,
+    "typescriptBuild": "passed",
+    "publicProductionBuild": "passed",
+    "priorFullFrontendSuite": {
+      "commit": "5ce1fab9d667d94d8ee88a6db0ea05992f2fdf46",
+      "passed": 1182
+    }
+  },
+  "limits": {
+    "platformAsrSecondsPerDay": 3600,
+    "perUserAsrSecondsPerDay": 600
+  },
+  "notVerified": [
+    "Private LiveKit worker was offline; production private playback and recovery remain unverified",
+    "Browser microphone interaction not exercised; real HTTPS ASR tested with synthetic audio",
+    "APK was not rebuilt or installed"
+  ],
+  "liveMicrophoneCaptured": false
+}
