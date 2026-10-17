@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { synthesizeSpeech } from "@/api/voice";
+import { synthesizeSpeech, synthesizeCloudSpeech } from "@/api/voice";
+import { getVoiceRouting, markPrivateTtsFailed, peekVoiceRouting } from "@/api/voice-routing";
+import { playPrivateSpeech } from "@/home/voice/private-tts";
 import {
   playAudioBlob,
   stopAudio,
@@ -132,8 +134,7 @@ export function useOllNarrationTts({
       setStartedKey(null);
     });
     const usePackagedAudio = Boolean(resolveAudio && narrationId);
-    const useNativeTts = !usePackagedAudio && nativeTtsAvailable();
-    const cached = !usePackagedAudio && !useNativeTts
+    const cached = !usePackagedAudio
       && currentKey && prefetchedSpeechRef.current?.key === currentKey
       ? prefetchedSpeechRef.current
       : null;
@@ -154,10 +155,41 @@ export function useOllNarrationTts({
       callbacksRef.current.onSpeakingChange?.(false);
       completePlayback();
     };
-    const playFallbackTts = () =>
+    const playCloudTts = (useCache = true) =>
       nativeTtsAvailable()
         ? playNativeTts(normalizedText, finishAudio, audioRequest.signal)
-        : (cached?.promise ?? synthesizeSpeech(
+          .catch((error) => {
+            if (audioRequest.signal.aborted) throw error;
+            return synthesizeCloudSpeech(normalizedText, audioRequest.signal)
+              .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
+          })
+        : (useCache && cached ? cached.promise : synthesizeCloudSpeech(normalizedText, audioRequest.signal))
+          .then(audio => audio ?? synthesizeCloudSpeech(normalizedText, audioRequest.signal))
+          .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
+    const playFallbackTts = async () => {
+      const routing = await getVoiceRouting();
+      if (!current || audioRequest.signal.aborted) return false;
+      if (routing.tts === "private") {
+        const fallback = () => {
+          markPrivateTtsFailed();
+          return playCloudTts(false);
+        };
+        try {
+          return await playPrivateSpeech(normalizedText, finishAudio, audioRequest.signal, () => {
+            if (!current || audioRequest.signal.aborted) return;
+            void fallback().catch(() => {
+              if (!current) return;
+              setFailure("课程语音暂时不可用，旁白仍会显示。");
+              finishAudio();
+            });
+          });
+        } catch (error) {
+          if (audioRequest.signal.aborted) throw error;
+          return fallback();
+        }
+      }
+      if (routing.tts === "cloud") return playCloudTts();
+      return (cached?.promise ?? synthesizeSpeech(
             normalizedText,
             audioRequest.signal,
           ).then((audio) => audio as Blob | null))
@@ -169,6 +201,7 @@ export function useOllNarrationTts({
             finishAudio,
             audioRequest.signal,
           ));
+    };
     const playback = packagedAudio
       ? packagedAudio.then((audio) => {
           if (!audio) {
@@ -178,28 +211,7 @@ export function useOllNarrationTts({
             ? playNativeAudioBlob(audio, finishAudio, audioRequest.signal)
             : playAudioBlob(audio, finishAudio, audioRequest.signal);
         })
-      : useNativeTts
-      ? playNativeTts(normalizedText, () => {
-          if (!current) return;
-          callbacksRef.current.onSpeakingChange?.(false);
-          completePlayback();
-        }, audioRequest.signal)
-      : (cached?.promise ?? synthesizeSpeech(
-          normalizedText,
-          audioRequest.signal,
-        ).then((audio) => audio as Blob | null))
-        .then((audio) =>
-          audio ?? synthesizeSpeech(normalizedText, audioRequest.signal)
-        )
-        .then((audio) => playAudioBlob(
-          audio,
-          () => {
-            if (!current) return;
-            callbacksRef.current.onSpeakingChange?.(false);
-            completePlayback();
-          },
-          audioRequest.signal,
-        ));
+      : playFallbackTts();
 
     void playback
       .then((started) => {
@@ -275,7 +287,7 @@ export function useOllNarrationTts({
     // Do not immediately recreate the same request while audio startup is
     // still pending (and before `startedKey` can be published).
     if (playing && candidateKey === currentKey) return;
-    if (nativeTtsAvailable()) {
+    if (peekVoiceRouting()?.tts === "cloud" && nativeTtsAvailable()) {
       if (nativeExisting?.key === candidateKey) return;
       nativeExisting?.cancel();
       const controller = new AbortController();
@@ -302,7 +314,13 @@ export function useOllNarrationTts({
       key: candidateKey,
       controller,
       claimed: false,
-      promise: synthesizeSpeech(candidateText, controller.signal)
+      promise: getVoiceRouting().then(routing => {
+        if (controller.signal.aborted || routing.tts === "private"
+          || (routing.tts === "cloud" && nativeTtsAvailable())) return null;
+        return routing.tts === "cloud"
+          ? synthesizeCloudSpeech(candidateText, controller.signal)
+          : synthesizeSpeech(candidateText, controller.signal);
+      })
         .then((audio) => audio)
         .catch(() => null),
     };

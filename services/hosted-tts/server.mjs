@@ -4,18 +4,13 @@ import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { PersistentAudioCache, synthesisCacheKey } from "./audio-cache.mjs";
+import { HttpError } from "./http-error.mjs";
+import { asrConfigured, loadAsrConfig, readAsrAudio, transcribeAsr } from "./asr.mjs";
+export { HttpError } from "./http-error.mjs";
 
 const JSON_TYPE = "application/json; charset=utf-8";
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_TEXT_CHARS = 5_000;
-
-export class HttpError extends Error {
-  constructor(status, message, retryAfter = undefined) {
-    super(message);
-    this.status = status;
-    this.retryAfter = retryAfter;
-  }
-}
 
 export function loadConfig(env = process.env) {
   const endpoint = env.VOLC_TTS_ENDPOINT?.trim()
@@ -50,6 +45,7 @@ export function loadConfig(env = process.env) {
     queueWaitMs: parseInteger(env.HOSTED_TTS_QUEUE_WAIT_MS, 3_000, 0, 60_000),
     requestsPerMinute: parseInteger(env.HOSTED_TTS_REQUESTS_PER_MINUTE, 60, 1, 10_000),
     typesafeApiKey: env.TYPESAFE_API_KEY?.trim() || "",
+    asr: loadAsrConfig(env),
   };
 }
 
@@ -86,6 +82,10 @@ export class UsageLedger {
       CREATE TABLE IF NOT EXISTS dispatch (
         minute INTEGER PRIMARY KEY,
         requests INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS asr_usage (
+        day TEXT NOT NULL, user TEXT NOT NULL, seconds INTEGER NOT NULL,
+        PRIMARY KEY(day,user)
       );
     `);
   }
@@ -157,6 +157,29 @@ export class UsageLedger {
 
   close() {
     this.db.close();
+  }
+
+  asrUsage(user) {
+    const day = this.now().toISOString().slice(0, 10);
+    const row = this.db.prepare(`SELECT COALESCE(SUM(seconds),0) AS total,
+      COALESCE(SUM(CASE WHEN user=? THEN seconds ELSE 0 END),0) AS user
+      FROM asr_usage WHERE day=?`).get(user, day);
+    return { total: Number(row.total), user: Number(row.user) };
+  }
+
+  reserveAsr(user, seconds, config) {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const used = this.asrUsage(user);
+      const charge = Math.max(1, Math.ceil(seconds));
+      if (used.total + charge > config.dailySeconds || used.user + charge > config.userDailySeconds) {
+        throw new HttpError(429, "今日语音识别额度已用完，你可以继续打字。", 60);
+      }
+      this.db.prepare(`INSERT INTO asr_usage VALUES(?,?,?)
+        ON CONFLICT(day,user) DO UPDATE SET seconds=seconds+excluded.seconds`)
+        .run(this.now().toISOString().slice(0, 10), user, charge);
+      this.db.exec("COMMIT");
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
 }
 
@@ -328,6 +351,7 @@ export function createHandler({
   audioCache = null,
 }) {
   const gate = new ConcurrencyGate(config.maxConcurrent, config.queueWaitMs);
+  const asrGate = new ConcurrencyGate(2, 1000);
   const inFlightSynthesis = new Map();
 
   async function cachedSynthesis(key, produce) {
@@ -375,6 +399,33 @@ export function createHandler({
       if (request.method === "GET" && url.pathname === "/health") {
         return sendJson(response, 200, { ok: true, configured: Boolean(config.appid && config.token) });
       }
+      if (url.pathname.startsWith("/api/learn/asr/")) {
+        const me = await fetchAuthenticatedUser(request, config, fetchImpl);
+        const configured = asrConfigured(config.asr);
+        const used = ledger.asrUsage(me.user.id);
+        const available = configured && used.total < config.asr.dailySeconds && used.user < config.asr.userDailySeconds;
+        if (request.method === "GET" && url.pathname === "/api/learn/asr/status") {
+          return sendJson(response, 200, {
+            available, configured,
+            detail: !configured ? "云端 ASR 尚未启用或配置。"
+              : !available ? "今日语音识别额度已用完。" : "云端 ASR 已配置。",
+          }, { "cache-control": "no-store" });
+        }
+        if (request.method !== "POST" || url.pathname !== "/api/learn/asr/transcribe") throw new HttpError(404, "not found");
+        if (!configured) throw new HttpError(503, "云端 ASR 尚未启用或配置。");
+        const audio = await readAsrAudio(request);
+        const release = await asrGate.acquire();
+        const controller = new AbortController();
+        const abort = () => controller.abort();
+        response.once("close", abort);
+        try {
+          if (response.destroyed) throw new HttpError(499, "request cancelled");
+          ledger.reserveAsr(me.user.id, audio.seconds, config.asr);
+          return sendJson(response, 200, await transcribeAsr(audio, config.asr, fetchImpl, controller.signal), {
+            "cache-control": "no-store",
+          });
+        } finally { response.off("close", abort); release(); }
+      }
       if ((request.method === "POST" || request.method === "GET") && url.pathname === "/api/systemone/grant") {
         await fetchAuthenticatedUser(request, config, fetchImpl);
         const apiKey = config.typesafeApiKey || "";
@@ -417,7 +468,7 @@ export function createHandler({
       if (!url.pathname.startsWith("/api/learn/tts/")) throw new HttpError(404, "not found");
       const me = await fetchAuthenticatedUser(request, config, fetchImpl);
       const profileId = me.user.id;
-      const usesPlatform = inheritsPlatform(me.profile);
+      const usesPlatform = url.pathname === "/api/learn/tts/cloud-synthesize" || inheritsPlatform(me.profile);
 
       if (request.method === "GET" && url.pathname === "/api/learn/tts/status") {
         const limits = ledger.limits();
@@ -496,7 +547,7 @@ export function createHandler({
         return sendJson(response, 200, ledger.setLimits(await readJson(request)));
       }
 
-      if (request.method === "POST" && url.pathname === "/api/learn/tts/synthesize") {
+      if (request.method === "POST" && ["/api/learn/tts/synthesize", "/api/learn/tts/cloud-synthesize"].includes(url.pathname)) {
         const body = await readJson(request);
         const { text, length } = parseText(body.text);
         const cacheKey = synthesisCacheKey({

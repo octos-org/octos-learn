@@ -5,13 +5,23 @@ import { configureNativeTts } from "@/home/voice/native-tts";
 
 const mocks = vi.hoisted(() => ({
   synthesizeSpeech: vi.fn(),
+  route: "backend",
+  playPrivateSpeech: vi.fn(),
+  markPrivateTtsFailed: vi.fn(),
   playAudioBlob: vi.fn(),
   stopAudio: vi.fn(),
 }));
 
 vi.mock("@/api/voice", () => ({
   synthesizeSpeech: mocks.synthesizeSpeech,
+  synthesizeCloudSpeech: mocks.synthesizeSpeech,
 }));
+vi.mock("@/api/voice-routing", () => ({
+  getVoiceRouting: vi.fn(async () => ({ tts: mocks.route })),
+  peekVoiceRouting: vi.fn(() => ({ tts: mocks.route })),
+  markPrivateTtsFailed: mocks.markPrivateTtsFailed,
+}));
+vi.mock("@/home/voice/private-tts", () => ({ playPrivateSpeech: mocks.playPrivateSpeech }));
 vi.mock("@/home/voice/audio-playback", () => ({
   playAudioBlob: mocks.playAudioBlob,
   stopAudio: mocks.stopAudio,
@@ -19,6 +29,9 @@ vi.mock("@/home/voice/audio-playback", () => ({
 
 describe("useOllNarrationTts", () => {
   beforeEach(() => {
+    mocks.route = "backend";
+    mocks.playPrivateSpeech.mockReset();
+    mocks.markPrivateTtsFailed.mockReset();
     mocks.synthesizeSpeech.mockReset();
     mocks.playAudioBlob.mockReset();
     mocks.stopAudio.mockReset();
@@ -31,6 +44,30 @@ describe("useOllNarrationTts", () => {
   afterEach(() => {
     delete window.OctosNativeTts;
     vi.restoreAllMocks();
+  });
+
+  it("prefers receive-only private TTS over cloud and native synthesis", async () => {
+    mocks.route = "private"; mocks.playPrivateSpeech.mockResolvedValue(true);
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "私有旁白", narrationId: "private-1" }));
+    await waitFor(() => expect(mocks.playPrivateSpeech).toHaveBeenCalledOnce());
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+  });
+
+  it("falls back to cloud when private TTS fails before playback", async () => {
+    mocks.route = "private"; mocks.playPrivateSpeech.mockRejectedValue(new Error("bridge offline"));
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "降级旁白", narrationId: "fallback-1" }));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(mocks.markPrivateTtsFailed).toHaveBeenCalledOnce();
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+  });
+
+  it("falls back on a private TTS error after playback has started", async () => {
+    mocks.route = "private"; mocks.playPrivateSpeech.mockResolvedValue(true);
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "播放中断", narrationId: "fallback-2" }));
+    await waitFor(() => expect(mocks.playPrivateSpeech).toHaveBeenCalledOnce());
+    act(() => mocks.playPrivateSpeech.mock.calls[0][3](new Error("disconnected")));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
   });
 
   it("OLL-TCH-002 uses the profile-backed speech synthesis path", async () => {
@@ -72,6 +109,7 @@ describe("useOllNarrationTts", () => {
   it("continues narration through server synthesis after native credentials are disabled", async () => {
     let configured = true;
     const nativePlay = vi.fn();
+    mocks.route = "cloud";
     window.OctosNativeTts = {
       configure: (raw) => {
         configured = JSON.parse(raw).enabled;
@@ -82,6 +120,7 @@ describe("useOllNarrationTts", () => {
       stop: vi.fn(),
     };
     expect(configureNativeTts({ version: 1, enabled: false })).toBe(true);
+    mocks.route = "backend";
     const onPlaybackComplete = vi.fn();
     renderHook(() => useOllNarrationTts({
       enabled: true,
@@ -103,6 +142,7 @@ describe("useOllNarrationTts", () => {
     const audio = new Blob(["packaged-audio"], { type: "audio/mpeg" });
     const resolveAudio = vi.fn(() => audio);
     const nativePlay = vi.fn(() => JSON.stringify({ ok: true }));
+    mocks.route = "cloud";
     window.OctosNativeTts = {
       isConfigured: () => true,
       prefetch: vi.fn(() => JSON.stringify({ ok: true })),
@@ -142,6 +182,7 @@ describe("useOllNarrationTts", () => {
       requestId = id;
       return JSON.stringify({ ok: true });
     });
+    mocks.route = "cloud";
     window.OctosNativeTts = { playAudio };
 
     renderHook(() => useOllNarrationTts({
@@ -232,6 +273,7 @@ describe("useOllNarrationTts", () => {
   it("prewarms the first narration through the Android bridge", async () => {
     const prefetch = vi.fn(() => JSON.stringify({ ok: true }));
     const play = vi.fn(() => JSON.stringify({ ok: true }));
+    mocks.route = "cloud";
     window.OctosNativeTts = {
       isConfigured: () => true,
       prefetch,

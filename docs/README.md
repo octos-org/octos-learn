@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [统一语音路由与云端降级](UNIFIED_VOICE_FALLBACK.md)：本地、网页与 APK 私有优先，ASR/TTS 故障回退及配置与验证说明。
+
 - [Android 滑块优化最终验证](course-runtime-quality/webview-slider-performance-2026-10-10/REPORT.md)：完整 Runtime pin、几何扫描优化、电视最终结果、持续存档与布局恢复验证。
 
 - [v0.1.5 发布记录](RELEASE_V0_1_5.md)：选区通用按钮立即可用，后台识别补充专用操作，附验证范围与交付约定。
