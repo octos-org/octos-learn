@@ -67,3 +67,5 @@
 - [独立产品抽取计划](STANDALONE_EXTRACTION_PLAN.md)：记录从 `octos-web` 抽取独立产品的过程；0–5 阶段已经完成。
 
 实际部署行为以“当前使用”中的文档和 `main` 分支为准。历史设计记录用于解释决策过程，不作为现行配置手册。
+
+- [圆与正多边形周长夹逼](ARCHIMEDES_POLYGON_BOUNDS.md)

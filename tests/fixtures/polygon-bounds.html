@@ -1,0 +1,28 @@
+<!doctype html><meta charset="utf-8"><title>Regular polygon bounds regression</title>
+<style>body{margin:0;background:#f6f7fb;font-family:sans-serif}header{padding:16px}#viewport{width:1200px;height:900px}input{width:360px}</style>
+<header><label>多边形边数 <input id="sides" type="range" min="6" max="96" step="1" value="6"><output id="value">6</output></label><button id="replay">重播</button></header>
+<div id="viewport" class="oll-board-runtime"><div id="world" class="world"><div id="groups" class="layer"></div><div id="nodes" class="layer"></div><svg id="connections"></svg><svg id="labels"></svg><div id="pointer"></div></div></div>
+<script type="module">
+import {normalizeAuthoringLesson} from 'octos-lesson-language';
+import {InfiniteBoardView,BrowserLessonSession,LocalPlaybackStore} from 'octos-lesson-language/web-runtime';
+import 'octos-lesson-language/web-runtime/styles.css';
+import lesson from './polygon-bounds.authoring.json';
+const events=normalizeAuthoringLesson(lesson,{lessonId:'polygon',boardId:'polygon-board',baseRevision:0});
+const el=id=>document.getElementById(id);
+const session=new BrowserLessonSession(events,new LocalPlaybackStore(),'polygon-regression');
+while(session.status!=='completed' && session.status!=='error') session.advance();
+const view=new InfiniteBoardView(...['viewport','world','nodes','groups','connections','labels','pointer'].map(el));
+const render=()=>{view.render(session.projection.board);el('sides').value=session.projection.board.variables.number_01.value;el('value').value=el('sides').value};
+el('sides').addEventListener('input',()=>{session.changeStudentVariable('number_01',Number(el('sides').value),{control:'slider',input:'mouse'});render()});
+el('replay').addEventListener('click',()=>{session.seek(0);while(session.status!=='completed'&&session.status!=='error')session.advance();render()});
+function seedLegacy() {
+  const oldLesson=structuredClone(lesson);
+  oldLesson.lesson.variables[0].control.step=.45;
+  const geometry=oldLesson.steps[0].beats[0].actions.find(a=>a.kind==='geometry').content;
+  delete geometry.regular_polygons; delete geometry.bindings;
+  const legacyEvents=normalizeAuthoringLesson(oldLesson,{lessonId:'polygon',boardId:'polygon-board',baseRevision:0});
+  const legacy=new BrowserLessonSession(legacyEvents,new LocalPlaybackStore(),'polygon-regression');
+  while(legacy.status!=='completed'&&legacy.status!=='error')legacy.advance();
+}
+render(); window.polygonRegression={session,view,render,seedLegacy};
+</script>
