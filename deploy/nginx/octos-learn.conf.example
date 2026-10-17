@@ -59,7 +59,7 @@ server {
         proxy_buffering off;
     }
 
-    location ^~ /api/learn/asr/ {
+    location ^~ /api/learn/asr/batch/ {
         proxy_pass http://127.0.0.1:50081;
         include /etc/nginx/proxy_params;
         proxy_set_header X-Forwarded-Proto $scheme;

@@ -399,19 +399,19 @@ export function createHandler({
       if (request.method === "GET" && url.pathname === "/health") {
         return sendJson(response, 200, { ok: true, configured: Boolean(config.appid && config.token) });
       }
-      if (url.pathname.startsWith("/api/learn/asr/")) {
+      if (url.pathname.startsWith("/api/learn/asr/batch/")) {
         const me = await fetchAuthenticatedUser(request, config, fetchImpl);
         const configured = asrConfigured(config.asr);
         const used = ledger.asrUsage(me.user.id);
         const available = configured && used.total < config.asr.dailySeconds && used.user < config.asr.userDailySeconds;
-        if (request.method === "GET" && url.pathname === "/api/learn/asr/status") {
+        if (request.method === "GET" && url.pathname === "/api/learn/asr/batch/status") {
           return sendJson(response, 200, {
             available, configured,
             detail: !configured ? "云端 ASR 尚未启用或配置。"
               : !available ? "今日语音识别额度已用完。" : "云端 ASR 已配置。",
           }, { "cache-control": "no-store" });
         }
-        if (request.method !== "POST" || url.pathname !== "/api/learn/asr/transcribe") throw new HttpError(404, "not found");
+        if (request.method !== "POST" || url.pathname !== "/api/learn/asr/batch/transcribe") throw new HttpError(404, "not found");
         if (!configured) throw new HttpError(503, "云端 ASR 尚未启用或配置。");
         const audio = await readAsrAudio(request);
         const release = await asrGate.acquire();

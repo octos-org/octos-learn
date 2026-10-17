@@ -74,33 +74,42 @@ async function withService(fn, { authenticated = true, enabled = true } = {}) {
 test("ASR status never exposes credentials and POST authenticates before dispatch", async () => {
   await withService(async (base, calls) => {
     const headers = { authorization: "Bearer session" };
-    const status = await fetch(`${base}/api/learn/asr/status`, { headers });
+    const status = await fetch(`${base}/api/learn/asr/batch/status`, { headers });
     assert.equal(status.status, 200); assert.equal(status.headers.get("cache-control"), "no-store");
     const body = await status.text(); assert.equal(JSON.parse(body).available, true); assert.equal(body.includes("private-token"), false);
-    const anonymous = await fetch(`${base}/api/learn/asr/transcribe`, { method: "POST", body: wav() });
+    const anonymous = await fetch(`${base}/api/learn/asr/batch/transcribe`, { method: "POST", body: wav() });
     assert.equal(anonymous.status, 401); assert.equal(calls(), 0);
-    const transcribed = await fetch(`${base}/api/learn/asr/transcribe`, { method: "POST", headers, body: wav() });
+    const transcribed = await fetch(`${base}/api/learn/asr/batch/transcribe`, { method: "POST", headers, body: wav() });
     assert.equal(transcribed.status, 200); assert.equal(calls(), 1);
     assert.deepEqual(await transcribed.json(), { status: "speech", transcript: "已识别" });
+  });
+});
+test("batch ASR does not take over the separately deployed streaming endpoints", async () => {
+  await withService(async (base, calls) => {
+    for (const path of ["status", "sessions", "ws"]) {
+      const response = await fetch(`${base}/api/learn/asr/${path}`);
+      assert.equal(response.status, 404);
+    }
+    assert.equal(calls(), 0);
   });
 });
 test("daily ASR quota survives requests and blocks additional provider spending", async () => {
   await withService(async (base, calls) => {
     const options = { method: "POST", headers: { authorization: "Bearer session" }, body: wav(2) };
-    assert.equal((await fetch(`${base}/api/learn/asr/transcribe`, options)).status, 200);
-    assert.equal((await fetch(`${base}/api/learn/asr/transcribe`, options)).status, 429);
+    assert.equal((await fetch(`${base}/api/learn/asr/batch/transcribe`, options)).status, 200);
+    assert.equal((await fetch(`${base}/api/learn/asr/batch/transcribe`, options)).status, 429);
     assert.equal(calls(), 1);
-    const status = await fetch(`${base}/api/learn/asr/status`, { headers: options.headers });
+    const status = await fetch(`${base}/api/learn/asr/batch/status`, { headers: options.headers });
     assert.equal((await status.json()).available, false);
   });
 });
 test("disabled service and invalid input do not contact the provider", async () => {
   await withService(async (base, calls) => {
-    const response = await fetch(`${base}/api/learn/asr/transcribe`, { method: "POST", headers: { authorization: "Bearer session" }, body: wav() });
+    const response = await fetch(`${base}/api/learn/asr/batch/transcribe`, { method: "POST", headers: { authorization: "Bearer session" }, body: wav() });
     assert.equal(response.status, 503); assert.equal(calls(), 0);
   }, { enabled: false });
   await withService(async (base, calls) => {
-    const response = await fetch(`${base}/api/learn/asr/transcribe`, { method: "POST", headers: { authorization: "Bearer session" }, body: "invalid WAV" });
+    const response = await fetch(`${base}/api/learn/asr/batch/transcribe`, { method: "POST", headers: { authorization: "Bearer session" }, body: "invalid WAV" });
     assert.equal(response.status, 400); assert.equal(calls(), 0);
   });
 });

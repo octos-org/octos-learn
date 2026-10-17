@@ -32,7 +32,7 @@ describe("direct cloud ASR", () => {
     const wav = new Blob(["wav"], { type: "audio/wav" });
     const signal = new AbortController().signal;
     await expect(transcribeCloudSpeech(wav, signal)).resolves.toEqual(result);
-    expect(request).toHaveBeenLastCalledWith("/api/learn/asr/transcribe", {
+    expect(request).toHaveBeenLastCalledWith("/api/learn/asr/batch/transcribe", {
       method: "POST", body: wav, signal, headers: { "Content-Type": "audio/wav" },
     });
   });

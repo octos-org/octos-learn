@@ -54,7 +54,7 @@ export async function fetchCloudAsrStatus(): Promise<CloudAsrStatus> {
     }
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3000);
-    try { return await request<CloudAsrStatus>("/api/learn/asr/status", { signal: controller.signal }); }
+    try { return await request<CloudAsrStatus>("/api/learn/asr/batch/status", { signal: controller.signal }); }
     finally { clearTimeout(timer); }
   } catch {
     return { available: false, detail: "云端语音识别暂不可用，请检查服务配置。" };
@@ -66,7 +66,7 @@ export async function transcribeCloudSpeech(wav: Blob, signal: AbortSignal): Pro
   if (signal.aborted) throw new DOMException("语音识别已取消", "AbortError");
   const bridge = window.OctosNativeAsr;
   if (!bridge || !bridge.isConfigured()) {
-    return request<CloudAsrResult>("/api/learn/asr/transcribe", {
+    return request<CloudAsrResult>("/api/learn/asr/batch/transcribe", {
       method: "POST", headers: { "Content-Type": "audio/wav" }, body: wav, signal,
     });
   }
