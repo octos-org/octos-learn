@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const routing = vi.hoisted(() => ({ backendReady: true, cloudAvailable: true }));
+vi.mock("./voice-routing", () => ({
+  getVoiceRouting: vi.fn(async () => ({ tts: routing.backendReady ? "backend" : "cloud", readiness: { tts: { ready: routing.backendReady } }, cloudTtsAvailable: routing.cloudAvailable })),
+  markPrivateTtsFailed: vi.fn(),
+}));
 vi.mock("@/api/client", () => ({
   request: vi.fn(),
   requestBlob: vi.fn(),
@@ -19,6 +24,7 @@ const mockRequestBlob = requestBlob as unknown as ReturnType<typeof vi.fn>;
 
 describe("voice api", () => {
   beforeEach(() => {
+    routing.backendReady = true; routing.cloudAvailable = true;
     mockRequest.mockReset();
     mockRequestBlob.mockReset();
   });
@@ -63,6 +69,20 @@ describe("voice api", () => {
     });
   });
 
+  it("falls back to cloud synthesis after a private/local HTTP TTS failure", async () => {
+    const audio = new Blob(["cloud audio"]);
+    mockRequestBlob.mockRejectedValueOnce(new Error("local worker offline")).mockResolvedValueOnce(audio);
+    await expect(synthesizeSpeech("降级旁白")).resolves.toBe(audio);
+    expect(mockRequestBlob.mock.calls.map(call => call[0])).toEqual(["/api/voice/synthesize", "/api/learn/tts/cloud-synthesize"]);
+  });
+
+  it("does not retry synthesis after cancellation", async () => {
+    const controller = new AbortController();
+    mockRequestBlob.mockImplementationOnce(async () => { controller.abort(); throw new DOMException("cancelled", "AbortError"); });
+    await expect(synthesizeSpeech("取消旁白", controller.signal)).rejects.toMatchObject({ name: "AbortError" });
+    expect(mockRequestBlob).toHaveBeenCalledOnce();
+  });
+
   it("reads product-hosted TTS status from the Octos Learn service", async () => {
     const status = { configured: true, available: true, uses_platform: true };
     mockRequest.mockResolvedValue(status);
@@ -87,13 +107,14 @@ describe("voice api", () => {
   });
 
   it("routes public synthesis through the product-hosted service", async () => {
+    routing.backendReady = false;
     vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
     const audio = new Blob(["audio"], { type: "audio/mpeg" });
     mockRequestBlob.mockResolvedValue(audio);
 
     await expect(synthesizeSpeech("继续讲解。")).resolves.toBe(audio);
     expect(mockRequestBlob).toHaveBeenCalledWith(
-      "/api/learn/tts/synthesize",
+      "/api/learn/tts/cloud-synthesize",
       {
         method: "POST",
         body: JSON.stringify({ text: "继续讲解。" }),
@@ -103,9 +124,11 @@ describe("voice api", () => {
   });
 
   it("routes a local Android-mode preview through the profile TTS service", async () => {
+    routing.backendReady = false;
     vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
     vi.stubEnv("MODE", "android");
     vi.stubEnv("DEV", true);
+    routing.backendReady = true;
     const audio = new Blob(["audio"], { type: "audio/wav" });
     mockRequestBlob.mockResolvedValue(audio);
 
@@ -122,6 +145,7 @@ describe("voice api", () => {
   });
 
   it("keeps hosted TTS enabled in the packaged Android build", async () => {
+    routing.backendReady = false;
     vi.stubEnv("VITE_HOSTED_TTS_ENABLED", "true");
     vi.stubEnv("MODE", "android");
     vi.stubEnv("DEV", false);
@@ -131,7 +155,7 @@ describe("voice api", () => {
     await expect(synthesizeSpeech("APK 公网旁白。"))
       .resolves.toBe(audio);
     expect(mockRequestBlob).toHaveBeenCalledWith(
-      "/api/learn/tts/synthesize",
+      "/api/learn/tts/cloud-synthesize",
       {
         method: "POST",
         body: JSON.stringify({ text: "APK 公网旁白。" }),

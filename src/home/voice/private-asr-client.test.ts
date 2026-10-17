@@ -17,6 +17,7 @@ const { microphoneMock, requestGrantMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("./microphone", () => ({
+  ensureNativeMicrophonePermission: vi.fn(async () => {}),
   getEchoCancelledMicStream: microphoneMock,
   nativePrivateAsrAvailable: vi.fn(() => false),
   NATIVE_AUDIO_EVENT: "octos-native-audio",
@@ -264,4 +265,3 @@ describe("private ASR same-origin routing", () => {
     );
   });
 });
-

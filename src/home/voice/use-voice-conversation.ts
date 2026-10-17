@@ -6,6 +6,8 @@ import {
   useSyncExternalStore,
 } from "react";
 import { uploadFiles } from "@/api/chat";
+import { transcribeCloudSpeech } from "@/api/cloud-asr";
+import { getVoiceRouting, markPrivateAsrFailed, type AsrRoute } from "@/api/voice-routing";
 import {
   admitVoiceMessage,
   commitAdmittedVoiceMessage,
@@ -689,6 +691,9 @@ export function useVoiceConversation(
   // beginListening() after teardown — that re-acquired the microphone under
   // a fresh VAD generation nothing tears down (post-unmount mic leak).
   const startGenRef = useRef(0);
+  const asrRouteRef = useRef<AsrRoute>("unavailable");
+  const cloudAsrAvailableRef = useRef(false);
+  const cloudAsrRequestsRef = useRef(new Set<AbortController>());
   const privateAsrRef = useRef<PrivateAsrClient | null>(null);
   const privateAsrRecoveryRef = useRef<Promise<boolean> | null>(null);
   const recoverPrivateAsrRef = useRef<(
@@ -837,19 +842,32 @@ export function useVoiceConversation(
         const clientTiming: LearningClientTiming = {
           submitted_at_epoch_ms: Date.now(),
         };
+        const recognizeCloud = async () => {
+          const controller = new AbortController();
+          cloudAsrRequestsRef.current.add(controller);
+          const timeout = setTimeout(() => controller.abort(), 35_000);
+          clientTiming.voice_admission_started_at_epoch_ms = Date.now();
+          try { return await transcribeCloudSpeech(wav, controller.signal); }
+          finally {
+            clearTimeout(timeout);
+            cloudAsrRequestsRef.current.delete(controller);
+            clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
+          }
+        };
         // When the camera is on, attach the current frame so the turn is a
         // video call (audio + image); the server transcribes the audio and the
         // VLM sees the frame. Degrades to audio-only on a failed grab.
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = includeFrame?.() ?? true;
-        const applicationTranscript = privateTranscript?.trim();
+        let applicationTranscript = privateTranscript?.trim();
+        const cloudAsr = asrRouteRef.current === "cloud" && Boolean(admitSpeech) && !applicationTranscript;
         if (applicationTranscript && !allowHesitation && !isMeaningfulVoiceTranscript(applicationTranscript)) {
           restoreBargeInCandidate();
           return;
         }
         const applicationAdmission = Boolean(applicationTranscript && admitSpeech);
         const admissionSupported =
-          applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
+          cloudAsr || applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
         const directAdmission = admissionSupported && Boolean(admitSpeech);
         let admission: Awaited<ReturnType<typeof admitVoiceMessage>> | undefined;
         let capturedFiles: File[];
@@ -860,6 +878,7 @@ export function useVoiceConversation(
         // question card must later fetch a camera frame from this same owner,
         // even if the globally selected profile changes meanwhile.
         const mediaProfileId = await ensureSelectedProfileId() ?? undefined;
+        if (generation !== startGenRef.current) return;
 
         if (directAdmission) {
           // Camera capture and selection snapshot preparation can run while
@@ -875,11 +894,23 @@ export function useVoiceConversation(
           const additionalFilesPromise = Promise.resolve(
             getFiles?.() ?? [],
           );
+          // Attach rejection handlers while cloud recognition is in flight.
+          void Promise.allSettled([framePromise, additionalFilesPromise]);
+          if (cloudAsr) {
+            const result = await recognizeCloud();
+            if (generation !== startGenRef.current) return;
+            if (result.status === "no_speech" || !result.transcript.trim()
+              || (!allowHesitation && !isMeaningfulVoiceTranscript(result.transcript))) {
+              restoreBargeInCandidate();
+              return;
+            }
+            applicationTranscript = result.transcript.trim();
+          }
           let audioPath: string | undefined;
           if (applicationTranscript) {
             admission = {
               status: "speech",
-              admissionId: `private-asr:${turnId}`,
+              admissionId: `${cloudAsr ? "cloud-asr" : "private-asr"}:${turnId}`,
               transcript: applicationTranscript,
               turnId,
             };
@@ -889,14 +920,23 @@ export function useVoiceConversation(
             clientTiming.audio_upload_completed_at_epoch_ms = Date.now();
             if (!audioPath) throw new Error("Voice audio upload returned no path");
             clientTiming.voice_admission_started_at_epoch_ms = Date.now();
-            admission = await admitVoiceMessage({
-              sessionId,
-              historyTopic,
-              text: "",
-              media: [audioPath],
-              clientMessageId: turnId,
-              liveVideo: false,
-            });
+            try {
+              admission = await admitVoiceMessage({
+                sessionId, historyTopic, text: "", media: [audioPath], clientMessageId: turnId, liveVideo: false,
+              });
+            } catch (error) {
+              if (generation !== startGenRef.current) return;
+              if (!cloudAsrAvailableRef.current) throw error;
+              const result = await recognizeCloud();
+              if (generation !== startGenRef.current) return;
+              markPrivateAsrFailed();
+              asrRouteRef.current = "cloud";
+              applicationTranscript = result.transcript.trim();
+              audioPath = undefined; // Do not attach the abandoned admission upload.
+              admission = result.status === "no_speech" || !applicationTranscript
+                ? { status: "no_speech", turnId }
+                : { status: "speech", admissionId: `cloud-asr:${turnId}`, transcript: applicationTranscript, turnId };
+            }
             clientTiming.voice_admission_completed_at_epoch_ms = Date.now();
           }
           if (admission.status === "no_speech") {
@@ -1199,6 +1239,18 @@ export function useVoiceConversation(
         await sendUtteranceRef.current(wav, includeCamera, transcript);
       } catch (error) {
         if (generation !== startGenRef.current) return;
+        if (cloudAsrAvailableRef.current) {
+          // NativeAudioBridge emits complete WAV utterances even when RTC
+          // disappears, so the SAME utterance can be replayed to cloud ASR.
+          privateAsrRef.current = null;
+          privateAsr.setConnectionErrorHandler(undefined);
+          void privateAsr.stop();
+          markPrivateAsrFailed();
+          asrRouteRef.current = "cloud";
+          setPrivateAsrError(null);
+          await sendUtteranceRef.current(wav, includeCamera);
+          return;
+        }
         if (privateAsr.isNativeRtcActive() || nativeAudioCaptureAvailable()) {
           // The native or bridged stream cannot replay an utterance after its ASR
           // session fails. Rebuild it immediately and resume listening so the
@@ -1365,7 +1417,7 @@ export function useVoiceConversation(
     generation: number,
   ): Promise<boolean> => {
     if (
-      (!failed.isNativeRtcActive() && !nativeAudioCaptureAvailable()) ||
+      (!cloudAsrAvailableRef.current && !failed.isNativeRtcActive() && !nativeAudioCaptureAvailable()) ||
       generation !== startGenRef.current
     ) {
       return false;
@@ -1373,6 +1425,19 @@ export function useVoiceConversation(
     if (privateAsrRecoveryRef.current) return privateAsrRecoveryRef.current;
 
     const recovery = (async () => {
+      if (cloudAsrAvailableRef.current) {
+        privateAsrRef.current = null;
+        failed.setConnectionErrorHandler(undefined);
+        void failed.stop();
+        if (generation !== startGenRef.current) return false;
+        markPrivateAsrFailed();
+        asrRouteRef.current = "cloud";
+        setStartupDetail(null);
+        setPrivateAsrError(null);
+        // Keep an utterance already captured by VAD; its callback will submit
+        // the WAV to cloud ASR. Do not interrupt a pending application turn.
+        return true;
+      }
       const current = privateAsrRef.current;
       if (current && current !== failed && current.isReusable()) return true;
       if (current === failed) privateAsrRef.current = null;
@@ -1580,6 +1645,8 @@ export function useVoiceConversation(
     // newer start() bumps the counter; every await below re-checks it and
     // abandons, so a stale start can never re-acquire the microphone.
     const gen = ++startGenRef.current;
+    cloudAsrRequestsRef.current.forEach((request) => request.abort());
+    cloudAsrRequestsRef.current.clear();
     setPrivateAsrError(null);
     stateRef.current = "starting";
     setState("starting");
@@ -1590,11 +1657,7 @@ export function useVoiceConversation(
     void preloadVoiceCaptureRuntime().catch((error) => {
       console.warn("[voice] VAD runtime preload failed", error);
     });
-    if (privateAsrEnabled() && onAdmittedSpeech) {
-      void preloadPrivateAsrRuntime().catch((error) => {
-        console.warn("[voice] private ASR runtime preload failed", error);
-      });
-    }
+    const routingPromise = getVoiceRouting().then((routing) => ({ routing }), (error: unknown) => ({ error }));
     // Unlock audio playback now, while we're still close to the user's entry
     // gesture (the click that mounted the voice view). Replies arrive tens of
     // seconds later and would otherwise be blocked by the autoplay policy.
@@ -1664,6 +1727,27 @@ export function useVoiceConversation(
       if (startGenRef.current !== gen) return;
     }
     if (startGenRef.current !== gen) return;
+    const routeResult = await routingPromise;
+    if (startGenRef.current !== gen) return;
+    if (!("routing" in routeResult)) {
+      setPrivateAsrError("语音服务状态检查失败，请检查网络后重试。");
+      stateRef.current = "error";
+      setState("error");
+      setStartupDetail(null);
+      return;
+    }
+    asrRouteRef.current = routeResult.routing.asr;
+    cloudAsrAvailableRef.current = routeResult.routing.cloudAsrAvailable;
+    if (asrRouteRef.current === "unavailable") {
+      setPrivateAsrError(routeResult.routing.cloudAsrDetail);
+      stateRef.current = "error";
+      setState("error");
+      setStartupDetail(null);
+      return;
+    }
+    if (asrRouteRef.current === "private") {
+      void preloadPrivateAsrRuntime().catch(() => undefined);
+    }
     // Let StrictMode's effect cleanup/replay invalidate the first development
     // start before it can reserve the single private-ASR worker.
     await Promise.resolve();
@@ -1673,7 +1757,7 @@ export function useVoiceConversation(
     let listeningPreparation: Promise<boolean> | null = null;
     let privateStartFailed = false;
     if (
-      privateAsrEnabled() &&
+      asrRouteRef.current === "private" && privateAsrEnabled() &&
       onAdmittedSpeech &&
       !privateAsrRef.current
     ) {
@@ -1681,6 +1765,10 @@ export function useVoiceConversation(
         ? takeRetainedNativePrivateAsr() ?? new PrivateAsrClient()
         : new PrivateAsrClient();
       const handlePrivateAsrError = (error: Error) => {
+        if (cloudAsrAvailableRef.current) {
+          void recoverPrivateAsrRef.current(privateAsr, error, startGenRef.current);
+          return;
+        }
         if (!privateAsr.isNativeRtcActive() && !nativeAudioCaptureAvailable()) {
           if (privateAsrRef.current === privateAsr) privateAsrRef.current = null;
           privateAsr.setConnectionErrorHandler(undefined);
@@ -1706,7 +1794,16 @@ export function useVoiceConversation(
         ? beginListening({ deferReady: true })
         : Promise.resolve(false);
       listeningPreparation = preparedListening;
-      const privateResult = await privateAsr.start().then(
+      let startupTimer: ReturnType<typeof setTimeout> | undefined;
+      const privateStartup = cloudAsrAvailableRef.current
+        ? Promise.race([
+            privateAsr.start(),
+            new Promise<never>((_, reject) => {
+              startupTimer = setTimeout(() => reject(new Error("Private ASR startup timed out")), 5000);
+            }),
+          ])
+        : privateAsr.start();
+      const privateResult = await privateStartup.finally(() => clearTimeout(startupTimer)).then(
         () => ({ status: "fulfilled" as const }),
         (reason: unknown) => ({ status: "rejected" as const, reason }),
       );
@@ -1714,7 +1811,7 @@ export function useVoiceConversation(
         if (privateAsrRef.current === privateAsr) {
           privateAsrRef.current = null;
         }
-        await privateAsr.stop();
+        void privateAsr.stop();
         return;
       }
       if (privateResult.status === "rejected") {
@@ -1722,10 +1819,15 @@ export function useVoiceConversation(
         if (privateAsrRef.current === privateAsr) {
           privateAsrRef.current = null;
         }
-        await privateAsr.stop();
+        void privateAsr.stop();
         const message = privateAsrErrorMessage(privateResult.reason);
-        setPrivateAsrError(message);
-        if (nativePrivateAsrAvailable()) {
+        const useCloudFallback = cloudAsrAvailableRef.current;
+        if (useCloudFallback) {
+          markPrivateAsrFailed();
+          asrRouteRef.current = "cloud";
+          setPrivateAsrError(null);
+        } else setPrivateAsrError(message);
+        if (!useCloudFallback && nativePrivateAsrAvailable()) {
           // There is no useful WebView microphone fallback on this device.
           // Surface the native Agora join error immediately and keep the
           // server's batch-ASR preflight from masking it.
@@ -1736,7 +1838,7 @@ export function useVoiceConversation(
           setStartupDetail(null);
           return;
         }
-        if (message === "语音服务正在使用中，你可以继续打字") {
+        if (!useCloudFallback && message === "语音服务正在使用中，你可以继续打字") {
           // Capacity is not a transport failure: don't keep recording into an
           // unavailable service or silently send the audio through another ASR.
           stateRef.current = "idle";
@@ -1746,7 +1848,7 @@ export function useVoiceConversation(
           setStartupDetail(null);
           return;
         }
-        console.warn("[voice] private ASR unavailable; keeping Octos ASR fallback", privateResult.reason);
+        if (!useCloudFallback) console.warn("[voice] private ASR unavailable; keeping Octos ASR fallback", privateResult.reason);
       } else {
         setPrivateAsrError(null);
         listeningPrepared = await preparedListening;
@@ -1766,10 +1868,16 @@ export function useVoiceConversation(
     }
     if (startOptions?.initialAudio) {
       setStartupDetail(null);
-      await sendCapturedUtterance(
-        startOptions.initialAudio,
-        startOptions.includeCamera ?? false,
-      );
+      // A wake/selection recording predates the RTC join. It cannot be
+      // committed as live private audio; use the cloud batch adapter for this
+      // first recording while retaining private RTC for subsequent speech.
+      const liveRoute = asrRouteRef.current;
+      if (liveRoute === "private" && cloudAsrAvailableRef.current) asrRouteRef.current = "cloud";
+      try {
+        await sendCapturedUtterance(startOptions.initialAudio, startOptions.includeCamera ?? false);
+      } finally {
+        if (startGenRef.current === gen && privateAsrRef.current) asrRouteRef.current = liveRoute;
+      }
       return;
     }
     if (listeningAttempted && privateStartFailed && listeningPreparation) {
@@ -1826,6 +1934,8 @@ export function useVoiceConversation(
     setSelectionTurnPending(false);
     // Invalidate any in-flight start() (it re-checks this after each await).
     startGenRef.current++;
+    cloudAsrRequestsRef.current.forEach((request) => request.abort());
+    cloudAsrRequestsRef.current.clear();
     // Supersede any suspended drain loop so it exits without scheduling a
     // stale grace timer (releaseAudio() below resolves its awaited clip).
     drainGenRef.current++;

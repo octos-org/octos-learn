@@ -74,6 +74,12 @@ final class NativeTtsBridge {
         return config != null;
     }
 
+    /** Native-only credential snapshot; never exposed as a JavaScript method. */
+    String[] speechCredentials() {
+        TtsConfig current = config;
+        return current == null ? null : new String[] { current.appId, current.accessToken };
+    }
+
     @JavascriptInterface
     public String configure(String rawConfig) {
         try {

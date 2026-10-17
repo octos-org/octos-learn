@@ -51,6 +51,8 @@ const {
   privateAsrConstructorMock,
   privateAsrInstance,
   captureState,
+  cloudAvailable,
+  transcribeCloudSpeechMock,
 } = vi.hoisted(() => ({
   captureStartMock: vi.fn(async () => {}),
   captureStopMock: vi.fn(async () => {}),
@@ -70,6 +72,8 @@ const {
   preloadPrivateAsrRuntimeMock: vi.fn(async () => {}),
   preloadVoiceCaptureRuntimeMock: vi.fn(async () => {}),
   privateAsrConstructorMock: vi.fn(),
+  cloudAvailable: { value: false, privateOffline: false },
+  transcribeCloudSpeechMock: vi.fn(async () => ({ status: "speech" as "speech" | "no_speech", transcript: "请解释这个公式" })),
   captureState: {
     error: null as string | null,
     capturing: false,
@@ -95,8 +99,19 @@ vi.mock("./private-asr-client", () => ({
   }),
 }));
 
+vi.mock("@/api/voice-routing", () => ({
+  getVoiceRouting: vi.fn(async () => ({
+    asr: cloudAvailable.privateOffline ? "cloud" : privateAsrEnabledMock() ? "private" : "backend",
+    cloudAsrAvailable: cloudAvailable.value,
+    cloudAsrDetail: "Cloud ASR unavailable",
+  })),
+  markPrivateAsrFailed: vi.fn(),
+}));
+vi.mock("@/api/cloud-asr", () => ({ transcribeCloudSpeech: transcribeCloudSpeechMock }));
+
 vi.mock("./microphone", () => ({
   nativePrivateAsrAvailable: nativePrivateAsrAvailableMock,
+  nativeAudioCaptureAvailable: vi.fn(() => false),
 }));
 
 vi.mock("./use-voice-capture", () => ({
@@ -216,6 +231,9 @@ vi.mock("@/api/client", () => ({
 }));
 
 afterEach(() => {
+  cloudAvailable.value = false; cloudAvailable.privateOffline = false;
+  transcribeCloudSpeechMock.mockReset();
+  transcribeCloudSpeechMock.mockResolvedValue({ status: "speech", transcript: "请解释这个公式" });
   supportsVoiceAdmissionMock.mockReset();
   supportsVoiceAdmissionMock.mockReturnValue(true);
   admitVoiceMessageMock.mockReset();
@@ -929,6 +947,151 @@ describe("start() cancellation (post-unmount mic re-acquire)", () => {
     }));
     expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
     expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("listening");
+    unmount();
+  });
+
+  it.each([false, true])("uses cloud ASR when private service is offline (Android=%s)", async (android) => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true);
+    nativePrivateAsrAvailableMock.mockReturnValue(android);
+    cloudAvailable.value = true; cloudAvailable.privateOffline = true;
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-offline", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start({ initialAudio: new Blob(["speech"]) }); });
+    expect(privateAsrInstance.start).not.toHaveBeenCalled();
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({ transcript: "请解释这个公式" }));
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("falls back on a private startup failure even on native Android", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true); nativePrivateAsrAvailableMock.mockReturnValue(true);
+    cloudAvailable.value = true;
+    privateAsrInstance.start.mockRejectedValueOnce(new Error("bridge offline"));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("start-fallback", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start({ initialAudio: new Blob(["speech"]) }); });
+    expect(onAdmittedSpeech).toHaveBeenCalledOnce();
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(result.current.error).toBeNull();
+    unmount();
+  });
+
+  it("falls back promptly when private startup stalls", async () => {
+    vi.useFakeTimers();
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true); cloudAvailable.value = true;
+    privateAsrInstance.start.mockImplementationOnce(() => new Promise(() => {}));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("stalled-private", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.start({ initialAudio: new Blob(["speech"]) });
+      await vi.advanceTimersByTimeAsync(5001);
+      await starting;
+    });
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledOnce();
+    unmount(); vi.useRealTimers();
+  });
+
+  it("replays the captured WAV to cloud when a live private commit fails", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true); cloudAvailable.value = true;
+    privateAsrInstance.commit.mockRejectedValueOnce(new Error("RTC disconnected"));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("commit-fallback", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start(); });
+    const onUtterance = captureStartMock.mock.calls.at(-1)?.[0] as ((wav: Blob) => void);
+    const wav = new Blob(["speech"]);
+    await act(async () => { onUtterance(wav); await vi.waitFor(() => expect(onAdmittedSpeech).toHaveBeenCalledOnce()); });
+    expect(privateAsrInstance.commit).toHaveBeenCalledOnce();
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledWith(wav, expect.any(AbortSignal));
+    expect(admitVoiceMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("uses cloud ASR after a private RTC disconnect without acquiring a second microphone", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    privateAsrEnabledMock.mockReturnValue(true); cloudAvailable.value = true;
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("rtc-fallback", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start(); });
+    const onUtterance = captureStartMock.mock.calls.at(-1)?.[0] as ((wav: Blob) => void);
+    const onError = privateAsrInstance.setConnectionErrorHandler.mock.calls.at(-1)?.[0] as ((error: Error) => void);
+    const starts = captureStartMock.mock.calls.length;
+    await act(async () => { onError(new Error("RTC disconnected")); await Promise.resolve(); });
+    await act(async () => { onUtterance(new Blob(["speech"])); await vi.waitFor(() => expect(onAdmittedSpeech).toHaveBeenCalledOnce()); });
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(captureStartMock.mock.calls.length).toBeGreaterThanOrEqual(starts);
+    expect(privateAsrInstance.start).toHaveBeenCalledOnce();
+    unmount();
+  });
+
+  it("replays a WAV after a local backend ASR failure without duplicate lesson admission", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAvailable.value = true;
+    uploadFilesMock.mockResolvedValueOnce(["abandoned/audio.wav"]);
+    admitVoiceMessageMock.mockRejectedValueOnce(new Error("local worker disconnected"));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("local-fallback", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start({ initialAudio: new Blob(["speech"]) }); });
+    expect(admitVoiceMessageMock).toHaveBeenCalledOnce();
+    expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledOnce();
+    expect(onAdmittedSpeech).toHaveBeenCalledWith(expect.objectContaining({ transcript: "请解释这个公式", mediaPaths: [] }));
+    expect(commitAdmittedVoiceMessageMock).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it("cancels cloud recognition and discards its late result after voice is stopped", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAvailable.value = true; cloudAvailable.privateOffline = true;
+    let resolveRecognition!: (value: { status: "speech"; transcript: string }) => void;
+    transcribeCloudSpeechMock.mockImplementationOnce(() => new Promise(resolve => { resolveRecognition = resolve; }));
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("stop-cloud", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    let starting!: Promise<void>;
+    await act(async () => {
+      starting = result.current.start({ initialAudio: new Blob(["speech"]) });
+      await vi.waitFor(() => expect(transcribeCloudSpeechMock).toHaveBeenCalledOnce());
+    });
+    const signal = transcribeCloudSpeechMock.mock.calls[0][1] as AbortSignal;
+    act(() => result.current.stop()); expect(signal.aborted).toBe(true);
+    await act(async () => { resolveRecognition({ status: "speech", transcript: "迟到的结果" }); await starting; });
+    expect(onAdmittedSpeech).not.toHaveBeenCalled(); expect(uploadFilesMock).not.toHaveBeenCalled();
+    expect(result.current.state).toBe("idle"); unmount();
+  });
+
+  it("does not send cloud silence to the lesson generator", async () => {
+    getActiveBridgeMock.mockReturnValue({ getConnectionState: () => "connected" });
+    cloudAvailable.value = true; cloudAvailable.privateOffline = true;
+    transcribeCloudSpeechMock.mockResolvedValueOnce({ status: "no_speech", transcript: "" });
+    const onAdmittedSpeech = vi.fn(async () => true);
+    const { result, unmount } = renderHook(() => useVoiceConversation("cloud-silence", undefined, undefined, {
+      onAdmittedSpeech, playReplyAudio: false,
+    }));
+    await act(async () => { await result.current.start({ initialAudio: new Blob(["noise"]) }); });
+    expect(onAdmittedSpeech).not.toHaveBeenCalled();
+    expect(uploadFilesMock).not.toHaveBeenCalled();
     expect(result.current.state).toBe("listening");
     unmount();
   });

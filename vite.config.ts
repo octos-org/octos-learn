@@ -214,6 +214,33 @@ export default defineConfig(({ mode, command }) => {
           }
         : undefined,
       proxy: {
+        "/api/learn/asr": {
+          target: env.OCTOS_VOICE_SERVICE_TARGET?.trim() || "http://127.0.0.1:50081",
+          changeOrigin: true,
+        },
+        "/api/learn/tts": {
+          target: env.OCTOS_VOICE_SERVICE_TARGET?.trim() || "http://127.0.0.1:50081",
+          changeOrigin: true,
+        },
+        "/private-asr": {
+          target: env.PRIVATE_ASR_PROXY_TARGET?.trim() || "https://asr.pitun.cc",
+          changeOrigin: true, ws: true,
+          rewrite: (path: string) => path.replace(/^\/private-asr/, ""),
+          cookiePathRewrite: "/private-asr/",
+          configure: (proxy) => {
+            const rewriteOrigin = (proxyReq: import("node:http").ClientRequest, req: import("node:http").IncomingMessage) => {
+              const origin = req.headers.origin;
+              if (!origin) return;
+              try {
+                if (new URL(origin).host === req.headers.host) {
+                  proxyReq.setHeader("Origin", new URL(env.PRIVATE_ASR_PROXY_TARGET?.trim() || "https://asr.pitun.cc").origin);
+                }
+              } catch { /* Invalid origins remain subject to upstream validation. */ }
+            };
+            proxy.on("proxyReq", rewriteOrigin);
+            proxy.on("proxyReqWs", rewriteOrigin);
+          },
+        },
         // CoursePack publication is served by public Nginx, not octos serve.
         // An explicit local publication uses the middleware above instead.
         ...(!env.OCTOS_LOCAL_COURSE_PACK_ROOT?.trim() ? {

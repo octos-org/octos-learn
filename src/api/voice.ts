@@ -6,6 +6,7 @@
  * Both are per-tenant on the backend (see octos `api/voices.rs`).
  */
 import { request, requestBlob } from "./client";
+import { getVoiceRouting, markPrivateTtsFailed } from "./voice-routing";
 
 export interface VoiceInfo {
   id: string;
@@ -84,12 +85,26 @@ export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
 ): Promise<Blob> {
-  const endpoint = isHostedTtsEnabled()
-    ? "/api/learn/tts/synthesize"
-    : "/api/voice/synthesize";
-  return requestBlob(endpoint, {
-    method: "POST",
-    body: JSON.stringify({ text }),
-    signal,
+  const routing = await getVoiceRouting();
+  if (signal?.aborted) throw new DOMException("语音已取消", "AbortError");
+  // RTC narration is played by the narration hook. Blob consumers retain
+  // the configured private/local HTTP synthesizer before trying cloud.
+  if (routing.tts === "backend" || (routing.tts === "private" && routing.readiness.tts.ready)) {
+    try {
+      return await requestBlob("/api/voice/synthesize", {
+        method: "POST", body: JSON.stringify({ text }), signal,
+      });
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      markPrivateTtsFailed();
+      if (!routing.cloudTtsAvailable) throw error;
+    }
+  }
+  return synthesizeCloudSpeech(text, signal);
+}
+
+export function synthesizeCloudSpeech(text: string, signal?: AbortSignal): Promise<Blob> {
+  return requestBlob("/api/learn/tts/cloud-synthesize", {
+    method: "POST", body: JSON.stringify({ text }), signal,
   });
 }

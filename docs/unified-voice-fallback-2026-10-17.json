@@ -1,0 +1,57 @@
+{
+  "date": "2026-10-17",
+  "branch": "codex/unified-voice-fallback",
+  "base": {
+    "ref": "origin/main",
+    "commit": "a72572d7547a495cdfa0eedd847202509e2f97ec"
+  },
+  "tests": {
+    "frontend": {
+      "files": 121,
+      "passed": 1182,
+      "failed": 0
+    },
+    "server": {
+      "passed": 41,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "targetedEslint": {
+      "errors": 0,
+      "warnings": 14
+    }
+  },
+  "builds": {
+    "publicWeb": "passed",
+    "androidBundledWebAssets": "passed",
+    "nativeApk": "not run: temporary Android SDK/JDK no longer installed"
+  },
+  "coverage": [
+    "development/public/android private-first route selection",
+    "private startup failure and 5s timeout -> cloud ASR",
+    "private commit failure -> replay same WAV",
+    "live RTC disconnect -> next captured WAV through cloud",
+    "local ASR failure -> cloud without duplicate lesson submission",
+    "cancel recognition -> no late question",
+    "silence -> no question",
+    "TTS private priority/start failure/mid-playback failure -> cloud",
+    "receive-only LiveKit player, warm reuse, cancel, idle release, account isolation",
+    "ASR API authentication/WAV validation/quotas/provider response handling",
+    "explicit cloud TTS avoids broken personal local configuration",
+    "health cache is account/profile scoped; transient health failure retains unknown LLM status"
+  ],
+  "deployment": {
+    "publicWebUpdated": false,
+    "serverUpdated": false,
+    "apkInstalled": false,
+    "livePrivateTtsVerified": false,
+    "liveCloudAsrVerifiedThisBranch": false,
+    "liveMicrophoneCaptured": false
+  },
+  "limits": [
+    "Enable HOSTED_ASR_ENABLED=1 and verify volc.bigasr.auc_turbo access on each server",
+    "Ship entire sidecar and Nginx ASR route before new public frontend",
+    "Private TTS recovery replays the current sentence",
+    "Native APK compile and device integration remain outstanding"
+  ]
+}

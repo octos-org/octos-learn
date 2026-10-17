@@ -16,6 +16,8 @@ const MIC_CONSTRAINTS_WITH_BOOLEAN_AEC: MediaTrackConstraints = {
 };
 
 type AndroidAudioBridge = {
+  hasMicrophonePermission?: () => boolean;
+  requestMicrophonePermission?: () => void;
   describeInputDevices?: () => string;
   prepareForVoiceCapture?: () => string;
   startVoiceCapture?: () => string;
@@ -42,6 +44,41 @@ function nativeAudioBridge(): AndroidAudioBridge | undefined {
 }
 
 export const NATIVE_AUDIO_EVENT = "octos-native-audio";
+export const NATIVE_MICROPHONE_PERMISSION_EVENT = "octos-native-microphone-permission";
+let microphonePermissionPending: Promise<void> | null = null;
+
+/** AudioRecord bypasses getUserMedia, so it must request Android permission itself. */
+export function ensureNativeMicrophonePermission(): Promise<void> {
+  const bridge = nativeAudioBridge();
+  if (!bridge?.requestMicrophonePermission || bridge.hasMicrophonePermission?.()) {
+    return Promise.resolve();
+  }
+  if (microphonePermissionPending) return microphonePermissionPending;
+  const request = new Promise<void>((resolve, reject) => {
+    const finish = (error?: Error) => {
+      clearTimeout(timer);
+      window.removeEventListener(NATIVE_MICROPHONE_PERMISSION_EVENT, onResult);
+      if (error) reject(error);
+      else resolve();
+    };
+    const onResult = (event: Event) => {
+      const { granted } = (event as CustomEvent<{ granted: boolean }>).detail;
+      finish(granted ? undefined : new Error("请在系统权限中允许 Octos Learn 使用麦克风"));
+    };
+    const timer = setTimeout(() => finish(new Error("麦克风授权等待超时，请重试")), 120_000);
+    window.addEventListener(NATIVE_MICROPHONE_PERMISSION_EVENT, onResult);
+    try {
+      bridge.requestMicrophonePermission!();
+    } catch (error) {
+      finish(new Error(microphoneErrorMessage(error)));
+    }
+  });
+  const pending = request.finally(() => {
+    if (microphonePermissionPending === pending) microphonePermissionPending = null;
+  });
+  microphonePermissionPending = pending;
+  return pending;
+}
 
 export interface NativeAudioEventDetail {
   type:
@@ -318,6 +355,7 @@ export function getNativeBridgedMicStream(): MediaStream | null {
 
 export async function getEchoCancelledMicStream(): Promise<MediaStream> {
   if (nativeAudioCaptureAvailable()) {
+    await ensureNativeMicrophonePermission();
     const bridged = getNativeBridgedMicStream();
     if (bridged) return bridged;
   }

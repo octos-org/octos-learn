@@ -107,7 +107,9 @@ export function configureNativeTts(config: NativeTtsConfig): boolean {
   const candidate = bridge();
   if (typeof candidate?.configure !== "function") return false;
   try {
-    return parseBridgeResult(candidate.configure(JSON.stringify(config))).ok;
+    const ok = parseBridgeResult(candidate.configure(JSON.stringify(config))).ok;
+    if (ok) window.dispatchEvent(new Event("octos:native-speech-configured"));
+    return ok;
   } catch {
     return false;
   }

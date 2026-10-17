@@ -26,6 +26,7 @@ import {
 } from "@/runtime/session-context";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import {
+  ensureNativeMicrophonePermission,
   getEchoCancelledMicStream,
   nativeAudioCaptureAvailable,
   prepareNativeAudioCapture,
@@ -136,6 +137,7 @@ async function requestLearningDevices(autoCamera: boolean): Promise<{
     if (nativeAudioCaptureAvailable()) {
       // AudioRecord is opened by the voice capture hook. Preparing here keeps
       // this permission gate independent of the broken Android 8 WebView mic.
+      await ensureNativeMicrophonePermission();
       prepareNativeAudioCapture();
     } else {
       microphoneStream = await getEchoCancelledMicStream();

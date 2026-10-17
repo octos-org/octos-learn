@@ -1,7 +1,6 @@
 package cc.pitun.learn;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.media.AudioDeviceInfo;
@@ -54,7 +53,7 @@ final class NativeAudioBridge {
     private static final int MIN_UTTERANCE_MS = 480;
     private static final int MAX_UTTERANCE_MS = 20000;
 
-    private final Activity activity;
+    private final MainActivity activity;
     private final WebView webView;
     private final AudioManager audioManager;
     private final Object captureLock = new Object();
@@ -73,10 +72,27 @@ final class NativeAudioBridge {
     private volatile long rtcFramesPushed;
     private final ByteArrayOutputStream livekitPcmBuffer = new ByteArrayOutputStream();
 
-    NativeAudioBridge(Activity activity, WebView webView) {
+    NativeAudioBridge(MainActivity activity, WebView webView) {
         this.activity = activity;
         this.webView = webView;
         this.audioManager = (AudioManager) activity.getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    @JavascriptInterface
+    public boolean hasMicrophonePermission() {
+        return activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    @JavascriptInterface
+    public void requestMicrophonePermission() {
+        activity.runOnUiThread(activity::requestMicrophonePermission);
+    }
+
+    void onMicrophonePermissionResult(boolean granted) {
+        String script = "window.dispatchEvent(new CustomEvent('octos-native-microphone-permission',"
+                + "{detail:{granted:" + granted + "}}));";
+        webView.post(() -> webView.evaluateJavascript(script, null));
     }
 
     @JavascriptInterface

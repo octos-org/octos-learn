@@ -3,6 +3,7 @@ import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWav } from "./wav-encode";
 import {
   decodeNativeWav,
+  ensureNativeMicrophonePermission,
   getEchoCancelledMicStream,
   nativeAudioCaptureAvailable,
   NATIVE_AUDIO_EVENT,
@@ -267,6 +268,15 @@ export function useVoiceCapture(): VoiceCapture {
     // getUserMedia({audio}) call fails. The APK therefore captures through
     // AudioRecord and sends complete WAV utterances through this event bridge.
     if (nativeAudioCaptureAvailable()) {
+      try {
+        await ensureNativeMicrophonePermission();
+      } catch (error) {
+        setError(error instanceof Error ? error.message : String(error));
+        setCapturing(false);
+        return false;
+      }
+      // The learner may stop voice mode while the system dialog is open.
+      if (!callbacksRef.current) return false;
       if (!nativeCaptureActiveRef.current) {
         const result = startNativeAudioCapture();
         if (!result.ok) {

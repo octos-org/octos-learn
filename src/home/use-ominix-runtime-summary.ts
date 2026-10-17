@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  fetchVoiceReadiness,
-  type VoiceReadiness,
-} from "@/settings/settings-api";
-import {
-  fetchHostedTtsStatus,
-  isHostedTtsEnabled,
-} from "@/api/voice";
+import type { VoiceReadiness } from "@/settings/settings-api";
+import { getVoiceRouting } from "@/api/voice-routing";
 
 export type OminixRuntimeTone = "default" | "success" | "warning" | "danger";
 
@@ -140,19 +134,20 @@ export function summarizeVoiceReadiness(
 
 export function refreshOminixRuntimeSummary(): Promise<void> {
   if (inFlight) return inFlight;
-  inFlight = fetchVoiceReadiness()
-    .then(async (readiness) => {
-      let hostedTtsAvailable = false;
-      if (isHostedTtsEnabled()) {
-        try {
-          const status = await fetchHostedTtsStatus();
-          hostedTtsAvailable = status.uses_platform && status.available;
-        } catch {
-          // The generic personal-TTS result remains authoritative when the
-          // optional product service cannot be reached.
-        }
-      }
-      emit(summarizeVoiceReadiness(readiness, hostedTtsAvailable));
+  inFlight = getVoiceRouting(true)
+    .then((routing) => {
+      const readiness = {
+        ...routing.readiness,
+        ready: false,
+        asr: { ready: routing.asr !== "unavailable", mode: routing.asr,
+          detail: routing.asr === "unavailable" ? routing.cloudAsrDetail : "语音识别已就绪。" },
+        tts: { ready: routing.tts !== "unavailable", mode: routing.tts, detail: "旁白语音暂不可用。" },
+      };
+      const summary = summarizeVoiceReadiness(readiness);
+      emit(routing.readinessKnown === false ? {
+        ...summary, inputReady: routing.asr !== "unavailable", ready: false, llmReady: undefined,
+        label: "模型服务状态暂时无法确认。", state: "llm_unknown", canRepair: false,
+      } : summary);
     })
     .catch(() => {
       emit({
@@ -187,10 +182,16 @@ export function useOminixRuntimeSummary() {
       }
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
+    const onSpeechConfigured = () => {
+      if (inFlight) void inFlight.then(() => refreshOminixRuntimeSummary());
+      else void refreshOminixRuntimeSummary();
+    };
+    window.addEventListener("octos:native-speech-configured", onSpeechConfigured);
     return () => {
       listeners.delete(setSummary);
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("octos:native-speech-configured", onSpeechConfigured);
     };
   }, []);
 
