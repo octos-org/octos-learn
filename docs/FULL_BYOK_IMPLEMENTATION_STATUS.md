@@ -26,14 +26,22 @@
 自动测试全部使用合成凭据和模拟供应商；没有用平台 Key 冒充个人接入。运行日志位于本机 `/private/tmp/octos-byok-*.log` 与 `/private/tmp/octos-voice-settings-*.log`，最终结果以本轮交付说明为准。
 
 - Octos：`cargo test -p octos-cli --no-default-features --features api client_services --lib`，覆盖加密 / 防密文跨账号复制、掩码元数据、本人显式同步、删除、旧版本拒绝、无平台回退及模型 Key 跨账号探测拒绝；共 7 项定向测试通过，新增 relay 固定地址 / 新版鉴权、成功响应、错误脱敏、超时及大小限制覆盖。`cargo check` 通过。
-- 前端：Vitest 全量 1,146 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
+- 前端：Vitest 全量 1,155 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
 - 本机真实候选服务器 HTTP 检查：无认证同步被拒绝、普通 profile / 元数据不返回 Key、显式本人同步与删除正常；仅使用合成凭据，无供应商请求。预览使用独立临时 profile，不复用线上账号或数据。
-- Chromium：`tests/byok-settings.spec.ts` 与 `tests/voice-settings.spec.ts`，三项通过：Voice / API Keys 跨页面配置、关闭服务显式测试及窄屏无溢出；保存配置不领取平台凭据、不暗中测试、不将 Key 写入 localStorage；显式 Jev 草稿测试经认证 relay 发送本人 Key。
+- Chromium：`tests/byok-settings.spec.ts` 与 `tests/voice-settings.spec.ts`，覆盖 Voice / API Keys 跨页面配置、关闭服务显式测试及窄屏无溢出；保存配置不领取平台凭据、不暗中测试、不将 Key 写入 localStorage；显式 Jev 草稿测试经认证 relay 发送本人 Key。新增真实 ONNX / AudioWorklet 初始化测试，使用 Chromium 合成麦克风，验证录音开始、停止后轨道释放，不使用本人真实麦克风或调用供应商。
 - Vite 常规、公网构建；Android Java 编译、Android 资源构建及 debug APK 打包。候选 APK 未安装至真实电视。
 
 设置页记录：[Voice 桌面](byok-migration-2026-10-19/voice-settings-desktop.png)、[API Keys 语音分组](byok-migration-2026-10-19/voice-api-keys-desktop.png)、[Voice 窄屏](byok-migration-2026-10-19/voice-settings-mobile.png)。保存 Key 不自动启用，显式测试停用服务仅临时取本人凭据；运行快照仍排除停用服务。
 
 页面记录：[桌面 onboarding](byok-migration-2026-10-19/onboarding-desktop.png)、[960×540 视口](byok-migration-2026-10-19/onboarding-960x540.png)。后者是浏览器视口检查，不是电视实机验收。
+
+## 音色选择与本机录音修复
+
+- Voice 的 Voice ID 在配置本人 TTS API Key 后读取随应用发布的火山标准音色目录，按 Resource ID 筛选下拉选项；现有自定义 / 克隆音色 ID 保留，可手动输入。加载失败或超时保留手动输入和重试，不修改已保存配置、不自动试听。目录目前收录 30 个常用标准音色，不声称是完整或账号已授权列表。
+- 官方 [ListSpeakers](https://docs.volcengine.com/docs/DoubaoVoice/ListSpeakers-LargeModelSoundListNewInterface?lang=zh) 示例使用 HMAC-SHA256 / AK-SK 签名，不能将语音推理 API Key 直接套用。当前目录取自[官方音色表](https://docs.volcengine.com/docs/DoubaoVoice/Tonelist-1?lang=zh)，账号对某个音色的实际权限由显式 Test voice 验证；不新增 AK/SK 配置。
+- 根因：Android 准备脚本删除了 `public/vad`，而 `pnpm dev:https` 缺少复制该目录的生命周期步骤；运行中的网页因此拿到 SPA HTML 而非录音模型 / worklet。现在 HTTPS 启动补齐资源，Android 只清理最终 APK assets 中的 VAD，不删除网页源资源。
+- 已执行 Android 资源构建，确认 APK 输出不含 VAD，随后通过正常 `https://127.0.0.1:5173/vad/` 逐字节校验 ONNX、AudioWorklet、ORT 模块和 WASM，均为正确文件。
+- 录音失败会区分权限被拒、无设备、设备占用 / 读取失败与 VAD 初始化失败；设置测试显示当次失败原因，不再统一误报权限。修复首次设置测试因初始化身份通知而取消自身的顺序问题。
 
 ## 当前外部接口证据与限制
 

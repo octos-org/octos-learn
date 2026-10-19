@@ -1,9 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-test("configures Voice through Learning and API Keys without implicit tests or activation", async ({ page }) => {
+test.use({ permissions: ["microphone"], launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } });
+
+type Service = { provider: string; enabled: boolean; params: Record<string, string>; key: string; revision: string; execution_target: string };
+async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {}) {
   const profile = { id: "learner", name: "Learner", enabled: true, config: { llm: { primary: { family_id: "google", model_id: "gemini-test" }, fallbacks: [] }, gateway: {}, env_vars: {} } };
-  type Service = { provider: string; enabled: boolean; params: Record<string, string>; key: string; revision: string; execution_target: string };
-  const services: Record<string, Service> = {};
+  const services = { ...initial };
   const writes: Array<Record<string, unknown>> = [];
   const relay: unknown[] = [];
   let revision = 0;
@@ -32,6 +34,11 @@ test("configures Voice through Learning and API Keys without implicit tests or a
     }
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
+  return { services, writes, relay };
+}
+
+test("configures Voice through Learning and API Keys without implicit tests or activation", async ({ page }) => {
+  const { services, writes, relay } = await mockVoiceAccount(page);
   await page.goto("/settings?tab=voice");
   const tts = page.getByRole("region", { name: "Text to Speech" });
   await expect(tts).toBeVisible();
@@ -40,7 +47,6 @@ test("configures Voice through Learning and API Keys without implicit tests or a
   await page.getByRole("textbox", { name: "Find a setting" }).fill("learning");
   await expect(page.getByRole("button", { name: "Voice", exact: true })).toBeVisible();
   await page.getByRole("textbox", { name: "Find a setting" }).fill("");
-  await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-settings-desktop.png" });
 
   await tts.getByRole("link", { name: "Set up API key" }).click();
   const keys = page.getByRole("region", { name: "Speech & Learning" });
@@ -57,13 +63,17 @@ test("configures Voice through Learning and API Keys without implicit tests or a
 
   await page.getByRole("button", { name: "Voice", exact: true }).click();
   await expect(tts.getByRole("button", { name: "Test voice" })).toBeEnabled();
-  await tts.getByLabel("Voice ID").fill("my-voice");
+  await expect(tts.getByLabel("Voice ID", { exact: true })).toBeEnabled();
+  await expect(tts.getByRole("option", { name: "Vivi 2.0", exact: true })).toHaveCount(1);
+  await tts.getByLabel("Voice ID", { exact: true }).selectOption("zh_female_vv_uranus_bigtts");
   await tts.getByRole("switch").check();
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
   expect(writes).toHaveLength(3);
   expect(writes[2]).not.toHaveProperty("key");
-  expect(writes[2]).toMatchObject({ enabled: true, params: { voice: "my-voice" } });
+  expect(writes[2]).toMatchObject({ enabled: true, params: { voice: "zh_female_vv_uranus_bigtts" } });
+  await tts.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-settings-desktop.png" });
   const jev = page.getByRole("region", { name: "Input Understanding" });
   await jev.getByRole("button", { name: "Test connection" }).click();
   await expect(jev.getByText("Jev connected successfully.")).toBeVisible();
@@ -77,4 +87,36 @@ test("configures Voice through Learning and API Keys without implicit tests or a
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-settings-mobile.png" });
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-tts-key");
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-jev-key");
+});
+
+
+test.describe("browser microphone runtime", () => {
+
+  test("initializes the real ONNX/worklet runtime and releases a synthetic microphone", async ({ page }) => {
+    const { relay } = await mockVoiceAccount(page, { asr: { provider: "volcano", enabled: false, key: "synthetic-asr-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } });
+    await page.addInitScript(() => {
+      const tracked = window as unknown as { testMicTracks: MediaStreamTrack[] };
+      tracked.testMicTracks = [];
+      const getStream = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+      navigator.mediaDevices.getUserMedia = async constraints => {
+        const stream = await getStream(constraints); tracked.testMicTracks.push(...stream.getTracks()); return stream;
+      };
+    });
+    const failures: string[] = [];
+    page.on("console", message => { if (message.type() === "error" && message.text().includes("[voice]")) failures.push(message.text()); });
+    await page.goto("/settings?tab=voice");
+    const asr = page.getByRole("region", { name: "Speech Recognition" });
+    await expect(asr.getByRole("button", { name: "Test microphone" })).toBeEnabled();
+    await page.waitForLoadState("networkidle");
+    const started = page.waitForEvent("console", { predicate: message => message.text().includes("started micVAD"), timeout: 20_000 });
+    await asr.getByRole("button", { name: "Test microphone" }).click();
+    await started.catch(error => { throw new Error(`${String(error)}; capture errors: ${failures.join("; ")}`); });
+    await asr.getByRole("button", { name: "Stop test" }).click();
+    await expect(asr.getByText("Test canceled.")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => {
+      const tracks = (window as unknown as { testMicTracks: MediaStreamTrack[] }).testMicTracks;
+      return tracks.length > 0 && tracks.every(track => track.readyState === "ended");
+    })).toBe(true);
+    expect(failures).toEqual([]); expect(relay).toHaveLength(0);
+  });
 });

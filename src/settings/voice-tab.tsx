@@ -4,6 +4,7 @@ import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsServi
 import { saveClientService, type Capability, type ServiceMetadata } from "@/byok/services";
 import { useServiceMetadata, type ServiceMetadataMap } from "@/byok/use-service-metadata";
 import { formatSettingsError, type Profile } from "./settings-api";
+import { VolcanoVoiceSelect } from "./volcano-voice-select";
 import { VoiceServiceTest } from "./voice-service-test";
 
 interface ServiceForm { enabled: boolean; params: Record<string, string> }
@@ -90,7 +91,7 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
             <label className="block min-w-0"><span className={labelClass}>Provider</span><select className={inputClass} value={definition.provider} onChange={() => {}}><option value={definition.provider}>{definition.providerName}</option></select></label>
             {capability === "admission" ? field("model", "Model", "jev-latest") : field("resource_id", "Resource ID")}
           </div>
-          {capability === "tts" && field("voice", "Voice ID", "Enter a voice ID available to your resource")}
+          {capability === "tts" && <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id} value={draft.params.voice} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
             <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
             <a href="/settings?tab=api-keys#speech-services" className="text-xs font-medium text-accent hover:underline">{hasKey ? "Manage API key" : "Set up API key"}</a>

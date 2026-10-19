@@ -1,0 +1,258 @@
+{
+  "version": 1,
+  "source": "https://docs.volcengine.com/docs/DoubaoVoice/Tonelist-1?lang=zh",
+  "checkedAt": "2026-10-19",
+  "scope": "public-standard-catalog",
+  "voices": [
+    {
+      "id": "zh_female_vv_uranus_bigtts",
+      "name": "Vivi 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_xiaohe_uranus_bigtts",
+      "name": "小何 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_m191_uranus_bigtts",
+      "name": "云舟 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_taocheng_uranus_bigtts",
+      "name": "小天 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_liufei_uranus_bigtts",
+      "name": "刘飞 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_sophie_uranus_bigtts",
+      "name": "魅力苏菲 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_qingxinnvsheng_uranus_bigtts",
+      "name": "清新女声 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_cancan_uranus_bigtts",
+      "name": "知性灿灿 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_linjiananhai_uranus_bigtts",
+      "name": "邻家男孩 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_ruyaqingnian_uranus_bigtts",
+      "name": "儒雅青年 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_wennuanahu_uranus_bigtts",
+      "name": "温暖阿虎 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_wenroushunv_uranus_bigtts",
+      "name": "温柔淑女 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_zhixingnv_uranus_bigtts",
+      "name": "知性女声 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_qingshuangnanda_uranus_bigtts",
+      "name": "清爽男大 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_yuanboxiaoshu_uranus_bigtts",
+      "name": "渊博小叔 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_yangguangqingnian_uranus_bigtts",
+      "name": "阳光青年 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_qingchezizi_uranus_bigtts",
+      "name": "清澈梓梓 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_tianmeiyueyue_uranus_bigtts",
+      "name": "甜美悦悦 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_wenrouxiaoge_uranus_bigtts",
+      "name": "温柔小哥 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_shaoergushi_uranus_bigtts",
+      "name": "少儿故事 2.0",
+      "resourceIds": [
+        "seed-tts-2.0"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_yingyujiaoyu_mars_bigtts",
+      "name": "Tina老师",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_qinqienvsheng_moon_bigtts",
+      "name": "亲切女声",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_tianmeitaozi_mars_bigtts",
+      "name": "甜美桃子",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_qingxinnvsheng_mars_bigtts",
+      "name": "清新女声",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_yuanboxiaoshu_moon_bigtts",
+      "name": "渊博小叔",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_cancan_mars_bigtts",
+      "name": "灿灿 / Shiny",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_shuangkuaisisi_moon_bigtts",
+      "name": "爽快思思 / Skye",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_wennuanahu_moon_bigtts",
+      "name": "温暖阿虎 / Alvin",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_male_shaonianzixin_moon_bigtts",
+      "name": "少年梓辛 / Brayan",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    },
+    {
+      "id": "zh_female_shaoergushi_mars_bigtts",
+      "name": "少儿故事",
+      "resourceIds": [
+        "seed-tts-1.0",
+        "seed-tts-1.0-concurr"
+      ],
+      "language": "中文 / English"
+    }
+  ]
+}

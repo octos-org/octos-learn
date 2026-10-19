@@ -148,7 +148,7 @@ function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage
         .finally(() => { if (active.current === controller) { active.current = null; setWorking(false); } });
     });
     if (controller.signal.aborted) { await capture.stop(); return; }
-    if (!ok) { setWorking(false); active.current = null; onMessage("麦克风不可用，请检查设备权限；配置草稿已保留。"); return; }
+    if (!ok) { setWorking(false); active.current = null; onMessage(capture.getError?.() || "麦克风初始化失败，请检查录音组件和设备权限；配置草稿已保留。"); return; }
     timer.current = setTimeout(() => { void stop(); onMessage("测试录音已停止，可重试或继续打字。"); }, 20_000);
   }
   return <div><button onClick={() => void (working ? stop() : start())}>{working ? "停止测试" : "录一小句测试草稿"}</button>{capture.error && <p role="alert">{capture.error}</p>}</div>;

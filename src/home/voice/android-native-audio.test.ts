@@ -14,6 +14,7 @@ const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
   scripts: Record<string, string>;
 };
 const androidAssets = readFileSync("scripts/prepare-android-assets.mjs", "utf8");
+const finalizedAndroidAssets = readFileSync("scripts/finalize-android-assets.mjs", "utf8");
 const viteConfig = readFileSync("vite.config.ts", "utf8");
 const nativeRuntimeStub = readFileSync(
   "build/android-native-runtime-stub.ts",
@@ -59,8 +60,9 @@ describe("Android native private-ASR audio pipeline", () => {
       .toBeLessThan(preload.indexOf("VAD_RUNTIME_ASSETS.map"));
     expect(packageJson.scripts["prebuild:android"])
       .toBe("node scripts/prepare-android-assets.mjs");
-    expect(androidAssets).toContain('join(root, "public", "vad")');
-    expect(androidAssets).toContain("rmSync(vadAssets");
+    expect(androidAssets).not.toContain("rmSync");
+    expect(finalizedAndroidAssets).toContain('"android", "app", "src", "main", "assets", "vad"');
+    expect(packageJson.scripts["predev:https"]).toContain("scripts/copy-vad-assets.mjs");
     expect(viteConfig).toContain(
       'mode === "android" && command === "build"',
     );

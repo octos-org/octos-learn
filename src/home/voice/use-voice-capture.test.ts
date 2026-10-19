@@ -47,6 +47,19 @@ describe("useVoiceCapture", () => {
     }) as Response));
   });
 
+  it("exposes the actual initialization error immediately after start fails", async () => {
+    vadNewMock.mockRejectedValue(new Error("Failed to load ONNX runtime"));
+    const { result, unmount } = renderHook(() => useVoiceCapture());
+    let failure: string | null = null;
+    await act(async () => {
+      expect(await result.current.start(vi.fn())).toBe(false);
+      failure = result.current.getError();
+    });
+    expect(failure).toContain("Failed to load ONNX runtime");
+    expect(failure).not.toContain("permission");
+    unmount();
+  });
+
   it("requests all-system echo cancellation for initial and resumed capture", async () => {
     const initialStream = {} as MediaStream;
     const resumedStream = {} as MediaStream;

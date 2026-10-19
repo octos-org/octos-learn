@@ -45,8 +45,11 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
   async function test() {
     unlockAudio();
     controller.current?.abort();
-    controller.current = new AbortController();
-    const request = serviceRequest(controller.current.signal, capability);
+    const nextController = new AbortController();
+    // serviceRequest may initialize the identity scope and notify reset listeners.
+    // Publish this test's controller only after that reset so it cannot cancel itself.
+    const request = serviceRequest(nextController.signal, capability);
+    controller.current = nextController;
     active.current = request; setState("testing"); setMessage(""); setAudio(null);
     deadline.current = setTimeout(() => {
       if (active.current !== request) return;
@@ -73,7 +76,7 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
           }).catch(error => fail(error, request));
         });
         if (request.signal.aborted) { await capture.stop(); return; }
-        if (!ok) throw new ServiceError("environment_unsupported", "Microphone unavailable. Check your device permission and try again.");
+        if (!ok) throw new ServiceError("environment_unsupported", capture.getError?.() || "Microphone initialization failed. Check the audio runtime and your device permissions, then retry.");
         if (!claimed && active.current === request) timer.current = setTimeout(() => { controller.current?.abort(); finish(request); void capture.stop(); setState("idle"); setMessage("Recording stopped after 20 seconds. You can try again."); }, 20_000);
         return;
       }

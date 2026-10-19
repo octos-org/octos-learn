@@ -9,6 +9,7 @@
     "setup:https": "node scripts/setup-local-https.mjs",
     "predev": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
     "dev": "vite",
+    "predev:https": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
     "dev:https": "vite --mode local-https --host 0.0.0.0",
     "prebuild": "node scripts/copy-vad-assets.mjs && node scripts/copy-course-pack-assets.mjs",
     "build": "tsc -b && vite build",

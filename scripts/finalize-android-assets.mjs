@@ -9,6 +9,10 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+// Exclude browser-only VAD from the APK output, preserving a running web dev server.
+rmSync(join(root, "android", "app", "src", "main", "assets", "vad"), { recursive: true, force: true });
+console.log("[finalize-android-assets] excluded browser VAD assets from APK output");
+
 const companions = join(
   root,
   "android",
