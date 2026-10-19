@@ -53,9 +53,9 @@
 
 ## 专题计划
 
-- [全面 BYOK 候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)：当前分支、已实现的管理 / 直连边界、自动验证与尚未完成的真实供应商 / 电视 / 上线验收。
+- [全面 BYOK 候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)：当前分支、已实现的管理 / 直连 / 网页 BYOK 转发边界、自动验证与尚未完成的真实供应商 / 电视 / 上线验收。
 
-- [全面 BYOK 与首次使用体验实施方案](FULL_BYOK_IMPLEMENTATION_PLAN.md)：Octos 统一管理课程模型、ASR、TTS 与可选 Jev 本人凭据；浏览器 / 电视 ASR、TTS、Jev 直连，包含 onboarding、缺配置恢复、分阶段改造及平台代付退出。
+- [全面 BYOK 与首次使用体验实施方案](FULL_BYOK_IMPLEMENTATION_PLAN.md)：Octos 统一管理课程模型、ASR、TTS 与可选 Jev 本人凭据；电视 ASR、TTS、Jev 直连与网页受限时 VPS 转发，首期语音仅火山新版 API Key，包含 onboarding、缺配置恢复、分阶段改造及平台代付退出。
 
 - 课程模型路由：[Claude 设计依据](PROFILE_MODEL_LESSON_GENERATION_PLAN_CLAUDE.md) / [执行指令](PROFILE_MODEL_LESSON_GENERATION_EXECUTION.md) / [实施报告](PROFILE_MODEL_LESSON_GENERATION_REPORT.md) / [复核跟进](PROFILE_MODEL_LESSON_GENERATION_REVIEW_FOLLOWUP.md)。
 

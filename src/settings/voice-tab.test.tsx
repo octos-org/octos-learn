@@ -25,7 +25,7 @@ describe("BYOK voice settings", () => {
     show(); const tts = await screen.findByRole("region", { name: "听讲解" });
     fireEvent.change(within(tts).getByLabelText("API Key"), { target: { value: "own-test-key" } });
     fireEvent.click(within(tts).getByRole("button", { name: "保存配置" }));
-    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "azure", key: "own-test-key" }), undefined));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "own-test-key" }), undefined));
     expect(state.synthesize).not.toHaveBeenCalled();
   });
   it("keeps an unsaved key draft after a failed direct synthesis test", async () => {
@@ -37,4 +37,17 @@ describe("BYOK voice settings", () => {
     expect(within(tts).getByLabelText("API Key")).toHaveProperty("value", "own-test-key");
     expect(state.save).not.toHaveBeenCalled();
   });
+  it.each(["azure", "legacy"])("requires a fresh API Key when migrating %s settings", async kind => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: { tts: { provider: kind === "azure" ? "azure" : "volcano", enabled: true, params: { auth_mode: "legacy", app_id: "old-app", resource_id: "old-resource", voice: "old-voice" }, revision: "old-revision", has_credential: true } } });
+    show(); const tts = await screen.findByRole("region", { name: "听讲解" });
+    expect(within(tts).queryByRole("combobox")).toBeNull();
+    fireEvent.click(within(tts).getByRole("button", { name: "保存配置" }));
+    await screen.findByText("请填写火山新版 API Key，旧凭据不能继续使用。");
+    expect(state.save).not.toHaveBeenCalled();
+    fireEvent.change(within(tts).getByLabelText("API Key"), { target: { value: "new-api-key" } });
+    fireEvent.click(within(tts).getByRole("button", { name: "保存配置" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "new-api-key", params: expect.objectContaining({ auth_mode: "api-key" }) }), "old-revision"));
+    expect(state.save.mock.calls[0][1].params).not.toHaveProperty("app_id");
+  });
+
 });

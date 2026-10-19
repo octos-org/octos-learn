@@ -21,16 +21,19 @@ export function ServiceSettings({ only, compact = false }: { only?: Capability; 
     return () => { active = false; };
   }, [revision]);
   return <div className="space-y-5">
-    <p>所有 AI 调用使用你自己的 Key，费用由供应商账户承担。ASR、TTS、Jev 由当前设备直连，Octos 只管理并同步配置。可跳过，继续白板和已有课程。</p>
+    <p>所有 AI 调用使用你自己的 Key，费用由供应商账户承担。电视直连供应商；网页直连受限时经服务器转发，仍使用你自己的 Key。可跳过，继续白板和已有课程。</p>
     {loading && <p role="status">正在读取账号配置…</p>}
     {error ? <p role="alert">{error} <button onClick={reload}>重新读取</button></p> : !loading && (only ? [only] : ["tts", "asr", "admission"] as const).map(capability => <ServiceCard key={`${capability}:${metadata[capability]?.revision ?? "empty"}`} capability={capability} collapsed={compact || (!only && capability === "admission")} saved={metadata[capability]} onSaved={reload} />)}
   </div>;
 }
 function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Capability; collapsed: boolean; saved?: ServiceMetadata; onSaved: () => void }) {
-  const [provider, setProvider] = useState(saved?.provider ?? (capability === "admission" ? "typesafe" : window.OctosNativeByok ? "volcano" : "azure"));
-  const defaults = (id: string): Record<string, string> => id === "azure" ? { region: "eastasia", voice: "zh-CN-XiaoxiaoNeural", language: "zh-CN" }
-    : id === "typesafe" ? { model: "jev-latest" } : { auth_mode: "api-key", app_id: "", resource_id: capability === "tts" ? "seed-tts-2.0" : "volc.bigasr.auc_turbo", voice: "" };
-  const [params, setParams] = useState(saved?.params ?? defaults(provider));
+  const provider = capability === "admission" ? "typesafe" : "volcano";
+  const needsNewKey = !!saved && (saved.provider !== provider || (capability !== "admission" && (saved.params.auth_mode === "legacy" || !!saved.params.app_id)));
+  const defaults: Record<string, string> = capability === "admission" ? { model: "jev-latest" }
+    : { auth_mode: "api-key", resource_id: capability === "tts" ? "seed-tts-2.0" : "volc.bigasr.auc_turbo", ...(capability === "tts" ? { voice: "" } : {}) };
+  const [params, setParams] = useState(() => Object.fromEntries(Object.entries(defaults).map(([name, value]) => [name,
+    name === "auth_mode" ? "api-key" : saved?.provider === provider ? saved.params[name] ?? value : value,
+  ])));
   const [key, setKey] = useState("");
   const [enabled, setEnabled] = useState(saved?.enabled ?? capability !== "admission");
   const [busy, setBusy] = useState(false);
@@ -49,12 +52,13 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     return () => { controller.current?.abort(); window.removeEventListener("octos:client-services-reset", reset); window.removeEventListener("octos:client-service-changed", reset); };
   }, [capability]);
   function draft(): ClientService {
-    return { provider, enabled: true, params, revision: saved?.revision ?? "draft", execution_target: "client", key: key.trim() || (saved?.provider === provider ? getService(capability)?.key ?? "" : "") };
+    return { provider, enabled: true, params, revision: saved?.revision ?? "draft", execution_target: "client", key: key.trim() || (saved?.provider === provider && !needsNewKey ? getService(capability)?.key ?? "" : "") };
   }
   async function save() {
     setBusy(true); setMessage("");
     try {
-      await saveClientService(capability, { provider, enabled, params, key: key.trim() || undefined }, saved?.revision);
+      if (needsNewKey && enabled && !key.trim()) { setMessage("请填写火山新版 API Key，旧凭据不能继续使用。"); return; }
+      await saveClientService(capability, { provider, enabled, params, key: key.trim() || (needsNewKey ? "" : undefined) }, saved?.revision);
       setKey(""); setMessage("已保存；是否可用以当前设备真实测试为准。"); onSaved();
     } catch { setMessage("保存失败，请重新读取配置后重试；输入仍保留。不能用平台 Key 代替。"); }
     finally { setBusy(false); }
@@ -74,7 +78,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
         const response = await directJson("admission", config, { model: params.model || "jev-latest", state: "学习勾股定理", questions: { learning: { type: "noul", instructions: "这是一项学习请求。" } } }, abort.signal);
         const data = JSON.parse(response.body) as { answers?: { learning?: { noul?: number } } };
         if (typeof data.answers?.learning?.noul !== "number") throw new Error("Invalid response");
-        setMessage("当前设备已直连 Jev。测试不会保存或覆盖账号配置。");
+        setMessage("已成功调用 Jev。测试不会保存或覆盖账号配置。");
       }
     } catch (error) { setMessage(serviceFailure(capability, error, false).message); }
     finally { setBusy(false); }
@@ -89,17 +93,13 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   const field = (name: string, label: string) => <label className="block space-y-2" key={name}>{label}<input className={inputClass} value={params[name] ?? ""} onChange={event => { setParams(value => ({ ...value, [name]: event.target.value })); setMessage(""); setAudio(null); }} autoComplete="off" spellCheck={false} /></label>;
   const content = <div className="space-y-4">
     <p>{capability === "admission" ? "帮助过滤无关口语、判断是否需要补充问题。未配置、关闭或不可用时跳过，其他能力照常工作。" : "可选；未配置时仍可继续文字学习。"}</p>
-    <label className="block space-y-2">供应商<select className={inputClass} value={provider} onChange={event => { setProvider(event.target.value); setParams(defaults(event.target.value)); setKey(""); setMessage(""); setAudio(null); }}>
-      {capability === "admission" ? <option value="typesafe">TypeSafe Jev</option> : <><option value="azure">Azure Speech</option><option value="volcano">火山语音（电视原生直连；网页受鉴权兼容限制）</option></>}
-    </select></label>
-    {provider === "azure" && <>{field("region", "Azure 资源区域（如 eastasia）")}{capability === "tts" ? field("voice", "Azure 音色 ID") : field("language", "识别语言（如 zh-CN）")}</>}
-    {provider === "volcano" && <>
-      <label className="block space-y-2">鉴权方式<select className={inputClass} value={params.auth_mode} onChange={event => setParams(value => ({ ...value, auth_mode: event.target.value }))}><option value="api-key">新版 API Key</option><option value="legacy">旧版 App ID + Access Key</option></select></label>
-      {params.auth_mode === "legacy" && field("app_id", "App ID")}{field("resource_id", "已开通的资源 ID")}{capability === "tts" && field("voice", "与资源匹配的音色 ID")}
-    </>}
+    <p>供应商：{capability === "admission" ? "TypeSafe Jev" : "火山引擎 · 新版 API Key"}</p>
+    <p>{window.OctosNativeByok ? "本机通过原生网络直连供应商。" : "当前网页接口不支持所需跨域调用，将经服务器转发；语音录音和 Jev 输入会经过服务器。"}</p>
+    {needsNewKey && <p role="alert">原供应商或旧版鉴权已不再支持，请填写火山新版 API Key 后保存。</p>}
+    {provider === "volcano" && <>{field("resource_id", "已开通的资源 ID")}{capability === "tts" && field("voice", "与资源匹配的音色 ID")}</>}
     {provider === "typesafe" && field("model", "Jev 模型")}
-    <label className="block space-y-2">{provider === "volcano" && params.auth_mode === "legacy" ? "Access Key" : "API Key"}<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider ? "本人凭据已保存；留空保留" : "粘贴你自己的 Key"} /></label>
-    <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={provider === "azure" ? "https://portal.azure.com/" : provider === "volcano" ? "https://console.volcengine.com/speech/app" : "https://console.typesafe.ai/settings/keys"} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
+    <label className="block space-y-2">API Key<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider && !needsNewKey ? "本人凭据已保存；留空保留" : "粘贴你自己的 Key"} /></label>
+    <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={provider === "volcano" ? "https://console.volcengine.com/speech/app" : "https://console.typesafe.ai/settings/keys"} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
     <label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> 启用此能力</label>
     <p role="status">{saved && !saved.enabled ? "账号已保存，当前已停用。" : status.detail}</p>
     <div className="flex flex-wrap gap-3">
@@ -137,7 +137,7 @@ function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage
     const draft = config();
     try { validateService("asr", draft); } catch (error) { onMessage(serviceFailure("asr", error, false).message); return; }
     const controller = new AbortController(); active.current = controller; setWorking(true);
-    onMessage("正在准备麦克风；请说一小句，识别后停止。录音只发往你选择的供应商。");
+    onMessage("正在准备麦克风；请说一小句，识别后停止。录音将发往火山引擎；网页直连受限时会经过服务器转发。");
     let claimed = false;
     const ok = await capture.start(wav => {
       if (claimed || controller.signal.aborted) return; claimed = true;

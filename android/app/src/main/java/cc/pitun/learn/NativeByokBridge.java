@@ -35,8 +35,7 @@ final class NativeByokBridge {
     private static boolean allowedHeader(String key, boolean jev) {
         if ("Content-Type".equals(key)) return true;
         if (jev) return "Authorization".equals(key);
-        return "X-Api-Key".equals(key) || "X-Api-App-Key".equals(key)
-                || "X-Api-App-Id".equals(key) || "X-Api-Access-Key".equals(key)
+        return "X-Api-Key".equals(key)
                 || "X-Api-Resource-Id".equals(key) || "X-Api-Request-Id".equals(key)
                 || "X-Api-Sequence".equals(key);
     }
