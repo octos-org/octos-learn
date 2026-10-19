@@ -235,7 +235,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
         const key = (serviceValues[capability] ?? "").trim();
         const next = await saveClientService(capability, {
           provider: SERVICE_DEFINITIONS[capability].provider,
-          enabled: !!key && supportsService(capability, current) && !!current?.enabled,
+          enabled: !!key,
           params: serviceParams(capability, current), key,
         }, current?.revision);
         if (!next) throw new Error(`Reload ${SERVICE_DEFINITIONS[capability].title} before saving again.`);
@@ -305,7 +305,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
                     onChange={value => { setServiceValues(previous => ({ ...previous, [capability]: value })); setSaved(false); setError(null); }} />
                   {capability !== "admission" && <p className="mt-2 px-1 text-xs leading-5 text-muted">Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.</p>}
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted">
-                    <span>{!supportsService(capability, current) ? "Replace the previous credential with a new Volcano API Key." : "Leave unchanged to keep. Clear and save to remove and disable this service."}</span>
+                    <span>{!supportsService(capability, current) ? "Replace the previous credential with a new Volcano API Key." : "Save a key to connect automatically. Leave unchanged to keep. Clear and save to disconnect."}</span>
                     <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">Get API Key <ExternalLink size={11} /></a>
                   </div>
                 </div>;

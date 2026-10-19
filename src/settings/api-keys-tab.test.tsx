@@ -133,12 +133,12 @@ describe("ApiKeysTab", () => {
     expect("OPENAI_API_KEY" in patch.env_vars).toBe(false);
     expect(patch.env_vars.SERPER_API_KEY).toBe("se***er");
   });
-  it("saves speech keys separately from env vars without automatically enabling a service", async () => {
+  it("saving a speech key connects the service without changing model env vars", async () => {
     render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
     const input = await screen.findByLabelText("Volcano TTS API Key");
     fireEvent.change(input, { target: { value: "synthetic-own-speech-key" } });
     fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
-    await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "synthetic-own-speech-key", enabled: false }), undefined));
+    await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "synthetic-own-speech-key", enabled: true }), undefined));
     await screen.findByRole("button", { name: "Saved" });
     expect(input).toHaveProperty("value", "••••••••");
     expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();

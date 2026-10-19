@@ -36,7 +36,7 @@ describe("BYOK voice settings", () => {
     show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
     fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "new-voice" } });
     fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
-    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", { provider: "volcano", enabled: false, params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: "new-voice" } }, "r1"));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", { provider: "volcano", enabled: true, params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: "new-voice" } }, "r1"));
     expect(state.save).toHaveBeenCalledOnce();
     await screen.findByRole("button", { name: "Saved" });
     expect(state.synthesize).not.toHaveBeenCalled(); expect(state.mic).not.toHaveBeenCalled();
@@ -49,12 +49,13 @@ describe("BYOK voice settings", () => {
     expect(screen.getByRole("button", { name: "Save Changes" })).toHaveProperty("disabled", true);
     expect(state.save).not.toHaveBeenCalled();
   });
-  it("can explicitly test a disabled service without saving or enabling it", async () => {
+  it("uses a previously saved key without an activation switch and keeps tests separate from saving", async () => {
     show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
     fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
     await screen.findByText("Voice synthesized and played successfully.");
     expect(state.synthesize.mock.calls[0][2]).toMatchObject({ key: "synthetic-own-key", enabled: true });
-    expect(within(region).getByRole("switch").getAttribute("aria-checked")).toBe("false");
+    expect(within(region).queryByRole("switch")).toBeNull();
+    expect(within(region).getByText(/Connected automatically/)).toBeTruthy();
     expect(state.save).not.toHaveBeenCalled();
   });
   it("preserves unsaved parameters after a failed test", async () => {
@@ -75,10 +76,10 @@ describe("BYOK voice settings", () => {
     fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "another-voice" } });
     expect(signal?.aborted).toBe(true);
   });
-  it("keeps tests and activation disabled without an API Key", async () => {
+  it("keeps paid tests unavailable until an API Key is saved", async () => {
     state.list.mockResolvedValue({ profile_id: "alice", services: {} }); show();
     const region = await screen.findByRole("region", { name: "Text to Speech" });
-    expect(within(region).getByRole("switch")).toHaveProperty("disabled", true);
+    expect(within(region).queryByRole("switch")).toBeNull();
     expect(within(region).getByRole("button", { name: "Test voice" })).toHaveProperty("disabled", true);
     expect(within(region).getByRole("link", { name: "Set up API key" })).toBeTruthy();
   });

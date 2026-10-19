@@ -32,7 +32,7 @@ test("saves optional BYOK services without requesting platform grants or paid te
   await tts.getByLabel("API Key").fill("synthetic-byok-canary");
   await tts.getByRole("button", { name: "保存配置" }).click();
   await expect.poll(() => writes.length).toBe(1);
-  expect(writes[0]).toMatchObject({ provider: "volcano", key: "synthetic-byok-canary", expected_revision: null });
+  expect(writes[0]).toMatchObject({ provider: "volcano", key: "synthetic-byok-canary", enabled: true, expected_revision: null });
   await page.setViewportSize({ width: 960, height: 540 });
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/onboarding-960x540.png", fullPage: true });
   expect(forbidden).toEqual([]); expect(paid).toEqual([]);

@@ -55,7 +55,7 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
   return { services, writes, relay };
 }
 
-test("configures Voice through Learning and API Keys without implicit tests or activation", async ({ page }) => {
+test("saving a key connects Voice without another switch or an implicit supplier test", async ({ page }) => {
   const { services, writes, relay } = await mockVoiceAccount(page);
   await page.goto("/settings?tab=voice");
   const tts = page.getByRole("region", { name: "Text to Speech" });
@@ -74,7 +74,7 @@ test("configures Voice through Learning and API Keys without implicit tests or a
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
   expect(writes).toHaveLength(2); expect(relay).toHaveLength(0);
-  expect(services.tts.enabled).toBe(false); expect(services.admission.enabled).toBe(false);
+  expect(services.tts.enabled).toBe(true); expect(services.admission.enabled).toBe(true);
   expect(await page.getByLabel("Volcano TTS API Key").inputValue()).toBe("••••••••");
   await keys.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-api-keys-desktop.png" });
@@ -84,7 +84,7 @@ test("configures Voice through Learning and API Keys without implicit tests or a
   await expect(tts.getByLabel("Voice ID", { exact: true })).toBeEnabled();
   await expect(tts.getByRole("option", { name: "Vivi 2.0", exact: true })).toHaveCount(1);
   await tts.getByLabel("Voice ID", { exact: true }).selectOption("zh_female_vv_uranus_bigtts");
-  await tts.getByRole("switch").check();
+  await expect(tts.getByRole("switch")).toHaveCount(0);
   await page.getByRole("button", { name: "Save Changes" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
   expect(writes).toHaveLength(3);
@@ -96,7 +96,7 @@ test("configures Voice through Learning and API Keys without implicit tests or a
   await jev.getByRole("button", { name: "Test connection" }).click();
   await expect(jev.getByText("Jev connected successfully.")).toBeVisible();
   expect(relay).toHaveLength(1);
-  expect(services.admission.enabled).toBe(false);
+  expect(services.admission.enabled).toBe(true);
   expect(writes).toHaveLength(3);
   await page.setViewportSize({ width: 390, height: 844 });
   await tts.scrollIntoViewIfNeeded();
@@ -109,6 +109,23 @@ test("configures Voice through Learning and API Keys without implicit tests or a
 
 
 test.describe("browser microphone runtime", () => {
+
+  test("a saved ASR key opens whiteboard voice even with a legacy off flag", async ({ page }) => {
+    const { relay } = await mockVoiceAccount(page, { asr: { provider: "volcano", enabled: false, key: "synthetic-asr-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } });
+    await page.addInitScript(() => {
+      localStorage.setItem("octos-learn:setup-skipped:learner", "yes");
+      const state = window as unknown as { openedServiceSetup: boolean };
+      state.openedServiceSetup = false;
+      window.addEventListener("octos:configure-service", () => { state.openedServiceSetup = true; });
+    });
+    const synced = page.waitForResponse(response => new URL(response.url()).pathname === "/api/my/client-services/sync");
+    await page.goto("/board?new-board=1"); await synced;
+    await page.getByRole("button", { name: "启用语音", exact: true }).first().click();
+    await expect(page.getByRole("button", { name: "关闭语音", exact: true }).first()).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { openedServiceSetup: boolean }).openedServiceSetup)).toBe(false);
+    await page.getByRole("button", { name: "关闭语音", exact: true }).first().click();
+    expect(relay).toHaveLength(0);
+  });
 
   test("initializes the real ONNX/worklet runtime and releases a synthetic microphone", async ({ page }) => {
     const { relay } = await mockVoiceAccount(page, { asr: { provider: "volcano", enabled: false, key: "synthetic-asr-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } });

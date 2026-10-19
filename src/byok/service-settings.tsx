@@ -36,7 +36,6 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     name === "auth_mode" ? "api-key" : saved?.provider === provider ? saved.params[name] ?? value : value,
   ])));
   const [key, setKey] = useState("");
-  const [enabled, setEnabled] = useState(saved?.enabled ?? capability !== "admission");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [audio, setAudio] = useState<Blob | null>(null);
@@ -58,8 +57,8 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   async function save() {
     setBusy(true); setMessage("");
     try {
-      if (needsNewKey && enabled && !key.trim()) { setMessage("请填写火山新版 API Key，旧凭据不能继续使用。"); return; }
-      await saveClientService(capability, { provider, enabled, params, key: key.trim() || (needsNewKey ? "" : undefined) }, saved?.revision);
+      if (needsNewKey && !key.trim()) { setMessage("请填写火山新版 API Key，旧凭据不能继续使用。"); return; }
+      await saveClientService(capability, { provider, enabled: !!key.trim() || !!saved?.has_credential, params, key: key.trim() || (needsNewKey ? "" : undefined) }, saved?.revision);
       setKey(""); setMessage("已保存；是否可用以当前设备真实测试为准。"); onSaved();
     } catch { setMessage("保存失败，请重新读取配置后重试；输入仍保留。不能用平台 Key 代替。"); }
     finally { setBusy(false); }
@@ -93,7 +92,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   }
   const field = (name: string, label: string) => <label className="block space-y-2" key={name}>{label}<input className={inputClass} value={params[name] ?? ""} onChange={event => { setParams(value => ({ ...value, [name]: event.target.value })); setMessage(""); setAudio(null); }} autoComplete="off" spellCheck={false} /></label>;
   const content = <div className="space-y-4">
-    <p>{capability === "admission" ? "帮助过滤无关口语、判断是否需要补充问题。未配置、关闭或不可用时跳过，其他能力照常工作。" : "可选；未配置时仍可继续文字学习。"}</p>
+    <p>{capability === "admission" ? "帮助过滤无关口语、判断是否需要补充问题。保存 Key 后自动使用；未配置或不可用时跳过，其他能力照常工作。" : "保存 Key 后自动使用；未配置时仍可继续文字学习。"}</p>
     <p>供应商：{capability === "admission" ? "TypeSafe Jev" : "火山引擎 · 新版 API Key"}</p>
     <p>{window.OctosNativeByok ? "本机通过原生网络直连供应商。" : "当前网页接口不支持所需跨域调用，将经服务器转发；语音录音和 Jev 输入会经过服务器。"}</p>
     {needsNewKey && <p role="alert">原供应商或旧版鉴权已不再支持，请填写火山新版 API Key 后保存。</p>}
@@ -102,8 +101,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     <label className="block space-y-2">API Key<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider && !needsNewKey ? "本人凭据已保存；留空保留" : "粘贴你自己的 Key"} /></label>
     {provider === "volcano" && <p>请使用豆包语音控制台的新版 API Key；火山方舟 Ark / 大模型 Key 和旧版 Access Token 不能用于语音服务。</p>}
     <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
-    <label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> 启用此能力</label>
-    <p role="status">{saved && !saved.enabled ? "账号已保存，当前已停用。" : status.detail}</p>
+    <p role="status">{saved?.has_credential && !needsNewKey ? "本人 Key 已保存，服务已连接；无需额外启用。" : status.detail}</p>
     <div className="flex flex-wrap gap-3">
       <button disabled={busy} onClick={() => void save()}>保存配置</button>
       {capability !== "asr" && <button disabled={busy} onClick={() => void test()}>{busy ? "测试中…" : capability === "tts" ? "测试草稿并试听" : "测试 Jev 草稿"}</button>}

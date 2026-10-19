@@ -7,13 +7,13 @@ import { formatSettingsError, type Profile } from "./settings-api";
 import { VolcanoVoiceSelect } from "./volcano-voice-select";
 import { VoiceServiceTest } from "./voice-service-test";
 
-interface ServiceForm { enabled: boolean; params: Record<string, string> }
+interface ServiceForm { params: Record<string, string> }
 type VoiceForm = Record<Capability, ServiceForm>;
 const icons = { tts: Volume2, asr: Mic, admission: Brain };
 const inputClass = "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 disabled:opacity-50 transition";
 const labelClass = "mb-2 block text-xs font-medium text-muted";
 function serviceForm(capability: Capability, saved?: ServiceMetadata): ServiceForm {
-  return { enabled: supportsService(capability, saved) && !!saved?.enabled, params: serviceParams(capability, saved) };
+  return { params: serviceParams(capability, saved) };
 }
 function initialForm(metadata: ServiceMetadataMap): VoiceForm {
   return Object.fromEntries(SERVICE_CAPABILITIES.map(capability => [capability, serviceForm(capability, metadata[capability])])) as VoiceForm;
@@ -49,13 +49,12 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
         const current = metadata[capability];
         const draft = form[capability];
         if (!supportsService(capability, current)) throw new Error(`Replace the ${SERVICE_DEFINITIONS[capability].title} credential in API Keys first.`);
-        if (draft.enabled && !current?.has_credential) throw new Error(`Add the ${SERVICE_DEFINITIONS[capability].keyLabel} in API Keys first.`);
-        if (draft.enabled && capability !== "admission" && !draft.params.resource_id.trim()) throw new Error("Enter an enabled resource ID before enabling speech.");
-        if (draft.enabled && capability === "tts" && !draft.params.voice.trim()) throw new Error("Enter a voice ID before enabling narration.");
+        if (current?.has_credential && capability !== "admission" && !draft.params.resource_id.trim()) throw new Error("Enter a resource ID for your speech service.");
+        if (current?.has_credential && capability === "tts" && !draft.params.voice.trim()) throw new Error("Choose a voice for narration.");
       }
       for (const capability of dirty) {
         const params = Object.fromEntries(Object.entries(form[capability].params).map(([name, value]) => [name, value.trim()]));
-        const next = await saveClientService(capability, { provider: SERVICE_DEFINITIONS[capability].provider, enabled: form[capability].enabled, params }, metadata[capability]?.revision);
+        const next = await saveClientService(capability, { provider: SERVICE_DEFINITIONS[capability].provider, enabled: !!metadata[capability]?.has_credential, params }, metadata[capability]?.revision);
         if (!next) throw new Error("Configuration changed. Reload the page before saving again.");
         const nextForm = serviceForm(capability, next);
         setMetadata(previous => ({ ...previous, [capability]: next }));
@@ -96,15 +95,10 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
             <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
             <a href="/settings?tab=api-keys#speech-services" className="text-xs font-medium text-accent hover:underline">{hasKey ? "Manage API key" : "Set up API key"}</a>
           </div>
-          <div className="flex items-center justify-between gap-4">
-            <div><p className="text-sm font-medium text-text-strong">{capability === "tts" ? "Enable narration" : capability === "asr" ? "Enable speech input" : "Enable input understanding"}</p><p className="mt-1 text-xs text-muted">{capability === "admission" ? "When off or unavailable, learning continues without Jev." : "Optional. Text learning stays available when off."}</p></div>
-            <button type="button" role="switch" aria-label={`Enable ${definition.title}`} aria-checked={draft.enabled} disabled={!hasKey}
-              onClick={() => update(capability, { enabled: !draft.enabled })}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-30 ${draft.enabled ? "bg-accent" : "bg-border"}`}><span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${draft.enabled ? "translate-x-5" : "translate-x-0"}`} /></button>
-          </div>
+          <p className="text-xs leading-5 text-muted">{hasKey ? "Connected automatically with your saved API key. Remove the key in API Keys to disconnect." : "Optional. Save your API key to connect; text learning remains available without it."}</p>
         </fieldset>
         <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft])} capability={capability}
-          draft={{ provider: definition.provider, enabled: draft.enabled, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving} /></div>
+          draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving} /></div>
       </section>;
     })}
     <div className="flex items-start gap-2 rounded-xl bg-surface-dark/50 px-4 py-3 text-xs leading-5 text-muted">

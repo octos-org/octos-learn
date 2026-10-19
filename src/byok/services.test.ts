@@ -54,11 +54,18 @@ describe("owner-scoped client snapshots", () => {
     expect(getService("tts")?.key).toBe("alice-own-key");
   });
 
-  it("excludes disabled credentials from runtime but allows an explicit settings test", async () => {
+  it("connects saved keys even when an older server reports an off flag", async () => {
     const value = configured(); value.services.tts.enabled = false;
     api.request.mockResolvedValue(value); await prepareClientServices();
-    expect(getService("tts")).toBeUndefined();
+    expect(getService("tts")).toMatchObject({ key: "alice-own-key", enabled: true });
     expect((await getServiceForTest("tts", new AbortController().signal))?.key).toBe("alice-own-key");
+    expect(getServiceStatus("tts").state).toBe("configured_unverified");
+    expect(api.request).toHaveBeenCalledOnce();
+  });
+  it("disconnects an empty key even when an older server reports an on flag", async () => {
+    api.request.mockResolvedValue(configured()); await prepareClientServices();
+    expect(getService("tts")?.key).toBe("alice-own-key");
+    api.request.mockResolvedValue(configured("")); await prepareClientServices(true);
     expect(getService("tts")).toBeUndefined();
     expect(getServiceStatus("tts").state).toBe("unconfigured");
   });

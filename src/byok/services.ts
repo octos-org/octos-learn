@@ -66,7 +66,7 @@ export function getService(capability: Capability): ClientService | undefined {
 }
 export function getServiceStatus(capability: Capability): CapabilityStatus {
   ensureIdentity();
-  return states[capability] ?? { state: "unconfigured", detail: `${names[capability]}尚未启用，可在设置中连接本人服务或启用已保存配置。` };
+  return states[capability] ?? { state: "unconfigured", detail: `${names[capability]}尚未配置，请在设置中保存本人服务 Key。` };
 }
 export function setLessonConfigured(value: boolean): void { ensureIdentity(); lessonConfigured = value; emit(); }
 export function getLessonConfigured(): boolean | undefined { ensureIdentity(); return lessonConfigured; }
@@ -89,15 +89,19 @@ export function prepareClientServices(force = false): Promise<void> {
       for (const capability of ["asr", "tts", "admission"] as const) {
         const value = snapshots[capability];
         const old = states[capability];
-        if (!value?.key || !value.enabled) { delete snapshots[capability]; delete states[capability]; }
-        else if (!old || previous[capability]?.revision !== value.revision) states[capability] = { state: "configured_unverified", detail: "账号已配置，此设备尚未验证。" };
+        if (!value?.key?.trim()) { delete snapshots[capability]; delete states[capability]; }
+        else {
+          // Key presence is the activation intent, including previously saved/off records.
+          snapshots[capability] = { ...value, enabled: true };
+          if (!old || previous[capability]?.revision !== value.revision) states[capability] = { state: "configured_unverified", detail: "账号已配置，此设备尚未验证。" };
+        }
       }
       emit();
     }).finally(() => { clearTimeout(timeout); if (pending === task) pending = undefined; });
   pending = task;
   return task;
 }
-/** Explicit settings test only. Disabled credentials never enter the active snapshot. */
+/** Explicit settings tests can use saved credentials without persisting test parameters. */
 export async function getServiceForTest(capability: Capability, signal: AbortSignal, expectedRevision?: string): Promise<ClientService | undefined> {
   const owner = identity();
   const cached = getService(capability);
