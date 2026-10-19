@@ -21,10 +21,10 @@ const nativeRuntimeStub = readFileSync(
 );
 
 describe("Android native private-ASR audio pipeline", () => {
-  it("enables the private ASR transport in Android production assets", () => {
-    expect(androidEnv).toMatch(/^VITE_PRIVATE_ASR_ENABLED=true$/m);
+  it("disables hosted speech in Android production assets", () => {
+    expect(androidEnv).toMatch(/^VITE_PRIVATE_ASR_ENABLED=false$/m);
     expect(androidEnv).toMatch(/^VITE_PUBLIC_DEPLOYMENT=true$/m);
-    expect(androidEnv).toMatch(/^VITE_HOSTED_TTS_ENABLED=true$/m);
+    expect(androidEnv).toMatch(/^VITE_HOSTED_TTS_ENABLED=false$/m);
   });
 
   it("packages Agora's Android RTC runtime and publishes a custom track", () => {

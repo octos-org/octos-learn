@@ -7,6 +7,7 @@ import {
   useParams,
   useSearchParams,
 } from "react-router-dom";
+import { CapabilitySettingsDialog } from "./byok/settings-dialog";
 import { AuthProvider } from "./auth/auth-context";
 import { AuthGuard } from "./auth/auth-guard";
 import { LoginPage } from "./auth/login-page";
@@ -78,6 +79,7 @@ export function App() {
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
         <AppRoutes />
+        <CapabilitySettingsDialog />
       </AuthProvider>
     </BrowserRouter>
   );

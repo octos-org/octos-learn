@@ -53,6 +53,10 @@
 
 ## 专题计划
 
+- [全面 BYOK 候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)：当前分支、已实现的管理 / 直连边界、自动验证与尚未完成的真实供应商 / 电视 / 上线验收。
+
+- [全面 BYOK 与首次使用体验实施方案](FULL_BYOK_IMPLEMENTATION_PLAN.md)：Octos 统一管理课程模型、ASR、TTS 与可选 Jev 本人凭据；浏览器 / 电视 ASR、TTS、Jev 直连，包含 onboarding、缺配置恢复、分阶段改造及平台代付退出。
+
 - 课程模型路由：[Claude 设计依据](PROFILE_MODEL_LESSON_GENERATION_PLAN_CLAUDE.md) / [执行指令](PROFILE_MODEL_LESSON_GENERATION_EXECUTION.md) / [实施报告](PROFILE_MODEL_LESSON_GENERATION_REPORT.md) / [复核跟进](PROFILE_MODEL_LESSON_GENERATION_REVIEW_FOLLOWUP.md)。
 
 - [课程生成跟随设置主模型](PROFILE_MODEL_LESSON_GENERATION_PLAN.md)：基于最新 Octos 的技能模型路由、凭据传递与配置生效状态修改方案；Ark 仅用于 TTS。

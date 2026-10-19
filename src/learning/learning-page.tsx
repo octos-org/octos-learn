@@ -32,12 +32,12 @@ import {
   prepareNativeAudioCapture,
 } from "@/home/voice/microphone";
 import {
-  privateAsrEnabled,
-  preloadPrivateAsrRuntime,
 } from "@/home/voice/private-asr-client";
 import { preloadVoiceCaptureRuntime } from "@/home/voice/use-voice-capture";
 import { useWakeLock } from "@/home/use-wake-lock";
-import { fetchNativeTtsConfig } from "@/api/voice";
+import { prepareClientServices } from "@/byok/services";
+import { availableService } from "@/byok/providers";
+import { openCapabilitySettings } from "@/byok/events";
 import {
   configureNativeTts,
   nativeTtsBridgeAvailable,
@@ -110,17 +110,17 @@ function preloadLearningVoiceRuntime(): void {
   void preloadVoiceCaptureRuntime().catch((error) => {
     console.warn("[learn] VAD runtime preload failed", error);
   });
-  if (privateAsrEnabled()) {
-    void preloadPrivateAsrRuntime().catch((error) => {
-      console.warn("[learn] private ASR runtime preload failed", error);
-    });
-  }
+
 }
 
 async function requestLearningDevices(autoCamera: boolean): Promise<{
   autoCamera: boolean;
   voiceEnabled: boolean;
 }> {
+  if (!availableService("asr")) {
+    openCapabilitySettings("asr");
+    throw new Error("请先连接自己的语音输入服务；可以继续打字。");
+  }
   const capability = detectLearningMediaCapability();
   if (!capability.available) throw new Error(capability.message);
   unlockAudio();
@@ -296,20 +296,9 @@ export function LearningPage() {
   const returnLabel = returnToCollection ? "返回" : "返回首页";
   const staticPlayback = Boolean(ollFixture || coursePackId);
   useEffect(() => {
-    if (!nativeTtsBridgeAvailable()) return;
-    let cancelled = false;
-    void fetchNativeTtsConfig()
-      .then((config) => {
-        if (!cancelled) configureNativeTts(config);
-      })
-      .catch((error) => {
-        // A previously encrypted configuration remains available during a
-        // temporary network outage; never log the configuration itself.
-        console.warn("[learn] native TTS configuration refresh failed", error);
-      });
-    return () => {
-      cancelled = true;
-    };
+    // Never retain credentials distributed by the old platform sidecar.
+    if (nativeTtsBridgeAvailable()) configureNativeTts({ version: 1, enabled: false });
+    void prepareClientServices().catch(() => undefined);
   }, []);
   const [hasTabLease] = useState(() =>
     acquireLearningTabLease(LEARNING_TAB_ID),

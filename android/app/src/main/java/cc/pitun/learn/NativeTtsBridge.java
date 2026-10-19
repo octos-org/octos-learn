@@ -64,7 +64,9 @@ final class NativeTtsBridge {
         this.cacheDirectory = new File(webView.getContext().getFilesDir(), "octos-native-tts");
         this.preferences = webView.getContext().getApplicationContext()
                 .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE);
-        this.config = loadConfig();
+        // Shared credentials from old releases are never adopted as BYOK.
+        this.preferences.edit().remove(CONFIG_PREFERENCE).apply();
+        this.config = null;
         //noinspection ResultOfMethodCallIgnored
         this.cacheDirectory.mkdirs();
     }

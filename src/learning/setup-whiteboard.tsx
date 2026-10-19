@@ -1,8 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { request, setSelectedProfileId } from "@/api/client";
-import { synthesizeSpeech } from "@/api/voice";
-import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 import { refreshOminixRuntimeSummary } from "@/home/use-ominix-runtime-summary";
 import {
   getMyProfile,
@@ -12,7 +10,8 @@ import {
   type Profile,
 } from "@/settings/settings-api";
 import { LLM_PROVIDERS, isLessonCapable } from "@/settings/llm-providers";
-import { SharedTtsPanel } from "@/settings/shared-tts";
+import { ServiceSettings } from "@/byok/service-settings";
+import { prepareClientServices, setLessonConfigured } from "@/byok/services";
 import { TeacherSkinPicker } from "@/settings/learning-companion-tab";
 import {
   isEmbeddedCourseLocation,
@@ -46,7 +45,7 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
       getMyProfile()
         .then((p) => {
           if (active) {
-            if (p?.id) setSelectedProfileId(p.id);
+            if (p?.id) { setSelectedProfileId(p.id); setLessonConfigured(hasLearningModel(p)); void prepareClientServices().catch(() => undefined); }
             setRequired(p ? needsLearningSetup(p) : false);
             setModelConfigured(p ? hasLearningModel(p) : !isEmbedded);
             setModelIssue(p ? learningModelIssue(p) : null);
@@ -59,9 +58,9 @@ export function LearningSetupGate({ children }: { children: ReactNode }) {
           }
         });
     });
-    return () => {
-      active = false;
-    };
+    const changed = () => { void getMyProfile().then(p => { if (active && p) { setModelConfigured(hasLearningModel(p)); setLessonConfigured(hasLearningModel(p)); setModelIssue(learningModelIssue(p)); } }).catch(() => undefined); };
+    window.addEventListener("octos:settings-closed", changed);
+    return () => { active = false; window.removeEventListener("octos:settings-closed", changed); };
   }, [location]);
   if (embeddedCourse) {
     return (
@@ -146,11 +145,9 @@ export function SetupWhiteboard() {
               <span className="setup-tag">02 · 可选</span>
               <h2>听老师讲，也可以只看文字</h2>
               <p>
-                平台提供有限额的旁白语音。你也可以配置自己的火山
-                TTS，不占平台额度。
+                连接自己的语音服务，费用由供应商账户承担。可稍后设置，先看文字讲解。
               </p>
-              <SharedTtsPanel />
-              <TtsCard profile={profile} onSaved={setProfile} />
+              <ServiceSettings compact />
             </section>
             <section className="setup-card">
               <span className="setup-tag">03 · 随时再开</span>
@@ -178,8 +175,7 @@ export function SetupWhiteboard() {
                 : "先用白板，稍后设置 AI"}
             </button>
             <p>
-              以后从「设置 → 新手设置白板」回来，随时调整。API Key
-              仅发送到本站后台的凭据设置接口，不写进白板或课程内容。
+              以后可从设置随时调整。Key 由 Octos 管理；语音和 Jev 同步至本人设备后直连供应商，不写进白板或课程内容。
             </p>
           </footer>
         </>
@@ -343,94 +339,5 @@ function ModelCard({
       </div>
       <Link to="/settings?tab=llm">打开完整模型设置 →</Link>
     </form>
-  );
-}
-
-function TtsCard({
-  profile,
-  onSaved,
-}: {
-  profile: Profile;
-  onSaved: (p: Profile) => void;
-}) {
-  const [appid, setAppid] = useState(profile.config.tts_cloud?.appid || "");
-  const [token, setToken] = useState("");
-  const [voice, setVoice] = useState(
-    profile.config.tts_cloud?.voice || "zh_female_xiaohe_uranus_bigtts",
-  );
-  const [message, setMessage] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function test(personal: boolean) {
-    unlockAudio();
-    setBusy(true);
-    setMessage("");
-    try {
-      if (personal) {
-        if (
-          !appid.trim() ||
-          (!token.trim() && !profile.config.env_vars.VOLC_TTS_TOKEN)
-        )
-          throw new Error("请填写 App ID 和 Access Token。");
-        const p = await updateMyProfileConfig(profile, {
-          tts_provider: "cloud",
-          tts_cloud: { appid: appid.trim(), voice: voice.trim() },
-          ...(token.trim()
-            ? {
-                env_vars: {
-                  ...profile.config.env_vars,
-                  VOLC_TTS_TOKEN: token.trim(),
-                },
-              }
-            : {}),
-        });
-        setToken("");
-        onSaved(p);
-      }
-      const audio = await synthesizeSpeech(
-        "你好，我是你白板旁的学习伙伴。我们可以一起看图、推导和解决问题。",
-      );
-      const started = await playAudioBlob(audio, () => {});
-      if (!started)
-        throw new Error("音频已返回，但浏览器未能播放，请再次点击试听。");
-      setMessage("试听已播放。如果没有听到，请检查本站音量和输出设备。");
-      void refreshOminixRuntimeSummary();
-    } catch (e) {
-      setMessage(formatSettingsError(e));
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <div className="setup-form">
-      <button onClick={() => test(false)} disabled={busy}>
-        {busy ? "正在准备语音…" : "试听当前旁白语音"}
-      </button>
-      <details>
-        <summary>使用自己的火山 TTS（可选）</summary>
-        <label>
-          App ID
-          <input value={appid} onChange={(e) => setAppid(e.target.value)} />
-        </label>
-        <label>
-          Access Token
-          <input
-            type="password"
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-            autoComplete="new-password"
-            placeholder="留空保留已有凭据"
-          />
-        </label>
-        <label>
-          音色 ID
-          <input value={voice} onChange={(e) => setVoice(e.target.value)} />
-        </label>
-        <button disabled={busy} onClick={() => test(true)}>
-          保存个人 TTS 并试听
-        </button>
-      </details>
-      <p role="status">{message}</p>
-      <Link to="/settings?tab=voice">语音设置与用量 →</Link>
-    </div>
   );
 }

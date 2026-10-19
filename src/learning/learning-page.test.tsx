@@ -20,6 +20,9 @@ import {
 import { storeWakeAudio } from "./wake-audio-handoff";
 import { LearningPage } from "./learning-page";
 
+vi.mock("@/byok/services", () => ({ prepareClientServices: vi.fn(async () => {}) }));
+vi.mock("@/byok/providers", () => ({ availableService: () => true }));
+vi.mock("@/byok/events", () => ({ openCapabilitySettings: vi.fn() }));
 const navigateMock = vi.hoisted(() => vi.fn());
 const setTitleMock = vi.hoisted(() => vi.fn(async () => ({})));
 const deleteSessionMock = vi.hoisted(() => vi.fn(async () => undefined));
@@ -200,7 +203,7 @@ describe("LearningPage", () => {
       expect.objectContaining({ cache: "no-store" }),
     );
     expect(sessionApiMock.listSessions).not.toHaveBeenCalled();
-    expect(nativeTtsConfigMock.fetch).toHaveBeenCalled();
+    expect(nativeTtsConfigMock.fetch).not.toHaveBeenCalled();
     expect(learningWorkspaceMock.props?.courseAccessMode).toBe("preview");
     expect(learningWorkspaceMock.props?.voiceEnabled).toBe(false);
     expect(learningWorkspaceMock.props?.onStartCourseInteraction).toBeTypeOf("function");
@@ -448,7 +451,7 @@ describe("LearningPage", () => {
     });
   });
 
-  it("refreshes Android native TTS configuration after authenticated startup", async () => {
+  it("clears legacy Android credentials without acquiring a platform key", async () => {
     const config = {
       version: 1,
       enabled: true,
@@ -463,7 +466,7 @@ describe("LearningPage", () => {
     render(<LearningPage />);
 
     await waitFor(() => {
-      expect(nativeTtsConfigMock.configure).toHaveBeenCalledWith(config);
+      expect(nativeTtsConfigMock.configure).toHaveBeenCalledWith({ version: 1, enabled: false });
     });
   });
 

@@ -13,47 +13,12 @@ describe("Android native TTS bridge", () => {
     delete window.OctosNativeTts;
   });
 
-  it("resolves at native playback start and completes on the native ended event", async () => {
-    let requestId = "";
-    const ended = vi.fn();
-    window.OctosNativeTts = {
-      isConfigured: () => true,
-      play: (id) => {
-        requestId = id;
-        return JSON.stringify({ ok: true });
-      },
-    };
-
-    expect(nativeTtsAvailable()).toBe(true);
-    const started = playNativeTts("第一节旁白", ended);
-    window.__octosNativeTtsEvent?.(JSON.stringify({
-      requestId,
-      type: "started",
-    }));
-    await expect(started).resolves.toBe(true);
-    window.__octosNativeTtsEvent?.(JSON.stringify({
-      requestId,
-      type: "ended",
-    }));
-    expect(ended).toHaveBeenCalledTimes(1);
-  });
-
-  it("cancels native playback when narration is superseded", async () => {
-    let requestId = "";
-    const cancel = vi.fn();
-    window.OctosNativeTts = {
-      isConfigured: () => true,
-      play: (id) => {
-        requestId = id;
-        return JSON.stringify({ ok: true });
-      },
-      cancel,
-    };
-    const controller = new AbortController();
-    const started = playNativeTts("即将被切换的旁白", vi.fn(), controller.signal);
-    controller.abort();
-    await expect(started).resolves.toBe(false);
-    expect(cancel).toHaveBeenCalledWith(requestId);
+  it("never uses persisted legacy credentials for generated narration", async () => {
+    const play = vi.fn();
+    window.OctosNativeTts = { isConfigured: () => true, play };
+    expect(nativeTtsAvailable()).toBe(false);
+    await expect(playNativeTts("narration", vi.fn())).resolves.toBe(false);
+    expect(play).not.toHaveBeenCalled();
   });
 
   it("plays verified CoursePack bytes without requiring a TTS credential", async () => {

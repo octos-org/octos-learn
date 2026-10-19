@@ -86,16 +86,9 @@ if (typeof window !== "undefined") {
 }
 
 export function nativeTtsAvailable(): boolean {
-  const candidate = bridge();
-  if (
-    typeof candidate?.isConfigured !== "function"
-    || typeof candidate.play !== "function"
-  ) return false;
-  try {
-    return candidate.isConfigured();
-  } catch {
-    return false;
-  }
+  // Legacy generated speech can contain shared platform credentials. Packaged
+  // audio still uses playAudio independently; all new synthesis uses BYOK.
+  return false;
 }
 
 export function nativeTtsBridgeAvailable(): boolean {

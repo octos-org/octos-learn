@@ -95,6 +95,17 @@ export function useOllNarrationTts({
   });
 
   useEffect(() => {
+    const clear = (event: Event) => {
+      if (event.type === "octos:client-service-changed" && (event as CustomEvent).detail !== "tts") return;
+      prefetchedSpeechRef.current?.controller.abort(); prefetchedSpeechRef.current = null;
+      nativePrefetchRef.current?.cancel(); nativePrefetchRef.current = null;
+    };
+    window.addEventListener("octos:client-services-reset", clear);
+    window.addEventListener("octos:client-service-changed", clear);
+    return () => { window.removeEventListener("octos:client-services-reset", clear); window.removeEventListener("octos:client-service-changed", clear); };
+  }, []);
+
+  useEffect(() => {
     callbacksRef.current = {
       onSpeakingChange,
       onPlaybackStart,
@@ -143,6 +154,14 @@ export function useOllNarrationTts({
       prefetchedSpeechRef.current = null;
     }
     const audioRequest = cached?.controller ?? request;
+    const invalidate = () => {
+      current = false; request.abort(); audioRequest.abort();
+      prefetchedSpeechRef.current?.controller.abort(); prefetchedSpeechRef.current = null;
+      stopAudio(); stopNativeTts(); setPreparing(false); setStartedKey(null);
+    };
+    const configChanged = (event: Event) => { if ((event as CustomEvent).detail === "tts") invalidate(); };
+    window.addEventListener("octos:client-services-reset", invalidate);
+    window.addEventListener("octos:client-service-changed", configChanged);
     const packagedAudio = usePackagedAudio && narrationId
       ? Promise.resolve(resolveAudio?.(
           narrationId,
@@ -247,6 +266,8 @@ export function useOllNarrationTts({
       });
 
     return () => {
+      window.removeEventListener("octos:client-services-reset", invalidate);
+      window.removeEventListener("octos:client-service-changed", configChanged);
       current = false;
       request.abort();
       if (cached) cached.controller.abort();

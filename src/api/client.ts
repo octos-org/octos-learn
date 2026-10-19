@@ -56,6 +56,7 @@ export function setToken(token: string, isAdmin = false) {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     localStorage.setItem(TOKEN_KEY, token);
   }
+  window.dispatchEvent(new Event("octos:identity-changed"));
 }
 
 export function clearToken() {
@@ -95,7 +96,9 @@ export function getSelectedProfileId(includeStoredFallback = true): string | nul
 }
 
 export function setSelectedProfileId(profileId: string) {
+  if (getSelectedProfileId() === profileId) return;
   localStorage.setItem("selected_profile", profileId);
+  window.dispatchEvent(new Event("octos:identity-changed"));
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

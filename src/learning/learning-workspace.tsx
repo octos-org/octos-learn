@@ -1,3 +1,4 @@
+import { openCapabilitySettings } from "@/byok/events";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -3479,20 +3480,20 @@ export function LearningWorkspace({
             conv.cameraError ??
             ollNarrationTts.error}
           {sendError && lessonModelErrorMessage(sendErrorCode) && (
-            <> <a href="/settings?tab=llm">前往设置</a></>
+            <> <button onClick={() => openCapabilitySettings("lesson")}>前往设置</button></>
           )}
         </div>
       )}
       {aiUnavailable && !isEmbeddedCourse && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
           {modelIssue
-            ? <>{modelIssue} <a href="/settings?tab=llm">前往设置</a></>
-            : <>连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <a href="/setup">去连接模型</a></>}
+            ? <>{modelIssue} <button onClick={() => openCapabilitySettings("lesson")}>前往设置</button></>
+            : <>连接模型后即可生成课程和使用小章鱼辅助；手写和已有课程不受影响。 <button onClick={() => openCapabilitySettings("lesson")}>去连接模型</button></>}
         </div>
       )}
       {!aiUnavailable && voiceEnabled && !runtime.inputReady && !runtime.loading && (
         <div className="learning-runtime-warning" data-learning-board-occlusion="">
-          语音暂不可用，你可以继续打字、上传题目和阅读课程。
+          语音暂不可用，你可以继续打字、上传题目和阅读课程。 <button onClick={() => openCapabilitySettings("asr")}>配置语音输入</button>
         </div>
       )}
       {import.meta.env.DEV && import.meta.env.MODE !== "test" && isTraceInspectorVisible ? (

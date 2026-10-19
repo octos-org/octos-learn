@@ -270,52 +270,13 @@ describe("useOllNarrationTts", () => {
     expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(1);
   });
 
-  it("prewarms the first narration through the Android bridge", async () => {
-    const prefetch = vi.fn(() => JSON.stringify({ ok: true }));
-    const play = vi.fn(() => JSON.stringify({ ok: true }));
+  it("does not prewarm narration through a legacy platform credential", async () => {
+    const prefetch = vi.fn();
+    window.OctosNativeTts = { isConfigured: () => true, prefetch, play: vi.fn() };
     mocks.route = "cloud";
-    window.OctosNativeTts = {
-      isConfigured: () => true,
-      prefetch,
-      play,
-      cancel: vi.fn(),
-      stop: vi.fn(),
-    };
-    const { rerender } = renderHook(
-      ({ playing, text, narrationId }) => useOllNarrationTts({
-        enabled: true,
-        playing,
-        text,
-        narrationId,
-        prefetchEnabled: true,
-        prewarmText: "安卓首段旁白。",
-        prewarmNarrationId: "android-beat-1",
-      }),
-      {
-        initialProps: {
-          playing: false,
-          text: "",
-          narrationId: undefined as string | undefined,
-        },
-      },
-    );
-
-    await waitFor(() => expect(prefetch).toHaveBeenCalledWith(
-      expect.any(String),
-      "安卓首段旁白。",
-    ));
-    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
-
-    rerender({
-      playing: true,
-      text: "安卓首段旁白。",
-      narrationId: "android-beat-1",
-    });
-    await waitFor(() => expect(play).toHaveBeenCalledWith(
-      expect.any(String),
-      "安卓首段旁白。",
-    ));
-    expect(prefetch).toHaveBeenCalledTimes(1);
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: false, text: "", prefetchEnabled: true, prewarmText: "narration", prewarmNarrationId: "beat-1" }));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalled());
+    expect(prefetch).not.toHaveBeenCalled();
   });
 
   it("does not restart synthesis when callback identities change during playback", async () => {

@@ -37,7 +37,7 @@ function JevAdmissionDebuggerPanel() {
     available: boolean;
     hasKey: boolean;
     keyPreview?: string;
-    source: "grant" | "env" | "none";
+    source: "account" | "none";
   }>({
     available: false,
     hasKey: false,

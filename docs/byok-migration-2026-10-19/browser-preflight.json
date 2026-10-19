@@ -1,0 +1,148 @@
+{
+  "checked_at_utc": "2026-10-19T08:54:05.901781+00:00",
+  "origin": "https://learn.pitun.cc",
+  "credentials_sent": false,
+  "audio_sent": false,
+  "provider_synthesis_or_recognition_requested": false,
+  "actual_authenticated_response_cors_tested": false,
+  "real_user_byok_tested": false,
+  "limitations": [
+    "OPTIONS checks only; not an authenticated browser end-to-end test.",
+    "Header permission is not proof that the chosen model accepts that credential format.",
+    "Responses can change; revalidate at implementation and release."
+  ],
+  "results": [
+    {
+      "name": "tts-v1",
+      "url": "https://openspeech.bytedance.com/api/v1/tts",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "authorization",
+        "content-type"
+      ],
+      "http_status": 404,
+      "cors": {},
+      "missing_requested_headers": [
+        "authorization",
+        "content-type"
+      ],
+      "preflight_candidate_pass": false
+    },
+    {
+      "name": "tts-v3-legacy-app-key",
+      "url": "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "content-type",
+        "x-api-resource-id",
+        "x-api-request-id",
+        "x-api-app-key",
+        "x-api-access-key"
+      ],
+      "http_status": 200,
+      "cors": {
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Api-App-Key,X-Api-Access-Key,X-Api-Request-Id,X-Api-Resource-Id,X-Api-Sequence",
+        "access-control-expose-headers": "X-Tt-Logid,X-Api-Status-Code,X-Api-Message"
+      },
+      "missing_requested_headers": [],
+      "preflight_candidate_pass": true
+    },
+    {
+      "name": "tts-v3-api-key",
+      "url": "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "content-type",
+        "x-api-resource-id",
+        "x-api-request-id",
+        "x-api-key"
+      ],
+      "http_status": 200,
+      "cors": {
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Api-App-Key,X-Api-Access-Key,X-Api-Request-Id,X-Api-Resource-Id,X-Api-Sequence",
+        "access-control-expose-headers": "X-Tt-Logid,X-Api-Status-Code,X-Api-Message"
+      },
+      "missing_requested_headers": [
+        "x-api-key"
+      ],
+      "preflight_candidate_pass": false
+    },
+    {
+      "name": "tts-v3-legacy-app-id",
+      "url": "https://openspeech.bytedance.com/api/v3/tts/unidirectional",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "content-type",
+        "x-api-resource-id",
+        "x-api-request-id",
+        "x-api-app-id",
+        "x-api-access-key"
+      ],
+      "http_status": 200,
+      "cors": {
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Api-App-Key,X-Api-Access-Key,X-Api-Request-Id,X-Api-Resource-Id,X-Api-Sequence",
+        "access-control-expose-headers": "X-Tt-Logid,X-Api-Status-Code,X-Api-Message"
+      },
+      "missing_requested_headers": [
+        "x-api-app-id"
+      ],
+      "preflight_candidate_pass": false
+    },
+    {
+      "name": "asr-batch-legacy",
+      "url": "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "content-type",
+        "x-api-resource-id",
+        "x-api-request-id",
+        "x-api-app-key",
+        "x-api-access-key",
+        "x-api-sequence"
+      ],
+      "http_status": 200,
+      "cors": {
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Api-App-Key,X-Api-Access-Key,X-Api-Request-Id,X-Api-Resource-Id,X-Api-Sequence",
+        "access-control-expose-headers": "X-Tt-Logid,X-Api-Status-Code,X-Api-Message"
+      },
+      "missing_requested_headers": [],
+      "preflight_candidate_pass": true
+    },
+    {
+      "name": "asr-batch-api-key",
+      "url": "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash",
+      "method": "OPTIONS",
+      "requested_headers": [
+        "content-type",
+        "x-api-resource-id",
+        "x-api-request-id",
+        "x-api-key",
+        "x-api-sequence"
+      ],
+      "http_status": 200,
+      "cors": {
+        "access-control-allow-origin": "*",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST, OPTIONS",
+        "access-control-allow-headers": "DNT,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Api-App-Key,X-Api-Access-Key,X-Api-Request-Id,X-Api-Resource-Id,X-Api-Sequence",
+        "access-control-expose-headers": "X-Tt-Logid,X-Api-Status-Code,X-Api-Message"
+      },
+      "missing_requested_headers": [
+        "x-api-key"
+      ],
+      "preflight_candidate_pass": false
+    }
+  ]
+}

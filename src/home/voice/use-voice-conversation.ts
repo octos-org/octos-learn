@@ -7,13 +7,14 @@ import {
 } from "react";
 import { uploadFiles } from "@/api/chat";
 import { transcribeCloudSpeech } from "@/api/cloud-asr";
+import { availableService } from "@/byok/providers";
+import { getServiceStatus } from "@/byok/services";
 import { getVoiceRouting, markPrivateAsrFailed, type AsrRoute } from "@/api/voice-routing";
 import {
   admitVoiceMessage,
   commitAdmittedVoiceMessage,
   interruptActiveTurn,
   sendMessage,
-  supportsVoiceAdmission,
 } from "@/runtime/ui-protocol-send";
 import { getActiveBridge } from "@/runtime/ui-protocol-runtime";
 import type { Thread, ThreadMessage } from "@/store/thread-store";
@@ -860,14 +861,20 @@ export function useVoiceConversation(
         const cameraRequested = includeCamera ?? cameraActiveRef.current;
         const cameraAllowed = includeFrame?.() ?? true;
         let applicationTranscript = privateTranscript?.trim();
-        const cloudAsr = asrRouteRef.current === "cloud" && Boolean(admitSpeech) && !applicationTranscript;
+        const cloudAsr = asrRouteRef.current === "cloud" && !applicationTranscript;
+        if (!admitSpeech && cloudAsr) {
+          const result = await recognizeCloud();
+          if (generation !== startGenRef.current) return;
+          if (result.status === "no_speech" || !result.transcript.trim()) { restoreBargeInCandidate(); return; }
+          applicationTranscript = result.transcript.trim();
+        }
         if (applicationTranscript && !allowHesitation && !isMeaningfulVoiceTranscript(applicationTranscript)) {
           restoreBargeInCandidate();
           return;
         }
         const applicationAdmission = Boolean(applicationTranscript && admitSpeech);
         const admissionSupported =
-          cloudAsr || applicationAdmission || supportsVoiceAdmission(sessionId, historyTopic);
+          Boolean(admitSpeech) && (cloudAsr || applicationAdmission);
         const directAdmission = admissionSupported && Boolean(admitSpeech);
         let admission: Awaited<ReturnType<typeof admitVoiceMessage>> | undefined;
         let capturedFiles: File[];
@@ -967,11 +974,9 @@ export function useVoiceConversation(
           if (cameraRequested && cameraAllowed) {
             clientTiming.camera_capture_started_at_epoch_ms = Date.now();
           }
-          capturedFiles = await assembleTurnFiles(
-            file,
-            cameraRequested && cameraAllowed,
-            cameraGrab,
-          );
+          if (!applicationTranscript) throw new Error("请先配置自己的语音输入服务，可继续打字。");
+          const frame = cameraRequested && cameraAllowed ? await cameraGrab() : null;
+          capturedFiles = frame ? [frame] : [];
           if (cameraRequested && cameraAllowed) {
             clientTiming.camera_capture_completed_at_epoch_ms = Date.now();
           }
@@ -981,7 +986,7 @@ export function useVoiceConversation(
             (candidateFile) => candidateFile.type.startsWith("image/"),
           )?.size;
           clientTiming.media_upload_started_at_epoch_ms = Date.now();
-          paths = await uploadFiles(files, "recording");
+          paths = files.length ? await uploadFiles(files, "recording") : [];
           clientTiming.media_upload_completed_at_epoch_ms = Date.now();
         }
         if (generation !== startGenRef.current) return;
@@ -1061,7 +1066,7 @@ export function useVoiceConversation(
           sendMessage({
             sessionId,
             historyTopic,
-            text,
+            text: [applicationTranscript, text].filter(Boolean).join("\n"),
             media: paths,
             clientMessageId: turnId,
             liveVideo: sentFrame !== undefined,
@@ -1641,6 +1646,10 @@ export function useVoiceConversation(
   const start = useCallback(async (
     startOptions?: VoiceConversationStartOptions,
   ) => {
+    if (!availableService("asr")) {
+      setPrivateAsrError(getServiceStatus("asr").detail + " 可在设置中连接语音输入，或继续打字。");
+      setState("error"); return;
+    }
     // Capture this start's generation. A later stop() (unmount, exit) or a
     // newer start() bumps the counter; every await below re-checks it and
     // abandons, so a stale start can never re-acquire the microphone.
@@ -2342,7 +2351,13 @@ export function useVoiceConversation(
   // every render). `[]` deps → cleanup runs once, at unmount.
   const stopRef = useRef(stop);
   stopRef.current = stop;
-  useEffect(() => () => stopRef.current(), []);
+  useEffect(() => {
+    const reset = () => stopRef.current();
+    const changed = (event: Event) => { if ((event as CustomEvent).detail === "asr") reset(); };
+    window.addEventListener("octos:client-services-reset", reset);
+    window.addEventListener("octos:client-service-changed", changed);
+    return () => { window.removeEventListener("octos:client-services-reset", reset); window.removeEventListener("octos:client-service-changed", changed); stopRef.current(); };
+  }, []);
 
   const visibleTurnIds = [
     ...provisionalTurnIds,
