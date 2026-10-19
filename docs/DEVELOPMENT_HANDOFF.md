@@ -58,6 +58,8 @@ Learning Coach 的 profile 模型继承已通过
 
 ## 本地启动
 
+本地人工开发与验收默认始终使用正常环境（用户要求，2026-10-19）：HTTPS 5173、后端 50080、现有本机账号与 Settings、正式安装的 Learning Coach。不得自行创建临时账号、换端口、指向临时数据目录或提供缺少课程能力的预览。仅在用户明确要求隔离环境时另行建立。启动候选代码应使用包含本次改动的二进制；无需每次重复安装已可用的技能。
+
 ### 1. 准备 Learning Coach
 
 本机单用户开发现使用 Octos 的账户级正式安装：Learning Coach 安装到 `alan0x` 的 `~/.octos/profiles/alan0x/data/skills/learning-coach/`，不再需要临时 `OCTOS_SKILLS_PATH`。这不改变公网产品技能的部署方式，也不自动安装到其他账户。
@@ -103,7 +105,7 @@ ASR_API_URL=http://127.0.0.1:8094 \
   `.env`。课程使用 Settings 中保存的主模型；`OLL_PROVIDER` / `OLL_MODEL` 仅用于独立 eval 脚本，不放入产品服务启动环境。
 - 只有直接测试 Vertex Service Account 时才需要临时提供 `VERTEX_SA_JSON`；使用 Settings
   中的 Gemini API Key 时不需要它。
-- 如果需要一套完全独立的本地测试数据，可额外加
+- 只有用户明确要求独立的人工测试环境时，才额外加
   `--data-dir /absolute/path/to/a/local-test-data-dir`。不要把该目录放入 Git。
 - 不要在公网服务器使用 `--solo`。
 
