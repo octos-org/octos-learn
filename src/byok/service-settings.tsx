@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { listClientServices, prepareClientServices, getService, getServiceStatus, subscribeServices, saveClientService, deleteClientService, type Capability, type ClientService, type ServiceMetadata } from "./services";
 import { directJson, serviceFailure, synthesizeDirect, transcribeDirect, validateService } from "./providers";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
-import { useVoiceCapture } from "@/home/voice/use-voice-capture";
+import { useTestVoiceCapture } from "@/home/voice/use-test-voice-capture";
+import { SERVICE_DEFINITIONS } from "./service-config";
 
 const titles: Record<Capability, string> = { tts: "听讲解", asr: "语音输入", admission: "输入预判（Jev，可选）" };
 const inputClass = "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text border border-border";
@@ -99,7 +100,8 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     {provider === "volcano" && <>{field("resource_id", "已开通的资源 ID")}{capability === "tts" && field("voice", "与资源匹配的音色 ID")}</>}
     {provider === "typesafe" && field("model", "Jev 模型")}
     <label className="block space-y-2">API Key<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider && !needsNewKey ? "本人凭据已保存；留空保留" : "粘贴你自己的 Key"} /></label>
-    <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={provider === "volcano" ? "https://console.volcengine.com/speech/app" : "https://console.typesafe.ai/settings/keys"} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
+    {provider === "volcano" && <p>请使用豆包语音控制台的新版 API Key；火山方舟 Ark / 大模型 Key 和旧版 Access Token 不能用于语音服务。</p>}
+    <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
     <label><input type="checkbox" checked={enabled} onChange={event => setEnabled(event.target.checked)} /> 启用此能力</label>
     <p role="status">{saved && !saved.enabled ? "账号已保存，当前已停用。" : status.detail}</p>
     <div className="flex flex-wrap gap-3">
@@ -118,7 +120,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
   </section>;
 }
 function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage: (text: string) => void }) {
-  const capture = useVoiceCapture();
+  const capture = useTestVoiceCapture();
   const active = useRef<AbortController | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const [working, setWorking] = useState(false);
@@ -142,6 +144,7 @@ function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage
     const ok = await capture.start(wav => {
       if (claimed || controller.signal.aborted) return; claimed = true;
       clearTimeout(timer.current); void capture.stop();
+      onMessage("正在识别…");
       void transcribeDirect(wav, controller.signal, draft).then(result => {
         if (!controller.signal.aborted) onMessage(result.transcript || "未检测到语音，请重试。");
       }).catch(error => { if (!controller.signal.aborted) onMessage(serviceFailure("asr", error, false).message); })
@@ -149,7 +152,19 @@ function AsrTest({ config, onMessage }: { config: () => ClientService; onMessage
     });
     if (controller.signal.aborted) { await capture.stop(); return; }
     if (!ok) { setWorking(false); active.current = null; onMessage(capture.getError?.() || "麦克风初始化失败，请检查录音组件和设备权限；配置草稿已保留。"); return; }
-    timer.current = setTimeout(() => { void stop(); onMessage("测试录音已停止，可重试或继续打字。"); }, 20_000);
+    if (claimed) return;
+    onMessage(capture.manualAvailable ? "麦克风已开启，请说话；停顿后自动识别，也可以点击结束录音并识别。" : "麦克风已开启，请说一小句，停顿后自动识别。");
+    timer.current = setTimeout(() => {
+      const input = capture.getInputState(); void stop();
+      onMessage(!capture.manualAvailable ? "未收到完整语音片段，请检查设备输入后重试。" : input.samples === 0 ? "录音组件没有收到麦克风音频，请检查浏览器选中的输入设备。" : input.peak < 0.001 ? "麦克风输入无声或音量过低，请检查选中的输入设备并靠近麦克风。" : "尚未检测到一句话结束；未发送识别请求。请重试，说话后点击结束录音并识别。");
+    }, 20_000);
   }
-  return <div><button onClick={() => void (working ? stop() : start())}>{working ? "停止测试" : "录一小句测试草稿"}</button>{capture.error && <p role="alert">{capture.error}</p>}</div>;
+  return <div>
+    <button onClick={() => void (working ? stop() : start())}>{working ? "取消测试" : "录一小句测试草稿"}</button>
+    {working && capture.capturing && capture.manualAvailable && <div>
+      <label>麦克风输入电平 <meter min={0} max={1} value={capture.inputLevel} /></label>
+      <button disabled={!capture.canFinish} onClick={capture.finish}>结束录音并识别</button>
+    </div>}
+    {capture.error && <p role="alert">{capture.error}</p>}
+  </div>;
 }

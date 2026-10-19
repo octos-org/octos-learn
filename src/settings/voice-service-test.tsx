@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Loader2, Mic, Play, Plug, Square, XCircle } from "lucide-react";
 import { directJson, markVerified, ServiceError, serviceFailure, synthesizeDirect, transcribeDirect, validateService } from "@/byok/providers";
 import { getServiceForTest, serviceRequest, type Capability, type ClientService } from "@/byok/services";
-import { useVoiceCapture } from "@/home/voice/use-voice-capture";
+import { useTestVoiceCapture } from "@/home/voice/use-test-voice-capture";
 import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
 
 type TestState = "idle" | "testing" | "success" | "failed";
@@ -11,7 +11,8 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
   const [state, setState] = useState<TestState>("idle");
   const [message, setMessage] = useState("");
   const [audio, setAudio] = useState<Blob | null>(null);
-  const capture = useVoiceCapture();
+  const capture = useTestVoiceCapture();
+  const [recording, setRecording] = useState(false);
   const active = useRef<ReturnType<typeof serviceRequest> | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const deadline = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -22,7 +23,7 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
       controller.current?.abort();
       active.current?.dispose(); active.current = null;
       clearTimeout(timer.current); clearTimeout(deadline.current); void stopCapture();
-      setState("idle"); setMessage(""); setAudio(null);
+      setState("idle"); setMessage(""); setAudio(null); setRecording(false);
     };
     // serviceRequest aborts automatically on identity / relevant configuration changes.
     window.addEventListener("octos:client-services-reset", stop);
@@ -39,7 +40,7 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
     if (active.current === request) { active.current = null; clearTimeout(timer.current); clearTimeout(deadline.current); }
   }
   function fail(error: unknown, request: ReturnType<typeof serviceRequest>) {
-    if (!request.signal.aborted) { setState("failed"); setMessage(serviceFailure(capability, error, false).message); }
+    if (!request.signal.aborted) { setRecording(false); setState("failed"); setMessage(serviceFailure(capability, error, false).message); }
     finish(request);
   }
   async function test() {
@@ -50,11 +51,11 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
     // Publish this test's controller only after that reset so it cannot cancel itself.
     const request = serviceRequest(nextController.signal, capability);
     controller.current = nextController;
-    active.current = request; setState("testing"); setMessage(""); setAudio(null);
+    active.current = request; setState("testing"); setMessage(""); setAudio(null); setRecording(false);
     deadline.current = setTimeout(() => {
       if (active.current !== request) return;
       controller.current?.abort(); finish(request); void capture.stop();
-      setState("failed"); setMessage("Test timed out. Check your connection and try again.");
+      setRecording(false); setState("failed"); setMessage("Test timed out. Check your connection and try again.");
     }, 60_000);
     try {
       const saved = await getServiceForTest(capability, request.signal, draft.revision === "draft" ? undefined : draft.revision);
@@ -64,20 +65,27 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
       const config: ClientService = { ...draft, enabled: true, key: saved.key };
       validateService(capability, config);
       if (capability === "asr") {
-        setMessage("Say a short sentence, then pause. The test stops after recognition.");
+        setMessage("Preparing microphone… Allow access if your browser asks.");
         let claimed = false;
         const ok = await capture.start(wav => {
           if (claimed || request.signal.aborted) return;
           claimed = true; clearTimeout(timer.current); void capture.stop();
-          setMessage("Recognizing…");
+          setRecording(false); setMessage("Recognizing…");
           void transcribeDirect(wav, request.signal, config).then(result => {
             if (!request.signal.aborted) { setState("success"); setMessage(result.transcript || "No speech detected. Try a short sentence again."); }
             finish(request);
           }).catch(error => fail(error, request));
         });
-        if (request.signal.aborted) { await capture.stop(); return; }
+        if (request.signal.aborted) return;
         if (!ok) throw new ServiceError("environment_unsupported", capture.getError?.() || "Microphone initialization failed. Check the audio runtime and your device permissions, then retry.");
-        if (!claimed && active.current === request) timer.current = setTimeout(() => { controller.current?.abort(); finish(request); void capture.stop(); setState("idle"); setMessage("Recording stopped after 20 seconds. You can try again."); }, 20_000);
+        if (!claimed && active.current === request) {
+          setRecording(true); setMessage(capture.manualAvailable ? "Microphone is on. Say a sentence, then pause, or choose Finish and recognize." : "Microphone is on. Say a sentence, then pause to recognize.");
+          timer.current = setTimeout(() => {
+            const input = capture.getInputState();
+            controller.current?.abort(); finish(request); void capture.stop(); setRecording(false); setState("idle");
+            setMessage(!capture.manualAvailable ? "No completed speech segment was received. Check your device input and try speaking a short sentence again." : input.samples === 0 ? "No microphone audio reached the recorder. Check your browser's selected input device and try again." : input.peak < 0.001 ? "Recording stopped: the microphone input was silent or very quiet. Check the selected input device and speak closer to it." : "Recording stopped without detecting the end of a sentence. Try again and choose Finish and recognize after speaking. No recognition request was sent.");
+          }, 20_000);
+        }
         return;
       }
       if (capability === "tts") {
@@ -95,16 +103,22 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
       finish(request);
     } catch (error) { fail(error, request); }
   }
-  function cancel() { controller.current?.abort(); if (active.current) finish(active.current); void capture.stop(); setState("idle"); setMessage("Test canceled."); }
+  function cancel() { controller.current?.abort(); if (active.current) finish(active.current); void capture.stop(); setRecording(false); setState("idle"); setMessage("Test canceled."); }
   return <div className="space-y-3">
     <div className="flex flex-wrap items-center gap-3">
       <button type="button" disabled={disabled && state !== "testing"} onClick={() => void (state === "testing" ? cancel() : test())} className={buttonClass}>
         {state === "testing" ? <Square size={14} /> : capability === "asr" ? <Mic size={14} /> : <Plug size={14} />}
         {state === "testing" ? "Stop test" : capability === "tts" ? "Test voice" : capability === "asr" ? "Test microphone" : "Test connection"}
       </button>
+      {recording && capture.manualAvailable && <button type="button" disabled={!capture.canFinish} className={buttonClass} onClick={capture.finish}>Finish and recognize</button>}
       {audio && <button type="button" disabled={state === "testing"} className={buttonClass} onClick={() => { unlockAudio(); void playAudioBlob(audio, () => {}, controller.current?.signal); }}><Play size={14} />Play sample</button>}
-      {state === "testing" && <Loader2 size={14} className="animate-spin text-accent" aria-label="Testing" />}
+      {state === "testing" && !recording && <Loader2 size={14} className="animate-spin text-accent" aria-label="Testing" />}
     </div>
+    {recording && <div className="space-y-2 text-xs text-muted">
+      <div className="flex items-center gap-2"><Mic size={14} className="text-accent" /><span>{capture.speechDetected ? "Speech detected — pause or finish to recognize." : "Listening — speak now."}</span></div>
+      {capture.manualAvailable && <label className="flex items-center gap-3">Microphone input level<meter aria-label="Microphone input level" className="h-3 flex-1" min={0} max={1} value={capture.inputLevel} /></label>}
+      {capture.manualAvailable && !capture.hasFrames && <p>Waiting for microphone audio…</p>}
+    </div>}
     {message && <p role={state === "failed" ? "alert" : "status"} className={`flex items-start gap-2 text-xs leading-5 ${state === "failed" ? "text-red-400" : "text-muted"}`}>
       {state === "failed" ? <XCircle size={14} className="mt-0.5 shrink-0" /> : state === "success" ? <CheckCircle2 size={14} className="mt-0.5 shrink-0 text-green-400" /> : null}{message}
     </p>}

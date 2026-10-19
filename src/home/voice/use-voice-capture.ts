@@ -37,6 +37,8 @@ export interface VoiceCaptureStartOptions {
   onSpeechConfirmed?: () => void;
   onSpeechRealStart?: () => void;
   onVADMisfire?: () => void;
+  /** Browser PCM frames at 16 kHz, including silence, for explicit recording tests. */
+  onAudioFrame?: (frame: Float32Array) => void;
   /** Supply a cloned stream when another transport owns the physical mic. */
   getStream?: () => Promise<MediaStream>;
 }
@@ -353,6 +355,11 @@ export function useVoiceCapture(): VoiceCapture {
             //    (short clicks fall under this and fire onVADMisfire instead),
             //  - wait ~700ms of silence before ending so natural pauses don't cut.
             ...frameProcessorOptions(options),
+            onFrameProcessed: (_probabilities, frame) => {
+              if (gen !== startGenRef.current) return;
+              const current = callbacksRef.current;
+              if (current?.options.onAudioFrame) runCallbackSafely("onAudioFrame", () => current.options.onAudioFrame?.(frame), setError);
+            },
             onSpeechStart: () => {
               if (gen !== startGenRef.current) return;
               const current = callbacksRef.current;

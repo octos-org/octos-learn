@@ -39,6 +39,12 @@ describe("BYOK provider transports", () => {
     await expect(synthesizeDirect("hi", undefined, config())).rejects.toMatchObject({ state: "invalid_credentials" });
     expect(api.request).toHaveBeenCalledOnce();
   });
+  it("explains speech and Ark key scopes without echoing the rejected key", async () => {
+    api.request.mockResolvedValue({ status: 401, body: "own-canary-key", code: null });
+    await expect(synthesizeDirect("hi", undefined, config())).rejects.toThrow("豆包语音控制台");
+    await expect(synthesizeDirect("hi", undefined, config())).rejects.not.toThrow("own-canary-key");
+    await expect(directJson("admission", config("typesafe"), {})).rejects.toThrow("凭据无效");
+  });
   it("keeps native television Jev direct and never relays", async () => {
     window.OctosNativeByok = { request: vi.fn((id, capability, headers) => {
       expect(capability).toBe("admission"); expect(JSON.parse(headers).Authorization).toBe("Bearer own-canary-key");

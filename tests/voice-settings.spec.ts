@@ -1,6 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
+import { writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-test.use({ permissions: ["microphone"], launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } });
+const microphoneFile = join(tmpdir(), `octos-learn-test-microphone-${process.pid}.wav`);
+test.beforeAll(() => {
+  // A continuous, deterministic tone avoids Chromium's intermittent fake-mic beeps.
+  const rate = 48000;
+  const wav = Buffer.alloc(44 + rate * 2);
+  wav.write("RIFF"); wav.writeUInt32LE(wav.length - 8, 4); wav.write("WAVEfmt ", 8);
+  wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34);
+  wav.write("data", 36); wav.writeUInt32LE(rate * 2, 40);
+  for (let i = 0; i < rate; i++) wav.writeInt16LE(Math.round(Math.sin(i * 2 * Math.PI * 440 / rate) * 8000), 44 + i * 2);
+  writeFileSync(microphoneFile, wav);
+});
+test.afterAll(() => rmSync(microphoneFile, { force: true }));
+test.use({ permissions: ["microphone"], launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${microphoneFile}`] } });
 
 type Service = { provider: string; enabled: boolean; params: Record<string, string>; key: string; revision: string; execution_target: string };
 async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {}) {
@@ -20,7 +36,9 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
       const capability = path.split("/")[4];
       if (path.endsWith("/relay")) {
         relay.push(route.request().postDataJSON());
-        body = { status: 200, body: JSON.stringify({ answers: { learning: { noul: 1 } } }), code: null };
+        body = capability === "asr"
+          ? { status: 200, body: JSON.stringify({ result: { text: "synthetic microphone recognized" } }), code: "20000000" }
+          : { status: 200, body: JSON.stringify({ answers: { learning: { noul: 1 } } }), code: null };
       } else {
         if (route.request().method() === "PUT") {
           const draft = route.request().postDataJSON(); writes.push(draft);
@@ -111,6 +129,12 @@ test.describe("browser microphone runtime", () => {
     const started = page.waitForEvent("console", { predicate: message => message.text().includes("started micVAD"), timeout: 20_000 });
     await asr.getByRole("button", { name: "Test microphone" }).click();
     await started.catch(error => { throw new Error(`${String(error)}; capture errors: ${failures.join("; ")}`); });
+    await expect(asr.getByText("Listening — speak now.")).toBeVisible();
+    await expect(asr.getByRole("button", { name: "Finish and recognize" })).toBeEnabled();
+    await expect.poll(() => asr.getByLabel("Microphone input level").evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
+    await expect(asr.getByText("Waiting for microphone audio…")).toHaveCount(0);
+    await asr.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-microphone-test-desktop.png" });
     await asr.getByRole("button", { name: "Stop test" }).click();
     await expect(asr.getByText("Test canceled.")).toBeVisible();
     await expect.poll(() => page.evaluate(() => {
@@ -118,5 +142,26 @@ test.describe("browser microphone runtime", () => {
       return tracks.length > 0 && tracks.every(track => track.readyState === "ended");
     })).toBe(true);
     expect(failures).toEqual([]); expect(relay).toHaveLength(0);
+  });
+  test("can explicitly submit microphone PCM without waiting for a detected sentence", async ({ page }) => {
+    const { relay } = await mockVoiceAccount(page, { asr: { provider: "volcano", enabled: false, key: "synthetic-asr-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } });
+    await page.goto("/settings?tab=voice"); await page.waitForLoadState("networkidle");
+    const asr = page.getByRole("region", { name: "Speech Recognition" });
+    await asr.getByRole("button", { name: "Test microphone" }).click();
+    const finish = asr.getByRole("button", { name: "Finish and recognize" });
+    await expect(finish).toBeEnabled();
+    await expect.poll(() => asr.getByLabel("Microphone input level").evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
+    await finish.click();
+    await expect(asr.getByText("synthetic microphone recognized")).toBeVisible();
+    expect(relay).toHaveLength(1);
+    const request = relay[0] as { key: string; payload: { audio: { data: string } } };
+    expect(request.key).toBe("synthetic-asr-key");
+    const wav = Buffer.from(request.payload.audio.data, "base64");
+    expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
+    expect(wav.readUInt32LE(24)).toBe(16000);
+    expect(wav.length).toBeGreaterThanOrEqual(16044);
+    expect(wav.subarray(44).some(byte => byte !== 0)).toBe(true);
+    await expect(asr.getByRole("button", { name: "Test microphone" })).toBeVisible();
+    expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-asr-key");
   });
 });

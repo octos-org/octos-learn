@@ -26,7 +26,7 @@
 自动测试全部使用合成凭据和模拟供应商；没有用平台 Key 冒充个人接入。运行日志位于本机 `/private/tmp/octos-byok-*.log` 与 `/private/tmp/octos-voice-settings-*.log`，最终结果以本轮交付说明为准。
 
 - Octos：`cargo test -p octos-cli --no-default-features --features api client_services --lib`，覆盖加密 / 防密文跨账号复制、掩码元数据、本人显式同步、删除、旧版本拒绝、无平台回退及模型 Key 跨账号探测拒绝；共 7 项定向测试通过，新增 relay 固定地址 / 新版鉴权、成功响应、错误脱敏、超时及大小限制覆盖。`cargo check` 通过。
-- 前端：Vitest 全量 1,155 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
+- 前端：Vitest 全量 1,160 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
 - 本机真实候选服务器 HTTP 检查：无认证同步被拒绝、普通 profile / 元数据不返回 Key、显式本人同步与删除正常；仅使用合成凭据，无供应商请求。预览使用独立临时 profile，不复用线上账号或数据。
 - Chromium：`tests/byok-settings.spec.ts` 与 `tests/voice-settings.spec.ts`，覆盖 Voice / API Keys 跨页面配置、关闭服务显式测试及窄屏无溢出；保存配置不领取平台凭据、不暗中测试、不将 Key 写入 localStorage；显式 Jev 草稿测试经认证 relay 发送本人 Key。新增真实 ONNX / AudioWorklet 初始化测试，使用 Chromium 合成麦克风，验证录音开始、停止后轨道释放，不使用本人真实麦克风或调用供应商。
 - Vite 常规、公网构建；Android Java 编译、Android 资源构建及 debug APK 打包。候选 APK 未安装至真实电视。
@@ -42,6 +42,11 @@
 - 根因：Android 准备脚本删除了 `public/vad`，而 `pnpm dev:https` 缺少复制该目录的生命周期步骤；运行中的网页因此拿到 SPA HTML 而非录音模型 / worklet。现在 HTTPS 启动补齐资源，Android 只清理最终 APK assets 中的 VAD，不删除网页源资源。
 - 已执行 Android 资源构建，确认 APK 输出不含 VAD，随后通过正常 `https://127.0.0.1:5173/vad/` 逐字节校验 ONNX、AudioWorklet、ORT 模块和 WASM，均为正确文件。
 - 录音失败会区分权限被拒、无设备、设备占用 / 读取失败与 VAD 初始化失败；设置测试显示当次失败原因，不再统一误报权限。修复首次设置测试因初始化身份通知而取消自身的顺序问题。
+- 语音测试明确提示使用豆包语音控制台的 Key，API Keys / onboarding 直接链接到新版语音 Key 页面；方舟 Ark / LLM Key 不用于语音接口。HTTP 401 提示 Key 的来源、停用状态与项目服务开通检查，不回显供应商错误正文或凭据。
+- ASR 测试区分麦克风准备、正在录音、正在识别，录音中显示输入电平与检测状态。网页可点击 Finish and recognize 提交当前录音，无须依赖 VAD 自动切句；自动切句仍保留。20 秒结束分别提示没有音频帧、无声 / 音量低或未检测到一句话结束，不再当作供应商超时。原生电视保留其语音分段路径。
+- 手动测试 PCM 仅在端内暂存，最长 20 秒，提交后 / 取消 / 离开即清理；不持久化，不改变课堂语音的分段阈值或课程生成请求。五项 Chromium 回归通过，其中使用持续合成音验证真实 ONNX / worklet 输出非零 PCM、输入电平可见、手动编码为 16 kHz WAV 并经模拟 ASR relay 返回文字，以及取消释放麦克风且不发送请求。本人设备为何未自动切句仍需观察新电平 / 状态提示；没有使用错误的 Ark Key 重试付费请求，也未声称真实火山识别已验收。
+
+录音状态记录：[Voice 麦克风测试](byok-migration-2026-10-19/voice-microphone-test-desktop.png)。
 
 ## 当前外部接口证据与限制
 

@@ -303,6 +303,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
                   <KeyFieldRow field={{ key: definition.keyLabel, name: capability === "admission" ? definition.providerName : `${definition.providerName} · ${capability === "tts" ? "TTS" : "ASR"}`, description: definition.description }}
                     value={serviceValues[capability] ?? originalKey(capability)} disabled={saving} showIdentifier={false}
                     onChange={value => { setServiceValues(previous => ({ ...previous, [capability]: value })); setSaved(false); setError(null); }} />
+                  {capability !== "admission" && <p className="mt-2 px-1 text-xs leading-5 text-muted">Use an API Key from the Doubao Speech console. An Ark / LLM API Key or a legacy Access Token cannot be used here. The same Speech Key can be entered for TTS and ASR if both services are enabled in its project.</p>}
                   <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted">
                     <span>{!supportsService(capability, current) ? "Replace the previous credential with a new Volcano API Key." : "Leave unchanged to keep. Clear and save to remove and disable this service."}</span>
                     <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">Get API Key <ExternalLink size={11} /></a>

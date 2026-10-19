@@ -32,8 +32,9 @@ export function availableService(capability: Capability): boolean {
   if (!config) return false;
   try { validateService(capability, config); return true; } catch { return false; }
 }
-function statusError(status: number, code?: string): ServiceError {
+function statusError(status: number, code?: string, capability?: Capability): ServiceError {
   const state = status === 401 ? "invalid_credentials" : status === 403 ? "resource_not_enabled" : status === 429 ? "rate_limited" : "network_error";
+  if (status === 401 && capability !== "admission") return new ServiceError(state, "火山语音鉴权未通过（HTTP 401）。请使用豆包语音控制台的 API Key；火山方舟 Ark / 大模型 Key 或旧版 Access Token 不能用于此处。也请确认 Key 未被停用且所属项目已开通所选语音服务。");
   return new ServiceError(state, status === 401 ? "凭据无效，请检查自己的 Key。" : status === 403 ? "资源或音色无权限，请检查供应商账户。" : status === 429 ? "供应商暂时限流，请稍后重试。" : `供应商请求失败（${code && /^\d{7,8}$/.test(code) ? code : status}），请检查网络、资源权限或账户额度。`);
 }
 export function serviceFailure(capability: Capability, error: unknown, updateState = true): Error {
@@ -75,7 +76,7 @@ export async function directJson(capability: Capability, config: ClientService, 
         } catch { cleanup(); reject(new ServiceError("network_error", "原生服务请求无法启动。")); }
       });
       if (value.error) throw new ServiceError("network_error", "供应商连接失败或超时。");
-      if (value.status < 200 || value.status >= 300) throw statusError(value.status, value.code);
+      if (value.status < 200 || value.status >= 300) throw statusError(value.status, value.code, capability);
       return { body: value.body, code: value.code ?? null };
     }
     // Credential-free preflights (2026-10-19) reject the required headers/origin
@@ -86,7 +87,7 @@ export async function directJson(capability: Capability, config: ClientService, 
       body: JSON.stringify({ provider: config.provider, params: config.params, key: config.key, payload: body }),
     });
     if (controller.signal.aborted) throw new DOMException("请求已取消", "AbortError");
-    if (response.status < 200 || response.status >= 300) throw statusError(response.status, response.code ?? undefined);
+    if (response.status < 200 || response.status >= 300) throw statusError(response.status, response.code ?? undefined, capability);
     return { body: response.body, code: response.code };
   } catch (error) {
     if (timedOut) throw new ServiceError("network_error", "供应商连接超时，请重试或检查网络。");

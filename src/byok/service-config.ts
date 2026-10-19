@@ -2,8 +2,8 @@ import type { Capability, ServiceMetadata } from "./services";
 
 export const SERVICE_CAPABILITIES = ["tts", "asr", "admission"] as const;
 export const SERVICE_DEFINITIONS = {
-  tts: { title: "Text to Speech", provider: "volcano", providerName: "Volcano Engine", keyLabel: "Volcano TTS API Key", description: "Voice narration for generated lessons.", consoleUrl: "https://console.volcengine.com/speech/app" },
-  asr: { title: "Speech Recognition", provider: "volcano", providerName: "Volcano Engine", keyLabel: "Volcano ASR API Key", description: "Turn microphone input into a learning request.", consoleUrl: "https://console.volcengine.com/speech/app" },
+  tts: { title: "Text to Speech", provider: "volcano", providerName: "Volcano Engine", keyLabel: "Volcano TTS API Key", description: "Voice narration for generated lessons.", consoleUrl: "https://console.volcengine.com/speech/new/setting/apikeys?projectName=default" },
+  asr: { title: "Speech Recognition", provider: "volcano", providerName: "Volcano Engine", keyLabel: "Volcano ASR API Key", description: "Turn microphone input into a learning request.", consoleUrl: "https://console.volcengine.com/speech/new/setting/apikeys?projectName=default" },
   admission: { title: "Input Understanding", provider: "typesafe", providerName: "TypeSafe Jev", keyLabel: "TypeSafe Jev API Key", description: "Optional intent filtering and clarification before a lesson.", consoleUrl: "https://console.typesafe.ai/settings/keys" },
 } as const;
 
