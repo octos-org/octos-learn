@@ -16,20 +16,22 @@
 4. 首期语音仅支持火山新版 API Key，移除 Azure 适配与旧版鉴权选择。电视通过受限原生桥接直连固定 ASR / TTS / Jev 官方地址；原生语音只允许新版鉴权头。
 5. 网页直连受限时允许走现有 VPS。当前火山新版鉴权与 Jev 均未通过浏览器预检，网页直接使用 `/api/my/client-services/{capability}/relay`，不先失败一次付费直连请求。Relay 校验本人身份，仅转发显式传入的本人同步凭据或未保存测试草稿，不读取平台 / 父账号凭据、不接受任意 URL、不跟随重定向、不自动重试；响应禁缓存，错误正文脱敏，限制请求 / 响应体、并发与超时。
 6. 网页 ASR 的 WAV 可经认证 relay 转发给火山，不写入服务器课程 / 语音缓存；最终文字和必要图片仍进入现有学习流程。Jev 的网页 relay 与电视直连均使用本人 Key；未配置 / 关闭 / 调用失败时跳过，不领取平台 grant、不另调 Gemini 模拟。旧 Android 共享配置在加载时清除。
-7. 设置页与 onboarding 提供分开的 ASR / TTS / Jev 表单。保存和测试分离，测试草稿不覆盖工作配置，显式测试提示供应商用量；录音测试有停止与超时、离开清理。旁白区分合成与播放，已生成音频可重播。账号已保存不等于本机已验证。旧 Azure / App ID 配置迁移须重新录入火山新版 Key，不复用旧 Token；页面明确说明网页录音与 Jev 输入会经过服务器。
+7. 设置页 Voice 已移动到 Learning，与 LLM、API Keys 并列；Voice 按统一卡片管理 ASR / TTS / Jev 参数、启用状态和测试，API Keys 的 Speech & Learning 分组集中管理三项本人凭据。Save Changes 仅保存变更，Reset 恢复原值；不更换未修改的 Key，清空凭据会停用对应能力。Onboarding / 白板内提示保留按用途配置入口。保存和测试分离，测试草稿不覆盖工作配置，显式测试提示供应商用量；录音测试有停止与超时、离开清理。旁白区分合成与播放，已生成音频可重播。账号已保存不等于本机已验证。旧 Azure / App ID 配置迁移须重新录入火山新版 Key，不复用旧 Token；页面明确说明网页录音与 Jev 输入会经过服务器。
 8. 白板内可打开配置对话框，保留当次输入 / 选区；返回后由用户主动继续，不自动提交付费课程或恢复麦克风。首次设置的可选表单折叠，Jev 无强制填写条件。
 9. 移除开发代理中的 Jev Key 注入和客户端平台 grant 获取。公网 / Android 构建停用旧托管语音与私有语音开关。Nginx 示例在正式切换时关闭旧语音、Jev、私有 ASR 路由，并为旧 APK 的 native-config 返回无凭据的 disabled 响应。
 10. 检查模型测试接口时发现读取保存 Key 的辅助函数缺少目标 profile 授权检查，已补上，并增加跨账号拒绝测试；没有改动模型生成协议或增加模型请求。
 
 ## 本轮可复现验证
 
-自动测试全部使用合成凭据和模拟供应商；没有用平台 Key 冒充个人接入。运行日志位于本机 `/private/tmp/octos-byok-*.log`，最终结果以本轮交付说明为准。
+自动测试全部使用合成凭据和模拟供应商；没有用平台 Key 冒充个人接入。运行日志位于本机 `/private/tmp/octos-byok-*.log` 与 `/private/tmp/octos-voice-settings-*.log`，最终结果以本轮交付说明为准。
 
 - Octos：`cargo test -p octos-cli --no-default-features --features api client_services --lib`，覆盖加密 / 防密文跨账号复制、掩码元数据、本人显式同步、删除、旧版本拒绝、无平台回退及模型 Key 跨账号探测拒绝；共 7 项定向测试通过，新增 relay 固定地址 / 新版鉴权、成功响应、错误脱敏、超时及大小限制覆盖。`cargo check` 通过。
-- 前端：Vitest 全量 1,138 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
+- 前端：Vitest 全量 1,146 项通过、TypeScript 通过、ESLint 0 errors / 37 warnings；其中旧的“私有优先 / 平台兜底”产品断言已替换为 BYOK 直连、取消、静音、图片并发和禁止 WAV 上传断言；保留纯函数、回放与上下文检查。
 - 本机真实候选服务器 HTTP 检查：无认证同步被拒绝、普通 profile / 元数据不返回 Key、显式本人同步与删除正常；仅使用合成凭据，无供应商请求。预览使用独立临时 profile，不复用线上账号或数据。
-- Chromium：`tests/byok-settings.spec.ts`，两项通过：保存配置不领取平台凭据、不暗中测试、不将 Key 写入 localStorage；显式 Jev 草稿测试经认证 relay 发送本人 Key。
+- Chromium：`tests/byok-settings.spec.ts` 与 `tests/voice-settings.spec.ts`，三项通过：Voice / API Keys 跨页面配置、关闭服务显式测试及窄屏无溢出；保存配置不领取平台凭据、不暗中测试、不将 Key 写入 localStorage；显式 Jev 草稿测试经认证 relay 发送本人 Key。
 - Vite 常规、公网构建；Android Java 编译、Android 资源构建及 debug APK 打包。候选 APK 未安装至真实电视。
+
+设置页记录：[Voice 桌面](byok-migration-2026-10-19/voice-settings-desktop.png)、[API Keys 语音分组](byok-migration-2026-10-19/voice-api-keys-desktop.png)、[Voice 窄屏](byok-migration-2026-10-19/voice-settings-mobile.png)。保存 Key 不自动启用，显式测试停用服务仅临时取本人凭据；运行快照仍排除停用服务。
 
 页面记录：[桌面 onboarding](byok-migration-2026-10-19/onboarding-desktop.png)、[960×540 视口](byok-migration-2026-10-19/onboarding-960x540.png)。后者是浏览器视口检查，不是电视实机验收。
 

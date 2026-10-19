@@ -54,7 +54,6 @@ const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = [
 
 const TABS: TabDef[] = [
   { id: "profile", label: "Profile", icon: User, group: "personal" },
-  { id: "voice", label: "Voice", icon: Volume2, group: "personal" },
   {
     id: "companion",
     label: "Learning Companion",
@@ -62,6 +61,7 @@ const TABS: TabDef[] = [
     group: "personal",
   },
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
+  { id: "voice", label: "Voice", icon: Volume2, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
   { id: "authentication", label: "Authentication", icon: ShieldCheck, adminOnly: true, group: "system" },
   { id: "developer", label: "Developer Options", icon: Bug, group: "developer" },

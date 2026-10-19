@@ -7,6 +7,8 @@ import {
   type ProfileConfig,
 } from "./settings-api";
 
+const serviceMocks = vi.hoisted(() => ({ list: vi.fn(), save: vi.fn() }));
+vi.mock("@/byok/services", () => ({ listClientServices: serviceMocks.list, saveClientService: serviceMocks.save }));
 const apiMocks = vi.hoisted(() => ({
   updateMyProfileConfig: vi.fn(),
   formatSettingsError: vi.fn((e: unknown, fb = "failed") =>
@@ -44,6 +46,8 @@ const baseProfile = makeProfile({
 describe("ApiKeysTab", () => {
   beforeEach(() => {
     cleanup();
+    serviceMocks.list.mockReset(); serviceMocks.list.mockResolvedValue({ profile_id: "p1", services: {} });
+    serviceMocks.save.mockReset(); serviceMocks.save.mockImplementation(async (_capability, draft) => ({ ...draft, has_credential: !!draft.key, revision: "r2", execution_target: "client" }));
     apiMocks.updateMyProfileConfig.mockReset();
     apiMocks.updateMyProfileConfig.mockResolvedValue(baseProfile);
   });
@@ -129,4 +133,38 @@ describe("ApiKeysTab", () => {
     expect("OPENAI_API_KEY" in patch.env_vars).toBe(false);
     expect(patch.env_vars.SERPER_API_KEY).toBe("se***er");
   });
+  it("saves speech keys separately from env vars without automatically enabling a service", async () => {
+    render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
+    const input = await screen.findByLabelText("Volcano TTS API Key");
+    fireEvent.change(input, { target: { value: "synthetic-own-speech-key" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", expect.objectContaining({ provider: "volcano", key: "synthetic-own-speech-key", enabled: false }), undefined));
+    await screen.findByRole("button", { name: "Saved" });
+    expect(input).toHaveProperty("value", "••••••••");
+    expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
+    expect(serviceMocks.save).toHaveBeenCalledOnce();
+  });
+  it("clearing a stored service key disables it while preserving its parameters", async () => {
+    serviceMocks.list.mockResolvedValue({ profile_id: "p1", services: { tts: { provider: "volcano", enabled: true, has_credential: true, revision: "r1", params: { auth_mode: "api-key", resource_id: "my-resource", voice: "my-voice" } } } });
+    render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
+    const input = await screen.findByLabelText("Volcano TTS API Key");
+    expect(input).toHaveProperty("value", "••••••••");
+    fireEvent.change(input, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(serviceMocks.save).toHaveBeenCalledWith("tts", { provider: "volcano", key: "", enabled: false, params: { auth_mode: "api-key", resource_id: "my-resource", voice: "my-voice" } }, "r1"));
+    expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
+  });
+  it("keeps a rejected key draft until reset, without changing other saved keys", async () => {
+    serviceMocks.save.mockRejectedValue(new Error("Configuration changed; reload before saving"));
+    render(<ApiKeysTab profile={baseProfile} onProfileUpdated={() => {}} />);
+    const input = await screen.findByLabelText("TypeSafe Jev API Key");
+    fireEvent.change(input, { target: { value: "synthetic-jev-draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await screen.findByText("Configuration changed; reload before saving");
+    expect(input).toHaveProperty("value", "synthetic-jev-draft");
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(input).toHaveProperty("value", "");
+    expect(apiMocks.updateMyProfileConfig).not.toHaveBeenCalled();
+  });
+
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Save,
   Loader2,
@@ -8,6 +8,8 @@ import {
   Radio,
   Server,
   KeyRound,
+  Volume2,
+  ExternalLink,
 } from "lucide-react";
 import {
   formatSettingsError,
@@ -15,6 +17,10 @@ import {
   type Profile,
 } from "./settings-api";
 import { LLM_PROVIDERS } from "./llm-providers";
+import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsService } from "@/byok/service-config";
+import { saveClientService, type Capability } from "@/byok/services";
+import { useServiceMetadata } from "@/byok/use-service-metadata";
+const STORED_KEY = "••••••••";
 
 interface ApiKeysTabProps {
   profile: Profile;
@@ -123,10 +129,14 @@ function KeyFieldRow({
   field,
   value,
   onChange,
+  showIdentifier = true,
+  disabled = false,
 }: {
   field: KeyField;
   value: string;
   onChange: (val: string) => void;
+  showIdentifier?: boolean;
+  disabled?: boolean;
 }) {
   const configured = Boolean(value.trim());
 
@@ -136,9 +146,7 @@ function KeyFieldRow({
         <div className="min-w-0">
           <h4 className="text-sm font-medium text-text-strong">{field.name}</h4>
           <p className="text-xs text-muted">{field.description}</p>
-          <p className="mt-0.5 font-mono text-[11px] text-muted/70">
-            {field.key}
-          </p>
+          {showIdentifier && <p className="mt-0.5 font-mono text-[11px] text-muted/70">{field.key}</p>}
         </div>
         <div className="shrink-0 flex items-center gap-1.5">
           <span
@@ -154,6 +162,7 @@ function KeyFieldRow({
 
       <input
         type="password"
+        disabled={disabled}
         aria-label={field.key}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -177,9 +186,23 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDirty = ALL_FIELDS.some(
+  const services = useServiceMetadata();
+  useEffect(() => {
+    if (window.location.hash === "#speech-services") document.getElementById("speech-services")?.scrollIntoView({ block: "start" });
+  }, []);
+  const [serviceValues, setServiceValues] = useState<Partial<Record<Capability, string>>>({});
+  const originalKey = (capability: Capability) => services.metadata[capability]?.has_credential ? STORED_KEY : "";
+  const dirtyServices = SERVICE_CAPABILITIES.filter(capability => serviceValues[capability] !== undefined && serviceValues[capability] !== originalKey(capability));
+  const envDirty = ALL_FIELDS.some(
     (f) => (values[f.key] ?? "") !== (original[f.key] ?? ""),
   );
+
+  const isDirty = envDirty || dirtyServices.length > 0;
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [saved]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -200,15 +223,26 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
     }
 
     try {
-      const result = await updateMyProfileConfig(profile, {
-        env_vars: mergedEnv,
-      });
-      onProfileUpdated(result);
-      const next = profileToValues(result);
-      setValues(next);
-      setOriginal(next);
+      if (envDirty) {
+        const result = await updateMyProfileConfig(profile, { env_vars: mergedEnv });
+        onProfileUpdated(result);
+        const next = profileToValues(result);
+        setValues(next);
+        setOriginal(next);
+      }
+      for (const capability of dirtyServices) {
+        const current = services.metadata[capability];
+        const key = (serviceValues[capability] ?? "").trim();
+        const next = await saveClientService(capability, {
+          provider: SERVICE_DEFINITIONS[capability].provider,
+          enabled: !!key && supportsService(capability, current) && !!current?.enabled,
+          params: serviceParams(capability, current), key,
+        }, current?.revision);
+        if (!next) throw new Error(`Reload ${SERVICE_DEFINITIONS[capability].title} before saving again.`);
+        services.setMetadata(previous => ({ ...previous, [capability]: next }));
+        setServiceValues(previous => { const remaining = { ...previous }; delete remaining[capability]; return remaining; });
+      }
       setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       setError(formatSettingsError(err, "Failed to save API keys."));
     } finally {
@@ -220,6 +254,9 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
     const next = profileToValues(profile);
     setValues(next);
     setOriginal(next);
+    setServiceValues({});
+    setError(null);
+    setSaved(false);
   };
 
   return (
@@ -227,7 +264,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
       {GROUPS.map((group) => {
         const Icon = group.icon;
         return (
-          <div key={group.id} className="glass-section rounded-lg p-6">
+          <div key={group.id} className="space-y-6"><div className="glass-section rounded-lg p-6">
             <div className="flex items-center gap-3 mb-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
                 <Icon size={20} />
@@ -246,12 +283,33 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
                   key={field.key}
                   field={field}
                   value={values[field.key] ?? ""}
-                  onChange={(val) =>
-                    setValues((v) => ({ ...v, [field.key]: val }))
-                  }
+                  disabled={saving}
+                  onChange={(val) => { setValues((v) => ({ ...v, [field.key]: val })); setSaved(false); setError(null); }}
                 />
               ))}
             </div>
+          </div>
+          {group.id === "llm_providers" && <section id="speech-services" aria-label="Speech & Learning" className="glass-section rounded-lg p-6">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Volume2 size={20} /></div>
+              <div><h3 className="text-sm font-semibold text-text-strong">Speech & Learning</h3><p className="text-xs text-muted">Your provider keys for Voice. Configure resources and enable services in the Voice tab.</p></div>
+            </div>
+            {services.loading ? <p role="status" className="flex items-center gap-2 text-sm text-muted"><Loader2 size={14} className="animate-spin" /> Loading service keys…</p>
+              : services.error ? <div role="alert" className="text-sm text-red-400">{services.error} <button onClick={services.reload} className="text-accent underline">Reload services</button></div>
+              : <div className="space-y-3">{SERVICE_CAPABILITIES.map(capability => {
+                const definition = SERVICE_DEFINITIONS[capability];
+                const current = services.metadata[capability];
+                return <div key={capability}>
+                  <KeyFieldRow field={{ key: definition.keyLabel, name: capability === "admission" ? definition.providerName : `${definition.providerName} · ${capability === "tts" ? "TTS" : "ASR"}`, description: definition.description }}
+                    value={serviceValues[capability] ?? originalKey(capability)} disabled={saving} showIdentifier={false}
+                    onChange={value => { setServiceValues(previous => ({ ...previous, [capability]: value })); setSaved(false); setError(null); }} />
+                  <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-xs text-muted">
+                    <span>{!supportsService(capability, current) ? "Replace the previous credential with a new Volcano API Key." : "Leave unchanged to keep. Clear and save to remove and disable this service."}</span>
+                    <a className="inline-flex items-center gap-1 text-accent hover:underline" href={definition.consoleUrl} target="_blank" rel="noreferrer">Get API Key <ExternalLink size={11} /></a>
+                  </div>
+                </div>;
+              })}</div>}
+          </section>}
           </div>
         );
       })}
@@ -285,6 +343,7 @@ export function ApiKeysTab({ profile, onProfileUpdated }: ApiKeysTabProps) {
         {isDirty && (
           <button
             onClick={handleReset}
+            disabled={saving}
             className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"
           >
             <RotateCcw size={14} />

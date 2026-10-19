@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ token: "alice", profile: "alice", request: vi.fn() }));
 vi.mock("@/api/client", () => ({ getToken: () => api.token, getSelectedProfileId: () => api.profile, request: api.request }));
-import { getService, getServiceStatus, prepareClientServices, resetClientServices, serviceRequest, saveClientService, deleteClientService } from "./services";
+import { getService, getServiceStatus, prepareClientServices, resetClientServices, serviceRequest, saveClientService, deleteClientService, getServiceForTest } from "./services";
 const configured = (key = "alice-own-key") => ({ profile_id: "alice", services: { tts: { provider: "azure", enabled: true, params: { region: "eastasia", voice: "zh-CN-XiaoxiaoNeural" }, key, revision: "r1", execution_target: "client" } } });
 beforeEach(() => { api.token = "alice"; api.profile = "alice"; api.request.mockReset(); resetClientServices(); });
 describe("owner-scoped client snapshots", () => {
@@ -52,6 +52,15 @@ describe("owner-scoped client snapshots", () => {
     expect(asr.signal.aborted).toBe(true);
     expect(tts.signal.aborted).toBe(false);
     expect(getService("tts")?.key).toBe("alice-own-key");
+  });
+
+  it("excludes disabled credentials from runtime but allows an explicit settings test", async () => {
+    const value = configured(); value.services.tts.enabled = false;
+    api.request.mockResolvedValue(value); await prepareClientServices();
+    expect(getService("tts")).toBeUndefined();
+    expect((await getServiceForTest("tts", new AbortController().signal))?.key).toBe("alice-own-key");
+    expect(getService("tts")).toBeUndefined();
+    expect(getServiceStatus("tts").state).toBe("unconfigured");
   });
 
 });

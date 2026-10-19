@@ -84,7 +84,7 @@ export function prepareClientServices(force = false): Promise<void> {
     .then(result => {
       if (owner !== identity() || version !== generation) return;
       const previous = snapshots;
-      snapshots = result.services;
+      snapshots = { ...result.services };
       loaded = true;
       for (const capability of ["asr", "tts", "admission"] as const) {
         const value = snapshots[capability];
@@ -97,18 +97,29 @@ export function prepareClientServices(force = false): Promise<void> {
   pending = task;
   return task;
 }
+/** Explicit settings test only. Disabled credentials never enter the active snapshot. */
+export async function getServiceForTest(capability: Capability, signal: AbortSignal, expectedRevision?: string): Promise<ClientService | undefined> {
+  const owner = identity();
+  const cached = getService(capability);
+  if (signal.aborted) throw new DOMException("Canceled", "AbortError");
+  if (cached && (!expectedRevision || cached.revision === expectedRevision)) return cached;
+  const result = await request<Envelope<ClientService>>("/api/my/client-services/sync", { method: "POST", signal });
+  if (signal.aborted || owner !== identity()) throw new DOMException("Canceled", "AbortError");
+  return result.services[capability];
+}
 export function listClientServices(): Promise<Envelope<ServiceMetadata>> {
   return request("/api/my/client-services");
 }
-export async function saveClientService(capability: Capability, draft: ServiceDraft, revision?: string): Promise<void> {
+export async function saveClientService(capability: Capability, draft: ServiceDraft, revision?: string): Promise<ServiceMetadata | undefined> {
   const owner = identity();
-  await request(`/api/my/client-services/${capability}`, {
+  const result = await request<Envelope<ServiceMetadata>>(`/api/my/client-services/${capability}`, {
     method: "PUT", body: JSON.stringify({ ...draft, expected_revision: revision ?? null }),
   });
   if (owner !== identity()) return;
   invalidateCapability(capability);
   await prepareClientServices();
   announceChange(capability);
+  return result.services[capability];
 }
 export async function deleteClientService(capability: Capability, revision: string): Promise<void> {
   const owner = identity();

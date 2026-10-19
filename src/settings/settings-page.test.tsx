@@ -171,6 +171,16 @@ describe("AdminSettingsPage", () => {
     expect(screen.queryByText("Personal")).toBeNull();
   });
 
+  it("groups Voice with LLM under Learning rather than Personal", async () => {
+    render(<MemoryRouter><AdminSettingsPage /></MemoryRouter>);
+    await screen.findByRole("button", { name: "Voice" });
+    fireEvent.change(screen.getByTestId("settings-tab-search"), { target: { value: "learning" } });
+    expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
+    fireEvent.change(screen.getByTestId("settings-tab-search"), { target: { value: "personal" } });
+    expect(screen.queryByRole("button", { name: "Voice" })).toBeNull();
+  });
+
   it("shows an empty state when the search matches nothing", async () => {
     render(
       <MemoryRouter>
