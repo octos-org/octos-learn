@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-19",
+  "origin": "https://learn.pitun.cc",
+  "authenticated": false,
+  "paid_calls": 0,
+  "actual_vendor_call_verified": false,
+  "checks": [
+    {
+      "service": "azure-tts-eastasia",
+      "status": 204,
+      "allow_origin": "*",
+      "allow_headers": "ocp-apim-subscription-key,content-type,x-microsoft-outputformat"
+    },
+    {
+      "service": "azure-asr-eastasia",
+      "status": 204,
+      "allow_origin": "*",
+      "allow_headers": "ocp-apim-subscription-key,content-type"
+    },
+    {
+      "service": "typesafe-systemone",
+      "status": 400,
+      "allow_origin": null,
+      "allow_headers_include_authorization": true,
+      "browser_preflight_passed": false
+    }
+  ]
+}

@@ -60,7 +60,7 @@ export interface EvaluateSystemOneOptions {
   signal?: AbortSignal;
 }
 
-export const DEFAULT_TYPESAFE_API_URL = "/api/systemone/evaluate";
+export const DEFAULT_TYPESAFE_API_URL = "https://api.typesafe.ai/v1/systemone";
 export const DEFAULT_TYPESAFE_MODEL = "jev-latest";
 export const DEFAULT_TYPESAFE_TIMEOUT_MS = 2000;
 
@@ -111,6 +111,8 @@ export async function evaluateSystemOne(
 
     const response = await fetchFn(baseUrl, {
       method: "POST",
+      credentials: "omit",
+      redirect: "error",
       headers,
       body: JSON.stringify({
         state: requestPayload.state,

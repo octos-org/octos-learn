@@ -1,431 +1,126 @@
-import { useState } from "react";
-import {
-  Save,
-  Loader2,
-  Check,
-  AlertCircle,
-  CheckCircle2,
-  XCircle,
-  Plug,
-  Volume2,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import { synthesizeSpeech } from "@/api/voice";
-import { SharedTtsPanel } from "./shared-tts";
-import { playAudioBlob, unlockAudio } from "@/home/voice/audio-playback";
-import {
-  updateMyProfileConfig,
-  formatSettingsError,
-  type Profile,
-  type CloudTtsConfig,
-} from "./settings-api";
+import { useEffect, useState } from "react";
+import { AlertCircle, Brain, Check, CheckCircle2, Info, KeyRound, Loader2, Mic, RotateCcw, Save, Volume2 } from "lucide-react";
+import { SERVICE_CAPABILITIES, SERVICE_DEFINITIONS, serviceParams, supportsService } from "@/byok/service-config";
+import { saveClientService, type Capability, type ServiceMetadata } from "@/byok/services";
+import { useServiceMetadata, type ServiceMetadataMap } from "@/byok/use-service-metadata";
+import { formatSettingsError, type Profile } from "./settings-api";
+import { VolcanoVoiceSelect } from "./volcano-voice-select";
+import { VoiceServiceTest } from "./voice-service-test";
 
-const TOKEN_ENV = "VOLC_TTS_TOKEN";
-// `inherit` maps to a null `tts_provider` (no per-profile override → use the
-// server-level default). The other ids are explicit overrides.
-const ROUTES: { id: string; label: string; hint: string }[] = [
-  { id: "inherit", label: "平台提供 / 服务器默认", hint: "未配置个人凭据时使用平台语音，受平台额度限制。" },
-  { id: "auto", label: "Auto", hint: "Cloud when credentials are set, else on-device." },
-  { id: "local", label: "Local (on-device)", hint: "Local ominix-api engine." },
-  { id: "cloud", label: "Cloud (Volcano)", hint: "Volcano Engine cloud TTS (requires App ID + token)." },
-];
-
-const ASR_LANGUAGES = [
-  "Chinese", "English", "Cantonese", "Arabic", "German", "French",
-  "Spanish", "Portuguese", "Indonesian", "Italian", "Korean", "Russian",
-  "Thai", "Vietnamese", "Japanese", "Turkish", "Hindi", "Malay", "Dutch",
-  "Swedish", "Danish", "Finnish", "Polish", "Czech", "Filipino", "Persian",
-  "Greek", "Romanian", "Hungarian", "Macedonian",
-] as const;
-
-// Preset Volcano voices (voice_type IDs). Label = friendly name shown to the
-// user; value = the `voice_type` written to `tts_cloud.voice`.
-const VOICES: { id: string; label: string }[] = [
-  { id: "zh_female_xiaohe_uranus_bigtts", label: "小何" },
-  { id: "zh_male_m191_uranus_bigtts", label: "云舟" },
-  { id: "zh_male_taocheng_uranus_bigtts", label: "小天" },
-  { id: "en_male_tim_uranus_bigtts", label: "Tim" },
-];
-
-const INPUT_CLASS =
-  "w-full rounded-xl bg-surface-container px-4 py-2.5 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 transition";
-const SELECT_CLASS =
-  "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text outline-none border border-transparent focus:border-accent/30 transition";
-
-function isMasked(v: string | undefined): boolean {
-  return !!v && (v.includes("***") || v.includes("\u{1f511}"));
+interface ServiceForm { params: Record<string, string> }
+type VoiceForm = Record<Capability, ServiceForm>;
+const icons = { tts: Volume2, asr: Mic, admission: Brain };
+const inputClass = "w-full rounded-xl bg-surface-container px-4 py-3 text-sm text-text placeholder-muted/50 outline-none border border-transparent focus:border-accent/30 disabled:opacity-50 transition";
+const labelClass = "mb-2 block text-xs font-medium text-muted";
+function serviceForm(capability: Capability, saved?: ServiceMetadata): ServiceForm {
+  return { params: serviceParams(capability, saved) };
 }
-
-function normalizeVolcanoAppId(value: string | undefined): string | null {
-  const match = value?.trim().match(/^(?:app\s*id\s*[:：]\s*)?(\d+)$/i);
-  return match?.[1] ?? null;
+function initialForm(metadata: ServiceMetadataMap): VoiceForm {
+  return Object.fromEntries(SERVICE_CAPABILITIES.map(capability => [capability, serviceForm(capability, metadata[capability])])) as VoiceForm;
 }
-
-type TestStatus = "idle" | "testing" | "connected" | "failed";
-
-export function VoiceTab({
-  profile,
-  onProfileUpdated,
-}: {
-  profile: Profile;
-  onProfileUpdated: (p: Profile) => void;
-}) {
-  const cfg = profile.config;
-  const storedToken = cfg.env_vars?.[TOKEN_ENV] ?? "";
-
-  // `null`/absent override → "inherit" (NOT "auto"): show the server-default
-  // option so we don't misrepresent the state or clobber inheritance on save.
-  const [route, setRoute] = useState(cfg.tts_provider ?? "inherit");
-  const [asrLanguage, setAsrLanguage] = useState(cfg.asr_language ?? "inherit");
-  const [cloud, setCloud] = useState<CloudTtsConfig>({ ...(cfg.tts_cloud ?? {}) });
-  // Whether the profile already had a cloud override, and whether the user has
-  // edited any cloud field this session. Used to avoid persisting an empty `{}`
-  // override (which would clobber the inherited server-level cloud config).
-  const hadCloud = cfg.tts_cloud != null;
-  const [cloudEdited, setCloudEdited] = useState(false);
-  // empty input = leave the stored (masked) token untouched
-  const [tokenInput, setTokenInput] = useState("");
-  const [showAdvanced, setShowAdvanced] = useState(false);
+export function VoiceTab({ profile }: { profile: Profile; onProfileUpdated: (profile: Profile) => void }) {
+  const services = useServiceMetadata();
+  if (services.loading) return <p role="status" className="flex items-center gap-2 py-6 text-sm text-muted"><Loader2 size={16} className="animate-spin" />Loading voice configuration…</p>;
+  if (services.error) return <div role="alert" className="glass-section rounded-lg p-6 text-sm text-red-400">{services.error}<button className="ml-2 text-accent underline" onClick={services.reload}>Reload configuration</button></div>;
+  return <VoiceEditor key={profile.id} initialMetadata={services.metadata} />;
+}
+function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap }) {
+  const [metadata, setMetadata] = useState(initialMetadata);
+  const [form, setForm] = useState(() => initialForm(initialMetadata));
+  const [original, setOriginal] = useState(() => initialForm(initialMetadata));
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [testStatus, setTestStatus] = useState<TestStatus>("idle");
-  const [testMessage, setTestMessage] = useState<string | null>(null);
-
-  const showCloud = route === "auto" || route === "cloud";
-  const tokenSet = isMasked(storedToken) || storedToken.length > 0;
-  const tokenAvailable = tokenSet || tokenInput.length > 0;
-  const normalizedAppId = normalizeVolcanoAppId(cloud.appid);
-  const appidSet = normalizedAppId != null;
-  // Cloud is an explicit choice → enforce complete creds (the backend would
-  // otherwise silently fall back to on-device). Auto may fall back, so it only
-  // gets a soft hint.
-  const cloudIncomplete = route === "cloud" && (!appidSet || !tokenAvailable);
-  const autoTokenHint = route === "auto" && !tokenAvailable;
-
-  const setCloudField = (k: keyof CloudTtsConfig, v: string) => {
-    setCloudEdited(true);
-    setCloud((c) => ({ ...c, [k]: v }));
-  };
-
-  async function persistVoiceConfig(): Promise<Profile> {
-    const envVars = { ...(cfg.env_vars ?? {}) };
-    // Only overwrite the token when the user typed a new value; otherwise
-    // re-send the stored masked value so the backend restores the real one.
-    if (tokenInput) envVars[TOKEN_ENV] = tokenInput;
-    // Only persist a cloud override when one already existed or the user
-    // actually edited cloud fields — otherwise send `null` so we don't create
-    // an empty `{}` that would override the inherited server-level config.
-    const ttsCloud = hadCloud || cloudEdited
-      ? {
-          ...cloud,
-          ...(cloud.appid != null && normalizedAppId != null
-            ? { appid: normalizedAppId }
-            : {}),
-        }
-      : null;
-    const updated = await updateMyProfileConfig(profile, {
-      // `inherit` → null clears the override so the server default applies.
-      tts_provider: route === "inherit" ? null : route,
-      tts_cloud: ttsCloud,
-      asr_language: asrLanguage === "inherit" ? null : asrLanguage,
-      env_vars: envVars,
-    });
-    onProfileUpdated(updated);
-    setTokenInput("");
-    if (ttsCloud?.appid && ttsCloud.appid !== cloud.appid) {
-      setCloud((current) => ({ ...current, appid: ttsCloud.appid }));
-    }
-    return updated;
+  const [error, setError] = useState("");
+  const dirty = SERVICE_CAPABILITIES.filter(capability => JSON.stringify(form[capability]) !== JSON.stringify(original[capability]));
+  useEffect(() => {
+    if (!saved) return;
+    const timer = setTimeout(() => setSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [saved]);
+  function update(capability: Capability, patch: Partial<ServiceForm>) {
+    setForm(previous => ({ ...previous, [capability]: { ...previous[capability], ...patch } }));
+    setSaved(false); setError("");
   }
-
-  async function save() {
-    setSaving(true);
-    setSaved(false);
-    setError(null);
-    setTestStatus("idle");
-    setTestMessage(null);
+  async function save(capabilities: readonly Capability[] = dirty) {
+    setSaving(true); setSaved(false); setError("");
     try {
-      await persistVoiceConfig();
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    } catch (err) {
-      setError(formatSettingsError(err, "Failed to update voice config."));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function testTts() {
-    // Unlock Web Audio while this click is still a user gesture. The actual
-    // audio arrives after two network requests and would otherwise be blocked
-    // by browser autoplay policy.
-    unlockAudio();
-    setTestStatus("testing");
-    setTestMessage(null);
-    setError(null);
-    try {
-      // Test exactly what is visible in the form. Persisting first also forces
-      // the server to rebuild the profile runtime with the latest secret and
-      // route before the real synthesis request.
-      await persistVoiceConfig();
-      const audio = await synthesizeSpeech("你好，这是一段课程语音测试。");
-      const started = await playAudioBlob(audio, () => {});
-      if (!started) {
-        throw new Error("TTS 已返回音频，但当前浏览器无法播放。");
+      // Validate all pending edits before persisting any of them.
+      for (const capability of capabilities) {
+        const current = metadata[capability];
+        const draft = form[capability];
+        if (!supportsService(capability, current)) throw new Error(`Replace the ${SERVICE_DEFINITIONS[capability].title} credential in API Keys first.`);
+        if (current?.has_credential && capability !== "admission" && !draft.params.resource_id.trim()) throw new Error("Enter a resource ID for your speech service.");
+        if (current?.has_credential && capability === "tts" && !draft.params.voice.trim()) throw new Error("Choose a voice for narration.");
       }
-      setTestStatus("connected");
-      setTestMessage("TTS 可用，试听已发送到当前默认扬声器。");
-    } catch (err) {
-      setTestStatus("failed");
-      setTestMessage(formatSettingsError(err, "TTS 测试失败。"));
-    }
+      for (const capability of capabilities) {
+        const params = Object.fromEntries(Object.entries(form[capability].params).map(([name, value]) => [name, value.trim()]));
+        const next = await saveClientService(capability, { provider: SERVICE_DEFINITIONS[capability].provider, enabled: !!metadata[capability]?.has_credential, params }, metadata[capability]?.revision);
+        if (!next) throw new Error("Configuration changed. Reload the page before saving again.");
+        const nextForm = serviceForm(capability, next);
+        setMetadata(previous => ({ ...previous, [capability]: next }));
+        setOriginal(previous => ({ ...previous, [capability]: nextForm }));
+        setForm(previous => ({ ...previous, [capability]: nextForm }));
+      }
+      setSaved(true);
+    } catch (error) { setError(formatSettingsError(error, "Failed to save voice configuration. Your remaining edits are kept.")); }
+    finally { setSaving(false); }
   }
-
-  return (
-    <div className="space-y-6">
-      <SharedTtsPanel />
-      <div className="glass-section rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            <Volume2 size={20} />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-text-strong">Speech recognition (ASR)</h3>
-            <p className="text-xs text-muted">
-              Choose how speech is recognized for this profile across AppUI and connected channels
-            </p>
-          </div>
+  const reset = () => { setForm(original); setSaved(false); setError(""); };
+  return <div className="space-y-6">
+    {SERVICE_CAPABILITIES.map(capability => {
+      const definition = SERVICE_DEFINITIONS[capability];
+      const Icon = icons[capability];
+      const current = metadata[capability];
+      const draft = form[capability];
+      const compatible = supportsService(capability, current);
+      const hasKey = !!current?.has_credential && compatible && current?.local_credential !== false;
+      const missingSavedVoice = capability === "tts" && hasKey && !current?.params.voice?.trim();
+      const edited = dirty.includes(capability);
+      const field = (name: string, label: string, placeholder?: string) => <label className="block min-w-0">
+        <span className={labelClass}>{label}</span>
+        <input className={`${inputClass} font-mono`} value={draft.params[name] ?? ""} placeholder={placeholder} spellCheck={false} autoComplete="off"
+          onChange={event => update(capability, { params: { ...draft.params, [name]: event.target.value } })} />
+      </label>;
+      return <section key={capability} aria-label={definition.title} className="glass-section rounded-lg p-6">
+        <div className="mb-6 flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Icon size={20} /></div>
+          <div className="min-w-0 flex-1"><h3 className="text-sm font-semibold text-text-strong">{definition.title}{capability === "admission" && <span className="ml-2 text-xs font-normal text-muted"> Optional</span>}</h3><p className="mt-0.5 text-xs leading-5 text-muted">{definition.description}</p></div>
+          <span className="flex shrink-0 items-center gap-1.5 pt-1 text-[10px] font-medium text-muted"><span className={`h-2 w-2 rounded-full ${missingSavedVoice ? "bg-amber-400" : hasKey ? "bg-green-400" : "bg-muted/30"}`} />{missingSavedVoice ? "Voice required" : hasKey ? "Configured" : "Key required"}</span>
         </div>
-        <label htmlFor="asr-language" className="mb-1.5 block text-xs font-medium text-muted">
-          Recognition language
-        </label>
-        <select
-          id="asr-language"
-          value={asrLanguage}
-          onChange={(event) => setAsrLanguage(event.target.value)}
-          className={SELECT_CLASS}
-        >
-          <option value="inherit">Inherit (server default)</option>
-          <option value="auto">Auto</option>
-          {ASR_LANGUAGES.map((language) => (
-            <option key={language} value={language}>{language}</option>
-          ))}
-        </select>
-        <p className="mt-1.5 text-xs text-muted">
-          Applied on the next utterance. Auto lets the recognition engine detect the spoken language.
-        </p>
-      </div>
-
-      {/* Route card */}
-      <div className="glass-section rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-            <Volume2 size={20} />
+        <fieldset disabled={saving} className="min-w-0 space-y-5">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <label className="block min-w-0"><span className={labelClass}>Provider</span><select className={inputClass} value={definition.provider} onChange={() => {}}><option value={definition.provider}>{definition.providerName}</option></select></label>
+            {capability === "admission" ? field("model", "Model", "jev-latest") : field("resource_id", "Resource ID")}
           </div>
-          <div>
-            <h3 className="text-sm font-semibold text-text-strong">Voice synthesis (TTS)</h3>
-            <p className="text-xs text-muted">Choose how spoken replies are synthesized</p>
+          {capability === "tts" && <>
+            <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id} value={draft.params.voice} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />
+            {missingSavedVoice && <p className="text-xs leading-5 text-amber-500">Your API key is saved, but lessons have no saved voice. Choose a Voice ID and save it to enable narration.</p>}
+          </>}
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
+            <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{current?.local_credential === false ? "Account key saved; enter it once on this TV" : hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
+            <a href="/settings?tab=api-keys#speech-services" className="text-xs font-medium text-accent hover:underline">{hasKey ? "Manage API key" : "Set up API key"}</a>
           </div>
-        </div>
-
-        <div>
-          <label htmlFor="tts-route" className="mb-1.5 block text-xs font-medium text-muted">
-            TTS route
-          </label>
-          <select
-            id="tts-route"
-            value={route}
-            onChange={(e) => setRoute(e.target.value)}
-            className={SELECT_CLASS}
-          >
-            {ROUTES.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1.5 text-xs text-muted">
-            {ROUTES.find((r) => r.id === route)?.hint}
-          </p>
-        </div>
-      </div>
-
-      {/* Volcano cloud credentials card */}
-      {showCloud && (
-        <div className="glass-section rounded-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
-              <Volume2 size={20} />
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-text-strong">Volcano (cloud) credentials</h3>
-              <p className="text-xs text-muted">
-                Token is stored securely; other fields are plain settings
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-5">
-            <Field label="App ID" htmlFor="volc-appid">
-              <input
-                id="volc-appid"
-                value={cloud.appid ?? ""}
-                onChange={(e) => setCloudField("appid", e.target.value)}
-                className={INPUT_CLASS}
-              />
-            </Field>
-
-            <Field label={`Token${tokenSet ? " (已设置)" : ""}`} htmlFor="volc-token">
-              <input
-                id="volc-token"
-                type="password"
-                value={tokenInput}
-                placeholder={tokenSet ? "•••••• (unchanged)" : "Enter token"}
-                onChange={(e) => setTokenInput(e.target.value)}
-                className={INPUT_CLASS}
-              />
-            </Field>
-
-            <Field label="Voice" htmlFor="volc-voice">
-              <select
-                id="volc-voice"
-                value={cloud.voice ?? ""}
-                onChange={(e) => setCloudField("voice", e.target.value)}
-                className={SELECT_CLASS}
-              >
-                <option value="">Default (BV001_streaming)</option>
-                {VOICES.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.label}
-                  </option>
-                ))}
-                {cloud.voice && !VOICES.some((v) => v.id === cloud.voice) && (
-                  <option value={cloud.voice}>{cloud.voice}</option>
-                )}
-              </select>
-              {cloud.voice && (
-                <p className="mt-1.5 text-xs text-muted">{cloud.voice}</p>
-              )}
-            </Field>
-
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowAdvanced((s) => !s)}
-                className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-muted hover:text-accent hover:bg-accent/10 transition"
-              >
-                {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                {showAdvanced ? "Hide advanced" : "Advanced"}
-              </button>
-              {showAdvanced && (
-                <div className="mt-4 space-y-5">
-                  <Field label="Cluster" htmlFor="volc-cluster">
-                    <input
-                      id="volc-cluster"
-                      value={cloud.cluster ?? ""}
-                      placeholder="volcano_tts"
-                      onChange={(e) => setCloudField("cluster", e.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </Field>
-                  <Field label="Encoding" htmlFor="volc-encoding">
-                    <input
-                      id="volc-encoding"
-                      value={cloud.encoding ?? ""}
-                      placeholder="mp3"
-                      onChange={(e) => setCloudField("encoding", e.target.value)}
-                      className={INPUT_CLASS}
-                    />
-                  </Field>
-                </div>
-              )}
-            </div>
-
-            {cloudIncomplete && (
-              <p role="alert" className="flex items-center gap-1.5 text-xs text-red-400">
-                <AlertCircle size={13} /> Cloud 模式需要纯数字 App ID 和 Token；不要填写“APP ID:”前缀
-              </p>
-            )}
-            {autoTokenHint && (
-              <p className="flex items-center gap-1.5 text-xs text-amber-400">
-                <AlertCircle size={13} /> 未填 token，Auto 将回退端侧
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Save actions */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={saving || cloudIncomplete}
-          aria-live="polite"
-          className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dim disabled:opacity-30 transition"
-        >
-          {saving ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : saved ? (
-            <Check size={14} />
-          ) : (
-            <Save size={14} />
-          )}
-          {saving ? "Saving…" : saved ? "Saved" : "Save"}
-        </button>
-        <button
-          type="button"
-          onClick={testTts}
-          disabled={saving || testStatus === "testing" || cloudIncomplete}
-          className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted hover:text-text-strong hover:border-accent/30 disabled:opacity-30 transition"
-        >
-          {testStatus === "testing" ? (
-            <Loader2 size={14} className="animate-spin" />
-          ) : (
-            <Plug size={14} />
-          )}
-          {testStatus === "testing" ? "Testing…" : "Test TTS"}
-        </button>
-        {testStatus === "connected" && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-green-400">
-            <CheckCircle2 size={14} />
-            {testMessage}
-          </span>
-        )}
-        {testStatus === "failed" && (
-          <span role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-400">
-            <XCircle size={14} />
-            {testMessage}
-          </span>
-        )}
-        {error && (
-          <span role="alert" className="text-xs text-red-400">
-            {error}
-          </span>
-        )}
-      </div>
-      <p className="text-xs text-muted">Restart the profile to apply credential changes.</p>
+          <p className="text-xs leading-5 text-muted">{current?.local_credential === false ? "Open API Keys and enter your key on this TV. It will be encrypted locally for direct calls; the server does not download it to this device." : current?.account_synced === false ? "Using the key saved on this TV. Account sync failed; save it again in API Keys to retry." : hasKey ? "Connected automatically with your saved API key. Remove the key in API Keys to disconnect." : "Optional. Save your API key to connect; text learning remains available without it."}</p>
+        </fieldset>
+        <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft])} capability={capability}
+          draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving || (capability === "tts" && !draft.params.voice.trim())} /></div>
+        {edited && <div className="mt-4 space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
+          <p role="status" className="text-xs leading-5 text-amber-500">Unsaved changes. Tests preview these edits; lessons still use your saved settings.</p>
+          <button type="button" className="inline-flex items-center gap-2 text-xs font-medium text-accent disabled:opacity-30" disabled={saving} onClick={() => void save([capability])}>
+            <Save size={14} />{capability === "tts" ? "Save voice for lessons" : "Save these settings"}
+          </button>
+        </div>}
+      </section>;
+    })}
+    <div className="flex items-start gap-2 rounded-xl bg-surface-dark/50 px-4 py-3 text-xs leading-5 text-muted">
+      <Info size={14} className="mt-0.5 shrink-0" /><p>API Keys stores your credentials; Voice controls how they are used. Tests use your own provider account and may incur charges. Tests do not save changes. Browser requests may pass through the server; TV uses direct requests.</p>
     </div>
-  );
-}
-
-function Field({
-  label,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-xs font-medium text-muted">
-        {label}
-      </label>
-      {children}
+    <div className="flex flex-wrap items-center gap-3">
+      <button type="button" onClick={() => void save()} disabled={saving || !dirty.length} aria-live="polite" className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-dim disabled:opacity-30 transition">
+        {saving ? <Loader2 size={14} className="animate-spin" /> : saved ? <Check size={14} /> : <Save size={14} />}{saved ? "Saved" : "Save Changes"}
+      </button>
+      {dirty.length > 0 && <button type="button" onClick={reset} disabled={saving} className="flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"><RotateCcw size={14} />Reset</button>}
+      {error && <p role="alert" className="flex items-center gap-2 text-xs text-red-400"><AlertCircle size={14} className="shrink-0" />{error}</p>}
     </div>
-  );
+  </div>;
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MicVAD } from "@ricky0123/vad-web";
+import { describeCaptureError } from "./capture-errors";
 import { encodeWav } from "./wav-encode";
 import {
   decodeNativeWav,
@@ -23,6 +24,8 @@ export interface VoiceCapture {
    *  contend with the playback render thread. */
   stop: () => Promise<void>;
   error: string | null;
+  /** Current failure, available immediately after start() resolves false. */
+  getError: () => string | null;
 }
 
 export interface VoiceCaptureStartOptions {
@@ -34,6 +37,8 @@ export interface VoiceCaptureStartOptions {
   onSpeechConfirmed?: () => void;
   onSpeechRealStart?: () => void;
   onVADMisfire?: () => void;
+  /** Browser PCM frames at 16 kHz, including silence, for explicit recording tests. */
+  onAudioFrame?: (frame: Float32Array) => void;
   /** Supply a cloned stream when another transport owns the physical mic. */
   getStream?: () => Promise<MediaStream>;
 }
@@ -160,7 +165,9 @@ export function useVoiceCapture(): VoiceCapture {
   // update callbacks/options instead of racing two microphone/VAD instances.
   const startGenRef = useRef(0);
   const [capturing, setCapturing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setErrorState] = useState<string | null>(null);
+  const errorRef = useRef<string | null>(null);
+  const setError = useCallback((value: string | null) => { errorRef.current = value; setErrorState(value); }, []);
 
   useEffect(() => {
     const onNativeAudio = (event: Event) => {
@@ -202,7 +209,7 @@ export function useVoiceCapture(): VoiceCapture {
     };
     window.addEventListener(NATIVE_AUDIO_EVENT, onNativeAudio);
     return () => window.removeEventListener(NATIVE_AUDIO_EVENT, onNativeAudio);
-  }, []);
+  }, [setError]);
 
   const stop = useCallback((): Promise<void> => {
     startGenRef.current++;
@@ -348,6 +355,11 @@ export function useVoiceCapture(): VoiceCapture {
             //    (short clicks fall under this and fire onVADMisfire instead),
             //  - wait ~700ms of silence before ending so natural pauses don't cut.
             ...frameProcessorOptions(options),
+            onFrameProcessed: (_probabilities, frame) => {
+              if (gen !== startGenRef.current) return;
+              const current = callbacksRef.current;
+              if (current?.options.onAudioFrame) runCallbackSafely("onAudioFrame", () => current.options.onAudioFrame?.(frame), setError);
+            },
             onSpeechStart: () => {
               if (gen !== startGenRef.current) return;
               const current = callbacksRef.current;
@@ -402,9 +414,7 @@ export function useVoiceCapture(): VoiceCapture {
         }
       }
       if (!vad) {
-        throw initError instanceof Error
-          ? initError
-          : new Error("microphone VAD unavailable");
+        throw initError ?? new Error("microphone VAD unavailable");
       }
       const latest = callbacksRef.current;
       if (!latest || gen !== startGenRef.current) {
@@ -421,7 +431,7 @@ export function useVoiceCapture(): VoiceCapture {
       return await initialize;
     } catch (e) {
       console.error("[voice] capture init failed", e);
-      setError(e instanceof Error ? e.message : "microphone unavailable");
+      setError(describeCaptureError(e));
       setCapturing(false);
       return false;
     } finally {
@@ -429,9 +439,9 @@ export function useVoiceCapture(): VoiceCapture {
         initializationRef.current = null;
       }
     }
-  }, []);
+  }, [setError]);
 
   useEffect(() => () => void stop(), [stop]);
 
-  return { capturing, start, stop, error };
+  return { capturing, start, stop, error, getError: () => errorRef.current };
 }

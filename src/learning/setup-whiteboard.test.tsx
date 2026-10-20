@@ -44,6 +44,8 @@ vi.mock("@/home/use-ominix-runtime-summary", () => ({
 vi.mock("@/settings/shared-tts", () => ({
   SharedTtsPanel: () => <p>平台语音额度</p>,
 }));
+vi.mock("@/byok/service-settings", () => ({ ServiceSettings: () => <p>BYOK service settings</p> }));
+vi.mock("@/byok/services", () => ({ prepareClientServices: vi.fn(async () => {}), setLessonConfigured: vi.fn() }));
 const blank = () =>
   normalizeProfile({
     id: "alice",

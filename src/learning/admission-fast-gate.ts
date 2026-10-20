@@ -4,10 +4,9 @@ import {
   type NoulAnswer,
   DEFAULT_TYPESAFE_TIMEOUT_MS,
 } from "@/api/typesafe-client";
-import {
-  requestSystemOneGrant,
-  getCachedSystemOneGrant,
-} from "@/api/systemone-grant";
+import { getService, hasServiceCredential, setServiceStatus } from "@/byok/services";
+import { directJson, serviceFailure, validateService } from "@/byok/providers";
+import type { SystemOneRequest, SystemOneResponse } from "@/api/typesafe-client";
 
 export interface AdmissionFastGateInput {
   text: string;
@@ -44,22 +43,6 @@ export interface AdmissionFastGateOptions {
 }
 
 export const DEFAULT_ADMISSION_CONFIDENCE_THRESHOLD = 0.6;
-
-async function resolveApiKey(explicitKey?: string): Promise<string | null> {
-  if (explicitKey !== undefined) {
-    return explicitKey.trim() || null;
-  }
-
-  // Tier 1: Vite client-side environment variable (for standalone / local debugging)
-  const envKey = (import.meta.env?.VITE_TYPESAFE_API_KEY as string | undefined)?.trim();
-  if (envKey) return envKey;
-
-  // Tier 2: Fetch Grant from backend (cached in memory)
-  const grant = await requestSystemOneGrant();
-  if (grant?.apiKey?.trim()) return grant.apiKey.trim();
-
-  return null;
-}
 
 export interface AdmissionEventRecord {
   id: string;
@@ -121,42 +104,13 @@ export async function getSystemOneStatus({
   available: boolean;
   hasKey: boolean;
   keyPreview?: string;
-  source: "grant" | "env" | "none";
+  source: "account" | "none";
 }> {
-  const envKey = (import.meta.env?.VITE_TYPESAFE_API_KEY as string | undefined)?.trim();
-  if (envKey) {
-    return {
-      available: true,
-      hasKey: true,
-      keyPreview: envKey.slice(0, 10) + "...",
-      source: "env",
-    };
-  }
-  const cachedGrant = getCachedSystemOneGrant();
-  if (cachedGrant?.apiKey?.trim()) {
-    return {
-      available: true,
-      hasKey: true,
-      keyPreview: cachedGrant.apiKey.trim().slice(0, 10) + "...",
-      source: "grant",
-    };
-  }
-  if (fetchIfMissing) {
-    const grant = await requestSystemOneGrant();
-    if (grant?.apiKey?.trim()) {
-      return {
-        available: true,
-        hasKey: true,
-        keyPreview: grant.apiKey.trim().slice(0, 10) + "...",
-        source: "grant",
-      };
-    }
-  }
-  return {
-    available: false,
-    hasKey: false,
-    source: "none",
-  };
+  void fetchIfMissing; // Status reads never fetch credentials or platform grants.
+  const configured = getService("admission");
+  let available = false;
+  if (configured) { try { validateService("admission", configured); available = true; } catch { /* unsupported device */ } }
+  return { available, hasKey: Boolean(configured?.has_credential || configured?.key), source: configured ? "account" : "none" };
 }
 
 function finish(input: AdmissionFastGateInput, result: AdmissionFastGateResult): AdmissionFastGateResult {
@@ -185,9 +139,10 @@ export async function evaluateAdmissionFastGate(
     });
   }
 
-  // 2. Resolve credentials (Grant / Env)
-  const apiKey = await resolveApiKey(options.apiKey);
-  if (!apiKey) {
+  // 2. Product calls need a usable saved reference, never a downloaded key.
+  const apiKey = options.apiKey?.trim() ?? "";
+  const configured = options.apiKey === undefined ? hasServiceCredential(getService("admission")) : !!apiKey;
+  if (!configured) {
     const elapsedMs = Date.now() - startedAt;
     return finish(input, {
       disposition: "generate_lesson",
@@ -208,7 +163,22 @@ export async function evaluateAdmissionFastGate(
   const confidenceThreshold = options.confidenceThreshold ?? DEFAULT_ADMISSION_CONFIDENCE_THRESHOLD;
 
   try {
-    const response = await evaluateSystemOne(
+    const evaluate = async (key: string, payload: SystemOneRequest, settings: Parameters<typeof evaluateSystemOne>[2]): Promise<SystemOneResponse> => {
+      // Explicit injection is retained for isolated tests; product calls use the account snapshot.
+      if (options.apiKey !== undefined) return evaluateSystemOne(key, payload, settings);
+      const config = getService("admission");
+      if (!config) throw new Error("Jev 未配置");
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await directJson("admission", config, { ...payload, model: config.params.model || "jev-latest" }, controller.signal);
+        const result = JSON.parse(response.body) as SystemOneResponse;
+        if (!result.answers || typeof result.answers !== "object") throw new Error("Invalid Jev response");
+        setServiceStatus("admission", "ready", "已在此设备成功调用 Jev。");
+        return result;
+      } finally { clearTimeout(timeout); }
+    };
+    const response = await evaluate(
       apiKey,
       {
         state: {
@@ -320,6 +290,7 @@ export async function evaluateAdmissionFastGate(
       latencyMs: elapsedMs,
     });
   } catch (error) {
+    if (options.apiKey === undefined) serviceFailure("admission", error);
     // 4. Graceful Fallback on timeout or API error
     const elapsedMs = Date.now() - startedAt;
     return finish(input, {

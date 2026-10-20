@@ -1,3 +1,4 @@
+import { subscribeServices } from "@/byok/services";
 import { useEffect, useState } from "react";
 import type { VoiceReadiness } from "@/settings/settings-api";
 import { getVoiceRouting } from "@/api/voice-routing";
@@ -136,18 +137,17 @@ export function refreshOminixRuntimeSummary(): Promise<void> {
   if (inFlight) return inFlight;
   inFlight = getVoiceRouting(true)
     .then((routing) => {
-      const readiness = {
-        ...routing.readiness,
-        ready: false,
-        asr: { ready: routing.asr !== "unavailable", mode: routing.asr,
-          detail: routing.asr === "unavailable" ? routing.cloudAsrDetail : "语音识别已就绪。" },
-        tts: { ready: routing.tts !== "unavailable", mode: routing.tts, detail: "旁白语音暂不可用。" },
-      };
-      const summary = summarizeVoiceReadiness(readiness);
-      emit(routing.readinessKnown === false ? {
-        ...summary, inputReady: routing.asr !== "unavailable", ready: false, llmReady: undefined,
-        label: "模型服务状态暂时无法确认。", state: "llm_unknown", canRepair: false,
-      } : summary);
+      const summary = summarizeVoiceReadiness(routing.readiness);
+      emit({
+        ...summary,
+        // These legacy fields gate attempts, rather than claiming a verified
+        // connection. Labels/ready come from actual capability test state.
+        inputReady: routing.asr !== "unavailable",
+        ttsReady: routing.tts !== "unavailable",
+        ...(routing.readinessKnown === false ? {
+          ready: false, llmReady: undefined, label: "模型配置状态暂时无法确认。", state: "llm_unknown", canRepair: false,
+        } : {}),
+      });
     })
     .catch(() => {
       emit({
@@ -172,6 +172,7 @@ export function useOminixRuntimeSummary() {
 
   useEffect(() => {
     listeners.add(setSummary);
+    const unsubscribe = subscribeServices(() => { void refreshOminixRuntimeSummary(); });
     void refreshOminixRuntimeSummary();
     const timer = window.setInterval(() => {
       void refreshOminixRuntimeSummary();
@@ -189,6 +190,7 @@ export function useOminixRuntimeSummary() {
     window.addEventListener("octos:native-speech-configured", onSpeechConfigured);
     return () => {
       listeners.delete(setSummary);
+      unsubscribe();
       window.clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("octos:native-speech-configured", onSpeechConfigured);

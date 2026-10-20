@@ -39,6 +39,7 @@ public final class MainActivity extends Activity {
     private NativeAudioBridge nativeAudioBridge;
     private NativeTtsBridge nativeTtsBridge;
     private NativeAsrBridge nativeAsrBridge;
+    private NativeByokBridge nativeByokBridge;
     private PermissionRequest pendingWebPermission;
     private boolean microphonePermissionPending;
     private boolean microphonePermissionWaiting;
@@ -93,6 +94,8 @@ public final class MainActivity extends Activity {
         webView.addJavascriptInterface(nativeInkBridge, "OctosNativeInk");
         nativeAudioBridge = new NativeAudioBridge(this, webView);
         webView.addJavascriptInterface(nativeAudioBridge, "OctosNativeAudio");
+        nativeByokBridge = new NativeByokBridge(webView);
+        webView.addJavascriptInterface(nativeByokBridge, "OctosNativeByok");
         nativeTtsBridge = new NativeTtsBridge(webView);
         webView.addJavascriptInterface(nativeTtsBridge, "OctosNativeTts");
         nativeAsrBridge = new NativeAsrBridge(webView, nativeTtsBridge);
@@ -361,6 +364,7 @@ public final class MainActivity extends Activity {
     protected void onDestroy() {
         if (pendingWebPermission != null) pendingWebPermission.deny();
         if (nativeAudioBridge != null) nativeAudioBridge.release();
+        if (nativeByokBridge != null) nativeByokBridge.release();
         if (nativeAsrBridge != null) nativeAsrBridge.release();
         if (nativeTtsBridge != null) nativeTtsBridge.release();
         webView.stopLoading();

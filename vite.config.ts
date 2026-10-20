@@ -6,6 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { createByokHandler } from "./services/byok/server.mjs";
 import {
   addLegacySupportsForSrgbColorMixes,
   downlevelOklchColors,
@@ -152,6 +153,15 @@ export default defineConfig(({ mode, command }) => {
     },
     base: process.env.BASE_URL || "/",
     plugins: [
+      ...(command === "serve" ? [{
+        name: "octos-learn-byok",
+        configureServer(server) {
+          const handle = createByokHandler({ octosBaseUrl: octosApiTarget, registryRoot: env.OCTOS_REGISTRY_ROOT?.trim() || undefined });
+          server.middlewares.use((request, response, next) => {
+            void handle(request, response).then(handled => { if (!handled) next(); }).catch(next);
+          });
+        },
+      } satisfies Plugin] : []),
       ...(command === "serve" && env.OCTOS_LOCAL_COURSE_PACK_ROOT?.trim()
         ? [localCoursePackServer(path.resolve(env.OCTOS_LOCAL_COURSE_PACK_ROOT.trim()))]
         : []),
@@ -207,6 +217,7 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       port: 5173,
+      strictPort: true,
       https: useLocalHttps
         ? {
             cert: readFileSync(localCertificate),
@@ -258,21 +269,6 @@ export default defineConfig(({ mode, command }) => {
             },
           },
         } : {}),
-        "/api/systemone/evaluate": {
-          target: "https://api.typesafe.ai",
-          changeOrigin: true,
-          rewrite: () => "/v1/systemone",
-          configure: (proxy) => {
-            proxy.on("proxyReq", (proxyReq) => {
-              proxyReq.removeHeader("origin");
-              proxyReq.removeHeader("referer");
-              const currentAuth = proxyReq.getHeader("authorization");
-              if (!currentAuth && env.VITE_TYPESAFE_API_KEY) {
-                proxyReq.setHeader("authorization", `Bearer ${env.VITE_TYPESAFE_API_KEY}`);
-              }
-            });
-          },
-        },
         "/api": {
           target: octosApiTarget,
           changeOrigin: true,

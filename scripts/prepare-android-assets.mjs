@@ -1,17 +1,5 @@
-// The APK uses Android's native AudioRecord/VAD pipeline. Browser VAD assets
-// are large and cannot execute on that path, so remove any files left by a
-// previous dev/public build before Vite copies public/ into Android assets.
-
+// Prepare APK content without mutating browser VAD files in public/.
+// finalize-android-assets removes browser-only assets from the APK output.
 import "./copy-course-pack-assets.mjs";
-
-import { rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const vadAssets = join(root, "public", "vad");
-
-rmSync(vadAssets, { recursive: true, force: true });
-console.log("[prepare-android-assets] excluded browser VAD/ONNX assets from APK build");
 
 import "./prepare-embedded-course-assets.mjs";

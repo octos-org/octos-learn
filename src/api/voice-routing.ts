@@ -1,5 +1,5 @@
-import { getSelectedProfileId, getToken, request } from "./client";
-import { fetchCloudAsrStatus, isCloudAsrEnabled } from "./cloud-asr";
+import { availableService } from "@/byok/providers";
+import { getService, hasServiceCredential, getServiceStatus, getLessonConfigured, subscribeServices } from "@/byok/services";
 import type { VoiceReadiness } from "@/settings/settings-api";
 
 export type AsrRoute = "private" | "backend" | "cloud" | "unavailable";
@@ -14,107 +14,31 @@ export interface VoiceRouting {
   cloudAsrDetail: string;
 }
 
-const TTL_MS = 10_000;
-let cached: { key: string; at: number; value: VoiceRouting } | undefined;
-let inFlight: { key: string; promise: Promise<VoiceRouting> } | undefined;
-let asrFailedUntil = 0;
-let ttsFailedUntil = 0;
-let revision = 0;
-let lastIdentity: string | undefined;
-
-function identity() { return `${getToken() || ""}\0${getSelectedProfileId() || ""}`; }
-
-async function probe<T>(path: string): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 3000);
-  try { return await request<T>(path, { signal: controller.signal }); }
-  finally { clearTimeout(timer); }
+let cached: VoiceRouting | undefined;
+export function selectVoiceRoutes(_readiness: VoiceReadiness, asr: boolean, tts: boolean): Pick<VoiceRouting, "asr" | "tts"> {
+  return { asr: asr ? "cloud" : "unavailable", tts: tts ? "cloud" : "unavailable" };
 }
-
-export function selectVoiceRoutes(
-  readiness: VoiceReadiness,
-  cloudAsrAvailable: boolean,
-  cloudTtsAvailable: boolean,
-): Pick<VoiceRouting, "asr" | "tts"> {
-  const privateOnline = import.meta.env.VITE_PRIVATE_ASR_ENABLED !== "false"
-    && readiness.asr.mode === "private" && readiness.asr.ready;
-  return {
-    asr: privateOnline && Date.now() >= asrFailedUntil ? "private"
-      : readiness.asr.mode !== "private" && readiness.asr.ready && Date.now() >= asrFailedUntil ? "backend"
-        : cloudAsrAvailable ? "cloud" : "unavailable",
-    tts: privateOnline && Date.now() >= ttsFailedUntil ? "private"
-      : readiness.tts.ready && readiness.tts.mode !== "cloud" && Date.now() >= ttsFailedUntil ? "backend"
-        : cloudTtsAvailable ? "cloud" : readiness.tts.ready ? "backend" : "unavailable",
+/** Local snapshots only: login/settings own configuration synchronization. */
+export async function getVoiceRouting(_force = false): Promise<VoiceRouting> {
+  void _force;
+  const asr = availableService("asr");
+  // A saved key opts into narration. Validate its parameters at synthesis so
+  // an incomplete voice selection produces an actionable error, not silence.
+  const savedTts = getService("tts");
+  const tts = hasServiceCredential(savedTts) || !!savedTts?.has_credential;
+  const lesson = getLessonConfigured();
+  const asrVerified = getServiceStatus("asr").state === "ready";
+  const ttsVerified = getServiceStatus("tts").state === "ready";
+  cached = {
+    readiness: { ready: asrVerified && ttsVerified && lesson === true, asr: { ready: asrVerified, mode: "cloud", detail: getServiceStatus("asr").detail },
+      llm: { ready: lesson === true, detail: lesson ? "课程模型已配置。" : "请连接自己的课程模型，语音配置独立保存。" }, tts: { ready: ttsVerified, mode: "cloud", detail: getServiceStatus("tts").detail } },
+    readinessKnown: lesson !== undefined, ...selectVoiceRoutes({} as VoiceReadiness, asr, tts),
+    cloudAsrAvailable: asr, cloudTtsAvailable: tts, cloudAsrDetail: getServiceStatus("asr").detail,
   };
+  return cached;
 }
-
-/** One bounded, identity-scoped health check shared by UI, capture and narration. */
-export function getVoiceRouting(force = false): Promise<VoiceRouting> {
-  const key = identity();
-  if (key !== lastIdentity) { clearVoiceRouting(); lastIdentity = key; }
-  const generation = revision;
-  if (!force && cached?.key === key && Date.now() - cached.at < TTL_MS) return Promise.resolve(cached.value);
-  if (inFlight?.key === key) return inFlight.promise;
-  const promise = (async () => {
-    const [readiness, cloudAsr, tts] = await Promise.all([
-      probe<VoiceReadiness>("/api/voice/readiness").then(
-        value => ({ value, known: true }),
-        (error: unknown) => {
-          const status = error && typeof error === "object" && "status" in error ? error.status : undefined;
-          if (status === 401 || status === 403) throw error;
-          // An offline health endpoint is not proof of missing LLM credentials.
-          // Keep cloud ASR/TTS usable, while reporting model health as unknown.
-          return { known: false, value: {
-            ready: false,
-            asr: { ready: false, mode: "private", detail: "私有语音服务检查失败。" },
-            llm: { ready: false, detail: "模型状态暂时无法确认。" },
-            tts: { ready: false, mode: "local", detail: "私有旁白服务检查失败。" },
-          } };
-        },
-      ),
-      isCloudAsrEnabled() ? fetchCloudAsrStatus() : Promise.resolve({ available: false, detail: "云端 ASR 已停用。" }),
-      probe<{ available: boolean }>("/api/learn/tts/status").catch(() => ({ available: false })),
-    ]);
-    const nativeTts = window.OctosNativeTts?.isConfigured?.() === true;
-    const cloudTtsAvailable = tts.available || nativeTts;
-    const value: VoiceRouting = {
-      readiness: readiness.value, readinessKnown: readiness.known,
-      ...selectVoiceRoutes(readiness.value, cloudAsr.available, cloudTtsAvailable),
-      cloudAsrAvailable: cloudAsr.available, cloudTtsAvailable, cloudAsrDetail: cloudAsr.detail,
-    };
-    if (identity() !== key) throw new Error("Voice routing identity changed");
-    if (revision === generation) cached = { key, at: Date.now(), value };
-    return value;
-  })().finally(() => { if (inFlight?.promise === promise) inFlight = undefined; });
-  inFlight = { key, promise };
-  return promise;
-}
-
-export function markPrivateAsrFailed(): void {
-  asrFailedUntil = Date.now() + TTL_MS;
-  cached = undefined;
-  revision++;
-}
-
-export function markPrivateTtsFailed(): void {
-  ttsFailedUntil = Date.now() + TTL_MS;
-  cached = undefined;
-  revision++;
-}
-
-export function clearVoiceRouting(): void {
-  cached = undefined;
-  inFlight = undefined;
-  asrFailedUntil = 0;
-  ttsFailedUntil = 0;
-  revision++;
-}
-
-export function peekVoiceRouting(): VoiceRouting | undefined {
-  return cached?.key === identity() && Date.now() - cached.at < TTL_MS ? cached.value : undefined;
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("crew:token_cleared", clearVoiceRouting);
-  window.addEventListener("octos:native-speech-configured", clearVoiceRouting);
-}
+export function markPrivateAsrFailed(): void { cached = undefined; }
+export function markPrivateTtsFailed(): void { cached = undefined; }
+export function clearVoiceRouting(): void { cached = undefined; }
+export function peekVoiceRouting(): VoiceRouting | undefined { return cached; }
+subscribeServices(clearVoiceRouting);

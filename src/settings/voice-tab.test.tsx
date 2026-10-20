@@ -1,203 +1,120 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import type { ServiceMetadata } from "@/byok/services";
+const state = vi.hoisted(() => ({ list: vi.fn(), save: vi.fn(), synthesize: vi.fn(), credential: vi.fn(), mic: vi.fn(), stop: vi.fn(async () => {}), captureError: vi.fn() }));
+vi.mock("@/byok/services", () => ({
+  listClientServices: state.list, saveClientService: state.save, getServiceForTest: state.credential,
+  serviceRequest: (signal: AbortSignal) => ({ signal, dispose: vi.fn() }),
+}));
+vi.mock("@/byok/providers", async importOriginal => ({ ...await importOriginal<typeof import("@/byok/providers")>(), synthesizeDirect: state.synthesize, validateService: vi.fn(), directJson: vi.fn(), markVerified: vi.fn(), serviceFailure: (_id: string, error: Error) => error, transcribeDirect: vi.fn() }));
+vi.mock("@/home/voice/use-voice-capture", () => ({ useVoiceCapture: () => ({ start: state.mic, stop: state.stop, capturing: false, error: null, getError: state.captureError }) }));
+vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn(), playAudioBlob: vi.fn(async () => true) }));
 import { VoiceTab } from "./voice-tab";
-import {
-  normalizeProfileConfig,
-  type Profile,
-  type ProfileConfig,
-} from "./settings-api";
-
-const apiMocks = vi.hoisted(() => ({
-  updateMyProfileConfig: vi.fn(),
-  formatSettingsError: vi.fn((e: unknown, fb = "failed") =>
-    e instanceof Error ? e.message : fb,
-  ),
-}));
-const voiceMocks = vi.hoisted(() => ({
-  synthesizeSpeech: vi.fn(),
-  playAudioBlob: vi.fn(),
-  unlockAudio: vi.fn(),
-}));
-// Keep the real module (normalizeProfileConfig etc.) and only spy the two
-// functions VoiceTab calls at runtime.
-vi.mock("./settings-api", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./settings-api")>();
-  return { ...actual, ...apiMocks };
+import type { Profile } from "./settings-api";
+const tts: ServiceMetadata = { provider: "volcano", enabled: false, params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: "old-voice" }, revision: "r1", has_credential: true, execution_target: "client" };
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ version: 1, voices: [] }), { headers: { "Content-Type": "application/json" } })));
+  state.list.mockReset(); state.list.mockResolvedValue({ profile_id: "alice", services: { tts } });
+  state.save.mockReset(); state.save.mockImplementation(async (_capability, draft) => ({ ...draft, revision: "r2", has_credential: true, execution_target: "client" }));
+  state.synthesize.mockReset(); state.synthesize.mockResolvedValue(new Blob(["audio"]));
+  state.credential.mockReset(); state.credential.mockResolvedValue({ ...tts, key: "synthetic-own-key" });
+  state.mic.mockReset(); state.mic.mockResolvedValue(true); state.stop.mockClear(); state.captureError.mockReset();
 });
-vi.mock("@/api/voice", () => ({
-  synthesizeSpeech: voiceMocks.synthesizeSpeech,
-}));
-vi.mock("@/home/voice/audio-playback", () => ({
-  playAudioBlob: voiceMocks.playAudioBlob,
-  unlockAudio: voiceMocks.unlockAudio,
-}));
-
-/** Build a fully-typed Profile from a partial config (no `as any`). */
-function makeProfile(config: Partial<ProfileConfig>): Profile {
-  return {
-    id: "p1",
-    name: "p1",
-    enabled: true,
-    data_dir: null,
-    config: normalizeProfileConfig(config),
-    created_at: "",
-    updated_at: "",
-    status: { running: false, pid: null, started_at: null, uptime_secs: null },
-  };
-}
-
-const baseProfile = makeProfile({
-  tts_provider: "cloud",
-  tts_cloud: { appid: "123", voice: "BV700" },
-  env_vars: { VOLC_TTS_TOKEN: "ab***yz" }, // masked => already set
-});
-
-describe("VoiceTab", () => {
-  beforeEach(() => {
-    cleanup();
-    apiMocks.updateMyProfileConfig.mockReset();
-    apiMocks.updateMyProfileConfig.mockResolvedValue(baseProfile);
-    voiceMocks.synthesizeSpeech.mockReset();
-    voiceMocks.synthesizeSpeech.mockResolvedValue(new Blob(["audio"]));
-    voiceMocks.playAudioBlob.mockReset();
-    voiceMocks.playAudioBlob.mockResolvedValue(true);
-    voiceMocks.unlockAudio.mockReset();
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+const show = () => render(<VoiceTab profile={{ id: "alice" } as Profile} onProfileUpdated={vi.fn()} />);
+describe("BYOK voice settings", () => {
+  it("uses settings sections, keeps credentials in API Keys and starts no tests", async () => {
+    show(); await screen.findByRole("region", { name: "Text to Speech" });
+    expect(screen.getByRole("region", { name: "Speech Recognition" })).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Input Understanding" })).toBeTruthy();
+    expect(document.querySelector('input[type="password"]')).toBeNull();
+    expect(screen.getByRole("link", { name: "Manage API key" }).getAttribute("href")).toContain("tab=api-keys");
+    expect(screen.getByRole("button", { name: "Save Changes" })).toHaveProperty("disabled", true);
+    expect(state.synthesize).not.toHaveBeenCalled(); expect(state.mic).not.toHaveBeenCalled();
+  });
+  it("saves only edited parameters with their revision and leaves the credential untouched", async () => {
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "new-voice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", { provider: "volcano", enabled: true, params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: "new-voice" } }, "r1"));
+    expect(state.save).toHaveBeenCalledOnce();
+    await screen.findByRole("button", { name: "Saved" });
+    expect(state.synthesize).not.toHaveBeenCalled(); expect(state.mic).not.toHaveBeenCalled();
+  });
+  it("resets edits and disables save again", async () => {
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "draft-voice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Reset" }));
+    expect(within(region).getByLabelText("Custom Voice ID")).toHaveProperty("value", "old-voice");
+    expect(screen.getByRole("button", { name: "Save Changes" })).toHaveProperty("disabled", true);
+    expect(state.save).not.toHaveBeenCalled();
+  });
+  it("uses a previously saved key without an activation switch and keeps tests separate from saving", async () => {
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
+    await screen.findByText("Voice synthesized and played successfully.");
+    expect(state.synthesize.mock.calls[0][2]).toMatchObject({ key: "synthetic-own-key", enabled: true });
+    expect(within(region).queryByRole("switch")).toBeNull();
+    expect(within(region).getByText(/Connected automatically/)).toBeTruthy();
+    expect(state.save).not.toHaveBeenCalled();
+  });
+  it("preserves unsaved parameters after a failed test", async () => {
+    state.synthesize.mockRejectedValue(new Error("资源无权限")); show();
+    const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "draft-voice" } });
+    fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
+    await screen.findByText("资源无权限");
+    expect(within(region).getByLabelText("Custom Voice ID")).toHaveProperty("value", "draft-voice");
+    expect(state.save).not.toHaveBeenCalled();
+  });
+  it("distinguishes a successful draft preview from a saved lesson voice", async () => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: { tts: { ...tts, params: { ...tts.params, voice: "" } } } });
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    expect(within(region).getByText("Voice required")).toBeTruthy();
+    expect(within(region).getByRole("button", { name: "Test voice" })).toHaveProperty("disabled", true);
+    fireEvent.change(within(region).getByLabelText("Voice ID", { exact: true }), { target: { value: "__custom__" } });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "previewed-voice" } });
+    fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
+    await screen.findByText("Voice synthesized and played successfully.");
+    expect(within(region).getByText(/Unsaved changes. Tests preview/)).toBeTruthy();
+    expect(state.save).not.toHaveBeenCalled();
+    fireEvent.click(within(region).getByRole("button", { name: "Save voice for lessons" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ params: expect.objectContaining({ voice: "previewed-voice" }) }), "r1"));
+    await waitFor(() => expect(within(region).queryByText("Voice required")).toBeNull());
+    expect(within(region).queryByText(/Unsaved changes/)).toBeNull();
+  });
+  it("cancels a running draft test when its parameters change", async () => {
+    let signal: AbortSignal | undefined;
+    state.synthesize.mockImplementation((_text, value: AbortSignal) => { signal = value; return new Promise((_resolve, reject) => value.addEventListener("abort", () => reject(new DOMException("Canceled", "AbortError")))); });
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
+    await waitFor(() => expect(state.synthesize).toHaveBeenCalledOnce());
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "another-voice" } });
+    expect(signal?.aborted).toBe(true);
+  });
+  it("keeps paid tests unavailable until an API Key is saved", async () => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: {} }); show();
+    const region = await screen.findByRole("region", { name: "Text to Speech" });
+    expect(within(region).queryByRole("switch")).toBeNull();
+    expect(within(region).getByRole("button", { name: "Test voice" })).toHaveProperty("disabled", true);
+    expect(within(region).getByRole("link", { name: "Set up API key" })).toBeTruthy();
+  });
+  it("never reinterprets a legacy credential as a new API Key", async () => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: { tts: { ...tts, params: { ...tts.params, auth_mode: "legacy", app_id: "old-app" } } } }); show();
+    const region = await screen.findByRole("region", { name: "Text to Speech" });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "new-voice" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+    await screen.findByText(/Replace the Text to Speech credential/);
+    expect(state.save).not.toHaveBeenCalled(); expect(state.credential).not.toHaveBeenCalled();
+  });
+  it("shows the capture initialization cause instead of blaming the supplier key", async () => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: { asr: { ...tts, params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } } });
+    state.mic.mockResolvedValue(false);
+    state.captureError.mockReturnValue("Voice capture could not initialize: failed to load ONNX runtime");
+    show(); const region = await screen.findByRole("region", { name: "Speech Recognition" });
+    fireEvent.click(within(region).getByRole("button", { name: "Test microphone" }));
+    await screen.findByText("Voice capture could not initialize: failed to load ONNX runtime");
+    expect(state.save).not.toHaveBeenCalled();
   });
 
-  it("should show cloud fields and render the appid in cleartext", () => {
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    expect((screen.getByLabelText(/App ?ID/i) as HTMLInputElement).value).toBe("123");
-    expect((screen.getByLabelText(/Voice/i) as HTMLSelectElement).value).toBe("BV700");
-  });
-
-  it("should omit an unchanged masked token from the save patch", async () => {
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    const [, patch] = apiMocks.updateMyProfileConfig.mock.calls[0];
-    // token left as the stored masked value (save_with_merge restores it)
-    expect(patch.env_vars.VOLC_TTS_TOKEN).toBe("ab***yz");
-    expect(patch.tts_provider).toBe("cloud");
-    expect(patch.tts_cloud.appid).toBe("123");
-  });
-
-  it("persists a per-profile ASR language and clears it back to inherit", async () => {
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    const language = screen.getByLabelText(
-      /Recognition language/i,
-    ) as HTMLSelectElement;
-    expect([...language.options].some((option) => option.value === "auto")).toBe(
-      true,
-    );
-    fireEvent.change(language, { target: { value: "English" } });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    expect(apiMocks.updateMyProfileConfig.mock.calls[0][1].asr_language).toBe(
-      "English",
-    );
-
-    cleanup();
-    apiMocks.updateMyProfileConfig.mockClear();
-    const persistedEnglishProfile = makeProfile({
-      ...baseProfile.config,
-      asr_language: "English",
-    });
-    render(
-      <VoiceTab
-        profile={persistedEnglishProfile}
-        onProfileUpdated={() => {}}
-      />,
-    );
-    const persistedLanguage = screen.getByLabelText(/Recognition language/i);
-    expect((persistedLanguage as HTMLSelectElement).value).toBe("English");
-    fireEvent.change(persistedLanguage, { target: { value: "inherit" } });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    expect(apiMocks.updateMyProfileConfig.mock.calls[0][1].asr_language).toBeNull();
-  });
-
-  it("should write a newly typed token into the save patch", async () => {
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    fireEvent.change(screen.getByLabelText(/Token/i), {
-      target: { value: "newtoken123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    const [, patch] = apiMocks.updateMyProfileConfig.mock.calls[0];
-    expect(patch.env_vars.VOLC_TTS_TOKEN).toBe("newtoken123");
-  });
-
-  it("defaults to 'Inherit' when no tts_provider is set and clears the override on save", async () => {
-    const inheritProfile = makeProfile({ env_vars: {} });
-    render(<VoiceTab profile={inheritProfile} onProfileUpdated={() => {}} />);
-    expect((screen.getByLabelText(/TTS route/i) as HTMLSelectElement).value).toBe(
-      "inherit",
-    );
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    const [, patch] = apiMocks.updateMyProfileConfig.mock.calls[0];
-    expect(patch.tts_provider).toBeNull(); // clears override → inherit
-  });
-
-  it("does not create an empty tts_cloud override when none existed", async () => {
-    // No tts_provider and no tts_cloud → Inherit save must send null, NOT `{}`,
-    // otherwise the backend treats `{}` as a per-profile override and clobbers
-    // the inherited server-level cloud config.
-    const inheritProfile = makeProfile({ env_vars: {} });
-    render(<VoiceTab profile={inheritProfile} onProfileUpdated={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    const [, patch] = apiMocks.updateMyProfileConfig.mock.calls[0];
-    expect(patch.tts_cloud).toBeNull();
-    expect(patch.tts_cloud).not.toEqual({});
-  });
-
-  it("blocks save and shows an error when cloud route is missing credentials", () => {
-    const incompleteCloud = makeProfile({
-      tts_provider: "cloud",
-      tts_cloud: {},
-      env_vars: {},
-    });
-    render(<VoiceTab profile={incompleteCloud} onProfileUpdated={() => {}} />);
-    const saveBtn = screen.getByRole("button", { name: /save/i }) as HTMLButtonElement;
-    expect(saveBtn.disabled).toBe(true);
-    expect(screen.getByRole("alert").textContent).toMatch(/App ID/i);
-  });
-
-  it("no longer exposes a free-text endpoint field", () => {
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: /advanced/i }));
-    expect(screen.queryByLabelText(/Endpoint/i)).toBeNull();
-  });
-
-  it("saves the visible config, synthesizes real audio, and plays the TTS test", async () => {
-    const prefixedAppId = makeProfile({
-      tts_provider: "cloud",
-      tts_cloud: { appid: "APP ID: 123", voice: "BV700" },
-      env_vars: { VOLC_TTS_TOKEN: "ab***yz" },
-    });
-    apiMocks.updateMyProfileConfig.mockResolvedValue(prefixedAppId);
-    render(<VoiceTab profile={prefixedAppId} onProfileUpdated={() => {}} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /test tts/i }));
-
-    expect(voiceMocks.unlockAudio).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled());
-    expect(apiMocks.updateMyProfileConfig.mock.calls[0][1].tts_cloud.appid).toBe("123");
-    await waitFor(() => expect(voiceMocks.synthesizeSpeech).toHaveBeenCalledWith(
-      "你好，这是一段课程语音测试。",
-    ));
-    expect(voiceMocks.playAudioBlob).toHaveBeenCalledTimes(1);
-    expect(await screen.findByText(/TTS 可用/)).toBeTruthy();
-  });
-
-  it("shows an actionable failure when real synthesis fails", async () => {
-    voiceMocks.synthesizeSpeech.mockRejectedValue(new Error("configured TTS provider failed"));
-    render(<VoiceTab profile={baseProfile} onProfileUpdated={() => {}} />);
-
-    fireEvent.click(screen.getByRole("button", { name: /test tts/i }));
-
-    expect(await screen.findByText("configured TTS provider failed")).toBeTruthy();
-    expect(voiceMocks.playAudioBlob).not.toHaveBeenCalled();
-  });
 });

@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOllNarrationTts } from "./use-oll-narration-tts";
 import { configureNativeTts } from "@/home/voice/native-tts";
+import { ServiceError } from "@/byok/providers";
 
 const mocks = vi.hoisted(() => ({
   synthesizeSpeech: vi.fn(),
@@ -270,52 +271,13 @@ describe("useOllNarrationTts", () => {
     expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(1);
   });
 
-  it("prewarms the first narration through the Android bridge", async () => {
-    const prefetch = vi.fn(() => JSON.stringify({ ok: true }));
-    const play = vi.fn(() => JSON.stringify({ ok: true }));
+  it("does not prewarm narration through a legacy platform credential", async () => {
+    const prefetch = vi.fn();
+    window.OctosNativeTts = { isConfigured: () => true, prefetch, play: vi.fn() };
     mocks.route = "cloud";
-    window.OctosNativeTts = {
-      isConfigured: () => true,
-      prefetch,
-      play,
-      cancel: vi.fn(),
-      stop: vi.fn(),
-    };
-    const { rerender } = renderHook(
-      ({ playing, text, narrationId }) => useOllNarrationTts({
-        enabled: true,
-        playing,
-        text,
-        narrationId,
-        prefetchEnabled: true,
-        prewarmText: "安卓首段旁白。",
-        prewarmNarrationId: "android-beat-1",
-      }),
-      {
-        initialProps: {
-          playing: false,
-          text: "",
-          narrationId: undefined as string | undefined,
-        },
-      },
-    );
-
-    await waitFor(() => expect(prefetch).toHaveBeenCalledWith(
-      expect.any(String),
-      "安卓首段旁白。",
-    ));
-    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
-
-    rerender({
-      playing: true,
-      text: "安卓首段旁白。",
-      narrationId: "android-beat-1",
-    });
-    await waitFor(() => expect(play).toHaveBeenCalledWith(
-      expect.any(String),
-      "安卓首段旁白。",
-    ));
-    expect(prefetch).toHaveBeenCalledTimes(1);
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: false, text: "", prefetchEnabled: true, prewarmText: "narration", prewarmNarrationId: "beat-1" }));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalled());
+    expect(prefetch).not.toHaveBeenCalled();
   });
 
   it("does not restart synthesis when callback identities change during playback", async () => {
@@ -486,6 +448,22 @@ describe("useOllNarrationTts", () => {
       narrationId: "beat-recovered",
     });
     await waitFor(() => expect(result.current.error).toBeNull());
+  });
+
+  it("shows sanitized configuration failures and does not retry a failed prewarm", async () => {
+    mocks.route = "cloud";
+    mocks.synthesizeSpeech.mockRejectedValue(new ServiceError("resource_not_enabled", "尚未保存课程音色。请在 Voice 设置中选择音色并保存，然后重新播放课程。"));
+    const onPlaybackComplete = vi.fn();
+    const { result, rerender } = renderHook(({ playing }) => useOllNarrationTts({
+      enabled: true, playing, text: playing ? "课程旁白" : "", narrationId: playing ? "beat-missing-voice" : undefined,
+      prefetchEnabled: true, prewarmText: "课程旁白", prewarmNarrationId: "beat-missing-voice", onPlaybackComplete,
+    }), { initialProps: { playing: false } });
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce());
+    rerender({ playing: true });
+    await waitFor(() => expect(result.current.error).toContain("尚未保存课程音色"));
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+    expect(onPlaybackComplete).toHaveBeenCalledWith("beat-missing-voice");
   });
 
   it("releases disabled narration but keeps paused narration pending", () => {

@@ -47,34 +47,33 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
-    # Product-specific hosted narration. This sidecar validates the existing
-    # Octos session server-side and owns platform credentials, quotas and cost
-    # controls. It is deliberately not part of the generic Octos API.
-    location ^~ /api/learn/tts/ {
-        proxy_pass http://127.0.0.1:50081;
-        include /etc/nginx/proxy_params;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_read_timeout 130s;
-        proxy_buffering off;
+    # Full-BYOK cutover: apply only after the product adapter, Web and APK
+    # pass the migration checks in docs/FULL_BYOK_IMPLEMENTATION_PLAN.md.
+    # Old APKs receive no supplier credential and can clear their legacy copy.
+    location = /api/learn/tts/native-config {
+        default_type application/json;
+        add_header Cache-Control "no-store" always;
+        return 200 '{"version":1,"enabled":false}';
     }
+    location ^~ /api/learn/tts/ { return 410; }
+    location ^~ /api/learn/asr/ { return 410; }
+    location ^~ /api/systemone/ { return 410; }
+    location ^~ /api/voice/ { return 410; }
+    location ^~ /api/private-asr/ { return 410; }
 
-    location ^~ /api/learn/asr/batch/ {
+    # Withdrawn Octos extension: never expose the old raw-key sync route.
+    location ^~ /api/my/client-services { return 410; }
+
+    # Product-owned metadata / save / relay; no saved-key export.
+    location ^~ /api/learn/byok {
         proxy_pass http://127.0.0.1:50081;
         include /etc/nginx/proxy_params;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
-        client_max_body_size 6m;
+        proxy_no_cache 1;
+        proxy_cache_bypass 1;
+        client_max_body_size 8m;
         proxy_read_timeout 40s;
-        proxy_buffering off;
-    }
-
-    # Product-specific TypeSafe Jev admission fast-gate grant.
-    location = /api/systemone/grant {
-        proxy_pass http://127.0.0.1:50081;
-        include /etc/nginx/proxy_params;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header X-Forwarded-Host $host;
     }
 
     # Public reviewed CoursePacks are immutable static releases, not learner
@@ -118,26 +117,7 @@ server {
         access_log off;
     }
 
-    # The trailing slash deliberately strips /private-asr/ before forwarding.
-    # The control plane accepts one-time Octos-issued browser grants. Never put
-    # its long-lived Octos service token or operator token in this public proxy.
-    location ^~ /private-asr/ {
-        proxy_pass https://asr.example.com/;
-        proxy_ssl_server_name on;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $octos_connection_upgrade;
-        proxy_set_header Host asr.example.com;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Origin $octos_private_asr_origin;
-        # Keep the HttpOnly session cookie isolated under this proxy prefix,
-        # while making it available to both session HTTP calls and the event
-        # WebSocket. Some upstream frameworks retain only one of two cookies
-        # when both have the same name but different paths.
-        proxy_cookie_path ~^/(?:api/v1/sessions|ws/client)/.*$ /private-asr/;
-        proxy_read_timeout 3600s;
-        proxy_buffering off;
-    }
+    location ^~ /private-asr/ { return 410; }
 
     location / {
         try_files $uri $uri/ /index.html;

@@ -1,3 +1,4 @@
+import { createRequestId } from "@/lib/request-id";
 /**
  * UI Protocol v1 send-path entry point for /chat.
  *
@@ -124,7 +125,7 @@ export async function admitVoiceMessage(
   await whenThinkingSeeded(opts.sessionId, opts.historyTopic);
   const bridge = getActiveBridge(opts.sessionId, opts.historyTopic);
   if (!bridge) throw new Error("WebSocket connection is unavailable.");
-  const turnId = opts.clientMessageId ?? crypto.randomUUID();
+  const turnId = opts.clientMessageId ?? createRequestId();
   const extras = buildTurnStartExtras({ ...opts, clientMessageId: turnId });
   const raw = await bridge.callMethod<{
     status: "speech" | "no_speech";
@@ -178,7 +179,7 @@ export async function commitAdmittedVoiceMessage(
   await whenThinkingSeeded(opts.sessionId, opts.historyTopic);
   let bridge = getActiveBridge(opts.sessionId, opts.historyTopic);
   if (!bridge) throw new Error("WebSocket connection is unavailable.");
-  const turnId = opts.clientMessageId ?? crypto.randomUUID();
+  const turnId = opts.clientMessageId ?? createRequestId();
   const extras = buildTurnStartExtras({ ...opts, clientMessageId: turnId });
   let completed = false;
   let offTerminal: (() => void) | null = null;
@@ -522,7 +523,7 @@ async function enqueueSendV1(opts: SendOptions): Promise<void> {
 
   // Pin the clientMessageId once so the ghost overlay, turn/start request,
   // and canonical terminal use the same identity.
-  const clientMessageId = opts.clientMessageId ?? crypto.randomUUID();
+  const clientMessageId = opts.clientMessageId ?? createRequestId();
   const pinnedOpts: SendOptions = { ...opts, clientMessageId };
 
   // The signal we hand to `sendMessageV1`. Its canonical-terminal handler
@@ -641,7 +642,7 @@ async function sendMessageV1(
     sessionId,
     historyTopic,
     text,
-    clientMessageId = crypto.randomUUID(),
+    clientMessageId = createRequestId(),
     onComplete,
   } = opts;
 

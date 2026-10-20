@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [2026-10-20 BYOK 公网部署与电视安装](BYOK_PUBLIC_DEPLOYMENT_2026_10_20.md)：Octos 2.0.3 升级、本人凭据产品服务、网页资源校验、Android 13 Keystore 测试与待完成的电视 E2E。
+
 - [统一语音路由与云端降级](UNIFIED_VOICE_FALLBACK.md)：本地、网页与 APK 私有优先，ASR/TTS 故障回退及配置与验证说明；[2026-10-18 公网部署验收](public-voice-deployment-2026-10-18.json)。
 
 - [Android 滑块优化最终验证](course-runtime-quality/webview-slider-performance-2026-10-10/REPORT.md)：完整 Runtime pin、几何扫描优化、电视最终结果、持续存档与布局恢复验证。
@@ -52,6 +54,12 @@
 - [开发路线图](ROADMAP_DEV.md)：开发向排期、里程碑、backlog 与来源索引。
 
 ## 专题计划
+
+- [复用现有 Octos 的 BYOK 修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)：关闭 Octos PR #2839；复用现有 profile / Key 存储与认证，APK 本机录入后加密保存并直连，网页转发放回 octos-learn，不导出已存 Key，包含迁移与验收边界。
+
+- [全面 BYOK 候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)：当前分支、已实现的管理 / 直连 / 网页 BYOK 转发边界、自动验证与尚未完成的真实供应商 / 电视 / 上线验收。
+
+- [全面 BYOK 与首次使用体验实施方案](FULL_BYOK_IMPLEMENTATION_PLAN.md)：Octos 统一管理课程模型、ASR、TTS 与可选 Jev 本人凭据；电视 ASR、TTS、Jev 直连与网页受限时 VPS 转发，首期语音仅火山新版 API Key，包含 onboarding、缺配置恢复、分阶段改造及平台代付退出。
 
 - 课程模型路由：[Claude 设计依据](PROFILE_MODEL_LESSON_GENERATION_PLAN_CLAUDE.md) / [执行指令](PROFILE_MODEL_LESSON_GENERATION_EXECUTION.md) / [实施报告](PROFILE_MODEL_LESSON_GENERATION_REPORT.md) / [复核跟进](PROFILE_MODEL_LESSON_GENERATION_REVIEW_FOLLOWUP.md)。
 
