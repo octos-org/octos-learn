@@ -8,7 +8,7 @@ Type=simple
 User=octos-learn
 Group=octos-learn
 WorkingDirectory=/opt/octos-learn/services/byok
-EnvironmentFile=/etc/octos-learn/hosted-tts.env
+EnvironmentFile=/etc/octos-learn/byok.env
 Environment=NODE_NO_WARNINGS=1
 ExecStart=/usr/bin/env node start.mjs
 Restart=on-failure

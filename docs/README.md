@@ -4,6 +4,8 @@
 
 ## 当前使用
 
+- [2026-10-20 BYOK 公网部署与电视安装](BYOK_PUBLIC_DEPLOYMENT_2026_10_20.md)：Octos 2.0.3 升级、本人凭据产品服务、网页资源校验、Android 13 Keystore 测试与待完成的电视 E2E。
+
 - [统一语音路由与云端降级](UNIFIED_VOICE_FALLBACK.md)：本地、网页与 APK 私有优先，ASR/TTS 故障回退及配置与验证说明；[2026-10-18 公网部署验收](public-voice-deployment-2026-10-18.json)。
 
 - [Android 滑块优化最终验证](course-runtime-quality/webview-slider-performance-2026-10-10/REPORT.md)：完整 Runtime pin、几何扫描优化、电视最终结果、持续存档与布局恢复验证。

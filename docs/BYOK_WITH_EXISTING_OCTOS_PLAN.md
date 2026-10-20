@@ -1,6 +1,6 @@
 # 复用现有 Octos 的 BYOK 实施方案
 
-更新：2026-10-19（America/Los_Angeles）。取代此前“登录时向电视下发 Key”的草案。代码在 octos-learn 的 `codex/full-byok`；未合并、未部署公网。
+更新：2026-10-20（America/Los_Angeles）。取代此前“登录时向电视下发 Key”的草案。代码在 octos-learn 的 `codex/full-byok`；未合并 main。用户明确要求后已部署公网，Octos 升级至官方正式版 `2.0.3+fca32c4`，详见[部署记录](BYOK_PUBLIC_DEPLOYMENT_2026_10_20.md)。
 
 ## 已确定的边界
 
@@ -74,6 +74,6 @@ JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home \
 
 本轮自动验证：1,178 项前端单元测试、17 项产品服务 HTTP 测试、9 项浏览器设置 / 录音 / 课程回归；TS、网页与 Android 资源构建、APK / 设备测试包和 Android lint 均需通过。真实本人账号在未修改的 Octos main 上完成火山 TTS 合成与播放，截图见 [主线兼容验收](byok-migration-2026-10-19/upstream-octos-tts.png)。
 
-当前没有连接的 Android 设备，也没有本机 Android 模拟器，因此**未完成 Android 8.0 实机加密、重启持久化和真实直连验收**，不能将 APK 构建通过当作实机通过。此限制保留在 PR 中。课程链路未修改模型请求；本轮未重新测量交错 p50 延迟，不以“无新增模型往返”冒充实测延迟结论。
+2026-10-20 已连接 M3G2 电视（Android 13 / API 33），覆盖安装公网 APK 并通过上述 7 项真实 Keystore 测试，验证了加密存储、新 store 实例读取、账号切换、删除、远程替换和损坏处理。**仍未完成 Android 8.0 实机、真实进程重启及真实供应商直连验收**，不能以 Android 13 单元设备测试代替。此限制保留在 PR 中。课程链路未修改模型请求；本轮未重新测量交错 p50 延迟，不以“无新增模型往返”冒充实测延迟结论。
 
-前端 PR #59 保持 Draft。公网切换须按部署手册协调产品服务与静态前端，未在本轮执行部署或 main 合并。
+前端 PR #59 保持 Draft。已按用户明确要求协调升级公网 Octos、产品服务、Nginx 和静态前端；未合并 main。用户随后进行电视真实供应商 E2E。
