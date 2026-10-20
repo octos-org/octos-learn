@@ -59,10 +59,10 @@ export function VoiceServiceTest({ capability, draft, disabled }: { capability: 
     }, 60_000);
     try {
       const saved = await getServiceForTest(capability, request.signal, draft.revision === "draft" ? undefined : draft.revision);
-      if (!saved?.key) throw new ServiceError("unconfigured", "Add your API key in API Keys first.");
+      if (!saved || (!saved.key && !saved.has_credential) || saved.local_credential === false) throw new ServiceError("unconfigured", "Add your API key in API Keys first.");
       if (draft.revision !== "draft" && saved.revision !== draft.revision) throw new ServiceError("network_error", "Configuration changed. Reload Voice before testing.");
       if (request.signal.aborted) return;
-      const config: ClientService = { ...draft, enabled: true, key: saved.key };
+      const config: ClientService = { ...saved, ...draft, enabled: true, key: saved.key };
       validateService(capability, config);
       if (capability === "asr") {
         setMessage("Preparing microphone… Allow access if your browser asks.");

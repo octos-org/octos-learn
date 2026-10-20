@@ -1,3 +1,4 @@
+import { ApiError } from "@/api/client";
 import { useEffect, useState } from "react";
 import { listClientServices, type Capability, type ServiceMetadata } from "./services";
 
@@ -11,7 +12,7 @@ export function useServiceMetadata() {
     let active = true;
     listClientServices().then(result => {
       if (active) { setMetadata(result.services); setError(""); }
-    }).catch(() => { if (active) setError("Could not load service configuration. Reload to try again."); })
+    }).catch(error => { if (active) setError(error instanceof ApiError ? `Could not load service configuration (${error.status}). ${error.message}` : "Could not load service configuration. Reload to try again."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [version]);

@@ -8,6 +8,12 @@
 [公网部署手册](PUBLIC_DEPLOYMENT_RUNBOOK.md) 为准；这里重点说明当前代码基线、
 各仓库边界、本地启动方式，以及修改新功能时需要保留的行为。
 
+## 当前 BYOK 候选（2026-10-19）
+
+Octos 已切回干净 main `ed92309a`（#2839 已关闭）。前端 `codex/full-byok` 的产品接口由 `services/byok` 实现，复用现有 `/api/my/profile`。正常 `pnpm dev:https` 内置产品中间件，不再依赖 Octos client-services 扩展，也不另起本地语音进程。沿用现有账号、资源和小何 2.0 音色。
+
+APK Key 在电视本机录入，加密保留后保存本人账号；服务器不向 APK / 网页导出已存 Key。网页走本人 Key relay。完整边界、迁移与 Android 8.0 待验收项见 [当前 BYOK 方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)。下面的平台语音部署和 09-06 基线是历史记录。
+
 ## 历史状态（2026-09-06）
 
 - 公网地址：<https://learn.pitun.cc>

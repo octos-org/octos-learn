@@ -148,7 +148,7 @@ export function ProfileTab({
 
   // Env vars
   const [envRows, setEnvRows] = useState<EnvVarRow[]>(() =>
-    Object.entries(profile.config.env_vars ?? {}).map(([key, val]) => ({
+    Object.entries(profile.config.env_vars ?? {}).filter(([key]) => !key.startsWith("OCTOS_LEARN_")).map(([key, val]) => ({
       key,
       value: "",
       maskedValue: val,
@@ -292,7 +292,7 @@ export function ProfileTab({
       onProfileUpdated(result);
       // Reset rows from fresh server data
       setEnvRows(
-        Object.entries(result.config.env_vars ?? {}).map(([key, val]) => ({
+        Object.entries(result.config.env_vars ?? {}).filter(([key]) => !key.startsWith("OCTOS_LEARN_")).map(([key, val]) => ({
           key,
           value: "",
           maskedValue: val,

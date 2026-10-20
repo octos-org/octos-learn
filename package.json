@@ -25,6 +25,8 @@
     "preview": "vite preview",
     "test": "playwright test",
     "test:unit": "vitest run",
+    "test:byok": "node --test services/byok/server.test.mjs",
+    "byok:serve": "node services/byok/start.mjs",
     "test:unit:watch": "vitest",
     "test:e2e:smoke": "playwright test tests/learning-smoke.spec.ts",
     "test:headed": "playwright test --headed",

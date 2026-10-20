@@ -17,7 +17,7 @@ export function ServiceSettings({ only, compact = false }: { only?: Capability; 
     let active = true;
     void Promise.all([listClientServices(), prepareClientServices(true)]).then(([result]) => {
       if (active) { setMetadata(result.services); setError(""); }
-    }).catch(() => { if (active) setError("未能读取账号服务配置。请确认 Octos 已升级并重试；不会使用平台凭据。"); })
+    }).catch(() => { if (active) setError("未能读取账号服务配置。请检查产品语音服务并重试；不会使用平台凭据。"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [revision]);
@@ -52,7 +52,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     return () => { controller.current?.abort(); window.removeEventListener("octos:client-services-reset", reset); window.removeEventListener("octos:client-service-changed", reset); };
   }, [capability]);
   function draft(): ClientService {
-    return { provider, enabled: true, params, revision: saved?.revision ?? "draft", execution_target: "client", key: key.trim() || (saved?.provider === provider && !needsNewKey ? getService(capability)?.key ?? "" : "") };
+    return { ...(saved?.provider === provider && !needsNewKey ? getService(capability) : undefined), provider, enabled: true, params, revision: saved?.revision ?? "draft", execution_target: "client", key: key.trim() || (saved?.provider === provider && !needsNewKey ? getService(capability)?.key ?? "" : "") };
   }
   async function save() {
     setBusy(true); setMessage("");
@@ -60,7 +60,7 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
       if (needsNewKey && !key.trim()) { setMessage("请填写火山新版 API Key，旧凭据不能继续使用。"); return; }
       await saveClientService(capability, { provider, enabled: !!key.trim() || !!saved?.has_credential, params, key: key.trim() || (needsNewKey ? "" : undefined) }, saved?.revision);
       setKey(""); setMessage("已保存；是否可用以当前设备真实测试为准。"); onSaved();
-    } catch { setMessage("保存失败，请重新读取配置后重试；输入仍保留。不能用平台 Key 代替。"); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : "保存失败，请重试；输入仍保留。"); }
     finally { setBusy(false); }
   }
   async function test() {
@@ -100,8 +100,8 @@ function ServiceCard({ capability, collapsed, saved, onSaved }: { capability: Ca
     {provider === "typesafe" && field("model", "Jev 模型")}
     <label className="block space-y-2">API Key<input className={inputClass} type="password" autoComplete="new-password" spellCheck={false} value={key} onChange={event => setKey(event.target.value)} placeholder={saved?.has_credential && saved.provider === provider && !needsNewKey ? "本人凭据已保存；留空保留" : "粘贴你自己的 Key"} /></label>
     {provider === "volcano" && <p>请使用豆包语音控制台的新版 API Key；火山方舟 Ark / 大模型 Key 和旧版 Access Token 不能用于语音服务。</p>}
-    <p>凭据保存在 Octos 账号中，按用途同步到本人设备；退出会清理本机会话缓存。<a href={SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
-    <p role="status">{saved?.has_credential && !needsNewKey ? "本人 Key 已保存，服务已连接；无需额外启用。" : status.detail}</p>
+    <p>凭据保存在本人 Octos 账号。电视需在本机录入一次并加密保存，退出登录会清除；网页通过服务器使用已保存的 Key。<a href={SERVICE_DEFINITIONS[capability].consoleUrl} target="_blank" rel="noreferrer">打开供应商控制台</a></p>
+    <p role="status">{saved?.local_credential === false ? "账号已保存 Key，请在这台电视录入一次以直接调用。" : saved?.account_synced === false ? "Key 已保存在本机，但账号尚未同步成功，请重试保存。" : saved?.has_credential && !needsNewKey ? "本人 Key 已保存，服务已连接；无需额外启用。" : status.detail}</p>
     <div className="flex flex-wrap gap-3">
       <button disabled={busy} onClick={() => void save()}>保存配置</button>
       {capability !== "asr" && <button disabled={busy} onClick={() => void test()}>{busy ? "测试中…" : capability === "tts" ? "测试草稿并试听" : "测试 Jev 草稿"}</button>}

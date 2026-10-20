@@ -4,7 +4,7 @@ import {
   type NoulAnswer,
   DEFAULT_TYPESAFE_TIMEOUT_MS,
 } from "@/api/typesafe-client";
-import { getService, setServiceStatus } from "@/byok/services";
+import { getService, hasServiceCredential, setServiceStatus } from "@/byok/services";
 import { directJson, serviceFailure, validateService } from "@/byok/providers";
 import type { SystemOneRequest, SystemOneResponse } from "@/api/typesafe-client";
 
@@ -43,14 +43,6 @@ export interface AdmissionFastGateOptions {
 }
 
 export const DEFAULT_ADMISSION_CONFIDENCE_THRESHOLD = 0.6;
-
-async function resolveApiKey(explicitKey?: string): Promise<string | null> {
-  if (explicitKey !== undefined) {
-    return explicitKey.trim() || null;
-  }
-
-  return getService("admission")?.key ?? null;
-}
 
 export interface AdmissionEventRecord {
   id: string;
@@ -118,7 +110,7 @@ export async function getSystemOneStatus({
   const configured = getService("admission");
   let available = false;
   if (configured) { try { validateService("admission", configured); available = true; } catch { /* unsupported device */ } }
-  return { available, hasKey: Boolean(configured?.key), source: configured ? "account" : "none" };
+  return { available, hasKey: Boolean(configured?.has_credential || configured?.key), source: configured ? "account" : "none" };
 }
 
 function finish(input: AdmissionFastGateInput, result: AdmissionFastGateResult): AdmissionFastGateResult {
@@ -147,9 +139,10 @@ export async function evaluateAdmissionFastGate(
     });
   }
 
-  // 2. Resolve credentials (Grant / Env)
-  const apiKey = await resolveApiKey(options.apiKey);
-  if (!apiKey) {
+  // 2. Product calls need a usable saved reference, never a downloaded key.
+  const apiKey = options.apiKey?.trim() ?? "";
+  const configured = options.apiKey === undefined ? hasServiceCredential(getService("admission")) : !!apiKey;
+  if (!configured) {
     const elapsedMs = Date.now() - startedAt;
     return finish(input, {
       disposition: "generate_lesson",

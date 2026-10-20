@@ -47,7 +47,7 @@ server {
         proxy_set_header X-Forwarded-Host $host;
     }
 
-    # Full-BYOK cutover: apply only after the new Octos API, Web and APK
+    # Full-BYOK cutover: apply only after the product adapter, Web and APK
     # pass the migration checks in docs/FULL_BYOK_IMPLEMENTATION_PLAN.md.
     # Old APKs receive no supplier credential and can clear their legacy copy.
     location = /api/learn/tts/native-config {
@@ -61,9 +61,12 @@ server {
     location ^~ /api/voice/ { return 410; }
     location ^~ /api/private-asr/ { return 410; }
 
-    # Owner-only configuration, sync and authenticated BYOK relay. Never cache.
-    location ^~ /api/my/client-services {
-        proxy_pass http://127.0.0.1:50080;
+    # Withdrawn Octos extension: never expose the old raw-key sync route.
+    location ^~ /api/my/client-services { return 410; }
+
+    # Product-owned metadata / save / relay; no saved-key export.
+    location ^~ /api/learn/byok {
+        proxy_pass http://127.0.0.1:50081;
         include /etc/nginx/proxy_params;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;

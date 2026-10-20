@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cronToggleRefusalReason,
   mergeProfileConfig,
+  mergeLatestEnvironment,
   normalizeProfileConfig,
 } from "./settings-api";
 import { BridgeRpcError } from "@/runtime/ui-protocol-bridge";
@@ -53,5 +54,21 @@ describe("cronToggleRefusalReason — WS bridge refusal contract", () => {
       JSON.stringify({ ok: false, reason: "gateway_running" }),
     );
     expect(cronToggleRefusalReason(err)).toBeNull();
+  });
+});
+
+describe("fresh profile environment merge", () => {
+  it("preserves newly saved speech configuration and masked LLM keys", () => {
+    expect(mergeLatestEnvironment({ GEMINI_API_KEY: "********" }, { GEMINI_API_KEY: "********", SERPER_API_KEY: "own-new" }, {
+      GEMINI_API_KEY: "********", OCTOS_LEARN_TTS_API_KEY: "********", OCTOS_LEARN_TTS_PARAMS: "********",
+    })).toEqual({ GEMINI_API_KEY: "********", SERPER_API_KEY: "own-new", OCTOS_LEARN_TTS_API_KEY: "********", OCTOS_LEARN_TTS_PARAMS: "********" });
+  });
+  it("does not resurrect a deleted speech key from stale settings", () => {
+    expect(mergeLatestEnvironment({ OCTOS_LEARN_TTS_API_KEY: "********", GEMINI_API_KEY: "********" }, undefined, { GEMINI_API_KEY: "********" }))
+      .toEqual({ GEMINI_API_KEY: "********" });
+  });
+  it("keeps explicit ordinary key deletion and rotation while ignoring stale unchanged fields", () => {
+    expect(mergeLatestEnvironment({ KEEP: "old", DROP: "********", ROTATE: "********" }, { KEEP: "old", ROTATE: "new" }, { KEEP: "fresh", DROP: "********", ROTATE: "********", ADDED: "********" }))
+      .toEqual({ KEEP: "fresh", ROTATE: "new", ADDED: "********" });
   });
 });

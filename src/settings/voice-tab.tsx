@@ -73,7 +73,7 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
       const current = metadata[capability];
       const draft = form[capability];
       const compatible = supportsService(capability, current);
-      const hasKey = !!current?.has_credential && compatible;
+      const hasKey = !!current?.has_credential && compatible && current?.local_credential !== false;
       const missingSavedVoice = capability === "tts" && hasKey && !current?.params.voice?.trim();
       const edited = dirty.includes(capability);
       const field = (name: string, label: string, placeholder?: string) => <label className="block min-w-0">
@@ -97,10 +97,10 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
             {missingSavedVoice && <p className="text-xs leading-5 text-amber-500">Your API key is saved, but lessons have no saved voice. Choose a Voice ID and save it to enable narration.</p>}
           </>}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
-            <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
+            <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{current?.local_credential === false ? "Account key saved; enter it once on this TV" : hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
             <a href="/settings?tab=api-keys#speech-services" className="text-xs font-medium text-accent hover:underline">{hasKey ? "Manage API key" : "Set up API key"}</a>
           </div>
-          <p className="text-xs leading-5 text-muted">{hasKey ? "Connected automatically with your saved API key. Remove the key in API Keys to disconnect." : "Optional. Save your API key to connect; text learning remains available without it."}</p>
+          <p className="text-xs leading-5 text-muted">{current?.local_credential === false ? "Open API Keys and enter your key on this TV. It will be encrypted locally for direct calls; the server does not download it to this device." : current?.account_synced === false ? "Using the key saved on this TV. Account sync failed; save it again in API Keys to retry." : hasKey ? "Connected automatically with your saved API key. Remove the key in API Keys to disconnect." : "Optional. Save your API key to connect; text learning remains available without it."}</p>
         </fieldset>
         <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft])} capability={capability}
           draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving || (capability === "tts" && !draft.params.voice.trim())} /></div>

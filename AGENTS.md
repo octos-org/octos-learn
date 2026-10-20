@@ -16,7 +16,7 @@ AI 驱动的无限白板学习产品：学生用手写、语音或拍照提问�
 
 | 仓库 | 职责 |
 |---|---|
-| `octos-learn`（本仓库） | 产品前端、白板渲染、Android 打包、公网部署脚本、hosted-tts 托管语音服务 |
+| `octos-learn`（本仓库） | 产品前端、白板渲染、Android 打包、公网部署脚本、BYOK 产品适配服务（旧 hosted-tts 保留作历史） |
 | `octos` | 通用 Rust 服务端：认证、profile 隔离、会话、文件、模型配置、技能运行 |
 | `learning-coach` | 课程生成技能：理解学习请求、生成课程计划、编译 OLL |
 | `octos-lesson-language`（OLL） | 课程 DSL、校验器、确定性播放 Runtime |
@@ -30,7 +30,7 @@ AI 驱动的无限白板学习产品：学生用手写、语音或拍照提问�
 ```
 src/            前端源码
 android/        Android APK 工程（WebView 壳）
-services/       hosted-tts 托管语音服务（Node 零依赖）
+services/       BYOK 产品适配服务与旧 hosted-tts（Node 零依赖）
 build/          Android 运行时 stub、本地课程包服务器（TS 源码）
 deploy/         服务器部署配置模板（nginx/systemd/env 示例）
 scripts/        构建、部署、课程包工具脚本
@@ -61,10 +61,10 @@ scripts/deploy-public-web.sh        # 部署 dist/ 到公网并校验（--verify
 
 1. **速度是硬门槛**：任何合入不得回退首个可播放片段的生成速度（p50 对照交错基线，零新增模型往返）。
 2. **OLL 承载正确性**：AI 负责理解学生意图，数学正确性由程序保证；课程改动优先落在 OLL 语义而非前端补丁。
-3. **BYOK**：课程模型、ASR、TTS 与可选 Jev 全部由用户自带凭据承担费用，配置与本人 Key 统一由 Octos 管理。课程仍由服务端生成；ASR / TTS / Jev 优先由本人设备直连供应商，网页跨域受限时允许经 VPS 转发，始终使用本人 Key。共享平台凭据禁止下发，用户自己的直连凭据只经本人配置同步接口进入端内会话，不进入 Git、构建变量、课程、日志或遥测。
+3. **BYOK**：课程模型、ASR、TTS 与可选 Jev 全部由用户自带凭据承担费用，配置与本人 Key 统一由 Octos 管理。课程仍由服务端生成；ASR / TTS / Jev 优先由本人设备直连供应商，网页跨域受限时允许经 VPS 转发，始终使用本人 Key。共享平台凭据禁止下发。ASR / TTS / Jev Key 保存到本人既有 profile；APK 只加密保留本机录入的副本，不从服务器下载 Key，原生层直接调用供应商；网页由本仓库产品服务使用本人 Key 转发。Key 不进入 Git、构建变量、课程、日志或遥测。
 4. **文档**：所有 markdown 放 `docs/`（`.gitignore` 全局忽略 `*.md`，仅放行 `docs/**/*.md`、根 `README.md` 和本文件）。改文档结构时同步更新 `docs/README.md` 索引。
 5. **部署**：前端只走 `scripts/deploy-public-web.sh`（rsync 镜像 + 公网资源校验），不要手动 scp 单个文件——曾因半部署导致入口 JS 404。
-6. 服务器运行配置只放服务器 `/etc/octos-learn/*.env`（0600）；本人直连凭据经 Octos 专用存储管理，不借用进程环境作为缺配置回退。仓库只有示例，不含实际凭据。
+6. 服务器运行配置只放服务器 `/etc/octos-learn/*.env`（0600）；本人凭据经 Octos 既有 profile 存储管理，不借用进程环境作为缺配置回退。仓库只有示例，不含实际凭据。
 7. **PR 语言**：所有 PR 的标题和描述统一使用英文。
 
 ## 深入阅读

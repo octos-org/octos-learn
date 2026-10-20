@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const services = vi.hoisted(() => ({ asr: false, tts: false }));
 vi.mock("@/byok/providers", () => ({ availableService: (id: "asr" | "tts") => services[id] }));
-vi.mock("@/byok/services", () => ({ getService: () => services.tts ? { key: "synthetic-tts-key", params: { voice: "" } } : undefined, getServiceStatus: () => ({ detail: "账号已配置，此设备尚未验证。" }), subscribeServices: vi.fn(), getLessonConfigured: () => true }));
+vi.mock("@/byok/services", () => ({ getService: () => services.tts ? { key: "synthetic-tts-key", params: { voice: "" } } : undefined, hasServiceCredential: (value: unknown) => !!value, getServiceStatus: () => ({ detail: "账号已配置，此设备尚未验证。" }), subscribeServices: vi.fn(), getLessonConfigured: () => true }));
 import { getVoiceRouting, selectVoiceRoutes } from "./voice-routing";
 import type { VoiceReadiness } from "@/settings/settings-api";
 beforeEach(() => { services.asr = false; services.tts = false; });

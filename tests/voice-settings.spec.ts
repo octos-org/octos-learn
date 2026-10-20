@@ -32,10 +32,12 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
     if (path === "/api/auth/me") body = { user: { id: "learner", name: "Learner" }, portal: { home_profile_id: "learner", accessible_profiles: [{ id: "learner", name: "Learner" }], can_access_admin_portal: false } };
     if (path === "/api/auth/status") body = { email_login_enabled: true };
     if (path === "/api/my/profile") body = profile;
-    if (path.startsWith("/api/my/client-services")) {
+    if (path.startsWith("/api/learn/byok")) {
       const capability = path.split("/")[4];
       if (path.endsWith("/relay")) {
-        relay.push(route.request().postDataJSON());
+        const draft = route.request().postDataJSON();
+        expect(draft).not.toHaveProperty("key");
+        relay.push(draft);
         body = capability === "asr"
           ? { status: 200, body: JSON.stringify({ result: { text: "synthetic microphone recognized" } }), code: "20000000" }
           : capability === "tts"
@@ -46,7 +48,7 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
           const draft = route.request().postDataJSON(); writes.push(draft);
           services[capability] = { ...draft, key: draft.key ?? services[capability]?.key ?? "", revision: `r${++revision}`, execution_target: "client" };
         }
-        const values = path.endsWith("/sync") ? services : Object.fromEntries(Object.entries(services).map(([id, value]) => {
+        const values = Object.fromEntries(Object.entries(services).map(([id, value]) => {
           const { key, ...metadata } = value; return [id, { ...metadata, has_credential: !!key }];
         }));
         body = { profile_id: "learner", services: values };
@@ -131,7 +133,7 @@ test("plays course narration through saved BYOK TTS without enabling microphone 
   await page.getByRole("button", { name: "播放 OLL 课程", exact: true }).click();
   await expect.poll(() => relay.length).toBeGreaterThan(0);
   await expect.poll(() => page.evaluate(() => (window as unknown as { narrationStarts: number }).narrationStarts)).toBeGreaterThan(0);
-  expect(relay[0]).toMatchObject({ key: "synthetic-tts-key", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: expect.any(String) } } });
+  expect(relay[0]).toMatchObject({ expected_revision: "r1", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: expect.any(String) } } });
   await expect(page.getByRole("button", { name: "启用语音", exact: true }).first()).toBeVisible();
 });
 
@@ -181,7 +183,7 @@ for (const savedVoice of ["zh_female_vv_uranus_bigtts", ""]) {
     }
     await expect.poll(() => relay.length).toBeGreaterThan(0);
     await expect.poll(() => page.evaluate(() => (window as unknown as { narrationStarts: number }).narrationStarts)).toBeGreaterThan(0);
-    expect(relay[0]).toMatchObject({ key: "synthetic-tts-key", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: "我们来看这节实时生成的课程。" } } });
+    expect(relay[0]).toMatchObject({ expected_revision: "r1", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: "我们来看这节实时生成的课程。" } } });
   });
 }
 
@@ -196,7 +198,7 @@ test.describe("browser microphone runtime", () => {
       state.openedServiceSetup = false;
       window.addEventListener("octos:configure-service", () => { state.openedServiceSetup = true; });
     });
-    const synced = page.waitForResponse(response => new URL(response.url()).pathname === "/api/my/client-services/sync");
+    const synced = page.waitForResponse(response => new URL(response.url()).pathname === "/api/learn/byok/prepare");
     await page.goto("/board?new-board=1"); await synced;
     await page.getByRole("button", { name: "启用语音", exact: true }).first().click();
     await expect(page.getByRole("button", { name: "关闭语音", exact: true }).first()).toBeVisible();
@@ -249,8 +251,9 @@ test.describe("browser microphone runtime", () => {
     await finish.click();
     await expect(asr.getByText("synthetic microphone recognized")).toBeVisible();
     expect(relay).toHaveLength(1);
-    const request = relay[0] as { key: string; payload: { audio: { data: string } } };
-    expect(request.key).toBe("synthetic-asr-key");
+    const request = relay[0] as { expected_revision: string; payload: { audio: { data: string } } };
+    expect(request).not.toHaveProperty("key");
+    expect(request.expected_revision).toBe("r1");
     const wav = Buffer.from(request.payload.audio.data, "base64");
     expect(wav.toString("ascii", 0, 4)).toBe("RIFF");
     expect(wav.readUInt32LE(24)).toBe(16000);

@@ -1,6 +1,10 @@
+> 当前实施以 [复用现有 Octos 的 BYOK 方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md) 为准：无 Octos 改动、无已存 Key 导出；电视本机录入后加密持久化并保存本人 profile。下文是历史候选设计，其中 client-services / sync / 独立服务端密钥库条款已废止。
+
 # 全面 BYOK 与首次使用体验实施方案
 
-日期：2026-10-19（America/Los_Angeles）。状态：已开始分支实施，见[候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)；未调用真实付费供应商、合并或部署。
+修订说明：Octos PR #2839 已按用户要求关闭；本文中新增 Octos client-services API / 独立凭据存储的路线已撤回。后续以[复用现有 Octos 的修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)为准，保留电视直连、网页转发和现有 UX。
+
+历史阶段记录：2026-10-19（America/Los_Angeles）。当时状态：已开始分支实施，见[候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)；未调用真实付费供应商、合并或部署。
 
 ## 1. 已确定的方向与执行边界
 

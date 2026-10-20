@@ -13,19 +13,53 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Fixed provider endpoints only. All credentials are caller-owned session
- * snapshots; no platform token, disk persistence, redirects or arbitrary URL. */
+/** Fixed supplier endpoints, using keys entered and encrypted on this device.
+ * Saved keys are never returned to JavaScript. */
 final class NativeByokBridge {
     private final WebView webView;
+    private final NativeByokStore store;
     private final ExecutorService executor = Executors.newFixedThreadPool(3);
     private final ConcurrentHashMap<String, Request> active = new ConcurrentHashMap<>();
     private volatile boolean released;
+    private String boundScope = "";
     private static final int MAX_BYTES = 12 * 1024 * 1024;
     private static final class Request {
         volatile boolean cancelled;
         volatile HttpURLConnection connection;
     }
-    NativeByokBridge(WebView view) { webView = view; }
+    NativeByokBridge(WebView view) { webView = view; store = new NativeByokStore(view.getContext()); }
+    @JavascriptInterface
+    public synchronized String bindScope(String origin, String profile) {
+        try {
+            java.net.URI uri = java.net.URI.create(origin);
+            if (!"https".equals(uri.getScheme()) || !"learn.pitun.cc".equalsIgnoreCase(uri.getHost()) || uri.getUserInfo() != null) return "{\"ok\":false}";
+            String scope = origin + "\0" + profile;
+            if (!boundScope.equals(scope)) for (String id : active.keySet()) cancel(id);
+            store.bind(uri.getScheme() + "://" + uri.getAuthority(), profile);
+            boundScope = scope; return "{\"ok\":true}";
+        } catch (Exception ignored) { return "{\"ok\":false}"; }
+    }
+    @JavascriptInterface
+    public String reconcile(String metadata) {
+        try { return store.reconcile(new JSONObject(metadata)).toString(); }
+        catch (Exception ignored) { return "{\"error\":true}"; }
+    }
+    @JavascriptInterface
+    public String saveCredential(String capability, String config) {
+        try { store.save(capability, new JSONObject(config)); return "{\"ok\":true}"; }
+        catch (Exception ignored) { return "{\"ok\":false}"; }
+    }
+    @JavascriptInterface
+    public String removeCredential(String capability) {
+        try { store.remove(capability); return "{\"ok\":true}"; }
+        catch (Exception ignored) { return "{\"ok\":false}"; }
+    }
+    @JavascriptInterface
+    public synchronized String clearCredentials() {
+        for (String id : active.keySet()) cancel(id);
+        try { store.clear(); boundScope = ""; return "{\"ok\":true}"; }
+        catch (Exception ignored) { return "{\"ok\":false}"; }
+    }
     private static String endpoint(String capability) {
         if ("tts".equals(capability)) return "https://openspeech.bytedance.com/api/v3/tts/unidirectional";
         if ("asr".equals(capability)) return "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash";
@@ -40,17 +74,33 @@ final class NativeByokBridge {
                 || "X-Api-Sequence".equals(key);
     }
     @JavascriptInterface
-    public String request(String id, String capability, String rawHeaders, String body) {
+    public synchronized String request(String id, String capability, String rawConfig, String body) {
         try {
             if (released || id == null || id.length() > 100 || body == null
-                    || body.length() > MAX_BYTES || rawHeaders == null || rawHeaders.length() > 16384
+                    || body.length() > MAX_BYTES || rawConfig == null || rawConfig.length() > 32768
                     || active.size() >= 6) return "{\"ok\":false}";
             final String url = endpoint(capability);
-            final JSONObject headers = new JSONObject(rawHeaders);
+            JSONObject config = new JSONObject(rawConfig);
+            NativeByokStore.requireCapability(capability);
+            if (!("admission".equals(capability) ? "typesafe" : "volcano").equals(config.getString("provider"))) return "{\"ok\":false}";
+            JSONObject params = config.getJSONObject("params");
+            // A draft test can use a just-entered key without persisting it.
+            // Normal requests contain only metadata; the key stays native.
+            String key = config.optString("key").trim();
+            if (key.isEmpty()) key = store.key(capability, config);
+            if (key.isEmpty() || key.length() > 8192 || key.contains("\r") || key.contains("\n")) return "{\"ok\":false}";
+            final JSONObject headers = new JSONObject().put("Content-Type", "application/json");
+            if ("admission".equals(capability)) headers.put("Authorization", "Bearer " + key);
+            else {
+                if ((params.has("auth_mode") && !"api-key".equals(params.getString("auth_mode"))) || params.has("app_id")) return "{\"ok\":false}";
+                headers.put("X-Api-Key", key).put("X-Api-Resource-Id", params.getString("resource_id"))
+                        .put("X-Api-Request-Id", java.util.UUID.randomUUID().toString());
+                if ("asr".equals(capability)) headers.put("X-Api-Sequence", "-1");
+            }
             for (Iterator<String> it = headers.keys(); it.hasNext();) {
-                String key = it.next();
-                String value = headers.getString(key);
-                if (!allowedHeader(key, "admission".equals(capability))
+                String header = it.next();
+                String value = headers.getString(header);
+                if (!allowedHeader(header, "admission".equals(capability))
                         || value.contains("\n") || value.contains("\r")) return "{\"ok\":false}";
             }
             final Request request = new Request();

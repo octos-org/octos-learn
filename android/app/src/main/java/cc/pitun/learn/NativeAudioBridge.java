@@ -380,6 +380,10 @@ final class NativeAudioBridge {
             int source,
             AudioDeviceInfo preferredDevice
     ) {
+        if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            throw new SecurityException("Microphone permission is required");
+        }
         int minBytes = AudioRecord.getMinBufferSize(
                 sampleRate,
                 AudioFormat.CHANNEL_IN_MONO,

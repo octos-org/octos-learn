@@ -13,7 +13,7 @@ test("saves optional BYOK services without requesting platform grants or paid te
     if (url.pathname === "/api/auth/me") body = { user: { id: "learner", name: "Learner", email: "learner@example.test" }, portal: { home_profile_id: "learner", accessible_profiles: [{ id: "learner", name: "Learner" }], can_access_admin_portal: false } };
     if (url.pathname === "/api/auth/status") body = { bootstrap_mode: false, email_login_enabled: true };
     if (url.pathname === "/api/my/profile") body = profile;
-    if (url.pathname.startsWith("/api/my/client-services")) {
+    if (url.pathname.startsWith("/api/learn/byok")) {
       body = { profile_id: "learner", services: {} };
       if (url.pathname.endsWith("/relay")) paid.push(url.pathname);
       if (route.request().method() === "PUT") writes.push(route.request().postDataJSON());
@@ -47,8 +47,8 @@ test("tests browser Jev through the authenticated BYOK relay with an unsaved own
     let body: unknown = {};
     if (path === "/api/auth/me") body = { user: { id: "learner", name: "Learner" }, portal: { home_profile_id: "learner", accessible_profiles: [{ id: "learner", name: "Learner" }] } };
     if (path === "/api/my/profile") body = { id: "learner", name: "Learner", config: { env_vars: {} } };
-    if (path.startsWith("/api/my/client-services")) body = { profile_id: "learner", services: {} };
-    if (path === "/api/my/client-services/admission/relay") {
+    if (path.startsWith("/api/learn/byok")) body = { profile_id: "learner", services: {} };
+    if (path === "/api/learn/byok/admission/relay") {
       relay.push(route.request().postDataJSON());
       expect(route.request().headers().authorization).toBe("Bearer test-session");
       body = { status: 200, body: JSON.stringify({ answers: { learning: { noul: 1 } } }), code: null };

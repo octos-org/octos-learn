@@ -4,6 +4,48 @@ This runbook deploys the public BYOK release on a dedicated Linux VPS. It uses
 email-verified self-registration and connects to the separately operated
 private ASR service through short-lived browser grants.
 
+## Pending full-BYOK cutover (2026-10-19; not deployed)
+
+The current candidate uses unmodified Octos main plus this repository's
+`services/byok` adapter. It replaces the old hosted-TTS process on 50081;
+it does not run alongside a second funded speech service. The older sections
+below describe the previous production deployment and are not a BYOK credential
+recipe. Follow [the current architecture](BYOK_WITH_EXISTING_OCTOS_PLAN.md)
+for credential handling and the remaining Android device acceptance gate.
+
+Before any production switch:
+
+1. Back up existing profile data and legacy encrypted settings with their private
+   permissions. Do not export plain keys or put them in deployment environment.
+2. Install `services/byok/{server.mjs,start.mjs}` together on the Octos host.
+   The updated `octos-learn-hosted-tts.service.example` deliberately reuses the
+   existing unit but points its working directory to `services/byok` and runs
+   `start.mjs`. Set `OCTOS_BASE_URL` and `OCTOS_REGISTRY_ROOT` using the updated
+   `deploy/hosted-tts/hosted-tts.env.example`; no vendor secrets are required.
+3. The adapter must run as the Octos service account and be able to read its
+   private 0600 profile files. The example unit makes that registry read-only in
+   the adapter process. Profile changes go through existing Octos HTTP APIs.
+4. Apply the new Nginx `/api/learn/byok` route to 50081 with no caching, 8 MiB
+   request limit and preserved Host / Authorization. Keep the generic Octos
+   API on 50080. Close the withdrawn `/api/my/client-services` routes and old
+   platform speech routes; the legacy native-config endpoint only returns off.
+5. Verify anonymous product requests return 401. Verify an authenticated account
+   sees metadata without any key; `POST .../prepare` migrates only that account's
+   previous encrypted candidate settings when present. Never overwrite failed
+   migration with an empty configuration. Recheck another account cannot select
+   the first with X-Profile-Id.
+6. Build and deploy the matching static frontend **only** with
+   `scripts/deploy-public-web.sh`. This script still deploys only the frontend;
+   it does not install/restart the product service, Octos or skills. Coordinate
+   the service and frontend cutover and rollback to avoid a half migration.
+7. Check microphone recognition, test voice and generated-course narration using
+   the account's own saved Speech Key. A previous hosted-platform Key is never
+   sent to a browser/APK. TV users enter their own Key once on the TV; no saved
+   server Key is downloaded, including after app restart or remote key changes.
+
+Do not perform this cutover until Android 8.0 local persistence/direct-call
+acceptance is completed. No production deployment was performed in this task.
+
 ## 1. Server layout
 
 Use a dedicated, non-login service account and keep code, configuration, and

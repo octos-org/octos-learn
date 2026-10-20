@@ -433,15 +433,29 @@ export function mergeProfileConfig(
   return next;
 }
 
+/** Merge only the caller's edits over fresh masked state. Product service
+ * fields belong to its own API and must survive older Settings snapshots. */
+export function mergeLatestEnvironment(original: Record<string, string>, desired: Record<string, string> | undefined, latest: Record<string, string>): Record<string, string> {
+  const merged = { ...latest };
+  if (!desired) return merged;
+  for (const key of new Set([...Object.keys(original), ...Object.keys(desired)])) {
+    if (key.startsWith("OCTOS_LEARN_")) continue;
+    if (original[key] === desired[key]) continue;
+    if (desired[key] === undefined) delete merged[key]; else merged[key] = desired[key];
+  }
+  return merged;
+}
+
 export async function updateMyProfileConfig(
   profile: Profile,
   config: Partial<ProfileConfig>,
   patch: { name?: string; enabled?: boolean } = {},
 ): Promise<Profile> {
-  return await updateMyProfile({
-    ...patch,
-    config: mergeProfileConfig(profile.config, config),
-  });
+  const latest = await getMyProfile();
+  if (!latest || latest.id !== profile.id) throw new Error("Account changed or unavailable. Reload settings before saving.");
+  const merged = mergeProfileConfig(profile.config, config);
+  merged.env_vars = mergeLatestEnvironment(profile.config.env_vars ?? {}, config.env_vars, latest.config.env_vars ?? {});
+  return await updateMyProfile({ ...patch, config: merged });
 }
 
 export async function fetchProviderModels(

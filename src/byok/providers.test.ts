@@ -12,27 +12,47 @@ describe("BYOK provider transports", () => {
     api.request.mockResolvedValue({ status: 200, body: '{"code":0,"data":"bXAz"}\n{"code":20000000}', code: null });
     expect((await synthesizeDirect("学习数学", undefined, config())).size).toBe(3);
     const [url, init] = api.request.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/my/client-services/tts/relay");
+    expect(url).toBe("/api/learn/byok/tts/relay");
     expect(JSON.parse(init.body as string)).toMatchObject({ provider: "volcano", key: "own-canary-key", params: { auth_mode: "api-key" }, payload: { req_params: { text: "学习数学" } } });
     expect(fetch).not.toHaveBeenCalled();
   });
   it("relays browser ASR and preserves the upstream status header for speech and silence", async () => {
     api.request.mockResolvedValueOnce({ status: 200, body: '{"result":{"text":"学习数学"}}', code: "20000000" });
     expect(await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config())).toEqual({ status: "speech", transcript: "学习数学" });
-    expect(api.request.mock.calls[0][0]).toBe("/api/my/client-services/asr/relay");
+    expect(api.request.mock.calls[0][0]).toBe("/api/learn/byok/asr/relay");
     api.request.mockResolvedValueOnce({ status: 200, body: "{}", code: "20000003" });
     expect((await transcribeDirect(new Blob(["wav"]), new AbortController().signal, config())).status).toBe("no_speech");
   });
   it("relays optional browser Jev using the caller's key", async () => {
     api.request.mockResolvedValue({ status: 200, body: '{"answers":{}}', code: null });
     expect((await directJson("admission", config("typesafe"), { state: "数学" })).body).toContain("answers");
-    expect(api.request.mock.calls[0][0]).toBe("/api/my/client-services/admission/relay");
+    expect(api.request.mock.calls[0][0]).toBe("/api/learn/byok/admission/relay");
   });
   it("refuses missing credentials, Azure and old auth before any paid request", async () => {
     await expect(synthesizeDirect("hello")).rejects.toMatchObject({ state: "unconfigured" });
     expect(() => validateService("tts", config("azure"))).toThrow("供应商");
     expect(() => validateService("tts", { ...config(), params: { ...config().params, auth_mode: "legacy", app_id: "old" } })).toThrow("新版 API Key");
     expect(api.request).not.toHaveBeenCalled();
+  });
+  it("browser saved-key calls send only a revision and no raw key", async () => {
+    api.request.mockResolvedValue({ status: 200, body: '{"code":0,"data":"bXAz"}', code: null });
+    await synthesizeDirect("hello", undefined, { ...config(), key: "", has_credential: true, credential_revision: "key-digest" });
+    const body = JSON.parse(api.request.mock.calls[0][1].body);
+    expect(body).not.toHaveProperty("key"); expect(body.expected_revision).toBe("r1");
+  });
+  it("native saved-key calls work without WebView randomUUID, with no credential export or VPS call", async () => {
+    vi.stubGlobal("crypto", { getRandomValues: (bytes: Uint8Array) => bytes.fill(17) });
+    window.OctosNativeByok = { request: vi.fn((id, _capability, raw) => {
+      const value = JSON.parse(raw); expect(value).not.toHaveProperty("key"); expect(value.credential_revision).toBe("key-digest");
+      queueMicrotask(() => window.__octosNativeByokEvent?.(JSON.stringify({ id, status: 200, body: "{}" }))); return '{"ok":true}';
+    }), cancel: vi.fn() };
+    await directJson("tts", { ...config(), key: "", has_credential: true, local_credential: true, credential_revision: "key-digest" }, {});
+    expect(api.request).not.toHaveBeenCalled();
+  });
+  it("a missing TV copy asks for local entry without falling back to VPS", async () => {
+    window.OctosNativeByok = { request: vi.fn(), cancel: vi.fn() };
+    await expect(directJson("tts", { ...config(), key: "", has_credential: true, local_credential: false }, {})).rejects.toThrow("这台电视");
+    expect(api.request).not.toHaveBeenCalled(); expect(window.OctosNativeByok.request).not.toHaveBeenCalled();
   });
   it("does not retry invalid supplier credentials or borrow platform speech", async () => {
     api.request.mockResolvedValue({ status: 401, body: "", code: null });
@@ -47,7 +67,7 @@ describe("BYOK provider transports", () => {
   });
   it("keeps native television Jev direct and never relays", async () => {
     window.OctosNativeByok = { request: vi.fn((id, capability, headers) => {
-      expect(capability).toBe("admission"); expect(JSON.parse(headers).Authorization).toBe("Bearer own-canary-key");
+      expect(capability).toBe("admission"); expect(JSON.parse(headers)).toMatchObject({ provider: "typesafe", key: "own-canary-key" });
       queueMicrotask(() => window.__octosNativeByokEvent?.(JSON.stringify({ id, status: 200, body: '{"answers":{}}' })));
       return '{"ok":true}';
     }), cancel: vi.fn() };
@@ -56,7 +76,7 @@ describe("BYOK provider transports", () => {
   });
   it("sends only new API Key headers for native Volcano speech", async () => {
     window.OctosNativeByok = { request: vi.fn((id, _capability, headers) => {
-      expect(JSON.parse(headers)).toMatchObject({ "X-Api-Key": "own-canary-key" });
+      expect(JSON.parse(headers)).toMatchObject({ key: "own-canary-key", provider: "volcano" });
       expect(headers).not.toMatch(/X-Api-App|X-Api-Access/);
       queueMicrotask(() => window.__octosNativeByokEvent?.(JSON.stringify({ id, status: 200, body: "{}" })));
       return '{"ok":true}';
@@ -80,7 +100,7 @@ describe("BYOK provider transports", () => {
     await expect(result).rejects.toMatchObject({ name: "AbortError" });
   });
   it("does not label a saved draft ready without a successful call", async () => {
-    api.request.mockResolvedValue({ profile_id: "alice", services: { tts: config() } });
+    api.request.mockResolvedValue({ profile_id: "alice", services: { tts: { ...config(), key: undefined, has_credential: true } } });
     await prepareClientServices();
     expect(getServiceStatus("tts").state).toBe("configured_unverified");
   });

@@ -1,5 +1,6 @@
+import { createRequestId } from "@/lib/request-id";
 import { request as apiRequest } from "@/api/client";
-import { getService, getServiceStatus, serviceRequest, setServiceStatus, type Capability, type ClientService, type ServiceState } from "./services";
+import { getService, hasServiceCredential, getServiceStatus, serviceRequest, setServiceStatus, type Capability, type ClientService, type ServiceState } from "./services";
 
 export const ENDPOINTS: Record<Capability, string> = {
   asr: "https://openspeech.bytedance.com/api/v3/auc/bigmodel/recognize/flash",
@@ -7,8 +8,13 @@ export const ENDPOINTS: Record<Capability, string> = {
   admission: "https://api.typesafe.ai/v1/systemone",
 };
 interface NativeHttp {
-  request: (id: string, capability: string, headers: string, body: string) => string;
+  request: (id: string, capability: string, config: string, body: string) => string;
   cancel: (id: string) => void;
+  bindScope?: (origin: string, profile: string) => string;
+  reconcile?: (metadata: string) => string;
+  saveCredential?: (capability: string, config: string) => string;
+  removeCredential?: (capability: string) => string;
+  clearCredentials?: () => string;
 }
 declare global { interface Window { OctosNativeByok?: NativeHttp; __octosNativeByokEvent?: (value: string) => void } }
 interface NativeResult { id: string; status: number; body: string; code?: string; error?: boolean }
@@ -21,7 +27,7 @@ export class ServiceError extends Error {
   constructor(state: ServiceState, message: string) { super(message); this.state = state; this.name = "ServiceError"; }
 }
 export function validateService(capability: Capability, config: ClientService): void {
-  if (!config.enabled || !config.key.trim()) throw new ServiceError("unconfigured", "请先连接你自己的服务，可继续文字学习。");
+  if (!config.enabled || !hasServiceCredential(config)) throw new ServiceError("unconfigured", config.local_credential === false ? "账号已保存 Key；请在这台电视的 API Keys 中录入一次，以在本机直接调用。" : "请先连接你自己的服务，可继续文字学习。");
   if ((capability === "admission" ? "typesafe" : "volcano") !== config.provider) throw new ServiceError("environment_unsupported", "当前仅支持火山语音和 Jev 供应商，请重新配置。");
   if (capability !== "admission" && ((config.params.auth_mode && config.params.auth_mode !== "api-key") || config.params.app_id)) throw new ServiceError("invalid_credentials", "请改用火山新版 API Key，旧版 App ID / Access Token 不再支持。");
   if (capability !== "admission" && !config.params.resource_id?.trim()) throw new ServiceError("resource_not_enabled", "请填写已开通的资源 ID。");
@@ -53,25 +59,17 @@ export async function directJson(capability: Capability, config: ClientService, 
   if (request.signal.aborted) abort();
   try {
     validateService(capability, config);
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (capability === "admission") headers.Authorization = `Bearer ${config.key}`;
-    else {
-      headers["X-Api-Resource-Id"] = config.params.resource_id;
-      headers["X-Api-Request-Id"] = crypto.randomUUID();
-      headers["X-Api-Key"] = config.key;
-      if (capability === "asr") headers["X-Api-Sequence"] = "-1";
-    }
     if (controller.signal.aborted) throw new DOMException("请求已取消", "AbortError");
     const bridge = window.OctosNativeByok;
     if (bridge) {
-      const id = crypto.randomUUID();
+      const id = createRequestId();
       const value = await new Promise<NativeResult>((resolve, reject) => {
         const cleanup = () => { pending.delete(id); controller.signal.removeEventListener("abort", cancel); };
         const cancel = () => { cleanup(); bridge.cancel(id); reject(new DOMException("请求已取消", "AbortError")); };
         pending.set(id, result => { cleanup(); resolve(result); });
         controller.signal.addEventListener("abort", cancel, { once: true });
         try {
-          const result = JSON.parse(bridge.request(id, capability, JSON.stringify(headers), JSON.stringify(body))) as { ok: boolean };
+          const result = JSON.parse(bridge.request(id, capability, JSON.stringify({ provider: config.provider, params: config.params, credential_revision: config.credential_revision, ...(config.key ? { key: config.key } : {}) }), JSON.stringify(body))) as { ok: boolean };
           if (!result.ok) { cleanup(); reject(new ServiceError("network_error", "原生服务请求无法启动。")); }
         } catch { cleanup(); reject(new ServiceError("network_error", "原生服务请求无法启动。")); }
       });
@@ -82,9 +80,9 @@ export async function directJson(capability: Capability, config: ClientService, 
     // Credential-free preflights (2026-10-19) reject the required headers/origin
     // for all three current browser endpoints. Select the authenticated relay
     // immediately instead of failing/retrying a potentially billable POST.
-    const response = await apiRequest<{ status: number; body: string; code: string | null }>(`/api/my/client-services/${capability}/relay`, {
+    const response = await apiRequest<{ status: number; body: string; code: string | null }>(`/api/learn/byok/${capability}/relay`, {
       method: "POST", signal: controller.signal,
-      body: JSON.stringify({ provider: config.provider, params: config.params, key: config.key, payload: body }),
+      body: JSON.stringify({ provider: config.provider, params: config.params, ...(config.key ? { key: config.key } : { expected_revision: config.revision }), payload: body }),
     });
     if (controller.signal.aborted) throw new DOMException("请求已取消", "AbortError");
     if (response.status < 200 || response.status >= 300) throw statusError(response.status, response.code ?? undefined, capability);

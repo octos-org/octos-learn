@@ -1,3 +1,4 @@
+import { createRequestId } from "@/lib/request-id";
 import {
   useCallback,
   useEffect,
@@ -838,7 +839,7 @@ export function useVoiceConversation(
         setState("thinking");
       }
       try {
-        const turnId = crypto.randomUUID();
+        const turnId = createRequestId();
         const file = new File([wav], "utterance.wav", { type: "audio/wav" });
         const clientTiming: LearningClientTiming = {
           submitted_at_epoch_ms: Date.now(),

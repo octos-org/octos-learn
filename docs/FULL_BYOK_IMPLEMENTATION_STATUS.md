@@ -1,6 +1,20 @@
+> 2026-10-19 修订实施：Octos PR #2839 已关闭；本机已切回干净 main `ed92309a`。新增 octos-learn 产品服务复用 profile 存储 / 保存与认证，浏览器不接收已存 Key；APK 使用本机录入的 Keystore AES-GCM 副本直连。本人现有 ASR / TTS 与小何 2.0 已迁移。代码及验收边界见 [当前方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)。下文保留之前候选的历史记录，其中新增 Octos client-services 接口的描述不再是当前实现。
+
 # 全面 BYOK：实现与候选验收记录
 
+## 当前修订验收（2026-10-19）
+
+- 代码仅在 octos-learn；Octos main `ed92309a` 工作区干净，50080 健康检查版本为 `2.0.3+ed92309a`，旧扩展接口返回 404。
+- 本人现有 Key、资源与小何 2.0 音色已通过产品服务迁移到既有 profile；保留旧加密文件，未输出或生成明文临时文件。未改变课程 LLM 路线。
+- 本机 HTTPS 5173 正常运行。在主线后端上真实火山 TTS 合成与播放成功，[验收截图](byok-migration-2026-10-19/upstream-octos-tts.png)。Jev 未配置，保持可选。
+- 1,178 项前端单元、17 项产品服务 HTTP、9 项 Chromium 回归通过；TS、公共网页与 Android 资源构建、APK 和设备测试包构建、Android lint 通过。ESLint 0 errors / 37 existing warnings。
+- Android 8.0 真机未连接；7 项真实 Keystore 设备测试已编译但未执行，真实供应商直连及进程重启持久化尚未实机验收。没有执行公网部署或 main 合并，PR #59 保持 Draft。
+
+## 历史候选记录（以下不代表当前运行方式）
+
 日期：2026-10-19（America/Los_Angeles）。候选分支，未合并、未部署、未撤销线上凭据。
+
+历史修订备注（迁移前）：用户要求不修改 Octos；Octos PR #2839 已关闭。下文记录旧候选实现，尚未迁移到未经修改的 Octos。新的边界与步骤见[复用现有 Octos 的修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)。用户已确认本地真实 ASR / TTS 与课程测试正常；电视实机和线上部署仍未验收。
 
 ## 分支与范围
 
