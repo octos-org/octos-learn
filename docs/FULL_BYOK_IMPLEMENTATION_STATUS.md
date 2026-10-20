@@ -48,6 +48,14 @@
 
 录音状态记录：[Voice 麦克风测试](byok-migration-2026-10-19/voice-microphone-test-desktop.png)。
 
+## 课程旁白与试听配置一致性修复
+
+- 本机实际页面确认：TTS Key 已保存，但保存的 Voice ID 为空。设置页允许以临时选择试听，测试成功不代表音色参数已经保存；旧界面仅凭 Key 显示 Configured，而课程的可用性检查会静默跳过空音色。
+- 缺少已保存音色时显示 Voice required；未选择音色不能试听。编辑后在试听旁持续显示未保存提示，并提供 Save voice for lessons，单独保存该能力参数，不覆盖 Key 或其他能力的草稿。全局 Save Changes 仍保留，试听不暗中保存配置。
+- 课程有本人 TTS Key 时进入参数校验，缺项或供应商故障显示脱敏后的具体原因和旁白设置入口；没有 Key 时仍可继续文字课程。已失败的首段预取不会在播放时自动重发同一付费请求。
+- Chromium 使用合成 Key、模拟课程 action / 课程文件交付和模拟供应商，验证真实 OLL Runtime 将新生成课程的旁白送至 relay 并启动 Web Audio；另覆盖 Key 已保存但音色为空时不发送供应商请求、显示明确提示。设置测试覆盖“草稿试听成功 → 未保存提示 → 保存供课程使用”。这不等同于真实火山供应商的课堂验收。
+- 本轮前端全量 1,164 项单元测试通过；TypeScript、公网构建和 ESLint 通过。仍使用正常本机 HTTPS 5173 / 后端 50080，未部署公网。
+
 ## 当前外部接口证据与限制
 
 无凭据 OPTIONS 检查，补充记录见[直连接口预检](byok-migration-2026-10-19/direct-provider-preflight.json)：

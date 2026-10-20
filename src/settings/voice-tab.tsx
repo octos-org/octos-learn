@@ -41,18 +41,18 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
     setForm(previous => ({ ...previous, [capability]: { ...previous[capability], ...patch } }));
     setSaved(false); setError("");
   }
-  async function save() {
+  async function save(capabilities: readonly Capability[] = dirty) {
     setSaving(true); setSaved(false); setError("");
     try {
       // Validate all pending edits before persisting any of them.
-      for (const capability of dirty) {
+      for (const capability of capabilities) {
         const current = metadata[capability];
         const draft = form[capability];
         if (!supportsService(capability, current)) throw new Error(`Replace the ${SERVICE_DEFINITIONS[capability].title} credential in API Keys first.`);
         if (current?.has_credential && capability !== "admission" && !draft.params.resource_id.trim()) throw new Error("Enter a resource ID for your speech service.");
         if (current?.has_credential && capability === "tts" && !draft.params.voice.trim()) throw new Error("Choose a voice for narration.");
       }
-      for (const capability of dirty) {
+      for (const capability of capabilities) {
         const params = Object.fromEntries(Object.entries(form[capability].params).map(([name, value]) => [name, value.trim()]));
         const next = await saveClientService(capability, { provider: SERVICE_DEFINITIONS[capability].provider, enabled: !!metadata[capability]?.has_credential, params }, metadata[capability]?.revision);
         if (!next) throw new Error("Configuration changed. Reload the page before saving again.");
@@ -74,6 +74,8 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
       const draft = form[capability];
       const compatible = supportsService(capability, current);
       const hasKey = !!current?.has_credential && compatible;
+      const missingSavedVoice = capability === "tts" && hasKey && !current?.params.voice?.trim();
+      const edited = dirty.includes(capability);
       const field = (name: string, label: string, placeholder?: string) => <label className="block min-w-0">
         <span className={labelClass}>{label}</span>
         <input className={`${inputClass} font-mono`} value={draft.params[name] ?? ""} placeholder={placeholder} spellCheck={false} autoComplete="off"
@@ -83,14 +85,17 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
         <div className="mb-6 flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"><Icon size={20} /></div>
           <div className="min-w-0 flex-1"><h3 className="text-sm font-semibold text-text-strong">{definition.title}{capability === "admission" && <span className="ml-2 text-xs font-normal text-muted"> Optional</span>}</h3><p className="mt-0.5 text-xs leading-5 text-muted">{definition.description}</p></div>
-          <span className="flex shrink-0 items-center gap-1.5 pt-1 text-[10px] font-medium text-muted"><span className={`h-2 w-2 rounded-full ${hasKey ? "bg-green-400" : "bg-muted/30"}`} />{hasKey ? "Configured" : "Key required"}</span>
+          <span className="flex shrink-0 items-center gap-1.5 pt-1 text-[10px] font-medium text-muted"><span className={`h-2 w-2 rounded-full ${missingSavedVoice ? "bg-amber-400" : hasKey ? "bg-green-400" : "bg-muted/30"}`} />{missingSavedVoice ? "Voice required" : hasKey ? "Configured" : "Key required"}</span>
         </div>
         <fieldset disabled={saving} className="min-w-0 space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             <label className="block min-w-0"><span className={labelClass}>Provider</span><select className={inputClass} value={definition.provider} onChange={() => {}}><option value={definition.provider}>{definition.providerName}</option></select></label>
             {capability === "admission" ? field("model", "Model", "jev-latest") : field("resource_id", "Resource ID")}
           </div>
-          {capability === "tts" && <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id} value={draft.params.voice} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />}
+          {capability === "tts" && <>
+            <VolcanoVoiceSelect hasCredential={hasKey} resourceId={draft.params.resource_id} value={draft.params.voice} onChange={value => update(capability, { params: { ...draft.params, voice: value } })} />
+            {missingSavedVoice && <p className="text-xs leading-5 text-amber-500">Your API key is saved, but lessons have no saved voice. Choose a Voice ID and save it to enable narration.</p>}
+          </>}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-surface-dark/50 px-4 py-3">
             <span className="flex items-center gap-2 text-xs text-muted">{hasKey ? <CheckCircle2 size={14} className="shrink-0 text-green-400" /> : <KeyRound size={14} className="shrink-0 text-amber-400" />}{hasKey ? "API key configured" : !compatible ? "Update the previous credential in API Keys" : "Add your own API key to connect"}</span>
             <a href="/settings?tab=api-keys#speech-services" className="text-xs font-medium text-accent hover:underline">{hasKey ? "Manage API key" : "Set up API key"}</a>
@@ -98,7 +103,13 @@ function VoiceEditor({ initialMetadata }: { initialMetadata: ServiceMetadataMap 
           <p className="text-xs leading-5 text-muted">{hasKey ? "Connected automatically with your saved API key. Remove the key in API Keys to disconnect." : "Optional. Save your API key to connect; text learning remains available without it."}</p>
         </fieldset>
         <div className="mt-5"><VoiceServiceTest key={JSON.stringify([current?.revision, draft])} capability={capability}
-          draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving} /></div>
+          draft={{ provider: definition.provider, enabled: hasKey, params: draft.params, revision: current?.revision ?? "draft", execution_target: "client" }} disabled={!hasKey || saving || (capability === "tts" && !draft.params.voice.trim())} /></div>
+        {edited && <div className="mt-4 space-y-3 rounded-xl border border-amber-400/20 bg-amber-400/5 p-4">
+          <p role="status" className="text-xs leading-5 text-amber-500">Unsaved changes. Tests preview these edits; lessons still use your saved settings.</p>
+          <button type="button" className="inline-flex items-center gap-2 text-xs font-medium text-accent disabled:opacity-30" disabled={saving} onClick={() => void save([capability])}>
+            <Save size={14} />{capability === "tts" ? "Save voice for lessons" : "Save these settings"}
+          </button>
+        </div>}
       </section>;
     })}
     <div className="flex items-start gap-2 rounded-xl bg-surface-dark/50 px-4 py-3 text-xs leading-5 text-muted">

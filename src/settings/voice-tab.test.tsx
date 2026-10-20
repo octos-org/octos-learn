@@ -67,6 +67,22 @@ describe("BYOK voice settings", () => {
     expect(within(region).getByLabelText("Custom Voice ID")).toHaveProperty("value", "draft-voice");
     expect(state.save).not.toHaveBeenCalled();
   });
+  it("distinguishes a successful draft preview from a saved lesson voice", async () => {
+    state.list.mockResolvedValue({ profile_id: "alice", services: { tts: { ...tts, params: { ...tts.params, voice: "" } } } });
+    show(); const region = await screen.findByRole("region", { name: "Text to Speech" });
+    expect(within(region).getByText("Voice required")).toBeTruthy();
+    expect(within(region).getByRole("button", { name: "Test voice" })).toHaveProperty("disabled", true);
+    fireEvent.change(within(region).getByLabelText("Voice ID", { exact: true }), { target: { value: "__custom__" } });
+    fireEvent.change(within(region).getByLabelText("Custom Voice ID"), { target: { value: "previewed-voice" } });
+    fireEvent.click(within(region).getByRole("button", { name: "Test voice" }));
+    await screen.findByText("Voice synthesized and played successfully.");
+    expect(within(region).getByText(/Unsaved changes. Tests preview/)).toBeTruthy();
+    expect(state.save).not.toHaveBeenCalled();
+    fireEvent.click(within(region).getByRole("button", { name: "Save voice for lessons" }));
+    await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ params: expect.objectContaining({ voice: "previewed-voice" }) }), "r1"));
+    await waitFor(() => expect(within(region).queryByText("Voice required")).toBeNull());
+    expect(within(region).queryByText(/Unsaved changes/)).toBeNull();
+  });
   it("cancels a running draft test when its parameters change", async () => {
     let signal: AbortSignal | undefined;
     state.synthesize.mockImplementation((_text, value: AbortSignal) => { signal = value; return new Promise((_resolve, reject) => value.addEventListener("abort", () => reject(new DOMException("Canceled", "AbortError")))); });

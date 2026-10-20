@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOllNarrationTts } from "./use-oll-narration-tts";
 import { configureNativeTts } from "@/home/voice/native-tts";
+import { ServiceError } from "@/byok/providers";
 
 const mocks = vi.hoisted(() => ({
   synthesizeSpeech: vi.fn(),
@@ -447,6 +448,22 @@ describe("useOllNarrationTts", () => {
       narrationId: "beat-recovered",
     });
     await waitFor(() => expect(result.current.error).toBeNull());
+  });
+
+  it("shows sanitized configuration failures and does not retry a failed prewarm", async () => {
+    mocks.route = "cloud";
+    mocks.synthesizeSpeech.mockRejectedValue(new ServiceError("resource_not_enabled", "尚未保存课程音色。请在 Voice 设置中选择音色并保存，然后重新播放课程。"));
+    const onPlaybackComplete = vi.fn();
+    const { result, rerender } = renderHook(({ playing }) => useOllNarrationTts({
+      enabled: true, playing, text: playing ? "课程旁白" : "", narrationId: playing ? "beat-missing-voice" : undefined,
+      prefetchEnabled: true, prewarmText: "课程旁白", prewarmNarrationId: "beat-missing-voice", onPlaybackComplete,
+    }), { initialProps: { playing: false } });
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce());
+    rerender({ playing: true });
+    await waitFor(() => expect(result.current.error).toContain("尚未保存课程音色"));
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    expect(mocks.playAudioBlob).not.toHaveBeenCalled();
+    expect(onPlaybackComplete).toHaveBeenCalledWith("beat-missing-voice");
   });
 
   it("releases disabled narration but keeps paused narration pending", () => {

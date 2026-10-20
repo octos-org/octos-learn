@@ -1,5 +1,5 @@
 import { availableService } from "@/byok/providers";
-import { getServiceStatus, getLessonConfigured, subscribeServices } from "@/byok/services";
+import { getService, getServiceStatus, getLessonConfigured, subscribeServices } from "@/byok/services";
 import type { VoiceReadiness } from "@/settings/settings-api";
 
 export type AsrRoute = "private" | "backend" | "cloud" | "unavailable";
@@ -22,7 +22,9 @@ export function selectVoiceRoutes(_readiness: VoiceReadiness, asr: boolean, tts:
 export async function getVoiceRouting(_force = false): Promise<VoiceRouting> {
   void _force;
   const asr = availableService("asr");
-  const tts = availableService("tts");
+  // A saved key opts into narration. Validate its parameters at synthesis so
+  // an incomplete voice selection produces an actionable error, not silence.
+  const tts = Boolean(getService("tts")?.key.trim());
   const lesson = getLessonConfigured();
   const asrVerified = getServiceStatus("asr").state === "ready";
   const ttsVerified = getServiceStatus("tts").state === "ready";

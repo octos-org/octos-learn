@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { synthesizeSpeech, synthesizeCloudSpeech } from "@/api/voice";
 import { getVoiceRouting, markPrivateTtsFailed, peekVoiceRouting } from "@/api/voice-routing";
+import { ServiceError } from "@/byok/providers";
 import { playPrivateSpeech } from "@/home/voice/private-tts";
 import {
   playAudioBlob,
@@ -47,6 +48,14 @@ interface PrefetchedSpeech {
   controller: AbortController;
   promise: Promise<Blob | null>;
   claimed: boolean;
+  failure: { cause: unknown } | null;
+}
+
+function narrationFailure(cause: unknown): string {
+  // Only our typed, sanitized provider errors may reach the whiteboard.
+  return cause instanceof ServiceError
+    ? `课程旁白：${cause.message} 文字旁白仍会显示。`
+    : "课程语音暂时不可用，旁白仍会显示。";
 }
 
 function speechKey(narrationId: string | undefined, text: string): string | null {
@@ -183,7 +192,10 @@ export function useOllNarrationTts({
               .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
           })
         : (useCache && cached ? cached.promise : synthesizeCloudSpeech(normalizedText, audioRequest.signal))
-          .then(audio => audio ?? synthesizeCloudSpeech(normalizedText, audioRequest.signal))
+          .then(audio => {
+            if (useCache && cached?.failure) throw cached.failure.cause;
+            return audio ?? synthesizeCloudSpeech(normalizedText, audioRequest.signal);
+          })
           .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
     const playFallbackTts = async () => {
       const routing = await getVoiceRouting();
@@ -212,9 +224,10 @@ export function useOllNarrationTts({
             normalizedText,
             audioRequest.signal,
           ).then((audio) => audio as Blob | null))
-          .then((audio) =>
-            audio ?? synthesizeSpeech(normalizedText, audioRequest.signal)
-          )
+          .then((audio) => {
+            if (cached?.failure) throw cached.failure.cause;
+            return audio ?? synthesizeSpeech(normalizedText, audioRequest.signal);
+          })
           .then((audio) => playAudioBlob(
             audio,
             finishAudio,
@@ -261,7 +274,7 @@ export function useOllNarrationTts({
         setPreparing(false);
         setStartedKey(null);
         callbacksRef.current.onSpeakingChange?.(false);
-        setFailure("课程语音暂时不可用，旁白仍会显示。");
+        setFailure(narrationFailure(cause));
         completePlayback();
       });
 
@@ -335,6 +348,7 @@ export function useOllNarrationTts({
       key: candidateKey,
       controller,
       claimed: false,
+      failure: null,
       promise: getVoiceRouting().then(routing => {
         if (controller.signal.aborted || routing.tts === "private"
           || (routing.tts === "cloud" && nativeTtsAvailable())) return null;
@@ -343,7 +357,7 @@ export function useOllNarrationTts({
           : synthesizeSpeech(candidateText, controller.signal);
       })
         .then((audio) => audio)
-        .catch(() => null),
+        .catch(cause => { entry.failure = { cause }; return null; }),
     };
     prefetchedSpeechRef.current = entry;
   }, [

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { writeFileSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -19,8 +19,8 @@ test.afterAll(() => rmSync(microphoneFile, { force: true }));
 test.use({ permissions: ["microphone"], launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${microphoneFile}`] } });
 
 type Service = { provider: string; enabled: boolean; params: Record<string, string>; key: string; revision: string; execution_target: string };
-async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {}) {
-  const profile = { id: "learner", name: "Learner", enabled: true, config: { llm: { primary: { family_id: "google", model_id: "gemini-test" }, fallbacks: [] }, gateway: {}, env_vars: {} } };
+async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {}, lessonConfigured = false) {
+  const profile = { id: "learner", name: "Learner", enabled: true, config: { llm: { primary: { family_id: "google", model_id: "gemini-test" }, fallbacks: [] }, gateway: {}, env_vars: lessonConfigured ? { GEMINI_API_KEY: "********" } : {} } };
   const services = { ...initial };
   const writes: Array<Record<string, unknown>> = [];
   const relay: unknown[] = [];
@@ -38,6 +38,8 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
         relay.push(route.request().postDataJSON());
         body = capability === "asr"
           ? { status: 200, body: JSON.stringify({ result: { text: "synthetic microphone recognized" } }), code: "20000000" }
+          : capability === "tts"
+          ? { status: 200, body: JSON.stringify({ code: 0, data: readFileSync(microphoneFile).toString("base64") }) + "\n" + JSON.stringify({ code: 20000000 }), code: null }
           : { status: 200, body: JSON.stringify({ answers: { learning: { noul: 1 } } }), code: null };
       } else {
         if (route.request().method() === "PUT") {
@@ -80,13 +82,19 @@ test("saving a key connects Voice without another switch or an implicit supplier
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-api-keys-desktop.png" });
 
   await page.getByRole("button", { name: "Voice", exact: true }).click();
-  await expect(tts.getByRole("button", { name: "Test voice" })).toBeEnabled();
+  await expect(tts.getByRole("button", { name: "Test voice" })).toBeDisabled();
+  await expect(tts.getByText("Voice required", { exact: true })).toBeVisible();
   await expect(tts.getByLabel("Voice ID", { exact: true })).toBeEnabled();
   await expect(tts.getByRole("option", { name: "Vivi 2.0", exact: true })).toHaveCount(1);
   await tts.getByLabel("Voice ID", { exact: true }).selectOption("zh_female_vv_uranus_bigtts");
   await expect(tts.getByRole("switch")).toHaveCount(0);
-  await page.getByRole("button", { name: "Save Changes" }).click();
+  await tts.getByRole("button", { name: "Test voice" }).click();
+  await expect(tts.getByText("Voice synthesized and played successfully.")).toBeVisible();
+  await expect(tts.getByText(/Unsaved changes. Tests preview/)).toBeVisible();
+  expect(writes).toHaveLength(2); expect(services.tts.params.voice).toBe("");
+  await tts.getByRole("button", { name: "Save voice for lessons" }).click();
   await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
+  await expect(tts.getByText("Voice required", { exact: true })).toHaveCount(0);
   expect(writes).toHaveLength(3);
   expect(writes[2]).not.toHaveProperty("key");
   expect(writes[2]).toMatchObject({ enabled: true, params: { voice: "zh_female_vv_uranus_bigtts" } });
@@ -95,7 +103,7 @@ test("saving a key connects Voice without another switch or an implicit supplier
   const jev = page.getByRole("region", { name: "Input Understanding" });
   await jev.getByRole("button", { name: "Test connection" }).click();
   await expect(jev.getByText("Jev connected successfully.")).toBeVisible();
-  expect(relay).toHaveLength(1);
+  expect(relay).toHaveLength(2);
   expect(services.admission.enabled).toBe(true);
   expect(writes).toHaveLength(3);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -106,6 +114,76 @@ test("saving a key connects Voice without another switch or an implicit supplier
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-tts-key");
   expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-jev-key");
 });
+
+test("plays course narration through saved BYOK TTS without enabling microphone input", async ({ page }) => {
+  const { relay } = await mockVoiceAccount(page, { tts: { provider: "volcano", enabled: true, key: "synthetic-tts-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: "zh_female_vv_uranus_bigtts" } } });
+  await page.addInitScript(() => {
+    localStorage.setItem("octos-learn:setup-skipped:learner", "yes");
+    const tracked = window as unknown as { narrationStarts: number; narrationStops: number };
+    tracked.narrationStarts = 0; tracked.narrationStops = 0;
+    const start = AudioBufferSourceNode.prototype.start;
+    const stop = AudioBufferSourceNode.prototype.stop;
+    AudioBufferSourceNode.prototype.start = function (...args) { tracked.narrationStarts++; return start.apply(this, args); };
+    AudioBufferSourceNode.prototype.stop = function (...args) { tracked.narrationStops++; return stop.apply(this, args); };
+  });
+  await page.goto("/board?oll-fixture=unit-circle-sine");
+  await page.getByRole("button", { name: "暂停 OLL 课程", exact: true }).click();
+  await page.getByRole("button", { name: "播放 OLL 课程", exact: true }).click();
+  await expect.poll(() => relay.length).toBeGreaterThan(0);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { narrationStarts: number }).narrationStarts)).toBeGreaterThan(0);
+  expect(relay[0]).toMatchObject({ key: "synthetic-tts-key", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: expect.any(String) } } });
+  await expect(page.getByRole("button", { name: "启用语音", exact: true }).first()).toBeVisible();
+});
+
+for (const savedVoice of ["zh_female_vv_uranus_bigtts", ""]) {
+  test(`newly generated course ${savedVoice ? "plays saved BYOK narration" : "explains the missing saved voice instead of silently skipping TTS"}`, async ({ page }) => {
+    const { relay } = await mockVoiceAccount(page, { tts: { provider: "volcano", enabled: true, key: "synthetic-tts-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "seed-tts-2.0", voice: savedVoice } } }, true);
+    let turnId = "";
+    await page.routeWebSocket(url => url.pathname === "/api/ui-protocol/ws", socket => {
+      socket.onMessage(raw => {
+        const message = JSON.parse(String(raw));
+        const params = message.params ?? {};
+        let result: unknown = {};
+        if (message.method === "session/open") result = { opened: { session_id: params.session_id, capabilities: { supported_features: ["projection.envelope.v2"] } } };
+        if (message.method === "session/hydrate") result = { messages: [], active_turn: null };
+        if (message.method === "session/list") result = { sessions: [] };
+        if (message.method === "skill/action/job/list") result = { jobs: [] };
+        if (message.method === "session/files.list") result = { files: turnId ? [{ filename: `${turnId}.octos-lesson.json`, path: `study/oll/${turnId}.octos-lesson.json`, size_bytes: 512, modified_at: new Date().toISOString() }] : [] };
+        if (message.method === "skill/action/invoke") {
+          turnId = params.arguments.turn_id;
+          result = { action_id: params.action_id, ok: true, jobs: [] };
+        }
+        if (message.id) socket.send(JSON.stringify({ jsonrpc: "2.0", id: message.id, result }));
+      });
+    });
+    await page.route(url => url.pathname === "/api/files" || url.pathname.startsWith("/api/files/"), route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({
+      dsl: "octos.lesson", version: "0.1", profile: "authoring",
+      lesson: { mode: "explain", language: "zh-CN", title: "实时课程旁白回归", goals: ["理解公式"] },
+      steps: [{ key: "explain", purpose: "解释", beats: [{ key: "intro", say: "我们来看这节实时生成的课程。", actions: [{ do: "write", as: "formula", kind: "math", role: "concept", content: { latex: "y=x^2" }, place: { relation: "new_region" } }] }] }],
+      close: { summary: "总结", focus: ["formula"] },
+    }) }));
+    await page.addInitScript(() => {
+      localStorage.setItem("octos-learn:setup-skipped:learner", "yes");
+      const tracked = window as unknown as { narrationStarts: number };
+      tracked.narrationStarts = 0;
+      const start = AudioBufferSourceNode.prototype.start;
+      AudioBufferSourceNode.prototype.start = function (...args) { tracked.narrationStarts++; return start.apply(this, args); };
+    });
+    await page.goto("/board?new-board=1");
+    await page.getByLabel("输入学习问题").fill("请解释二次函数");
+    await page.getByRole("button", { name: "发送问题", exact: true }).click();
+    await expect.poll(() => turnId).not.toBe("");
+    if (!savedVoice) {
+      await expect(page.getByRole("alert")).toContainText("尚未保存课程音色");
+      await expect(page.getByRole("button", { name: "检查旁白设置" })).toBeVisible();
+      expect(relay).toHaveLength(0);
+      return;
+    }
+    await expect.poll(() => relay.length).toBeGreaterThan(0);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { narrationStarts: number }).narrationStarts)).toBeGreaterThan(0);
+    expect(relay[0]).toMatchObject({ key: "synthetic-tts-key", payload: { req_params: { speaker: "zh_female_vv_uranus_bigtts", text: "我们来看这节实时生成的课程。" } } });
+  });
+}
 
 
 test.describe("browser microphone runtime", () => {

@@ -25,7 +25,7 @@ export function validateService(capability: Capability, config: ClientService): 
   if ((capability === "admission" ? "typesafe" : "volcano") !== config.provider) throw new ServiceError("environment_unsupported", "当前仅支持火山语音和 Jev 供应商，请重新配置。");
   if (capability !== "admission" && ((config.params.auth_mode && config.params.auth_mode !== "api-key") || config.params.app_id)) throw new ServiceError("invalid_credentials", "请改用火山新版 API Key，旧版 App ID / Access Token 不再支持。");
   if (capability !== "admission" && !config.params.resource_id?.trim()) throw new ServiceError("resource_not_enabled", "请填写已开通的资源 ID。");
-  if (capability === "tts" && !config.params.voice?.trim()) throw new ServiceError("resource_not_enabled", "请填写具有使用权限的音色 ID。");
+  if (capability === "tts" && !config.params.voice?.trim()) throw new ServiceError("resource_not_enabled", "尚未保存课程音色。请在 Voice 设置中选择音色并保存，然后重新播放课程。");
 }
 export function availableService(capability: Capability): boolean {
   const config = getService(capability);

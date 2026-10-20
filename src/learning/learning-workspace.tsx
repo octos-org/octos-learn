@@ -3482,6 +3482,9 @@ export function LearningWorkspace({
           {sendError && lessonModelErrorMessage(sendErrorCode) && (
             <> <button onClick={() => openCapabilitySettings("lesson")}>前往设置</button></>
           )}
+          {!sendError && ollNarrationTts.error && (
+            <> <button onClick={() => openCapabilitySettings("tts")}>检查旁白设置</button></>
+          )}
         </div>
       )}
       {aiUnavailable && !isEmbeddedCourse && (
