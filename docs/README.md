@@ -57,7 +57,7 @@
 
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
-- [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选。
+- [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
 
 - [复用现有 Octos 的 BYOK 修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)：关闭 Octos PR #2839；复用现有 profile / Key 存储与认证，APK 本机录入后加密保存并直连，网页转发放回 octos-learn，不导出已存 Key，包含迁移与验收边界。
 
