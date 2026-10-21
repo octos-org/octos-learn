@@ -76,7 +76,7 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         send(200, { profile_id: owner, ...store().acknowledgeDelivery(owner, path[1], body.lease_id, body.seq) });
       } else if (request.method === "GET" && path.join("/") === "deliveries") {
         if (url.search) throw new HttpError(400, "Unexpected query");
-        send(200, { profile_id: owner, states: store().deliveryStatus(owner) });
+        send(200, { profile_id: owner, states: store().deliveryStatus(owner), pending_session_deletions: store().pendingSessionDeletions(owner) });
       } else if (request.method === "GET" && ["runs", "changes"].includes(path[0])) {
         if ([...url.searchParams.keys()].some(key => !["limit", "through", "after", "before"].includes(key))) throw new HttpError(400, "Unknown query field");
         const options = { limit: integer(url.searchParams, "limit", 20, 100),
@@ -87,6 +87,21 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         else if (path[0] === "runs" && path.length === 1) send(200, store().listRuns(owner, options));
         else if (path[0] === "runs" && path.length === 2 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) send(200, store().runEvents(owner, path[1], options));
         else throw new HttpError(404, "Unknown history endpoint");
+      } else if (request.method === "DELETE" && path[0] === "sessions" && path.length === 2 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        const body = await limitedJson(request, 1024);
+        if (!body || Object.keys(body).some(key => key !== "delete_octos_session") || typeof body.delete_octos_session !== "boolean") throw new HttpError(400, "Invalid deletion scope");
+        send(200, { profile_id: owner, ...store().deleteSession(owner, path[1], body.delete_octos_session) });
+      } else if (request.method === "POST" && path.join("/") === "session-deletions/claim") {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        const body = await limitedJson(request, 1024);
+        if (!body || Object.keys(body).some(key => key !== "limit") || !Number.isSafeInteger(body.limit) || body.limit < 1 || body.limit > 20) throw new HttpError(400, "Invalid claim");
+        send(200, { profile_id: owner, ...store().claimSessionDeletions(owner, body.limit) });
+      } else if (request.method === "POST" && path.length === 3 && path[0] === "session-deletions" && path[2] === "receipt") {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        const body = await limitedJson(request, 1024);
+        if (!body || Object.keys(body).some(key => key !== "lease_id") || typeof body.lease_id !== "string" || !/^[a-f0-9-]{36}$/.test(body.lease_id)) throw new HttpError(400, "Invalid receipt");
+        send(200, { profile_id: owner, ...store().acknowledgeSessionDeletion(owner, path[1], body.lease_id) });
       } else if (request.method === "DELETE" && path[0] === "runs" && path.length === 2 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) {
         if (url.search) throw new HttpError(400, "Unexpected query");
         send(200, store().deleteRun(owner, path[1]));

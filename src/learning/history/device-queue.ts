@@ -74,21 +74,25 @@ export class DeviceHistoryQueue {
     try {
       const store = tx.objectStore(EVENTS);
       for (const event of events) {
-        const deleted = tx.objectStore(META).get([owner, 'deleted', event.run_id]);
+        const deleted = tx.objectStore(META).get([owner, 'deleted-session', event.session_id]);
         deleted.onsuccess = () => {
           if (deleted.result) return;
-          const prior = store.get([owner, event.id]);
-          prior.onsuccess = () => {
-            const old = prior.result as QueuedHistoryEvent | undefined;
-            if (old && canonicalHistoryJson(old.event) !== canonicalHistoryJson(event)) {
-              conflict = new Error('同一学习记录编号对应不同内容，已停止保存'); tx.abort(); return;
-            }
-            try {
-              if (!old) store.add({ owner, event, state: 'pending' } satisfies QueuedHistoryEvent, [owner, event.id]);
-            } catch (error) {
-              conflict = error instanceof Error ? error : new Error('本机学习记录尚未保存');
-              tx.abort();
-            }
+          const removedRun = tx.objectStore(META).get([owner, 'deleted', event.run_id]);
+          removedRun.onsuccess = () => {
+            if (removedRun.result) return;
+            const prior = store.get([owner, event.id]);
+            prior.onsuccess = () => {
+              const old = prior.result as QueuedHistoryEvent | undefined;
+              if (old && canonicalHistoryJson(old.event) !== canonicalHistoryJson(event)) {
+                conflict = new Error('同一学习记录编号对应不同内容，已停止保存'); tx.abort(); return;
+              }
+              try {
+                if (!old) store.add({ owner, event, state: 'pending' } satisfies QueuedHistoryEvent, [owner, event.id]);
+              } catch (error) {
+                conflict = error instanceof Error ? error : new Error('本机学习记录尚未保存');
+                tx.abort();
+              }
+            };
           };
         };
       }
@@ -147,12 +151,33 @@ export class DeviceHistoryQueue {
     };
   }
 
-  async applyDeletions(owner: string, runIds: string[], through: number): Promise<void> {
+  async deletedSessionIds(owner: string): Promise<string[]> {
+    assertOwner(owner);
+    const db = await this.database();
+    const tx = db.transaction(META, 'readonly');
+    const completion = done(tx);
+    const [keys] = await Promise.all([result(tx.objectStore(META).getAllKeys(IDBKeyRange.bound([owner, 'deleted-session'], [owner, 'deleted-session', []]))), completion]);
+    return keys.map(key => (key as string[])[2]);
+  }
+
+  private deleteSessionWithin(tx: IDBTransaction, owner: string, sessionId: string) {
+    tx.objectStore(META).put(true, [owner, 'deleted-session', sessionId]);
+    const request = tx.objectStore(EVENTS).index('owner').openCursor(owner);
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      if ((cursor.value as QueuedHistoryEvent).event.session_id === sessionId) cursor.delete();
+      cursor.continue();
+    };
+  }
+
+  async applyDeletions(owner: string, runIds: string[], through: number, sessionIds: string[] = []): Promise<void> {
     assertOwner(owner);
     const db = await this.database();
     const tx = db.transaction([EVENTS, META], 'readwrite');
     const completion = done(tx);
     for (const runId of new Set(runIds)) this.deleteWithin(tx, owner, runId);
+    for (const sessionId of new Set(sessionIds)) this.deleteSessionWithin(tx, owner, sessionId);
     // Concurrent tabs must never move the confirmed change cursor backwards.
     const request = tx.objectStore(META).get([owner, 'changes']);
     request.onsuccess = () => tx.objectStore(META).put(Math.max(Number(request.result) || 0, through), [owner, 'changes']);

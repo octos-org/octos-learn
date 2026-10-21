@@ -18,10 +18,11 @@ export class HistoryApi {
     this.identity = identity; this.fetcher = fetcher; this.currentToken = currentToken;
   }
   get owner() { return this.identity.owner; }
-  private async request<T>(path: string, method = 'GET'): Promise<T> {
+  private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     if (this.currentToken() !== this.identity.token) throw new Error('账号已切换，请重新打开学习记录');
     const response = await this.fetcher(`${API_BASE}/api/learn/history${path}`, {
-      method, headers: { Authorization: `Bearer ${this.identity.token}`, 'X-Learning-Owner': this.identity.owner },
+      method, headers: { Authorization: `Bearer ${this.identity.token}`, 'X-Learning-Owner': this.identity.owner, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       redirect: 'error', signal: AbortSignal.timeout(10000),
     });
     if (this.currentToken() !== this.identity.token) throw new Error('账号已切换，请重新打开学习记录');
@@ -42,6 +43,12 @@ export class HistoryApi {
     if (through !== undefined) query.set('through', String(through));
     return this.request<HistoryEventsPage>(`/runs/${encodeURIComponent(runId)}?${query}`);
   }
+  async deleteSession(sessionId: string, deleteOctos = true) {
+    await this.request(`/sessions/${encodeURIComponent(sessionId)}`, 'DELETE', { delete_octos_session: deleteOctos });
+    const queue = new DeviceHistoryQueue();
+    await queue.applyDeletions(this.identity.owner, [], await queue.changeCursor(this.identity.owner), [sessionId]);
+    window.dispatchEvent(new Event('octos:history-sync-needed'));
+  }
   async deleteRun(runId: string) {
     await this.request(`/runs/${encodeURIComponent(runId)}`, 'DELETE');
     const queue = new DeviceHistoryQueue();
@@ -50,4 +57,14 @@ export class HistoryApi {
 }
 export async function openHistoryApi(token: string): Promise<HistoryApi> {
   return new HistoryApi(await resolveHistoryIdentity(API_BASE, token, new DeviceHistoryQueue()));
+}
+
+
+/** Queue the requested whiteboard cleanup durably before removing its card. */
+export async function queueWhiteboardDeletion(sessionId: string): Promise<boolean> {
+  const token = getToken();
+  if (!token) return false;
+  const api = await openHistoryApi(token);
+  await api.deleteSession(sessionId, true);
+  return true;
 }

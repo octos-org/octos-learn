@@ -159,7 +159,7 @@ test("schema 1 upgrades transactionally without changing raw records or durable 
   for (const column of ['occurred_at', 'question_preview', 'beat_id', 'task_id', 'operation_id']) raw.exec(`ALTER TABLE events DROP COLUMN ${column}`);
   raw.exec('UPDATE history_schema SET version=1'); raw.close();
   legacy = new HistoryStore(legacyFile);
-  assert.equal(legacy.db.prepare('SELECT version FROM history_schema').get().version, 2);
+  assert.equal(legacy.db.prepare('SELECT version FROM history_schema').get().version, 3);
   assert.equal(legacy.append('alice', [event('legacy')]).results[0].status, 'exists');
   assert.equal(legacy.listRuns('alice').runs[0].question_preview, '请解释斜率');
   assert.equal(legacy.runEvents('alice', 'run-one').events[0].event.id, 'legacy');
@@ -173,4 +173,22 @@ test("turn-routed questions never become duplicate Octos delivery tasks", () => 
   store.append('alice', [answer, route, question]);
   assert.equal(store.claimDeliveries('alice').tasks.length, 0);
   assert.equal(store.runEvents('alice', question.run_id).events.length, 3);
+});
+
+test("deleting a whole whiteboard blocks unknown future runs, cancels dialogue copies and retains an account-scoped cleanup task", () => {
+  store.append('alice', [event('first'), event('second', { run_id: 'run-two' })]);
+  const deleted = store.deleteSession('alice', 'learn-board', true);
+  assert.equal(deleted.octos_cleanup, 'pending');
+  assert.equal(store.append('alice', [event('unknown', { run_id: 'unknown-run' })]).results[0].status, 'deleted');
+  assert.equal(store.append('bob', [event('unknown', { run_id: 'unknown-run' })]).results[0].status, 'accepted');
+  assert.equal(store.listRuns('alice').runs.length, 0);
+  assert.equal(store.changes('alice').changes.at(-1).session_id, 'learn-board');
+  store.close(); store = new HistoryStore(file);
+  assert.equal(store.claimSessionDeletions('bob').tasks.length, 0);
+  const task = store.claimSessionDeletions('alice').tasks[0];
+  assert.equal(task.session_id, 'learn-board');
+  assert.equal(store.acknowledgeSessionDeletion('bob', task.session_id, task.lease_id).recorded, false);
+  assert.equal(store.acknowledgeSessionDeletion('alice', task.session_id, task.lease_id).recorded, true);
+  assert.equal(store.claimSessionDeletions('alice').tasks.length, 0);
+  assert.equal(store.deleteSession('alice', 'learn-board', true).seq, deleted.seq);
 });

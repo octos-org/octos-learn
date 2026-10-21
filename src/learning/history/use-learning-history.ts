@@ -1,3 +1,4 @@
+import { finishSessionDeletions } from "./delete-session-copies";
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { getToken } from '../../api/client';
 import { API_BASE } from '../../lib/constants';
@@ -6,8 +7,8 @@ import { LearningHistoryRecorder } from './recorder';
 import { HistorySynchronizer, resolveHistoryIdentity, type HistoryIdentity } from './synchronize';
 import { deliverHistoryMessages } from './deliver-messages';
 
-export interface LearningHistoryStatus { saving: number; pending: number; syncing: boolean; error: string; conversationPending: number; checked: boolean }
-const EMPTY: LearningHistoryStatus = { saving: 0, pending: 0, syncing: false, error: '', conversationPending: 0, checked: false };
+export interface LearningHistoryStatus { saving: number; pending: number; syncing: boolean; error: string; conversationPending: number; checked: boolean; cleanupPending: number }
+const EMPTY: LearningHistoryStatus = { saving: 0, pending: 0, syncing: false, error: '', conversationPending: 0, checked: false, cleanupPending: 0 };
 const noSubscribe = () => () => undefined;
 const emptySnapshot = () => EMPTY;
 
@@ -74,8 +75,14 @@ export class LearningHistoryCoordinator {
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };
       const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
       if (!pending.ok) throw new Error('问答交付状态暂不可用');
-      const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[] };
+      const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[]; pending_session_deletions: number };
       if (payload.profile_id !== identity.owner || !Array.isArray(payload.states)) throw new Error('无法确认问答交付账号');
+      const cleanup = Number(payload.pending_session_deletions) || 0;
+      this.update({ cleanupPending: cleanup });
+      if (cleanup && this.current() && !this.busy.size) {
+        const accepted = await finishSessionDeletions(identity, API_BASE, { isCurrent: this.current });
+        this.update({ cleanupPending: Math.max(0, cleanup - accepted) });
+      }
       let conversations = payload.states.filter(row => ['pending', 'leased'].includes(row.state)).reduce((sum, row) => sum + row.count, 0);
       this.update({ conversationPending: conversations, checked: true });
       if (conversations && this.current() && !this.busy.size) {
@@ -87,6 +94,7 @@ export class LearningHistoryCoordinator {
       this.update({ error: '学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。' });
     } finally { this.update({ syncing: false }); }
   }
+  markDeletionQueued() { this.update({ cleanupPending: Math.max(1, this.status.cleanupPending) }); }
   retry = async () => {
     await Promise.all([...this.recorders.values()].map(recorder => recorder.retry().catch(() => undefined)));
     await this.synchronize();
@@ -116,8 +124,10 @@ export function useLearningHistoryRecorder(sessionId: string, enabled = true) {
     if (!coordinator) return;
     void coordinator.synchronize();
     const online = () => { void coordinator.retry(); };
+    const deletion = () => { coordinator.markDeletionQueued(); online(); };
     window.addEventListener('online', online);
-    return () => window.removeEventListener('online', online);
+    window.addEventListener('octos:history-sync-needed', deletion);
+    return () => { window.removeEventListener('online', online); window.removeEventListener('octos:history-sync-needed', deletion); };
   }, [coordinator]);
   return { recorder, coordinator, status, localStatus };
 }

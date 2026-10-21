@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
@@ -292,7 +292,7 @@ describe("shared course launcher", () => {
     expect(screen.getByRole("button", { name: /重新开始/u })).toBeTruthy();
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
-    expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy());
   });
 
   it("manages ordinary whiteboards and logout from the launcher", async () => {

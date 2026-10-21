@@ -76,16 +76,17 @@ export class HistorySynchronizer {
       if (through !== undefined) params.set('through', String(through));
       const response = await this.fetcher(`${this.base}/api/learn/history/changes?${params}`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
       if (!response.ok) throw new Error('学习记录尚未同步，可稍后重试');
-      const page = await response.json() as { changes: { seq: number; run_id: string; change_kind: string }[]; through: number; next_after: number | null };
+      const page = await response.json() as { changes: { seq: number; run_id?: string; session_id?: string; change_kind: string }[]; through: number; next_after: number | null };
       if (!Number.isSafeInteger(page.through) || page.through < after || !Array.isArray(page.changes)
         || page.changes.some((row, i) => !Number.isSafeInteger(row.seq) || row.seq <= (page.changes[i - 1]?.seq ?? after)
-          || row.seq > page.through || typeof row.run_id !== 'string' || !['event', 'deleted'].includes(row.change_kind))
+          || row.seq > page.through || !['event', 'deleted', 'session_deleted'].includes(row.change_kind)
+          || (row.change_kind === 'session_deleted' ? typeof row.session_id !== 'string' : typeof row.run_id !== 'string'))
         || (page.next_after !== null && (!Number.isSafeInteger(page.next_after) || page.next_after <= after
           || page.next_after !== page.changes.at(-1)?.seq))) throw new Error('学习记录同步结果无效');
       if (through !== undefined && through !== page.through) throw new Error('学习记录同步范围发生变化');
       through = page.through;
       const cursor = page.next_after ?? through;
-      await this.queue.applyDeletions(identity.owner, page.changes.filter(row => row.change_kind === 'deleted').map(row => row.run_id), cursor);
+      await this.queue.applyDeletions(identity.owner, page.changes.filter(row => row.change_kind === 'deleted').map(row => row.run_id!), cursor, page.changes.filter(row => row.change_kind === 'session_deleted').map(row => row.session_id!));
       if (page.next_after === null) break;
       after = cursor;
     }

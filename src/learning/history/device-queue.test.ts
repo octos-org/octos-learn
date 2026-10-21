@@ -172,3 +172,16 @@ it('upgrades an existing document database without losing its old playback state
   expect(await checkpoint()).toEqual({ cursor: 12 });
   expect(await local.list('alice')).toHaveLength(1);
 });
+
+it('a whole-whiteboard deletion purges its queue and rejects an offline run the server never knew', async () => {
+  const { IDBKeyRange } = await import('fake-indexeddb'); vi.stubGlobal('IDBKeyRange', IDBKeyRange);
+  const local = await queue();
+  await local.commit('alice', [event(), event('second', 'second-run')]);
+  await local.commit('bob', [event()]);
+  await local.applyDeletions('alice', [], 7, ['session-1']);
+  vi.resetModules(); const reopened = await queue();
+  await reopened.commit('alice', [event('never-uploaded', 'new-offline-run')]);
+  expect(await reopened.list('alice')).toEqual([]);
+  expect(await reopened.deletedSessionIds('alice')).toEqual(['session-1']);
+  expect(await reopened.list('bob')).toHaveLength(1);
+});

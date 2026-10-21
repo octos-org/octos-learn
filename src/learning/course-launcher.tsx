@@ -1,3 +1,5 @@
+import { queueWhiteboardDeletion } from "./history/history-api";
+import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { useEffect, useState } from "react";
 import {
   ArrowRight,
@@ -204,14 +206,23 @@ function CourseCard({
     if (!window.confirm("从课程初始白板重新开始？原来的学习记录会保留。")) return;
     startNewInstance();
   };
-  const deleteProgress = () => {
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const deleteProgress = async () => {
     if (!latestInstance
       || !window.confirm("删除这门课程当前保存的学习记录？课程包本身不会被删除。")) return;
-    removeLearningSession(latestInstance.id);
-    setLatestInstance(listCoursePackLearningInstances(source)[0] ?? null);
+    setDeleting(true); setDeleteError("");
+    try {
+      await queueWhiteboardDeletion(latestInstance.id);
+      removeLearningSession(latestInstance.id);
+      setLatestInstance(listCoursePackLearningInstances(source)[0] ?? null);
+    } catch { setDeleteError("删除请求尚未保存，原记录已保留，请重试。"); }
+    finally { setDeleting(false); }
   };
   return (
     <article className="course-launcher-card">
+      {deleteError && <p role="alert">{deleteError}</p>}
+      {deleting && <p role="status">正在保存删除请求…</p>}
       <div className="course-launcher-cover">
         <img src={installedThumbnail ?? entry.thumbnailUrl} alt="" />
 
@@ -302,17 +313,18 @@ function WhiteboardSessionCard({
     onChanged();
     void setSessionTitle(session.id, title).catch(() => undefined);
   };
+  const [deleteError, setDeleteError] = useState("");
   const remove = () => {
     if (!window.confirm(`删除“${session.title}”？此操作会删除这块白板的学习记录。`)) return;
-    void deleteSession(session.id)
-      .catch(() => undefined)
-      .finally(() => {
-        removeLearningSession(session.id);
-        onChanged();
-      });
+    setDeleteError("");
+    void queueWhiteboardDeletion(session.id).then(async queued => {
+      if (!queued) await deleteSession(session.id);
+      removeLearningSession(session.id); onChanged();
+    }).catch(() => { setDeleteError("删除请求尚未保存，原白板已保留，请重试。"); });
   };
   return (
     <article className="course-launcher-session-card">
+      {deleteError && <p role="alert">{deleteError}</p>}
       <button type="button" className="course-launcher-session-open" onClick={open}>
         <span>{session.title}</span>
         <small>{session.status === "completed" ? "已完成" : "继续学习"}</small>
@@ -330,6 +342,7 @@ function WhiteboardSessionCard({
 }
 
 export function CourseLauncher() {
+  const history = useLearningHistoryRecorder("course-launcher");
   const { token, logout } = useAuth();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -403,6 +416,7 @@ export function CourseLauncher() {
   }, [collectionId]);
   return (
     <main className="course-launcher">
+      {history.status.cleanupPending > 0 && <p role="status">白板删除请求已保存，清理结果仍待确认。<button onClick={() => { void history.coordinator?.retry(); }}>重试清理</button></p>}
       {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
         onNew={() => navigate("/board?new-board=1")}
         onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}

@@ -19,7 +19,7 @@ export class HistoryStore {
       CREATE TABLE IF NOT EXISTS history_schema(version INTEGER PRIMARY KEY);
     `);
     const versions = this.db.prepare("SELECT version FROM history_schema").all();
-    if (versions.length > 1 || versions.some(row => ![1, 2].includes(row.version))) throw new Error("Unsupported history database version");
+    if (versions.length > 1 || versions.some(row => ![1, 2, 3].includes(row.version))) throw new Error("Unsupported history database version");
     const version = versions[0]?.version ?? 1;
     this.db.exec(`
       BEGIN IMMEDIATE;
@@ -53,6 +53,13 @@ export class HistoryStore {
         PRIMARY KEY(owner,event_id)
       );
       CREATE INDEX IF NOT EXISTS delivery_owner_state ON delivery_tasks(owner,state,seq);
+      CREATE INDEX IF NOT EXISTS delivery_owner_run ON delivery_tasks(owner,run_id);
+      CREATE INDEX IF NOT EXISTS events_owner_session ON events(owner,session_id);
+      CREATE TABLE IF NOT EXISTS deleted_sessions(
+        owner TEXT NOT NULL, session_id TEXT NOT NULL, seq INTEGER NOT NULL,
+        state TEXT NOT NULL, lease_id TEXT, lease_until INTEGER,
+        PRIMARY KEY(owner,session_id)
+      );
       ${version === 1 ? `
       ALTER TABLE events ADD COLUMN occurred_at TEXT;
       ALTER TABLE events ADD COLUMN question_preview TEXT;
@@ -65,6 +72,7 @@ export class HistoryStore {
         operation_id=json_extract(body,'$.data.operation_id');
       UPDATE history_schema SET version=2;
       ` : ""}
+      UPDATE history_schema SET version=3;
       COMMIT;
     `);
     } catch (error) { this.db.close(); throw error; }
@@ -73,7 +81,7 @@ export class HistoryStore {
   close() { this.db.close(); }
   upperBound(owner) { return Number(this.db.prepare("SELECT COALESCE(MAX(seq),0) AS n FROM changes WHERE owner=?").get(owner).n); }
   checkSnapshot(owner, through) {
-    if (this.db.prepare("SELECT 1 FROM changes WHERE owner=? AND seq>? AND change_kind='deleted' LIMIT 1").get(owner, through)) {
+    if (this.db.prepare("SELECT 1 FROM changes WHERE owner=? AND seq>? AND change_kind IN ('deleted','session_deleted') LIMIT 1").get(owner, through)) {
       throw new HistorySnapshotChanged("History was deleted during pagination; restart the query");
     }
   }
@@ -92,6 +100,7 @@ export class HistoryStore {
   appendOne(owner, event) {
     const body = canonicalHistoryJson(event);
     const fingerprint = createHash("sha256").update(body).digest("hex");
+    if (this.db.prepare("SELECT 1 FROM deleted_sessions WHERE owner=? AND session_id=?").get(owner, event.session_id)) return { id: event.id, status: "deleted" };
     const prior = this.db.prepare("SELECT * FROM receipts WHERE owner=? AND event_id=?").get(owner, event.id);
     if (prior) return { id: event.id, status: prior.fingerprint !== fingerprint ? "conflict" : prior.deleted ? "deleted" : "exists", seq: prior.seq };
     if (this.db.prepare("SELECT 1 FROM deleted_runs WHERE owner=? AND run_id=?").get(owner, event.run_id)) return { id: event.id, status: "deleted" };
@@ -182,7 +191,8 @@ export class HistoryStore {
   changes(owner, { after = 0, limit = 100, through = this.upperBound(owner) } = {}) {
     const rows = this.db.prepare(`SELECT seq,run_id,change_kind,event_id,received_at FROM changes
       WHERE owner=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?`).all(owner, after, through, limit + 1);
-    return { changes: rows.slice(0, limit), through, next_after: rows.length > limit ? rows[limit - 1].seq : null };
+    return { changes: rows.slice(0, limit).map(row => row.change_kind === "session_deleted"
+      ? { seq: row.seq, session_id: row.run_id, change_kind: row.change_kind, received_at: row.received_at } : row), through, next_after: rows.length > limit ? rows[limit - 1].seq : null };
   }
 
   claimDeliveries(owner, limit = 10) {
@@ -214,6 +224,53 @@ export class HistoryStore {
 
   deliveryStatus(owner) {
     return this.db.prepare("SELECT state,COUNT(*) AS count FROM delivery_tasks WHERE owner=? GROUP BY state").all(owner);
+  }
+
+  pendingSessionDeletions(owner) {
+    return this.db.prepare("SELECT COUNT(*) AS n FROM deleted_sessions WHERE owner=? AND state IN ('pending','leased')").get(owner).n;
+  }
+
+  deleteSession(owner, sessionId, deleteOctos = false) {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      let prior = this.db.prepare("SELECT seq,state FROM deleted_sessions WHERE owner=? AND session_id=?").get(owner, sessionId);
+      if (!prior) {
+        const row = this.db.prepare("INSERT INTO changes(owner,run_id,change_kind,received_at) VALUES(?,?,'session_deleted',?)").run(owner, sessionId, this.now());
+        prior = { seq: Number(row.lastInsertRowid), state: deleteOctos ? "pending" : "not_requested" };
+        this.db.prepare("INSERT INTO deleted_sessions(owner,session_id,seq,state) VALUES(?,?,?,?)").run(owner, sessionId, prior.seq, prior.state);
+        const runs = this.db.prepare("SELECT DISTINCT run_id FROM events WHERE owner=? AND session_id=?").all(owner, sessionId);
+        for (const { run_id: run } of runs) {
+          this.db.prepare("INSERT OR IGNORE INTO deleted_runs VALUES(?,?,?)").run(owner, run, prior.seq);
+          this.db.prepare("UPDATE receipts SET deleted=1 WHERE owner=? AND run_id=?").run(owner, run);
+          this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, run);
+        }
+        this.db.prepare("DELETE FROM events WHERE owner=? AND session_id=?").run(owner, sessionId);
+      } else if (deleteOctos && prior.state === "not_requested") {
+        prior.state = "pending";
+        this.db.prepare("UPDATE deleted_sessions SET state='pending' WHERE owner=? AND session_id=?").run(owner, sessionId);
+      }
+      this.db.exec("COMMIT");
+      return { session_id: sessionId, seq: prior.seq, status: "deleted", octos_cleanup: prior.state };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+
+  claimSessionDeletions(owner, limit = 10) {
+    const now = Date.parse(this.now());
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const rows = this.db.prepare("SELECT session_id FROM deleted_sessions WHERE owner=? AND (state='pending' OR (state='leased' AND lease_until<=?)) ORDER BY seq LIMIT ?").all(owner, now, limit);
+      const tasks = rows.map(row => {
+        const lease_id = randomUUID();
+        this.db.prepare("UPDATE deleted_sessions SET state='leased',lease_id=?,lease_until=? WHERE owner=? AND session_id=?").run(lease_id, now + 30000, owner, row.session_id);
+        return { session_id: row.session_id, lease_id };
+      });
+      this.db.exec("COMMIT"); return { tasks };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+
+  acknowledgeSessionDeletion(owner, sessionId, lease) {
+    const result = this.db.prepare("UPDATE deleted_sessions SET state='completed',lease_id=NULL,lease_until=NULL WHERE owner=? AND session_id=? AND state='leased' AND lease_id=?").run(owner, sessionId, lease);
+    return { recorded: Number(result.changes) === 1 };
   }
 
   deleteRun(owner, runId) {

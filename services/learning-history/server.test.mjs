@@ -91,3 +91,16 @@ test("delivery leases stay account-scoped, bind original questions, and cannot a
   assert.equal((await (await call(`/deliveries/${teacher.id}/receipt`, 'POST', { lease_id: teacher.lease_id, seq: 1 })).json()).recorded, false);
   assert.deepEqual((await (await call('/deliveries')).json()).states, [{ state: 'cancelled', count: 2 }]);
 });
+
+test("whiteboard deletion is durable, rejects unknown offline runs and separately tracks the Octos cleanup receipt", async () => {
+  await call('/events', 'POST', { events: [event('board')] });
+  assert.equal((await call('/sessions/learn-board', 'DELETE', { delete_octos_session: true }, { 'x-learning-owner': 'bob' })).status, 409);
+  const result = await (await call('/sessions/learn-board', 'DELETE', { delete_octos_session: true })).json();
+  assert.equal(result.octos_cleanup, 'pending');
+  assert.equal((await (await call('/events', 'POST', { events: [{ ...event('unknown-run-event'), run_id: 'unknown-offline-run' }] })).json()).results[0].status, 'deleted');
+  const task = (await (await call('/session-deletions/claim', 'POST', { limit: 10 })).json()).tasks[0];
+  assert.equal(task.session_id, 'learn-board');
+  assert.equal((await (await call(`/session-deletions/${task.session_id}/receipt`, 'POST', { lease_id: task.lease_id }, { authorization: 'Bearer bob' })).json()).recorded, false);
+  assert.equal((await (await call(`/session-deletions/${task.session_id}/receipt`, 'POST', { lease_id: task.lease_id })).json()).recorded, true);
+  assert.equal((await (await call('/deliveries')).json()).pending_session_deletions, 0);
+});
