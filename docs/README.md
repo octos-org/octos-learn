@@ -57,13 +57,15 @@
 
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
+- [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；存储与口径待讨论确认；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
+
 - [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
 
 - [Octos 应用记忆接入](personalized-teachers-phase1/APP_MEMORY_ACCESS.md)：实际链路测试、正文和更新记录的限制，以及复用现有记住、纠正、遗忘和资料挑选能力的最小应用接口草案；旧任务写回按复杂度处理，不作为本轮必做条件。
 
 - [第一阶段独立审查收尾](personalized-teachers-phase1/REVIEW_CLOSEOUT.md)：审查意见的处理、旧建议撤回、测试边界及后续接口实现事项；记录实施前的审查结论，后续接口实现另有审计入口。
 
-- [Octos 记忆接口实施与审计入口](personalized-teachers-phase1/IMPLEMENTATION.md)：两个通用接口的实现提交、验证结果、源文件及限制，供上游 PR 前独立审计。
+- [Octos 记忆接口实施与审计入口](personalized-teachers-phase1/IMPLEMENTATION.md)：两个通用接口的实现提交、验证结果、源文件及限制；上游 PR #2848 已审批并合入 main，附合并前后的提交对应。
 
 - [复用现有 Octos 的 BYOK 修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)：关闭 Octos PR #2839；复用现有 profile / Key 存储与认证，APK 本机录入后加密保存并直连，网页转发放回 octos-learn，不导出已存 Key，包含迁移与验收边界。
 
