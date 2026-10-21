@@ -61,7 +61,9 @@
 
 - [Octos 应用记忆接入](personalized-teachers-phase1/APP_MEMORY_ACCESS.md)：实际链路测试、正文和更新记录的限制，以及复用现有记住、纠正、遗忘和资料挑选能力的最小应用接口草案；旧任务写回按复杂度处理，不作为本轮必做条件。
 
-- [第一阶段独立审查收尾](personalized-teachers-phase1/REVIEW_CLOSEOUT.md)：审查意见的处理、旧建议撤回、测试边界及后续接口实现事项；第一阶段完成，正式应用接口仍待实现。
+- [第一阶段独立审查收尾](personalized-teachers-phase1/REVIEW_CLOSEOUT.md)：审查意见的处理、旧建议撤回、测试边界及后续接口实现事项；记录实施前的审查结论，后续接口实现另有审计入口。
+
+- [Octos 记忆接口实施与审计入口](personalized-teachers-phase1/IMPLEMENTATION.md)：两个通用接口的实现提交、验证结果、源文件及限制，供上游 PR 前独立审计。
 
 - [复用现有 Octos 的 BYOK 修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)：关闭 Octos PR #2839；复用现有 profile / Key 存储与认证，APK 本机录入后加密保存并直连，网页转发放回 octos-learn，不导出已存 Key，包含迁移与验收边界。
 

@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-21T04:29:00.234Z",
+  "diagnostic_script_sha256": "5c7499f1059e457046700e835e6d8a8eb7b0970f86a0f08dfadf8bd8f769658e",
+  "mode": "source-and-local-runtime",
+  "revisions": {
+    "octos-learn": "5d7d5d08bd95223c3c8dfcc7e27f223d69eb7917",
+    "octos": "b0acfe04f15f05eee30e34976674676a403bdf5e",
+    "learning-coach": "428772965c78e5d2ae031d75aafa85110bb89fa5",
+    "octos-lesson-language": "15ee0095f317fe868c0f0af4bfae55abd8e70b55",
+    "octos-course-library": "0781f74f8b31bc56dd013527d45f8379416e70b2"
+  },
+  "source_actions": [
+    {
+      "id": "learning.lesson.generate",
+      "learner_context": true,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-camera",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-selection",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    }
+  ],
+  "mapping": {
+    "status": "draft-pending-editorial-review",
+    "pack_id": "slope-and-intercept",
+    "version": "0.1.8",
+    "entry_sha256": "4d924d7fd7456a7a2839da5f26b09d8326156c2dc61b4412c31b26a139fbbbe9",
+    "steps": 4,
+    "beats": 13,
+    "tasks": 3,
+    "references_valid": true,
+    "taxonomy_ids_verified": false
+  },
+  "runtime": {
+    "version": "2.0.3+b0acfe04",
+    "existing_solo_account": true,
+    "cases": [
+      {
+        "method": "memory/overview",
+        "outcome": "ok",
+        "refresh_enabled": true
+      },
+      {
+        "method": "session/append_message",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/search",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/load",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/ingest",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/request",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/promote",
+        "outcome": "invalid_params",
+        "code": -32602
+      }
+    ]
+  }
+}

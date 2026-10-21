@@ -210,6 +210,8 @@ node scripts/inspect-learning-memory.mjs --live \
 
 ## 8. 下一步的明确顺序
 
+本节记录调查结束时的实施顺序；前两项现已形成 Octos 候选实现，后续以[实施与审计入口](IMPLEMENTATION.md)为准。
+
 **原先“先新增 Octos 永久事实记录能力、再接前端”的顺序已撤回。当前以[应用记忆接入方案](APP_MEMORY_ACCESS.md)为准，不再等待 app/records。**
 
 1. 先在 Octos 完成 memory/request 的正式协议与实现，使应用能够提交记住、纠正和按编号遗忘的要求。实现时明确请求重试的保存方式、目标条目不存在时如何返回，以及本人和其他账号的权限；回执仅表示“已接收”。

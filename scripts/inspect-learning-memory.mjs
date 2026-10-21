@@ -131,13 +131,15 @@ async function inspectLive() {
         overview_ok: overview.result?.overview?.ok,
       })}`);
     cases.push({ method: "memory/overview", outcome: "ok", refresh_enabled: overview.result.overview.refresh_enabled });
-    // Intentionally incomplete DTOs: rejection happens before any store write
-    // or embedding/model call. No valid append/ingest payload is ever sent.
+    // Intentionally invalid DTOs: rejection happens before any store write
+    // or embedding/model call. No valid mutation payload is ever sent.
     for (const [method, params] of [
       ["session/append_message", {}],
       ["memory/search", { query: "" }],
       ["memory/load", {}],
       ["memory/ingest", { records: [{}], embed: false }],
+      ["memory/request", { request_id: "memory-audit-invalid", operation: "remember", content: "" }],
+      ["memory/promote", { limit: 0 }],
     ]) {
       const response = await rpc(method, params);
       check(response.error?.code === -32602, `Expected invalid_params from ${method}`);
@@ -152,6 +154,7 @@ async function inspectLive() {
 const report = {
   schema_version: 1,
   recorded_at: new Date().toISOString(),
+  diagnostic_script_sha256: sha256(await readFile(fileURLToPath(import.meta.url))),
   mode: options.live ? "source-and-local-runtime" : "source-only",
   revisions: Object.fromEntries(["octos-learn", "octos", "learning-coach", "octos-lesson-language", "octos-course-library"]
     .map((repo) => [repo, revision(repo)])),
