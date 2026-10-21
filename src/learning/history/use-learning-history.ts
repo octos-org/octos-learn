@@ -79,7 +79,7 @@ export class LearningHistoryCoordinator {
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };
       const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
       if (!pending.ok) throw new Error('问答交付状态暂不可用');
-      const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[]; pending_session_deletions: number };
+      const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[]; pending_session_deletions: number; probe_session_id: string | null };
       if (payload.profile_id !== identity.owner || !Array.isArray(payload.states)) throw new Error('无法确认问答交付账号');
       const cleanup = Number(payload.pending_session_deletions) || 0;
       this.update({ cleanupPending: cleanup });
@@ -90,7 +90,7 @@ export class LearningHistoryCoordinator {
       let conversations = payload.states.filter(row => ['pending', 'leased'].includes(row.state)).reduce((sum, row) => sum + row.count, 0);
       this.update({ conversationPending: conversations, checked: true });
       if (conversations && this.current() && !this.busy.size) {
-        const result = await deliverHistoryMessages(identity, API_BASE, { isCurrent: this.current });
+        const result = await deliverHistoryMessages(identity, API_BASE, { isCurrent: this.current, probeSessionId: payload.probe_session_id });
         conversations = Math.max(0, conversations - result.delivered);
         this.update({ conversationPending: conversations, checked: true });
       }

@@ -78,6 +78,7 @@ test("delivery leases stay account-scoped, bind original questions, and cannot a
   assert.equal((await call('/events', 'POST', { events: [answer, route, question] })).status, 200);
   assert.equal((await call('/deliveries/claim', 'POST', { limit: 0 })).status, 400);
   assert.equal((await (await call('/deliveries/claim', 'POST', { limit: 10 }, { authorization: 'Bearer bob' })).json()).tasks.length, 0);
+  assert.equal((await (await call('/deliveries')).json()).probe_session_id, 'learn-board');
   const claimed = await (await call('/deliveries/claim', 'POST', { limit: 10 })).json();
   assert.equal(claimed.profile_id, 'alice'); assert.equal(claimed.tasks.length, 1);
   const user = claimed.tasks[0];
@@ -89,6 +90,7 @@ test("delivery leases stay account-scoped, bind original questions, and cannot a
   assert.equal(teacher.message.role, 'assistant'); assert.equal(teacher.message.thread_id, user.message.client_message_id);
   await call('/runs/run-one', 'DELETE');
   assert.equal((await (await call(`/deliveries/${teacher.id}/receipt`, 'POST', { lease_id: teacher.lease_id, seq: 1 })).json()).recorded, false);
+  assert.equal((await (await call('/deliveries')).json()).probe_session_id, null);
   assert.deepEqual((await (await call('/deliveries')).json()).states, [{ state: 'cancelled', count: 2 }]);
 });
 

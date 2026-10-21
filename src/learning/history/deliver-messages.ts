@@ -15,12 +15,17 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
   fetcher = fetch,
   createBridge = () => createUiProtocolBridge({ getToken: () => identity.token, getProfileId: () => identity.owner }),
   isCurrent = () => true,
-}: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean } = {}): Promise<HistoryDeliveryResult> {
+  probeSessionId,
+}: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; probeSessionId?: string | null } = {}): Promise<HistoryDeliveryResult> {
   if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+  if (!probeSessionId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(probeSessionId)) return { status: 'waiting-for-octos', delivered: 0 };
   const bridge = createBridge();
   let delivered = 0;
   try {
-    await bridge.start({});
+    // Capabilities are acknowledged by session/open, not by an auxiliary
+    // socket's connection alone. Probe an existing queued task's session
+    // before claiming or appending anything; never invent a probe session.
+    await bridge.start({ sessionId: probeSessionId });
     // Older Octos builds implement the method but cannot safely retry an old
     // write after losing its receipt. Leave tasks unclaimed on those builds.
     if (!bridge.supportsFullHistoryAppendRetry?.()) return { status: 'waiting-for-octos', delivered };

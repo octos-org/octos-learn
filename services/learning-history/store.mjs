@@ -227,6 +227,11 @@ export class HistoryStore {
     return this.db.prepare("SELECT state,COUNT(*) AS count FROM delivery_tasks WHERE owner=? GROUP BY state").all(owner);
   }
 
+  deliveryProbeSession(owner) {
+    return this.db.prepare(`SELECT json_extract(payload,'$.session_id') AS session_id FROM delivery_tasks
+      WHERE owner=? AND state IN ('pending','leased') AND payload IS NOT NULL ORDER BY seq LIMIT 1`).get(owner)?.session_id ?? null;
+  }
+
   pendingSessionDeletions(owner) {
     return this.db.prepare("SELECT COUNT(*) AS n FROM deleted_sessions WHERE owner=? AND state IN ('pending','leased')").get(owner).n;
   }

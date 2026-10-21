@@ -10,7 +10,7 @@ function bridge(supported = true) {
 }
 it('leaves tasks untouched when Octos does not acknowledge safe old-message retries', async () => {
   const fetcher = vi.fn(); const connection = bridge(false);
-  expect(await deliverHistoryMessages(identity, '', { createBridge: () => connection, fetcher })).toEqual({ status: 'waiting-for-octos', delivered: 0 });
+  expect(await deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher })).toEqual({ status: 'waiting-for-octos', delivered: 0 });
   expect(fetcher).not.toHaveBeenCalled(); expect(connection.callMethod).not.toHaveBeenCalled(); expect(connection.stop).toHaveBeenCalledOnce();
 });
 it('transmits only persisted original messages and records the correlated receipt', async () => {
@@ -25,15 +25,21 @@ it('transmits only persisted original messages and records the correlated receip
     expect(JSON.parse(String(init?.body))).toEqual({ lease_id: 'lease', seq: 0 });
     return Response.json({ profile_id: 'alice', recorded: true });
   }) as unknown as typeof fetch;
-  expect(await deliverHistoryMessages(identity, '', { createBridge: () => connection, fetcher })).toEqual({ status: 'idle', delivered: 1 });
+  expect(await deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher })).toEqual({ status: 'idle', delivered: 1 });
+  expect(connection.start).toHaveBeenCalledWith({ sessionId: 'learn-one' });
   expect(connection.callMethod).toHaveBeenCalledWith('session/append_message', task.message);
 });
 it('does not acknowledge an uncertain write or a switched identity, and always closes its captured connection', async () => {
   const connection = bridge();
   vi.mocked(connection.callMethod).mockRejectedValue(new Error('reply lost'));
   const fetcher = vi.fn(async () => Response.json({ profile_id: 'alice', tasks: [task] }));
-  await expect(deliverHistoryMessages(identity, '', { createBridge: () => connection, fetcher })).rejects.toThrow('reply lost');
+  await expect(deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher })).rejects.toThrow('reply lost');
   expect(fetcher).toHaveBeenCalledOnce(); expect(connection.stop).toHaveBeenCalledOnce();
-  await expect(deliverHistoryMessages(identity, '', { createBridge: () => connection, fetcher, isCurrent: () => false })).rejects.toThrow('切换');
+  await expect(deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher, isCurrent: () => false })).rejects.toThrow('切换');
   expect(fetcher).toHaveBeenCalledOnce();
+});
+it('never invents a session solely to probe capabilities when no queued session was supplied', async () => {
+  const createBridge = vi.fn();
+  expect(await deliverHistoryMessages(identity, '', { createBridge })).toEqual({ status: 'waiting-for-octos', delivered: 0 });
+  expect(createBridge).not.toHaveBeenCalled();
 });
