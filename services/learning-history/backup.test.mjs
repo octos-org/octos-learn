@@ -14,9 +14,13 @@ test("backup includes committed WAL rows and deletion receipts; existing files a
   try {
     live.append("alice", [e("keep", "live"), e("remove", "deleted")]);
     live.deleteRun("alice", "deleted");
+    live.deleteSession("alice", "removed-board", true);
     await backupHistoryDatabase(source, destination);
     const restored = new HistoryStore(destination);
     try {
+      assert.equal(restored.pendingSessionDeletions("alice"), 1);
+      assert.equal(restored.claimSessionDeletions("alice").tasks[0].session_id, "removed-board");
+      assert.equal(restored.append("alice", [{ ...e("new-child", "unknown"), session_id: "removed-board" }]).results[0].status, "deleted");
       assert.equal(restored.runEvents("alice", "live").events.length, 1);
       assert.equal(restored.append("alice", [e("remove", "deleted")]).results[0].status, "deleted");
       assert.equal(restored.append("alice", [e("late", "deleted")]).results[0].status, "deleted");
