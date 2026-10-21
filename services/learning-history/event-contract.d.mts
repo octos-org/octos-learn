@@ -1,5 +1,5 @@
 export interface HistoryCourse { kind: "course-pack" | "generated"; id: string; version: string; sha256?: string }
-export type HistoryKind = "question_submitted" | "answer_delivered" | "course_delivered" | "run_started" | "playback_position" | "beat_completed" | "narration_ended" | "task_attempt" | "task_hint";
+export type HistoryKind = "question_submitted" | "question_routed" | "answer_delivered" | "course_delivered" | "run_started" | "playback_position" | "beat_completed" | "narration_ended" | "task_attempt" | "task_hint";
 export interface HistoryEvent {
   version: 1; id: string; kind: HistoryKind; occurred_at: string; device_id: string; session_id: string;
   question_id?: string; run_id: string; log_id?: string; course?: HistoryCourse;

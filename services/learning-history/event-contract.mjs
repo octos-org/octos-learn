@@ -55,6 +55,10 @@ export function validateHistoryEvent(candidate) {
       question(); fields(d, ["text", "modality", "media"], ["text", "modality"]);
       text(d.text, "question", 65536); choice(d.modality, "modality", ["text", "voice", "image", "selection"]); media(d.media);
       break;
+    case "question_routed":
+      question(); fields(d, ["conversation_route", "media"], ["conversation_route"]);
+      choice(d.conversation_route, "conversation route", ["direct-action", "turn"]); media(d.media);
+      break;
     case "answer_delivered":
       question(); fields(d, ["text", "part_id", "media"], ["text", "part_id"]);
       text(d.text, "answer", 65536); id(d.part_id, "part_id"); media(d.media);

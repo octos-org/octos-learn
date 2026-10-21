@@ -120,3 +120,57 @@ test("contract rejects unsupported kinds, missing run/log identity and synthetic
   assert.equal(checked.data.text, "请解释斜率");
   assert.equal(canonicalHistoryJson({ b: 2, a: 1 }), canonicalHistoryJson({ a: 1, b: 2 }));
 });
+
+test("direct question delivery survives lost receipts and restart, answers wait for their original user, and deletion cancels raw copies", () => {
+  let now = '2026-10-21T00:00:00.000Z';
+  let store = new HistoryStore(join(root, 'delivery.sqlite'), { now: () => now });
+  const user = { ...event('direct-user'), data: { text: '原问题', modality: 'text' } };
+  const answer = { ...user, id: 'direct-answer', kind: 'answer_delivered', data: { text: '实际答复', part_id: 'one' } };
+  const route = { ...user, id: 'route', kind: 'question_routed', data: { conversation_route: 'direct-action' } };
+  store.append('alice', [answer, route, user]);
+  assert.equal(store.claimDeliveries('bob').tasks.length, 0);
+  let claim = store.claimDeliveries('alice');
+  assert.equal(claim.tasks.length, 1);
+  assert.equal(claim.tasks[0].message.role, 'user');
+  const firstLease = claim.tasks[0].lease_id;
+  assert.equal(store.claimDeliveries('alice').tasks.length, 0);
+  store.close();
+  now = '2026-10-21T00:00:31.000Z';
+  store = new HistoryStore(join(root, 'delivery.sqlite'), { now: () => now });
+  claim = store.claimDeliveries('alice');
+  assert.equal(claim.tasks[0].message.client_message_id, 'learn:user:q-direct-user');
+  assert.equal(store.acknowledgeDelivery('alice', user.id, firstLease, 0).recorded, false);
+  assert.equal(store.acknowledgeDelivery('alice', user.id, claim.tasks[0].lease_id, 0).recorded, true);
+  const answerClaim = store.claimDeliveries('alice').tasks[0];
+  assert.equal(answerClaim.message.thread_id, claim.tasks[0].message.client_message_id);
+  assert.equal(answerClaim.message.content, '实际答复');
+  store.deleteRun('alice', user.run_id);
+  assert.equal(store.acknowledgeDelivery('alice', answer.id, answerClaim.lease_id, 1).recorded, false);
+  assert.equal(store.claimDeliveries('alice').tasks.length, 0);
+  assert.equal(store.db.prepare('SELECT payload FROM delivery_tasks WHERE owner=?').all('alice').every(row => row.payload === null), true);
+  store.close();
+});
+
+test("schema 1 upgrades transactionally without changing raw records or durable replay receipts", () => {
+  const legacyFile = join(root, 'legacy.sqlite');
+  let legacy = new HistoryStore(legacyFile);
+  legacy.append('alice', [event('legacy')]); legacy.close();
+  const raw = new DatabaseSync(legacyFile);
+  for (const column of ['occurred_at', 'question_preview', 'beat_id', 'task_id', 'operation_id']) raw.exec(`ALTER TABLE events DROP COLUMN ${column}`);
+  raw.exec('UPDATE history_schema SET version=1'); raw.close();
+  legacy = new HistoryStore(legacyFile);
+  assert.equal(legacy.db.prepare('SELECT version FROM history_schema').get().version, 2);
+  assert.equal(legacy.append('alice', [event('legacy')]).results[0].status, 'exists');
+  assert.equal(legacy.listRuns('alice').runs[0].question_preview, '请解释斜率');
+  assert.equal(legacy.runEvents('alice', 'run-one').events[0].event.id, 'legacy');
+  legacy.close();
+});
+
+test("turn-routed questions never become duplicate Octos delivery tasks", () => {
+  const question = event('normal-turn');
+  const route = { ...question, id: 'normal-route', kind: 'question_routed', data: { conversation_route: 'turn', media: ['uploads/photo.png'] } };
+  const answer = { ...question, id: 'normal-answer', kind: 'answer_delivered', data: { text: '实际答复', part_id: 'one' } };
+  store.append('alice', [answer, route, question]);
+  assert.equal(store.claimDeliveries('alice').tasks.length, 0);
+  assert.equal(store.runEvents('alice', question.run_id).events.length, 3);
+});

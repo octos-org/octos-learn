@@ -62,6 +62,21 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         const body = await limitedJson(request, 1024 * 1024);
         if (!body || Object.keys(body).some(key => key !== "events") || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT) throw new HttpError(400, "Invalid event batch");
         send(200, { profile_id: owner, ...store().append(owner, body.events) });
+      } else if (request.method === "POST" && path.join("/") === "deliveries/claim") {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        const body = await limitedJson(request, 1024);
+        if (!body || Object.keys(body).some(key => key !== "limit") || !Number.isSafeInteger(body.limit) || body.limit < 1 || body.limit > 20) throw new HttpError(400, "Invalid claim");
+        send(200, { profile_id: owner, ...store().claimDeliveries(owner, body.limit) });
+      } else if (request.method === "POST" && path.length === 3 && path[0] === "deliveries" && path[2] === "receipt") {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        const body = await limitedJson(request, 1024);
+        if (!body || Object.keys(body).some(key => !["lease_id", "seq"].includes(key))
+          || typeof body.lease_id !== "string" || !/^[a-f0-9-]{36}$/.test(body.lease_id)
+          || !Number.isSafeInteger(body.seq) || body.seq < 0) throw new HttpError(400, "Invalid receipt");
+        send(200, { profile_id: owner, ...store().acknowledgeDelivery(owner, path[1], body.lease_id, body.seq) });
+      } else if (request.method === "GET" && path.join("/") === "deliveries") {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        send(200, { profile_id: owner, states: store().deliveryStatus(owner) });
       } else if (request.method === "GET" && ["runs", "changes"].includes(path[0])) {
         if ([...url.searchParams.keys()].some(key => !["limit", "through", "after", "before"].includes(key))) throw new HttpError(400, "Unknown query field");
         const options = { limit: integer(url.searchParams, "limit", 20, 100),

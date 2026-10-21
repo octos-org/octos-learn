@@ -70,3 +70,24 @@ test("returns replay/deletion states and increments changes without retaining ev
   assert.equal(changes.changes[0].change_kind, "deleted");
   assert.ok(!JSON.stringify(changes).includes("斜率是什么"));
 });
+
+test("delivery leases stay account-scoped, bind original questions, and cannot acknowledge a cancelled task", async () => {
+  const question = event('delivery');
+  const route = { ...question, id: 'delivery-route', kind: 'question_routed', data: { conversation_route: 'direct-action', media: ['uploads/original.png'] } };
+  const answer = { ...question, id: 'delivery-answer', kind: 'answer_delivered', data: { text: '实际旁白', part_id: 'part-one' } };
+  assert.equal((await call('/events', 'POST', { events: [answer, route, question] })).status, 200);
+  assert.equal((await call('/deliveries/claim', 'POST', { limit: 0 })).status, 400);
+  assert.equal((await (await call('/deliveries/claim', 'POST', { limit: 10 }, { authorization: 'Bearer bob' })).json()).tasks.length, 0);
+  const claimed = await (await call('/deliveries/claim', 'POST', { limit: 10 })).json();
+  assert.equal(claimed.profile_id, 'alice'); assert.equal(claimed.tasks.length, 1);
+  const user = claimed.tasks[0];
+  assert.equal(user.message.content, question.data.text); assert.deepEqual(user.message.media, ['uploads/original.png']);
+  assert.equal(user.message.role, 'user');
+  assert.equal((await (await call(`/deliveries/${user.id}/receipt`, 'POST', { lease_id: user.lease_id, seq: 0 }, { authorization: 'Bearer bob' })).json()).recorded, false);
+  assert.equal((await (await call(`/deliveries/${user.id}/receipt`, 'POST', { lease_id: user.lease_id, seq: 0 })).json()).recorded, true);
+  const teacher = (await (await call('/deliveries/claim', 'POST', { limit: 10 })).json()).tasks[0];
+  assert.equal(teacher.message.role, 'assistant'); assert.equal(teacher.message.thread_id, user.message.client_message_id);
+  await call('/runs/run-one', 'DELETE');
+  assert.equal((await (await call(`/deliveries/${teacher.id}/receipt`, 'POST', { lease_id: teacher.lease_id, seq: 1 })).json()).recorded, false);
+  assert.deepEqual((await (await call('/deliveries')).json()).states, [{ state: 'cancelled', count: 2 }]);
+});
