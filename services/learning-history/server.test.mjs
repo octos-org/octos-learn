@@ -1,0 +1,60 @@
+import { test, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { mkdtemp, rm } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { createHistoryHandler } from "./server.mjs";
+let root, handler, server, base;
+const event = id => ({ version: 1, id, kind: "question_submitted", occurred_at: "2026-10-21T08:00:00.000Z", device_id: "tv", session_id: "learn-board", run_id: "run-one", question_id: `q-${id}`, data: { text: "斜率是什么", modality: "text" } });
+const call = (path, method = "GET", body, headers = {}) => fetch(`${base}/api/learn/history${path}`, {
+  method, headers: { authorization: "Bearer alice", "content-type": "application/json", ...headers },
+  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+});
+beforeEach(async () => {
+  root = await mkdtemp(join(tmpdir(), "learn-history-http-"));
+  handler = createHistoryHandler({ databasePath: join(root, "history.sqlite"), fetchImpl: async (url, options) => {
+    assert.equal(url, "http://127.0.0.1:50080/api/my/profile");
+    assert.equal(options.redirect, "error");
+    assert.equal(options.headers["x-profile-id"], undefined);
+    const owner = options.headers.authorization?.replace("Bearer ", "");
+    return ["alice", "bob"].includes(owner) ? Response.json({ profile: { id: owner } }) : Response.json({}, { status: 401 });
+  } });
+  server = createServer(async (request, response) => { if (!await handler(request, response)) { response.writeHead(404); response.end(); } });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  base = `http://127.0.0.1:${server.address().port}`;
+});
+afterEach(async () => { await new Promise(resolve => server.close(resolve)); handler.close(); await rm(root, { recursive: true, force: true }); });
+
+test("requires Octos authentication and ignores forged profile routing", async () => {
+  assert.equal((await call("/runs", "GET", undefined, { authorization: "" })).status, 401);
+  assert.equal((await call("/runs", "GET", undefined, { authorization: "Bearer invalid" })).status, 401);
+  const accepted = await call("/events", "POST", { events: [event("one")] }, { "x-profile-id": "bob" });
+  assert.equal(accepted.status, 200);
+  assert.match(accepted.headers.get("cache-control"), /no-store/);
+  assert.equal((await (await call("/runs")).json()).runs.length, 1);
+  assert.equal((await (await call("/runs", "GET", undefined, { authorization: "Bearer bob" })).json()).runs.length, 0);
+  assert.equal((await call("/events", "POST", { events: [event("two")], profile_id: "bob" })).status, 400);
+});
+
+test("rejects cross-origin writes, invalid payloads and ambiguous pagination", async () => {
+  assert.equal((await call("/events", "POST", { events: [event("one")] }, { origin: "https://attacker.invalid" })).status, 403);
+  assert.equal((await call("/events", "POST", { events: [{ ...event("one"), origin: "host" }] })).status, 400);
+  assert.equal((await call("/runs?limit=0")).status, 400);
+  assert.equal((await call("/runs?after=1&after=2")).status, 400);
+  assert.equal((await call("/runs?owner=bob")).status, 400);
+  assert.equal((await call("/events", "POST", { events: [] })).status, 400);
+});
+
+test("returns replay/deletion states and increments changes without retaining event bodies", async () => {
+  for (const expected of ["accepted", "exists"]) assert.equal((await (await call("/events", "POST", { events: [event("one")] })).json()).results[0].status, expected);
+  const detail = await (await call("/runs/run-one")).json();
+  assert.equal(detail.events[0].event.question_id, "q-one");
+  const removed = await (await call("/runs/run-one", "DELETE")).json();
+  assert.equal(removed.status, "deleted");
+  assert.equal((await (await call("/events", "POST", { events: [event("late")] })).json()).results[0].status, "deleted");
+  const changes = await (await call(`/changes?after=${detail.through}`)).json();
+  assert.equal(changes.changes.length, 1);
+  assert.equal(changes.changes[0].change_kind, "deleted");
+  assert.ok(!JSON.stringify(changes).includes("斜率是什么"));
+});
