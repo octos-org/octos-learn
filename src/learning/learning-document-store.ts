@@ -22,13 +22,21 @@ export const learningStorageStatus = {
   getSnapshot: () => errorMessage,
 };
 
-function openDatabase(): Promise<IDBDatabase> {
+export function openLearningDatabase(): Promise<IDBDatabase> {
   if (database) return database;
   database = new Promise<IDBDatabase>((resolve, reject) => {
     if (typeof indexedDB === 'undefined') { reject(new Error('此设备的本地数据库不可用')); return; }
     let blocked = false;
-    const request = indexedDB.open(LEARNING_DATABASE_NAME, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(DOCUMENTS);
+    const request = indexedDB.open(LEARNING_DATABASE_NAME, 2);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(DOCUMENTS)) db.createObjectStore(DOCUMENTS);
+      if (!db.objectStoreNames.contains('history-events')) {
+        const events = db.createObjectStore('history-events');
+        events.createIndex('owner', 'owner');
+      }
+      if (!db.objectStoreNames.contains('history-meta')) db.createObjectStore('history-meta');
+    };
     request.onerror = () => reject(request.error);
     request.onblocked = () => { blocked = true; reject(new Error('请关闭其他 Octos 页面后重试本地数据库初始化')); };
     request.onsuccess = () => {
@@ -42,7 +50,7 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 async function transact<T>(mode: IDBTransactionMode, operation: (store: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  const db = await openDatabase();
+  const db = await openLearningDatabase();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(DOCUMENTS, mode);
     const request = operation(tx.objectStore(DOCUMENTS));

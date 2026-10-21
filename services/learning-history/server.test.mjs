@@ -37,6 +37,18 @@ test("requires Octos authentication and ignores forged profile routing", async (
   assert.equal((await call("/events", "POST", { events: [event("two")], profile_id: "bob" })).status, 400);
 });
 
+test("refuses a stale queue owner before writing under the next login", async () => {
+  const response = await call("/events", "POST", { events: [event("old-alice-question")] }, {
+    authorization: "Bearer bob", "x-learning-owner": "alice",
+  });
+  assert.equal(response.status, 409);
+  assert.equal((await (await call("/runs", "GET", undefined, { authorization: "Bearer bob" })).json()).runs.length, 0);
+  assert.equal((await (await call("/runs")).json()).runs.length, 0);
+  const accepted = await call("/events", "POST", { events: [event("own-question")] }, { "x-learning-owner": "alice" });
+  assert.equal(accepted.status, 200);
+  assert.equal((await accepted.json()).profile_id, "alice");
+});
+
 test("rejects cross-origin writes, invalid payloads and ambiguous pagination", async () => {
   assert.equal((await call("/events", "POST", { events: [event("one")] }, { origin: "https://attacker.invalid" })).status, 403);
   assert.equal((await call("/events", "POST", { events: [{ ...event("one"), origin: "host" }] })).status, 400);

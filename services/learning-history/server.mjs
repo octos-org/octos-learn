@@ -52,12 +52,16 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       const profile = payload?.profile?.profile ?? payload?.profile ?? payload;
       const owner = profile?.id;
       if (typeof owner !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(owner)) throw new HttpError(502, "Octos identity unavailable");
+      // This is a consistency condition, never an account selector. Reject
+      // stale device queues before their bodies can enter the new account.
+      const expectedOwner = request.headers["x-learning-owner"];
+      if (expectedOwner !== undefined && expectedOwner !== owner) throw new HttpError(409, "Learning record account changed; keep the original local queue");
       const path = url.pathname.slice(PREFIX.length).split("/").filter(Boolean).map(decodeURIComponent);
       if (request.method === "POST" && path.length === 1 && path[0] === "events") {
         if (url.search) throw new HttpError(400, "Unexpected query");
         const body = await limitedJson(request, 1024 * 1024);
         if (!body || Object.keys(body).some(key => key !== "events") || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT) throw new HttpError(400, "Invalid event batch");
-        send(200, store().append(owner, body.events));
+        send(200, { profile_id: owner, ...store().append(owner, body.events) });
       } else if (request.method === "GET" && ["runs", "changes"].includes(path[0])) {
         if ([...url.searchParams.keys()].some(key => !["limit", "through", "after", "before"].includes(key))) throw new HttpError(400, "Unknown query field");
         const options = { limit: integer(url.searchParams, "limit", 20, 100),
