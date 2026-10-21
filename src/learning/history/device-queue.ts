@@ -31,6 +31,31 @@ export class DeviceHistoryQueue {
   private readonly database: () => Promise<IDBDatabase>;
   constructor(database: () => Promise<IDBDatabase> = openLearningDatabase) { this.database = database; }
 
+  async recall<T>(owner: string, key: string): Promise<T | undefined> {
+    assertOwner(owner);
+    const db = await this.database();
+    const tx = db.transaction(META, 'readonly');
+    const completion = done(tx);
+    const [value] = await Promise.all([result(tx.objectStore(META).get([owner, 'context', key])), completion]);
+    return value as T | undefined;
+  }
+
+  async remember<T>(owner: string, key: string, initial: T): Promise<T> {
+    assertOwner(owner);
+    const db = await this.database();
+    const tx = db.transaction(META, 'readwrite');
+    const completion = done(tx);
+    const store = tx.objectStore(META);
+    const request = store.get([owner, 'context', key]);
+    let value = structuredClone(initial);
+    request.onsuccess = () => {
+      if (request.result !== undefined) value = request.result as T;
+      else store.add(value, [owner, 'context', key]);
+    };
+    await completion;
+    return value;
+  }
+
   async commit(owner: string, candidates: HistoryEvent[], documents: HistoryDocumentWrite[] = []): Promise<void> {
     assertOwner(owner);
     const unique = new Map<string, HistoryEvent>();

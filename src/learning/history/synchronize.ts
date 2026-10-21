@@ -1,3 +1,4 @@
+import { historyId } from "./identifiers";
 import { extractProfileIdFromPayload } from '../../api/client';
 import { DeviceHistoryQueue, type HistoryReceipt } from './device-queue';
 import type { HistoryEvent } from '../../../services/learning-history/event-contract.mjs';
@@ -14,6 +15,26 @@ export async function verifyHistoryIdentity(base: string, token: string, fetcher
   const owner = extractProfileIdFromPayload(await response.json());
   if (!owner || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(owner)) throw new Error('无法确认学习记录所属账号');
   return { owner, token };
+}
+
+/** Cached ownership is for local offline attribution only. It never grants
+ * server access; every upload still uses Octos authentication. No token is
+ * persisted, and a different credential cannot adopt this binding.
+ */
+export async function resolveHistoryIdentity(base: string, token: string, queue: DeviceHistoryQueue, fetcher: typeof fetch = fetch): Promise<HistoryIdentity> {
+  const key = await historyId(['verified-auth', token]);
+  try {
+    const identity = await verifyHistoryIdentity(base, token, fetcher);
+    const bound = await queue.remember('verified-auth', key, identity.owner);
+    if (bound !== identity.owner) throw new Error('账号归属已改变，旧记录保留等待核对');
+    return identity;
+  } catch (error) {
+    if (error instanceof TypeError || (error instanceof DOMException && ['TimeoutError', 'AbortError', 'NetworkError'].includes(error.name))) {
+      const owner = await queue.recall<string>('verified-auth', key);
+      if (owner) return { owner, token };
+    }
+    throw error;
+  }
 }
 
 function batch(events: HistoryEvent[]): HistoryEvent[] {

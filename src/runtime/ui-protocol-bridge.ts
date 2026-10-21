@@ -352,6 +352,7 @@ export const UI_PROTOCOL_FEATURES = [
   // isn't a staged REST-to-WS migration with a client-side kill switch,
   // it's a new capability with no prior REST route to fall back to.
   "smart_home.v1",
+  "session.append_message.full_history_retry.v1",
 ] as const;
 
 /**
@@ -493,6 +494,7 @@ export interface UiProtocolBridge {
   /** Whether the current socket negotiated the optional two-phase voice
    * admission contract. False means callers must use legacy `turn/start`. */
   supportsVoiceAdmission(): boolean;
+  supportsFullHistoryAppendRetry?(): boolean;
 
   sendTurn(
     turn_id: string,
@@ -2256,6 +2258,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.topicScope = t && t.length > 0 ? t : null;
     this.projectionV2Active = false;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.projectionHandshake = "pending";
     this.pendingProjectionFrames = [];
     this.emittedProjectionTerminals.clear();
@@ -2331,14 +2334,19 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     return this.stopped || this.reconnectAbandoned || this.state === "closed";
   }
 
+  private fullHistoryAppendRetryActive = false;
+
   supportsVoiceAdmission(): boolean {
     return this.voiceAdmissionActive;
   }
+
+  supportsFullHistoryAppendRetry(): boolean { return this.fullHistoryAppendRetryActive; }
 
   async stop(): Promise<void> {
     if (this.stopped) return;
     this.stopped = true;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.cancelReconnectTimer();
     this.rejectStartup(
       new BridgeStartupError("stopped", "UI Protocol startup was cancelled."),
@@ -2965,6 +2973,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private async onWsOpen(): Promise<void> {
     if (this.stopped) return;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.lastInboundAt = this.cfg.now();
     if (!this.sessionId) {
       // Sessionless (auxiliary) mode: there is no session to open — the
@@ -3037,6 +3046,8 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       this.voiceAdmissionActive =
         Array.isArray(supportedFeatures) &&
         supportedFeatures.includes("voice.asr_admission.v1");
+      this.fullHistoryAppendRetryActive = Array.isArray(supportedFeatures)
+        && supportedFeatures.includes("session.append_message.full_history_retry.v1");
       if (!negotiatedProjectionV2) {
         this.failStartup(
           new BridgeStartupError(

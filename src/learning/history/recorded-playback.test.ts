@@ -1,0 +1,101 @@
+import { webcrypto } from 'node:crypto';
+import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { BrowserLessonSession, parseCanonicalJsonl } from 'octos-lesson-language/web-runtime';
+import source from '../oll/fixtures/unit-circle-sine.canonical.jsonl?raw';
+
+beforeEach(() => { vi.resetModules(); vi.stubGlobal('indexedDB', new IDBFactory()); vi.stubGlobal('crypto', webcrypto); localStorage.clear(); });
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
+async function classroom() {
+  const { DeviceHistoryQueue } = await import('./device-queue');
+  const { LearningHistoryRecorder } = await import('./recorder');
+  const { PlaybackHistoryCapture } = await import('./playback-recorder');
+  const { createIndexedPlaybackStore } = await import('../learning-document-store');
+  const queue = new DeviceHistoryQueue();
+  const recorder = new LearningHistoryRecorder('session-one', Promise.resolve({ owner: 'alice', token: 'credential' }), queue);
+  const context = { runKey: 'course-one', course: { kind: 'generated' as const, id: 'unit-circle', version: 'one' } };
+  const capture = new PlaybackHistoryCapture('recorded', { recorder, forStep: () => context, forTask: () => context });
+  const store = await createIndexedPlaybackStore('recorded', { onWrite: capture.write });
+  const runtime = new BrowserLessonSession(parseCanonicalJsonl(source), store, 'recorded', { reducedMotion: true });
+  capture.bind(runtime);
+  return { queue, recorder, runtime, store, capture, context, createIndexedPlaybackStore, LearningHistoryRecorder, PlaybackHistoryCapture };
+}
+it('exports completed coverage from timed playback with its saved checkpoint, not from restoring an end position', async () => {
+  const c = await classroom();
+  vi.useFakeTimers(); c.runtime.play(); vi.runAllTimers(); vi.useRealTimers();
+  await c.recorder.flush();
+  const rows = await c.queue.list('alice');
+  expect(rows.filter(row => row.event.kind === 'beat_completed')).toHaveLength(c.runtime.outline.flatMap(step => step.beats).length);
+  expect(rows.filter(row => row.event.kind === 'run_started')).toHaveLength(1);
+  const restoredStore = await c.createIndexedPlaybackStore('recorded');
+  const restored = new BrowserLessonSession(parseCanonicalJsonl(source), restoredStore, 'recorded');
+  expect(restored.projection.cursor).toBe(c.runtime.projection.cursor);
+  const before = rows.length;
+  restored.pause();
+  expect(await c.queue.list('alice')).toHaveLength(before);
+});
+it('seeking, viewing and manual next-beat movement never become completed coverage', async () => {
+  const c = await classroom();
+  c.runtime.advanceBeat(); c.runtime.seekToStep(c.runtime.outline.at(-1)!.id, 'end');
+  await c.recorder.flush();
+  const rows = await c.queue.list('alice');
+  expect(rows.filter(row => row.event.kind === 'beat_completed')).toHaveLength(0);
+  expect(rows.filter(row => row.event.kind === 'run_started')).toHaveLength(0);
+});
+it('records actual attempts and hints, atomically saves their logs, and does not import old attempts after refresh', async () => {
+  const c = await classroom();
+  c.runtime.seek(c.runtime.projection.total_operations);
+  const task = c.runtime.studentTasks[0];
+  c.runtime.requestStudentTaskHint(task.task_id);
+  const id = c.runtime.beginStudentVariableOperation('theta', { control: 'slider', input: 'mouse' });
+  c.runtime.commitStudentVariableOperation(id, Math.PI / 2);
+  await c.recorder.flush();
+  const rows = await c.queue.list('alice');
+  const attempts = rows.filter(row => row.event.kind === 'task_attempt');
+  expect(attempts).toHaveLength(1);
+  expect(attempts[0].event.data).toMatchObject({ hints_used: 1, result: 'succeeded', operation_id: id });
+  expect(rows.filter(row => row.event.kind === 'task_hint')).toHaveLength(1);
+  const recorder = new c.LearningHistoryRecorder('session-one', Promise.resolve({ owner: 'alice', token: 'credential' }), c.queue);
+  const capture = new c.PlaybackHistoryCapture('recorded', { recorder, forStep: () => c.context, forTask: () => c.context });
+  const adapter = await c.createIndexedPlaybackStore('recorded', { onWrite: capture.write });
+  const reopened = new BrowserLessonSession(parseCanonicalJsonl(source), adapter, 'recorded');
+  capture.bind(reopened); reopened.pause(); await recorder.flush();
+  expect(reopened.studentTasks[0].attempts).toHaveLength(1);
+  expect((await c.queue.list('alice')).filter(row => row.event.kind === 'task_attempt')).toHaveLength(1);
+});
+it('a failed local commit holds newer checkpoints and facts for retry without claiming saved progress', async () => {
+  const c = await classroom();
+  const put = IDBObjectStore.prototype.put;
+  const failure = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (this: IDBObjectStore, ...args: Parameters<typeof put>) {
+    if (this.name === 'documents') throw new DOMException('quota', 'QuotaExceededError');
+    return put.apply(this, args);
+  });
+  c.runtime.seek(c.runtime.projection.total_operations);
+  await expect(c.recorder.flush()).rejects.toThrow('尚未保存');
+  expect(c.recorder.getSnapshot().pendingWrites).toBeGreaterThan(0);
+  expect(await c.queue.list('alice')).toHaveLength(0);
+  const old = await c.createIndexedPlaybackStore('recorded');
+  expect(old.load('recorded')).toBeUndefined();
+  failure.mockRestore(); await c.recorder.retry();
+  expect(c.recorder.getSnapshot()).toEqual({ pendingWrites: 0, error: '' });
+  const saved = await c.createIndexedPlaybackStore('recorded');
+  expect(saved.load('recorded')?.cursor).toBe(c.runtime.projection.cursor);
+});
+it('stable delivery fragments keep their original event and time when a file is restored again', async () => {
+  const c = await classroom();
+  const draft = { ...c.context, questionId: 'q-one', kind: 'answer_delivered' as const, stableKey: 'answer:original:part-one', data: { text: '原来的旁白' } };
+  c.recorder.record(draft); await c.recorder.flush();
+  const first = (await c.queue.list('alice'))[0].event;
+  c.recorder.record({ ...draft, occurredAt: '2026-10-21T03:00:00.000Z' }); await c.recorder.flush();
+  expect((await c.queue.list('alice')).map(row => row.event)).toEqual([first]);
+});
+it('offline ownership is recovered only for the previously verified credential and never for a newly selected account', async () => {
+  const { DeviceHistoryQueue } = await import('./device-queue'); const queue = new DeviceHistoryQueue();
+  const { resolveHistoryIdentity } = await import('./synchronize');
+  expect(await resolveHistoryIdentity('', 'credential-a', queue, vi.fn(async () => Response.json({ profile: { id: 'alice' } })))).toEqual({ owner: 'alice', token: 'credential-a' });
+  const offline = vi.fn(async () => { throw new TypeError('offline'); });
+  localStorage.setItem('selected_profile', 'bob');
+  expect(await resolveHistoryIdentity('', 'credential-a', queue, offline)).toEqual({ owner: 'alice', token: 'credential-a' });
+  await expect(resolveHistoryIdentity('', 'credential-b', queue, offline)).rejects.toThrow('offline');
+  await expect(resolveHistoryIdentity('', 'credential-a', queue, vi.fn(async () => new Response(null, { status: 401 })))).rejects.toThrow('登录');
+});

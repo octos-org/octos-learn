@@ -520,4 +520,21 @@ describe("useOllNarrationTts", () => {
     ));
     expect(result.current.error).toBeNull();
   });
+  it("reports disabled, ended, failed and cancelled narration separately without changing Runtime completion behavior", async () => {
+    const end = vi.fn(), complete = vi.fn();
+    const disabled = renderHook(() => useOllNarrationTts({ enabled: false, playing: true, text: "图文旁白", narrationId: "disabled", onPlaybackEnd: end, onPlaybackComplete: complete }));
+    expect(end).toHaveBeenCalledWith("disabled", "disabled"); disabled.unmount();
+    const played = renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "正常旁白", narrationId: "ended", onPlaybackEnd: end, onPlaybackComplete: complete }));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    act(() => mocks.playAudioBlob.mock.calls[0][1]()); played.unmount();
+    expect(end).toHaveBeenCalledWith("ended", "ended");
+    mocks.synthesizeSpeech.mockRejectedValueOnce(new Error("private provider detail"));
+    const failed = renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "失败旁白", narrationId: "failed", onPlaybackEnd: end, onPlaybackComplete: complete }));
+    await waitFor(() => expect(end).toHaveBeenCalledWith("failed", "failed")); failed.unmount();
+    const interrupted = renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "取消旁白", narrationId: "cancelled", onPlaybackEnd: end, onPlaybackComplete: complete }));
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledTimes(2)); interrupted.unmount();
+    expect(end).toHaveBeenCalledWith("cancelled", "cancelled");
+    expect(complete).not.toHaveBeenCalledWith("cancelled"); expect(end).toHaveBeenCalledTimes(4);
+  });
+
 });

@@ -1,5 +1,6 @@
+import { PlaybackHistoryCapture, type PlaybackHistoryBinding } from "../history/playback-recorder";
 import { createIndexedPlaybackStore } from "../learning-document-store";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type {
   AuthoringStudentTask,
   CanonicalEvent,
@@ -110,6 +111,7 @@ export interface OllLessonRuntimeController {
   playBeat(beatId: string): void;
   startNarration(beatId: string): void;
   completeNarration(beatId: string): void;
+  recordNarrationEnd(beatId: string, reason: "ended" | "disabled" | "failed" | "cancelled"): void;
   setVariable(alias: string, value: number): void;
   handleStudentVariableInput(
     alias: string,
@@ -132,6 +134,7 @@ export interface OllLessonRuntimeController {
 }
 
 interface OllLessonRuntimeOptions {
+  history?: PlaybackHistoryBinding;
   source: string | null;
   storageKey: string;
   autoPlay?: boolean;
@@ -183,6 +186,7 @@ const EMPTY_TOPICS: OllLessonTopicDefinition[] = [];
 export function useOllLessonRuntime({
   source,
   storageKey,
+  history,
   autoPlay = false,
   incremental = false,
   narrationTiming = "estimated",
@@ -196,22 +200,25 @@ export function useOllLessonRuntime({
     () => (source ? parseCanonicalJsonl(source) : null),
     [source],
   );
+  const capture = useMemo(() => new PlaybackHistoryCapture(storageKey), [storageKey]);
+  useLayoutEffect(() => { capture.updateBinding(history); }, [capture, history]);
+  const historyEnabled = Boolean(history);
   const [hydratedStore, setHydratedStore] = useState<{ key: string; store: PlaybackStore } | null>(null);
   const [storageError, setStorageError] = useState<Error | null>(null);
   useEffect(() => {
     let active = true;
-    void createIndexedPlaybackStore(storageKey).then(
+    void createIndexedPlaybackStore(storageKey, historyEnabled ? { onWrite: capture.write } : undefined).then(
       store => { if (active) setHydratedStore({ key: storageKey, store }); },
       error => { if (active) setStorageError(error instanceof Error ? error : new Error(String(error))); },
     );
     return () => { active = false; };
-  }, [storageKey]);
+  }, [storageKey, capture, historyEnabled]);
   if (storageError) throw storageError;
   const playbackStore = hydratedStore?.key === storageKey ? hydratedStore.store : null;
   const session = useMemo(
     () =>
       events && playbackStore
-        ? new BrowserLessonSession(
+        ? (() => { const runtime = new BrowserLessonSession(
             events,
             playbackStore,
             storageKey,
@@ -222,13 +229,13 @@ export function useOllLessonRuntime({
                 ? { deliveredProgram: structuredClone(deliveredProgram) }
                 : {}),
             },
-          )
+          ); capture.bind(runtime); return runtime; })()
         : null,
     // `deliveredProgram` is a restore-time guard. A Step-only update must be
     // appended to the existing Runtime rather than reconstructing it; when
     // lesson.open changes, `events` changes and the current guard is captured.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [events, incremental, narrationTiming, storageKey, playbackStore],
+    [events, incremental, narrationTiming, storageKey, playbackStore, capture],
   );
   const [revision, setRevision] = useState(0);
   const acceleratedStartupRef = useRef<{
@@ -241,7 +248,7 @@ export function useOllLessonRuntime({
     const unsubscribe = session.subscribe(() => {
       setRevision((revision) => revision + 1);
     });
-    if (startAtEnd) advanceToAvailableEnd(session);
+    if (startAtEnd) capture.withReason("restore", () => advanceToAvailableEnd(session));
     else if (autoPlay && session.status !== "completed") session.play();
     return () => {
       unsubscribe();
@@ -251,7 +258,7 @@ export function useOllLessonRuntime({
         session.setSpeed(1);
       }
     };
-  }, [autoPlay, session, startAtEnd]);
+  }, [autoPlay, session, startAtEnd, capture]);
 
   useEffect(() => {
     if (!session || !startupNarrationId || startupSpeed <= 1 || startAtEnd) {
@@ -394,7 +401,7 @@ export function useOllLessonRuntime({
     session.setDeliverySettled(false);
     session.play();
   }, [resolveTopicStopCursor, session]);
-  const pause = useCallback(() => session?.pause(), [session]);
+  const pause = useCallback(() => capture.withReason("play", () => session?.pause()), [session, capture]);
   const restart = useCallback(() => {
     if (!session) return;
     const currentStepId = session.projection.current_step_id;
@@ -405,46 +412,46 @@ export function useOllLessonRuntime({
     stopCursorRef.current = resolveTopicStopCursor(topic);
     setDeliverySettledOverride(false);
     session.setDeliverySettled(false);
-    session.reset();
+    capture.withReason("seek", () => session.reset());
     session.play();
-  }, [resolveTopicStopCursor, session]);
+  }, [resolveTopicStopCursor, session, capture]);
   const nextBeat = useCallback(() => {
     if (!session) return;
-    session.advanceBeat();
-    if (session.activePhaseTransition?.kind === "practice") {
-      session.advance();
-    }
-  }, [session]);
+    capture.withReason("skip", () => {
+      session.advanceBeat();
+      if (session.activePhaseTransition?.kind === "practice") session.advance();
+    });
+  }, [session, capture]);
   const viewStep = useCallback(
     (stepId: string) => {
       stopCursorRef.current = null;
-      session?.seekToStep(stepId, "end");
+      capture.withReason("view", () => session?.seekToStep(stepId, "end"));
     },
-    [session],
+    [session, capture],
   );
   const playStep = useCallback((stepId: string) => {
     if (!session) return;
     setStopCursorForStep(stepId);
     setDeliverySettledOverride(false);
     session.setDeliverySettled(false);
-    session.seekToStep(stepId, "start");
+    capture.withReason("seek", () => session.seekToStep(stepId, "start"));
     session.play();
-  }, [session, setStopCursorForStep]);
+  }, [session, setStopCursorForStep, capture]);
   const viewBeat = useCallback(
     (beatId: string) => {
       stopCursorRef.current = null;
-      session?.seekToBeat(beatId, "end");
+      capture.withReason("view", () => session?.seekToBeat(beatId, "end"));
     },
-    [session],
+    [session, capture],
   );
   const playBeat = useCallback((beatId: string) => {
     if (!session) return;
     setStopCursorForBeat(beatId);
     setDeliverySettledOverride(false);
     session.setDeliverySettled(false);
-    session.seekToBeat(beatId, "start");
+    capture.withReason("seek", () => session.seekToBeat(beatId, "start"));
     session.play();
-  }, [session, setStopCursorForBeat]);
+  }, [session, setStopCursorForBeat, capture]);
   const playbackEpoch = session?.playbackEpoch;
   const startNarration = useCallback(
     (beatId: string) => session?.startNarration(beatId, playbackEpoch),
@@ -519,11 +526,11 @@ export function useOllLessonRuntime({
       if (!session) throw new Error("OLL Runtime 尚未初始化");
       const result = session.appendEvents(nextEvents);
       if (startAtEnd && result.accepted > 0) {
-        advanceToAvailableEnd(session);
+        capture.withReason("restore", () => advanceToAvailableEnd(session));
       }
       return result;
     },
-    [session, startAtEnd],
+    [session, startAtEnd, capture],
   );
 
   // Session getters return fresh snapshots. Read them only when the session
@@ -660,6 +667,7 @@ export function useOllLessonRuntime({
     playBeat,
     startNarration,
     completeNarration,
+    recordNarrationEnd: (beatId, reason) => capture.narrationEnded(beatId, reason),
     setVariable,
     handleStudentVariableInput,
     requestStudentTaskHint,

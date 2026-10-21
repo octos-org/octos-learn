@@ -36,6 +36,7 @@ export interface OllNarrationTtsOptions {
   onSpeakingChange?: (speaking: boolean) => void;
   onPlaybackStart?: (narrationId: string) => void;
   onPlaybackComplete?: (narrationId: string) => void;
+  onPlaybackEnd?: (narrationId: string, reason: "ended" | "disabled" | "failed" | "cancelled") => void;
 }
 
 export interface OllNarrationTtsState {
@@ -82,6 +83,7 @@ export function useOllNarrationTts({
   onSpeakingChange,
   onPlaybackStart,
   onPlaybackComplete,
+  onPlaybackEnd,
 }: OllNarrationTtsOptions): OllNarrationTtsState {
   const normalizedText = text.trim();
   const normalizedPrewarmText = prewarmText.trim();
@@ -101,6 +103,7 @@ export function useOllNarrationTts({
     onSpeakingChange,
     onPlaybackStart,
     onPlaybackComplete,
+  onPlaybackEnd,
   });
 
   useEffect(() => {
@@ -119,17 +122,22 @@ export function useOllNarrationTts({
       onSpeakingChange,
       onPlaybackStart,
       onPlaybackComplete,
+  onPlaybackEnd,
     };
-  }, [onPlaybackComplete, onPlaybackStart, onSpeakingChange]);
+  }, [onPlaybackComplete, onPlaybackEnd, onPlaybackStart, onSpeakingChange]);
 
   useEffect(() => {
     const request = new AbortController();
     let current = true;
     let completed = false;
-    const completePlayback = () => {
-      if (!current || completed || !narrationId) return;
+    const reportEnd = (reason: "ended" | "disabled" | "failed" | "cancelled") => {
+      if (!current || completed || !narrationId) return false;
       completed = true;
-      callbacksRef.current.onPlaybackComplete?.(narrationId);
+      callbacksRef.current.onPlaybackEnd?.(narrationId, reason);
+      return true;
+    };
+    const completePlayback = (reason: "ended" | "disabled" | "failed") => {
+      if (reportEnd(reason) && narrationId) callbacksRef.current.onPlaybackComplete?.(narrationId);
     };
 
     if (!enabled || !playing || !normalizedText) {
@@ -141,7 +149,7 @@ export function useOllNarrationTts({
       callbacksRef.current.onSpeakingChange?.(false);
       stopAudio();
       stopNativeTts();
-      if (!enabled && playing && normalizedText) completePlayback();
+      if (!enabled && playing && normalizedText) completePlayback("disabled");
       return () => {
         current = false;
         request.abort();
@@ -164,6 +172,7 @@ export function useOllNarrationTts({
     }
     const audioRequest = cached?.controller ?? request;
     const invalidate = () => {
+      reportEnd("cancelled");
       current = false; request.abort(); audioRequest.abort();
       prefetchedSpeechRef.current?.controller.abort(); prefetchedSpeechRef.current = null;
       stopAudio(); stopNativeTts(); setPreparing(false); setStartedKey(null);
@@ -181,7 +190,7 @@ export function useOllNarrationTts({
     const finishAudio = () => {
       if (!current) return;
       callbacksRef.current.onSpeakingChange?.(false);
-      completePlayback();
+      completePlayback("ended");
     };
     const playCloudTts = (useCache = true) =>
       nativeTtsAvailable()
@@ -260,7 +269,7 @@ export function useOllNarrationTts({
           setStartedKey(null);
           callbacksRef.current.onSpeakingChange?.(false);
           setFailure("当前设备无法播放课程语音，旁白仍会显示。");
-          completePlayback();
+          completePlayback("failed");
         }
       })
       .catch((cause: unknown) => {
@@ -275,12 +284,13 @@ export function useOllNarrationTts({
         setStartedKey(null);
         callbacksRef.current.onSpeakingChange?.(false);
         setFailure(narrationFailure(cause));
-        completePlayback();
+        completePlayback("failed");
       });
 
     return () => {
       window.removeEventListener("octos:client-services-reset", invalidate);
       window.removeEventListener("octos:client-service-changed", configChanged);
+      reportEnd("cancelled");
       current = false;
       request.abort();
       if (cached) cached.controller.abort();

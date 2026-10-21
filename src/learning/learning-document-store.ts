@@ -135,15 +135,22 @@ export const indexedInkStore: InkDocumentStore = {
 
 // OLL's playback contract is synchronous. Hydrate only this session's three
 // records before constructing the player; subsequent writes commit asynchronously.
-export async function createIndexedPlaybackStore(key: string): Promise<PlaybackStore> {
+export async function createIndexedPlaybackStore(key: string, options?: {
+  onWrite?: (key: string, value: unknown) => void;
+}): Promise<PlaybackStore> {
   const keys = [key, `${key}:student-operations:v1`, `${key}:student-task-progress:v1`];
   const values = await Promise.all(keys.map(k => read(k)));
   const cache = new Map(keys.map((k, index) => [k, values[index]]));
   const save = (k: string, value: unknown) => {
     cache.set(k, structuredClone(value));
-    void write(k, value).catch(() => undefined); // surfaced by learningStorageStatus
+    if (options?.onWrite) options.onWrite(k, value);
+    else void write(k, value).catch(() => undefined); // surfaced by learningStorageStatus
   };
-  const remove = (k: string) => { cache.delete(k); void write(k, undefined).catch(() => undefined); };
+  const remove = (k: string) => {
+    cache.delete(k);
+    if (options?.onWrite) options.onWrite(k, undefined);
+    else void write(k, undefined).catch(() => undefined);
+  };
   return {
     load: k => structuredClone(cache.get(k)) as ReturnType<PlaybackStore['load']>,
     save, remove,
