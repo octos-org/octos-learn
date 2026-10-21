@@ -20,7 +20,7 @@ const options = { registryRoot: root, historyDatabasePath: file,
   fetchImpl: async () => Response.json({ profile: { id: "fixture", config: { env_vars: {} } } }),
   supplierFetch: async () => { suppliers++; await new Promise(resolve => setTimeout(resolve, 5)); return new Response('{"code":0,"data":"bXAz"}', { headers: { "X-Api-Status-Code": "20000000" } }); },
 };
-const baseline = createByokServer(options), candidate = createProductServer(options);
+const legacy = createByokServer(options), candidate = createProductServer(options);
 const store = new HistoryStore(file);
 let blocker;
 async function listen(server) {
@@ -35,14 +35,14 @@ try {
   await mkdir(join(root, "profiles"));
   await writeFile(join(root, "profiles/fixture.json"), JSON.stringify({ id: "fixture", config: { env_vars: { OCTOS_LEARN_TTS_API_KEY: "synthetic-key", OCTOS_LEARN_TTS_PARAMS: JSON.stringify({ provider: "volcano", params }) } } }), { mode: 0o600 });
   for (let i = 0; i < 10000; i += 100) store.append("fixture", Array.from({ length: 100 }, (_, j) => fact(i + j)));
-  const base = await listen(baseline), next = await listen(candidate);
+  const base = await listen(legacy), next = await listen(candidate);
   const metadata = await (await fetch(`${base}/api/learn/byok`, { headers })).json();
   if (!metadata.services) throw new Error(metadata.error?.message ?? JSON.stringify(metadata.error));
   const revision = metadata.services.tts.revision;
   // Open/migrate the candidate handle before taking an independent writer lock.
   assert.equal((await fetch(`${next}/api/learn/history/runs`, { headers })).status, 200);
   blocker = new DatabaseSync(file); blocker.exec("BEGIN IMMEDIATE");
-  const samples = { baseline: [], with_history_query_and_busy_write: [] };
+  const samples = { legacy_byok_idle: [], product_idle: [], product_with_history_query_and_busy_write: [] };
   const loaded = async n => {
     const speech = relay(next, revision);
     const [query, busy, elapsed] = await Promise.all([
@@ -50,20 +50,30 @@ try {
       fetch(`${next}/api/learn/history/events`, { method: "POST", headers, body: JSON.stringify({ events: [fact(10000 + n)] }) }), speech,
     ]);
     assert.equal(query.status, 200); assert.equal(busy.status, 503);
-    await Promise.all([query.arrayBuffer(), busy.arrayBuffer()]); samples.with_history_query_and_busy_write.push(elapsed);
+    await Promise.all([query.arrayBuffer(), busy.arrayBuffer()]); return elapsed;
   };
+  const cases = {
+    legacy_byok_idle: () => relay(base, revision),
+    product_idle: () => relay(next, revision),
+    product_with_history_query_and_busy_write: loaded,
+  };
+  const names = Object.keys(cases);
   for (let i = 0; i < 21; i++) {
-    if (i % 2) { await loaded(i); samples.baseline.push(await relay(base, revision)); }
-    else { samples.baseline.push(await relay(base, revision)); await loaded(i); }
+    // Rotate all three cases: compare history load against the same product
+    // handler at idle, while retaining the legacy process as a separate control.
+    for (let offset = 0; offset < names.length; offset++) {
+      const name = names[(i + offset) % names.length];
+      samples[name].push(await cases[name](i));
+    }
   }
   const summary = values => { const sorted = [...values].sort((a, b) => a - b); return { p50_ms: sorted[Math.floor(sorted.length / 2)], max_ms: sorted.at(-1) }; };
-  assert.equal(suppliers, 42);
+  assert.equal(suppliers, 63);
   console.log(JSON.stringify({ scope: "synthetic local shared-process speech relay only; not the course-generation latency gate", node: process.version,
-    fixture_events: 10000, pairs: 21, interleaved: true, supplier_delay_ms: 5, supplier_requests: suppliers,
-    baseline: summary(samples.baseline), with_history_query_and_busy_write: summary(samples.with_history_query_and_busy_write),
+    fixture_events: 10000, triplets: 21, interleaved: true, supplier_delay_ms: 5, supplier_requests: suppliers,
+    ...Object.fromEntries(Object.entries(samples).map(([name, values]) => [name, summary(values)])),
   }, null, 2));
 } finally {
   if (blocker) { blocker.exec("ROLLBACK"); blocker.close(); }
-  await Promise.all([baseline, candidate].map(server => server.listening ? new Promise(resolve => server.close(resolve)) : undefined));
+  await Promise.all([legacy, candidate].map(server => server.listening ? new Promise(resolve => server.close(resolve)) : undefined));
   store.close(); await rm(root, { recursive: true, force: true });
 }
