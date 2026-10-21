@@ -333,7 +333,7 @@ status are tracked in [the phase-two implementation record](personalized-teacher
    Replace the destination with the real approved backup directory and a unique
    name. The helper refuses to overwrite files. Do not copy only the live
    `.sqlite` file: committed changes may still be in `-wal`. This backup covers
-   learning facts and deletion receipts; Octos profiles, keys, sessions and
+   learning facts, deletion receipts and pending message/session-cleanup tasks; Octos profiles, keys, sessions and
    memory require their own existing backup procedure.
 5. Restore first to a separate private path and verify expected test records
    and deletion receipts there. For a production restore, stop the product
@@ -343,7 +343,7 @@ status are tracked in [the phase-two implementation record](personalized-teacher
    stale `-wal`/`-shm` files. Restart and check authenticated reads through Nginx.
    Production rollback/restore must explicitly account for records received
    after the backup; do not silently discard them.
-6. Schema 1 is created transactionally; an unrecognized schema fails rather
+6. Schema 3 is created transactionally; schema 1/2 databases migrate in one transaction. An unrecognized schema fails rather
    than downgrading or deleting data. Roll back the code, route and unit
    together only when the prior code can read the saved schema. Otherwise keep
    the new database intact and resolve compatibility before resuming writes.
@@ -354,3 +354,13 @@ status are tracked in [the phase-two implementation record](personalized-teacher
    classroom memories in a person's real account to perform negative tests.
    Complete the device and classroom acceptance before describing history as
    available to students.
+8. Release the matching frontend and product modules together. Raw learning
+   facts can sync independently of Octos message copies. Message delivery must
+   remain gated until Octos explicitly negotiates
+   `session.append_message.full_history_retry.v1` (upstream draft PR #2854).
+   Older builds leave durable copies pending; do not remove that check.
+9. Keep unreviewed topic mappings inactive. The candidate slope course map is
+   pinned to archive and taxonomy versions but still needs the documented
+   content review. Missing mappings mean unknown progress, not zero mastery.
+   A successful Octos session-delete receipt is not proof that all memory or
+   physical copies were erased. Preserve pending cleanup state in backups.

@@ -1,0 +1,321 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-21",
+  "authorized_courses": 6,
+  "actual_courses": 6,
+  "scope": "Existing local account; normal HTTPS 5173 / candidate Octos 50080. First visible OLL course node after submit, not first audio. TTS supplier calls and learning-event uploads are blocked for benchmark sessions only; unsent local facts are discarded with the isolated browser context. Generated Octos sessions/artifacts are retained. No deletion API is called.",
+  "baseline_source": "4973499",
+  "candidate_source": "a4eb939 (before the later UUID, streamed-narration reference and WebView timeout compatibility fixes)",
+  "backend_source": "110be993",
+  "installed_learning_coach": "0.15.0",
+  "model": {
+    "family": "google",
+    "model": "gemini-3.6-flash"
+  },
+  "first_visible_definition": "Time from form submission to first actual OLL board node in the DOM; audio suppliers blocked. This is not first audio.",
+  "frontend_artifacts": {
+    "baseline": {
+      "entry": "/assets/index-CnO3Hvf9.js",
+      "sha256": "bb4b9b5f3c7619f04971b82751a20fd5b9f464a0bffbc5e2efa916eaf4917b92"
+    },
+    "candidate": {
+      "entry": "/assets/index-C13XKxYc.js",
+      "sha256": "e8f460be0f45e40b57aa901cedb13cad3bc62730b4b33d1d84b9d37edc773b09"
+    }
+  },
+  "normal_environment_check": {
+    "connected": true,
+    "full_history_retry": true,
+    "authenticated_history_status": 200,
+    "anonymous_history_status": 401
+  },
+  "summary": {
+    "baseline": {
+      "samples": 3,
+      "first_visible_p50_ms": 10050.59999999404,
+      "first_visible_max_ms": 11405.09999999404,
+      "course_provider_requests": 4
+    },
+    "candidate": {
+      "samples": 3,
+      "first_visible_p50_ms": 9377.199999988079,
+      "first_visible_max_ms": 19657.79999998212,
+      "course_provider_requests": 7
+    }
+  },
+  "rows": [
+    {
+      "index": 1,
+      "version": "baseline",
+      "state": "completed",
+      "first_node_ms": 11405.09999999404,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 1,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792593959426
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792593964930,
+          "elapsed_ms": 5505
+        }
+      ],
+      "collection_recovered": true
+    },
+    {
+      "index": 2,
+      "version": "candidate",
+      "state": "completed",
+      "first_node_ms": 19657.79999998212,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 4,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594320048
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594324537,
+          "elapsed_ms": 4493
+        },
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594324541
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "request_attempts": 1,
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594330703,
+          "elapsed_ms": 6162
+        },
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594330742
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "request_attempts": 1,
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594335280,
+          "elapsed_ms": 4539
+        },
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594335284
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "request_attempts": 1,
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594339292,
+          "elapsed_ms": 4008
+        }
+      ],
+      "collection_recovered": false
+    },
+    {
+      "index": 3,
+      "version": "candidate",
+      "state": "completed",
+      "first_node_ms": 5825.4000000059605,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 1,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594339929
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594345436,
+          "elapsed_ms": 5508
+        }
+      ],
+      "collection_recovered": false
+    },
+    {
+      "index": 4,
+      "version": "baseline",
+      "state": "completed",
+      "first_node_ms": 7104.700000017881,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 1,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594346067
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594352846,
+          "elapsed_ms": 6783
+        }
+      ],
+      "collection_recovered": false
+    },
+    {
+      "index": 5,
+      "version": "baseline",
+      "state": "completed",
+      "first_node_ms": 10050.59999999404,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 2,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594353474
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594358541,
+          "elapsed_ms": 5068
+        },
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594358579
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "request_attempts": 1,
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594363219,
+          "elapsed_ms": 4639
+        }
+      ],
+      "collection_recovered": false
+    },
+    {
+      "index": 6,
+      "version": "candidate",
+      "state": "completed",
+      "first_node_ms": 9377.199999988079,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "provider_http_attempts": 2,
+      "job_statuses": [
+        "succeeded"
+      ],
+      "model_stages": [
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594363852
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-bootstrap",
+          "request_attempts": 1,
+          "lesson_plan_part": "bootstrap",
+          "recorded_at_epoch_ms": 1792594368837,
+          "elapsed_ms": 4989
+        },
+        {
+          "status": "started",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594368874
+        },
+        {
+          "status": "completed",
+          "model": "gemini-3.6-flash",
+          "label": "lesson-plan-section",
+          "request_attempts": 1,
+          "lesson_plan_part": "section",
+          "recorded_at_epoch_ms": 1792594372912,
+          "elapsed_ms": 4038
+        }
+      ],
+      "collection_recovered": false
+    }
+  ],
+  "limitations": [
+    "Three samples per version, with different model-selected section counts; not equal-workload cost or broad latency evidence.",
+    "All extra provider requests are existing lesson-plan-section generation; no HTTP retries occurred.",
+    "First baseline collector waited for a legacy terminal; its timing was retained and completion/requests confirmed from persisted job and trace without repeating generation.",
+    "Benchmark facts were not uploaded to the learning database or Octos memory; generated Octos workspaces are retained.",
+    "Later UUID, streamed-narration reference and WebView timeout compatibility fixes were verified with automated tests and non-paid device checks; the six-course paid cap was exhausted, so this is not a new paid measurement of the final APK."
+  ]
+}
