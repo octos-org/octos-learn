@@ -104,3 +104,15 @@ test("whiteboard deletion is durable, rejects unknown offline runs and separatel
   assert.equal((await (await call(`/session-deletions/${task.session_id}/receipt`, 'POST', { lease_id: task.lease_id })).json()).recorded, true);
   assert.equal((await (await call('/deliveries')).json()).pending_session_deletions, 0);
 });
+
+test("topic queries expose pending mappings honestly and reject ambiguous time ranges", async () => {
+  const topic = await call('/topics/mt_WBdHkc2HTf');
+  assert.equal(topic.status, 200);
+  const body = await topic.json();
+  assert.equal(body.status, 'pending-review'); assert.equal(body.objectives[0].counts, null);
+  assert.equal((await call('/topics/mt_WBdHkc2HTf?from=2026-10-21')).status, 400);
+  assert.equal((await call('/topics/mt_WBdHkc2HTf?from=2026-10-22T00:00:00.000Z&until=2026-10-21T00:00:00.000Z')).status, 400);
+  assert.equal((await call('/topics/mt_WBdHkc2HTf?limit=0')).status, 400);
+  assert.equal((await call('/topics/mt_WBdHkc2HTf?approved=true')).status, 400);
+  assert.equal((await (await call('/runs/nonexistent/coverage')).json()).status, 'unmapped');
+});

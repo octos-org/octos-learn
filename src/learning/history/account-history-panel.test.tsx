@@ -74,3 +74,13 @@ it('never displays a delayed account-A detail response after switching to accoun
   await waitFor(() => expect(screen.queryByText('学生提问')).toBeNull());
   expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
 });
+it('shows unreviewed course mappings as pending rather than zero progress', async () => {
+  stubFetch(url => {
+    if (url.includes('/coverage?')) return Response.json({ status: 'pending-review', through: 8, course_playback: null, objectives: [] });
+    if (url.includes('/runs?')) return Response.json({ runs: [{ ...run, course: { kind: 'course-pack', id: 'slope-and-intercept', version: '0.1.8' } }], through: 8, next_before: null });
+  });
+  render(<AccountHistoryPanel onSelect={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
+  expect(await screen.findByText(/对应表尚待内容审核/)).toBeTruthy();
+  expect(screen.queryByText(/本遍课程实际播放了/)).toBeNull();
+});

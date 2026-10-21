@@ -10,12 +10,22 @@ export interface LearningRunSummary {
 }
 export interface HistoryEventsPage { events: { seq: number; event: HistoryEvent }[]; through: number; next_after: number | null }
 export interface HistoryRunsPage { runs: LearningRunSummary[]; through: number; next_before: number | null }
+export interface ObjectiveCounts { played_runs: number; played_beats: number; task_attempts: number; hints: number }
+export interface HistoryCoverage {
+  status: 'approved' | 'pending-review' | 'unmapped'; through: number; mapping_id?: string;
+  course_playback: { required_beats: number; played_beats: number; complete: boolean } | null;
+  objectives: { topic_id: string; objective_key: string; title: string; counts: ObjectiveCounts | null }[];
+}
+export interface HistoryTopicPage extends HistoryEventsPage {
+  topic_id: string; status: string; counting_rule: string;
+  objectives: { mapping_id: string; objective_key: string; title: string; counts: (ObjectiveCounts & { question_count: number | null }) | null }[];
+}
 export class HistoryApi {
   private readonly identity: HistoryIdentity;
   private readonly fetcher: typeof fetch;
   private readonly currentToken: () => string | null;
   constructor(identity: HistoryIdentity, fetcher: typeof fetch = fetch, currentToken: () => string | null = getToken) {
-    this.identity = identity; this.fetcher = fetcher; this.currentToken = currentToken;
+    this.identity = identity; this.fetcher = (input, init) => fetcher(input, init); this.currentToken = currentToken;
   }
   get owner() { return this.identity.owner; }
   private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
@@ -42,6 +52,12 @@ export class HistoryApi {
     const query = new URLSearchParams({ limit: '50', after: String(after) });
     if (through !== undefined) query.set('through', String(through));
     return this.request<HistoryEventsPage>(`/runs/${encodeURIComponent(runId)}?${query}`);
+  }
+  coverage(runId: string, through: number) {
+    return this.request<HistoryCoverage>(`/runs/${encodeURIComponent(runId)}/coverage?through=${through}`);
+  }
+  topic(topicId: string, through: number, after = 0) {
+    return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50`);
   }
   async deleteSession(sessionId: string, deleteOctos = true) {
     await this.request(`/sessions/${encodeURIComponent(sessionId)}`, 'DELETE', { delete_octos_session: deleteOctos });

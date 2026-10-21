@@ -72,6 +72,7 @@ export class HistoryStore {
         operation_id=json_extract(body,'$.data.operation_id');
       UPDATE history_schema SET version=2;
       ` : ""}
+      CREATE INDEX IF NOT EXISTS events_owner_course ON events(owner,course_key,course_digest,seq);
       UPDATE history_schema SET version=3;
       COMMIT;
     `);

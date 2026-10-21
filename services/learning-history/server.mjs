@@ -3,6 +3,8 @@ import { homedir } from "node:os";
 import { HistoryStore, HistorySnapshotChanged } from "./store.mjs";
 import { HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mjs";
 
+import { queryTopic, queryRunCoverage } from "./topic-query.mjs";
+
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
 async function limitedJson(stream, max) {
@@ -77,6 +79,19 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       } else if (request.method === "GET" && path.join("/") === "deliveries") {
         if (url.search) throw new HttpError(400, "Unexpected query");
         send(200, { profile_id: owner, states: store().deliveryStatus(owner), pending_session_deletions: store().pendingSessionDeletions(owner) });
+      } else if (request.method === "GET" && ((path[0] === "topics" && path.length === 2) || (path[0] === "runs" && path.length === 3 && path[2] === "coverage"))) {
+        if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) throw new HttpError(400, "Invalid record identifier");
+        if ([...url.searchParams.keys()].some(key => !(path[0] === "topics" ? ["limit", "through", "after", "from", "until"] : ["through"]).includes(key))) throw new HttpError(400, "Unknown query field");
+        const options = { limit: integer(url.searchParams, "limit", 50, 100), after: integer(url.searchParams, "after", 0),
+          through: Math.min(integer(url.searchParams, "through", store().upperBound(owner)), store().upperBound(owner)) };
+        if (!options.limit) throw new HttpError(400, "Invalid limit");
+        for (const field of ["from", "until"]) {
+          const values = url.searchParams.getAll(field);
+          if (values.length > 1 || (values.length && (!Number.isFinite(Date.parse(values[0])) || new Date(values[0]).toISOString() !== values[0]))) throw new HttpError(400, "Use one UTC ISO timestamp per time boundary");
+          if (values.length) options[field] = values[0];
+        }
+        if (options.from && options.until && options.from >= options.until) throw new HttpError(400, "Invalid time range");
+        send(200, path[0] === "topics" ? queryTopic(store(), owner, path[1], options) : queryRunCoverage(store(), owner, path[1], options));
       } else if (request.method === "GET" && ["runs", "changes"].includes(path[0])) {
         if ([...url.searchParams.keys()].some(key => !["limit", "through", "after", "before"].includes(key))) throw new HttpError(400, "Unknown query field");
         const options = { limit: integer(url.searchParams, "limit", 20, 100),

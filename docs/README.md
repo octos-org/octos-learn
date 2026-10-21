@@ -57,7 +57,7 @@
 
 - [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
 
-- [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
+- [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
 
 - [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
 
