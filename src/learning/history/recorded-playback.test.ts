@@ -148,3 +148,19 @@ it('captures durable playback on older Android WebViews without crypto.randomUUI
   expect(rows.some(row => row.event.kind === 'beat_completed')).toBe(true);
   expect(rows.every(row => /^[a-f0-9-]{36}$/.test(row.event.device_id))).toBe(true);
 });
+it('retains streamed and final course references without duplicating or conflicting on unchanged teacher narration', async () => {
+  const c = await classroom();
+  const { recordDeliveredLesson } = await import('./delivered-material');
+  const full = parseCanonicalJsonl(source);
+  const firstStepIndex = full.findIndex(event => event.event === 'lesson.step');
+  const partial = full.slice(0, firstStepIndex + 1);
+  const spoken = partial[firstStepIndex].step!.beats[0].narration!.text;
+  recordDeliveredLesson(c.recorder, 'q-streamed', 'lesson.part-01.oll.jsonl', partial);
+  await c.recorder.flush();
+  recordDeliveredLesson(c.recorder, 'q-streamed', 'lesson.oll.jsonl', full);
+  await c.recorder.flush();
+  expect(c.recorder.getSnapshot().error).toBe('');
+  const rows = await c.queue.list('alice');
+  expect(rows.filter(row => row.event.kind === 'answer_delivered' && row.event.data.text === spoken)).toHaveLength(1);
+  expect(rows.filter(row => row.event.kind === 'course_delivered').map(row => row.event.data.artifact).sort()).toEqual(['lesson.oll.jsonl', 'lesson.part-01.oll.jsonl']);
+});

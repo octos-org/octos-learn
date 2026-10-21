@@ -25,6 +25,9 @@ export function recordDeliveredLesson(recorder: LearningHistoryRecorder, questio
     snapshotJson: JSON.stringify(events), data: { artifact, status: complete ? 'complete' : 'partial', event_count: events.length } });
   for (const event of events) {
     if (event.event !== 'lesson.step' || !event.step) continue;
-    for (const beat of event.step.beats) if (beat.narration?.text.trim()) recordTeacherText(recorder, questionId, `narration:${event.lesson_id}:${event.step.id}:${beat.id}`, beat.narration.text, [artifact]);
+    // The course delivery owns the artifact reference. A streamed part and
+    // its completed file can contain the same spoken beat; changing that
+    // reference must not change or conflict with the original spoken message.
+    for (const beat of event.step.beats) if (beat.narration?.text.trim()) recordTeacherText(recorder, questionId, `narration:${event.lesson_id}:${event.step.id}:${beat.id}`, beat.narration.text);
   }
 }
