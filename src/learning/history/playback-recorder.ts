@@ -24,16 +24,26 @@ export class PlaybackHistoryCapture {
   private binding?: PlaybackHistoryBinding;
   private readonly storageKey: string;
   private reason?: "play" | "view" | "seek" | "skip" | "restore";
+  private position?: HistoryDraft;
+  private checkpoint?: { cursor: number; epoch: number };
   constructor(storageKey: string, binding?: PlaybackHistoryBinding) { this.storageKey = storageKey; this.binding = binding; }
   updateBinding(binding?: PlaybackHistoryBinding) { this.binding = binding; }
   withReason<T>(reason: "play" | "view" | "seek" | "skip" | "restore", apply: () => T): T {
     const previous = this.reason; this.reason = reason;
-    try { return apply(); } finally { this.reason = previous; }
+    try { return apply(); } finally {
+      this.reason = previous;
+      if (!previous && this.position) {
+        const position = this.position; this.position = undefined;
+        this.binding?.recorder.record(position);
+      }
+    }
   }
   bind(session: BrowserLessonSession) {
     this.session = session;
     this.log = createRequestId(); this.attempts.clear(); this.hints.clear(); this.started.clear();
     this.evidence = new PlaybackEvidenceTracker({ cursor: session.projection.cursor, epoch: session.playbackEpoch });
+    this.checkpoint = { cursor: session.projection.cursor, epoch: session.playbackEpoch };
+    this.position = undefined;
     // Restored attempts are existing state, not newly observed answers.
     for (const task of session.studentTasks) {
       task.attempts.forEach(attempt => this.attempts.add(`${task.task_id}:${attempt.operation_id}`));
@@ -47,6 +57,8 @@ export class PlaybackHistoryCapture {
     const session = this.session;
     if (session && key === this.storageKey) {
       const cursor = session.projection.cursor;
+      const moved = this.checkpoint?.cursor !== cursor || this.checkpoint?.epoch !== session.playbackEpoch;
+      this.checkpoint = { cursor, epoch: session.playbackEpoch };
       const op = session.currentOperation;
       const stepId = op?.step_id ?? session.projection.current_step_id;
       const context = stepId ? binding.forStep(stepId) : undefined;
@@ -55,15 +67,20 @@ export class PlaybackHistoryCapture {
         const owned = binding.forStep(completed.stepId);
         if (owned) {
           if (!this.started.has(owned.runKey)) {
-            drafts.push({ ...owned, kind: 'run_started', data: { mode: 'start' } }); this.started.add(owned.runKey);
+            drafts.push({ ...owned, kind: 'run_started', stableKey: `run-started:${owned.runKey}`, data: { mode: 'start' } }); this.started.add(owned.runKey);
           }
           drafts.push({ ...owned, kind: 'beat_completed', logKey: this.log, data: { step_id: completed.stepId, beat_id: completed.beatId, presentation: completed.presentation } });
         }
       }
-      // Positions remain explicitly separate from completed coverage. Sparse
-      // boundary positions avoid exporting a database row for every animation.
-      if (context && (op?.type === 'beat.end' || !session.isPlaying)) drafts.push({ ...context, kind: 'playback_position', logKey: this.log,
-        data: { cursor, reason: this.reason ?? (session.isPlaying ? 'play' : 'view'), ...(stepId ? { step_id: stepId } : {}), ...(op?.beat_id ? { beat_id: op.beat_id } : {}) } });
+      // Restoring a review board is reconstruction, not a new visit to each
+      // intermediate position. A navigation action records only its final
+      // position; task-only checkpoint writes do not add another position.
+      if (context && moved && this.reason !== 'restore' && (op?.type === 'beat.end' || !session.isPlaying)) {
+        const position: HistoryDraft = { ...context, kind: 'playback_position', logKey: this.log,
+          data: { cursor, reason: this.reason ?? (session.isPlaying ? 'play' : 'view'), ...(stepId ? { step_id: stepId } : {}), ...(op?.beat_id ? { beat_id: op.beat_id } : {}) } };
+        if (this.reason) this.position = position;
+        else drafts.push(position);
+      }
     }
     if (session && key.endsWith(':student-task-progress:v1')) {
       for (const task of session.studentTasks) {

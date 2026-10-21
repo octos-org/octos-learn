@@ -42,6 +42,49 @@ it('seeking, viewing and manual next-beat movement never become completed covera
   expect(rows.filter(row => row.event.kind === 'beat_completed')).toHaveLength(0);
   expect(rows.filter(row => row.event.kind === 'run_started')).toHaveLength(0);
 });
+it('saves a review reconstruction without exporting a position for every restored operation', async () => {
+  const c = await classroom();
+  c.capture.withReason('restore', () => {
+    c.runtime.pause();
+    while (c.runtime.advance()) { /* Rebuild the whole review board as the hook does. */ }
+  });
+  await c.recorder.flush();
+  const rows = await c.queue.list('alice');
+  expect(rows.filter(row => row.event.kind === 'playback_position')).toHaveLength(0);
+  expect(rows.filter(row => row.event.kind === 'beat_completed')).toHaveLength(0);
+  const restoredStore = await c.createIndexedPlaybackStore('recorded');
+  expect(restoredStore.load('recorded')?.cursor).toBe(c.runtime.projection.cursor);
+});
+it('records one final position for a multi-operation skip and none for a task-only checkpoint', async () => {
+  const c = await classroom();
+  c.capture.withReason('skip', () => c.runtime.advanceBeat());
+  await c.recorder.flush();
+  const positions = (await c.queue.list('alice')).filter(row => row.event.kind === 'playback_position');
+  expect(positions).toHaveLength(1);
+  expect(positions[0].event.data).toMatchObject({ reason: 'skip', cursor: c.runtime.projection.cursor });
+  c.capture.withReason('restore', () => c.runtime.seek(c.runtime.projection.total_operations));
+  c.runtime.requestStudentTaskHint(c.runtime.studentTasks[0].task_id);
+  const operation = c.runtime.beginStudentVariableOperation('theta', { control: 'slider', input: 'mouse' });
+  c.runtime.commitStudentVariableOperation(operation, Math.PI / 2);
+  await c.recorder.flush();
+  expect((await c.queue.list('alice')).filter(row => row.event.kind === 'playback_position')).toHaveLength(1);
+  expect((await c.queue.list('alice')).filter(row => row.event.kind === 'task_attempt')).toHaveLength(1);
+});
+it('keeps the first start fact when a reopened learning instance is played again', async () => {
+  const c = await classroom();
+  vi.useFakeTimers(); c.runtime.play(); vi.runAllTimers(); vi.useRealTimers();
+  await c.recorder.flush();
+  const before = (await c.queue.list('alice')).find(row => row.event.kind === 'run_started')!;
+  const recorder = new c.LearningHistoryRecorder('session-one', Promise.resolve({ owner: 'alice', token: 'credential' }), c.queue);
+  const capture = new c.PlaybackHistoryCapture('recorded', { recorder, forStep: () => c.context, forTask: () => c.context });
+  const adapter = await c.createIndexedPlaybackStore('recorded', { onWrite: capture.write });
+  const reopened = new BrowserLessonSession(parseCanonicalJsonl(source), adapter, 'recorded', { reducedMotion: true });
+  capture.bind(reopened);
+  capture.withReason('seek', () => reopened.reset());
+  vi.useFakeTimers(); reopened.play(); vi.runAllTimers(); vi.useRealTimers();
+  await recorder.flush();
+  expect((await c.queue.list('alice')).filter(row => row.event.kind === 'run_started')).toEqual([before]);
+});
 it('records actual attempts and hints, atomically saves their logs, and does not import old attempts after refresh', async () => {
   const c = await classroom();
   c.runtime.seek(c.runtime.projection.total_operations);
