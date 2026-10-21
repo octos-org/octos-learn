@@ -1,7 +1,7 @@
 # 个性化老师与学习记忆实施方案
 
-更新日期：2026-10-20
-当前状态：第一阶段的调查、流程验证和接口方案已完成，并已根据独立审查完成文档收尾，见[审查收尾记录](personalized-teachers-phase1/REVIEW_CLOSEOUT.md)。产品方向、记忆处理边界和下文的老师性格实现方式已讨论并认可；课堂记录到下一课的完整链路尚未接通。Octos 两个通用接口的上游 [PR #2848](https://github.com/octos-org/octos/pull/2848) 已于 2026-10-21 审批通过并合入 main（c27a90c2），审查范围和合并提交对应见[实施记录](personalized-teachers-phase1/IMPLEMENTATION.md)。第二阶段的分批开发与验收见[学习历史与进展实施计划](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)，尚未开始业务代码开发。老师名字、具体设定、首期数量和素材尚未定稿；老师之间的记忆共享规则留待后续确定。
+更新日期：2026-10-21
+当前状态：第一阶段接口已通过 [PR #2848](https://github.com/octos-org/octos/pull/2848) 合入 Octos main（c27a90c2），详见[实施记录](personalized-teachers-phase1/IMPLEMENTATION.md)。第二阶段已形成学习记录候选实现、自动化与电视本地验收证据，并处理独立审查指出的问题，见[实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)和[审查处理记录](personalized-teachers-phase2/REVIEW_FOLLOWUP.md)。新增上游 [PR #2854](https://github.com/octos-org/octos/pull/2854) 尚未合入；公网同步、知识点对应表内容审核及自由提问的可靠知识点归属仍未完成，不能将下表第二步的全部验收目标视为已实现。Learning Coach 尚未读取这些记录改变教学，课堂记录到下一课的完整链路仍未接通。老师名字、具体设定、首期数量和素材尚未定稿；老师之间的记忆共享规则留待后续确定。本轮仍在第二阶段，不启动第三阶段或公网发布。
 
 此前已根据独立审查重新核对代码，将已确认缺口加入第一阶段任务；同时修正了部分审查结论过于绝对的表述。详细依据见[审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。该轮审查修订只修改方案，没有实施代码修复或运行时验收。
 

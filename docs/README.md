@@ -59,6 +59,8 @@
 
 - [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
 
+- [第二阶段实现审查处理](personalized-teachers-phase2/REVIEW_FOLLOWUP.md)：未登录删除保留、复习位置与开始事件去重、Octos PR #2854 CI 修正、性能对照补测及逐项判断；附实际验证边界。
+
 - [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
 
 - [Octos 应用记忆接入](personalized-teachers-phase1/APP_MEMORY_ACCESS.md)：实际链路测试、正文和更新记录的限制，以及复用现有记住、纠正、遗忘和资料挑选能力的最小应用接口草案；旧任务写回按复杂度处理，不作为本轮必做条件。

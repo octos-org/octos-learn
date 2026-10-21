@@ -74,5 +74,16 @@
     ],
     "practiceSuccess": true,
     "runStarts": 1
+  },
+  "evidenceDetails": {
+    "addedBetween146And149": {
+      "task_attempt": 1,
+      "playback_position": 2
+    },
+    "narrationEndReasons": {
+      "ended": 5,
+      "cancelled": 1
+    },
+    "scope": "Reconstructed from retained private event snapshots; evidence refers to ec5b28d, before the sparse-position and stable-start fixes. No device retest was performed for the later fixes."
   }
 }

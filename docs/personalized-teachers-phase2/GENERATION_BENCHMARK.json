@@ -317,5 +317,9 @@
     "First baseline collector waited for a legacy terminal; its timing was retained and completion/requests confirmed from persisted job and trace without repeating generation.",
     "Benchmark facts were not uploaded to the learning database or Octos memory; generated Octos workspaces are retained.",
     "Later UUID, streamed-narration reference and WebView timeout compatibility fixes were verified with automated tests and non-paid device checks; the six-course paid cap was exhausted, so this is not a new paid measurement of the final APK."
-  ]
+  ],
+  "clock_semantics": {
+    "first_node_ms": "Browser performance.now(), a monotonic duration from submit to first board node.",
+    "model_stages": "Learning Coach uses Date.now() for both recorded_at_epoch_ms and elapsed_ms. The request start is sampled before the started log; recorded_at_epoch_ms is sampled inside stageLog after constructing its payload. Differences of a few milliseconds are sampling-boundary differences, not evidence of different clocks."
+  }
 }

@@ -1,0 +1,21 @@
+{
+  "scope": "synthetic local shared-process speech relay only; not the course-generation latency gate",
+  "node": "v24.16.0",
+  "fixture_events": 10000,
+  "triplets": 21,
+  "interleaved": true,
+  "supplier_delay_ms": 5,
+  "supplier_requests": 63,
+  "legacy_byok_idle": {
+    "p50_ms": 6.302291999999852,
+    "max_ms": 7.7309999999999945
+  },
+  "product_idle": {
+    "p50_ms": 6.314750000000004,
+    "max_ms": 6.890957999999955
+  },
+  "product_with_history_query_and_busy_write": {
+    "p50_ms": 11.750374999999963,
+    "max_ms": 13.673167000000035
+  }
+}
