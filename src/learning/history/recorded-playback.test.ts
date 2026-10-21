@@ -139,3 +139,12 @@ it('pins delivered generated content even if the same artifact later has differe
   recordDeliveredLesson(c.recorder, 'q-generated', 'lesson.jsonl', revised); await c.recorder.flush();
   expect((await c.queue.list('alice')).filter(row => row.event.kind === 'course_delivered')).toHaveLength(2);
 });
+it('captures durable playback on older Android WebViews without crypto.randomUUID', async () => {
+  vi.stubGlobal('crypto', { getRandomValues: webcrypto.getRandomValues.bind(webcrypto), subtle: webcrypto.subtle });
+  const c = await classroom();
+  vi.useFakeTimers(); c.runtime.play(); vi.runAllTimers(); vi.useRealTimers();
+  await c.recorder.flush();
+  const rows = await c.queue.list('alice');
+  expect(rows.some(row => row.event.kind === 'beat_completed')).toBe(true);
+  expect(rows.every(row => /^[a-f0-9-]{36}$/.test(row.event.device_id))).toBe(true);
+});

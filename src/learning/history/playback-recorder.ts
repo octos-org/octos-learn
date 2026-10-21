@@ -1,3 +1,4 @@
+import { createRequestId } from "../../lib/request-id";
 import type { BrowserLessonSession } from 'octos-lesson-language/web-runtime';
 import { PlaybackEvidenceTracker } from './playback-evidence';
 import type { HistoryDraft, LearningHistoryRecorder } from './recorder';
@@ -19,7 +20,7 @@ export class PlaybackHistoryCapture {
   private attempts = new Set<string>();
   private hints = new Map<string, number>();
   private started = new Set<string>();
-  private log = crypto.randomUUID();
+  private log = createRequestId();
   private binding?: PlaybackHistoryBinding;
   private readonly storageKey: string;
   private reason?: "play" | "view" | "seek" | "skip" | "restore";
@@ -31,7 +32,7 @@ export class PlaybackHistoryCapture {
   }
   bind(session: BrowserLessonSession) {
     this.session = session;
-    this.log = crypto.randomUUID(); this.attempts.clear(); this.hints.clear(); this.started.clear();
+    this.log = createRequestId(); this.attempts.clear(); this.hints.clear(); this.started.clear();
     this.evidence = new PlaybackEvidenceTracker({ cursor: session.projection.cursor, epoch: session.playbackEpoch });
     // Restored attempts are existing state, not newly observed answers.
     for (const task of session.studentTasks) {

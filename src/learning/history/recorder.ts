@@ -1,3 +1,4 @@
+import { createRequestId } from "../../lib/request-id";
 import { historyId, historySha256 } from "./identifiers";
 import type { HistoryCourse, HistoryEvent, HistoryKind } from '../../../services/learning-history/event-contract.mjs';
 import { DeviceHistoryQueue, type HistoryDocumentWrite } from './device-queue';
@@ -43,7 +44,7 @@ export class LearningHistoryRecorder {
   }
   stage(document?: HistoryDocumentWrite, drafts: HistoryDraft[] = []) {
     if (document) this.stagedDocuments.set(document.key, structuredClone(document.value));
-    this.stagedDrafts.push(...structuredClone(drafts).map(draft => ({ ...draft, occurredAt: draft.occurredAt ?? new Date().toISOString(), id: draft.id ?? (draft.stableKey ? undefined : crypto.randomUUID()) })));
+    this.stagedDrafts.push(...structuredClone(drafts).map(draft => ({ ...draft, occurredAt: draft.occurredAt ?? new Date().toISOString(), id: draft.id ?? (draft.stableKey ? undefined : createRequestId()) })));
     if (this.scheduled) return;
     this.scheduled = true; this.notify();
     queueMicrotask(() => {
@@ -64,7 +65,7 @@ export class LearningHistoryRecorder {
   private async write() {
     try {
       const identity = await this.identity();
-      const device = await this.queue.remember(identity.owner, 'device', crypto.randomUUID());
+      const device = await this.queue.remember(identity.owner, 'device', createRequestId());
       while (this.jobs.length) {
         const job = this.jobs[0];
         const events: HistoryEvent[] = [];
@@ -77,7 +78,7 @@ export class LearningHistoryRecorder {
             session_id: this.sessionId, run_id: await historyId([identity.owner, this.sessionId, draft.runKey]),
             ...(draft.questionId ? { question_id: draft.questionId } : {}),
             ...(draft.course ? { course: draft.course } : {}),
-            ...(draft.logKey ? { log_id: await this.queue.remember(identity.owner, `log:${draft.logKey}`, crypto.randomUUID()) } : {}),
+            ...(draft.logKey ? { log_id: await this.queue.remember(identity.owner, `log:${draft.logKey}`, createRequestId()) } : {}),
             data: { ...draft.data, ...(snapshotHash ? { snapshot_sha256: snapshotHash } : {}), ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
           };
           events.push(event);
