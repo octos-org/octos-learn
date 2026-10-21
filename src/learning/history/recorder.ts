@@ -1,4 +1,4 @@
-import { historyId } from "./identifiers";
+import { historyId, historySha256 } from "./identifiers";
 import type { HistoryCourse, HistoryEvent, HistoryKind } from '../../../services/learning-history/event-contract.mjs';
 import { DeviceHistoryQueue, type HistoryDocumentWrite } from './device-queue';
 import type { HistoryIdentity } from './synchronize';
@@ -6,6 +6,9 @@ import type { HistoryIdentity } from './synchronize';
 export interface HistoryDraft {
   kind: HistoryKind; runKey: string; questionId?: string; course?: HistoryCourse; logKey?: string;
   data: HistoryEvent['data']; id?: string; stableKey?: string; occurredAt?: string;
+  /** Immutable delivered event snapshot; hashed during the background write,
+   * not stored as a second copy of the lesson in the facts database. */
+  snapshotJson?: string;
 }
 export interface RecorderStatus { pendingWrites: number; error: string }
 interface Write { drafts: HistoryDraft[]; documents: HistoryDocumentWrite[] }
@@ -66,7 +69,8 @@ export class LearningHistoryRecorder {
         const job = this.jobs[0];
         const events: HistoryEvent[] = [];
         for (const draft of job.drafts) {
-          const id = draft.id ?? await historyId([this.sessionId, draft.stableKey]);
+          const snapshotHash = draft.snapshotJson === undefined ? undefined : await historySha256(draft.snapshotJson);
+          const id = draft.id ?? await historyId(snapshotHash ? [this.sessionId, draft.stableKey, snapshotHash] : [this.sessionId, draft.stableKey]);
           const time = await this.queue.remember(identity.owner, `event-time:${id}`, draft.occurredAt!);
           const event: HistoryEvent = {
             version: 1, id, kind: draft.kind, occurred_at: time, device_id: device,
@@ -74,7 +78,7 @@ export class LearningHistoryRecorder {
             ...(draft.questionId ? { question_id: draft.questionId } : {}),
             ...(draft.course ? { course: draft.course } : {}),
             ...(draft.logKey ? { log_id: await this.queue.remember(identity.owner, `log:${draft.logKey}`, crypto.randomUUID()) } : {}),
-            data: { ...draft.data, ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
+            data: { ...draft.data, ...(snapshotHash ? { snapshot_sha256: snapshotHash } : {}), ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
           };
           events.push(event);
         }

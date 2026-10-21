@@ -22,7 +22,7 @@ export function recordDeliveredLesson(recorder: LearningHistoryRecorder, questio
   const context = { runKey: `question:${questionId}`, questionId, course: { kind: 'generated' as const, id: questionId, version: questionId } };
   const complete = events.some(event => event.event === 'lesson.close');
   recorder.record({ ...context, kind: 'course_delivered', stableKey: JSON.stringify(['course', questionId, artifact, events.length, complete]),
-    data: { artifact, status: complete ? 'complete' : 'partial' } });
+    snapshotJson: JSON.stringify(events), data: { artifact, status: complete ? 'complete' : 'partial', event_count: events.length } });
   for (const event of events) {
     if (event.event !== 'lesson.step' || !event.step) continue;
     for (const beat of event.step.beats) if (beat.narration?.text.trim()) recordTeacherText(recorder, questionId, `narration:${event.lesson_id}:${event.step.id}:${beat.id}`, beat.narration.text, [artifact]);

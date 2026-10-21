@@ -64,8 +64,13 @@ export function validateHistoryEvent(candidate) {
       text(d.text, "answer", 65536); id(d.part_id, "part_id"); media(d.media);
       break;
     case "course_delivered":
-      question(); course(e.course); fields(d, ["artifact", "status"], ["artifact", "status"]);
+      question(); course(e.course); fields(d, ["artifact", "status", "snapshot_sha256", "event_count"], ["artifact", "status"]);
       text(d.artifact, "artifact", 2048); choice(d.status, "delivery status", ["partial", "complete"]);
+      if (d.snapshot_sha256 !== undefined || d.event_count !== undefined) {
+        if (typeof d.snapshot_sha256 !== "string" || !/^[a-f0-9]{64}$/.test(d.snapshot_sha256)) fail("Invalid delivered snapshot digest");
+        integer(d.event_count, "event_count");
+        if (!d.event_count) fail("Empty delivered snapshot");
+      }
       break;
     case "run_started":
       run(); fields(d, ["mode", "previous_run_id"], ["mode"]);
