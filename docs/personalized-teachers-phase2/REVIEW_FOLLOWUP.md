@@ -24,6 +24,8 @@
 
 最小构建曾因磁盘不足链接失败；完整测试首次也因真实磁盘可用量低于 1 GiB 而失败于 `gate_passes_when_free_space_meets_threshold`，其余 4346 项通过。清除了本轮已完成的可重建 CLI 对象缓存，保留测试可执行文件、现有服务和用户数据后，最小构建与完整测试重跑均通过；没有修改该磁盘检查或把首次失败写成成功。远程 CI 状态须以新提交对应的检查为准。
 
+最终远程核对：`96860d83a453380a870a4b40dcad2c2980f73684` 的 [CI 运行](https://github.com/octos-org/octos/actions/runs/39635481700)成功结束，`CI required` 为成功；原先失败的 unit、integration、oup-minimal 均完整通过，OUP、Windows、macOS 和主检查也通过。PR 检查汇总为 29 项成功、7 项按流程跳过，无失败或运行中项。等待期间的缓存上传不当作测试失败；最终以完整结束状态核对。PR 仍为 OPEN / draft，未合并。
+
 ## 两项主要产品问题
 
 ### 删除没有持久保存就移除课程卡片

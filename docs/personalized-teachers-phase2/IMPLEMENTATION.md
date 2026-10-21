@@ -66,6 +66,7 @@ Octos `session/delete` 当前成功响应只证明接口接受并执行了删除
 - TypeScript、构建通过。ESLint 无错误，保留原有 37 项警告；构建保留既有大分块提示。
 - Octos：此前 bus 296 项、UI 协议 157 项通过；本次重新验证 append handler 7 项，以及 API/无 API 两种构建中的 doctor 诊断回归各 1 项；CLI 严格 Clippy、rustfmt 通过。上游分为 `7d2beff1`（重试与回执）、`110be993`（实际传输的能力协商及说明）和 `96860d83`（诊断排除仅协商声明的能力），尚未合入。远程 CI 的最终状态以 PR 为准。
 - 本次 Octos 已构建 API CLI 的完整单元测试另有 4347 项通过、12 项忽略；前述 7 项 handler 和 doctor 用例包含其中，不重复相加。首次完整运行因本机可用磁盘低于测试要求的 1 GiB 而失败，清理可重建编译对象缓存后重跑通过，没有弱化测试。
+- 最终 GitHub 核对：上游 `96860d83` 的 [CI 运行](https://github.com/octos-org/octos/actions/runs/39635481700)成功，`CI required` 以及原失败的 unit、integration、oup-minimal 均通过；PR 汇总 29 项成功、7 项按流程跳过，无失败或运行中项。上游 PR 仍为草稿，尚未合入；不把 CI 成功说成已发布。
 
 复测命令：
 
