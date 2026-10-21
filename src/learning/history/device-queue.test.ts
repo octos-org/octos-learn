@@ -185,3 +185,9 @@ it('a whole-whiteboard deletion purges its queue and rejects an offline run the 
   expect(await reopened.deletedSessionIds('alice')).toEqual(['session-1']);
   expect(await reopened.list('bob')).toHaveLength(1);
 });
+it('accepts all supported current-profile response envelopes without relying on the local selected name', async () => {
+  const { verifyHistoryIdentity } = await import('./synchronize');
+  for (const payload of [{ id: 'alice' }, { profile: { id: 'alice' } }, { profile: { profile: { id: 'alice' } } }]) {
+    expect(await verifyHistoryIdentity('', 'credential', vi.fn(async () => Response.json(payload)))).toEqual({ owner: 'alice', token: 'credential' });
+  }
+});

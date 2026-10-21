@@ -12,7 +12,9 @@ export async function verifyHistoryIdentity(base: string, token: string, fetcher
     headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: AbortSignal.timeout(8000),
   });
   if (!response.ok) throw new Error('请登录后同步学习记录');
-  const owner = extractProfileIdFromPayload(await response.json());
+  const payload: unknown = await response.json();
+  const direct = payload && typeof payload === 'object' && 'id' in payload ? payload.id : undefined;
+  const owner = extractProfileIdFromPayload(payload) ?? (typeof direct === 'string' ? direct : null);
   if (!owner || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(owner)) throw new Error('无法确认学习记录所属账号');
   return { owner, token };
 }
@@ -54,7 +56,7 @@ export class HistorySynchronizer {
   private readonly base: string;
   private readonly fetcher: typeof fetch;
   constructor(queue: DeviceHistoryQueue, base: string, fetcher: typeof fetch = fetch) {
-    this.queue = queue; this.base = base; this.fetcher = fetcher;
+    this.queue = queue; this.base = base; this.fetcher = (input, init) => fetcher(input, init);
   }
 
   synchronize(identity: HistoryIdentity): Promise<void> {

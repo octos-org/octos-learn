@@ -22,6 +22,7 @@ export class LearningHistoryCoordinator {
   private status = EMPTY;
   private timer?: ReturnType<typeof setTimeout>;
   private active?: Promise<void>;
+  private retryDelay = 30000;
   private busy = new Set<string>();
   constructor(token: string) { this.token = token; }
   private current = () => getToken() === this.token;
@@ -41,7 +42,7 @@ export class LearningHistoryCoordinator {
   recorder(sessionId: string): LearningHistoryRecorder {
     let recorder = this.recorders.get(sessionId);
     if (!recorder) {
-      recorder = new LearningHistoryRecorder(sessionId, this.getIdentity, this.queue, () => this.schedule());
+      recorder = new LearningHistoryRecorder(sessionId, this.getIdentity, this.queue, () => { this.update({ pending: Math.max(1, this.status.pending) }); this.schedule(); });
       recorder.subscribe(() => this.update());
       this.recorders.set(sessionId, recorder);
     }
@@ -66,8 +67,11 @@ export class LearningHistoryCoordinator {
     this.update({ syncing: true, error: '' });
     try {
       await Promise.all([...this.recorders.values()].map(recorder => recorder.flush()));
+      // Keep shared-process database work and message maintenance out of
+      // active generation/narration. Local durable capture continues normally.
+      if (this.busy.size || !this.current()) return;
       const identity = await this.getIdentity();
-      if (!this.current()) return;
+      if (!this.current() || this.busy.size) return;
       this.update({ pending: (await this.queue.list(identity.owner)).length });
       await this.synchronizer.synchronize(identity);
       const remaining = await this.queue.list(identity.owner);
@@ -92,7 +96,18 @@ export class LearningHistoryCoordinator {
       }
     } catch {
       this.update({ error: '学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。' });
-    } finally { this.update({ syncing: false }); }
+    } finally {
+      this.update({ syncing: false });
+      // Lost HTTP/RPC replies leave durable tasks behind. Retry while this
+      // account remains active, including after a lease expires. No model call
+      // is made by this maintenance loop.
+      const unfinished = this.status.error || this.status.pending || this.status.conversationPending || this.status.cleanupPending;
+      if (unfinished && this.current() && !this.timer) {
+        const delay = this.retryDelay;
+        this.retryDelay = Math.min(delay * 2, 300000);
+        this.timer = setTimeout(() => { this.timer = undefined; void this.synchronize(); }, delay);
+      } else if (!unfinished) this.retryDelay = 30000;
+    }
   }
   markDeletionQueued() { this.update({ cleanupPending: Math.max(1, this.status.cleanupPending) }); }
   retry = async () => {
