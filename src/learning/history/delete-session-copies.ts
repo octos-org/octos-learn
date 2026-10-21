@@ -1,3 +1,4 @@
+import { historyRequestTimeout } from './request-timeout';
 import { createUiProtocolBridge, type UiProtocolBridge } from '../../runtime/ui-protocol-bridge';
 import type { HistoryIdentity } from './synchronize';
 
@@ -16,7 +17,7 @@ export async function finishSessionDeletions(identity: HistoryIdentity, base: st
   try {
     for (;;) {
       if (!isCurrent()) throw new Error('账号已切换，删除请求仍然保留');
-      const response = await fetcher(`${base}/api/learn/history/session-deletions/claim`, { method: 'POST', headers, body: JSON.stringify({ limit: 10 }), redirect: 'error', signal: AbortSignal.timeout(10000) });
+      const response = await fetcher(`${base}/api/learn/history/session-deletions/claim`, { method: 'POST', headers, body: JSON.stringify({ limit: 10 }), redirect: 'error', signal: historyRequestTimeout(10000) });
       if (!response.ok) throw new Error('白板清理尚待完成');
       const body = await response.json() as { profile_id: string; tasks: { session_id: string; lease_id: string }[] };
       if (body.profile_id !== identity.owner || !Array.isArray(body.tasks)) throw new Error('无法核对删除请求所属账号');
@@ -26,7 +27,7 @@ export async function finishSessionDeletions(identity: HistoryIdentity, base: st
         if (!isCurrent()) throw new Error('账号已切换，删除请求仍然保留');
         await bridge.callMethod('session/delete', { session_id: task.session_id });
         const acknowledged = await fetcher(`${base}/api/learn/history/session-deletions/${encodeURIComponent(task.session_id)}/receipt`, {
-          method: 'POST', headers, body: JSON.stringify({ lease_id: task.lease_id }), redirect: 'error', signal: AbortSignal.timeout(10000),
+          method: 'POST', headers, body: JSON.stringify({ lease_id: task.lease_id }), redirect: 'error', signal: historyRequestTimeout(10000),
         });
         if (!acknowledged.ok) throw new Error('删除请求的回执尚待保存');
         const receipt = await acknowledged.json() as { profile_id: string; recorded: boolean };

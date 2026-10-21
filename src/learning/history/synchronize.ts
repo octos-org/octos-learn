@@ -1,3 +1,4 @@
+import { historyRequestTimeout } from './request-timeout';
 import { historyId } from "./identifiers";
 import { extractProfileIdFromPayload } from '../../api/client';
 import { DeviceHistoryQueue, type HistoryReceipt } from './device-queue';
@@ -9,7 +10,7 @@ export interface HistoryIdentity { owner: string; token: string }
  */
 export async function verifyHistoryIdentity(base: string, token: string, fetcher: typeof fetch = fetch): Promise<HistoryIdentity> {
   const response = await fetcher(`${base}/api/my/profile`, {
-    headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: AbortSignal.timeout(8000),
+    headers: { Authorization: `Bearer ${token}` }, redirect: 'error', signal: historyRequestTimeout(8000),
   });
   if (!response.ok) throw new Error('请登录后同步学习记录');
   const payload: unknown = await response.json();
@@ -76,7 +77,7 @@ export class HistorySynchronizer {
     for (;;) {
       const params = new URLSearchParams({ after: String(after), limit: '100' });
       if (through !== undefined) params.set('through', String(through));
-      const response = await this.fetcher(`${this.base}/api/learn/history/changes?${params}`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
+      const response = await this.fetcher(`${this.base}/api/learn/history/changes?${params}`, { headers, redirect: 'error', signal: historyRequestTimeout(10000) });
       if (!response.ok) throw new Error('学习记录尚未同步，可稍后重试');
       const page = await response.json() as { changes: { seq: number; run_id?: string; session_id?: string; change_kind: string }[]; through: number; next_after: number | null };
       if (!Number.isSafeInteger(page.through) || page.through < after || !Array.isArray(page.changes)
@@ -96,7 +97,7 @@ export class HistorySynchronizer {
       const sent = batch((await this.queue.list(identity.owner)).filter(row => row.state === 'pending').map(row => row.event));
       if (!sent.length) return;
       const response = await this.fetcher(`${this.base}/api/learn/history/events`, {
-        method: 'POST', headers, body: JSON.stringify({ events: sent }), redirect: 'error', signal: AbortSignal.timeout(15000),
+        method: 'POST', headers, body: JSON.stringify({ events: sent }), redirect: 'error', signal: historyRequestTimeout(15000),
       });
       if (!response.ok) throw new Error('学习记录尚未同步，本机副本已保留');
       const payload = await response.json() as { profile_id: string; results: HistoryReceipt[] };

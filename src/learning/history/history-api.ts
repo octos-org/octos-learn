@@ -1,3 +1,4 @@
+import { historyRequestTimeout } from './request-timeout';
 import { getToken } from '../../api/client';
 import { API_BASE } from '../../lib/constants';
 import { DeviceHistoryQueue } from './device-queue';
@@ -33,7 +34,7 @@ export class HistoryApi {
     const response = await this.fetcher(`${API_BASE}/api/learn/history${path}`, {
       method, headers: { Authorization: `Bearer ${this.identity.token}`, 'X-Learning-Owner': this.identity.owner, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      redirect: 'error', signal: AbortSignal.timeout(10000),
+      redirect: 'error', signal: historyRequestTimeout(10000),
     });
     if (this.currentToken() !== this.identity.token) throw new Error('账号已切换，请重新打开学习记录');
     if (response.status === 409) throw new Error('记录已发生删除或账号变化，请刷新后重新查看');

@@ -1,3 +1,4 @@
+import { historyRequestTimeout } from './request-timeout';
 import { finishSessionDeletions } from "./delete-session-copies";
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { getToken } from '../../api/client';
@@ -77,7 +78,7 @@ export class LearningHistoryCoordinator {
       const remaining = await this.queue.list(identity.owner);
       this.update({ pending: remaining.length, error: remaining.some(row => row.state === 'conflict') ? '有学习记录内容冲突，原记录已保留，等待核对。' : '' });
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };
-      const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: AbortSignal.timeout(10000) });
+      const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: historyRequestTimeout(10000) });
       if (!pending.ok) throw new Error('问答交付状态暂不可用');
       const payload = await pending.json() as { profile_id: string; states: { state: string; count: number }[]; pending_session_deletions: number; probe_session_id: string | null };
       if (payload.profile_id !== identity.owner || !Array.isArray(payload.states)) throw new Error('无法确认问答交付账号');

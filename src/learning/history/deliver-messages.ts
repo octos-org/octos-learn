@@ -1,3 +1,4 @@
+import { historyRequestTimeout } from './request-timeout';
 import { createUiProtocolBridge, type UiProtocolBridge } from '../../runtime/ui-protocol-bridge';
 import type { HistoryIdentity } from './synchronize';
 
@@ -33,7 +34,7 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
     for (;;) {
       if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
       const claim = await fetcher(`${base}/api/learn/history/deliveries/claim`, {
-        method: 'POST', headers, body: JSON.stringify({ limit: 10 }), signal: AbortSignal.timeout(10000), redirect: 'error',
+        method: 'POST', headers, body: JSON.stringify({ limit: 10 }), signal: historyRequestTimeout(10000), redirect: 'error',
       });
       if (!claim.ok) throw new Error('问答尚未交给 Octos，原文已保留');
       const body = await claim.json() as { profile_id: string; tasks: HistoryDeliveryTask[] };
@@ -46,7 +47,7 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
         if (receipt.session_id !== task.message.session_id || !Number.isSafeInteger(receipt.seq) || receipt.seq < 0
           || receipt.thread_id !== expectedThread) throw new Error('Octos 未返回可核对的问答回执');
         const response = await fetcher(`${base}/api/learn/history/deliveries/${encodeURIComponent(task.id)}/receipt`, {
-          method: 'POST', headers, body: JSON.stringify({ lease_id: task.lease_id, seq: receipt.seq }), signal: AbortSignal.timeout(10000), redirect: 'error',
+          method: 'POST', headers, body: JSON.stringify({ lease_id: task.lease_id, seq: receipt.seq }), signal: historyRequestTimeout(10000), redirect: 'error',
         });
         if (!response.ok) throw new Error('Octos 已返回回执，产品记录尚待确认');
         const acknowledgement = await response.json() as { profile_id: string; recorded: boolean };
