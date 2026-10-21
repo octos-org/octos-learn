@@ -1,9 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { webcrypto } from "node:crypto";
+import { IDBFactory } from "fake-indexeddb";
 import { MemoryRouter, useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CourseLauncher } from "./course-launcher";
 import {
   createProvisionalLearningSession,
+  createCoursePackLearningInstance,
   getLearningSession,
   promoteLearningSession,
   updateLearningSession,
@@ -274,7 +277,12 @@ describe("shared course launcher", () => {
 
   it("creates one instance explicitly, then offers continue and restart", async () => {
     auth.token = "token";
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
+    localStorage.setItem("octos_session_token", "token");
+    vi.stubGlobal("indexedDB", new IDBFactory());
+    vi.stubGlobal("crypto", webcrypto);
+    const fetcher = vi.fn(async (input: RequestInfo | URL) => String(input).endsWith("/api/my/profile")
+      ? Response.json({ id: "alice" }) : Response.json(catalog([release])));
+    vi.stubGlobal("fetch", fetcher);
     showLauncher();
     fireEvent.click(await screen.findByRole("button", { name: /开始互动/u }));
     const destination = new URL(screen.getByTestId("location").textContent!, "https://example.test");
@@ -293,6 +301,24 @@ describe("shared course launcher", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
     await waitFor(() => expect(screen.getByRole("button", { name: /开始互动/u })).toBeTruthy());
+    expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/learn/history/sessions/"),
+      expect.objectContaining({ method: "DELETE", body: JSON.stringify({ delete_octos_session: true }) }));
+  });
+
+  it("keeps a course instance when its deletion cannot be persisted without a login", async () => {
+    const instance = createCoursePackLearningInstance({
+      packId: release.packId, version: release.version, archiveSha256: release.archiveSha256,
+    }, release.title);
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json(catalog([release]))));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    showLauncher();
+    const link = await screen.findByRole("link", { name: /继续学习/u });
+    const destination = link.getAttribute("href");
+    fireEvent.click(screen.getByLabelText(/更多操作/u));
+    fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
+    expect((await screen.findByRole("alert")).textContent).toContain("删除请求尚未保存");
+    expect(getLearningSession(instance.id)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /继续学习/u }).getAttribute("href")).toBe(destination);
   });
 
   it("manages ordinary whiteboards and logout from the launcher", async () => {

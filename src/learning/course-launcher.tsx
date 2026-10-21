@@ -213,7 +213,7 @@ function CourseCard({
       || !window.confirm("删除这门课程当前保存的学习记录？课程包本身不会被删除。")) return;
     setDeleting(true); setDeleteError("");
     try {
-      await queueWhiteboardDeletion(latestInstance.id);
+      if (!await queueWhiteboardDeletion(latestInstance.id)) throw new Error("请登录后删除学习记录");
       removeLearningSession(latestInstance.id);
       setLatestInstance(listCoursePackLearningInstances(source)[0] ?? null);
     } catch { setDeleteError("删除请求尚未保存，原记录已保留，请重试。"); }
