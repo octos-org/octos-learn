@@ -26,6 +26,7 @@
     "test": "playwright test",
     "test:unit": "vitest run",
     "test:byok": "node --test services/byok/server.test.mjs",
+    "test:history": "node --test services/learning-history/*.test.mjs services/product-server.test.mjs",
     "byok:serve": "node services/byok/start.mjs",
     "test:unit:watch": "vitest",
     "test:e2e:smoke": "playwright test tests/learning-smoke.spec.ts",
