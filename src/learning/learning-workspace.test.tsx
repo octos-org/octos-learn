@@ -32,6 +32,16 @@ import * as admissionFastGate from "./admission-fast-gate";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
 
+const historyRecordingMock = vi.hoisted(() => ({ enabled: false, record: vi.fn(), stage: vi.fn(), setClassroomBusy: vi.fn() }));
+vi.mock("./history/use-learning-history", () => ({
+  useLearningHistoryRecorder: () => ({
+    recorder: historyRecordingMock.enabled ? { record: historyRecordingMock.record, stage: historyRecordingMock.stage } : undefined,
+    coordinator: { setClassroomBusy: historyRecordingMock.setClassroomBusy, retry: vi.fn() },
+    status: { pending: 0, syncing: false, conversationPending: 0, error: "", checked: true },
+    localStatus: { pendingWrites: 0, error: "" },
+  }),
+}));
+
 const conversationMock = vi.hoisted(() => ({
   state: "idle" as "idle" | "starting",
   startupDetail: null as string | null,
@@ -190,6 +200,7 @@ describe("LearningWorkspace", () => {
 
   beforeEach(() => {
     cleanup();
+    historyRecordingMock.enabled = false; historyRecordingMock.record.mockClear(); historyRecordingMock.stage.mockClear();
     conversationMock.turns = [];
     conversationMock.threads = [];
     conversationMock.state = "idle";
@@ -593,6 +604,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("routes an admitted voice lesson directly to the background lesson action", async () => {
+    historyRecordingMock.enabled = true;
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",
       ok: true,
@@ -636,6 +648,7 @@ describe("LearningWorkspace", () => {
 
     expect(await screen.findByText("自然对数的意义是怎么推导的？"))
       .toBeTruthy();
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_submitted", questionId: "voice-lesson-turn", data: { text: "自然对数的意义是怎么推导的？", modality: "voice" } }));
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith(
       "learn-voice-question",
       "learning.lesson.generate",
@@ -1443,6 +1456,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("sends a composer lesson directly to the background lesson action", async () => {
+    historyRecordingMock.enabled = true;
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",
       ok: true,
@@ -1485,6 +1499,8 @@ describe("LearningWorkspace", () => {
     const turnId = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.turn_id;
     expect(turnId).toEqual(expect.any(String));
     expect(sendMessageMock).not.toHaveBeenCalled();
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_submitted", questionId: turnId, data: { text: "请解释勾股定理", modality: "text" } }));
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", questionId: turnId, data: { conversation_route: "direct-action", media: [] } }));
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toContain("lesson-job-1");
@@ -1548,6 +1564,7 @@ describe("LearningWorkspace", () => {
     });
     expect(await screen.findByText("已回答")).toBeTruthy();
     expect(await screen.findByText("勾股定理")).toBeTruthy();
+    await waitFor(() => expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "answer_delivered", questionId: turnId, data: expect.objectContaining({ text: "我们来看勾股定理。" }) })));
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toBeNull();
