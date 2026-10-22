@@ -1,5 +1,5 @@
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
-import { recordDeliveredLesson, recordTeacherText } from "./history/delivered-material";
+import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
@@ -1237,6 +1237,7 @@ export function LearningWorkspace({
     setSendErrorCode(errorCode);
     const thread = threads.find((candidate) => candidate.id === turnId);
     const questionId = thread?.turnId ?? turnId;
+    recordFailedRequest(historyRecorder, questionId, turnId);
     failedQuestionErrorsRef.current.set(turnId, message);
     failedQuestionErrorsRef.current.set(questionId, message);
     updateWhiteboardQuestion(questionId, { status: "failed", error: message, errorCode });
@@ -1246,7 +1247,7 @@ export function LearningWorkspace({
     setPlainReplySpoken(false);
     setSendError(message);
     conversationOptions?.onTurnError?.(turnId, error);
-  }, [setTextTurnPending, setSendError, setSendErrorCode, conversationOptions, threads, updateWhiteboardQuestion]);
+  }, [setTextTurnPending, setSendError, setSendErrorCode, conversationOptions, threads, updateWhiteboardQuestion, historyRecorder]);
   const voiceConversationOptions = useMemo<VoiceConversationOptions>(
     () => {
       type PendingSelection = NonNullable<typeof pendingVoiceSelectionRef.current>;
@@ -1928,6 +1929,11 @@ export function LearningWorkspace({
         setOllGenerationSessionId(sessionId);
         return;
       }
+      // Capture every known failed execution before aggregation or file I/O.
+      // Another job for this question may still succeed and deliver material.
+      if (job.status !== "succeeded") {
+        recordFailedRequest(historyRecorder, pending.turnId, job.job_id, job.status === "cancelled" ? "cancelled" : "failed", "job-ended");
+      }
       pendingLessonJobsRef.current.delete(job.job_id);
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
       const sameTurnStillRunning = [...pendingLessonJobsRef.current.values()]
@@ -1978,6 +1984,7 @@ export function LearningWorkspace({
         // delivery instead of displaying the previous lesson's completion
         // message. Jobs without a result are kept as a legacy-server fallback.
         if (job.result && !hasLessonArtifact) {
+          recordFailedRequest(historyRecorder, pending.turnId, job.job_id, "failed", "missing-artifact");
           const message = "课程已经生成，但白板没有收到课程内容，请重试。";
           failedQuestionErrorsRef.current.set(pending.turnId, message);
           updateWhiteboardQuestion(pending.turnId, {
@@ -2062,6 +2069,7 @@ export function LearningWorkspace({
     };
   }, [
     handleTurnComplete,
+    historyRecorder,
     learnTrace,
     packagedPlayback,
     sessionId,
@@ -2594,6 +2602,7 @@ export function LearningWorkspace({
           ? cause.message
           : "选区问题发送失败";
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         updateWhiteboardQuestion(turnId, { status: "failed", error: message, errorCode: cause instanceof LessonModelError ? cause.code : undefined });
         // Selection failures stay attached to their question on the board.
         // Resolving here prevents the whiteboard toolbar and the workspace
@@ -2983,12 +2992,14 @@ export function LearningWorkspace({
           },
           onError: (error) => {
             setTextTurnPending(false);
+            recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
         setSendErrorCode(cause instanceof LessonModelError ? cause.code : undefined);
         setSendError(cause instanceof Error ? cause.message : "发送失败");
@@ -3001,6 +3012,7 @@ export function LearningWorkspace({
       aiUnavailableMessage,
       addWhiteboardQuestion,
       recordHistoryRoute,
+      historyRecorder,
       composerBoardReferences,
       conv,
       handleTurnComplete,
@@ -3057,12 +3069,14 @@ export function LearningWorkspace({
           },
           onError: (error) => {
             setTextTurnPending(false);
+            recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "图片发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
         setSendError(cause instanceof Error ? cause.message : "图片发送失败");
       }
@@ -3072,6 +3086,7 @@ export function LearningWorkspace({
       buildTurnText,
       recordHistoryQuestion,
       recordHistoryRoute,
+      historyRecorder,
       aiUnavailable,
       aiUnavailableMessage,
       handleTurnComplete,

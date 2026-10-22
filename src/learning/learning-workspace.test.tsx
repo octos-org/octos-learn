@@ -32,10 +32,13 @@ import * as admissionFastGate from "./admission-fast-gate";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import mathTwoPointsSource from "./oll/fixtures/math-two-points.canonical.jsonl?raw";
 
-const historyRecordingMock = vi.hoisted(() => ({ enabled: false, record: vi.fn(), stage: vi.fn(), setClassroomBusy: vi.fn() }));
+const historyRecordingMock = vi.hoisted(() => {
+  const record = vi.fn(), stage = vi.fn();
+  return { enabled: false, record, stage, recorder: { record, stage }, setClassroomBusy: vi.fn() };
+});
 vi.mock("./history/use-learning-history", () => ({
   useLearningHistoryRecorder: () => ({
-    recorder: historyRecordingMock.enabled ? { record: historyRecordingMock.record, stage: historyRecordingMock.stage } : undefined,
+    recorder: historyRecordingMock.enabled ? historyRecordingMock.recorder : undefined,
     coordinator: { setClassroomBusy: historyRecordingMock.setClassroomBusy, retry: vi.fn() },
     status: { pending: 0, syncing: false, conversationPending: 0, error: "", checked: true },
     localStatus: { pendingWrites: 0, error: "" },
@@ -1641,7 +1644,53 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(screen.getByText(finishText)).toBeTruthy(), { timeout: 4000 });
   });
 
+  it.each(["failed", "cancelled"] as const)("records a %s generation job once without retaining provider errors", async status => {
+    historyRecordingMock.enabled = true;
+    const job = { job_id: "failed-history-job", batch_id: "failed-history-batch", profile_id: "alan0x",
+      session_id: "learn-failed-history", action_id: "learning.lesson.generate", skill_id: "learning-coach", status: "queued",
+      created_at: "2026-09-04T00:00:00Z", updated_at: "2026-09-04T00:00:00Z" };
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: job.action_id, ok: true, queued: 1, jobs: [job] });
+    await renderLearning(<LearningWorkspace sessionId={job.session_id} voiceEnabled={false} onBack={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释等比数列求和公式" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const questionId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
+    const detail = { ...job, status, result: { success: false, output: "synthetic-private-provider-error" } };
+    await act(async () => { window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail })); });
+    await waitFor(() => expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({
+      kind: "request_failed", questionId, runKey: `question:${questionId}`,
+      data: { execution_id: job.job_id, status, reason: "job-ended" },
+    })));
+    await act(async () => { window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail })); });
+    const failures = historyRecordingMock.record.mock.calls.filter(([draft]) => draft.kind === "request_failed");
+    expect(failures).toHaveLength(1);
+    expect(JSON.stringify(failures)).not.toContain("synthetic-private-provider-error");
+    expect(historyRecordingMock.record.mock.calls.some(([draft]) => draft.kind === "course_delivered")).toBe(false);
+  });
+
+  it("records an earlier failed job before file lookup and while a sibling generation job continues", async () => {
+    historyRecordingMock.enabled = true;
+    const job = { job_id: "first-job", batch_id: "two-job-batch", profile_id: "alan0x", session_id: "learn-two-failure-jobs",
+      action_id: "learning.lesson.generate", skill_id: "learning-coach", status: "queued", created_at: "2026-09-04T00:00:00Z", updated_at: "2026-09-04T00:00:00Z" };
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: job.action_id, ok: true, queued: 2, jobs: [job, { ...job, job_id: "second-job" }] });
+    await renderLearning(<LearningWorkspace sessionId={job.session_id} voiceEnabled={false} onBack={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释等比数列求和公式" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const questionId = sessionFilesMock.invokeSkillAction.mock.calls[0]![2]!.turn_id as string;
+    await act(async () => { window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail: { ...job, status: "failed" } })); });
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "request_failed", questionId,
+      data: { execution_id: "first-job", status: "failed", reason: "job-ended" } }));
+    let resolveFiles!: (files: []) => void;
+    sessionFilesMock.getSessionFiles.mockImplementationOnce(() => new Promise(resolve => { resolveFiles = resolve; }));
+    await act(async () => { window.dispatchEvent(new CustomEvent("crew:skill_action_job_updated", { detail: { ...job, job_id: "second-job", status: "cancelled" } })); });
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "request_failed", questionId,
+      data: { execution_id: "second-job", status: "cancelled", reason: "job-ended" } }));
+    await act(async () => { resolveFiles([]); });
+  });
+
   it("does not finish a successful job when no lesson artifact was delivered", async () => {
+    historyRecordingMock.enabled = true;
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
       action_id: "learning.lesson.generate",
       ok: true,
@@ -1697,6 +1746,9 @@ describe("LearningWorkspace", () => {
       "课程已经生成，但白板没有收到课程内容，请重试。",
     )).not.toHaveLength(0);
     expect(screen.queryByText("已回答")).toBeNull();
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({
+      kind: "request_failed", data: { execution_id: "lesson-job-without-artifact", status: "failed", reason: "missing-artifact" },
+    }));
     expect(screen.queryByText(
       "这节课讲完了，你可以缩放白板回顾刚才的内容。",
     )).toBeNull();

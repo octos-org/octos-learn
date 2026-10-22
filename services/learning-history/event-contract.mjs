@@ -63,6 +63,12 @@ export function validateHistoryEvent(candidate) {
       question(); fields(d, ["text", "part_id", "media"], ["text", "part_id"]);
       text(d.text, "answer", 65536); id(d.part_id, "part_id"); media(d.media);
       break;
+    case "request_failed":
+      question(); fields(d, ["execution_id", "status", "reason"], ["execution_id", "status", "reason"]);
+      id(d.execution_id, "execution id");
+      choice(d.status, "request outcome", ["failed", "cancelled"]);
+      choice(d.reason, "failure reason", ["request-error", "job-ended", "missing-artifact"]);
+      break;
     case "course_delivered":
       question(); course(e.course); fields(d, ["artifact", "status", "snapshot_sha256", "event_count"], ["artifact", "status"]);
       text(d.artifact, "artifact", 2048); choice(d.status, "delivery status", ["partial", "complete"]);

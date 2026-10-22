@@ -109,3 +109,12 @@ it('shows automatic evidence separately and pins its pagination without turning 
   expect(screen.getByText(/原问题依据 1/)).toBeTruthy();
   expect(screen.queryByRole('button', { name: '继续查看自动分析依据' })).toBeNull();
 });
+
+
+it('shows a failed request separately from delivered content and played progress', async () => {
+  stubFetch(url => url.includes('/runs/run-1') ? Response.json({ events: [{ seq: 2, event: { ...event, kind: 'request_failed', data: { execution_id: 'job-one', status: 'failed', reason: 'job-ended' } } }], through: 8, next_after: null }) : undefined);
+  render(<AccountHistoryPanel onSelect={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
+  expect(await screen.findByText('一次请求执行未完成')).toBeTruthy();
+  expect(screen.getByText(/已经交付的内容仍保留，是否播放另看播放记录/)).toBeTruthy();
+});

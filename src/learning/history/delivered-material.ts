@@ -1,6 +1,17 @@
 import type { CanonicalEvent } from 'octos-lesson-language';
 import type { LearningHistoryRecorder } from './recorder';
 
+/** A request can have multiple executions, and a failed execution may already
+ * have delivered useful material. Keep its
+ * terminal observation separate from those deliveries, without copying errors
+ * or provider responses into learning history or Octos dialogue. */
+export function recordFailedRequest(recorder: LearningHistoryRecorder | undefined, questionId: string,
+  executionId = questionId, status: 'failed' | 'cancelled' = 'failed',
+  reason: 'request-error' | 'job-ended' | 'missing-artifact' = 'request-error') {
+  recorder?.record({ kind: 'request_failed', runKey: `question:${questionId}`, questionId,
+    stableKey: JSON.stringify(['failure', questionId, executionId]), data: { execution_id: executionId, status, reason } });
+}
+
 export function historyTextParts(text: string): string[] {
   const parts: string[] = []; let part = ''; let size = 0;
   for (const character of text) {

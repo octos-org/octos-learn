@@ -6,7 +6,7 @@ import type { HistoryEvent } from '../../../services/learning-history/event-cont
 
 function EventDetail({ event }: { event: HistoryEvent }) {
   const d = event.data;
-  const title: Record<string, string> = { question_submitted: '学生提问', answer_delivered: '老师交付的文字', course_delivered: '课程交付',
+  const title: Record<string, string> = { question_submitted: '学生提问', answer_delivered: '老师交付的文字', course_delivered: '课程交付', request_failed: '一次请求执行未完成',
     run_started: '开始学习', playback_position: '浏览与播放位置', beat_completed: '片段实际播放完成', narration_ended: '旁白结束', task_attempt: '一次作答', task_hint: '查看提示' };
   const reasons: Record<string, string> = { ended: '正常播完', disabled: '关闭语音', failed: '语音失败', cancelled: '已取消', play: '播放推进', view: '查看', seek: '跳转', skip: '手动跳过', restore: '恢复位置' };
   return <article className="learning-history-evidence">
@@ -14,6 +14,7 @@ function EventDetail({ event }: { event: HistoryEvent }) {
     <time>{new Date(event.occurred_at).toLocaleString('zh-CN')}</time>
     {typeof d.text === 'string' && <p className="learning-history-original-text">{d.text}</p>}
     {event.kind === 'course_delivered' && <p>{d.status === 'complete' ? '已完整交付课程，是否学完需看实际播放记录。' : '课程部分内容已交付。'}</p>}
+    {event.kind === 'request_failed' && <p>{d.status === 'cancelled' ? '一次请求执行已取消。' : d.reason === 'missing-artifact' ? '生成任务已结束，但没有收到课程内容。' : '一次生成或回答执行失败。'} 已经交付的内容仍保留，是否播放另看播放记录。</p>}
     {event.kind === 'beat_completed' && <p>{d.presentation === 'audio' ? '包含正常结束的语音播放' : '图文播放'} · {String(d.step_id)} · {String(d.beat_id)}</p>}
     {event.kind === 'narration_ended' && <p>{reasons[String(d.reason)]}</p>}
     {event.kind === 'playback_position' && <p>{reasons[String(d.reason)]} · 位置 {String(d.cursor)}；不能据此推断此前内容全部学过。</p>}

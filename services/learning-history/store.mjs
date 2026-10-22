@@ -141,14 +141,15 @@ export class HistoryStore {
     const operation = event.kind === "task_attempt" ? ["task", event.run_id, event.log_id, event.data.task_id, event.data.operation_id]
       : event.kind === "question_submitted" ? ["question", event.question_id]
         : event.kind === "question_routed" ? ["route", event.question_id]
-        : event.kind === "answer_delivered" ? ["answer", event.question_id, event.data.part_id] : null;
+        : event.kind === "answer_delivered" ? ["answer", event.question_id, event.data.part_id]
+          : event.kind === "request_failed" ? ["failure", event.data.execution_id] : null;
     const operationKey = operation && canonicalHistoryJson(operation);
     if (operationKey && this.db.prepare("SELECT 1 FROM receipts WHERE owner=? AND operation_key=?").get(owner, operationKey)) return { id: event.id, status: "conflict" };
     const parent = this.db.prepare("SELECT session_id FROM events WHERE owner=? AND run_id=? LIMIT 1").get(owner, event.run_id);
     if (parent && parent.session_id !== event.session_id) return { id: event.id, status: "conflict" };
-    if (["question_submitted", "question_routed", "answer_delivered", "course_delivered"].includes(event.kind)) {
+    if (["question_submitted", "question_routed", "answer_delivered", "request_failed", "course_delivered"].includes(event.kind)) {
       const question = this.db.prepare(`SELECT run_id,session_id FROM events WHERE owner=? AND question_id=?
-        AND kind IN ('question_submitted','question_routed','answer_delivered','course_delivered') LIMIT 1`).get(owner, event.question_id);
+        AND kind IN ('question_submitted','question_routed','answer_delivered','request_failed','course_delivered') LIMIT 1`).get(owner, event.question_id);
       if (question && (question.run_id !== event.run_id || question.session_id !== event.session_id)) return { id: event.id, status: "conflict" };
     }
     const courseKey = event.course ? historyCourseKey(event.course) : null;

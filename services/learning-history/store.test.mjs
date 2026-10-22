@@ -193,3 +193,30 @@ test("deleting a whole whiteboard blocks unknown future runs, cancels dialogue c
   assert.equal(store.claimSessionDeletions('alice').tasks.length, 0);
   assert.equal(store.deleteSession('alice', 'learn-board', true).seq, deleted.seq);
 });
+
+
+test("request failures survive restart without replacing partial deliveries, adding dialogue, or changing learning counts", () => {
+  const q = event("source"), route = event("route", { kind: "question_routed", question_id: q.question_id, data: { conversation_route: "direct-action", media: [] } });
+  const partial = event("partial", { kind: "course_delivered", question_id: q.question_id, course: { kind: "generated", id: "source", version: "one" }, data: { artifact: "first.jsonl", status: "partial" } });
+  store.append("alice", [q, route, partial]);
+  const failure = event("failure", { kind: "request_failed", question_id: q.question_id, data: { execution_id: "job-one", status: "failed", reason: "job-ended" } });
+  const dialogueCount = store.db.prepare("SELECT COUNT(*) n FROM delivery_tasks").get().n;
+  const analysisCount = store.db.prepare("SELECT COUNT(*) n FROM topic_analysis_jobs WHERE source_event_id='source'").get().n;
+  assert.equal(store.append("alice", [failure]).results[0].status, "accepted");
+  store.close(); store = new HistoryStore(file);
+  assert.equal(store.append("alice", [failure]).results[0].status, "exists");
+  assert.equal(store.append("alice", [{ ...failure, id: "duplicate-execution" }]).results[0].status, "conflict");
+  assert.equal(store.append("alice", [{ ...failure, id: "wrong-run", run_id: "other-run", data: { ...failure.data, execution_id: "job-two" } }]).results[0].status, "conflict");
+  store.append("alice", [event("second-question", { run_id: "other-question-run" })]);
+  assert.equal(store.append("alice", [{ ...failure, id: "relabeled-job", question_id: "q-second-question", run_id: "other-question-run" }]).results[0].status, "conflict");
+  const rows = store.runEvents("alice", "run-one").events;
+  assert.equal(rows.filter(row => row.event.kind === "course_delivered" && row.event.data.status === "partial").length, 1);
+  assert.deepEqual(rows.find(row => row.event.kind === "request_failed").event.data, failure.data);
+  assert.equal(store.db.prepare("SELECT COUNT(*) n FROM delivery_tasks").get().n, dialogueCount);
+  assert.equal(store.db.prepare("SELECT COUNT(*) n FROM topic_analysis_jobs WHERE source_event_id='source'").get().n, analysisCount);
+  const run = store.listRuns("alice").runs.find(row => row.run_id === "run-one"); assert.equal(run.question_count, 1); assert.equal(run.completed_beats, 0); assert.equal(run.start_recorded, false);
+  assert.equal(store.runEvents("bob", "run-one").events.length, 0);
+  for (const data of [{ ...failure.data, error: "provider response must not be retained" }, { ...failure.data, status: "complete" }, { status: "failed", reason: "job-ended" }]) {
+    assert.throws(() => validateHistoryEvent({ ...failure, data }));
+  }
+});

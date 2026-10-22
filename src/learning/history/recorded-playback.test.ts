@@ -231,3 +231,23 @@ it('retains streamed and final course references without duplicating or conflict
   expect(rows.filter(row => row.event.kind === 'answer_delivered' && row.event.data.text === spoken)).toHaveLength(1);
   expect(rows.filter(row => row.event.kind === 'course_delivered').map(row => row.event.data.artifact).sort()).toEqual(['lesson.oll.jsonl', 'lesson.part-01.oll.jsonl']);
 });
+
+
+it('durably deduplicates request failure callbacks and keeps delivered content as separate evidence', async () => {
+  const c = await classroom();
+  const { recordDeliveredLesson, recordFailedRequest } = await import('./delivered-material');
+  const partial = parseCanonicalJsonl(source).filter(event => event.event !== 'lesson.close');
+  recordDeliveredLesson(c.recorder, 'q-partial', 'part.jsonl', partial);
+  recordFailedRequest(c.recorder, 'q-partial', 'job-one');
+  recordFailedRequest(c.recorder, 'q-partial', 'job-one');
+  recordFailedRequest(c.recorder, 'q-partial', 'job-two', 'cancelled', 'job-ended');
+  await c.recorder.flush();
+  const reopened = new (await import('./device-queue')).DeviceHistoryQueue();
+  const rows = await reopened.list('alice');
+  const failures = rows.filter(row => row.event.kind === 'request_failed');
+  expect(failures).toHaveLength(2);
+  expect(failures[0].event.data).toEqual({ execution_id: 'job-one', status: 'failed', reason: 'request-error' });
+  expect(failures[1].event.data.status).toBe('cancelled');
+  expect(rows.filter(row => row.event.kind === 'course_delivered' && row.event.data.status === 'partial')).toHaveLength(1);
+  expect(failures.every(row => row.event.question_id === 'q-partial')).toBe(true);
+});
