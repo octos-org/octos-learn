@@ -1,8 +1,8 @@
 {
   "schema": "octos.learn.topic-accuracy-trial.v1",
   "id": "phase2-topic-diagnosis-20261022",
-  "status": "prepared-not-approved",
-  "authorization_reference": "",
+  "status": "stopped-do-not-reexecute",
+  "authorization_reference": "User explicitly authorized this separate one-source diagnosis, max 3 supplier HTTP requests and USD3.30, in this chat on 2026-10-22.",
   "owner": "alan0x",
   "model": "gemini-3.8-flash",
   "backend": "http://127.0.0.1:50080",
@@ -29,12 +29,12 @@
     "output_tokens": 32768
   },
   "code_sha256": {
-    "scripts/verify-learning-topic-accuracy.mjs": "6552993be799ab99dd33ef6cd96cfb7cc27b246201b32570b7f430378b1065d5",
-    "scripts/lib/learning-topic-trial-control.mjs": "17b346c9673bc5f5c487891a38d2b2bae351fe7ce2963fbd1282f14cfa004f6d",
+    "scripts/verify-learning-topic-accuracy.mjs": "7359f2372f0c2e1047e171ff757572b62fe1db6f1fbacc5269efc6219fd09986",
+    "scripts/lib/learning-topic-trial-control.mjs": "78c74a0ca734c4e9415db7aaa389b714ec5348deaeea852d57735421014e23be",
     "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
-    "scripts/lib/learning-topic-trial-fixture.mjs": "ac8ab5fd366a2d877d1ad16605e072d6e6d28a0d329609ec9616e225c29cf6cd",
+    "scripts/lib/learning-topic-trial-fixture.mjs": "b693ed4e9d7a60e0cd3e1ac8d69be59e490249d64371e92d5e2e337ab82c78e9",
     "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
-    "src/learning/history/analyze-topics.ts": "52462bff3c1c16a5ffb0f4fc56beda0ab13accf12fb60d9324f759b74d996845",
+    "src/learning/history/analyze-topics.ts": "745421920fade338599501d5b6a3c67f62e4cfdea921d4df79d87f7147f01ee8",
     "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
     "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
     "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",

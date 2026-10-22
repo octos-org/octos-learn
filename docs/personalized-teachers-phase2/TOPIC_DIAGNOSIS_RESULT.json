@@ -1,0 +1,248 @@
+{
+  "schema": "octos.learn.topic-diagnosis-result.v1",
+  "date": "2026-10-22",
+  "state": "stopped-cap-exhausted-no-final-result",
+  "real_supplier_http_requests": 3,
+  "unforwarded_refusals": 1,
+  "reserved_usd": 3.3,
+  "actual_billed_usd": null,
+  "actual_token_usage": null,
+  "source_count": 1,
+  "source_id": "q-direction",
+  "semantic_quality_verified": false,
+  "final_assistant_text_present": false,
+  "terminal_state": "errored",
+  "catalog_result_count": 3,
+  "expected_catalog_node_seen": true,
+  "analysis_instructions_present": true,
+  "frozen_input_hash_preserved": true,
+  "jobs": [
+    {
+      "state": "blocked",
+      "error": "invalid-analysis-result"
+    }
+  ],
+  "persisted_results": 0,
+  "pre_admission_recovery": {
+    "previous_policy_sha256": "d8ea98f0ca7a192c4181ac99eaa8c61d33c568d5ecdff77915c9f493584300a3",
+    "previous_report_sha256": "c74ac9cfb6309ccc5f34704931681c5fb38ebcf4448f80e8afc3dd5bc7c0b5a1",
+    "original_ledger_preserved": true,
+    "connection_defect": "Persisted stable host was implicitly opened without cwd on bridge start.",
+    "runtime_fix": "9845bcf",
+    "reviewed_resume": "e1ace3d",
+    "initial_supplier_requests": 0,
+    "initial_octos_admission": false,
+    "source_and_original_ledger_preserved": true,
+    "original_approved_policy": {
+      "schema": "octos.learn.topic-accuracy-trial.v1",
+      "id": "phase2-topic-diagnosis-20261022",
+      "status": "approved",
+      "authorization_reference": "User explicitly authorized this separate one-source diagnosis, max 3 supplier HTTP requests and USD3.30, in this chat on 2026-10-22.",
+      "owner": "alan0x",
+      "model": "gemini-3.8-flash",
+      "backend": "http://127.0.0.1:50080",
+      "gateway": "http://127.0.0.1:50189",
+      "output_directory": "/private/tmp/octos-topic-diagnosis-20261022",
+      "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+      "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "pricing": {
+        "verified_at": "2026-10-22",
+        "valid_until": "2026-12-31",
+        "input_per_million_usd": 0.75,
+        "output_including_thinking_per_million_usd": 3.75,
+        "max_input_tokens": 1048576,
+        "max_output_tokens": 65536,
+        "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+      },
+      "limits": {
+        "tasks": 1,
+        "model_http_requests": 3,
+        "model_http_requests_per_task": 3,
+        "usd_micros": 3300000,
+        "reservation_usd_micros": 1100000,
+        "request_bytes": 1048576,
+        "output_tokens": 32768
+      },
+      "code_sha256": {
+        "scripts/verify-learning-topic-accuracy.mjs": "6552993be799ab99dd33ef6cd96cfb7cc27b246201b32570b7f430378b1065d5",
+        "scripts/lib/learning-topic-trial-control.mjs": "17b346c9673bc5f5c487891a38d2b2bae351fe7ce2963fbd1282f14cfa004f6d",
+        "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+        "scripts/lib/learning-topic-trial-fixture.mjs": "ac8ab5fd366a2d877d1ad16605e072d6e6d28a0d329609ec9616e225c29cf6cd",
+        "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+        "src/learning/history/analyze-topics.ts": "52462bff3c1c16a5ffb0f4fc56beda0ab13accf12fb60d9324f759b74d996845",
+        "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+        "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+        "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+        "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+        "services/learning-history/topic-analysis-instructions.mjs": "ecdbfefd621796d7a2f8f70425a04af061307f08724b05d3747c2cacde2fcb71",
+        "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+        "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+        "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+        "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358"
+      },
+      "octos": {
+        "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+        "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+        "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+      },
+      "scope": "first-source-diagnosis"
+    },
+    "resumed_approved_policy": {
+      "schema": "octos.learn.topic-accuracy-trial.v1",
+      "id": "phase2-topic-diagnosis-20261022",
+      "status": "approved",
+      "authorization_reference": "User explicitly authorized this separate one-source diagnosis, max 3 supplier HTTP requests and USD3.30, in this chat on 2026-10-22.",
+      "owner": "alan0x",
+      "model": "gemini-3.8-flash",
+      "backend": "http://127.0.0.1:50080",
+      "gateway": "http://127.0.0.1:50189",
+      "output_directory": "/private/tmp/octos-topic-diagnosis-20261022",
+      "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+      "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "pricing": {
+        "verified_at": "2026-10-22",
+        "valid_until": "2026-12-31",
+        "input_per_million_usd": 0.75,
+        "output_including_thinking_per_million_usd": 3.75,
+        "max_input_tokens": 1048576,
+        "max_output_tokens": 65536,
+        "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+      },
+      "limits": {
+        "tasks": 1,
+        "model_http_requests": 3,
+        "model_http_requests_per_task": 3,
+        "usd_micros": 3300000,
+        "reservation_usd_micros": 1100000,
+        "request_bytes": 1048576,
+        "output_tokens": 32768
+      },
+      "code_sha256": {
+        "scripts/verify-learning-topic-accuracy.mjs": "7359f2372f0c2e1047e171ff757572b62fe1db6f1fbacc5269efc6219fd09986",
+        "scripts/lib/learning-topic-trial-control.mjs": "78c74a0ca734c4e9415db7aaa389b714ec5348deaeea852d57735421014e23be",
+        "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+        "scripts/lib/learning-topic-trial-fixture.mjs": "b693ed4e9d7a60e0cd3e1ac8d69be59e490249d64371e92d5e2e337ab82c78e9",
+        "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+        "src/learning/history/analyze-topics.ts": "745421920fade338599501d5b6a3c67f62e4cfdea921d4df79d87f7147f01ee8",
+        "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+        "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+        "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+        "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+        "services/learning-history/topic-analysis-instructions.mjs": "ecdbfefd621796d7a2f8f70425a04af061307f08724b05d3747c2cacde2fcb71",
+        "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+        "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+        "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+        "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358"
+      },
+      "octos": {
+        "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+        "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+        "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+      },
+      "scope": "first-source-diagnosis"
+    }
+  },
+  "cleanup": {
+    "matching_purge_records": 1,
+    "event": "peer_purged",
+    "error_count": 0,
+    "purge_recorded": true
+  },
+  "restoration": {
+    "restored": true,
+    "original_route_fields_exactly_restored": true,
+    "other_config_canonically_unchanged": false,
+    "normal_backend_stopped": true,
+    "original_backend_listening": false,
+    "control_files_remaining": 0
+  },
+  "caveats": [
+    "The three-request cap was fully reserved and a further request was refused. The original gateway did not retain the exact refusal stage; no unique internal refusal reason is claimed.",
+    "Three catalog responses and no final assistant answer were retained. The generic invalid-analysis-result job error does not demonstrate malformed JSON or wrong semantic classification.",
+    "The expected catalog node appearing in retrieved data does not prove a final model association.",
+    "USD3.30 is conservative reserved capacity, not an actual bill.",
+    "Other configuration canonical hash changed after normal Octos login/serialization. Only the original two route fields were restored; no claim of full config equivalence is made.",
+    "No additional real calls, new sources, course generation, TTS/ASR/Jev, deployment or APK installation."
+  ],
+  "evidence": [
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022/report.json",
+      "sha256": "a18ed6f2092957a0c460e0cde13edeaa76b12daacf7490909b32404e87b6f8ff"
+    },
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022/pre-admission-report.json",
+      "sha256": "c74ac9cfb6309ccc5f34704931681c5fb38ebcf4448f80e8afc3dd5bc7c0b5a1"
+    },
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022/policy-executed.json",
+      "sha256": "d8ea98f0ca7a192c4181ac99eaa8c61d33c568d5ecdff77915c9f493584300a3"
+    },
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022/policy-resumed.json",
+      "sha256": "87f5b21ac3432eda77010846af64d5c3832cfd347cc6144201655b99dc89f735"
+    },
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022/cleanup-confirmation.json",
+      "sha256": "8e2528f42fb2be9e84dc0c8750da1b02236c9c6bd61d10c3a9c5768684c18775"
+    },
+    {
+      "path": "/private/tmp/octos-topic-diagnosis-20261022-recovery/restoration.json",
+      "sha256": "f8b411de12dbbc0d379f221c33c08368db99d83185b0b47e27da6456c259f061"
+    },
+    {
+      "path": "/private/tmp/topic-host-restart-fixture/report.json",
+      "sha256": "34fa8303097e98ea855d6b00fbf7b0ff1bfdaf5edcb2859185f784133726e675"
+    },
+    {
+      "path": "/private/tmp/topic-host-reopen-full-unit.log",
+      "sha256": "087b6ce9ead600020a6da9c0d8309e1506a6043481b90d4d891bdd25774cbda0"
+    },
+    {
+      "path": "/private/tmp/topic-host-reopen-build.log",
+      "sha256": "d3fcfc3f42b78664f9f1551d1672107230196b3ef04c6ad6d91cc4c7398657e5"
+    },
+    {
+      "path": "/private/tmp/topic-host-reopen-lint.log",
+      "sha256": "38796eab739fee61a2997c6db17b779c5315dc1534a90759d88871946ee73d05"
+    },
+    {
+      "path": "/private/tmp/topic-three-lookups-cap3/report.json",
+      "sha256": "c0119480a5b47d83ead74b423da97ddbfc7ca2c49c2e22750b60ddad6c126924"
+    },
+    {
+      "path": "/private/tmp/topic-three-lookups-cap9/report.json",
+      "sha256": "a4df5db05f32fb7554d8fd39ee57b53b35b565e5b62f488b1e29aa308c254c9b"
+    },
+    {
+      "path": "/private/tmp/topic-catalog-budget-control.log",
+      "sha256": "37cd56cd410f42bc683c4dbd689a245e4688e3423d5235402b4999b39563ed16"
+    },
+    {
+      "path": "/private/tmp/topic-catalog-budget-lint.log",
+      "sha256": "5637091fe1189e38d18daf088bf189a61284c9e3e14342d29c4d67f29c300284"
+    }
+  ],
+  "free_followup": {
+    "commit": "a241ad1",
+    "control_tests": 10,
+    "targeted_lint": "passed",
+    "independent_review": "passed",
+    "real_supplier_calls": 0,
+    "cap3_fixture": {
+      "state": "stopped",
+      "supplier_attempts": 0,
+      "synthetic_requests": 3,
+      "refused_by_stage": {
+        "reservation": 1
+      },
+      "catalog_calls": 3
+    },
+    "cap9_fixture": {
+      "state": "completed-needs-human-review",
+      "supplier_attempts": 0,
+      "synthetic_requests": 4,
+      "catalog_calls": 3
+    },
+    "does_not_prove_original_refusal_stage": true
+  }
+}
