@@ -11,14 +11,17 @@ import { createServer as createViteServer } from 'vite';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { HistoryStore } from '../services/learning-history/store.mjs';
 
-const [binary, output] = process.argv.slice(2);
+const [binary, output, mode = 'saved-receipt'] = process.argv.slice(2);
 assert.ok(binary?.startsWith('/') && output?.startsWith('/'), 'Supply an absolute Octos binary and NEW result JSON path');
+assert.ok(['saved-receipt', 'before-result'].includes(mode), 'Choose saved-receipt or before-result');
 const root = await mkdtemp(join(tmpdir(), 'octos-topic-analysis-'));
 await writeFile(output, '{}\n', { flag: 'wx', mode: 0o600 });
 const log = await open(join(root, 'octos.log'), 'a', 0o600);
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 const listen = async server => { await new Promise(resolve => server.listen(0, '127.0.0.1', resolve)); return `http://127.0.0.1:${server.address().port}`; };
-const history = new HistoryStore(join(root, 'history.sqlite'));
+let clock = Date.now();
+const openHistory = () => new HistoryStore(join(root, 'history.sqlite'), { now: () => new Date(clock).toISOString() });
+let history = openHistory();
 const snapshot = JSON.stringify([{ event: 'lesson.step', lesson_id: 'fixture', step: { id: 'step-one', beats: [{ id: 'beat-one', narration: { text: '横向增加一格时，纵向增加两格，斜率为二。' } }] } }]);
 const snapshotHash = createHash('sha256').update(snapshot).digest('hex');
 const delivery = { version: 1, id: 'delivery-one', kind: 'course_delivered', occurred_at: '2026-10-22T00:00:00.000Z', device_id: 'fixture', session_id: 'learn-topic-host', question_id: 'q1', run_id: 'run-one',
@@ -86,7 +89,8 @@ try {
   const login = await fetch(`${base}/api/auth/solo`, { method: 'POST' });
   assert.equal(login.status, 200); const { token } = await login.json();
   const identity = { owner: 'topic-fixture', token };
-  const handler = createHistoryHandler({ store: history, databasePath: join(root, 'history.sqlite'), octosBaseUrl: base });
+  const openHandler = () => createHistoryHandler({ store: history, databasePath: join(root, 'history.sqlite'), octosBaseUrl: base });
+  let handler = openHandler();
   product = createServer((request, response) => { void handler(request, response); });
   const productBase = await listen(product);
   const headers = { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'x-learning-owner': identity.owner };
@@ -95,10 +99,9 @@ try {
     assert.equal(response.status, 200, `Product ${path}: ${response.status}`); return response.json();
   };
   vite = await createViteServer({ root: process.cwd(), server: { middlewareMode: true, hmr: false }, appType: 'custom', logLevel: 'error' });
-  const { analyzeTopics } = await vite.ssrLoadModule('/src/learning/history/analyze-topics.ts');
-  const { createUiProtocolBridge } = await vite.ssrLoadModule('/src/runtime/ui-protocol-bridge.ts');
+  const { analyzeTopics, createTopicAnalysisBridge } = await vite.ssrLoadModule('/src/learning/history/analyze-topics.ts');
   const bridge = () => {
-    const connection = createUiProtocolBridge({ origin: base, getToken: () => token, getProfileId: () => identity.owner });
+    const connection = createTopicAnalysisBridge(identity, base);
     const original = connection.callMethod.bind(connection);
     connection.callMethod = async (method, params) => {
       const result = await original(method, params);
@@ -113,24 +116,27 @@ try {
   // Observe the frozen task through the real product API before admission.
   let dropped = false;
   await assert.rejects(analyzeTopics(identity, productBase, { createBridge: bridge, fetcher: async (url, options) => {
+    if (!dropped && mode === 'before-result' && String(url).endsWith('/result')) { dropped = true; throw Error('Injected lost result before saving'); }
     const response = await fetch(url, options);
     if (String(url).endsWith('/analysis/claim')) input = (await response.clone().json()).tasks[0]?.input;
     if (!dropped && String(url).endsWith('/result')) { assert.equal(response.status, 200); dropped = true; throw Error('Injected lost saved-result receipt'); }
     return response;
-  } }), /Injected lost saved-result receipt/);
+  } }), /Injected lost/);
   assert.equal(dropped, true);
   assert.equal(requests.length, 2); assert.equal(catalogLookups, 1);
   const saved = await api('/analysis');
-  assert.deepEqual(saved.states, [{ state: 'complete', count: 1 }]);
+  assert.deepEqual(saved.states, [{ state: mode === 'before-result' ? 'uncertain' : 'complete', count: 1 }]);
   assert.equal((await api('/analysis/controls')).controls.length, 1, 'Lost receipt must retain cleanup authorization');
   // Drop both services and the first browser bridge before another device resumes.
   await new Promise(resolve => product.close(resolve)); product = undefined;
+  history.close(); clock += 181000;
   await new Promise(resolve => { child.once('exit', resolve); child.kill('SIGTERM'); });
   await start();
+  history = openHistory(); handler = openHandler();
   product = createServer((request, response) => { void handler(request, response); });
   const restartedBase = await listen(product);
   const reconciled = await analyzeTopics(identity, restartedBase, { createBridge: bridge });
-  assert.equal(reconciled.completed, 0); assert.equal(requests.length, 2, 'Result reconciliation repeated a model call');
+  assert.equal(reconciled.completed, mode === 'before-result' ? 1 : 0); assert.equal(requests.length, 2, 'Result reconciliation repeated a model call');
   const controls = await fetch(`${restartedBase}/api/learn/history/analysis/controls`, { headers }).then(r => r.json());
   assert.deepEqual(controls.controls, [], 'Temporary analysis namespace cleanup not acknowledged');
   history.append(identity.owner, [{ ...delivery, id: 'played', kind: 'beat_completed', log_id: 'log-fixture', data: { step_id: 'step-one', beat_id: 'beat-one', presentation: 'text', delivery_sha256: snapshotHash } }]);
@@ -146,7 +152,7 @@ try {
   const report = { checked_at: new Date().toISOString(), passed: true, octos_binary_sha256: createHash('sha256').update(await readFile(binary)).digest('hex'),
     actual_frontend_worker: true, actual_authenticated_product_api: true, actual_octos_app_peer: true, pinned_catalog_topics: 529,
     fixture_model_requests: requests.length, catalog_tool_roundtrips: catalogLookups, real_supplier_calls: 0, original_account_modified: false,
-    lost_result_receipt_and_octos_restart: true, cross_device_namespace_cleanup: true, exact_version_playback_count: true,
+    failure_mode: mode, octos_and_sqlite_reopened: true, lost_result_receipt_and_octos_restart: mode === 'saved-receipt', unsaved_result_recovered: mode === 'before-result', cross_device_namespace_cleanup: true, exact_version_playback_count: true,
     classification_quality_verified: false, private_fixture_directory: root };
   await writeFile(output, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 }); console.log(JSON.stringify(report));
 } finally {
