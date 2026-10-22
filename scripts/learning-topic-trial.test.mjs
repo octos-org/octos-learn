@@ -49,6 +49,17 @@ test('a fresh first-source diagnosis has its own one-source, three-request, USD3
   } finally { ledger.close(); }
 });
 
+test('a separately approved completion scope can cover eight catalog rounds plus a final answer, within USD9.90', () => {
+  const p = { ...plan, scope: 'first-source-completion', limits: { ...plan.limits, tasks: 1, model_http_requests: 9, model_http_requests_per_task: 9, usd_micros: 9900000 } };
+  assert.deepEqual(validateTopicTrial(p, casesBytes).map(s => s.id), ['q-direction']);
+  assert.throws(() => validateTopicTrial(p, casesBytes, { execute: true }), /not authorized/);
+  assert.throws(() => validateTopicTrial({ ...p, limits: { ...p.limits, model_http_requests: 10 } }, casesBytes));
+  const ledger = new TopicTrialLedger(':memory:', p), input = inputFor();
+  try { ledger.start('q-direction', input.input_sha256); for (let i = 0; i < 9; i++) ledger.reserve(input.input_sha256);
+    assert.throws(() => ledger.reserve(input.input_sha256), /budget exhausted/); assert.equal(ledger.snapshot().requests.length, 9);
+  } finally { ledger.close(); }
+});
+
 test('pre-admission recovery preserves scope and refuses any charged, admitted or uncleared attempt', () => {
   const single = { ...plan, status: 'approved', authorization_reference: 'synthetic-only', scope: 'first-source-diagnosis',
     limits: { ...plan.limits, tasks: 1, model_http_requests: 3, usd_micros: 3300000 } };

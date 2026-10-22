@@ -20,9 +20,10 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
   assert.match(plan.id, /^[a-z0-9-]+$/); assert.ok(plan.output_directory.startsWith('/private/tmp/'));
   const cases = JSON.parse(casesBytes).cases;
   assert.equal(cases.length, 9); assert.equal(new Set(cases.map(c => c.id)).size, 9);
-  assert.ok(plan.scope === undefined || plan.scope === 'first-source-diagnosis', 'Unsupported trial scope');
-  const diagnostic = plan.scope === 'first-source-diagnosis';
-  assert.deepEqual(plan.limits, { tasks: diagnostic ? 1 : 9, model_http_requests: diagnostic ? 3 : 18, model_http_requests_per_task: 3, usd_micros: diagnostic ? 3300000 : 20000000,
+  assert.ok(plan.scope === undefined || ['first-source-diagnosis', 'first-source-completion'].includes(plan.scope), 'Unsupported trial scope');
+  const diagnostic = plan.scope !== undefined;
+  const completion = plan.scope === 'first-source-completion';
+  assert.deepEqual(plan.limits, { tasks: diagnostic ? 1 : 9, model_http_requests: completion ? 9 : diagnostic ? 3 : 18, model_http_requests_per_task: completion ? 9 : 3, usd_micros: completion ? 9900000 : diagnostic ? 3300000 : 20000000,
     reservation_usd_micros: 1100000, request_bytes: 1048576, output_tokens: 32768 });
   const p = plan.pricing;
   assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
@@ -156,8 +157,9 @@ export function checkTopicModelRequest(body, plan) {
  * synthetic checks never get a default path to the real provider. */
 export function createTopicTrialGateway({ ledger, upstreamFetch }) {
   assert.equal(typeof upstreamFetch, 'function');
-  const metrics = { forwarded: 0, refused: 0, failed: 0 };
+  const metrics = { forwarded: 0, refused: 0, failed: 0, refused_by_stage: {} };
   const server = createServer(async (request, response) => {
+    let stage = 'protocol';
     try {
       const url = new URL(request.url, 'http://local');
       const expected = `/v1beta/models/${ledger.plan.model}`;
@@ -167,9 +169,13 @@ export function createTopicTrialGateway({ ledger, upstreamFetch }) {
       let size = 0; const chunks = [];
       for await (const chunk of request) { size += chunk.length; assert.ok(size <= ledger.plan.limits.request_bytes); chunks.push(chunk); }
       const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      stage = 'input';
       const inputHash = checkTopicModelRequest(body, ledger.plan);
+      stage = 'authorization';
       const key = request.headers['x-goog-api-key']; assert.ok(typeof key === 'string' && key);
+      stage = 'reservation';
       ledger.reserve(inputHash); metrics.forwarded++;
+      stage = 'supplier';
       const upstream = await upstreamFetch(`https://generativelanguage.googleapis.com${url.pathname}${url.search}`, {
         method: 'POST', redirect: 'error', headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify(body), signal: AbortSignal.timeout(120000) });
@@ -177,7 +183,7 @@ export function createTopicTrialGateway({ ledger, upstreamFetch }) {
       if (upstream.body) await pipeline(Readable.fromWeb(upstream.body), response); else response.end();
     } catch {
       if (response.headersSent) { metrics.failed++; response.destroy(); }
-      else { metrics.refused++; response.writeHead(402, { 'content-type': 'application/json', 'cache-control': 'no-store' }); response.end('{"error":"Topic trial refused; inspect pinned policy and reservations"}'); }
+      else { metrics.refused++; metrics.refused_by_stage[stage] = (metrics.refused_by_stage[stage] ?? 0) + 1; response.writeHead(402, { 'content-type': 'application/json', 'cache-control': 'no-store' }); response.end('{"error":"Topic trial refused; inspect pinned policy and reservations"}'); }
     }
   });
   return { server, metrics };

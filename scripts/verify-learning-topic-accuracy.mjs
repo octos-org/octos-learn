@@ -21,7 +21,7 @@ import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 const [mode, planFile, output, binary, fixtureScenario = 'valid'] = process.argv.slice(2);
 const execute = mode === '--execute' || mode === '--resume-preflight';
 assert.ok(['--check', '--fixture', '--execute', '--resume-preflight'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
-assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host'].includes(fixtureScenario)), 'Invalid fixture scenario');
+assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host', 'three-lookups'].includes(fixtureScenario)), 'Invalid fixture scenario');
 const planBytes = await readFile(planFile), plan = JSON.parse(planBytes);
 const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
 const samples = validateTopicTrial(plan, casesBytes, { execute });
@@ -83,10 +83,14 @@ if (mode === '--check') {
       assert.ok(!promptTexts.includes('acceptable_topics'), 'Expected answers leaked into model input');
       report.fixture_instruction_requests_checked = (report.fixture_instruction_requests_checked ?? 0) + 1;
       const hasTool = body.contents.some(content => content.parts.some(part => part.functionResponse));
-      const parts = hasTool ? [{ text: JSON.stringify({ schema: 1, input_sha256: activeInput.input_sha256,
+      let parts = hasTool ? [{ text: JSON.stringify({ schema: 1, input_sha256: activeInput.input_sha256,
         units: activeInput.units.map(unit => { const expected = activeSample.expectations[unit.unit_id]; return { unit_id: unit.unit_id, status: expected.status,
           topics: expected.status === 'mapped' ? [{ topic_id: expected.acceptable_topics[0], quote: unit.content.slice(0, Math.min(24, unit.content.length)) }] : [], reason: 'Fixture only; expectations never reach a real model' }; }) }) }]
         : [{ functionCall: { name: 'learning_topics_search', args: { query: 'linear gradient intercept triangle angle sum', limit: 12 } } }];
+      if (fixtureScenario === 'three-lookups') {
+        const replies = body.contents.flatMap(content => content.parts).filter(part => part.functionResponse).length;
+        if (replies < 3) parts = [{ functionCall: { name: 'learning_topics_search', args: replies === 2 ? { ids: ['mt_WBdHkc2HTf'] } : { query: replies === 0 ? 'unfindablesyntheticterm' : 'linear gradient intercept' } } }];
+      }
       if (hasTool && fixtureScenario === 'invalid-json') parts[0].text = 'Synthetic invalid JSON answer; preserve this before cleanup.';
       return new Response(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts }, finishReason: hasTool ? 'STOP' : 'STOP' }], usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } })}\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     };
@@ -129,8 +133,21 @@ if (mode === '--check') {
       const row = { id: sample.id, input_sha256: activeInput.input_sha256, state: 'started' }; report.rows.push(row); await save();
       const progress = await analyzeTopics(identity, productBase, { createBridge: () => {
         const connection = createTopicAnalysisBridge(identity, backend), original = connection.callMethod.bind(connection);
+        let registeredSession;
+        const subscribe = connection.onPeerToolCall.bind(connection);
+        connection.onPeerToolCall = callback => subscribe(event => {
+          if (event.name === 'learning_topics.search' && event.session_id === registeredSession) {
+            const args = event.args ?? {}, safe = {};
+            if (typeof args.query === 'string' && args.query.length <= 256) safe.query = args.query;
+            if (Array.isArray(args.ids) && args.ids.length <= 12 && args.ids.every(id => typeof id === 'string' && /^mt_[A-Za-z0-9_-]+$/.test(id))) safe.ids = args.ids;
+            if (Number.isInteger(args.limit)) safe.limit = args.limit;
+            (row.catalog_calls ??= []).push({ name: event.name, args: safe });
+          }
+          callback(event);
+        });
         connection.callMethod = async (method, params) => {
           const result = await original(method, params);
+          if (method === 'peer/tools/register') registeredSession = `${params.session_id}#peer-${params.peer}`;
           if (method === 'session/hydrate' && retainTopicTrialOutput(row, params.session_id, result)) await save();
           return result;
         };
@@ -154,7 +171,7 @@ if (mode === '--check') {
     const controls = await fetch(`${productBase}/api/learn/history/analysis/controls`, { headers: { authorization: `Bearer ${token}`, 'x-learning-owner': plan.owner } }).then(r => r.json());
     assert.deepEqual(controls.controls, [], 'Temporary namespaces still need cleanup');
     report.state = 'completed-needs-human-review';
-    if (mode === '--fixture') { assert.equal(originalHttp, samples.length * 2); assert.equal(gateway.metrics.forwarded, samples.length * 2); report.fixture_model_http_requests = originalHttp; }
+    if (mode === '--fixture') { const expected = samples.length * (fixtureScenario === 'three-lookups' ? 4 : 2); assert.equal(originalHttp, expected); assert.equal(gateway.metrics.forwarded, expected); report.fixture_model_http_requests = originalHttp; }
   } catch (error) {
     // Do not serialize provider bodies, request headers or account config.
     report.state = 'stopped'; report.failure = 'Inspect protected results and durable reservations; no automatic continuation';
