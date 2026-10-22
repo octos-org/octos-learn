@@ -1,0 +1,148 @@
+{
+  "schema": "octos.learn.performance-trial.v1",
+  "id": "phase2-live-playable-draft",
+  "status": "deferred",
+  "cost_basis_verified": true,
+  "route_verified": false,
+  "authorization_reference": "",
+  "owner": "alan0x",
+  "origin": "https://127.0.0.1:5173",
+  "backend": "http://127.0.0.1:50080",
+  "gateway": "http://127.0.0.1:50189",
+  "model": "gemini-3.8-flash",
+  "voice": "zh_female_xiaohe_uranus_bigtts",
+  "resource": "seed-tts-2.0",
+  "voice_revision": "de675f252aa5c3da176ab5d095c52cfe1445ad97f317f04d4e22abcf4d0d444b",
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-C3AsDNei.js",
+      "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+    },
+    "candidate": {
+      "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+      "entry": "/assets/index-BIcz2LPp.js",
+      "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+    }
+  },
+  "limits": {
+    "courses": 12,
+    "speech_requests": 12,
+    "usd_micros": 33000000,
+    "cny_micros": 5000000,
+    "model_request_usd_micros": 1100000,
+    "speech_byte_cny_micros": 300,
+    "speech_utf8_bytes": 1200,
+    "output_tokens": 32768,
+    "request_bytes": 1048576
+  },
+  "samples": [
+    {
+      "id": "pair-01-baseline",
+      "pair": 1,
+      "topic": "linear",
+      "version": "baseline",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-01-candidate",
+      "pair": 1,
+      "topic": "linear",
+      "version": "candidate",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-02-candidate",
+      "pair": 2,
+      "topic": "geometry",
+      "version": "candidate",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-02-baseline",
+      "pair": 2,
+      "topic": "geometry",
+      "version": "baseline",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-03-baseline",
+      "pair": 3,
+      "topic": "formula",
+      "version": "baseline",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-03-candidate",
+      "pair": 3,
+      "topic": "formula",
+      "version": "candidate",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-04-candidate",
+      "pair": 4,
+      "topic": "linear",
+      "version": "candidate",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-04-baseline",
+      "pair": 4,
+      "topic": "linear",
+      "version": "baseline",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-05-baseline",
+      "pair": 5,
+      "topic": "geometry",
+      "version": "baseline",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-05-candidate",
+      "pair": 5,
+      "topic": "geometry",
+      "version": "candidate",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-06-candidate",
+      "pair": 6,
+      "topic": "formula",
+      "version": "candidate",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-06-baseline",
+      "pair": 6,
+      "topic": "formula",
+      "version": "baseline",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    }
+  ],
+  "notes": [
+    "Frontend pinned to 20e6a45 is now stale: runtime fixes 867f468/f28cda2 require new reviewed builds and hashes before any future trial. Paid execution remains deferred.",
+    "Optional supplemental real-supplier trial. AGENTS.md requires latency non-regression evidence, not this paid method. Review free evidence and changed execution paths before deciding merge readiness.",
+    "User explicitly deferred paid testing. Preserve this as preparation only; do not execute, retry or substitute a lower budget without a later user decision.",
+    "Draft only. User selected the existing alan0x account, not a paid budget. No new supplier calls are authorized.",
+    "Proposed limits: 12 courses, at most 30 admitted model HTTP attempts at USD 1.10 reserved each, 12 first-narration requests, model cap USD 33 and separate speech cap CNY 5. No guarantee that all courses fit before the request limit is reached.",
+    "Published standard Gemini 3.8 Flash rates through 2026-12-31: USD 0.75 per million input tokens and USD 3.75 per million output tokens including thinking. Full model input 1048576 plus full model output 65536 costs USD 1.032192; reserve USD 1.10 per attempt. The installed skill and gateway still restrict request output to 32768. Failed, timed-out and interrupted attempts retain their full reservation.",
+    "Published seed-tts-2.0 postpaid rate is CNY 3 per 10000 characters. Reserve CNY 0.0003 per UTF-8 byte, which conservatively exceeds or equals the character charge. At most 1200 bytes per request and 12 requests reserve no more than CNY 4.32. No custom/cloned voice or additional synthesis options.",
+    "Recheck public prices before approval/execution; this calculation applies to the fixed public standard endpoint and reviewed text-only options, not an account invoice or future prices.",
+    "Configure and inspect the normal account base_url and running binary only after paid-test authorization, before admitting any request. Keep the budget gateway until all related jobs terminate, then restore only the changed URL field. Do not restore direct routing while retries remain in flight.",
+    "Absolute build locations are local prerequisites; reverify hashes, installed bundles and source before execution. See LIVE_PERFORMANCE_EXECUTION.md for the reviewable setup, stop and restore sequence."
+  ],
+  "output_directory": "/private/tmp/octos-phase2-live-approved-trial",
+  "paid_execution_decision": {
+    "source": "Direct user response to the new-budget approval request",
+    "decision": "defer",
+    "user_response": "暂不运行付费测试",
+    "paid_execution_authorized": false
+  },
+  "required_for_phase2_merge": false,
+  "source_pin_stale": true
+}

@@ -1,0 +1,68 @@
+{
+  "schema": "octos.learn.request-failure-evidence.v1",
+  "date": "2026-10-22",
+  "code_commit": "a0b5f1ce39267bd52dff35fcd8904d1d824753bb",
+  "problem": "Plan section 4 promised explicit failed generation outcomes; UI failures previously left no learning-history fact.",
+  "record": "request_failed; account-scoped execution identity, status and fixed reason only; no provider error body",
+  "checks": {
+    "frontend_tests": 1255,
+    "frontend_test_files": 136,
+    "targeted_frontend_tests": 90,
+    "history_service_tests": 40,
+    "trial_control_tests": 12,
+    "types_public_build": "passed",
+    "scoped_lint": {
+      "errors": 0,
+      "existing_warnings": 2
+    },
+    "independent_reviewer": "review_topic_analysis",
+    "review": "passed after both confirmed issues were fixed"
+  },
+  "regressions": [
+    "failed/cancelled and missing-artifact jobs recorded",
+    "multi-job failure recorded before sibling aggregation and file lookup",
+    "same owner execution ID cannot change question/run binding",
+    "identical replay after restart is idempotent",
+    "partial deliveries retained and counts unchanged",
+    "error bodies not retained or copied to dialogue/analysis",
+    "offline queue deduplicates callbacks and survives reopening"
+  ],
+  "logs": {
+    "targeted_frontend": {
+      "path": "/private/tmp/phase2-failure-regressions-final.log",
+      "sha256": "7c7c00858ff36395ac341e4b683834d1ac3f7a931813effee5789c0b55d68383"
+    },
+    "full_frontend": {
+      "path": "/private/tmp/phase2-failure-unit-full.log",
+      "sha256": "940b440a05fc6487616969313e4ab7cf21f7530d973d332fd087803d55e26fc8"
+    },
+    "full_history": {
+      "path": "/private/tmp/phase2-failure-history-final.log",
+      "sha256": "12e73d94190d6450159cac6676ae5f39079b6806fc2e346874e878cf6d9cb558"
+    },
+    "trial_controls": {
+      "path": "/private/tmp/phase2-failure-controls-final.log",
+      "sha256": "e77f073e6ef1d13fa803612d18b370ec84826cf2302cbc0ce32637191f4a69d9"
+    },
+    "public_build": {
+      "path": "/private/tmp/phase2-failure-public-build.log",
+      "sha256": "a8ac498160ecdb36e0d2776f480921112463da17a99d89a2e57d2b4c0a86bad3"
+    },
+    "scoped_lint": {
+      "path": "/private/tmp/phase2-failure-lint-final.log",
+      "sha256": "bd32a7af4891cc82ad0c13f8ff418a0d77814a86cf342ba07554214cec2b7afa"
+    }
+  },
+  "compatibility_limit": "Legacy synchronous responses with jobs=[] and no explicit result cannot establish missing-artifact failure; no speculative backfill.",
+  "database_schema_version": 5,
+  "schema_migration_required": false,
+  "model_calls": 0,
+  "device_changed": false,
+  "production_changed": false,
+  "prior_candidate_ci": {
+    "commit": "53dfeac7db407f44964fe75b155b98b30194dd87",
+    "run": 39794914166,
+    "conclusion": "success",
+    "covers_this_repair": false
+  }
+}

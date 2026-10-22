@@ -1,0 +1,230 @@
+{
+  "date": "2026-10-22",
+  "code_commits": {
+    "whole_course": "11f5b7c",
+    "tasks": "51f78fe",
+    "fixture": "2cb5c3a"
+  },
+  "local_checks": {
+    "frontend_files": 136,
+    "frontend_tests": 1258,
+    "history_tests": 50,
+    "trial_control_tests": 12,
+    "typescript": "passed",
+    "public_build": "passed",
+    "scoped_lint": {
+      "errors": 0,
+      "existing_warnings": 2
+    },
+    "fixture_script_lint_and_syntax": "passed"
+  },
+  "logs": {
+    "phase2-handoff-task-unit.log": {
+      "path": "/private/tmp/phase2-handoff-task-unit.log",
+      "sha256": "caad2898487d54b55765a1fbf1025e0ccbc94c2aca177a3075112a3002304f10"
+    },
+    "phase2-task-history.log": {
+      "path": "/private/tmp/phase2-task-history.log",
+      "sha256": "6f3966287238ad0774755dc32064cc140504dd09ca16ab6b719092e72747256b"
+    },
+    "phase2-task-controls.log": {
+      "path": "/private/tmp/phase2-task-controls.log",
+      "sha256": "4adf0609727f2125665193ee49c3429f2cec2da491b56c9de4ffb90ae2e52bdb"
+    },
+    "phase2-handoff-task-build.log": {
+      "path": "/private/tmp/phase2-handoff-task-build.log",
+      "sha256": "e56bbcdff9c9078f69a27a24c78c01ce62a32cefe1bc84fc36eb0ffd6024f5ec"
+    },
+    "phase2-handoff-task-lint.log": {
+      "path": "/private/tmp/phase2-handoff-task-lint.log",
+      "sha256": "3b6bc14fe72b6f5d51068423537609783a1a1cded16ff926895ba8271e94ec99"
+    },
+    "phase2-handoff-task-pipeline-saved.log": {
+      "path": "/private/tmp/phase2-handoff-task-pipeline-saved.log",
+      "sha256": "8f42da91ccfbeada079a61d24dfb0548ddcb9cb96e9acc6cdb581b9b6bf132fa"
+    }
+  },
+  "saved_receipt_fixture": {
+    "checked_at": "2026-10-22T15:24:34.534Z",
+    "passed": true,
+    "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+    "actual_frontend_worker": true,
+    "actual_authenticated_product_api": true,
+    "actual_octos_app_peer": true,
+    "pinned_catalog_topics": 529,
+    "fixture_model_requests": 2,
+    "catalog_tool_roundtrips": 1,
+    "real_supplier_calls": 0,
+    "original_account_modified": false,
+    "failure_mode": "saved-receipt",
+    "octos_and_sqlite_reopened": true,
+    "lost_result_receipt_and_octos_restart": true,
+    "unsaved_result_recovered": false,
+    "cross_device_namespace_cleanup": true,
+    "exact_version_playback_count": true,
+    "task_units_analyzed": 1,
+    "exact_version_task_counts": true,
+    "classification_quality_verified": false,
+    "private_fixture_directory": "/var/folders/52/0n82fb6900j8gwcdydn6hznc0000gn/T/octos-topic-analysis-O339KR"
+  },
+  "before_result_v2": "passed on takeover (see takeover_2026_10_22)",
+  "task_independent_review": "completed; fixes re-reviewed (see takeover_2026_10_22)",
+  "task_real_model_quality": "not tested",
+  "previous_nine_real_cases": "historical v1; not task-v2 validation",
+  "latest_ci": "must inspect current pushed head; earlier ff087d7 passed run 39801559428",
+  "paid_calls_this_checkpoint": 0,
+  "takeover_2026_10_22": {
+    "note": "Recorded by the agent that took over on a different machine. The original records above are unchanged. Logs are in a session scratchpad on that machine and are not committed; only hashes are recorded here.",
+    "machine": "different machine from the original handoff; repo at /Users/yy/Documents/projects/OctosLearn/octos-learn; Node 22.23.3 (Homebrew keg-only), pnpm 11.5.2 via corepack; no ~/.octos",
+    "verified_remote_head": "cb4d8a2",
+    "ci_on_handoff_head": {
+      "run": 39806056380,
+      "unit_tests_and_build": "success",
+      "e2e_smoke": "success"
+    },
+    "baseline_reproduced": {
+      "frontend_files": 136,
+      "frontend_tests": 1258,
+      "history_tests": 50,
+      "trial_control_tests": 12
+    },
+    "independent_review": {
+      "scope": "11f5b7c..51f78fe",
+      "reviewer": "independent subagent, read-only",
+      "confirmed_defects": 1,
+      "should_fix": 2,
+      "fixed_in": [
+        "cfa3b24",
+        "89259a5"
+      ],
+      "re_review_of_cfa3b24": "no confirmed defects; two hardening suggestions adopted in 89259a5",
+      "not_changed": [
+        "no automatic v2 re-analysis of previously analyzed material (user cost decision)",
+        "old-rules lost-turn recovery loop (same as v2)",
+        "hint dedup by event id (unverified)",
+        "outside-catalog tasks counted unassociated",
+        "weak JSON-key quotes",
+        "course filter mismatch (cannot currently occur)",
+        "bind side effect in useMemo under StrictMode (pre-existing)",
+        "one-off v1 execution by a client holding an old lease at upgrade",
+        "course-pack fallback context if a generated lesson's turn id cannot be resolved (pre-existing, unverified)"
+      ],
+      "re_review_of_89259a5": "no confirmed issues"
+    },
+    "local_checks_at": "89259a5",
+    "local_checks": {
+      "frontend_files": 137,
+      "frontend_tests": 1260,
+      "history_tests": 52,
+      "trial_control_tests": 12,
+      "hosted_tts_tests": 32,
+      "eslint": {
+        "errors": 0,
+        "note": "excluding the machine-local .pnpm-store/ temp directory inside the repo; warnings in touched files unchanged"
+      },
+      "build": "passed",
+      "public_build": "passed"
+    },
+    "octos_binary": {
+      "commit": "413b4b68",
+      "profile": "debug",
+      "features": "--no-default-features --features api (no cmake on this machine)",
+      "sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968"
+    },
+    "before_result_v2": {
+      "first_run": "passed",
+      "checked_at": "2026-10-22T16:19:56.833Z",
+      "passed": true,
+      "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+      "actual_frontend_worker": true,
+      "actual_authenticated_product_api": true,
+      "actual_octos_app_peer": true,
+      "pinned_catalog_topics": 529,
+      "fixture_model_requests": 2,
+      "catalog_tool_roundtrips": 1,
+      "real_supplier_calls": 0,
+      "original_account_modified": false,
+      "failure_mode": "before-result",
+      "octos_and_sqlite_reopened": true,
+      "lost_result_receipt_and_octos_restart": false,
+      "unsaved_result_recovered": true,
+      "cross_device_namespace_cleanup": true,
+      "exact_version_playback_count": true,
+      "task_units_analyzed": 1,
+      "exact_version_task_counts": true,
+      "classification_quality_verified": false
+    },
+    "saved_receipt_v2_on_new_code": {
+      "first_run": "passed",
+      "checked_at": "2026-10-22T16:20:06.456Z",
+      "passed": true,
+      "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+      "actual_frontend_worker": true,
+      "actual_authenticated_product_api": true,
+      "actual_octos_app_peer": true,
+      "pinned_catalog_topics": 529,
+      "fixture_model_requests": 2,
+      "catalog_tool_roundtrips": 1,
+      "real_supplier_calls": 0,
+      "original_account_modified": false,
+      "failure_mode": "saved-receipt",
+      "octos_and_sqlite_reopened": true,
+      "lost_result_receipt_and_octos_restart": true,
+      "unsaved_result_recovered": false,
+      "cross_device_namespace_cleanup": true,
+      "exact_version_playback_count": true,
+      "task_units_analyzed": 1,
+      "exact_version_task_counts": true,
+      "classification_quality_verified": false
+    },
+    "logs": {
+      "unit": {
+        "file": "final/unit.log",
+        "sha256": "ce1c6e8c8911890382590f3ce469ed5943d4b5148c389db7d6e5089b7d439ce0"
+      },
+      "history": {
+        "file": "final/history.log",
+        "sha256": "0a3363fc162dbcdee8a6d09892bc6d7897691b9b279a0996193f1555a425ee84"
+      },
+      "trial_controls": {
+        "file": "final/trial.log",
+        "sha256": "5e9f8cf464e263affd7c0876b8931301c8fe5131b40ea6395e44c75d66857b38"
+      },
+      "hosted_tts": {
+        "file": "final/tts.log",
+        "sha256": "cd0a29121082026d3bcfddf6e152b9c7d6dc32826c71c7ff83d701a8c755f278"
+      },
+      "lint": {
+        "file": "final/lint.log",
+        "sha256": "57029d0027a39ca91c9dabc75fcb9c177d358c7123dbd7b7169ea441cc052b77"
+      },
+      "build": {
+        "file": "final/build.log",
+        "sha256": "e36f70ba87c1d7361f22d08c1cf18ea4a3b61d12739d7fbc399e1cfeb377da18"
+      },
+      "build_public": {
+        "file": "final/build-public.log",
+        "sha256": "984632fcd04e75ba5e2ca3ccd9023418aaa6a7fe35332c5560272dc673b5c690"
+      },
+      "pipeline_before_result_v2": {
+        "file": "pipeline-before-result-v2-run1.log",
+        "sha256": "070729638b6a2e6c874b817f90b025a160680d321f217a1b2dbd5807f99bfb3c"
+      },
+      "pipeline_before_result_v2_result": {
+        "file": "pipeline-before-result-v2-run1.json",
+        "sha256": "4923e2e78fe5abf4efc9c31d4b4a7cc1e495459105947eff84e5fa03a1ff6381"
+      },
+      "pipeline_saved_receipt_v2": {
+        "file": "pipeline-saved-receipt-v2-run1.log",
+        "sha256": "59dc5c2d76596c41b204bbbe143edff5fa4fee9b347a1b76f216f970466d8705"
+      },
+      "pipeline_saved_receipt_v2_result": {
+        "file": "pipeline-saved-receipt-v2-run1.json",
+        "sha256": "7251b2240052d7b46a3390b4bf826daf2af7ccdf3de4aa222cea4ce7860a1c60"
+      }
+    },
+    "paid_calls": 0,
+    "task_real_model_quality": "not tested",
+    "previous_tmp_logs": "not present on this machine; cannot re-verify beyond committed hashes"
+  }
+}

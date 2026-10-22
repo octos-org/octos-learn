@@ -1,0 +1,687 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-22T05:46:15.091214+00:00",
+  "scope": "Free validation of live-trial instrumentation and persistent controls; not a live latency verdict or authorization",
+  "source_head_before_changes": "386fff2361484626a8a366da2c8f6c8280c91c6c",
+  "node": "v24.16.0",
+  "real_model_supplier_calls": 0,
+  "real_speech_supplier_calls": 0,
+  "normal_profile_or_installation_modified": false,
+  "production_changed": false,
+  "scripts_sha256": {
+    "scripts/benchmark-learning-history-live.mjs": "5c383e4763c8327a88b3c973ab41785813d1cf1f930613479cb2ef7f80d829dc",
+    "scripts/learning-performance-control.test.mjs": "bbcde91ba0aef1d8eecb7280bf905b683f8ad961e4c29fbe1d35961b5542b860",
+    "scripts/lib/learning-performance-control.mjs": "24d0909af1250740a31fa1f8a4a1222307f18081674af48fd899a00ed25de303",
+    "scripts/lib/learning-performance-fixture.mjs": "c3dd59e73c842b47be27e3da51cfad231f742439210e52e833fda87c559a0717",
+    "scripts/lib/learning-performance-target.mjs": "73b0aa78e29728f238f4f508abaf2f2d37405ee4cdccb10928a45cf4a6a603ab",
+    "scripts/lib/learning-playable-probe.mjs": "f9ca47afee027c4c0dd28b57b454521ad851682c3fd6f94f9328c21f485976c7",
+    "scripts/verify-learning-performance-octos-route.mjs": "65047930bdc2c8b2d7225f59e11d9ebffb511c6507beda876736b4711076a4c1",
+    "scripts/verify-learning-performance-probe.mjs": "86de7ad1734272a47d692a19f90d65fa9a4eaa99f64f11a86e5b524ba34e4371",
+    "scripts/verify-learning-performance-skill-route.mjs": "6153dcc7ab91e6475246738a0ab1ac50f7b764630ed27f4654f6e77056ce0018"
+  },
+  "unit_tests": {
+    "passed": 8,
+    "failed": 0,
+    "log_sha256": "dcaddcf566c4c9a3b2d8d17cc878867759457a768b98b503f7e9974a86a8fc35"
+  },
+  "targeted_eslint": {
+    "exit_code": 0,
+    "log_sha256": "3534951427fa84cb83111b936b2aaa762c821a2e72ca9371ec14cfe085c74aa4"
+  },
+  "browser_probe_controls": {
+    "scope": "Isolated browser probe controls, no product acceptance or real provider calls",
+    "real_supplier_calls": 0,
+    "rows": [
+      {
+        "scenario": "valid",
+        "expected_complete": true,
+        "actual_complete": true,
+        "metrics": {
+          "audio": true,
+          "visual": true,
+          "matching_sources": 1
+        }
+      },
+      {
+        "scenario": "silent",
+        "expected_complete": false,
+        "actual_complete": false,
+        "metrics": {
+          "audio": false,
+          "visual": true,
+          "matching_sources": 1
+        }
+      },
+      {
+        "scenario": "wrong-audio",
+        "expected_complete": false,
+        "actual_complete": false,
+        "metrics": {
+          "audio": false,
+          "visual": true,
+          "matching_sources": 0
+        }
+      },
+      {
+        "scenario": "wrong-course",
+        "expected_complete": false,
+        "actual_complete": false,
+        "metrics": {
+          "audio": true,
+          "visual": false,
+          "matching_sources": 1
+        }
+      },
+      {
+        "scenario": "no-audio",
+        "expected_complete": false,
+        "actual_complete": false,
+        "metrics": {
+          "audio": false,
+          "visual": true,
+          "matching_sources": 0
+        }
+      },
+      {
+        "scenario": "no-course",
+        "expected_complete": false,
+        "actual_complete": false,
+        "metrics": {
+          "audio": true,
+          "visual": false,
+          "matching_sources": 1
+        }
+      }
+    ],
+    "passed": true,
+    "checked_at": "2026-10-22T05:21:56.616Z"
+  },
+  "frontend_scenarios": [
+    {
+      "scenario": "success",
+      "expected_behavior_verified": true,
+      "raw_result_sha256": "4049d73e2147704cb400a2ca7868074b16c86c5ddd8d5d7c4fe605e79405c8a3",
+      "plan": {
+        "schema": "octos.learn.performance-trial.v1",
+        "id": "fixture-live-control",
+        "status": "draft",
+        "cost_basis_verified": false,
+        "route_verified": false,
+        "authorization_reference": "",
+        "owner": "playable-fixture",
+        "origin": "https://127.0.0.1:5173",
+        "backend": "http://127.0.0.1:50080",
+        "gateway": "http://127.0.0.1:50189",
+        "model": "gemini-3.6-flash",
+        "voice": "fixture-voice",
+        "resource": "fixture-resource",
+        "voice_revision": "pending-read-only-verification",
+        "frontends": {
+          "baseline": {
+            "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+            "entry": "/assets/index-C3AsDNei.js",
+            "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+          },
+          "candidate": {
+            "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+            "entry": "/assets/index-BIcz2LPp.js",
+            "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+          }
+        },
+        "limits": {
+          "courses": 2,
+          "speech_requests": 2,
+          "usd_micros": 1000,
+          "cny_micros": 1000,
+          "model_request_usd_micros": 100,
+          "speech_byte_cny_micros": 1,
+          "speech_utf8_bytes": 1200,
+          "output_tokens": 32768,
+          "request_bytes": 1048576
+        },
+        "samples": [
+          {
+            "id": "pair-01-baseline",
+            "pair": 1,
+            "topic": "linear",
+            "version": "baseline",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          },
+          {
+            "id": "pair-01-candidate",
+            "pair": 1,
+            "topic": "linear",
+            "version": "candidate",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          }
+        ],
+        "notes": [
+          "Draft only. Neither the currency caps nor the call counts are authorized.",
+          "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
+          "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
+          "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
+          "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
+          "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+        ],
+        "fixture_scenario": "success"
+      },
+      "result": {
+        "plan_sha256": "d5d8852200bf16af08aef3e88429f27ac32f1fe7b302da2e9525fbd81f416d64",
+        "started_at": "2026-10-22T05:38:52.336Z",
+        "status": "completed",
+        "rows": [
+          {
+            "id": "pair-01-baseline",
+            "version": "baseline",
+            "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+            "state": "completed",
+            "actions": 1,
+            "turns": 0,
+            "speech_forwarded": 1,
+            "speech_blocked": 1,
+            "session_id": "learn-1792647532911-zqfiny",
+            "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+            "visual_ms": 842.1999999880791,
+            "audio_ms": 592.4000000059605,
+            "playable_ms": 842.1999999880791,
+            "audio_observation_interval_ms": [
+              583.1999999880791,
+              592.4000000059605
+            ],
+            "matched_audio_sources": 1,
+            "artifact_sha256": "75d6c82c5e0b0f54ddd2c88e7d3acd363aff5ac54d4093d670eba894fa2fac12",
+            "beat_id": "learn-learn-1792647532911-zqfiny-28d236ff-b034-40c7-b254-6e6bfa9168b9.octos-lesson.json:step:observe:beat:first",
+            "job_status": "succeeded",
+            "models": [
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-bootstrap",
+                "request_attempts": 1,
+                "lesson_plan_part": "bootstrap"
+              },
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-section",
+                "request_attempts": 1,
+                "lesson_plan_part": "section"
+              }
+            ],
+            "model_http_reservations": 2,
+            "traced_model_http_attempts": 2
+          },
+          {
+            "id": "pair-01-candidate",
+            "version": "candidate",
+            "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+            "state": "completed",
+            "actions": 1,
+            "turns": 0,
+            "speech_forwarded": 1,
+            "speech_blocked": 1,
+            "session_id": "learn-1792647536325-bxiiz7",
+            "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+            "visual_ms": 513.1000000238419,
+            "audio_ms": 246.80000001192093,
+            "playable_ms": 513.1000000238419,
+            "audio_observation_interval_ms": [
+              234,
+              246.80000001192093
+            ],
+            "matched_audio_sources": 1,
+            "artifact_sha256": "75d6c82c5e0b0f54ddd2c88e7d3acd363aff5ac54d4093d670eba894fa2fac12",
+            "beat_id": "learn-learn-1792647536325-bxiiz7-3f76801e-7319-4fa2-ba6c-70fdbc3df3ec.octos-lesson.json:step:observe:beat:first",
+            "job_status": "succeeded",
+            "models": [
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-bootstrap",
+                "request_attempts": 1,
+                "lesson_plan_part": "bootstrap"
+              },
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-section",
+                "request_attempts": 1,
+                "lesson_plan_part": "section"
+              }
+            ],
+            "model_http_reservations": 2,
+            "traced_model_http_attempts": 2
+          }
+        ],
+        "normal_account": false,
+        "fees_incurred": "not inferred from playback; conservative reservations retained in ledger",
+        "fixture_only": true,
+        "fixture_metrics": {
+          "model_supplier_calls": 4,
+          "speech_supplier_calls": 2,
+          "actions": 2
+        },
+        "completed_at": "2026-10-22T05:38:59.031Z"
+      }
+    },
+    {
+      "scenario": "voice-failure",
+      "expected_behavior_verified": true,
+      "raw_result_sha256": "68e47a46c6df72850e7d15da864256dcd3ebeec09bab7b0e71dff0469379c8ba",
+      "plan": {
+        "schema": "octos.learn.performance-trial.v1",
+        "id": "fixture-live-control",
+        "status": "draft",
+        "cost_basis_verified": false,
+        "route_verified": false,
+        "authorization_reference": "",
+        "owner": "playable-fixture",
+        "origin": "https://127.0.0.1:5173",
+        "backend": "http://127.0.0.1:50080",
+        "gateway": "http://127.0.0.1:50189",
+        "model": "gemini-3.6-flash",
+        "voice": "fixture-voice",
+        "resource": "fixture-resource",
+        "voice_revision": "pending-read-only-verification",
+        "frontends": {
+          "baseline": {
+            "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+            "entry": "/assets/index-C3AsDNei.js",
+            "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+          },
+          "candidate": {
+            "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+            "entry": "/assets/index-BIcz2LPp.js",
+            "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+          }
+        },
+        "limits": {
+          "courses": 2,
+          "speech_requests": 2,
+          "usd_micros": 1000,
+          "cny_micros": 1000,
+          "model_request_usd_micros": 100,
+          "speech_byte_cny_micros": 1,
+          "speech_utf8_bytes": 1200,
+          "output_tokens": 32768,
+          "request_bytes": 1048576
+        },
+        "samples": [
+          {
+            "id": "pair-01-baseline",
+            "pair": 1,
+            "topic": "linear",
+            "version": "baseline",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          },
+          {
+            "id": "pair-01-candidate",
+            "pair": 1,
+            "topic": "linear",
+            "version": "candidate",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          }
+        ],
+        "notes": [
+          "Draft only. Neither the currency caps nor the call counts are authorized.",
+          "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
+          "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
+          "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
+          "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
+          "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+        ],
+        "fixture_scenario": "voice-failure"
+      },
+      "result": {
+        "plan_sha256": "32fad3e0293bf82d23e4f25580ccb73873bd581d1f5322c187684a6c8df73319",
+        "started_at": "2026-10-22T05:38:50.250Z",
+        "status": "stopped",
+        "rows": [
+          {
+            "id": "pair-01-baseline",
+            "version": "baseline",
+            "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+            "state": "needs-inspection",
+            "actions": 1,
+            "turns": 0,
+            "speech_forwarded": 0,
+            "speech_blocked": 3,
+            "session_id": "learn-1792647530720-69gfsa",
+            "fixture_error": "page.waitForFunction: Timeout 7000ms exceeded.",
+            "failed_probe_observations": {
+              "start": 467.39999997615814,
+              "visual": 1129.3999999761581,
+              "audio": 0,
+              "audioSources": 0
+            }
+          }
+        ],
+        "normal_account": false,
+        "fees_incurred": "not inferred from playback; conservative reservations retained in ledger",
+        "fixture_only": true,
+        "fixture_metrics": {
+          "model_supplier_calls": 2,
+          "speech_supplier_calls": 1,
+          "actions": 1
+        }
+      }
+    },
+    {
+      "scenario": "silent-audio",
+      "expected_behavior_verified": true,
+      "raw_result_sha256": "e0c6da046cb62d6b5ad2c466f7058c0774333fb4ad44db73cf8f7a00facc7221",
+      "plan": {
+        "schema": "octos.learn.performance-trial.v1",
+        "id": "fixture-live-control",
+        "status": "draft",
+        "cost_basis_verified": false,
+        "route_verified": false,
+        "authorization_reference": "",
+        "owner": "playable-fixture",
+        "origin": "https://127.0.0.1:5173",
+        "backend": "http://127.0.0.1:50080",
+        "gateway": "http://127.0.0.1:50189",
+        "model": "gemini-3.6-flash",
+        "voice": "fixture-voice",
+        "resource": "fixture-resource",
+        "voice_revision": "pending-read-only-verification",
+        "frontends": {
+          "baseline": {
+            "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+            "entry": "/assets/index-C3AsDNei.js",
+            "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+          },
+          "candidate": {
+            "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+            "entry": "/assets/index-BIcz2LPp.js",
+            "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+          }
+        },
+        "limits": {
+          "courses": 2,
+          "speech_requests": 2,
+          "usd_micros": 1000,
+          "cny_micros": 1000,
+          "model_request_usd_micros": 100,
+          "speech_byte_cny_micros": 1,
+          "speech_utf8_bytes": 1200,
+          "output_tokens": 32768,
+          "request_bytes": 1048576
+        },
+        "samples": [
+          {
+            "id": "pair-01-baseline",
+            "pair": 1,
+            "topic": "linear",
+            "version": "baseline",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          },
+          {
+            "id": "pair-01-candidate",
+            "pair": 1,
+            "topic": "linear",
+            "version": "candidate",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          }
+        ],
+        "notes": [
+          "Draft only. Neither the currency caps nor the call counts are authorized.",
+          "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
+          "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
+          "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
+          "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
+          "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+        ],
+        "fixture_scenario": "silent-audio"
+      },
+      "result": {
+        "plan_sha256": "de6a1c88d039d5f507afa7ff7859c0632f83865522c1bf8ef1b4cd57f9e1f5d5",
+        "started_at": "2026-10-22T05:38:52.833Z",
+        "status": "stopped",
+        "rows": [
+          {
+            "id": "pair-01-baseline",
+            "version": "baseline",
+            "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+            "state": "needs-inspection",
+            "actions": 1,
+            "turns": 0,
+            "speech_forwarded": 1,
+            "speech_blocked": 1,
+            "session_id": "learn-1792647533814-t2sbis",
+            "audio_sha256": "e5ea01a23fcb85fd8e608c5c672ea5c22dfab6b0e581d782242f478e4b1c5900",
+            "fixture_error": "page.waitForFunction: Timeout 7000ms exceeded.",
+            "failed_probe_observations": {
+              "start": 569.4000000059605,
+              "visual": 1310.699999988079,
+              "audio": 0,
+              "audioSources": 1
+            }
+          }
+        ],
+        "normal_account": false,
+        "fees_incurred": "not inferred from playback; conservative reservations retained in ledger",
+        "fixture_only": true,
+        "fixture_metrics": {
+          "model_supplier_calls": 2,
+          "speech_supplier_calls": 1,
+          "actions": 1
+        }
+      }
+    },
+    {
+      "scenario": "budget-exhausted",
+      "expected_behavior_verified": true,
+      "raw_result_sha256": "0a61239c9ab8b45df23c2a584ece5b2c1af7199046a37e9cfb3aec68491a5293",
+      "plan": {
+        "schema": "octos.learn.performance-trial.v1",
+        "id": "fixture-live-control",
+        "status": "draft",
+        "cost_basis_verified": false,
+        "route_verified": false,
+        "authorization_reference": "",
+        "owner": "playable-fixture",
+        "origin": "https://127.0.0.1:5173",
+        "backend": "http://127.0.0.1:50080",
+        "gateway": "http://127.0.0.1:50189",
+        "model": "gemini-3.6-flash",
+        "voice": "fixture-voice",
+        "resource": "fixture-resource",
+        "voice_revision": "pending-read-only-verification",
+        "frontends": {
+          "baseline": {
+            "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+            "entry": "/assets/index-C3AsDNei.js",
+            "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+          },
+          "candidate": {
+            "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+            "entry": "/assets/index-BIcz2LPp.js",
+            "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+            "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+          }
+        },
+        "limits": {
+          "courses": 2,
+          "speech_requests": 2,
+          "usd_micros": 150,
+          "cny_micros": 1000,
+          "model_request_usd_micros": 100,
+          "speech_byte_cny_micros": 1,
+          "speech_utf8_bytes": 1200,
+          "output_tokens": 32768,
+          "request_bytes": 1048576
+        },
+        "samples": [
+          {
+            "id": "pair-01-baseline",
+            "pair": 1,
+            "topic": "linear",
+            "version": "baseline",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          },
+          {
+            "id": "pair-01-candidate",
+            "pair": 1,
+            "topic": "linear",
+            "version": "candidate",
+            "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+          }
+        ],
+        "notes": [
+          "Draft only. Neither the currency caps nor the call counts are authorized.",
+          "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
+          "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
+          "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
+          "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
+          "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+        ],
+        "fixture_scenario": "budget-exhausted"
+      },
+      "result": {
+        "plan_sha256": "51d975e79bf7c9d9b3d398829f82838e0ffb4c7332db336b77c57b373123155d",
+        "started_at": "2026-10-22T05:38:52.316Z",
+        "status": "stopped",
+        "rows": [
+          {
+            "id": "pair-01-baseline",
+            "version": "baseline",
+            "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+            "state": "needs-inspection",
+            "actions": 1,
+            "turns": 0,
+            "speech_forwarded": 1,
+            "speech_blocked": 1,
+            "session_id": "learn-1792647532907-dm3bpm",
+            "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+            "visual_ms": 856.8000000119209,
+            "audio_ms": 590.2000000178814,
+            "playable_ms": 856.8000000119209,
+            "audio_observation_interval_ms": [
+              574.9000000059605,
+              590.2000000178814
+            ],
+            "matched_audio_sources": 1,
+            "artifact_sha256": "75d6c82c5e0b0f54ddd2c88e7d3acd363aff5ac54d4093d670eba894fa2fac12",
+            "beat_id": "learn-learn-1792647532907-dm3bpm-14c48a66-ab2e-4d0e-b426-784073efc0f5.octos-lesson.json:step:observe:beat:first",
+            "job_status": "failed",
+            "models": [
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-bootstrap",
+                "request_attempts": 1,
+                "lesson_plan_part": "bootstrap"
+              },
+              {
+                "status": "completed",
+                "model": "gemini-3.6-flash",
+                "label": "lesson-plan-section",
+                "request_attempts": 1,
+                "lesson_plan_part": "section"
+              }
+            ],
+            "fixture_error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ 'failed'\n- 'succeeded'\n",
+            "failed_probe_observations": {
+              "start": 491.19999998807907,
+              "visual": 1348,
+              "audio": 1081.4000000059605,
+              "audioSources": 1
+            }
+          }
+        ],
+        "normal_account": false,
+        "fees_incurred": "not inferred from playback; conservative reservations retained in ledger",
+        "fixture_only": true,
+        "fixture_metrics": {
+          "model_supplier_calls": 1,
+          "speech_supplier_calls": 1,
+          "actions": 1
+        }
+      }
+    }
+  ],
+  "restart_guard": {
+    "rejected_as_expected": true,
+    "before": {
+      "result_sha256": "4049d73e2147704cb400a2ca7868074b16c86c5ddd8d5d7c4fe605e79405c8a3",
+      "ledger_sha256": "1a5b50cda370bc6ef156e5ef71ffb63c48ae5e62c762fe42f92502d41c7045a9"
+    },
+    "after": {
+      "result_sha256": "4049d73e2147704cb400a2ca7868074b16c86c5ddd8d5d7c4fe605e79405c8a3",
+      "ledger_sha256": "1a5b50cda370bc6ef156e5ef71ffb63c48ae5e62c762fe42f92502d41c7045a9"
+    },
+    "raw_log_sha256": "8b99e3cb58bb29cfe09d2d845b0d645a72699348f27d6eb4783010631e26591b"
+  },
+  "skill_route_checks": [
+    {
+      "kind": "installed-skill",
+      "raw_result_sha256": "c824dbf601b6bb30c9ad1a955049ba2b60d504ed487bdaafb74ffc90678a7f1f",
+      "result": {
+        "checked_at": "2026-10-22T05:42:27.325Z",
+        "installed_skill_sha256": "7137b77551c8db8d50fe85309dd2415e5e2ff1ca52481c3f659c9c84a1370227",
+        "scope": "Installed Learning Coach direct executable with explicit synthetic env, isolated workspace and local supplier replacement; not the normal Octos action environment",
+        "passed": true,
+        "real_supplier_calls": 0,
+        "synthetic_supplier_attempts": 2,
+        "rejected_requests": 1,
+        "reserved_usd_micros_in_fixture": 200,
+        "generation_failed_as_expected": true,
+        "original_installation_modified": false
+      }
+    },
+    {
+      "kind": "actual-octos-action",
+      "raw_result_sha256": "363227c8c36d7211355e0cfd5cffc5801c161984067beec802eba3e79cc9602c",
+      "result": {
+        "checked_at": "2026-10-22T05:42:31.924Z",
+        "passed": true,
+        "scope": "Actual isolated Octos process and background learning.lesson.generate action, copied installed skill bundles, synthetic credentials and local budget gateway",
+        "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+        "installed_skill_sha256": "7137b77551c8db8d50fe85309dd2415e5e2ff1ca52481c3f659c9c84a1370227",
+        "model": "gemini-3.6-flash",
+        "real_supplier_calls": 0,
+        "synthetic_supplier_attempts": 2,
+        "rejected_requests": 1,
+        "original_profile_modified": false,
+        "original_installation_modified": false,
+        "memory_refresh_disabled_for_fixture": true,
+        "normal_profile_gateway_route_verified": false
+      }
+    }
+  ],
+  "draft_check": {
+    "id": "phase2-live-playable-draft",
+    "mode": "no-network-plan-check",
+    "ready_to_execute": false,
+    "samples": 12,
+    "maximum_courses": 12,
+    "maximum_speech_requests": 12,
+    "maximum_model_requests_at_reserved_upper_cost": 4,
+    "blockers": [
+      "Trial is not authorized\n+ actual - expected\n\n+ 'draft'\n- 'approved'\n"
+    ]
+  },
+  "draft_execution_refused_before_directory_creation": true,
+  "normal_account_selection": "Pending user clarification; yy has Gemini 3.6 and no saved TTS config; alan0x has Gemini 3.8 and seed-tts-2.0 Xiaohe. No mixed profile configuration is assumed.",
+  "normal_profile_gateway_route_verified": false,
+  "limitations": [
+    "Supplier functions are synthetic; counters named supplier_calls in fixtures are not real provider calls.",
+    "Full frontend fixture rows validate controls, not timing performance. No p50 verdict is derived.",
+    "Actual-Octos route check deliberately uses supplier failures and Gemini 3.6; it does not verify successful paid streaming, the normal account route, Gemini 3.8, or actual account tariffs.",
+    "Old 30-pair fixed-response benchmark and six paid generations remain separately scoped.",
+    "Frontend failure page dumps and private fixture paths are omitted; raw-result hashes retained.",
+    "Synthetic fixture plans retain initial draft notes; their numeric reservations are fake test units, not supplier prices or human approval."
+  ],
+  "instrumentation_commits": [
+    "f698603",
+    "5367aee"
+  ]
+}

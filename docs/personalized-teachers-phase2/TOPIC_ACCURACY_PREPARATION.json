@@ -1,0 +1,79 @@
+{
+  "checked_at": "2026-10-22",
+  "scope": "Topic accuracy trial preparation only, no real semantic-quality claim",
+  "executor_commit": "3c1374ad1e87234d489b340624d5f13411723e94",
+  "policy_sha256": "2443ee468efcbf4654def0a4f5305d3a43f5a42c4c8428a187915366f1586a7f",
+  "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+  "checks": {
+    "control_tests": 5,
+    "scoped_lint": "passed",
+    "offline_policy_check": "unapproved, no network",
+    "independent_reviewer": "review_topic_analysis",
+    "review_result": "no blocking substantive findings",
+    "original_account_modified": false,
+    "real_supplier_calls": 0,
+    "installed_or_deployed": false,
+    "semantic_quality_verified": false
+  },
+  "fixture": {
+    "state": "completed-needs-human-review",
+    "tasks": 9,
+    "model_http_requests": 18,
+    "synthetic_reserved_usd": 19.8,
+    "real_supplier_calls": 0,
+    "gateway": {
+      "forwarded": 18,
+      "refused": 0,
+      "failed": 0
+    },
+    "playback_counts": {
+      "question_count": 1,
+      "played_runs": 2,
+      "played_beats": 2
+    },
+    "independent_quality_review_required": true
+  },
+  "limits": {
+    "tasks": 9,
+    "actual_model_http_including_retries": 18,
+    "per_task_http": 3,
+    "model_usage_usd": 20,
+    "reservation_per_request_usd": 1.1
+  },
+  "price_sources": [
+    "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash",
+    "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash"
+  ],
+  "notes": [
+    "The reviewed Octos profile bootstrap pins embedding=None, which resolves to local or disabled. The profile API alone is not effective-runtime attestation. The reviewed binary and startup must be used.",
+    "An initial synthetic fixture stopped after seven sources due to question/run ownership, corrected without supplier calls.",
+    "Slope and intercept legitimately share a catalog topic. Actual unit quotes and result revisions establish version attribution.",
+    "Normal model routing and restoration are approved-execution steps, not claimed completed in preparation."
+  ],
+  "logs": {
+    "offline_check": {
+      "path": "/private/tmp/topic-accuracy-check-final.log",
+      "sha256": "c6606203a00a9e96f6c0af3dcd02ea2e80db3255ce988e67d47286561971f50c"
+    },
+    "control_tests": {
+      "path": "/private/tmp/topic-accuracy-control-final.log",
+      "sha256": "c035a957b2e3d83b818da161e97beaa5594d3fc31d3593d336130fa337c6ac6f"
+    },
+    "lint": {
+      "path": "/private/tmp/topic-accuracy-lint-final.log",
+      "sha256": "1a9ab873bbd00e1dde304a02b639e4668d8ce324ed42f234d05df16b4cb413e0"
+    },
+    "full_fixture": {
+      "path": "/private/tmp/topic-accuracy-fixture-final.log",
+      "sha256": "acbbcbec21b4c41a62c8de529470db92a75300af5599b6b30b224f6a38980bac"
+    },
+    "fixture_report": {
+      "path": "/private/tmp/topic-accuracy-fixture-final/report.json",
+      "sha256": "d1ca12700ef09805aa7b670a0b9cbe4326df8bb1289ce7d68621277d65a1cfb1"
+    },
+    "unauthorized_refusal": {
+      "path": "/private/tmp/topic-accuracy-unauthorized.log",
+      "sha256": "2f562736b0644c41c482c1d414845b029bc0521bcd8b4ca9ac61eb23aa5defe4"
+    }
+  }
+}

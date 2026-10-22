@@ -1,0 +1,183 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "q-direction",
+      "kind": "question",
+      "text": "y=mx+b 中，为什么 m 为负时直线向右下方走？",
+      "modality": "text",
+      "expectations": {
+        "question": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-two-points",
+      "kind": "question",
+      "text": "已知直线上两点 (1,3) 和 (4,9)，怎样用纵坐标的变化除以横坐标的变化求斜率？",
+      "modality": "text",
+      "expectations": {
+        "question": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_-3udyo6VyB"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-angle",
+      "kind": "question",
+      "text": "三角形的两个角是 50°、60°，第三个角为什么是 70°？",
+      "modality": "text",
+      "expectations": {
+        "question": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_J03RFlVdas",
+            "mt_cdMlC7EpTJ"
+          ]
+        }
+      }
+    },
+    {
+      "id": "q-vague",
+      "kind": "question",
+      "text": "还是不懂。",
+      "modality": "text",
+      "expectations": {
+        "question": {
+          "status": "unknown",
+          "acceptable_topics": []
+        }
+      }
+    },
+    {
+      "id": "q-image",
+      "kind": "question",
+      "text": "图中这个角是多少？",
+      "modality": "image",
+      "expectations": {
+        "question": {
+          "status": "unknown",
+          "acceptable_topics": []
+        }
+      }
+    },
+    {
+      "id": "q-audio-settings",
+      "kind": "question",
+      "text": "这堂课的声音太小，怎么调大？",
+      "modality": "text",
+      "expectations": {
+        "question": {
+          "status": "outside-catalog",
+          "acceptable_topics": []
+        }
+      }
+    },
+    {
+      "id": "course-supplement",
+      "kind": "course",
+      "events": [
+        {
+          "event": "lesson.step",
+          "lesson_id": "quality",
+          "step": {
+            "id": "step-one",
+            "beats": [
+              {
+                "id": "direction",
+                "narration": {
+                  "text": "在 y=mx+b 中，斜率 m 为负，直线向右下方倾斜；m 的绝对值越大，直线越陡。"
+                }
+              },
+              {
+                "id": "intercept",
+                "narration": {
+                  "text": "现在额外解释纵截距 b：当 x=0 时，y=b，所以图像与纵轴相交于 (0,b)。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"beat\",\"step-one\",\"direction\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf"
+          ]
+        },
+        "[\"beat\",\"step-one\",\"intercept\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "course-version-a",
+      "kind": "course",
+      "events": [
+        {
+          "event": "lesson.step",
+          "lesson_id": "quality",
+          "step": {
+            "id": "step-one",
+            "beats": [
+              {
+                "id": "same-beat",
+                "narration": {
+                  "text": "斜率 m 表示直线的方向与陡缓，m 由正变负时，直线由向右上方转为向右下方。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"beat\",\"step-one\",\"same-beat\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "course-version-b",
+      "kind": "course",
+      "events": [
+        {
+          "event": "lesson.step",
+          "lesson_id": "quality",
+          "step": {
+            "id": "step-one",
+            "beats": [
+              {
+                "id": "same-beat",
+                "narration": {
+                  "text": "纵截距 b 是直线与纵轴交点的纵坐标。在 y=mx+b 中，让 x=0 就得到 y=b。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"beat\",\"step-one\",\"same-beat\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf"
+          ]
+        }
+      }
+    }
+  ]
+}

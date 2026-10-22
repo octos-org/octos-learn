@@ -1,0 +1,477 @@
+{
+  "schema": "octos.learn.topic-final-seven-result.v1",
+  "date": "2026-10-22",
+  "state": "seven-fixed-sources-passed-program-and-independent-agent-review",
+  "source_count": 7,
+  "real_supplier_http_requests": 13,
+  "reserved_usd": 14.3,
+  "actual_billed_usd": null,
+  "actual_token_usage": null,
+  "combined_with_previous_stopped_trial": {
+    "real_supplier_http_requests": 18,
+    "reserved_usd": 19.8,
+    "authorization_request_limit": 18,
+    "authorization_usd_limit": 20,
+    "old_requests_refunded": false
+  },
+  "gateway_metrics": {
+    "forwarded": 13,
+    "refused": 0,
+    "failed": 0,
+    "refused_by_stage": {}
+  },
+  "rows": [
+    {
+      "id": "q-angle",
+      "input_sha256": "cce8bd87fd389eab905adb44555cc96ef91fe4e8e2c0167b8d6d9b5ba40c58c1",
+      "supplier_http_requests": 2,
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "triangle angle sum"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "cce8bd87fd389eab905adb44555cc96ef91fe4e8e2c0167b8d6d9b5ba40c58c1",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "The question asks why the third angle in a triangle with angles 50° and 60° must be 70°, which directly concerns finding or explaining unknown angles in triangles using the triangle angle sum property.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "三角形的两个角是 50°、60°，第三个角为什么是 70°？",
+                "topic_id": "mt_cdMlC7EpTJ"
+              }
+            ],
+            "unit_id": "question"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "目录明确涵盖已知两角、利用内角和求第三角。"
+      }
+    },
+    {
+      "id": "q-vague",
+      "input_sha256": "e5e87d560ec3efae72baa17d1b9cb05777553d10ff06b13723fb08212bfb1ae6",
+      "supplier_http_requests": 1,
+      "catalog_calls": [],
+      "result": {
+        "input_sha256": "e5e87d560ec3efae72baa17d1b9cb05777553d10ff06b13723fb08212bfb1ae6",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Vague follow-up without explicit context provides insufficient evidence to identify a topic.",
+            "status": "unknown",
+            "topics": [],
+            "unit_id": "question"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "没有明确前文，不能猜测所问知识点。"
+      }
+    },
+    {
+      "id": "q-image",
+      "input_sha256": "8a7adab755f10e33eb017a82db85e09c4de34dbca49009f62a381e19cbf8885d",
+      "supplier_http_requests": 1,
+      "catalog_calls": [],
+      "result": {
+        "input_sha256": "8a7adab755f10e33eb017a82db85e09c4de34dbca49009f62a381e19cbf8885d",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "The question references an image that is missing, providing insufficient evidence to identify the topic.",
+            "status": "unknown",
+            "topics": [],
+            "unit_id": "question"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "缺少实际图片，不强行按角字推断。"
+      }
+    },
+    {
+      "id": "q-audio-settings",
+      "input_sha256": "11db76312b838490a4f558093ad7729192491d4df2b8f6bd6f2d84ad11b773a5",
+      "supplier_http_requests": 1,
+      "catalog_calls": [],
+      "result": {
+        "input_sha256": "11db76312b838490a4f558093ad7729192491d4df2b8f6bd6f2d84ad11b773a5",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "The user is asking how to adjust audio/volume settings, which is a software or device operation outside the mathematics catalog.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "question"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "意图为设备或软件音量操作，不是数学内容。"
+      }
+    },
+    {
+      "id": "course-supplement",
+      "input_sha256": "043546fde6f033c444fef704a0dd6126b3df826d9f038263fe0f74591bb2dde7",
+      "supplier_http_requests": 2,
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "slope intercept linear equation"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "043546fde6f033c444fef704a0dd6126b3df826d9f038263fe0f74591bb2dde7",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Explains how the slope parameter m in a linear equation determines the steepness and direction of the straight-line graph.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "斜率 m 为负，直线向右下方倾斜；m 的绝对值越大，直线越陡。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"step-one\",\"direction\"]"
+          },
+          {
+            "reason": "Explains the definition and graphical interpretation of the y-intercept b in a linear equation graph.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "纵截距 b：当 x=0 时，y=b，所以图像与纵轴相交于 (0,b)。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"step-one\",\"intercept\"]"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "斜率方向/陡缓及纵截距分别引用各自片段，不反推学生提问。"
+      }
+    },
+    {
+      "id": "course-version-a",
+      "input_sha256": "4630dd43e86d7099b335123746dca78cc85d5113e8719f8ba17ce9b90c5dc062",
+      "supplier_http_requests": 4,
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "slope"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "linear"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "ids": [
+              "mt_WBdHkc2HTf"
+            ]
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "4630dd43e86d7099b335123746dca78cc85d5113e8719f8ba17ce9b90c5dc062",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Explains how the slope parameter m affects the steepness and direction of a linear graph, matching the Linear Function Graphs topic.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "斜率 m 表示直线的方向与陡缓，m 由正变负时，直线由向右上方转为向右下方。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"step-one\",\"same-beat\"]"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "实际讲解斜率与直线方向，有本片段原文依据。"
+      }
+    },
+    {
+      "id": "course-version-b",
+      "input_sha256": "939a2e6d58d4de681d48aa2cd047859066281ec0afed2cc7892e386a3a1db107",
+      "supplier_http_requests": 2,
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "intercept"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "939a2e6d58d4de681d48aa2cd047859066281ec0afed2cc7892e386a3a1db107",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Explains the definition of the y-intercept b on a straight line and determines it from the linear equation y=mx+b by setting x=0.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "纵截距 b 是直线与纵轴交点的纵坐标。在 y=mx+b 中，让 x=0 就得到 y=b。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"step-one\",\"same-beat\"]"
+          }
+        ]
+      },
+      "raw_review_flags_preserved": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "independent_agent_review": {
+        "decision": "correct-for-this-fixed-source",
+        "basis": "实际讲解纵截距与x=0求交点，有本版本原文依据。"
+      }
+    }
+  ],
+  "independent_agent_review": {
+    "reviewer": "review_topic_analysis",
+    "all_seven_inputs_reconstructed": true,
+    "formal_validation": "all passed",
+    "human_approval_claimed": false,
+    "limitation": "Only these fixed inputs; not a population accuracy estimate or human teaching approval."
+  },
+  "playback_evidence": {
+    "taxonomy": {
+      "repository": "https://github.com/withmarbleapp/os-taxonomy",
+      "commit": "533bab591b24c4024f0d70f9296aa4ee560fdd01",
+      "topics_sha256": "311b90e7706d76c21af7b68275eb738d3f3ade027418a633fa30d2faffe12693",
+      "catalog_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "topic_count": 529,
+      "subject": "Mathematics",
+      "projection": "id, domain, name, description, evidence, ageRangeStart, ageRangeEnd; original text unchanged; curriculum-standard records excluded",
+      "database_license": "ODbL-1.0",
+      "content_license": "CC-BY-SA-4.0",
+      "attribution": "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · https://withmarble.com"
+    },
+    "rules_version": "separate-question-and-delivered-units-v1",
+    "analysis_through": 7,
+    "status": "partial",
+    "meaning": "counts-from-associated-records-only; playback-is-not-mastery",
+    "counts": {
+      "question_count": 0,
+      "played_runs": 2,
+      "played_beats": 2
+    },
+    "coverage": {
+      "total_questions": 4,
+      "analyzed_questions": 4,
+      "unknown_questions": 2,
+      "outside_catalog_questions": 1,
+      "unprocessed_questions": 0,
+      "generated_played_beats": 2,
+      "analyzed_played_beats": 2,
+      "associated_played_beats": 2,
+      "unassociated_played_beats": 0
+    },
+    "events": [
+      {
+        "seq": 8,
+        "event": {
+          "course": {
+            "id": "trial-course-supplement",
+            "kind": "generated",
+            "version": "one"
+          },
+          "data": {
+            "beat_id": "direction",
+            "delivery_sha256": "b80961263a63f74bb0dc0e27c2764d54c6fd98a72d89f5583ae9dca31f21e9ed",
+            "presentation": "text",
+            "step_id": "step-one"
+          },
+          "device_id": "topic-accuracy-trial",
+          "id": "played-course-supplement",
+          "kind": "beat_completed",
+          "log_id": "trial-playback-log",
+          "occurred_at": "2026-10-22T00:00:00.000Z",
+          "question_id": "trial-course-supplement",
+          "run_id": "trial-course-supplement",
+          "session_id": "learn-topic-accuracy-trial",
+          "version": 1
+        },
+        "associations": [
+          {
+            "result_seq": 5,
+            "unit_id": "[\"beat\",\"step-one\",\"direction\"]",
+            "quote": "斜率 m 为负，直线向右下方倾斜；m 的绝对值越大，直线越陡。"
+          }
+        ]
+      },
+      {
+        "seq": 9,
+        "event": {
+          "course": {
+            "id": "trial-course-versions",
+            "kind": "generated",
+            "version": "one"
+          },
+          "data": {
+            "beat_id": "same-beat",
+            "delivery_sha256": "48023ae3b58f5dd645999bd396365ac0ff0c65e85267340b710c1eb45ddb9f11",
+            "presentation": "text",
+            "step_id": "step-one"
+          },
+          "device_id": "topic-accuracy-trial",
+          "id": "played-course-version-a",
+          "kind": "beat_completed",
+          "log_id": "trial-playback-log",
+          "occurred_at": "2026-10-22T00:00:00.000Z",
+          "question_id": "trial-course-versions",
+          "run_id": "trial-course-versions",
+          "session_id": "learn-topic-accuracy-trial",
+          "version": 1
+        },
+        "associations": [
+          {
+            "result_seq": 6,
+            "unit_id": "[\"beat\",\"step-one\",\"same-beat\"]",
+            "quote": "斜率 m 表示直线的方向与陡缓，m 由正变负时，直线由向右上方转为向右下方。"
+          }
+        ]
+      }
+    ],
+    "next_after": null
+  },
+  "playback_limitation": "Program-registered synthetic playback facts; not real TV playback acceptance.",
+  "cleanup": {
+    "matching_purge_records": 7,
+    "event": "peer_purged",
+    "error_count": 0,
+    "purge_recorded": true
+  },
+  "restoration": {
+    "restored": true,
+    "original_route_fields_exactly_restored": true,
+    "other_config_canonically_unchanged": true,
+    "normal_backend_stopped": true,
+    "original_backend_listening": false,
+    "control_files_remaining": 0
+  },
+  "executed_policy_sha256": "84b1579c94b54e81f78ecb8006f77073aeb5390aede9898ecfae30c11b3c6dff",
+  "executed_policy": {
+    "schema": "octos.learn.topic-accuracy-trial.v1",
+    "id": "phase2-topic-final7-20261022",
+    "status": "approved",
+    "authorization_reference": "User explicitly permitted continuation of the seven remaining fixed sources within the original total budget in this chat on 2026-10-22: 13 additional HTTP requests including retries, 9 per source and USD14.30; earlier five requests remain charged to the original 18-request/USD20 allowance.",
+    "owner": "alan0x",
+    "model": "gemini-3.8-flash",
+    "backend": "http://127.0.0.1:50080",
+    "gateway": "http://127.0.0.1:50189",
+    "output_directory": "/private/tmp/octos-topic-final7-20261022",
+    "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+    "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "pricing": {
+      "verified_at": "2026-10-22",
+      "valid_until": "2026-12-31",
+      "input_per_million_usd": 0.75,
+      "output_including_thinking_per_million_usd": 3.75,
+      "max_input_tokens": 1048576,
+      "max_output_tokens": 65536,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+    },
+    "limits": {
+      "tasks": 7,
+      "model_http_requests": 13,
+      "model_http_requests_per_task": 9,
+      "usd_micros": 14300000,
+      "reservation_usd_micros": 1100000,
+      "request_bytes": 1048576,
+      "output_tokens": 32768
+    },
+    "code_sha256": {
+      "scripts/verify-learning-topic-accuracy.mjs": "a4ec3d8c7e07257156acc6237d4df0bde5fb16cdf889ecc4e985f94bd990b241",
+      "scripts/lib/learning-topic-trial-control.mjs": "53167f291beb4b598fbc0a10ccaf2cb29f25293a2cc0b9258ac9ef08c8d036cc",
+      "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+      "scripts/lib/learning-topic-trial-fixture.mjs": "b693ed4e9d7a60e0cd3e1ac8d69be59e490249d64371e92d5e2e337ab82c78e9",
+      "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+      "src/learning/history/analyze-topics.ts": "1194aca38f3e2812c665e3e3e3799dffbd3bf7b3b55a3a0c7d7bcfe363a406eb",
+      "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+      "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+      "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+      "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+      "services/learning-history/topic-analysis-instructions.mjs": "ecdbfefd621796d7a2f8f70425a04af061307f08724b05d3747c2cacde2fcb71",
+      "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+      "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+      "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358",
+      "services/learning-history/topic-analysis-response.mjs": "5a1dc3e431479697f275a42a55df25c59626ae01e1aaf3920f5794f094387dac"
+    },
+    "octos": {
+      "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+      "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+      "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+    },
+    "scope": "final-seven-fixed-cases",
+    "prior_stopped_trial": {
+      "id": "phase2-topic-remaining8-20261022",
+      "requests_not_refunded": 5,
+      "reserved_usd_micros_not_refunded": 5500000,
+      "original_report_sha256": "d91f88eb389f9c8630572f76e59f09edd2f0a51f732c2619ce411fdf2fbd903d",
+      "original_ledger_retained": true
+    }
+  },
+  "original_report_sha256": "5beab684c452cc9acce9cb9afa83a6530292185e1eb9132d742c19c437c09e43",
+  "automatic_analysis_enabled": false,
+  "new_device_acceptance": false,
+  "deployment": false
+}

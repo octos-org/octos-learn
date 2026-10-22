@@ -1,3 +1,4 @@
+import { AccountHistoryPanel } from "./history/account-history-panel";
 import { useEffect, useRef, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { adoptLearningSession, listLearningSessions, type LearningSessionRecord } from "./learning-session-store";
@@ -18,6 +19,7 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
 }) {
   const [sessions, setSessions] = useState(() => listLearningSessions().filter(s => s.source?.mode !== "preview"));
   const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"resume" | "facts">("resume");
   const [syncing, setSyncing] = useState(true);
   const [error, setError] = useState(false);
   const panel = useRef<HTMLElement>(null);
@@ -37,13 +39,18 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
     <aside ref={panel} className="learning-history-panel" role="dialog" aria-modal="true" aria-label="学习记录" onClick={e => e.stopPropagation()} onKeyDown={e => {
       if (e.key === "Escape") { e.stopPropagation(); onClose(); }
       if (e.key === "Tab") {
-        const elements = panel.current?.querySelectorAll<HTMLElement>('button, input, a[href]');
+        const elements = panel.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input, a[href], summary');
         const first = elements?.[0], last = elements?.[elements.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
       }
     }}>
       <header><div><h2>学习记录</h2><p>继续之前的白板与课程</p></div><button onClick={onClose} aria-label="关闭学习记录"><X size={20} /></button></header>
+      <div className="learning-history-tabs" role="tablist" aria-label="记录类型">
+        <button role="tab" aria-selected={tab === "resume"} onClick={() => setTab("resume")}>继续学习</button>
+        <button role="tab" aria-selected={tab === "facts"} onClick={() => setTab("facts")}>学习经过</button>
+      </div>
+      {tab === "facts" ? <AccountHistoryPanel onSelect={onSelect} /> : <>
       <button className="learning-history-new" onClick={onNew}><Plus size={18} /> 新建白板</button>
       <label className="learning-history-search"><Search size={17} /><input aria-label="搜索学习记录" placeholder="搜索学习记录" value={query} onChange={e => setQuery(e.target.value)} /></label>
       {syncing && <p role="status">正在同步历史记录…</p>}
@@ -54,6 +61,7 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
         </button>)}
         {!visible.length && <p>{query ? "没有找到匹配的学习记录" : "还没有保存的学习记录"}</p>}
       </div>
+      </>}
     </aside>
   </div>;
 }

@@ -14,3 +14,14 @@
 .learning-history-item span { font-size: 12px; color: #69817d; }
 .learning-history-item:hover, .learning-history-item[aria-current] { background: #edf4ef; }
 .learning-history-panel :is(button,input):focus-visible { outline: 2px solid #16818c; outline-offset: 2px; }
+
+.learning-history-tabs { display: flex; gap: 6px; margin: 8px 0; }
+.learning-history-tabs button { flex: 1; min-height: 40px; border: 1px solid #d7dfd9; border-radius: 8px; background: transparent; color: inherit; }
+.learning-history-tabs button[aria-selected="true"] { background: #e3f0e8; border-color: #166a79; }
+.learning-history-account { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.learning-history-account > button { min-height: 40px; margin: 4px; border: 1px solid #d7dfd9; border-radius: 8px; background: #f5f8f3; color: inherit; }
+.learning-history-account h3 { font-size: 16px; overflow-wrap: anywhere; }
+.learning-history-evidence { padding: 12px 0; border-top: 1px solid #d7dfd9; font-size: 12px; overflow-wrap: anywhere; }
+.learning-history-evidence time { display: block; color: #657c7c; margin: 4px 0; }
+.learning-history-original-text { white-space: pre-wrap; color: #243b40 !important; }
+.learning-history-evidence summary { min-height: 32px; cursor: pointer; color: #166a79; }

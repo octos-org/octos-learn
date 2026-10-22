@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 
 export async function readLearningDocument(page: Page, key: string): Promise<unknown> {
   return page.evaluate(key => new Promise((resolve, reject) => {
-    const request = indexedDB.open('octos-learning-documents', 1);
+    const request = indexedDB.open('octos-learning-documents');
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
       const db = request.result;

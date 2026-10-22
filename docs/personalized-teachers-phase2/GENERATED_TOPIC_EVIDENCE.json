@@ -1,0 +1,82 @@
+{
+  "checked_at": "2026-10-22T08:25:20.821Z",
+  "scope": "Exact delivered course material persistence and existing Octos app-origin agent entry; not automatic topic classification",
+  "runtime_parent": "bf99486",
+  "schema_version": 4,
+  "source_sha256": {
+    "services/learning-history/course-material.mjs": "d288d028bf7154a4e18a56e4cd0135949ea65955806f5dda740c33ff7133fbb7",
+    "services/learning-history/store.mjs": "081009de324e5097aad01f27158ea117ebaf7b034f8416048cd7980ebf728be6",
+    "services/learning-history/server.mjs": "31c639b899b64605073ac62373adadf33a8428b6b8ebbae360733490312a20f4",
+    "src/learning/history/device-queue.ts": "7c3356ff3844974fecabd9d65719ae04d42a4a48f7c8921b08a9b238601c60a0",
+    "src/learning/history/recorder.ts": "894bffac29184526fe24dfd8573223f8ec8b1a607e1d461af7db4333fe6046c3",
+    "src/learning/history/synchronize.ts": "66ed8c1da156306577afe5a8d54f37eaed8704af2c9c225610c976952b9e5598",
+    "deploy/nginx/octos-learn.conf.example": "1c4b862fe8b56c67b544205c6134d8e0156bdd784f6ce16a2274311939eb468b",
+    "scripts/verify-learning-topic-octos.mjs": "95d6b9d5ae85269d730de7ce172108888ce7f076c60022df7c5733952af9184a"
+  },
+  "checks": {
+    "unit_tests": 1229,
+    "unit_test_files": 135,
+    "targeted_unit_tests_included_in_full": 29,
+    "history_and_product_service_tests": 30,
+    "final_material_case_rerun": 2,
+    "typescript_public_build": "passed",
+    "focused_lint": "passed",
+    "real_supplier_calls": 0,
+    "classification_quality": "not verified",
+    "automatic_scheduling": "not implemented",
+    "topic_counting": "not connected",
+    "new_device_install": false,
+    "production_deployed": false,
+    "performance_retested": false,
+    "oversized_material": "retained locally; later ordinary facts still upload (regression passed)"
+  },
+  "octos_entry": {
+    "checked_at": "2026-10-22T08:17:58.318Z",
+    "passed": true,
+    "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+    "scope": "Actual isolated Octos host-owned app peer, app-origin turn, local model replacement, readable result and separate host transcript",
+    "original_account_modified": false,
+    "real_supplier_calls": 0,
+    "fixture_model_requests": 1,
+    "automatic_scheduling_verified": false,
+    "classification_quality_verified": false,
+    "production_integration_complete": false,
+    "input_origin": "app",
+    "preserved_course_bytes_supplied": true,
+    "synthetic_taxonomy": true,
+    "result_readable": true,
+    "classroom_transcript_unchanged": true
+  },
+  "logs": {
+    "full_unit": {
+      "path": "/private/tmp/phase2-topic-material-unit-full-final.log",
+      "sha256": "70b5caa9d90805305dd4ff4980013adfc6c5062d2d05b3b85ccd7909d0ce71fb"
+    },
+    "service_suite": {
+      "path": "/private/tmp/phase2-topic-material-service-final.log",
+      "sha256": "57c8e12e406144d4a18b5f439e102f506eb76b01df7fba20cee8c811b3b446a4"
+    },
+    "final_material_cases": {
+      "path": "/private/tmp/phase2-topic-material-service-focused-final.log",
+      "sha256": "35a40038c7015e3e1549ef2c5960edc7c3f02c20d33c499edb1d0af2e272dc7b"
+    },
+    "public_build": {
+      "path": "/private/tmp/phase2-topic-material-build-final.log",
+      "sha256": "ad9848b1025f3556fbf1ddb1d4328b0cf7b357f52c85a3eff3bf3c42192c98e3"
+    },
+    "focused_lint": {
+      "path": "/private/tmp/phase2-topic-material-lint-last.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "octos_probe": {
+      "path": "/private/tmp/phase2-topic-octos-verified.log",
+      "sha256": "6c796424b502552c14bc7fe828041fa7f849f639251e036c764f64807dfbfa62"
+    }
+  },
+  "preflight_notes": [
+    "Initial non-escalated service run hit local-listener sandbox errors; one schema-migration assertion still expected version 3. The assertion was updated for version 4 and the permitted local-listener suite passed.",
+    "Protocol fixture prechecks corrected turn UUID/text-array encoding, temporary profile setup and message retrieval. Core session/hydrate was used because the auxiliary messages-page REST handler was unavailable in this fixture. No upstream code was changed.",
+    "Final entry probe used synthetic taxonomy and preset model output; its one local model request is not evidence of semantic classification quality."
+  ],
+  "implementation_commit": "f7a8fa4"
+}

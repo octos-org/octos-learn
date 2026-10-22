@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-20T16:31:11.897Z",
+  "mode": "source-and-local-runtime",
+  "revisions": {
+    "octos-learn": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+    "octos": "ed92309a3fca68b9e721b25ad36c85dd6ddd723e",
+    "learning-coach": "428772965c78e5d2ae031d75aafa85110bb89fa5",
+    "octos-lesson-language": "15ee0095f317fe868c0f0af4bfae55abd8e70b55",
+    "octos-course-library": "0781f74f8b31bc56dd013527d45f8379416e70b2"
+  },
+  "source_actions": [
+    {
+      "id": "learning.lesson.generate",
+      "learner_context": true,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-camera",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-selection",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    }
+  ],
+  "mapping": {
+    "status": "draft-pending-editorial-review",
+    "pack_id": "slope-and-intercept",
+    "version": "0.1.8",
+    "entry_sha256": "4d924d7fd7456a7a2839da5f26b09d8326156c2dc61b4412c31b26a139fbbbe9",
+    "steps": 4,
+    "beats": 13,
+    "tasks": 3,
+    "references_valid": true,
+    "taxonomy_ids_verified": true,
+    "taxonomy_commit": "533bab591b24c4024f0d70f9296aa4ee560fdd01"
+  },
+  "installed_actions": [
+    {
+      "id": "learning.lesson.generate",
+      "learner_context": true,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-camera",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    },
+    {
+      "id": "learning.lesson.generate-from-selection",
+      "learner_context": false,
+      "tutor_context": false,
+      "accepts_extra_fields": false
+    }
+  ],
+  "installed_skill_instructions_match_source": true,
+  "runtime": {
+    "version": "2.0.3+ed92309a",
+    "existing_solo_account": true,
+    "cases": [
+      {
+        "method": "memory/overview",
+        "outcome": "ok",
+        "refresh_enabled": true
+      },
+      {
+        "method": "session/append_message",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/search",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/load",
+        "outcome": "invalid_params",
+        "code": -32602
+      },
+      {
+        "method": "memory/ingest",
+        "outcome": "invalid_params",
+        "code": -32602
+      }
+    ]
+  }
+}

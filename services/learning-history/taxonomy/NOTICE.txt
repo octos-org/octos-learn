@@ -1,0 +1,10 @@
+Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · https://withmarble.com
+Source: https://github.com/withmarbleapp/os-taxonomy/tree/533bab591b24c4024f0d70f9296aa4ee560fdd01
+
+This Mathematics-only projection preserves the upstream names, descriptions and evidence unchanged.
+The database (including this projection) is licensed under ODbL 1.0:
+https://github.com/withmarbleapp/os-taxonomy/blob/533bab591b24c4024f0d70f9296aa4ee560fdd01/LICENSE
+The authored textual content is licensed under CC BY-SA 4.0:
+https://github.com/withmarbleapp/os-taxonomy/blob/533bab591b24c4024f0d70f9296aa4ee560fdd01/LICENSE-CONTENT
+Curriculum-standard records and teaching-research text are not included.
+This notice applies to this catalog, not to the application code.

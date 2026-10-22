@@ -1,0 +1,89 @@
+{
+  "checkedAt": "2026-10-21T15:36:45.233Z",
+  "device": "M3G2",
+  "androidApi": 33,
+  "webView": "101.0.4951.61",
+  "source": "ec5b28d144af9c2a1db77bba1ae6e8887385f08d",
+  "offlineScope": "Only the app WebView, restored in finally; device Wi-Fi/account/settings unchanged",
+  "originalFactsRetained": 146,
+  "firstReloadFacts": 146,
+  "offlineAttemptAdded": true,
+  "secondReloadFacts": 149,
+  "counts": {
+    "playback_position": 116,
+    "task_attempt": 21,
+    "narration_ended": 6,
+    "beat_completed": 5,
+    "run_started": 1
+  },
+  "sliders": [
+    {
+      "id": "oll-variable-number_01",
+      "value": "-3",
+      "min": "-5",
+      "max": "5"
+    },
+    {
+      "id": "oll-variable-number_02",
+      "value": "-1.95",
+      "min": "-5",
+      "max": "5"
+    }
+  ],
+  "restoredPracticeSuccess": true,
+  "runStarts": 1,
+  "originalAttempts": 20,
+  "offlineAttempts": 1,
+  "paidGenerations": 0,
+  "publicSyncVerified": false,
+  "allChecksPassed": true,
+  "migration": {
+    "fromVersion": 1,
+    "toVersion": 2,
+    "originalDocuments": 112,
+    "originalDocumentsUnchanged": 112,
+    "backupScope": "Learning documents only; no credentials or cookies"
+  },
+  "processRestart": {
+    "before": 149,
+    "after": 149,
+    "allExistingEventsUnchanged": true
+  },
+  "apk": {
+    "path": "delivery/phase2/octos-learn-phase2-ec5b28d-debug.apk",
+    "bytes": 107404660,
+    "sha256": "f8509c065b597c7ced53ec5ec808d4605ed21e1f5c1d5c7e1d601ab222ca0b75"
+  },
+  "reopenedAfterProcessRestart": {
+    "previousEvents": 149,
+    "currentEvents": 149,
+    "allOriginalEventsUnchanged": true,
+    "sliders": [
+      {
+        "id": "oll-variable-number_01",
+        "value": "-3",
+        "min": "-5",
+        "max": "5"
+      },
+      {
+        "id": "oll-variable-number_02",
+        "value": "-1.95",
+        "min": "-5",
+        "max": "5"
+      }
+    ],
+    "practiceSuccess": true,
+    "runStarts": 1
+  },
+  "evidenceDetails": {
+    "addedBetween146And149": {
+      "task_attempt": 1,
+      "playback_position": 2
+    },
+    "narrationEndReasons": {
+      "ended": 5,
+      "cancelled": 1
+    },
+    "scope": "Reconstructed from retained private event snapshots; evidence refers to ec5b28d, before the sparse-position and stable-start fixes. No device retest was performed for the later fixes."
+  }
+}

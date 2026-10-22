@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import { existsSync, readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
-import { createByokHandler } from "./services/byok/server.mjs";
+import { createProductHandler } from "./services/product-server.mjs";
 import {
   addLegacySupportsForSrgbColorMixes,
   downlevelOklchColors,
@@ -156,7 +156,8 @@ export default defineConfig(({ mode, command }) => {
       ...(command === "serve" ? [{
         name: "octos-learn-byok",
         configureServer(server) {
-          const handle = createByokHandler({ octosBaseUrl: octosApiTarget, registryRoot: env.OCTOS_REGISTRY_ROOT?.trim() || undefined });
+          const handle = createProductHandler({ octosBaseUrl: octosApiTarget, registryRoot: env.OCTOS_REGISTRY_ROOT?.trim() || undefined, historyDatabasePath: env.OCTOS_LEARN_HISTORY_DB?.trim() || undefined });
+          server.httpServer?.once("close", handle.close);
           server.middlewares.use((request, response, next) => {
             void handle(request, response).then(handled => { if (!handled) next(); }).catch(next);
           });

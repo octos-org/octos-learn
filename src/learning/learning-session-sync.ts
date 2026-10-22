@@ -1,4 +1,6 @@
 import { getMessages, getSessionFiles, listSessions, type SessionFileInfo } from "@/api/sessions";
+import { DeviceHistoryQueue } from "./history/device-queue";
+import { getSelectedProfileId } from "@/api/client";
 import { buildApiHeaders } from "@/api/client";
 import { buildFileUrl } from "@/api/files";
 import { stripLearningContext } from "./learning-context";
@@ -45,7 +47,16 @@ async function recoverTitle(id: string, files: SessionFileInfo[]): Promise<strin
 
 export async function discoverServerLearningSessions(options: { recoverTitles?: boolean } = {}): Promise<LearningSessionRecord[]> {
   const recoverTitles = options.recoverTitles !== false;
-  const sessions = (await listSessions()).filter(session => session.id.startsWith("learn-"));
+  const remote = await listSessions();
+  let deleted = new Set<string>();
+  const localScope = getSelectedProfileId();
+  // This only filters the local resume index; server authorization and fact
+  // ownership still come from Octos, never from this browser selection.
+  if (localScope) {
+    try { deleted = new Set(await new DeviceHistoryQueue().deletedSessionIds(localScope)); }
+    catch { /* A local read failure cannot manufacture a server-side deletion. */ }
+  }
+  const sessions = remote.filter(session => session.id.startsWith("learn-") && !deleted.has(session.id));
   const result: LearningSessionRecord[] = [];
   // Keep network concurrency bounded for accounts with a long history.
   const batchSize = recoverTitles ? 6 : Math.max(1, sessions.length);

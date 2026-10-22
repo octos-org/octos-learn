@@ -352,6 +352,7 @@ export const UI_PROTOCOL_FEATURES = [
   // isn't a staged REST-to-WS migration with a client-side kill switch,
   // it's a new capability with no prior REST route to fall back to.
   "smart_home.v1",
+  "session.append_message.full_history_retry.v1",
 ] as const;
 
 /**
@@ -493,6 +494,7 @@ export interface UiProtocolBridge {
   /** Whether the current socket negotiated the optional two-phase voice
    * admission contract. False means callers must use legacy `turn/start`. */
   supportsVoiceAdmission(): boolean;
+  supportsFullHistoryAppendRetry?(): boolean;
 
   sendTurn(
     turn_id: string,
@@ -562,6 +564,8 @@ export interface UiProtocolBridge {
   callMethod<T = unknown>(method: string, params?: unknown): Promise<T>;
 
   onMessageDelta(handler: (e: MessageDeltaEvent) => void): () => void;
+  /** Host-routed read tools; consumers must verify the active peer/session/turn. */
+  onPeerToolCall(handler: (e: PeerToolCall) => void): () => void;
   onSpawnComplete(handler: (e: TurnSpawnCompleteEvent) => void): () => void;
   /** UPCR-2026-014 M9-α-9 dedicated per-artefact envelope subscriber.
    *  Routes one event per `file/attached` notification — the SPA
@@ -678,6 +682,10 @@ export interface UiProtocolBridge {
   onSessionTitleUpdated(
     handler: (e: { session_id: string; title: string }) => void,
   ): () => void;
+}
+
+export interface PeerToolCall {
+  peer: string; session_id: string; turn_id: string; call_id: string; name: string; args: unknown;
 }
 
 export interface BridgeConfig {
@@ -1940,6 +1948,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private readonly sendQueue: QueuedFrame[] = [];
 
   private readonly subMessageDelta = new Subscribers<MessageDeltaEvent>();
+  private readonly subPeerToolCall = new Subscribers<PeerToolCall>();
   private readonly subSpawnComplete = new Subscribers<TurnSpawnCompleteEvent>();
   private readonly subFileAttached = new Subscribers<FileAttachedEvent>();
   private readonly subVisualGenerating =
@@ -2016,6 +2025,14 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     [METHODS.VISUAL_GENERATING]: {
       guard: guardVisualGenerating,
       emit: (v) => this.subVisualGenerating.emit(v as VisualGeneratingEvent),
+    },
+    "peer/tool/call": {
+      guard: (value: unknown) => {
+        if (!isPlainObject(value) || !["peer", "session_id", "turn_id", "call_id", "name"].every(key => typeof value[key] === "string" && value[key].length > 0 && value[key].length <= 512)
+          || !isPlainObject(value.args) || JSON.stringify(value.args).length > 2048) return null;
+        return value as unknown as PeerToolCall;
+      },
+      emit: value => this.subPeerToolCall.emit(value as PeerToolCall),
     },
     [METHODS.VISUAL_SUCCEEDED]: {
       guard: guardVisualSucceeded,
@@ -2256,6 +2273,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.topicScope = t && t.length > 0 ? t : null;
     this.projectionV2Active = false;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.projectionHandshake = "pending";
     this.pendingProjectionFrames = [];
     this.emittedProjectionTerminals.clear();
@@ -2331,14 +2349,19 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     return this.stopped || this.reconnectAbandoned || this.state === "closed";
   }
 
+  private fullHistoryAppendRetryActive = false;
+
   supportsVoiceAdmission(): boolean {
     return this.voiceAdmissionActive;
   }
+
+  supportsFullHistoryAppendRetry(): boolean { return this.fullHistoryAppendRetryActive; }
 
   async stop(): Promise<void> {
     if (this.stopped) return;
     this.stopped = true;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.cancelReconnectTimer();
     this.rejectStartup(
       new BridgeStartupError("stopped", "UI Protocol startup was cancelled."),
@@ -2358,6 +2381,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.rejectAllPending(new BridgeStoppedError());
     this.sendQueue.length = 0;
     this.subMessageDelta.clear();
+    this.subPeerToolCall.clear();
     this.subSpawnComplete.clear();
     this.subFileAttached.clear();
     this.subVisualGenerating.clear();
@@ -2674,6 +2698,9 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   onMessageDelta(handler: Listener<MessageDeltaEvent>): () => void {
     return this.subMessageDelta.add(handler);
   }
+  onPeerToolCall(handler: Listener<PeerToolCall>): () => void {
+    return this.subPeerToolCall.add(handler);
+  }
   onSpawnComplete(handler: Listener<TurnSpawnCompleteEvent>): () => void {
     return this.subSpawnComplete.add(handler);
   }
@@ -2965,6 +2992,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private async onWsOpen(): Promise<void> {
     if (this.stopped) return;
     this.voiceAdmissionActive = false;
+    this.fullHistoryAppendRetryActive = false;
     this.lastInboundAt = this.cfg.now();
     if (!this.sessionId) {
       // Sessionless (auxiliary) mode: there is no session to open — the
@@ -3037,6 +3065,8 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
       this.voiceAdmissionActive =
         Array.isArray(supportedFeatures) &&
         supportedFeatures.includes("voice.asr_admission.v1");
+      this.fullHistoryAppendRetryActive = Array.isArray(supportedFeatures)
+        && supportedFeatures.includes("session.append_message.full_history_retry.v1");
       if (!negotiatedProjectionV2) {
         this.failStartup(
           new BridgeStartupError(

@@ -1,0 +1,209 @@
+{
+  "recorded_at": "2026-10-22T06:51:44.724288+00:00",
+  "scope": "Free evidence coverage review, concrete maintenance fixes and final full-frontend fixed-response comparison",
+  "candidate": "f28cda2f1fd6930db03b3f8bd03a31eb3fb3933d",
+  "fix_commits": [
+    "867f468",
+    "f28cda2"
+  ],
+  "collector_commit": "e9639c4",
+  "paid_testing": "deferred by user; optional supplemental method, not a mandatory gate",
+  "real_supplier_calls": 0,
+  "normal_account_configuration_changed": false,
+  "production_changed": false,
+  "runtime_changed_since_installed_apk": true,
+  "installed_apk_source": "47a1843",
+  "candidate_device_retest": "not performed",
+  "checks": {
+    "unit_tests": 1227,
+    "test_files": 135,
+    "new_unit_regressions": 5,
+    "targeted_tests": 23,
+    "isolated_browser_tests": 2,
+    "public_build": "passed; includes tsc -b",
+    "full_eslint": "passed, 0 errors, 37 warnings before final workspace busy condition; changed workspace lint then passed with 0 errors and 2 existing warnings",
+    "collector_syntax_and_lint": "passed",
+    "isolated_browser_scope": "Two history browser regressions ran after maintenance-layer fixes and before final workspace condition; final live generation condition is covered by the 40-pair complete-frontend run."
+  },
+  "logs": {
+    "regression_before_fix": {
+      "sha256": "54f64a76ee4723342a04f04e8e18f9100b4864ce608fe8a42ebe6de8297badfc",
+      "tail": [
+        "",
+        "⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯",
+        "",
+        " Test Files  1 failed (1)",
+        "      Tests  2 failed | 1 passed (3)",
+        "   Start at  23:34:39",
+        "   Duration  552ms (transform 95ms, setup 15ms, collect 13ms, tests 176ms, environment 156ms, prepare 42ms)",
+        ""
+      ]
+    },
+    "targeted_after_fix": {
+      "sha256": "dc2af9668c127dde9e355c2cd496f76d355ba1830d386d48596adb39f9db7501",
+      "tail": [
+        " ✓ src/learning/history/device-queue.test.ts  (11 tests) 134ms",
+        " ✓ src/learning/history/use-learning-history.test.ts  (3 tests) 213ms",
+        "",
+        " Test Files  4 passed (4)",
+        "      Tests  23 passed (23)",
+        "   Start at  23:36:00",
+        "   Duration  657ms (transform 199ms, setup 121ms, collect 309ms, tests 357ms, environment 853ms, prepare 192ms)",
+        ""
+      ]
+    },
+    "full_unit_final": {
+      "sha256": "b69a5bb1d2bd3844a65b11665c70abe5aa51509fd385ee65ac6ac0789c7c94c9",
+      "tail": [
+        " ✓ src/learning/wake-audio-handoff.test.ts  (1 test) 1ms",
+        " ✓ src/learning/setup-whiteboard.test.tsx  (13 tests) 13237ms",
+        "",
+        " Test Files  135 passed (135)",
+        "      Tests  1227 passed (1227)",
+        "   Start at  23:44:27",
+        "   Duration  17.18s (transform 3.54s, setup 2.43s, collect 16.11s, tests 43.34s, environment 35.78s, prepare 6.72s)",
+        ""
+      ]
+    },
+    "public_build_final": {
+      "sha256": "9d50017f1e09df6206d9a76a4622e27c10d2abbaec660293b9c5dd70f0091f08",
+      "tail": [
+        "dist/assets/AgoraRTC_N-production-DuFB1RNd.js                1,598.52 kB │ gzip: 443.33 kB",
+        "dist/assets/index-DPge8utq.js                                3,059.45 kB │ gzip: 910.41 kB",
+        "",
+        "(!) Some chunks are larger than 500 kB after minification. Consider:",
+        "- Using dynamic import() to code-split the application",
+        "- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks",
+        "- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.",
+        "✓ built in 10.89s"
+      ]
+    },
+    "typecheck_before_workspace_fix": {
+      "sha256": "9a2503b4ff909f90a9ba15bc7bf8a402cdc33d0243f816461fe9816addabb058",
+      "tail": [
+        "Already up to date",
+        "Done in 240ms using pnpm v11.5.2"
+      ]
+    },
+    "full_eslint_before_workspace_fix": {
+      "sha256": "a72bbf2063862938c8a836bf13333c816341eb416b1855d02b8b738e9a439405",
+      "tail": [
+        "> 250 |       setModelCatalogLoading(false);",
+        "      |       ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect",
+        "  251 |       setModelCatalogError(null);",
+        "  252 |       return;",
+        "  253 |     }  react-hooks/set-state-in-effect",
+        "",
+        "✖ 37 problems (0 errors, 37 warnings)",
+        ""
+      ]
+    },
+    "changed_workspace_eslint": {
+      "sha256": "0d083b6459bc83993ee1458baaed4bcb20405c1732a4256422f4227017f214b7",
+      "tail": [
+        "> 2071 |     setTextTurnPending(false);",
+        "       |     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect",
+        "  2072 |     setSelectionState(null);",
+        "  2073 |     setLoadedSelectionArtifacts({});",
+        "  2074 |     void loadSelectionEnhancementState(sessionId).then((state) => {  react-hooks/set-state-in-effect",
+        "",
+        "✖ 2 problems (0 errors, 2 warnings)",
+        ""
+      ]
+    },
+    "collector_eslint": {
+      "sha256": "6b46f5eaedaff86fc2fad0a8d8de34c48f9ff44e860475dd376173c44e7a3b0a",
+      "tail": [
+        "Already up to date",
+        "Done in 160ms using pnpm v11.5.2"
+      ]
+    },
+    "browser_records": {
+      "sha256": "c201b6219d6596b97911d04eb8514066706b2f51eeada7b94832b3e3a24d3a47",
+      "tail": [
+        "[WebServer] Sourcemap for \"/Users/alan0x/Documents/projects/octos-learn/node_modules/.pnpm/octos-lesson-language@https+++codeload.github.com+alan0x+octos-lesson-language+tar.gz+1_f9326551a838e6a665e494043f93e468/node_modules/octos-lesson-language/dist/packages/ink-runtime/src/keyboard-policy.js\" points to missing source files",
+        "[WebServer] Sourcemap for \"/Users/alan0x/Documents/projects/octos-learn/node_modules/.pnpm/octos-lesson-language@https+++codeload.github.com+alan0x+octos-lesson-language+tar.gz+1_f9326551a838e6a665e494043f93e468/node_modules/octos-lesson-language/dist/packages/ink-runtime/src/content-geometry-cache.js\" points to missing source files",
+        "[WebServer] Sourcemap for \"/Users/alan0x/Documents/projects/octos-learn/node_modules/.pnpm/octos-lesson-language@https+++codeload.github.com+alan0x+octos-lesson-language+tar.gz+1_f9326551a838e6a665e494043f93e468/node_modules/octos-lesson-language/dist/packages/ink-runtime/src/ai-writing-record.js\" points to missing source files",
+        "[WebServer] Sourcemap for \"/Users/alan0x/Documents/projects/octos-learn/node_modules/.pnpm/octos-lesson-language@https+++codeload.github.com+alan0x+octos-lesson-language+tar.gz+1_f9326551a838e6a665e494043f93e468/node_modules/octos-lesson-language/dist/packages/web-runtime/src/coordinate-view.js\" points to missing source files",
+        "  ✓  1 [chromium] › tests/learning-history.spec.ts:53:1 › offline captured playback survives reload; a lost upload receipt cannot double counts (40.8s)",
+        "  ✓  2 [chromium] › tests/learning-history.spec.ts:76:1 › manual skipping creates position records but no proof of completed lecture (23.2s)",
+        "",
+        "  2 passed (1.1m)"
+      ]
+    }
+  },
+  "failed_first_preflight": {
+    "candidate": "e9639c477d40a1ed981160fb0fba251b1a2d3ef1",
+    "reason": "Already-running maintenance must yield before another request\n+ actual - expected\n\n+ [\n+   '/api/learn/history/events',\n+   '/api/learn/history/events',\n+   '/api/learn/history/events',\n+   '/api/learn/history/events',\n+   '/api/learn/history/events',\n+   '/api/learn/history/events',\n+   '/api/learn/history/deliveries'\n+ ]\n- []\n",
+    "post_invocation_history_requests": [
+      "/api/learn/history/events",
+      "/api/learn/history/events",
+      "/api/learn/history/events",
+      "/api/learn/history/events",
+      "/api/learn/history/events",
+      "/api/learn/history/events",
+      "/api/learn/history/deliveries"
+    ],
+    "note": "Full frontend still marked generation idle before the first player existed; fixed in f28cda2, rather than weakening this assertion."
+  },
+  "fixed_preflight": {
+    "candidate": "f28cda2f1fd6930db03b3f8bd03a31eb3fb3933d",
+    "passed": true,
+    "raw_result_sha256": "b78520f3dce219fdbcd4d90ed79bd86ba8cef20268adae5384d87b0d26ca7f12"
+  },
+  "measurement": {
+    "raw_result": "FREE_PLAYABLE_BENCHMARK_F28CDA2.json",
+    "raw_result_sha256": "5425a8e3f69f6ab9ebe7703aa16276c081d975022ecb438a7cb29e1942a62526",
+    "measured_pairs": 40,
+    "warmup_pairs": 1,
+    "observer_unchanged_from_prior_run": true,
+    "summary": {
+      "small": {
+        "baseline_playable_p50_ms": 613.1999999880791,
+        "candidate_playable_p50_ms": 613.1999999880791,
+        "difference_ms": 0,
+        "paired_p95_ms": 15.099999994039536
+      },
+      "large": {
+        "baseline_playable_p50_ms": 609.5,
+        "candidate_playable_p50_ms": 613.1999999880791,
+        "difference_ms": 3.699999988079071,
+        "paired_p95_ms": 15
+      },
+      "retry": {
+        "baseline_playable_p50_ms": 613.3000000119209,
+        "candidate_playable_p50_ms": 613.1999999880791,
+        "difference_ms": -0.10000002384185791,
+        "paired_p95_ms": 0.699999988079071
+      },
+      "inflight": {
+        "baseline_playable_p50_ms": 612.0999999940395,
+        "candidate_playable_p50_ms": 613.2000000178814,
+        "difference_ms": 1.100000023841858,
+        "paired_p95_ms": 17
+      }
+    }
+  },
+  "assessment": {
+    "coverage_review": "completed; two confirmed implementation gaps repaired and covered",
+    "performance_gate": "not established",
+    "reason": "Candidate p50 was higher in large (+3.7ms) and inflight (+1.1ms), comparable to sampling-phase variation but not proven to be only noise. Do not declare non-regression, attribute causality, relax the gate, or cherry-pick another run. Next work is free timing/implementation attribution.",
+    "paid_trial_required": false
+  },
+  "sources": {
+    "foreground_history": [
+      "src/learning/history/recorder.ts",
+      "src/learning/history/delivered-material.ts",
+      "src/learning/learning-workspace.tsx"
+    ],
+    "maintenance": [
+      "src/learning/history/synchronize.ts",
+      "src/learning/history/use-learning-history.ts",
+      "src/learning/history/deliver-messages.ts",
+      "src/learning/history/delete-session-copies.ts"
+    ],
+    "existing_octos_delivery_evidence": "OCTOS_INTEGRATION_ACCEPTANCE.json",
+    "existing_relay_load_evidence": "RELAY_BENCHMARK.json",
+    "voice_provider_diff_from_baseline": ""
+  }
+}

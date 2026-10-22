@@ -55,6 +55,48 @@
 
 ## 专题计划
 
+- [个性化老师与学习记忆实施方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)：包含老师基础设定、情境范例、课堂反应和性格验证；记忆统一由 Octos 处理，并规划学习进展、知识地图、趣味成就及老师间共享等待定事项；附[独立审查核对与修订记录](PERSONALIZED_TEACHERS_REVIEW_FOLLOWUP.md)。
+
+- [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
+
+- [个性化老师：调整后的推进顺序](PERSONALIZED_TEACHERS_DIRECTION.md)：2026-10-22 用户认可的新顺序——第二阶段收口合并、第三四阶段最小纵向切片、第五阶段前补精度；列出待决定事项与切片技术落点，不删除原目标。
+
+- [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
+
+- [个性化老师接手说明](personalized-teachers-phase2/HANDOFF.md)：当前提交、已验证与未验证范围、授权边界和接手顺序；与[持续工作日志](personalized-teachers-phase2/WORK_LOG.md)、[交接证据](personalized-teachers-phase2/HANDOFF_EVIDENCE.json)一起持续维护。
+
+- [第二阶段代码验收对照](personalized-teachers-phase2/CODE_ACCEPTANCE.md)：已实现主链路、失败事实及整课汇总，练习归属待独立审查和真实质量；代码审查与发布、设备验收分开。
+- [第二阶段 TODO](personalized-teachers-phase2/TODO.md)：持续维护已完成、当前推进、待办与阻塞原因，区分代码、内容审核、设备验收和发布。
+
+- [实时内容知识点归属实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)：完整课程材料、固定知识目录、Octos 空闲分析、可追溯结果与精确版本计数已实现；附免费整链路证据，列明真实质量、默认关闭和待验收边界。
+
+- [知识点准确性验收执行单](personalized-teachers-phase2/TOPIC_ACCURACY_EXECUTION.md)：固定 9 份问题/课程材料、18 次模型请求与 20 美元上限；获准后首份失败，已停止，不续用旧授权。
+- [知识点准确性首轮真实结果](personalized-teachers-phase2/TOPIC_ACCURACY_RESULT.md)：2 次请求后拒收，具体原因未知；原路由恢复，已免费修复原文留存，判断质量仍未通过。
+- [分析要求漏发修复与单项验证](personalized-teachers-phase2/TOPIC_DIAGNOSIS_EXECUTION.md)：规则漏发及重启连接已修复；获准单项 3 请求后停止。
+- [单项真实结果与后续范围](personalized-teachers-phase2/TOPIC_DIAGNOSIS_RESULT.md)：三次查询、无最终回答，已恢复配置；同题 9 请求/9.90 美元范围随后获准并完成，见下一项。
+- [同题完整验证结果](personalized-teachers-phase2/TOPIC_COMPLETION_RESULT.md)：另获授权后实际 3 次请求完成，程序与独立 agent 内容复核通过；只覆盖这一题，原路由和配置已恢复。
+- [最后七份实际结果](personalized-teachers-phase2/TOPIC_FINAL_SEVEN_RESULT.md)：13 次请求全部完成，经程序及独立 agent 内容复核；九份固定材料覆盖完成，持续分析仍关闭。
+- [最后七份受限执行单](personalized-teachers-phase2/TOPIC_FINAL_SEVEN_EXECUTION.md)：排除两道已核对题，最多再用 13 次/14.30 美元，仍在原总预算内；获准后已完成，原策略关闭重执行。
+- [新 Android 候选准备](personalized-teachers-phase2/ANDROID_CANDIDATE_PREPARATION.json)：含 JSON 代码框修复，APK 构建和完整性检查通过，未安装或做设备验收。
+- [剩余八份实际结果](personalized-teachers-phase2/TOPIC_REMAINING_RESULT.md)：五次真实请求后停止；代码框修复与离线复验，原试验不改判成功。
+- [剩余八份质量验收执行单](personalized-teachers-phase2/TOPIC_REMAINING_EXECUTION.md)：排除已通过题，共享 18 请求/20 美元；已获准执行，首项因输出格式停止；免费修复及原回答复验通过，其余七项未运行。
+
+- [第二阶段收尾审查材料](personalized-teachers-phase2/REVIEW_READINESS.md)：固定代码范围、真实 Octos 与电视验收、服务器只读核查、缺项及英文 PR 草稿；[合并前性能验收](personalized-teachers-phase2/PERFORMANCE_ACCEPTANCE_PLAN.md)包含已执行的 30 对免费首段播放对照、反向检查、原始样本及待授权的真实调用。
+
+- [第二阶段真实计时执行器准备](personalized-teachers-phase2/LIVE_PERFORMANCE_PREPARATION.md)：首段画面与匹配旁白计时、持久费用限制和免费故障检查；[alan0x 真实对照执行单](personalized-teachers-phase2/LIVE_PERFORMANCE_EXECUTION.md)固定所选模型/音色、次数、费用依据、停止及恢复步骤，含独立补测记录；没有新增付费调用。
+
+- [第二阶段免费性能覆盖复核](personalized-teachers-phase2/PERFORMANCE_EVIDENCE_REVIEW.md)：两处维护/生成等待遗漏的复现与修正、f28cda2 新 40 对免费测量及验证依据；两组 p50 差异原因未定，未宣称速度通过，旧 APK 与旧构建不代替新候选。
+
+- [第二阶段实现审查处理](personalized-teachers-phase2/REVIEW_FOLLOWUP.md)：未登录删除保留、复习位置与开始事件去重、Octos PR #2854 CI 修正、性能对照补测及逐项判断；附实际验证边界。
+
+- [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
+
+- [Octos 应用记忆接入](personalized-teachers-phase1/APP_MEMORY_ACCESS.md)：实际链路测试、正文和更新记录的限制，以及复用现有记住、纠正、遗忘和资料挑选能力的最小应用接口草案；旧任务写回按复杂度处理，不作为本轮必做条件。
+
+- [第一阶段独立审查收尾](personalized-teachers-phase1/REVIEW_CLOSEOUT.md)：审查意见的处理、旧建议撤回、测试边界及后续接口实现事项；记录实施前的审查结论，后续接口实现另有审计入口。
+
+- [Octos 记忆接口实施与审计入口](personalized-teachers-phase1/IMPLEMENTATION.md)：两个通用接口的实现提交、验证结果、源文件及限制；上游 PR #2848 已审批并合入 main，附合并前后的提交对应。
+
 - [复用现有 Octos 的 BYOK 修订方案](BYOK_WITH_EXISTING_OCTOS_PLAN.md)：关闭 Octos PR #2839；复用现有 profile / Key 存储与认证，APK 本机录入后加密保存并直连，网页转发放回 octos-learn，不导出已存 Key，包含迁移与验收边界。
 
 - [全面 BYOK 候选实现与验收记录](FULL_BYOK_IMPLEMENTATION_STATUS.md)：当前分支、已实现的管理 / 直连 / 网页 BYOK 转发边界、自动验证与尚未完成的真实供应商 / 电视 / 上线验收。

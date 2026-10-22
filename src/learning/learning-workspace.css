@@ -4026,3 +4026,15 @@
   font-size: 12px;
   cursor: pointer;
 }
+
+
+.learning-history-sync-status {
+  position: absolute; bottom: 12px; left: 16px; z-index: 38;
+  max-width: min(520px, calc(100% - 32px)); padding: 5px 10px;
+  border-radius: 8px; background: #fffef5eb; color: #53605a;
+  font-size: 11px; line-height: 1.5; pointer-events: auto;
+}
+.learning-history-sync-status button {
+  min-height: 36px; margin-left: 8px; border: 0; background: transparent;
+  color: #166a79; font: inherit; text-decoration: underline; cursor: pointer;
+}

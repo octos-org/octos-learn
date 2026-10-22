@@ -1,0 +1,273 @@
+{
+  "recorded_at": "2026-10-22T06:11:31.531946+00:00",
+  "selected_account": "alan0x",
+  "selection_source": "Direct user answer choosing existing alan0x model and Xiaohe voice; not new paid authorization",
+  "voice_metadata": {
+    "source": "Existing BYOK handler GET with stubbed identity and actual read-only profile; no live HTTP authentication or supplier calls",
+    "owner": "alan0x",
+    "provider": "volcano",
+    "voice": "zh_female_xiaohe_uranus_bigtts",
+    "resource": "seed-tts-2.0",
+    "voice_revision": "de675f252aa5c3da176ab5d095c52cfe1445ad97f317f04d4e22abcf4d0d444b",
+    "configured": true
+  },
+  "installed_files_sha256": {
+    "main": "7137b77551c8db8d50fe85309dd2415e5e2ff1ca52481c3f659c9c84a1370227",
+    "lesson-plan.js": "baaae440bb6e8ed40c4e4889536f8683a4e7235168b5fd579f4c36a177ba4052",
+    "manifest.json": "c8e4661ef306873774994e71a265bab4aa4dca44457c166c74aae1c3709e445f",
+    "oll-contract.json": "57fba77024196c4c6fc7ec953ce3b05cc692a7ed30959a8513538fdd0d81e200"
+  },
+  "free_route_checks": [
+    {
+      "kind": "actual-octos-action",
+      "result": {
+        "checked_at": "2026-10-22T06:17:04.008Z",
+        "passed": true,
+        "scope": "Actual isolated Octos process and background learning.lesson.generate action, copied installed skill bundles, synthetic credentials and local budget gateway",
+        "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+        "installed_skill_sha256": "7137b77551c8db8d50fe85309dd2415e5e2ff1ca52481c3f659c9c84a1370227",
+        "model": "gemini-3.8-flash",
+        "real_supplier_calls": 0,
+        "synthetic_supplier_attempts": 2,
+        "rejected_requests": 1,
+        "original_profile_modified": false,
+        "original_installation_modified": false,
+        "memory_refresh_disabled_for_fixture": true,
+        "normal_profile_gateway_route_verified": false,
+        "selected_existing_owner_login_verified": true
+      }
+    },
+    {
+      "kind": "installed-skill",
+      "result": {
+        "checked_at": "2026-10-22T06:08:22.054Z",
+        "model": "gemini-3.8-flash",
+        "installed_skill_sha256": "7137b77551c8db8d50fe85309dd2415e5e2ff1ca52481c3f659c9c84a1370227",
+        "scope": "Installed Learning Coach direct executable with explicit synthetic env, isolated workspace and local supplier replacement; not the normal Octos action environment",
+        "passed": true,
+        "real_supplier_calls": 0,
+        "synthetic_supplier_attempts": 2,
+        "rejected_requests": 1,
+        "reserved_usd_micros_in_fixture": 200,
+        "generation_failed_as_expected": true,
+        "original_installation_modified": false
+      }
+    }
+  ],
+  "frontend_fixture": {
+    "plan": {
+      "schema": "octos.learn.performance-trial.v1",
+      "id": "alan-selected-model-fixture",
+      "status": "draft",
+      "cost_basis_verified": false,
+      "route_verified": false,
+      "authorization_reference": "",
+      "owner": "playable-fixture",
+      "origin": "https://127.0.0.1:5173",
+      "backend": "http://127.0.0.1:50080",
+      "gateway": "http://127.0.0.1:50189",
+      "model": "gemini-3.8-flash",
+      "voice": "zh_female_xiaohe_uranus_bigtts",
+      "resource": "seed-tts-2.0",
+      "voice_revision": "pending-read-only-verification",
+      "frontends": {
+        "baseline": {
+          "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+          "entry": "/assets/index-C3AsDNei.js",
+          "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+          "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+        },
+        "candidate": {
+          "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+          "entry": "/assets/index-BIcz2LPp.js",
+          "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+          "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+        }
+      },
+      "limits": {
+        "courses": 2,
+        "speech_requests": 2,
+        "usd_micros": 1000,
+        "cny_micros": 1000,
+        "model_request_usd_micros": 100,
+        "speech_byte_cny_micros": 1,
+        "speech_utf8_bytes": 1200,
+        "output_tokens": 32768,
+        "request_bytes": 1048576
+      },
+      "samples": [
+        {
+          "id": "pair-01-baseline",
+          "pair": 1,
+          "topic": "linear",
+          "version": "baseline",
+          "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+        },
+        {
+          "id": "pair-01-candidate",
+          "pair": 1,
+          "topic": "linear",
+          "version": "candidate",
+          "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+        }
+      ],
+      "notes": [
+        "Free synthetic accounting only; no real supplier calls, personal credentials or paid authorization."
+      ],
+      "fixture_scenario": "success"
+    },
+    "result": {
+      "plan_sha256": "f641909d0b0124bce28ec5239a58837471c21687d695e4447bfec434d4d7fb36",
+      "started_at": "2026-10-22T06:15:04.224Z",
+      "status": "completed",
+      "rows": [
+        {
+          "id": "pair-01-baseline",
+          "version": "baseline",
+          "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+          "state": "completed",
+          "actions": 1,
+          "turns": 0,
+          "speech_forwarded": 1,
+          "speech_blocked": 1,
+          "session_id": "learn-1792649704699-8t6k5i",
+          "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+          "visual_ms": 668.6000000238419,
+          "audio_ms": 383.90000000596046,
+          "playable_ms": 668.6000000238419,
+          "audio_observation_interval_ms": [
+            377.80000001192093,
+            383.90000000596046
+          ],
+          "matched_audio_sources": 1,
+          "artifact_sha256": "75d6c82c5e0b0f54ddd2c88e7d3acd363aff5ac54d4093d670eba894fa2fac12",
+          "beat_id": "learn-learn-1792649704699-8t6k5i-8c7494e7-077e-4752-963f-7fcff59de5b2.octos-lesson.json:step:observe:beat:first",
+          "job_status": "succeeded",
+          "models": [
+            {
+              "status": "completed",
+              "model": "gemini-3.8-flash",
+              "label": "lesson-plan-bootstrap",
+              "request_attempts": 1,
+              "lesson_plan_part": "bootstrap"
+            },
+            {
+              "status": "completed",
+              "model": "gemini-3.8-flash",
+              "label": "lesson-plan-section",
+              "request_attempts": 1,
+              "lesson_plan_part": "section"
+            }
+          ],
+          "model_http_reservations": 2,
+          "traced_model_http_attempts": 2
+        },
+        {
+          "id": "pair-01-candidate",
+          "version": "candidate",
+          "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+          "state": "completed",
+          "actions": 1,
+          "turns": 0,
+          "speech_forwarded": 1,
+          "speech_blocked": 1,
+          "session_id": "learn-1792649707898-pve39w",
+          "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+          "visual_ms": 513.5,
+          "audio_ms": 247.60000002384186,
+          "playable_ms": 513.5,
+          "audio_observation_interval_ms": [
+            237.5,
+            247.60000002384186
+          ],
+          "matched_audio_sources": 1,
+          "artifact_sha256": "75d6c82c5e0b0f54ddd2c88e7d3acd363aff5ac54d4093d670eba894fa2fac12",
+          "beat_id": "learn-learn-1792649707898-pve39w-053e411b-6eaa-4127-bbb7-184ca71ed58b.octos-lesson.json:step:observe:beat:first",
+          "job_status": "succeeded",
+          "models": [
+            {
+              "status": "completed",
+              "model": "gemini-3.8-flash",
+              "label": "lesson-plan-bootstrap",
+              "request_attempts": 1,
+              "lesson_plan_part": "bootstrap"
+            },
+            {
+              "status": "completed",
+              "model": "gemini-3.8-flash",
+              "label": "lesson-plan-section",
+              "request_attempts": 1,
+              "lesson_plan_part": "section"
+            }
+          ],
+          "model_http_reservations": 2,
+          "traced_model_http_attempts": 2
+        }
+      ],
+      "normal_account": false,
+      "fees_incurred": "not inferred from playback; conservative reservations retained in ledger",
+      "fixture_only": true,
+      "fixture_metrics": {
+        "model_supplier_calls": 4,
+        "speech_supplier_calls": 2,
+        "actions": 2
+      },
+      "completed_at": "2026-10-22T06:15:10.628Z"
+    }
+  },
+  "new_script_hashes": {
+    "scripts/verify-learning-performance-octos-route.mjs": "0a8345088a96411ceb2f0a4bfc402041a46e622a91a6bd10594cd77d2f002d99",
+    "scripts/verify-learning-performance-skill-route.mjs": "e9e7c627a040da627357450b1d903bd8d0e212a15e473d80ebac6a467fe77ed3",
+    "scripts/benchmark-learning-history-live.mjs": "51184682da1e5d479cc83523db221af18c53a0b182886b884b015a02229e4747",
+    "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+    "scripts/learning-performance-auth.test.mjs": "166d7739ceb56909bd56cc309d9214c7844843c863ca7357a1c3162bfc0e7412"
+  },
+  "targeted_lint_exit_code": 0,
+  "real_model_calls": 0,
+  "real_speech_calls": 0,
+  "original_account_or_installation_modified": false,
+  "normal_profile_route_verified": false,
+  "runtime_source_difference_from_built_candidate": [],
+  "price_basis": {
+    "google_pricing": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash",
+    "google_limits": "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash",
+    "speech_pricing": "https://docs.volcengine.com/docs/DoubaoVoice/Billinginstructions-21?lang=zh",
+    "speech_resource": "https://docs.volcengine.com/docs/DoubaoVoice/HTTPChunkedSSEUnidirectionalStreaming-V3?lang=zh",
+    "standard_usd_per_million_input": 0.75,
+    "standard_usd_per_million_output_including_thoughts": 3.75,
+    "input_limit": 1048576,
+    "published_output_limit": 65536,
+    "full_model_bound_usd": 1.032192,
+    "per_attempt_reservation_usd": 1.1,
+    "speech_cny_per_10000_characters": 3,
+    "speech_reserve_cny_per_utf8_byte": 0.0003,
+    "proposed_model_cap_usd": 33,
+    "maximum_admitted_model_http_attempts": 30,
+    "proposed_speech_cap_cny": 5,
+    "maximum_speech_reservations_cny": 4.32,
+    "public_rate_validity_note": "Google introductory rates through 2026-12-31; recheck both providers before execution; no console invoice or account discount assumed."
+  },
+  "existing_account_login_tests": {
+    "passed": 3,
+    "failed": 0,
+    "log_sha256": "3babd671711f08788637db083632d5bc2224d0ede633a939de2926b5e17fc4e2",
+    "actual_octos_two_synthetic_accounts_verified": true,
+    "normal_existing_user_and_profile_identity_matches_read_only": true,
+    "development_precheck_correction": "First actual REST precheck expected a nested result; Octos REST flattens created/profile_id/user_id. Corrected against source and reran actual check successfully; no upstream change."
+  },
+  "targeted_lint_log_sha256": "be0e76bf212bb511ebd27c0673a0b4969a8964a9f420b64e4fcc125da2f3d0a4",
+  "unauthorized_plan_check": {
+    "id": "phase2-live-playable-draft",
+    "mode": "no-network-plan-check",
+    "ready_to_execute": false,
+    "samples": 12,
+    "maximum_courses": 12,
+    "maximum_speech_requests": 12,
+    "maximum_model_requests_at_reserved_upper_cost": 30,
+    "blockers": [
+      "Trial is not authorized\n+ actual - expected\n\n+ 'draft'\n- 'approved'\n"
+    ]
+  },
+  "unauthorized_execution_refused_before_directory_creation": true,
+  "instrumentation_commit": "6ac1781"
+}

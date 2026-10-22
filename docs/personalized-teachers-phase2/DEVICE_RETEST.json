@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-10-22T02:06:10.541Z",
+  "source": "47a1843",
+  "device": "M3G2",
+  "profile": "admin",
+  "original_events": 149,
+  "after_restore_events": 149,
+  "after_offline_attempt_events": 150,
+  "after_second_reload_events": 150,
+  "original_events_unchanged": true,
+  "previous_practice_success_restored": true,
+  "slider_m": "-3",
+  "slider_b_before": "-1.95",
+  "slider_b_after": "-1.9",
+  "added_event_kinds": [
+    "task_attempt"
+  ],
+  "task_only_operation_added_no_position": true,
+  "reload_added_no_facts": true,
+  "offline_scope": "App WebView only, restored in finally; device connectivity and account unchanged",
+  "paid_generations": 0,
+  "public_sync_verified": false,
+  "full_device_acceptance_passed": false,
+  "pending_checks": [
+    "navigation_sparse_positions",
+    "first_run_started_across_playback_reload",
+    "failed_delete_retention"
+  ],
+  "process_restart": {
+    "original_account_authentication_status": 200,
+    "before_events": 150,
+    "after_events": 150,
+    "all_events_unchanged": true,
+    "practice_success_restored": true,
+    "slider_m": "-3",
+    "slider_b": "-1.9"
+  }
+}

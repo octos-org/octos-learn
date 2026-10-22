@@ -13,9 +13,10 @@ async function openCourse(page: Page) {
 
 async function draw(page: Page) {
   await page.getByRole('button', { name: '书写笔迹', exact: true }).click();
-  await page.mouse.move(160, 700);
+  await expect(page.getByRole('button', { name: '书写笔迹', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.mouse.move(160, 300);
   await page.mouse.down();
-  await page.mouse.move(260, 680, { steps: 10 });
+  await page.mouse.move(260, 320, { steps: 10 });
   await page.mouse.up();
   await expect(page.locator('.learning-ink-status')).toContainText('1 项笔迹');
 }

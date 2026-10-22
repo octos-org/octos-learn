@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { localCoursePackFile } from "../../build/local-course-pack-server";
 import type { Page } from "@playwright/test";
 
 export async function installTestAccount(page: Page) {
@@ -9,7 +11,12 @@ export async function installTestAccount(page: Page) {
   await page.routeWebSocket((url) => url.pathname.startsWith("/api/"), (socket) => socket.close());
   await page.route((url) => url.pathname.startsWith("/api/"), async (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    if (pathname.startsWith("/api/learn/course-packs")) return route.continue();
+    if (pathname.startsWith("/api/learn/course-packs")) {
+      const root = process.env.OCTOS_TEST_COURSE_CACHE;
+      if (!root) return route.continue();
+      const file = localCoursePackFile(root, pathname);
+      return file ? route.fulfill({ status: 200, body: await readFile(file), contentType: file.endsWith('.json') ? 'application/json' : 'application/octet-stream' }) : route.fulfill({ status: 404 });
+    }
     const responses: Record<string, unknown> = {
       "/api/auth/status": { bootstrap_mode: false, email_login_enabled: true },
       "/api/auth/me": {

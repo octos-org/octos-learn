@@ -1,3 +1,6 @@
+import { useLearningHistoryRecorder } from "./history/use-learning-history";
+import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
+import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
@@ -85,7 +88,7 @@ import {
   coursePackNarrationBlob,
   type CoursePackPlaybackSource,
 } from "./course-pack/course-pack-loader";
-import { useOllLessonRuntime } from "./oll/use-oll-lesson-runtime";
+import { useOllLessonRuntime, type OllLessonTopicDefinition } from "./oll/use-oll-lesson-runtime";
 import {
   addSelectionSource,
   buildSelectionClassificationActionArguments,
@@ -461,6 +464,17 @@ export function LearningWorkspace({
 }: LearningWorkspaceProps) {
   const { isJevDebuggerVisible, isTraceInspectorVisible } = useDebugSettings();
   const coursePreview = Boolean(coursePack && courseAccessMode === "preview");
+  const history = useLearningHistoryRecorder(sessionId, !coursePreview && !ollFixture);
+  const historyRecorder = history.recorder;
+  const recordedQuestions = useRef(new Set<string>());
+  const recordHistoryQuestion = useCallback((id: string, text: string, modality: "text" | "voice" | "image" | "selection", occurredAt?: string) => {
+    if (!historyRecorder || !text.trim() || recordedQuestions.current.has(`${sessionId}:${id}`)) return;
+    recordedQuestions.current.add(`${sessionId}:${id}`);
+    historyRecorder.record({ kind: "question_submitted", runKey: `question:${id}`, questionId: id, stableKey: `question:${id}`, occurredAt, data: { text, modality } });
+  }, [historyRecorder, sessionId]);
+  const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = []) => {
+    historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`, data: { conversation_route: route, media } });
+  }, [historyRecorder]);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   // Voice readiness also reports false before the profile runtime starts.
@@ -598,6 +612,7 @@ export function LearningWorkspace({
   const addWhiteboardQuestion = useCallback((
     question: WhiteboardQuestionRecord,
   ) => {
+    recordHistoryQuestion(question.id, question.text, question.origin === "selection" ? "selection" : "text", question.createdAt);
     setWhiteboardQuestions((current) => {
       const next = [
         ...current.filter((candidate) => candidate.id !== question.id),
@@ -605,7 +620,7 @@ export function LearningWorkspace({
       ].sort((left, right) => left.createdAt.localeCompare(right.createdAt));
       return next;
     });
-  }, [setWhiteboardQuestions]);
+  }, [setWhiteboardQuestions, recordHistoryQuestion]);
   const updateWhiteboardQuestion = useCallback((
     questionId: string,
     patch: Partial<Pick<
@@ -918,6 +933,53 @@ export function LearningWorkspace({
     ),
     [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents],
   );
+  const deliveredHistorySnapshots = useRef(new WeakMap<CanonicalEvent[], string>());
+  // Filled on first use, so a Runtime bound during render sees the snapshot
+  // of a lesson that arrived in that same render.
+  const historySnapshotOf = useCallback((events: CanonicalEvent[]) => {
+    let snapshotJson = deliveredHistorySnapshots.current.get(events);
+    if (snapshotJson === undefined) { snapshotJson = JSON.stringify(events); deliveredHistorySnapshots.current.set(events, snapshotJson); }
+    return snapshotJson;
+  }, []);
+  const playbackHistory = useMemo<PlaybackHistoryBinding | undefined>(() => {
+    if (!historyRecorder) return undefined;
+    const context = (topic: OllLessonTopicDefinition | undefined): PlaybackHistoryContext | undefined => {
+      if (topic?.questionId) {
+        const source = deliveredOllLessons[deliveredOllQuestionIds.indexOf(topic.questionId)];
+        return { runKey: `question:${topic.questionId}`, questionId: topic.questionId,
+          sourceSnapshotJson: source ? historySnapshotOf(source) : undefined,
+          course: { kind: "generated", id: topic.questionId, version: topic.questionId } };
+      }
+      if (!coursePack || !topic) return undefined;
+      return { runKey: `pack:${coursePack.pack.manifest.packId}@${coursePack.pack.manifest.version}`,
+        course: { kind: "course-pack", id: coursePack.pack.manifest.packId, version: coursePack.pack.manifest.version, sha256: coursePack.pack.archiveSha256 } };
+    };
+    return { recorder: historyRecorder,
+      forStep: step => context(activeOllTopics.find(topic => topic.stepIds.includes(step))),
+      forTask: task => {
+        const topic = activeOllTopics.find(candidate => candidate.taskAliases?.includes(task));
+        const binding = context(topic);
+        if (!binding || !topic?.questionId) return binding;
+        const source = deliveredOllLessons[deliveredOllQuestionIds.indexOf(topic.questionId)];
+        const tasks = source?.find(event => event.event === "lesson.open")?.lesson?.tasks;
+        const taskIndex = topic.taskAliases?.indexOf(task) ?? -1;
+        const sourceTaskId = taskIndex >= 0 ? tasks?.[taskIndex]?.as : undefined;
+        // Namespaced Runtime IDs are paired with the original task in the
+        // same ordered topic definition; never strip prefixes by guessing.
+        return sourceTaskId ? { ...binding, sourceTaskId } : { ...binding, sourceSnapshotJson: undefined };
+      },
+    };
+  }, [historyRecorder, activeOllTopics, coursePack, deliveredOllLessons, deliveredOllQuestionIds, historySnapshotOf]);
+  useEffect(() => {
+    if (!historyRecorder) return;
+    deliveredOllLessons.forEach((events, index) => {
+      const question = deliveredOllQuestionIds[index];
+      const artifact = ollArtifacts.find(candidate => loadedOllArtifacts[ollArtifactIdentity(candidate)] === events);
+      if (question && artifact) {
+        recordDeliveredLesson(historyRecorder, question, artifact.path, events, historySnapshotOf(events));
+      }
+    });
+  }, [historyRecorder, deliveredOllLessons, deliveredOllQuestionIds, ollArtifacts, loadedOllArtifacts, historySnapshotOf]);
   const startupNarration = useMemo(() => {
     if (playbackMode !== "live") return null;
     const topic = [...activeOllTopics].reverse().find((candidate) =>
@@ -960,6 +1022,7 @@ export function LearningWorkspace({
     setOllRestoreReady(true);
   }
   const ollLesson = useOllLessonRuntime({
+    history: playbackHistory,
     source: ollRestoreReady ? ollOpenSource : null,
     storageKey: ollPlaybackStorageKey(
       sessionId,
@@ -1055,6 +1118,14 @@ export function LearningWorkspace({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendErrorCode, setSendErrorCode] = useState<string | undefined>();
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
+  // A background job can be generating before there is an OLL player at all.
+  // Do not treat that first-artifact wait as idle maintenance time.
+  const historyClassroomBusy = textTurnPending || ollGenerationSessionId === sessionId
+    || hasUndeliveredOllEvents || Boolean(ollLesson?.playing);
+  useEffect(() => {
+    history.coordinator?.setClassroomBusy(sessionId, historyClassroomBusy);
+    return () => history.coordinator?.setClassroomBusy(sessionId, false);
+  }, [history.coordinator, sessionId, historyClassroomBusy]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1083,6 +1154,7 @@ export function LearningWorkspace({
     },
     clientTiming?: LearningClientTiming,
   ) => {
+    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : []);
     setTextTurnPending(true);
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
@@ -1174,13 +1246,14 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
     setSendErrorCode(errorCode);
     const thread = threads.find((candidate) => candidate.id === turnId);
     const questionId = thread?.turnId ?? turnId;
+    recordFailedRequest(historyRecorder, questionId, turnId);
     failedQuestionErrorsRef.current.set(turnId, message);
     failedQuestionErrorsRef.current.set(questionId, message);
     updateWhiteboardQuestion(questionId, { status: "failed", error: message, errorCode });
@@ -1190,7 +1263,7 @@ export function LearningWorkspace({
     setPlainReplySpoken(false);
     setSendError(message);
     conversationOptions?.onTurnError?.(turnId, error);
-  }, [setTextTurnPending, setSendError, setSendErrorCode, conversationOptions, threads, updateWhiteboardQuestion]);
+  }, [setTextTurnPending, setSendError, setSendErrorCode, conversationOptions, threads, updateWhiteboardQuestion, historyRecorder]);
   const voiceConversationOptions = useMemo<VoiceConversationOptions>(
     () => {
       type PendingSelection = NonNullable<typeof pendingVoiceSelectionRef.current>;
@@ -1367,6 +1440,7 @@ export function LearningWorkspace({
               },
             });
 
+            recordHistoryQuestion(context.turnId, context.transcript, "voice");
             if (pendingSelection && selectionPath) {
               pendingVoiceSelectionRef.current = null;
               pendingSelection.recordSelection();
@@ -1416,7 +1490,10 @@ export function LearningWorkspace({
               );
               return true;
             }
-            if ((context.additionalMediaPaths?.length ?? 0) > 0) return false;
+            if ((context.additionalMediaPaths?.length ?? 0) > 0) {
+              recordHistoryRoute(context.turnId, "turn", context.additionalMediaPaths);
+              return false;
+            }
 
             registerVoiceQuestion(context.turnId, context.transcript, null);
             if (context.currentFramePath) {
@@ -1481,6 +1558,8 @@ export function LearningWorkspace({
       ollLesson,
       onLearnerInput,
       registerVoiceQuestion,
+      recordHistoryQuestion,
+      recordHistoryRoute,
       sessionId,
       startDirectLessonGeneration,
       textTurnPending,
@@ -1753,12 +1832,14 @@ export function LearningWorkspace({
     }
     if (completedTurnHasArtifact || !completedAssistantText) return;
     const timer = window.setTimeout(() => {
+      if (historyRecorder) recordTeacherText(historyRecorder, completedTurnId, `plain:${completedTurnId}`, completedAssistantText);
       setPlainReply({ turnId: completedTurnId, text: completedAssistantText });
       setCompletedTurnId(null);
     }, 2_500);
     return () => window.clearTimeout(timer);
   }, [
     completedAssistantText,
+    historyRecorder,
     completedTurn,
     completedTurnHasArtifact,
     completedTurnId,
@@ -1864,6 +1945,11 @@ export function LearningWorkspace({
         setOllGenerationSessionId(sessionId);
         return;
       }
+      // Capture every known failed execution before aggregation or file I/O.
+      // Another job for this question may still succeed and deliver material.
+      if (job.status !== "succeeded") {
+        recordFailedRequest(historyRecorder, pending.turnId, job.job_id, job.status === "cancelled" ? "cancelled" : "failed", "job-ended");
+      }
       pendingLessonJobsRef.current.delete(job.job_id);
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
       const sameTurnStillRunning = [...pendingLessonJobsRef.current.values()]
@@ -1914,6 +2000,7 @@ export function LearningWorkspace({
         // delivery instead of displaying the previous lesson's completion
         // message. Jobs without a result are kept as a legacy-server fallback.
         if (job.result && !hasLessonArtifact) {
+          recordFailedRequest(historyRecorder, pending.turnId, job.job_id, "failed", "missing-artifact");
           const message = "课程已经生成，但白板没有收到课程内容，请重试。";
           failedQuestionErrorsRef.current.set(pending.turnId, message);
           updateWhiteboardQuestion(pending.turnId, {
@@ -1998,6 +2085,7 @@ export function LearningWorkspace({
     };
   }, [
     handleTurnComplete,
+    historyRecorder,
     learnTrace,
     packagedPlayback,
     sessionId,
@@ -2283,6 +2371,7 @@ export function LearningWorkspace({
     : undefined;
   const startOllNarration = ollLesson?.startNarration;
   const completeOllNarration = ollLesson?.completeNarration;
+  const recordOllNarrationEnd = ollLesson?.recordNarrationEnd;
   const handleNarrationStart = useCallback((narrationId: string) => {
     if (!narrationId.startsWith("plain-reply:")) {
       const turnId = courseTopicForBeat(narrationId)?.questionId
@@ -2345,6 +2434,7 @@ export function LearningWorkspace({
     onSpeakingChange: setNarrationSpeechActive,
     onPlaybackStart: handleNarrationStart,
     onPlaybackComplete: handleNarrationComplete,
+    onPlaybackEnd: recordOllNarrationEnd,
   });
 
   const buildTurnText = useCallback(
@@ -2478,6 +2568,7 @@ export function LearningWorkspace({
           toolId,
           deliveryMode: answerPresentation,
         });
+        recordHistoryRoute(turnId, "direct-action", [mediaPath]);
         const invocation = await invokeSkillAction(
           sessionId,
           "learning.selection.enhance",
@@ -2510,6 +2601,7 @@ export function LearningWorkspace({
         }
         if (!selectionRequests.accept(turnId)) return;
         requestedSelectionArtifactsRef.current.add(resultArtifact.path);
+        if (historyRecorder) recordTeacherText(historyRecorder, turnId, `selection:${resultArtifact.path}`, loaded.response.text, [resultArtifact.path]);
         setLoadedSelectionArtifacts((current) => ({ ...current, [resultArtifact.path]: loaded }));
         setPersistedSelectionArtifacts(artifacts);
         setTextTurnPending(false);
@@ -2526,6 +2618,7 @@ export function LearningWorkspace({
           ? cause.message
           : "选区问题发送失败";
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         updateWhiteboardQuestion(turnId, { status: "failed", error: message, errorCode: cause instanceof LessonModelError ? cause.code : undefined });
         // Selection failures stay attached to their question on the board.
         // Resolving here prevents the whiteboard toolbar and the workspace
@@ -2542,6 +2635,8 @@ export function LearningWorkspace({
       rememberSelectionSource,
       sessionId,
       selectionRequests,
+      historyRecorder,
+      recordHistoryRoute,
       boardWritingReady,
       startDirectLessonGeneration,
       setWhiteboardQuestionStatus,
@@ -2889,6 +2984,7 @@ export function LearningWorkspace({
           );
           return;
         }
+        recordHistoryRoute(turnId, "turn", mediaPaths);
         sendMessage({
           sessionId,
           text: [
@@ -2912,12 +3008,14 @@ export function LearningWorkspace({
           },
           onError: (error) => {
             setTextTurnPending(false);
+            recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
         setSendErrorCode(cause instanceof LessonModelError ? cause.code : undefined);
         setSendError(cause instanceof Error ? cause.message : "发送失败");
@@ -2929,6 +3027,8 @@ export function LearningWorkspace({
       aiUnavailable,
       aiUnavailableMessage,
       addWhiteboardQuestion,
+      recordHistoryRoute,
+      historyRecorder,
       composerBoardReferences,
       conv,
       handleTurnComplete,
@@ -2955,6 +3055,7 @@ export function LearningWorkspace({
       setSendErrorCode(undefined);
       const turnId = crypto.randomUUID();
       const prompt = "请看我上传的题目，把题目和关键步骤整理到白板上。";
+      recordHistoryQuestion(turnId, prompt, "image");
       addWhiteboardQuestion({
         id: turnId,
         sessionId,
@@ -2967,6 +3068,7 @@ export function LearningWorkspace({
         setTextTurnPending(true);
         const paths = await uploadFiles([file], "upload");
         onLearnerInput?.(prompt);
+        recordHistoryRoute(turnId, "turn", paths);
         sendMessage({
           sessionId,
           text: buildTurnText(
@@ -2983,12 +3085,14 @@ export function LearningWorkspace({
           },
           onError: (error) => {
             setTextTurnPending(false);
+            recordFailedRequest(historyRecorder, turnId);
             setWhiteboardQuestionStatus(turnId, "failed");
             setSendError(error.message || "图片发送失败");
           },
         });
       } catch (cause) {
         setTextTurnPending(false);
+        recordFailedRequest(historyRecorder, turnId);
         setWhiteboardQuestionStatus(turnId, "failed");
         setSendError(cause instanceof Error ? cause.message : "图片发送失败");
       }
@@ -2996,6 +3100,9 @@ export function LearningWorkspace({
     [setSendError, setSendErrorCode, setTextTurnPending,
       addWhiteboardQuestion,
       buildTurnText,
+      recordHistoryQuestion,
+      recordHistoryRoute,
+      historyRecorder,
       aiUnavailable,
       aiUnavailableMessage,
       handleTurnComplete,
@@ -3200,6 +3307,10 @@ export function LearningWorkspace({
 
   return (
     <div className="learning-workspace">
+      {historyRecorder && <div className="learning-history-sync-status" data-learning-board-occlusion="" role="status">
+        {history.localStatus.error || history.status.error || (history.localStatus.pendingWrites ? "课堂记录保存中…" : history.status.syncing ? "学习记录同步中…" : history.status.pending ? "学习记录已保存在本机，等待同步" : history.status.conversationPending ? "学习记录已同步，问答仍待交给老师" : !history.status.checked ? "正在确认记录同步状态…" : "学习记录已同步")}
+        {(history.localStatus.error || history.status.error || history.status.pending || history.status.conversationPending > 0) && <button onClick={() => { void history.coordinator?.retry(); }}>重试同步</button>}
+      </div>}
       <header
         className="learning-workspace-topbar"
         data-learning-board-occlusion=""

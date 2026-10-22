@@ -1,0 +1,91 @@
+{
+  "checked_at": "2026-10-22T03:00:23.044711+00:00",
+  "scope": "Read-only inventory; no restart, deployment, configuration or data changes",
+  "services": {
+    "octos-learn.service": {
+      "MainPID": "1100547",
+      "User": "octos-learn",
+      "Group": "octos-learn",
+      "ReadWritePaths": "/var/lib/octos-learn",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/octos-learn.service",
+      "executable": "/opt/octos-learn/bin/octos",
+      "working_directory": "/var/lib/octos-learn/runtime"
+    },
+    "octos-learn-hosted-tts.service": {
+      "MainPID": "1100548",
+      "User": "octos-learn",
+      "Group": "octos-learn",
+      "ReadWritePaths": "",
+      "ActiveState": "active",
+      "SubState": "running",
+      "FragmentPath": "/etc/systemd/system/octos-learn-hosted-tts.service",
+      "executable": "/opt/node-v22.23.2-linux-x64/bin/node",
+      "working_directory": "/opt/octos-learn/services/byok"
+    }
+  },
+  "node_version": "v22.23.2",
+  "sqlite_api": {
+    "DatabaseSync": "function",
+    "backup": "function"
+  },
+  "safe_product_configuration": {
+    "HOST": "127.0.0.1",
+    "PORT": "50081",
+    "OCTOS_BASE_URL": "http://127.0.0.1:50080",
+    "OCTOS_REGISTRY_ROOT": "/var/lib/octos-learn/octos"
+  },
+  "files": {
+    "/opt/octos-learn/bin/octos": {
+      "exists": true,
+      "bytes": 259840416,
+      "sha256": "5892d56ac053eceb1474d4089450beacf6d5a2542cd1c55a33610032b37632e6"
+    },
+    "/opt/octos-learn/services/product-server.mjs": {
+      "exists": false
+    },
+    "/opt/octos-learn/services/byok/start.mjs": {
+      "exists": true,
+      "bytes": 348,
+      "sha256": "87e0851bf1dd22e3b74ad93b065dfc346a40600698fce6a09358ea57a33f396c"
+    },
+    "/opt/octos-learn/services/learning-history/server.mjs": {
+      "exists": false
+    },
+    "/opt/octos-learn/web/index.html": {
+      "exists": true,
+      "bytes": 2188,
+      "sha256": "46a4ee02e079e64af3a0f2efea32a58480909598f6788a49443c73d190ad46fd"
+    }
+  },
+  "octos_version": "octos 2.0.3 (fca32c4 2026-10-13)",
+  "nginx": [
+    {
+      "file": "/etc/nginx/sites-enabled/octos-learn.conf",
+      "history_location_present": false,
+      "product_50081_present": true
+    }
+  ],
+  "directories": {
+    "/var/lib/octos-learn/learning": {
+      "exists": false
+    },
+    "/opt/octos-learn/backups": {
+      "exists": true,
+      "mode": "0o755",
+      "uid": 0,
+      "gid": 0
+    },
+    "/var/backups/octos-learn": {
+      "exists": true,
+      "mode": "0o700",
+      "uid": 0,
+      "gid": 0
+    }
+  },
+  "disk_free_bytes": 28780818432,
+  "production_source_commit_verified": false,
+  "production_backup_created": false,
+  "production_restore_performed": false
+}

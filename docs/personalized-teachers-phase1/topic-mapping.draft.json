@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "review_status": "draft-pending-editorial-review",
+  "pack_id": "slope-and-intercept",
+  "pack_version": "0.1.8",
+  "entry_sha256": "4d924d7fd7456a7a2839da5f26b09d8326156c2dc61b4412c31b26a139fbbbe9",
+  "taxonomy": {
+    "repository": "https://github.com/withmarbleapp/os-taxonomy",
+    "commit": "533bab591b24c4024f0d70f9296aa4ee560fdd01",
+    "topics_sha256": "311b90e7706d76c21af7b68275eb738d3f3ade027418a633fa30d2faffe12693"
+  },
+  "coverage": [
+    {
+      "topic_id": "mt_WBdHkc2HTf",
+      "objective_key": "linear-equation-parameters",
+      "step_ids": ["slope-and-intercept-0.1.8:step:section-01"],
+      "task_ids": [],
+      "topic_coverage": "partial"
+    },
+    {
+      "topic_id": "mt_WBdHkc2HTf",
+      "objective_key": "gradient-direction-and-steepness",
+      "step_ids": ["slope-and-intercept-0.1.8:step:section-02"],
+      "task_ids": ["section-02-task-01"],
+      "topic_coverage": "partial"
+    },
+    {
+      "topic_id": "mt_WBdHkc2HTf",
+      "objective_key": "vertical-intercept",
+      "step_ids": ["slope-and-intercept-0.1.8:step:section-03"],
+      "task_ids": ["section-03-task-01"],
+      "topic_coverage": "partial"
+    },
+    {
+      "topic_id": "mt_-3udyo6VyB",
+      "objective_key": "gradient-rise-over-run",
+      "step_ids": ["slope-and-intercept-0.1.8:step:section-04"],
+      "task_ids": ["section-04-task-01"],
+      "topic_coverage": "partial"
+    }
+  ],
+  "limitations": [
+    "Section references are candidate content mappings, not evidence of student completion.",
+    "Step completion requires actual playback observations; unvisited beats confer no progress.",
+    "The tasks check slider targets, not independent mastery of either complete taxonomy topic.",
+    "objective_key is a local curriculum label, not a new upstream taxonomy topic ID.",
+    "This draft is not included in a published CoursePack or used to light the knowledge map."
+  ]
+}

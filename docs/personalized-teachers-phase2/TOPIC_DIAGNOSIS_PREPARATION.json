@@ -1,0 +1,97 @@
+{
+  "schema": "octos.learn.topic-diagnosis-preparation.v1",
+  "date": "2026-10-22",
+  "state": "free-fix-verified-paid-diagnosis-not-approved",
+  "confirmed_defect": "peer/prepare stages a brief file but app-managed turn/start did not transmit the analysis contract to the model.",
+  "upstream_revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+  "upstream_changes": 0,
+  "real_supplier_calls_this_followup": 0,
+  "does_not_recover_original_paid_output": true,
+  "does_not_prove_original_exact_failure": true,
+  "free_reproduction": {
+    "state": "stopped",
+    "instructions_present": false
+  },
+  "free_fixed_full": {
+    "sources": 9,
+    "state": "completed-needs-human-review",
+    "instructions_present": true,
+    "synthetic_requests": 18
+  },
+  "free_fixed_single": {
+    "state": "completed-needs-human-review",
+    "sources": 1,
+    "instructions_present": true,
+    "requests_checked": 2,
+    "synthetic_requests": 2,
+    "playback_check": "Not exercised by the first-source-only diagnosis"
+  },
+  "free_invalid_single": {
+    "state": "stopped",
+    "sources": 1,
+    "raw_answer_retained": true,
+    "instructions_present": true,
+    "synthetic_requests": 2,
+    "persisted_results": 0,
+    "control_files_remaining": 0
+  },
+  "checks": {
+    "frontend_tests": 1247,
+    "frontend_files": 136,
+    "product_analysis_tests": 15,
+    "control_tests": 8,
+    "public_build": "passed",
+    "targeted_lint": "passed",
+    "independent_product_review": "passed",
+    "independent_single_policy_review": "passed",
+    "full_repository_lint": "passed",
+    "full_repository_lint_errors": 0,
+    "full_repository_lint_warnings": 37
+  },
+  "prepared_policy_sha256": "15db9e5ad4db7300b32293a2d2ec878fd93ca8006f5dfa37611c23fd6583f34a",
+  "original_trial_still_stopped": true,
+  "evidence": [
+    {
+      "path": "/private/tmp/topic-instructions-before-fix/report.json",
+      "sha256": "214da49771a87a2547b9ff989bd31a722e1d439de8cf76d37ac1fc6904a3405d"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-after-fix/report.json",
+      "sha256": "5d322f6946d32836001e5da228984a7f001be182cf28b25cc41e8c016da5331f"
+    },
+    {
+      "path": "/private/tmp/topic-diagnosis-one-valid/report.json",
+      "sha256": "a51576cc873cbcec4b19d5d022cb7611d03d3f83bf036dc0278d1e676b3b2c91"
+    },
+    {
+      "path": "/private/tmp/topic-diagnosis-one-invalid/report.json",
+      "sha256": "cbb915e3f13816031693a4ba0d21d39eac38c2e5f404da3d18644157b54165a2"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-unit.log",
+      "sha256": "ac3e4f94aaf5665fec1384d5c1cd27269e95d17ff1d37af4d05fe11bfc3bfa05"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-build.log",
+      "sha256": "cf2b94a7be54ea2e69e2bb0a751aa742d3bff792f7eaeaca0b98aef9ed0a0d55"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-control-final.log",
+      "sha256": "512eb48c31444c837c7ba8400346eb51335308712d43926bbf9da5ff8f4024ee"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-harness-lint.log",
+      "sha256": "05aaff61b62088d72728d0edf775dc45a14c0e0bb539762c6a58ee0b6c7dc9bb"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-lint.log",
+      "sha256": "196788b8a81661a2732c5c55467c26f369c07a4a2f0d9f2800822c5d4562f75e"
+    },
+    {
+      "path": "/private/tmp/topic-instructions-product-lint.log",
+      "sha256": "b4126916cbd7ceeb630c4a88095cb99f9843c1708f6b64a7397423f5836794b0"
+    }
+  ],
+  "product_fix_commit": "35ad6ca",
+  "trial_tool_commit": "ccce8f5"
+}
