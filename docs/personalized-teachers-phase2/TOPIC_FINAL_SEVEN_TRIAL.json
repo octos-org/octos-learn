@@ -1,7 +1,7 @@
 {
   "schema": "octos.learn.topic-accuracy-trial.v1",
   "id": "phase2-topic-final7-20261022",
-  "status": "approved",
+  "status": "completed-do-not-reexecute",
   "authorization_reference": "User explicitly permitted continuation of the seven remaining fixed sources within the original total budget in this chat on 2026-10-22: 13 additional HTTP requests including retries, 9 per source and USD14.30; earlier five requests remain charged to the original 18-request/USD20 allowance.",
   "owner": "alan0x",
   "model": "gemini-3.8-flash",

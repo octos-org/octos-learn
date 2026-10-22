@@ -1,6 +1,6 @@
 # 最后七份固定材料：供批准的执行单
 
-日期：2026-10-22。状态：**用户已明确允许在原总预算内继续七份，正在执行。** 前一轮首项因 JSON 代码框停止，修复及原回答离线复验已完成；见[原结果](TOPIC_REMAINING_RESULT.md)。
+日期：2026-10-22。状态：**获准后已完成：七项、13 次请求，程序与独立 agent 内容复核通过。** 见[结果](TOPIC_FINAL_SEVEN_RESULT.md)。 前一轮首项因 JSON 代码框停止，修复及原回答离线复验已完成；见[原结果](TOPIC_REMAINING_RESULT.md)。
 
 ## 只验证还没做过的内容
 
@@ -12,7 +12,7 @@
 
 ## 执行和恢复
 
-机器策略 [TOPIC_FINAL_SEVEN_TRIAL.json](TOPIC_FINAL_SEVEN_TRIAL.json) 获准后标为 approved；代码、二进制、固定材料和当日价格须在执行前重新核对。新输出 `/private/tmp/octos-topic-final7-20261022`，保留原试验所有记录，只给新执行器十三次硬上限。12 项免费控制测试通过，预算和材料不能改成原八份的较大额度；[准备证据](TOPIC_FINAL_SEVEN_PREPARATION.json)说明免费拦截结果。
+机器策略 [TOPIC_FINAL_SEVEN_TRIAL.json](TOPIC_FINAL_SEVEN_TRIAL.json) 获准执行时为 approved，现已关闭重执行；代码、二进制、固定材料和当日价格须在执行前重新核对。新输出 `/private/tmp/octos-topic-final7-20261022`，保留原试验所有记录，只给新执行器十三次硬上限。12 项免费控制测试通过，预算和材料不能改成原八份的较大额度；[准备证据](TOPIC_FINAL_SEVEN_PREPARATION.json)说明免费拦截结果。
 
 继续只在正常 Octos 50080、既有本人账号运行受限试验，临时路由到试验网关；凭据不导出。规则、材料和只读目录由 Octos 自己处理，产品只检查并保存结果。保存最终原文、目录查询及失败阶段；程序校验与独立 agent 的内容审核分别记录，不冒称用户本人批准。
 
