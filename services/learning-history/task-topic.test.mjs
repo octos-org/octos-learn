@@ -86,3 +86,36 @@ test("a saved execution from the previous rules can still be reconciled without 
     finish(analysis, recovered);
   } finally { store.close(); }
 });
+
+test("hints without exact task evidence are disclosed as unresolved instead of silently dropped", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    const analysis = new TopicAnalysisStore(store); analysis.configure("alice", { enabled: true, max_daily_tasks: 20 });
+    store.append("alice", [q]); const delivered = deliver(store, "source");
+    finish(analysis, analysis.claim("alice").tasks[0]); finish(analysis, analysis.claim("alice").tasks[0]);
+    const hint = { ...delivered.event, id: "hint", kind: "task_hint", log_id: "log", data: { task_id: "namespaced:compute-slope", source_task_id: "compute-slope", delivery_sha256: delivered.hash, hint_index: 1 } };
+    store.append("alice", [hint]);
+    let result = queryTopic(store, "alice", plotting).automatic;
+    assert.equal(result.counts.task_hints, 1); assert.equal(result.counts.task_attempts, null);
+    assert.equal(result.coverage.unassociated_task_hints, 0);
+    store.append("alice", [{ ...hint, id: "legacy-hint", data: { task_id: "namespaced:compute-slope", hint_index: 2 } }]);
+    result = queryTopic(store, "alice", plotting).automatic;
+    assert.equal(result.counts.task_hints, 1); assert.equal(result.coverage.generated_task_hints, 2);
+    assert.equal(result.coverage.unassociated_task_hints, 1); assert.equal(result.status, "partial");
+  } finally { store.close(); }
+});
+
+test("unstarted jobs from previous rules are reported as superseded, not as pending work clients must retry", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    const analysis = new TopicAnalysisStore(store); analysis.configure("alice", { enabled: true, max_daily_tasks: 20 });
+    store.append("alice", [q]); store.append("alice", [{ ...q, id: "second", question_id: "q2" }]);
+    const started = analysis.claim("alice").tasks[0];
+    analysis.execution("alice", started.id, started.lease_id, execution);
+    store.db.prepare("UPDATE topic_analysis_jobs SET rules_version=?").run("separate-question-and-delivered-units-v1");
+    const states = Object.fromEntries(analysis.status("alice").states.map(row => [row.state, row.count]));
+    assert.deepEqual(states, { leased: 1, superseded: 1 });
+    store.db.prepare("UPDATE topic_analysis_jobs SET lease_until=0").run();
+    assert.equal(analysis.claim("alice").tasks[0].id, started.id); // Only the started execution is recoverable.
+  } finally { store.close(); }
+});

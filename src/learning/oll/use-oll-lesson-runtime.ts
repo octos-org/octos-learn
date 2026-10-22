@@ -229,11 +229,12 @@ export function useOllLessonRuntime({
                 ? { deliveredProgram: structuredClone(deliveredProgram) }
                 : {}),
             },
-          ); capture.bind(runtime); return runtime; })()
+          ); capture.bind(runtime, history); return runtime; })()
         : null,
     // `deliveredProgram` is a restore-time guard. A Step-only update must be
     // appended to the existing Runtime rather than reconstructing it; when
     // lesson.open changes, `events` changes and the current guard is captured.
+    // `history` likewise is read only at bind, from this same render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, incremental, narrationTiming, storageKey, playbackStore, capture],
   );

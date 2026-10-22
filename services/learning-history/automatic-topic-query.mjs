@@ -53,20 +53,22 @@ export function queryAutomaticTopic(store, owner, topicId, options) {
     (SELECT COUNT(DISTINCT json_array(run_id,step_id,beat_id,delivery_digest)) FROM played) AS analyzed_played_beats,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_attempt') AS analyzed_attempts,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_attempt' AND status='mapped') AS associated_attempts,
+    (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_hint') AS analyzed_hints,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_hint' AND status='mapped') AS associated_hints,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_attempt' AND seq IN (SELECT seq FROM matched)) AS task_attempts,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_attempt' AND json_extract(body,'$.data.result')='succeeded' AND seq IN (SELECT seq FROM matched)) AS task_successes,
     (SELECT COUNT(DISTINCT seq) FROM tasks WHERE kind='task_hint' AND seq IN (SELECT seq FROM matched)) AS task_hints`).get(...args);
   const total = store.db.prepare(`SELECT COUNT(CASE WHEN kind='question_submitted' THEN 1 END) AS questions,
       COUNT(DISTINCT CASE WHEN kind='beat_completed' AND json_extract(course_key,'$[0]')='generated' THEN json_array(run_id,json_extract(body,'$.data.step_id'),beat_id,delivery_digest) END) AS played_beats,
-      COUNT(CASE WHEN kind='task_attempt' AND json_extract(course_key,'$[0]')='generated' THEN 1 END) AS task_attempts
+      COUNT(CASE WHEN kind='task_attempt' AND json_extract(course_key,'$[0]')='generated' THEN 1 END) AS task_attempts,
+      COUNT(CASE WHEN kind='task_hint' AND json_extract(course_key,'$[0]')='generated' THEN 1 END) AS task_hints
       FROM events WHERE owner=? AND seq<=? AND occurred_at>=? AND occurred_at<?`).get(owner, through, from, until);
   const rows = store.db.prepare(`${cte} SELECT seq,body,json_group_array(json_object('result_seq',result_seq,'unit_id',unit_id,'quote',quote)) AS associations
     FROM matched WHERE seq>? GROUP BY seq ORDER BY seq LIMIT ?`).all(...args, after, limit + 1);
   const page = rows.slice(0, limit);
-  const unresolved = Math.max(0, total.questions - stats.analyzed_questions) + stats.unknown_questions + Math.max(0, total.played_beats - stats.associated_played_beats) + Math.max(0, total.task_attempts - stats.associated_attempts);
+  const unresolved = Math.max(0, total.questions - stats.analyzed_questions) + stats.unknown_questions + Math.max(0, total.played_beats - stats.associated_played_beats) + Math.max(0, total.task_attempts - stats.associated_attempts) + Math.max(0, total.task_hints - stats.associated_hints);
   return { taxonomy: TOPIC_TAXONOMY, rules_version: TOPIC_RULES_VERSION, analysis_through: analysisThrough,
-    status: !stats.analyzed_questions && !stats.analyzed_played_beats && !stats.analyzed_attempts ? "not-analyzed" : unresolved ? "partial" : "associated",
+    status: !stats.analyzed_questions && !stats.analyzed_played_beats && !stats.analyzed_attempts && !stats.analyzed_hints ? "not-analyzed" : unresolved ? "partial" : "associated",
     meaning: "counts-from-associated-records-only; playback-is-not-mastery",
     counts: { question_count: stats.mapped_questions ? stats.question_count : null,
       played_runs: stats.associated_played_beats ? stats.played_runs : null, played_beats: stats.associated_played_beats ? stats.played_beats : null,
@@ -77,7 +79,9 @@ export function queryAutomaticTopic(store, owner, topicId, options) {
       generated_played_beats: total.played_beats, analyzed_played_beats: stats.analyzed_played_beats, associated_played_beats: stats.associated_played_beats,
       unassociated_played_beats: Math.max(0, total.played_beats - stats.associated_played_beats),
       generated_task_attempts: total.task_attempts, analyzed_task_attempts: stats.analyzed_attempts,
-      associated_task_attempts: stats.associated_attempts, unassociated_task_attempts: Math.max(0, total.task_attempts - stats.associated_attempts) },
+      associated_task_attempts: stats.associated_attempts, unassociated_task_attempts: Math.max(0, total.task_attempts - stats.associated_attempts),
+      generated_task_hints: total.task_hints, analyzed_task_hints: stats.analyzed_hints,
+      associated_task_hints: stats.associated_hints, unassociated_task_hints: Math.max(0, total.task_hints - stats.associated_hints) },
     events: page.map(row => ({ seq: row.seq, event: JSON.parse(row.body), associations: JSON.parse(row.associations) })),
     next_after: rows.length > limit ? page.at(-1).seq : null };
 }

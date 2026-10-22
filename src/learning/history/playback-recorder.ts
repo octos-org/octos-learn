@@ -40,7 +40,11 @@ export class PlaybackHistoryCapture {
       }
     }
   }
-  bind(session: BrowserLessonSession) {
+  /** Pass the binding from the same render that built `session`. A binding
+   * applied later in an effect still describes the previous lesson header,
+   * so task sources would be frozen against the wrong delivery. */
+  bind(session: BrowserLessonSession, binding: PlaybackHistoryBinding | undefined = this.binding) {
+    this.binding = binding;
     this.session = session;
     this.log = createRequestId(); this.attempts.clear(); this.hints.clear(); this.started.clear();
     this.evidence = new PlaybackEvidenceTracker({ cursor: session.projection.cursor, epoch: session.playbackEpoch });

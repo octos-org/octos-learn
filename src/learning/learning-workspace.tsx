@@ -934,13 +934,20 @@ export function LearningWorkspace({
     [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents],
   );
   const deliveredHistorySnapshots = useRef(new WeakMap<CanonicalEvent[], string>());
+  // Filled on first use, so a Runtime bound during render sees the snapshot
+  // of a lesson that arrived in that same render.
+  const historySnapshotOf = useCallback((events: CanonicalEvent[]) => {
+    let snapshotJson = deliveredHistorySnapshots.current.get(events);
+    if (snapshotJson === undefined) { snapshotJson = JSON.stringify(events); deliveredHistorySnapshots.current.set(events, snapshotJson); }
+    return snapshotJson;
+  }, []);
   const playbackHistory = useMemo<PlaybackHistoryBinding | undefined>(() => {
     if (!historyRecorder) return undefined;
     const context = (topic: OllLessonTopicDefinition | undefined): PlaybackHistoryContext | undefined => {
       if (topic?.questionId) {
         const source = deliveredOllLessons[deliveredOllQuestionIds.indexOf(topic.questionId)];
         return { runKey: `question:${topic.questionId}`, questionId: topic.questionId,
-          sourceSnapshotJson: source ? deliveredHistorySnapshots.current.get(source) : undefined,
+          sourceSnapshotJson: source ? historySnapshotOf(source) : undefined,
           course: { kind: "generated", id: topic.questionId, version: topic.questionId } };
       }
       if (!coursePack || !topic) return undefined;
@@ -962,19 +969,17 @@ export function LearningWorkspace({
         return sourceTaskId ? { ...binding, sourceTaskId } : { ...binding, sourceSnapshotJson: undefined };
       },
     };
-  }, [historyRecorder, activeOllTopics, coursePack, deliveredOllLessons, deliveredOllQuestionIds]);
+  }, [historyRecorder, activeOllTopics, coursePack, deliveredOllLessons, deliveredOllQuestionIds, historySnapshotOf]);
   useEffect(() => {
     if (!historyRecorder) return;
     deliveredOllLessons.forEach((events, index) => {
       const question = deliveredOllQuestionIds[index];
       const artifact = ollArtifacts.find(candidate => loadedOllArtifacts[ollArtifactIdentity(candidate)] === events);
       if (question && artifact) {
-        let snapshotJson = deliveredHistorySnapshots.current.get(events);
-        if (snapshotJson === undefined) { snapshotJson = JSON.stringify(events); deliveredHistorySnapshots.current.set(events, snapshotJson); }
-        recordDeliveredLesson(historyRecorder, question, artifact.path, events, snapshotJson);
+        recordDeliveredLesson(historyRecorder, question, artifact.path, events, historySnapshotOf(events));
       }
     });
-  }, [historyRecorder, deliveredOllLessons, deliveredOllQuestionIds, ollArtifacts, loadedOllArtifacts]);
+  }, [historyRecorder, deliveredOllLessons, deliveredOllQuestionIds, ollArtifacts, loadedOllArtifacts, historySnapshotOf]);
   const startupNarration = useMemo(() => {
     if (playbackMode !== "live") return null;
     const topic = [...activeOllTopics].reverse().find((candidate) =>
