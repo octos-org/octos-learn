@@ -2,17 +2,17 @@
   "schema": "octos.learn.performance-trial.v1",
   "id": "phase2-live-playable-draft",
   "status": "draft",
-  "cost_basis_verified": false,
+  "cost_basis_verified": true,
   "route_verified": false,
   "authorization_reference": "",
-  "owner": "yy",
+  "owner": "alan0x",
   "origin": "https://127.0.0.1:5173",
   "backend": "http://127.0.0.1:50080",
   "gateway": "http://127.0.0.1:50189",
-  "model": "gemini-3.6-flash",
-  "voice": "pending-read-only-verification",
-  "resource": "pending-read-only-verification",
-  "voice_revision": "pending-read-only-verification",
+  "model": "gemini-3.8-flash",
+  "voice": "zh_female_xiaohe_uranus_bigtts",
+  "resource": "seed-tts-2.0",
+  "voice_revision": "de675f252aa5c3da176ab5d095c52cfe1445ad97f317f04d4e22abcf4d0d444b",
   "frontends": {
     "baseline": {
       "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
@@ -30,10 +30,10 @@
   "limits": {
     "courses": 12,
     "speech_requests": 12,
-    "usd_micros": 5000000,
+    "usd_micros": 33000000,
     "cny_micros": 5000000,
     "model_request_usd_micros": 1100000,
-    "speech_byte_cny_micros": 1000,
+    "speech_byte_cny_micros": 300,
     "speech_utf8_bytes": 1200,
     "output_tokens": 32768,
     "request_bytes": 1048576
@@ -125,12 +125,13 @@
     }
   ],
   "notes": [
-    "Draft only. Neither the currency caps nor the call counts are authorized.",
-    "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
-    "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
-    "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
-    "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
-    "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+    "Draft only. User selected the existing alan0x account, not a paid budget. No new supplier calls are authorized.",
+    "Proposed limits: 12 courses, at most 30 admitted model HTTP attempts at USD 1.10 reserved each, 12 first-narration requests, model cap USD 33 and separate speech cap CNY 5. No guarantee that all courses fit before the request limit is reached.",
+    "Published standard Gemini 3.8 Flash rates through 2026-12-31: USD 0.75 per million input tokens and USD 3.75 per million output tokens including thinking. Full model input 1048576 plus full model output 65536 costs USD 1.032192; reserve USD 1.10 per attempt. The installed skill and gateway still restrict request output to 32768. Failed, timed-out and interrupted attempts retain their full reservation.",
+    "Published seed-tts-2.0 postpaid rate is CNY 3 per 10000 characters. Reserve CNY 0.0003 per UTF-8 byte, which conservatively exceeds or equals the character charge. At most 1200 bytes per request and 12 requests reserve no more than CNY 4.32. No custom/cloned voice or additional synthesis options.",
+    "Recheck public prices before approval/execution; this calculation applies to the fixed public standard endpoint and reviewed text-only options, not an account invoice or future prices.",
+    "Configure and inspect the normal account base_url and running binary only after paid-test authorization, before admitting any request. Keep the budget gateway until all related jobs terminate, then restore only the changed URL field. Do not restore direct routing while retries remain in flight.",
+    "Absolute build locations are local prerequisites; reverify hashes, installed bundles and source before execution. See LIVE_PERFORMANCE_EXECUTION.md for the reviewable setup, stop and restore sequence."
   ],
   "output_directory": "/private/tmp/octos-phase2-live-approved-trial"
 }

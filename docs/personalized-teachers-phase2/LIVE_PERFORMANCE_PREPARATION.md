@@ -43,15 +43,15 @@
 
 ## 付费前还缺什么
 
-**第一，确认以哪个既有账号为准。** 本次正常后端 50080 未运行，未完成正常产品接口的音色核对。只读 profile 检查发现：`yy` 使用 `gemini-3.6-flash`，没有新的 TTS 保存项；`alan0x` 使用 `gemini-3.8-flash`，已保存 `seed-tts-2.0` 的“小何”音色 `zh_female_xiaohe_uranus_bigtts`。二者模型地址均为供应商默认值。已询问用户采用哪个账号；当前草稿暂保留此前核对的 yy/3.6，不能将它当作已确定的执行环境，也不能把 alan0x 的语音配置和 yy 的模型拼成一份假定配置。若换模型，价格、费用上界及实际安装包的接入验证也要按选定模型重新核对。
+**第一，账号已经确定为 alan0x。** 用户选择沿用该账号的 `gemini-3.8-flash` 和小何 2.0，计划 JSON 已同步。只读调用现有 BYOK 元数据处理器核对音色、资源及版本标识，没有导出 Key；正常服务尚未启动，没有冒称通过其真实 HTTP 鉴权。所选安装包、现有用户身份、模型默认地址和无备用模型均已核对；另补了该模型的直接技能、真实隔离 Octos 和完整前端免费检查，见[补充验证](LIVE_PERFORMANCE_ALAN_PREPARATION.json)。
 
-**第二，核准每次请求的费用上界。** [计划草稿](LIVE_PERFORMANCE_TRIAL_DRAFT.json)列出了 12 堂、12 次首段语音和具体问题，但费用数字只是不能执行的占位方案：模型每次预留 1.10 美元，模型总额 5 美元，语音另限 5 元人民币。按这个预留法，5 美元只容纳 4 次模型 HTTP 尝试，连 12 堂每堂一次都不够，更不能保证完成实际多阶段课程。每 UTF-8 字节 0.001 元也只是待核价的保守语音预留，不是确认过的本人资费。因此本轮没有把这些数字提交为新的预算申请。
+**第二，费用计算和待批准执行单已补齐。** [执行单](LIVE_PERFORMANCE_EXECUTION.md)建议最多 12 堂、30 次模型 HTTP 尝试和 12 次首段语音，模型上限 33 美元、语音另限 5 元人民币；未获授权。每次模型按全容量费用 1.032192 美元向上预留 1.10 美元，而不是预测实际输出；语音按已核对的 2.0 公开后付费价格保守地按 UTF-8 字节预留，12 次最多 4.32 元。此前“12 堂、5 美元”的模型方案已停用；不能满足试验条件时，不自动增加预算或调用。公开价格和计算依据不等于本人实际账单，执行前再核价。
 
-Google 的[官方价格](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.6-flash)和[模型上下文限制](https://ai.google.dev/gemini-api/docs/models/gemini-3.6-flash)只能提供计算材料；仍须确认本人实际计费档位、输入/输出的计费规则与已安装技能限制。语音则须核对实际资源、音色和[本人适用计价](https://docs.volcengine.com/docs/DoubaoVoice/Billinginstructions-21?lang=zh)。不能把公开最低价格直接当作本人单次费用上界。
+计算采用 Google [标准价格](https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash)和[整个模型容量](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)，以及火山[语音合成 2.0 后付费价格](https://docs.volcengine.com/docs/DoubaoVoice/Billinginstructions-21?lang=zh)，不依赖本人免费额度、资源包折扣或其他模型资费。转发只允许已核对的标准文字接口和请求选项。
 
 **第三，让正常账号也确实走费用检查。** 隔离测试已证明 Octos 可以通过现有模型地址配置做到这一点，尚未改正常账号。正式执行单须写清：原配置怎样私下备份、测试期间只改哪一项地址、怎样核对实际运行二进制和技能、确认没有其他课程同时运行、结束或失败后怎样恢复。其他账号和正常使用不应接入这个测试进程。首段到达就关闭页面并不能取消后台模型费用；后台未结束时保留费用检查进程和原登记，先处理在途任务，不能立即恢复直连让重试绕过额度。
 
-这些准备完成后，固定版本、问题、费用上限、次数、停止条件和恢复方法，再申请新预算。原来获准的六次已经用完。草稿明确为 `draft`，实际路由和费用核实标记均为 false；本轮已验证 `--execute` 会在创建结果目录或联网之前拒绝该草稿。
+版本、问题、费用上限、次数、停止条件和恢复方法已列入执行单，等待新预算。原来获准的六次已经用完。草稿仍为 `draft`，费用依据已记录，正常账号的 `route_verified` 仍为 false：获准后先完成执行单中的本机地址配置和检查，再允许实际请求。未获准草稿仍在创建结果目录或联网之前被拒绝。
 
 ## 复核入口
 
@@ -65,6 +65,6 @@ node scripts/benchmark-learning-history-live.mjs --check docs/personalized-teach
 
 完整前端替身复跑：从验证 JSON 的 `frontend_scenarios` 中取出对应 `plan`，写入新的私有 JSON 文件，再运行 `node scripts/benchmark-learning-history-live.mjs --fixture PLAN.json NEW_PRIVATE_DIRECTORY`。正常案例退出 0；失败、静音和超额案例退出 1，必须同时核对保存的具体指标及调用数，不能把任意异常当作通过。所有输出目录和结果路径应全新，现有结果不覆盖。
 
-真实 Octos 拒绝测试入口为 `scripts/verify-learning-performance-octos-route.mjs`，依次传绝对二进制路径、已安装技能目录、新的结果 JSON 路径；直接技能拒绝测试入口为 `scripts/verify-learning-performance-skill-route.mjs`，依次传绝对 `main` 可执行文件路径、新的结果 JSON 路径。二者会保留受保护的临时工作区用于审计，不读取原账号 Key，不调用真实供应商。
+真实 Octos 拒绝测试入口为 `scripts/verify-learning-performance-octos-route.mjs`，依次传绝对二进制路径、已安装技能目录、新的结果 JSON 路径，最后可传模型名；直接技能入口为 `scripts/verify-learning-performance-skill-route.mjs`，依次传绝对 `main` 路径、新结果 JSON 路径及可选模型名。所选账号补测使用 `gemini-3.8-flash`；二者保留受保护临时工作区，不读取原账号 Key，不调用真实供应商。新增 `scripts/learning-performance-auth.test.mjs` 的三项检查及真实 Octos 的双合成账号检查，确认默认账号不同时登录已存在的指定账号；早期预检按错了 REST 响应的层级，已按真实扁平字段修正并复跑通过，未改上游。
 
 `--serve-gateway` 和 `--execute` 是未来获准后才使用的命令；不能仅为运行方便把草稿的批准字段改成 true。执行后还须人工核对每一对实际生成内容、前置阶段和章节工作量，判断能否比较，再计算速度统计。尚未实现自动判断课程工作量是否相当，本轮不声称已经完成真实性能验收。

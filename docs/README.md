@@ -65,7 +65,7 @@
 
 - [第二阶段收尾审查材料](personalized-teachers-phase2/REVIEW_READINESS.md)：固定代码范围、真实 Octos 与电视验收、服务器只读核查、缺项及英文 PR 草稿；[合并前性能验收](personalized-teachers-phase2/PERFORMANCE_ACCEPTANCE_PLAN.md)包含已执行的 30 对免费首段播放对照、反向检查、原始样本及待授权的真实调用。
 
-- [第二阶段真实计时执行器准备](personalized-teachers-phase2/LIVE_PERFORMANCE_PREPARATION.md)：首段画面与匹配旁白计时、持久费用限制、免费故障检查、真实隔离 Octos 的请求拦截，以及实际账号、计价和执行单的剩余核对；没有新增付费调用。
+- [第二阶段真实计时执行器准备](personalized-teachers-phase2/LIVE_PERFORMANCE_PREPARATION.md)：首段画面与匹配旁白计时、持久费用限制和免费故障检查；[alan0x 真实对照执行单](personalized-teachers-phase2/LIVE_PERFORMANCE_EXECUTION.md)固定所选模型/音色、次数、费用依据、停止及恢复步骤，含独立补测记录；没有新增付费调用。
 
 - [第二阶段实现审查处理](personalized-teachers-phase2/REVIEW_FOLLOWUP.md)：未登录删除保留、复习位置与开始事件去重、Octos PR #2854 CI 修正、性能对照补测及逐项判断；附实际验证边界。
 
