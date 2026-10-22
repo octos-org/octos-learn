@@ -1,8 +1,8 @@
 {
   "schema": "octos.learn.topic-accuracy-trial.v1",
   "id": "phase2-topic-completion-20261022",
-  "status": "prepared-not-approved",
-  "authorization_reference": "",
+  "status": "completed-do-not-reexecute",
+  "authorization_reference": "User explicitly authorized the separate same-question completion trial, max 9 supplier HTTP requests including retries and USD9.90, in this chat on 2026-10-22.",
   "owner": "alan0x",
   "model": "gemini-3.8-flash",
   "backend": "http://127.0.0.1:50080",

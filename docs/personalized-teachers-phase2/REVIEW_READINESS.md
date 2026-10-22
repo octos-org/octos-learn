@@ -2,11 +2,13 @@
 
 ## 当前审查入口（2026-10-22）
 
-最新补充：两轮获准真实试验分别发生 2 次、3 次供应商请求，均未得到可入库结果，准确性未通过；账户持续分析仍关闭。原路由和试验前服务启动状态均已恢复。[首轮结果](TOPIC_ACCURACY_RESULT.md)与[单项结果](TOPIC_DIAGNOSIS_RESULT.md)分别保存实际证据，不能再把此前“零真实调用”的免费验证结论当作当前总调用数。
+最新结果：[同题完整验证](TOPIC_COMPLETION_RESULT.md)在另获授权后实际用 3 次供应商请求取得有效归属，程序检查与独立 agent 内容复核通过，仅覆盖一题；其余八份未执行，分析仍关闭。原模型路由、其他配置和启动状态已恢复。下文两次停止记录是此前试验，不能当作这次结果。
+
+历史补充：此前两轮获准真实试验分别发生 2 次、3 次供应商请求，均未得到可入库结果，准确性未通过；账户持续分析仍关闭。原路由和试验前服务启动状态均已恢复。[首轮结果](TOPIC_ACCURACY_RESULT.md)与[单项结果](TOPIC_DIAGNOSIS_RESULT.md)分别保存实际证据，不能再把此前“零真实调用”的免费验证结论当作当前总调用数。
 
 最新运行修复为 `35ad6ca`（把分析要求明确送入同一次 app turn）及 `9845bcf`（连接只认证，避免重启后隐式重开稳定 host 而缺少 cwd）。两者均有真实 Octos 本地替身复现、1247 项完整单元及 public 构建、定向 lint 和独立复核。`e1ace3d` 只允许在原账本确实零请求、没有 Octos 准入时恢复原任务；`a241ad1` 补目录调用/拦截阶段及多轮查询替身，不是产品新增模型客户端。收费、scope 与代码指纹检查没有放宽。
 
-最新同题 9 请求/9.90 美元策略未获准。3 请求上限已用完，不自动追加。下面四提交表和三项恢复修复是较早的实现证据，完整审查还须包含上述运行修复和试验工具；无真实语义质量通过、设备升级、合并或发布结论。
+同题 9 请求/9.90 美元策略随后获准并完成，当前已关闭重执行。前一轮 3 请求上限已用完，不自动追加。下面四提交表和三项恢复修复是较早的实现证据，完整审查还须包含上述运行修复和试验工具；未完成全部真实语义质量、设备升级、合并或发布验收。
 
 本轮已实现并免费验证“固定知识目录 → Octos 分析 → 原文检查保存 → 提问/精确版本播放计数”。[实施进展](GENERATED_TOPIC_PROGRESS.md)说明实际行为、API、恢复、费用与隐私边界；[结构化证据](TOPIC_ANALYSIS_EVIDENCE.json)保存版本、指纹和测试结果。不是只有入口试验，也没有把替身答案当作真实模型的判断质量。
 
@@ -154,7 +156,7 @@ Direct skill invocation did not append the student's original question and deliv
 
 The new, default-off analysis path supplies exact delivered content to a single-use Octos app peer, exposes a read-only pinned mathematics catalog, validates source-bound JSON results and distinguishes question attribution from actual playback. Playback records bind to the delivery present when the beat began. Unknown inputs and missing version bindings do not become zero-looking progress or mastery. Durable execution bookmarks and private account-scoped host controls support reconciliation and namespace cleanup after a lost response without automatically starting another model turn.
 
-Validation after independent review fixes: 1,247 frontend unit tests, 38 history/product service tests, TypeScript/public build, and scoped lint (no errors; two pre-existing React effect warnings). The actual frontend worker, authenticated product API/SQLite and Octos ran against a local model replacement using the real catalog tool. Both a lost saved-result receipt and a disconnect before saving the result were followed by Octos restart, SQLite reopen and another client; each kept the original two fixture model requests. An independent read-only reviewer found three recovery/scheduling/cleanup defects; all were reproduced, fixed and re-reviewed without further findings. Those fixture regressions made no real supplier calls. Subsequent bounded real trials made two and three supplier HTTP requests respectively; neither produced an accepted final association. Review the stopped-trial evidence in TOPIC_ACCURACY_RESULT.md and TOPIC_DIAGNOSIS_RESULT.md. The missing prompt instructions and persisted-host connection defects found during follow-up were fixed and independently re-reviewed; real-model semantic quality remains unverified.
+Validation after independent review fixes: 1,247 frontend unit tests, 38 history/product service tests, TypeScript/public build, and scoped lint (no errors; two pre-existing React effect warnings). The actual frontend worker, authenticated product API/SQLite and Octos ran against a local model replacement using the real catalog tool. Both a lost saved-result receipt and a disconnect before saving the result were followed by Octos restart, SQLite reopen and another client; each kept the original two fixture model requests. An independent read-only reviewer found three recovery/scheduling/cleanup defects; all were reproduced, fixed and re-reviewed without further findings. Those fixture regressions made no real supplier calls. Subsequent bounded real trials made two and three supplier HTTP requests respectively; neither produced an accepted final association. Review the stopped-trial evidence in TOPIC_ACCURACY_RESULT.md and TOPIC_DIAGNOSIS_RESULT.md. The missing prompt instructions and persisted-host connection defects found during follow-up were fixed and independently re-reviewed; One subsequent same-question completion trial produced a valid association in three supplier requests; product validation and independent-agent semantic review passed for that case only. The other eight fixed cases remain untested, and analysis remains disabled.
 
 This is a review candidate, not a release. Real-model attribution quality remains unverified; image-dependent input stays unknown. Analysis runs only with an open, idle app and explicit settings; daily task reservations are not a currency or provider-request hard cap. Generated-task attribution, teacher-facing context, new-device acceptance and production synchronization remain outstanding. The database upgrades to format 5 and needs an upgrade backup; host controls require a protected operational backup alongside SQLite.
 

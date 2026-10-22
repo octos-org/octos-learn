@@ -1,0 +1,160 @@
+{
+  "schema": "octos.learn.topic-completion-result.v1",
+  "date": "2026-10-22",
+  "state": "single-case-passed-program-and-independent-agent-review",
+  "source_id": "q-direction",
+  "source_count": 1,
+  "real_supplier_http_requests": 3,
+  "unforwarded_refusals": 0,
+  "reserved_usd": 3.3,
+  "actual_billed_usd": null,
+  "actual_token_usage": null,
+  "catalog_calls": [
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "slope intercept form"
+      }
+    },
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "gradient linear line graph"
+      }
+    }
+  ],
+  "result": {
+    "input_sha256": "7b0e1f9543bf25aa1fedfab96bc4c615dd8e802edc7e21c3d5d60771c344ba84",
+    "schema": 1,
+    "units": [
+      {
+        "reason": "The student asks why a negative slope m in y=mx+b causes a linear graph to slope downwards to the right, which directly corresponds to interpreting the gradient and direction of a linear function graph (y=mx+c).",
+        "status": "mapped",
+        "topics": [
+          {
+            "quote": "y=mx+b 中，为什么 m 为负时直线向右下方走？",
+            "topic_id": "mt_WBdHkc2HTf"
+          }
+        ],
+        "unit_id": "question"
+      }
+    ]
+  },
+  "program_expectation_issues": [],
+  "independent_agent_review": {
+    "reviewer": "review_topic_analysis",
+    "decision": "correct-for-this-case-only",
+    "basis": "Linear Function Graphs explicitly includes explaining how m changes straight-line steepness and direction. The exact original question asks about negative m and direction; b/c names are equivalent intercept constants. Reconstructed frozen input and formal result validation pass.",
+    "human_approval_claimed": false
+  },
+  "raw_report_review_flags_preserved": {
+    "human_review_required": true,
+    "semantic_pass": null
+  },
+  "other_cases_verified": false,
+  "automatic_analysis_enabled": false,
+  "cleanup": {
+    "matching_purge_records": 1,
+    "event": "peer_purged",
+    "error_count": 0,
+    "purge_recorded": true
+  },
+  "restoration": {
+    "restored": true,
+    "original_route_fields_exactly_restored": true,
+    "other_config_canonically_unchanged": true,
+    "normal_backend_stopped": true,
+    "original_backend_listening": false,
+    "control_files_remaining": 0
+  },
+  "executed_policy_sha256": "8fdce437a1023c724d5e3de1a37d34ddd35937d47e6a52d674661e0ea1e5efbc",
+  "executed_policy": {
+    "schema": "octos.learn.topic-accuracy-trial.v1",
+    "id": "phase2-topic-completion-20261022",
+    "status": "approved",
+    "authorization_reference": "User explicitly authorized the separate same-question completion trial, max 9 supplier HTTP requests including retries and USD9.90, in this chat on 2026-10-22.",
+    "owner": "alan0x",
+    "model": "gemini-3.8-flash",
+    "backend": "http://127.0.0.1:50080",
+    "gateway": "http://127.0.0.1:50189",
+    "output_directory": "/private/tmp/octos-topic-completion-20261022",
+    "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+    "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "pricing": {
+      "verified_at": "2026-10-22",
+      "valid_until": "2026-12-31",
+      "input_per_million_usd": 0.75,
+      "output_including_thinking_per_million_usd": 3.75,
+      "max_input_tokens": 1048576,
+      "max_output_tokens": 65536,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+    },
+    "limits": {
+      "tasks": 1,
+      "model_http_requests": 9,
+      "model_http_requests_per_task": 9,
+      "usd_micros": 9900000,
+      "reservation_usd_micros": 1100000,
+      "request_bytes": 1048576,
+      "output_tokens": 32768
+    },
+    "code_sha256": {
+      "scripts/verify-learning-topic-accuracy.mjs": "ed0fe541da1352d708e0697e742f542d6e10803a4e1b2338d9dc2a077c82ed9c",
+      "scripts/lib/learning-topic-trial-control.mjs": "abb14c56a63dd3234a98409d9da30af043d20aba4c3fd7501fe45b98c738edd7",
+      "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+      "scripts/lib/learning-topic-trial-fixture.mjs": "b693ed4e9d7a60e0cd3e1ac8d69be59e490249d64371e92d5e2e337ab82c78e9",
+      "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+      "src/learning/history/analyze-topics.ts": "745421920fade338599501d5b6a3c67f62e4cfdea921d4df79d87f7147f01ee8",
+      "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+      "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+      "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+      "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+      "services/learning-history/topic-analysis-instructions.mjs": "ecdbfefd621796d7a2f8f70425a04af061307f08724b05d3747c2cacde2fcb71",
+      "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+      "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+      "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358"
+    },
+    "octos": {
+      "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+      "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+      "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+    },
+    "scope": "first-source-completion"
+  },
+  "evidence": [
+    {
+      "path": "/private/tmp/octos-topic-completion-20261022/report.json",
+      "sha256": "f5f3cb24eb24e60ba64ba41c8c43ad01c58c8e1edfbe86c5fec287afa3acd195"
+    },
+    {
+      "path": "/private/tmp/octos-topic-completion-20261022/policy-executed.json",
+      "sha256": "8fdce437a1023c724d5e3de1a37d34ddd35937d47e6a52d674661e0ea1e5efbc"
+    },
+    {
+      "path": "/private/tmp/octos-topic-completion-20261022/cleanup-confirmation.json",
+      "sha256": "8e2528f42fb2be9e84dc0c8750da1b02236c9c6bd61d10c3a9c5768684c18775"
+    },
+    {
+      "path": "/private/tmp/octos-topic-completion-20261022-recovery/restoration.json",
+      "sha256": "bedc9d50ae89505e4c913b09bf69f66445f19f7b24bd04d7a3450c7bad574320"
+    },
+    {
+      "path": "/private/tmp/topic-completion-history-final.log",
+      "sha256": "d9a8d28e4c16e34ce4dc5d599cef93ab96a0edefa1f02ee604844940cd044d03"
+    }
+  ],
+  "final_review_checks": {
+    "frontend_unit_tests": 1247,
+    "frontend_unit_files": 136,
+    "history_product_service_tests": 38,
+    "trial_control_tests": 10,
+    "public_build": "passed",
+    "changed_file_lint": "passed",
+    "full_lint_prior_prompt_fix": {
+      "errors": 0,
+      "warnings": 37
+    },
+    "upstream_main": "4973499c0d8ede16a9897c918bdf587472fb57c8"
+  }
+}
