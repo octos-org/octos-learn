@@ -1,14 +1,14 @@
 import { createRequestId } from "../../lib/request-id";
 import { historyId, historySha256 } from "./identifiers";
 import type { HistoryCourse, HistoryEvent, HistoryKind } from '../../../services/learning-history/event-contract.mjs';
-import { DeviceHistoryQueue, type HistoryDocumentWrite } from './device-queue';
+import { DeviceHistoryQueue, type HistoryDocumentWrite, type HistoryMaterialWrite } from './device-queue';
 import type { HistoryIdentity } from './synchronize';
 
 export interface HistoryDraft {
   kind: HistoryKind; runKey: string; questionId?: string; course?: HistoryCourse; logKey?: string;
   data: HistoryEvent['data']; id?: string; stableKey?: string; occurredAt?: string;
-  /** Immutable delivered event snapshot; hashed during the background write,
-   * not stored as a second copy of the lesson in the facts database. */
+  /** Immutable delivered events, hashed and durably queued with their fact
+   * during the background write. Never reconstructed from a later artifact. */
   snapshotJson?: string;
 }
 export interface RecorderStatus { pendingWrites: number; error: string }
@@ -69,6 +69,7 @@ export class LearningHistoryRecorder {
       while (this.jobs.length) {
         const job = this.jobs[0];
         const events: HistoryEvent[] = [];
+        const materials: HistoryMaterialWrite[] = [];
         for (const draft of job.drafts) {
           const snapshotHash = draft.snapshotJson === undefined ? undefined : await historySha256(draft.snapshotJson);
           const id = draft.id ?? await historyId(snapshotHash ? [this.sessionId, draft.stableKey, snapshotHash] : [this.sessionId, draft.stableKey]);
@@ -82,8 +83,9 @@ export class LearningHistoryRecorder {
             data: { ...draft.data, ...(snapshotHash ? { snapshot_sha256: snapshotHash } : {}), ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
           };
           events.push(event);
+          if (draft.kind === 'course_delivered' && draft.snapshotJson !== undefined) materials.push({ eventId: event.id, snapshotJson: draft.snapshotJson });
         }
-        await this.queue.commit(identity.owner, events, job.documents);
+        await this.queue.commit(identity.owner, events, job.documents, materials);
         this.jobs.shift(); this.notify('');
         try { this.committed(identity); } catch { /* network scheduling cannot undo a local commit */ }
       }

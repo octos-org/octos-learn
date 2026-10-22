@@ -1,7 +1,7 @@
 import { historyRequestTimeout } from './request-timeout';
 import { historyId } from "./identifiers";
 import { extractProfileIdFromPayload } from '../../api/client';
-import { DeviceHistoryQueue, type HistoryReceipt } from './device-queue';
+import { DeviceHistoryQueue, type HistoryReceipt, type QueuedHistoryEvent } from './device-queue';
 import type { HistoryEvent } from '../../../services/learning-history/event-contract.mjs';
 
 export interface HistoryIdentity { owner: string; token: string }
@@ -40,13 +40,23 @@ export async function resolveHistoryIdentity(base: string, token: string, queue:
   }
 }
 
-function batch(events: HistoryEvent[]): HistoryEvent[] {
-  const selected: HistoryEvent[] = [];
-  let bytes = 32;
-  for (const event of events) {
-    const size = new TextEncoder().encode(JSON.stringify(event)).length + 1;
-    if (selected.length === 100 || bytes + size > 768 * 1024) break;
-    selected.push(event); bytes += size;
+function batch(rows: QueuedHistoryEvent[]): { events: HistoryEvent[]; materials: { event_id: string; snapshot_json: string }[]; oversized: boolean } {
+  const selected: ReturnType<typeof batch> = { events: [], materials: [], oversized: false };
+  let bytes = 128;
+  for (const row of rows) {
+    const material = row.snapshotJson === undefined ? undefined : { event_id: row.event.id, snapshot_json: row.snapshotJson };
+    const size = new TextEncoder().encode(JSON.stringify(row.event)).length + 2
+      + (material ? new TextEncoder().encode(JSON.stringify(material)).length + 2 : 0);
+    // Retain an unsupported material locally, but do not strand unrelated
+    // questions and playback facts behind it in this account's queue.
+    if (size + 128 > 8 * 1024 * 1024) { selected.oversized = true; continue; }
+    const limit = material && !selected.events.length ? 8 * 1024 * 1024 : 768 * 1024;
+    if (selected.events.length === 100 || bytes + size > limit) {
+      break;
+    }
+    selected.events.push(row.event);
+    if (material) selected.materials.push(material);
+    bytes += size;
   }
   return selected;
 }
@@ -98,15 +108,19 @@ export class HistorySynchronizer {
     }
     for (;;) {
       if (!canContinue()) return;
-      const sent = batch((await this.queue.list(identity.owner)).filter(row => row.state === 'pending').map(row => row.event));
-      if (!sent.length || !canContinue()) return;
+      const sent = batch((await this.queue.list(identity.owner)).filter(row => row.state === 'pending'));
+      if (!canContinue()) return;
+      if (!sent.events.length) {
+        if (sent.oversized) throw new Error('部分课程材料超过同步上限，本机副本已保留');
+        return;
+      }
       const response = await this.fetcher(`${this.base}/api/learn/history/events`, {
-        method: 'POST', headers, body: JSON.stringify({ events: sent }), redirect: 'error', signal: historyRequestTimeout(15000),
+        method: 'POST', headers, body: JSON.stringify({ events: sent.events, materials: sent.materials }), redirect: 'error', signal: historyRequestTimeout(15000),
       });
       if (!response.ok) throw new Error('学习记录尚未同步，本机副本已保留');
       const payload = await response.json() as { profile_id: string; results: HistoryReceipt[] };
       if (payload.profile_id !== identity.owner || !Array.isArray(payload.results)) throw new Error('同步回执所属账号不符，保留本机记录');
-      await this.queue.acknowledge(identity.owner, sent, payload.results);
+      await this.queue.acknowledge(identity.owner, sent.events, payload.results);
     }
   }
 }

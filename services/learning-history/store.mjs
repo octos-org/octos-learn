@@ -2,7 +2,8 @@ import { DatabaseSync } from "node:sqlite";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
-import { canonicalHistoryJson, historyCourseKey, validateHistoryEvent, HISTORY_BATCH_LIMIT } from "./event-contract.mjs";
+import { canonicalHistoryJson, historyCourseKey, validateHistoryEvent, HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mjs";
+import { validateCourseMaterial } from "./course-material.mjs";
 
 export class HistorySnapshotChanged extends Error {}
 export class HistoryStore {
@@ -19,7 +20,7 @@ export class HistoryStore {
       CREATE TABLE IF NOT EXISTS history_schema(version INTEGER PRIMARY KEY);
     `);
     const versions = this.db.prepare("SELECT version FROM history_schema").all();
-    if (versions.length > 1 || versions.some(row => ![1, 2, 3].includes(row.version))) throw new Error("Unsupported history database version");
+    if (versions.length > 1 || versions.some(row => ![1, 2, 3, 4].includes(row.version))) throw new Error("Unsupported history database version");
     const version = versions[0]?.version ?? 1;
     this.db.exec(`
       BEGIN IMMEDIATE;
@@ -73,7 +74,13 @@ export class HistoryStore {
       UPDATE history_schema SET version=2;
       ` : ""}
       CREATE INDEX IF NOT EXISTS events_owner_course ON events(owner,course_key,course_digest,seq);
-      UPDATE history_schema SET version=3;
+      CREATE TABLE IF NOT EXISTS course_materials(
+        owner TEXT NOT NULL, event_id TEXT NOT NULL, run_id TEXT NOT NULL,
+        sha256 TEXT NOT NULL, snapshot_json TEXT NOT NULL,
+        PRIMARY KEY(owner,event_id)
+      );
+      CREATE INDEX IF NOT EXISTS materials_owner_run ON course_materials(owner,run_id);
+      UPDATE history_schema SET version=4;
       COMMIT;
     `);
     } catch (error) { this.db.close(); throw error; }
@@ -87,15 +94,36 @@ export class HistoryStore {
     }
   }
 
-  append(owner, candidates) {
+  append(owner, candidates, materials = []) {
     if (!Array.isArray(candidates) || !candidates.length || candidates.length > HISTORY_BATCH_LIMIT) throw new Error("Invalid history batch");
     const events = candidates.map(validateHistoryEvent);
+    if (!Array.isArray(materials) || materials.length > events.length) throw new HistoryValidationError("Invalid material batch");
+    const byId = new Map(events.map(event => [event.id, event]));
+    if (materials.length && byId.size !== events.length) throw new HistoryValidationError("Duplicate delivery identifiers in material batch");
+    const materialIds = new Set();
+    const checked = materials.map(material => {
+      if (!material || Object.keys(material).some(key => !["event_id", "snapshot_json"].includes(key))
+        || materialIds.has(material.event_id)) throw new HistoryValidationError("Invalid material batch");
+      materialIds.add(material.event_id);
+      return validateCourseMaterial(byId.get(material.event_id), material.snapshot_json);
+    });
     this.db.exec("BEGIN IMMEDIATE");
     try {
       const results = events.map(event => this.appendOne(owner, event));
+      for (const material of checked) {
+        const receipt = results.find(row => row.id === material.event_id);
+        if (!["accepted", "exists"].includes(receipt.status)) continue;
+        const event = byId.get(material.event_id);
+        this.db.prepare("INSERT OR IGNORE INTO course_materials(owner,event_id,run_id,sha256,snapshot_json) VALUES(?,?,?,?,?)")
+          .run(owner, event.id, event.run_id, material.sha256, material.snapshot_json);
+      }
       this.db.exec("COMMIT");
       return { results, through: this.upperBound(owner) };
     } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+
+  courseMaterial(owner, eventId) {
+    return this.db.prepare("SELECT event_id,sha256,snapshot_json FROM course_materials WHERE owner=? AND event_id=?").get(owner, eventId) ?? null;
   }
 
   appendOne(owner, event) {
@@ -249,6 +277,7 @@ export class HistoryStore {
           this.db.prepare("INSERT OR IGNORE INTO deleted_runs VALUES(?,?,?)").run(owner, run, prior.seq);
           this.db.prepare("UPDATE receipts SET deleted=1 WHERE owner=? AND run_id=?").run(owner, run);
           this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, run);
+          this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, run);
         }
         this.db.prepare("DELETE FROM events WHERE owner=? AND session_id=?").run(owner, sessionId);
       } else if (deleteOctos && prior.state === "not_requested") {
@@ -290,6 +319,7 @@ export class HistoryStore {
         this.db.prepare("DELETE FROM events WHERE owner=? AND run_id=?").run(owner, runId);
         this.db.prepare("UPDATE receipts SET deleted=1 WHERE owner=? AND run_id=?").run(owner, runId);
         this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, runId);
+        this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, runId);
       }
       this.db.exec("COMMIT");
       return { run_id: runId, seq: prior.seq, status: "deleted" };

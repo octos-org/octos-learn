@@ -159,7 +159,7 @@ test("schema 1 upgrades transactionally without changing raw records or durable 
   for (const column of ['occurred_at', 'question_preview', 'beat_id', 'task_id', 'operation_id']) raw.exec(`ALTER TABLE events DROP COLUMN ${column}`);
   raw.exec('UPDATE history_schema SET version=1'); raw.close();
   legacy = new HistoryStore(legacyFile);
-  assert.equal(legacy.db.prepare('SELECT version FROM history_schema').get().version, 3);
+  assert.equal(legacy.db.prepare('SELECT version FROM history_schema').get().version, 4);
   assert.equal(legacy.append('alice', [event('legacy')]).results[0].status, 'exists');
   assert.equal(legacy.listRuns('alice').runs[0].question_preview, '请解释斜率');
   assert.equal(legacy.runEvents('alice', 'run-one').events[0].event.id, 'legacy');

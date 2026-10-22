@@ -178,6 +178,7 @@ it('pins delivered generated content even if the same artifact later has differe
   expect(deliveries).toHaveLength(2);
   expect(deliveries[0].event.id).not.toBe(deliveries[1].event.id);
   expect(deliveries[0].event.data.snapshot_sha256).not.toBe(deliveries[1].event.data.snapshot_sha256);
+  expect(deliveries.map(row => row.snapshotJson).sort()).toEqual([JSON.stringify(first), JSON.stringify(revised)].sort());
   expect(deliveries[0].event.data.event_count).toBe(first.length);
   recordDeliveredLesson(c.recorder, 'q-generated', 'lesson.jsonl', revised); await c.recorder.flush();
   expect((await c.queue.list('alice')).filter(row => row.event.kind === 'course_delivered')).toHaveLength(2);

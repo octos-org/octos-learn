@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { createHash } from "node:crypto";
 import { createHistoryHandler } from "./server.mjs";
 let root, handler, server, base;
 const event = id => ({ version: 1, id, kind: "question_submitted", occurred_at: "2026-10-21T08:00:00.000Z", device_id: "tv", session_id: "learn-board", run_id: "run-one", question_id: `q-${id}`, data: { text: "斜率是什么", modality: "text" } });
@@ -25,6 +26,20 @@ beforeEach(async () => {
   base = `http://127.0.0.1:${server.address().port}`;
 });
 afterEach(async () => { await new Promise(resolve => server.close(resolve)); handler.close(); await rm(root, { recursive: true, force: true }); });
+
+test("course bytes require their exact delivery and the authenticated owner, and disappear on deletion", async () => {
+  const snapshot = JSON.stringify([{ event: "lesson.open", lesson_id: "one" }]);
+  const delivered = { ...event("course"), kind: "course_delivered", course: { kind: "generated", id: "q-course", version: "q-course" },
+    data: { artifact: "one.jsonl", status: "partial", snapshot_sha256: createHash("sha256").update(snapshot).digest("hex"), event_count: 1 } };
+  const payload = { events: [delivered], materials: [{ event_id: delivered.id, snapshot_json: snapshot }] };
+  assert.equal((await call("/events", "POST", { ...payload, materials: [{ event_id: delivered.id, snapshot_json: "[]" }] })).status, 400);
+  assert.equal((await call("/events", "POST", payload)).status, 200);
+  assert.equal((await call("/materials/course", "GET", undefined, { authorization: "Bearer bob" })).status, 404);
+  assert.equal((await (await call("/materials/course")).json()).material.snapshot_json, snapshot);
+  assert.equal((await call("/materials/course?owner=alice")).status, 400);
+  assert.equal((await call("/runs/run-one", "DELETE")).status, 200);
+  assert.equal((await call("/materials/course")).status, 404);
+});
 
 test("requires Octos authentication and ignores forged profile routing", async () => {
   assert.equal((await call("/runs", "GET", undefined, { authorization: "" })).status, 401);

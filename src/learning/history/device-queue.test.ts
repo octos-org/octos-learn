@@ -30,6 +30,48 @@ it('commits the checkpoint with its facts and recovers both after reopening', as
   expect(await checkpoint()).toEqual({ cursor: 4 });
 });
 
+it('keeps exact delivered bytes through reopening and a lost upload reply until the shared receipt is confirmed', async () => {
+  const snapshotJson = JSON.stringify([{ event: 'lesson.open', lesson_id: 'one' }]);
+  const delivered: HistoryEvent = { ...event('course-one'), kind: 'course_delivered', course: { kind: 'generated', id: 'one', version: 'one' },
+    data: { artifact: 'lesson.jsonl', status: 'partial', snapshot_sha256: 'a'.repeat(64), event_count: 1 } };
+  const first = await queue();
+  await first.commit('alice', [delivered], [], [{ eventId: delivered.id, snapshotJson }]);
+  vi.resetModules(); const reopened = await queue();
+  expect((await reopened.list('alice'))[0].snapshotJson).toBe(snapshotJson);
+  expect(await reopened.list('bob')).toEqual([]);
+  let lost = true; const bodies: unknown[] = [];
+  const { HistorySynchronizer } = await import('./synchronize');
+  const sync = new HistorySynchronizer(reopened, '', vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    if (init?.method !== 'POST') return Response.json({ changes: [], through: 0, next_after: null });
+    bodies.push(JSON.parse(String(init.body)));
+    if (lost) { lost = false; throw new Error('lost'); }
+    return Response.json({ profile_id: 'alice', results: [{ id: delivered.id, status: 'exists', seq: 1 }] });
+  }) as unknown as typeof fetch);
+  await expect(sync.synchronize({ owner: 'alice', token: 'captured' })).rejects.toThrow('lost');
+  expect((await reopened.list('alice'))[0].snapshotJson).toBe(snapshotJson);
+  await sync.synchronize({ owner: 'alice', token: 'captured' });
+  expect(bodies).toEqual([0, 1].map(() => ({ events: [delivered], materials: [{ event_id: delivered.id, snapshot_json: snapshotJson }] })));
+  expect(await reopened.list('alice')).toEqual([]);
+});
+
+it('retains oversized course material without blocking later ordinary learning facts', async () => {
+  const local = await queue();
+  const delivered: HistoryEvent = { ...event('a-large-course'), kind: 'course_delivered', course: { kind: 'generated', id: 'one', version: 'one' },
+    data: { artifact: 'lesson.jsonl', status: 'partial', snapshot_sha256: 'a'.repeat(64), event_count: 1 } };
+  await local.commit('alice', [delivered, event('z-later-question')], [], [{ eventId: delivered.id, snapshotJson: 'x'.repeat(8 * 1024 * 1024) }]);
+  const uploaded: string[] = [];
+  const { HistorySynchronizer } = await import('./synchronize');
+  const sync = new HistorySynchronizer(local, '', vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+    if (init?.method !== 'POST') return Response.json({ changes: [], through: 0, next_after: null });
+    const { events } = JSON.parse(String(init.body)) as { events: HistoryEvent[] }; uploaded.push(...events.map(e => e.id));
+    return Response.json({ profile_id: 'alice', results: events.map(e => ({ id: e.id, status: 'accepted', seq: 1 })) });
+  }) as unknown as typeof fetch);
+  await expect(sync.synchronize({ owner: 'alice', token: 'captured' })).rejects.toThrow('同步上限');
+  expect(uploaded).toEqual(['z-later-question']);
+  const remaining = await local.list('alice');
+  expect(remaining).toHaveLength(1); expect(remaining[0].snapshotJson).toHaveLength(8 * 1024 * 1024);
+});
+
 it('aborting either side of a local transaction leaves neither a checkpoint nor a queued fact', async () => {
   const local = await queue();
   const put = IDBObjectStore.prototype.add;

@@ -4,7 +4,8 @@ import { openLearningDatabase } from '../learning-document-store';
 const EVENTS = 'history-events';
 const META = 'history-meta';
 const DOCUMENTS = 'documents';
-export interface QueuedHistoryEvent { owner: string; event: HistoryEvent; state: 'pending' | 'conflict' }
+export interface QueuedHistoryEvent { owner: string; event: HistoryEvent; state: 'pending' | 'conflict'; snapshotJson?: string }
+export interface HistoryMaterialWrite { eventId: string; snapshotJson: string }
 export interface HistoryReceipt { id: string; status: 'accepted' | 'exists' | 'deleted' | 'conflict'; seq?: number }
 export interface HistoryDocumentWrite { key: string; value: unknown }
 const ownerId = /^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/;
@@ -56,7 +57,7 @@ export class DeviceHistoryQueue {
     return value;
   }
 
-  async commit(owner: string, candidates: HistoryEvent[], documents: HistoryDocumentWrite[] = []): Promise<void> {
+  async commit(owner: string, candidates: HistoryEvent[], documents: HistoryDocumentWrite[] = [], materials: HistoryMaterialWrite[] = []): Promise<void> {
     assertOwner(owner);
     const unique = new Map<string, HistoryEvent>();
     for (const candidate of candidates) {
@@ -66,6 +67,13 @@ export class DeviceHistoryQueue {
       unique.set(event.id, event);
     }
     const events = [...unique.values()];
+    const snapshots = new Map<string, string>();
+    for (const material of materials) {
+      const event = unique.get(material.eventId);
+      if (event?.kind !== 'course_delivered' || typeof material.snapshotJson !== 'string'
+        || (snapshots.has(material.eventId) && snapshots.get(material.eventId) !== material.snapshotJson)) throw new Error('课程材料与交付记录不符');
+      snapshots.set(material.eventId, material.snapshotJson);
+    }
     const copies = structuredClone(documents);
     const db = await this.database();
     const tx = db.transaction([EVENTS, META, DOCUMENTS], 'readwrite');
@@ -87,7 +95,12 @@ export class DeviceHistoryQueue {
                 conflict = new Error('同一学习记录编号对应不同内容，已停止保存'); tx.abort(); return;
               }
               try {
-                if (!old) store.add({ owner, event, state: 'pending' } satisfies QueuedHistoryEvent, [owner, event.id]);
+                const snapshotJson = snapshots.get(event.id);
+                if (old?.snapshotJson !== undefined && snapshotJson !== undefined && old.snapshotJson !== snapshotJson) {
+                  conflict = new Error('同一交付记录对应不同课程材料'); tx.abort(); return;
+                }
+                if (!old) store.add({ owner, event, state: 'pending', ...(snapshotJson === undefined ? {} : { snapshotJson }) } satisfies QueuedHistoryEvent, [owner, event.id]);
+                else if (snapshotJson !== undefined && old.snapshotJson === undefined) store.put({ ...old, snapshotJson }, [owner, event.id]);
               } catch (error) {
                 conflict = error instanceof Error ? error : new Error('本机学习记录尚未保存');
                 tx.abort();

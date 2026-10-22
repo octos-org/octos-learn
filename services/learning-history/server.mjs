@@ -61,9 +61,15 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       const path = url.pathname.slice(PREFIX.length).split("/").filter(Boolean).map(decodeURIComponent);
       if (request.method === "POST" && path.length === 1 && path[0] === "events") {
         if (url.search) throw new HttpError(400, "Unexpected query");
-        const body = await limitedJson(request, 1024 * 1024);
-        if (!body || Object.keys(body).some(key => key !== "events") || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT) throw new HttpError(400, "Invalid event batch");
-        send(200, { profile_id: owner, ...store().append(owner, body.events) });
+        const body = await limitedJson(request, 8 * 1024 * 1024);
+        if (!body || Object.keys(body).some(key => !["events", "materials"].includes(key)) || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT
+          || (body.materials !== undefined && (!Array.isArray(body.materials) || body.materials.length > body.events.length))) throw new HttpError(400, "Invalid event batch");
+        send(200, { profile_id: owner, ...store().append(owner, body.events, body.materials) });
+      } else if (request.method === "GET" && path.length === 2 && path[0] === "materials") {
+        if (url.search || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) throw new HttpError(400, "Invalid material query");
+        const material = store().courseMaterial(owner, path[1]);
+        if (!material) throw new HttpError(404, "No preserved course material for this delivery");
+        send(200, { profile_id: owner, material });
       } else if (request.method === "POST" && path.join("/") === "deliveries/claim") {
         if (url.search) throw new HttpError(400, "Unexpected query");
         const body = await limitedJson(request, 1024);
