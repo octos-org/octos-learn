@@ -357,7 +357,7 @@ status are tracked in [the phase-two implementation record](personalized-teacher
 8. Release the matching frontend and product modules together. Raw learning
    facts can sync independently of Octos message copies. Message delivery must
    remain gated until Octos explicitly negotiates
-   `session.append_message.full_history_retry.v1` (upstream draft PR #2854).
+   `session.append_message.full_history_retry.v1` (upstream PR #2854, ready for review; not yet merged at this record's update).
    Older builds leave durable copies pending; do not remove that check.
 9. Keep unreviewed topic mappings inactive. The candidate slope course map is
    pinned to archive and taxonomy versions but still needs the documented

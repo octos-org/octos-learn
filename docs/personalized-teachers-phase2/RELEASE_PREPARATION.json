@@ -1,0 +1,40 @@
+{
+  "created_at": "2026-10-22T01:26:48.672327+00:00",
+  "kind": "review-preview-not-approved-for-deployment",
+  "source": "47a1843",
+  "source_note": "Application source matches this commit; subsequent local changes are documentation and evidence only.",
+  "upstream_octos_candidate": "96860d83a453380a870a4b40dcad2c2980f73684",
+  "upstream_merged": false,
+  "mapping_status": "pending-review",
+  "paid_generations": 0,
+  "contains_octos_binary": false,
+  "contains_production_configuration_or_database": false,
+  "path": "delivery/phase2/release-preview-47a1843",
+  "manifest_sha256": "64f72cb133420ea7f3a72514c611bfb671c0792b2f01a2ed95ddaf957dfadfb5",
+  "file_count": 168,
+  "bytes": 111651429,
+  "checks": {
+    "public_build": "passed",
+    "android_build": "passed",
+    "backup_and_topic_tests": "4 passed, isolated fixtures",
+    "production_configuration": "not changed",
+    "production_backup_restore": "not performed",
+    "production_publish": "not authorized or performed",
+    "original_account_device_acceptance": "pending login",
+    "performance_acceptance": "pending separate plan and new budget",
+    "preview_hashes": "168 file hashes and byte counts verified",
+    "product_modules": "imports resolve in preview; SQLite backup API available on local Node v24.16.0"
+  },
+  "remaining_release_gates": [
+    "human topic-mapping review",
+    "reliable question-topic attribution decision and implementation",
+    "original-account device acceptance",
+    "comparable first-playable-fragment performance acceptance",
+    "product review and merge",
+    "upstream review and merge; pin deployed version",
+    "read-only production inventory and approved backup paths",
+    "production Octos/profile backup and history backup if present",
+    "explicit production release authorization",
+    "post-release device sync and Octos delivery acceptance"
+  ]
+}

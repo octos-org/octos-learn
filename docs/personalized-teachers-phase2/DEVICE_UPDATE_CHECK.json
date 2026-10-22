@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-22T01:25:49.161941+00:00",
+  "source": "47a1843",
+  "device": "M3G2",
+  "android_api": 33,
+  "apk": {
+    "path": "delivery/phase2/octos-learn-phase2-47a1843-debug.apk",
+    "bytes": 107404859,
+    "sha256": "7571797b9b5e43464cea464cd33a44b264062b1179b92a1d95b61ce2521650da"
+  },
+  "build_passed": true,
+  "install_preserving_data_passed": true,
+  "original_documents": 115,
+  "original_documents_unchanged": 115,
+  "original_events": 149,
+  "original_events_unchanged": 149,
+  "current_events": 149,
+  "authenticated_acceptance": "pending_original_account_login",
+  "original_record_owner": "admin",
+  "observed_after_launch": {
+    "has_stored_token": false,
+    "selected_profile": null
+  },
+  "anonymous_course_was_opened": true,
+  "scope": "Existing records are preserved. An unauthenticated visit created a separate anonymous course document; it does not demonstrate restoration or history capture for the original account. Original account data was not deleted or overwritten.",
+  "pending_checks": [
+    "original_account_course_restore",
+    "sparse_playback_positions",
+    "stable_first_run_started",
+    "failed_delete_keeps_card",
+    "offline_reload_and_process_restart"
+  ],
+  "paid_generations": 0,
+  "public_sync_verified": false,
+  "full_device_acceptance_passed": false
+}
