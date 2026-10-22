@@ -7,6 +7,7 @@ import { createServer } from 'node:http';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { analysisHash } from '../../services/learning-history/topic-analysis.mjs';
+import { ANALYSIS_MATERIAL_PREFIX } from '../../services/learning-history/topic-analysis-instructions.mjs';
 
 export const digest = value => createHash('sha256').update(value).digest('hex');
 const fields = (value, allowed) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
@@ -19,7 +20,9 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
   assert.match(plan.id, /^[a-z0-9-]+$/); assert.ok(plan.output_directory.startsWith('/private/tmp/'));
   const cases = JSON.parse(casesBytes).cases;
   assert.equal(cases.length, 9); assert.equal(new Set(cases.map(c => c.id)).size, 9);
-  assert.deepEqual(plan.limits, { tasks: 9, model_http_requests: 18, model_http_requests_per_task: 3, usd_micros: 20000000,
+  assert.ok(plan.scope === undefined || plan.scope === 'first-source-diagnosis', 'Unsupported trial scope');
+  const diagnostic = plan.scope === 'first-source-diagnosis';
+  assert.deepEqual(plan.limits, { tasks: diagnostic ? 1 : 9, model_http_requests: diagnostic ? 3 : 18, model_http_requests_per_task: 3, usd_micros: diagnostic ? 3300000 : 20000000,
     reservation_usd_micros: 1100000, request_bytes: 1048576, output_tokens: 32768 });
   const p = plan.pricing;
   assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
@@ -32,7 +35,7 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
     assert.equal(p.verified_at, now.toISOString().slice(0, 10), 'Recheck the public price on execution day');
     assert.ok(now.toISOString().slice(0, 10) <= p.valid_until, 'Pricing basis expired');
   }
-  return cases;
+  return diagnostic ? cases.slice(0, 1) : cases;
 }
 
 /** Reservations are written before forwarding. Missing/failed replies are never
@@ -99,7 +102,9 @@ export function checkTopicModelRequest(body, plan) {
         const marker = '[from the app: Learning topic analysis] ';
         if (content.role === 'user' && part.text.startsWith(marker)) {
           assert.equal(inputHash, undefined, 'Multiple analysis inputs');
-          const input = JSON.parse(part.text.slice(marker.length));
+          const prompt = part.text.slice(marker.length);
+          assert.ok(prompt.startsWith(ANALYSIS_MATERIAL_PREFIX), 'Analysis instructions missing or changed');
+          const input = JSON.parse(prompt.slice(ANALYSIS_MATERIAL_PREFIX.length));
           assert.equal(input.schema, 1); assert.match(input.input_sha256, /^[a-f0-9]{64}$/);
           const { input_sha256, ...original } = input;
           assert.equal(analysisHash(original), input_sha256, 'Pinned input content changed'); inputHash = input_sha256;

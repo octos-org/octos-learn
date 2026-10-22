@@ -8,6 +8,7 @@ import { stageTopicCase, inspectTopicCandidate, retainTopicTrialOutput } from '.
 import { listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { HistoryStore } from '../services/learning-history/store.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
+import { buildTopicAnalysisPrompt } from '../services/learning-history/topic-analysis-instructions.mjs';
 
 const plan = { ...JSON.parse(await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_TRIAL.json')),
   status: 'prepared-not-approved', authorization_reference: '' };
@@ -18,7 +19,7 @@ function inputFor(sample = cases[0]) {
   try { stageTopicCase(store, 'alan0x', sample); return buildAnalysisInput(store, 'alan0x', sample.id); } finally { store.close(); }
 }
 function bodyFor(input = inputFor()) {
-  return { contents: [{ role: 'user', parts: [{ text: `[from the app: Learning topic analysis] ${JSON.stringify(input)}` }] }],
+  return { contents: [{ role: 'user', parts: [{ text: `[from the app: Learning topic analysis] ${buildTopicAnalysisPrompt(input)}` }] }],
     generation_config: { max_output_tokens: 32768, thinkingConfig: { thinkingBudget: 1024 } },
     tools: [{ function_declarations: [{ name: 'learning_topics_search', description: 'Pinned definitions', parameters: { type: 'object' } }] }] };
 }
@@ -29,6 +30,23 @@ test('paid execution refuses missing authorization, changed samples and expired 
   assert.equal(validateTopicTrial(approved, casesBytes, { execute: true, now: new Date(`${plan.pricing.verified_at}T00:00:00Z`) }).length, 9);
   assert.throws(() => validateTopicTrial(approved, Buffer.from('changed')));
   assert.throws(() => validateTopicTrial({ ...approved, pricing: { ...plan.pricing, verified_at: '2027-01-01' } }, casesBytes, { execute: true, now: new Date('2027-01-01') }), /expired/);
+});
+
+test('a fresh first-source diagnosis has its own one-source, three-request, USD3.30 policy', () => {
+  const single = { ...plan, scope: 'first-source-diagnosis',
+    limits: { ...plan.limits, tasks: 1, model_http_requests: 3, usd_micros: 3300000 } };
+  assert.deepEqual(validateTopicTrial(single, casesBytes).map(sample => sample.id), ['q-direction']);
+  assert.throws(() => validateTopicTrial({ ...single, limits: plan.limits }, casesBytes));
+  assert.throws(() => validateTopicTrial({ ...single, scope: 'arbitrary-input' }, casesBytes));
+  assert.throws(() => validateTopicTrial(single, casesBytes, { execute: true }), /not authorized/);
+  const ledger = new TopicTrialLedger(':memory:', single), input = inputFor();
+  try {
+    ledger.start('q-direction', input.input_sha256);
+    for (let i = 0; i < 3; i++) ledger.reserve(input.input_sha256);
+    assert.throws(() => ledger.reserve(input.input_sha256), /budget exhausted/);
+    ledger.finish('q-direction');
+    assert.throws(() => ledger.start('another-source', 'd'.repeat(64)), /Task limit reached/);
+  } finally { ledger.close(); }
 });
 
 test('all nine fixed sources stage through the actual contracts; expected answers never reach model inputs', () => {
@@ -56,6 +74,12 @@ test('failed terminal output remains reviewable before purge, without RPC tokens
     messages: [{ role: 'assistant', content: 'Invalid JSON answer', reasoning_content: 'never-retain', turn_id: 'turn' }] }), true);
   assert.equal(row.octos_observation.messages[0].content, 'Invalid JSON answer');
   assert.ok(!JSON.stringify(row).includes('never-retain'));
+});
+
+test('material alone cannot pass the gateway when the analysis instructions are absent', () => {
+  const input = inputFor(), body = bodyFor(input);
+  body.contents[0].parts[0].text = `[from the app: Learning topic analysis] ${JSON.stringify(input)}`;
+  assert.throws(() => checkTopicModelRequest(body, plan), /instructions missing/);
 });
 
 test('Gemini catalog tool history is accepted, while unpriced tools, media, aliases and changed material are refused', () => {

@@ -10,6 +10,7 @@ import { createServer as createViteServer } from 'vite';
 import { HistoryStore } from '../services/learning-history/store.mjs';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
+import { ANALYSIS_INSTRUCTIONS } from '../services/learning-history/topic-analysis-instructions.mjs';
 import { digest, validateTopicTrial, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
 import { stageTopicCase, inspectTopicCandidate, requireAllStagedJobs, stageObservedTrialPlayback, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { queryTopic } from '../services/learning-history/topic-query.mjs';
@@ -49,6 +50,12 @@ if (mode === '--check') {
     const upstreamFetch = mode === '--execute' ? fetch : async (_url, options) => {
       originalHttp++;
       const body = JSON.parse(options.body);
+      const promptTexts = [body.system_instruction, body.systemInstruction, ...body.contents].filter(Boolean)
+        .flatMap(message => message.parts ?? []).map(part => part.text ?? '').join('\n');
+      report.fixture_instructions_present = promptTexts.includes(ANALYSIS_INSTRUCTIONS);
+      assert.ok(report.fixture_instructions_present, 'Analysis instructions did not reach the actual Octos model request');
+      assert.ok(!promptTexts.includes('acceptable_topics'), 'Expected answers leaked into model input');
+      report.fixture_instruction_requests_checked = (report.fixture_instruction_requests_checked ?? 0) + 1;
       const hasTool = body.contents.some(content => content.parts.some(part => part.functionResponse));
       const parts = hasTool ? [{ text: JSON.stringify({ schema: 1, input_sha256: activeInput.input_sha256,
         units: activeInput.units.map(unit => { const expected = activeSample.expectations[unit.unit_id]; return { unit_id: unit.unit_id, status: expected.status,
@@ -77,7 +84,7 @@ if (mode === '--check') {
     const productBase = await listenLocal(product), identity = { owner: plan.owner, token };
     vite = await createViteServer({ root: process.cwd(), server: { middlewareMode: true, hmr: false }, appType: 'custom', logLevel: 'error' });
     const { analyzeTopics, createTopicAnalysisBridge } = await vite.ssrLoadModule('/src/learning/history/analyze-topics.ts');
-    history.db.prepare('INSERT INTO topic_analysis_settings VALUES(?,?,?)').run(plan.owner, 1, 9);
+    history.db.prepare('INSERT INTO topic_analysis_settings VALUES(?,?,?)').run(plan.owner, 1, samples.length);
     report.state = 'running'; await save();
     for (const sample of samples) {
       activeSample = sample; stageTopicCase(history, plan.owner, sample);
@@ -102,15 +109,17 @@ if (mode === '--check') {
       ledger.finish(sample.id); await save();
       assert.equal(row.review.expectation_issues.length, 0, 'Trial stopped at a predeclared expectation mismatch; do not auto-repeat');
     }
-    stageObservedTrialPlayback(history, plan.owner);
-    report.playback_evidence = queryTopic(history, plan.owner, 'mt_WBdHkc2HTf').automatic;
-    assert.equal(report.playback_evidence.counts.played_runs, 2); assert.equal(report.playback_evidence.counts.played_beats, 2);
-    const revised = history.db.prepare('SELECT seq FROM topic_analysis_results WHERE owner=? AND source_event_id=?').get(plan.owner, 'course-version-b').seq;
-    assert.ok(report.playback_evidence.events.every(row => row.associations.every(link => link.result_seq !== revised)), 'New material relabeled the old playback');
+    if (samples.length === 9) {
+      stageObservedTrialPlayback(history, plan.owner);
+      report.playback_evidence = queryTopic(history, plan.owner, 'mt_WBdHkc2HTf').automatic;
+      assert.equal(report.playback_evidence.counts.played_runs, 2); assert.equal(report.playback_evidence.counts.played_beats, 2);
+      const revised = history.db.prepare('SELECT seq FROM topic_analysis_results WHERE owner=? AND source_event_id=?').get(plan.owner, 'course-version-b').seq;
+      assert.ok(report.playback_evidence.events.every(row => row.associations.every(link => link.result_seq !== revised)), 'New material relabeled the old playback');
+    } else report.playback_check = 'Not exercised by the first-source-only diagnosis';
     const controls = await fetch(`${productBase}/api/learn/history/analysis/controls`, { headers: { authorization: `Bearer ${token}`, 'x-learning-owner': plan.owner } }).then(r => r.json());
     assert.deepEqual(controls.controls, [], 'Temporary namespaces still need cleanup');
     report.state = 'completed-needs-human-review';
-    if (mode === '--fixture') { assert.equal(originalHttp, 18); assert.equal(gateway.metrics.forwarded, 18); report.fixture_model_http_requests = originalHttp; }
+    if (mode === '--fixture') { assert.equal(originalHttp, samples.length * 2); assert.equal(gateway.metrics.forwarded, samples.length * 2); report.fixture_model_http_requests = originalHttp; }
   } catch (error) {
     // Do not serialize provider bodies, request headers or account config.
     report.state = 'stopped'; report.failure = 'Inspect protected results and durable reservations; no automatic continuation';
