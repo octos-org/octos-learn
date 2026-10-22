@@ -220,3 +220,21 @@ test("request failures survive restart without replacing partial deliveries, add
     assert.throws(() => validateHistoryEvent({ ...failure, data }));
   }
 });
+
+test("a direct answer delivered to Octos names the preset teacher, while the recorded answer stays verbatim", () => {
+  const store = new HistoryStore(':memory:');
+  try {
+    const user = { ...event('teacher-user'), data: { text: '什么是斜率？', modality: 'text' } };
+    const answer = { ...user, id: 'teacher-answer', kind: 'answer_delivered', data: { text: '我们先看两个变化量。', part_id: 'one' } };
+    const route = { ...user, id: 'teacher-route', kind: 'question_routed', data: { conversation_route: 'direct-action', media: [], teacher_id: 'alan', teacher_name: '阿澜' } };
+    store.append('alice', [user, route, answer]);
+    const first = store.claimDeliveries('alice').tasks[0];
+    assert.equal(first.message.content, '什么是斜率？');
+    store.acknowledgeDelivery('alice', user.id, first.lease_id, 0);
+    assert.equal(store.claimDeliveries('alice').tasks[0].message.content, '【阿澜老师】\n我们先看两个变化量。');
+    assert.equal(JSON.parse(store.db.prepare("SELECT body FROM events WHERE event_id=?").get(answer.id).body).data.text, '我们先看两个变化量。');
+    const { teacher_id: _id, teacher_name: _name, ...plain } = route.data;
+    for (const teacher of [{ teacher_id: 'alan' }, { teacher_name: '阿澜' }, { teacher_id: 'has space', teacher_name: '阿澜' }, { teacher_id: 'alan', teacher_name: '' }, { teacher_id: 'alan', teacher_name: '阿澜', teacher_voice: 'x' }])
+      assert.throws(() => validateHistoryEvent({ ...route, data: { ...plain, ...teacher } }));
+  } finally { store.close(); }
+});

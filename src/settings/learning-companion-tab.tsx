@@ -2,6 +2,44 @@ import { Check, GraduationCap } from "lucide-react";
 
 import { OctosSkinArt } from "@/components/octos-skin-art";
 import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
+import { TEACHERS, useSelectedTeacher } from "@/learning/teachers/teachers";
+
+export function TeacherPicker() {
+  const { teacher, setTeacherId } = useSelectedTeacher();
+  const { setSkin } = useTeacherSkin();
+  return (
+    <div className="mt-5 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="选择老师">
+      {TEACHERS.map((option) => {
+        const active = teacher.id === option.id;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            data-testid={`teacher-${option.id}`}
+            onClick={() => { setTeacherId(option.id); setSkin(option.skin); }}
+            className="teacher-skin-option workbench-card flex flex-col items-start gap-3 p-4 text-left"
+          >
+            <span className="flex w-full items-center gap-3">
+              <span className="teacher-skin-art flex shrink-0 justify-center" aria-hidden="true">
+                <OctosSkinArt skin={option.skin} className="octos-skin-card-art" staticPreview />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-text-strong">{option.name}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">{option.tagline}</span>
+              </span>
+            </span>
+            <span className={`workbench-status-pill shrink-0 ${active ? "" : "invisible"}`} data-tone="accent" aria-hidden={!active}>
+              <Check size={13} />
+              当前老师
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export function TeacherSkinPicker({
   compact = false,
@@ -84,6 +122,10 @@ export function LearningCompanionTab() {
         </div>
       </div>
 
+      <TeacherPicker />
+      <p className="mt-5 text-sm text-muted">
+        Appearance only — choosing a teacher above also applies that teacher's look.
+      </p>
       <TeacherSkinPicker />
     </section>
   );

@@ -1503,7 +1503,9 @@ describe("LearningWorkspace", () => {
     expect(turnId).toEqual(expect.any(String));
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_submitted", questionId: turnId, data: { text: "请解释勾股定理", modality: "text" } }));
-    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", questionId: turnId, data: { conversation_route: "direct-action", media: [] } }));
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", questionId: turnId, data: { conversation_route: "direct-action", media: [], teacher_id: "alan", teacher_name: "阿澜" } }));
+    // The selected preset teacher is fixed at submission and reaches every lesson entry.
+    expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.tutor_context).toContain("本次授课老师：阿澜");
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toContain("lesson-job-1");

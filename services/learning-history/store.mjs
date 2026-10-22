@@ -188,7 +188,10 @@ export class HistoryStore {
       .all(owner, event.question_id).map(row => JSON.parse(row.body));
     for (const answer of answers) {
       const seq = this.db.prepare("SELECT seq FROM events WHERE owner=? AND event_id=?").get(owner, answer.id).seq;
-      stage({ ...answer, seq }, { session_id: answer.session_id, role: "assistant", content: answer.data.text,
+      // Octos has no speaker field yet; label the preset teacher in the body
+      // so memory extraction can tell which teacher shared this exchange.
+      const teacher = routing.data.teacher_name;
+      stage({ ...answer, seq }, { session_id: answer.session_id, role: "assistant", content: teacher ? `【${teacher}老师】\n${answer.data.text}` : answer.data.text,
         media: answer.data.media ?? [], source: "external_record:octos-learn", client_message_id: `learn:answer:${answer.id}`, thread_id: userId });
     }
   }

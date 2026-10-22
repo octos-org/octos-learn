@@ -1,4 +1,9 @@
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
+import { openHistoryApi } from "./history/history-api";
+import { LearnerBackgroundCache } from "./teachers/learner-background";
+import { teacherTutorContext, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { getMyMemory } from "../settings/settings-api";
+import { getToken } from "../api/client";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
@@ -472,9 +477,18 @@ export function LearningWorkspace({
     recordedQuestions.current.add(`${sessionId}:${id}`);
     historyRecorder.record({ kind: "question_submitted", runKey: `question:${id}`, questionId: id, stableKey: `question:${id}`, occurredAt, data: { text, modality } });
   }, [historyRecorder, sessionId]);
-  const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = []) => {
-    historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`, data: { conversation_route: route, media } });
+  const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = [], teacher?: TeacherDefinition) => {
+    historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`,
+      data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacher.name } : {}) } });
   }, [historyRecorder]);
+  const { teacher } = useSelectedTeacher();
+  const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
+    const [memory, runs] = await Promise.allSettled([
+      getMyMemory(),
+      openHistoryApi(token).then((api) => api.runs()),
+    ]);
+    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null };
+  }), []);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   // Voice readiness also reports false before the profile runtime starts.
@@ -1126,6 +1140,12 @@ export function LearningWorkspace({
     history.coordinator?.setClassroomBusy(sessionId, historyClassroomBusy);
     return () => history.coordinator?.setClassroomBusy(sessionId, false);
   }, [history.coordinator, sessionId, historyClassroomBusy]);
+  // Prefetch learner background only while the classroom is idle, so it is
+  // never on the path between submitting a question and the first lesson.
+  useEffect(() => {
+    if (historyClassroomBusy || !historyRecorder) return;
+    void learnerBackground.refresh(getToken());
+  }, [historyClassroomBusy, historyRecorder, learnerBackground]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1154,7 +1174,11 @@ export function LearningWorkspace({
     },
     clientTiming?: LearningClientTiming,
   ) => {
-    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : []);
+    // The teacher is fixed when the question is submitted; switching later
+    // does not change a lesson already being generated.
+    const lessonTeacher = teacher;
+    const learnerContext = learnerBackground.current(getToken());
+    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [], lessonTeacher);
     setTextTurnPending(true);
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
@@ -1185,6 +1209,8 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: "zh-CN",
+          tutor_context: teacherTutorContext(lessonTeacher),
+          ...(learnerContext ? { learner_context: learnerContext } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1246,7 +1272,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, learnerBackground, teacher]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
