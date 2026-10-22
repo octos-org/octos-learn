@@ -125,6 +125,7 @@
     }
   ],
   "notes": [
+    "Frontend pinned to 20e6a45 is now stale: runtime fixes 867f468/f28cda2 require new reviewed builds and hashes before any future trial. Paid execution remains deferred.",
     "Optional supplemental real-supplier trial. AGENTS.md requires latency non-regression evidence, not this paid method. Review free evidence and changed execution paths before deciding merge readiness.",
     "User explicitly deferred paid testing. Preserve this as preparation only; do not execute, retry or substitute a lower budget without a later user decision.",
     "Draft only. User selected the existing alan0x account, not a paid budget. No new supplier calls are authorized.",
@@ -142,5 +143,6 @@
     "user_response": "暂不运行付费测试",
     "paid_execution_authorized": false
   },
-  "required_for_phase2_merge": false
+  "required_for_phase2_merge": false,
+  "source_pin_stale": true
 }

@@ -2,6 +2,8 @@
 
 当前状态：本机上游接入与最新 APK 的本地验收完成；终轮独立审查已返回并完成对照，没有新增已确认代码缺陷。合并前的完整速度证据仍待补齐。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标，不能因此宣布第二阶段全部完成。
 
+最新增量：原 APK 47a1843 的验收不覆盖本轮 867f468 / f28cda2。免费覆盖复核发现并修复两处后台维护遗漏，新 40 对测量已完成但速度仍未确定，见[报告](PERFORMANCE_EVIDENCE_REVIEW.md)。新增代码的重点审查范围为 `git diff 53d53d3..f28cda2 -- src/learning scripts/benchmark-learning-history-playable.mjs`；新候选未安装电视，仍需针对性复验。以下原审查范围及历史证据按原提交理解。
+
 ## 审查范围
 
 - 产品分支：`codex/learning-history-phase2`。
@@ -30,6 +32,7 @@
 | [电视剩余项目](DEVICE_FINAL_ACCEPTANCE.json) | 导航位置、新格式实例回放去重、无凭据删除失败；未向服务器发送删除。原 150 条事实全部保留 |
 | [课程生成对照](GENERATION_BENCHMARK.json) | 旧候选的六次首画面对照，额度已用完；不是完整首段音频性能结论 |
 | [免费首段可播放对照](FREE_PLAYABLE_BENCHMARK.json) | 完整两版前端、三种条件各 10 对、真实浏览器音频信号；零真实供应商调用，不能代替真实模型/TTS 环境；停用的旧计时轮次另存 |
+| [本轮免费性能覆盖复核](PERFORMANCE_EVIDENCE_REVIEW.md) | f28cda2 四种情况各 10 对，包含在途同步与两处修复；1227 项单元等验证通过，但两组 p50 较高、原因未定，不声明速度通过；原 APK 不含新修正 |
 | [真实计时执行器准备](LIVE_PERFORMANCE_PREPARATION.md) | 费用、音画及故障检查通过；另补用户所选 alan0x / Gemini 3.8 / 小何验证及指定既有账号登录。[执行单](LIVE_PERFORMANCE_EXECUTION.md)已列保守上限和恢复步骤，用户已暂缓付费；零真实供应商调用，正常账号尚未接入测试地址 |
 | [同进程 relay 对照](RELAY_BENCHMARK.json) | 固定模拟供应商延迟；不能推导真实供应商速度 |
 

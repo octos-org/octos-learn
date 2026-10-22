@@ -67,6 +67,8 @@
 
 - [第二阶段真实计时执行器准备](personalized-teachers-phase2/LIVE_PERFORMANCE_PREPARATION.md)：首段画面与匹配旁白计时、持久费用限制和免费故障检查；[alan0x 真实对照执行单](personalized-teachers-phase2/LIVE_PERFORMANCE_EXECUTION.md)固定所选模型/音色、次数、费用依据、停止及恢复步骤，含独立补测记录；没有新增付费调用。
 
+- [第二阶段免费性能覆盖复核](personalized-teachers-phase2/PERFORMANCE_EVIDENCE_REVIEW.md)：两处维护/生成等待遗漏的复现与修正、f28cda2 新 40 对免费测量及验证依据；两组 p50 差异原因未定，未宣称速度通过，旧 APK 与旧构建不代替新候选。
+
 - [第二阶段实现审查处理](personalized-teachers-phase2/REVIEW_FOLLOWUP.md)：未登录删除保留、复习位置与开始事件去重、Octos PR #2854 CI 修正、性能对照补测及逐项判断；附实际验证边界。
 
 - [个性化老师第一阶段核验与接入设计](personalized-teachers-phase1/REPORT.md)：最新 main 基线、本机接口与无模型测试、事实存储比较、Octos 最小扩展草案和《斜率与截距》的知识点映射候选；后续[职责与必要性复核](personalized-teachers-phase1/OCTOS_GAP_REASSESSMENT.md)收窄了原扩展建议。
