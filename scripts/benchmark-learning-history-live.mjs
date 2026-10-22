@@ -9,6 +9,8 @@ import { createServer as createViteServer } from 'vite';
 import { TrialLedger, validateTrialPlan, createFirstSpeechGate, createModelBudgetGateway, sha256 } from './lib/learning-performance-control.mjs';
 import { firstPlayableTarget } from './lib/learning-performance-target.mjs';
 import { installLivePlayableProbe, readLivePlayable } from './lib/learning-playable-probe.mjs';
+import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
+import { homedir } from 'node:os';
 
 const [mode, planPath, output] = process.argv.slice(2);
 assert.ok(['--check', '--execute', '--serve-gateway', '--fixture'].includes(mode) && planPath, 'Usage: node scripts/benchmark-learning-history-live.mjs --check|--execute|--serve-gateway|--fixture PLAN.json [PRIVATE_OUTPUT_DIRECTORY]');
@@ -55,11 +57,8 @@ if (mode === '--check') {
       const authClient = mode === '--fixture' ? (await import('playwright')).request : null;
       const fixtureClient = authClient && await authClient.newContext({ ignoreHTTPSErrors: true });
       const get = async (path, options) => fixtureClient ? fixtureClient.fetch(backend + path, options) : fetch(backend + path, options);
-      const auth = await get('/api/auth/solo', { method: 'POST' }); assert.equal(typeof auth.status === 'function' ? auth.status() : auth.status, 200);
-      const { token } = await auth.json();
+      const { token, profile } = await loginExistingTrialOwner({ request: get, owner: plan.owner, registryRoot: fixture ? undefined : join(homedir(), '.octos') });
       const headers = { Authorization: `Bearer ${token}` };
-      const profileResponse = await get('/api/my/profile', { headers }); assert.equal(typeof profileResponse.status === 'function' ? profileResponse.status() : profileResponse.status, 200);
-      const payload = await profileResponse.json(), profile = payload.profile?.profile ?? payload.profile ?? payload;
       assert.equal(profile.id, plan.owner); assert.equal(profile.config.llm.primary.model_id, plan.model);
       // Read-only metadata request. Never prepares/migrates or exports a Key.
       await fixtureClient?.dispose();

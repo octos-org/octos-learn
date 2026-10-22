@@ -7,10 +7,11 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { TrialLedger, createModelBudgetGateway, sha256 } from './lib/learning-performance-control.mjs';
 
-const [skill, resultPath] = process.argv.slice(2);
-assert.ok(skill?.startsWith('/') && resultPath, 'Supply absolute installed Learning Coach executable and a NEW result JSON path');
+const [skill, resultPath, model = 'gemini-3.6-flash'] = process.argv.slice(2);
+assert.ok(skill?.startsWith('/') && resultPath, 'Supply absolute installed Learning Coach executable, NEW result JSON path and optional Gemini model');
+assert.match(model, /^gemini-[\w.-]+$/);
 const root = await mkdtemp(join(tmpdir(), 'octos-skill-budget-fixture-'));
-const plan = { schema: 'octos.learn.performance-trial.v1', id: 'installed-skill-fixture', status: 'draft', model: 'gemini-3.6-flash', voice: 'fixture', resource: 'fixture',
+const plan = { schema: 'octos.learn.performance-trial.v1', id: 'installed-skill-fixture', status: 'draft', model, voice: 'fixture', resource: 'fixture',
   limits: { courses: 1, speech_requests: 1, usd_micros: 250, cny_micros: 1000, model_request_usd_micros: 100, speech_byte_cny_micros: 1, speech_utf8_bytes: 100, output_tokens: 32768, request_bytes: 1048576 },
   samples: [{ id: 'one', version: 'candidate', prompt: '请解释斜率' }],
 };
@@ -18,7 +19,7 @@ await writeFile(resultPath, '{}\n', { flag: 'wx', mode: 0o600 });
 const ledger = new TrialLedger(join(root, 'ledger.sqlite'), plan); ledger.reserveSample('one', 'learn-skill-fixture');
 let supplierCalls = 0;
 const gateway = createModelBudgetGateway({ ledger, activeSample: () => 'one', upstreamFetch: async url => {
-  assert.ok(url.startsWith('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:'));
+  assert.ok(url.startsWith(`https://generativelanguage.googleapis.com/v1beta/models/${plan.model}:`));
   supplierCalls++; return new Response('{}', { status: 503 });
 } });
 await new Promise(done => gateway.server.listen(0, '127.0.0.1', done));
@@ -42,7 +43,7 @@ try {
   assert.ok(gateway.metrics.rejected > 0, 'An additional attempt must actually reach the budget check');
   const expenses = ledger.snapshot().expenses;
   assert.equal(expenses.length, 2); assert.equal(expenses.reduce((sum, x) => sum + x.usd, 0), 200);
-  const report = { checked_at: new Date().toISOString(), installed_skill_sha256: sha256(await readFile(skill)),
+  const report = { checked_at: new Date().toISOString(), model: plan.model, installed_skill_sha256: sha256(await readFile(skill)),
     scope: 'Installed Learning Coach direct executable with explicit synthetic env, isolated workspace and local supplier replacement; not the normal Octos action environment',
     passed: true, real_supplier_calls: 0, synthetic_supplier_attempts: supplierCalls, rejected_requests: gateway.metrics.rejected,
     reserved_usd_micros_in_fixture: 200, generation_failed_as_expected: true, original_installation_modified: false,

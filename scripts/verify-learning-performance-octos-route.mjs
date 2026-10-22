@@ -7,12 +7,14 @@ import { mkdtemp, mkdir, cp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { TrialLedger, createModelBudgetGateway, sha256 } from './lib/learning-performance-control.mjs';
+import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 
-const [binary, skill, resultPath] = process.argv.slice(2);
-assert.ok(binary?.startsWith('/') && skill?.startsWith('/') && resultPath, 'Supply absolute Octos binary, installed skill directory and NEW result JSON path');
+const [binary, skill, resultPath, model = 'gemini-3.6-flash'] = process.argv.slice(2);
+assert.ok(binary?.startsWith('/') && skill?.startsWith('/') && resultPath, 'Supply absolute Octos binary, installed skill directory, NEW result JSON path and optional Gemini model');
+assert.match(model, /^gemini-[\w.-]+$/);
 const root = await mkdtemp(join(tmpdir(), 'octos-action-budget-fixture-'));
 await writeFile(resultPath, '{}\n', { flag: 'wx', mode: 0o600 });
-const plan = { schema: 'octos.learn.performance-trial.v1', id: 'octos-route-fixture', status: 'draft', model: 'gemini-3.6-flash', voice: 'fixture', resource: 'fixture',
+const plan = { schema: 'octos.learn.performance-trial.v1', id: 'octos-route-fixture', status: 'draft', model, voice: 'fixture', resource: 'fixture',
   limits: { courses: 1, speech_requests: 1, usd_micros: 250, cny_micros: 1000, model_request_usd_micros: 100, speech_byte_cny_micros: 1, speech_utf8_bytes: 100, output_tokens: 32768, request_bytes: 1048576 },
   samples: [{ id: 'one', version: 'candidate', prompt: '请解释斜率' }],
 };
@@ -20,7 +22,7 @@ const ledger = new TrialLedger(join(root, 'ledger.sqlite'), plan); ledger.reserv
 let supplierCalls = 0, child, socket;
 const log = [];
 const gate = createModelBudgetGateway({ ledger, activeSample: () => 'one', upstreamFetch: async url => {
-  assert.ok(url.startsWith('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:'));
+  assert.ok(url.startsWith(`https://generativelanguage.googleapis.com/v1beta/models/${plan.model}:`));
   supplierCalls++; return new Response('{}', { status: 503 });
 } });
 await new Promise(done => gate.server.listen(0, '127.0.0.1', done));
@@ -48,7 +50,11 @@ try {
   await start();
   const owner = 'budget-route-fixture';
   const response = await fetch(`${origin}/api/auth/solo/create`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Budget route fixture', username: owner, email: 'fixture@solo.local' }) });
-  assert.equal(response.status, 200); const { token } = await response.json();
+  assert.equal(response.status, 200);
+  // Make a different user the newest solo default, then prove the runner logs
+  // back into the explicitly selected existing account without adding a third.
+  const newer = await fetch(`${origin}/api/auth/solo/create`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'Other fixture', username: 'other-fixture', email: 'other@solo.local' }) });
+  assert.equal(newer.status, 200);
   const installed = join(data, 'profiles', owner, 'data', 'skills', 'learning-coach'); await mkdir(installed, { recursive: true });
   // Bundled executables, contract/references and manifest; do not edit or copy
   // private profile files, credentials or another node_modules installation.
@@ -63,6 +69,8 @@ try {
   // Restart only this fixture after creating its profile and installed skill.
   await new Promise(done => { child.once('exit', done); child.kill('SIGTERM'); });
   await start();
+  const { token, explicitExistingLogin } = await loginExistingTrialOwner({ request: (path, options) => fetch(origin + path, options), owner, registryRoot: data });
+  assert.equal(explicitExistingLogin, true);
   const ws = new URL(`${origin.replace('http:', 'ws:')}/api/ui-protocol/ws`); ws.searchParams.set('token', token);
   for (const f of ['skill.actions.v1', 'skill.action_jobs.v1']) ws.searchParams.append('ui_feature', f);
   socket = new WebSocket(ws);
@@ -90,7 +98,7 @@ try {
     octos_binary_sha256: sha256(await readFile(binary)), installed_skill_sha256: sha256(await readFile(join(skill, 'main'))),
     model: plan.model, real_supplier_calls: 0, synthetic_supplier_attempts: supplierCalls, rejected_requests: gate.metrics.rejected,
     original_profile_modified: false, original_installation_modified: false, memory_refresh_disabled_for_fixture: true,
-    normal_profile_gateway_route_verified: false, private_fixture_directory: root };
+    normal_profile_gateway_route_verified: false, selected_existing_owner_login_verified: true, private_fixture_directory: root };
   await writeFile(join(root, 'octos.log'), Buffer.concat(log), { mode: 0o600 });
   await writeFile(resultPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flush: true }); console.log(JSON.stringify(report, null, 2));
 } finally {
