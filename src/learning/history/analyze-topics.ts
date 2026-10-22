@@ -1,6 +1,6 @@
 import { ANALYSIS_INSTRUCTIONS } from '../../../services/learning-history/topic-analysis-instructions.mjs';
 import { createRequestId } from '../../lib/request-id';
-import { createUiProtocolBridge, type UiProtocolBridge, type PeerToolCall } from '../../runtime/ui-protocol-bridge';
+import { createUiProtocolBridge, getUiProtocolFeatures, type UiProtocolBridge, type PeerToolCall } from '../../runtime/ui-protocol-bridge';
 import { historySha256 } from './identifiers';
 import { historyRequestTimeout } from './request-timeout';
 import type { HistoryIdentity } from './synchronize';
@@ -11,6 +11,13 @@ interface Control { host: string; peer: string; session: string; token: string; 
 interface Status { profile_id: string; enabled: boolean; states: { state: string; count: number }[] }
 interface Hydration { messages?: { role: string; content: string; turn_id?: string }[]; turns?: { turn_id: string; state: string }[] }
 export interface TopicAnalysisProgress { pending: number; completed: number; enabled: boolean }
+export const createTopicAnalysisBridge = (identity: HistoryIdentity, origin?: string) => createUiProtocolBridge({ origin,
+  getToken: () => identity.token, getProfileId: () => identity.owner,
+  features: [...getUiProtocolFeatures(), 'session.workspace_cwd.v1'] });
+const analysisWorkspace = (value: unknown): string => {
+  if (typeof value !== 'string' || !value || value.length > 4096 || value.includes('\0')) throw new Error('Octos 未返回有效分析工作目录');
+  return value;
+};
 class AnalysisHttpError extends Error {
   readonly status: number;
   constructor(status: number) { super('知识点分析暂不可用，原始学习记录已保留'); this.status = status; }
@@ -33,7 +40,7 @@ const safeControl = (value: unknown): value is Control => {
  */
 export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   fetcher = fetch,
-  createBridge = () => createUiProtocolBridge({ getToken: () => identity.token, getProfileId: () => identity.owner }),
+  createBridge = () => createTopicAnalysisBridge(identity),
   isCurrent = () => true, canContinue = () => true,
   sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)),
   now = Date.now,
@@ -55,17 +62,18 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   const controlFor = (id: string) => controls.find(row => row.id === id)?.control;
   const connect = async (control: Control, connection: UiProtocolBridge) => {
     await connection.start({ sessionId: control.host, profileId: identity.owner });
-    await connection.callMethod('peer/prepare', { session_id: control.host, profile_id: identity.owner, names: [control.peer],
+    const prepared = await connection.callMethod<{ cwd: string }>('peer/prepare', { session_id: control.host, profile_id: identity.owner, names: [control.peer],
       brief: ANALYSIS_INSTRUCTIONS, memory_namespace: control.namespace, resume: true, host_token: control.token });
+    return analysisWorkspace(prepared.cwd);
   };
   const purge = async (id: string, control: Control, connection?: UiProtocolBridge) => {
     const own = !connection; const bridge = connection ?? createBridge();
     try {
       if (own) await bridge.start({ sessionId: control.host, profileId: identity.owner });
-      const result = await bridge.callMethod<{ purged?: boolean; already_purged?: boolean }>('peer/purge', {
+      const result = await bridge.callMethod<{ purged?: boolean; already_purged?: boolean; partial?: boolean; errors?: unknown[]; residual_errors?: unknown[] }>('peer/purge', {
         session_id: control.host, profile_id: identity.owner, peer: control.peer, host_token: control.token,
       });
-      if (!result.purged && !result.already_purged) throw new Error('分析临时资料尚未清理完成');
+      if ((!result.purged && !result.already_purged) || result.partial || result.errors?.length || result.residual_errors?.length) throw new Error('分析临时资料尚未清理完成');
       await request(`/controls/${id}`, undefined, 'DELETE');
     } finally { if (own) await bridge.stop(); }
   };
@@ -84,10 +92,18 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   const claimed = await request<{ tasks: Task[] }>('/claim', {});
   if (!claimed.tasks.length) return { pending: pendingCount(status), completed: 0, enabled: true };
   const task = claimed.tasks[0], bridge = createBridge();
-  let control = controlFor(task.id), admitted = false, resultSaved = false, toolCalls = 0, unsubscribe = () => {};
+  // A persisted execution may already have incurred a model request. Recovery
+  // failures before opening its session must never purge the only saved result.
+  let control = controlFor(task.id), admitted = Boolean(task.execution), resultSaved = false, toolCalls = 0, unsubscribe = () => {};
+  let workspace: string;
   let outcome: TopicAnalysisProgress | undefined;
   const rpc = <T,>(method: string, params: Record<string, unknown>) => bridge.callMethod<T>(method, { ...params, profile_id: identity.owner });
   const interrupt = async () => { if (control) await rpc('turn/interrupt', { session_id: control.session, turn_id: control.turn }); };
+  const rejectResult = async () => {
+    const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/reject`, { lease_id: task.lease_id });
+    if (!receipt.recorded) throw new Error('分析任务已重新领取，保留原执行等待核对');
+    resultSaved = true;
+  };
   const answerTool = async (event: PeerToolCall) => {
     if (!control || event.peer !== control.peer || event.session_id !== control.session || event.turn_id !== control.turn) return;
     let data: unknown, ok = false;
@@ -112,14 +128,15 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
       // A lost admission/result reply never authorizes another model call.
       // Re-open only the recorded execution, using its local control token.
       if (!control || control.session !== task.execution.session_id || control.turn !== task.execution.turn_id) throw new Error('旧分析结果需要核对，不自动重复调用模型');
-      await connect(control, bridge);
+      workspace = await connect(control, bridge);
     } else {
       if (control) { await purge(task.id, control); control = undefined; }
       const host = `learn-topic-${(await historySha256(identity.owner)).slice(0, 32)}`, name = `topics-${createRequestId().replaceAll('-', '')}`;
       await bridge.start({ sessionId: host, profileId: identity.owner });
       if (!canContinue()) throw new Error('课堂已开始，分析延后');
       const namespace = `app/learning-topics/${name}`;
-      const prepared = await rpc<{ slug: string; topic: string; host_token: string }>('peer/prepare', { session_id: host, names: [name], brief: ANALYSIS_INSTRUCTIONS, memory_namespace: namespace });
+      const prepared = await rpc<{ slug: string; topic: string; host_token: string; cwd: string }>('peer/prepare', { session_id: host, names: [name], brief: ANALYSIS_INSTRUCTIONS, memory_namespace: namespace });
+      workspace = analysisWorkspace(prepared.cwd);
       control = { host, peer: prepared.slug, token: prepared.host_token, namespace, turn: createRequestId(),
         session: prepared.topic.startsWith(`${host}#`) ? prepared.topic : `${host}#${prepared.topic}` };
       if (!safeControl(control)) throw new Error('Octos 未返回有效分析连接');
@@ -133,7 +150,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
     await rpc('peer/tools/register', { session_id: control.host, peer: control.peer, host_token: control.token, generic_tools: [], max_result_bytes: 65536,
       tools: [{ name: 'learning_topics.search', description: 'Look up pinned math topic definitions using English concepts or exact topic IDs.', risk: 'read', background: true,
         input_schema: { type: 'object', properties: { query: { type: 'string' }, ids: { type: 'array', items: { type: 'string' } }, limit: { type: 'integer' } }, additionalProperties: false } }] });
-    await rpc('session/open', { session_id: control.session });
+    await rpc('session/open', { session_id: control.session, cwd: workspace });
     if (!task.execution) {
       if (!canContinue()) throw new Error('课堂已开始，分析延后');
       // The execution bookmark is already durable. Treat a lost admission
@@ -156,20 +173,21 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
           && (row.turn_id === control!.turn || (!row.turn_id && singleTurn))).at(-1);
         let candidate: unknown;
         try { candidate = JSON.parse(message?.content ?? ''); }
-        catch { await request(`/jobs/${task.id}/reject`, { lease_id: task.lease_id }); resultSaved = true; throw new Error('分析未返回有效结果，保留未知'); }
+        catch { await rejectResult(); throw new Error('分析未返回有效结果，保留未知'); }
         try {
           const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/result`, { lease_id: task.lease_id, result: candidate });
           if (!receipt.recorded) throw new Error('分析来源已删除或任务已重新领取');
           resultSaved = true;
         } catch (error) {
-          if (error instanceof AnalysisHttpError && error.status === 400) { await request(`/jobs/${task.id}/reject`, { lease_id: task.lease_id }); resultSaved = true; }
+          if (error instanceof AnalysisHttpError && error.status === 400) await rejectResult();
           throw error;
         }
         const latest = await request<Status>('');
         outcome = { pending: pendingCount(latest), completed: 1, enabled: latest.enabled };
         return outcome;
       }
-      if (['errored', 'interrupted'].includes(state ?? '') || (task.execution && (!state || state === 'unknown'))) throw new Error('上次分析未完成，不自动重复调用模型');
+      if (['errored', 'interrupted'].includes(state ?? '')) { await rejectResult(); throw new Error('上次分析已结束但没有有效结果，保留未知，不自动重复调用模型'); }
+      if (task.execution && (!state || state === 'unknown')) throw new Error('上次分析未完成，不自动重复调用模型');
       if (tick % 10 === 0) await request(`/jobs/${task.id}`); // Notice deletion on another device.
       await sleep(500);
     }

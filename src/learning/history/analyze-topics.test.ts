@@ -41,7 +41,7 @@ function fixture({ disabled = false, resumed = false, invalid = false, lostRecei
     calls.push({ method, params });
     if (method === 'peer/prepare') {
       const peer = (params.names as string[])[0];
-      return { slug: peer, topic: `peer-${peer}`, host_token: 'synthetic-control' };
+      return { slug: peer, topic: `peer-${peer}`, host_token: 'synthetic-control', cwd: '/synthetic/octos/analysis-workspace' };
     }
     if (method === 'session/hydrate') return { turns: [{ turn_id: turn, state: 'completed' }, ...(extraTurn ? [{ turn_id: 'other-turn', state: 'completed' }] : [])], messages: [{ role: 'assistant', ...(untyped ? {} : { turn_id: turn }), content: invalid ? 'malformed' : JSON.stringify(result) }] };
     if (method === 'peer/purge') return { purged: true };
@@ -83,7 +83,53 @@ it('reads the original execution after a lost response without starting another 
   await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection });
   expect(f.calls.some(call => call.method === 'turn/start')).toBe(false);
   expect(f.calls.find(call => call.method === 'peer/prepare')?.params.resume).toBe(true);
+  expect(f.calls.find(call => call.method === 'session/open')?.params.cwd).toBe('/synthetic/octos/analysis-workspace');
   expect(f.calls.filter(call => call.method === 'peer/purge')).toHaveLength(1);
+});
+
+it.each(['partial', 'errors', 'residual_errors'])('retains cleanup authorization when Octos reports %s residue', async field => {
+  const f = fixture(), original = f.connection.callMethod;
+  f.connection.callMethod = async (method, params) => method === 'peer/purge' ? { already_purged: true, [field]: field === 'partial' ? true : ['residue'] } as never : original(method, params);
+  const outcome = await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection });
+  expect(outcome.pending).toBe(1);
+  // The single controls request saved the token; no DELETE was acknowledged.
+  expect(f.http.filter(path => path === `/controls/${id}`)).toHaveLength(1);
+});
+
+it.each(['errored', 'interrupted'])('settles a definitively %s execution without admitting a replacement', async state => {
+  const f = fixture({ resumed: true }), original = f.connection.callMethod;
+  f.connection.callMethod = async (method, params) => {
+    const result = await original(method, params);
+    if (method === 'session/hydrate') {
+      const page = result as { turns: { turn_id: string; state: string }[] };
+      return { ...page, turns: page.turns.map(turn => ({ ...turn, state })) } as never;
+    }
+    return result;
+  };
+  await expect(analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).rejects.toThrow('已结束但没有有效结果');
+  expect(f.http).toContain(`/jobs/${id}/reject`);
+  expect(f.calls.some(call => call.method === 'turn/start')).toBe(false);
+  expect(f.calls.some(call => call.method === 'peer/purge')).toBe(true);
+});
+
+it('retains the original execution when a stale lease cannot reject its output', async () => {
+  const f = fixture({ resumed: true, invalid: true });
+  const fetcher = async (url: string | URL | Request, options?: RequestInit) => String(url).endsWith('/reject')
+    ? Response.json({ profile_id: 'alice', recorded: false }) : f.fetcher(url, options);
+  await expect(analyzeTopics(identity, '', { fetcher, createBridge: () => f.connection })).rejects.toThrow('重新领取');
+  expect(f.calls.some(call => call.method === 'peer/purge')).toBe(false);
+});
+
+it.each(['peer/prepare', 'peer/tools/register', 'session/open'])('retains an existing execution when recovery fails at %s', async methodToFail => {
+  const f = fixture({ resumed: true }), original = f.connection.callMethod;
+  f.connection.callMethod = async (method, params) => {
+    if (method === methodToFail) throw Error('Recovery connection failed');
+    return original(method, params);
+  };
+  await expect(analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).rejects.toThrow('Recovery connection failed');
+  expect(f.calls.some(call => call.method === 'turn/start')).toBe(false);
+  expect(f.calls.some(call => call.method === 'peer/purge')).toBe(false);
+  expect(f.http).toContain(`/jobs/${id}/pause`);
 });
 
 it('accepts current Octos untyped messages only in a single-use analysis session', async () => {
