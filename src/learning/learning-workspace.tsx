@@ -1093,10 +1093,14 @@ export function LearningWorkspace({
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendErrorCode, setSendErrorCode] = useState<string | undefined>();
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
+  // A background job can be generating before there is an OLL player at all.
+  // Do not treat that first-artifact wait as idle maintenance time.
+  const historyClassroomBusy = textTurnPending || ollGenerationSessionId === sessionId
+    || hasUndeliveredOllEvents || Boolean(ollLesson?.playing);
   useEffect(() => {
-    history.coordinator?.setClassroomBusy(sessionId, textTurnPending || hasUndeliveredOllEvents || Boolean(ollLesson?.playing));
+    history.coordinator?.setClassroomBusy(sessionId, historyClassroomBusy);
     return () => history.coordinator?.setClassroomBusy(sessionId, false);
-  }, [history.coordinator, sessionId, textTurnPending, hasUndeliveredOllEvents, ollLesson?.playing]);
+  }, [history.coordinator, sessionId, historyClassroomBusy]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
