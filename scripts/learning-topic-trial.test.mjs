@@ -186,3 +186,25 @@ test('actual forwarding pins endpoint, strips account auth, preserves reservatio
     assert.equal((await request(bodyFor(input))).status, 402); assert.equal(calls, 3);
   } finally { await closeLocal(gateway.server); ledger.close(); }
 });
+
+
+test('the final seven exclude both checked questions and cannot replenish the previous five requests', () => {
+  const p = { ...plan, scope: 'final-seven-fixed-cases', limits: { ...plan.limits, tasks: 7, model_http_requests: 13, model_http_requests_per_task: 9, usd_micros: 14300000 } };
+  const selected = validateTopicTrial(p, casesBytes);
+  assert.deepEqual(selected.map(s => s.id), cases.slice(2).map(s => s.id));
+  assert.throws(() => validateTopicTrial(p, casesBytes, { execute: true }), /not authorized/);
+  for (const limits of [{ ...p.limits, model_http_requests: 18 }, { ...p.limits, usd_micros: 20000000 }, { ...p.limits, tasks: 8 }]) {
+    assert.throws(() => validateTopicTrial({ ...p, limits }, casesBytes));
+  }
+  const ledger = new TopicTrialLedger(':memory:', p);
+  try {
+    const first = inputFor(selected[0]), second = inputFor(selected[1]);
+    ledger.start(selected[0].id, first.input_sha256);
+    for (let i = 0; i < 9; i++) ledger.reserve(first.input_sha256);
+    assert.throws(() => ledger.reserve(first.input_sha256), /Task request cap reached/);
+    ledger.finish(selected[0].id); ledger.start(selected[1].id, second.input_sha256);
+    for (let i = 0; i < 4; i++) ledger.reserve(second.input_sha256);
+    assert.throws(() => ledger.reserve(second.input_sha256), /budget exhausted/);
+    assert.equal(ledger.snapshot().requests.length + 5, 18);
+  } finally { ledger.close(); }
+});
