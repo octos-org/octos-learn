@@ -1,0 +1,40 @@
+{
+  "schema": "octos.learn.remaining-topic-preparation.v1",
+  "date": "2026-10-22",
+  "status": "prepared-not-approved",
+  "sources": 8,
+  "passed_first_source_excluded": true,
+  "max_supplier_requests": 18,
+  "per_source_request_cap": 9,
+  "max_usd": 20,
+  "max_reserved_usd": 19.8,
+  "control_tests": 11,
+  "targeted_lint": "passed",
+  "independent_review": "passed",
+  "fixture": {
+    "state": "completed-needs-human-review",
+    "sources": 8,
+    "synthetic_requests": 16,
+    "real_supplier_calls": 0,
+    "playback_counts": {
+      "question_count": 0,
+      "played_runs": 2,
+      "played_beats": 2
+    }
+  },
+  "policy_sha256": "99260100ea75f0969a96337b4c840734d3040f72bb1425729c3973dc5cafd0de",
+  "evidence": [
+    {
+      "path": "/private/tmp/topic-remaining-fixture/report.json",
+      "sha256": "f1d9aad87d7f7a6994e1d6e129245e54d12f2246a27a6f8e9e46fa467fd48030"
+    },
+    {
+      "path": "/private/tmp/topic-remaining-control.log",
+      "sha256": "058009509524f2682a8c9a55b4cc1e028033177cf2564574bb8bd42b7cb8c769"
+    },
+    {
+      "path": "/private/tmp/topic-remaining-lint.log",
+      "sha256": "3551d3a21fc80862cbf8ed897fabf432b8363ea8d7f5563f937dffa624cba395"
+    }
+  ]
+}

@@ -70,6 +70,7 @@
 - [分析要求漏发修复与单项验证](personalized-teachers-phase2/TOPIC_DIAGNOSIS_EXECUTION.md)：规则漏发及重启连接已修复；获准单项 3 请求后停止。
 - [单项真实结果与后续范围](personalized-teachers-phase2/TOPIC_DIAGNOSIS_RESULT.md)：三次查询、无最终回答，已恢复配置；同题 9 请求/9.90 美元范围随后获准并完成，见下一项。
 - [同题完整验证结果](personalized-teachers-phase2/TOPIC_COMPLETION_RESULT.md)：另获授权后实际 3 次请求完成，程序与独立 agent 内容复核通过；只覆盖这一题，原路由和配置已恢复。
+- [剩余八份质量验收执行单](personalized-teachers-phase2/TOPIC_REMAINING_EXECUTION.md)：排除已通过题，共享 18 请求/20 美元；免费准备与独立复核通过，待新授权。
 
 - [第二阶段收尾审查材料](personalized-teachers-phase2/REVIEW_READINESS.md)：固定代码范围、真实 Octos 与电视验收、服务器只读核查、缺项及英文 PR 草稿；[合并前性能验收](personalized-teachers-phase2/PERFORMANCE_ACCEPTANCE_PLAN.md)包含已执行的 30 对免费首段播放对照、反向检查、原始样本及待授权的真实调用。
 
