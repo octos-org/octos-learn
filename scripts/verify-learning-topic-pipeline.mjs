@@ -22,10 +22,13 @@ const listen = async server => { await new Promise(resolve => server.listen(0, '
 let clock = Date.now();
 const openHistory = () => new HistoryStore(join(root, 'history.sqlite'), { now: () => new Date(clock).toISOString() });
 let history = openHistory();
-const snapshot = JSON.stringify([{ event: 'lesson.step', lesson_id: 'fixture', step: { id: 'step-one', beats: [{ id: 'beat-one', narration: { text: '横向增加一格时，纵向增加两格，斜率为二。' } }] } }]);
+const snapshot = JSON.stringify([{ event: 'lesson.open', lesson_id: 'fixture', lesson: {
+  variables: [{ as: 'm', initial: 0 }], tasks: [{ as: 'set-slope', prompt: '将斜率 m 调整到二。', allowed_operations: [{ kind: 'variable_change', variable: 'm' }],
+    completion: { kind: 'expression_target', expression: 'm', value: 2, tolerance: 0.01 } }] } },
+  { event: 'lesson.step', lesson_id: 'fixture', step: { id: 'step-one', beats: [{ id: 'beat-one', narration: { text: '横向增加一格时，纵向增加两格，斜率为二。' } }] } }]);
 const snapshotHash = createHash('sha256').update(snapshot).digest('hex');
 const delivery = { version: 1, id: 'delivery-one', kind: 'course_delivered', occurred_at: '2026-10-22T00:00:00.000Z', device_id: 'fixture', session_id: 'learn-topic-host', question_id: 'q1', run_id: 'run-one',
-  course: { kind: 'generated', id: 'q1', version: 'q1' }, data: { artifact: 'lesson.jsonl', status: 'partial', snapshot_sha256: snapshotHash, event_count: 1 } };
+  course: { kind: 'generated', id: 'q1', version: 'q1' }, data: { artifact: 'lesson.jsonl', status: 'partial', snapshot_sha256: snapshotHash, event_count: 2 } };
 history.append('topic-fixture', [delivery], [{ event_id: delivery.id, snapshot_json: snapshot }]);
 const requests = []; let child, vite, product;
 let input, providerError, catalogLookups = 0;
@@ -38,6 +41,7 @@ const provider = createServer(async (request, response) => {
   if (request.method !== 'POST' || !request.url.endsWith('/chat/completions')) { response.writeHead(404); response.end(); return; }
   const chunks = []; for await (const chunk of request) chunks.push(chunk);
   const body = JSON.parse(Buffer.concat(chunks)); requests.push(body);
+  assert.ok(JSON.stringify(body).includes('For each task unit'), 'Task instructions did not reach the Octos model request');
   assert.ok(requests.length <= 2, 'Unexpected extra fixture model request');
   const toolReply = body.messages.some(message => message.role === 'tool');
   let message, finish;
@@ -110,6 +114,12 @@ try {
     };
     return connection;
   };
+  const hostId = `learn-topic-${createHash('sha256').update(identity.owner).digest('hex').slice(0,32)}`;
+  const hostSetup = bridge();
+  try {
+    await hostSetup.start({ profileId: identity.owner });
+    await hostSetup.callMethod('session/open', { session_id: hostId, profile_id: identity.owner, cwd: root });
+  } finally { await hostSetup.stop(); }
   const off = await analyzeTopics(identity, productBase, { createBridge: () => { throw Error('Disabled analysis opened a connection'); } });
   assert.equal(off.enabled, false); assert.equal(requests.length, 0);
   await api('/analysis/settings', 'POST', { enabled: true, max_daily_tasks: 2 });
@@ -142,9 +152,18 @@ try {
   history.append(identity.owner, [{ ...delivery, id: 'played', kind: 'beat_completed', log_id: 'log-fixture', data: { step_id: 'step-one', beat_id: 'beat-one', presentation: 'text', delivery_sha256: snapshotHash } }]);
   const topic = await fetch(`${restartedBase}/api/learn/history/topics/mt_WBdHkc2HTf`, { headers }).then(r => r.json());
   assert.equal(topic.automatic.counts.played_runs, 1); assert.equal(topic.automatic.events.length, 1);
+  history.append(identity.owner, [{ ...delivery, id: 'task-attempt', kind: 'task_attempt', log_id: 'task-log', data: {
+    task_id: 'namespaced:set-slope', source_task_id: 'set-slope', delivery_sha256: snapshotHash, operation_id: 'student-operation', result: 'succeeded', hints_used: 1,
+  } }, { ...delivery, id: 'task-hint', kind: 'task_hint', log_id: 'task-log', data: {
+    task_id: 'namespaced:set-slope', source_task_id: 'set-slope', delivery_sha256: snapshotHash, hint_index: 1,
+  } }]);
+  const taskTopic = await fetch(`${restartedBase}/api/learn/history/topics/mt_WBdHkc2HTf`, { headers }).then(r => r.json());
+  assert.equal(taskTopic.automatic.counts.task_attempts, 1); assert.equal(taskTopic.automatic.counts.task_successes, 1);
+  assert.equal(taskTopic.automatic.counts.task_hints, 1); assert.equal(taskTopic.automatic.events.length, 3);
   const reader = bridge();
   try {
-    await reader.start({ sessionId: `learn-topic-${createHash('sha256').update(identity.owner).digest('hex').slice(0,32)}`, profileId: identity.owner });
+    await reader.start({ profileId: identity.owner });
+    await reader.callMethod('session/open', { session_id: hostId, profile_id: identity.owner, cwd: root });
     const host = await reader.callMethod('session/hydrate', { session_id: `learn-topic-${createHash('sha256').update(identity.owner).digest('hex').slice(0,32)}`, include: ['messages'] });
     assert.equal(host.messages.length, 0, 'Analysis entered the host classroom');
   } finally { await reader.stop(); }
@@ -153,6 +172,7 @@ try {
     actual_frontend_worker: true, actual_authenticated_product_api: true, actual_octos_app_peer: true, pinned_catalog_topics: 529,
     fixture_model_requests: requests.length, catalog_tool_roundtrips: catalogLookups, real_supplier_calls: 0, original_account_modified: false,
     failure_mode: mode, octos_and_sqlite_reopened: true, lost_result_receipt_and_octos_restart: mode === 'saved-receipt', unsaved_result_recovered: mode === 'before-result', cross_device_namespace_cleanup: true, exact_version_playback_count: true,
+    task_units_analyzed: input.units.filter(unit => unit.kind === 'task').length, exact_version_task_counts: true,
     classification_quality_verified: false, private_fixture_directory: root };
   await writeFile(output, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 }); console.log(JSON.stringify(report));
 } finally {
