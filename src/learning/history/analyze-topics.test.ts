@@ -159,6 +159,21 @@ it('retains the control and execution after a lost receipt; malformed output is 
   expect(invalid.calls.filter(call => call.method === 'peer/purge')).toHaveLength(1);
 });
 
+it.each(['```json\n', '```\n', '```JSON\r\n'])('accepts one whole JSON code block without another model turn (%j)', async prefix => {
+  const f = fixture(), original = f.connection.callMethod;
+  f.connection.callMethod = async (method, params) => {
+    const result = await original(method, params);
+    if (method === 'session/hydrate') {
+      const page = result as { messages: { content: string }[] };
+      page.messages[0].content = '  ' + prefix + JSON.stringify(f.result) + '\n```  ';
+    }
+    return result;
+  };
+  expect((await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).completed).toBe(1);
+  expect(f.calls.filter(call => call.method === 'turn/start')).toHaveLength(1);
+  expect(f.http).not.toContain(`/jobs/${id}/reject`);
+});
+
 it('interrupts the captured analysis when teaching starts and preserves its bookmark for reconciliation', async () => {
   const f = fixture(); const original = f.connection.callMethod;
   f.connection.callMethod = async (method, params) => {

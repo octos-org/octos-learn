@@ -1,3 +1,4 @@
+import { parseTopicAnalysisResponse } from '../../../services/learning-history/topic-analysis-response.mjs';
 import { ANALYSIS_INSTRUCTIONS, buildTopicAnalysisPrompt } from '../../../services/learning-history/topic-analysis-instructions.mjs';
 import { createRequestId } from '../../lib/request-id';
 import { createUiProtocolBridge, getUiProtocolFeatures, type UiProtocolBridge, type PeerToolCall } from '../../runtime/ui-protocol-bridge';
@@ -175,7 +176,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
         const message = page.messages?.filter(row => row.role === 'assistant'
           && (row.turn_id === control!.turn || (!row.turn_id && singleTurn))).at(-1);
         let candidate: unknown;
-        try { candidate = JSON.parse(message?.content ?? ''); }
+        try { candidate = parseTopicAnalysisResponse(message?.content ?? ''); }
         catch { await rejectResult(); throw new Error('分析未返回有效结果，保留未知'); }
         try {
           const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/result`, { lease_id: task.lease_id, result: candidate });

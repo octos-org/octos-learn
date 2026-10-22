@@ -4,6 +4,7 @@ import { HistoryStore, HistorySnapshotChanged } from "./store.mjs";
 import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { buildAnalysisInput, validateAnalysisResult, analysisHash } from "./topic-analysis.mjs";
 import { topicCatalog, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
+import { parseTopicAnalysisResponse } from "./topic-analysis-response.mjs";
 import { queryTopic } from "./topic-query.mjs";
 
 const slope = "mt_WBdHkc2HTf", plotting = "mt_-3udyo6VyB";
@@ -154,5 +155,26 @@ test("an unresolved old execution cannot starve new sources, and quota exhaustio
     clock = "2026-10-22T00:10:02.000Z";
     assert.equal(analysis.claim("alice").tasks[0].id, first.id);
     assert.equal(analysis.quotaUsed("alice"), 2);
+  } finally { store.close(); }
+});
+
+
+test("response parsing accepts only bare JSON or a complete JSON block, retaining strict evidence validation", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    const q = question("response-format"); store.append("alice", [q]);
+    const input = buildAnalysisInput(store, "alice", q.id), result = mapped(input), json = JSON.stringify(result);
+    for (const text of [json, `  ${json} \n`, "```json\n" + json + "\n```", "```\n" + json + "\n```", " ```JSON\r\n" + json + "\r\n``` "]) {
+      assert.deepEqual(validateAnalysisResult(input, parseTopicAnalysisResponse(text)), result);
+    }
+    for (const text of ["Here is the result: " + json, json + " done", "```json\n" + json, "```js\n" + json + "\n```", "```json\n{}\n```\n```json\n{}\n```", "```json\ninvalid\n```", "before\n```json\n" + json + "\n```", "```json\n" + json + "\n```\nafter"]) {
+      assert.throws(() => parseTopicAnalysisResponse(text));
+    }
+    for (const bad of [
+      { ...result, input_sha256: "0".repeat(64) },
+      { ...result, mastered: true },
+      { ...result, units: [{ ...result.units[0], topics: [{ topic_id: "invented", quote: "斜率" }] }] },
+      { ...result, units: [{ ...result.units[0], topics: [{ topic_id: slope, quote: "不存在的原文" }] }] },
+    ]) assert.throws(() => validateAnalysisResult(input, parseTopicAnalysisResponse("```json\n" + JSON.stringify(bad) + "\n```")));
   } finally { store.close(); }
 });
