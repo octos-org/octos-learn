@@ -1145,12 +1145,13 @@ export function LearningWorkspace({
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
   useEffect(() => {
-    if (historyClassroomBusy || !historyRecorder) return;
-    void learnerBackground.refresh(getToken());
+    if (historyClassroomBusy) return;
+    // Teacher settings do not depend on learning history being available.
     void Promise.resolve()
       .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
       .then((lists) => { lessonContextFields.current = lessonContextSupport(lists.flat()); })
       .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
+    if (historyRecorder) void learnerBackground.refresh(getToken());
   }, [historyClassroomBusy, historyRecorder, learnerBackground, sessionId]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
