@@ -21,8 +21,8 @@ const resultPath = process.env.PLAYABLE_BENCHMARK_RESULT;
 assert.ok(resultPath, 'Set PLAYABLE_BENCHMARK_RESULT to a NEW JSON file');
 const pairs = Number(process.env.PLAYABLE_BENCHMARK_PAIRS ?? 10);
 assert.ok(Number.isSafeInteger(pairs) && pairs > 0 && pairs <= 30);
-const conditions = (process.env.PLAYABLE_BENCHMARK_CONDITIONS ?? 'small,large,retry').split(',');
-assert.ok(conditions.length && new Set(conditions).size === conditions.length && conditions.every(c => ['small', 'large', 'retry'].includes(c)));
+const conditions = (process.env.PLAYABLE_BENCHMARK_CONDITIONS ?? 'small,large,retry,inflight').split(',');
+assert.ok(conditions.length && new Set(conditions).size === conditions.length && conditions.every(c => ['small', 'large', 'retry', 'inflight'].includes(c)));
 const hash = value => createHash('sha256').update(value).digest('hex');
 const marker = '固定斜率';
 const origin = 'https://history-benchmark.invalid';
@@ -99,7 +99,7 @@ const lesson = {
 const secondLesson = { ...lesson, steps: [...lesson.steps, { key: 'finish', purpose: '小结', beats: [{ key: 'second', actions: [
   { do: 'write', as: 'summary-card', kind: 'note', role: 'concept', content: { text: '继续观察' }, place: { relation: 'below', anchor: 'fixed-card' } },
 ] }] }] };
-report.fixture = { lesson_sha256: hash(JSON.stringify(lesson)), second_part_sha256: hash(JSON.stringify(secondLesson)), audio_sha256: hash(audio), audio_seconds: 1, part_delays_ms: [200, 900], completion_delay_ms: 1600, large_server_events: 10000, large_local_documents: 1000, retry_pending_events: 500 };
+report.fixture = { lesson_sha256: hash(JSON.stringify(lesson)), second_part_sha256: hash(JSON.stringify(secondLesson)), audio_sha256: hash(audio), audio_seconds: 1, part_delays_ms: [200, 900], completion_delay_ms: 1600, large_server_events: 10000, large_local_documents: 1000, retry_pending_events: 500, inflight_pending_events: 500, inflight_release_after_invocation_ms: 100 };
 const synthetic = n => ({ version: 1, id: `fixture-${n}`, kind: 'question_submitted', occurred_at: '2026-10-21T08:00:00.000Z', device_id: 'fixture', session_id: `fixture-board-${n % 100}`, run_id: `fixture-run-${n % 100}`, question_id: `q-${n}`, data: { text: '合成记录', modality: 'text' } });
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.woff2': 'font/woff2', '.woff': 'font/woff', '.wasm': 'application/wasm' };
 
@@ -150,7 +150,7 @@ function observeBrowser({ owner, token, marker }) {
 }
 
 async function sample(browser, artifacts, version, condition, pair) {
-  const row = { version, condition, pair, action_invocations: 0, turn_starts: 0, tts_requests: 0, history_requests: 0, failed_uploads: 0, history_failures: [], unexpected_http: [], unexpected_rpc: [], client_errors: [] };
+  const row = { version, condition, pair, action_invocations: 0, turn_starts: 0, tts_requests: 0, history_requests: 0, failed_uploads: 0, history_failures: [], history_requests_after_invocation: [], unexpected_http: [], unexpected_rpc: [], client_errors: [] };
   const directory = join(root, `${condition}-${pair}-${version}`);
   await mkdir(join(directory, 'profiles'), { recursive: true });
   const profile = { id: owner, name: 'Synthetic Learner', config: { llm: { primary: { family_id: 'google', model_id: 'gemini-2.5-flash' } }, env_vars: { GEMINI_API_KEY: 'synthetic-never-sent', OCTOS_LEARN_TTS_API_KEY: 'synthetic-no-real-key', OCTOS_LEARN_TTS_PARAMS: JSON.stringify({ provider: 'volcano', params: { auth_mode: 'api-key', resource_id: 'fixture', voice: 'fixture' } }) } } };
@@ -174,14 +174,24 @@ async function sample(browser, artifacts, version, condition, pair) {
   };
   const handler = version === 'candidate' ? createProductHandler(options)
     : (await import(pathToFileURL(join(artifacts.source, 'services/byok/server.mjs')).href)).createByokHandler(options);
+  let releaseHistory;
   const server = createServer((request, response) => {
+    const dispatch = () => {
+      void handler(request, response).then(handled => { if (!handled) { response.writeHead(404); response.end('{}'); } }).catch(error => { row.client_errors.push(`fixture-server:${error.message}`); response.writeHead(500); response.end('{}'); });
+    };
     if (request.url.startsWith('/api/learn/history/')) {
       row.history_requests++;
+      if (turnId) row.history_requests_after_invocation.push(request.url);
+      // Simulate a slow deletion-page response that was already requested
+      // before the student submits. The actual handler runs after release.
+      if (condition === 'inflight' && request.url.startsWith('/api/learn/history/changes?') && !row.inflight_history_held) {
+        row.inflight_history_held = true; releaseHistory = dispatch; return;
+      }
       if (condition === 'retry' && request.method === 'POST' && request.url.endsWith('/events')) {
         row.failed_uploads++; request.resume(); response.writeHead(503, { 'content-type': 'application/json' }); response.end('{}'); return;
       }
     }
-    void handler(request, response).then(handled => { if (!handled) { response.writeHead(404); response.end('{}'); } }).catch(error => { row.client_errors.push(`fixture-server:${error.message}`); response.writeHead(500); response.end('{}'); });
+    dispatch();
   });
   await new Promise((done, fail) => { server.once('error', fail); server.listen(0, '127.0.0.1', done); });
   const endpoint = `http://127.0.0.1:${server.address().port}`;
@@ -215,6 +225,7 @@ async function sample(browser, artifacts, version, condition, pair) {
             row.action_invocations++; assert.equal(p.action_id, 'learning.lesson.generate');
             sessionId = p.session_id; turnId = p.arguments.turn_id;
             result = { ok: true, action_id: p.action_id, queued: 1, jobs: [job('queued')] };
+            if (releaseHistory) later(100, () => { row.inflight_history_released = true; releaseHistory(); releaseHistory = undefined; });
             later(200, () => {
               if (negativeControl === 'missing-course') return;
               ready = true;
@@ -273,16 +284,20 @@ async function sample(browser, artifacts, version, condition, pair) {
       });
       const tx = db.transaction([...db.objectStoreNames], 'readwrite');
       if (condition === 'large') for (let i = 0; i < 1000; i++) tx.objectStore('documents').put({ fixture: true, text: '固定的历史检查点'.repeat(100) }, `fixture-checkpoint-${i}`);
-      if (version === 'candidate' && condition === 'retry') for (const event of pending) tx.objectStore('history-events').put({ owner, event, state: 'pending' }, [owner, event.id]);
+      if (version === 'candidate' && ['retry', 'inflight'].includes(condition)) for (const event of pending) tx.objectStore('history-events').put({ owner, event, state: 'pending' }, [owner, event.id]);
       await new Promise((done, fail) => { tx.oncomplete = done; tx.onabort = () => fail(tx.error); }); db.close();
-      return { local_documents: condition === 'large' ? 1000 : 0, queued_events: version === 'candidate' && condition === 'retry' ? pending.length : 0 };
-    }, { version, condition, owner, pending: condition === 'retry' ? Array.from({ length: 500 }, (_, i) => synthetic(i)) : [] });
+      return { local_documents: condition === 'large' ? 1000 : 0, queued_events: version === 'candidate' && ['retry', 'inflight'].includes(condition) ? pending.length : 0 };
+    }, { version, condition, owner, pending: ['retry', 'inflight'].includes(condition) ? Array.from({ length: 500 }, (_, i) => synthetic(i)) : [] });
     console.log(JSON.stringify({ stage: 'open', condition, pair, version }));
     await page.goto(origin + '/board?new-board=1');
     const input = page.getByRole('textbox', { name: '输入学习问题', exact: true });
     await input.waitFor({ state: 'visible', timeout: 30000 });
     await page.waitForFunction(() => !document.querySelector('input[aria-label="输入学习问题"]')?.disabled);
-    if (version === 'candidate' && condition === 'retry') {
+    if (version === 'candidate' && condition === 'inflight') {
+      const deadline = Date.now() + 10000;
+      while (!row.inflight_history_held && Date.now() < deadline) await new Promise(done => setTimeout(done, 25));
+      assert.ok(row.inflight_history_held, 'Initial synchronization must be in flight before submission');
+    } else if (version === 'candidate' && condition === 'retry') {
       const deadline = Date.now() + 10000;
       while (!row.failed_uploads && Date.now() < deadline) await new Promise(done => setTimeout(done, 50));
       assert.ok(row.failed_uploads, 'Retry condition must actually attempt and fail an upload before measurement');
@@ -305,6 +320,20 @@ async function sample(browser, artifacts, version, condition, pair) {
     assert.ok(Math.abs(row.audio_contexts[0].duration - 1) < 0.001, 'Only the fixed one-second fixture can qualify as first narration');
     assert.deepEqual(row.client_errors, []); assert.deepEqual(row.unexpected_rpc, []); assert.deepEqual(row.unexpected_http, []);
     assert.deepEqual(row.history_failures, []);
+    if (version === 'candidate' && condition === 'inflight') {
+      assert.equal(row.inflight_history_released, true);
+      assert.deepEqual(row.history_requests_after_invocation, [], 'Already-running maintenance must yield before another request');
+      row.pending_fixture_facts = await page.evaluate(() => new Promise((done, fail) => {
+        const request = indexedDB.open('octos-learning-documents');
+        request.onerror = () => fail(request.error);
+        request.onsuccess = () => {
+          const db = request.result, tx = db.transaction('history-events'), read = tx.objectStore('history-events').getAll();
+          tx.oncomplete = () => { db.close(); done(read.result.filter(r => r.event.id.startsWith('fixture-') && r.state === 'pending').length); };
+          tx.onabort = () => fail(tx.error);
+        };
+      }));
+      assert.equal(row.pending_fixture_facts, 500, 'Yielding must retain every unsent original fact');
+    }
     row.state = 'completed';
     return row;
   } catch (error) {
@@ -340,8 +369,8 @@ try {
     const delta = versions.candidate.playable_ms.p50 - versions.baseline.playable_ms.p50;
     return [condition, { ...versions, p50_difference_ms: delta, paired_delta_p50_ms: percentile(deltas, .5), paired_delta_p95_ms: percentile(deltas, .95), candidate_faster_pairs: deltas.filter(d => d < 0).length, observed_p50_relation: delta > 0 ? 'candidate higher' : 'candidate no higher', conclusion: 'Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established.' }];
   }));
-  report.status = 'completed'; report.full_planned_matrix = pairs === 10 && conditions.length === 3;
-  report.merge_performance_requirement = 'not established by fixed-response fixtures alone';
+  report.status = 'completed'; report.full_planned_matrix = pairs === 10 && conditions.length === 4;
+  report.merge_performance_requirement = 'Measurement data only; assess alongside changed call paths and load coverage. A paid supplier run is not mandatory.';
   report.completed_at = new Date().toISOString(); await save();
   console.log(JSON.stringify({ status: report.status, summary: report.summary, result: resultPath }));
 } catch (error) { report.status = 'failed'; report.error = error.message; await save(); throw error; }
