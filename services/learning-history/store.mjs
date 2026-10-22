@@ -4,6 +4,7 @@ import { mkdirSync, chmodSync } from "node:fs";
 import { dirname } from "node:path";
 import { canonicalHistoryJson, historyCourseKey, validateHistoryEvent, HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mjs";
 import { validateCourseMaterial } from "./course-material.mjs";
+import { createAnalysisSchema, enqueueAnalysis, deleteAnalysisRun } from "./topic-analysis-store.mjs";
 
 export class HistorySnapshotChanged extends Error {}
 export class HistoryStore {
@@ -20,7 +21,7 @@ export class HistoryStore {
       CREATE TABLE IF NOT EXISTS history_schema(version INTEGER PRIMARY KEY);
     `);
     const versions = this.db.prepare("SELECT version FROM history_schema").all();
-    if (versions.length > 1 || versions.some(row => ![1, 2, 3, 4].includes(row.version))) throw new Error("Unsupported history database version");
+    if (versions.length > 1 || versions.some(row => ![1, 2, 3, 4, 5].includes(row.version))) throw new Error("Unsupported history database version");
     const version = versions[0]?.version ?? 1;
     this.db.exec(`
       BEGIN IMMEDIATE;
@@ -80,9 +81,11 @@ export class HistoryStore {
         PRIMARY KEY(owner,event_id)
       );
       CREATE INDEX IF NOT EXISTS materials_owner_run ON course_materials(owner,run_id);
-      UPDATE history_schema SET version=4;
-      COMMIT;
+      ${version < 5 ? "ALTER TABLE events ADD COLUMN delivery_digest TEXT;" : ""}
+      CREATE INDEX IF NOT EXISTS events_owner_delivery ON events(owner,delivery_digest,kind,seq);
     `);
+    createAnalysisSchema(this.db);
+    this.db.exec("UPDATE history_schema SET version=5; COMMIT;");
     } catch (error) { this.db.close(); throw error; }
   }
 
@@ -117,6 +120,7 @@ export class HistoryStore {
         this.db.prepare("INSERT OR IGNORE INTO course_materials(owner,event_id,run_id,sha256,snapshot_json) VALUES(?,?,?,?,?)")
           .run(owner, event.id, event.run_id, material.sha256, material.snapshot_json);
       }
+      for (const receipt of results) if (["accepted", "exists"].includes(receipt.status)) enqueueAnalysis(this, owner, receipt.id);
       this.db.exec("COMMIT");
       return { results, through: this.upperBound(owner) };
     } catch (error) { this.db.exec("ROLLBACK"); throw error; }
@@ -163,6 +167,7 @@ export class HistoryStore {
         event.data.beat_id ?? null, event.data.task_id ?? null, event.data.operation_id ?? null);
     this.db.prepare("INSERT INTO receipts(owner,event_id,fingerprint,run_id,seq,operation_key) VALUES(?,?,?,?,?,?)")
       .run(owner, event.id, fingerprint, event.run_id, seq, operationKey);
+    if (event.data.delivery_sha256) this.db.prepare("UPDATE events SET delivery_digest=? WHERE seq=?").run(event.data.delivery_sha256, seq);
     if (["question_submitted", "question_routed", "answer_delivered"].includes(event.kind)) this.stageDeliveries(owner, event);
     return { id: event.id, status: "accepted", seq };
   }
@@ -278,6 +283,7 @@ export class HistoryStore {
           this.db.prepare("UPDATE receipts SET deleted=1 WHERE owner=? AND run_id=?").run(owner, run);
           this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, run);
           this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, run);
+          deleteAnalysisRun(this.db, owner, run);
         }
         this.db.prepare("DELETE FROM events WHERE owner=? AND session_id=?").run(owner, sessionId);
       } else if (deleteOctos && prior.state === "not_requested") {
@@ -320,6 +326,7 @@ export class HistoryStore {
         this.db.prepare("UPDATE receipts SET deleted=1 WHERE owner=? AND run_id=?").run(owner, runId);
         this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, runId);
         this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, runId);
+        deleteAnalysisRun(this.db, owner, runId);
       }
       this.db.exec("COMMIT");
       return { run_id: runId, seq: prior.seq, status: "deleted" };

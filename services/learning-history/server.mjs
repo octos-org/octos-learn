@@ -1,9 +1,12 @@
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import { HistoryStore, HistorySnapshotChanged } from "./store.mjs";
 import { HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mjs";
 
 import { queryTopic, queryRunCoverage } from "./topic-query.mjs";
+import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
+import { topicCatalog } from "./topic-catalog.mjs";
+import { AnalysisControlStore } from "./analysis-control.mjs";
 
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -26,10 +29,11 @@ function integer(search, name, fallback, max = Number.MAX_SAFE_INTEGER) {
   return value;
 }
 
-export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), fetchImpl = fetch, store: suppliedStore } = {}) {
+export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore } = {}) {
   const base = new URL(octosBaseUrl).origin;
   let storage = suppliedStore;
   const store = () => storage ??= new HistoryStore(databasePath);
+  const controls = new AnalysisControlStore(analysisControlDirectory);
   const handle = async (request, response) => {
     const url = new URL(request.url, "http://local");
     if (url.pathname !== PREFIX && !url.pathname.startsWith(`${PREFIX}/`)) return false;
@@ -59,7 +63,66 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       const expectedOwner = request.headers["x-learning-owner"];
       if (expectedOwner !== undefined && expectedOwner !== owner) throw new HttpError(409, "Learning record account changed; keep the original local queue");
       const path = url.pathname.slice(PREFIX.length).split("/").filter(Boolean).map(decodeURIComponent);
-      if (request.method === "POST" && path.length === 1 && path[0] === "events") {
+      if (path[0] === "analysis") {
+        const analysis = new TopicAnalysisStore(store());
+        const post = async (allowed, max = 2048) => {
+          if (url.search || request.method !== "POST") throw new HttpError(400, "Invalid analysis request");
+          const body = await limitedJson(request, max);
+          if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => !allowed.includes(key))) throw new HttpError(400, "Invalid analysis fields");
+          return body;
+        };
+        let result;
+        if (request.method === "GET" && path.length === 1 && !url.search) result = analysis.status(owner);
+        else if (path.length === 2 && path[1] === "controls" && request.method === "GET" && !url.search) result = { controls: await controls.list(owner) };
+        else if (path.length === 3 && path[1] === "controls" && /^[a-f0-9]{64}$/.test(path[2])) {
+          if (request.method === "DELETE" && !url.search) { await controls.remove(owner, path[2]); result = { removed: true }; }
+          else {
+            const body = await post(["lease_id", "control"], 8192);
+            const job = store().db.prepare("SELECT id FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=?").get(owner, path[2], body.lease_id);
+            if (!job) throw new HttpError(409, "Analysis lease changed");
+            await controls.put(owner, path[2], body.control); result = { recorded: true };
+          }
+        }
+        else if (path.length === 2 && path[1] === "settings") result = analysis.configure(owner, await post(["enabled", "max_daily_tasks"]));
+        else if (path.length === 2 && path[1] === "seed") {
+          const body = await post(["after"]);
+          if (!Number.isSafeInteger(body.after) || body.after < 0) throw new HttpError(400, "Invalid analysis cursor");
+          result = analysis.seed(owner, body.after);
+        } else if (path.length === 2 && path[1] === "claim") { await post([]); result = analysis.claim(owner); }
+        else if (path.length === 2 && path[1] === "reanalyze") {
+          const body = await post(["event_id"]);
+          if (typeof body.event_id !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(body.event_id)) throw new HttpError(400, "Invalid source event");
+          result = analysis.reanalyze(owner, body.event_id);
+        } else if (path.length === 2 && path[1] === "catalog" && request.method === "GET") {
+          if ([...url.searchParams.keys()].some(key => !["query", "ids", "limit"].includes(key)) || url.searchParams.getAll("query").length > 1 || url.searchParams.getAll("ids").length > 1
+            || url.searchParams.has("query") === url.searchParams.has("ids")) throw new HttpError(400, "Choose one catalog query");
+          const catalog = topicCatalog(), limit = integer(url.searchParams, "limit", 8, 12);
+          if (!limit) throw new HttpError(400, "Invalid catalog limit");
+          const ids = url.searchParams.get("ids")?.split(",");
+          if (ids && (ids.length > 12 || ids.some(id => !/^mt_[A-Za-z0-9_-]+$/.test(id)))) throw new HttpError(400, "Invalid topic identifiers");
+          const query = url.searchParams.get("query");
+          if (query !== null && query.length > 256) throw new HttpError(400, "Catalog query too long");
+          result = { taxonomy: catalog.metadata, topics: ids ? catalog.read(ids) : catalog.search(query, limit) };
+        } else if (path.length === 3 && path[1] === "results" && request.method === "GET" && /^\d+$/.test(path[2]) && !url.search) {
+          const row = store().db.prepare(`SELECT r.seq,r.source_event_id,r.result_json,j.octos_session_id,j.octos_turn_id,j.input_sha256,j.revision FROM topic_analysis_results r
+            JOIN topic_analysis_jobs j ON j.owner=r.owner AND j.id=r.job_id WHERE r.owner=? AND r.seq=?`).get(owner, Number(path[2]));
+          if (!row) throw new HttpError(404, "Analysis result unavailable");
+          const { result_json, ...metadata } = row; result = { ...metadata, result: JSON.parse(result_json) };
+        } else if (path.length === 3 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2]) && request.method === "GET" && !url.search) {
+          const job = store().db.prepare("SELECT id,state,source_event_id FROM topic_analysis_jobs WHERE owner=? AND id=?").get(owner, path[2]);
+          if (!job) throw new HttpError(404, "Analysis task unavailable");
+          result = { job };
+        } else if (path.length === 4 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2])) {
+          const body = await post(["lease_id", "execution", "result"], 1024 * 1024);
+          if (typeof body.lease_id !== "string" || !/^[a-f0-9-]{36}$/.test(body.lease_id)) throw new HttpError(400, "Invalid analysis lease");
+          if (path[3] === "execution" && Object.keys(body).every(key => ["lease_id", "execution"].includes(key))) result = analysis.execution(owner, path[2], body.lease_id, body.execution);
+          else if (path[3] === "result" && Object.keys(body).every(key => ["lease_id", "result"].includes(key))) result = analysis.complete(owner, path[2], body.lease_id, body.result);
+          else if (path[3] === "pause" && Object.keys(body).length === 1) result = analysis.pause(owner, path[2], body.lease_id);
+          else if (path[3] === "reject" && Object.keys(body).length === 1) result = analysis.reject(owner, path[2], body.lease_id);
+          else throw new HttpError(400, "Invalid analysis operation");
+        } else throw new HttpError(404, "Unknown analysis endpoint");
+        send(200, { profile_id: owner, ...result });
+      } else if (request.method === "POST" && path.length === 1 && path[0] === "events") {
         if (url.search) throw new HttpError(400, "Unexpected query");
         const body = await limitedJson(request, 8 * 1024 * 1024);
         if (!body || Object.keys(body).some(key => !["events", "materials"].includes(key)) || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT
@@ -87,10 +150,11 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         send(200, { profile_id: owner, states: store().deliveryStatus(owner), probe_session_id: store().deliveryProbeSession(owner), pending_session_deletions: store().pendingSessionDeletions(owner) });
       } else if (request.method === "GET" && ((path[0] === "topics" && path.length === 2) || (path[0] === "runs" && path.length === 3 && path[2] === "coverage"))) {
         if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) throw new HttpError(400, "Invalid record identifier");
-        if ([...url.searchParams.keys()].some(key => !(path[0] === "topics" ? ["limit", "through", "after", "from", "until"] : ["through"]).includes(key))) throw new HttpError(400, "Unknown query field");
+        if ([...url.searchParams.keys()].some(key => !(path[0] === "topics" ? ["limit", "through", "analysis_through", "after", "from", "until"] : ["through"]).includes(key))) throw new HttpError(400, "Unknown query field");
         const options = { limit: integer(url.searchParams, "limit", 50, 100), after: integer(url.searchParams, "after", 0),
           through: Math.min(integer(url.searchParams, "through", store().upperBound(owner)), store().upperBound(owner)) };
         if (!options.limit) throw new HttpError(400, "Invalid limit");
+        if (path[0] === "topics" && url.searchParams.has("analysis_through")) options.analysis_through = integer(url.searchParams, "analysis_through", 0);
         for (const field of ["from", "until"]) {
           const values = url.searchParams.getAll(field);
           if (values.length > 1 || (values.length && (!Number.isFinite(Date.parse(values[0])) || new Date(values[0]).toISOString() !== values[0]))) throw new HttpError(400, "Use one UTC ISO timestamp per time boundary");

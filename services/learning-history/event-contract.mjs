@@ -83,9 +83,10 @@ export function validateHistoryEvent(candidate) {
       for (const key of ["step_id", "beat_id"]) if (d[key] !== undefined) text(d[key], key, 256);
       break;
     case "beat_completed":
-      run(true); fields(d, ["step_id", "beat_id", "presentation"], ["step_id", "beat_id", "presentation"]);
+      run(true); fields(d, ["step_id", "beat_id", "presentation", "delivery_sha256"], ["step_id", "beat_id", "presentation"]);
       text(d.step_id, "step_id", 256); text(d.beat_id, "beat_id", 256);
       choice(d.presentation, "presentation", ["audio", "text"]);
+      if (d.delivery_sha256 !== undefined && !/^[a-f0-9]{64}$/.test(d.delivery_sha256)) fail("Invalid playback delivery digest");
       break;
     case "narration_ended":
       run(true); fields(d, ["beat_id", "reason"], ["beat_id", "reason"]);

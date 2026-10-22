@@ -1,5 +1,7 @@
 import { historyCourseKey } from "./event-contract.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
+import { queryAutomaticTopic, automaticTopicsForRun } from "./automatic-topic-query.mjs";
+import { topicCatalog } from "./topic-catalog.mjs";
 
 export const COUNTING_RULE = "observed-beats-and-task-operations-v1";
 const metadata = map => ({ mapping_id: map.id, status: map.status, course: map.course, taxonomy: map.taxonomy });
@@ -40,23 +42,25 @@ export function queryTopic(store, owner, topicId, options = {}, mappings = TOPIC
       .all(owner, options.after ?? 0, range.through, range.from, range.until, ...conditions.flatMap(item => item.args), (options.limit ?? 50) + 1);
   }
   const page = events.slice(0, options.limit ?? 50);
+  const automatic = queryAutomaticTopic(store, owner, topicId, { ...options, ...range });
   return { topic_id: topicId, counting_rule: COUNTING_RULE, ...range,
     status: !candidates.length ? "unmapped" : active.length ? "available" : "pending-review",
-    question_association: "not-recorded", objectives,
+    question_association: automatic.coverage.analyzed_questions ? "from-associated-records" : "not-recorded", objectives, automatic,
     events: page.map(row => ({ seq: row.seq, event: JSON.parse(row.body) })),
     next_after: events.length > page.length ? page.at(-1).seq : null };
 }
 
 export function queryRunCoverage(store, owner, runId, options = {}, mappings = TOPIC_MAPPINGS) {
   const range = bounds(store, owner, options); store.checkSnapshot(owner, range.through);
+  const automaticTopics = topicCatalog().read(automaticTopicsForRun(store, owner, runId, range.through)).map(topic => ({ topic_id: topic.id, title: topic.name }));
   const course = store.db.prepare("SELECT course_key,course_digest FROM events WHERE owner=? AND run_id=? AND seq<=? AND course_key IS NOT NULL LIMIT 1").get(owner, runId, range.through);
   const map = course && mappings.find(item => historyCourseKey(item.course) === course.course_key && item.course.sha256 === course.course_digest);
-  if (!map) return { run_id: runId, through: range.through, status: "unmapped", counting_rule: COUNTING_RULE, objectives: [], course_playback: null };
+  if (!map) return { run_id: runId, through: range.through, status: "unmapped", counting_rule: COUNTING_RULE, objectives: [], course_playback: null, automatic_topics: automaticTopics };
   const approved = map.status === "approved";
   const played = approved ? store.db.prepare(`SELECT COUNT(DISTINCT beat_id) AS n FROM events WHERE owner=? AND run_id=? AND seq<=?
     AND course_key=? AND course_digest=? AND kind='beat_completed' AND beat_id IN (SELECT value FROM json_each(?))`)
     .get(owner, runId, range.through, course.course_key, course.course_digest, JSON.stringify(map.required_beats)).n : null;
-  return { run_id: runId, through: range.through, ...metadata(map), counting_rule: COUNTING_RULE,
+  return { run_id: runId, through: range.through, ...metadata(map), counting_rule: COUNTING_RULE, automatic_topics: automaticTopics,
     course_playback: approved ? { required_beats: map.required_beats.length, played_beats: played, complete: played === map.required_beats.length } : null,
     objectives: map.objectives.map(objective => ({ topic_id: objective.topic_id, objective_key: objective.key, title: objective.title,
       counts: approved ? counts(store, owner, map, objective, { ...range, runId }) : null })) };

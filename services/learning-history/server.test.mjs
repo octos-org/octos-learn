@@ -27,6 +27,39 @@ beforeEach(async () => {
 });
 afterEach(async () => { await new Promise(resolve => server.close(resolve)); handler.close(); await rm(root, { recursive: true, force: true }); });
 
+test("analysis HTTP operations require the authenticated owner and current task; source deletion leaves cleanup authorization only", async () => {
+  await call("/events", "POST", { events: [event("analysis-question")] });
+  assert.equal((await (await call("/analysis")).json()).enabled, false);
+  assert.deepEqual((await (await call("/analysis/claim", "POST", {})).json()).tasks, []);
+  assert.equal((await call("/analysis/settings", "POST", { enabled: true, max_daily_tasks: 0 })).status, 400);
+  assert.equal((await call("/analysis/settings", "POST", { enabled: true, max_daily_tasks: 1, owner: "bob" })).status, 400);
+  await call("/analysis/settings", "POST", { enabled: true, max_daily_tasks: 1 });
+  const task = (await (await call("/analysis/claim", "POST", {})).json()).tasks[0];
+  const control = { host: `learn-topic-${"b".repeat(32)}`, peer: "topics-http", session: `learn-topic-${"b".repeat(32)}#peer-topics-http`,
+    token: "synthetic-host-capability", namespace: "app/learning-topics/topics-http", turn: "12345678-1234-4234-8234-123456789abc" };
+  const path = `/analysis/controls/${task.id}`;
+  assert.equal((await call(path, "POST", { lease_id: task.lease_id, control }, { authorization: "Bearer bob" })).status, 409);
+  assert.equal((await call(path, "POST", { lease_id: "stale", control })).status, 409);
+  assert.equal((await call(path, "POST", { lease_id: task.lease_id, control })).status, 200);
+  const execution = { session_id: control.session, turn_id: control.turn };
+  await call(`/analysis/jobs/${task.id}/execution`, "POST", { lease_id: task.lease_id, execution });
+  const result = { schema: 1, input_sha256: task.input.input_sha256, units: [{ unit_id: "question", status: "mapped", topics: [{ topic_id: "mt_WBdHkc2HTf", quote: "斜率" }], reason: "HTTP fixture" }] };
+  assert.equal((await call(`/analysis/jobs/${task.id}/result`, "POST", { lease_id: task.lease_id, result: { ...result, mastered: true } })).status, 400);
+  assert.equal((await call(`/analysis/jobs/${task.id}/result`, "POST", { lease_id: task.lease_id, result })).status, 200);
+  assert.equal((await call("/analysis/results/1", "GET", undefined, { authorization: "Bearer bob" })).status, 404);
+  assert.equal((await (await call("/analysis/results/1")).json()).result.units[0].status, "mapped");
+  assert.deepEqual((await (await call("/analysis/controls", "GET", undefined, { authorization: "Bearer bob" })).json()).controls, []);
+  assert.equal((await call("/analysis/catalog?query=slope&ids=mt_WBdHkc2HTf")).status, 400);
+  assert.equal((await call("/analysis/catalog?query=slope&limit=100")).status, 400);
+  assert.equal((await (await call("/analysis/catalog?ids=mt_WBdHkc2HTf")).json()).topics[0].name, "Linear Function Graphs");
+  await call("/runs/run-one", "DELETE");
+  assert.equal((await call(`/analysis/jobs/${task.id}`)).status, 404);
+  assert.equal((await call("/analysis/results/1")).status, 404);
+  assert.equal((await (await call("/analysis/controls")).json()).controls.length, 1);
+  await call(path, "DELETE");
+  assert.deepEqual((await (await call("/analysis/controls")).json()).controls, []);
+});
+
 test("course bytes require their exact delivery and the authenticated owner, and disappear on deletion", async () => {
   const snapshot = JSON.stringify([{ event: "lesson.open", lesson_id: "one" }]);
   const delivered = { ...event("course"), kind: "course_delivered", course: { kind: "generated", id: "q-course", version: "q-course" },
