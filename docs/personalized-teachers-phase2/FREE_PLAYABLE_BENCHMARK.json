@@ -1,0 +1,2834 @@
+{
+  "started_at": "2026-10-22T04:42:08.728Z",
+  "baseline": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+  "candidate": "20e6a458a928197cce9e9e60077830bbb4518721",
+  "builds": "/private/tmp/octos-playable-builds-20e6a45",
+  "scope": "Full production frontends with fixed progressive course and real Web Audio rendering; isolated account/database; protocol and suppliers replaced. Not a real-provider speed verdict.",
+  "model_calls": 0,
+  "real_supplier_calls": 0,
+  "normal_environment_changed": false,
+  "collector_sha256": "ba9902c03c90f7076f4e2ea0c0bec2365069d75e0057b0d55dac8f93f9798dc7",
+  "clock": "Browser performance.now; visual after two animation frames; audio after nonzero matching-buffer samples are observed in a running AudioContext",
+  "pairs_per_condition": 10,
+  "conditions": [
+    "small",
+    "large",
+    "retry"
+  ],
+  "rows": [
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.5999999940395,
+      "audio_ms": 346.80000001192093,
+      "playable_ms": 613.5999999940395,
+      "audio_observation_interval_ms": [
+        330.80000001192093,
+        346.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.09999999403954,
+          "response_end_ms": 216.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.1999999880791,
+      "audio_ms": 330.2999999821186,
+      "playable_ms": 613.1999999880791,
+      "audio_observation_interval_ms": [
+        324.59999999403954,
+        330.2999999821186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.19999998807907,
+          "response_end_ms": 215
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.5,
+      "audio_ms": 330.7000000178814,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        325.2000000178814,
+        330.7000000178814
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.80000001192093,
+          "response_end_ms": 216.7000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.8000000119209,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.8000000119209,
+      "audio_observation_interval_ms": [
+        324.09999999403954,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214,
+          "response_end_ms": 214.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        324.90000000596046,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.69999998807907,
+          "response_end_ms": 217.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.2000000178814,
+      "audio_ms": 330.30000001192093,
+      "playable_ms": 613.2000000178814,
+      "audio_observation_interval_ms": [
+        325.59999999403954,
+        330.30000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.2000000178814,
+          "response_end_ms": 215.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.4000000059605,
+      "audio_ms": 330.5,
+      "playable_ms": 613.4000000059605,
+      "audio_observation_interval_ms": [
+        326.09999999403954,
+        330.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.59999999403954,
+          "response_end_ms": 216.2999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.5,
+      "audio_ms": 330.80000001192093,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        323.90000000596046,
+        330.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.5,
+          "response_end_ms": 214.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.5999999940395,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.5999999940395,
+      "audio_observation_interval_ms": [
+        322.7000000178814,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214,
+          "response_end_ms": 214.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.5999999940395,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.5999999940395,
+      "audio_observation_interval_ms": [
+        322.7000000178814,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.40000000596046,
+          "response_end_ms": 215.2000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 597.6999999880791,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 597.6999999880791,
+      "audio_observation_interval_ms": [
+        325.69999998807907,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.5,
+          "response_end_ms": 216.19999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 597,
+      "audio_ms": 330.7999999821186,
+      "playable_ms": 597,
+      "audio_observation_interval_ms": [
+        323.90000000596046,
+        330.7999999821186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.09999999403954,
+          "response_end_ms": 215.7999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.5,
+      "audio_ms": 330.69999998807907,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        321.2999999821186,
+        330.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.89999997615814,
+          "response_end_ms": 214.69999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 330.7999999821186,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        326.19999998807907,
+        330.7999999821186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.7999999821186,
+          "response_end_ms": 216.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.1999999880791,
+      "audio_ms": 330.39999997615814,
+      "playable_ms": 613.1999999880791,
+      "audio_observation_interval_ms": [
+        325.89999997615814,
+        330.39999997615814
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.2999999821186,
+          "response_end_ms": 216.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.5999999940395,
+      "audio_ms": 330.69999998807907,
+      "playable_ms": 613.5999999940395,
+      "audio_observation_interval_ms": [
+        321.30000001192093,
+        330.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.90000000596046,
+          "response_end_ms": 215.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 608.5,
+      "audio_ms": 341.90000000596046,
+      "playable_ms": 608.5,
+      "audio_observation_interval_ms": [
+        325.80000001192093,
+        341.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.90000000596046,
+          "response_end_ms": 214.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 346.89999997615814,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        330.69999998807907,
+        346.89999997615814
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.5,
+          "response_end_ms": 216.2999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 614.4000000059605,
+      "audio_ms": 331.5,
+      "playable_ms": 614.4000000059605,
+      "audio_observation_interval_ms": [
+        324.59999999403954,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.69999998807907,
+          "response_end_ms": 215.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.9000000059605,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.9000000059605,
+      "audio_observation_interval_ms": [
+        325.09999999403954,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.2000000178814,
+          "response_end_ms": 216.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.4000000059605,
+      "audio_ms": 329.19999998807907,
+      "playable_ms": 613.4000000059605,
+      "audio_observation_interval_ms": [
+        322,
+        329.19999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.09999999403954,
+          "response_end_ms": 215.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.7999999821186,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 613.7999999821186,
+      "audio_observation_interval_ms": [
+        321.89999997615814,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215,
+          "response_end_ms": 215.69999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.90000000596046,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        321.40000000596046,
+        331.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.2000000178814,
+          "response_end_ms": 212.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.1999999880791,
+      "audio_ms": 330.40000000596046,
+      "playable_ms": 613.1999999880791,
+      "audio_observation_interval_ms": [
+        325.69999998807907,
+        330.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.09999999403954,
+          "response_end_ms": 216
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.7000000178814,
+      "audio_ms": 330.80000001192093,
+      "playable_ms": 613.7000000178814,
+      "audio_observation_interval_ms": [
+        325.2000000178814,
+        330.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.59999999403954,
+          "response_end_ms": 216.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.2000000178814,
+      "audio_ms": 330.30000001192093,
+      "playable_ms": 613.2000000178814,
+      "audio_observation_interval_ms": [
+        326,
+        330.30000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.30000001192093,
+          "response_end_ms": 216.10000002384186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 596.7000000178814,
+      "audio_ms": 330.60000002384186,
+      "playable_ms": 596.7000000178814,
+      "audio_observation_interval_ms": [
+        324.2000000178814,
+        330.60000002384186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.60000002384186,
+          "response_end_ms": 215.30000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 604.0999999940395,
+      "audio_ms": 337.80000001192093,
+      "playable_ms": 604.0999999940395,
+      "audio_observation_interval_ms": [
+        322.09999999403954,
+        337.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215,
+          "response_end_ms": 215.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.9000000059605,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.9000000059605,
+      "audio_observation_interval_ms": [
+        325.09999999403954,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.7000000178814,
+          "response_end_ms": 216.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.6000000238419,
+      "audio_ms": 330.7000000178814,
+      "playable_ms": 613.6000000238419,
+      "audio_observation_interval_ms": [
+        325.10000002384186,
+        330.7000000178814
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.60000002384186,
+          "response_end_ms": 213.30000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 614.9000000059605,
+      "audio_ms": 332.19999998807907,
+      "playable_ms": 614.9000000059605,
+      "audio_observation_interval_ms": [
+        326.59999999403954,
+        332.19999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.2999999821186,
+          "response_end_ms": 217.19999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 608.2999999821186,
+      "audio_ms": 340.90000000596046,
+      "playable_ms": 608.2999999821186,
+      "audio_observation_interval_ms": [
+        326.2999999821186,
+        340.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 217,
+          "response_end_ms": 218.19999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 331,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        325,
+        331
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.09999999403954,
+          "response_end_ms": 216
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        325.09999999403954,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.30000001192093,
+          "response_end_ms": 217.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 613.5,
+      "audio_ms": 330.7000000178814,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        323.80000001192093,
+        330.7000000178814
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.59999999403954,
+          "response_end_ms": 215.2000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 597.0999999940395,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 597.0999999940395,
+      "audio_observation_interval_ms": [
+        325.2000000178814,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216,
+          "response_end_ms": 216.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 609.6999999880791,
+      "audio_ms": 343.59999999403954,
+      "playable_ms": 609.6999999880791,
+      "audio_observation_interval_ms": [
+        330.09999999403954,
+        343.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 217.40000000596046,
+          "response_end_ms": 218.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 596.6000000238419,
+      "audio_ms": 330.40000000596046,
+      "playable_ms": 596.6000000238419,
+      "audio_observation_interval_ms": [
+        323.5,
+        330.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.60000002384186,
+          "response_end_ms": 214.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 101,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 597.0999999940395,
+      "audio_ms": 331,
+      "playable_ms": 597.0999999940395,
+      "audio_observation_interval_ms": [
+        320.59999999403954,
+        331
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.39999997615814,
+          "response_end_ms": 215.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        326,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.2999999821186,
+          "response_end_ms": 217
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.8000000119209,
+      "audio_ms": 330.80000001192093,
+      "playable_ms": 613.8000000119209,
+      "audio_observation_interval_ms": [
+        322.40000000596046,
+        330.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215,
+          "response_end_ms": 215.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.3000000119209,
+      "audio_ms": 328.60000002384186,
+      "playable_ms": 613.3000000119209,
+      "audio_observation_interval_ms": [
+        327.30000001192093,
+        328.60000002384186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.30000001192093,
+          "response_end_ms": 217
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 614,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 614,
+      "audio_observation_interval_ms": [
+        322.59999999403954,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.19999998807907,
+          "response_end_ms": 214.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 617.8000000119209,
+      "audio_ms": 334.90000000596046,
+      "playable_ms": 617.8000000119209,
+      "audio_observation_interval_ms": [
+        328.10000002384186,
+        334.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 216.80000001192093,
+          "response_end_ms": 217.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.6999999880791,
+      "audio_ms": 330.7999999821186,
+      "playable_ms": 613.6999999880791,
+      "audio_observation_interval_ms": [
+        325,
+        330.7999999821186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.19999998807907,
+          "response_end_ms": 215.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 596.5999999940395,
+      "audio_ms": 330.5,
+      "playable_ms": 596.5999999940395,
+      "audio_observation_interval_ms": [
+        323.40000000596046,
+        330.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.90000000596046,
+          "response_end_ms": 215.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.9000000059605,
+      "audio_ms": 331,
+      "playable_ms": 613.9000000059605,
+      "audio_observation_interval_ms": [
+        324.90000000596046,
+        331
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.7000000178814,
+          "response_end_ms": 214.60000002384186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 613.7999999821186,
+      "audio_ms": 331,
+      "playable_ms": 613.7999999821186,
+      "audio_observation_interval_ms": [
+        324.09999999403954,
+        331
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.19999998807907,
+          "response_end_ms": 215.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 604.0999999940395,
+      "audio_ms": 338,
+      "playable_ms": 604.0999999940395,
+      "audio_observation_interval_ms": [
+        326.09999999403954,
+        338
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 217.30000001192093,
+          "response_end_ms": 218
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.3000000119209,
+      "audio_ms": 330.40000000596046,
+      "playable_ms": 613.3000000119209,
+      "audio_observation_interval_ms": [
+        326,
+        330.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215,
+          "response_end_ms": 215.7000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.5,
+      "audio_ms": 330.69999998807907,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        321.19999998807907,
+        330.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.59999999403954,
+          "response_end_ms": 214.2999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 606.9000000059605,
+      "audio_ms": 340.5,
+      "playable_ms": 606.9000000059605,
+      "audio_observation_interval_ms": [
+        327.60000002384186,
+        340.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.5,
+          "response_end_ms": 216.2000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 596.5,
+      "audio_ms": 328.80000001192093,
+      "playable_ms": 596.5,
+      "audio_observation_interval_ms": [
+        318.59999999403954,
+        328.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.40000000596046,
+          "response_end_ms": 213.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.2000000178814,
+      "audio_ms": 330.30000001192093,
+      "playable_ms": 613.2000000178814,
+      "audio_observation_interval_ms": [
+        324.90000000596046,
+        330.30000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215,
+          "response_end_ms": 215.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.5,
+      "audio_ms": 330.80000001192093,
+      "playable_ms": 613.5,
+      "audio_observation_interval_ms": [
+        324.5,
+        330.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.2000000178814,
+          "response_end_ms": 216.10000002384186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 622.2999999821186,
+      "audio_ms": 338.7999999821186,
+      "playable_ms": 622.2999999821186,
+      "audio_observation_interval_ms": [
+        332.40000000596046,
+        338.7999999821186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 219.90000000596046,
+          "response_end_ms": 220.7999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 609.0999999940395,
+      "audio_ms": 326.09999999403954,
+      "playable_ms": 609.0999999940395,
+      "audio_observation_interval_ms": [
+        321.40000000596046,
+        326.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.40000000596046,
+          "response_end_ms": 214.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 613.9000000059605,
+      "audio_ms": 331.10000002384186,
+      "playable_ms": 613.9000000059605,
+      "audio_observation_interval_ms": [
+        326.7000000178814,
+        331.10000002384186
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.7000000178814,
+          "response_end_ms": 216.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "visual_ms": 611.4000000059605,
+      "audio_ms": 330.5,
+      "playable_ms": 611.4000000059605,
+      "audio_observation_interval_ms": [
+        325.7000000178814,
+        330.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.40000000596046,
+          "response_end_ms": 216.2000000178814
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 620.5,
+      "audio_ms": 337.69999998807907,
+      "playable_ms": 620.5,
+      "audio_observation_interval_ms": [
+        327,
+        337.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 217.2999999821186,
+          "response_end_ms": 217.90000000596046
+        }
+      ],
+      "state": "completed"
+    }
+  ],
+  "warmup_rows": [
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 713.0999999940395,
+      "audio_ms": 428.5,
+      "playable_ms": 713.0999999940395,
+      "audio_observation_interval_ms": [
+        419.69999998807907,
+        428.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 311.19999998807907,
+          "response_end_ms": 311.7999999821186
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 597,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 597,
+      "audio_observation_interval_ms": [
+        325.30000001192093,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 44100,
+          "duration": 0.9999773242630385
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.90000000596046,
+          "response_end_ms": 216.80000001192093
+        }
+      ],
+      "state": "completed"
+    }
+  ],
+  "status": "completed",
+  "negative_control": null,
+  "fixture": {
+    "lesson_sha256": "234a6b06efa86ea91f19953d8ea9cca4d16deded7f1c90b729ca191d4f79c9ce",
+    "second_part_sha256": "4ea17c1c03f971c06ee1e128dd7e20b83714c8136d95042ee8bc799c8fab1d40",
+    "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+    "audio_seconds": 1,
+    "part_delays_ms": [
+      200,
+      900
+    ],
+    "completion_delay_ms": 1600,
+    "large_server_events": 10000,
+    "large_local_documents": 1000,
+    "retry_pending_events": 500
+  },
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-C3AsDNei.js",
+      "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+      "source": "/private/tmp/octos-playable-builds-20e6a45/baseline",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+    },
+    "candidate": {
+      "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+      "entry": "/assets/index-BIcz2LPp.js",
+      "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+      "source": "/private/tmp/octos-playable-builds-20e6a45/candidate",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+    }
+  },
+  "browser": "148.0.7778.96",
+  "summary": {
+    "small": {
+      "baseline": {
+        "visual_ms": {
+          "min": 597,
+          "p50": 613.5999999940395,
+          "p95": 613.9000000059605
+        },
+        "audio_ms": {
+          "min": 330.69999998807907,
+          "p50": 330.90000000596046,
+          "p95": 346.80000001192093
+        },
+        "playable_ms": {
+          "min": 597,
+          "p50": 613.5999999940395,
+          "p95": 613.9000000059605
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 597.6999999880791,
+          "p50": 613.4000000059605,
+          "p95": 614.4000000059605
+        },
+        "audio_ms": {
+          "min": 330.2999999821186,
+          "p50": 330.7000000178814,
+          "p95": 346.89999997615814
+        },
+        "playable_ms": {
+          "min": 597.6999999880791,
+          "p50": 613.4000000059605,
+          "p95": 614.4000000059605
+        }
+      },
+      "p50_difference_ms": -0.19999998807907104,
+      "paired_delta_p50_ms": -0.09999999403953552,
+      "paired_delta_p95_ms": 5.199999988079071,
+      "candidate_faster_pairs": 5,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    },
+    "large": {
+      "baseline": {
+        "visual_ms": {
+          "min": 597.0999999940395,
+          "p50": 613.1999999880791,
+          "p95": 613.9000000059605
+        },
+        "audio_ms": {
+          "min": 329.19999998807907,
+          "p50": 330.90000000596046,
+          "p95": 343.59999999403954
+        },
+        "playable_ms": {
+          "min": 597.0999999940395,
+          "p50": 613.1999999880791,
+          "p95": 613.9000000059605
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 596.6000000238419,
+          "p50": 613.2000000178814,
+          "p95": 614.9000000059605
+        },
+        "audio_ms": {
+          "min": 330.30000001192093,
+          "p50": 330.7000000178814,
+          "p95": 332.19999998807907
+        },
+        "playable_ms": {
+          "min": 596.6000000238419,
+          "p50": 613.2000000178814,
+          "p95": 614.9000000059605
+        }
+      },
+      "p50_difference_ms": 2.9802322387695312e-08,
+      "paired_delta_p50_ms": -0.5,
+      "paired_delta_p95_ms": 16.400000005960464,
+      "candidate_faster_pairs": 6,
+      "observed_p50_relation": "candidate higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    },
+    "retry": {
+      "baseline": {
+        "visual_ms": {
+          "min": 596.5,
+          "p50": 613.6999999880791,
+          "p95": 622.2999999821186
+        },
+        "audio_ms": {
+          "min": 326.09999999403954,
+          "p50": 331,
+          "p95": 340.5
+        },
+        "playable_ms": {
+          "min": 596.5,
+          "p50": 613.6999999880791,
+          "p95": 622.2999999821186
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 596.5999999940395,
+          "p50": 613.3000000119209,
+          "p95": 614
+        },
+        "audio_ms": {
+          "min": 328.60000002384186,
+          "p50": 330.5,
+          "p95": 331.10000002384186
+        },
+        "playable_ms": {
+          "min": 596.5999999940395,
+          "p50": 613.3000000119209,
+          "p95": 614
+        }
+      },
+      "p50_difference_ms": -0.3999999761581421,
+      "paired_delta_p50_ms": -0.5,
+      "paired_delta_p95_ms": 16.700000017881393,
+      "candidate_faster_pairs": 5,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    }
+  },
+  "full_planned_matrix": true,
+  "merge_performance_requirement": "not established by fixed-response fixtures alone",
+  "completed_at": "2026-10-22T04:43:15.101Z",
+  "negative_controls": [
+    {
+      "control": "silent-audio",
+      "expected_result": "reject completion",
+      "observed_result": "rejected by timeout as intended",
+      "raw_report_sha256": "6cc940458f978cd12792015692717564dacf3ccc535f4ee130cc9ccfb3a4dcb8",
+      "row": {
+        "version": "baseline",
+        "condition": "small",
+        "pair": -1,
+        "action_invocations": 1,
+        "turn_starts": 0,
+        "tts_requests": 1,
+        "history_requests": 0,
+        "failed_uploads": 0,
+        "history_failures": [],
+        "unexpected_http": [],
+        "unexpected_rpc": [],
+        "client_errors": [],
+        "seed": {
+          "local_documents": 0,
+          "queued_events": 0
+        },
+        "state": "failed",
+        "error": "page.waitForFunction: Timeout 5000ms exceeded.",
+        "browser_state": {
+          "metrics": {
+            "start": 319.40000000596046,
+            "visual": 1032,
+            "audio": 0,
+            "sources": 1,
+            "audioContexts": [],
+            "errors": []
+          },
+          "text": "OCTOS LEARNING CANVAS\n固定响应性能课程\n启用语音\n启用摄像头\nconcept\n固定斜率\nconcept\n继续观察\n我的问题\n已回答\n\n请讲解直线 y=2x+1 的斜率。\n\n全选\n0 项笔迹 · 已保存\n课程播放中"
+        }
+      }
+    },
+    {
+      "control": "missing-course",
+      "expected_result": "reject completion",
+      "observed_result": "rejected by timeout as intended",
+      "raw_report_sha256": "bdb3a14b340e7b1e3ebaa637fbbb86a98bdcabf0f93b11e5a288602ffbc0c411",
+      "row": {
+        "version": "baseline",
+        "condition": "small",
+        "pair": -1,
+        "action_invocations": 1,
+        "turn_starts": 0,
+        "tts_requests": 0,
+        "history_requests": 0,
+        "failed_uploads": 0,
+        "history_failures": [],
+        "unexpected_http": [],
+        "unexpected_rpc": [],
+        "client_errors": [],
+        "seed": {
+          "local_documents": 0,
+          "queued_events": 0
+        },
+        "state": "failed",
+        "error": "page.waitForFunction: Timeout 5000ms exceeded.",
+        "browser_state": {
+          "metrics": {
+            "start": 313.60000002384186,
+            "visual": 0,
+            "audio": 0,
+            "sources": 0,
+            "audioContexts": [],
+            "errors": []
+          },
+          "text": "OCTOS LEARNING CANVAS\n新的学习白板\n启用语音\n启用摄像头\n我的问题\n没有生成成功\n\n请讲解直线 y=2x+1 的斜率。\n\n画笔 1 已禁用\n以文本形式重绘\n开启声音探索\n全选\n0 项笔迹 · 已保存\n\n课程已经生成，但白板没有收到课程内容，请重试。\n\n老师回复\n课程已经生成，但白板没有收到课程内容，请重试。"
+        }
+      }
+    }
+  ],
+  "interpretation": {
+    "fixed_response_findings": "All three observed p50 differences are below 1 ms, smaller than observed timing variation. No clear slowdown was found in these fixtures; this is not proof of a speed improvement or a complete merge performance pass.",
+    "progressive_delivery": "All 60 measured samples rendered the first course and audio before the 900 ms second-part notification; exactly the first artifact had been fetched at collection.",
+    "audio_limit": "Nonzero samples in Chromium Web Audio rendering, not physical speaker output or Android native playback. Detection is sampled on animation frames; the zero-to-signal interval is retained.",
+    "model_limit": "Exactly one mocked lesson action and zero ordinary turns per sample. The actual Learning Coach/model provider execution is excluded; actual model request counts are not measured.",
+    "history_limit": "Large fixtures use 10000 server events and 1000 generic local documents; failed-upload fixtures use 500 queued events. Normal account history verification finishes before submitting the timed question. This is not arbitrary concurrent production load or full-progress restore acceptance.",
+    "side_effects": "No personal account or production data used. Normal HTTPS 5173/backend 50080 untouched. Only test-owned temporary fixtures are removed after success; build archives and failed-run diagnostics remain private.",
+    "next_requirement": "A real-provider comparison still requires a ready timing/budget-control script, verified prices and new explicit authorization. No paid request has been issued."
+  }
+}
