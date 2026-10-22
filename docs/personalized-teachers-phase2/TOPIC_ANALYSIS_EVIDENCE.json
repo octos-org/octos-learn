@@ -1,0 +1,140 @@
+{
+  "checked_at": "2026-10-22T09:24:07.184Z",
+  "scope": "Opt-in Octos analysis of original questions and exact delivered course units, pinned catalog tool, validated source links and precise playback counts; semantic quality not verified",
+  "runtime_commits": [
+    "e0e2df1",
+    "393077a",
+    "d6b93e1",
+    "9a19c24"
+  ],
+  "increment_base": "b389e86",
+  "runtime_head": "9a19c24ac236d1f0040066afc7d81626333c912f",
+  "history_schema": 5,
+  "catalog": {
+    "repository": "https://github.com/withmarbleapp/os-taxonomy",
+    "commit": "533bab591b24c4024f0d70f9296aa4ee560fdd01",
+    "topics_sha256": "311b90e7706d76c21af7b68275eb738d3f3ade027418a633fa30d2faffe12693",
+    "catalog_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "topic_count": 529,
+    "subject": "Mathematics",
+    "projection": "id, domain, name, description, evidence, ageRangeStart, ageRangeEnd; original text unchanged; curriculum-standard records excluded",
+    "database_license": "ODbL-1.0",
+    "content_license": "CC-BY-SA-4.0",
+    "attribution": "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · https://withmarble.com"
+  },
+  "pinned_original_source_rechecked": {
+    "sha256": "311b90e7706d76c21af7b68275eb738d3f3ade027418a633fa30d2faffe12693",
+    "mathematics_projection_exactly_matches": true
+  },
+  "checks": {
+    "frontend_unit_test_files": 136,
+    "frontend_unit_tests": 1238,
+    "history_product_service_tests": 37,
+    "typescript_public_build": "passed",
+    "scoped_lint": {
+      "errors": 0,
+      "pre_existing_react_effect_warnings": 2
+    },
+    "supplier_calls": 0,
+    "classification_quality": "not verified",
+    "normal_account_analysis_enabled": false,
+    "normal_account_modified": false,
+    "new_apk_installed": false,
+    "production_deployed": false,
+    "performance_acceptance": "undetermined; no new timing experiment"
+  },
+  "octos_pipeline": {
+    "checked_at": "2026-10-22T09:24:07.184Z",
+    "passed": true,
+    "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+    "actual_frontend_worker": true,
+    "actual_authenticated_product_api": true,
+    "actual_octos_app_peer": true,
+    "pinned_catalog_topics": 529,
+    "fixture_model_requests": 2,
+    "catalog_tool_roundtrips": 1,
+    "real_supplier_calls": 0,
+    "original_account_modified": false,
+    "lost_result_receipt_and_octos_restart": true,
+    "cross_device_namespace_cleanup": true,
+    "exact_version_playback_count": true,
+    "classification_quality_verified": false
+  },
+  "source_sha256": {
+    "scripts/verify-learning-topic-pipeline.mjs": "6bb51dfa112eb08c8f6a706007e3b52872d0872063fc6d57638d60fb5e34ab0c",
+    "services/learning-history/analysis-control.mjs": "66a714b8ff5c92f989febf866abb8bef8a938bd271a3e08cec98a84d5958f7ec",
+    "services/learning-history/analysis-control.test.mjs": "595ce9e7196e47eff5a89f3b346b5c566488e648908a3901b1aec7b6520b8780",
+    "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358",
+    "services/learning-history/event-contract.mjs": "a9aaea5027497ba7a84e3f11e9dced426dc6298f5f5ed2097290d7d7da83b75c",
+    "services/learning-history/server.d.mts": "64f43f0ffbefa57afc7a5272c8605d92d4e3cf18afed31397c7ecb59f4f9d127",
+    "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+    "services/learning-history/server.test.mjs": "272d3cdbde3a2e947046fd17e30dd522fa6cfeba0389293a152fc6fab472b8a3",
+    "services/learning-history/store.mjs": "d3c5203bf1c6d441f48646c0be9680deb3a487452b63728a195da5e6c2c2adbe",
+    "services/learning-history/store.test.mjs": "33e475b999897285b73396bc2ab9b5dae91d4059f1d3891a1e5cc5adbcbb0007",
+    "services/learning-history/taxonomy/NOTICE.txt": "8ae57933f8883ec200decad8a32bbbf16e23ca9c06005f01999ef7770d77932a",
+    "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "services/learning-history/taxonomy/metadata.json": "c121ead35d8d172182f892b610f6bce919fdab2c1f544fc3a4104de69f731b2a",
+    "services/learning-history/topic-analysis-instructions.d.mts": "02fcb5c3fa36bd8fa690c4d3511012fc49279fdb341c98f015f04e2b4ce90bb0",
+    "services/learning-history/topic-analysis-instructions.mjs": "1a9c01ec3a14775884b73de868904f4e4e76dfa2438d33973da996ae3ff6ef63",
+    "services/learning-history/topic-analysis-store.mjs": "dd31217d392ad4c1de0ceb70ad1c7d9b446031a45e65e18fba2e10a9ec23f681",
+    "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+    "services/learning-history/topic-analysis.test.mjs": "1fbfb4dd1c558fc90d72af6337d0f7165b88239b0f0d281fd91e0bda7b422ce8",
+    "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+    "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+    "src/learning/history/account-history-panel.test.tsx": "a851881364966bc67991071a27ad64aa97c78206dddf1586edbcdfde7d8baeaf",
+    "src/learning/history/account-history-panel.tsx": "6e2a1bdbf3c495de68362d477aa0930f9c99233797686672dfd0f9834f7ddce0",
+    "src/learning/history/analyze-topics.test.ts": "e0e9c721dbf4368a9119ec5fc62315e3a585735225586508346c3aeab287fe72",
+    "src/learning/history/analyze-topics.ts": "416295a302dbde3986c2eedf30d0b04e13adb04671719f96a1092b7c73f0beaf",
+    "src/learning/history/delivered-material.ts": "cd280e4c580e8f27198fe95d9dc4b1012880605a4cd35aac6638bf6109b0886b",
+    "src/learning/history/history-api.ts": "5cc2e2186d7261e165d33fd79a60158258e8c13cf391835364cb20f1b06fbab5",
+    "src/learning/history/playback-recorder.ts": "da4131e921509ee5c87c3437fc74b2d3f07a67069e356fd884c3336d28a62833",
+    "src/learning/history/recorded-playback.test.ts": "d8e3fbb337a4329619570925093557866c6ddbbe208f39de717bc0c1abe6416b",
+    "src/learning/history/recorder.ts": "1494662ec43c2bff16e727188edde0a2dc4c3feb61a4fde175244e0993cfa8d5",
+    "src/learning/history/use-learning-history.test.ts": "bf66bd7ab57e7dfcb8529b311486fe5083a60f93542994175d071c35c8abc662",
+    "src/learning/history/use-learning-history.ts": "2ab773cc65c9a379b075bf67af520e228bd67cb91d7f8fa4a267392f826c13cc",
+    "src/learning/learning-workspace.tsx": "fada4408ee47670a56dbc7281fae3a195bfe2c3dc21f1d14365d309d3b54ab93",
+    "src/runtime/ui-protocol-bridge.test.ts": "523b07321a743abb510a8b8715fe1d65201b89d7b5605bc86df225a9cbec6f84",
+    "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8"
+  },
+  "logs": {
+    "full_frontend_unit": {
+      "path": "/private/tmp/phase2-topic-final-unit.log",
+      "sha256": "3fea3b6d351fdd9020bdb1e046cffc37edab7dc246a1452ec19368c1a85b3b63"
+    },
+    "full_history_product_services": {
+      "path": "/private/tmp/phase2-topic-final-service.log",
+      "sha256": "05a341a73f82499c1c656cd8048fe8fbda5a2cb3d8064f95b85c18159cbb1765"
+    },
+    "public_typescript_build": {
+      "path": "/private/tmp/phase2-topic-final-build.log",
+      "sha256": "2a77b32164b976d89c170279f6e5c12a1c99c50f9df9c875a04c3d005eb68e1b"
+    },
+    "scoped_lint": {
+      "path": "/private/tmp/phase2-topic-final-lint.log",
+      "sha256": "75b55f7d5ba3cccef13321cf5fe76118b6b582c87cff6b6964d1c93b1ee5ca5f"
+    },
+    "actual_octos_pipeline": {
+      "path": "/private/tmp/phase2-topic-pipeline-20261022e.log",
+      "sha256": "6661c8c525640b3627f86dd455c88aa04eeed80de80808627648d245f22bed97"
+    }
+  },
+  "limitations": [
+    "Default off. Explicit per-owner settings required.",
+    "An open, idle app drives tasks; no always-on scheduler.",
+    "Daily task reservations are not a provider-request or currency hard cap.",
+    "Image-dependent input lacks image bytes and remains unknown.",
+    "Vague follow-ups without explicit context remain unknown.",
+    "At most 100 units and 256 KiB input; oversized sources are blocked, not truncated.",
+    "Different streamed delivery versions may incur repeated analysis of overlapping material.",
+    "Legacy playback without delivery digest cannot receive generated-course topic counts.",
+    "Generated task attempts/hints do not yet receive automatic topic attribution.",
+    "Host capabilities are protected operational files alongside SQLite, not supplier credentials or learning facts; both need protected backup.",
+    "Independent review, real-model quality, current-device and production acceptance remain outstanding."
+  ],
+  "preflight_notes": [
+    "The initial local fixture used a dot-form model tool name; corrected to Octos provider-safe underscore form. No upstream fix.",
+    "Actual Octos hydrate has no message turn_id. The adapter now accepts untyped results only if the entire single-use peer has exactly the recorded turn; frozen input hash and units are validated server-side. Regression and actual process check pass.",
+    "Playback regression was corrected for the fixture containing one beat and queue ordering by identifier; it verifies the original version and a later replay version.",
+    "Earlier failed fixtures and source-free probes are not counted in the final passing fixture request total. All used synthetic endpoints, no real suppliers."
+  ]
+}

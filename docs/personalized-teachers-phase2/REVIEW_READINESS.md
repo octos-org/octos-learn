@@ -1,12 +1,29 @@
 # 第二阶段代码审查与发布准备
 
-2026-10-22 新增运行范围：用户恢复实时内容知识点归属开发，本轮实现课程材料保存/读取并验证 Octos 应用分析入口。请先看[实施进展](GENERATED_TOPIC_PROGRESS.md)及对应代码增量；下文最后两处维护修复的自查、旧候选审查和英文草稿不自动覆盖本轮新功能。产品 PR 尚未创建。
+## 当前审查入口（2026-10-22）
 
-当前状态（2026-10-22）：基础学习记录已有实现和验收证据；旧候选的终轮独立审查完成，本轮另对 867f468 / f28cda2 完成作者增量自查，未发现新增需修复问题。这不代替其他 agent 的独立审查。速度结论仍未确定，新候选尚未做设备复验。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标。
+本轮已实现并免费验证“固定知识目录 → Octos 分析 → 原文检查保存 → 提问/精确版本播放计数”。[实施进展](GENERATED_TOPIC_PROGRESS.md)说明实际行为、API、恢复、费用与隐私边界；[结构化证据](TOPIC_ANALYSIS_EVIDENCE.json)保存版本、指纹和测试结果。不是只有入口试验，也没有把替身答案当作真实模型的判断质量。
 
-最新增量：原 APK 47a1843 的验收不覆盖本轮 867f468 / f28cda2。免费覆盖复核发现并修复两处后台维护遗漏，新 40 对测量已完成但速度仍未确定，见[报告](PERFORMANCE_EVIDENCE_REVIEW.md)。新增代码的重点审查范围为 `git diff 53d53d3..f28cda2 -- src/learning scripts/benchmark-learning-history-playable.mjs`；新候选未安装电视，仍需针对性复验。以下原审查范围及历史证据按原提交理解。
+新增代码分为四个可分别审查的提交：
 
-2026-10-22 收尾范围调整：用户已同意先整理已有交付和验收结论，再审查最后两处修复；进一步计时差异定位暂缓，不默认新增测试专项。速度结论仍未确定，合并前要求保留。现有记录能力、尚未实现的知识点关联和未发布边界须分别说明。
+| 提交 | 内容 |
+|---|---|
+| `e0e2df1` | 固定 529 个数学节点、来源及许可声明、只读检索 |
+| `393077a` | 输入/输出约束、默认关闭的持久分析队列、本人授权文件、原文依据及准确查询 |
+| `d6b93e1` | 播放开始时固定其实际交付版本，防止后续课程改写旧记录 |
+| `9a19c24` | 由 Octos 执行的应用来源分析、课堂让出、断线后找回原任务、核查界面及真实进程验证脚本 |
+
+完整新增运行代码：`git diff b389e86..9a19c24`。包含更早的材料保存时，从 `bf99486` 开始看。新功能测试为 1238 项前端单元、37 项服务测试、public/类型构建；真实 Octos + 本地模型替身证明工具查阅正式目录、丢结果回执、重启后另一客户端清理及精确版本播放计数，最终运行两次替身模型请求、真实供应商调用 0。
+
+请重点核对：所有语义判断是否仍只有 Octos 做；原问题是否借用了生成课标签；结果是否绑定同一份原文与版本；未知是否被误算成零次；重新查询或重分析是否改变已有原始事实；丢回执是否会重复调用模型；账号切换、删除与临时授权是否可跨设备恢复；默认关闭、每日启动数和课堂让出是否真实生效。每日任务数不是美元硬上限；应用关闭期间不运行，模型语义质量、实际账号启用、生成课题目自动归属、新 APK、速度结论及公网验收仍未完成。
+
+本轮没有更新正常账号、电视、公网或上游。保护性备份要同时覆盖 SQLite 和同目录下的 `analysis-host-controls` 私有授权文件；发布产品服务时必须包含整个 `services/learning-history/`（含 taxonomy JSON 与 NOTICE），不能只拷贝 `.mjs`。旧版本不能直接读取格式 5，正式升级和回退仍需备份。
+
+**本轮新增代码尚未接受独立审查；下面的旧审查、旧设备及速度证据不能覆盖它。** 产品 PR 尚未创建，未合并、未发布；费用授权仍未新增。可以现在审查代码，不需要先运行付费测试。
+
+## 以下是基础候选的历史审查材料
+
+以下表格及结论对应 `f28cda2` 等明确提交；其中“自动归属未实现”等描述只代表当时状态，当前新增实现与限制以上文为准。旧速度结论仍是未确定，不自动升级为通过。
 
 ## 本次交付能回答什么
 
@@ -105,10 +122,24 @@
 
 ## English PR draft
 
-Title: **Persist account-scoped learning history and replay original classroom messages**
+Title: **Persist learning evidence and add opt-in Octos topic analysis**
 
-Direct skill invocation did not append the student's original question and delivered response to Octos, and resumable playback state did not provide an auditable record of learning activity. This change adds durable account-scoped learning facts, an offline device queue, correlated message delivery to Octos, playback and task evidence, and a history inspection interface. It preserves the boundary between product facts and Octos-managed semantic memory.
+Direct skill invocation did not append the student's original question and delivered response to Octos, and resumable playback state could not answer what the student actually asked, received, played or attempted. This change adds account-scoped learning facts, an offline queue, deletion receipts, original-message delivery and an inspection interface. Semantic interpretation stays in Octos; the product stores source material and computes counts.
 
-Validation covers persistence, retry deduplication, account isolation, deletion receipts, real Runtime playback, and browser behavior. Real Octos and product-process acceptance used the actual delivery client, including a lost receipt followed by restarting both services, with zero model calls. The latest runtime fixes stop starting further maintenance batches during teaching and keep maintenance paused before the first lesson artifact arrives. The candidate passed 1,227 unit tests and a public build. The previously installed Android build passed local recovery, offline operation, sparse navigation, repeat-start and failed-delete retention checks; it does not contain these last two fixes, which still require a focused device retest.
+The new, default-off analysis path supplies exact delivered content to a single-use Octos app peer, exposes a read-only pinned mathematics catalog, validates source-bound JSON results and distinguishes question attribution from actual playback. Playback records bind to the delivery present when the beat began. Unknown inputs and missing version bindings do not become zero-looking progress or mastery. Durable execution bookmarks and private account-scoped host controls support reconciliation and namespace cleanup after a lost response without automatically starting another model turn.
 
-This is not a production release. Topic mappings remain inactive pending review; automatic attribution of generated lessons and knowledge-point question counts are not implemented. A free 40-pair fixed-response comparison exercised full frontend builds, real Runtime playback and Web Audio rendering with isolated product services. Two conditions had candidate p50 increases of approximately 3.7 ms and 1.1 ms; the cause is unresolved and performance acceptance remains undetermined. Further timing investigation and optional paid testing are deferred. The existing six-generation benchmark measured an earlier candidate's first visible frame, not complete first-playable audio latency. The pre-merge performance requirement and production synchronization acceptance remain outstanding. This draft is prepared for review and does not assert readiness to merge.
+Validation: 1,238 frontend unit tests, 37 history/product service tests, TypeScript/public build, and scoped lint (no errors; two pre-existing React effect warnings). The actual frontend worker, authenticated product API/SQLite and Octos ran against a local model replacement using the real catalog tool. A lost saved-result receipt followed by Octos restart and another client did not increase the two fixture model requests. No real supplier calls were made.
+
+This is a review candidate, not a release. Real-model attribution quality remains unverified; image-dependent input stays unknown. Analysis runs only with an open, idle app and explicit settings; daily task reservations are not a currency or provider-request hard cap. Generated-task attribution, teacher-facing context, new-device acceptance and production synchronization remain outstanding. The database upgrades to format 5 and needs an upgrade backup; host controls require a protected operational backup alongside SQLite.
+
+Performance acceptance remains undetermined. The earlier free 40-pair comparison found small candidate p50 increases in two conditions, with unresolved cause; optional paid timing and further investigation were deferred. The pre-merge performance requirement remains in force. Previously installed Android builds and earlier independent reviews do not cover this new analysis increment.
+
+## 可直接交给独立审查 agent 的提示词
+
+请独立审查 Octos Learn 第二阶段新增的实时内容知识点分析实现，不要直接采信作者报告。工作仓库 `/Users/alan0x/Documents/projects/octos-learn`，分支 `codex/learning-history-phase2`。先读 AGENTS.md、总 TODO 和本文件的“当前审查入口”，再读 GENERATED_TOPIC_PROGRESS.md / TOPIC_ANALYSIS_EVIDENCE.json。
+
+重点增量是 `git diff b389e86..9a19c24`；若要检查本次完整材料传递链路，再看 `git diff bf99486..9a19c24`。固定目录数据可单独按 `e0e2df1` 的原始 SHA/投影 SHA 核验，不必逐行猜它是否正确。请实际运行必要的免费测试，不调用真实模型、语音、ASR 或 Jev，不修改正常账号、安装、电视、公网或上游。
+
+请独立判断：原问题与实际讲解是否分开；所有理解是否只由 Octos 做；模型能否捏造编号、原文、版本或掌握结论进入计数；播放是否真绑定当时交付；去重、重分析、分页和删除是否准确；已完成但回执丢失、开始响应不明、两端重启、换账号及另一设备接手是否会串资料或重复调用模型；私有授权的保存与清理是否必要且安全；默认关闭、每日额度和课堂让出是否有效；报告是否如实披露质量、费用、图片、应用关闭和发布限制。
+
+给出按严重程度排序的具体问题，提供文件/行号、可复现条件及实际影响；没有证据的问题请标为疑问，不虚构上游能力。区分必须修复的缺陷、可接受且已披露的限制和可选改进。最后分别判断：是否可继续代码审查、是否可启用真实账号、是否可合并、是否可发布；不要把替身通过当成语义质量通过，也不要要求重新启动付费速度专项。

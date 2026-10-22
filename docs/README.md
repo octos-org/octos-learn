@@ -63,7 +63,7 @@
 
 - [第二阶段 TODO](personalized-teachers-phase2/TODO.md)：持续维护已完成、当前推进、待办与阻塞原因，区分代码、内容审核、设备验收和发布。
 
-- [实时内容知识点归属实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)：本轮新增完整课程材料保存及本人读取，真实 Octos 应用发起分析入口已验证；列明目录、对应结果和计数的剩余实现，附测试证据。
+- [实时内容知识点归属实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)：完整课程材料、固定知识目录、Octos 空闲分析、可追溯结果与精确版本计数已实现；附免费整链路证据，列明真实质量、默认关闭和待验收边界。
 
 - [第二阶段收尾审查材料](personalized-teachers-phase2/REVIEW_READINESS.md)：固定代码范围、真实 Octos 与电视验收、服务器只读核查、缺项及英文 PR 草稿；[合并前性能验收](personalized-teachers-phase2/PERFORMANCE_ACCEPTANCE_PLAN.md)包含已执行的 30 对免费首段播放对照、反向检查、原始样本及待授权的真实调用。
 
