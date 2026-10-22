@@ -1,10 +1,47 @@
 # 第二阶段代码审查与发布准备
 
-当前状态：本机上游接入与最新 APK 的本地验收完成；终轮独立审查已返回并完成对照，没有新增已确认代码缺陷。合并前的完整速度证据仍待补齐。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标，不能因此宣布第二阶段全部完成。
+当前状态（2026-10-22）：基础学习记录已有实现和验收证据；旧候选的终轮独立审查完成，本轮另对 867f468 / f28cda2 完成作者增量自查，未发现新增需修复问题。这不代替其他 agent 的独立审查。速度结论仍未确定，新候选尚未做设备复验。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标。
 
 最新增量：原 APK 47a1843 的验收不覆盖本轮 867f468 / f28cda2。免费覆盖复核发现并修复两处后台维护遗漏，新 40 对测量已完成但速度仍未确定，见[报告](PERFORMANCE_EVIDENCE_REVIEW.md)。新增代码的重点审查范围为 `git diff 53d53d3..f28cda2 -- src/learning scripts/benchmark-learning-history-playable.mjs`；新候选未安装电视，仍需针对性复验。以下原审查范围及历史证据按原提交理解。
 
-## 审查范围
+2026-10-22 收尾范围调整：用户已同意先整理已有交付和验收结论，再审查最后两处修复；进一步计时差异定位暂缓，不默认新增测试专项。速度结论仍未确定，合并前要求保留。现有记录能力、尚未实现的知识点关联和未发布边界须分别说明。
+
+## 本次交付能回答什么
+
+| 学生或老师想知道什么 | 目前实际能做到什么 | 边界 |
+|---|---|---|
+| 这堂课学过几遍，播放过哪些部分？ | 保存学习实例、实际播放证据、作答和提示记录，可展开原始记录；回放同一遍不重复计遍，明确重新开始另记一遍 | 只统计开始采集后有依据的内容；播放不证明掌握，生成不等于学完 |
+| 断网或退出后，记录还在吗？ | 设备先保存，联网且课堂空闲后补传；重复上传不重复计数 | 服务端路径有隔离进程验收；电视验收的是本地保存、重开与冷启动，公网补传尚未验收 |
+| 直接调用 Learning Coach 的原始问答能进入 Octos 吗？ | 产品持久保存交付任务，使用原始内容和固定编号追加；两端重启、丢回执重试已验收 | 送达不等于 Octos 已提炼出某条长期记忆，也不等于下一堂课已读取它 |
+| 学生反复学了几次三角函数？ | 有原始课程和问答可查 | 任意问题/生成课尚未可靠关联知识点，不能提供这个知识点的准确次数；预制课对应表也未启用 |
+| 老师会因此记住进度、换一种讲法吗？ | 目前准备了可供后续使用的事实与交付链路 | 生成端尚未接入事实和相关记忆；老师成长属于后续阶段 |
+
+因此建议本次交付名称为“可靠学习记录与原始问答交付”。原始事件核查界面用于验收和排障，最终学生界面尚未定稿。本次工作为后续教学提供依据，不宣称已经交付个性化老师。
+
+## 最后两处修复的增量自查
+
+审查对象：`867f468` 的维护暂停判断及五项回归、`f28cda2` 的生成等待判断；同时阅读相关协调器、持久队列和服务端任务恢复代码。`e9639c4` 的完整前端场景作为既有验证依据。运行源码与 f28cda2 一致，本轮没有新增运行代码或扩大测试。
+
+| 核对事项 | 结论与依据 |
+|---|---|
+| 已经发出请求时开始上课 | 不强行取消当前写入。同步器先校验响应、保存上传回执或删除信息，再在下一次请求前退出；不会把已送达记录误当成未保存而丢弃 |
+| 原问答追加或删除已执行 | 当前这一项继续保存有效回执；下一项开始前检查课堂和账号状态。专用连接仍在 finally 中关闭；任务内容和认证归属未改 |
+| 已领取但没有执行的任务 | 服务端继续保留，30 秒后允许重新领取；旧编号不能确认已重新分配的任务。问答仍须先交付学生原问题，再交付对应回复。这里可能延后恢复，不承诺课堂一结束就全部完成 |
+| 课堂空闲后继续 | 忙碌转为空闲会安排同步；未完成事实、问答和删除计数会保留重试，间隔由 30 秒逐步增加至最多 5 分钟。记录上传的两项协调器回归已验证恢复后完成且不重复 |
+| 首份课程还没到时 | 直接课程 action 被接受后，生成任务状态独立参与忙碌判断，覆盖“提交等待已结束、播放器尚不存在”的空档；终态按既有任务事件清除，未改变原音频归属逻辑 |
+| 账号切换和页面退出 | 新任务仍检查所捕获账号；旧连接使用原凭据。组件清理释放本课堂忙碌标记，持久事实和任务不会因此删除。这里只停止后续维护，不承诺撤回已经发送的请求 |
+
+结论：本次自查未发现需要继续修改代码的问题。复用了已有 5 项新回归、23 项针对性测试、1227 项完整单元和 public 构建；重新核对三个关键日志的 SHA-256 与[证据 JSON](PERFORMANCE_EVIDENCE_REVIEW.json)一致，没有重新跑测试并累计数量。消息租期到期及重启恢复有既有存储测试；删除任务的重开与账号隔离有既有测试，暂停后到期重领的组合行为由代码检查支持，不冒称有单独实机覆盖。
+
+其他 agent 后续只需审查上述增量及相关恢复路径，无需重复整阶段审计。新候选设备复验仍待做，限定为：等待首份课程时不继续批量同步、空闲后补传恢复、退出重开后记录保留；优先使用现有课程与固定响应，无须付费生成新课。
+
+## 建议的本次代码提交范围
+
+将已实现的事实存储、离线队列、课堂采集、删除、核查界面、Octos 原问答交付及最后两处修复作为一个基础能力 PR 评审，保留现有按功能划分的提交供逐项查看。知识点查询代码如保留，必须继续保持未审核表停用，不将其算作已启用能力。既有性能脚本是验证材料，不能以脚本已写完替代功能验收，也不继续为它扩展新功能。
+
+知识点自动归属、后台分析、老师读记忆和成长、地图与成就不进入本次交付承诺；仍保留在原阶段待办中。此处是可供评审的范围建议，不是用户已经批准缩减整个第二阶段。PR 可供审查与代码可合并、可发布分别判断：速度未确定和新候选设备复验须如实列出，当前不标为可合并。
+
+## 历史独立审查范围
 
 - 产品分支：`codex/learning-history-phase2`。
 - 已核对远端 main：`4973499c0d8ede16a9897c918bdf587472fb57c8`。
@@ -44,7 +81,7 @@
 2. Learning Coach 尚未主动读取这些事实并改变下一堂课；老师成长、知识地图、成就及主动复习没有随本轮交付。
 3. 旧实验 APK `ec5b28d` 的开始记录没有固定编号，首次在新版本回放旧实例会补一条新格式开始事实。该实例两条开始事实仍属于同一个学习编号，查询按学习编号计一遍；未清理或伪改旧事实。
 4. 暂停、纯旁白文字模式等播放证据限制仍见实施记录；播放不能当作掌握。
-5. [合并与发布前性能计划](PERFORMANCE_ACCEPTANCE_PLAN.md)的免费部分已执行，三种条件各 10 对及两项反向检查完成，未发现明确拖慢。待复核这些结果及调用路径是否充分覆盖本次改动；当前不预判验收通过。AGENTS.md 要求合入前速度不回退，但没有要求必须再做付费测试。真实供应商对照为可选补充，用户已暂缓；其未执行本身不是阻止合并的理由。
+5. [合并与发布前性能计划](PERFORMANCE_ACCEPTANCE_PLAN.md)的覆盖复核完成，最新 f28cda2 四种情况各 10 对，两组中位数高约 3.7 ms、1.1 ms，原因未定，未判定速度通过。进一步定位已暂缓。AGENTS.md 要求合入前速度不回退，但没有要求必须再做付费测试。真实供应商对照为可选补充，用户已暂缓；其未执行本身不是阻止合并的理由。
 6. 公网历史接口尚未部署，真实设备上传和问答交付仍需发布后验收。
 
 因此，审查可以评估已实现的代码是否可分批合并；是否按当前范围分批收尾，需要明确决定，不能把原计划缺项默认为取消。合并评审与正式发布是两件事；独立审查通过不代替合并前性能要求。终轮意见的采纳与分歧见[处理记录](REVIEW_FOLLOWUP.md#终轮审查处理)。
@@ -70,6 +107,6 @@ Title: **Persist account-scoped learning history and replay original classroom m
 
 Direct skill invocation did not append the student's original question and delivered response to Octos, and resumable playback state did not provide an auditable record of learning activity. This change adds durable account-scoped learning facts, an offline device queue, correlated message delivery to Octos, playback and task evidence, and a history inspection interface. It preserves the boundary between product facts and Octos-managed semantic memory.
 
-Validation covers persistence, retry deduplication, account isolation, deletion receipts, real Runtime playback, and browser behavior. Follow-up acceptance used real Octos and product processes with the actual delivery client, including a lost receipt followed by restarting both services, with zero model calls. The installed Android candidate passed local recovery, offline operation, sparse navigation, repeat-start and failed-delete retention checks.
+Validation covers persistence, retry deduplication, account isolation, deletion receipts, real Runtime playback, and browser behavior. Real Octos and product-process acceptance used the actual delivery client, including a lost receipt followed by restarting both services, with zero model calls. The latest runtime fixes stop starting further maintenance batches during teaching and keep maintenance paused before the first lesson artifact arrives. The candidate passed 1,227 unit tests and a public build. The previously installed Android build passed local recovery, offline operation, sparse navigation, repeat-start and failed-delete retention checks; it does not contain these last two fixes, which still require a focused device retest.
 
-This is not a production release. Topic mappings remain inactive pending review; automatic attribution of generated lessons is not implemented. Knowledge-point question counts remain unknown. A free 30-pair fixed-response comparison exercised full frontend builds, real Runtime playback and Web Audio rendering with isolated product services; it found sub-millisecond p50 differences within observed variation, but does not establish real-provider latency. The existing six-generation benchmark measured an earlier candidate's first visible frame, not complete first-playable audio latency; the repository’s pre-merge performance requirement and production synchronization acceptance remain outstanding. This review draft does not assert that the change is ready to merge.
+This is not a production release. Topic mappings remain inactive pending review; automatic attribution of generated lessons and knowledge-point question counts are not implemented. A free 40-pair fixed-response comparison exercised full frontend builds, real Runtime playback and Web Audio rendering with isolated product services. Two conditions had candidate p50 increases of approximately 3.7 ms and 1.1 ms; the cause is unresolved and performance acceptance remains undetermined. Further timing investigation and optional paid testing are deferred. The existing six-generation benchmark measured an earlier candidate's first visible frame, not complete first-playable audio latency. The pre-merge performance requirement and production synchronization acceptance remain outstanding. This draft is prepared for review and does not assert readiness to merge.
