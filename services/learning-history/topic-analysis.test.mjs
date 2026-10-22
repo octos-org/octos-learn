@@ -134,3 +134,25 @@ test("explicit reanalysis can replace an uncertain execution without rewriting f
     assert.deepEqual(store.runEvents("alice", q.run_id).events.map(row => row.event), [q]);
   } finally { store.close(); }
 });
+
+test("an unresolved old execution cannot starve new sources, and quota exhaustion still allows reconciliation", () => {
+  let clock = "2026-10-22T00:00:00.000Z";
+  const store = new HistoryStore(":memory:", { now: () => clock });
+  try {
+    const analysis = new TopicAnalysisStore(store);
+    analysis.configure("alice", { enabled: true, max_daily_tasks: 2 });
+    store.append("alice", [question("first"), question("second")]);
+    const first = analysis.claim("alice").tasks[0];
+    analysis.execution("alice", first.id, first.lease_id, execution); analysis.pause("alice", first.id, first.lease_id);
+    clock = "2026-10-22T00:05:01.000Z";
+    const second = analysis.claim("alice").tasks[0];
+    assert.equal(second.input.source_event_id, "second"); finish(analysis, second, mapped(second.input));
+    store.append("alice", [question("third")]);
+    const retry = analysis.claim("alice").tasks[0];
+    assert.equal(retry.id, first.id); assert.deepEqual(retry.execution, execution);
+    analysis.pause("alice", retry.id, retry.lease_id);
+    clock = "2026-10-22T00:10:02.000Z";
+    assert.equal(analysis.claim("alice").tasks[0].id, first.id);
+    assert.equal(analysis.quotaUsed("alice"), 2);
+  } finally { store.close(); }
+});

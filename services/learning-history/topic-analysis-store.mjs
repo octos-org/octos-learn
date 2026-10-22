@@ -62,10 +62,16 @@ export class TopicAnalysisStore {
     this.db.exec("BEGIN IMMEDIATE");
     try {
       if (this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND state='leased' AND lease_until>?").get(owner, now)) { this.db.exec("COMMIT"); return { tasks: [], reason: "active-task" }; }
-      const job = this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND rules_version=? AND taxonomy_sha256=? AND (state='pending' OR (state IN ('leased','uncertain') AND lease_until<=?)) ORDER BY source_seq,revision LIMIT 1`)
-        .get(owner, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, now);
-      if (!job) { this.db.exec("COMMIT"); return { tasks: [] }; }
-      if (!job.octos_session_id && this.quotaUsed(owner) >= this.settings(owner).max_daily_tasks) { this.db.exec("COMMIT"); return { tasks: [], reason: "daily-task-limit" }; }
+      const quotaAvailable = this.quotaUsed(owner) < this.settings(owner).max_daily_tasks;
+      // Unresolved executions are read-only reconciliation, never replacement
+      // turns. Prefer unattempted material, then rotate older recovery attempts;
+      // an old missing turn must not win every 5-minute coordinator retry.
+      // An exhausted start quota still permits recovering existing executions.
+      const job = this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND rules_version=? AND taxonomy_sha256=?
+        AND (state='pending' OR (state IN ('leased','uncertain') AND lease_until<=?))
+        AND (octos_session_id IS NOT NULL OR ?) ORDER BY COALESCE(lease_until,0),source_seq,revision LIMIT 1`)
+        .get(owner, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, now, Number(quotaAvailable));
+      if (!job) { this.db.exec("COMMIT"); return { tasks: [], ...(quotaAvailable ? {} : { reason: "daily-task-limit" }) }; }
       let input;
       try { input = job.input_json ? JSON.parse(job.input_json) : buildAnalysisInput(this.history, owner, job.source_event_id); }
       catch (error) {
