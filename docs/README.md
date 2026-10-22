@@ -65,6 +65,8 @@
 
 - [实时内容知识点归属实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)：完整课程材料、固定知识目录、Octos 空闲分析、可追溯结果与精确版本计数已实现；附免费整链路证据，列明真实质量、默认关闭和待验收边界。
 
+- [知识点准确性验收执行单](personalized-teachers-phase2/TOPIC_ACCURACY_EXECUTION.md)：固定 9 份问题/课程材料、18 次模型请求与 20 美元上限；免费验证和独立复核完成，等待本轮明确费用授权，没有真实调用。
+
 - [第二阶段收尾审查材料](personalized-teachers-phase2/REVIEW_READINESS.md)：固定代码范围、真实 Octos 与电视验收、服务器只读核查、缺项及英文 PR 草稿；[合并前性能验收](personalized-teachers-phase2/PERFORMANCE_ACCEPTANCE_PLAN.md)包含已执行的 30 对免费首段播放对照、反向检查、原始样本及待授权的真实调用。
 
 - [第二阶段真实计时执行器准备](personalized-teachers-phase2/LIVE_PERFORMANCE_PREPARATION.md)：首段画面与匹配旁白计时、持久费用限制和免费故障检查；[alan0x 真实对照执行单](personalized-teachers-phase2/LIVE_PERFORMANCE_EXECUTION.md)固定所选模型/音色、次数、费用依据、停止及恢复步骤，含独立补测记录；没有新增付费调用。
