@@ -73,3 +73,4 @@ scripts/deploy-public-web.sh        # 部署 dist/ 到公网并校验（--verify
 - `docs/DEVELOPMENT_HANDOFF.md` — 本地开发与仓库协作的权威约定
 - `docs/PUBLIC_DEPLOYMENT_RUNBOOK.md` — 公网部署/升级/回滚
 - `docs/ROADMAP_DEV.md` — 当前里程碑与 backlog
+- `docs/PERSONALIZED_TEACHERS_TODO.md` — 个性化老师与学习记忆的全阶段进展；推进该专题时持续更新总清单与对应阶段明细，不只维护当前阶段
