@@ -1,9 +1,9 @@
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
+import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
 import { teacherTutorContext, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { getMyMemory } from "../settings/settings-api";
-import { getToken } from "../api/client";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
@@ -28,10 +28,11 @@ import {
   VolumeX,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
-import { ensureSelectedProfileId } from "@/api/client";
+import { ensureSelectedProfileId, getToken } from "@/api/client";
 import { getSessionFiles } from "@/api/sessions";
 import {
   invokeSkillAction,
+  listSkillActions,
   listSkillActionJobs,
   type SkillActionJob,
 } from "@/api/skill-actions";
@@ -1142,10 +1143,15 @@ export function LearningWorkspace({
   }, [history.coordinator, sessionId, historyClassroomBusy]);
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
+  const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
   useEffect(() => {
     if (historyClassroomBusy || !historyRecorder) return;
     void learnerBackground.refresh(getToken());
-  }, [historyClassroomBusy, historyRecorder, learnerBackground]);
+    void Promise.resolve()
+      .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
+      .then((lists) => { lessonContextFields.current = lessonContextSupport(lists.flat()); })
+      .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
+  }, [historyClassroomBusy, historyRecorder, learnerBackground, sessionId]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1177,14 +1183,17 @@ export function LearningWorkspace({
     // The teacher is fixed when the question is submitted; switching later
     // does not change a lesson already being generated.
     const lessonTeacher = teacher;
-    const learnerContext = learnerBackground.current(getToken());
-    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [], lessonTeacher);
-    setTextTurnPending(true);
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
       : visualContext?.kind === "ink_selection"
         ? "learning.lesson.generate-from-selection"
         : "learning.lesson.generate";
+    const contextFields = lessonContextFields.current.get(actionId);
+    const learnerContext = contextFields?.has("learner_context") ? learnerBackground.current(getToken()) : undefined;
+    // Name the teacher in the record only when the lesson received its settings.
+    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
+      contextFields?.has("tutor_context") ? lessonTeacher : undefined);
+    setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
     learnTrace.recordOnce(`${turnId}:skill-invocation-started`, {
@@ -1209,7 +1218,7 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: "zh-CN",
-          tutor_context: teacherTutorContext(lessonTeacher),
+          ...(contextFields?.has("tutor_context") ? { tutor_context: teacherTutorContext(lessonTeacher) } : {}),
           ...(learnerContext ? { learner_context: learnerContext } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {

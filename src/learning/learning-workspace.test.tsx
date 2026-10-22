@@ -76,7 +76,10 @@ const sessionFilesMock = vi.hoisted(() => ({
   getSessionFiles: vi.fn(async () => []),
   invokeSkillAction: vi.fn(async () => ({ action_id: "learning.selection.enhance", ok: true, results: [] })),
   listSkillActionJobs: vi.fn(async () => []),
+  listSkillActions: vi.fn(async () => [] as unknown[]),
 }));
+const lessonActionsWithContext = ["learning.lesson.generate", "learning.lesson.generate-from-camera", "learning.lesson.generate-from-selection"]
+  .map((id) => ({ id, input_schema: { properties: { learner_request: {}, tutor_context: {}, learner_context: {} } } }));
 const sendMessageMock = vi.hoisted(() => vi.fn());
 const narrationTtsMock = vi.hoisted(() => ({
   useOllNarrationTts: vi.fn(() => ({ error: null, preparing: false })),
@@ -110,6 +113,7 @@ vi.mock("@/api/sessions", () => ({
 vi.mock("@/api/skill-actions", () => ({
   invokeSkillAction: sessionFilesMock.invokeSkillAction,
   listSkillActionJobs: sessionFilesMock.listSkillActionJobs,
+  listSkillActions: sessionFilesMock.listSkillActions,
 }));
 vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: sendMessageMock }));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
@@ -277,6 +281,8 @@ describe("LearningWorkspace", () => {
     });
     sessionFilesMock.listSkillActionJobs.mockReset();
     sessionFilesMock.listSkillActionJobs.mockResolvedValue([]);
+    sessionFilesMock.listSkillActions.mockReset();
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext);
     sendMessageMock.mockReset();
   });
 
@@ -1458,6 +1464,22 @@ describe("LearningWorkspace", () => {
     expect(region.origin!.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
   });
 
+  it("omits teacher settings for a Learning Coach install that does not declare them", async () => {
+    historyRecordingMock.enabled = true;
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext.map((action) => ({ ...action, input_schema: { properties: { learner_request: {} } } })));
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-old-coach" voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释勾股定理" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("tutor_context");
+    expect(params).not.toHaveProperty("learner_context");
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", data: { conversation_route: "direct-action", media: [] } }));
+  });
+
   it("sends a composer lesson directly to the background lesson action", async () => {
     historyRecordingMock.enabled = true;
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
@@ -1483,6 +1505,9 @@ describe("LearningWorkspace", () => {
         onBack={vi.fn()}
       />,
     );
+    // Installed action support is learned while the classroom is idle.
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
+    await act(async () => {});
 
     fireEvent.change(screen.getByLabelText("输入学习问题"), {
       target: { value: "请解释勾股定理" },

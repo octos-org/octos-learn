@@ -57,3 +57,16 @@ it('serves cached background per account without waiting, and keeps it when a re
   await cache.refresh('alice');
   expect(cache.current('alice')).toContain('偏好看图');
 });
+
+it('sends a context field only to lesson actions that declare it', async () => {
+  const { lessonContextSupport } = await import('./lesson-context-support');
+  const support = lessonContextSupport([
+    { id: 'new', input_schema: { properties: { tutor_context: {}, learner_context: {} } } },
+    { id: 'old', input_schema: { properties: { learner_request: {} } } },
+    { id: 'bare', input_schema: {} },
+  ] as never);
+  expect([...support.get('new')!]).toEqual(['tutor_context', 'learner_context']);
+  expect(support.get('old')!.size).toBe(0);
+  expect(support.get('bare')!.size).toBe(0);
+  expect(support.get('missing')).toBeUndefined();
+});
