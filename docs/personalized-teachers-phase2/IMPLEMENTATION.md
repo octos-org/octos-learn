@@ -203,3 +203,5 @@ OCTOS_TEST_COURSE_CACHE=/path/to/verified-public-course-cache node node_modules/
 详细依据见[准备说明](LIVE_PERFORMANCE_PREPARATION.md)与[验证记录](LIVE_PERFORMANCE_PREPARATION.json)。执行单仍为不能执行的草稿：使用哪个既有账号、实际计费上界和临时模型地址的接入/恢复方法待核实。没有新付费授权，没有修改正常配置或公网；P2-08 保持未完成。
 
 用户随后选定 alan0x 的既有 Gemini 3.8 和小何。已只读核对配置、安装包及身份信息，完成所选模型的免费技能/真实隔离 Octos/完整前端补测。发现 solo 默认登录选择最新账号，故执行器增加核对既有身份后登录指定账号的流程；3 项账号测试及真实双合成账号验证通过。早期 REST 预检的响应层级错误已修正并复跑，不改上游或本人配置。公开价格、保守额度、接入与恢复步骤已写入[供批准执行单](LIVE_PERFORMANCE_EXECUTION.md)，建议模型上限 33 美元、语音另限 5 元；没有获得新预算，也没有真实供应商调用，P2-08 仍未完成。[补充记录](LIVE_PERFORMANCE_ALAN_PREPARATION.json)与原验证分开保存。
+
+用户对预算申请明确选择“暂不运行付费测试”。已将执行计划标为暂缓并同步总清单、阶段明细和性能计划；没有启动费用转发、切换本人配置或调用供应商。准备材料保留，真实性能与合并条件仍未满足，不把暂缓测试当成阶段验收通过。

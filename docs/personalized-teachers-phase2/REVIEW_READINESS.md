@@ -30,7 +30,7 @@
 | [电视剩余项目](DEVICE_FINAL_ACCEPTANCE.json) | 导航位置、新格式实例回放去重、无凭据删除失败；未向服务器发送删除。原 150 条事实全部保留 |
 | [课程生成对照](GENERATION_BENCHMARK.json) | 旧候选的六次首画面对照，额度已用完；不是完整首段音频性能结论 |
 | [免费首段可播放对照](FREE_PLAYABLE_BENCHMARK.json) | 完整两版前端、三种条件各 10 对、真实浏览器音频信号；零真实供应商调用，不能代替真实模型/TTS 环境；停用的旧计时轮次另存 |
-| [真实计时执行器准备](LIVE_PERFORMANCE_PREPARATION.md) | 费用、音画及故障检查通过；另补用户所选 alan0x / Gemini 3.8 / 小何验证及指定既有账号登录。[执行单](LIVE_PERFORMANCE_EXECUTION.md)已列保守上限和恢复步骤，待新预算；零真实供应商调用，正常账号尚未接入测试地址 |
+| [真实计时执行器准备](LIVE_PERFORMANCE_PREPARATION.md) | 费用、音画及故障检查通过；另补用户所选 alan0x / Gemini 3.8 / 小何验证及指定既有账号登录。[执行单](LIVE_PERFORMANCE_EXECUTION.md)已列保守上限和恢复步骤，用户已暂缓付费；零真实供应商调用，正常账号尚未接入测试地址 |
 | [同进程 relay 对照](RELAY_BENCHMARK.json) | 固定模拟供应商延迟；不能推导真实供应商速度 |
 
 本轮额外针对删除、播放记录与交付客户端的既有回归共 36 项通过；新增验证脚本 lint 通过。`git diff --check` 与文档引用检查通过。没有执行新增付费课程生成、TTS 合成或知识点分析。

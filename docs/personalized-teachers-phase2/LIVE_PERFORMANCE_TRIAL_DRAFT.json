@@ -1,7 +1,7 @@
 {
   "schema": "octos.learn.performance-trial.v1",
   "id": "phase2-live-playable-draft",
-  "status": "draft",
+  "status": "deferred",
   "cost_basis_verified": true,
   "route_verified": false,
   "authorization_reference": "",
@@ -125,6 +125,7 @@
     }
   ],
   "notes": [
+    "User explicitly deferred paid testing. Preserve this as preparation only; do not execute, retry or substitute a lower budget without a later user decision.",
     "Draft only. User selected the existing alan0x account, not a paid budget. No new supplier calls are authorized.",
     "Proposed limits: 12 courses, at most 30 admitted model HTTP attempts at USD 1.10 reserved each, 12 first-narration requests, model cap USD 33 and separate speech cap CNY 5. No guarantee that all courses fit before the request limit is reached.",
     "Published standard Gemini 3.8 Flash rates through 2026-12-31: USD 0.75 per million input tokens and USD 3.75 per million output tokens including thinking. Full model input 1048576 plus full model output 65536 costs USD 1.032192; reserve USD 1.10 per attempt. The installed skill and gateway still restrict request output to 32768. Failed, timed-out and interrupted attempts retain their full reservation.",
@@ -133,5 +134,11 @@
     "Configure and inspect the normal account base_url and running binary only after paid-test authorization, before admitting any request. Keep the budget gateway until all related jobs terminate, then restore only the changed URL field. Do not restore direct routing while retries remain in flight.",
     "Absolute build locations are local prerequisites; reverify hashes, installed bundles and source before execution. See LIVE_PERFORMANCE_EXECUTION.md for the reviewable setup, stop and restore sequence."
   ],
-  "output_directory": "/private/tmp/octos-phase2-live-approved-trial"
+  "output_directory": "/private/tmp/octos-phase2-live-approved-trial",
+  "paid_execution_decision": {
+    "source": "Direct user response to the new-budget approval request",
+    "decision": "defer",
+    "user_response": "暂不运行付费测试",
+    "paid_execution_authorized": false
+  }
 }
