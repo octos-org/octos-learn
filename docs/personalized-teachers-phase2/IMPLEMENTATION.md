@@ -4,6 +4,8 @@
 
 独立审查后的判断、修正和保留限制见[审查处理记录](REVIEW_FOLLOWUP.md)。本记录已更新到审查后的候选；电视及六次生成证据仍分别对应它们实际测试的较早提交，不将新修正冒称为重新实机验收过。
 
+用户要求从收尾推进起持续维护[第二阶段 TODO](TODO.md)，记录已做事项、剩余任务、当前状态与阻塞依据；本实施记录保留具体实现和验证证据。
+
 产品分支 `codex/learning-history-phase2`，包含 main `4973499`。Octos 独立分支 `codex/session-history-replay`，基于 main `598b3d53`，英文草稿 [PR #2854](https://github.com/octos-org/octos/pull/2854)。第一阶段已合入的 #2848 与本次旧消息重试修复是两件事。没有改 Learning Coach、OLL 或课程库，也没有提交其他任务的闭源迁移文件。
 
 ## 现在能够做什么
