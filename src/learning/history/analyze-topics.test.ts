@@ -1,3 +1,4 @@
+import { ANALYSIS_INSTRUCTIONS, buildTopicAnalysisPrompt } from '../../../services/learning-history/topic-analysis-instructions.mjs';
 import { webcrypto } from 'node:crypto';
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { analyzeTopics } from './analyze-topics';
@@ -74,6 +75,11 @@ it('records execution before app admission and confines catalog calls to the cur
   expect((await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).completed).toBe(1);
   expect(f.http.filter(path => path.startsWith('/catalog?'))).toHaveLength(1);
   expect(f.calls.find(call => call.method === 'peer/tools/register')?.params.generic_tools).toEqual([]);
+  const admissions = f.calls.filter(call => call.method === 'turn/start');
+  expect(admissions).toHaveLength(1);
+  const prompt = (admissions[0].params.input as { text: string }[])[0].text;
+  expect(prompt.startsWith(ANALYSIS_INSTRUCTIONS)).toBe(true);
+  expect(prompt).toBe(buildTopicAnalysisPrompt({ input_sha256: 'c'.repeat(64), units: [{ unit_id: 'question' }] }));
   expect(f.calls.filter(call => call.method === 'peer/purge')).toHaveLength(1);
   expect(f.http).toContain(`/controls/${id}`);
 });

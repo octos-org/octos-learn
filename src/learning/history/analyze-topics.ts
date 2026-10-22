@@ -1,4 +1,4 @@
-import { ANALYSIS_INSTRUCTIONS } from '../../../services/learning-history/topic-analysis-instructions.mjs';
+import { ANALYSIS_INSTRUCTIONS, buildTopicAnalysisPrompt } from '../../../services/learning-history/topic-analysis-instructions.mjs';
 import { createRequestId } from '../../lib/request-id';
 import { createUiProtocolBridge, getUiProtocolFeatures, type UiProtocolBridge, type PeerToolCall } from '../../runtime/ui-protocol-bridge';
 import { historySha256 } from './identifiers';
@@ -156,7 +156,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
       // The execution bookmark is already durable. Treat a lost admission
       // response as potentially charged; never submit a replacement turn.
       admitted = true;
-      await rpc('turn/start', { session_id: control.session, turn_id: control.turn, origin: { kind: 'app', label: 'Learning topic analysis' }, input: [{ kind: 'text', text: JSON.stringify(task.input) }] });
+      await rpc('turn/start', { session_id: control.session, turn_id: control.turn, origin: { kind: 'app', label: 'Learning topic analysis' }, input: [{ kind: 'text', text: buildTopicAnalysisPrompt(task.input) }] });
     } else admitted = true;
     const started = now();
     for (let tick = 0; now() - started < 120000 && tick < 240; tick++) {

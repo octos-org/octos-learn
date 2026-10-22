@@ -6,3 +6,8 @@ Use learning_topics.search with English concepts to inspect candidate definition
 Return only JSON: {"schema":1,"input_sha256":"the supplied input hash","units":[{"unit_id":"exact supplied id","status":"mapped|unknown|outside-catalog","topics":[{"topic_id":"catalog id","quote":"exact nonempty substring of this unit's content"}],"reason":"brief explanation"}]}.
 Return every unit exactly once. Mapped units need at least one topic and exact evidence from that same unit. Other statuses need an empty topics array. A catalog node is only partially covered; do not claim a whole node is complete. Do not include confidence or mastery fields.`;
 
+// peer/prepare stages brief.md; app-managed turn/start does not inject that
+// file into the model prompt. Carry the contract in the same app request as
+// the observed data, without an extra model round trip.
+export const ANALYSIS_MATERIAL_PREFIX = `${ANALYSIS_INSTRUCTIONS}\n\nObserved learning material (JSON):\n`;
+export const buildTopicAnalysisPrompt = input => ANALYSIS_MATERIAL_PREFIX + JSON.stringify(input);
