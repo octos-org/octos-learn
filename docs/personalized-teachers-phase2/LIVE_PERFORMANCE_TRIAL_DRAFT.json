@@ -125,6 +125,7 @@
     }
   ],
   "notes": [
+    "Optional supplemental real-supplier trial. AGENTS.md requires latency non-regression evidence, not this paid method. Review free evidence and changed execution paths before deciding merge readiness.",
     "User explicitly deferred paid testing. Preserve this as preparation only; do not execute, retry or substitute a lower budget without a later user decision.",
     "Draft only. User selected the existing alan0x account, not a paid budget. No new supplier calls are authorized.",
     "Proposed limits: 12 courses, at most 30 admitted model HTTP attempts at USD 1.10 reserved each, 12 first-narration requests, model cap USD 33 and separate speech cap CNY 5. No guarantee that all courses fit before the request limit is reached.",
@@ -140,5 +141,6 @@
     "decision": "defer",
     "user_response": "暂不运行付费测试",
     "paid_execution_authorized": false
-  }
+  },
+  "required_for_phase2_merge": false
 }
