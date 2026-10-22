@@ -38,6 +38,28 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
   return diagnostic ? cases.slice(0, 1) : cases;
 }
 
+// A connection failure before Octos admission has not spent the authorization.
+// Only the same first source and its original, empty ledger can be resumed.
+// Code fingerprints may advance after a reviewed repair; every other approved
+// field and all previous evidence must remain intact.
+export function validateUnadmittedResume(plan, previousPlan, report, snapshot, jobs, resultCount, controlCount) {
+  const { code_sha256: currentCode, ...current } = plan;
+  const { code_sha256: previousCode, ...previous } = previousPlan;
+  assert.ok(currentCode && previousCode);
+  assert.deepEqual(current, previous, 'Preflight recovery cannot change approved scope or limits');
+  assert.equal(plan.status, 'approved'); assert.equal(plan.scope, 'first-source-diagnosis');
+  assert.equal(report.state, 'stopped'); assert.equal(report.mode, '--execute');
+  assert.equal(report.gateway_metrics?.forwarded, 0); assert.equal(report.gateway_metrics?.failed, 0);
+  assert.equal(report.rows.length, 1); assert.equal(report.rows[0].id, 'q-direction');
+  assert.equal(report.budget.requests.length, 0); assert.equal(snapshot.requests.length, 0, 'An attempted model request cannot be resumed');
+  assert.equal(snapshot.tasks.length, 1); const task = snapshot.tasks[0];
+  assert.equal(task.id, 'q-direction'); assert.equal(task.state, 'active'); assert.equal(task.input_hash, report.rows[0].input_sha256);
+  assert.equal(jobs.length, 1); const job = jobs[0];
+  assert.equal(job.source_event_id, task.id); assert.equal(job.state, 'pending'); assert.equal(job.input_sha256, task.input_hash);
+  assert.equal(job.octos_session_id, null, 'Octos admission may already have occurred'); assert.equal(job.octos_turn_id, null);
+  assert.equal(resultCount, 0); assert.equal(controlCount, 0, 'Unreconciled control must not be replaced');
+}
+
 /** Reservations are written before forwarding. Missing/failed replies are never
  * refunded; changing the plan or restarting cannot reset the ledger. */
 export class TopicTrialLedger {

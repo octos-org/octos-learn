@@ -39,6 +39,6 @@ export async function topicOctosFixture({ binary, root, gateway, plan }) {
     profile.config.llm = { primary: { family_id: 'google', model_id: plan.model, route: { api_type: 'gemini', base_url: `${gateway}/v1beta`, api_key_env: 'TOPIC_FIXTURE_KEY' } }, fallbacks: [] };
     profile.config.env_vars = { TOPIC_FIXTURE_KEY: 'synthetic-not-real' };
     await writeFile(path, JSON.stringify(profile), { mode: 0o600 }); await stop(); await start();
-    return { base, close: async () => { await stop(); await closeLocal(embedding); await log.close(); } };
+    return { base, restart: async () => { await stop(); await start(); }, close: async () => { await stop(); await closeLocal(embedding); await log.close(); } };
   } catch (error) { await stop(); await closeLocal(embedding); await log.close(); throw error; }
 }

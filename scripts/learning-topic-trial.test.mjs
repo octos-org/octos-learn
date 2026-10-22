@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { TopicTrialLedger, validateTopicTrial, checkTopicModelRequest, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
+import { TopicTrialLedger, validateTopicTrial, validateUnadmittedResume, checkTopicModelRequest, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
 import { stageTopicCase, inspectTopicCandidate, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { HistoryStore } from '../services/learning-history/store.mjs';
@@ -47,6 +47,25 @@ test('a fresh first-source diagnosis has its own one-source, three-request, USD3
     ledger.finish('q-direction');
     assert.throws(() => ledger.start('another-source', 'd'.repeat(64)), /Task limit reached/);
   } finally { ledger.close(); }
+});
+
+test('pre-admission recovery preserves scope and refuses any charged, admitted or uncleared attempt', () => {
+  const single = { ...plan, status: 'approved', authorization_reference: 'synthetic-only', scope: 'first-source-diagnosis',
+    limits: { ...plan.limits, tasks: 1, model_http_requests: 3, usd_micros: 3300000 } };
+  const updated = { ...single, code_sha256: { ...single.code_sha256, repaired: 'new-code' } };
+  const input = inputFor(), report = { state: 'stopped', mode: '--execute', gateway_metrics: { forwarded: 0, failed: 0 },
+    rows: [{ id: 'q-direction', input_sha256: input.input_sha256 }], budget: { requests: [] } };
+  const snapshot = { tasks: [{ id: 'q-direction', state: 'active', input_hash: input.input_sha256 }], requests: [] };
+  const jobs = [{ source_event_id: 'q-direction', state: 'pending', input_sha256: input.input_sha256, octos_session_id: null, octos_turn_id: null }];
+  const check = (p = updated, r = report, s = snapshot, j = jobs, count = 0, controls = 0) => validateUnadmittedResume(p, single, r, s, j, count, controls);
+  check();
+  assert.throws(() => check({ ...updated, output_directory: '/private/tmp/replacement-ledger' }));
+  assert.throws(() => check(updated, report, { ...snapshot, requests: [{ usd: 1100000 }] }), /attempted model request/);
+  assert.throws(() => check(updated, { ...report, gateway_metrics: { forwarded: 1, failed: 0 } }));
+  assert.throws(() => check(updated, report, snapshot, [{ ...jobs[0], octos_session_id: 'existing-peer' }]), /admission/);
+  assert.throws(() => check(updated, report, snapshot, jobs, 0, 1), /Unreconciled/);
+  assert.throws(() => check(updated, report, snapshot, jobs, 1));
+  assert.throws(() => check(updated, { ...report, mode: '--resume-preflight' }));
 });
 
 test('all nine fixed sources stage through the actual contracts; expected answers never reach model inputs', () => {

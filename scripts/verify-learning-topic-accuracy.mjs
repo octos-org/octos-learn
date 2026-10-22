@@ -2,27 +2,29 @@
 // Gemini replacement. --execute requires an explicitly approved policy and
 // pre-routed normal Octos; it never exports/copies supplier credentials.
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { createServer } from 'node:http';
+import { DatabaseSync } from 'node:sqlite';
 import { createServer as createViteServer } from 'vite';
 import { HistoryStore } from '../services/learning-history/store.mjs';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
 import { ANALYSIS_INSTRUCTIONS } from '../services/learning-history/topic-analysis-instructions.mjs';
-import { digest, validateTopicTrial, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
+import { digest, validateTopicTrial, validateUnadmittedResume, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
 import { stageTopicCase, inspectTopicCandidate, requireAllStagedJobs, stageObservedTrialPlayback, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { queryTopic } from '../services/learning-history/topic-query.mjs';
 import { topicOctosFixture, listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 
 const [mode, planFile, output, binary, fixtureScenario = 'valid'] = process.argv.slice(2);
-assert.ok(['--check', '--fixture', '--execute'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
-assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && fixtureScenario === 'invalid-json'), 'Invalid fixture scenario');
+const execute = mode === '--execute' || mode === '--resume-preflight';
+assert.ok(['--check', '--fixture', '--execute', '--resume-preflight'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
+assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host'].includes(fixtureScenario)), 'Invalid fixture scenario');
 const planBytes = await readFile(planFile), plan = JSON.parse(planBytes);
 const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
-const samples = validateTopicTrial(plan, casesBytes, { execute: mode === '--execute' });
+const samples = validateTopicTrial(plan, casesBytes, { execute });
 assert.ok(plan.code_sha256 && Object.keys(plan.code_sha256).length >= 7, 'Trial source fingerprints missing');
 for (const [path, expected] of Object.entries(plan.code_sha256)) {
   assert.ok(/^(src\/learning\/history|src\/runtime|services\/learning-history|scripts)\/[A-Za-z0-9_./-]+$/.test(path) && !path.includes('..'), 'Invalid pinned source path');
@@ -34,20 +36,44 @@ if (mode === '--check') {
     approval_required: true, supplier_calls: 0, plan_sha256: digest(planBytes) }));
 } else {
   assert.ok(output?.startsWith('/'), 'Provide a new protected output directory');
-  if (mode === '--execute') {
+  if (execute) {
     assert.equal(resolve(output), plan.output_directory);
     assert.equal(digest(await readFile(plan.octos.binary)), plan.octos.sha256, 'Reviewed Octos binary changed; recheck profile bootstrap and billing paths');
   }
   else assert.ok(binary?.startsWith('/'), 'Fixture requires an absolute local Octos binary');
   // No fresh directory or changed policy is used to refill an existing trial.
-  await mkdir(output, { recursive: false, mode: 0o700 });
-  const ledger = new TopicTrialLedger(join(output, 'budget.sqlite'), plan);
+  let ledger, resumeEvidence;
+  if (mode === '--resume-preflight') {
+    // Never create a replacement budget. Inspect both durable stores before
+    // connecting, retain the prior approved policy/report, and reuse the same
+    // active task only when no Octos execution or supplier attempt existed.
+    const previousBytes = await readFile(join(output, 'policy-executed.json'));
+    const previousPlan = JSON.parse(previousBytes), previousReportBytes = await readFile(join(output, 'report.json'));
+    const previousReport = JSON.parse(previousReportBytes);
+    const previousDb = new DatabaseSync(join(output, 'trial-history.sqlite'), { readOnly: true });
+    try {
+      const jobs = previousDb.prepare('SELECT source_event_id,state,input_sha256,octos_session_id,octos_turn_id FROM topic_analysis_jobs').all();
+      const results = previousDb.prepare('SELECT COUNT(*) n FROM topic_analysis_results').get().n;
+      let controlCount = 0;
+      try { controlCount = (await readdir(join(output, 'analysis-host-controls', plan.owner))).length; }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+      ledger = new TopicTrialLedger(join(output, 'budget.sqlite'), previousPlan);
+      validateUnadmittedResume(plan, previousPlan, previousReport, ledger.snapshot(), jobs, results, controlCount);
+      await writeFile(join(output, 'pre-admission-report.json'), previousReportBytes, { flag: 'wx', mode: 0o600, flush: true });
+      await writeFile(join(output, 'policy-resumed.json'), planBytes, { flag: 'wx', mode: 0o600, flush: true });
+      resumeEvidence = { previous_policy_sha256: digest(previousBytes), previous_report_sha256: digest(previousReportBytes), original_ledger_preserved: true };
+    } catch (error) { ledger?.close(); throw error; }
+    finally { previousDb.close(); }
+  } else {
+    await mkdir(output, { recursive: false, mode: 0o700 });
+    ledger = new TopicTrialLedger(join(output, 'budget.sqlite'), plan);
+  }
   let fixture, vite, product, gateway, activeInput, activeSample, originalHttp = 0, history;
   const report = { plan_sha256: digest(planBytes), mode, supplier_calls: mode === '--fixture' ? 0 : null,
-    rows: [], semantic_quality: 'requires independent human review', state: 'preflight' };
+    ...(resumeEvidence ? { preflight_resume: resumeEvidence } : {}), rows: [], semantic_quality: 'requires independent human review', state: 'preflight' };
   const save = () => writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flush: true });
   try {
-    const upstreamFetch = mode === '--execute' ? fetch : async (_url, options) => {
+    const upstreamFetch = execute ? fetch : async (_url, options) => {
       originalHttp++;
       const body = JSON.parse(options.body);
       const promptTexts = [body.system_instruction, body.systemInstruction, ...body.contents].filter(Boolean)
@@ -65,7 +91,7 @@ if (mode === '--check') {
       return new Response(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts }, finishReason: hasTool ? 'STOP' : 'STOP' }], usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } })}\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     };
     gateway = createTopicTrialGateway({ ledger, upstreamFetch });
-    const gatewayBase = await listenLocal(gateway.server, mode === '--execute' ? Number(new URL(plan.gateway).port) : 0);
+    const gatewayBase = await listenLocal(gateway.server, execute ? Number(new URL(plan.gateway).port) : 0);
     if (mode === '--fixture') fixture = await topicOctosFixture({ binary, root: output, gateway: gatewayBase, plan });
     const backend = fixture?.base ?? plan.backend;
     const { token, profile } = await loginExistingTrialOwner({ owner: plan.owner, registryRoot: fixture ? undefined : join(homedir(), '.octos'), request: (path, options) => fetch(backend + path, options) });
@@ -84,13 +110,22 @@ if (mode === '--check') {
     const productBase = await listenLocal(product), identity = { owner: plan.owner, token };
     vite = await createViteServer({ root: process.cwd(), server: { middlewareMode: true, hmr: false }, appType: 'custom', logLevel: 'error' });
     const { analyzeTopics, createTopicAnalysisBridge } = await vite.ssrLoadModule('/src/learning/history/analyze-topics.ts');
-    history.db.prepare('INSERT INTO topic_analysis_settings VALUES(?,?,?)').run(plan.owner, 1, samples.length);
+    if (fixtureScenario === 'resumed-host') {
+      const preflight = createTopicAnalysisBridge(identity, backend);
+      try {
+        await preflight.start({ profileId: plan.owner });
+        await preflight.callMethod('session/open', { session_id: 'learn-topic-' + digest(plan.owner).slice(0, 32), profile_id: plan.owner, cwd: output });
+      } finally { await preflight.stop(); }
+      await fixture.restart();
+      report.fixture_persisted_host_restarted = true;
+    }
+    if (!resumeEvidence) history.db.prepare('INSERT INTO topic_analysis_settings VALUES(?,?,?)').run(plan.owner, 1, samples.length);
     report.state = 'running'; await save();
     for (const sample of samples) {
-      activeSample = sample; stageTopicCase(history, plan.owner, sample);
+      activeSample = sample; if (!resumeEvidence) stageTopicCase(history, plan.owner, sample);
       requireAllStagedJobs(history, plan.owner, sample);
       activeInput = buildAnalysisInput(history, plan.owner, sample.id);
-      ledger.start(sample.id, activeInput.input_sha256);
+      if (!resumeEvidence) ledger.start(sample.id, activeInput.input_sha256);
       const row = { id: sample.id, input_sha256: activeInput.input_sha256, state: 'started' }; report.rows.push(row); await save();
       const progress = await analyzeTopics(identity, productBase, { createBridge: () => {
         const connection = createTopicAnalysisBridge(identity, backend), original = connection.callMethod.bind(connection);
@@ -123,7 +158,7 @@ if (mode === '--check') {
   } catch (error) {
     // Do not serialize provider bodies, request headers or account config.
     report.state = 'stopped'; report.failure = 'Inspect protected results and durable reservations; no automatic continuation';
-    if (mode === '--execute') throw Error('Topic trial stopped; retain the private report and budget ledger for inspection. Do not automatically retry or restore direct routing.');
+    if (execute) throw Error('Topic trial stopped; retain the private report and budget ledger for inspection. Do not automatically retry or restore direct routing.');
     throw error;
   } finally {
     report.budget = ledger.snapshot(); report.gateway_metrics = gateway?.metrics; await save();
