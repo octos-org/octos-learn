@@ -60,6 +60,26 @@ test('a separately approved completion scope can cover eight catalog rounds plus
   } finally { ledger.close(); }
 });
 
+test('remaining-case scope excludes the passed first question and shares one 18-request budget across eight sources', () => {
+  const p = { ...plan, scope: 'remaining-fixed-cases', limits: { ...plan.limits, tasks: 8, model_http_requests_per_task: 9 } };
+  const selected = validateTopicTrial(p, casesBytes);
+  assert.equal(selected.length, 8); assert.ok(selected.every(s => s.id !== 'q-direction'));
+  assert.ok(['course-supplement', 'course-version-a', 'course-version-b'].every(id => selected.some(s => s.id === id)));
+  assert.throws(() => validateTopicTrial(p, casesBytes, { execute: true }), /not authorized/);
+  assert.throws(() => validateTopicTrial({ ...p, limits: { ...p.limits, tasks: 9 } }, casesBytes));
+  const ledger = new TopicTrialLedger(':memory:', p);
+  try {
+    for (let i = 0; i < 2; i++) {
+      const input = inputFor(selected[i]); ledger.start(selected[i].id, input.input_sha256);
+      for (let j = 0; j < 9; j++) ledger.reserve(input.input_sha256);
+      ledger.finish(selected[i].id);
+    }
+    const input = inputFor(selected[2]); ledger.start(selected[2].id, input.input_sha256);
+    assert.throws(() => ledger.reserve(input.input_sha256), /budget exhausted/);
+    assert.equal(ledger.snapshot().requests.length, 18);
+  } finally { ledger.close(); }
+});
+
 test('pre-admission recovery preserves scope and refuses any charged, admitted or uncleared attempt', () => {
   const single = { ...plan, status: 'approved', authorization_reference: 'synthetic-only', scope: 'first-source-diagnosis',
     limits: { ...plan.limits, tasks: 1, model_http_requests: 3, usd_micros: 3300000 } };

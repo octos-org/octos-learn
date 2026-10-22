@@ -161,7 +161,7 @@ if (mode === '--check') {
       ledger.finish(sample.id); await save();
       assert.equal(row.review.expectation_issues.length, 0, 'Trial stopped at a predeclared expectation mismatch; do not auto-repeat');
     }
-    if (samples.length === 9) {
+    if (['course-supplement', 'course-version-a', 'course-version-b'].every(id => samples.some(sample => sample.id === id))) {
       stageObservedTrialPlayback(history, plan.owner);
       report.playback_evidence = queryTopic(history, plan.owner, 'mt_WBdHkc2HTf').automatic;
       assert.equal(report.playback_evidence.counts.played_runs, 2); assert.equal(report.playback_evidence.counts.played_beats, 2);

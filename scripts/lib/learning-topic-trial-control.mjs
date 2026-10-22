@@ -20,10 +20,11 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
   assert.match(plan.id, /^[a-z0-9-]+$/); assert.ok(plan.output_directory.startsWith('/private/tmp/'));
   const cases = JSON.parse(casesBytes).cases;
   assert.equal(cases.length, 9); assert.equal(new Set(cases.map(c => c.id)).size, 9);
-  assert.ok(plan.scope === undefined || ['first-source-diagnosis', 'first-source-completion'].includes(plan.scope), 'Unsupported trial scope');
+  assert.ok(plan.scope === undefined || ['first-source-diagnosis', 'first-source-completion', 'remaining-fixed-cases'].includes(plan.scope), 'Unsupported trial scope');
   const diagnostic = plan.scope !== undefined;
   const completion = plan.scope === 'first-source-completion';
-  assert.deepEqual(plan.limits, { tasks: diagnostic ? 1 : 9, model_http_requests: completion ? 9 : diagnostic ? 3 : 18, model_http_requests_per_task: completion ? 9 : 3, usd_micros: completion ? 9900000 : diagnostic ? 3300000 : 20000000,
+  const remaining = plan.scope === 'remaining-fixed-cases';
+  assert.deepEqual(plan.limits, { tasks: remaining ? 8 : diagnostic ? 1 : 9, model_http_requests: remaining ? 18 : completion ? 9 : diagnostic ? 3 : 18, model_http_requests_per_task: completion || remaining ? 9 : 3, usd_micros: remaining ? 20000000 : completion ? 9900000 : diagnostic ? 3300000 : 20000000,
     reservation_usd_micros: 1100000, request_bytes: 1048576, output_tokens: 32768 });
   const p = plan.pricing;
   assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
@@ -36,7 +37,7 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
     assert.equal(p.verified_at, now.toISOString().slice(0, 10), 'Recheck the public price on execution day');
     assert.ok(now.toISOString().slice(0, 10) <= p.valid_until, 'Pricing basis expired');
   }
-  return diagnostic ? cases.slice(0, 1) : cases;
+  return remaining ? cases.slice(1) : diagnostic ? cases.slice(0, 1) : cases;
 }
 
 // A connection failure before Octos admission has not spent the authorization.
