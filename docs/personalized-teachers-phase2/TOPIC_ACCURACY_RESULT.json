@@ -1,0 +1,161 @@
+{
+  "schema": "octos.learn.topic-accuracy-result.v1",
+  "date": "2026-10-22",
+  "state": "stopped-not-passed",
+  "trial_id": "phase2-topic-accuracy-20261022",
+  "executed_policy_sha256": "27ec256f84aef652521df391c36afdff841d1ecc167ee781a579a1f13c5abfb8",
+  "executed_policy": {
+    "schema": "octos.learn.topic-accuracy-trial.v1",
+    "id": "phase2-topic-accuracy-20261022",
+    "status": "approved",
+    "authorization_reference": "User explicitly authorized the prepared 9-task, 18-request, USD20 accuracy trial in this chat on 2026-10-22 after the purpose was explained.",
+    "owner": "alan0x",
+    "model": "gemini-3.8-flash",
+    "backend": "http://127.0.0.1:50080",
+    "gateway": "http://127.0.0.1:50189",
+    "output_directory": "/private/tmp/octos-topic-accuracy-20261022",
+    "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+    "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "pricing": {
+      "verified_at": "2026-10-22",
+      "valid_until": "2026-12-31",
+      "input_per_million_usd": 0.75,
+      "output_including_thinking_per_million_usd": 3.75,
+      "max_input_tokens": 1048576,
+      "max_output_tokens": 65536,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+    },
+    "limits": {
+      "tasks": 9,
+      "model_http_requests": 18,
+      "model_http_requests_per_task": 3,
+      "usd_micros": 20000000,
+      "reservation_usd_micros": 1100000,
+      "request_bytes": 1048576,
+      "output_tokens": 32768
+    },
+    "code_sha256": {
+      "scripts/verify-learning-topic-accuracy.mjs": "408d61fbc67f4dd30b0e1694b6e780bb4ab76177fa5a415ab637474bf012dc8d",
+      "scripts/lib/learning-topic-trial-control.mjs": "7c82c2b729633278991f070d79992df611fc303478611b7a99260aab54afc1ed",
+      "scripts/lib/learning-topic-trial-cases.mjs": "e50e43fbf58a5ed1c06d30cdaaf9e0b8259bedef4c1a9c2f5c554d9d2bd7dce1",
+      "scripts/lib/learning-topic-trial-fixture.mjs": "ac8ab5fd366a2d877d1ad16605e072d6e6d28a0d329609ec9616e225c29cf6cd",
+      "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+      "src/learning/history/analyze-topics.ts": "6667f092575918aa99211d09026fb063c53c5dbcd685cf508b0bec416734f781",
+      "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+      "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+      "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+      "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+      "services/learning-history/topic-analysis-instructions.mjs": "1a9c01ec3a14775884b73de868904f4e4e76dfa2438d33973da996ae3ff6ef63",
+      "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+      "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+      "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358"
+    },
+    "octos": {
+      "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+      "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+      "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+    }
+  },
+  "actual": {
+    "started_sources": 1,
+    "planned_sources": 9,
+    "not_started_sources": 8,
+    "supplier_http_requests": 2,
+    "reserved_usd": 2.2,
+    "actual_billed_usd": null,
+    "actual_token_usage": null,
+    "cost_note": "Conservative capacity reservations, not measured or billed spending; failed requests are not refunded from the ledger.",
+    "first_source": "q-direction",
+    "jobs": [
+      {
+        "source_event_id": "q-direction",
+        "state": "blocked",
+        "error": "invalid-analysis-result"
+      }
+    ],
+    "persisted_results": 0,
+    "raw_model_answer_retained": false,
+    "exact_rejection_reason": null,
+    "semantic_quality_verified": false
+  },
+  "limitations": [
+    "The original harness did not retain rejected raw output before cleanup. JSON parsing, schema, input identity and quotation checks cannot be distinguished from this evidence.",
+    "The report supplier_calls field is null; the actual count of 2 is supported by gateway forwarded metrics and the durable 2-request ledger.",
+    "The ledger task remains active because it was never successfully finished. That reservation status does not mean an Octos turn is still running.",
+    "No repeated paid samples, subsequent source tasks, new courses, TTS, ASR, Jev, deployment, APK installation or continuous analysis activation."
+  ],
+  "restoration": {
+    "restored": true,
+    "other_profile_fields_unchanged": false,
+    "normal_backend_stopped": true,
+    "model": "gemini-3.8-flash",
+    "original_route_exactly_restored": true,
+    "other_profile_fields_comparison": "Raw JSON fingerprint changed after normal Octos login/serialization; no full-profile backup was exported, so exact equivalence is not claimed. The restore operation only edited base_url/api_type.",
+    "original_backend_state": "not-listening",
+    "final_backend_state": "not-listening",
+    "temporary_control_files_remaining": 0,
+    "purge": {
+      "matching_purge_records": 1,
+      "event": "peer_purged",
+      "error_count": 0,
+      "purge_recorded": true
+    }
+  },
+  "free_fix": {
+    "commit": "1e4fff8",
+    "independent_review": "passed; existing review_topic_analysis agent; no paid calls",
+    "regression_tests": 6,
+    "valid_fixture": {
+      "sources": 9,
+      "synthetic_http_requests": 18,
+      "real_supplier_calls": 0,
+      "state": "completed-needs-human-review"
+    },
+    "invalid_json_fixture": {
+      "sources": 1,
+      "synthetic_http_requests": 2,
+      "real_supplier_calls": 0,
+      "state": "stopped",
+      "raw_answer_retained": true,
+      "results_persisted": 0,
+      "remaining_sources_not_started": 8,
+      "control_files_remaining": 0
+    },
+    "does_not_recover_original_output": true
+  },
+  "evidence": [
+    {
+      "path": "/private/tmp/octos-topic-accuracy-20261022/report.json",
+      "sha256": "76088266452decbf0d7e968bee4a6593750f4226d2a27dac0356dbc49b1e7039"
+    },
+    {
+      "path": "/private/tmp/octos-topic-accuracy-20261022/policy-executed.json",
+      "sha256": "27ec256f84aef652521df391c36afdff841d1ecc167ee781a579a1f13c5abfb8"
+    },
+    {
+      "path": "/private/tmp/octos-topic-accuracy-20261022/cleanup-confirmation.json",
+      "sha256": "0e4a59dcaa5406a3dae6e676782bbd445da6d8584b2d3c6d1371c0dbb4cb18a7"
+    },
+    {
+      "path": "/private/tmp/octos-topic-accuracy-20261022-recovery/restoration.json",
+      "sha256": "c02893ea50d5a4135ccfcafe0750652123f0d2f553daaa2df824147f8be32beb"
+    },
+    {
+      "path": "/private/tmp/topic-accuracy-capture-valid/report.json",
+      "sha256": "13a156db9e3a5073fda21c4bd5f49b8525609cfb1f700805367f5933b673e7de"
+    },
+    {
+      "path": "/private/tmp/topic-accuracy-invalid-capture/report.json",
+      "sha256": "a3b344b8d00e2f84d6e4f5c9d2f5e309482377a1d55765f908efbb03e4685115"
+    },
+    {
+      "path": "/private/tmp/topic-accuracy-capture-tests.log",
+      "sha256": "1f21f4493bef2497344be3989ccd723c22edb312bbb2786d644c2534d28af472"
+    },
+    {
+      "path": "/private/tmp/topic-accuracy-capture-lint.log",
+      "sha256": "80b590eb30b56971a95f524802de0d470e14704730054a2a44f8c632e0213db3"
+    }
+  ]
+}
