@@ -118,3 +118,33 @@ it('shows a failed request separately from delivered content and played progress
   expect(await screen.findByText('一次请求执行未完成')).toBeTruthy();
   expect(screen.getByText(/已经交付的内容仍保留，是否播放另看播放记录/)).toBeTruthy();
 });
+
+
+it('shows generated whole-course playback with its actual source and counted records, without claiming mastery', async () => {
+  stubFetch(url => {
+    if (url.includes('/coverage?')) return Response.json({ status: 'unmapped', through: 8, objectives: [],
+      course_playback: { required_beats: 2, played_beats: 1, complete: false },
+      generated_playback: { status: 'available', rule: 'complete-delivery-matching-beats-v1', source_event_id: 'final-delivery',
+        evidence: [{ event_id: 'old-part-playback', step_id: 'section', beat_id: 'first' }] } });
+    if (url.includes('/runs?')) return Response.json({ runs: [{ ...run, course: { kind: 'generated', id: 'question', version: 'one' } }], through: 8, next_before: null });
+  });
+  render(<AccountHistoryPanel onSelect={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
+  expect(await screen.findByText(/本遍课程实际播放了 1\/2/)).toBeTruthy();
+  fireEvent.click(screen.getByText('查看整课播放的依据'));
+  expect(screen.getByText(/课程交付记录：final-delivery/)).toBeTruthy();
+  expect(screen.getByText(/播放记录：old-part-playback/)).toBeTruthy();
+  expect(screen.getByText(/不表示练习完成或掌握/)).toBeTruthy();
+});
+
+it('keeps generated whole-course playback unknown when a final source is unavailable', async () => {
+  stubFetch(url => {
+    if (url.includes('/coverage?')) return Response.json({ status: 'unmapped', through: 8, objectives: [], course_playback: null,
+      generated_playback: { status: 'unknown', reason: 'incomplete-delivery', rule: 'complete-delivery-matching-beats-v1' } });
+    if (url.includes('/runs?')) return Response.json({ runs: [{ ...run, course: { kind: 'generated', id: 'question', version: 'one' } }], through: 8, next_before: null });
+  });
+  render(<AccountHistoryPanel onSelect={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
+  expect(await screen.findByText(/暂不能判断整课是否播放完成/)).toBeTruthy();
+  expect(screen.queryByText(/本遍课程实际播放了/)).toBeNull();
+});

@@ -50,7 +50,13 @@ function CourseCoverage({ api, run, through }: { api: HistoryApi; run: LearningR
     {error && <p role="alert">{error}</p>}
     {coverage?.status === 'unmapped' && <p>这门课没有人工确认的教学对应表。自动分析的结果另列在下方；没有结果时不猜测知识点进度。</p>}
     {coverage?.status === 'pending-review' && <p>课程与知识点的对应表尚待内容审核，暂不计算知识点进度。</p>}
+    {coverage?.generated_playback?.status === 'unknown' && <p>尚无足够的完整课程与内容版本依据，暂不能判断整课是否播放完成；已有片段记录仍保留。</p>}
     {coverage?.course_playback && <p>本遍课程实际播放了 {coverage.course_playback.played_beats}/{coverage.course_playback.required_beats} 个必需片段。{coverage.course_playback.complete ? '必需讲解均有播放记录。' : '仍有讲解没有播放记录。'}这不代表掌握。</p>}
+    {coverage?.generated_playback?.status === 'available' && <details><summary>查看整课播放的依据</summary>
+      <p>按实际交付课程的全部片段核对；未改变的早期分段可以计入，改写后的内容需要重新播放。这不表示练习完成或掌握。</p>
+      <p>课程交付记录：{coverage.generated_playback.source_event_id}</p>
+      {coverage.generated_playback.evidence?.map(item => <p key={item.event_id}>片段 {item.step_id} / {item.beat_id} · 播放记录：{item.event_id}</p>)}
+    </details>}
     {coverage?.status === 'approved' && coverage.objectives.map(objective => <article key={objective.objective_key}>
       <strong>{objective.title}</strong><p>本遍播放 {objective.counts?.played_beats} 个片段 · 作答 {objective.counts?.task_attempts} 次 · 查看提示 {objective.counts?.hints} 次</p>
       <button disabled={busy} onClick={() => void inspect(objective.topic_id)}>查看“{objective.title}”所在知识点的全部学习依据</button>

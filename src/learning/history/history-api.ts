@@ -16,6 +16,8 @@ export interface HistoryCoverage {
   status: 'approved' | 'pending-review' | 'unmapped'; through: number; mapping_id?: string;
   course_playback: { required_beats: number; played_beats: number; complete: boolean } | null;
   objectives: { topic_id: string; objective_key: string; title: string; counts: ObjectiveCounts | null }[];
+  generated_playback?: { rule: string; status: 'available' | 'unknown'; reason?: string; source_event_id?: string; delivery_sha256?: string;
+    evidence?: { event_id: string; step_id: string; beat_id: string; delivery_sha256: string }[] };
   automatic_topics?: { topic_id: string; title: string }[];
 }
 export interface HistoryTopicPage extends HistoryEventsPage {

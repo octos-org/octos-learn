@@ -1,3 +1,4 @@
+import { generatedPlaybackCoverage } from "./generated-playback.mjs";
 import { historyCourseKey } from "./event-contract.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 import { queryAutomaticTopic, automaticTopicsForRun } from "./automatic-topic-query.mjs";
@@ -53,7 +54,11 @@ export function queryTopic(store, owner, topicId, options = {}, mappings = TOPIC
 export function queryRunCoverage(store, owner, runId, options = {}, mappings = TOPIC_MAPPINGS) {
   const range = bounds(store, owner, options); store.checkSnapshot(owner, range.through);
   const automaticTopics = topicCatalog().read(automaticTopicsForRun(store, owner, runId, range.through)).map(topic => ({ topic_id: topic.id, title: topic.name }));
-  const course = store.db.prepare("SELECT course_key,course_digest FROM events WHERE owner=? AND run_id=? AND seq<=? AND course_key IS NOT NULL LIMIT 1").get(owner, runId, range.through);
+  const course = store.db.prepare("SELECT course_key,course_digest,session_id FROM events WHERE owner=? AND run_id=? AND seq<=? AND course_key IS NOT NULL LIMIT 1").get(owner, runId, range.through);
+  if (course && JSON.parse(course.course_key)[0] === "generated") {
+    return { run_id: runId, through: range.through, status: "unmapped", counting_rule: COUNTING_RULE, objectives: [], automatic_topics: automaticTopics,
+      ...generatedPlaybackCoverage(store, owner, runId, course, range.through) };
+  }
   const map = course && mappings.find(item => historyCourseKey(item.course) === course.course_key && item.course.sha256 === course.course_digest);
   if (!map) return { run_id: runId, through: range.through, status: "unmapped", counting_rule: COUNTING_RULE, objectives: [], course_playback: null, automatic_topics: automaticTopics };
   const approved = map.status === "approved";
