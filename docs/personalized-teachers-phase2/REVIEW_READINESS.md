@@ -19,7 +19,27 @@
 
 本轮没有更新正常账号、电视、公网或上游。保护性备份要同时覆盖 SQLite 和同目录下的 `analysis-host-controls` 私有授权文件；发布产品服务时必须包含整个 `services/learning-history/`（含 taxonomy JSON 与 NOTICE），不能只拷贝 `.mjs`。旧版本不能直接读取格式 5，正式升级和回退仍需备份。
 
-**本轮新增代码尚未接受独立审查；下面的旧审查、旧设备及速度证据不能覆盖它。** 产品 PR 尚未创建，未合并、未发布；费用授权仍未新增。可以现在审查代码，不需要先运行付费测试。
+**本轮新增代码及修复已通过独立子 agent 审查/复核；具体发现和证据见下一节。下面的旧审查、旧设备及速度证据不能覆盖它。** 产品 PR 尚未创建，未合并、未发布；费用授权仍未新增。可以现在审查代码，不需要先运行付费测试。
+
+## 本轮独立审查与修复复核
+
+用户明确授权独立子 agent 审查并继续修复。审查 agent 只读检查 `b389e86..9a19c24`，主 agent 对照源码、复现并修改，再由原 agent 复核实际工作区增量；没有把作者自查冒充独立审查。
+
+| 独立审查发现 | 判断与处理 | 提交/验证 |
+|---|---|---|
+| P1：恢复已有执行时，准备连接、注册工具或打开会话失败，会把它误当成尚未开始而清理，可能丢掉已收费的分析结果 | 接受。只要有持久执行编号，就从一开始按可能已执行处理，恢复失败保留原结果和授权 | `25d4479`；三个故障回归修复前全部失败、修复后通过 |
+| P2：最早的结果不明任务每次等待 180 秒，而协调器最长 300 秒重试，可能永远优先领取它，新材料一直等待 | 接受。按上次领取/延后时间轮换，新材料不被同一个旧任务挡住；额度用尽仍允许只找回原执行。明确失败/中断的旧执行在有效结束回执后保留未知并清理，不自动重调 | `5a863eb` / `25d4479`；实际存储回归修复前复现，修复后通过 |
+| P2：Octos 返回已清理但同时报告部分残留时，应用仍移除清理授权 | 接受。检查 `partial`、`errors`、`residual_errors`，有任何不完整信息均保留授权；失效领取编号也不能确认拒收后清理别人接手的执行 | `25d4479`；三种残留回执及拒收回执失效回归通过 |
+
+三项判断全部采纳，没有以“只是边缘场景”跳过已复现的缺陷。复核 agent 重新检查修改并运行服务侧 7 项、前端针对性 141 项及 TypeScript，报告原三项均修复、未发现新的实质问题。这些是针对性复核数量，不与完整套件相加。
+
+主 agent 进一步用真实 Octos 做“结果还没有保存到产品库就断线”的验收，发现已有分析会话重启后必须显式恢复工作目录。现在只有分析专用连接协商 `session.workspace_cwd.v1`，仅使用 Octos `peer/prepare` 返回的目录打开该分析会话，不改变普通课堂连接或读取本人配置。该修改也经原 agent 复核。
+
+`591aff8` 将真实进程脚本扩为两个可复跑场景：`saved-receipt`（结果已入库但回执丢失）、`before-result`（结果尚未入库就断线）。两者均重启实际 Octos、关闭后重开 SQLite，并由新的客户端接手；各自仅有原来的两次本地模型替身请求，目录工具一次往返，找回/清理成功，播放计数为 1。第二个场景确实读取 Octos 保存的原结果，不能再用“产品库已有结果”替代恢复验证。
+
+最终检查：136 个前端单元文件、1247 项通过；学习记录与产品服务 38 项通过；TypeScript/public 构建通过；本轮修改的定向 lint 无警告或错误。构建原有大包提示保留。验证来源与日志散列见 `TOPIC_ANALYSIS_EVIDENCE.json` 的 `independent_review_followup`，早先指纹仍按早先提交保留。
+
+独立复核通过只覆盖代码及上述免费机械流程。真实模型语义质量、新设备、公网验收和速度结论仍未通过；默认关闭，没有新增付费调用、修改正常账号、安装、发布或合并。下一项是 S2-08b/P2-13c 的质量与启用范围，不能拿此次复核直接开启自动收费分析。
 
 ## 以下是基础候选的历史审查材料
 
@@ -128,7 +148,7 @@ Direct skill invocation did not append the student's original question and deliv
 
 The new, default-off analysis path supplies exact delivered content to a single-use Octos app peer, exposes a read-only pinned mathematics catalog, validates source-bound JSON results and distinguishes question attribution from actual playback. Playback records bind to the delivery present when the beat began. Unknown inputs and missing version bindings do not become zero-looking progress or mastery. Durable execution bookmarks and private account-scoped host controls support reconciliation and namespace cleanup after a lost response without automatically starting another model turn.
 
-Validation: 1,238 frontend unit tests, 37 history/product service tests, TypeScript/public build, and scoped lint (no errors; two pre-existing React effect warnings). The actual frontend worker, authenticated product API/SQLite and Octos ran against a local model replacement using the real catalog tool. A lost saved-result receipt followed by Octos restart and another client did not increase the two fixture model requests. No real supplier calls were made.
+Validation after independent review fixes: 1,247 frontend unit tests, 38 history/product service tests, TypeScript/public build, and scoped lint (no errors; two pre-existing React effect warnings). The actual frontend worker, authenticated product API/SQLite and Octos ran against a local model replacement using the real catalog tool. Both a lost saved-result receipt and a disconnect before saving the result were followed by Octos restart, SQLite reopen and another client; each kept the original two fixture model requests. An independent read-only reviewer found three recovery/scheduling/cleanup defects; all were reproduced, fixed and re-reviewed without further findings. No real supplier calls were made.
 
 This is a review candidate, not a release. Real-model attribution quality remains unverified; image-dependent input stays unknown. Analysis runs only with an open, idle app and explicit settings; daily task reservations are not a currency or provider-request hard cap. Generated-task attribution, teacher-facing context, new-device acceptance and production synchronization remain outstanding. The database upgrades to format 5 and needs an upgrade backup; host controls require a protected operational backup alongside SQLite.
 
@@ -138,7 +158,7 @@ Performance acceptance remains undetermined. The earlier free 40-pair comparison
 
 请独立审查 Octos Learn 第二阶段新增的实时内容知识点分析实现，不要直接采信作者报告。工作仓库 `/Users/alan0x/Documents/projects/octos-learn`，分支 `codex/learning-history-phase2`。先读 AGENTS.md、总 TODO 和本文件的“当前审查入口”，再读 GENERATED_TOPIC_PROGRESS.md / TOPIC_ANALYSIS_EVIDENCE.json。
 
-重点增量是 `git diff b389e86..9a19c24`；若要检查本次完整材料传递链路，再看 `git diff bf99486..9a19c24`。固定目录数据可单独按 `e0e2df1` 的原始 SHA/投影 SHA 核验，不必逐行猜它是否正确。请实际运行必要的免费测试，不调用真实模型、语音、ASR 或 Jev，不修改正常账号、安装、电视、公网或上游。
+重点增量是 `git diff b389e86..9a19c24`，后续修复另看 `git diff 09be572..591aff8`；若要检查本次完整材料传递链路，再看 `git diff bf99486..9a19c24`。固定目录数据可单独按 `e0e2df1` 的原始 SHA/投影 SHA 核验，不必逐行猜它是否正确。请实际运行必要的免费测试，不调用真实模型、语音、ASR 或 Jev，不修改正常账号、安装、电视、公网或上游。
 
 请独立判断：原问题与实际讲解是否分开；所有理解是否只由 Octos 做；模型能否捏造编号、原文、版本或掌握结论进入计数；播放是否真绑定当时交付；去重、重分析、分页和删除是否准确；已完成但回执丢失、开始响应不明、两端重启、换账号及另一设备接手是否会串资料或重复调用模型；私有授权的保存与清理是否必要且安全；默认关闭、每日额度和课堂让出是否有效；报告是否如实披露质量、费用、图片、应用关闭和发布限制。
 

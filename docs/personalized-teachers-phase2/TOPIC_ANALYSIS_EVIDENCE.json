@@ -136,5 +136,144 @@
     "Actual Octos hydrate has no message turn_id. The adapter now accepts untyped results only if the entire single-use peer has exactly the recorded turn; frozen input hash and units are validated server-side. Regression and actual process check pass.",
     "Playback regression was corrected for the fixture containing one beat and queue ordering by identifier; it verifies the original version and a later replay version.",
     "Earlier failed fixtures and source-free probes are not counted in the final passing fixture request total. All used synthetic endpoints, no real suppliers."
-  ]
+  ],
+  "independent_review_followup": {
+    "reviewed_initial_runtime": "b389e86..9a19c24",
+    "fix_commits": [
+      "25d4479",
+      "5a863eb",
+      "591aff8"
+    ],
+    "final_runtime_head": "591aff87a60fda9d5674b748226c1989ebdde096",
+    "independent_read_only_agent": "review_topic_analysis",
+    "findings": [
+      {
+        "severity": "P1",
+        "issue": "Failed recovery could purge an existing execution",
+        "resolution": "Preserve possible admission from the durable bookmark; three old-code failures now pass."
+      },
+      {
+        "severity": "P2",
+        "issue": "Old uncertain source could indefinitely starve new material",
+        "resolution": "Rotate by previous claim/deferral time; allow reconciliation even after start quota exhaustion; settle definitive failed/interrupted turns only after valid receipt."
+      },
+      {
+        "severity": "P2",
+        "issue": "Partial purge receipt discarded cleanup authorization",
+        "resolution": "Retain authorization on partial/errors/residual_errors and stale rejection receipt."
+      }
+    ],
+    "additional_actual_process_finding": "After restart, opening a recovered scoped peer needs explicit cwd; the dedicated analysis bridge negotiates workspace cwd and reuses only the Octos-returned directory.",
+    "independent_recheck": {
+      "passed": true,
+      "new_substantive_findings": 0,
+      "targeted_frontend_tests": 141,
+      "targeted_service_tests": 7,
+      "typescript": "passed",
+      "actual_process_runs_by": "primary agent; reviewer inspected reports and script, did not rerun"
+    },
+    "final_checks": {
+      "frontend_unit_files": 136,
+      "frontend_unit_tests": 1247,
+      "history_product_service_tests": 38,
+      "typescript_public_build": "passed",
+      "changed_code_lint": "passed, no warnings",
+      "supplier_calls": 0,
+      "real_model_quality_verified": false,
+      "normal_account_modified": false,
+      "installed_or_deployed": false,
+      "performance_acceptance": "undetermined"
+    },
+    "octos_restart_scenarios": [
+      {
+        "checked_at": "2026-10-22T10:14:53.773Z",
+        "passed": true,
+        "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+        "actual_frontend_worker": true,
+        "actual_authenticated_product_api": true,
+        "actual_octos_app_peer": true,
+        "pinned_catalog_topics": 529,
+        "fixture_model_requests": 2,
+        "catalog_tool_roundtrips": 1,
+        "real_supplier_calls": 0,
+        "original_account_modified": false,
+        "failure_mode": "saved-receipt",
+        "octos_and_sqlite_reopened": true,
+        "lost_result_receipt_and_octos_restart": true,
+        "unsaved_result_recovered": false,
+        "cross_device_namespace_cleanup": true,
+        "exact_version_playback_count": true,
+        "classification_quality_verified": false
+      },
+      {
+        "checked_at": "2026-10-22T10:14:58.017Z",
+        "passed": true,
+        "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+        "actual_frontend_worker": true,
+        "actual_authenticated_product_api": true,
+        "actual_octos_app_peer": true,
+        "pinned_catalog_topics": 529,
+        "fixture_model_requests": 2,
+        "catalog_tool_roundtrips": 1,
+        "real_supplier_calls": 0,
+        "original_account_modified": false,
+        "failure_mode": "before-result",
+        "octos_and_sqlite_reopened": true,
+        "lost_result_receipt_and_octos_restart": false,
+        "unsaved_result_recovered": true,
+        "cross_device_namespace_cleanup": true,
+        "exact_version_playback_count": true,
+        "classification_quality_verified": false
+      }
+    ],
+    "source_sha256": {
+      "scripts/verify-learning-topic-pipeline.mjs": "0a6ed3a82db45e5a64b9da536b12b10e12f6fa24d3e3c2c4bc76c8f9152727e9",
+      "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+      "services/learning-history/topic-analysis.test.mjs": "87d9fe0358406e5472306e6884ef0f20ad89183722ff44fe38b3a2ac0c6ff4d9",
+      "src/learning/history/analyze-topics.test.ts": "7f7312940441a5a5e7897f889d79d16884ac3407c93f3bb1b8949fbf5fc62403",
+      "src/learning/history/analyze-topics.ts": "6667f092575918aa99211d09026fb063c53c5dbcd685cf508b0bec416734f781"
+    },
+    "logs": {
+      "recovery_regression_old_code": {
+        "path": "/private/tmp/phase2-review-recovery-before-fix.log",
+        "sha256": "bb1c478bd3fe70215b162d2b652252f9071114dfddd988d2d4206fb6da84d62e"
+      },
+      "recovery_regression_fixed": {
+        "path": "/private/tmp/phase2-review-recovery-after-fix.log",
+        "sha256": "1e994d82574e6cbf75263d9557da3945d93c3d7f2622a2a690a49086201e9514"
+      },
+      "queue_regression_old_code": {
+        "path": "/private/tmp/phase2-review-queue-before-fix.log",
+        "sha256": "884ba21244240ea02a27b940796fb738468a77b7dd90b893ab903503c51f9d21"
+      },
+      "queue_regression_fixed": {
+        "path": "/private/tmp/phase2-review-queue-after-fix.log",
+        "sha256": "13145aa5dc7f5956bdc481d8eb54cbd5f2da6547b319a85af6c73d166d4c38b5"
+      },
+      "full_frontend_unit": {
+        "path": "/private/tmp/phase2-review-final-unit.log",
+        "sha256": "5cd25ae39f64c5f836d9ef999a2df28d7704b20538cd2c917eb65a1e6158b189"
+      },
+      "full_history_product_services": {
+        "path": "/private/tmp/phase2-review-final-service.log",
+        "sha256": "76cef54801970cc4bfb0fe7cb4990557df81af1d55a987b1dfb037503a7b0c3b"
+      },
+      "public_typescript_build": {
+        "path": "/private/tmp/phase2-review-final-build.log",
+        "sha256": "010975beb12c4f0a1df30910ba7994e68a725a50f4e2f8fc1f7e84bf5abae15a"
+      },
+      "scoped_lint": {
+        "path": "/private/tmp/phase2-review-final-lint.log",
+        "sha256": "fdc165f9b4c440e8f9e3f1661e2105cc0a132163258c9f4a793887bfe8709ae2"
+      },
+      "actual_saved_receipt": {
+        "path": "/private/tmp/phase2-review-saved-final.log",
+        "sha256": "378b6989a46bd6921ce8b6bc3dfc70950e9918774ad4a29b57427b09c728427c"
+      },
+      "actual_unsaved_result": {
+        "path": "/private/tmp/phase2-review-unsaved-final.log",
+        "sha256": "8054a3c49307df4ee0c89d230011f5d4e8b95741ed2d2d13ded3dbdec91dc004"
+      }
+    }
+  }
 }
