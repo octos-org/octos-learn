@@ -10,7 +10,7 @@ export interface LearnerBackgroundSources {
 const MAX_MEMORY_CHARS = 1500;
 const MAX_RUNS = 5;
 
-/** Formats facts for `learner_context`. Only states what the sources say;
+/** Formats facts for `learner_background`. Only states what the sources say;
  * counts are program-computed and playback is never described as mastery. */
 export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Date): string | undefined {
   const sections: string[] = [];
@@ -29,32 +29,46 @@ export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Dat
 }
 
 /** Keeps the latest background per account so submitting a question never
- * waits for it. Refreshes happen while the classroom is idle; a failed or
- * slow refresh keeps the previous value and the lesson starts without it. */
+ * waits for it. Refreshes happen while the classroom is idle and at most once
+ * per `maxAgeMs` unless forced; a failed or slow refresh keeps the previous
+ * value and the lesson starts without it. A result is stored only if the
+ * signed-in account is still the one it was loaded for. */
 export class LearnerBackgroundCache {
-  private value?: { account: string; text: string | undefined };
-  private inflight?: Promise<void>;
+  private value?: { account: string; text: string | undefined; at: number };
+  private readonly inflight = new Map<string, Promise<void>>();
   private readonly load: (account: string) => Promise<LearnerBackgroundSources>;
+  private readonly currentAccount: () => string | null;
   private readonly timeoutMs: number;
+  private readonly maxAgeMs: number;
   private readonly now: () => Date;
 
-  constructor(load: (account: string) => Promise<LearnerBackgroundSources>, timeoutMs = 8000, now = () => new Date()) {
-    this.load = load; this.timeoutMs = timeoutMs; this.now = now;
+  constructor(load: (account: string) => Promise<LearnerBackgroundSources>, options: {
+    currentAccount: () => string | null; timeoutMs?: number; maxAgeMs?: number; now?: () => Date;
+  }) {
+    this.load = load; this.currentAccount = options.currentAccount;
+    this.timeoutMs = options.timeoutMs ?? 8000; this.maxAgeMs = options.maxAgeMs ?? 120000; this.now = options.now ?? (() => new Date());
   }
 
   current(account: string | null): string | undefined {
     return account && this.value?.account === account ? this.value.text : undefined;
   }
 
-  refresh(account: string | null): Promise<void> {
+  refresh(account: string | null, force = false): Promise<void> {
     if (!account) return Promise.resolve();
-    if (this.inflight) return this.inflight;
+    const running = this.inflight.get(account);
+    if (running) return running;
+    if (!force && this.value?.account === account && this.now().getTime() - this.value.at < this.maxAgeMs) return Promise.resolve();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("learner background timed out")), this.timeoutMs); });
-    this.inflight = Promise.race([this.load(account), timeout])
-      .then((sources) => { this.value = { account, text: buildLearnerContext(sources, this.now()) }; })
+    const task = Promise.race([this.load(account), timeout])
+      .then((sources) => {
+        if (this.currentAccount() !== account) return;
+        const now = this.now();
+        this.value = { account, text: buildLearnerContext(sources, now), at: now.getTime() };
+      })
       .catch(() => { /* keep the previous value; lessons start without background */ })
-      .finally(() => { clearTimeout(timer); this.inflight = undefined; });
-    return this.inflight;
+      .finally(() => { clearTimeout(timer); this.inflight.delete(account); });
+    this.inflight.set(account, task);
+    return task;
   }
 }

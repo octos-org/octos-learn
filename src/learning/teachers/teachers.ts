@@ -57,7 +57,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       role: "热情的学习搭档",
       onError: "先肯定尝试本身，再用同一个比喻指出卡住的地方",
       onChallenge: "认真对待质疑，先说清楚哪里成立、哪里需要修正",
-      praise: "具体又轻快，例如说出这次比上次多做到了什么（只在记录支持时）",
+      praise: "具体又轻快，说出这一步具体做对了什么，不夸大成已经掌握",
       interests: "生活中的小场景、游戏和运动",
       habit: "一次只用一个主要比喻，玩笑简短，讲完马上回到数学",
       rhythm: "轻快、短句、有适度的感叹，学生卡住时放慢",
@@ -77,11 +77,11 @@ export function getTeacher(id: TeacherDefinition["id"]): TeacherDefinition {
   return TEACHERS.find((teacher) => teacher.id === id) ?? TEACHERS[0];
 }
 
-/** The base settings sent as `tutor_context`. Sharing rules for the first
+/** The base settings sent as `teacher_profile`. Sharing rules for the first
  * slice are conservative: experiences with another teacher are never claimed
  * as this teacher's own, and requests made only to another teacher do not
  * apply here unless the learner said they apply to every teacher. */
-export function teacherTutorContext(teacher: TeacherDefinition): string {
+export function teacherProfile(teacher: TeacherDefinition): string {
   const { card } = teacher;
   return [
     `本次授课老师：${teacher.name}（Octos Learn 预设老师，设定版本 ${TEACHER_CATALOG_VERSION}）。`,

@@ -124,7 +124,7 @@ export function LearningCompanionTab() {
 
       <TeacherPicker />
       <p className="mt-5 text-sm text-muted">
-        Appearance only — choosing a teacher above also applies that teacher's look.
+        下面只改变外观；选择上面的老师时会同时换成这位老师的默认外观。
       </p>
       <TeacherSkinPicker />
     </section>

@@ -2,7 +2,7 @@ import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
-import { teacherTutorContext, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { teacherProfile, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
@@ -38,6 +38,7 @@ import {
 } from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
+import { getAnyConnectedBridge } from "@/runtime/ui-protocol-runtime";
 import { SelectionRequestState } from "./selection-request-state";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -485,11 +486,12 @@ export function LearningWorkspace({
   const { teacher } = useSelectedTeacher();
   const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
     const [memory, runs] = await Promise.allSettled([
-      getMyMemory(),
+      // Only reuse an existing connection; never open one just for this.
+      getAnyConnectedBridge() ? getMyMemory() : Promise.resolve(null),
       openHistoryApi(token).then((api) => api.runs()),
     ]);
     return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null };
-  }), []);
+  }, { currentAccount: getToken }), []);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   // Voice readiness also reports false before the profile runtime starts.
@@ -1144,15 +1146,31 @@ export function LearningWorkspace({
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
+  // Installed action support changes only with a (re)connection, e.g. after a
+  // skill reinstall, so read it on mount and on each bridge connection. The
+  // session bridge may not be connected on mount; then the connection event
+  // supplies it. Only the latest read may apply.
   useEffect(() => {
-    if (historyClassroomBusy) return;
-    // Teacher settings do not depend on learning history being available.
-    void Promise.resolve()
-      .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
-      .then((lists) => { lessonContextFields.current = lessonContextSupport(lists.flat()); })
-      .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
-    if (historyRecorder) void learnerBackground.refresh(getToken());
-  }, [historyClassroomBusy, historyRecorder, learnerBackground, sessionId]);
+    let cancelled = false, latest = 0;
+    const readSupport = () => {
+      const read = ++latest;
+      void Promise.resolve()
+        .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
+        .then((lists) => { if (!cancelled && read === latest) lessonContextFields.current = lessonContextSupport(lists.flat()); })
+        .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
+    };
+    const onConnected = () => {
+      readSupport();
+      if (historyRecorder) void learnerBackground.refresh(getToken(), true);
+    };
+    readSupport();
+    window.addEventListener("crew:bridge_connected", onConnected);
+    return () => { cancelled = true; window.removeEventListener("crew:bridge_connected", onConnected); };
+  }, [historyRecorder, learnerBackground, sessionId]);
+  useEffect(() => {
+    if (historyClassroomBusy || !historyRecorder) return;
+    void learnerBackground.refresh(getToken());
+  }, [historyClassroomBusy, historyRecorder, learnerBackground]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1190,10 +1208,10 @@ export function LearningWorkspace({
         ? "learning.lesson.generate-from-selection"
         : "learning.lesson.generate";
     const contextFields = lessonContextFields.current.get(actionId);
-    const learnerContext = contextFields?.has("learner_context") ? learnerBackground.current(getToken()) : undefined;
+    const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
-      contextFields?.has("tutor_context") ? lessonTeacher : undefined);
+      contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
     setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
@@ -1219,8 +1237,8 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: "zh-CN",
-          ...(contextFields?.has("tutor_context") ? { tutor_context: teacherTutorContext(lessonTeacher) } : {}),
-          ...(learnerContext ? { learner_context: learnerContext } : {}),
+          ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
+          ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {

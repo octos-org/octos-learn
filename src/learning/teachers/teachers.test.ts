@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, expect, it } from 'vitest';
-import { TEACHERS, getTeacher, teacherTutorContext, useSelectedTeacher } from './teachers';
+import { beforeEach, expect, it, vi } from 'vitest';
+import { TEACHERS, getTeacher, teacherProfile, useSelectedTeacher } from './teachers';
 import { buildLearnerContext, LearnerBackgroundCache } from './learner-background';
 import type { LearningRunSummary } from '../history/history-api';
 
@@ -8,7 +8,7 @@ beforeEach(() => localStorage.clear());
 
 it('offers two distinct preset teachers whose settings bound shared memories', () => {
   expect(TEACHERS.map(teacher => teacher.id)).toEqual(['alan', 'doudou']);
-  const alan = teacherTutorContext(getTeacher('alan')), doudou = teacherTutorContext(getTeacher('doudou'));
+  const alan = teacherProfile(getTeacher('alan')), doudou = teacherProfile(getTeacher('doudou'));
   expect(alan).toContain('本次授课老师：阿澜');
   expect(doudou).toContain('本次授课老师：豆豆');
   expect(alan).not.toEqual(doudou);
@@ -45,7 +45,9 @@ it('states only sourced facts in learner context and omits it when there are non
 
 it('serves cached background per account without waiting, and keeps it when a refresh fails or stalls', async () => {
   let reply: () => Promise<{ memory: { long_term: string } }> = async () => ({ memory: { long_term: '偏好看图' } });
-  const cache = new LearnerBackgroundCache(() => reply(), 20);
+  let account = 'alice';
+  const load = vi.fn(() => reply());
+  const cache = new LearnerBackgroundCache(load, { currentAccount: () => account, timeoutMs: 20, maxAgeMs: 0 });
   expect(cache.current('alice')).toBeUndefined();
   await cache.refresh('alice');
   expect(cache.current('alice')).toContain('偏好看图');
@@ -56,16 +58,39 @@ it('serves cached background per account without waiting, and keeps it when a re
   reply = () => new Promise(() => {});
   await cache.refresh('alice');
   expect(cache.current('alice')).toContain('偏好看图');
+  // A load that finishes after the account changed is discarded.
+  reply = async () => { account = 'bob'; return { memory: { long_term: '另一个账号的记忆' } }; };
+  await cache.refresh('alice');
+  expect(cache.current('alice')).toContain('偏好看图');
+  expect(cache.current('bob')).toBeUndefined();
+});
+
+it('refreshes at most once per interval unless forced, and keeps loads for different accounts apart', async () => {
+  let time = 0;
+  const load = vi.fn(async (account: string) => ({ memory: { long_term: `${account} 的记忆` } }));
+  let account = 'alice';
+  const cache = new LearnerBackgroundCache(load, { currentAccount: () => account, maxAgeMs: 1000, now: () => new Date(time) });
+  await cache.refresh('alice'); await cache.refresh('alice');
+  expect(load).toHaveBeenCalledTimes(1);
+  await cache.refresh('alice', true);
+  expect(load).toHaveBeenCalledTimes(2);
+  time = 2000; await cache.refresh('alice');
+  expect(load).toHaveBeenCalledTimes(3);
+  account = 'bob';
+  await Promise.all([cache.refresh('alice'), cache.refresh('bob')]);
+  expect(load.mock.calls.map(call => call[0]).slice(-2).sort()).toEqual(['alice', 'bob']);
+  expect(cache.current('bob')).toContain('bob 的记忆');
 });
 
 it('sends a context field only to lesson actions that declare it', async () => {
   const { lessonContextSupport } = await import('./lesson-context-support');
   const support = lessonContextSupport([
-    { id: 'new', input_schema: { properties: { tutor_context: {}, learner_context: {} } } },
-    { id: 'old', input_schema: { properties: { learner_request: {} } } },
+    { id: 'new', input_schema: { properties: { teacher_profile: {}, learner_background: {} } } },
+    // Learning Coach 0.15 already declared tutor_context/learner_context with another meaning.
+    { id: 'old', input_schema: { properties: { learner_request: {}, tutor_context: {}, learner_context: {} } } },
     { id: 'bare', input_schema: {} },
   ] as never);
-  expect([...support.get('new')!]).toEqual(['tutor_context', 'learner_context']);
+  expect([...support.get('new')!]).toEqual(['teacher_profile', 'learner_background']);
   expect(support.get('old')!.size).toBe(0);
   expect(support.get('bare')!.size).toBe(0);
   expect(support.get('missing')).toBeUndefined();

@@ -27,7 +27,7 @@ const hash = value => createHash('sha256').update(value).digest('hex');
 const marker = '固定斜率';
 const lessonActions = [['learning.lesson.generate', 'learning.composer'], ['learning.lesson.generate-from-camera', 'learning.composer'], ['learning.lesson.generate-from-selection', 'learning.selection']]
   .map(([id, surface]) => ({ id, skill_id: 'learning-coach', label: id, tags: [], surfaces: [surface], execution: 'background', available: true,
-    input_schema: { type: 'object', additionalProperties: false, properties: { turn_id: {}, learner_request: {}, request_source: {}, language: {}, tutor_context: {}, learner_context: {}, input_modality: {}, client_timing: {} } } }));
+    input_schema: { type: 'object', additionalProperties: false, properties: { turn_id: {}, learner_request: {}, request_source: {}, language: {}, teacher_profile: {}, learner_background: {}, input_modality: {}, client_timing: {} } } }));
 const origin = 'https://history-benchmark.invalid';
 const owner = 'playable-fixture';
 const fixtureToken = 'synthetic-playable-token';
@@ -229,7 +229,7 @@ async function sample(browser, artifacts, version, condition, pair) {
           case 'skill/action/job/list': result = { jobs: turnId ? [job(completed ? 'succeeded' : 'running')] : [] }; break;
           case 'skill/action/invoke':
             row.action_invocations++; assert.equal(p.action_id, 'learning.lesson.generate');
-            row.lesson_context_fields = ['tutor_context', 'learner_context'].filter(field => field in p.arguments);
+            row.lesson_context_fields = ['teacher_profile', 'learner_background', 'tutor_context', 'learner_context'].filter(field => field in p.arguments);
             sessionId = p.session_id; turnId = p.arguments.turn_id;
             result = { ok: true, action_id: p.action_id, queued: 1, jobs: [job('queued')] };
             if (releaseHistory) later(100, () => { row.inflight_history_released = true; releaseHistory(); releaseHistory = undefined; });
@@ -326,6 +326,10 @@ async function sample(browser, artifacts, version, condition, pair) {
     assert.equal(row.audio_sources, 1); assert.equal(row.audio_contexts.length, 1);
     assert.ok(Math.abs(row.audio_contexts[0].duration - 1) < 0.001, 'Only the fixed one-second fixture can qualify as first narration');
     assert.deepEqual(row.client_errors, []); assert.deepEqual(row.unexpected_rpc, []); assert.deepEqual(row.unexpected_http, []);
+    // Background reads stay bounded (mount plus a forced read on connection) and
+    // only the dedicated, declared context fields are ever sent.
+    assert.ok((row.memory_reads ?? 0) <= (version === 'candidate' ? 2 : 0), `memory reads ${row.memory_reads}`);
+    assert.ok((row.lesson_context_fields ?? []).every(field => ['teacher_profile', 'learner_background'].includes(field)));
     assert.deepEqual(row.history_failures, []);
     if (version === 'candidate' && condition === 'inflight') {
       assert.equal(row.inflight_history_released, true);
