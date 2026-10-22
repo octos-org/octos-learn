@@ -16,10 +16,13 @@ export interface HistoryCoverage {
   status: 'approved' | 'pending-review' | 'unmapped'; through: number; mapping_id?: string;
   course_playback: { required_beats: number; played_beats: number; complete: boolean } | null;
   objectives: { topic_id: string; objective_key: string; title: string; counts: ObjectiveCounts | null }[];
+  automatic_topics?: { topic_id: string; title: string }[];
 }
 export interface HistoryTopicPage extends HistoryEventsPage {
   topic_id: string; status: string; counting_rule: string;
   objectives: { mapping_id: string; objective_key: string; title: string; counts: (ObjectiveCounts & { question_count: number | null }) | null }[];
+  automatic?: { status: string; analysis_through: number; counts: { question_count: number | null; played_runs: number | null; played_beats: number | null };
+    coverage: { unprocessed_questions: number; unknown_questions: number; outside_catalog_questions?: number; unassociated_played_beats: number }; events: { seq: number; event: HistoryEvent; associations: { result_seq: number; unit_id: string; quote: string }[] }[]; next_after: number | null };
 }
 export class HistoryApi {
   private readonly identity: HistoryIdentity;
@@ -57,8 +60,13 @@ export class HistoryApi {
   coverage(runId: string, through: number) {
     return this.request<HistoryCoverage>(`/runs/${encodeURIComponent(runId)}/coverage?through=${through}`);
   }
-  topic(topicId: string, through: number, after = 0) {
-    return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50`);
+  topic(topicId: string, through: number, after = 0, analysisThrough?: number) {
+    return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50${analysisThrough === undefined ? '' : `&analysis_through=${analysisThrough}`}`);
+  }
+  analysisStatus() { return this.request<{ enabled: boolean; max_daily_tasks: number; states: { state: string; count: number }[] }>('/analysis'); }
+  async configureAnalysis(enabled: boolean, maxDailyTasks: number) {
+    await this.request('/analysis/settings', 'POST', { enabled, max_daily_tasks: maxDailyTasks });
+    window.dispatchEvent(new Event('octos:analysis-sync-needed'));
   }
   async deleteSession(sessionId: string, deleteOctos = true) {
     await this.request(`/sessions/${encodeURIComponent(sessionId)}`, 'DELETE', { delete_octos_session: deleteOctos });
@@ -70,6 +78,7 @@ export class HistoryApi {
     await this.request(`/runs/${encodeURIComponent(runId)}`, 'DELETE');
     const queue = new DeviceHistoryQueue();
     await queue.applyDeletions(this.identity.owner, [runId], await queue.changeCursor(this.identity.owner));
+    window.dispatchEvent(new Event('octos:analysis-sync-needed'));
   }
 }
 export async function openHistoryApi(token: string): Promise<HistoryApi> {

@@ -84,3 +84,28 @@ it('shows unreviewed course mappings as pending rather than zero progress', asyn
   expect(await screen.findByText(/对应表尚待内容审核/)).toBeTruthy();
   expect(screen.queryByText(/本遍课程实际播放了/)).toBeNull();
 });
+
+it('shows automatic evidence separately and pins its pagination without turning unknown records into zero', async () => {
+  let topicReads = 0;
+  stubFetch(url => {
+    if (url.includes('/coverage?')) return Response.json({ status: 'unmapped', through: 8, course_playback: null, objectives: [], automatic_topics: [{ topic_id: 'mt_WBdHkc2HTf', title: 'Linear Function Graphs' }] });
+    if (url.includes('/topics/')) {
+      topicReads++;
+      if (topicReads === 2) { expect(url).toContain('analysis_through=12'); expect(url).toContain('after=1'); }
+      return Response.json({ topic_id: 'mt_WBdHkc2HTf', through: 8, events: [], next_after: null, objectives: [], counting_rule: 'test', status: 'unmapped',
+        automatic: { status: 'partial', analysis_through: 12, counts: { question_count: 1, played_runs: null, played_beats: null },
+          coverage: { unprocessed_questions: 2, unknown_questions: 1, outside_catalog_questions: 4, unassociated_played_beats: 3 },
+          events: [{ seq: topicReads, event: { ...event, id: `evidence-${topicReads}` }, associations: [{ result_seq: 12, unit_id: 'question', quote: `原问题依据 ${topicReads}` }] }], next_after: topicReads === 1 ? 1 : null } });
+    }
+  });
+  render(<AccountHistoryPanel onSelect={vi.fn()} />);
+  fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
+  fireEvent.click(await screen.findByRole('button', { name: '查看 Linear Function Graphs 的记录' }));
+  expect(await screen.findByText(/2 条提问未分析、1 条提问无法确定/)).toBeTruthy();
+  expect(screen.getByText(/4 条提问超出当前目录/)).toBeTruthy();
+  expect(screen.getByText(/提问 1 次 · 在 尚不能确定 遍/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: '继续查看自动分析依据' }));
+  expect(await screen.findByText(/原问题依据 2/)).toBeTruthy();
+  expect(screen.getByText(/原问题依据 1/)).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '继续查看自动分析依据' })).toBeNull();
+});

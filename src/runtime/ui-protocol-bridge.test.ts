@@ -2243,6 +2243,21 @@ describe("notification dispatch", () => {
     return { bridge, ws };
   }
 
+  it("routes bounded peer catalog requests and drops malformed host-tool notifications", async () => {
+    const { bridge, ws } = await freshConnected();
+    const seen: unknown[] = [];
+    const unsubscribe = bridge.onPeerToolCall(event => seen.push(event));
+    const params = { peer: 'topics-test', session_id: 'host#peer-topics-test', turn_id: 'turn-one', call_id: 'call-one', name: 'learning_topics.search', args: { query: 'linear slope' } };
+    ws.triggerMessage({ jsonrpc: '2.0', method: 'peer/tool/call', params });
+    for (const bad of [{ ...params, args: 'text' }, { ...params, turn_id: '' }, { ...params, args: { query: 'x'.repeat(2049) } }]) {
+      ws.triggerMessage({ jsonrpc: '2.0', method: 'peer/tool/call', params: bad });
+    }
+    expect(seen).toEqual([params]);
+    unsubscribe(); ws.triggerMessage({ jsonrpc: '2.0', method: 'peer/tool/call', params });
+    expect(seen).toEqual([params]);
+    await bridge.stop();
+  });
+
   it("routes context compaction lifecycle with flattened payloads", async () => {
     const { bridge, ws } = await freshConnected();
     const seen: unknown[] = [];

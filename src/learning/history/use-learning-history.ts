@@ -7,9 +7,10 @@ import { DeviceHistoryQueue } from './device-queue';
 import { LearningHistoryRecorder } from './recorder';
 import { HistorySynchronizer, resolveHistoryIdentity, type HistoryIdentity } from './synchronize';
 import { deliverHistoryMessages } from './deliver-messages';
+import { analyzeTopics } from './analyze-topics';
 
-export interface LearningHistoryStatus { saving: number; pending: number; syncing: boolean; error: string; conversationPending: number; checked: boolean; cleanupPending: number }
-const EMPTY: LearningHistoryStatus = { saving: 0, pending: 0, syncing: false, error: '', conversationPending: 0, checked: false, cleanupPending: 0 };
+export interface LearningHistoryStatus { saving: number; pending: number; syncing: boolean; error: string; conversationPending: number; checked: boolean; cleanupPending: number; analysisPending: number; analysisError: string }
+const EMPTY: LearningHistoryStatus = { saving: 0, pending: 0, syncing: false, error: '', conversationPending: 0, checked: false, cleanupPending: 0, analysisPending: 0, analysisError: '' };
 const noSubscribe = () => () => undefined;
 const emptySnapshot = () => EMPTY;
 
@@ -98,14 +99,22 @@ export class LearningHistoryCoordinator {
         conversations = Math.max(0, conversations - result.delivered);
         this.update({ conversationPending: conversations, checked: true });
       }
+      if (this.canMaintain()) {
+        try {
+          const analysis = await analyzeTopics(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain });
+          this.update({ analysisPending: analysis.pending, analysisError: '' });
+        } catch {
+          this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
+        }
+      }
     } catch {
       this.update({ error: '学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。' });
     } finally {
       this.update({ syncing: false });
       // Lost HTTP/RPC replies leave durable tasks behind. Retry while this
-      // account remains active, including after a lease expires. No model call
-      // is made by this maintenance loop.
-      const unfinished = this.status.error || this.status.pending || this.status.conversationPending || this.status.cleanupPending;
+      // account remains active, including after a lease expires. Topic turns
+      // remain opt-in; existing executions are reconciled without replacement.
+      const unfinished = this.status.error || this.status.pending || this.status.conversationPending || this.status.cleanupPending || this.status.analysisPending;
       if (unfinished && this.current() && !this.timer) {
         const delay = this.retryDelay;
         this.retryDelay = Math.min(delay * 2, 300000);
@@ -146,7 +155,8 @@ export function useLearningHistoryRecorder(sessionId: string, enabled = true) {
     const deletion = () => { coordinator.markDeletionQueued(); online(); };
     window.addEventListener('online', online);
     window.addEventListener('octos:history-sync-needed', deletion);
-    return () => { window.removeEventListener('online', online); window.removeEventListener('octos:history-sync-needed', deletion); };
+    window.addEventListener('octos:analysis-sync-needed', online);
+    return () => { window.removeEventListener('online', online); window.removeEventListener('octos:history-sync-needed', deletion); window.removeEventListener('octos:analysis-sync-needed', online); };
   }, [coordinator]);
   return { recorder, coordinator, status, localStatus };
 }

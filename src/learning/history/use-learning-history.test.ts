@@ -26,6 +26,8 @@ it('keeps durable local facts during active teaching, then uploads them once aft
       return Response.json({ profile_id: 'alice', results });
     }
     if (path.endsWith('/deliveries')) return Response.json({ profile_id: 'alice', states: [], pending_session_deletions: 0 });
+    if (path.endsWith('/analysis/controls')) return Response.json({ profile_id: 'alice', controls: [] });
+    if (path.endsWith('/analysis')) return Response.json({ profile_id: 'alice', enabled: false, states: [] });
     throw new Error(`Unexpected network request: ${path}`);
   }));
   const { LearningHistoryCoordinator } = await import('./use-learning-history');
@@ -58,6 +60,8 @@ it('yields when teaching begins during an in-flight deletion-page read, retainin
       return Response.json({ profile_id: 'alice', results: events.map((e: { id: string }) => ({ id: e.id, status: 'accepted', seq: 1 })) });
     }
     if (path.endsWith('/deliveries')) return Response.json({ profile_id: 'alice', states: [], pending_session_deletions: 0 });
+    if (path.endsWith('/analysis/controls')) return Response.json({ profile_id: 'alice', controls: [] });
+    if (path.endsWith('/analysis')) return Response.json({ profile_id: 'alice', enabled: false, states: [] });
     throw new Error(`Unexpected request: ${path}`);
   }));
   const { LearningHistoryCoordinator } = await import('./use-learning-history');
@@ -87,6 +91,8 @@ it('finishes an already-sent batch receipt but sends no next batch while teachin
       return Response.json({ profile_id: 'alice', results: events.map((e: { id: string }) => ({ id: e.id, status: 'accepted', seq: 1 })) });
     }
     if (path.endsWith('/deliveries')) { deliveries++; return Response.json({ profile_id: 'alice', states: [], pending_session_deletions: 0 }); }
+    if (path.endsWith('/analysis/controls')) return Response.json({ profile_id: 'alice', controls: [] });
+    if (path.endsWith('/analysis')) return Response.json({ profile_id: 'alice', enabled: false, states: [] });
     throw new Error(`Unexpected request: ${path}`);
   }));
   const { LearningHistoryCoordinator } = await import('./use-learning-history');

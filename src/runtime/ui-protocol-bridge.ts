@@ -564,6 +564,8 @@ export interface UiProtocolBridge {
   callMethod<T = unknown>(method: string, params?: unknown): Promise<T>;
 
   onMessageDelta(handler: (e: MessageDeltaEvent) => void): () => void;
+  /** Host-routed read tools; consumers must verify the active peer/session/turn. */
+  onPeerToolCall(handler: (e: PeerToolCall) => void): () => void;
   onSpawnComplete(handler: (e: TurnSpawnCompleteEvent) => void): () => void;
   /** UPCR-2026-014 M9-α-9 dedicated per-artefact envelope subscriber.
    *  Routes one event per `file/attached` notification — the SPA
@@ -680,6 +682,10 @@ export interface UiProtocolBridge {
   onSessionTitleUpdated(
     handler: (e: { session_id: string; title: string }) => void,
   ): () => void;
+}
+
+export interface PeerToolCall {
+  peer: string; session_id: string; turn_id: string; call_id: string; name: string; args: unknown;
 }
 
 export interface BridgeConfig {
@@ -1942,6 +1948,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
   private readonly sendQueue: QueuedFrame[] = [];
 
   private readonly subMessageDelta = new Subscribers<MessageDeltaEvent>();
+  private readonly subPeerToolCall = new Subscribers<PeerToolCall>();
   private readonly subSpawnComplete = new Subscribers<TurnSpawnCompleteEvent>();
   private readonly subFileAttached = new Subscribers<FileAttachedEvent>();
   private readonly subVisualGenerating =
@@ -2018,6 +2025,14 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     [METHODS.VISUAL_GENERATING]: {
       guard: guardVisualGenerating,
       emit: (v) => this.subVisualGenerating.emit(v as VisualGeneratingEvent),
+    },
+    "peer/tool/call": {
+      guard: (value: unknown) => {
+        if (!isPlainObject(value) || !["peer", "session_id", "turn_id", "call_id", "name"].every(key => typeof value[key] === "string" && value[key].length > 0 && value[key].length <= 512)
+          || !isPlainObject(value.args) || JSON.stringify(value.args).length > 2048) return null;
+        return value as unknown as PeerToolCall;
+      },
+      emit: value => this.subPeerToolCall.emit(value as PeerToolCall),
     },
     [METHODS.VISUAL_SUCCEEDED]: {
       guard: guardVisualSucceeded,
@@ -2366,6 +2381,7 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
     this.rejectAllPending(new BridgeStoppedError());
     this.sendQueue.length = 0;
     this.subMessageDelta.clear();
+    this.subPeerToolCall.clear();
     this.subSpawnComplete.clear();
     this.subFileAttached.clear();
     this.subVisualGenerating.clear();
@@ -2681,6 +2697,9 @@ class UiProtocolBridgeImpl implements UiProtocolBridge {
 
   onMessageDelta(handler: Listener<MessageDeltaEvent>): () => void {
     return this.subMessageDelta.add(handler);
+  }
+  onPeerToolCall(handler: Listener<PeerToolCall>): () => void {
+    return this.subPeerToolCall.add(handler);
   }
   onSpawnComplete(handler: Listener<TurnSpawnCompleteEvent>): () => void {
     return this.subSpawnComplete.add(handler);

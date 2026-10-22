@@ -33,28 +33,42 @@ function CourseCoverage({ api, run, through }: { api: HistoryApi; run: LearningR
     void api.coverage(run.run_id, through).then(value => { if (active) setCoverage(value); }).catch(() => { if (active) setError('课程对应信息暂不可用'); });
     return () => { active = false; };
   }, [api, run.run_id, through]);
-  const inspect = async (topicId: string, after = 0) => {
+  const inspect = async (topicId: string, after = 0, automaticOnly = false) => {
     setBusy(true); setError('');
     try {
-      const next = await api.topic(topicId, through, after);
-      setTopic(previous => after && previous ? { ...next, events: [...previous.events, ...next.events] } : next);
+      const next = await api.topic(topicId, through, after, after ? topic?.automatic?.analysis_through : undefined);
+      setTopic(previous => {
+        if (!after || !previous) return next;
+        if (automaticOnly && next.automatic) return { ...previous, automatic: { ...next.automatic, events: [...previous.automatic?.events ?? [], ...next.automatic.events] } };
+        return { ...previous, events: [...previous.events, ...next.events], next_after: next.next_after };
+      });
     } catch (cause) { setError(cause instanceof Error ? cause.message : '依据暂不可用'); }
     finally { setBusy(false); }
   };
   return <section aria-label="课程与知识点对应进度">
     {error && <p role="alert">{error}</p>}
-    {coverage?.status === 'unmapped' && <p>这门课尚未建立已确认的知识点对应关系，暂不计算知识点进度。</p>}
+    {coverage?.status === 'unmapped' && <p>这门课没有人工确认的教学对应表。自动分析的结果另列在下方；没有结果时不猜测知识点进度。</p>}
     {coverage?.status === 'pending-review' && <p>课程与知识点的对应表尚待内容审核，暂不计算知识点进度。</p>}
     {coverage?.course_playback && <p>本遍课程实际播放了 {coverage.course_playback.played_beats}/{coverage.course_playback.required_beats} 个必需片段。{coverage.course_playback.complete ? '必需讲解均有播放记录。' : '仍有讲解没有播放记录。'}这不代表掌握。</p>}
     {coverage?.status === 'approved' && coverage.objectives.map(objective => <article key={objective.objective_key}>
       <strong>{objective.title}</strong><p>本遍播放 {objective.counts?.played_beats} 个片段 · 作答 {objective.counts?.task_attempts} 次 · 查看提示 {objective.counts?.hints} 次</p>
       <button disabled={busy} onClick={() => void inspect(objective.topic_id)}>查看“{objective.title}”所在知识点的全部学习依据</button>
     </article>)}
+    {!!coverage?.automatic_topics?.length && <section aria-label="自动分析发现的知识点">
+      <p>以下知识点来自对原问题或课程材料的分析。材料涉及某知识点，不表示学生已播放或掌握；点击查看实际记录。</p>
+      {coverage.automatic_topics.map(item => <button key={item.topic_id} disabled={busy} onClick={() => void inspect(item.topic_id)}>查看 {item.title} 的记录</button>)}
+    </section>}
     {topic && <section aria-label="知识点原始依据">
-      <p>该知识点在各门已确认课程中的记录；这里只涉及部分教学目标，不代表整个知识点已掌握。尚未为提问建立可靠的知识点归属，因此不猜测提问次数。</p>
+      <p>这里仅统计有来源依据的部分内容，不代表整个知识点已掌握。人工确认的课程对应与模型分析分别列出。</p>
       {topic.objectives.map(objective => <p key={`${objective.mapping_id}:${objective.objective_key}`}>{objective.title}：{objective.counts ? `在 ${objective.counts.played_runs} 遍学习中播放过，作答 ${objective.counts.task_attempts} 次` : '对应表待审核'}</p>)}
       {topic.events.map(row => <EventDetail key={row.seq} event={row.event} />)}
       {topic.next_after != null && <button disabled={busy} onClick={() => void inspect(topic.topic_id, topic.next_after!)}>继续查看知识点依据</button>}
+      {topic.automatic && <section aria-label="自动归属的学习记录">
+        <p>在已对应的记录中：提问 {topic.automatic.counts.question_count ?? '尚不能确定'} 次 · 在 {topic.automatic.counts.played_runs ?? '尚不能确定'} 遍学习中播放过 · 播放 {topic.automatic.counts.played_beats ?? '尚不能确定'} 个不同内容片段。</p>
+        <p>查询范围内另有 {topic.automatic.coverage.unprocessed_questions} 条提问未分析、{topic.automatic.coverage.unknown_questions} 条提问无法确定、{topic.automatic.coverage.outside_catalog_questions ?? 0} 条提问超出当前目录、{topic.automatic.coverage.unassociated_played_beats} 个播放片段尚无可靠对应。这些没有当成零次或已掌握。</p>
+        {topic.automatic.events.map(row => <div key={row.seq}><EventDetail event={row.event} />{row.associations.map(item => <blockquote key={`${item.result_seq}:${item.unit_id}`}>分析依据：{item.quote}（结果 {item.result_seq}）</blockquote>)}</div>)}
+        {topic.automatic.next_after != null && <button disabled={busy} onClick={() => void inspect(topic.topic_id, topic.automatic!.next_after!, true)}>继续查看自动分析依据</button>}
+      </section>}
       <details><summary>查看统计口径</summary><p>{topic.counting_rule} · 统计截至接收顺序 {topic.through}</p>{topic.objectives.map(objective => <p key={`${objective.mapping_id}:${objective.objective_key}`}>{objective.mapping_id} · {objective.objective_key}</p>)}</details>
     </section>}
   </section>;
@@ -126,7 +140,7 @@ export function AccountHistoryPanel({ onSelect }: { onSelect: (session: Learning
       <h3>{selected.question_preview || selected.course?.id || '课程学习'}</h3>
       <p>提问 {selected.question_count} 次 · 已播放 {selected.completed_beats} 个不同片段 · 作答 {selected.task_attempts} 次</p>
       <p>同一遍重复回放同一片段只计一次；下面保留每次原始记录。旧保存位置不能补成过去的学习次数。</p>
-      {selected.course && api && page && <CourseCoverage key={`${api.owner}:${selected.run_id}`} api={api} run={selected} through={page.through} />}
+      {api && page && <CourseCoverage key={`${api.owner}:${selected.run_id}`} api={api} run={selected} through={page.through} />}
       {local && <button onClick={() => onSelect(local)}>继续这块白板</button>}
       <button onClick={() => void remove()} disabled={busy}>删除这次学习记录</button>
       {detail?.events.filter(row => row.event.kind !== 'question_routed').map(row => <EventDetail key={row.seq} event={row.event} />)}
