@@ -1,0 +1,136 @@
+{
+  "schema": "octos.learn.performance-trial.v1",
+  "id": "phase2-live-playable-draft",
+  "status": "draft",
+  "cost_basis_verified": false,
+  "route_verified": false,
+  "authorization_reference": "",
+  "owner": "yy",
+  "origin": "https://127.0.0.1:5173",
+  "backend": "http://127.0.0.1:50080",
+  "gateway": "http://127.0.0.1:50189",
+  "model": "gemini-3.6-flash",
+  "voice": "pending-read-only-verification",
+  "resource": "pending-read-only-verification",
+  "voice_revision": "pending-read-only-verification",
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-C3AsDNei.js",
+      "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/baseline/dist"
+    },
+    "candidate": {
+      "ref": "20e6a458a928197cce9e9e60077830bbb4518721",
+      "entry": "/assets/index-BIcz2LPp.js",
+      "entry_sha256": "8e131979ee9dd94ea45e556d113e5510ef9405dbdc170d4f524af163b347cb63",
+      "dist": "/private/tmp/octos-playable-builds-20e6a45/candidate/dist"
+    }
+  },
+  "limits": {
+    "courses": 12,
+    "speech_requests": 12,
+    "usd_micros": 5000000,
+    "cny_micros": 5000000,
+    "model_request_usd_micros": 1100000,
+    "speech_byte_cny_micros": 1000,
+    "speech_utf8_bytes": 1200,
+    "output_tokens": 32768,
+    "request_bytes": 1048576
+  },
+  "samples": [
+    {
+      "id": "pair-01-baseline",
+      "pair": 1,
+      "topic": "linear",
+      "version": "baseline",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-01-candidate",
+      "pair": 1,
+      "topic": "linear",
+      "version": "candidate",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-02-candidate",
+      "pair": 2,
+      "topic": "geometry",
+      "version": "candidate",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-02-baseline",
+      "pair": 2,
+      "topic": "geometry",
+      "version": "baseline",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-03-baseline",
+      "pair": 3,
+      "topic": "formula",
+      "version": "baseline",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-03-candidate",
+      "pair": 3,
+      "topic": "formula",
+      "version": "candidate",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-04-candidate",
+      "pair": 4,
+      "topic": "linear",
+      "version": "candidate",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-04-baseline",
+      "pair": 4,
+      "topic": "linear",
+      "version": "baseline",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-05-baseline",
+      "pair": 5,
+      "topic": "geometry",
+      "version": "baseline",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-05-candidate",
+      "pair": 5,
+      "topic": "geometry",
+      "version": "candidate",
+      "prompt": "请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-06-candidate",
+      "pair": 6,
+      "topic": "formula",
+      "version": "candidate",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-06-baseline",
+      "pair": 6,
+      "topic": "formula",
+      "version": "baseline",
+      "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+    }
+  ],
+  "notes": [
+    "Draft only. Neither the currency caps nor the call counts are authorized.",
+    "Per-model-request USD 1.10 is a proposed conservative reservation for the full published text input context plus 32768 output tokens at the current standard price; actual route, billing class, token-limit semantics and price validity must be verified before enabling execution.",
+    "USD 5 at that reservation admits at most four model HTTP attempts, fewer than the twelve planned courses even if every course used only one attempt. Do not describe this draft as sufficient for all samples.",
+    "Speech reserve is a proposed conservative CNY 0.001 per UTF-8 byte, not a verified account tariff. It is tracked separately; this is not a new combined USD 5 proposal.",
+    "The existing normal service must route the installed skill through the gateway before route_verified can be true. Do not edit personal configuration or run a paid route probe as part of preparation.",
+    "Absolute build locations are private local prerequisites; reverify exact hashes/source and all runtime inputs before a future approval."
+  ],
+  "output_directory": "/private/tmp/octos-phase2-live-approved-trial"
+}
