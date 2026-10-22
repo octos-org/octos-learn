@@ -1,0 +1,160 @@
+{
+  "schema": "octos.learn.topic-remaining-result.v1",
+  "date": "2026-10-22",
+  "state": "stopped-on-first-source-format-error",
+  "source_id": "q-two-points",
+  "attempted_sources": 1,
+  "unrun_sources": 7,
+  "real_supplier_http_requests": 5,
+  "reserved_usd": 5.5,
+  "actual_billed_usd": null,
+  "actual_token_usage": null,
+  "gateway_metrics": {
+    "forwarded": 5,
+    "refused": 0,
+    "failed": 0,
+    "refused_by_stage": {}
+  },
+  "catalog_calls": [
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "slope two points"
+      }
+    },
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "slope"
+      }
+    },
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "rate of change"
+      }
+    },
+    {
+      "name": "learning_topics.search",
+      "args": {
+        "query": "linear"
+      }
+    }
+  ],
+  "original_final_answer": "```json\n{\n  \"schema\": 1,\n  \"input_sha256\": \"660a2f5199621a4531a214a5dc52a28f09ab5f467cd95f100e142e99216ab916\",\n  \"units\": [\n    {\n      \"unit_id\": \"question\",\n      \"status\": \"mapped\",\n      \"topics\": [\n        {\n          \"topic_id\": \"mt_-3udyo6VyB\",\n          \"quote\": \"已知直线上两点 (1,3) 和 (4,9)，怎样用纵坐标的变化除以横坐标的变化求斜率？\"\n        }\n      ],\n      \"reason\": \"The question asks how to calculate the slope/gradient of a line given two points using vertical change divided by horizontal change (rise over run), matching 'Plotting Linear Graphs' which covers calculating gradients from two points on a line.\"\n    }\n  ]\n}\n```",
+  "original_product_result": "blocked-invalid-analysis-result; no saved association",
+  "confirmed_cause": "The complete JSON answer was wrapped in a Markdown JSON block; direct JSON.parse rejected its outer wrapper.",
+  "offline_replay": {
+    "real_supplier_calls_added": 0,
+    "original_trial_unchanged": true,
+    "input_sha256": "660a2f5199621a4531a214a5dc52a28f09ab5f467cd95f100e142e99216ab916",
+    "result": {
+      "input_sha256": "660a2f5199621a4531a214a5dc52a28f09ab5f467cd95f100e142e99216ab916",
+      "schema": 1,
+      "units": [
+        {
+          "reason": "The question asks how to calculate the slope/gradient of a line given two points using vertical change divided by horizontal change (rise over run), matching 'Plotting Linear Graphs' which covers calculating gradients from two points on a line.",
+          "status": "mapped",
+          "topics": [
+            {
+              "quote": "已知直线上两点 (1,3) 和 (4,9)，怎样用纵坐标的变化除以横坐标的变化求斜率？",
+              "topic_id": "mt_-3udyo6VyB"
+            }
+          ],
+          "unit_id": "question"
+        }
+      ]
+    },
+    "validation": "passed"
+  },
+  "independent_agent_review": {
+    "reviewer": "review_topic_analysis",
+    "decision": "correct-for-this-case-only; parser repair approved",
+    "human_approval_claimed": false
+  },
+  "free_verification": {
+    "frontend_tests": 1250,
+    "frontend_files": 136,
+    "history_service_tests": 39,
+    "trial_control_tests": 11,
+    "types_public_build": "passed",
+    "scoped_lint": "passed",
+    "fenced_fixture_sources": 8,
+    "fenced_fixture_synthetic_http_requests": 16,
+    "real_supplier_calls_added": 0,
+    "played_runs": 2,
+    "played_beats": 2
+  },
+  "cleanup": {
+    "matching_purge_records": 1,
+    "event": "peer_purged",
+    "error_count": 0,
+    "purge_recorded": true
+  },
+  "restoration": {
+    "restored": true,
+    "original_route_fields_exactly_restored": true,
+    "other_config_canonically_unchanged": true,
+    "normal_backend_stopped": true,
+    "original_backend_listening": false,
+    "control_files_remaining": 0
+  },
+  "executed_policy_sha256": "cf96f46e42c99416ebe85450a5e688fb9565f154896439202aec95b15fa2974d",
+  "executed_policy": {
+    "schema": "octos.learn.topic-accuracy-trial.v1",
+    "id": "phase2-topic-remaining8-20261022",
+    "status": "approved",
+    "authorization_reference": "User explicitly authorized the remaining eight fixed sources, at most 18 supplier HTTP requests including retries, 9 per source and USD20 total, in this chat on 2026-10-22.",
+    "owner": "alan0x",
+    "model": "gemini-3.8-flash",
+    "backend": "http://127.0.0.1:50080",
+    "gateway": "http://127.0.0.1:50189",
+    "output_directory": "/private/tmp/octos-topic-remaining8-20261022",
+    "cases_sha256": "655db5cf9cc30a553632e14efa89dfa99baa6f34ab7ad6b675c363ae8ea1a34a",
+    "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "pricing": {
+      "verified_at": "2026-10-22",
+      "valid_until": "2026-12-31",
+      "input_per_million_usd": 0.75,
+      "output_including_thinking_per_million_usd": 3.75,
+      "max_input_tokens": 1048576,
+      "max_output_tokens": 65536,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+    },
+    "limits": {
+      "tasks": 8,
+      "model_http_requests": 18,
+      "model_http_requests_per_task": 9,
+      "usd_micros": 20000000,
+      "reservation_usd_micros": 1100000,
+      "request_bytes": 1048576,
+      "output_tokens": 32768
+    },
+    "code_sha256": {
+      "scripts/verify-learning-topic-accuracy.mjs": "f77f8fcfdb929ed80df59bd0b493c5c553b9e23c1f7298ebfb9eaa417a9e0efb",
+      "scripts/lib/learning-topic-trial-control.mjs": "40792eda85cf2ab9b12c20a69384796d7309873643f4b61a5a455de79fbb70b3",
+      "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+      "scripts/lib/learning-topic-trial-fixture.mjs": "b693ed4e9d7a60e0cd3e1ac8d69be59e490249d64371e92d5e2e337ab82c78e9",
+      "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+      "src/learning/history/analyze-topics.ts": "745421920fade338599501d5b6a3c67f62e4cfdea921d4df79d87f7147f01ee8",
+      "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+      "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+      "services/learning-history/topic-analysis.mjs": "873e7eca976d9175ef7d48452d5ce8a8696f31ad44c398b3e1d18f8f46e2657b",
+      "services/learning-history/topic-analysis-store.mjs": "b1c3d46574965bb2796f3d271808b21f0c032cf68206ac6680d10fce3d6a112a",
+      "services/learning-history/topic-analysis-instructions.mjs": "ecdbfefd621796d7a2f8f70425a04af061307f08724b05d3747c2cacde2fcb71",
+      "services/learning-history/topic-catalog.mjs": "7a22ccf046ab3f07ec7769b8d39aea151280fa2756edff7e2ff1993c32de660e",
+      "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+      "services/learning-history/topic-query.mjs": "69e267574f162374b95bd61cc1796f0442f374a6889e6b6efe1963107b3c8390",
+      "services/learning-history/automatic-topic-query.mjs": "fafc9b674d17e31f003bfa5ed83a08de5a7b12d325163240c0fc4866932da358"
+    },
+    "octos": {
+      "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+      "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+      "sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11"
+    },
+    "scope": "remaining-fixed-cases"
+  },
+  "original_report_sha256": "d91f88eb389f9c8630572f76e59f09edd2f0a51f732c2619ce411fdf2fbd903d",
+  "automatic_analysis_enabled": false,
+  "other_seven_verified": false
+}

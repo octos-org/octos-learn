@@ -48,8 +48,10 @@
 - [x] N-17 免费排查确认并修复分析规则没有送达模型：prepare 仅保存 brief，app turn 必须明确带入规则。修复 35ad6ca，同一次请求携带规则和材料，无新增往返；9 项真实 Octos 替身、1247 项单元、构建、定向 lint 及独立复核通过。见[修复和最小执行单](personalized-teachers-phase2/TOPIC_DIAGNOSIS_EXECUTION.md)。
 - [x] N-18 完成获准的真实单项验证和收尾：先免费修复重启后的 host 连接，保留原任务/账本继续同一题；实际 3 次模型请求、三次目录返回，无最终结果，额度用完后停止。原路由及启动状态恢复；质量仍未通过。见[结果](personalized-teachers-phase2/TOPIC_DIAGNOSIS_RESULT.md)。
 - [x] N-19 完成新授权的同题完整验证及收尾：实际 3 次供应商请求、两次目录查询后返回有效 JSON，程序检查与独立 agent 内容复核通过。原路由、其他配置及原启动状态恢复；只覆盖这一题，不使用剩余额度扩大范围。见[完整结果](personalized-teachers-phase2/TOPIC_COMPLETION_RESULT.md)。
-- [ ] N-20 其余八份固定材料的真实质量尚未验证；[受限执行单](personalized-teachers-phase2/TOPIC_REMAINING_EXECUTION.md)已免费准备并独立复核：共享最多 18 请求/20 美元，每项最多 9，排除已通过的第一题。11 项控制、8 项/16 请求替身及版本统计通过；尚未获新费用授权，不自动执行。
+- [ ] N-20 其余八份固定材料的真实质量尚未验证；[受限执行单](personalized-teachers-phase2/TOPIC_REMAINING_EXECUTION.md)已免费准备并独立复核：共享最多 18 请求/20 美元，每项最多 9，排除已通过的第一题。11 项控制、8 项/16 请求替身及版本统计通过；获准后首项因 JSON 代码框被拒收，5 次请求后停止，其余七项未运行；原回答离线校验及独立内容复核通过，见[结果](personalized-teachers-phase2/TOPIC_REMAINING_RESULT.md)。原停止条件未解除，不自动续跑。
 - [x] N-21 完成代码审查交付：已 fetch 核对最新 main 4973499，无落后或冲突；建立英文草稿 [PR #60](https://github.com/octos-org/octos-learn/pull/60)，列明证据、未验收范围和合并前速度要求。PR 保持草稿，未合并、启用分析或发布。
+
+- [x] N-23 修复完整 JSON 代码框的读取，保留全部原文与编号检查、不增加模型请求；1250 项前端、39 项服务、11 项控制、构建和八份代码框替身流程通过，独立复核无必要问题。原试验保持停止，不把免费重放算成新的真实请求。
 
 - [x] N-22 取得上游 413b4b68 成功 CI 的 Linux x86_64 包，核对 GitHub 下载指纹、ELF 和提取文件指纹；服务器只读核对架构/glibc/C++ 条件匹配。仅准备本地交付物，CPU、实际启动和 Linux 记忆链路尚未验收，没有上传或安装。见[来源和指纹](personalized-teachers-phase2/LINUX_ARTIFACT_PREPARATION.json)。
 

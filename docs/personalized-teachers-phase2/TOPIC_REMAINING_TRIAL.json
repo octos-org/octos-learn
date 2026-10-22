@@ -1,8 +1,8 @@
 {
   "schema": "octos.learn.topic-accuracy-trial.v1",
   "id": "phase2-topic-remaining8-20261022",
-  "status": "prepared-not-approved",
-  "authorization_reference": "",
+  "status": "stopped-do-not-reexecute",
+  "authorization_reference": "User explicitly authorized the remaining eight fixed sources, at most 18 supplier HTTP requests including retries, 9 per source and USD20 total, in this chat on 2026-10-22.",
   "owner": "alan0x",
   "model": "gemini-3.8-flash",
   "backend": "http://127.0.0.1:50080",
