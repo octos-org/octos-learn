@@ -33,6 +33,18 @@ export function inspectTopicCandidate(sample, result) {
   return { expectation_issues: issues, human_review_required: true, semantic_pass: null };
 }
 
+// Save raw terminal output before the product validates and purges its private
+// namespace. Only transcript fields needed to judge the answer are retained;
+// never copy RPC authorization, profile config or model reasoning metadata.
+export function retainTopicTrialOutput(row, sessionId, page) {
+  if (!row || !sessionId?.includes('#peer-') || !page.turns?.some(turn => ['completed', 'errored', 'interrupted'].includes(turn.state))) return false;
+  row.octos_observation = { session_id: sessionId,
+    turns: page.turns.map(turn => ({ turn_id: turn.turn_id, state: turn.state })),
+    messages: (page.messages ?? []).map(message => ({ role: message.role, content: message.content,
+      ...(message.turn_id ? { turn_id: message.turn_id } : {}) })) };
+  return true;
+}
+
 export function requireAllStagedJobs(store, owner, sample) {
   const job = store.db.prepare('SELECT id,input_json FROM topic_analysis_jobs WHERE owner=? AND source_event_id=?').get(owner, sample.id);
   assert.ok(job, 'Fixed trial source did not create its analysis job'); return job;

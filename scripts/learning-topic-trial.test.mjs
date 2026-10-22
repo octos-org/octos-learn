@@ -4,12 +4,13 @@ import { readFile, mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { TopicTrialLedger, validateTopicTrial, checkTopicModelRequest, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
-import { stageTopicCase, inspectTopicCandidate } from './lib/learning-topic-trial-cases.mjs';
+import { stageTopicCase, inspectTopicCandidate, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { HistoryStore } from '../services/learning-history/store.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
 
-const plan = JSON.parse(await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_TRIAL.json'));
+const plan = { ...JSON.parse(await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_TRIAL.json')),
+  status: 'prepared-not-approved', authorization_reference: '' };
 const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
 const cases = validateTopicTrial(plan, casesBytes);
 function inputFor(sample = cases[0]) {
@@ -44,6 +45,17 @@ test('all nine fixed sources stage through the actual contracts; expected answer
     const reviewed = inspectTopicCandidate(cases[3], { units: [{ unit_id: 'question', status: 'unknown', topics: [] }] });
     assert.equal(reviewed.semantic_pass, null); assert.equal(reviewed.human_review_required, true);
   } finally { store.close(); }
+});
+
+test('failed terminal output remains reviewable before purge, without RPC tokens, profile config or reasoning fields', () => {
+  const row = { id: 'one' };
+  assert.equal(retainTopicTrialOutput(row, 'host#peer-topics-one', { turns: [{ turn_id: 'turn', state: 'active' }] }), false);
+  assert.equal(retainTopicTrialOutput(row, 'ordinary-classroom', { turns: [{ turn_id: 'turn', state: 'completed' }] }), false);
+  assert.equal(retainTopicTrialOutput(row, 'host#peer-topics-one', { host_token: 'never-retain', config: { api_key: 'never-retain' },
+    turns: [{ turn_id: 'turn', state: 'completed', host_token: 'never-retain' }],
+    messages: [{ role: 'assistant', content: 'Invalid JSON answer', reasoning_content: 'never-retain', turn_id: 'turn' }] }), true);
+  assert.equal(row.octos_observation.messages[0].content, 'Invalid JSON answer');
+  assert.ok(!JSON.stringify(row).includes('never-retain'));
 });
 
 test('Gemini catalog tool history is accepted, while unpriced tools, media, aliases and changed material are refused', () => {

@@ -11,13 +11,14 @@ import { HistoryStore } from '../services/learning-history/store.mjs';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
 import { digest, validateTopicTrial, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
-import { stageTopicCase, inspectTopicCandidate, requireAllStagedJobs, stageObservedTrialPlayback } from './lib/learning-topic-trial-cases.mjs';
+import { stageTopicCase, inspectTopicCandidate, requireAllStagedJobs, stageObservedTrialPlayback, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { queryTopic } from '../services/learning-history/topic-query.mjs';
 import { topicOctosFixture, listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 
-const [mode, planFile, output, binary] = process.argv.slice(2);
+const [mode, planFile, output, binary, fixtureScenario = 'valid'] = process.argv.slice(2);
 assert.ok(['--check', '--fixture', '--execute'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
+assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && fixtureScenario === 'invalid-json'), 'Invalid fixture scenario');
 const planBytes = await readFile(planFile), plan = JSON.parse(planBytes);
 const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
 const samples = validateTopicTrial(plan, casesBytes, { execute: mode === '--execute' });
@@ -53,6 +54,7 @@ if (mode === '--check') {
         units: activeInput.units.map(unit => { const expected = activeSample.expectations[unit.unit_id]; return { unit_id: unit.unit_id, status: expected.status,
           topics: expected.status === 'mapped' ? [{ topic_id: expected.acceptable_topics[0], quote: unit.content.slice(0, Math.min(24, unit.content.length)) }] : [], reason: 'Fixture only; expectations never reach a real model' }; }) }) }]
         : [{ functionCall: { name: 'learning_topics_search', args: { query: 'linear gradient intercept triangle angle sum', limit: 12 } } }];
+      if (hasTool && fixtureScenario === 'invalid-json') parts[0].text = 'Synthetic invalid JSON answer; preserve this before cleanup.';
       return new Response(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts }, finishReason: hasTool ? 'STOP' : 'STOP' }], usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } })}\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     };
     gateway = createTopicTrialGateway({ ledger, upstreamFetch });
@@ -83,7 +85,15 @@ if (mode === '--check') {
       activeInput = buildAnalysisInput(history, plan.owner, sample.id);
       ledger.start(sample.id, activeInput.input_sha256);
       const row = { id: sample.id, input_sha256: activeInput.input_sha256, state: 'started' }; report.rows.push(row); await save();
-      const progress = await analyzeTopics(identity, productBase, { createBridge: () => createTopicAnalysisBridge(identity, backend) });
+      const progress = await analyzeTopics(identity, productBase, { createBridge: () => {
+        const connection = createTopicAnalysisBridge(identity, backend), original = connection.callMethod.bind(connection);
+        connection.callMethod = async (method, params) => {
+          const result = await original(method, params);
+          if (method === 'session/hydrate' && retainTopicTrialOutput(row, params.session_id, result)) await save();
+          return result;
+        };
+        return connection;
+      } });
       assert.equal(progress.completed, 1, 'Trial stopped: source did not complete');
       const saved = history.db.prepare('SELECT result_json FROM topic_analysis_results WHERE owner=? AND source_event_id=?').get(plan.owner, sample.id);
       assert.ok(saved, 'Trial stopped: result not saved');
