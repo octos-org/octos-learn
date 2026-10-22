@@ -1,0 +1,168 @@
+{
+  "started_at": "2026-10-22T17:19:11.708Z",
+  "baseline": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+  "candidate": "52887f3b9e01c3a2e8c7b48e2628f033808bc4a6",
+  "builds": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-slice",
+  "scope": "Full production frontends with fixed progressive course and real Web Audio rendering; isolated account/database; protocol and suppliers replaced. Not a real-provider speed verdict.",
+  "model_calls": 0,
+  "real_supplier_calls": 0,
+  "normal_environment_changed": false,
+  "collector_sha256": "1d452e75b30b5d20112319bb81d09b76ee1a9c8f7a3bac025f57902dd2283d07",
+  "clock": "Browser performance.now; visual after two animation frames; audio after nonzero matching-buffer samples are observed in a running AudioContext",
+  "pairs_per_condition": 10,
+  "conditions": [
+    "small",
+    "large",
+    "retry",
+    "inflight"
+  ],
+  "rows": [
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [
+        "memory/overview"
+      ],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "initial_history_check": true,
+      "visual_ms": 597.5999999940395,
+      "audio_ms": 330.70000000298023,
+      "playable_ms": 597.5999999940395,
+      "audio_observation_interval_ms": [
+        320.09999999403954,
+        330.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.79999999701977,
+          "response_end_ms": 213.40000000596046
+        }
+      ],
+      "state": "failed",
+      "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   'memory/overview'\n+ ]\n- []\n",
+      "browser_state": {
+        "metrics": {
+          "start": 327.40000000596046,
+          "visual": 925,
+          "audio": 658.1000000089407,
+          "sources": 1,
+          "audioContexts": [
+            {
+              "state": "running",
+              "sampleRate": 48000,
+              "duration": 1
+            }
+          ],
+          "errors": [],
+          "audioObservationInterval": [
+            320.09999999403954,
+            330.70000000298023
+          ]
+        },
+        "text": "学习记录已保存在本机，等待同步重试同步\nOCTOS LEARNING CANVAS\n固定响应性能课程\n继续生成中\n启用语音\n启用摄像头\nconcept\n固定斜率\n我的问题\n正在准备回答\n\n请讲解直线 y=2x+1 的斜率。\n\n全选\n0 项笔迹 · 已保存\n\n直线的斜率是二。\n\n课程播放中"
+      }
+    }
+  ],
+  "warmup_rows": [
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "visual_ms": 673.9000000059605,
+      "audio_ms": 407.5,
+      "playable_ms": 673.9000000059605,
+      "audio_observation_interval_ms": [
+        393.40000000596046,
+        407.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 284.40000000596046,
+          "response_end_ms": 285.1000000089407
+        }
+      ],
+      "state": "completed"
+    }
+  ],
+  "status": "failed",
+  "negative_control": null,
+  "fixture": {
+    "lesson_sha256": "234a6b06efa86ea91f19953d8ea9cca4d16deded7f1c90b729ca191d4f79c9ce",
+    "second_part_sha256": "4ea17c1c03f971c06ee1e128dd7e20b83714c8136d95042ee8bc799c8fab1d40",
+    "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+    "audio_seconds": 1,
+    "part_delays_ms": [
+      200,
+      900
+    ],
+    "completion_delay_ms": 1600,
+    "large_server_events": 10000,
+    "large_local_documents": 1000,
+    "retry_pending_events": 500,
+    "inflight_pending_events": 500,
+    "inflight_release_after_invocation_ms": 100
+  },
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-C3AsDNei.js",
+      "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+      "source": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-slice/baseline",
+      "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-slice/baseline/dist"
+    },
+    "candidate": {
+      "ref": "52887f3b9e01c3a2e8c7b48e2628f033808bc4a6",
+      "entry": "/assets/index-DnM9fDUm.js",
+      "entry_sha256": "6dc940555b4e6ac2482e501d6120509ccf53db586bac1a0e58681cfc60ec33dc",
+      "source": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-slice/candidate",
+      "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-slice/candidate/dist"
+    }
+  },
+  "browser": "148.0.7778.96",
+  "error": "Expected values to be strictly deep-equal:\n+ actual - expected\n\n+ [\n+   'memory/overview'\n+ ]\n- []\n"
+}

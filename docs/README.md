@@ -61,6 +61,8 @@
 
 - [个性化老师：调整后的推进顺序](PERSONALIZED_TEACHERS_DIRECTION.md)：2026-10-22 用户认可的新顺序——第二阶段收口合并、第三四阶段最小纵向切片、第五阶段前补精度；列出待决定事项与切片技术落点，不删除原目标。
 
+- [老师与记忆最小切片：实施进展](personalized-teachers-slice/PROGRESS.md)：两位预设老师、老师设定与学生背景进入课程生成、兼容旧技能安装、验证与已知限制。
+
 - [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
 
 - [个性化老师接手说明](personalized-teachers-phase2/HANDOFF.md)：当前提交、已验证与未验证范围、授权边界和接手顺序；与[持续工作日志](personalized-teachers-phase2/WORK_LOG.md)、[交接证据](personalized-teachers-phase2/HANDOFF_EVIDENCE.json)一起持续维护。

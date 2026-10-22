@@ -69,4 +69,7 @@ D1、D2 决定第二阶段能否合并；D3–D5 决定切片能否开始实现�
 
 - 2026-10-22：本文件建立。
 - 2026-10-22：用户决定 D1 整分支合并、分析默认关闭；D2 差值小于一帧即判定不回退；D3 讨论伙伴 + 轻松鼓励者；D5 保守共享。D4（音色）、D6（真实模型预算）随切片推进再定。
+- 2026-10-22：B 切片经独立审查与两轮复核，确认问题已修复：octos-learn 最终 d9f1ccf，learning-coach 0.16.0（7c1482c/48041ae，改用专用字段 teacher_profile/learner_background）。免费首段对照不高于基线，40 次候选全部带老师设定与学生背景。下一步：推送并建立英文草稿 PR；真实模型验证待 D6 预算，音色待 D4。详见[切片实施进展](personalized-teachers-slice/PROGRESS.md)。
+- 2026-10-22：B 切片代码完成第一版并在独立审查中，见[切片实施进展](personalized-teachers-slice/PROGRESS.md)：octos-learn `codex/teacher-memory-slice`（52887f3/f0cf7a8/ac11a2d），learning-coach `codex/teacher-and-learner-context`（c13f1ec）。免费首段对照 f0cf7a8 不高于基线；52887f3 首次对照因夹具拒绝新 RPC 失败，记录保留。未合并、未发布、无付费调用。
+- 2026-10-22：A 完成——PR #60 在 CI 39817658962 成功后合并入 main（8e72488），分析保持默认关闭；合并后 GitHub Pages 静态预览按仓库既有工作流自动更新，公网正式站与 APK 未更新。B 开始：learning-coach 分支 `codex/teacher-and-learner-context`（c13f1ec）让三个课程入口接受老师设定与学生背景。
 - 2026-10-22：D2 免费对照完成，[结果](personalized-teachers-phase2/FREE_PLAYABLE_BENCHMARK_82E759F.json)：main 4973499 对 82e759f，四种情况各 10 对，80 次全部有画面与非静音音频；候选首段可播放 p50 减基线分别为 small −0.4、large −0.1、retry 0、inflight 0 ms，均不高于基线，零模型调用。按 D2 口径（也满足最严的不高于基线）判定首段速度不回退。只测固定响应下的产品开销，不代表真实供应商速度。之后仅有文档提交，运行代码未变。
