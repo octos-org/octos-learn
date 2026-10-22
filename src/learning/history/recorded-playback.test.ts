@@ -3,6 +3,7 @@ import { IDBFactory, IDBObjectStore } from 'fake-indexeddb';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { BrowserLessonSession, parseCanonicalJsonl } from 'octos-lesson-language/web-runtime';
 import source from '../oll/fixtures/unit-circle-sine.canonical.jsonl?raw';
+import { historySha256 } from './identifiers';
 
 beforeEach(() => { vi.resetModules(); vi.stubGlobal('indexedDB', new IDBFactory()); vi.stubGlobal('crypto', webcrypto); localStorage.clear(); });
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
@@ -41,6 +42,28 @@ it('seeking, viewing and manual next-beat movement never become completed covera
   const rows = await c.queue.list('alice');
   expect(rows.filter(row => row.event.kind === 'beat_completed')).toHaveLength(0);
   expect(rows.filter(row => row.event.kind === 'run_started')).toHaveLength(0);
+});
+it('pins a completed beat to the delivery present at its beginning, across a streamed course update', async () => {
+  const c = await classroom();
+  const original = JSON.stringify(parseCanonicalJsonl(source));
+  const revised = `${original} `;
+  let sourceSnapshotJson = original;
+  const binding = () => ({ recorder: c.recorder, forStep: () => ({ ...c.context, sourceSnapshotJson }), forTask: () => c.context });
+  c.capture.updateBinding(binding());
+  vi.useFakeTimers(); c.runtime.play();
+  // Observe a genuine beat.begin before updating the delivered material.
+  for (let n = 0; n < 200 && c.runtime.currentOperation?.type !== 'beat.begin'; n++) vi.advanceTimersToNextTimer();
+  expect(c.runtime.currentOperation?.type).toBe('beat.begin');
+  sourceSnapshotJson = revised; c.capture.updateBinding(binding());
+  vi.runAllTimers(); vi.useRealTimers(); await c.recorder.flush();
+  const rows = (await c.queue.list('alice')).filter(row => row.event.kind === 'beat_completed');
+  expect(rows).toHaveLength(1);
+  expect(rows[0].event.data.delivery_sha256).toBe(await historySha256(original));
+  c.capture.withReason('seek', () => c.runtime.reset());
+  vi.useFakeTimers(); c.runtime.play(); vi.runAllTimers(); vi.useRealTimers(); await c.recorder.flush();
+  const replayed = (await c.queue.list('alice')).filter(row => row.event.kind === 'beat_completed');
+  expect(replayed).toHaveLength(2);
+  expect(replayed.map(row => row.event.data.delivery_sha256)).toEqual(expect.arrayContaining([await historySha256(original), await historySha256(revised)]));
 });
 it('saves a review reconstruction without exporting a position for every restored operation', async () => {
   const c = await classroom();

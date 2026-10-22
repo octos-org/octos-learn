@@ -18,11 +18,11 @@ export function recordTeacherText(recorder: LearningHistoryRecorder, questionId:
     stableKey: JSON.stringify(['answer', questionId, key, index, part]), data: { text: part, media },
   }));
 }
-export function recordDeliveredLesson(recorder: LearningHistoryRecorder, questionId: string, artifact: string, events: CanonicalEvent[]) {
+export function recordDeliveredLesson(recorder: LearningHistoryRecorder, questionId: string, artifact: string, events: CanonicalEvent[], snapshotJson = JSON.stringify(events)) {
   const context = { runKey: `question:${questionId}`, questionId, course: { kind: 'generated' as const, id: questionId, version: questionId } };
   const complete = events.some(event => event.event === 'lesson.close');
   recorder.record({ ...context, kind: 'course_delivered', stableKey: JSON.stringify(['course', questionId, artifact, events.length, complete]),
-    snapshotJson: JSON.stringify(events), data: { artifact, status: complete ? 'complete' : 'partial', event_count: events.length } });
+    snapshotJson, data: { artifact, status: complete ? 'complete' : 'partial', event_count: events.length } });
   for (const event of events) {
     if (event.event !== 'lesson.step' || !event.step) continue;
     // The course delivery owns the artifact reference. A streamed part and

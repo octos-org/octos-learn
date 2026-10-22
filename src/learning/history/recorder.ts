@@ -10,9 +10,21 @@ export interface HistoryDraft {
   /** Immutable delivered events, hashed and durably queued with their fact
    * during the background write. Never reconstructed from a later artifact. */
   snapshotJson?: string;
+  /** The exact delivered version captured when this beat began playing. */
+  sourceSnapshotJson?: string;
 }
 export interface RecorderStatus { pendingWrites: number; error: string }
 interface Write { drafts: HistoryDraft[]; documents: HistoryDocumentWrite[] }
+const recentSourceDigests = new Map<string, Promise<string>>();
+function sourceDigest(json: string) {
+  let hash = recentSourceDigests.get(json);
+  if (!hash) {
+    hash = historySha256(json).catch(error => { recentSourceDigests.delete(json); throw error; });
+    recentSourceDigests.set(json, hash);
+    if (recentSourceDigests.size > 2) recentSourceDigests.delete(recentSourceDigests.keys().next().value!);
+  }
+  return hash;
+}
 
 /** One ordered write queue per classroom. A failed transaction holds later
  * snapshots behind it, preventing a newer checkpoint from hiding lost facts.
@@ -72,6 +84,7 @@ export class LearningHistoryRecorder {
         const materials: HistoryMaterialWrite[] = [];
         for (const draft of job.drafts) {
           const snapshotHash = draft.snapshotJson === undefined ? undefined : await historySha256(draft.snapshotJson);
+          const deliveryHash = draft.kind === 'beat_completed' && draft.sourceSnapshotJson !== undefined ? await sourceDigest(draft.sourceSnapshotJson) : undefined;
           const id = draft.id ?? await historyId(snapshotHash ? [this.sessionId, draft.stableKey, snapshotHash] : [this.sessionId, draft.stableKey]);
           const time = await this.queue.remember(identity.owner, `event-time:${id}`, draft.occurredAt!);
           const event: HistoryEvent = {
@@ -80,7 +93,7 @@ export class LearningHistoryRecorder {
             ...(draft.questionId ? { question_id: draft.questionId } : {}),
             ...(draft.course ? { course: draft.course } : {}),
             ...(draft.logKey ? { log_id: await this.queue.remember(identity.owner, `log:${draft.logKey}`, createRequestId()) } : {}),
-            data: { ...draft.data, ...(snapshotHash ? { snapshot_sha256: snapshotHash } : {}), ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
+            data: { ...draft.data, ...(snapshotHash ? { snapshot_sha256: snapshotHash } : {}), ...(deliveryHash ? { delivery_sha256: deliveryHash } : {}), ...(draft.kind === 'answer_delivered' ? { part_id: id } : {}) },
           };
           events.push(event);
           if (draft.kind === 'course_delivered' && draft.snapshotJson !== undefined) materials.push({ eventId: event.id, snapshotJson: draft.snapshotJson });

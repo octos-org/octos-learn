@@ -3,7 +3,7 @@ import type { BrowserLessonSession } from 'octos-lesson-language/web-runtime';
 import { PlaybackEvidenceTracker } from './playback-evidence';
 import type { HistoryDraft, LearningHistoryRecorder } from './recorder';
 
-export type PlaybackHistoryContext = Pick<HistoryDraft, 'runKey' | 'questionId' | 'course'>;
+export type PlaybackHistoryContext = Pick<HistoryDraft, 'runKey' | 'questionId' | 'course' | 'sourceSnapshotJson'>;
 export interface PlaybackHistoryBinding {
   recorder: LearningHistoryRecorder;
   forStep(stepId: string): PlaybackHistoryContext | undefined;
@@ -26,6 +26,7 @@ export class PlaybackHistoryCapture {
   private reason?: "play" | "view" | "seek" | "skip" | "restore";
   private position?: HistoryDraft;
   private checkpoint?: { cursor: number; epoch: number };
+  private beatSource?: { stepId: string; beatId: string; context: PlaybackHistoryContext };
   constructor(storageKey: string, binding?: PlaybackHistoryBinding) { this.storageKey = storageKey; this.binding = binding; }
   updateBinding(binding?: PlaybackHistoryBinding) { this.binding = binding; }
   withReason<T>(reason: "play" | "view" | "seek" | "skip" | "restore", apply: () => T): T {
@@ -44,6 +45,7 @@ export class PlaybackHistoryCapture {
     this.evidence = new PlaybackEvidenceTracker({ cursor: session.projection.cursor, epoch: session.playbackEpoch });
     this.checkpoint = { cursor: session.projection.cursor, epoch: session.playbackEpoch };
     this.position = undefined;
+    this.beatSource = undefined;
     // Restored attempts are existing state, not newly observed answers.
     for (const task of session.studentTasks) {
       task.attempts.forEach(attempt => this.attempts.add(`${task.task_id}:${attempt.operation_id}`));
@@ -58,13 +60,21 @@ export class PlaybackHistoryCapture {
     if (session && key === this.storageKey) {
       const cursor = session.projection.cursor;
       const moved = this.checkpoint?.cursor !== cursor || this.checkpoint?.epoch !== session.playbackEpoch;
+      const contiguous = this.checkpoint?.epoch === session.playbackEpoch && cursor === this.checkpoint.cursor + 1;
+      if (moved && !contiguous) this.beatSource = undefined;
       this.checkpoint = { cursor, epoch: session.playbackEpoch };
       const op = session.currentOperation;
       const stepId = op?.step_id ?? session.projection.current_step_id;
       const context = stepId ? binding.forStep(stepId) : undefined;
+      if (contiguous && session.isPlaying && op?.type === 'beat.begin' && op.step_id && op.beat_id && context) {
+        this.beatSource = { stepId: op.step_id, beatId: op.beat_id, context };
+      }
       const completed = this.evidence?.observe({ cursor, epoch: session.playbackEpoch, playing: session.isPlaying && (!this.reason || this.reason === "play"), operation: op });
       if (completed) {
-        const owned = binding.forStep(completed.stepId);
+        const bound = this.beatSource?.stepId === completed.stepId && this.beatSource.beatId === completed.beatId ? this.beatSource.context : undefined;
+        const fallback = binding.forStep(completed.stepId);
+        const owned = bound ?? (fallback ? { runKey: fallback.runKey, questionId: fallback.questionId, course: fallback.course } : undefined);
+        this.beatSource = undefined;
         if (owned) {
           if (!this.started.has(owned.runKey)) {
             drafts.push({ ...owned, kind: 'run_started', stableKey: `run-started:${owned.runKey}`, data: { mode: 'start' } }); this.started.add(owned.runKey);

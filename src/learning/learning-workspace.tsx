@@ -933,11 +933,16 @@ export function LearningWorkspace({
     ),
     [deliveredOllLessons, deliveredOllQuestionIds, packagedOllEvents],
   );
+  const deliveredHistorySnapshots = useRef(new WeakMap<CanonicalEvent[], string>());
   const playbackHistory = useMemo<PlaybackHistoryBinding | undefined>(() => {
     if (!historyRecorder) return undefined;
     const context = (topic: OllLessonTopicDefinition | undefined): PlaybackHistoryContext | undefined => {
-      if (topic?.questionId) return { runKey: `question:${topic.questionId}`, questionId: topic.questionId,
-        course: { kind: "generated", id: topic.questionId, version: topic.questionId } };
+      if (topic?.questionId) {
+        const source = deliveredOllLessons[deliveredOllQuestionIds.indexOf(topic.questionId)];
+        return { runKey: `question:${topic.questionId}`, questionId: topic.questionId,
+          sourceSnapshotJson: source ? deliveredHistorySnapshots.current.get(source) : undefined,
+          course: { kind: "generated", id: topic.questionId, version: topic.questionId } };
+      }
       if (!coursePack || !topic) return undefined;
       return { runKey: `pack:${coursePack.pack.manifest.packId}@${coursePack.pack.manifest.version}`,
         course: { kind: "course-pack", id: coursePack.pack.manifest.packId, version: coursePack.pack.manifest.version, sha256: coursePack.pack.archiveSha256 } };
@@ -946,13 +951,17 @@ export function LearningWorkspace({
       forStep: step => context(activeOllTopics.find(topic => topic.stepIds.includes(step))),
       forTask: task => context(activeOllTopics.find(topic => topic.taskAliases?.includes(task))),
     };
-  }, [historyRecorder, activeOllTopics, coursePack]);
+  }, [historyRecorder, activeOllTopics, coursePack, deliveredOllLessons, deliveredOllQuestionIds]);
   useEffect(() => {
     if (!historyRecorder) return;
     deliveredOllLessons.forEach((events, index) => {
       const question = deliveredOllQuestionIds[index];
       const artifact = ollArtifacts.find(candidate => loadedOllArtifacts[ollArtifactIdentity(candidate)] === events);
-      if (question && artifact) recordDeliveredLesson(historyRecorder, question, artifact.path, events);
+      if (question && artifact) {
+        let snapshotJson = deliveredHistorySnapshots.current.get(events);
+        if (snapshotJson === undefined) { snapshotJson = JSON.stringify(events); deliveredHistorySnapshots.current.set(events, snapshotJson); }
+        recordDeliveredLesson(historyRecorder, question, artifact.path, events, snapshotJson);
+      }
     });
   }, [historyRecorder, deliveredOllLessons, deliveredOllQuestionIds, ollArtifacts, loadedOllArtifacts]);
   const startupNarration = useMemo(() => {
