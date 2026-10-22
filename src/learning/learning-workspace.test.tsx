@@ -1488,7 +1488,7 @@ describe("LearningWorkspace", () => {
   it("sends learner background read while idle, and learns action support once the bridge connects", async () => {
     historyRecordingMock.enabled = true;
     setToken("learner-token");
-    backgroundMock.connected.mockReturnValue(true);
+    // Cold load: no connection yet, so the first idle read has no memory.
     backgroundMock.runs.mockResolvedValue({ runs: [{ run_id: "r", session_id: "s", updated_seq: 1, question_preview: "什么是斜率", first_occurred_at: "2026-10-20T08:00:00.000Z",
       course: null, question_count: 2, completed_beats: 12, task_attempts: 3, start_recorded: true }] });
     // The session bridge is not connected yet on mount.
@@ -1496,7 +1496,10 @@ describe("LearningWorkspace", () => {
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
     await renderLearning(<LearningWorkspace sessionId="learn-background" voiceEnabled={false} onBack={vi.fn()} />);
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
-    await act(async () => { window.dispatchEvent(new Event("crew:bridge_connected")); });
+    await act(async () => {
+      backgroundMock.connected.mockReturnValue(true);
+      window.dispatchEvent(new Event("crew:bridge_connected"));
+    });
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(4));
     await waitFor(() => expect(backgroundMock.getMyMemory).toHaveBeenCalled());
     await act(async () => {});

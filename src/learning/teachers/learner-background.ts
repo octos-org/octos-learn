@@ -36,6 +36,7 @@ export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Dat
 export class LearnerBackgroundCache {
   private value?: { account: string; text: string | undefined; at: number };
   private readonly inflight = new Map<string, Promise<void>>();
+  private readonly forcedAfter = new Map<string, Promise<void>>();
   private readonly load: (account: string) => Promise<LearnerBackgroundSources>;
   private readonly currentAccount: () => string | null;
   private readonly timeoutMs: number;
@@ -56,7 +57,17 @@ export class LearnerBackgroundCache {
   refresh(account: string | null, force = false): Promise<void> {
     if (!account) return Promise.resolve();
     const running = this.inflight.get(account);
-    if (running) return running;
+    if (running) {
+      if (!force) return running;
+      // A forced refresh means sources changed (e.g. a connection appeared), so
+      // the running load may be stale: queue one fresh load after it.
+      let again = this.forcedAfter.get(account);
+      if (!again) {
+        again = running.then(() => { this.forcedAfter.delete(account); return this.refresh(account, true); });
+        this.forcedAfter.set(account, again);
+      }
+      return again;
+    }
     if (!force && this.value?.account === account && this.now().getTime() - this.value.at < this.maxAgeMs) return Promise.resolve();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("learner background timed out")), this.timeoutMs); });

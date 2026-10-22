@@ -1146,6 +1146,8 @@ export function LearningWorkspace({
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
+  const classroomBusyRef = useRef(historyClassroomBusy);
+  const backgroundStaleRef = useRef(false);
   // Installed action support changes only with a (re)connection, e.g. after a
   // skill reinstall, so read it on mount and on each bridge connection. The
   // session bridge may not be connected on mount; then the connection event
@@ -1161,15 +1163,23 @@ export function LearningWorkspace({
     };
     const onConnected = () => {
       readSupport();
-      if (historyRecorder) void learnerBackground.refresh(getToken(), true);
+      // Memory may only now be readable; refresh on the next idle moment.
+      backgroundStaleRef.current = true;
+      if (!classroomBusyRef.current && historyRecorder) {
+        backgroundStaleRef.current = false;
+        void learnerBackground.refresh(getToken(), true);
+      }
     };
     readSupport();
     window.addEventListener("crew:bridge_connected", onConnected);
     return () => { cancelled = true; window.removeEventListener("crew:bridge_connected", onConnected); };
   }, [historyRecorder, learnerBackground, sessionId]);
   useEffect(() => {
+    classroomBusyRef.current = historyClassroomBusy;
     if (historyClassroomBusy || !historyRecorder) return;
-    void learnerBackground.refresh(getToken());
+    const force = backgroundStaleRef.current;
+    backgroundStaleRef.current = false;
+    void learnerBackground.refresh(getToken(), force);
   }, [historyClassroomBusy, historyRecorder, learnerBackground]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;

@@ -95,3 +95,20 @@ it('sends a context field only to lesson actions that declare it', async () => {
   expect(support.get('bare')!.size).toBe(0);
   expect(support.get('missing')).toBeUndefined();
 });
+
+it('a forced refresh during a running load reloads afterwards instead of reusing the stale result', async () => {
+  let release!: () => void;
+  const sources = [
+    () => new Promise<{ memory: null }>((done) => { release = () => done({ memory: null }); }),
+    async () => ({ memory: { long_term: '连接建立后才读到的记忆' } }),
+  ];
+  const load = vi.fn(() => sources[load.mock.calls.length - 1]());
+  const cache = new LearnerBackgroundCache(load, { currentAccount: () => 'alice' });
+  const first = cache.refresh('alice');
+  const forced = cache.refresh('alice', true);
+  expect(cache.refresh('alice', true)).toBe(forced);
+  release();
+  await first; await forced;
+  expect(load).toHaveBeenCalledTimes(2);
+  expect(cache.current('alice')).toContain('连接建立后才读到的记忆');
+});
