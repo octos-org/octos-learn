@@ -7,7 +7,7 @@ export interface HistoryMessage {
   source: string; client_message_id: string; thread_id?: string;
 }
 export interface HistoryDeliveryTask { id: string; lease_id: string; message: HistoryMessage }
-export interface HistoryDeliveryResult { status: 'idle' | 'waiting-for-octos'; delivered: number }
+export interface HistoryDeliveryResult { status: 'idle' | 'waiting-for-octos' | 'paused'; delivered: number }
 
 /** Mechanical transport only. The dedicated connection captures the verified
  * credential; an unrelated tab's login cannot change it during an RPC.
@@ -16,9 +16,11 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
   fetcher = fetch,
   createBridge = () => createUiProtocolBridge({ getToken: () => identity.token, getProfileId: () => identity.owner }),
   isCurrent = () => true,
+  canContinue = () => true,
   probeSessionId,
-}: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; probeSessionId?: string | null } = {}): Promise<HistoryDeliveryResult> {
+}: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; canContinue?: () => boolean; probeSessionId?: string | null } = {}): Promise<HistoryDeliveryResult> {
   if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+  if (!canContinue()) return { status: 'paused', delivered: 0 };
   if (!probeSessionId || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(probeSessionId)) return { status: 'waiting-for-octos', delivered: 0 };
   const bridge = createBridge();
   let delivered = 0;
@@ -33,6 +35,7 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
     const headers = { Authorization: `Bearer ${identity.token}`, 'Content-Type': 'application/json', 'X-Learning-Owner': identity.owner };
     for (;;) {
       if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+      if (!canContinue()) return { status: 'paused', delivered };
       const claim = await fetcher(`${base}/api/learn/history/deliveries/claim`, {
         method: 'POST', headers, body: JSON.stringify({ limit: 10 }), signal: historyRequestTimeout(10000), redirect: 'error',
       });
@@ -42,6 +45,7 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
       if (!body.tasks.length) return { status: 'idle', delivered };
       for (const task of body.tasks) {
         if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
+        if (!canContinue()) return { status: 'paused', delivered };
         const receipt = await bridge.callMethod<{ session_id: string; seq: number; thread_id?: string }>('session/append_message', task.message);
         const expectedThread = task.message.role === 'user' ? task.message.client_message_id : task.message.thread_id;
         if (receipt.session_id !== task.message.session_id || !Number.isSafeInteger(receipt.seq) || receipt.seq < 0

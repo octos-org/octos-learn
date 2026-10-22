@@ -23,3 +23,14 @@ it('leaves a lost-delete-reply task unacknowledged for idempotent retry', async 
   await expect(finishSessionDeletions({ owner: 'alice', token: 'credential' }, '', { createBridge: () => bridge, fetcher })).rejects.toThrow('reply lost');
   expect(fetcher).toHaveBeenCalledOnce(); expect(bridge.stop).toHaveBeenCalledOnce();
 });
+it('keeps the current delete receipt but yields before the next leased task when teaching starts', async () => {
+  let idle = true;
+  const bridge = { start: vi.fn(async () => undefined), stop: vi.fn(async () => undefined), callMethod: vi.fn(async () => ({})) } as unknown as UiProtocolBridge;
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    if (String(url).endsWith('/claim')) return Response.json({ profile_id: 'alice', tasks: [{ session_id: 'first', lease_id: 'lease-one' }, { session_id: 'second', lease_id: 'lease-two' }] });
+    expect(String(url)).toContain('/session-deletions/first/receipt'); idle = false;
+    return Response.json({ profile_id: 'alice', recorded: true });
+  }) as unknown as typeof fetch;
+  expect(await finishSessionDeletions({ owner: 'alice', token: 'credential' }, '', { createBridge: () => bridge, fetcher, canContinue: () => idle })).toBe(1);
+  expect(bridge.callMethod).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledTimes(2); expect(bridge.stop).toHaveBeenCalledOnce();
+});

@@ -43,3 +43,20 @@ it('never invents a session solely to probe capabilities when no queued session 
   expect(await deliverHistoryMessages(identity, '', { createBridge })).toEqual({ status: 'waiting-for-octos', delivered: 0 });
   expect(createBridge).not.toHaveBeenCalled();
 });
+it('yields after an in-flight capability handshake when teaching starts, without claiming messages', async () => {
+  let idle = true; const connection = bridge(); const fetcher = vi.fn();
+  vi.mocked(connection.start).mockImplementation(async () => { idle = false; });
+  expect(await deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher, canContinue: () => idle })).toEqual({ status: 'paused', delivered: 0 });
+  expect(fetcher).not.toHaveBeenCalled(); expect(connection.callMethod).not.toHaveBeenCalled(); expect(connection.stop).toHaveBeenCalledOnce();
+});
+it('records the in-flight append receipt then yields before another leased message or claim', async () => {
+  let idle = true; const connection = bridge();
+  const second = { ...task, id: 'second', message: { ...task.message, client_message_id: 'learn:user:q-2' } };
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    if (String(url).endsWith('/claim')) return Response.json({ profile_id: 'alice', tasks: [task, second] });
+    expect(String(url)).toContain('/deliveries/event/receipt'); idle = false;
+    return Response.json({ profile_id: 'alice', recorded: true });
+  }) as unknown as typeof fetch;
+  expect(await deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher, canContinue: () => idle })).toEqual({ status: 'paused', delivered: 1 });
+  expect(connection.callMethod).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledTimes(2); expect(connection.stop).toHaveBeenCalledOnce();
+});

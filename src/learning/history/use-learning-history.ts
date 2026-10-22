@@ -27,6 +27,7 @@ export class LearningHistoryCoordinator {
   private busy = new Set<string>();
   constructor(token: string) { this.token = token; }
   private current = () => getToken() === this.token;
+  private canMaintain = () => this.current() && !this.busy.size;
   private getIdentity = (): Promise<HistoryIdentity> => {
     if (!this.identity) {
       this.identity = resolveHistoryIdentity(API_BASE, this.token, this.queue).catch(error => { this.identity = undefined; throw error; });
@@ -74,9 +75,11 @@ export class LearningHistoryCoordinator {
       const identity = await this.getIdentity();
       if (!this.current() || this.busy.size) return;
       this.update({ pending: (await this.queue.list(identity.owner)).length });
-      await this.synchronizer.synchronize(identity);
+      await this.synchronizer.synchronize(identity, this.canMaintain);
+      if (!this.canMaintain()) return;
       const remaining = await this.queue.list(identity.owner);
       this.update({ pending: remaining.length, error: remaining.some(row => row.state === 'conflict') ? '有学习记录内容冲突，原记录已保留，等待核对。' : '' });
+      if (!this.canMaintain()) return;
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };
       const pending = await fetch(`${API_BASE}/api/learn/history/deliveries`, { headers, redirect: 'error', signal: historyRequestTimeout(10000) });
       if (!pending.ok) throw new Error('问答交付状态暂不可用');
@@ -85,13 +88,13 @@ export class LearningHistoryCoordinator {
       const cleanup = Number(payload.pending_session_deletions) || 0;
       this.update({ cleanupPending: cleanup });
       if (cleanup && this.current() && !this.busy.size) {
-        const accepted = await finishSessionDeletions(identity, API_BASE, { isCurrent: this.current });
+        const accepted = await finishSessionDeletions(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain });
         this.update({ cleanupPending: Math.max(0, cleanup - accepted) });
       }
       let conversations = payload.states.filter(row => ['pending', 'leased'].includes(row.state)).reduce((sum, row) => sum + row.count, 0);
       this.update({ conversationPending: conversations, checked: true });
       if (conversations && this.current() && !this.busy.size) {
-        const result = await deliverHistoryMessages(identity, API_BASE, { isCurrent: this.current, probeSessionId: payload.probe_session_id });
+        const result = await deliverHistoryMessages(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain, probeSessionId: payload.probe_session_id });
         conversations = Math.max(0, conversations - result.delivered);
         this.update({ conversationPending: conversations, checked: true });
       }

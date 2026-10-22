@@ -60,21 +60,24 @@ export class HistorySynchronizer {
     this.queue = queue; this.base = base; this.fetcher = (input, init) => fetcher(input, init);
   }
 
-  synchronize(identity: HistoryIdentity): Promise<void> {
+  // Yield before another request; always preserve the receipt of a request
+  // already sent. The coordinator resumes durable pending work while idle.
+  synchronize(identity: HistoryIdentity, canContinue: () => boolean = () => true): Promise<void> {
     const active = this.active.get(identity.owner);
     if (active) return active;
-    const work = this.run(identity).finally(() => { this.active.delete(identity.owner); });
+    const work = this.run(identity, canContinue).finally(() => { this.active.delete(identity.owner); });
     this.active.set(identity.owner, work);
     return work;
   }
 
-  private async run(identity: HistoryIdentity): Promise<void> {
+  private async run(identity: HistoryIdentity, canContinue: () => boolean): Promise<void> {
     const headers = { Authorization: `Bearer ${identity.token}`, 'Content-Type': 'application/json', 'X-Learning-Owner': identity.owner };
     // Pull deletions before sending offline children. The server also rejects
     // deleted runs if another device deletes one after this read completes.
     let after = await this.queue.changeCursor(identity.owner);
     let through: number | undefined;
     for (;;) {
+      if (!canContinue()) return;
       const params = new URLSearchParams({ after: String(after), limit: '100' });
       if (through !== undefined) params.set('through', String(through));
       const response = await this.fetcher(`${this.base}/api/learn/history/changes?${params}`, { headers, redirect: 'error', signal: historyRequestTimeout(10000) });
@@ -94,8 +97,9 @@ export class HistorySynchronizer {
       after = cursor;
     }
     for (;;) {
+      if (!canContinue()) return;
       const sent = batch((await this.queue.list(identity.owner)).filter(row => row.state === 'pending').map(row => row.event));
-      if (!sent.length) return;
+      if (!sent.length || !canContinue()) return;
       const response = await this.fetcher(`${this.base}/api/learn/history/events`, {
         method: 'POST', headers, body: JSON.stringify({ events: sent }), redirect: 'error', signal: historyRequestTimeout(15000),
       });
