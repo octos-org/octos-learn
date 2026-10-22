@@ -21,7 +21,7 @@ import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 const [mode, planFile, output, binary, fixtureScenario = 'valid'] = process.argv.slice(2);
 const execute = mode === '--execute' || mode === '--resume-preflight';
 assert.ok(['--check', '--fixture', '--execute', '--resume-preflight'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
-assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host', 'three-lookups'].includes(fixtureScenario)), 'Invalid fixture scenario');
+assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host', 'three-lookups', 'fenced-json'].includes(fixtureScenario)), 'Invalid fixture scenario');
 const planBytes = await readFile(planFile), plan = JSON.parse(planBytes);
 const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
 const samples = validateTopicTrial(plan, casesBytes, { execute });
@@ -91,6 +91,7 @@ if (mode === '--check') {
         const replies = body.contents.flatMap(content => content.parts).filter(part => part.functionResponse).length;
         if (replies < 3) parts = [{ functionCall: { name: 'learning_topics_search', args: replies === 2 ? { ids: ['mt_WBdHkc2HTf'] } : { query: replies === 0 ? 'unfindablesyntheticterm' : 'linear gradient intercept' } } }];
       }
+      if (hasTool && fixtureScenario === 'fenced-json') parts[0].text = '```json\n' + parts[0].text + '\n```';
       if (hasTool && fixtureScenario === 'invalid-json') parts[0].text = 'Synthetic invalid JSON answer; preserve this before cleanup.';
       return new Response(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts }, finishReason: hasTool ? 'STOP' : 'STOP' }], usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } })}\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     };
