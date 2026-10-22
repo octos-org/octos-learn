@@ -1,6 +1,6 @@
 # 第二阶段代码审查与发布准备
 
-当前状态：本机上游接入与最新 APK 的本地验收完成；准备交付审查。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标，不能因此宣布第二阶段全部完成。
+当前状态：本机上游接入与最新 APK 的本地验收完成；终轮独立审查已返回并完成对照，没有新增已确认代码缺陷。合并前的完整速度证据仍待补齐。未创建产品 PR、未合并产品分支、未发布公网。自动知识点关联的讨论暂缓，仍是未完成目标，不能因此宣布第二阶段全部完成。
 
 ## 审查范围
 
@@ -39,10 +39,10 @@
 2. Learning Coach 尚未主动读取这些事实并改变下一堂课；老师成长、知识地图、成就及主动复习没有随本轮交付。
 3. 旧实验 APK `ec5b28d` 的开始记录没有固定编号，首次在新版本回放旧实例会补一条新格式开始事实。该实例两条开始事实仍属于同一个学习编号，查询按学习编号计一遍；未清理或伪改旧事实。
 4. 暂停、纯旁白文字模式等播放证据限制仍见实施记录；播放不能当作掌握。
-5. [发布前性能计划](PERFORMANCE_ACCEPTANCE_PLAN.md)还没有执行；现有速度数据不足以宣称完整硬门槛通过。
+5. [合并与发布前性能计划](PERFORMANCE_ACCEPTANCE_PLAN.md)还没有执行；现有速度数据不足以宣称完整硬门槛通过。项目 AGENTS.md 要求任何合入不得回退速度，不能将该要求移到合并之后。
 6. 公网历史接口尚未部署，真实设备上传和问答交付仍需发布后验收。
 
-因此，审查可以评估已实现的代码是否可分批合并；是否按当前范围分批收尾，需要明确决定，不能把原计划缺项默认为取消。合并评审与正式发布是两件事。
+因此，审查可以评估已实现的代码是否可分批合并；是否按当前范围分批收尾，需要明确决定，不能把原计划缺项默认为取消。合并评审与正式发布是两件事；独立审查通过不代替合并前性能要求。终轮意见的采纳与分歧见[处理记录](REVIEW_FOLLOWUP.md#终轮审查处理)。
 
 ## 服务器只读核查结果及拟议发布顺序
 
@@ -67,4 +67,4 @@ Direct skill invocation did not append the student's original question and deliv
 
 Validation covers persistence, retry deduplication, account isolation, deletion receipts, real Runtime playback, and browser behavior. Follow-up acceptance used real Octos and product processes with the actual delivery client, including a lost receipt followed by restarting both services, with zero model calls. The installed Android candidate passed local recovery, offline operation, sparse navigation, repeat-start and failed-delete retention checks.
 
-This is not a production release. Topic mappings remain inactive pending review; automatic attribution of generated lessons is not implemented. Knowledge-point question counts remain unknown. The existing six-generation benchmark measured an earlier candidate's first visible frame, not complete first-playable audio latency; the release performance gate and production synchronization acceptance remain outstanding.
+This is not a production release. Topic mappings remain inactive pending review; automatic attribution of generated lessons is not implemented. Knowledge-point question counts remain unknown. The existing six-generation benchmark measured an earlier candidate's first visible frame, not complete first-playable audio latency; the repository’s pre-merge performance requirement and production synchronization acceptance remain outstanding. This review draft does not assert that the change is ready to merge.
