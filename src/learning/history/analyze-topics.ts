@@ -60,8 +60,11 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   const controls = (await request<{ controls: { id: string; control: Control }[] }>('/controls')).controls;
   if (!Array.isArray(controls) || controls.some(row => !/^[a-f0-9]{64}$/.test(row.id) || !safeControl(row.control))) throw new Error('分析连接的授权记录需要核对');
   const controlFor = (id: string) => controls.find(row => row.id === id)?.control;
+  // Resource RPCs identify the host explicitly. An auth-only connection avoids
+  // implicitly reopening its persisted session without the required cwd. The
+  // analysis peer is opened below with the workspace returned by prepare.
   const connect = async (control: Control, connection: UiProtocolBridge) => {
-    await connection.start({ sessionId: control.host, profileId: identity.owner });
+    await connection.start({ profileId: identity.owner });
     const prepared = await connection.callMethod<{ cwd: string }>('peer/prepare', { session_id: control.host, profile_id: identity.owner, names: [control.peer],
       brief: ANALYSIS_INSTRUCTIONS, memory_namespace: control.namespace, resume: true, host_token: control.token });
     return analysisWorkspace(prepared.cwd);
@@ -69,7 +72,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   const purge = async (id: string, control: Control, connection?: UiProtocolBridge) => {
     const own = !connection; const bridge = connection ?? createBridge();
     try {
-      if (own) await bridge.start({ sessionId: control.host, profileId: identity.owner });
+      if (own) await bridge.start({ profileId: identity.owner });
       const result = await bridge.callMethod<{ purged?: boolean; already_purged?: boolean; partial?: boolean; errors?: unknown[]; residual_errors?: unknown[] }>('peer/purge', {
         session_id: control.host, profile_id: identity.owner, peer: control.peer, host_token: control.token,
       });
@@ -132,7 +135,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
     } else {
       if (control) { await purge(task.id, control); control = undefined; }
       const host = `learn-topic-${(await historySha256(identity.owner)).slice(0, 32)}`, name = `topics-${createRequestId().replaceAll('-', '')}`;
-      await bridge.start({ sessionId: host, profileId: identity.owner });
+      await bridge.start({ profileId: identity.owner });
       if (!canContinue()) throw new Error('课堂已开始，分析延后');
       const namespace = `app/learning-topics/${name}`;
       const prepared = await rpc<{ slug: string; topic: string; host_token: string; cwd: string }>('peer/prepare', { session_id: host, names: [name], brief: ANALYSIS_INSTRUCTIONS, memory_namespace: namespace });

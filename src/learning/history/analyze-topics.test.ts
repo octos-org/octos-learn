@@ -75,6 +75,7 @@ it('records execution before app admission and confines catalog calls to the cur
   expect((await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).completed).toBe(1);
   expect(f.http.filter(path => path.startsWith('/catalog?'))).toHaveLength(1);
   expect(f.calls.find(call => call.method === 'peer/tools/register')?.params.generic_tools).toEqual([]);
+  expect(f.connection.start).toHaveBeenCalledWith({ profileId: identity.owner });
   const admissions = f.calls.filter(call => call.method === 'turn/start');
   expect(admissions).toHaveLength(1);
   const prompt = (admissions[0].params.input as { text: string }[])[0].text;
@@ -89,6 +90,7 @@ it('reads the original execution after a lost response without starting another 
   await analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection });
   expect(f.calls.some(call => call.method === 'turn/start')).toBe(false);
   expect(f.calls.find(call => call.method === 'peer/prepare')?.params.resume).toBe(true);
+  expect(f.connection.start).toHaveBeenCalledWith({ profileId: identity.owner });
   expect(f.calls.find(call => call.method === 'session/open')?.params.cwd).toBe('/synthetic/octos/analysis-workspace');
   expect(f.calls.filter(call => call.method === 'peer/purge')).toHaveLength(1);
 });
