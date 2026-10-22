@@ -61,6 +61,7 @@
 
 - [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
 
+- [第二阶段代码验收对照](personalized-teachers-phase2/CODE_ACCEPTANCE.md)：已实现主链路、失败事实修复及仍未实现的练习归属/整课汇总；代码审查与发布、设备验收分开。
 - [第二阶段 TODO](personalized-teachers-phase2/TODO.md)：持续维护已完成、当前推进、待办与阻塞原因，区分代码、内容审核、设备验收和发布。
 
 - [实时内容知识点归属实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)：完整课程材料、固定知识目录、Octos 空闲分析、可追溯结果与精确版本计数已实现；附免费整链路证据，列明真实质量、默认关闭和待验收边界。
