@@ -59,6 +59,8 @@
 
 - [第二阶段实施计划：学习历史与进展](PERSONALIZED_TEACHERS_PHASE2_PLAN.md)：提出产品服务端 SQLite、设备离线记录和 Octos 记忆的职责建议，明确计数口径、知识点关联、问答交付、分批提交与验收；已授权开始实施，实际进展见[第二阶段实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)；知识点启用前请看[课程对应表审核材料](personalized-teachers-phase2/TOPIC_MAPPING_REVIEW.md)；附[独立审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)，记录采纳项、不同判断及已核对的代码依据。
 
+- [个性化老师：调整后的推进顺序](PERSONALIZED_TEACHERS_DIRECTION.md)：2026-10-22 用户认可的新顺序——第二阶段收口合并、第三四阶段最小纵向切片、第五阶段前补精度；列出待决定事项与切片技术落点，不删除原目标。
+
 - [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
 
 - [个性化老师接手说明](personalized-teachers-phase2/HANDOFF.md)：当前提交、已验证与未验证范围、授权边界和接手顺序；与[持续工作日志](personalized-teachers-phase2/WORK_LOG.md)、[交接证据](personalized-teachers-phase2/HANDOFF_EVIDENCE.json)一起持续维护。
