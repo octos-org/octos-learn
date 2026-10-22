@@ -1,0 +1,27 @@
+{
+  "checked_at": "2026-10-22T02:58:02.766Z",
+  "binary": "/Users/alan0x/Documents/projects/octos/target/debug/octos",
+  "scope": "Isolated automated fixture, real Octos process and product service, actual delivery client",
+  "full_history_retry_negotiated": true,
+  "lost_receipt_retried_after_both_services_restart": true,
+  "original_question_and_answer_preserved": true,
+  "message_count": 2,
+  "repeated_delivery_added_messages": 0,
+  "original_seq_and_thread_receipt_retained": true,
+  "delivered_tasks": 2,
+  "model_calls": 0,
+  "source": "413b4b68b82fd38f3adeb92500345259f38b5407",
+  "binary_bytes": 276404304,
+  "binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+  "build": "default features + api; dev debug symbols and incremental compilation disabled",
+  "normal_environment": {
+    "checked_at": "2026-10-22T02:46:39.125Z",
+    "profile": "yy",
+    "normal_backend": "http://127.0.0.1:50080",
+    "existing_course_workspace_used": true,
+    "full_history_retry_negotiated": true,
+    "learning_coach_actions": 5,
+    "no_messages_appended": true,
+    "no_model_turn_started": true
+  }
+}
