@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/withmarbleapp/os-taxonomy",
+  "commit": "533bab591b24c4024f0d70f9296aa4ee560fdd01",
+  "topics_sha256": "311b90e7706d76c21af7b68275eb738d3f3ade027418a633fa30d2faffe12693",
+  "catalog_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+  "topic_count": 529,
+  "subject": "Mathematics",
+  "projection": "id, domain, name, description, evidence, ageRangeStart, ageRangeEnd; original text unchanged; curriculum-standard records excluded",
+  "database_license": "ODbL-1.0",
+  "content_license": "CC-BY-SA-4.0",
+  "attribution": "Marble Skill Taxonomy (v1) · © Generative Spark, Inc. (Marble) · https://withmarble.com"
+}
