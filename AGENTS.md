@@ -66,6 +66,7 @@ scripts/deploy-public-web.sh        # 部署 dist/ 到公网并校验（--verify
 5. **部署**：前端只走 `scripts/deploy-public-web.sh`（rsync 镜像 + 公网资源校验），不要手动 scp 单个文件——曾因半部署导致入口 JS 404。
 6. 服务器运行配置只放服务器 `/etc/octos-learn/*.env`（0600）；本人凭据经 Octos 既有 profile 存储管理，不借用进程环境作为缺配置回退。仓库只有示例，不含实际凭据。
 7. **PR 语言**：所有 PR 的标题和描述统一使用英文。
+8. **持续记录与交接**：推进个性化老师与学习记忆时，持续维护全阶段 TODO、阶段 TODO、`docs/personalized-teachers-phase2/WORK_LOG.md` 和 `HANDOFF.md`。每次重要变更、发现问题、结束一轮或交接前更新实际进展、提交、验证、授权/费用边界和下一步，随时保持可接手；失败与停止记录保留。实现、测试、独立审查、真实质量、合并、发布分别写清楚。
 
 ## 深入阅读
 

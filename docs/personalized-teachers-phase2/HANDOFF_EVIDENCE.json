@@ -1,0 +1,76 @@
+{
+  "date": "2026-10-22",
+  "code_commits": {
+    "whole_course": "11f5b7c",
+    "tasks": "51f78fe",
+    "fixture": "2cb5c3a"
+  },
+  "local_checks": {
+    "frontend_files": 136,
+    "frontend_tests": 1258,
+    "history_tests": 50,
+    "trial_control_tests": 12,
+    "typescript": "passed",
+    "public_build": "passed",
+    "scoped_lint": {
+      "errors": 0,
+      "existing_warnings": 2
+    },
+    "fixture_script_lint_and_syntax": "passed"
+  },
+  "logs": {
+    "phase2-handoff-task-unit.log": {
+      "path": "/private/tmp/phase2-handoff-task-unit.log",
+      "sha256": "caad2898487d54b55765a1fbf1025e0ccbc94c2aca177a3075112a3002304f10"
+    },
+    "phase2-task-history.log": {
+      "path": "/private/tmp/phase2-task-history.log",
+      "sha256": "6f3966287238ad0774755dc32064cc140504dd09ca16ab6b719092e72747256b"
+    },
+    "phase2-task-controls.log": {
+      "path": "/private/tmp/phase2-task-controls.log",
+      "sha256": "4adf0609727f2125665193ee49c3429f2cec2da491b56c9de4ffb90ae2e52bdb"
+    },
+    "phase2-handoff-task-build.log": {
+      "path": "/private/tmp/phase2-handoff-task-build.log",
+      "sha256": "e56bbcdff9c9078f69a27a24c78c01ce62a32cefe1bc84fc36eb0ffd6024f5ec"
+    },
+    "phase2-handoff-task-lint.log": {
+      "path": "/private/tmp/phase2-handoff-task-lint.log",
+      "sha256": "3b6bc14fe72b6f5d51068423537609783a1a1cded16ff926895ba8271e94ec99"
+    },
+    "phase2-handoff-task-pipeline-saved.log": {
+      "path": "/private/tmp/phase2-handoff-task-pipeline-saved.log",
+      "sha256": "8f42da91ccfbeada079a61d24dfb0548ddcb9cb96e9acc6cdb581b9b6bf132fa"
+    }
+  },
+  "saved_receipt_fixture": {
+    "checked_at": "2026-10-22T15:24:34.534Z",
+    "passed": true,
+    "octos_binary_sha256": "66f19fd28e55cd14b5843e26b244c5feb76f9d28751e2b32347daded0b65ce11",
+    "actual_frontend_worker": true,
+    "actual_authenticated_product_api": true,
+    "actual_octos_app_peer": true,
+    "pinned_catalog_topics": 529,
+    "fixture_model_requests": 2,
+    "catalog_tool_roundtrips": 1,
+    "real_supplier_calls": 0,
+    "original_account_modified": false,
+    "failure_mode": "saved-receipt",
+    "octos_and_sqlite_reopened": true,
+    "lost_result_receipt_and_octos_restart": true,
+    "unsaved_result_recovered": false,
+    "cross_device_namespace_cleanup": true,
+    "exact_version_playback_count": true,
+    "task_units_analyzed": 1,
+    "exact_version_task_counts": true,
+    "classification_quality_verified": false,
+    "private_fixture_directory": "/var/folders/52/0n82fb6900j8gwcdydn6hznc0000gn/T/octos-topic-analysis-O339KR"
+  },
+  "before_result_v2": "not rerun",
+  "task_independent_review": "pending",
+  "task_real_model_quality": "not tested",
+  "previous_nine_real_cases": "historical v1; not task-v2 validation",
+  "latest_ci": "must inspect current pushed head; earlier ff087d7 passed run 39801559428",
+  "paid_calls_this_checkpoint": 0
+}
