@@ -1,0 +1,22 @@
+{
+  "schema": "octos.learn.android-candidate-preparation.v1",
+  "date": "2026-10-22",
+  "runtime_fix_commit": "251f037",
+  "build_base_commit": "54c733b",
+  "apk": "/Users/alan0x/Documents/projects/octos-learn/delivery/personalized-teachers-phase2/android-251f037/octos-learn-topic-json-fix-debug.apk",
+  "sha256": "f50eed6db7072375c7c15f58b1027da9bcf87270a969eb2e989171645f03fa8c",
+  "bytes": 107411327,
+  "zip_integrity": "passed",
+  "embedded_entry": "assets/index.html",
+  "java_runtime": "existing Homebrew OpenJDK 17",
+  "build": "BUILD SUCCESSFUL; 35 tasks, 3 executed",
+  "installed": false,
+  "device_acceptance": false,
+  "public_deployment": false,
+  "upgrade_backup_required": "database format 5; SQLite and account-scoped analysis-host-controls need a protected operational backup",
+  "limitations": [
+    "Debug APK only; no new device acceptance",
+    "Includes parser repair; earlier TV acceptance does not cover this runtime",
+    "No public service deployment or real-device upload acceptance"
+  ]
+}

@@ -2,7 +2,7 @@
 
 ## 当前审查入口（2026-10-22）
 
-最新结果：[同题完整验证](TOPIC_COMPLETION_RESULT.md)在另获授权后实际用 3 次供应商请求取得有效归属，程序检查与独立 agent 内容复核通过，仅覆盖一题；其余八份未执行，分析仍关闭。原模型路由、其他配置和启动状态已恢复。下文两次停止记录是此前试验，不能当作这次结果。
+最新结果：两道固定斜率题已获程序检查与独立 agent 内容复核：第一题真实调用取得有效结果；第二题原回答因 JSON 代码框被拒收，修复后离线重放通过，原付费试验仍保持停止。其余七份未运行，持续分析关闭。详见[最新结果](TOPIC_REMAINING_RESULT.md)和[七份执行单](TOPIC_FINAL_SEVEN_EXECUTION.md)。
 
 历史补充：此前两轮获准真实试验分别发生 2 次、3 次供应商请求，均未得到可入库结果，准确性未通过；账户持续分析仍关闭。原路由和试验前服务启动状态均已恢复。[首轮结果](TOPIC_ACCURACY_RESULT.md)与[单项结果](TOPIC_DIAGNOSIS_RESULT.md)分别保存实际证据，不能再把此前“零真实调用”的免费验证结论当作当前总调用数。
 
@@ -175,3 +175,5 @@ Performance acceptance remains undetermined. The earlier free 40-pair comparison
 ## JSON 代码框修复增量
 
 完整 JSON 代码框读取的最小修复已由原独立 agent 复核，无必要问题。最新免费验证为前端 1250 项、服务 39 项、控制 11 项、类型/public 构建及定向 lint；八份代码框替身流程实际供应商零调用。第二个真实题目原回答离线复验通过，原试验仍保持停止，其余七份未运行，见 [TOPIC_REMAINING_RESULT.md](TOPIC_REMAINING_RESULT.md)。
+
+候选 APK 已含 251f037 格式修复并重新构建，ZIP 完整性检查通过；见 [ANDROID_CANDIDATE_PREPARATION.json](ANDROID_CANDIDATE_PREPARATION.json)。未安装到电视，不沿用旧实机结论。最新试验控制增加为 12 项；新七份替身在共享 13 次限制处正确停止，未扩大原额度。

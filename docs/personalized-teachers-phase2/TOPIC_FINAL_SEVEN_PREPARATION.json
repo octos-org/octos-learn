@@ -1,0 +1,31 @@
+{
+  "schema": "octos.learn.topic-final-seven-preparation.v1",
+  "date": "2026-10-22",
+  "approved": false,
+  "supplier_calls": 0,
+  "control_tests": 12,
+  "selection": "fixed cases 3 through 9; q-direction and q-two-points excluded",
+  "limits": {
+    "remaining_requests": 13,
+    "remaining_reserved_usd": 14.3,
+    "previous_requests_not_refunded": 5,
+    "previous_reserved_usd_not_refunded": 5.5,
+    "combined_request_cap": 18,
+    "combined_reserved_usd": 19.8
+  },
+  "fixture": {
+    "scenario": "fenced-json",
+    "state": "stopped",
+    "saved_sources": 6,
+    "started_sources": 7,
+    "synthetic_http_requests": 13,
+    "refusals": {
+      "reservation": 1
+    },
+    "last_source_without_final_result": "course-version-b",
+    "all_seven_complete": false,
+    "explanation": "Two synthetic requests per source require 14 requests. The immutable 13-request cap correctly stops on the last source; no budget expansion or real supplier call occurred."
+  },
+  "full_format_fixture_reference": "TOPIC_REMAINING_RESULT.json",
+  "original_ledger_reset": false
+}

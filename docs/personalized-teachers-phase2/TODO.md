@@ -24,6 +24,8 @@
 
 ## 已完成
 
+- [x] D-38 准备最后七份的减少额度执行单，12 项控制通过，免费替身正确在 13 次停止。另完成含修复 APK 的构建、完整性和指纹记录，未安装；见[执行单](TOPIC_FINAL_SEVEN_EXECUTION.md)及[APK 准备](ANDROID_CANDIDATE_PREPARATION.json)。真实调用仍待明确许可，不追加原总预算。
+
 - [x] D-37 获准八项验证在首项因 JSON 代码框被拒收后停止，5 次真实请求，其余七项未运行。免费修复、原回答离线重放、独立内容及代码复核通过；1250 项前端、39 项服务、11 项控制与八项代码框替身流程通过。清理和原配置/启动状态恢复，见[结果](TOPIC_REMAINING_RESULT.md)。不自动续用旧授权。
 
 - [x] D-36 Linux 413b4b68 上游成功 CI 构建包已下载并核对 GitHub archive/bundle/二进制指纹，服务器架构/glibc/C++ 只读条件匹配。CPU、启动及 Linux 记忆链路未验收，无上传或安装，见[准备证据](LINUX_ARTIFACT_PREPARATION.json)。
