@@ -23,8 +23,8 @@ export interface HistoryCoverage {
 export interface HistoryTopicPage extends HistoryEventsPage {
   topic_id: string; status: string; counting_rule: string;
   objectives: { mapping_id: string; objective_key: string; title: string; counts: (ObjectiveCounts & { question_count: number | null }) | null }[];
-  automatic?: { status: string; analysis_through: number; counts: { question_count: number | null; played_runs: number | null; played_beats: number | null };
-    coverage: { unprocessed_questions: number; unknown_questions: number; outside_catalog_questions?: number; unassociated_played_beats: number }; events: { seq: number; event: HistoryEvent; associations: { result_seq: number; unit_id: string; quote: string }[] }[]; next_after: number | null };
+  automatic?: { status: string; analysis_through: number; counts: { question_count: number | null; played_runs: number | null; played_beats: number | null; task_attempts?: number | null; task_successes?: number | null; task_hints?: number | null };
+    coverage: { unprocessed_questions: number; unknown_questions: number; outside_catalog_questions?: number; unassociated_played_beats: number; unassociated_task_attempts?: number }; events: { seq: number; event: HistoryEvent; associations: { result_seq: number; unit_id: string; quote: string }[] }[]; next_after: number | null };
 }
 export class HistoryApi {
   private readonly identity: HistoryIdentity;

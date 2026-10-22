@@ -3,7 +3,7 @@ import type { BrowserLessonSession } from 'octos-lesson-language/web-runtime';
 import { PlaybackEvidenceTracker } from './playback-evidence';
 import type { HistoryDraft, LearningHistoryRecorder } from './recorder';
 
-export type PlaybackHistoryContext = Pick<HistoryDraft, 'runKey' | 'questionId' | 'course' | 'sourceSnapshotJson'>;
+export type PlaybackHistoryContext = Pick<HistoryDraft, 'runKey' | 'questionId' | 'course' | 'sourceSnapshotJson'> & { sourceTaskId?: string };
 export interface PlaybackHistoryBinding {
   recorder: LearningHistoryRecorder;
   forStep(stepId: string): PlaybackHistoryContext | undefined;
@@ -19,6 +19,7 @@ export class PlaybackHistoryCapture {
   private evidence?: PlaybackEvidenceTracker;
   private attempts = new Set<string>();
   private hints = new Map<string, number>();
+  private taskSources = new Map<string, PlaybackHistoryContext>();
   private started = new Set<string>();
   private log = createRequestId();
   private binding?: PlaybackHistoryBinding;
@@ -46,8 +47,11 @@ export class PlaybackHistoryCapture {
     this.checkpoint = { cursor: session.projection.cursor, epoch: session.playbackEpoch };
     this.position = undefined;
     this.beatSource = undefined;
+    this.taskSources.clear();
     // Restored attempts are existing state, not newly observed answers.
     for (const task of session.studentTasks) {
+      const context = this.binding?.forTask(task.task_id);
+      if (context) this.taskSources.set(task.task_id, { ...context });
       task.attempts.forEach(attempt => this.attempts.add(`${task.task_id}:${attempt.operation_id}`));
       this.hints.set(task.task_id, task.hints_revealed);
     }
@@ -94,17 +98,24 @@ export class PlaybackHistoryCapture {
     }
     if (session && key.endsWith(':student-task-progress:v1')) {
       for (const task of session.studentTasks) {
-        const context = binding.forTask(task.task_id);
+        const fallback = binding.forTask(task.task_id);
+        // Runtime task definitions are fixed at bind, even when later lesson
+        // deliveries update the surrounding board. Never borrow a new header
+        // to label an attempt evaluated against the old task definition.
+        const context = this.taskSources.get(task.task_id) ?? (fallback ? {
+          runKey: fallback.runKey, questionId: fallback.questionId, course: fallback.course,
+        } : undefined);
         if (!context) continue;
+        const source: Record<string, string> = context.sourceTaskId ? { source_task_id: context.sourceTaskId } : {};
         for (const attempt of task.attempts) {
           const id = `${task.task_id}:${attempt.operation_id}`;
           if (this.attempts.has(id)) continue;
           this.attempts.add(id);
           drafts.push({ ...context, kind: 'task_attempt', logKey: this.log, data: { task_id: task.task_id, operation_id: attempt.operation_id,
-            result: attempt.succeeded ? 'succeeded' : 'failed', hints_used: task.hints_revealed, value: attempt.actual } });
+            ...source, result: attempt.succeeded ? 'succeeded' : 'failed', hints_used: task.hints_revealed, value: attempt.actual } });
         }
         const before = this.hints.get(task.task_id) ?? 0;
-        for (let hint = before + 1; hint <= task.hints_revealed; hint++) drafts.push({ ...context, kind: 'task_hint', logKey: this.log, data: { task_id: task.task_id, hint_index: hint } });
+        for (let hint = before + 1; hint <= task.hints_revealed; hint++) drafts.push({ ...context, kind: 'task_hint', logKey: this.log, data: { task_id: task.task_id, hint_index: hint, ...source } });
         this.hints.set(task.task_id, task.hints_revealed);
       }
     }

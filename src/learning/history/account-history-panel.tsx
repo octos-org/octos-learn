@@ -72,7 +72,8 @@ function CourseCoverage({ api, run, through }: { api: HistoryApi; run: LearningR
       {topic.next_after != null && <button disabled={busy} onClick={() => void inspect(topic.topic_id, topic.next_after!)}>继续查看知识点依据</button>}
       {topic.automatic && <section aria-label="自动归属的学习记录">
         <p>在已对应的记录中：提问 {topic.automatic.counts.question_count ?? '尚不能确定'} 次 · 在 {topic.automatic.counts.played_runs ?? '尚不能确定'} 遍学习中播放过 · 播放 {topic.automatic.counts.played_beats ?? '尚不能确定'} 个不同内容片段。</p>
-        <p>查询范围内另有 {topic.automatic.coverage.unprocessed_questions} 条提问未分析、{topic.automatic.coverage.unknown_questions} 条提问无法确定、{topic.automatic.coverage.outside_catalog_questions ?? 0} 条提问超出当前目录、{topic.automatic.coverage.unassociated_played_beats} 个播放片段尚无可靠对应。这些没有当成零次或已掌握。</p>
+        <p>有知识点依据的作答 {topic.automatic.counts.task_attempts ?? '尚不能确定'} 次 · 达到本题程序条件 {topic.automatic.counts.task_successes ?? '尚不能确定'} 次 · 查看提示 {topic.automatic.counts.task_hints ?? '尚不能确定'} 次；不代表独立掌握。</p>
+        <p>查询范围内另有 {topic.automatic.coverage.unprocessed_questions} 条提问未分析、{topic.automatic.coverage.unknown_questions} 条提问无法确定、{topic.automatic.coverage.outside_catalog_questions ?? 0} 条提问超出当前目录、{topic.automatic.coverage.unassociated_played_beats} 个播放片段尚无可靠对应。另有 {topic.automatic.coverage.unassociated_task_attempts ?? 0} 次作答尚无可靠知识点对应。这些没有当成零次或已掌握。</p>
         {topic.automatic.events.map(row => <div key={row.seq}><EventDetail event={row.event} />{row.associations.map(item => <blockquote key={`${item.result_seq}:${item.unit_id}`}>分析依据：{item.quote}（结果 {item.result_seq}）</blockquote>)}</div>)}
         {topic.automatic.next_after != null && <button disabled={busy} onClick={() => void inspect(topic.topic_id, topic.automatic!.next_after!, true)}>继续查看自动分析依据</button>}
       </section>}

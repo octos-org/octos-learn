@@ -50,6 +50,10 @@ export function validateHistoryEvent(candidate) {
     if (needsLog) id(e.log_id, "log_id");
   };
   const d = e.data;
+  const taskSource = () => {
+    if (d.delivery_sha256 !== undefined && !/^[a-f0-9]{64}$/.test(d.delivery_sha256)) fail("Invalid task delivery digest");
+    if (d.source_task_id !== undefined) text(d.source_task_id, "source task", 256);
+  };
   switch (e.kind) {
     case "question_submitted":
       question(); fields(d, ["text", "modality", "media"], ["text", "modality"]);
@@ -100,13 +104,15 @@ export function validateHistoryEvent(candidate) {
       choice(d.reason, "narration reason", ["ended", "disabled", "failed", "cancelled"]);
       break;
     case "task_attempt":
-      run(true); fields(d, ["task_id", "operation_id", "result", "hints_used", "value"], ["task_id", "operation_id", "result", "hints_used"]);
+      run(true); fields(d, ["task_id", "operation_id", "result", "hints_used", "value", "delivery_sha256", "source_task_id"], ["task_id", "operation_id", "result", "hints_used"]);
       text(d.task_id, "task_id", 256); text(d.operation_id, "operation_id", 256);
+      taskSource();
       choice(d.result, "task result", ["succeeded", "failed"]); integer(d.hints_used, "hints_used");
       if (d.value !== undefined && (typeof d.value !== "number" || !Number.isFinite(d.value))) fail("Invalid task value");
       break;
     case "task_hint":
-      run(true); fields(d, ["task_id", "hint_index"], ["task_id", "hint_index"]);
+      run(true); fields(d, ["task_id", "hint_index", "delivery_sha256", "source_task_id"], ["task_id", "hint_index"]);
+      taskSource();
       text(d.task_id, "task_id", 256); integer(d.hint_index, "hint_index");
       break;
     default: fail("Unknown history event kind");

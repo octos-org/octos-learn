@@ -25,6 +25,13 @@ export function buildAnalysisInput(store, owner, eventId) {
       ? (item.step.beats ?? []).map(beat => ({ unit_id: JSON.stringify(["beat", item.step.id, beat.id]), kind: "beat",
         step_id: item.step.id, beat_id: beat.id, content: canonicalHistoryJson(beat) })) : []);
     if (units.some(unit => typeof unit.step_id !== "string" || typeof unit.beat_id !== "string")) fail("Delivered beat identity is invalid");
+    const opens = delivered.filter(item => item.event === "lesson.open");
+    if (opens.length > 1) fail("Task definitions need one unambiguous lesson header");
+    const tasks = opens[0]?.lesson?.tasks ?? [];
+    if (!Array.isArray(tasks) || tasks.some(task => !task || typeof task.as !== "string" || !task.as.trim() || task.as.length > 256)) fail("Delivered task identity is invalid");
+    units.push(...tasks.map(task => ({ unit_id: JSON.stringify(["task", task.as]), kind: "task", task_id: task.as,
+      content: canonicalHistoryJson({ task, variables: opens[0].lesson.variables ?? [] }) })));
+
   } else fail("Unsupported analysis source");
   if (!units.length || units.length > 100 || new Set(units.map(unit => unit.unit_id)).size !== units.length) fail("Analysis needs 1 to 100 uniquely identified units");
   const input = { schema: 1, source_event_id: event.id, source_kind: event.kind,

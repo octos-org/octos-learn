@@ -251,3 +251,23 @@ it('durably deduplicates request failure callbacks and keeps delivered content a
   expect(rows.filter(row => row.event.kind === 'course_delivered' && row.event.data.status === 'partial')).toHaveLength(1);
   expect(failures.every(row => row.event.question_id === 'q-partial')).toBe(true);
 });
+
+
+it('pins attempts and hints to the task definition bound to the Runtime, including across later delivery changes', async () => {
+  const c = await classroom();
+  const original = JSON.stringify(parseCanonicalJsonl(source)), later = original + ' ';
+  let sourceSnapshotJson = original;
+  const binding = () => ({ recorder: c.recorder, forStep: () => c.context,
+    forTask: () => ({ ...c.context, questionId: 'task-question', sourceSnapshotJson, sourceTaskId: 'reach-sine-maximum' }) });
+  c.capture.updateBinding(binding()); c.capture.bind(c.runtime);
+  c.capture.withReason('restore', () => c.runtime.seek(c.runtime.projection.total_operations));
+  const operation = c.runtime.beginStudentVariableOperation('theta', { control: 'slider', input: 'mouse' });
+  sourceSnapshotJson = later; c.capture.updateBinding(binding());
+  c.runtime.requestStudentTaskHint(c.runtime.studentTasks[0].task_id);
+  c.runtime.commitStudentVariableOperation(operation, Math.PI / 2);
+  await c.recorder.flush();
+  const tasks = (await c.queue.list('alice')).filter(row => ['task_attempt', 'task_hint'].includes(row.event.kind));
+  expect(tasks).toHaveLength(2);
+  expect(tasks.every(row => row.event.data.delivery_sha256 === undefined || row.event.data.delivery_sha256 === '')).toBe(false);
+  for (const row of tasks) expect(row.event.data).toMatchObject({ source_task_id: 'reach-sine-maximum', delivery_sha256: await historySha256(original) });
+});

@@ -67,7 +67,7 @@ export class TopicAnalysisStore {
       // turns. Prefer unattempted material, then rotate older recovery attempts;
       // an old missing turn must not win every 5-minute coordinator retry.
       // An exhausted start quota still permits recovering existing executions.
-      const job = this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND rules_version=? AND taxonomy_sha256=?
+      const job = this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND (rules_version=? OR octos_session_id IS NOT NULL) AND taxonomy_sha256=?
         AND (state='pending' OR (state IN ('leased','uncertain') AND lease_until<=?))
         AND (octos_session_id IS NOT NULL OR ?) ORDER BY COALESCE(lease_until,0),source_seq,revision LIMIT 1`)
         .get(owner, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, now, Number(quotaAvailable));

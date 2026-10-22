@@ -84,7 +84,7 @@ export class LearningHistoryRecorder {
         const materials: HistoryMaterialWrite[] = [];
         for (const draft of job.drafts) {
           const snapshotHash = draft.snapshotJson === undefined ? undefined : await historySha256(draft.snapshotJson);
-          const deliveryHash = draft.kind === 'beat_completed' && draft.sourceSnapshotJson !== undefined ? await sourceDigest(draft.sourceSnapshotJson) : undefined;
+          const deliveryHash = ['beat_completed', 'task_attempt', 'task_hint'].includes(draft.kind) && draft.sourceSnapshotJson !== undefined ? await sourceDigest(draft.sourceSnapshotJson) : undefined;
           const id = draft.id ?? await historyId(snapshotHash ? [this.sessionId, draft.stableKey, snapshotHash] : [this.sessionId, draft.stableKey]);
           const time = await this.queue.remember(identity.owner, `event-time:${id}`, draft.occurredAt!);
           const event: HistoryEvent = {

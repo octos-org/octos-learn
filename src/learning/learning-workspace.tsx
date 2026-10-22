@@ -949,7 +949,18 @@ export function LearningWorkspace({
     };
     return { recorder: historyRecorder,
       forStep: step => context(activeOllTopics.find(topic => topic.stepIds.includes(step))),
-      forTask: task => context(activeOllTopics.find(topic => topic.taskAliases?.includes(task))),
+      forTask: task => {
+        const topic = activeOllTopics.find(candidate => candidate.taskAliases?.includes(task));
+        const binding = context(topic);
+        if (!binding || !topic?.questionId) return binding;
+        const source = deliveredOllLessons[deliveredOllQuestionIds.indexOf(topic.questionId)];
+        const tasks = source?.find(event => event.event === "lesson.open")?.lesson?.tasks;
+        const taskIndex = topic.taskAliases?.indexOf(task) ?? -1;
+        const sourceTaskId = taskIndex >= 0 ? tasks?.[taskIndex]?.as : undefined;
+        // Namespaced Runtime IDs are paired with the original task in the
+        // same ordered topic definition; never strip prefixes by guessing.
+        return sourceTaskId ? { ...binding, sourceTaskId } : { ...binding, sourceSnapshotJson: undefined };
+      },
     };
   }, [historyRecorder, activeOllTopics, coursePack, deliveredOllLessons, deliveredOllQuestionIds]);
   useEffect(() => {

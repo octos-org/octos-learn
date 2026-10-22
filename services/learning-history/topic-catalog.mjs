@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
-export const TOPIC_RULES_VERSION = "separate-question-and-delivered-units-v1";
+export const TOPIC_RULES_VERSION = "separate-question-beat-and-task-units-v2";
 export const TOPIC_TAXONOMY = Object.freeze(JSON.parse(readFileSync(new URL("./taxonomy/metadata.json", import.meta.url), "utf8")));
 let catalog;
 const words = text => String(text).toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];

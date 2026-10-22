@@ -99,7 +99,7 @@ test("question counts and exact-version playback have separate evidence; replays
     const playback = (id, digest) => ({ ...q, id, kind: "beat_completed", course: a.course, log_id: "log", data: { step_id: "step-one", beat_id: "beat-one", presentation: "text", ...(digest ? { delivery_sha256: digest } : {}) } });
     store.append("alice", [playback("played", a.data.snapshot_sha256), playback("replayed", a.data.snapshot_sha256), playback("legacy-no-version")]);
     const original = queryTopic(store, "alice", slope, { limit: 1 }).automatic;
-    assert.deepEqual(original.counts, { question_count: 1, played_runs: 1, played_beats: 1 });
+    assert.deepEqual(original.counts, { question_count: 1, played_runs: 1, played_beats: 1, task_attempts: null, task_successes: null, task_hints: null });
     assert.equal(original.coverage.unassociated_played_beats, 1);
     assert.ok(original.events[0].associations[0].quote.includes("斜率"));
     store.append("alice", [b], [{ event_id: b.id, snapshot_json: revised }]);
