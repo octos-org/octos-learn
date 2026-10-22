@@ -2,6 +2,8 @@
 
 日期：2026-10-20；2026-10-21 用户授权开始实施。状态：实施中，实际进展与尚未完成的项目见[实施记录](personalized-teachers-phase2/IMPLEMENTATION.md)。
 
+2026-10-22 最新推进：用户已同意恢复实时内容知识点归属开发，替代第 6 节中“讨论暂缓”的历史状态。完整课程材料保存读取已实现，Octos 应用发起的分析入口已验证；目录检索、对应结果与计数仍需接通，见[实施进展](personalized-teachers-phase2/GENERATED_TOPIC_PROGRESS.md)。本轮没有新付费调用或公网发布。
+
 已根据第三方审查核对并修订；采纳项、不同判断和代码依据见[第二阶段审查处理记录](PERSONALIZED_TEACHERS_PHASE2_REVIEW_FOLLOWUP.md)。审查者认可某项产品选择，不代表用户已经确认该选择。
 
 本计划承接[总体方案](PERSONALIZED_TEACHERS_AND_MEMORY_PLAN.md)第二步。第一阶段的 Octos 通用接口已通过英文 [PR #2848](https://github.com/octos-org/octos/pull/2848) 于 2026-10-21 合入 main（c27a90c2）。本地源码已同步；产品接入和运行服务升级仍需后续实施。
