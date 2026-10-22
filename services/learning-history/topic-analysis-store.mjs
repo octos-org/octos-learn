@@ -42,10 +42,12 @@ export class TopicAnalysisStore {
     return this.settings(owner);
   }
   status(owner) {
-    // Unstarted jobs from older rules can never be claimed (see claim), so
-    // reporting them as pending would keep clients retrying forever.
-    return { ...this.settings(owner), states: this.db.prepare(`SELECT CASE WHEN rules_version<>? AND octos_session_id IS NULL AND state IN ('pending','leased','uncertain')
-        THEN 'superseded' ELSE state END AS state,COUNT(*) AS count FROM topic_analysis_jobs WHERE owner=? GROUP BY 1`).all(TOPIC_RULES_VERSION, owner),
+    // Jobs outside the claim predicate (older rules never started, or another
+    // taxonomy) can never run, so reporting them as pending would keep
+    // clients retrying forever.
+    return { ...this.settings(owner), states: this.db.prepare(`SELECT CASE WHEN state IN ('pending','leased','uncertain')
+        AND NOT ((rules_version=? OR octos_session_id IS NOT NULL) AND taxonomy_sha256=?)
+        THEN 'superseded' ELSE state END AS state,COUNT(*) AS count FROM topic_analysis_jobs WHERE owner=? GROUP BY 1`).all(TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, owner),
       analysis_through: this.db.prepare("SELECT COALESCE(MAX(seq),0) AS n FROM topic_analysis_results WHERE owner=?").get(owner).n };
   }
   quotaUsed(owner) {

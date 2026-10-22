@@ -117,5 +117,7 @@ test("unstarted jobs from previous rules are reported as superseded, not as pend
     assert.deepEqual(states, { leased: 1, superseded: 1 });
     store.db.prepare("UPDATE topic_analysis_jobs SET lease_until=0").run();
     assert.equal(analysis.claim("alice").tasks[0].id, started.id); // Only the started execution is recoverable.
+    store.db.prepare("UPDATE topic_analysis_jobs SET taxonomy_sha256='other-catalog' WHERE id=?").run(started.id);
+    assert.deepEqual(analysis.status("alice").states.map(row => row.state), ["superseded"]); // Another taxonomy is never claimable.
   } finally { store.close(); }
 });

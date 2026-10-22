@@ -271,3 +271,22 @@ it('pins attempts and hints to the task definition bound to the Runtime, includi
   expect(tasks.every(row => row.event.data.delivery_sha256 === undefined || row.event.data.delivery_sha256 === '')).toBe(false);
   for (const row of tasks) expect(row.event.data).toMatchObject({ source_task_id: 'reach-sine-maximum', delivery_sha256: await historySha256(original) });
 });
+
+it('freezes a task source on first progress when its lesson had no topic at bind, then keeps it across later deliveries', async () => {
+  const c = await classroom();
+  const original = JSON.stringify(parseCanonicalJsonl(source)), later = original + ' ';
+  let sourceSnapshotJson = original;
+  const binding = (topic: boolean) => ({ recorder: c.recorder, forStep: () => c.context,
+    forTask: () => topic ? ({ ...c.context, questionId: 'task-question', sourceSnapshotJson, sourceTaskId: 'reach-sine-maximum' }) : undefined });
+  c.capture.bind(c.runtime, binding(false)); // A header with tasks arrived before its first step.
+  c.capture.withReason('restore', () => c.runtime.seek(c.runtime.projection.total_operations));
+  c.capture.updateBinding(binding(true));
+  const taskId = c.runtime.studentTasks[0].task_id;
+  c.runtime.requestStudentTaskHint(taskId);
+  sourceSnapshotJson = later; c.capture.updateBinding(binding(true));
+  c.runtime.requestStudentTaskHint(taskId);
+  await c.recorder.flush();
+  const hints = (await c.queue.list('alice')).filter(row => row.event.kind === 'task_hint');
+  expect(hints).toHaveLength(2);
+  for (const row of hints) expect(row.event.data).toMatchObject({ source_task_id: 'reach-sine-maximum', delivery_sha256: await historySha256(original) });
+});

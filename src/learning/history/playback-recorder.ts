@@ -102,13 +102,15 @@ export class PlaybackHistoryCapture {
     }
     if (session && key.endsWith(':student-task-progress:v1')) {
       for (const task of session.studentTasks) {
-        const fallback = binding.forTask(task.task_id);
-        // Runtime task definitions are fixed at bind, even when later lesson
-        // deliveries update the surrounding board. Never borrow a new header
-        // to label an attempt evaluated against the old task definition.
-        const context = this.taskSources.get(task.task_id) ?? (fallback ? {
-          runKey: fallback.runKey, questionId: fallback.questionId, course: fallback.course,
-        } : undefined);
+        let context = this.taskSources.get(task.task_id);
+        if (!context) {
+          // Changing any task definition changes lesson.open and rebinds, so
+          // until then the current binding has the Runtime's definition. This
+          // covers a header that arrived before its lesson had a step.
+          const fallback = binding.forTask(task.task_id);
+          if (fallback?.sourceTaskId) this.taskSources.set(task.task_id, context = { ...fallback });
+          else if (fallback) context = { runKey: fallback.runKey, questionId: fallback.questionId, course: fallback.course };
+        }
         if (!context) continue;
         const source: Record<string, string> = context.sourceTaskId ? { source_task_id: context.sourceTaskId } : {};
         for (const attempt of task.attempts) {
