@@ -183,3 +183,11 @@ learning-coach #27 已由用户合并（9241d5b）。核对 Octos 413b4b68：`se
 | Δy/Δx 写反 | 丢失 | 仍丢失（Octos 判断为非持久信息；不在本修复范围） |
 
 单次样本；稳定性需更多次执行。Octos 上游测试与 PR 见下一节。
+
+## 2026-10-23 Octos 草稿 PR
+
+octos [PR #2859](https://github.com/octos-org/octos/pull/2859)（草稿，提交 9358f028，UPCR-2026-053）。新增能力 `session.append_message.participant.v1`（需协商才确认，旧服务器静默忽略该参数）；`doctor` 基线不要求它（首次全量测试发现的 doctor 回归已修复，修复后 doctor 测试 49/49）。
+
+全量测试（core/memory/bus/agent/llm/cli api 特性/pipeline，`--no-fail-fast`）：10333 通过、7 失败。其中 doctor 回归已修复；其余 6 项在未修改的 main 上同样失败，属本机环境（无 Docker 的沙箱测试、本网络把不存在域名解析为私网地址的 SSRF 测试）。`olp_obs_p2_gate` 需要 cmake、clippy 未安装、UPCR 登记检查需要 Python 3.12，本机均未运行，依赖 CI。
+
+Octos Learn 侧后续（依赖 #61 的 `store.mjs` 与本 PR 合并）：连接协商该能力，确认后以 `participant` 发送老师，否则继续正文标签。
