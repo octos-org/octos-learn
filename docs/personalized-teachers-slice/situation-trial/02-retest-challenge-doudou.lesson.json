@@ -1,0 +1,325 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "竖直线与水平线的斜率辨析：直线 x=2 的斜率是多少？",
+    "goals": [
+      "理解斜率的比值定义（Δy/Δx），辨析水平线与竖直线的根本区别",
+      "掌握竖直线（如 x=2）斜率不存在的原因，并与水平线斜率为0正确区分"
+    ],
+    "adaptation": {
+      "strategies": [
+        "用爬山坡的比喻建立直觉：向右走是底，上升是高",
+        "通过分母为0的代数推导直观验证为什么竖直线斜率未定义或不存在"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -5,
+        "max": 5,
+        "label": "直线斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.05
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请把直线斜率 k调到 -5。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动左下角的滑杆，观察数值和画面同步变化。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成，直线斜率 k已经调到 -5。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -5,
+          "tolerance": 0.025
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果一条直线的方程是 x = -3，它的斜率是多少？和直线 x = 2 的情况有什么相同点？",
+        "answer": "斜率同样不存在。因为 x = -3 也是一条竖直直线，其上任意两点的横坐标差 Δx 均为 0，分母为 0 导致斜率公式无意义。",
+        "anchor": "section-02-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "明确斜率定义为上升除以水平位移，辨析水平线与竖直线的核心区别，得出竖直线斜率不存在",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你的直觉非常敏锐，这个怀疑完全正确！竖直直线的斜率确实不是0。我们立刻用爬山路来看看究竟是怎么回事。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -1,
+                    "max": 1,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 0,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们把斜率想成爬山路：每向右走一步，高度往上升几格。斜率就是高度的变化除以向右的位移。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率的物理直觉",
+                "items": [
+                  "斜率 = 上升高度 ÷ 水平跨度",
+                  "水平路面：高度变化为 0，斜率 = 0",
+                  "垂直悬崖：水平跨度为 0，分母为 0！"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "看，当直线完全水平时，向右走不管多远，高度变化都是0，0除以任何非零数都是0，所以水平线的斜率才是0！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "观察水平直线的斜率与公式的对应"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "如果山路越来越陡，斜率会越来越大。若是变成完全竖直的悬崖，向右的位移就是0，分母变成了0，所以竖直线根本没有斜率，斜率是不存在的！",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 4,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "具体计算直线 x=2 上的两点斜率，彻底明确竖直直线的斜率不存在，总结斜率为0与不存在的边界",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们立刻来看具体计算！在直线 x 等于 2 上任意挑两个点，比如点 (2, 1) 和点 (2, 5)。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "A(2, 1),\\quad B(2, 5)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "代入斜率定义式：分母是水平变化量 2 减 2 等于 0，分子是竖直变化量 5 减 1 等于 4。出现了 4 除以 0！",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{5 - 1}{2 - 2} = \\frac{4}{0} \\quad (\\text{无意义})"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "在数学里，0 不能作除数，这个式子没有定义！所以直线 x 等于 2 的斜率不存在，而不是 0。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "强调除以零导致斜率不存在",
+              "when": "before_speech"
+            },
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 0,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "一句话分清楚：水平线向右走、高度完全不变，斜率是实实在在的 0；竖直的悬崖根本没法向右走，斜率不存在！课后你可以把斜率滑块拉回 0，亲自感受一下水平线。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率辨析总结",
+                "items": [
+                  "水平线（如 y=c）：Δy=0, Δx≠0 → 斜率 k = 0",
+                  "竖直线（如 x=2）：Δx=0, 分母为0无意义 → 斜率不存在"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "水平直线向右走有位移而高度不变，分子为0，斜率是0；竖直直线如 x=2 水平位移为0，分母为0无意义，所以斜率不存在。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}
