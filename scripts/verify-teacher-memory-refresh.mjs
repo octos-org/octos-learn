@@ -4,7 +4,10 @@
 // runs its background extraction and consolidation, and the resulting
 // long-term memory is saved for review. A plan with `phases` delivers each
 // group of lessons only after the previous group was consolidated, so later
-// lessons can change or contradict memory that already exists. Every model request passes a local
+// lessons can change or contradict memory that already exists. A phase given
+// as { lessons, requests } also sends the settings page's memory/request calls
+// (remember, correct, forget) after its lessons; correct and forget find their
+// entry in MEMORY.md by a text fragment, as a learner would pick it. Every model request passes a local
 // gateway that reserves the plan's per-request cost before sending.
 //
 //   --fixture            free: synthetic Key; the gateway answers {"items":[]}
@@ -34,9 +37,14 @@ const { limits } = plan;
 // participant-field: UPCR-2026-053 `participant` on session/append_message.
 assert.ok(['body-label', 'participant-field'].includes(plan.delivery ?? 'body-label'));
 const viaField = plan.delivery === 'participant-field';
-const phases = plan.phases ?? [plan.lessons];
-assert.ok(Array.isArray(phases) && phases.length >= 1 && phases.length <= 3 && phases.every(lessons => Array.isArray(lessons) && lessons.length));
-const allLessons = phases.flat();
+const phases = (plan.phases ?? [plan.lessons]).map(phase => Array.isArray(phase) ? { lessons: phase, requests: [] } : { lessons: phase.lessons ?? [], requests: phase.requests ?? [] });
+assert.ok(phases.length >= 1 && phases.length <= 3 && phases.every(phase => phase.lessons.length + phase.requests.length > 0));
+for (const request of phases.flatMap(phase => phase.requests)) {
+  assert.ok(['remember', 'correct', 'forget'].includes(request.operation));
+  assert.ok(request.operation === 'remember' ? request.content?.trim() && !request.match : request.match?.trim());
+  assert.ok(request.operation === 'forget' ? !request.content : request.content?.trim());
+}
+const allLessons = phases.flatMap(phase => phase.lessons);
 assert.equal(new Set(allLessons.map(lesson => lesson.session_id)).size, allLessons.length, 'Session ids must be unique');
 assert.ok(Number.isSafeInteger(limits.model_http_requests) && limits.model_http_requests <= 12);
 assert.ok(limits.request_bytes <= 262144 && limits.output_tokens === 65536);
@@ -145,16 +153,19 @@ try {
     await start();
   };
   // Same message shape as services/learning-history/store.mjs delivery tasks.
-  const deliver = async lessons => {
+  const memoryEntries = async () => (await readFile(join(memoryDir, 'MEMORY.md'), 'utf8').catch(() => '')).split(/\n\s*\n/).map(block => block.trim()).filter(Boolean)
+    .map(block => ({ id: block.match(/\s(\^m[a-z2-7]{6})$/)?.[1] ?? null, text: block }));
+  const deliver = async (lessons, requests) => {
     const { token } = await loginExistingTrialOwner({ request: (path, options) => fetch(origin + path, options), owner, registryRoot: data });
-    const ws = new URL(`${origin.replace('http:', 'ws:')}/api/ui-protocol/ws`); ws.searchParams.set('token', token);
+    const ws = new URL(`${origin.replace('http:', 'ws:')}/api/ui-protocol/ws`); ws.searchParams.set('token', token); ws.searchParams.append('ui_feature', 'auxiliary.rest_to_ws.v1');
     socket = new WebSocket(ws);
     await new Promise((done, fail) => { socket.onopen = done; socket.onerror = () => fail(Error('Trial protocol failed')); });
     let seq = 0;
     const rpc = (method, params) => new Promise((done, fail) => {
       const id = `trial-${++seq}`, timer = setTimeout(() => fail(Error(`Trial RPC ${method} timeout`)), 15000);
       socket.onmessage = e => { const r = JSON.parse(e.data); if (r.id !== id) return; clearTimeout(timer); if (r.error) fail(Error(`Trial RPC ${method} ${r.error.code}: ${r.error.message}`)); else done(r.result); };
-      socket.send(JSON.stringify({ jsonrpc: '2.0', id, method, params: { ...params, profile_id: owner } }));
+      // memory/request takes the authenticated profile only and refuses other fields.
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id, method, params: method === 'memory/request' ? params : { ...params, profile_id: owner } }));
     });
     for (const lesson of lessons) {
       await rpc('session/open', { session_id: lesson.session_id });
@@ -167,13 +178,30 @@ try {
           source: 'external_record:octos-learn', client_message_id: `learn:answer:${exchange.id}`, thread_id: userId });
       }
     }
+    const sent = [];
+    for (const [index, request] of requests.entries()) {
+      const record = { operation: request.operation, ...(request.match ? { match: request.match } : {}), ...(request.content ? { content: request.content } : {}) };
+      let entry;
+      if (request.match) {
+        const found = (await memoryEntries()).filter(candidate => candidate.id && candidate.text.includes(request.match));
+        if (found.length !== 1) { sent.push({ ...record, skipped: `${found.length} entries match` }); continue; }
+        [entry] = found;
+        Object.assign(record, { entry_id: entry.id, entry_text: entry.text });
+      }
+      try {
+        record.result = await rpc('memory/request', { request_id: `learn-memory-trial-${plan.id}-${report.phases.length}-${index}`, operation: request.operation,
+          ...(request.content ? { content: request.content } : {}), ...(entry ? { entry_id: entry.id } : {}) });
+      } catch (error) { record.error = error instanceof Error ? error.message : String(error); }
+      sent.push(record);
+    }
     socket.close(); socket = null;
+    return sent;
   };
   report.phases = [];
   let delivered = 0;
-  for (const [index, lessons] of phases.entries()) {
+  for (const { lessons, requests } of phases) {
     await setRefresh(false);
-    await deliver(lessons);
+    const sentRequests = await deliver(lessons, requests);
     delivered += lessons.length;
     await setRefresh(true);
     // The sweep runs on its own schedule; wait for this phase's extractions
@@ -183,13 +211,15 @@ try {
     while (Date.now() < deadline) {
       await delay(5000);
       const extracts = (await listing(join(memoryDir, 'staging', 'extract'))).filter(name => name.endsWith('.md') || name.endsWith('.json'));
+      // Admitted memory requests wait in staging/notes until consolidation takes them.
+      if (live && sentRequests.some(request => request.result) && (await listing(join(memoryDir, 'staging', 'notes'))).some(name => !name.startsWith('.'))) continue;
       const memory = await readFile(join(memoryDir, 'MEMORY.md'), 'utf8').catch(() => '');
       if (fixture && calls.filter(call => call.kind === 'extraction').length >= delivered) break;
       if (live && memory.trim() && !extracts.length && calls.filter(call => call.kind === 'consolidation').length > consolidationsBefore) { await delay(5000); break; }
     }
     const staging = [];
     for (const name of await listing(join(memoryDir, 'staging', 'extract'))) staging.push({ name, content: await readFile(join(memoryDir, 'staging', 'extract', name), 'utf8') });
-    report.phases.push({ sessions: lessons.map(lesson => lesson.session_id), extraction_staging: staging,
+    report.phases.push({ sessions: lessons.map(lesson => lesson.session_id), memory_requests: sentRequests, extraction_staging: staging,
       long_term_memory: await readFile(join(memoryDir, 'MEMORY.md'), 'utf8').catch(() => null) });
   }
   const last = report.phases.at(-1);

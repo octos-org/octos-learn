@@ -1,0 +1,45 @@
+{
+  "schema": "octos.learn.teacher-memory-refresh-trial.v1",
+  "id": "teacher-memory-forget-20261023",
+  "status": "approved",
+  "authorization_reference": "Same approval as MEMORY_CONTINUITY_PLAN (10 requests / USD 4.50). That run used 7 requests; its forget request found no target because Octos did not store the exam date. This follow-up uses the remaining 3 requests (USD 1.35 reserved) to exercise forget.",
+  "model": "gemini-3.8-flash",
+  "delivery": "participant-field",
+  "octos_change": "octos main 5d9e70b4. The forget request is sent as the 老师记得的事 settings page sends it (octos-learn #68).",
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/memory-forget-run1",
+  "wait_seconds": 420,
+  "limits": {
+    "model_http_requests": 3,
+    "request_bytes": 262144,
+    "output_tokens": 65536,
+    "reservation_usd_micros": 450000,
+    "usd_micros": 1350000
+  },
+  "questions_answered": [
+    "Does a forget request from the settings page remove the targeted entry and leave the others?"
+  ],
+  "expected": [
+    "After phase 1: an entry that the learner likes drawing graphs in GeoGebra, and one that 阿澜 should check each step aloud.",
+    "After phase 2: the GeoGebra entry is gone; the other entry is unchanged."
+  ],
+  "phases": [
+    {
+      "lessons": [
+        {
+          "session_id": "learn-forget-a",
+          "teacher": "阿澜",
+          "date_note": "synthetic lesson 1",
+          "exchanges": [
+            { "user": "我以后都想先用 GeoGebra 画出图像，再学函数的性质。", "teacher": "好，我们先画 y=2x+1 的图像，再看它的斜率和截距。" },
+            { "user": "阿澜老师，以后你讲题时每一步都检查一下给我听。", "teacher": "好，每一步我都会说明为什么成立。" }
+          ]
+        }
+      ]
+    },
+    {
+      "requests": [
+        { "operation": "forget", "match": "GeoGebra" }
+      ]
+    }
+  ]
+}
