@@ -55,11 +55,14 @@ const gate = createModelBudgetGateway({ ledger, activeSample: () => active, upst
   const response = await fetch(url, init);
   const text = await response.text();
   call.status = response.status;
-  const usage = text.match(/"usageMetadata"\s*:\s*(\{[^}]*\})/g)?.at(-1);
-  if (usage) call.usage = JSON.parse(usage.replace(/^"usageMetadata"\s*:\s*/, ''));
-  const n = calls.filter(c => c.sample === active).length;
-  await writeFile(join(outDir, `${active}.call-${n}.request.json`), init.body, { mode: 0o600 });
-  await writeFile(join(outDir, `${active}.call-${n}.response.txt`), text, { mode: 0o600 });
+  // Recording must never turn a paid answer into a rejection.
+  try {
+    const n = calls.filter(c => c.sample === active).length;
+    await writeFile(join(outDir, `${active}.call-${n}.request.json`), init.body, { mode: 0o600 });
+    await writeFile(join(outDir, `${active}.call-${n}.response.txt`), text, { mode: 0o600 });
+    const chunks = text.trim().startsWith('{') ? [text] : text.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5));
+    for (const chunk of chunks) { const usage = JSON.parse(chunk).usageMetadata; if (usage) call.usage = usage; }
+  } catch (error) { call.record_error = error instanceof Error ? error.message : String(error); }
   return new Response(text, { status: response.status, headers: { 'content-type': response.headers.get('content-type') ?? 'application/json' } });
 } });
 await new Promise(done => gate.server.listen(0, '127.0.0.1', done));
@@ -131,19 +134,20 @@ try {
     const terminal = job && !['queued', 'running'].includes(job.status);
     const result = { id: sample.id, teacher: sample.teacher, topic: sample.topic, status: job?.status ?? 'unknown', elapsed_ms: Date.now() - startedAt,
       model_requests: calls.filter(c => c.sample === sample.id).length };
-    if (live && job?.status === 'completed') {
+    // Octos job statuses: queued, running, succeeded, failed, cancelled, abandoned.
+    if (live && terminal) {
       const find = async dir => { for (const entry of await readdir(dir, { withFileTypes: true })) {
         const path = join(dir, entry.name);
         if (entry.isDirectory()) { const found = await find(path); if (found) return found; } else if (entry.name === `${turnId}.octos-lesson.json`) return path;
       } };
-      const lesson = await find(data);
-      assert.ok(lesson, 'Completed job left no lesson file');
-      await cp(lesson, join(outDir, `${sample.id}.lesson.json`)); result.lesson_sha256 = sha256(await readFile(lesson));
+      const lesson = await find(root);
+      if (job.status === 'succeeded') assert.ok(lesson, 'Succeeded job left no lesson file');
+      if (lesson) await cp(lesson, join(outDir, `${sample.id}.lesson.json`)); if (lesson) result.lesson_sha256 = sha256(await readFile(lesson));
     }
     results.push(result);
     if (fixture) { assert.equal(terminal && job.status, 'failed', 'Fixture generation must fail at the stand-in supplier'); break; }
     // A failed course stops the trial: inspect before spending more.
-    ledger.complete(sample.id, { jobsTerminal: terminal, measurementValid: job?.status === 'completed' });
+    ledger.complete(sample.id, { jobsTerminal: terminal, measurementValid: job?.status === 'succeeded' });
     active = null;
   }
 } catch (error) {

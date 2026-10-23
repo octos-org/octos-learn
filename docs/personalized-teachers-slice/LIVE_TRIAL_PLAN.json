@@ -11,7 +11,7 @@
   "limits": {
     "courses": 6,
     "speech_requests": 1,
-    "usd_micros": 13500000,
+    "usd_micros": 12600000,
     "cny_micros": 1,
     "model_request_usd_micros": 450000,
     "speech_byte_cny_micros": 1,
@@ -19,7 +19,7 @@
     "output_tokens": 32768,
     "request_bytes": 262144
   },
-  "output_directory": "/private/tmp/octos-teacher-slice-trial-20261022",
+  "output_directory": "/private/tmp/octos-teacher-slice-trial-20261022-run3",
   "samples": [
     {
       "id": "01-slope-alan",
@@ -86,5 +86,10 @@
     "Gateway rejects requests over 262144 bytes, so input is at most 262144 tokens (USD 0.196608). Output is reserved at the full model capacity of 65536 tokens even though requests cap it at 32768 (USD 0.24576). Sum USD 0.442368, reserved as USD 0.45 per attempt; 30 attempts = USD 13.50.",
     "The free route check measured the first lesson request at 19682 bytes. Failed or interrupted attempts keep their full reservation. This is an upper bound, not an expected bill."
   ],
-  "route_check": "Free fixture through actual isolated Octos 413b4b68 and Learning Coach 48041ae: action accepted both fields; every model request carried teacher settings, learner background and both rules; 0 supplier calls (FREE_ROUTE_CHECK.json)."
+  "route_check": "Free fixture through actual isolated Octos 413b4b68 and Learning Coach 48041ae: action accepted both fields; every model request carried teacher settings, learner background and both rules; 0 supplier calls (FREE_ROUTE_CHECK.json).",
+  "run_history": [
+    "Run 1 (/private/tmp/octos-teacher-slice-trial-20261022, ledger kept): 1 admitted supplier request (HTTP 200, USD 0.45 reserved), then the runner usage parser threw on nested usageMetadata and the gateway answered the skill 402; lesson 01 failed and the run stopped. Runner bug, not a lesson-generation result. See LIVE_TRIAL_RUN1_FAILED.json.",
+    "Run 2 (/private/tmp/octos-teacher-slice-trial-20261022-run2, ledger and model response kept): lesson 01 succeeded with 1 supplier request (USD 0.45 reserved; 3089 prompt / 2037 output tokens), but the runner expected status completed while Octos reports succeeded, so it treated success as failure and stopped. Runner bug. See LIVE_TRIAL_RUN2_STOPPED.json.",
+    "Run 3 budget = USD 13.50 minus runs 1-2: 28 attempts, USD 12.60; all six lessons rerun for one consistent set."
+  ]
 }

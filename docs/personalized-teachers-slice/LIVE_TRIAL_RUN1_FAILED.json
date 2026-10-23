@@ -1,0 +1,45 @@
+{
+  "checked_at": "2026-10-23T01:09:41.375Z",
+  "mode": "live",
+  "passed": false,
+  "failure": "A failed measurement must stop the run\n\nfalse !== true\n",
+  "plan_id": "teacher-slice-model-trial-20261022",
+  "plan_sha256": "e6017a52841ddb0642b3f80b058ca5040b8f8ac530555fcf9423592dfad439da",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "gateway": {
+    "admitted": 1,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 1,
+  "reserved_usd_micros": 450000,
+  "calls": [
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 19682,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200
+    }
+  ],
+  "results": [
+    {
+      "id": "01-slope-alan",
+      "teacher": "alan",
+      "topic": "slope",
+      "status": "failed",
+      "elapsed_ms": 13373,
+      "model_requests": 1
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/octos-teacher-slice-trial-20261022"
+}

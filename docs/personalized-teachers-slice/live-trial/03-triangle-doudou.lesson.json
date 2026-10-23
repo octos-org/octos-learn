@@ -1,0 +1,161 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么三角形内角和是 180 度",
+    "goals": [
+      "理解三角形内角和恒为 180° 的核心原因",
+      "掌握通过过顶点作平行线转化内错角的推导逻辑"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵从学生习惯，先亮明结论再解释原理",
+        "利用过顶点的平行线与内错角相等直观拼出平角"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "先明确内角和等于180度的结论，再利用过顶点的平行线和内错角推导转化过程",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "嗨！我们先直接说结论：任意一个三角形，它的三个内角加起来，一定正好是 180 度，也就是一个平角。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle A + \\angle B + \\angle C = 180^\\circ"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "为什么无论三角形怎么变，结果都这么巧呢？我们来看核心的证明思路。只要在一个顶点作一条平行线，答案就浮现出来了！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "平行线法证明内角和",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "1. 任意画三角形 ABC"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "2. 过顶点 A 作底边 BC 的平行线 l"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "3. 两条平行线被边截断，形成相等的内错角"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "4. 顶点 A 处的三个角刚好拼成平角 180°"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "你看，过顶点 A 画一条平行于底边 BC 的直线。根据平行线的性质，两直线平行，内错角相等。于是底角的角 B 和角 C，就被精准地搬到了顶点 A 的两侧！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "角的位置转化",
+                "items": [
+                  "平行线产生内错角：角1 = 角B",
+                  "平行线产生内错角：角2 = 角C",
+                  "顶点处三角相加：角1 + 角A + 角2 = 180°"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "关注过顶点平移内错角到平角的过程",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "现在顶点 A 处正好是由角 1、角 A、角 2 连成的一条平整直线，构成 180 度的平角。换句话说，三角形的三个角只是换了个位置聚在了一起，总和自然永远是 180 度！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "before_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "我们先给出了结论：任意三角形三个内角相加都等于 180 度。接着，我们通过在三角形的一个顶点作底边的平行线，利用内错角相等，把底部的两个角搬到顶点，与顶角刚好拼成一个 180 度的平角，从而严谨证明了这个结论！",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}
