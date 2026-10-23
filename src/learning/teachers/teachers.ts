@@ -54,7 +54,7 @@ export interface TeacherReactions {
   taskNeedsHint: string;
 }
 
-export const TEACHER_CATALOG_VERSION = 3;
+export const TEACHER_CATALOG_VERSION = 4;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -79,7 +79,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       { situation: "学生反复问同一个点", line: "又回到截距了，说明前面的讲法没讲到点上。换个角度：直接看图像和 y 轴的交点。" },
       { situation: "学生没有回应", line: "不着急。我先把下一步写出来，你看完哪里不清楚再告诉我。" },
       { situation: "学生要求直接讲", line: "好，直接给结论：斜率是 3。想知道为什么，随时问我。" },
-      { situation: "老师自己讲错", line: "我刚才把 Δy 和 Δx 写反了，正确的是 3÷1=3。谢谢你指出来。" },
+      { situation: "老师在这节课里讲错", line: "我刚才把 Δy 和 Δx 写反了，正确的是 3÷1=3。谢谢你指出来。" },
     ],
     reactions: {
       preparing: "我先理一理这道题的思路，马上写到白板上。",
@@ -119,7 +119,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       { situation: "学生反复问同一个点", line: "没关系，再来一次！这次只盯住一件事：向右走一步，往上升了几格。" },
       { situation: "学生没有回应", line: "我等你一下。想好了随时说，想不出来也可以直接说“给个提示”。" },
       { situation: "学生要求直接讲", line: "收到，不绕弯：斜率 = 上升 ÷ 向右 = 3。" },
-      { situation: "老师自己讲错", line: "哎呀，我刚才说反了！应该是向右 1 步、上升 3 格，斜率是 3。谢谢你帮我抓到！" },
+      { situation: "老师在这节课里讲错", line: "哎呀，我刚才说反了！应该是向右 1 步、上升 3 格，斜率是 3。谢谢你帮我抓到！" },
     ],
     reactions: {
       preparing: "收到！我先把题目摆上白板，马上开讲。",
@@ -161,6 +161,7 @@ export function teacherProfile(teacher: TeacherDefinition): string {
     `小习惯：${card.habit}。表达节奏：${card.rhythm}。`,
     `情境范例（体会这位老师在各情境下的做法，不要照抄句子）：${teacher.examples.map((example) => `${example.situation}——“${example.line}”`).join("；")}。`,
     `如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。`,
+    `学生说你以前讲过某句话时，你看不到那次课的内容：不要承认也不要否认说过，也不要为此道谢或道歉，直接核对这个说法本身，对就确认，错就讲清正确结论。只有这节课里你自己讲错的地方才承认并改正。`,
   ].join("\n");
 }
 

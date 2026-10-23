@@ -1,0 +1,319 @@
+{
+  "checked_at": "2026-10-23T16:40:09.492Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "teacher-situation-trial-20261023",
+  "plan_sha256": "7f3318e1ee45b7af36ca888508bce1d7b0feafd2afea8b40c8eef2c1eaf92990",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "71e3e68391f8a69621abc9d0421fc9447504acc7eac31abf72453be630c2810a",
+  "gateway": {
+    "admitted": 10,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 10,
+  "reserved_usd_micros": 1500000,
+  "calls": [
+    {
+      "sample": "01-challenge-alan",
+      "request_bytes": 19766,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3037,
+        "candidatesTokenCount": 1352,
+        "totalTokenCount": 4389,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3037
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-challenge-alan",
+      "request_bytes": 10503,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1706,
+        "candidatesTokenCount": 770,
+        "totalTokenCount": 2476,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1706
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-challenge-alan",
+      "request_bytes": 9111,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1667,
+        "candidatesTokenCount": 883,
+        "totalTokenCount": 2550,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1667
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-challenge-doudou",
+      "request_bytes": 19785,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3056,
+        "candidatesTokenCount": 1523,
+        "totalTokenCount": 4579,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3056
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-challenge-doudou",
+      "request_bytes": 10368,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1736,
+        "candidatesTokenCount": 858,
+        "totalTokenCount": 2594,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1736
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "03-direct-doudou",
+      "request_bytes": 19779,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3062,
+        "candidatesTokenCount": 805,
+        "totalTokenCount": 3867,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3062
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "04-direct-alan",
+      "request_bytes": 19760,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3043,
+        "candidatesTokenCount": 1553,
+        "totalTokenCount": 4596,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3043
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "05-wrong-alan",
+      "request_bytes": 19688,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3031,
+        "candidatesTokenCount": 1454,
+        "totalTokenCount": 4485,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3031
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "06-wrong-doudou",
+      "request_bytes": 19707,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3050,
+        "candidatesTokenCount": 1613,
+        "totalTokenCount": 4663,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3050
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "06-wrong-doudou",
+      "request_bytes": 9814,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1749,
+        "candidatesTokenCount": 650,
+        "totalTokenCount": 2399,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1749
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-challenge-alan",
+      "teacher": "alan",
+      "topic": "challenge",
+      "status": "succeeded",
+      "elapsed_ms": 37094,
+      "model_requests": 3,
+      "lesson_sha256": "bb85794ef747d040fe3fad98743cc02512d9ba27518477542e256384bc0fd932"
+    },
+    {
+      "id": "02-challenge-doudou",
+      "teacher": "doudou",
+      "topic": "challenge",
+      "status": "succeeded",
+      "elapsed_ms": 21267,
+      "model_requests": 2,
+      "lesson_sha256": "8b99f5d29cc9c8f5319609896472475efac3a713d2011858a249021d5fc3883c"
+    },
+    {
+      "id": "03-direct-doudou",
+      "teacher": "doudou",
+      "topic": "direct",
+      "status": "succeeded",
+      "elapsed_ms": 9348,
+      "model_requests": 1,
+      "lesson_sha256": "5778a6f25f44a2a4cddd422d75b3d1452964c814a04bbed30d58028c15dd2284"
+    },
+    {
+      "id": "04-direct-alan",
+      "teacher": "alan",
+      "topic": "direct",
+      "status": "succeeded",
+      "elapsed_ms": 12215,
+      "model_requests": 1,
+      "lesson_sha256": "f510d403250cac61f7a5151470d6c9e0d1a2f5a51a33f58e4f4055228f47f0b3"
+    },
+    {
+      "id": "05-wrong-alan",
+      "teacher": "alan",
+      "topic": "wrong",
+      "status": "succeeded",
+      "elapsed_ms": 14480,
+      "model_requests": 1,
+      "lesson_sha256": "a18511089282e15c1702e1e7c0d5c5528c5c4e6564c56dcb72950324f1008381"
+    },
+    {
+      "id": "06-wrong-doudou",
+      "teacher": "doudou",
+      "topic": "wrong",
+      "status": "succeeded",
+      "elapsed_ms": 22113,
+      "model_requests": 2,
+      "lesson_sha256": "60aba4de746510291043562cc3430075df20fc382c5a03a4db8131eda3bf1ab3"
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/situation-trial-run1"
+}

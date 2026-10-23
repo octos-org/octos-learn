@@ -1,0 +1,310 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "竖直直线的斜率：为什么不是 0？",
+    "goals": [
+      "分清水平直线与竖直直线在两坐标变化量上的本质区别",
+      "理解竖直线 x=2 导致除以零，因此斜率不存在"
+    ],
+    "adaptation": {
+      "strategies": [
+        "坦率修正误解，认可学生的敏锐质疑",
+        "通过逐步比较变化量 Δx 和 Δy，从斜率定义直接找出分歧"
+      ]
+    },
+    "reflections": [
+      {
+        "as": "section-01-reflection-01",
+        "prompt": "如果一条直线的倾斜角从 0° 逐渐增大逼近 90°，它的斜率变化趋势是怎样的？为什么恰好在 90° 时无法定义斜率？",
+        "answer": "当倾斜角逼近 90° 时，Δx 越来越接近 0，比值 k = Δy / Δx 绝对值无限增大；恰好到达 90°（竖直）时，Δx = 0，产生了除以零的算式，因此无法定义数值斜率。",
+        "anchor": "section-01-moment-03-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-02-reflection-01",
+        "prompt": "如果一条直线的方程是 x = -5，它的斜率是多少？为什么不能说它的斜率是 0 或无穷大？",
+        "answer": "斜率不存在。因为在直线 x = -5 上任取两点，横坐标变化量 Δx 始终为 0，斜率公式的分母为 0，除以 0 在实数运算中无定义；斜率为 0 对应水平直线，而无穷大不是实数斜率值，因此规范表述必须是“斜率不存在”。",
+        "anchor": "section-02-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "纠正‘竖直线斜率为0’的误解，建立水平线与竖直线的变化量对比",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你说得很对，竖直直线的斜率确实不是 0。这是一个值得收藏的问题，我们直接用斜率的定义来对比清楚。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "竖直直线的斜率：为什么不是 0？",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "expression",
+              "expression": "neutral",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们先比较两个变化量：水平直线上，横坐标可以任意改变，而纵坐标的变化量始终是 0，算出的比值才是 0。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "水平直线 y=0*x+2",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -0.5,
+                    "max": 2.5,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((0)*(x))+(2)",
+                    "label": "y = 2 (斜率为0)"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 2,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "((0)*(0))+(2)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "((0)*(1))+(2)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "但对竖直线来说，任何两点的横坐标都完全相同，导致分母上的横坐标变化量等于 0。除以零在算术中没有定义，所以直线 x=2 的斜率不存在，而不是 0。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "两类特殊直线的斜率区别",
+                "items": [
+                  "水平线 (y = c)：Δy = 0，Δx ≠ 0，斜率 k = 0",
+                  "竖直线 (x = 2)：Δx = 0，分母为 0 无意义，斜率不存在"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "以直线 x=2 具体计算两点变化量，明确除以零导致斜率不存在",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你敏锐地指出了上一节的关键：直线 x=2 的斜率到底是多少？我们直接在直线 x=2 上任取两个不同的点，比如 (2, 1) 和 (2, 4)，用斜率定义一步步比较变化量。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直线上任取两点",
+                "items": [
+                  "直线方程：x = 2",
+                  "点 A: (2, 1)",
+                  "点 B: (2, 4)"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们先比较两个变化量：纵坐标从 1 变成 4，纵向变化量 Δy 等于 3；但横坐标始终固定为 2，横向变化量 Δx 等于 2 减 2，也就是 0。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\Delta y = 4 - 1 = 3,\\quad \\Delta x = 2 - 2 = 0"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-02-moment-02-item-01"
+              ],
+              "intent": "聚焦在分母横坐标变化量为0",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "斜率的定义是 Δy 比上 Δx。代入进来，式子变成了 3 除以 0。但在数学中，除数绝对不能为 0，这个比值根本没有定义。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{3}{0} \\quad (\\text{除以 } 0 \\text{ 无意义，斜率不存在})"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "所以直接给出确切结论：直线 x=2 的斜率不是 0，而是不存在。斜率为 0 属于水平直线，而像 x=2 这样的所有竖直直线，它们的斜率都是不存在的。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率本质对比",
+                "items": [
+                  "水平直线：Δy = 0, Δx ≠ 0 → 斜率为 0",
+                  "竖直直线 (x=2)：Δx = 0, 分母为 0 → 斜率不存在"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-03-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "水平直线的 Δy=0，斜率是 0；竖直直线（如 x=2）的 Δx=0，导致分母为 0，因此斜率不存在，而不是 0。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

@@ -1,0 +1,240 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直击斜率：从两点快速算出变化率",
+    "goals": [
+      "直接掌握过两点求斜率的计算方法",
+      "通过“向右与上升”理解斜率代表单位水平距离上的垂直变化量"
+    ],
+    "adaptation": {
+      "strategies": [
+        "开门见山给出结论，不绕弯子",
+        "使用“爬山路”单一贯穿比喻，直观解释垂直变化量除以水平变化量",
+        "配合函数图动态展示从第一个点移动到第二个点的过程"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": 1,
+        "max": 3,
+        "label": "A点横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.01
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 3,
+        "min": 1,
+        "max": 5,
+        "label": "B点横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.02
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "调整 A 点的横坐标，观察点在直线上的移动",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向右拖动滑块使横坐标变大",
+          "将 A 点横坐标调整为 3"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！两点重合时，水平距离为 0，这时不能直接相除求斜率！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 3,
+          "tolerance": 0.005
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "直接给出斜率数值 3，并通过坐标差与山路比喻说明原因",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "收到，绝不绕弯：过这两点的直线斜率是 3！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": 1,
+                    "max": 5,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 20,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((3)*(x))-(1)",
+                    "label": "y = 3x - 1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 1,
+                    "y": 2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 3,
+                    "y": 8,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((3)*(number_01))-(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((3)*(number_02))-(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{8 - 2}{3 - 1} = \\frac{6}{2} = 3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "为什么是 3 呢？我们把这条直线想象成一段山路：斜率衡量的就是，你往右平移 1 步，高度到底上升了多少。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率的意义",
+                "items": [
+                  "斜率 = 垂直变化量 ÷ 水平变化量",
+                  "从 (1,2) 到 (3,8)：向右走 2 格，向上升 6 格",
+                  "每向右 1 格，高度上升 3 格"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              }
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "聚焦斜率公式与对应坐标计算"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "从点 (1,2) 走到点 (3,8)，水平方向向右走了 2 格，垂直方向往上升了 6 格。两者一除，6 除以 2 正好等于 3！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "现在换你试一试：观察画面中的滑块，把 A 点的横坐标调整到 3，看看两点重合时会发生什么。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "过点 (1,2) 和 (3,8) 的直线斜率是 3。直观上，就是每向右走 1 步，高度上升 3 格。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}
