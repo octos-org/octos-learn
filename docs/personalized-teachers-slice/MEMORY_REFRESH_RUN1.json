@@ -1,0 +1,79 @@
+{
+  "checked_at": "2026-10-23T04:45:07.707Z",
+  "mode": "live",
+  "plan_id": "teacher-memory-refresh-trial-20261023",
+  "plan_sha256": "928c9b1a740bb16f50268ed4a611a9de6a81d097638eba0e5c9a3117ad102bcd",
+  "model": "gemini-3.8-flash",
+  "extraction_staging": [],
+  "long_term_memory": "用户平时最喜欢打篮球。(updated: 2026-10-22) ^muvcenb\n\n讲题偏好：先说结论再做解释，不使用比喻，直接进行逻辑或数学推导。(updated: 2026-10-22) ^mefri54\n",
+  "refresh_state": {
+    "date": "2026-10-22",
+    "extractions_today": 2,
+    "tokens_today": 2432,
+    "consolidations_today": 1,
+    "extracted_counts": {
+      "learn-memory-trial-a": [
+        6,
+        "0aced77fe5f0ab8a36870d0a58a0a9349e2c2d8a337b389445aa14959a96fac0"
+      ],
+      "learn-memory-trial-b": [
+        6,
+        "bd6d51a1524b213d6b1a72f961082a943ea041360217ff67331ab5ce6578722e"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "gateway": {
+    "forwarded": 3,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2129,
+      "teacher_labels": [
+        "【豆豆老师】"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 505,
+        "output": 245
+      }
+    },
+    {
+      "n": 2,
+      "kind": "extraction",
+      "request_bytes": 2031,
+      "teacher_labels": [
+        "【阿澜老师】"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 450,
+        "output": 420
+      }
+    },
+    {
+      "n": 3,
+      "kind": "consolidation",
+      "request_bytes": 4241,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1109,
+        "output": 1034
+      }
+    }
+  ],
+  "reserved_usd_micros": 1350000,
+  "usage": {
+    "input": 2064,
+    "output": 1699
+  },
+  "estimated_usd": 0.00791925,
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true
+}
