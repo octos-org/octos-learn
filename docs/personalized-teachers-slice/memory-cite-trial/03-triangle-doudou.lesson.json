@@ -1,0 +1,283 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么三角形内角和是 180 度",
+    "goals": [
+      "理解平角与 180 度的几何直觉",
+      "掌握通过平行线内错角将三角形三个角拼成平角的严谨推导过程"
+    ],
+    "adaptation": {
+      "strategies": [
+        "先明确给出结论：任意三角形的三个内角加起来正好等于一个平角，也就是 180 度",
+        "使用折纸/拼角到一条直线的生动比喻建立直觉",
+        "通过辅助平行线和内错角相等完成严密推导"
+      ]
+    },
+    "reflections": [
+      {
+        "as": "section-02-reflection-01",
+        "prompt": "如果延长三角形的一条边，比如延长 BC 得到外角，这个外角和不相邻的两个内角有什么数量关系？",
+        "answer": "三角形的一个外角等于与它不相邻的两个内角之和。因为外角与相邻内角互为邻补角（和为 180 度），而三角形内角和也是 180 度，相减即可得到该结论。",
+        "anchor": "section-02-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "建立平角直觉并给出核心结论：三个角能在一条直线上无缝拼合",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你说过希望先听结论，那我们先说结论：无论三角形是什么形状，三个内角加起来一定刚好是 180 度！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "为什么三角形内角和是 180 度",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle A + \\angle B + \\angle C = 180^\\circ"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "为什么正好是 180 度？想象把三角形的三个角撕下来，尖角对尖角拼在一起，你会发现它们的边缘刚好拼成了一条笔直的线，也就是一个平角。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直观拼角思路",
+                "items": [
+                  "一条直线构成的平角刚好是 180°",
+                  "把三个角拼在一起正好填满这条平角"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "撕纸拼贴直观但不够严密。数学上，我们通过画一条特殊的平行辅助线来把底下的两个角精确搬上去。来看推导的整个路线图！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "过程图",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "任意三角形 ABC"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "过顶点 A 作底边 BC 的平行线"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "利用两直线平行、内错角相等"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "顶点处三角无缝拼成 180° 平角"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "展示证明步骤路线图",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "通过作顶点平行线与内错角性质，严谨推导内角和公式并完成检验",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "上一节我们发现把角拼在一条线上恰好是个平角。现在，我们用一条巧妙的辅助线，把它变成无法辩驳的几何证明！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "引导观察如何将直觉转化为严密证明",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "在三角形 ABC 的顶点 A 处，作一条平行于底边 BC 的直线 DE。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "证明步骤",
+                "items": [
+                  "1. 过顶点 A 作直线 DE 平行于 BC",
+                  "2. 两直线平行，内错角相等",
+                  "3. 平角等于 180 度，得出三角之和为 180 度"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-03-item-01",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "因为 DE 平行于 BC，根据平行线的性质，内错角相等！左边的角 DAB 就等于角 B，右边的角 EAC 就等于角 C。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle DAB = \\angle B,\\quad \\angle EAC = \\angle C"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-03-item-01",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "你看，顶点 A 处的平角由角 DAB、角 A 和角 EAC 组成。把相等的角替换进去，角 A 加角 B 加角 C 就完全等于 180 度！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle A + \\angle B + \\angle C = 180^\\circ"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01",
+                "section-02-moment-04-item-01"
+              ],
+              "intent": "聚焦内角和公式的严谨推导结论",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "通过过顶点作底边的平行线，利用内错角相等，成功把三角形的三个内角平移拼成了一条直线，从而证明了任意三角形的内角和都恒等于 180 度。",
+    "focus": [
+      "section-01-moment-03-item-01"
+    ]
+  }
+}

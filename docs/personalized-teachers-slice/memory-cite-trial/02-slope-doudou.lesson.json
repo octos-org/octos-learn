@@ -1,0 +1,259 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直线 y=2x+1 中的斜率 2 究竟代表什么？",
+    "goals": [
+      "理解一次函数中斜率 2 的几何与变化率含义：横坐标每增加 1，纵坐标增加 2",
+      "掌握斜率定义式 Δy/Δx 中分子与分母的对应关系，能结合图像读出台阶式的增量变化"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵照偏好开门见山先给结论，再用熟悉的山路台阶比喻解释原理",
+        "针对曾经颠倒 Δy 与 Δx 的情况，强调垂直升高在分子、水平前进在分母",
+        "结合动态直线与点坐标变化，直观观察自变量每走 1 步因变量抬升 2 步"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -3,
+        "max": 3,
+        "label": "点A横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": -3,
+        "max": 3,
+        "label": "点B横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "拖动滑块将点 B 的横坐标调整到 3，观察 y 的变化量与斜率比值",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "把点 B 的横坐标从 2 移动到 3",
+          "观察当 x=3 时，y 的值是多少，再算算从 x=0 到 x=3 的总变化比率"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！当 x=3 时 y=7，高度从 1 升到 7 增加了 6，6/3 依然是 2！这就是斜率 2 的恒定本质。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 3,
+          "tolerance": 0.015
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过山路台阶比喻与动点增量，讲透 y=2x+1 中斜率 2 的直观与数学含义",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你说过喜欢先听结论，那我们先说结论：在 y=2x+1 里，斜率 2 说的就是‘变化率’——x 每向右增加 1，y 就向上增加 2！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y = 2x + 1",
+                "axes": {
+                  "x": {
+                    "min": -3,
+                    "max": 3,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 10,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y=2x+1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 3,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((2)*(number_02))+(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1} = 2"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们之前一起用‘山路’的比喻学过斜率：把直线当成坡道。你上次算斜率时把 Δy 和 Δx 颠倒过，这次我们专门看清楚：分母是水平往前走的步数 Δx，分子是竖直升高的步数 Δy！",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率 2 的台阶比喻",
+                "items": [
+                  "Δx（分母）：水平向右走 1 步",
+                  "Δy（分子）：竖直向上爬 2 格",
+                  "比值：Δy / Δx = 2 / 1 = 2"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "强调斜率公式中分母为横向增量，分子为纵向增量",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "来看图上的点 A 和点 B：当 A 在 x=0 时，y 是 1；当 B 在 x=1 时，y 变成了 3。水平只前进了 1 格，高度却往上窜了 2 格，比值正好是 2！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "如果继续往前走到 x=2 呢？我们把点 B 移到 x=2 看看。从 x=0 到 x=2，水平走了 2 步，高从 1 变成 5，升高了 4 格！4 除以 2，斜率依然是 2，坡度始终不变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "轮到你来当小测绘员了！试着把点 B 调到 x=3，看看自变量每前进一步，高度是不是都在以 2 倍的节奏稳稳上升？",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在直线 y=2x+1 中，斜率 2 表达的是变化率：沿着这条‘山路’水平向右每走 1 个单位（Δx=1），高度就向上攀升 2 个单位（Δy=2）。牢记升高量在分子、前进量在分母，就不会写反了！",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

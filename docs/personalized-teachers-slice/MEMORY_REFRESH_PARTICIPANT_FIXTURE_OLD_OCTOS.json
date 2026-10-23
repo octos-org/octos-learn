@@ -1,0 +1,52 @@
+{
+  "checked_at": "2026-10-23T04:59:48.477Z",
+  "mode": "fixture",
+  "plan_id": "teacher-memory-refresh-participant-20261023",
+  "delivery": "participant-field",
+  "plan_sha256": "5a1dd1c85807ca20fcafb4c033c812a00928762dd0cf51262754c24673f5f255",
+  "model": "gemini-3.8-flash",
+  "extraction_staging": [],
+  "long_term_memory": null,
+  "refresh_state": {
+    "date": "2026-10-22",
+    "extractions_today": 2,
+    "tokens_today": 4,
+    "consolidations_today": 0,
+    "extracted_counts": {
+      "learn-memory-trial-a": [
+        6,
+        "2d7ff5281802becc3fe8523a59a816552ba7bf93c51cce6d9931075ce103713b"
+      ],
+      "learn-memory-trial-b": [
+        6,
+        "66aa0559f2b01d27eddcbba391125559d9a102da88a15f2d88ef42cb99fdecbd"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": false,
+  "failure": "Each extraction must see exactly its own lesson teacher label",
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "gateway": {
+    "forwarded": 2,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2069,
+      "teacher_labels": []
+    },
+    {
+      "n": 2,
+      "kind": "extraction",
+      "request_bytes": 1971,
+      "teacher_labels": []
+    }
+  ],
+  "reserved_usd_micros": 900000,
+  "real_supplier_calls": 0,
+  "octos_log_saved": false,
+  "temporary_octos_data_deleted": true
+}

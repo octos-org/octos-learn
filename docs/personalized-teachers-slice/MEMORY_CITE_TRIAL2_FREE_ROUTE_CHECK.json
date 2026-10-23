@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-23T02:55:13.038Z",
+  "mode": "fixture",
+  "passed": true,
+  "plan_id": "teacher-memory-cite-trial2-20261022-fixture",
+  "plan_sha256": "f9b463a2ea751906c92e696fcbcb101c7530619b59b3c72832060ab35bfeba9c",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "71e3e68391f8a69621abc9d0421fc9447504acc7eac31abf72453be630c2810a",
+  "gateway": {
+    "admitted": 2,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 2,
+  "reserved_usd_micros": 300000,
+  "calls": [
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 21310,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      }
+    },
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 21310,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-slope-alan",
+      "teacher": "alan",
+      "topic": "slope",
+      "status": "failed",
+      "elapsed_ms": 4134,
+      "model_requests": 2
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "real_supplier_calls": 0
+}

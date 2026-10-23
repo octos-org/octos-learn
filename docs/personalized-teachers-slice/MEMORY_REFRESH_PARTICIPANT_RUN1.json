@@ -1,0 +1,80 @@
+{
+  "checked_at": "2026-10-23T05:00:08.953Z",
+  "mode": "live",
+  "plan_id": "teacher-memory-refresh-participant-20261023",
+  "delivery": "participant-field",
+  "plan_sha256": "9e956609f40569c29661a883cd756662054f109e4888ae07d506eb36f84994df",
+  "model": "gemini-3.8-flash",
+  "extraction_staging": [],
+  "long_term_memory": "用户平时最喜欢打篮球。(updated: 2026-10-22) ^mzkobc6\n\n听所有老师讲题时，均要求先说结论再解释。(updated: 2026-10-22) ^mtmh67t\n\n豆豆老师讲题偏好：觉得豆豆老师用“山路”比喻解释斜率（Δy/Δx）很好记、易于理解。(updated: 2026-10-22) ^mpuwual\n\n阿澜老师讲题偏好：阿澜老师讲题时无需使用比喻，直接推导即可。(updated: 2026-10-22) ^mpkt344\n",
+  "refresh_state": {
+    "date": "2026-10-22",
+    "extractions_today": 2,
+    "tokens_today": 3058,
+    "consolidations_today": 1,
+    "extracted_counts": {
+      "learn-memory-trial-a": [
+        6,
+        "2d7ff5281802becc3fe8523a59a816552ba7bf93c51cce6d9931075ce103713b"
+      ],
+      "learn-memory-trial-b": [
+        6,
+        "66aa0559f2b01d27eddcbba391125559d9a102da88a15f2d88ef42cb99fdecbd"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "55f70730366286a1ec0c3c62c9599d684af58b3f4e9f7e2c2069bdbce619c218",
+  "gateway": {
+    "forwarded": 3,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2694,
+      "teacher_labels": [
+        "豆豆老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 621,
+        "output": 678
+      }
+    },
+    {
+      "n": 2,
+      "kind": "extraction",
+      "request_bytes": 2596,
+      "teacher_labels": [
+        "阿澜老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 563,
+        "output": 736
+      }
+    },
+    {
+      "n": 3,
+      "kind": "consolidation",
+      "request_bytes": 4801,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1282,
+        "output": 2067
+      }
+    }
+  ],
+  "reserved_usd_micros": 1350000,
+  "usage": {
+    "input": 2466,
+    "output": 3481
+  },
+  "estimated_usd": 0.01490325,
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true
+}

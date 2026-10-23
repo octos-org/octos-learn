@@ -1,0 +1,54 @@
+{
+  "checked_at": "2026-10-23T04:44:02.630Z",
+  "mode": "fixture",
+  "plan_id": "teacher-memory-refresh-trial-20261023",
+  "plan_sha256": "b54d5df18f1a9f6a94d2704dc94bc97dbc26a21975519bcb1516477e310ca8cd",
+  "model": "gemini-3.8-flash",
+  "extraction_staging": [],
+  "long_term_memory": null,
+  "refresh_state": {
+    "date": "2026-10-22",
+    "extractions_today": 2,
+    "tokens_today": 4,
+    "consolidations_today": 0,
+    "extracted_counts": {
+      "learn-memory-trial-a": [
+        6,
+        "0aced77fe5f0ab8a36870d0a58a0a9349e2c2d8a337b389445aa14959a96fac0"
+      ],
+      "learn-memory-trial-b": [
+        6,
+        "bd6d51a1524b213d6b1a72f961082a943ea041360217ff67331ab5ce6578722e"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "gateway": {
+    "forwarded": 2,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2129,
+      "teacher_labels": [
+        "【豆豆老师】"
+      ]
+    },
+    {
+      "n": 2,
+      "kind": "extraction",
+      "request_bytes": 2031,
+      "teacher_labels": [
+        "【阿澜老师】"
+      ]
+    }
+  ],
+  "reserved_usd_micros": 900000,
+  "real_supplier_calls": 0,
+  "octos_log_saved": false,
+  "temporary_octos_data_deleted": true
+}
