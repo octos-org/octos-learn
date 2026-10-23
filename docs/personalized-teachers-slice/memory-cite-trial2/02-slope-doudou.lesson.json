@@ -1,0 +1,283 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直线 y=2x+1 中的斜率 2 究竟代表什么",
+    "goals": [
+      "理解斜率表示自变量每增加 1 个单位时因变量的变化量",
+      "掌握斜率定义中 Δy 与 Δx 的比值关系，避免颠倒位置"
+    ],
+    "adaptation": {
+      "strategies": [
+        "先亮出核心结论，再展开几何解释",
+        "沿用学生熟悉的山路比喻，通过每水平走 1 步高度上升 2 格直观感知",
+        "强调 Δy 比上 Δx 的顺序，针对性纠错"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -3,
+        "max": 3,
+        "label": "点A横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": -3,
+        "max": 3,
+        "label": "点B横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "把点 B 的横坐标调整到 3，观察对应的 y 变化量和斜率",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向右拖动点 B 的滑块，将数值设为 3",
+          "当 x=3 时，y=2×3+1=7，高度从 1 上升到 7，变化量是 6",
+          "用高度差 6 除以水平距离 3，依然等于 2"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！跨度是 3，高度上升了 6，6÷3 正好还是 2，斜率完全一致！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 3,
+          "tolerance": 0.015
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过点位移动和山路比喻，直观理解斜率 2 代表横向每走 1 步纵向升高 2 格",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们按你的习惯，先直接说结论：直线 y=2x+1 的斜率 2，意思是 x 每向右增加 1 个单位，y 就向上增加 2 个单位！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直线 y=2x+1 中的斜率 2 究竟代表什么",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{2}{1} = 2"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率的核心含义",
+                "items": [
+                  "结论：x 每增加 1，y 就增加 2",
+                  "注意：竖直变化量 Δy 在分子，水平变化量 Δx 在分母"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-02",
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "聚焦斜率计算公式与结论",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们之前用过山路的比喻，现在来看屏幕上的这条直线。把直线想象成一段匀速爬升的山路，我们在上面选两个点：A 点在 x=0，B 点在 x=1。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y=2x+1 的斜率观察",
+                "axes": {
+                  "x": {
+                    "min": -3,
+                    "max": 3,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 10,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y=2x+1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 3,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((2)*(number_02))+(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "从 A 点 (0, 1) 出发走到 B 点 (1, 3)：向右水平走了 1 格，高度就直接往上升了 2 格！这里一定要特别注意，我们算斜率时，是高度变化 Δy 放在上面，步长 Δx 放在下面，千万别写反了。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "强调高度变化比水平步长",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "如果山路继续往前走呢？我们把 B 点向右移动到 x=2 看看。水平方向一共走过了 2 格，而高度从 1 升到了 5，一共升了 4 格！4 除以 2 依然是 2，坡度始终不变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "现在轮到你了，试着把点 B 调到横坐标为 3 的位置，亲自算算高度差除以水平跨度是不是还是 2！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在直线 y=2x+1 中，斜率 2 的核心含义就是变化率：自变量 x 每向右增加 1，因变量 y 就必定向上增加 2。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

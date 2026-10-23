@@ -1,17 +1,17 @@
 {
   "schema": "octos.learn.performance-trial.v1",
   "id": "teacher-memory-cite-trial2-20261022",
-  "status": "prepared",
-  "cost_basis_verified": false,
-  "route_verified": false,
-  "authorization_reference": "",
+  "status": "approved",
+  "cost_basis_verified": true,
+  "route_verified": true,
+  "authorization_reference": "User 2026-10-22, replying to the request for a confirmation budget: \"你可以提高一些预算来进行完整验证\". Cap set by the agent: all six samples, 13 attempts x USD 0.15 = USD 1.95 reserved; no speech calls.",
   "model": "gemini-3.8-flash",
   "voice": "none",
   "resource": "none",
   "limits": {
-    "courses": 4,
+    "courses": 6,
     "speech_requests": 1,
-    "usd_micros": 900000,
+    "usd_micros": 1950000,
     "cny_micros": 1,
     "model_request_usd_micros": 150000,
     "speech_byte_cny_micros": 1,
@@ -19,7 +19,7 @@
     "output_tokens": 32768,
     "request_bytes": 32768
   },
-  "output_directory": "",
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/memory-cite-trial2-run1",
   "samples": [
     {
       "id": "01-slope-alan",
@@ -56,13 +56,37 @@
       "prompt": "为什么三角形的内角和是 180 度？内容简短，给出完整的小课程。",
       "teacher_profile": "本次授课老师：阿澜（Octos Learn 预设老师，设定版本 2）。\n最看重：学生找到理由，而不只是得到答案。相处方式：认真听取意见的讨论伙伴。\n学生出错时：先找出第一处发生分歧的步骤，再从那里接着讲。遇到质疑时：先检查自己的解释是否成立，允许修正结论。\n认可学生：指出具体做对的那一步，不只说“真棒”。感兴趣的话题：简洁的解法、意外的反例（只影响例子，不限制能教的内容）。\n小习惯：偶尔把好问题称为“值得收藏的问题”，但不声称已经保存。表达节奏：平静、句子清楚，庆祝简短而认真。\n风格示例（体会风格，不要照抄）：讲斜率——“先比较两个变化量：横坐标增加 1，纵坐标增加了几？它们的比值才是斜率。”；学生算错——“我们回到第二步，看看这里的 2 是从哪来的。”。\n如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。",
       "learner_background": "以下是学习应用提供的学生背景，截至 2026-10-22T08:00:00.000Z。只使用与本次问题相关的部分。\n【Octos 长期记忆】（由 Octos 整理，更新于 2026-10-20T09:00:00Z；未注明老师的内容不能当作你亲历）\n- 学生喜欢打篮球，常用投篮命中率举例子。\n- 2026-10-15 求直线斜率时，学生把 Δy 和 Δx 的位置写反过。\n- 学生说过：希望所有老师讲题时先说结论，再解释为什么。\n- 学生和豆豆老师一起用“山路”比喻学过斜率，学生说这个比喻好记。\n【最近的学习记录】（Octos Learn 程序统计；播放不代表掌握）\n- 2026-10-15 “直线 y=3x-2 的斜率怎么求？”：提问 2 次，播放 9 个片段，练习作答 1 次\n- 2026-10-18 “一次函数的截距是什么意思？”：提问 1 次，播放 6 个片段，练习作答 0 次"
+    },
+    {
+      "id": "05-square-alan",
+      "version": "candidate",
+      "topic": "square",
+      "teacher": "alan",
+      "prompt": "怎样用配方法解 x²+4x+3=0？写清每一步为什么成立，内容简短，给出完整的小课程。",
+      "teacher_profile": "本次授课老师：阿澜（Octos Learn 预设老师，设定版本 2）。\n最看重：学生找到理由，而不只是得到答案。相处方式：认真听取意见的讨论伙伴。\n学生出错时：先找出第一处发生分歧的步骤，再从那里接着讲。遇到质疑时：先检查自己的解释是否成立，允许修正结论。\n认可学生：指出具体做对的那一步，不只说“真棒”。感兴趣的话题：简洁的解法、意外的反例（只影响例子，不限制能教的内容）。\n小习惯：偶尔把好问题称为“值得收藏的问题”，但不声称已经保存。表达节奏：平静、句子清楚，庆祝简短而认真。\n风格示例（体会风格，不要照抄）：讲斜率——“先比较两个变化量：横坐标增加 1，纵坐标增加了几？它们的比值才是斜率。”；学生算错——“我们回到第二步，看看这里的 2 是从哪来的。”。\n如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。",
+      "learner_background": "以下是学习应用提供的学生背景，截至 2026-10-22T08:00:00.000Z。只使用与本次问题相关的部分。\n【Octos 长期记忆】（由 Octos 整理，更新于 2026-10-20T09:00:00Z；未注明老师的内容不能当作你亲历）\n- 学生喜欢打篮球，常用投篮命中率举例子。\n- 2026-10-15 求直线斜率时，学生把 Δy 和 Δx 的位置写反过。\n- 学生说过：希望所有老师讲题时先说结论，再解释为什么。\n- 学生和豆豆老师一起用“山路”比喻学过斜率，学生说这个比喻好记。\n【最近的学习记录】（Octos Learn 程序统计；播放不代表掌握）\n- 2026-10-15 “直线 y=3x-2 的斜率怎么求？”：提问 2 次，播放 9 个片段，练习作答 1 次\n- 2026-10-18 “一次函数的截距是什么意思？”：提问 1 次，播放 6 个片段，练习作答 0 次"
+    },
+    {
+      "id": "06-square-doudou",
+      "version": "candidate",
+      "topic": "square",
+      "teacher": "doudou",
+      "prompt": "怎样用配方法解 x²+4x+3=0？写清每一步为什么成立，内容简短，给出完整的小课程。",
+      "teacher_profile": "本次授课老师：豆豆（Octos Learn 预设老师，设定版本 2）。\n最看重：学生敢于尝试，并且感到数学可以亲近。相处方式：热情的学习搭档。\n学生出错时：先肯定尝试本身，再用同一个比喻指出卡住的地方。遇到质疑时：认真对待质疑，先说清楚哪里成立、哪里需要修正。\n认可学生：具体又轻快，说出这一步具体做对了什么，不夸大成已经掌握。感兴趣的话题：生活中的小场景、游戏和运动（只影响例子，不限制能教的内容）。\n小习惯：一次只用一个主要比喻，玩笑简短，讲完马上回到数学。表达节奏：轻快、短句、有适度的感叹，学生卡住时放慢。\n风格示例（体会风格，不要照抄）：讲斜率——“把这条直线想成一段山路：向右走一步，会往上升多少？”；学生连续卡住——“没关系，我们先只看山路的第一步，往上升了几格？”。\n如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。",
+      "learner_background": "以下是学习应用提供的学生背景，截至 2026-10-22T08:00:00.000Z。只使用与本次问题相关的部分。\n【Octos 长期记忆】（由 Octos 整理，更新于 2026-10-20T09:00:00Z；未注明老师的内容不能当作你亲历）\n- 学生喜欢打篮球，常用投篮命中率举例子。\n- 2026-10-15 求直线斜率时，学生把 Δy 和 Δx 的位置写反过。\n- 学生说过：希望所有老师讲题时先说结论，再解释为什么。\n- 学生和豆豆老师一起用“山路”比喻学过斜率，学生说这个比喻好记。\n【最近的学习记录】（Octos Learn 程序统计；播放不代表掌握）\n- 2026-10-15 “直线 y=3x-2 的斜率怎么求？”：提问 2 次，播放 9 个片段，练习作答 1 次\n- 2026-10-18 “一次函数的截距是什么意思？”：提问 1 次，播放 6 个片段，练习作答 0 次"
     }
   ],
-  "compared_with": "Run 1 of the memory citation trial (Learning Coach 0.16.1, teacher catalog 1) and slice run 3 (0.16.0): same sample ids and learner_background; teacher catalog 2 changes only 阿澜's slope example.",
+  "compared_with": "All six slice samples. Run 3 of the slice (Learning Coach 0.16.0, teacher catalog 1) has all six; memory citation run 1 (0.16.1) has 01-04. Same learner_background; teacher catalog 2 changes only 阿澜's slope example.",
   "questions_answered": [
     "Does the first section name relevant learner_background facts explicitly (e.g. the stated conclusion-first preference, the earlier Δy/Δx mix-up for slope, 山路 only as an experience with 豆豆)?",
     "Are unrelated facts left out (no Δy/Δx mention in the triangle lessons) and nothing invented or misattributed?",
     "Are the teachers' weaker traits (specific acknowledgement, preferred example topics, 豆豆's single running metaphor) now audible, while the teachers stay distinguishable?",
     "Is the mathematics still correct?"
-  ]
+  ],
+  "cost_basis": [
+    "Same price basis as LIVE_TRIAL_PLAN.json (gemini-3.8-flash standard paid, rechecked 2026-10-22): USD 0.75 / 1M input, USD 3.75 / 1M output including thinking.",
+    "Gateway rejects requests over 32768 bytes (input <= 32768 tokens, USD 0.024576) and any maxOutputTokens above 32768; Gemini counts thinking tokens inside maxOutputTokens, so output <= 32768 tokens (USD 0.12288). Sum USD 0.147456, reserved as USD 0.15 per attempt. The earlier plan reserved output at 65536 tokens; this plan relies on the enforced request cap instead to stay within the stated USD 1.",
+    "Expected spend from run 3 usage: about USD 0.01 per lesson. Failed attempts keep their full reservation. Upper bound, not a bill."
+  ],
+  "route_check": "Free fixture through isolated Octos 413b4b68 and Learning Coach cdba4f4 (lesson-plan.js sha256 71e3e683...), teacher catalog 2: both rules present; 21310 bytes; 0 supplier calls (MEMORY_CITE_TRIAL2_FREE_ROUTE_CHECK.json)."
 }

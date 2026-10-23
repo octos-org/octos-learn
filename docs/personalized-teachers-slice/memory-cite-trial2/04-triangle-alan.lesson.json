@@ -1,0 +1,178 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "三角形内角和为什么是 180 度",
+    "goals": [
+      "理解平角是 180 度的几何基准",
+      "掌握通过平行线内错角将三角形三个角拼成平角的几何推导步骤"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵循学生偏好：开门见山先给结论，再一步步推导原理",
+        "使用平行线与截线的内错角性质，把三个分散的内角搬移到同一个顶点拼成一条直线"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "先给出结论，再通过作底边的平行线、利用内错角相等将三个内角聚合成一个 180 度的平角进行严密推导",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "这是一个值得收藏的问题。按照你之前提到的偏好，我们先直接看结论：在平面几何中，任意三角形的三个内角之和恒等于 180 度。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "三角形内角和为什么是 180 度",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle A + \\angle B + \\angle C = 180^\\circ"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "结论明确了，关键在于为什么。我们来看这个简洁的证明思路：平面的基准是一条直线，也就是 180 度的平角。要证明三个角的和是 180 度，只要把它们不重不漏地拼成一条平角直线。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "平行线辅助线法推导内角和",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "任意三角形 ABC"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "过顶点 A 作对边 BC 的平行线 DE"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "利用两直线平行、内错角相等转化角"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "三个角拼成平角，总和为 180°"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "在三角形 ABC 中，我们过顶点 A 画一条平行于底边 BC 的辅助线 DE。因为 DE 平行于 BC，根据平行线的性质，两条截线 AB 和 AC 会产生内错角：角 DAB 等于角 B，角 EAC 等于角 C。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "DE \\parallel BC \\implies \\angle DAB = \\angle B,\\; \\angle EAC = \\angle C"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "观察顶点 A 处的三个相邻角：角 DAB、角 BAC 和角 EAC。它们刚好紧密拼接在直线 DE 的同一侧，构成一个完整的平角 180 度。把相等的角代换回去，就严格得到了角 A 加上角 B 加上角 C 等于 180 度。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "证明关键总结",
+                "items": [
+                  "作平行辅助线：过顶点 A 作 DE 平行于 BC",
+                  "内错角等量代换：∠DAB = ∠B，∠EAC = ∠C",
+                  "平角定义：∠DAB + ∠BAC + ∠EAC = 180°",
+                  "结论：任意三角形内角和恒为 180°"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "三角形内角和恒为 180 度的根源，在于过任意顶点作对边的平行线后，两对内错角把底部的两个角搬到了顶点两旁，与顶角恰好拼成了一个 180 度的平角。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

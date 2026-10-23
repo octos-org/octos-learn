@@ -1,0 +1,278 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "理解直线斜率：从变化量比值看 y=2x+1",
+    "goals": [
+      "理解斜率是纵坐标变化量与横坐标变化量的比值",
+      "通过点在直线上的移动看清斜率 2 的几何与代数含义"
+    ],
+    "adaptation": {
+      "strategies": [
+        "按照学生习惯先给结论再剖析原因",
+        "沿用与豆豆老师学过的山路比喻对比水平与垂直变化量",
+        "强调分子与分母位置避免颠倒"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -2,
+        "max": 3,
+        "label": "点A横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": -2,
+        "max": 3,
+        "label": "点B横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请将点 A 的横坐标调整到 -1，观察此时的横纵变化量与斜率比值。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "点击或拖动滑块，把点 A 的横坐标设为 -1。",
+          "此时点 A 坐标变为 (-1, -1)，它依然满足 y=2x+1。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成！移动取样点后，Δx 与 Δy 同比例变化，固定直线的斜率保持不变。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -1,
+          "tolerance": 0.0125
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "先明确斜率结论，再通过直线上两点的变化量比值解析 2 的含义",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "按照你的要求，我们先说结论：在直线 y=2x+1 中，斜率 2 表示横坐标每向右增加 1 个单位，纵坐标就必须向上增加 2 个单位。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率 2 的核心含义",
+                "items": [
+                  "结论：横坐标 x 每增加 1，纵坐标 y 就增加 2",
+                  "本质：纵向变化量与横向变化量的比值"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "你和豆豆老师用山路比喻学过斜率，那是一条很有助理解的思路。走山路时，水平向前走一段距离，高度就会上升一段距离；斜率就是‘垂直上升高度’与‘水平前进距离’的比值。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -2,
+                    "max": 3,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -4,
+                    "max": 8,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y = 2x + 1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 3,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((2)*(number_02))+(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "我们仔细看直线上这两个点。点 A 的坐标是 (0, 1)，点 B 的坐标是 (1, 3)。我们来逐步比较两个变化量：横坐标从 0 变到 1，变化量是 1；纵坐标从 1 变到 3，变化量是 2。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\Delta x = 1 - 0 = 1, \\quad \\Delta y = 3 - 1 = 2"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "观察直线上点A(0,1)与点B(1,3)的坐标变化",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "这里要特别注意分母和分子的位置，斜率一定是纵坐标的变化量 Δy 在分子，横坐标的变化量 Δx 在分母。算出来 2 除以 1，正好等于 2。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{2}{1} = 2"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "现在我们把点 B 向右移动到横坐标为 2 的位置看看。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "此时横坐标增加了 2，纵坐标从 1 变成了 5，增加了 4。两者的比值是 4 比 2，依然等于 2。这就是斜率 2 的恒定本质。课后你可以试着移动点 A 或点 B，检验比值是否始终不变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "验证不同两点间比值仍然是2",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "直线 y=2x+1 中的斜率 2，表示横坐标每增加 1 个单位，纵坐标就对应增加 2 个单位，即变化率是 2。通过两点变化量比值 Δy/Δx，可以直观验证这一结论。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

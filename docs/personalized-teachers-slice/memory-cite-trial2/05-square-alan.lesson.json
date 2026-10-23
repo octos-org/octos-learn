@@ -1,0 +1,368 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "用配方法解方程 x²+4x+3=0",
+    "goals": [
+      "理解配方法的核心逻辑：将二次项与一次项构造成完全平方式",
+      "掌握解方程 x²+4x+3=0 的完整代数推导步骤并理解每一步的等式依据",
+      "能检验求得的根并总结配方法的关键检查点"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵循学生偏好：每步先给出明确结论与变形结果，再逐层解释背后的代数依据",
+        "以探究原因与几何恒等式为核心，指出一次项系数一半的平方的来源",
+        "保持平静、简洁的语言节奏，引导学生验证步骤与解的正确性"
+      ]
+    },
+    "reflections": [
+      {
+        "as": "section-02-reflection-01",
+        "prompt": "如果配方后等号右侧算出来是一个负数，比如得到 (x+2)² = -1，在实数范围内这个方程会有解吗？为什么？",
+        "answer": "在实数范围内没有解。因为任何实数的平方都大于或等于 0，不可能等于负数 -1。",
+        "anchor": "section-02-moment-04-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "完成常数项移项与两边配方，理解为什么必须加上一次项系数一半的平方",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你提到希望先看结论再探究原因，我们就按这个节奏来。这个方程的最终解是 x₁ = -1，x₂ = -3。现在我们一步一步看，为什么配方法能精准得出这个结果。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "用配方法解方程 x²+4x+3=0",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + 4x + 3 = 0"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "第一步的结论是：把常数项移到右边，得到 x²+4x = -3。依据是等式性质：等式两边同时减去 3，等号依然成立。这一步的目的，是把含有未知数的项留在左侧，为接下来的完全平方做准备。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "过程图",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "移项：将常数项移至等号右侧"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "配方：两边同时加 (b/2)²"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "化为完全平方式：(x+m)² = n"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + 4x = -3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-01-moment-02-item-02"
+              ],
+              "intent": "关注移项后的等式形式",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "第二步的结论是：等式两边同时加上 4，变形为 x²+4x+4 = 1。为什么加的是 4？因为完全平方公式是 (x+a)² = x²+2ax+a²。对比中间项 2ax 与 4x，可以确定 a 必须是 2，所以必须补上 a²，也就是 2 的平方 4。依据等式性质，右边也必须加上 4，保持平衡。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + 4x + 4 = -3 + 4"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "第三步的结论是：写成完全平方式 (x+2)² = 1。左边三项精准重构为 (x+2) 的平方，右边计算结果是 1。我们成功把一个一元二次方程，转化成了非负数的平方等于 1 的纯净形式。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "(x+2)^2 = 1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "配方关键要点",
+                "items": [
+                  "移项：常数项移至右侧",
+                  "配方关键常数：(一次项系数 ÷ 2)²",
+                  "等式两边同加，确保等式成立"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-04-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-01-moment-04-item-01",
+                "section-01-moment-04-item-02"
+              ],
+              "intent": "聚焦完全平方形式与配方总结",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "开平方求解一元一次方程，检验根的正确性并总结配方法通法",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "接上一节，我们已经得到了完全平方式：(x+2)² 等于 1。结论是，两边开平方后会得到两个一元一次方程：x+2=1 或 x+2=-1。为什么呢？因为平方等于 1 的数刚好有两个，就是正负 1。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "(x+2)^2 = 1 \\implies x+2 = \\pm 1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-02-moment-01-item-01"
+              ],
+              "intent": "观察开平方后的正负号分岔",
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "解这两个一次方程：当 x+2=1 时，两边减 2 得 x=-1；当 x+2=-1 时，两边减 2 得 x=-3。方程的两个实数根是 x₁=-1，x₂=-3。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x_1 = -1, \\quad x_2 = -3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "我们把结果代回原方程 x²+4x+3 检验：代入 -1 得 1-4+3=0；代入 -3 得 9-12+3=0。两步计算都严格成立，说明求出的两个根完全正确。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "(-1)^2 + 4(-1) + 3 = 0, \\quad (-3)^2 + 4(-3) + 3 = 0"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-02-moment-03-item-01"
+              ],
+              "intent": "检验求出的两根是否使原式为零",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "整理配方法的完整通法：第一步移项，让含 x 的项留左边；第二步两边同加一次项系数一半的平方凑成完全平方；第三步开平方化为两个一次方程求解。每一步都建立在等式性质上。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "配方法解题步骤",
+                "items": [
+                  "移项：二次项与一次项在左，常数项移到右边",
+                  "配方：两边同时加上一次项系数一半的平方",
+                  "开方：转化为两个一元一次方程求解并代回检验"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-03-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "配方法关键总结",
+                "items": [
+                  "核心目的：降次，将二次方程转化为一次方程",
+                  "关键数值：必须加 (b/2)² 才能补全完全平方式",
+                  "常见陷阱：开平方时不能漏掉负根符号"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-04-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "配方法的核心是通过等式两边同时加上一次项系数一半的平方，将二次项与一次项拼成完全平方式 (x+m)²=n，进而转化为直接开平方求解。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}
