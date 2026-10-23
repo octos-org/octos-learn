@@ -166,3 +166,22 @@ test("topic queries expose pending mappings honestly and reject ambiguous time r
   assert.equal((await call('/topics/mt_WBdHkc2HTf?approved=true')).status, 400);
   assert.equal((await (await call('/runs/nonexistent/coverage')).json()).status, 'unmapped');
 });
+
+test("teacher choice belongs to the authenticated account and keeps a later choice over a stale replay", async () => {
+  assert.equal((await (await call("/teacher-choice")).json()).choice, null);
+  const first = await (await call("/teacher-choice", "PUT", { teacher_id: "doudou" })).json();
+  assert.equal(first.status, "saved");
+  assert.deepEqual([first.choice.teacher_id, first.choice.revision], ["doudou", 1]);
+  assert.equal((await (await call("/teacher-choice", "GET", undefined, { authorization: "Bearer bob" })).json()).choice, null);
+  // Another device replays an offline choice made before revision 1.
+  const stale = await (await call("/teacher-choice", "PUT", { teacher_id: "alan", base_revision: 0 })).json();
+  assert.deepEqual([stale.status, stale.choice.teacher_id], ["conflict", "doudou"]);
+  const current = await (await call("/teacher-choice", "PUT", { teacher_id: "alan", base_revision: 1 })).json();
+  assert.deepEqual([current.status, current.choice.teacher_id, current.choice.revision], ["saved", "alan", 2]);
+  assert.equal((await call("/teacher-choice", "PUT", { teacher_id: "Alan Smith" })).status, 400);
+  assert.equal((await call("/teacher-choice", "PUT", { teacher_id: "alan", owner: "bob" })).status, 400);
+  assert.equal((await call("/teacher-choice", "PUT", { teacher_id: "alan", base_revision: -1 })).status, 400);
+  assert.equal((await call("/teacher-choice", "PUT", { teacher_id: "alan" }, { "x-learning-owner": "bob" })).status, 409);
+  assert.equal((await call("/teacher-choice", "POST", { teacher_id: "alan" })).status, 404);
+  assert.equal((await (await call("/teacher-choice")).json()).choice.teacher_id, "alan");
+});

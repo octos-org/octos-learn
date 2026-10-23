@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { SvgTeacherSkin } from "@/hooks/use-teacher-skin";
 
+import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_EVENT, TEACHER_STORAGE_KEY } from "./teacher-choice";
+
 /** Preset teachers everyone can choose. These are product settings, not
  * learner memory: a lesson never rewrites them. What a teacher learns about
  * one learner stays in Octos and reaches the lesson as learner context. */
@@ -107,19 +109,15 @@ export function teacherProfile(teacher: TeacherDefinition): string {
   ].join("\n");
 }
 
-const STORAGE_KEY = "octos-learn-teacher";
-const CHANGE_EVENT = "octos-learn-teacher-change";
+const choiceOptions = { isKnown: isTeacherId };
 
 export function resolveSelectedTeacherId(): TeacherDefinition["id"] {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return isTeacherId(stored) ? stored : TEACHERS[0].id;
-  } catch {
-    return TEACHERS[0].id;
-  }
+  const stored = deviceTeacherChoice();
+  return isTeacherId(stored) ? stored : TEACHERS[0].id;
 }
 
-/** Device-local choice for this slice; account-level storage is a later step. */
+/** The choice belongs to the signed-in account (saved in the learning-history
+ * service) and is mirrored on the device, so a lesson never waits for it. */
 export function useSelectedTeacher() {
   const [teacherId, setTeacherIdState] = useState(resolveSelectedTeacherId);
   useEffect(() => {
@@ -128,19 +126,22 @@ export function useSelectedTeacher() {
       if (isTeacherId(next)) setTeacherIdState(next);
     };
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) setTeacherIdState(resolveSelectedTeacherId());
+      if (event.key === TEACHER_STORAGE_KEY) setTeacherIdState(resolveSelectedTeacherId());
     };
-    window.addEventListener(CHANGE_EVENT, onChange);
+    const sync = () => { void syncTeacherChoice(choiceOptions); };
+    window.addEventListener(TEACHER_CHANGE_EVENT, onChange);
     window.addEventListener("storage", onStorage);
+    window.addEventListener("online", sync);
+    sync();
     return () => {
-      window.removeEventListener(CHANGE_EVENT, onChange);
+      window.removeEventListener(TEACHER_CHANGE_EVENT, onChange);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("online", sync);
     };
   }, []);
   const setTeacherId = useCallback((next: TeacherDefinition["id"]) => {
-    try { localStorage.setItem(STORAGE_KEY, next); } catch { /* choice still applies to this page */ }
     setTeacherIdState(next);
-    window.dispatchEvent(new CustomEvent(CHANGE_EVENT, { detail: next }));
+    void chooseTeacher(next, choiceOptions);
   }, []);
   return { teacher: getTeacher(teacherId), setTeacherId };
 }

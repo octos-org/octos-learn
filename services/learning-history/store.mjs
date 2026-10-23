@@ -83,6 +83,10 @@ export class HistoryStore {
       CREATE INDEX IF NOT EXISTS materials_owner_run ON course_materials(owner,run_id);
       ${version < 5 ? "ALTER TABLE events ADD COLUMN delivery_digest TEXT;" : ""}
       CREATE INDEX IF NOT EXISTS events_owner_delivery ON events(owner,delivery_digest,kind,seq);
+      CREATE TABLE IF NOT EXISTS teacher_choices(
+        owner TEXT PRIMARY KEY, teacher_id TEXT NOT NULL,
+        revision INTEGER NOT NULL, updated_at TEXT NOT NULL
+      );
     `);
     createAnalysisSchema(this.db);
     this.db.exec("UPDATE history_schema SET version=5; COMMIT;");
@@ -123,6 +127,32 @@ export class HistoryStore {
       for (const receipt of results) if (["accepted", "exists"].includes(receipt.status)) enqueueAnalysis(this, owner, receipt.id);
       this.db.exec("COMMIT");
       return { results, through: this.upperBound(owner) };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+
+  /** The account's preset-teacher choice: a product setting kept beside the
+   * learning record so every device of the account uses the same teacher. */
+  teacherChoice(owner) {
+    return this.db.prepare("SELECT teacher_id,revision,updated_at FROM teacher_choices WHERE owner=?").get(owner) ?? null;
+  }
+  // Without base_revision the newest request wins. A device replaying a choice
+  // made while offline passes the revision it last saw, so a later choice from
+  // another device is kept and returned instead.
+  chooseTeacher(owner, teacherId, baseRevision) {
+    if (typeof teacherId !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(teacherId)) throw new HistoryValidationError("Invalid teacher");
+    if (baseRevision !== undefined && (!Number.isSafeInteger(baseRevision) || baseRevision < 0)) throw new HistoryValidationError("Invalid teacher revision");
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const current = this.teacherChoice(owner);
+      if (baseRevision !== undefined && (current?.revision ?? 0) !== baseRevision) {
+        this.db.exec("COMMIT");
+        return { status: "conflict", choice: current };
+      }
+      const revision = (current?.revision ?? 0) + 1;
+      this.db.prepare("INSERT INTO teacher_choices(owner,teacher_id,revision,updated_at) VALUES(?,?,?,?) ON CONFLICT(owner) DO UPDATE SET teacher_id=excluded.teacher_id,revision=excluded.revision,updated_at=excluded.updated_at")
+        .run(owner, teacherId, revision, this.now());
+      this.db.exec("COMMIT");
+      return { status: "saved", choice: this.teacherChoice(owner) };
     } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
 

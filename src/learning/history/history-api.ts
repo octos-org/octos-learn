@@ -26,6 +26,7 @@ export interface HistoryTopicPage extends HistoryEventsPage {
   automatic?: { status: string; analysis_through: number; counts: { question_count: number | null; played_runs: number | null; played_beats: number | null; task_attempts?: number | null; task_successes?: number | null; task_hints?: number | null };
     coverage: { unprocessed_questions: number; unknown_questions: number; outside_catalog_questions?: number; unassociated_played_beats: number; unassociated_task_attempts?: number; unassociated_task_hints?: number }; events: { seq: number; event: HistoryEvent; associations: { result_seq: number; unit_id: string; quote: string }[] }[]; next_after: number | null };
 }
+export interface AccountTeacherChoice { teacher_id: string; revision: number; updated_at: string }
 export class HistoryApi {
   private readonly identity: HistoryIdentity;
   private readonly fetcher: typeof fetch;
@@ -64,6 +65,11 @@ export class HistoryApi {
   }
   topic(topicId: string, through: number, after = 0, analysisThrough?: number) {
     return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50${analysisThrough === undefined ? '' : `&analysis_through=${analysisThrough}`}`);
+  }
+  teacherChoice() { return this.request<{ choice: AccountTeacherChoice | null }>('/teacher-choice'); }
+  chooseTeacher(teacherId: string, baseRevision?: number) {
+    return this.request<{ status: 'saved' | 'conflict'; choice: AccountTeacherChoice | null }>('/teacher-choice', 'PUT',
+      baseRevision === undefined ? { teacher_id: teacherId } : { teacher_id: teacherId, base_revision: baseRevision });
   }
   analysisStatus() { return this.request<{ enabled: boolean; max_daily_tasks: number; states: { state: string; count: number }[] }>('/analysis'); }
   async configureAnalysis(enabled: boolean, maxDailyTasks: number) {
