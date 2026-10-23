@@ -1,0 +1,56 @@
+{
+  "schema": "octos.learn.topic-accuracy-trial.v1",
+  "id": "phase2-task-v2-cases-20261022",
+  "scope": "task-v2-cases",
+  "status": "prepared",
+  "authorization_reference": "",
+  "owner": "task-v2-trial",
+  "model": "gemini-3.8-flash",
+  "output_directory": "/private/tmp/octos-task-v2-trial-20261022",
+  "cases_file": "docs/personalized-teachers-phase2/TASK_V2_CASES.json",
+  "cases_sha256": "f893cd2e2cde93dfae13821ed7083357086b40f4840932e6b1375c539e4ba581",
+  "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+  "pricing": {
+    "verified_at": "2026-10-22",
+    "valid_until": "2026-12-31",
+    "input_per_million_usd": 0.75,
+    "output_including_thinking_per_million_usd": 3.75,
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 65536,
+    "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+  },
+  "limits": {
+    "tasks": 4,
+    "model_http_requests": 16,
+    "model_http_requests_per_task": 6,
+    "usd_micros": 17600000,
+    "reservation_usd_micros": 1100000,
+    "request_bytes": 1048576,
+    "output_tokens": 32768
+  },
+  "octos": {
+    "revision": "413b4b68b82fd38f3adeb92500345259f38b5407",
+    "binary": "/Users/yy/Documents/projects/OctosLearn/octos/target/debug/octos",
+    "sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968"
+  },
+  "key_source": "User-created file ~/.config/octos-trial/gemini.key (mode 600), passed to an isolated Octos only; never read from or written to the user's own Octos.",
+  "cost_note": "Each admitted request reserves USD 1.10, the price of the full 1M-token input plus 65536 output tokens; 16 requests = USD 17.60 is an upper bound, not a bill. Earlier analysis requests used a few thousand tokens each (about USD 0.01-0.03).",
+  "code_sha256": {
+    "scripts/verify-learning-topic-accuracy.mjs": "20dace6bb9c904ecdc366575235fb9d0108127ebd1fc171889ecab567f596e6d",
+    "scripts/lib/learning-topic-trial-control.mjs": "f29816093ac98acda39c347f91cad3842a3838e9e37f2eefd58b6dac7069ba84",
+    "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+    "scripts/lib/learning-topic-trial-fixture.mjs": "e7965a054f304ed215b732606fcf3c7d45c42d49bf93eec72ebb2a00c6472653",
+    "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+    "src/learning/history/analyze-topics.ts": "1194aca38f3e2812c665e3e3e3799dffbd3bf7b3b55a3a0c7d7bcfe363a406eb",
+    "src/runtime/ui-protocol-bridge.ts": "2f752b82deb798558df3d46e293b67e5c36ad4e8aeeae2c363fcd489ed4567a8",
+    "services/learning-history/server.mjs": "34dba89e18d206441e094c296fa252e54ee0bd6464583c570cf8ce35627ac579",
+    "services/learning-history/topic-analysis.mjs": "beae650ef374fa984abfc931c928f87bc05869bda5f72a167d7e19df2416e73b",
+    "services/learning-history/topic-analysis-store.mjs": "8c88c6a4b2166fc3eba81b607f74972d00441c890ab8d8eca010c89aef7c029b",
+    "services/learning-history/topic-analysis-instructions.mjs": "9fcc02d7734556ff2308a68d5ec14131b8f37ce73f70b6c6f935f3129e597ce1",
+    "services/learning-history/topic-catalog.mjs": "3f219bc11f567adeed734b965deaed74c74f17186d68451c5af5e1a2c674dc94",
+    "services/learning-history/taxonomy/catalog.json": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
+    "services/learning-history/topic-query.mjs": "bd4e8518c063858aed19807a95bf9f1098e77873b9defd6a0414e62ebe4dfc8f",
+    "services/learning-history/automatic-topic-query.mjs": "39b9895fc1be3cd2f179cdffae67a0c1addb8891d90d4460636bbd8722267a23",
+    "services/learning-history/topic-analysis-response.mjs": "5a1dc3e431479697f275a42a55df25c59626ae01e1aaf3920f5794f094387dac"
+  }
+}
