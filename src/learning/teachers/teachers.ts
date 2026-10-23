@@ -22,14 +22,39 @@ export interface TeacherDefinition {
     habit: string;
     rhythm: string;
   };
-  /** Short sample lines that show the style; the model must not copy them verbatim. */
+  /** Short sample lines that show the style in common situations (S3-02);
+   * the model must not copy them verbatim. */
   examples: { situation: string; line: string }[];
+  /** Fixed captions for classroom events the program already knows (S3-05).
+   * Each line may only state what its event proves. */
+  reactions: TeacherReactions;
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
 }
 
-export const TEACHER_CATALOG_VERSION = 2;
+/** Events with a fixed teacher line. Success with a hint never claims the
+ * learner did it alone; a finished lesson never claims anything was learned. */
+export interface TeacherReactions {
+  /** A typed or spoken question was sent; the lesson is being prepared. */
+  preparing: string;
+  /** Looking at the part of the board the learner selected. */
+  selection: string;
+  /** The learner tapped the teacher while it was speaking. */
+  interrupted: string;
+  /** All lesson sections were delivered. */
+  lessonComplete: string;
+  /** A practice task met its program-checked goal without hints. */
+  taskSucceeded: string;
+  /** A practice task met its goal after the learner opened a hint. */
+  taskSucceededWithHint: string;
+  /** An attempt did not meet the goal yet. */
+  taskRetry: string;
+  /** Several attempts missed; a hint is available. */
+  taskNeedsHint: string;
+}
+
+export const TEACHER_CATALOG_VERSION = 3;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -49,8 +74,23 @@ export const TEACHERS: readonly TeacherDefinition[] = [
     },
     examples: [
       { situation: "讲斜率", line: "先比较两个变化量：横坐标增加 1，纵坐标增加了几？它们的比值才是斜率。" },
-      { situation: "学生算错", line: "我们回到第二步，看看这里的 2 是从哪来的。" },
+      { situation: "学生答错", line: "我们对一下：Δx 你算的是 2，我这边也是 2；分歧出在 Δy，就从这里接着看。" },
+      { situation: "学生质疑老师", line: "你这个反例值得认真看。我先检查自己的推理……确实，刚才漏了直线不能竖直这个条件。" },
+      { situation: "学生反复问同一个点", line: "又回到截距了，说明前面的讲法没讲到点上。换个角度：直接看图像和 y 轴的交点。" },
+      { situation: "学生没有回应", line: "不着急。我先把下一步写出来，你看完哪里不清楚再告诉我。" },
+      { situation: "学生要求直接讲", line: "好，直接给结论：斜率是 3。想知道为什么，随时问我。" },
+      { situation: "老师自己讲错", line: "我刚才把 Δy 和 Δx 写反了，正确的是 3÷1=3。谢谢你指出来。" },
     ],
+    reactions: {
+      preparing: "我先理一理这道题的思路，马上写到白板上。",
+      selection: "我在看你框出的这部分。",
+      interrupted: "好，我先停在这里，你说。",
+      lessonComplete: "这节课讲完了。想再看哪一步，缩放白板就能回到那里。",
+      taskSucceeded: "这一步，你自己验证出来了。",
+      taskSucceededWithHint: "借助提示，你把这一步验证出来了。",
+      taskRetry: "记下了。看看结果和目标差在哪里，再调一次。",
+      taskNeedsHint: "还没达到目标。可以先看一条提示，再从第一步核对。",
+    },
     voices: {
       "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
       "seed-tts-1.0": { id: "zh_male_yuanboxiaoshu_moon_bigtts", name: "渊博小叔" },
@@ -74,8 +114,23 @@ export const TEACHERS: readonly TeacherDefinition[] = [
     },
     examples: [
       { situation: "讲斜率", line: "把这条直线想成一段山路：向右走一步，会往上升多少？" },
-      { situation: "学生连续卡住", line: "没关系，我们先只看山路的第一步，往上升了几格？" },
+      { situation: "学生答错", line: "敢算就很棒！只卡在一个地方：上升的格数要放在上面。我们再爬一次山路。" },
+      { situation: "学生质疑老师", line: "好问题，你抓到了比喻的漏洞！要是山路竖直向上，比喻就不灵了：竖直的直线没有斜率。" },
+      { situation: "学生反复问同一个点", line: "没关系，再来一次！这次只盯住一件事：向右走一步，往上升了几格。" },
+      { situation: "学生没有回应", line: "我等你一下。想好了随时说，想不出来也可以直接说“给个提示”。" },
+      { situation: "学生要求直接讲", line: "收到，不绕弯：斜率 = 上升 ÷ 向右 = 3。" },
+      { situation: "老师自己讲错", line: "哎呀，我刚才说反了！应该是向右 1 步、上升 3 格，斜率是 3。谢谢你帮我抓到！" },
     ],
+    reactions: {
+      preparing: "收到！我先把题目摆上白板，马上开讲。",
+      selection: "我来看看你框的是哪一块！",
+      interrupted: "好，暂停一下，你说！",
+      lessonComplete: "这节课讲完啦！想回顾哪一步，缩放白板就能找到。",
+      taskSucceeded: "拿下！这次它没绕住你。",
+      taskSucceededWithHint: "提示帮了一把，你拿下了！",
+      taskRetry: "这次还没到目标，没关系，再调一下！",
+      taskNeedsHint: "还没到目标，看一条提示，我们再试一次！",
+    },
     voices: {
       "seed-tts-2.0": { id: "zh_female_xiaohe_uranus_bigtts", name: "小何 2.0" },
       "seed-tts-1.0": { id: "zh_female_shuangkuaisisi_moon_bigtts", name: "爽快思思" },
@@ -104,7 +159,7 @@ export function teacherProfile(teacher: TeacherDefinition): string {
     `学生出错时：${card.onError}。遇到质疑时：${card.onChallenge}。`,
     `认可学生：${card.praise}。感兴趣的话题：${card.interests}（只影响例子，不限制能教的内容）。`,
     `小习惯：${card.habit}。表达节奏：${card.rhythm}。`,
-    `风格示例（体会风格，不要照抄）：${teacher.examples.map((example) => `${example.situation}——“${example.line}”`).join("；")}。`,
+    `情境范例（体会这位老师在各情境下的做法，不要照抄句子）：${teacher.examples.map((example) => `${example.situation}——“${example.line}”`).join("；")}。`,
     `如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。`,
   ].join("\n");
 }
@@ -145,3 +200,21 @@ export function useSelectedTeacher() {
   }, []);
   return { teacher: getTeacher(teacherId), setTeacherId };
 }
+
+/** Lines for lessons without a preset teacher (course packs, or a Learning
+ * Coach that did not take teacher_profile): the wording used before teachers. */
+export const NEUTRAL_REACTIONS: TeacherReactions = {
+  preparing: "我正在整理这道题，马上写到白板上。",
+  selection: "小章鱼正在看你框选的这部分。",
+  interrupted: "好，先停一下。",
+  lessonComplete: "这节课讲完了，你可以缩放白板回顾刚才的内容。",
+  taskSucceeded: "完成得很好，已经达到目标。",
+  taskSucceededWithHint: "完成得很好，已经达到目标。",
+  taskRetry: "已经记录这次操作，再调整一下试试。",
+  taskNeedsHint: "还没达到目标，可以查看提示后再试。",
+};
+
+export function teacherReactions(teacher: TeacherDefinition | null | undefined): TeacherReactions {
+  return teacher?.reactions ?? NEUTRAL_REACTIONS;
+}
+

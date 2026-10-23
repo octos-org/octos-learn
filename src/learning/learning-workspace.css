@@ -1797,6 +1797,14 @@
   font-weight: 650;
 }
 
+/* The lesson's own result line under the teacher's reaction. */
+.learning-student-task-feedback.is-success span > small {
+  display: block;
+  margin-top: 2px;
+  color: #3f7a63;
+  font-weight: 400;
+}
+
 .learning-student-task-feedback svg,
 .learning-student-task-hint svg {
   flex: 0 0 auto;

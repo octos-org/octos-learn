@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { TEACHERS, getTeacher, teacherProfile, useSelectedTeacher } from './teachers';
+import { NEUTRAL_REACTIONS, TEACHERS, getTeacher, teacherProfile, teacherReactions, useSelectedTeacher } from './teachers';
 import { buildLearnerContext, LearnerBackgroundCache } from './learner-background';
 import type { LearningRunSummary } from '../history/history-api';
 
@@ -122,4 +122,37 @@ it('gives each teacher a distinct standard catalog voice for every catalog resou
     expect(new Set(chosen.map(voice => voice.id)).size).toBe(TEACHERS.length);
     for (const voice of chosen) expect(catalog.voices.find(entry => entry.id === voice.id && entry.name.startsWith(voice.name))?.resourceIds).toContain(resource);
   }
+});
+
+const SITUATIONS = ['学生答错', '学生质疑老师', '学生反复问同一个点', '学生没有回应', '学生要求直接讲', '老师自己讲错'];
+
+it('gives every teacher a distinct example for each S3-02 situation, sent in the profile', () => {
+  for (const teacher of TEACHERS) {
+    const situations = teacher.examples.map(example => example.situation);
+    for (const situation of SITUATIONS) expect(situations).toContain(situation);
+    const profile = teacherProfile(teacher);
+    expect(profile).toContain('情境范例');
+    for (const example of teacher.examples) expect(profile).toContain(example.line);
+  }
+  const [alan, doudou] = TEACHERS;
+  for (const situation of SITUATIONS) {
+    const line = (teacher: typeof alan) => teacher.examples.find(example => example.situation === situation)!.line;
+    expect(line(alan)).not.toEqual(line(doudou));
+  }
+});
+
+it('keeps fixed reactions within what each event proves', () => {
+  for (const reactions of [...TEACHERS.map(teacher => teacher.reactions), NEUTRAL_REACTIONS]) {
+    // A hint was used: never "by yourself"; a finished lesson proves nothing was learned.
+    expect(reactions.taskSucceededWithHint).not.toMatch(/自己|独立|靠你/);
+    expect(reactions.lessonComplete).not.toMatch(/学会|掌握|懂了/);
+    expect(reactions.taskRetry).not.toMatch(/差一点|快了/);
+    for (const line of Object.values(reactions)) expect(line.length).toBeLessThanOrEqual(40);
+  }
+  const [alan, doudou] = TEACHERS;
+  for (const key of Object.keys(alan.reactions) as (keyof typeof alan.reactions)[]) {
+    expect(alan.reactions[key]).not.toEqual(doudou.reactions[key]);
+  }
+  expect(teacherReactions(null)).toBe(NEUTRAL_REACTIONS);
+  expect(teacherReactions(getTeacher('doudou'))).toBe(getTeacher('doudou').reactions);
 });

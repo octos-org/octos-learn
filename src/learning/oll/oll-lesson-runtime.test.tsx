@@ -38,6 +38,7 @@ import { createCourseRegion } from "../course-regions";
 import type { SelectionClassification } from "../selection-enhancements";
 import { isLessonDeliverySettled } from "./lesson-delivery";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
+import { getTeacher, NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
 
 const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
 const selectionContextToPngFileMock = vi.hoisted(() => vi.fn(async () =>
@@ -762,16 +763,20 @@ function CurrentTopicVariableRuntimeProbe() {
   );
 }
 
-function StudentTaskRuntimeProbe({ startAtEnd = true }: { startAtEnd?: boolean }) {
+function StudentTaskRuntimeProbe({ startAtEnd = true, taskReactions, storageKey = "oll-student-task-runtime-test" }: {
+  startAtEnd?: boolean;
+  taskReactions?: TeacherReactions;
+  storageKey?: string;
+}) {
   const runtime = useOllLessonRuntime({
     source: unitCircleSineLessonSource,
-    storageKey: "oll-student-task-runtime-test",
+    storageKey,
     startAtEnd,
   });
   if (!runtime) return null;
   return (
     <div style={{ width: 1200, height: 800 }}>
-      <OllLessonBoard runtime={runtime} />
+      <OllLessonBoard runtime={runtime} taskReactions={taskReactions} />
     </div>
   );
 }
@@ -1016,7 +1021,7 @@ function DegradedVisualRuntimeProbe({
   );
 }
 
-function Scene3dRuntimeProbe() {
+function Scene3dRuntimeProbe({ taskReactions }: { taskReactions?: TeacherReactions } = {}) {
   const runtime = useOllLessonRuntime({
     source: scene3dLessonSource,
     storageKey: "oll-scene3d-runtime-test",
@@ -1030,7 +1035,7 @@ function Scene3dRuntimeProbe() {
           (operation) => operation.kind === "scene3d_view",
         ).length}
       </span>
-      <OllLessonBoard runtime={runtime} />
+      <OllLessonBoard runtime={runtime} taskReactions={taskReactions} />
     </div>
   );
 }
@@ -2917,6 +2922,15 @@ describe("OLL lesson Runtime integration", () => {
     expect(screen.getByText("正确，这是立方体的正视图。")).toBeTruthy();
   });
 
+  it("credits a task met without hints to the learner in the teacher's words", async () => {
+    const alan = getTeacher("alan").reactions;
+    await renderLearning(<Scene3dRuntimeProbe taskReactions={alan} />);
+    await screen.findByRole("img", { name: "立方体" });
+    fireEvent.click(screen.getByRole("button", { name: "正视" }));
+    await waitFor(() => expect(screen.getByText(alan.taskSucceeded)).toBeTruthy());
+    expect(screen.getByText("正确，这是立方体的正视图。")).toBeTruthy();
+  });
+
   it("shows an after-lesson task with feedback, hints, retry, success, and restore", async () => {
     const duringLesson = await renderLearning(<StudentTaskRuntimeProbe startAtEnd={false} />);
     expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
@@ -2961,6 +2975,29 @@ describe("OLL lesson Runtime integration", () => {
     await renderLearning(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
+  });
+
+  it("uses the lesson teacher's fixed lines for retry and success, and never says alone after a hint", async () => {
+    const doudou = getTeacher("doudou").reactions;
+    await renderLearning(<StudentTaskRuntimeProbe taskReactions={doudou} storageKey="oll-student-task-teacher-lines" />);
+    expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
+    const slider = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(slider, { pointerType: "mouse" });
+    fireEvent.change(slider, { target: { value: String(Math.PI / 4) } });
+    fireEvent.pointerUp(slider, { pointerType: "mouse" });
+    await waitFor(() => expect(screen.getByText("已尝试 1 次")).toBeTruthy());
+    expect(screen.queryByText(doudou.taskRetry) ?? screen.queryByText(doudou.taskNeedsHint)).toBeTruthy();
+    expect(screen.queryByText(NEUTRAL_REACTIONS.taskRetry)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    const retry = screen.getByRole("slider", { name: "旋转角 θ" });
+    fireEvent.pointerDown(retry, { pointerType: "mouse" });
+    fireEvent.change(retry, { target: { value: String(Math.PI / 2) } });
+    fireEvent.pointerUp(retry, { pointerType: "mouse" });
+    await waitFor(() => expect(screen.getByText(doudou.taskSucceededWithHint)).toBeTruthy());
+    expect(screen.queryByText(doudou.taskSucceeded)).toBeNull();
+    // The lesson's own result line stays under the teacher's reaction.
+    expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
   });
 
   it("opens an after-lesson task when the current incremental delivery settles", async () => {
