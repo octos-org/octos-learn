@@ -1,0 +1,253 @@
+{
+  "checked_at": "2026-10-23T01:12:25.947Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "teacher-slice-model-trial-20261022",
+  "plan_sha256": "3052b52c2fec948053b51694bd911198de65167c1c4854fb90969634adfd2526",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "gateway": {
+    "admitted": 7,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 7,
+  "reserved_usd_micros": 3150000,
+  "calls": [
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 19682,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3089,
+        "candidatesTokenCount": 1762,
+        "totalTokenCount": 4851,
+        "cachedContentTokenCount": 2328,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3089
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2328
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 10626,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1872,
+        "candidatesTokenCount": 1077,
+        "totalTokenCount": 2949,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1872
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-slope-doudou",
+      "request_bytes": 19745,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3116,
+        "candidatesTokenCount": 1705,
+        "totalTokenCount": 4821,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3116
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "03-triangle-doudou",
+      "request_bytes": 19745,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3110,
+        "candidatesTokenCount": 775,
+        "totalTokenCount": 3885,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3110
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "04-triangle-alan",
+      "request_bytes": 19682,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3083,
+        "candidatesTokenCount": 1238,
+        "totalTokenCount": 4321,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3083
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "05-square-alan",
+      "request_bytes": 19730,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3099,
+        "candidatesTokenCount": 1450,
+        "totalTokenCount": 4549,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3099
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "06-square-doudou",
+      "request_bytes": 19793,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": true,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3126,
+        "candidatesTokenCount": 1463,
+        "totalTokenCount": 4589,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3126
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-slope-alan",
+      "teacher": "alan",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 21796,
+      "model_requests": 2,
+      "lesson_sha256": "b9ee9b7f6ae3457ee8524121d239709cb580f4f8107e32c59eb0d4dbb1794c7d"
+    },
+    {
+      "id": "02-slope-doudou",
+      "teacher": "doudou",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 13686,
+      "model_requests": 1,
+      "lesson_sha256": "a5004d283c22b962eb4fc9d2eb9d93ca8a59ad704b410b5120a5b41692ea651b"
+    },
+    {
+      "id": "03-triangle-doudou",
+      "teacher": "doudou",
+      "topic": "triangle",
+      "status": "succeeded",
+      "elapsed_ms": 8847,
+      "model_requests": 1,
+      "lesson_sha256": "4e450e771aef4d49ec8fc13326dc57bb5b5528ba063b45fa4e64e5633e37ea06"
+    },
+    {
+      "id": "04-triangle-alan",
+      "teacher": "alan",
+      "topic": "triangle",
+      "status": "succeeded",
+      "elapsed_ms": 9255,
+      "model_requests": 1,
+      "lesson_sha256": "731567f8c51c13bf940ca2474d0d06fdc84ca5045852c9313303c6e4b72f5a6f"
+    },
+    {
+      "id": "05-square-alan",
+      "teacher": "alan",
+      "topic": "square",
+      "status": "succeeded",
+      "elapsed_ms": 11006,
+      "model_requests": 1,
+      "lesson_sha256": "178b9818b53c1d523f85be53504613d80de8f1772b7e14adf312d9da358ba2a6"
+    },
+    {
+      "id": "06-square-doudou",
+      "teacher": "doudou",
+      "topic": "square",
+      "status": "succeeded",
+      "elapsed_ms": 11008,
+      "model_requests": 1,
+      "lesson_sha256": "eaad1ac9a27a48f07ecba49d8918921143a668f2e059fbc268b69c18649e0850"
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/octos-teacher-slice-trial-20261022-run3"
+}

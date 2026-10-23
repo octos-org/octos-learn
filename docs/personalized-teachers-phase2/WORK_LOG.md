@@ -41,3 +41,16 @@
 - 用户决定（2026-10-22）：D1 整分支合并、分析默认关闭；D2 差值小于一帧判定不回退；D3 讨论伙伴 + 轻松鼓励者；D5 保守共享。
 - 免费首段对照（82e759f vs main 4973499，`scripts/benchmark-learning-history-playable.mjs`，四种情况各 10 对，首次运行即完成）：80 次全部有画面与非静音音频，零模型调用；p50 差值 small −0.4、large −0.1、retry 0、inflight 0 ms，均不高于基线。证据 FREE_PLAYABLE_BENCHMARK_82E759F.json，日志 sha256 8aa0c703…8a96（本机 scratchpad，未提交）。按用户确认的口径判定首段速度不回退；不代表真实供应商速度。
 - 下一步：推送文档、等 CI，PR 转为正式并合并（用户已选择整分支合并）；合并不等于发布。随后开始切片 B。
+- 合并：PR #60 头部 08dddb2，CI 39817658962 两项成功，main 未变（4973499）后转为正式并合并，merge commit `8e72488`。合并触发仓库既有 GitHub Pages 静态预览部署；公网正式站、服务器、APK 均未改动。
+- 切片 B 开始：learning-coach 新分支 `codex/teacher-and-learner-context` 提交 `c13f1ec`——三个课程 action 接受 `tutor_context`/`learner_context`；仅在请求带上对应字段时追加一段使用规则，无字段时系统提示完全不变；205 项测试通过（新增 3 项）。octos-learn 切片分支 `codex/teacher-memory-slice` 基于合并后的 main `8e72488`。
+
+## 2026-10-22：切片 B 第一版
+
+- octos-learn `codex/teacher-memory-slice`：`52887f3` 两位老师、老师设定与学生背景进入课程 action、路由记录老师、Octos 回复副本标注老师；`f0cf7a8` 只向声明字段的 action 发送（防止前端先于 Learning Coach 部署时所有课程失败），并扩展免费对照夹具；`ac11a2d` action 支持读取不再依赖学习记录模块。
+- 免费首段对照：52887f3 首次运行失败（夹具拒绝未登记的 memory/overview RPC），原结果保留；f0cf7a8 完成，四种情况 p50 均不高于基线。详见 [切片实施进展](../personalized-teachers-slice/PROGRESS.md)。
+- 测试：前端 1266、服务 53、控制 12，learning-coach 205；lint 0 错误、无新增警告；两种构建通过。
+- 已安排独立子 agent 只读审查切片两仓改动（进行中）。
+- 未做：真实进程端到端检查（并入 D6 准备）、真实模型质量（需 D6 预算）、音色（D4）。无付费调用，未合并或发布。
+- 独立审查切片（c13f1ec；8e72488..ac11a2d）：确认 D1 首课因连接未建立读不到 action 支持、D2 旧 0.15 已声明 learner_context 会收到个人记忆、D3 每次转闲约 5 个请求、D4 新规则改变旧字段含义、D5 若干小问题。处理：learning-coach 撤回未推送的 c13f1ec，改用专用字段 teacher_profile/learner_background（7c1482c，0.16.0）；octos-learn 63bef19 修复 D1/D3/D5 并加账号隔离。复核确认修复，并发现 N1（强制刷新复用无记忆的读取）、N2（上课中重连读背景）、S-a（agent 工具暴露新字段）：d9f1ccf、48041ae 修复，N1 缓存测试修复前失败、修复后通过。
+- d9f1ccf 免费首段对照：40 次候选全部发送老师设定与学生背景，p50 不高于基线（差值为一帧采样粒度，不代表变快），零模型调用。前端 1269、服务 53、控制 12、learning-coach 205 项通过；两种构建通过。
+- 残余与待办见切片 PROGRESS：Octos 说话者字段、S2 归属依赖 Octos、发布须先服务端后客户端、真实进程端到端检查与真实模型质量（D6）、音色（D4）。

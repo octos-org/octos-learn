@@ -60,8 +60,10 @@ export function validateHistoryEvent(candidate) {
       text(d.text, "question", 65536); choice(d.modality, "modality", ["text", "voice", "image", "selection"]); media(d.media);
       break;
     case "question_routed":
-      question(); fields(d, ["conversation_route", "media"], ["conversation_route"]);
+      question(); fields(d, ["conversation_route", "media", "teacher_id", "teacher_name"], ["conversation_route"]);
       choice(d.conversation_route, "conversation route", ["direct-action", "turn"]); media(d.media);
+      if ((d.teacher_id === undefined) !== (d.teacher_name === undefined)) fail("Teacher id and name go together");
+      if (d.teacher_id !== undefined) { id(d.teacher_id, "teacher id"); text(d.teacher_name, "teacher name", 64); }
       break;
     case "answer_delivered":
       question(); fields(d, ["text", "part_id", "media"], ["text", "part_id"]);

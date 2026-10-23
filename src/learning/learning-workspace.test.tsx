@@ -36,6 +36,8 @@ const historyRecordingMock = vi.hoisted(() => {
   const record = vi.fn(), stage = vi.fn();
   return { enabled: false, record, stage, recorder: { record, stage }, setClassroomBusy: vi.fn() };
 });
+import { setToken } from "@/api/client";
+
 vi.mock("./history/use-learning-history", () => ({
   useLearningHistoryRecorder: () => ({
     recorder: historyRecordingMock.enabled ? historyRecordingMock.recorder : undefined,
@@ -76,6 +78,14 @@ const sessionFilesMock = vi.hoisted(() => ({
   getSessionFiles: vi.fn(async () => []),
   invokeSkillAction: vi.fn(async () => ({ action_id: "learning.selection.enhance", ok: true, results: [] })),
   listSkillActionJobs: vi.fn(async () => []),
+  listSkillActions: vi.fn(async () => [] as unknown[]),
+}));
+const lessonActionsWithContext = ["learning.lesson.generate", "learning.lesson.generate-from-camera", "learning.lesson.generate-from-selection"]
+  .map((id) => ({ id, input_schema: { properties: { learner_request: {}, teacher_profile: {}, learner_background: {} } } }));
+const backgroundMock = vi.hoisted(() => ({
+  getMyMemory: vi.fn(async () => ({ long_term: "学生说过以后讲新内容先看图。" })),
+  connected: vi.fn(() => false),
+  runs: vi.fn(async () => ({ runs: [] })),
 }));
 const sendMessageMock = vi.hoisted(() => vi.fn());
 const narrationTtsMock = vi.hoisted(() => ({
@@ -110,8 +120,21 @@ vi.mock("@/api/sessions", () => ({
 vi.mock("@/api/skill-actions", () => ({
   invokeSkillAction: sessionFilesMock.invokeSkillAction,
   listSkillActionJobs: sessionFilesMock.listSkillActionJobs,
+  listSkillActions: sessionFilesMock.listSkillActions,
 }));
 vi.mock("@/runtime/ui-protocol-send", () => ({ sendMessage: sendMessageMock }));
+vi.mock("@/settings/settings-api", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/settings/settings-api")>(),
+  getMyMemory: backgroundMock.getMyMemory,
+}));
+vi.mock("@/runtime/ui-protocol-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/runtime/ui-protocol-runtime")>();
+  return { ...actual, getAnyConnectedBridge: (...args: Parameters<typeof actual.getAnyConnectedBridge>) => backgroundMock.connected() ? ({} as never) : actual.getAnyConnectedBridge(...args) };
+});
+vi.mock("./history/history-api", async (importOriginal) => ({
+  ...await importOriginal<typeof import("./history/history-api")>(),
+  openHistoryApi: vi.fn(async () => ({ runs: backgroundMock.runs })),
+}));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
 vi.mock("@/home/voice/camera-preview", () => ({
   CameraPreview: () => <canvas data-testid="camera-preview" />,
@@ -277,6 +300,10 @@ describe("LearningWorkspace", () => {
     });
     sessionFilesMock.listSkillActionJobs.mockReset();
     sessionFilesMock.listSkillActionJobs.mockResolvedValue([]);
+    sessionFilesMock.listSkillActions.mockReset();
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext);
+    backgroundMock.connected.mockReset();
+    backgroundMock.connected.mockReturnValue(false);
     sendMessageMock.mockReset();
   });
 
@@ -1458,6 +1485,51 @@ describe("LearningWorkspace", () => {
     expect(region.origin!.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
   });
 
+  it("sends learner background read while idle, and learns action support once the bridge connects", async () => {
+    historyRecordingMock.enabled = true;
+    setToken("learner-token");
+    // Cold load: no connection yet, so the first idle read has no memory.
+    backgroundMock.runs.mockResolvedValue({ runs: [{ run_id: "r", session_id: "s", updated_seq: 1, question_preview: "什么是斜率", first_occurred_at: "2026-10-20T08:00:00.000Z",
+      course: null, question_count: 2, completed_beats: 12, task_attempts: 3, start_recorded: true }] });
+    // The session bridge is not connected yet on mount.
+    sessionFilesMock.listSkillActions.mockRejectedValueOnce(new Error("no connected bridge")).mockRejectedValueOnce(new Error("no connected bridge"));
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-background" voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      backgroundMock.connected.mockReturnValue(true);
+      window.dispatchEvent(new Event("crew:bridge_connected"));
+    });
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(backgroundMock.getMyMemory).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释勾股定理" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, string>;
+    expect(params.teacher_profile).toContain("本次授课老师：阿澜");
+    expect(params.learner_background).toContain("学生说过以后讲新内容先看图。");
+    expect(params.learner_background).toContain("“什么是斜率”：提问 2 次");
+  });
+
+  it("omits teacher settings for a Learning Coach install that does not declare them", async () => {
+    historyRecordingMock.enabled = true;
+    // Learning Coach 0.15 declared learner_context (a nearby problem) but not the new fields.
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext.map((action) => ({ ...action,
+      input_schema: { properties: action.id === "learning.lesson.generate" ? { learner_request: {}, tutor_context: {}, learner_context: {} } : { learner_request: {} } } })));
+    backgroundMock.connected.mockReturnValue(true);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-old-coach" voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "请解释勾股定理" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
+    for (const field of ["teacher_profile", "learner_background", "tutor_context", "learner_context"]) expect(params).not.toHaveProperty(field);
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", data: { conversation_route: "direct-action", media: [] } }));
+  });
+
   it("sends a composer lesson directly to the background lesson action", async () => {
     historyRecordingMock.enabled = true;
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({
@@ -1483,6 +1555,9 @@ describe("LearningWorkspace", () => {
         onBack={vi.fn()}
       />,
     );
+    // Installed action support is learned while the classroom is idle.
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalledTimes(2));
+    await act(async () => {});
 
     fireEvent.change(screen.getByLabelText("输入学习问题"), {
       target: { value: "请解释勾股定理" },
@@ -1503,7 +1578,9 @@ describe("LearningWorkspace", () => {
     expect(turnId).toEqual(expect.any(String));
     expect(sendMessageMock).not.toHaveBeenCalled();
     expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_submitted", questionId: turnId, data: { text: "请解释勾股定理", modality: "text" } }));
-    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", questionId: turnId, data: { conversation_route: "direct-action", media: [] } }));
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", questionId: turnId, data: { conversation_route: "direct-action", media: [], teacher_id: "alan", teacher_name: "阿澜" } }));
+    // The selected preset teacher is fixed at submission and reaches every lesson entry.
+    expect(sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.teacher_profile).toContain("本次授课老师：阿澜");
     expect(localStorage.getItem(
       "octos-learning-lesson-jobs:v1:learn-direct-lesson",
     )).toContain("lesson-job-1");

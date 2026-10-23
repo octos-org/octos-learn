@@ -1,7 +1,13 @@
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
+import { openHistoryApi } from "./history/history-api";
+import { LearnerBackgroundCache } from "./teachers/learner-background";
+import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
+import { teacherProfile, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
+import { setLessonVoices } from "@/byok/providers";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -23,15 +29,17 @@ import {
   VolumeX,
 } from "lucide-react";
 import { uploadFiles } from "@/api/chat";
-import { ensureSelectedProfileId } from "@/api/client";
+import { ensureSelectedProfileId, getToken } from "@/api/client";
 import { getSessionFiles } from "@/api/sessions";
 import {
   invokeSkillAction,
+  listSkillActions,
   listSkillActionJobs,
   type SkillActionJob,
 } from "@/api/skill-actions";
 import { sendMessage } from "@/runtime/ui-protocol-send";
 import { BridgeTimeoutError } from "@/runtime/ui-protocol-bridge";
+import { getAnyConnectedBridge } from "@/runtime/ui-protocol-runtime";
 import { SelectionRequestState } from "./selection-request-state";
 import { unlockAudio } from "@/home/voice/audio-playback";
 import { CameraPreview } from "@/home/voice/camera-preview";
@@ -472,9 +480,19 @@ export function LearningWorkspace({
     recordedQuestions.current.add(`${sessionId}:${id}`);
     historyRecorder.record({ kind: "question_submitted", runKey: `question:${id}`, questionId: id, stableKey: `question:${id}`, occurredAt, data: { text, modality } });
   }, [historyRecorder, sessionId]);
-  const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = []) => {
-    historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`, data: { conversation_route: route, media } });
+  const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = [], teacher?: TeacherDefinition) => {
+    historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`,
+      data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacher.name } : {}) } });
   }, [historyRecorder]);
+  const { teacher } = useSelectedTeacher();
+  const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
+    const [memory, runs] = await Promise.allSettled([
+      // Only reuse an existing connection; never open one just for this.
+      getAnyConnectedBridge() ? getMyMemory() : Promise.resolve(null),
+      openHistoryApi(token).then((api) => api.runs()),
+    ]);
+    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null };
+  }, { currentAccount: getToken }), []);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
   // Voice readiness also reports false before the profile runtime starts.
@@ -1126,6 +1144,44 @@ export function LearningWorkspace({
     history.coordinator?.setClassroomBusy(sessionId, historyClassroomBusy);
     return () => history.coordinator?.setClassroomBusy(sessionId, false);
   }, [history.coordinator, sessionId, historyClassroomBusy]);
+  // Prefetch learner background only while the classroom is idle, so it is
+  // never on the path between submitting a question and the first lesson.
+  const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
+  const classroomBusyRef = useRef(historyClassroomBusy);
+  const backgroundStaleRef = useRef(false);
+  // Installed action support changes only with a (re)connection, e.g. after a
+  // skill reinstall, so read it on mount and on each bridge connection. The
+  // session bridge may not be connected on mount; then the connection event
+  // supplies it. Only the latest read may apply.
+  useEffect(() => {
+    let cancelled = false, latest = 0;
+    const readSupport = () => {
+      const read = ++latest;
+      void Promise.resolve()
+        .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
+        .then((lists) => { if (!cancelled && read === latest) lessonContextFields.current = lessonContextSupport(lists.flat()); })
+        .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
+    };
+    const onConnected = () => {
+      readSupport();
+      // Memory may only now be readable; refresh on the next idle moment.
+      backgroundStaleRef.current = true;
+      if (!classroomBusyRef.current && historyRecorder) {
+        backgroundStaleRef.current = false;
+        void learnerBackground.refresh(getToken(), true);
+      }
+    };
+    readSupport();
+    window.addEventListener("crew:bridge_connected", onConnected);
+    return () => { cancelled = true; window.removeEventListener("crew:bridge_connected", onConnected); };
+  }, [historyRecorder, learnerBackground, sessionId]);
+  useEffect(() => {
+    classroomBusyRef.current = historyClassroomBusy;
+    if (historyClassroomBusy || !historyRecorder) return;
+    const force = backgroundStaleRef.current;
+    backgroundStaleRef.current = false;
+    void learnerBackground.refresh(getToken(), force);
+  }, [historyClassroomBusy, historyRecorder, learnerBackground]);
   const handleTurnComplete = useCallback((turnId: string) => {
     pendingVoiceSelectionRef.current = null;
     const thread = threads.find((candidate) => candidate.id === turnId);
@@ -1154,13 +1210,22 @@ export function LearningWorkspace({
     },
     clientTiming?: LearningClientTiming,
   ) => {
-    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : []);
-    setTextTurnPending(true);
+    // The teacher is fixed when the question is submitted; switching later
+    // does not change a lesson already being generated.
+    const lessonTeacher = teacher;
     const actionId = visualContext?.kind === "camera"
       ? "learning.lesson.generate-from-camera"
       : visualContext?.kind === "ink_selection"
         ? "learning.lesson.generate-from-selection"
         : "learning.lesson.generate";
+    const contextFields = lessonContextFields.current.get(actionId);
+    const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
+    // Name the teacher in the record only when the lesson received its settings.
+    recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
+      contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
+    // Narration uses this teacher's voice only for lessons in this teacher's style.
+    setLessonVoices(contextFields?.has("teacher_profile") ? lessonTeacher.voices : null);
+    setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
     learnTrace.recordOnce(`${turnId}:skill-invocation-started`, {
@@ -1185,6 +1250,8 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: "zh-CN",
+          ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
+          ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1246,7 +1313,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, learnerBackground, teacher]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const errorCode = error instanceof LessonModelError ? error.code : undefined;

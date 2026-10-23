@@ -1,0 +1,3924 @@
+{
+  "started_at": "2026-10-22T17:26:14.320Z",
+  "baseline": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+  "candidate": "f0cf7a8d18392ca7ca2f4bd0218933748ad3b202",
+  "builds": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-f0cf7a8",
+  "scope": "Full production frontends with fixed progressive course and real Web Audio rendering; isolated account/database; protocol and suppliers replaced. Not a real-provider speed verdict.",
+  "model_calls": 0,
+  "real_supplier_calls": 0,
+  "normal_environment_changed": false,
+  "collector_sha256": "cba7674d40de5e3c74af149b73f62b6c486b5772defe997e943a21ed0ea6790f",
+  "clock": "Browser performance.now; visual after two animation frames; audio after nonzero matching-buffer samples are observed in a running AudioContext",
+  "pairs_per_condition": 10,
+  "conditions": [
+    "small",
+    "large",
+    "retry",
+    "inflight"
+  ],
+  "rows": [
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        320.5,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.19999998807907,
+          "response_end_ms": 212.79999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.6000000089407,
+      "audio_ms": 331.30000001192093,
+      "playable_ms": 597.6000000089407,
+      "audio_observation_interval_ms": [
+        319.6000000089407,
+        331.30000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.6000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.59999999403954,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.3999999910593,
+          "response_end_ms": 212.29999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.3999999910593,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.19999998807907,
+        331.3999999910593
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.5,
+          "response_end_ms": 213.19999998807907
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 611.7000000029802,
+      "audio_ms": 328.29999999701977,
+      "playable_ms": 611.7000000029802,
+      "audio_observation_interval_ms": [
+        320.59999999403954,
+        328.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 214.29999999701977,
+          "response_end_ms": 215.20000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.5,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.5,
+      "audio_observation_interval_ms": [
+        319.70000000298023,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.70000000298023,
+          "response_end_ms": 212.29999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.5,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.5,
+      "audio_observation_interval_ms": [
+        319.70000000298023,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.70000000298023,
+          "response_end_ms": 213.20000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.19999998807907,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        320.3999999910593,
+        331.19999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.5,
+          "response_end_ms": 213.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.7999999970198,
+      "audio_ms": 331.40000000596046,
+      "playable_ms": 597.7999999970198,
+      "audio_observation_interval_ms": [
+        319.6000000089407,
+        331.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.6000000089407,
+          "response_end_ms": 212.20000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 596.9000000059605,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 596.9000000059605,
+      "audio_observation_interval_ms": [
+        320.1000000089407,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.70000000298023,
+          "response_end_ms": 213.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.5999999940395,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.5999999940395,
+      "audio_observation_interval_ms": [
+        320,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.69999998807907,
+          "response_end_ms": 212.3999999910593
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.5,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.29999999701977,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.09999999403954,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.69999998807907,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.29999999701977,
+        331.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.69999998807907,
+          "response_end_ms": 212.3999999910593
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 598.2000000029802,
+      "audio_ms": 331.40000000596046,
+      "playable_ms": 598.2000000029802,
+      "audio_observation_interval_ms": [
+        320,
+        331.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.59999999403954,
+          "response_end_ms": 212.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.0999999940395,
+      "audio_ms": 331.5,
+      "playable_ms": 597.0999999940395,
+      "audio_observation_interval_ms": [
+        319.29999999701977,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.90000000596046,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.2000000029802,
+      "audio_ms": 331.40000000596046,
+      "playable_ms": 598.2000000029802,
+      "audio_observation_interval_ms": [
+        320.5,
+        331.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.40000000596046,
+          "response_end_ms": 213
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.59999999403954,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.70000000298023,
+          "response_end_ms": 212.29999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        320.3999999910593,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.79999999701977,
+          "response_end_ms": 213.29999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        319.90000000596046,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.80000001192093,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.6000000089407,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.29999999701977,
+          "response_end_ms": 212.79999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        318.69999998807907,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.8999999910593,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.7999999970198,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7999999970198,
+      "audio_observation_interval_ms": [
+        320.19999998807907,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.8999999910593,
+          "response_end_ms": 212.3999999910593
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.5999999940395,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 597.5999999940395,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.29999999701977,
+          "response_end_ms": 213.79999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.1000000089407,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.1000000089407,
+      "audio_observation_interval_ms": [
+        318.1000000089407,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.5,
+          "response_end_ms": 213.1000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.20000000298023,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.09999999403954,
+          "response_end_ms": 212.79999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.6999999880791,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.6999999880791,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        319.09999999403954,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.59999999403954,
+          "response_end_ms": 212.20000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.70000000298023,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.80000001192093,
+          "response_end_ms": 212.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 611.4000000059605,
+      "audio_ms": 328.20000000298023,
+      "playable_ms": 611.4000000059605,
+      "audio_observation_interval_ms": [
+        320.1000000089407,
+        328.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.1000000089407,
+          "response_end_ms": 213.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        320.1000000089407,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.1000000089407,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7999999970198,
+      "audio_ms": 331.5,
+      "playable_ms": 597.7999999970198,
+      "audio_observation_interval_ms": [
+        320.20000000298023,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.90000000596046,
+          "response_end_ms": 213.6000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.20000000298023,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.79999999701977,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.9000000059605,
+      "audio_ms": 331.5,
+      "playable_ms": 597.9000000059605,
+      "audio_observation_interval_ms": [
+        319.09999999403954,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.5,
+          "response_end_ms": 214.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.4000000059605,
+      "audio_ms": 331,
+      "playable_ms": 597.4000000059605,
+      "audio_observation_interval_ms": [
+        319.90000000596046,
+        331
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.1000000089407,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [],
+      "visual_ms": 597.5999999940395,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 597.5999999940395,
+      "audio_observation_interval_ms": [
+        321.09999999403954,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.8999999910593,
+          "response_end_ms": 214.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.90000000596046,
+          "response_end_ms": 212.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.5999999940395,
+      "audio_ms": 332,
+      "playable_ms": 598.5999999940395,
+      "audio_observation_interval_ms": [
+        319.59999999403954,
+        332
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.3999999910593,
+          "response_end_ms": 213
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.40000000596046,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.90000000596046,
+          "response_end_ms": 212.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "large",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 104,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7999999970198,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7999999970198,
+      "audio_observation_interval_ms": [
+        319,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.5,
+          "response_end_ms": 212
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "large",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 1000,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.9000000059605,
+      "audio_ms": 331.5,
+      "playable_ms": 597.9000000059605,
+      "audio_observation_interval_ms": [
+        319.1000000089407,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 608.7000000029802,
+      "audio_ms": 325.5,
+      "playable_ms": 608.7000000029802,
+      "audio_observation_interval_ms": [
+        318.90000000596046,
+        325.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.90000000596046,
+          "response_end_ms": 213.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 597.8000000119209,
+      "audio_ms": 331.30000001192093,
+      "playable_ms": 597.8000000119209,
+      "audio_observation_interval_ms": [
+        319.1000000089407,
+        331.30000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.80000001192093,
+          "response_end_ms": 212.40000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.5,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.20000000298023,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.1000000089407,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.9000000059605,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 597.9000000059605,
+      "audio_observation_interval_ms": [
+        321.79999999701977,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.1000000089407,
+          "response_end_ms": 215.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.29999999701977,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.8999999910593,
+          "response_end_ms": 212.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.5,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        320.1000000089407,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.1000000089407,
+          "response_end_ms": 212.6000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 598,
+      "audio_ms": 330.90000000596046,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.90000000596046,
+        330.90000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.20000000298023,
+          "response_end_ms": 213.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.30000001192093,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.30000001192093,
+          "response_end_ms": 212.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.2000000029802,
+      "audio_ms": 331.80000001192093,
+      "playable_ms": 598.2000000029802,
+      "audio_observation_interval_ms": [
+        319.5,
+        331.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.20000000298023,
+          "response_end_ms": 212.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 597.5999999940395,
+      "audio_ms": 331.09999999403954,
+      "playable_ms": 597.5999999940395,
+      "audio_observation_interval_ms": [
+        319.70000000298023,
+        331.09999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211,
+          "response_end_ms": 211.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.40000000596046,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.30000001192093,
+        331.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.20000000298023,
+          "response_end_ms": 213.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.30000001192093,
+          "response_end_ms": 211.90000000596046
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 597.7999999970198,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7999999970198,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.6000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [],
+      "visual_ms": 597.2000000029802,
+      "audio_ms": 330.80000001192093,
+      "playable_ms": 597.2000000029802,
+      "audio_observation_interval_ms": [
+        318.90000000596046,
+        330.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.90000000596046,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        320.59999999403954,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.59999999403954,
+          "response_end_ms": 213.29999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.1999999880791,
+      "audio_ms": 331.69999998807907,
+      "playable_ms": 598.1999999880791,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.09999999403954,
+          "response_end_ms": 212.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "retry",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 3,
+      "failed_uploads": 1,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.3999999910593,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.59999999403954,
+          "response_end_ms": 212.20000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "retry",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        321.59999999403954,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 215.09999999403954,
+          "response_end_ms": 215.79999999701977
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        320.20000000298023,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.90000000596046,
+          "response_end_ms": 213.6000000089407
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 0,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 597.6000000089407,
+      "audio_ms": 331.20000000298023,
+      "playable_ms": 597.6000000089407,
+      "audio_observation_interval_ms": [
+        320.30000001192093,
+        331.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.1000000089407,
+          "response_end_ms": 212.6000000089407
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [],
+      "inflight_history_released": true,
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.5,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        320.3999999910593,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.20000000298023,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.9000000059605,
+      "audio_ms": 331.5,
+      "playable_ms": 597.9000000059605,
+      "audio_observation_interval_ms": [
+        319.29999999701977,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598,
+      "audio_ms": 331.5,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.79999999701977,
+        331.5
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.59999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 2,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.29999999701977,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.79999999701977,
+          "response_end_ms": 212.3999999910593
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.69999998807907,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.3999999910593,
+        331.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.69999998807907,
+          "response_end_ms": 213.29999999701977
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 3,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 597.8999999910593,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 597.8999999910593,
+      "audio_observation_interval_ms": [
+        319.20000000298023,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.2000000029802,
+      "audio_ms": 331.80000001192093,
+      "playable_ms": 598.2000000029802,
+      "audio_observation_interval_ms": [
+        319.5,
+        331.80000001192093
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.20000000298023,
+          "response_end_ms": 212.70000000298023
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 4,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [],
+      "inflight_history_released": true,
+      "visual_ms": 598.1000000089407,
+      "audio_ms": 331.6000000089407,
+      "playable_ms": 598.1000000089407,
+      "audio_observation_interval_ms": [
+        319,
+        331.6000000089407
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.30000001192093,
+          "response_end_ms": 212
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.70000000298023,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.40000000596046,
+          "response_end_ms": 213
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 5,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 610.0999999940395,
+      "audio_ms": 327,
+      "playable_ms": 610.0999999940395,
+      "audio_observation_interval_ms": [
+        318.20000000298023,
+        327
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.3999999910593,
+          "response_end_ms": 213
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.1999999880791,
+      "audio_ms": 331.69999998807907,
+      "playable_ms": 598.1999999880791,
+      "audio_observation_interval_ms": [
+        319.19999998807907,
+        331.69999998807907
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 210.8999999910593,
+          "response_end_ms": 211.3999999910593
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 6,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [],
+      "inflight_history_released": true,
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.59999999403954,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        320.5,
+        331.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.59999999403954,
+          "response_end_ms": 212.09999999403954
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598.0999999940395,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.0999999940395,
+      "audio_observation_interval_ms": [
+        319.59999999403954,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.79999999701977,
+          "response_end_ms": 213.40000000596046
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 7,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 598.1000000089407,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598.1000000089407,
+      "audio_observation_interval_ms": [
+        319.40000000596046,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212,
+          "response_end_ms": 212.5
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 593.9000000059605,
+      "audio_ms": 327.40000000596046,
+      "playable_ms": 593.9000000059605,
+      "audio_observation_interval_ms": [
+        318.6000000089407,
+        327.40000000596046
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 213.1000000089407,
+          "response_end_ms": 213.80000001192093
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 8,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.6000000089407,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.5,
+          "response_end_ms": 213
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "inflight",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 2,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 500
+      },
+      "memory_reads": 1,
+      "inflight_history_held": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "inflight_history_released": true,
+      "visual_ms": 598,
+      "audio_ms": 331.70000000298023,
+      "playable_ms": 598,
+      "audio_observation_interval_ms": [
+        319.5,
+        331.70000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 211.6000000089407,
+          "response_end_ms": 212.30000001192093
+        }
+      ],
+      "pending_fixture_facts": 500,
+      "state": "completed"
+    },
+    {
+      "version": "baseline",
+      "condition": "inflight",
+      "pair": 9,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 607.4000000059605,
+      "audio_ms": 324.20000000298023,
+      "playable_ms": 607.4000000059605,
+      "audio_observation_interval_ms": [
+        319.40000000596046,
+        324.20000000298023
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.90000000596046,
+          "response_end_ms": 213.5
+        }
+      ],
+      "state": "completed"
+    }
+  ],
+  "warmup_rows": [
+    {
+      "version": "baseline",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 0,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "lesson_context_fields": [],
+      "visual_ms": 664.2000000029802,
+      "audio_ms": 397.59999999403954,
+      "playable_ms": 664.2000000029802,
+      "audio_observation_interval_ms": [
+        388.3999999910593,
+        397.59999999403954
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 275.29999999701977,
+          "response_end_ms": 276.09999999403954
+        }
+      ],
+      "state": "completed"
+    },
+    {
+      "version": "candidate",
+      "condition": "small",
+      "pair": -1,
+      "action_invocations": 1,
+      "turn_starts": 0,
+      "tts_requests": 1,
+      "history_requests": 5,
+      "failed_uploads": 0,
+      "history_failures": [],
+      "history_requests_after_invocation": [],
+      "unexpected_http": [],
+      "unexpected_rpc": [],
+      "client_errors": [],
+      "seed": {
+        "local_documents": 0,
+        "queued_events": 0
+      },
+      "memory_reads": 1,
+      "initial_history_check": true,
+      "lesson_context_fields": [
+        "tutor_context",
+        "learner_context"
+      ],
+      "visual_ms": 597.7000000029802,
+      "audio_ms": 331.29999999701977,
+      "playable_ms": 597.7000000029802,
+      "audio_observation_interval_ms": [
+        320.09999999403954,
+        331.29999999701977
+      ],
+      "audio_sources": 1,
+      "audio_contexts": [
+        {
+          "state": "running",
+          "sampleRate": 48000,
+          "duration": 1
+        }
+      ],
+      "file_timings": [
+        {
+          "part": "000",
+          "start_ms": 212.8999999910593,
+          "response_end_ms": 213.5
+        }
+      ],
+      "state": "completed"
+    }
+  ],
+  "status": "completed",
+  "negative_control": null,
+  "fixture": {
+    "lesson_sha256": "234a6b06efa86ea91f19953d8ea9cca4d16deded7f1c90b729ca191d4f79c9ce",
+    "second_part_sha256": "4ea17c1c03f971c06ee1e128dd7e20b83714c8136d95042ee8bc799c8fab1d40",
+    "audio_sha256": "66d71976d19c1f6c8177aaef94cf3dde313467e3821c36734adf7cdc69134cdc",
+    "audio_seconds": 1,
+    "part_delays_ms": [
+      200,
+      900
+    ],
+    "completion_delay_ms": 1600,
+    "large_server_events": 10000,
+    "large_local_documents": 1000,
+    "retry_pending_events": 500,
+    "inflight_pending_events": 500,
+    "inflight_release_after_invocation_ms": 100
+  },
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-C3AsDNei.js",
+      "entry_sha256": "00206a0844ab4edf03fe2305af54442b009abcae408f42f3b736ff11ea01b245",
+      "source": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-f0cf7a8/baseline",
+      "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-f0cf7a8/baseline/dist"
+    },
+    "candidate": {
+      "ref": "f0cf7a8d18392ca7ca2f4bd0218933748ad3b202",
+      "entry": "/assets/index-BAKdwqZR.js",
+      "entry_sha256": "15d818498b801d551444623e21b05442e63439d4faa982d91a1ce4d052b05f1e",
+      "source": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-f0cf7a8/candidate",
+      "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/playable-builds-f0cf7a8/candidate/dist"
+    }
+  },
+  "browser": "148.0.7778.96",
+  "summary": {
+    "small": {
+      "baseline": {
+        "visual_ms": {
+          "min": 597.7999999970198,
+          "p50": 598,
+          "p95": 611.7000000029802
+        },
+        "audio_ms": {
+          "min": 328.29999999701977,
+          "p50": 331.40000000596046,
+          "p95": 331.70000000298023
+        },
+        "playable_ms": {
+          "min": 597.7999999970198,
+          "p50": 598,
+          "p95": 611.7000000029802
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 596.9000000059605,
+          "p50": 597.5999999940395,
+          "p95": 598.2000000029802
+        },
+        "audio_ms": {
+          "min": 331.20000000298023,
+          "p50": 331.29999999701977,
+          "p95": 331.59999999403954
+        },
+        "playable_ms": {
+          "min": 596.9000000059605,
+          "p50": 597.5999999940395,
+          "p95": 598.2000000029802
+        }
+      },
+      "p50_difference_ms": -0.4000000059604645,
+      "paired_delta_p50_ms": -0.3999999910593033,
+      "paired_delta_p95_ms": 0.10000000894069672,
+      "candidate_faster_pairs": 8,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    },
+    "large": {
+      "baseline": {
+        "visual_ms": {
+          "min": 597.9000000059605,
+          "p50": 598,
+          "p95": 611.4000000059605
+        },
+        "audio_ms": {
+          "min": 328.20000000298023,
+          "p50": 331.59999999403954,
+          "p95": 332
+        },
+        "playable_ms": {
+          "min": 597.9000000059605,
+          "p50": 598,
+          "p95": 611.4000000059605
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 597.4000000059605,
+          "p50": 597.7000000029802,
+          "p95": 598.0999999940395
+        },
+        "audio_ms": {
+          "min": 331,
+          "p50": 331.29999999701977,
+          "p95": 331.70000000298023
+        },
+        "playable_ms": {
+          "min": 597.4000000059605,
+          "p50": 597.7000000029802,
+          "p95": 598.0999999940395
+        }
+      },
+      "p50_difference_ms": -0.29999999701976776,
+      "paired_delta_p50_ms": -0.4000000059604645,
+      "paired_delta_p95_ms": -0.10000000894069672,
+      "candidate_faster_pairs": 10,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    },
+    "retry": {
+      "baseline": {
+        "visual_ms": {
+          "min": 597.9000000059605,
+          "p50": 598,
+          "p95": 608.7000000029802
+        },
+        "audio_ms": {
+          "min": 325.5,
+          "p50": 331.6000000089407,
+          "p95": 331.80000001192093
+        },
+        "playable_ms": {
+          "min": 597.9000000059605,
+          "p50": 598,
+          "p95": 608.7000000029802
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 597.2000000029802,
+          "p50": 597.7999999970198,
+          "p95": 598.0999999940395
+        },
+        "audio_ms": {
+          "min": 330.80000001192093,
+          "p50": 331.29999999701977,
+          "p95": 331.59999999403954
+        },
+        "playable_ms": {
+          "min": 597.2000000029802,
+          "p50": 597.7999999970198,
+          "p95": 598.0999999940395
+        }
+      },
+      "p50_difference_ms": -0.20000000298023224,
+      "paired_delta_p50_ms": -0.29999999701976776,
+      "paired_delta_p95_ms": 0.09999999403953552,
+      "candidate_faster_pairs": 6,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    },
+    "inflight": {
+      "baseline": {
+        "visual_ms": {
+          "min": 593.9000000059605,
+          "p50": 598,
+          "p95": 610.0999999940395
+        },
+        "audio_ms": {
+          "min": 324.20000000298023,
+          "p50": 331.5,
+          "p95": 331.80000001192093
+        },
+        "playable_ms": {
+          "min": 593.9000000059605,
+          "p50": 598,
+          "p95": 610.0999999940395
+        }
+      },
+      "candidate": {
+        "visual_ms": {
+          "min": 597.6000000089407,
+          "p50": 598,
+          "p95": 598.1000000089407
+        },
+        "audio_ms": {
+          "min": 331.20000000298023,
+          "p50": 331.6000000089407,
+          "p95": 331.70000000298023
+        },
+        "playable_ms": {
+          "min": 597.6000000089407,
+          "p50": 598,
+          "p95": 598.1000000089407
+        }
+      },
+      "p50_difference_ms": 0,
+      "paired_delta_p50_ms": -0.09999999403953552,
+      "paired_delta_p95_ms": 4.0999999940395355,
+      "candidate_faster_pairs": 7,
+      "observed_p50_relation": "candidate no higher",
+      "conclusion": "Fixed-response data only. Assess variation and ordering before attributing any difference; no merge performance pass is established."
+    }
+  },
+  "full_planned_matrix": true,
+  "merge_performance_requirement": "Measurement data only; assess alongside changed call paths and load coverage. A paid supplier run is not mandatory.",
+  "completed_at": "2026-10-22T17:27:57.891Z"
+}

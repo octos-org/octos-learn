@@ -1,0 +1,190 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "配方法解一元二次方程：以 x²+4x+3=0 为例",
+    "goals": [
+      "掌握用配方法解方程 x²+4x+3=0 的完整解题步骤",
+      "理解配方每一步成立的代数依据与等式性质"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵循学生偏好：先给出每步结论与核心式子，再解释为什么这样变形",
+        "通过结构化板书对比展示移项、配方、开方与求解的逻辑链条"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "掌握配方法解 x²+4x+3=0 的四个核心步骤及每一步成立的数学理由",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们先来看最终结论：方程 x²+4x+3=0 的两个解是 x₁=-1，x₂=-3。配方法的核心，就是把未知数集中到一个完全平方式里。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "过程图",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "移常数项：x²+4x=-3"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "两边配方：x²+4x+4=1"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "完全平方：(x+2)²=1"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "开方求解：x+2=±1"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + 4x + 3 = 0"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "第一步，常数项移到右边，得到 x²+4x=-3。依据是等式性质：两边同时减去 3，等式依然成立。这样左边只保留含有未知数的项。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "关注移项后的等式形式",
+              "when": "before_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "第二步是核心：两边同时加 4，得到 x²+4x+4=1。为什么加 4？因为一次项系数是 4，它的一半是 2，而 2 的平方正是 4。根据等式性质，两边同加 4，值保持相等。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x^2 + 4x + \\left(\\frac{4}{2}\\right)^2 = -3 + 4"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "第三步，左边写成完全平方形式，得到 (x+2)²=1。依据是完全平方公式 a²+2ab+b²=(a+b)²，这里 a 是 x，b 是 2。这样两个未知数项就合成了一个整块。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "(x+2)^2 = 1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "第四步，两边直接开平方，得到 x+2=±1。因为平方等于 1 的数有 1 和 -1 两个。最后两边减 2，算得 x₁=-1，x₂=-3。每一步都有确定的代数依据，解法非常工整。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-05-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x + 2 = \\pm 1 \\implies x_1 = -1,\\; x_2 = -3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-04-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "配方法的关键在于通过等式两边同时加上一次项系数一半的平方，将含未知数的二次与一次项转化成完全平方，进而通过直接开平方求解。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}
