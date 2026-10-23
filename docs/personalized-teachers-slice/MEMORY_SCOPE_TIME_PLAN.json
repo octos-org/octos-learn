@@ -1,8 +1,8 @@
 {
   "schema": "octos.learn.teacher-memory-refresh-trial.v1",
   "id": "teacher-memory-today-vs-later-20261023",
-  "status": "draft",
-  "authorization_reference": "",
+  "status": "approved",
+  "authorization_reference": "User 2026-10-23 answered \"同意方向并批准实验（推荐）\" to: reuse Octos memory rules for one-lesson vs lasting requests and run one real-model check, capped at 10 requests / USD 4.50 reserved, expected about USD 0.03.",
   "model": "gemini-3.8-flash",
   "delivery": "participant-field",
   "octos_change": "octos main 5d9e70b4 (includes #2859, UPCR-2026-053). No Octos change is tested here: the question is whether its existing rules already separate one-lesson requests from lasting ones.",

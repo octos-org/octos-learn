@@ -1,0 +1,125 @@
+{
+  "checked_at": "2026-10-23T15:12:58.778Z",
+  "mode": "live",
+  "plan_id": "teacher-memory-today-vs-later-20261023",
+  "delivery": "participant-field",
+  "plan_sha256": "a5a1b85b8a2dd3946940ac9d8f359e5254b426d112bf42f7fe857ecebcd12b17",
+  "model": "gemini-3.8-flash",
+  "phases": [
+    {
+      "sessions": [
+        "learn-memory-time-a"
+      ],
+      "extraction_staging": [],
+      "long_term_memory": "希望所有老师讲题时都先说结论，再解释为什么。(updated: 2026-10-23) ^mdmec77\n\n平时最喜欢打篮球。(updated: 2026-10-23) ^matokxe\n\n希望豆豆老师在举例时多用篮球相关的例子。(updated: 2026-10-23) ^m6sptfa\n"
+    },
+    {
+      "sessions": [
+        "learn-memory-time-b",
+        "learn-memory-time-c"
+      ],
+      "extraction_staging": [],
+      "long_term_memory": "希望所有老师讲题时都先举一个例子再说结论。(updated: 2026-10-23) ^mdmec77\n\n平时最喜欢打篮球。(updated: 2026-10-23) ^matokxe\n\n希望豆豆老师在举例时多用篮球相关的例子。(updated: 2026-10-23) ^m6sptfa\n"
+    }
+  ],
+  "extraction_staging": [],
+  "long_term_memory": "希望所有老师讲题时都先举一个例子再说结论。(updated: 2026-10-23) ^mdmec77\n\n平时最喜欢打篮球。(updated: 2026-10-23) ^matokxe\n\n希望豆豆老师在举例时多用篮球相关的例子。(updated: 2026-10-23) ^m6sptfa\n",
+  "refresh_state": {
+    "date": "2026-10-23",
+    "extractions_today": 3,
+    "tokens_today": 4647,
+    "consolidations_today": 2,
+    "extracted_counts": {
+      "learn-memory-time-a": [
+        6,
+        "752d64b236f4c8b43510c7460530db4ef872bed70514be757905ddc4f98476f9"
+      ],
+      "learn-memory-time-b": [
+        4,
+        "9e9f1ee90bf79a055d24f7a51eedb40dd0aa7a936ba1e2a853b26d0bb4079275"
+      ],
+      "learn-memory-time-c": [
+        4,
+        "5b48fdbab6b1be06ced4fee3e63fb8914fafd62c3226e80d95b242f14790187d"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "gateway": {
+    "forwarded": 5,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2590,
+      "teacher_labels": [
+        "豆豆老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 559,
+        "output": 1291
+      }
+    },
+    {
+      "n": 2,
+      "kind": "consolidation",
+      "request_bytes": 4541,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1171,
+        "output": 1547
+      }
+    },
+    {
+      "n": 3,
+      "kind": "extraction",
+      "request_bytes": 2686,
+      "teacher_labels": [
+        "阿澜老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 624,
+        "output": 361
+      }
+    },
+    {
+      "n": 4,
+      "kind": "extraction",
+      "request_bytes": 2527,
+      "teacher_labels": [
+        "豆豆老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 581,
+        "output": 186
+      }
+    },
+    {
+      "n": 5,
+      "kind": "consolidation",
+      "request_bytes": 4533,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1151,
+        "output": 910
+      }
+    }
+  ],
+  "reserved_usd_micros": 2250000,
+  "usage": {
+    "input": 4086,
+    "output": 4295
+  },
+  "estimated_usd": 0.01917075,
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true
+}
