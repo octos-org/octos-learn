@@ -91,3 +91,9 @@ gemini-3.8-flash，经隔离真实 Octos 413b4b68 + Learning Coach 48041ae 的 `
 - **风格薄弱处：**阿澜的“具体认可”“简洁解法 / 反例”、豆豆的“生活场景 / 运动”大多没有体现；豆豆配方课没有比喻。
 
 **结论：**切片要回答的两个问题都得到正面结果：老师能区分，记忆没有被编造或错误归属。但记忆的使用是隐性、保守的，老师风格主要体现在语气上。后续改进方向：在提示中给出显式引用记忆的方式（例如“你说过……”），加强老师卡片中较少体现的特征。
+
+## 2026-10-23 Octos 参与者字段合并，Octos Learn 改用该字段
+
+- octos #2859 获同事审查通过，CI 首次失败原因：`Message` 增加 `participant` 后变为 232 字节，`SteeringMessage::FollowUp(Message)` 触发 clippy `large_enum_variant`（CI 以 `-D warnings` 运行）。修复为 `FollowUp(Box<Message>)`（e3990a4d）及格式补正（610c1c0c）。CI 28 项通过后按用户授权合并，merge commit 5e0ab6ab。
+- Octos Learn（分支 `codex/teacher-participant-field`）：老师回复暂存时以 `participant: "<名字>老师"` 记录、正文为原文；交付时 Octos 确认 `session.append_message.participant.v1` 才发送该字段，否则把“【名字老师】”标签放回正文（旧 Octos 会静默丢弃未知参数）。旧版本已暂存的任务保持带标签正文。前端 1273、服务 52 项测试通过，类型检查与 lint 通过。
+- 发布顺序：新 Octos 部署后该字段才生效；未更新 Octos 时行为与之前相同。合并不等于发布。
