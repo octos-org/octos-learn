@@ -14,6 +14,7 @@ import {
   Moon,
   Sun,
   Bug,
+  BookHeart,
 } from "lucide-react";
 import { StudioTopbar } from "@/components/studio-topbar";
 import { useTheme } from "@/hooks/use-theme";
@@ -24,6 +25,7 @@ import { ApiKeysTab } from "./api-keys-tab";
 import { VoiceTab } from "./voice-tab";
 import { AuthenticationTab } from "./authentication-tab";
 import { LearningCompanionTab } from "./learning-companion-tab";
+import { TeacherMemoryTab } from "./teacher-memory-tab";
 import { DeveloperTab } from "./developer-tab";
 
 type TabId =
@@ -32,6 +34,7 @@ type TabId =
   | "api-keys"
   | "voice"
   | "companion"
+  | "memory"
   | "authentication"
   | "developer";
 
@@ -60,6 +63,7 @@ const TABS: TabDef[] = [
     icon: GraduationCap,
     group: "personal",
   },
+  { id: "memory", label: "老师记得的事", icon: BookHeart, group: "personal" },
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "voice", label: "Voice", icon: Volume2, group: "learning" },
   { id: "api-keys", label: "API Keys", icon: KeyRound, group: "learning" },
@@ -270,6 +274,7 @@ export function AdminSettingsPage() {
                       canDeleteProfile={Boolean(portal?.can_access_admin_portal)}
                     />
                   )}
+                  {activeTab === "memory" && <TeacherMemoryTab key={profile.id} profileId={profile.id} />}
                   {activeTab === "llm" && (
                     <LlmTab profile={profile} onProfileUpdated={setProfile} />
                   )}

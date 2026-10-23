@@ -1,11 +1,15 @@
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 
 export interface ConfirmDialogProps {
   open: boolean;
   title: string;
   body: string;
+  /** Extra content below the body, such as form fields. */
+  children?: ReactNode;
   confirmLabel?: string;
+  cancelLabel?: string;
+  confirmDisabled?: boolean;
   variant?: "danger" | "warning" | "default";
   onConfirm: () => void;
   onCancel: () => void;
@@ -36,7 +40,10 @@ export function ConfirmDialog({
   open,
   title,
   body,
+  children,
   confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  confirmDisabled = false,
   variant = "default",
   onConfirm,
   onCancel,
@@ -117,6 +124,7 @@ export function ConfirmDialog({
 
         {/* Body */}
         <p className="text-sm text-muted leading-relaxed mb-6">{body}</p>
+        {children && <div className="mb-6">{children}</div>}
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-3">
@@ -125,12 +133,13 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="rounded-xl border border-border px-4 py-2 text-sm text-muted hover:text-text-strong hover:border-accent/30 transition"
           >
-            Cancel
+            {cancelLabel}
           </button>
           <button
             ref={confirmRef}
             onClick={onConfirm}
-            className={`rounded-xl px-5 py-2 text-sm font-medium transition ${VARIANT_STYLES[variant]}`}
+            disabled={confirmDisabled}
+            className={`rounded-xl px-5 py-2 text-sm font-medium transition disabled:opacity-50 ${VARIANT_STYLES[variant]}`}
           >
             {confirmLabel}
           </button>

@@ -1215,6 +1215,19 @@ export async function getMyMemory(): Promise<MemoryOverview> {
   return result.overview;
 }
 
+export interface MemoryChangeRequest {
+  request_id: string;
+  operation: "remember" | "correct" | "forget";
+  content?: string;
+  entry_id?: string;
+}
+
+/** Admits a request for the background consolidator; `accepted` is not the
+ * change itself. Resending the same request_id and body is safe. */
+export async function requestMemoryChange(params: MemoryChangeRequest): Promise<{ status: "accepted"; refresh_enabled: boolean }> {
+  return await callAuxWs(METHODS.MEMORY_REQUEST, params);
+}
+
 export async function getMyMemoryEntity(name: string): Promise<MemoryEntityPage> {
   return await callAuxWs<MemoryEntityPage>(METHODS.MEMORY_ENTITY, { name });
 }
