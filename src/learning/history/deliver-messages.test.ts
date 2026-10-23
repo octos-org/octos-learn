@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { deliverHistoryMessages, type HistoryDeliveryTask } from './deliver-messages';
+import { deliverHistoryMessages, messageForOctos, type HistoryDeliveryTask } from './deliver-messages';
 import type { UiProtocolBridge } from '../../runtime/ui-protocol-bridge';
 const identity = { owner: 'alice', token: 'captured-a' };
 const task: HistoryDeliveryTask = { id: 'event', lease_id: 'lease', message: { session_id: 'learn-one', role: 'user', content: '原问题', media: [], source: 'external_record:octos-learn', client_message_id: 'learn:user:q-1' } };
@@ -59,4 +59,11 @@ it('records the in-flight append receipt then yields before another leased messa
   }) as unknown as typeof fetch;
   expect(await deliverHistoryMessages(identity, '', { probeSessionId: 'learn-one', createBridge: () => connection, fetcher, canContinue: () => idle })).toEqual({ status: 'paused', delivered: 1 });
   expect(connection.callMethod).toHaveBeenCalledOnce(); expect(fetcher).toHaveBeenCalledTimes(2); expect(connection.stop).toHaveBeenCalledOnce();
+});
+it('sends the teacher as participant only to an Octos that acknowledges it, else keeps a label in the body', () => {
+  const reply = { ...task.message, role: 'assistant' as const, content: '先说结论。', participant: '阿澜老师', thread_id: 'learn:user:q-1' };
+  expect(messageForOctos(reply, true)).toEqual(reply);
+  const legacy = messageForOctos(reply, false);
+  expect(legacy.content).toBe('【阿澜老师】\n先说结论。'); expect('participant' in legacy).toBe(false);
+  expect(messageForOctos(task.message, false)).toBe(task.message);
 });
