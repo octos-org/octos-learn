@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { HistoryStore, HistorySnapshotChanged } from "./store.mjs";
 import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { buildAnalysisInput, validateAnalysisResult, analysisHash } from "./topic-analysis.mjs";
-import { topicCatalog, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
+import { topicCatalog, topicStructure, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
 import { parseTopicAnalysisResponse } from "./topic-analysis-response.mjs";
 import { queryTopic } from "./topic-query.mjs";
 
@@ -20,7 +20,8 @@ const finish = (analysis, task, result) => {
 
 test("pinned catalog provides scoped definitions, and lexical lookup never becomes a semantic or Chinese-keyword classifier", () => {
   const catalog = topicCatalog();
-  assert.equal(TOPIC_TAXONOMY.topic_count, 529);
+  assert.equal(TOPIC_TAXONOMY.topic_count, 1833);
+  assert.equal(TOPIC_TAXONOMY.commit, "c7ed549758d9fb430c4af54886c658e78162a0b1");
   assert.equal(catalog.read([slope])[0].name, "Linear Function Graphs");
   assert.ok(catalog.search("linear gradient intercept", 12).some(item => item.id === slope));
   assert.deepEqual(catalog.search("斜率"), []);
@@ -178,3 +179,16 @@ test("response parsing accepts only bare JSON or a complete JSON block, retainin
     ]) assert.throws(() => validateAnalysisResult(input, parseTopicAnalysisResponse("```json\n" + JSON.stringify(bad) + "\n```")));
   } finally { store.close(); }
 });
+
+test("the pinned catalog keeps every subject and the topic ids used by earlier records", () => {
+  const catalog = topicCatalog();
+  assert.deepEqual(Object.keys(TOPIC_TAXONOMY.subjects).sort(), ["Computing", "English", "Geography", "History", "Learning to Learn", "Life Skills", "Mathematics", "Personal & Social Development", "Science"]);
+  // Ids referenced by the course mapping and earlier analysis fixtures are unchanged.
+  for (const id of ["mt_WBdHkc2HTf", "mt_-3udyo6VyB"]) assert.equal(catalog.read([id]).length, 1);
+  assert.ok(catalog.search("photosynthesis plants", 12).some(topic => topic.subject === "Science"));
+  const structure = topicStructure();
+  assert.ok(structure.prerequisitesOf("mt_WBdHkc2HTf").length > 0);
+  for (const edge of structure.prerequisitesOf("mt_WBdHkc2HTf")) assert.equal(catalog.read([edge.prerequisiteId]).length, 1);
+  assert.ok(structure.clustersOf("Mathematics", "Algebra").length > 0);
+});
+
