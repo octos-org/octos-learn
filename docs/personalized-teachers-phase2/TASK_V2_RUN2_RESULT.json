@@ -1,0 +1,522 @@
+{
+  "plan_sha256": "3a450f2512525fd13590be095675fcf376a7b2d815b487b1554431bd95c2324b",
+  "mode": "--execute-isolated",
+  "supplier_calls": null,
+  "rows": [
+    {
+      "id": "task-slope-lesson",
+      "input_sha256": "b4975e651b5c769ba3cb8d91163f4543b7da6b5ef5d78e09c14369c14b7e3545",
+      "state": "saved-needs-human-review",
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "slope"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "linear"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "gradient"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "triangle angles"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "ids": [
+              "mt_cdMlC7EpTJ",
+              "mt_J03RFlVdas"
+            ]
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "intercept"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "b4975e651b5c769ba3cb8d91163f4543b7da6b5ef5d78e09c14369c14b7e3545",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Explains the graphical meaning and rate of change (gradient) of a linear function.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "斜率 2 表示 x 每增加 1，y 增加 2。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"section-01\",\"b1\"]"
+          },
+          {
+            "reason": "Relates the linear equation y=mx+c to gradient/rate of change.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "在 y=2x+1 中，Δy/Δx 始终等于 2。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"section-01\",\"b2\"]"
+          },
+          {
+            "reason": "Requires calculating the gradient/slope between two coordinate points on a line.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "由点 (1,3) 和 (4,9) 求这条直线的斜率",
+                "topic_id": "mt_-3udyo6VyB"
+              }
+            ],
+            "unit_id": "[\"task\",\"compute-slope\"]"
+          },
+          {
+            "reason": "Requires identifying and setting the y-intercept of a linear function.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "调整 b，让直线 y=2x+b 经过点 (0,-2)。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"task\",\"move-intercept\"]"
+          },
+          {
+            "reason": "Requires finding the unknown third angle in a triangle given two angles.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "一个三角形的两个内角是 50° 和 60°，把 c 调到第三个内角的度数。",
+                "topic_id": "mt_cdMlC7EpTJ"
+              }
+            ],
+            "unit_id": "[\"task\",\"third-angle\"]"
+          }
+        ]
+      },
+      "review": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "octos_observation_summary": {
+        "messages": 14,
+        "turns": [
+          {
+            "turn_id": "7700afa0-5766-4354-b1e1-f9950dc31552",
+            "state": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-triangle-lesson",
+      "input_sha256": "5d142a1c8c4f256f32a0bf14523fdc9b96a7031f52d1c93a9873aa568415a646",
+      "state": "saved-needs-human-review",
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "parallel lines alternate interior angles"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "triangle angle sum"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "supplementary angles straight line"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "angles on a straight line"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "straight line angle 180"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "5d142a1c8c4f256f32a0bf14523fdc9b96a7031f52d1c93a9873aa568415a646",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Describes constructing a parallel line through a vertex to form a straight angle, which acts as an informal geometric proof step not mapped to a specific catalog concept.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "[\"beat\",\"section-01\",\"b1\"]"
+          },
+          {
+            "reason": "Directly presents the theorem that the sum of interior angles in a triangle is 180°.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "三角形内角和是 180°",
+                "topic_id": "mt_J03RFlVdas"
+              }
+            ],
+            "unit_id": "[\"beat\",\"section-01\",\"b2\"]"
+          },
+          {
+            "reason": "Requires finding the unknown third angle of a triangle given two known angles using the triangle angle sum property.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "三角形中 ∠A=35°，∠B=90°，把 x 调到 ∠C 的度数。",
+                "topic_id": "mt_cdMlC7EpTJ"
+              }
+            ],
+            "unit_id": "[\"task\",\"find-angle\"]"
+          },
+          {
+            "reason": "UI interaction prompt to adjust a slider without mathematical problem-solving content.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "[\"task\",\"just-drag\"]"
+          },
+          {
+            "reason": "Requires calculating a missing angle using the property that angles on a straight line sum to 180°.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "一条直线上的两个相邻角，其中一个是 130°，把 y 调到另一个角的度数。",
+                "topic_id": "mt_oqziWKry-L"
+              }
+            ],
+            "unit_id": "[\"task\",\"straight-line\"]"
+          }
+        ]
+      },
+      "review": {
+        "expectation_issues": [
+          {
+            "unit_id": "[\"task\",\"just-drag\"]",
+            "issue": "status-does-not-match-predeclared-expectation"
+          }
+        ],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "octos_observation_summary": {
+        "messages": 10,
+        "turns": [
+          {
+            "turn_id": "526b2353-d556-4638-8627-6e9d6a6b060e",
+            "state": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-quadratic-lesson",
+      "input_sha256": "fc38e62f82778e801a9a3c9ec33fdb6cceb71983ad16fb916eec5f3082dd9ebb",
+      "state": "saved-needs-human-review",
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "completing the square"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "quadratic"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "equation"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "parabola"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "vertex"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "algebra"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "quadratic",
+            "limit": 50
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "fc38e62f82778e801a9a3c9ec33fdb6cceb71983ad16fb916eec5f3082dd9ebb",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "Completing the square to rewrite a quadratic equation into vertex form is outside the scope of the catalog.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "[\"beat\",\"section-01\",\"b1\"]"
+          },
+          {
+            "reason": "Solving a quadratic equation by taking square roots is outside the scope of the catalog.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "[\"beat\",\"section-01\",\"b2\"]"
+          },
+          {
+            "reason": "Finding the vertex of a parabola in vertex form is outside the scope of the catalog.",
+            "status": "outside-catalog",
+            "topics": [],
+            "unit_id": "[\"task\",\"vertex\"]"
+          }
+        ]
+      },
+      "review": {
+        "expectation_issues": [
+          {
+            "unit_id": "[\"task\",\"vertex\"]",
+            "issue": "status-does-not-match-predeclared-expectation"
+          }
+        ],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "octos_observation_summary": {
+        "messages": 16,
+        "turns": [
+          {
+            "turn_id": "31ea49e9-7424-4486-a48c-41e760d3a12a",
+            "state": "completed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "task-missing-context",
+      "input_sha256": "6497bdadf3b709b7d1127ff7b120384f3e7ca6e7e51e9c0e2d70a9741ebb64bf",
+      "state": "saved-needs-human-review",
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "linear function graph"
+          }
+        }
+      ],
+      "result": {
+        "input_sha256": "6497bdadf3b709b7d1127ff7b120384f3e7ca6e7e51e9c0e2d70a9741ebb64bf",
+        "schema": 1,
+        "units": [
+          {
+            "reason": "The beat explains that the graph of a linear function y=kx+1 is a straight line, corresponding to recognizing linear function graphs.",
+            "status": "mapped",
+            "topics": [
+              {
+                "quote": "一次函数 y=kx+1 的图像是一条直线。",
+                "topic_id": "mt_WBdHkc2HTf"
+              }
+            ],
+            "unit_id": "[\"beat\",\"section-01\",\"b1\"]"
+          },
+          {
+            "reason": "The task prompt only instructs to adjust k to a target value without providing the mathematical problem or context.",
+            "status": "unknown",
+            "topics": [],
+            "unit_id": "[\"task\",\"bare-target\"]"
+          }
+        ]
+      },
+      "review": {
+        "expectation_issues": [],
+        "human_review_required": true,
+        "semantic_pass": null
+      },
+      "octos_observation_summary": {
+        "messages": 4,
+        "turns": [
+          {
+            "turn_id": "8a3f76a4-a9a2-4a05-b26e-4612c55bcecb",
+            "state": "completed"
+          }
+        ]
+      }
+    }
+  ],
+  "semantic_quality": "requires independent human review",
+  "state": "completed-needs-human-review",
+  "playback_check": "Not exercised by the first-source-only diagnosis",
+  "budget": {
+    "tasks": [
+      {
+        "id": "task-slope-lesson",
+        "input_hash": "b4975e651b5c769ba3cb8d91163f4543b7da6b5ef5d78e09c14369c14b7e3545",
+        "state": "finished"
+      },
+      {
+        "id": "task-triangle-lesson",
+        "input_hash": "5d142a1c8c4f256f32a0bf14523fdc9b96a7031f52d1c93a9873aa568415a646",
+        "state": "finished"
+      },
+      {
+        "id": "task-quadratic-lesson",
+        "input_hash": "fc38e62f82778e801a9a3c9ec33fdb6cceb71983ad16fb916eec5f3082dd9ebb",
+        "state": "finished"
+      },
+      {
+        "id": "task-missing-context",
+        "input_hash": "6497bdadf3b709b7d1127ff7b120384f3e7ca6e7e51e9c0e2d70a9741ebb64bf",
+        "state": "finished"
+      }
+    ],
+    "requests": [
+      {
+        "id": "cab89e0d-ea34-4abf-a97f-18f29dd44f92",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "b76726da-2632-40df-a2ce-e1edd47ff36f",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "10cde859-afc1-4d5e-a7c6-e81f0ba51577",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "bb8edc06-b9a9-4fd4-8453-8ce4510fd118",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "4f79eeba-4ba4-4610-980a-cd79c5e63e53",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "5179da94-8b43-4ad1-80cb-7a789bb413bc",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "7148d8a6-1100-498b-b2ba-2162f8a21101",
+        "task_id": "task-slope-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "f50a0e58-c5ce-4963-8f95-13413c9f7f2f",
+        "task_id": "task-triangle-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "a07e1376-3567-4175-8226-9425d41e887a",
+        "task_id": "task-triangle-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "44861114-dda8-4e60-b3cd-c0c2bf82ea77",
+        "task_id": "task-triangle-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "6c6c21bb-4e88-4ef2-b2f5-d50ac6c8e17b",
+        "task_id": "task-triangle-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "55c5c5f3-3813-4eae-8f77-50a2a87debc5",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "e3322a92-53d5-4c0e-8c4d-0198b5797607",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "52c57285-d27c-4594-9e76-12c54ffa781f",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "a74a022c-b201-444d-8dce-01ebf771949c",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "78b33f6b-85ad-4f39-919d-fbb30852ce54",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "ef60ce76-1856-437f-896d-da83ef1f6f07",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "0710b078-2dfb-40d1-bd8a-6d8882e66d32",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "26002220-a67e-42f3-8da9-3652a82167f1",
+        "task_id": "task-quadratic-lesson",
+        "usd": 450000
+      },
+      {
+        "id": "b3e42b4d-717b-4f10-a5d8-67f6a333df60",
+        "task_id": "task-missing-context",
+        "usd": 450000
+      },
+      {
+        "id": "c92d1627-1525-4f56-9b60-ae550b27ed47",
+        "task_id": "task-missing-context",
+        "usd": 450000
+      }
+    ]
+  },
+  "gateway_metrics": {
+    "forwarded": 21,
+    "refused": 0,
+    "failed": 0,
+    "refused_by_stage": {}
+  },
+  "isolated_cleanup": {
+    "octos_data_deleted": true,
+    "octos_log_kept": true
+  }
+}

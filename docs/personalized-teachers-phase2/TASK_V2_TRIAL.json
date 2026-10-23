@@ -1,12 +1,12 @@
 {
   "schema": "octos.learn.topic-accuracy-trial.v1",
-  "id": "phase2-task-v2-cases-20261022",
+  "id": "phase2-task-v2-cases-run2-20261023",
   "scope": "task-v2-cases",
   "status": "approved",
-  "authorization_reference": "User 2026-10-22, replying \"approve\" to the request: run the task-v2 cases on an isolated Octos with the user-created Key file; expected actual cost under USD 0.50; hard cap 16 requests and USD 17.60 reserved.",
+  "authorization_reference": "User 2026-10-23, replying \"sure,you are approved\" to the request after run 1 stopped: rerun all four lessons with at most 10 requests per lesson, 30 requests in total and USD 13.50 reserved (USD 0.45 per request, requests capped at 256 KiB); expected actual cost about USD 0.30. Run 1 (6 requests, USD 6.60 reserved) is recorded separately.",
   "owner": "task-v2-trial",
   "model": "gemini-3.8-flash",
-  "output_directory": "/private/tmp/octos-task-v2-trial-20261022",
+  "output_directory": "/private/tmp/octos-task-v2-trial-run2-20261023",
   "cases_file": "docs/personalized-teachers-phase2/TASK_V2_CASES.json",
   "cases_sha256": "f893cd2e2cde93dfae13821ed7083357086b40f4840932e6b1375c539e4ba581",
   "taxonomy_sha256": "27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522",
@@ -21,11 +21,11 @@
   },
   "limits": {
     "tasks": 4,
-    "model_http_requests": 16,
-    "model_http_requests_per_task": 6,
-    "usd_micros": 17600000,
-    "reservation_usd_micros": 1100000,
-    "request_bytes": 1048576,
+    "model_http_requests": 30,
+    "model_http_requests_per_task": 10,
+    "usd_micros": 13500000,
+    "reservation_usd_micros": 450000,
+    "request_bytes": 262144,
     "output_tokens": 32768
   },
   "octos": {
@@ -34,10 +34,10 @@
     "sha256": "45fc092f4ee6f365dfac87187fc06503d6a175de2b6f486ca30b9311b97e5968"
   },
   "key_source": "User-created file ~/.config/octos-trial/gemini.key (mode 600), passed to an isolated Octos only; never read from or written to the user's own Octos.",
-  "cost_note": "Each admitted request reserves USD 1.10, the price of the full 1M-token input plus 65536 output tokens; 16 requests = USD 17.60 is an upper bound, not a bill. Earlier analysis requests used a few thousand tokens each (about USD 0.01-0.03).",
+  "cost_note": "Each admitted request reserves USD 0.45: at most 262144 input tokens (requests over 256 KiB are refused) plus the full 65536-token output capacity. 30 requests = USD 13.50 is an upper bound, not a bill.",
   "code_sha256": {
     "scripts/verify-learning-topic-accuracy.mjs": "20dace6bb9c904ecdc366575235fb9d0108127ebd1fc171889ecab567f596e6d",
-    "scripts/lib/learning-topic-trial-control.mjs": "f29816093ac98acda39c347f91cad3842a3838e9e37f2eefd58b6dac7069ba84",
+    "scripts/lib/learning-topic-trial-control.mjs": "aacaf4221820a2d094b9ad76a75d7abdfd42e23201f04b17ecf403fbff35280c",
     "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
     "scripts/lib/learning-topic-trial-fixture.mjs": "e7965a054f304ed215b732606fcf3c7d45c42d49bf93eec72ebb2a00c6472653",
     "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
@@ -52,5 +52,11 @@
     "services/learning-history/topic-query.mjs": "bd4e8518c063858aed19807a95bf9f1098e77873b9defd6a0414e62ebe4dfc8f",
     "services/learning-history/automatic-topic-query.mjs": "39b9895fc1be3cd2f179cdffae67a0c1addb8891d90d4460636bbd8722267a23",
     "services/learning-history/topic-analysis-response.mjs": "5a1dc3e431479697f275a42a55df25c59626ae01e1aaf3920f5794f094387dac"
+  },
+  "prior_stopped_trial": {
+    "id": "phase2-task-v2-cases-20261022",
+    "requests_not_refunded": 6,
+    "reserved_usd_micros_not_refunded": 6600000,
+    "report": "TASK_V2_RUN1_STOPPED.json"
   }
 }

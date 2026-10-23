@@ -57,13 +57,16 @@ function validateTaskV2Trial(plan, casesBytes, { execute = false, now = new Date
   const cases = JSON.parse(casesBytes).cases;
   assert.equal(cases.length, 4); assert.equal(new Set(cases.map(c => c.id)).size, 4);
   assert.ok(cases.every(c => c.kind === 'course' && Object.keys(c.expectations).every(id => JSON.parse(id)[0] === 'task')));
-  assert.deepEqual(plan.limits, { tasks: 4, model_http_requests: 16, model_http_requests_per_task: 6, usd_micros: 17600000,
-    reservation_usd_micros: 1100000, request_bytes: 1048576, output_tokens: 32768 });
+  // Run 1 stopped at 6 requests per lesson: the model searches the catalog one
+  // term per round trip. Requests are capped at 256 KiB, so input is at most
+  // 262144 tokens and each reservation covers that plus full output capacity.
+  assert.deepEqual(plan.limits, { tasks: 4, model_http_requests: 30, model_http_requests_per_task: 10, usd_micros: 13500000,
+    reservation_usd_micros: 450000, request_bytes: 262144, output_tokens: 32768 });
   const p = plan.pricing;
   assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
-  assert.equal(p.max_input_tokens, 1048576); assert.equal(p.max_output_tokens, 65536);
+  assert.equal(p.max_output_tokens, 65536);
   assert.equal(p.valid_until, '2026-12-31');
-  assert.ok((p.max_input_tokens * p.input_per_million_usd + p.max_output_tokens * p.output_including_thinking_per_million_usd) <= plan.limits.reservation_usd_micros);
+  assert.ok((plan.limits.request_bytes * p.input_per_million_usd + p.max_output_tokens * p.output_including_thinking_per_million_usd) <= plan.limits.reservation_usd_micros);
   if (execute) {
     assert.equal(plan.status, 'approved', 'Task-v2 trial is not authorized');
     assert.ok(typeof plan.authorization_reference === 'string' && plan.authorization_reference.trim(), 'Human authorization missing');

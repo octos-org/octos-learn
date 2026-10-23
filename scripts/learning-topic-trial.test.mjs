@@ -210,7 +210,7 @@ test('the final seven exclude both checked questions and cannot replenish the pr
 });
 
 test('task-v2 cases need their own pinned file, isolated route, limits and authorization; every expectation is a task unit', async () => {
-  const taskPlan = JSON.parse(await readFile('docs/personalized-teachers-phase2/TASK_V2_TRIAL.json'));
+  const taskPlan = { ...JSON.parse(await readFile('docs/personalized-teachers-phase2/TASK_V2_TRIAL.json')), status: 'prepared', authorization_reference: '' };
   const taskBytes = await readFile('docs/personalized-teachers-phase2/TASK_V2_CASES.json');
   const taskCases = validateTopicTrial(taskPlan, taskBytes);
   assert.equal(taskCases.length, 4);
