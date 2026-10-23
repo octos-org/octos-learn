@@ -7,6 +7,8 @@ import { queryTopic, queryRunCoverage } from "./topic-query.mjs";
 import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { topicCatalog } from "./topic-catalog.mjs";
 import { AnalysisControlStore } from "./analysis-control.mjs";
+import { queryLearningMap } from "./map-progress.mjs";
+import { evaluateAchievements } from "./achievements.mjs";
 
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -128,6 +130,12 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         if (!body || Object.keys(body).some(key => !["events", "materials"].includes(key)) || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT
           || (body.materials !== undefined && (!Array.isArray(body.materials) || body.materials.length > body.events.length))) throw new HttpError(400, "Invalid event batch");
         send(200, { profile_id: owner, ...store().append(owner, body.events, body.materials) });
+      } else if (request.method === "GET" && path.length === 1 && ["map", "achievements"].includes(path[0])) {
+        if ([...url.searchParams.keys()].some(key => key !== "utc_offset_minutes") || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
+        const raw = url.searchParams.get("utc_offset_minutes") ?? "0";
+        if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
+        const utcOffsetMinutes = Number(raw);
+        send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }) : evaluateAchievements(store(), owner, { utcOffsetMinutes })) });
       } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
         if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
         else {

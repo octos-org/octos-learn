@@ -121,3 +121,18 @@ test("unstarted jobs from previous rules are reported as superseded, not as pend
     assert.deepEqual(analysis.status("alice").states.map(row => row.state), ["superseded"]); // Another taxonomy is never claimable.
   } finally { store.close(); }
 });
+
+test("the learning map reads automatic associations: a hinted success is practising and an asked-only topic stays off the map", async () => {
+  const { queryLearningMap } = await import("./map-progress.mjs");
+  const store = new HistoryStore(":memory:");
+  try {
+    const analysis = new TopicAnalysisStore(store); analysis.configure("alice", { enabled: true, max_daily_tasks: 20 });
+    store.append("alice", [q]); const delivered = deliver(store, "source");
+    finish(analysis, analysis.claim("alice").tasks[0]); finish(analysis, analysis.claim("alice").tasks[0]);
+    attempt(store, delivered, "failed"); attempt(store, delivered, "passed", "succeeded");
+    const map = queryLearningMap(store, "alice");
+    // The question and beat were linked to the triangle topic, but the beat was never played.
+    assert.deepEqual(map.topics.map(topic => [topic.topic_id, topic.state]), [[plotting, "practising"]]);
+    assert.equal(map.topics[0].evidence.assisted_successes, 1);
+  } finally { store.close(); }
+});
