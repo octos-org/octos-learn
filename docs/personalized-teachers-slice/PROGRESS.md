@@ -197,3 +197,18 @@ Octos Learn 侧后续（依赖 #61 的 `store.mjs` 与本 PR 合并）：连接�
 - octos #2859 获同事审查通过，CI 首次失败原因：`Message` 增加 `participant` 后变为 232 字节，`SteeringMessage::FollowUp(Message)` 触发 clippy `large_enum_variant`（CI 以 `-D warnings` 运行）。修复为 `FollowUp(Box<Message>)`（e3990a4d）及格式补正（610c1c0c）。CI 28 项通过后按用户授权合并，merge commit 5e0ab6ab。
 - Octos Learn [PR #63](https://github.com/octos-org/octos-learn/pull/63)（分支 `codex/teacher-participant-field`）：老师回复暂存时以 `participant: "<名字>老师"` 记录、正文为原文；交付时 Octos 确认 `session.append_message.participant.v1` 才发送该字段，否则把“【名字老师】”标签放回正文（旧 Octos 会静默丢弃未知参数）。旧版本已暂存的任务保持带标签正文。前端 1273、服务 52 项测试通过，类型检查与 lint 通过。
 - 发布顺序：新 Octos 部署后该字段才生效；未更新 Octos 时行为与之前相同。合并不等于发布。
+
+## 2026-10-23 #63、#64、octos #2860 合并；Learning Coach 旧跨课记忆指令改写
+
+- 用户已合并 octos-learn #63（cb6a542）、#64（5345a2e）及 octos #2860（5d9e70b4）。均未发布。
+- S4-03：Learning Coach 的 SKILL.md 和 references/session-state.md 仍要求 agent 把课堂证据“提升”为自己维护的跨课 Learning Profile，每份 review 还列候选长期记忆。这与“长期记忆统一由 Octos 处理”冲突，可能与 Octos 整理出的记忆重复或矛盾。[learning-coach #28](https://github.com/alan0x/learning-coach/pull/28)（0.16.3）改为：长期记忆归 Octos，技能不写、不改、不删长期记忆，也不另建画像；学生要求记住、纠正或遗忘时在对话中回应，不声称已经生效。当堂工作区、观察记录和 review 保留。新增测试防止旧指令回归；构建及 206 项测试通过。未改运行代码。
+- 安装态：本机没有已安装的 Learning Coach，无法核验；正式安装后需核对安装副本与 0.16.3 一致。
+- 总 TODO 状态表已同步：N-32、S3-04、S4-01 勾选并注明依据；S4-03、S4-07 记录进展但未勾选。
+
+## 2026-10-23 老师选择保存到账号（S3-03）
+
+- 用户选定方案 a：老师选择存在 Octos Learn 自己的学习记录服务，不给 Octos 账号设置加字段（该设置拒收未知字段）。
+- [octos-learn #66](https://github.com/octos-org/octos-learn/pull/66)：服务新增 teacher_choices 表（IF NOT EXISTS，不升级库版本，随现有 SQLite 备份）和 GET/PUT `/api/learn/history/teacher-choice`。客户端以账号为准、设备保留镜像，课程提交时仍同步读取本机副本。点选立即生效并保存；离线时排队，联网后带上次看到的版本号重放，若其他设备之后改过则以后者为准；设备上旧的本机选择在该账号首次同步时保存一次；排队的选择不会写入另一个账号。
+- 验证：服务 54 项、前端 1279 项测试通过，tsc 通过，改动文件 eslint 无问题。未部署；服务未更新前请求失败，行为与之前相同。
+- 已知限制：设备上旧选择若来自另一账号，会被首个同步的账号采用一次；老师形象仍按设备保存。
+
