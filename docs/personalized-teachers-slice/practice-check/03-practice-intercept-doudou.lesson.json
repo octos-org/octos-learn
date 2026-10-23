@@ -1,0 +1,218 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "截距 b 对直线 y = 2x + b 的影响",
+    "goals": [
+      "理解常数项 b 在直线方程 y = 2x + b 中表示 y 轴交点的纵坐标",
+      "观察当 b 增大或减小时，直线在平面直角坐标系中发生的上下平移现象"
+    ],
+    "adaptation": {
+      "strategies": [
+        "利用直角坐标系和动态一次函数图像直观呈现直线位置变化",
+        "结合直梯在墙面上整体抬高与降低的比喻，形象解释斜率不变而截距变化时的平移特征",
+        "通过单点代入验证代数与几何的一致性，并在课后设计练习巩固理解"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -5,
+        "max": 5,
+        "label": "b",
+        "control": {
+          "kind": "slider",
+          "step": 0.05
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请拖动滑块，将截距 b 的值设置为 4。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向右滑动滑块增加 b 的数值。",
+          "直到看到直线与 y 轴交于点 (0, 4) 即可。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！直线的倾斜程度完全没变，整体平移到了 (0, 4)。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 4,
+          "tolerance": 0.025
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "探究截距 b 的几何意义及对直线整体上下平移的影响",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "嗨！我是豆豆。今天我们来看一次函数 y = 2x + b，特别看看常数项 b 改变时，这条直线到底会怎么动！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 10,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(number_01)",
+                    "label": "y = 2x + b"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = 2x + b"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "先把 x 代入 0，你看，2 乘以 0 还是 0，所以 y 就直接等于 b！这意味着，不管 b 是几，直线都稳稳穿过 y 轴上的点 (0, b)。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "截距的意义",
+                "items": [
+                  "当 x = 0 时，y = b",
+                  "直线与 y 轴交于 (0, b)",
+                  "斜率固定为 2，倾斜程度不变"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "关注直线与y轴的交点",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "我们可以把这条直线想象成靠在墙上的一架直梯。现在坡度是锁定的，当我们把 b 调大，比如升到 3，整架梯子就直直地向上抬高！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "如果我们把 b 减小到 -2，整条直线又平行地往下滑动，穿过 y 轴负半轴的 (0, -2)。斜率 2 没变，改变的只是它上下所在的高度。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "轮到你亲自来试一试啦！请拖动滑块，把截距 b 调整到 4，看看梯子是不是正好抬到了 y 轴的刻度 4 处。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "截距 b 决定了直线与 y 轴交点的位置 (0, b)。当斜率保持不变时，b 的变化表现为整条直线在平面直角坐标系中的上下平移。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

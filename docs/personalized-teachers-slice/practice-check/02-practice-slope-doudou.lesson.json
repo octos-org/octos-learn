@@ -1,0 +1,246 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "斜率 k 如何改变直线 y = kx",
+    "goals": [
+      "直观理解斜率 k 的正负与绝对值如何控制直线 y=kx 的倾斜方向与陡峭程度"
+    ],
+    "adaptation": {
+      "strategies": [
+        "运用单贯穿比喻'爬山坡'建立直观感受",
+        "通过动态调节滑块观察 k 从正到零再到负的连续倾斜变化",
+        "课后设置单数值验证练习巩固概念"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": -3,
+        "max": 3,
+        "label": "斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请拖动滑块，把斜率 k 调整为 2。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "现在直线是下坡路，需要向右拖动滑块",
+          "找到滑块上的正数 2 即可"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！准确调到了 2，这是一条比较陡的上坡路。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 2.01,
+          "tolerance": 0.015
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过调节斜率 k 观察直线 y=kx 的倾角与陡峭变化，并完成目标斜率练习",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你好！我是豆豆，今天我们用一个很直观的比喻来看直线：把直线想成一段山路，我们人一律从左往右走。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -6,
+                    "max": 6,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = kx"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "现在滑块上的 k 是 1。从左往右看，山路向右上倾斜，每往右走 1 步，就往上升 1 格。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果把 k 调大到 3，山路一下子变陡了！向右走 1 步，要往上爬 3 格，正值越大，坡度就越陡峭。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "那要是把 k 慢慢减小到 0 呢？看，山路变成了一条完全水平的平地，既不向上也不向下。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 0,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "如果继续把 k 变成负数，比如减到 -2，山路就转向右下方倾斜了，变成了下坡路！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "总结一下规律：k 大于 0 是上坡，绝对值越大越陡；k 等于 0 是平路；k 小于 0 则是下坡。现在轮到你来试一试了：请把滑块调到 2，看看坡度会怎么变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-06-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率 k 与直线特征",
+                "items": [
+                  "k > 0：向右上方倾斜（上坡），|k| 越大越陡",
+                  "k = 0：水平直线（平路）",
+                  "k < 0：向右下方倾斜（下坡）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "斜率 k 决定直线 y=kx 的方向与陡峭程度：k 为正往右上爬，k 越大越陡；k 为 0 是一条平路；k 为负则是往右下走。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

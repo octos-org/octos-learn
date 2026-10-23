@@ -1,0 +1,157 @@
+{
+  "checked_at": "2026-10-23T17:28:20.426Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "practice-target-check-20261023",
+  "plan_sha256": "cb0f2a9fb2f1856a36b2c7d92e6b29641e16484fa6c5ebb80437954142e1e522",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "78bf18f221b69de49503067a79f92b7eb3edbfc3fea61e25b9653ecbb1255223",
+  "gateway": {
+    "admitted": 4,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 4,
+  "reserved_usd_micros": 600000,
+  "calls": [
+    {
+      "sample": "01-practice-slope-alan",
+      "request_bytes": 20236,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3147,
+        "candidatesTokenCount": 874,
+        "totalTokenCount": 4021,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3147
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-practice-slope-doudou",
+      "request_bytes": 20255,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3166,
+        "candidatesTokenCount": 1002,
+        "totalTokenCount": 4168,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3166
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "03-practice-intercept-doudou",
+      "request_bytes": 20205,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3160,
+        "candidatesTokenCount": 982,
+        "totalTokenCount": 4142,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3160
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "04-practice-intercept-alan",
+      "request_bytes": 20186,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3141,
+        "candidatesTokenCount": 1572,
+        "totalTokenCount": 4713,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3141
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-practice-slope-alan",
+      "teacher": "alan",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 8938,
+      "model_requests": 1,
+      "lesson_sha256": "70b40d28c32040f73768a92ac9172a6929995c62b57449aff5695339084cfc82"
+    },
+    {
+      "id": "02-practice-slope-doudou",
+      "teacher": "doudou",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 10272,
+      "model_requests": 1,
+      "lesson_sha256": "0ddcf9224ca54480df9530b13ccd90541a8376e75f9fef0f424e39ccd2ecbcd9"
+    },
+    {
+      "id": "03-practice-intercept-doudou",
+      "teacher": "doudou",
+      "topic": "intercept",
+      "status": "succeeded",
+      "elapsed_ms": 12643,
+      "model_requests": 1,
+      "lesson_sha256": "93c22c9297b52efc8b40f4b0ddfc3ab5f33878652006f8f1b33cb17b6af46f65"
+    },
+    {
+      "id": "04-practice-intercept-alan",
+      "teacher": "alan",
+      "topic": "intercept",
+      "status": "succeeded",
+      "elapsed_ms": 12635,
+      "model_requests": 1,
+      "lesson_sha256": "e87ff0eeeef68bab6a745850a89167cb6fd0909248559d058539a2c4eda5169a"
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/practice-check-run1"
+}
