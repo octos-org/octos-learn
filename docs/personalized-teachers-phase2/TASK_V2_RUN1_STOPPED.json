@@ -1,0 +1,119 @@
+{
+  "plan_sha256": "fbf3e24e3bb5d17d8cb34b1da2ed429d31030eb5653858cbf0efc2ee6f43809d",
+  "mode": "--execute-isolated",
+  "supplier_calls": null,
+  "rows": [
+    {
+      "id": "task-slope-lesson",
+      "input_sha256": "b4975e651b5c769ba3cb8d91163f4543b7da6b5ef5d78e09c14369c14b7e3545",
+      "state": "started",
+      "catalog_calls": [
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "slope"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "linear"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "gradient"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "triangle angle"
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "ids": [
+              "mt_cdMlC7EpTJ",
+              "mt_J03RFlVdas"
+            ]
+          }
+        },
+        {
+          "name": "learning_topics.search",
+          "args": {
+            "query": "intercept"
+          }
+        }
+      ],
+      "octos_observation_summary": {
+        "messages": 13,
+        "roles": "user,assistant,tool,assistant,tool,assistant,tool,assistant,tool,assistant,tool,assistant,tool",
+        "turns": [
+          {
+            "turn_id": "6d675028-e106-47f6-87ae-aea73b7b1fb3",
+            "state": "errored"
+          }
+        ]
+      }
+    }
+  ],
+  "semantic_quality": "requires independent human review",
+  "state": "stopped",
+  "failure": "Inspect protected results and durable reservations; no automatic continuation",
+  "budget": {
+    "tasks": [
+      {
+        "id": "task-slope-lesson",
+        "input_hash": "b4975e651b5c769ba3cb8d91163f4543b7da6b5ef5d78e09c14369c14b7e3545",
+        "state": "active"
+      }
+    ],
+    "requests": [
+      {
+        "id": "532a2880-b46d-4233-a96f-477b0149fdb0",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      },
+      {
+        "id": "ebb99192-d7d3-4936-8807-01a2a5cd0ae2",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      },
+      {
+        "id": "11392d09-ffc8-4207-b99f-d630790359ff",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      },
+      {
+        "id": "a3869ab2-9bd3-4d4b-80d3-d9070462e287",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      },
+      {
+        "id": "4f563f72-e323-409e-989a-514be3afcadc",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      },
+      {
+        "id": "96a64f56-2e21-4cb1-99a2-ec6d07496959",
+        "task_id": "task-slope-lesson",
+        "usd": 1100000
+      }
+    ]
+  },
+  "gateway_metrics": {
+    "forwarded": 6,
+    "refused": 1,
+    "failed": 0,
+    "refused_by_stage": {
+      "reservation": 1
+    }
+  },
+  "isolated_cleanup": {
+    "octos_data_deleted": true,
+    "octos_log_kept": true
+  }
+}
