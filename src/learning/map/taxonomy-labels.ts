@@ -1,5 +1,6 @@
-/** Chinese labels for the pinned os-taxonomy subjects and domains. Topic names
- * stay in the original English until a reviewed translation exists. */
+import topicNames from "./topic-names-zh.json";
+
+/** Chinese labels for the pinned os-taxonomy subjects and domains. */
 export const SUBJECT_LABELS: Readonly<Record<string, string>> = {
   Mathematics: "数学",
   Science: "科学",
@@ -83,3 +84,9 @@ export const DOMAIN_LABELS: Readonly<Record<string, string>> = {
 
 export const subjectLabel = (subject: string) => SUBJECT_LABELS[subject] ?? subject;
 export const domainLabel = (domain: string) => DOMAIN_LABELS[domain] ?? domain;
+
+/** Draft Chinese topic names (Mathematics only, pending review); other topics
+ * keep their original English name. */
+const TOPIC_NAMES: Readonly<Record<string, string>> = topicNames.names;
+export const topicLabel = (topicId: string, name: string) => TOPIC_NAMES[topicId] ?? name;
+

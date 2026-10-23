@@ -4,14 +4,14 @@ import { getToken } from "../../api/client";
 import { openHistoryApi, type AchievementList, type EarnedAchievement, type LearningMap, type MapState } from "../history/history-api";
 import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
-import { domainLabel, subjectLabel } from "./taxonomy-labels";
+import { domainLabel, subjectLabel, topicLabel } from "./taxonomy-labels";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
 
 function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement; tone: AwardTone }) {
   const teacher = isTeacherId(achievement.teacher_id) ? getTeacher(achievement.teacher_id) : null;
   return <article className={`learning-map-award${achievement.new ? " is-new" : ""}`}>
-    <strong>{ACHIEVEMENT_NAME[achievement.achievement_id]}{achievement.topic_name ? ` · ${achievement.topic_name}` : ""}</strong>
+    <strong>{ACHIEVEMENT_NAME[achievement.achievement_id]}{achievement.topic_name ? ` · ${topicLabel(achievement.scope, achievement.topic_name)}` : ""}</strong>
     {achievement.new && <span className="learning-map-new">新获得</span>}
     <p>{teacher && tone === "playful" ? `${teacher.name}：` : ""}{awardLine(achievement, tone)}</p>
     <time>{new Date(achievement.earned_at).toLocaleDateString("zh-CN")}</time>
@@ -70,7 +70,7 @@ export function LearningMapPanel() {
           <h5>{domainLabel(domain)}（{topics.length} 个点亮）</h5>
           <ul>
             {topics.map(topic => <li key={topic.topic_id} data-state={topic.state}>
-              <strong>{topic.name}</strong>
+              <strong>{topicLabel(topic.topic_id, topic.name)}{topicLabel(topic.topic_id, topic.name) !== topic.name && <small className="learning-map-original">{topic.name}</small>}</strong>
               <span>{STATE_LABEL[topic.state]}</span>
               <small>{topic.evidence.days.length} 天学过 · 播放 {topic.evidence.played_beats} 段 · 练习 {topic.evidence.task_attempts} 次{topic.evidence.unassisted_successes ? ` · 不用提示做出 ${topic.evidence.unassisted_successes} 次` : ""}</small>
             </li>)}

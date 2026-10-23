@@ -1,5 +1,5 @@
 import type { LearningMap, LearningRunSummary } from "../history/history-api";
-import { domainLabel, subjectLabel } from "../map/taxonomy-labels";
+import { domainLabel, subjectLabel, topicLabel } from "../map/taxonomy-labels";
 
 export interface LearnerBackgroundSources {
   /** Octos long-term memory (`memory/overview`), already processed by Octos. */
@@ -34,7 +34,8 @@ export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Dat
     sections.push(`【学习地图】（Octos Learn 程序统计，与学生看到的地图一致；已探索=播放过相关讲解，正在练习=做过相关练习，做出来过=不用提示达到过练习要求；都不等于掌握，不要说成已经学会）\n${topics.map((topic) => {
       const { evidence } = topic;
       const detail = [`${evidence.days.length} 天学过`, evidence.task_attempts ? `练习作答 ${evidence.task_attempts} 次` : "", evidence.unassisted_successes ? `其中不用提示达到要求 ${evidence.unassisted_successes} 次` : ""].filter(Boolean).join("，");
-      return `- ${topic.name}（${subjectLabel(topic.subject)}·${domainLabel(topic.domain)}）：${MAP_STATE[topic.state]}；${detail}`;
+      const label = topicLabel(topic.topic_id, topic.name);
+      return `- ${label === topic.name ? label : `${label}（${topic.name}）`}，${subjectLabel(topic.subject)}·${domainLabel(topic.domain)}：${MAP_STATE[topic.state]}；${detail}`;
     }).join("\n")}`);
   }
   if (!sections.length) return undefined;

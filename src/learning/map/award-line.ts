@@ -1,5 +1,6 @@
 import type { EarnedAchievement } from "../history/history-api";
 import { getTeacher, isTeacherId, PLAIN_AWARDS, type AchievementId } from "../teachers/teachers";
+import { topicLabel } from "./taxonomy-labels";
 
 export const ACHIEVEMENT_NAME: Record<AchievementId, string> = {
   "first-footprint": "初来乍到", "did-it-alone": "亲手搞定", "regular-guest": "常驻嘉宾", reunion: "老朋友重逢",
@@ -19,13 +20,13 @@ export function saveAwardTone(tone: AwardTone) {
 export function awardLine(achievement: EarnedAchievement, tone: AwardTone): string {
   const teacher = tone === "playful" && isTeacherId(achievement.teacher_id) ? getTeacher(achievement.teacher_id) : null;
   const template = (teacher?.awards ?? PLAIN_AWARDS)[achievement.achievement_id];
-  return template.replaceAll("{topic}", achievement.topic_name ?? "这个知识点");
+  return template.replaceAll("{topic}", achievement.topic_name ? topicLabel(achievement.scope, achievement.topic_name) : "这个知识点");
 }
 
 /** A one-line classroom announcement that names who presents the award, so an
  * award earned in another teacher's lesson is never claimed by the current one. */
 export function awardAnnouncement(achievement: EarnedAchievement, tone: AwardTone): string {
-  const name = `「${ACHIEVEMENT_NAME[achievement.achievement_id]}${achievement.topic_name ? ` · ${achievement.topic_name}` : ""}」`;
+  const name = `「${ACHIEVEMENT_NAME[achievement.achievement_id]}${achievement.topic_name ? ` · ${topicLabel(achievement.scope, achievement.topic_name)}` : ""}」`;
   const teacher = tone === "playful" && isTeacherId(achievement.teacher_id) ? getTeacher(achievement.teacher_id) : null;
   return teacher ? `${teacher.name}颁发${name}：${awardLine(achievement, tone)}` : `获得成就${name}：${awardLine(achievement, tone)}`;
 }

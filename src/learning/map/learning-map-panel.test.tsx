@@ -23,9 +23,9 @@ beforeEach(() => { localStorage.clear(); api.learningMap.mockResolvedValue(MAP);
 afterEach(cleanup);
 
 it('fills the presenting teacher\'s line with the topic, and falls back to plain wording', () => {
-  expect(awardLine(award({}), 'playful')).toBe('第三次见面！Linear Function Graphs都想给你留个专座了。');
-  expect(awardLine(award({}), 'plain')).toBe('在 3 个不同的日子学习了Linear Function Graphs。');
-  expect(awardLine(award({ teacher_id: null }), 'playful')).toBe(PLAIN_AWARDS['regular-guest'].replace('{topic}', 'Linear Function Graphs'));
+  expect(awardLine(award({}), 'playful')).toBe('第三次见面！一次函数图像都想给你留个专座了。');
+  expect(awardLine(award({}), 'plain')).toBe('在 3 个不同的日子学习了一次函数图像。');
+  expect(awardLine(award({ teacher_id: null }), 'playful')).toBe(PLAIN_AWARDS['regular-guest'].replace('{topic}', '一次函数图像'));
   expect(awardLine(award({ achievement_id: 'did-it-alone', scope: '', topic_name: null, teacher_id: 'alan' }), 'playful')).toBe(TEACHERS[0].awards['did-it-alone']);
 });
 
@@ -41,7 +41,10 @@ it('groups lit topics by subject and domain with their state, and puts new achie
   expect(screen.getByText('已探索')).toBeTruthy();
   expect(screen.getByText(/这些都不等于已经掌握/)).toBeTruthy();
   const cards = document.querySelectorAll('.learning-map-award');
-  expect(cards[0].textContent).toContain('常驻嘉宾 · Linear Function Graphs');
+  expect(cards[0].textContent).toContain('常驻嘉宾 · 一次函数图像');
+  // Draft Chinese name first, the original English name kept beside it.
+  expect(screen.getByText('一次函数图像')).toBeTruthy();
+  expect(screen.getByText('Linear Function Graphs')).toBeTruthy();
   expect(cards[0].textContent).toContain('新获得');
   expect(cards[0].textContent).toContain('豆豆：第三次见面！');
   fireEvent.click(screen.getByRole('button', { name: '颁发语改为普通说法' }));

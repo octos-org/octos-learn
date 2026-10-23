@@ -181,7 +181,9 @@ it('adds the learning map to learner context with the same states and no mastery
   const context = buildLearnerContext({ map }, asOf)!;
   expect(context).toContain('【学习地图】');
   expect(context).toContain('都不等于掌握');
-  expect(context).toContain('- Topic 5（数学·代数）：做出来过；2 天学过，练习作答 2 次，其中不用提示达到要求 1 次');
+  expect(context).toContain('- Topic 5，数学·代数：做出来过；2 天学过，练习作答 2 次，其中不用提示达到要求 1 次');
+  // A topic with a draft Chinese name shows both names.
+  expect(buildLearnerContext({ map: { ...map, topics: [{ ...map.topics[1], topic_id: 'mt_WBdHkc2HTf', name: 'Linear Function Graphs' }] } }, asOf)).toContain('- 一次函数图像（Linear Function Graphs），数学·代数');
   expect(context).not.toContain('Old topic'); // Only the six most recent topics.
   expect(buildLearnerContext({ map: { ...map, topics: [] } }, asOf)).toBeUndefined();
 });
