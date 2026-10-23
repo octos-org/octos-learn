@@ -1,0 +1,62 @@
+{
+  "schema": "octos.learn.teacher-memory-refresh-trial.v1",
+  "id": "teacher-memory-refresh-trial-20261023",
+  "status": "prepared",
+  "authorization_reference": "",
+  "model": "gemini-3.8-flash",
+  "output_directory": "",
+  "wait_seconds": 420,
+  "limits": {
+    "model_http_requests": 8,
+    "request_bytes": 262144,
+    "output_tokens": 65536,
+    "reservation_usd_micros": 450000,
+    "usd_micros": 3600000
+  },
+  "questions_answered": [
+    "Does Octos memory keep the teacher with a shared experience (山路 with 豆豆) rather than dropping or reassigning it?",
+    "Is a request made to one teacher (阿澜: no metaphors) kept scoped to that teacher, while a request for all teachers (conclusion first) is kept general?",
+    "Are learner facts said in one teacher's lesson (basketball, exam) stored as learner facts, not as something a teacher did or said?",
+    "Is the mistake (Δy/Δx swapped) kept with the lesson it happened in, without inventing a teacher who was not there?"
+  ],
+  "lessons": [
+    {
+      "session_id": "learn-memory-trial-a",
+      "teacher": "豆豆",
+      "date_note": "synthetic lesson 1",
+      "exchanges": [
+        {
+          "user": "直线 y=3x-2 的斜率怎么求？",
+          "teacher": "我们把这条直线想成一段山路：向右走 1 步，会往上升几格？从 x=0 到 x=1，y 从 -2 变成 1，上升了 3 格，所以斜率是 Δy/Δx=3/1=3。"
+        },
+        {
+          "user": "我算成了 Δx/Δy，得到 1/3。",
+          "teacher": "没关系，敢算就很好！只是分子分母放反了：上升的高度 Δy 放上面，向右走的距离 Δx 放下面。再看山路：走 1 步升 3 格，所以是 3。"
+        },
+        {
+          "user": "山路这个比喻好记！我平时最喜欢打篮球。",
+          "teacher": "太好了！山路我们就记住啦。喜欢篮球的话，以后也可以用投篮来举例。"
+        }
+      ]
+    },
+    {
+      "session_id": "learn-memory-trial-b",
+      "teacher": "阿澜",
+      "date_note": "synthetic lesson 2",
+      "exchanges": [
+        {
+          "user": "一次函数的截距是什么意思？另外，以后所有老师讲题都先说结论再解释。",
+          "teacher": "好，先说结论：截距是直线与 y 轴交点的纵坐标。理由是 y 轴上 x=0，代入 y=kx+b 得 y=b。"
+        },
+        {
+          "user": "阿澜老师，你讲的时候不用比喻，直接推导就好。",
+          "teacher": "明白，我讲题时直接推导，不用比喻。"
+        },
+        {
+          "user": "我下周三有数学期中考试。",
+          "teacher": "那我们可以把一次函数的斜率和截距作为复习重点，先从你最近问过的题开始。"
+        }
+      ]
+    }
+  ]
+}

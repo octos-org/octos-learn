@@ -123,3 +123,11 @@ gemini-3.8-flash，经隔离真实 Octos 413b4b68 + Learning Coach 48041ae 的 `
 ## 2026-10-22 Octos 说话者字段：核对后暂不改上游
 
 learning-coach #27 已由用户合并（9241d5b）。核对 Octos 413b4b68：`session/append_message`（`SessionAppendMessageParams`）确实没有说话者字段；已有的 `TurnOrigin`（`[from the person]` 等前缀）只用于宿主自有应用 peer 会话中开始的轮次，不适用于记录性写入。追加的记录作为普通历史内容进入后续模型上下文，当前“【阿澜老师】”前缀与专用字段最终呈现给模型的信息相同。按 S4-07“只有证实必要的通用缺口才改上游”，暂不改 Octos。独立审查 S2 的风险（带老师标签的回复让未注明老师的事实被归给某位老师）仍是推测，需要多次上课后的 Octos 记忆整理实测（S4-08）才能证实或排除。
+
+## 2026-10-23 Octos 记忆整理是否保留老师归属：准备
+
+核对 Octos 413b4b68 的记忆链路：后台 memory refresh 按会话把记录渲染成 `[编号:角色] 内容` 交给模型提炼（`memory_refresh/input.rs`、`extract.rs`），再合并进 MEMORY.md（`memory_consolidate`）。`source` 不进入提炼，正文里的“【阿澜老师】”会进入；提炼提示是通用个人助理口径，没有多位老师的概念。学习问答写入普通学习会话，不是 app peer 会话，所以会被画像级整理扫描。老师归属能否保留只能实测，这也是独立审查 S2 和 S4-08 的核心。
+
+新增 `scripts/verify-teacher-memory-refresh.mjs`：隔离 Octos，按产品交付格式（`session/append_message`、`external_record:octos-learn`、助手正文加老师标签）写入两节合成课（[计划](MEMORY_REFRESH_TRIAL_PLAN.json)：豆豆课含山路比喻、Δy/Δx 写反、喜欢篮球；阿澜课含“所有老师先说结论”、只对阿澜的“不用比喻”、下周期中考试），然后开启 Octos 自己的后台整理（空闲 0 分钟、周期 1 分钟），保存提炼暂存和最终长期记忆。
+
+免费检查通过（[记录](MEMORY_REFRESH_FIXTURE.json)）：Octos 后台整理自行发现两个学习会话，各发 1 次提炼请求，每次只含本课老师标签；供应商调用 0。付费执行待用户批准预算（最多 8 次请求、每次预留 0.45 美元、上限 3.60 美元；预计实际约 0.02 美元）。
