@@ -1,0 +1,241 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "截距 b 如何平移直线 y=2x+b",
+    "goals": [
+      "理解直线 y=2x+b 中截距 b 的几何意义：它决定了直线与 y 轴交点 (0, b)",
+      "掌握当 b 改变时，直线保持斜率不变、整体沿 y 轴进行上下平移"
+    ],
+    "adaptation": {
+      "strategies": [
+        "代入特殊点 x=0 寻找截距的本质理由",
+        "通过动态改变参数 b 观察直线整体平行移动的过程",
+        "结合操作练习巩固对截距几何意义的理解"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -4,
+        "max": 4,
+        "label": "b",
+        "control": {
+          "kind": "slider",
+          "step": 0.04
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请拖动滑块，把截距 b 的值调整为 2。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "关注滑块的数值，向右拖动增大 b 的值。",
+          "当 b=2 时，直线与 y 轴交于点 (0, 2)。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "做得很准！此时交点正是 (0, 2)，直线相比原来平行上移了 2 个单位。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 2,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过直观动态演示弄清截距 b 如何决定直线在 y 轴的交点并带动整条线上下平移",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "我们来看直线方程 y=2x+b。寻找一个参数的几何意义，最简洁的方法是看特殊点：当 x 等于 0 时，y 就直接等于 b。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 10,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(number_01)",
+                    "label": "y=2x+b"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 2,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "((2)*(0))+(number_01)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "((2)*(1))+(number_01)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x=0 \\implies y=b"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "这说明无论 b 怎么变，直线与 y 轴的交点坐标永远是 (0, b)。当前 b=0，直线经过原点 (0, 0)。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "截距 b 的几何意义",
+                "items": [
+                  "与 y 轴交点为 (0, b)",
+                  "斜率保持为 2 不变",
+                  "b 增大向上平移，b 减小向下平移"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "聚焦在直线与 y 轴的交点",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "现在我们把 b 增加到 3。注意观察：直线倾斜的角度丝毫没有改变，整条线向上平行移动，交点来到了 (0, 3)。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "接着我们把 b 减小到 -2。直线的倾斜程度依然不变，交点向下移动到了 (0, -2)。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "这就得出了结论：截距 b 控制直线在 y 轴上的位置，改变 b 相当于整体上下平移。课后请你亲自试一下：把滑块上的截距 b 调整到 2，观察直线与 y 轴的交点位置。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在直线方程 y=2x+b 中，斜率 2 决定倾斜程度，而截距 b 决定了直线与 y 轴相交于点 (0, b)。改变 b 的值不会改变直线的方向，只会让直线沿 y 轴平行上下平移。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

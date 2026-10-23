@@ -1,0 +1,222 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "斜率 k 如何改变直线 y = kx",
+    "goals": [
+      "理解斜率 k 表示横坐标每增加 1 时纵坐标的变化量 Δy",
+      "直观观察 k 为正、0、负时直线的倾斜方向与陡峭程度"
+    ],
+    "adaptation": {
+      "strategies": [
+        "采用逐步比较变化量的方法：固定横坐标增加 1，观察纵坐标的变化",
+        "通过连续调节斜率数值滑块直观对比正负与水平状态"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": -3,
+        "max": 3,
+        "label": "斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.03
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请拖动滑块，把斜率 k 调整为 3，观察直线的陡峭程度。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "沿着正方向继续向右移动滑块",
+          "目标数值是正整数 3"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "做得很准确。当 k = 3 时，横坐标每增加 1，纵坐标增加 3，直线比之前更加陡峭了。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 3,
+          "tolerance": 0.015
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "建立直觉并观察斜率 k 变化时直线 y=kx 的旋转与变化规律，完成课后练习",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你好，我是阿澜。我们来看正比例函数 y = kx。理解斜率最关键的理由，是看两个变化量的比值：横坐标增加 1 时，纵坐标究竟变了多少。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y = kx",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -6,
+                    "max": 6,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-03",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率的意义",
+                "items": [
+                  "x 每增加 1，y 改变 k",
+                  "k > 0：向右上方倾斜",
+                  "k = 0：水平直线",
+                  "k < 0：向右下方倾斜"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "现在的斜率是 1，横坐标每往右走 1 个单位，纵坐标就往上走 1 个单位。我们把 k 调大到 2，你会发现每往右 1 格，纵向抬升了 2 格，直线明显变得更陡。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果把 k 调到 0，无论横坐标怎么增加，纵坐标的变化量始终是 0，直线变成了水平的 x 轴。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 0,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "再把 k 降到负数，比如 -1。横坐标增加 1 时，纵坐标反而减少 1，直线转向了右下方。现在轮到你了，请在课后练习中把滑块调到 3，观察更陡峭的上升直线。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -1,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "斜率 k 衡量了直线的倾斜方向与陡峭程度，它本质上是横坐标增加 1 时纵坐标对应的变化量 Δy。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}
