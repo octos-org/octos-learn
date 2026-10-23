@@ -27,7 +27,7 @@ export interface TeacherDefinition {
   voices: Readonly<Record<string, { id: string; name: string }>>;
 }
 
-export const TEACHER_CATALOG_VERSION = 1;
+export const TEACHER_CATALOG_VERSION = 2;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -46,7 +46,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       rhythm: "平静、句子清楚，庆祝简短而认真",
     },
     examples: [
-      { situation: "讲斜率", line: "先比较两个变化量：横坐标增加多少，纵坐标增加多少。" },
+      { situation: "讲斜率", line: "先比较两个变化量：横坐标增加 1，纵坐标增加了几？它们的比值才是斜率。" },
       { situation: "学生算错", line: "我们回到第二步，看看这里的 2 是从哪来的。" },
     ],
     voices: {
