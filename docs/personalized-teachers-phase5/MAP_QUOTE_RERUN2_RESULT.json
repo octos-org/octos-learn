@@ -1,0 +1,146 @@
+{
+  "checked_at": "2026-10-23T18:09:36.842Z",
+  "mode": "live",
+  "passed": false,
+  "failure": "A failed measurement must stop the run\n\nfalse !== true\n",
+  "plan_id": "phase5-map-quote-rerun2-20261023",
+  "plan_sha256": "0f307319efce4bbc48478a9e332bccec3a772d904e925d1f11bffa7bda210b96",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 4,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 4,
+  "reserved_usd_micros": 600000,
+  "calls": [
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 22329,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3645,
+        "candidatesTokenCount": 1618,
+        "totalTokenCount": 5263,
+        "cachedContentTokenCount": 2801,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3645
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2801
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14338,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2370,
+        "candidatesTokenCount": 1092,
+        "totalTokenCount": 3462,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2370
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 13085,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2354,
+        "candidatesTokenCount": 907,
+        "totalTokenCount": 3261,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2354
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-map-doudou",
+      "request_bytes": 22348,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3664,
+        "candidatesTokenCount": 1579,
+        "totalTokenCount": 5243,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3664
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-map-alan",
+      "teacher": "alan",
+      "topic": "map-quote",
+      "status": "succeeded",
+      "elapsed_ms": 41619,
+      "model_requests": 3,
+      "lesson_sha256": "31123a79946e8fc8653e6641cc316bd16cf047681b785c34de70f37947b11348"
+    },
+    {
+      "id": "02-map-doudou",
+      "teacher": "doudou",
+      "topic": "map-quote",
+      "status": "failed",
+      "elapsed_ms": 13893,
+      "model_requests": 1
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/map-quote-rerun2"
+}

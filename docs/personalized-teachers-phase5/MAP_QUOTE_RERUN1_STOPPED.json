@@ -1,0 +1,144 @@
+{
+  "checked_at": "2026-10-23T18:07:08.382Z",
+  "mode": "live",
+  "passed": false,
+  "failure": "A failed measurement must stop the run\n\nfalse !== true\n",
+  "plan_id": "phase5-map-quote-rerun-20261023",
+  "plan_sha256": "f3b4d088ada38962cc04c0d2a476a4c6a1de10910ea9b5e329c7c4026d330dd3",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "78bf18f221b69de49503067a79f92b7eb3edbfc3fea61e25b9653ecbb1255223",
+  "gateway": {
+    "admitted": 4,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 4,
+  "reserved_usd_micros": 600000,
+  "calls": [
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 22329,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3645,
+        "candidatesTokenCount": 1563,
+        "totalTokenCount": 5208,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3645
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14300,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2360,
+        "candidatesTokenCount": 1091,
+        "totalTokenCount": 3451,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2360
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14300,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2360,
+        "candidatesTokenCount": 966,
+        "totalTokenCount": 3326,
+        "cachedContentTokenCount": 1330,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2360
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1330
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14300,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2360,
+        "candidatesTokenCount": 1128,
+        "totalTokenCount": 3488,
+        "cachedContentTokenCount": 1330,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2360
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1330
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-map-alan",
+      "teacher": "alan",
+      "topic": "map-quote",
+      "status": "failed",
+      "elapsed_ms": 64688,
+      "model_requests": 4
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/map-quote-rerun1"
+}
