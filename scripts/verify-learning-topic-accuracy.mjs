@@ -2,7 +2,7 @@
 // Gemini replacement. --execute requires an explicitly approved policy and
 // pre-routed normal Octos; it never exports/copies supplier credentials.
 import assert from 'node:assert/strict';
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { createServer } from 'node:http';
@@ -12,18 +12,22 @@ import { HistoryStore } from '../services/learning-history/store.mjs';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { buildAnalysisInput } from '../services/learning-history/topic-analysis.mjs';
 import { ANALYSIS_INSTRUCTIONS } from '../services/learning-history/topic-analysis-instructions.mjs';
-import { digest, validateTopicTrial, validateUnadmittedResume, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
+import { digest, TASK_V2_CASES_FILE, validateTopicTrial, validateUnadmittedResume, TopicTrialLedger, createTopicTrialGateway } from './lib/learning-topic-trial-control.mjs';
 import { stageTopicCase, inspectTopicCandidate, requireAllStagedJobs, stageObservedTrialPlayback, retainTopicTrialOutput } from './lib/learning-topic-trial-cases.mjs';
 import { queryTopic } from '../services/learning-history/topic-query.mjs';
 import { topicOctosFixture, listenLocal, closeLocal } from './lib/learning-topic-trial-fixture.mjs';
 import { loginExistingTrialOwner } from './lib/learning-performance-auth.mjs';
 
-const [mode, planFile, output, binary, fixtureScenario = 'valid'] = process.argv.slice(2);
-const execute = mode === '--execute' || mode === '--resume-preflight';
-assert.ok(['--check', '--fixture', '--execute', '--resume-preflight'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY]');
-assert.ok(fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host', 'three-lookups', 'fenced-json'].includes(fixtureScenario)), 'Invalid fixture scenario');
+const args = process.argv.slice(2);
+const isolated = args[0] === '--execute-isolated';
+const [mode, planFile, output, binary, fixtureScenario = 'valid'] = isolated ? args.slice(0, 4) : args;
+const execute = mode === '--execute' || mode === '--resume-preflight' || isolated;
+assert.ok(['--check', '--fixture', '--execute', '--resume-preflight', '--execute-isolated'].includes(mode) && planFile, 'Supply --check|--fixture|--execute PLAN.json [PRIVATE_OUTPUT] [ABSOLUTE_OCTOS_BINARY], or --execute-isolated PLAN.json PRIVATE_OUTPUT ABSOLUTE_OCTOS_BINARY --key-file ABSOLUTE_FILE');
+assert.ok(isolated || fixtureScenario === 'valid' || (mode === '--fixture' && ['invalid-json', 'resumed-host', 'three-lookups', 'fenced-json'].includes(fixtureScenario)), 'Invalid fixture scenario');
 const planBytes = await readFile(planFile), plan = JSON.parse(planBytes);
-const casesBytes = await readFile('docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
+const taskV2 = plan.scope === 'task-v2-cases';
+assert.equal(isolated, execute && taskV2, 'Task-v2 cases run only on an isolated Octos; earlier fixed cases only on the reviewed routed Octos');
+const casesBytes = await readFile(taskV2 ? TASK_V2_CASES_FILE : 'docs/personalized-teachers-phase2/TOPIC_ACCURACY_CASES.json');
 const samples = validateTopicTrial(plan, casesBytes, { execute });
 assert.ok(plan.code_sha256 && Object.keys(plan.code_sha256).length >= 7, 'Trial source fingerprints missing');
 for (const [path, expected] of Object.entries(plan.code_sha256)) {
@@ -36,9 +40,18 @@ if (mode === '--check') {
     approval_required: true, supplier_calls: 0, plan_sha256: digest(planBytes) }));
 } else {
   assert.ok(output?.startsWith('/'), 'Provide a new protected output directory');
+  let key;
   if (execute) {
     assert.equal(resolve(output), plan.output_directory);
     assert.equal(digest(await readFile(plan.octos.binary)), plan.octos.sha256, 'Reviewed Octos binary changed; recheck profile bootstrap and billing paths');
+  }
+  if (isolated) {
+    assert.equal(binary, plan.octos.binary);
+    const keyFile = args[args.indexOf('--key-file') + 1];
+    assert.ok(args.indexOf('--key-file') === 4 && keyFile?.startsWith('/'), 'Supply --key-file with an absolute path');
+    assert.equal((await stat(keyFile)).mode & 0o077, 0, 'Key file must not be readable by other users (chmod 600)');
+    key = (await readFile(keyFile, 'utf8')).trim();
+    assert.ok(key && !/\s/.test(key), 'Key file must hold one Key');
   }
   else assert.ok(binary?.startsWith('/'), 'Fixture requires an absolute local Octos binary');
   // No fresh directory or changed policy is used to refill an existing trial.
@@ -84,7 +97,7 @@ if (mode === '--check') {
       report.fixture_instruction_requests_checked = (report.fixture_instruction_requests_checked ?? 0) + 1;
       const hasTool = body.contents.some(content => content.parts.some(part => part.functionResponse));
       let parts = hasTool ? [{ text: JSON.stringify({ schema: 1, input_sha256: activeInput.input_sha256,
-        units: activeInput.units.map(unit => { const expected = activeSample.expectations[unit.unit_id]; return { unit_id: unit.unit_id, status: expected.status,
+        units: activeInput.units.map(unit => { const expected = activeSample.expectations[unit.unit_id] ?? { status: 'unknown' }; return { unit_id: unit.unit_id, status: expected.status,
           topics: expected.status === 'mapped' ? [{ topic_id: expected.acceptable_topics[0], quote: unit.content.slice(0, Math.min(24, unit.content.length)) }] : [], reason: 'Fixture only; expectations never reach a real model' }; }) }) }]
         : [{ functionCall: { name: 'learning_topics_search', args: { query: 'linear gradient intercept triangle angle sum', limit: 12 } } }];
       if (fixtureScenario === 'three-lookups') {
@@ -96,8 +109,8 @@ if (mode === '--check') {
       return new Response(`data: ${JSON.stringify({ candidates: [{ content: { role: 'model', parts }, finishReason: hasTool ? 'STOP' : 'STOP' }], usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } })}\n\n`, { headers: { 'content-type': 'text/event-stream' } });
     };
     gateway = createTopicTrialGateway({ ledger, upstreamFetch });
-    const gatewayBase = await listenLocal(gateway.server, execute ? Number(new URL(plan.gateway).port) : 0);
-    if (mode === '--fixture') fixture = await topicOctosFixture({ binary, root: output, gateway: gatewayBase, plan });
+    const gatewayBase = await listenLocal(gateway.server, execute && !isolated ? Number(new URL(plan.gateway).port) : 0);
+    if (mode === '--fixture' || isolated) fixture = await topicOctosFixture({ binary, root: output, gateway: gatewayBase, plan, ...(isolated ? { key } : {}) });
     const backend = fixture?.base ?? plan.backend;
     const { token, profile } = await loginExistingTrialOwner({ owner: plan.owner, registryRoot: fixture ? undefined : join(homedir(), '.octos'), request: (path, options) => fetch(backend + path, options) });
     assert.equal(profile.config.llm.primary.model_id, plan.model);
@@ -160,7 +173,7 @@ if (mode === '--check') {
       const result = JSON.parse(saved.result_json);
       row.result = result; row.review = inspectTopicCandidate(sample, result); row.state = 'saved-needs-human-review';
       ledger.finish(sample.id); await save();
-      assert.equal(row.review.expectation_issues.length, 0, 'Trial stopped at a predeclared expectation mismatch; do not auto-repeat');
+      if (!taskV2) assert.equal(row.review.expectation_issues.length, 0, 'Trial stopped at a predeclared expectation mismatch; do not auto-repeat');
     }
     if (['course-supplement', 'course-version-a', 'course-version-b'].every(id => samples.some(sample => sample.id === id))) {
       stageObservedTrialPlayback(history, plan.owner);
@@ -182,6 +195,15 @@ if (mode === '--check') {
     report.budget = ledger.snapshot(); report.gateway_metrics = gateway?.metrics; await save();
     await closeLocal(product); await vite?.close(); await fixture?.close();
     await closeLocal(gateway?.server); history?.close(); ledger.close();
+    if (isolated) {
+      // The isolated profile and config hold the Key: remove them, and keep
+      // the Octos log only when it does not contain the Key.
+      await rm(join(output, 'octos'), { recursive: true, force: true }); await rm(join(output, 'fixture-config.json'), { force: true });
+      const logPath = join(output, 'fixture-octos.log');
+      const logText = await readFile(logPath, 'utf8').catch(() => '');
+      if (logText.includes(key)) await rm(logPath, { force: true });
+      report.isolated_cleanup = { octos_data_deleted: true, octos_log_kept: !logText.includes(key) }; await save();
+    }
   }
   console.log(JSON.stringify({ state: report.state, samples: report.rows.length, supplier_calls: report.supplier_calls,
     model_http_requests: report.budget.requests.length, reserved_usd: report.budget.requests.reduce((sum, r) => sum + r.usd, 0) / 1e6,

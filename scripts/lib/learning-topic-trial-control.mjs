@@ -11,7 +11,10 @@ import { ANALYSIS_MATERIAL_PREFIX } from '../../services/learning-history/topic-
 
 export const digest = value => createHash('sha256').update(value).digest('hex');
 const fields = (value, allowed) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
-export function validateTopicTrial(plan, casesBytes, { execute = false, now = new Date() } = {}) {
+export const TASK_V2_CASES_FILE = 'docs/personalized-teachers-phase2/TASK_V2_CASES.json';
+export function validateTopicTrial(plan, casesBytes, options = {}) {
+  if (plan.scope === 'task-v2-cases') return validateTaskV2Trial(plan, casesBytes, options);
+  const { execute = false, now = new Date() } = options;
   assert.equal(plan.schema, 'octos.learn.topic-accuracy-trial.v1');
   assert.equal(plan.owner, 'alan0x'); assert.equal(plan.model, 'gemini-3.8-flash');
   assert.equal(plan.backend, 'http://127.0.0.1:50080'); assert.equal(plan.gateway, 'http://127.0.0.1:50189');
@@ -39,6 +42,38 @@ export function validateTopicTrial(plan, casesBytes, { execute = false, now = ne
     assert.ok(now.toISOString().slice(0, 10) <= p.valid_until, 'Pricing basis expired');
   }
   return finalSeven ? cases.slice(2) : remaining ? cases.slice(1) : diagnostic ? cases.slice(0, 1) : cases;
+}
+
+// Task-unit cases run on an isolated Octos whose only model route is this
+// trial's gateway; the Key comes from a file the user created, never from the
+// user's own Octos profile. Mismatches are the measurement and do not stop it.
+function validateTaskV2Trial(plan, casesBytes, { execute = false, now = new Date() } = {}) {
+  assert.equal(plan.schema, 'octos.learn.topic-accuracy-trial.v1');
+  assert.equal(plan.owner, 'task-v2-trial'); assert.equal(plan.model, 'gemini-3.8-flash');
+  assert.equal(plan.backend, undefined); assert.equal(plan.gateway, undefined);
+  assert.equal(plan.cases_file, TASK_V2_CASES_FILE); assert.equal(plan.cases_sha256, digest(casesBytes));
+  assert.equal(plan.taxonomy_sha256, '27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522');
+  assert.match(plan.id, /^[a-z0-9-]+$/); assert.ok(typeof plan.output_directory === 'string' && plan.output_directory.startsWith('/private/tmp/'));
+  const cases = JSON.parse(casesBytes).cases;
+  assert.equal(cases.length, 4); assert.equal(new Set(cases.map(c => c.id)).size, 4);
+  assert.ok(cases.every(c => c.kind === 'course' && Object.keys(c.expectations).every(id => JSON.parse(id)[0] === 'task')));
+  // Run 1 stopped at 6 requests per lesson: the model searches the catalog one
+  // term per round trip. Requests are capped at 256 KiB, so input is at most
+  // 262144 tokens and each reservation covers that plus full output capacity.
+  assert.deepEqual(plan.limits, { tasks: 4, model_http_requests: 30, model_http_requests_per_task: 10, usd_micros: 13500000,
+    reservation_usd_micros: 450000, request_bytes: 262144, output_tokens: 32768 });
+  const p = plan.pricing;
+  assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
+  assert.equal(p.max_output_tokens, 65536);
+  assert.equal(p.valid_until, '2026-12-31');
+  assert.ok((plan.limits.request_bytes * p.input_per_million_usd + p.max_output_tokens * p.output_including_thinking_per_million_usd) <= plan.limits.reservation_usd_micros);
+  if (execute) {
+    assert.equal(plan.status, 'approved', 'Task-v2 trial is not authorized');
+    assert.ok(typeof plan.authorization_reference === 'string' && plan.authorization_reference.trim(), 'Human authorization missing');
+    assert.equal(p.verified_at, now.toISOString().slice(0, 10), 'Recheck the public price on execution day');
+    assert.ok(now.toISOString().slice(0, 10) <= p.valid_until, 'Pricing basis expired');
+  }
+  return cases;
 }
 
 // A connection failure before Octos admission has not spent the authorization.

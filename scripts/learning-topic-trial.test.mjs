@@ -208,3 +208,23 @@ test('the final seven exclude both checked questions and cannot replenish the pr
     assert.equal(ledger.snapshot().requests.length + 5, 18);
   } finally { ledger.close(); }
 });
+
+test('task-v2 cases need their own pinned file, isolated route, limits and authorization; every expectation is a task unit', async () => {
+  const taskPlan = { ...JSON.parse(await readFile('docs/personalized-teachers-phase2/TASK_V2_TRIAL.json')), status: 'prepared', authorization_reference: '' };
+  const taskBytes = await readFile('docs/personalized-teachers-phase2/TASK_V2_CASES.json');
+  const taskCases = validateTopicTrial(taskPlan, taskBytes);
+  assert.equal(taskCases.length, 4);
+  assert.throws(() => validateTopicTrial(taskPlan, taskBytes, { execute: true }), /not authorized/);
+  assert.throws(() => validateTopicTrial(taskPlan, casesBytes), /Expected values to be strictly equal/);
+  assert.throws(() => validateTopicTrial({ ...taskPlan, backend: 'http://127.0.0.1:50080' }, taskBytes));
+  assert.throws(() => validateTopicTrial({ ...taskPlan, limits: { ...taskPlan.limits, usd_micros: 99000000 } }, taskBytes));
+  const store = new HistoryStore(':memory:');
+  try {
+    for (const sample of taskCases) {
+      stageTopicCase(store, 'task-v2-trial', sample);
+      const input = buildAnalysisInput(store, 'task-v2-trial', sample.id);
+      for (const unitId of Object.keys(sample.expectations)) assert.equal(input.units.find(unit => unit.unit_id === unitId)?.kind, 'task');
+      assert.ok(!JSON.stringify(input).includes('acceptable_topics'));
+    }
+  } finally { store.close(); }
+});

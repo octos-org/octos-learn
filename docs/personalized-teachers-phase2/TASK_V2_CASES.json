@@ -1,0 +1,372 @@
+{
+  "schema": "octos.learn.task-v2-cases.v1",
+  "purpose": "Predeclared expectations for task-unit classification under rules separate-question-beat-and-task-units-v2. Expectations stay in the report and never reach the model.",
+  "cases": [
+    {
+      "id": "task-slope-lesson",
+      "kind": "course",
+      "note": "A triangle task inside a slope lesson must be classified from its own question, not the course title.",
+      "events": [
+        {
+          "event": "lesson.open",
+          "lesson_id": "task-slope-lesson",
+          "lesson": {
+            "title": "斜率 2 是什么意思",
+            "variables": [
+              {
+                "as": "m",
+                "initial": 0
+              },
+              {
+                "as": "b",
+                "initial": 0
+              },
+              {
+                "as": "c",
+                "initial": 0
+              }
+            ],
+            "tasks": [
+              {
+                "as": "compute-slope",
+                "prompt": "由点 (1,3) 和 (4,9) 求这条直线的斜率，把 m 调到你的计算结果。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "m"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "m",
+                  "value": 2,
+                  "tolerance": 0.01
+                }
+              },
+              {
+                "as": "move-intercept",
+                "prompt": "调整 b，让直线 y=2x+b 经过点 (0,-2)。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "b"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "b",
+                  "value": -2,
+                  "tolerance": 0.01
+                }
+              },
+              {
+                "as": "third-angle",
+                "prompt": "换个题目：一个三角形的两个内角是 50° 和 60°，把 c 调到第三个内角的度数。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "c"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "c",
+                  "value": 70,
+                  "tolerance": 0.01
+                }
+              }
+            ]
+          }
+        },
+        {
+          "event": "lesson.step",
+          "lesson_id": "task-slope-lesson",
+          "step": {
+            "id": "section-01",
+            "beats": [
+              {
+                "id": "b1",
+                "narration": {
+                  "text": "斜率 2 表示 x 每增加 1，y 增加 2。"
+                }
+              },
+              {
+                "id": "b2",
+                "narration": {
+                  "text": "在 y=2x+1 中，Δy/Δx 始终等于 2。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"task\",\"compute-slope\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf",
+            "mt_-3udyo6VyB"
+          ]
+        },
+        "[\"task\",\"move-intercept\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_WBdHkc2HTf",
+            "mt_-3udyo6VyB"
+          ]
+        },
+        "[\"task\",\"third-angle\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_J03RFlVdas",
+            "mt_cdMlC7EpTJ"
+          ]
+        }
+      }
+    },
+    {
+      "id": "task-triangle-lesson",
+      "kind": "course",
+      "note": "A slider step with no mathematics is unknown; angles on a straight line is a different node from the triangle sum.",
+      "events": [
+        {
+          "event": "lesson.open",
+          "lesson_id": "task-triangle-lesson",
+          "lesson": {
+            "title": "三角形内角和为什么是 180 度",
+            "variables": [
+              {
+                "as": "x",
+                "initial": 0
+              },
+              {
+                "as": "t",
+                "initial": 0
+              },
+              {
+                "as": "y",
+                "initial": 0
+              }
+            ],
+            "tasks": [
+              {
+                "as": "find-angle",
+                "prompt": "三角形中 ∠A=35°，∠B=90°，把 x 调到 ∠C 的度数。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "x"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "x",
+                  "value": 55,
+                  "tolerance": 0.01
+                }
+              },
+              {
+                "as": "just-drag",
+                "prompt": "拖动滑块，把 t 调到 1，然后继续。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "t"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "t",
+                  "value": 1,
+                  "tolerance": 0.01
+                }
+              },
+              {
+                "as": "straight-line",
+                "prompt": "一条直线上的两个相邻角，其中一个是 130°，把 y 调到另一个角的度数。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "y"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "y",
+                  "value": 50,
+                  "tolerance": 0.01
+                }
+              }
+            ]
+          }
+        },
+        {
+          "event": "lesson.step",
+          "lesson_id": "task-triangle-lesson",
+          "step": {
+            "id": "section-01",
+            "beats": [
+              {
+                "id": "b1",
+                "narration": {
+                  "text": "过顶点作底边的平行线，三个内角拼成一个平角。"
+                }
+              },
+              {
+                "id": "b2",
+                "narration": {
+                  "text": "所以三角形内角和是 180°。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"task\",\"find-angle\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_J03RFlVdas",
+            "mt_cdMlC7EpTJ"
+          ]
+        },
+        "[\"task\",\"just-drag\"]": {
+          "status": "unknown",
+          "acceptable_topics": []
+        },
+        "[\"task\",\"straight-line\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_oqziWKry-L"
+          ]
+        }
+      }
+    },
+    {
+      "id": "task-quadratic-lesson",
+      "kind": "course",
+      "note": "A parabola-vertex task is classified as quadratic graphs even though the lesson is about completing the square.",
+      "events": [
+        {
+          "event": "lesson.open",
+          "lesson_id": "task-quadratic-lesson",
+          "lesson": {
+            "title": "用配方法解一元二次方程",
+            "variables": [
+              {
+                "as": "h",
+                "initial": 0
+              }
+            ],
+            "tasks": [
+              {
+                "as": "vertex",
+                "prompt": "抛物线 y=(x-h)²-1 的顶点在 x=3 处，把 h 调到正确的值。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "h"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "h",
+                  "value": 3,
+                  "tolerance": 0.01
+                }
+              }
+            ]
+          }
+        },
+        {
+          "event": "lesson.step",
+          "lesson_id": "task-quadratic-lesson",
+          "step": {
+            "id": "section-01",
+            "beats": [
+              {
+                "id": "b1",
+                "narration": {
+                  "text": "x²+4x+3=0 可以写成 (x+2)²=1。"
+                }
+              },
+              {
+                "id": "b2",
+                "narration": {
+                  "text": "所以 x+2=1 或 x+2=-1，x=-1 或 x=-3。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"task\",\"vertex\"]": {
+          "status": "mapped",
+          "acceptable_topics": [
+            "mt_GZuoYaDdWd"
+          ]
+        }
+      }
+    },
+    {
+      "id": "task-missing-context",
+      "kind": "course",
+      "note": "The task itself gives no question; nearby narration must not supply one.",
+      "events": [
+        {
+          "event": "lesson.open",
+          "lesson_id": "task-missing-context",
+          "lesson": {
+            "title": "一次函数练习",
+            "variables": [
+              {
+                "as": "k",
+                "initial": 0
+              }
+            ],
+            "tasks": [
+              {
+                "as": "bare-target",
+                "prompt": "把 k 调到正确的值。",
+                "allowed_operations": [
+                  {
+                    "kind": "variable_change",
+                    "variable": "k"
+                  }
+                ],
+                "completion": {
+                  "kind": "expression_target",
+                  "expression": "k",
+                  "value": 3,
+                  "tolerance": 0.01
+                }
+              }
+            ]
+          }
+        },
+        {
+          "event": "lesson.step",
+          "lesson_id": "task-missing-context",
+          "step": {
+            "id": "section-01",
+            "beats": [
+              {
+                "id": "b1",
+                "narration": {
+                  "text": "一次函数 y=kx+1 的图像是一条直线。"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "expectations": {
+        "[\"task\",\"bare-target\"]": {
+          "status": "unknown",
+          "acceptable_topics": []
+        }
+      }
+    }
+  ]
+}
