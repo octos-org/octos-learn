@@ -22,6 +22,9 @@ export interface TeacherDefinition {
   };
   /** Short sample lines that show the style; the model must not copy them verbatim. */
   examples: { situation: string; line: string }[];
+  /** Standard narration voice per speech resource. A resource not listed here
+   * (for example a custom one) keeps the learner's saved voice. */
+  voices: Readonly<Record<string, { id: string; name: string }>>;
 }
 
 export const TEACHER_CATALOG_VERSION = 1;
@@ -46,6 +49,11 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       { situation: "讲斜率", line: "先比较两个变化量：横坐标增加多少，纵坐标增加多少。" },
       { situation: "学生算错", line: "我们回到第二步，看看这里的 2 是从哪来的。" },
     ],
+    voices: {
+      "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
+      "seed-tts-1.0": { id: "zh_male_yuanboxiaoshu_moon_bigtts", name: "渊博小叔" },
+      "seed-tts-1.0-concurr": { id: "zh_male_yuanboxiaoshu_moon_bigtts", name: "渊博小叔" },
+    },
   },
   {
     id: "doudou",
@@ -66,6 +74,11 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       { situation: "讲斜率", line: "把这条直线想成一段山路：向右走一步，会往上升多少？" },
       { situation: "学生连续卡住", line: "没关系，我们先只看山路的第一步，往上升了几格？" },
     ],
+    voices: {
+      "seed-tts-2.0": { id: "zh_female_xiaohe_uranus_bigtts", name: "小何 2.0" },
+      "seed-tts-1.0": { id: "zh_female_shuangkuaisisi_moon_bigtts", name: "爽快思思" },
+      "seed-tts-1.0-concurr": { id: "zh_female_shuangkuaisisi_moon_bigtts", name: "爽快思思" },
+    },
   },
 ];
 

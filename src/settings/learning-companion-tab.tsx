@@ -28,6 +28,7 @@ export function TeacherPicker() {
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-text-strong">{option.name}</span>
                 <span className="mt-1 block text-xs leading-5 text-muted">{option.tagline}</span>
+                <span className="mt-1 block text-xs leading-5 text-muted">朗读音色：{[...new Set(Object.values(option.voices).map((voice) => voice.name))].join(" / ")}</span>
               </span>
             </span>
             <span className={`workbench-status-pill shrink-0 ${active ? "" : "invisible"}`} data-tone="accent" aria-hidden={!active}>
@@ -124,7 +125,7 @@ export function LearningCompanionTab() {
 
       <TeacherPicker />
       <p className="mt-5 text-sm text-muted">
-        下面只改变外观；选择上面的老师时会同时换成这位老师的默认外观。
+        老师的讲课风格和朗读音色用于新开始的课程；使用自定义语音资源或账号无权使用该音色时，仍用 Voice 设置里保存的音色。下面只改变外观；选择上面的老师时会同时换成这位老师的默认外观。
       </p>
       <TeacherSkinPicker />
     </section>

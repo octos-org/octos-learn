@@ -107,19 +107,41 @@ export function markVerified(capability: Capability, config: ClientService): voi
   if ([...fields].some(field => current.params[field] !== config.params[field])) return;
   setServiceStatus(capability, "ready", "已成功调用本人服务。");
 }
+// Narration voices of the teacher who started the current lesson, keyed by
+// speech resource. Voice tests (drafts) always use the voice being tested.
+let lessonVoices: Readonly<Record<string, { id: string }>> | null = null;
+const refusedLessonVoices = new Set<string>();
+export function setLessonVoices(voices: Readonly<Record<string, { id: string }>> | null): void { lessonVoices = voices; }
+class SpeakerRefused extends ServiceError {}
+async function synthesizeWith(text: string, config: ClientService, speaker: string, signal?: AbortSignal): Promise<Blob> {
+  const response = await directJson("tts", config, { user: { uid: "byok-client" }, req_params: { text, speaker, audio_params: { format: "mp3", sample_rate: 24000 } } }, signal);
+  const audio: Uint8Array<ArrayBuffer>[] = [];
+  for (const line of response.body.split(/\r?\n/).filter(s => s.trim())) {
+    const chunk = JSON.parse(line) as { code: number; data?: string };
+    if (chunk.code !== 0 && chunk.code !== 20000000) throw new SpeakerRefused("network_error", statusError(502, String(chunk.code)).message);
+    if (chunk.data) audio.push(base64Bytes(chunk.data));
+  }
+  if (!audio.length) throw new ServiceError("network_error", "供应商未返回可播放音频。");
+  return new Blob(audio, { type: "audio/mpeg" });
+}
 export async function synthesizeDirect(text: string, signal?: AbortSignal, draft?: ClientService): Promise<Blob> {
   try {
     const config = draft ?? requiredService("tts");
-    const response = await directJson("tts", config, { user: { uid: "byok-client" }, req_params: { text, speaker: config.params.voice, audio_params: { format: "mp3", sample_rate: 24000 } } }, signal);
-    const audio: Uint8Array<ArrayBuffer>[] = [];
-    for (const line of response.body.split(/\r?\n/).filter(s => s.trim())) {
-      const chunk = JSON.parse(line) as { code: number; data?: string };
-      if (chunk.code !== 0 && chunk.code !== 20000000) throw statusError(502, String(chunk.code));
-      if (chunk.data) audio.push(base64Bytes(chunk.data));
-    }
-    if (!audio.length) throw new ServiceError("network_error", "供应商未返回可播放音频。");
+    const listed = draft ? undefined : lessonVoices?.[config.params.resource_id?.trim() ?? ""]?.id;
+    const teacherVoice = listed && listed !== config.params.voice && !refusedLessonVoices.has(listed) ? listed : undefined;
+    let audio: Blob;
+    if (teacherVoice) {
+      try { audio = await synthesizeWith(text, config, teacherVoice, signal); }
+      catch (error) {
+        // An account without access to the teacher's standard voice keeps
+        // narrating with the learner's saved voice for the rest of the page.
+        if (!(error instanceof SpeakerRefused || (error instanceof ServiceError && error.state === "resource_not_enabled"))) throw error;
+        refusedLessonVoices.add(teacherVoice);
+        audio = await synthesizeWith(text, config, config.params.voice, signal);
+      }
+    } else audio = await synthesizeWith(text, config, config.params.voice, signal);
     markVerified("tts", config);
-    return new Blob(audio, { type: "audio/mpeg" });
+    return audio;
   } catch (error) { throw serviceFailure("tts", error, !draft); }
 }
 export async function transcribeDirect(wav: Blob, signal: AbortSignal, draft?: ClientService): Promise<{ status: "speech" | "no_speech"; transcript: string }> {

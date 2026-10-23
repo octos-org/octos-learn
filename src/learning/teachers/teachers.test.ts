@@ -1,4 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { TEACHERS, getTeacher, teacherProfile, useSelectedTeacher } from './teachers';
 import { buildLearnerContext, LearnerBackgroundCache } from './learner-background';
@@ -111,4 +113,13 @@ it('a forced refresh during a running load reloads afterwards instead of reusing
   await first; await forced;
   expect(load).toHaveBeenCalledTimes(2);
   expect(cache.current('alice')).toContain('连接建立后才读到的记忆');
+});
+
+it('gives each teacher a distinct standard catalog voice for every catalog resource', () => {
+  const catalog = JSON.parse(readFileSync(resolve(__dirname, '../../../public/voice-catalog/volcano.json'), 'utf8')) as { voices: { id: string; name: string; resourceIds: string[] }[] };
+  for (const resource of new Set(catalog.voices.flatMap(voice => voice.resourceIds))) {
+    const chosen = TEACHERS.map(teacher => teacher.voices[resource]);
+    expect(new Set(chosen.map(voice => voice.id)).size).toBe(TEACHERS.length);
+    for (const voice of chosen) expect(catalog.voices.find(entry => entry.id === voice.id && entry.name.startsWith(voice.name))?.resourceIds).toContain(resource);
+  }
 });

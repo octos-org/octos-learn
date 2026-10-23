@@ -7,6 +7,7 @@ import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
+import { setLessonVoices } from "@/byok/providers";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -1222,6 +1223,8 @@ export function LearningWorkspace({
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
+    // Narration uses this teacher's voice only for lessons in this teacher's style.
+    setLessonVoices(contextFields?.has("teacher_profile") ? lessonTeacher.voices : null);
     setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();

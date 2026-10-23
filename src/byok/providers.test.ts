@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ request: vi.fn() }));
 vi.mock("@/api/client", () => ({ getToken: () => "alice", getSelectedProfileId: () => "alice", request: api.request }));
 import { resetClientServices, prepareClientServices, getServiceStatus, type ClientService } from "./services";
-import { directJson, synthesizeDirect, transcribeDirect, validateService } from "./providers";
+import { directJson, setLessonVoices, synthesizeDirect, transcribeDirect, validateService } from "./providers";
 const config = (provider = "volcano"): ClientService => ({ provider, enabled: true, key: "own-canary-key", params: { voice: "test-voice", auth_mode: "api-key", resource_id: "seed-tts-2.0" }, revision: "r1", execution_target: "client" });
-beforeEach(() => { resetClientServices(); api.request.mockReset(); delete window.OctosNativeByok; });
+beforeEach(() => { resetClientServices(); setLessonVoices(null); api.request.mockReset(); delete window.OctosNativeByok; });
 afterEach(() => { vi.unstubAllGlobals(); delete window.OctosNativeByok; });
 describe("BYOK provider transports", () => {
   it("relays browser TTS with only the caller's new Key, without trying a paid direct request first", async () => {
@@ -103,6 +103,36 @@ describe("BYOK provider transports", () => {
     api.request.mockResolvedValue({ profile_id: "alice", services: { tts: { ...config(), key: undefined, has_credential: true } } });
     await prepareClientServices();
     expect(getServiceStatus("tts").state).toBe("configured_unverified");
+  });
+  it("narrates lessons with the teacher's voice for the saved resource and falls back once it is refused", async () => {
+    const audio = { status: 200, body: '{"code":0,"data":"bXAz"}', code: null };
+    const speakers = () => api.request.mock.calls.filter(([url]) => url === "/api/learn/byok/tts/relay").map(([, init]) => JSON.parse(init.body).payload.req_params.speaker);
+    api.request.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url !== "/api/learn/byok/tts/relay") return { profile_id: "alice", services: { tts: { ...config(), key: undefined, has_credential: true } } };
+      return JSON.parse(init?.body as string).payload.req_params.speaker === "teacher-voice" ? { status: 200, body: '{"code":45000000}', code: null } : audio;
+    });
+    await prepareClientServices();
+    setLessonVoices({ "seed-tts-1.0": { id: "other-resource-voice" } });
+    await synthesizeDirect("一");
+    setLessonVoices({ "seed-tts-2.0": { id: "teacher-voice" } });
+    await synthesizeDirect("二");
+    await synthesizeDirect("三");
+    await synthesizeDirect("试听", undefined, config());
+    // Other resource: saved voice. Refused teacher voice: one retry, then saved voice only.
+    expect(speakers()).toEqual(["test-voice", "teacher-voice", "test-voice", "test-voice", "test-voice"]);
+  });
+  it("uses an accepted teacher voice and never for voice tests", async () => {
+    api.request.mockImplementation(async (url: string) => url === "/api/learn/byok/tts/relay"
+      ? { status: 200, body: '{"code":0,"data":"bXAz"}', code: null }
+      : { profile_id: "alice", services: { tts: { ...config(), key: undefined, has_credential: true } } });
+    await prepareClientServices();
+    setLessonVoices({ "seed-tts-2.0": { id: "calm-voice" } });
+    await synthesizeDirect("一"); await synthesizeDirect("试听", undefined, config());
+    api.request.mockResolvedValueOnce({ status: 429, body: "", code: null });
+    await expect(synthesizeDirect("二")).rejects.toMatchObject({ state: "rate_limited" });
+    const speakers = api.request.mock.calls.filter(([url]) => url === "/api/learn/byok/tts/relay").map(([, init]) => JSON.parse(init.body).payload.req_params.speaker);
+    // Rate limiting is not a refusal: no fallback request and no extra charge.
+    expect(speakers).toEqual(["calm-voice", "test-voice", "calm-voice"]);
   });
   it("does not send an old account's key after sign-out during WAV preparation", async () => {
     const result = transcribeDirect(new Blob(["wav"]), new AbortController().signal, config());
