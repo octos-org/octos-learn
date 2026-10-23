@@ -1,0 +1,83 @@
+{
+  "schema": "octos.learn.teacher-memory-refresh-trial.v1",
+  "id": "teacher-memory-today-vs-later-20261023",
+  "status": "draft",
+  "authorization_reference": "",
+  "model": "gemini-3.8-flash",
+  "delivery": "participant-field",
+  "octos_change": "octos main 5d9e70b4 (includes #2859, UPCR-2026-053). No Octos change is tested here: the question is whether its existing rules already separate one-lesson requests from lasting ones.",
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/memory-scope-time-run1",
+  "wait_seconds": 420,
+  "limits": {
+    "model_http_requests": 10,
+    "request_bytes": 262144,
+    "output_tokens": 65536,
+    "reservation_usd_micros": 450000,
+    "usd_micros": 4500000
+  },
+  "questions_answered": [
+    "Is a request limited to this lesson ('today', 'this lesson') left out of long-term memory, both when said to every teacher and to one teacher?",
+    "Is a lasting request ('from now on') kept, with its scope (all teachers or one teacher)?",
+    "When the learner later replaces a lasting request, does the newer one supersede the older one instead of both staying active?",
+    "Does a one-lesson exception leave the lasting preference it overrides untouched?"
+  ],
+  "expected": [
+    "After phase 1: 'all teachers: conclusion first' (general); '豆豆: use basketball examples' (豆豆 only); learner plays basketball. Nothing about skipping practice today.",
+    "After phase 2: 'conclusion first' replaced by 'all teachers: one example first, then the conclusion'; '豆豆: basketball examples' still present; nothing about 'just give the answer this lesson' or 'no metaphors today'."
+  ],
+  "phases": [
+    [
+      {
+        "session_id": "learn-memory-time-a",
+        "teacher": "豆豆",
+        "date_note": "synthetic lesson 1",
+        "exchanges": [
+          {
+            "user": "以后所有老师讲题都先说结论，再解释为什么。",
+            "teacher": "好的！先说结论：一次函数 y=kx+b 中，k 是斜率。为什么？因为 x 每增加 1，y 就增加 k。"
+          },
+          {
+            "user": "豆豆老师，我平时最喜欢打篮球，以后你举例可以多用篮球。",
+            "teacher": "太棒了！比如投篮命中数随练习次数增加，就像一条向上走的直线。"
+          },
+          {
+            "user": "今天我有点累，这节课先别出练习题了。",
+            "teacher": "没问题，今天我们只把概念讲清楚，不做练习。"
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "session_id": "learn-memory-time-b",
+        "teacher": "阿澜",
+        "date_note": "synthetic lesson 2",
+        "exchanges": [
+          {
+            "user": "我改主意了：以后所有老师讲题都先举一个例子，再说结论，不用先说结论了。",
+            "teacher": "好，先看一个例子：y=2x+1，x 从 0 变到 1，y 从 1 变到 3，增加了 2。所以结论是：斜率 k=2。"
+          },
+          {
+            "user": "这节课时间紧，直接告诉我截距的答案就行，不用举例。",
+            "teacher": "好的，直接说：y=2x+1 的截距是 1。"
+          }
+        ]
+      },
+      {
+        "session_id": "learn-memory-time-c",
+        "teacher": "豆豆",
+        "date_note": "synthetic lesson 3",
+        "exchanges": [
+          {
+            "user": "豆豆老师，今天先别用比喻了，我想直接看推导。",
+            "teacher": "好的，今天直接推导：两点 (0,1) 和 (2,5)，斜率 k=(5-1)/(2-0)=2。"
+          },
+          {
+            "user": "嗯，看懂了，谢谢。",
+            "teacher": "不客气！"
+          }
+        ]
+      }
+    ]
+  ]
+}
