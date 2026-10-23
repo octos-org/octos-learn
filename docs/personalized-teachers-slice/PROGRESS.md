@@ -195,5 +195,5 @@ Octos Learn 侧后续（依赖 #61 的 `store.mjs` 与本 PR 合并）：连接�
 ## 2026-10-23 Octos 参与者字段合并，Octos Learn 改用该字段
 
 - octos #2859 获同事审查通过，CI 首次失败原因：`Message` 增加 `participant` 后变为 232 字节，`SteeringMessage::FollowUp(Message)` 触发 clippy `large_enum_variant`（CI 以 `-D warnings` 运行）。修复为 `FollowUp(Box<Message>)`（e3990a4d）及格式补正（610c1c0c）。CI 28 项通过后按用户授权合并，merge commit 5e0ab6ab。
-- Octos Learn（分支 `codex/teacher-participant-field`）：老师回复暂存时以 `participant: "<名字>老师"` 记录、正文为原文；交付时 Octos 确认 `session.append_message.participant.v1` 才发送该字段，否则把“【名字老师】”标签放回正文（旧 Octos 会静默丢弃未知参数）。旧版本已暂存的任务保持带标签正文。前端 1273、服务 52 项测试通过，类型检查与 lint 通过。
+- Octos Learn [PR #63](https://github.com/octos-org/octos-learn/pull/63)（分支 `codex/teacher-participant-field`）：老师回复暂存时以 `participant: "<名字>老师"` 记录、正文为原文；交付时 Octos 确认 `session.append_message.participant.v1` 才发送该字段，否则把“【名字老师】”标签放回正文（旧 Octos 会静默丢弃未知参数）。旧版本已暂存的任务保持带标签正文。前端 1273、服务 52 项测试通过，类型检查与 lint 通过。
 - 发布顺序：新 Octos 部署后该字段才生效；未更新 Octos 时行为与之前相同。合并不等于发布。
