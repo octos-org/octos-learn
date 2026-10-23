@@ -1,0 +1,30 @@
+{
+ "method": "Longest substring shared between each lesson's extracted text (narration, board text, task, close; teacher names removed) and any of the 14 situation example lines in teacher catalog 3. Example lines are about 20-45 characters.",
+ "results": {
+  "01-challenge-alan": {
+   "chars": 9,
+   "fragment": "先比较两个变化量："
+  },
+  "02-challenge-doudou": {
+   "chars": 7,
+   "fragment": "直线没有斜率。"
+  },
+  "03-direct-doudou": {
+   "chars": 6,
+   "fragment": "斜率是 3。"
+  },
+  "04-direct-alan": {
+   "chars": 10,
+   "fragment": "增加 1，纵坐标增加"
+  },
+  "05-wrong-alan": {
+   "chars": 10,
+   "fragment": "增加 1，纵坐标增加"
+  },
+  "06-wrong-doudou": {
+   "chars": 6,
+   "fragment": "把这条直线想"
+  }
+ },
+ "conclusion": "No example sentence was copied; the longest shared runs are short common phrases."
+}

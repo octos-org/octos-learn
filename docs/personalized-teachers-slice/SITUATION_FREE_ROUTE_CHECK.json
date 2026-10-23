@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-23T16:37:29.176Z",
+  "mode": "fixture",
+  "passed": true,
+  "plan_id": "teacher-situation-trial-20261023-fixture",
+  "plan_sha256": "d46701b5c6223f4795ba92929376d5323b4e42ee92ab2cc9204b72db4192a84e",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "71e3e68391f8a69621abc9d0421fc9447504acc7eac31abf72453be630c2810a",
+  "gateway": {
+    "admitted": 2,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 2,
+  "reserved_usd_micros": 300000,
+  "calls": [
+    {
+      "sample": "01-challenge-alan",
+      "request_bytes": 19766,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      }
+    },
+    {
+      "sample": "01-challenge-alan",
+      "request_bytes": 19766,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-challenge-alan",
+      "teacher": "alan",
+      "topic": "challenge",
+      "status": "failed",
+      "elapsed_ms": 3498,
+      "model_requests": 2
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "real_supplier_calls": 0
+}

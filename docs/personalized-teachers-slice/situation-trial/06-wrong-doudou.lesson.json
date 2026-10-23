@@ -1,0 +1,374 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "弄清截距：从起点找到 y 轴截距",
+    "goals": [
+      "区分一次函数中的斜率与截距，建立截距是坐标轴交点数值的直觉",
+      "掌握求 y 轴截距的方法：代入 x=0 验证交点坐标 (0, b)"
+    ],
+    "adaptation": {
+      "strategies": [
+        "认可学生的勇敢尝试，肯定抓出数字的敏锐度，同时用短跑起点的比喻厘清 2 与 5 的不同角色",
+        "使用一次函数图像直观对比常数项变动对交点位置的影响"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 5,
+        "min": -5,
+        "max": 10,
+        "label": "截距 b",
+        "control": {
+          "kind": "slider",
+          "step": 0.075
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "拖动滑块，把截距调整为 3，观察直线与 y 轴相交的位置。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "关注常数项数值",
+          "当 b 为 3 时，交点在 (0, 3)"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！交点正好移到了 (0, 3)，截距就是 3！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 3.025,
+          "tolerance": 0.0375
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "把截距 b 调整到 0，观察直线经过原点时的样子：",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "将截距滑块拖动到 0。",
+          "此时函数变成 y = 2x，起点正好在坐标原点 (0, 0)。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！当 b=0 时，直线恰好穿过原点，此时 y 轴截距就是 0！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 0.025,
+          "tolerance": 0.0375
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "对于函数 y = 2x + 6，它的 y 轴截距和 x 轴截距分别对应哪个点的数值？",
+        "answer": "y 轴截距令 x = 0 得 y = 6；x 轴截距令 y = 0 得 2x + 6 = 0，解得 x = -3。",
+        "anchor": "section-02-moment-01-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "纠正对 y=2x+5 截距的误判，建立截距即 y 轴起点的直觉",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "敢直接算出来就很棒！你敏锐抓出了式子里的关键数，只卡在了一个分工上：2 不是截距，2 是斜率，截距其实是 5！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "弄清截距：从起点找到 y 轴截距",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = 2x + 5"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们把这条直线想象成跑步路线：x 是你跑出去的步数，y 是高度。式子里的 5，就是你还没出发、也就是 x 等于 0 时的起始高度！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(number_01)",
+                    "label": "y = 2x + b"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 5,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 7,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "((2)*(0))+(number_01)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "((2)*(1))+(number_01)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "观察直线穿过 y 轴的交点位置",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "所谓 y 轴截距，就是直线切在 y 轴上的位置数值。当 x 为 0 时，y 等于 2 乘 0 加 5，正好是 5！而 2 代表每走一步上升 2 格，那是斜率。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            },
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 5,
+              "easing": "linear",
+              "duration_intent": "brief",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "你看，交点稳稳落在 (0, 5)。截距是位置，斜率是坡度，分工清清楚楚。稍后你也可以试着滑动参数，看看起点怎么跟着变！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "一次函数 y = kx + b 的分工",
+                "items": [
+                  "k (系数 2)：斜率，表示倾斜程度",
+                  "b (常数 5)：y 轴截距，表示与 y 轴交点 (0, b)"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "通过令 x=0 计算并验证任意一次函数的 y 轴截距与 x 轴截距",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你敢直接给出答案算截距，这种主动尝试特别棒！不过 2 是斜率而不是截距。求 y 轴截距有一个万能钥匙：只要令 x 等于 0。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x = 0 \\implies y = 2(0) + b = b"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "求两轴截距的方法",
+                "items": [
+                  "y 轴截距：令 x = 0，解出 y（即起点高度）",
+                  "x 轴截距：令 y = 0，解出 x（地面交点）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01",
+                "section-02-moment-01-item-01",
+                "section-02-moment-01-item-02"
+              ],
+              "intent": "聚焦在代入 x 等于 0 求解截距的公式上",
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "看，当滑块在 5 的时候，直线刚好从 y 轴的 5 这个高度出发。如果把截距滑到负 2，整条登山道整体下移，起点变成了负 2。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "现在反过来想：那这条线什么时候踩到地面，也就是 x 轴截距又该怎么算呢？课后试试看把截距调到 0 观察一下。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-02-moment-01-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "通常说的截距是 y 轴截距，对应直线穿过 y 轴的位置。令 x=0 就能轻松求出，在 y=2x+5 中截距是 5 而不是 2。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

@@ -1,0 +1,218 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "截距与斜率的辨析：从 y=2x+5 看交点",
+    "goals": [
+      "澄清直线 y=2x+5 中截距与斜率的对应关系",
+      "理解截距的几何含义是直线与坐标轴的交点位置数值"
+    ],
+    "adaptation": {
+      "strategies": [
+        "先明确确认学生算式的分歧点：2 是斜率而非截距",
+        "通过令 x=0 求交点的值，建立截距的直观与代数统一"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 5,
+        "min": -10,
+        "max": 10,
+        "label": "常数项b",
+        "control": {
+          "kind": "slider",
+          "step": 0.1
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "如果把常数项调整为 3，直线的 y 截距就会变成 3。试着把滑块滑动到 3 观察交点的变化。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "常数项 b 对应直线与 y 轴的交点位置。",
+          "将参数调为 3，直线会向下平移，交于 (0, 3)。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "很好，此时直线与 y 轴的交点就是 3，这就是新的 y 截距！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 3,
+          "tolerance": 0.05
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "直接纠正对 2 的混淆，解释 y 截距是令 x=0 时 y 的值，即 5",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "这是一个值得收藏的问题。我们先直接对答案：算 2 是不对的。你关注到了式子里的数字 2，这很自然，但分歧点在于：2 是斜率，而不是截距。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "y = 2x + n1",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(number_01)",
+                    "label": "y = 2x + 5"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 5,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 7,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "((2)*(0))+(number_01)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "((2)*(1))+(number_01)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = mx + b"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "所谓 y 截距，几何上就是直线与 y 轴交点的位置。在 y 轴上，横坐标 x 一定是 0。我们把 x = 0 代入直线方程：y 等于 2 乘以 0 加上 5，结果直接就是 5。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "x = 0 \\implies y = 2(0) + 5 = 5"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "强调交点 (0, 5)",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "所以，直线和 y 轴相交于点 (0, 5)，它的 y 截距是 5。而你刚才看的 2，是直线的斜率，它描述的是横坐标每增加 1，纵坐标增加 2。常数项 5 才是截距。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜截式辨析",
+                "items": [
+                  "斜率 m = 2（变化率）",
+                  "y 截距 b = 5（与 y 轴交点纵坐标）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在一次函数 y=mx+b 中，x 前面的系数 2 是直线的斜率，控制倾斜程度；常数项 5 才是 y 截距，代表直线与 y 轴交点的纵坐标。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

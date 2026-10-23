@@ -1,0 +1,215 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "两点间的直线斜率计算与意义",
+    "goals": [
+      "掌握两点间斜率的计算公式并得出斜率为 3",
+      "理解斜率代表“横坐标每增加 1，纵坐标增加多少”的几何变化率"
+    ],
+    "adaptation": {
+      "strategies": [
+        "开门见山给出答案，满足学生直接要求",
+        "逐步比较变化量 Δx 与 Δy，结合图像展示变化率本质"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": 0,
+        "max": 5,
+        "label": "点A横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 3,
+        "min": 0,
+        "max": 5,
+        "label": "点B横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "直接计算两点 (1,2) 与 (3,8) 的斜率并用变化量解释几何原因",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "好，直接给结论：过点 (1,2) 和 (3,8) 的直线斜率是 3。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "两点间的直线斜率计算与意义",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{8 - 2}{3 - 1} = \\frac{6}{2} = 3"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "直接展示斜率计算公式与结果",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "为什么是 3？我们把两点连成直线，先比较两个方向的变化量：从点 (1,2) 移动到点 (3,8)，横坐标 x 从 1 增加到 3，增加了 2；纵坐标 y 从 2 增加到 8，增加了 6。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": 0,
+                    "max": 5,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 20,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((3)*(x))-(1)",
+                    "label": "y = 3x - 1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 1,
+                    "y": 2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 3,
+                    "y": 8,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((3)*(number_01))-(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((3)*(number_02))-(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "两点变化量",
+                "items": [
+                  "横向变化量 \\Delta x = 3 - 1 = 2",
+                  "纵向变化量 \\Delta y = 8 - 2 = 6",
+                  "斜率 k = \\Delta y / \\Delta x = 3"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "斜率本质上就是两个变化量的比值，代表横坐标每增加 1，纵坐标增加多少。横坐标增加 2 时纵坐标共增加了 6，平均每增加 1，纵坐标就稳稳上升 3，所以斜率等于 3。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "聚焦变化量比值的几何含义",
+              "when": "before_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "过 (1,2) 和 (3,8) 的直线斜率为 3。斜率就是纵向变化量除以横向变化量，表示横坐标每增加 1，纵坐标就相应增加 3。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

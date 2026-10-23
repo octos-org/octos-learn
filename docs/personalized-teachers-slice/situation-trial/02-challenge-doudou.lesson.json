@@ -1,0 +1,332 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "竖直线与斜率：为什么 x=2 没有斜率",
+    "goals": [
+      "区分水平线与竖直线在斜率定义下的本质差异",
+      "理解直线 x=2 斜率不存在（未定义）的代数与几何原因"
+    ],
+    "adaptation": {
+      "strategies": [
+        "认真肯定学生的质疑，坦诚纠正错误并说明山路比喻的适用边界",
+        "通过爬山坡比喻对比水平地面（上升为0）与垂直峭壁（横向位移为0导致除以0）"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -4,
+        "max": 4,
+        "label": "直线斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.04
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "请把直线斜率 k调到 -4。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动左下角的滑杆，观察数值和画面同步变化。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "完成，直线斜率 k已经调到 -4。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -4,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果有一条直线方程是 x = -5，它的斜率是多少？为什么？",
+        "answer": "斜率同样不存在。因为 x = -5 是一条竖直线，线上任意两点的横坐标之差 Δx = 0，在斜率公式中会出现分母为 0 的情况，因此没有定义。",
+        "anchor": "section-02-moment-03-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "纠正误区：区分斜率为0的水平线与斜率不存在的竖直线",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你说得太对了，必须先谢谢你帮我抓到这个漏洞！水平的直线斜率才是 0，竖直的直线根本不是 0。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "竖直线与斜率：为什么 x=2 没有斜率",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直线的倾斜与山路",
+                "items": [
+                  "斜率 = 纵向变化量 ÷ 横向变化量",
+                  "水平地面：高度变化为 0，斜率是 0",
+                  "竖直峭壁：横向无法前进，没有斜率"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们把直线看成一段山路：斜率就是向右每走一段距离，高度往上升了多少。屏幕上现在是一条水平线 y=0，我们向右走，高度完全没变，所以 0 除以任何横向距离都是 0，水平线的斜率确实是 0。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "旋转直线观察倾斜程度",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -1,
+                    "max": 1,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 0,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "山路如果越来越陡，斜率数值就越来越大。看，当坡度变大时，向右走一步，上升的高度就猛增。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "但如果这条路彻底竖直起来，变成一堵悬崖呢？这时候你根本无法向右走，横向变化量变成了 0！数学里分母不能为 0，所以竖直直线不是斜率很大，而是根本没有斜率。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "强调横向变化量为零时分母无意义",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "代数推导与总结：从两点坐标看 x=2 为什么产生除以零",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你敏锐地抓到了最关键的矛盾：直线 x=2 上根本走不出向右的步子！我们挑出这条线上的两个点，比如 (2, 0) 和 (2, 3)。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-02-item-01",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "套进斜率公式算一算：纵坐标的变化量是 3 减 0 等于 3，但横坐标的变化量是 2 减 2 等于 0。分母变成了 0！",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{y_2 - y_1}{x_2 - x_1} = \\frac{3 - 0}{2 - 2} = \\frac{3}{0} \\quad (\\text{无意义})"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "推导直线两点代入斜率公式时分母为零",
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "在数学里除数不能为零，所以 3 除以 0 没有意义。直线 x=2 的斜率不是 0，而是不存在！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-03-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "重要结论",
+                "items": [
+                  "水平线：Δy = 0，斜率 = 0",
+                  "竖直线：Δx = 0，分母为 0，斜率不存在"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "我们再把这条可调节的斜线调回到平缓的水平状态，亲自看一看斜率真正为 0 的模样吧！",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 0,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "水平线向右走高度不改变，斜率是 0；竖直线如 x=2 横向变化量为 0，分母为 0 无意义，因此竖直线没有斜率。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

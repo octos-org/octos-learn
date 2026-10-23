@@ -124,7 +124,7 @@ it('gives each teacher a distinct standard catalog voice for every catalog resou
   }
 });
 
-const SITUATIONS = ['学生答错', '学生质疑老师', '学生反复问同一个点', '学生没有回应', '学生要求直接讲', '老师自己讲错'];
+const SITUATIONS = ['学生答错', '学生质疑老师', '学生反复问同一个点', '学生没有回应', '学生要求直接讲', '老师在这节课里讲错'];
 
 it('gives every teacher a distinct example for each S3-02 situation, sent in the profile', () => {
   for (const teacher of TEACHERS) {
@@ -132,6 +132,8 @@ it('gives every teacher a distinct example for each S3-02 situation, sent in the
     for (const situation of SITUATIONS) expect(situations).toContain(situation);
     const profile = teacherProfile(teacher);
     expect(profile).toContain('情境范例');
+    // A claimed earlier statement cannot be checked, so it is neither admitted nor denied.
+    expect(profile).toContain('不要承认也不要否认说过');
     for (const example of teacher.examples) expect(profile).toContain(example.line);
   }
   const [alan, doudou] = TEACHERS;
