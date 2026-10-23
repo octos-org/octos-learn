@@ -2,21 +2,13 @@ import { useEffect, useState } from "react";
 
 import { getToken } from "../../api/client";
 import { openHistoryApi, type AchievementList, type EarnedAchievement, type LearningMap, type MapState } from "../history/history-api";
-import { getTeacher, isTeacherId, type AchievementId } from "../teachers/teachers";
-import { awardLine } from "./award-line";
+import { getTeacher, isTeacherId } from "../teachers/teachers";
+import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
 import { domainLabel, subjectLabel } from "./taxonomy-labels";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
-const ACHIEVEMENT_NAME: Record<AchievementId, string> = {
-  "first-footprint": "初来乍到", "did-it-alone": "亲手搞定", "regular-guest": "常驻嘉宾", reunion: "老朋友重逢",
-};
-const TONE_KEY = "octos-learn-award-tone";
 
-function readTone(): "playful" | "plain" {
-  try { return localStorage.getItem(TONE_KEY) === "plain" ? "plain" : "playful"; } catch { return "playful"; }
-}
-
-function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement; tone: "playful" | "plain" }) {
+function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement; tone: AwardTone }) {
   const teacher = isTeacherId(achievement.teacher_id) ? getTeacher(achievement.teacher_id) : null;
   return <article className={`learning-map-award${achievement.new ? " is-new" : ""}`}>
     <strong>{ACHIEVEMENT_NAME[achievement.achievement_id]}{achievement.topic_name ? ` · ${achievement.topic_name}` : ""}</strong>
@@ -30,7 +22,7 @@ export function LearningMapPanel() {
   const [map, setMap] = useState<LearningMap>();
   const [awards, setAwards] = useState<AchievementList>();
   const [error, setError] = useState(false);
-  const [tone, setTone] = useState(readTone);
+  const [tone, setTone] = useState(readAwardTone);
   useEffect(() => {
     let active = true;
     const token = getToken();
@@ -44,7 +36,7 @@ export function LearningMapPanel() {
   }, []);
   const switchTone = () => {
     const next = tone === "playful" ? "plain" : "playful";
-    try { localStorage.setItem(TONE_KEY, next); } catch { /* applies to this page */ }
+    saveAwardTone(next);
     setTone(next);
   };
 
