@@ -4,7 +4,14 @@ import type { HistoryIdentity } from './synchronize';
 
 export interface HistoryMessage {
   session_id: string; role: 'user' | 'assistant'; content: string; media: string[];
-  source: string; client_message_id: string; thread_id?: string;
+  source: string; client_message_id: string; thread_id?: string; participant?: string;
+}
+
+/** Older Octos silently drops `participant`; keep who spoke in the body there. */
+export function messageForOctos(message: HistoryMessage, participantSupported: boolean): HistoryMessage {
+  if (!message.participant || participantSupported) return message;
+  const { participant, ...rest } = message;
+  return { ...rest, content: `【${participant}】\n${message.content}` };
 }
 export interface HistoryDeliveryTask { id: string; lease_id: string; message: HistoryMessage }
 export interface HistoryDeliveryResult { status: 'idle' | 'waiting-for-octos' | 'paused'; delivered: number }
@@ -46,7 +53,8 @@ export async function deliverHistoryMessages(identity: HistoryIdentity, base: st
       for (const task of body.tasks) {
         if (!isCurrent()) throw new Error('账号已切换，原问答保留等待同步');
         if (!canContinue()) return { status: 'paused', delivered };
-        const receipt = await bridge.callMethod<{ session_id: string; seq: number; thread_id?: string }>('session/append_message', task.message);
+        const receipt = await bridge.callMethod<{ session_id: string; seq: number; thread_id?: string }>('session/append_message',
+          messageForOctos(task.message, bridge.supportsAppendParticipant?.() ?? false));
         const expectedThread = task.message.role === 'user' ? task.message.client_message_id : task.message.thread_id;
         if (receipt.session_id !== task.message.session_id || !Number.isSafeInteger(receipt.seq) || receipt.seq < 0
           || receipt.thread_id !== expectedThread) throw new Error('Octos 未返回可核对的问答回执');
