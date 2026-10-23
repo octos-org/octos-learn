@@ -164,7 +164,7 @@ try {
   await rm(root, { recursive: true, force: true });
   const report = { checked_at: new Date().toISOString(), mode: live ? 'live' : 'fixture', passed: !failure, failure,
     plan_id: plan.id, plan_sha256: sha256(JSON.stringify(plan)), model: plan.model,
-    octos_binary_sha256: sha256(await readFile(binary)), installed_skill_sha256: sha256(await readFile(join(skill, 'main'))),
+    octos_binary_sha256: sha256(await readFile(binary)), installed_skill_sha256: sha256(await readFile(join(skill, 'main'))), installed_lesson_plan_sha256: sha256(await readFile(join(skill, 'lesson-plan.js'))),
     gateway: gate.metrics, admitted_requests: spent.expenses.length, reserved_usd_micros: spent.expenses.reduce((sum, x) => sum + x.usd, 0),
     calls, results, octos_log_saved: logSaved, temporary_octos_data_deleted: true, ...(live ? { output_directory: outDir } : { real_supplier_calls: 0 }) };
   await writeFile(resultPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
