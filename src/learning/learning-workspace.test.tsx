@@ -37,6 +37,7 @@ const historyRecordingMock = vi.hoisted(() => {
   return { enabled: false, record, stage, recorder: { record, stage }, setClassroomBusy: vi.fn() };
 });
 import { setToken } from "@/api/client";
+import { getTeacher } from "./teachers/teachers";
 
 vi.mock("./history/use-learning-history", () => ({
   useLearningHistoryRecorder: () => ({
@@ -337,6 +338,22 @@ describe("LearningWorkspace", () => {
       screen.getByAltText("本轮已发送给老师的画面").getAttribute("src"),
     ).toBe("blob:sent-frame");
     expect(screen.getByText("本轮已发送")).toBeTruthy();
+  });
+
+  it("answers a tap that interrupts the teacher with the teacher's short fixed line", async () => {
+    conversationMock.state = "speaking";
+    await renderLearning(
+      <LearningWorkspace sessionId="learn-voice-interrupt" voiceEnabled onBack={vi.fn()} />,
+    );
+    vi.useFakeTimers();
+    try {
+      fireEvent.click(document.querySelector(".octos-teacher-avatar")!);
+      expect(screen.getByText(getTeacher("alan").reactions.interrupted)).toBeTruthy();
+      await act(async () => { await vi.advanceTimersByTimeAsync(3100); });
+      expect(screen.queryByText(getTeacher("alan").reactions.interrupted)).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("shows an explicit startup panel while voice dependencies are loading", async () => {
@@ -1191,7 +1208,8 @@ describe("LearningWorkspace", () => {
     let first!: Promise<boolean | void>;
     act(() => { first = Promise.resolve(send("expired-turn")); });
     await waitFor(() => expect(rejectFirst).toBeTypeOf("function"));
-    expect(screen.getByText("小章鱼正在看你框选的这部分。")).toBeTruthy();
+    // The selected (default) teacher's fixed line.
+    expect(screen.getByText(getTeacher("alan").reactions.selection)).toBeTruthy();
     expect(document.querySelector(".learning-whiteboard-loading-block")).toBeNull();
     expect(document.querySelector(".learning-selection-enhancement")).toBeTruthy();
     expect(screen.getByText("正在生成小章鱼辅助")).toBeTruthy();
@@ -1705,10 +1723,14 @@ describe("LearningWorkspace", () => {
         }] },
       } }));
     });
+    // The new lesson was given 阿澜's settings, so its ending is her line.
+    const teacherFinishText = getTeacher("alan").reactions.lessonComplete;
     expect(screen.queryByText(finishText)).toBeNull();
+    expect(screen.queryByText(teacherFinishText)).toBeNull();
     expect(screen.queryByText("课程完成")).toBeNull();
     await act(async () => resolveFiles([makeFile("old-turn"), makeFile(turnId)]));
     expect(screen.queryByText(finishText)).toBeNull();
+    expect(screen.queryByText(teacherFinishText)).toBeNull();
     await waitFor(() => expect(narrationTtsMock.useOllNarrationTts).toHaveBeenLastCalledWith(
       expect.objectContaining({ playing: true, text: "新课程的第一段旁白" }),
     ), { timeout: 4000 });
@@ -1718,7 +1740,7 @@ describe("LearningWorkspace", () => {
       narration.onPlaybackComplete?.(narration.narrationId!);
     });
     // Completing the actual new narration still produces the normal ending.
-    await waitFor(() => expect(screen.getByText(finishText)).toBeTruthy(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByText(teacherFinishText)).toBeTruthy(), { timeout: 4000 });
   });
 
   it.each(["failed", "cancelled"] as const)("records a %s generation job once without retaining provider errors", async status => {

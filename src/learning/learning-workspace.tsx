@@ -2,7 +2,7 @@ import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
-import { teacherProfile, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
@@ -178,8 +178,8 @@ const DELIVERABLE_ARTIFACT_SUFFIXES = [
   ".octos-selection-enhancement.json",
 ] as const;
 
-export const LESSON_COMPLETION_SPEECH =
-  "这节课讲完了，你可以缩放白板回顾刚才的内容。";
+export const LESSON_COMPLETION_SPEECH = NEUTRAL_REACTIONS.lessonComplete;
+const INTERRUPT_CAPTION_MS = 3_000;
 export const LESSON_COMPLETION_BUBBLE_DURATION_MS = 6_000;
 
 interface PendingLessonJobRecord {
@@ -485,6 +485,14 @@ export function LearningWorkspace({
       data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacher.name } : {}) } });
   }, [historyRecorder]);
   const { teacher } = useSelectedTeacher();
+  // The teacher whose settings the current generated lesson received; fixed
+  // reactions for that lesson use this teacher even if the selection changes.
+  const [lessonStyleTeacher, setLessonStyleTeacher] = useState<TeacherDefinition | null>(null);
+  const [interruptCaption, setInterruptCaption] = useState<string | null>(null);
+  const interruptCaptionTimer = useRef<number | null>(null);
+  useEffect(() => () => {
+    if (interruptCaptionTimer.current !== null) window.clearTimeout(interruptCaptionTimer.current);
+  }, []);
   const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
     const [memory, runs] = await Promise.allSettled([
       // Only reuse an existing connection; never open one just for this.
@@ -910,6 +918,8 @@ export function LearningWorkspace({
     });
   }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
   const packagedPlayback = Boolean(ollFixture || coursePack);
+  // Course packs and fixtures carry their own narration; they keep the neutral lines.
+  const lessonReactionTeacher = packagedPlayback ? null : lessonStyleTeacher;
   const packagedOllEvents = coursePack?.playbackEvents
     ?? coursePack?.pack.events
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
@@ -1225,6 +1235,7 @@ export function LearningWorkspace({
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
     // Narration uses this teacher's voice only for lessons in this teacher's style.
     setLessonVoices(contextFields?.has("teacher_profile") ? lessonTeacher.voices : null);
+    setLessonStyleTeacher(contextFields?.has("teacher_profile") ? lessonTeacher : null);
     setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
@@ -3206,6 +3217,12 @@ export function LearningWorkspace({
     if (conv.state === "speaking" || conv.state === "thinking") {
       conv.interrupt();
       controlledOllLesson?.pause();
+      if (interruptCaptionTimer.current !== null) window.clearTimeout(interruptCaptionTimer.current);
+      setInterruptCaption(teacherReactions(ollLesson ? lessonReactionTeacher : teacher).interrupted);
+      interruptCaptionTimer.current = window.setTimeout(() => {
+        setInterruptCaption(null);
+        interruptCaptionTimer.current = null;
+      }, INTERRUPT_CAPTION_MS);
       return;
     }
     if (conv.state === "idle" || conv.state === "error") {
@@ -3272,20 +3289,22 @@ export function LearningWorkspace({
   const pendingSelectionQuestion = whiteboardQuestions.find((question) =>
     question.origin === "selection" && question.status === "pending");
   const selectionPending = Boolean(pendingSelectionQuestion) || Boolean(conv.selectionTurnPending);
+  const lessonReactions = teacherReactions(lessonReactionTeacher);
   const teacherSpeech = selectionPending
-    ? "小章鱼正在看你框选的这部分。"
+    ? teacherReactions(teacher).selection
     : lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
-    : plainReply?.text ??
+    : interruptCaption ??
+      plainReply?.text ??
       (textTurnPending
-        ? "我正在整理这道题，马上写到白板上。"
+        ? lessonReactions.preparing
         : ollLesson
           ? ollLesson.activeSpeech ||
             (lessonDeliverySettled && !completionPromptDismissed
-              ? LESSON_COMPLETION_SPEECH
+              ? lessonReactions.lessonComplete
               : "")
           : conv.state === "thinking"
-            ? "我正在准备白板课程。"
+            ? teacherReactions(teacher).preparing
             : "");
   const teacherState = selectionPending || textTurnPending
     ? "thinking"
@@ -3517,6 +3536,7 @@ export function LearningWorkspace({
       <main className="learning-canvas-shell">
         <LearningWhiteboard
           runtime={controlledOllLesson ?? ollLesson}
+          taskReactions={lessonReactions}
           portableCourseRegion={coursePack?.courseRegion}
           inkSessionId={coursePreview ? undefined : inkSessionId}
           loadingState={whiteboardLoadingState}

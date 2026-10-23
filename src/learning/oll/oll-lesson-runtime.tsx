@@ -1,4 +1,5 @@
 import { indexedInkStore } from "../learning-document-store";
+import { NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
 import {
   BoxSelect,
   CheckCircle2,
@@ -690,8 +691,11 @@ export function LearningWhiteboard({
   onDeleteSelectionSources,
   onSelectionCardLayoutChange,
   onRetryDegradedVisual,
+  taskReactions = NEUTRAL_REACTIONS,
 }: {
   runtime?: OllLessonRuntimeController | null;
+  /** Fixed task lines of the teacher who gave this lesson. */
+  taskReactions?: TeacherReactions;
   portableCourseRegion?: {
     x: number;
     y: number;
@@ -3958,17 +3962,28 @@ export function LearningWhiteboard({
                               ) : task.status === "succeeded" ? (
                                 <div className="learning-student-task-feedback is-success">
                                   <CheckCircle2 size={17} />
-                                  <span>
-                                    {task.success_message
-                                      ?? "完成得很好，已经达到目标。"}
-                                  </span>
+                                  {taskReactions === NEUTRAL_REACTIONS ? (
+                                    <span>
+                                      {task.success_message
+                                        ?? NEUTRAL_REACTIONS.taskSucceeded}
+                                    </span>
+                                  ) : (
+                                    // The teacher's line depends only on whether a hint was
+                                    // opened; the lesson's own message states the result.
+                                    <span>
+                                      {task.hints_revealed > 0
+                                        ? taskReactions.taskSucceededWithHint
+                                        : taskReactions.taskSucceeded}
+                                      {task.success_message ? <small>{task.success_message}</small> : null}
+                                    </span>
+                                  )}
                                 </div>
                               ) : lastAttempt ? (
                                 <div className="learning-student-task-feedback">
                                   <span>
                                     {task.status === "needs_hint"
-                                      ? "还没达到目标，可以查看提示后再试。"
-                                      : "已经记录这次操作，再调整一下试试。"}
+                                      ? taskReactions.taskNeedsHint
+                                      : taskReactions.taskRetry}
                                   </span>
                                   <small>已尝试 {attempts} 次</small>
                                 </div>
