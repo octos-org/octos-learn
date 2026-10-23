@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { NEUTRAL_REACTIONS, TEACHERS, getTeacher, teacherProfile, teacherReactions, useSelectedTeacher } from './teachers';
+import { NEUTRAL_REACTIONS, PLAIN_AWARDS, TEACHERS, getTeacher, teacherProfile, teacherReactions, useSelectedTeacher } from './teachers';
 import { buildLearnerContext, LearnerBackgroundCache } from './learner-background';
 import type { LearningRunSummary } from '../history/history-api';
 
@@ -157,4 +157,31 @@ it('keeps fixed reactions within what each event proves', () => {
   }
   expect(teacherReactions(null)).toBe(NEUTRAL_REACTIONS);
   expect(teacherReactions(getTeacher('doudou'))).toBe(getTeacher('doudou').reactions);
+});
+
+it('gives every teacher a line for each achievement that never claims mastery', () => {
+  const ids = ['first-footprint', 'did-it-alone', 'regular-guest', 'reunion'] as const;
+  for (const awards of [...TEACHERS.map(teacher => teacher.awards), PLAIN_AWARDS]) {
+    for (const id of ids) {
+      expect(awards[id]).toBeTruthy();
+      expect(awards[id]).not.toMatch(/学会|掌握|精通/);
+    }
+    expect(awards['regular-guest']).toContain('{topic}');
+    expect(awards.reunion).toContain('{topic}');
+  }
+  expect(TEACHERS[0].awards['regular-guest']).not.toEqual(TEACHERS[1].awards['regular-guest']);
+});
+
+it('adds the learning map to learner context with the same states and no mastery claim', () => {
+  const asOf = new Date('2026-10-23T00:00:00.000Z');
+  const topic = (name: string, state: 'explored' | 'practising' | 'did-it', last: string) => ({ topic_id: name, subject: 'Mathematics', domain: 'Algebra', name, state,
+    evidence: { played_beats: 2, runs: 2, task_attempts: state === 'explored' ? 0 : 2, unassisted_successes: state === 'did-it' ? 1 : 0, assisted_successes: 0, days: ['2026-10-20', '2026-10-22'], first_at: null, last_at: last } });
+  const map = { rules_version: 'map-states-v1', through: 3, taxonomy: { commit: 'c7ed549' },
+    topics: [topic('Old topic', 'explored', '2026-09-01T00:00:00.000Z'), ...Array.from({ length: 6 }, (_, i) => topic(`Topic ${i}`, 'did-it', `2026-10-2${i}T00:00:00.000Z`))] };
+  const context = buildLearnerContext({ map }, asOf)!;
+  expect(context).toContain('【学习地图】');
+  expect(context).toContain('都不等于掌握');
+  expect(context).toContain('- Topic 5（数学·代数）：做出来过；2 天学过，练习作答 2 次，其中不用提示达到要求 1 次');
+  expect(context).not.toContain('Old topic'); // Only the six most recent topics.
+  expect(buildLearnerContext({ map: { ...map, topics: [] } }, asOf)).toBeUndefined();
 });

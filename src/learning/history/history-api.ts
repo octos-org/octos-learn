@@ -26,6 +26,19 @@ export interface HistoryTopicPage extends HistoryEventsPage {
   automatic?: { status: string; analysis_through: number; counts: { question_count: number | null; played_runs: number | null; played_beats: number | null; task_attempts?: number | null; task_successes?: number | null; task_hints?: number | null };
     coverage: { unprocessed_questions: number; unknown_questions: number; outside_catalog_questions?: number; unassociated_played_beats: number; unassociated_task_attempts?: number; unassociated_task_hints?: number }; events: { seq: number; event: HistoryEvent; associations: { result_seq: number; unit_id: string; quote: string }[] }[]; next_after: number | null };
 }
+export type MapState = 'explored' | 'practising' | 'did-it';
+export interface LearningMapTopic {
+  topic_id: string; subject: string; domain: string; name: string; state: MapState;
+  evidence: { played_beats: number; runs: number; task_attempts: number; unassisted_successes: number; assisted_successes: number; days: string[]; first_at: string | null; last_at: string | null };
+}
+export interface LearningMap { rules_version: string; through: number; taxonomy: { commit: string }; topics: LearningMapTopic[] }
+export interface EarnedAchievement {
+  achievement_id: 'first-footprint' | 'did-it-alone' | 'regular-guest' | 'reunion'; scope: string; topic_name: string | null;
+  teacher_id: string | null; earned_at: string; awarded_at: string; evidence_event_id: string; new: boolean;
+}
+export interface AchievementList { rules_version: string; achievements: EarnedAchievement[] }
+/** Minutes east of UTC, so "different days" follow the learner's calendar. */
+export const localUtcOffsetMinutes = () => -new Date().getTimezoneOffset();
 export interface AccountTeacherChoice { teacher_id: string; revision: number; updated_at: string }
 export class HistoryApi {
   private readonly identity: HistoryIdentity;
@@ -66,6 +79,8 @@ export class HistoryApi {
   topic(topicId: string, through: number, after = 0, analysisThrough?: number) {
     return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50${analysisThrough === undefined ? '' : `&analysis_through=${analysisThrough}`}`);
   }
+  learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   teacherChoice() { return this.request<{ choice: AccountTeacherChoice | null }>('/teacher-choice'); }
   chooseTeacher(teacherId: string, baseRevision?: number) {
     return this.request<{ status: 'saved' | 'conflict'; choice: AccountTeacherChoice | null }>('/teacher-choice', 'PUT',

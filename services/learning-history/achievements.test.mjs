@@ -65,3 +65,15 @@ test("regular guest counts the learner's local days, not UTC days", () => {
     } finally { store2.close(); }
   } finally { store.close(); }
 });
+
+test("awards stay when the counting basis changes later; only deleted evidence withdraws them", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    store.append("alice", [routed("r1", at(10, 1), "alan"), attempt("a1", "r1", at(10, 1), 0)]);
+    assert.equal(evaluateAchievements(store, "alice", {}, approved).achievements.length, 1);
+    // The course mapping is withdrawn (or a catalog upgrade supersedes analysis): the map
+    // no longer counts the fact, but the earned award and its evidence remain.
+    const later = evaluateAchievements(store, "alice", {}, []);
+    assert.deepEqual(later.achievements.map(item => [item.achievement_id, item.evidence_event_id]), [["did-it-alone", "a1"]]);
+  } finally { store.close(); }
+});

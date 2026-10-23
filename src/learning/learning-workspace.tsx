@@ -494,12 +494,15 @@ export function LearningWorkspace({
     if (interruptCaptionTimer.current !== null) window.clearTimeout(interruptCaptionTimer.current);
   }, []);
   const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
-    const [memory, runs] = await Promise.allSettled([
+    const history = openHistoryApi(token);
+    const [memory, runs, map] = await Promise.allSettled([
       // Only reuse an existing connection; never open one just for this.
       getAnyConnectedBridge() ? getMyMemory() : Promise.resolve(null),
-      openHistoryApi(token).then((api) => api.runs()),
+      history.then((api) => api.runs()),
+      history.then((api) => api.learningMap()),
     ]);
-    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null };
+    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null,
+      map: map.status === "fulfilled" ? map.value : null };
   }, { currentAccount: getToken }), []);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
