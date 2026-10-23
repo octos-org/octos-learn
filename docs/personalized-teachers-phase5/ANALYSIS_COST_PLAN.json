@@ -1,0 +1,67 @@
+{
+  "schema": "octos.learn.topic-accuracy-trial.v1",
+  "id": "phase5-analysis-cost-20261023",
+  "scope": "task-v2-cases",
+  "status": "approved",
+  "authorization_reference": "User 2026-10-23: \"可以，开始付费验证，然后按照你的建议一步一步做其他的\", approving the proposed phase-5 paid checks capped at 30 requests / USD 4.50 in total. Split by the agent: map-quote lessons 3 requests (USD 0.45 reserved) + analysis cost measurement 9 requests (USD 4.05 reserved) = 12 requests, USD 4.50.",
+  "owner": "task-v2-trial",
+  "model": "gemini-3.8-flash",
+  "output_directory": "/private/tmp/octos-phase5-analysis-cost-20261023",
+  "cases_file": "docs/personalized-teachers-phase2/TASK_V2_CASES.json",
+  "cases_sha256": "f893cd2e2cde93dfae13821ed7083357086b40f4840932e6b1375c539e4ba581",
+  "taxonomy_sha256": "2c4803c89d0601978503e14b05bc51e278f3b846cf85efe91f69f3a875c1f270",
+  "pricing": {
+    "verified_at": "2026-10-23",
+    "valid_until": "2026-12-31",
+    "input_per_million_usd": 0.75,
+    "output_including_thinking_per_million_usd": 3.75,
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 65536,
+    "source": "https://ai.google.dev/gemini-api/docs/pricing#gemini-3.8-flash"
+  },
+  "limits": {
+    "tasks": 2,
+    "model_http_requests": 9,
+    "model_http_requests_per_task": 7,
+    "usd_micros": 4050000,
+    "reservation_usd_micros": 450000,
+    "request_bytes": 262144,
+    "output_tokens": 32768
+  },
+  "octos": {
+    "revision": "5d9e70b40a59ea925d6e49dd15b2d4c5d62b2ce3",
+    "binary": "/Users/yy/Documents/projects/OctosLearn/octos/target/debug/octos",
+    "sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7"
+  },
+  "key_source": "User-created file ~/.config/octos-trial/gemini.key (mode 600), passed to an isolated Octos only; never read from or written to the user's own Octos.",
+  "cost_note": "Measures supplier tokens per analysed lesson on the full c7ed549 catalog. Each admitted request reserves USD 0.45 (256 KiB input cap plus full output capacity); 9 requests = USD 4.05 is an upper bound. If the slope lesson needs all 7 of its requests, the triangle lesson may stop early; per-request token usage is still measured.",
+  "code_sha256": {
+    "scripts/verify-learning-topic-accuracy.mjs": "1de287595847fac014b677785a2f13bc24167f4a2c0ce5f2772510bc856cc842",
+    "scripts/lib/learning-topic-trial-control.mjs": "489ace4f31c9efe9308b42718181068d83aab36fb108de336eb98cc73fef2797",
+    "scripts/lib/learning-topic-trial-cases.mjs": "a85a2f3add9aeb15fd470499c7ab6c2a8f064917e3b4582e2f684f4b4f1e4096",
+    "scripts/lib/learning-topic-trial-fixture.mjs": "e7965a054f304ed215b732606fcf3c7d45c42d49bf93eec72ebb2a00c6472653",
+    "scripts/lib/learning-performance-auth.mjs": "fa1b84a1d67e0aa75b211f4100204f52dfd47ba4b32ea9635f46d7c82afc0eb0",
+    "src/learning/history/analyze-topics.ts": "65e066e40b5b46ac487222e689d2c8d8fc0c2f315b1e614e8abbb9c8d03f2e85",
+    "src/runtime/ui-protocol-bridge.ts": "82231901805b39aa655aa0a0879b236375f33293e3e10a200a739489f4fded01",
+    "services/learning-history/server.mjs": "a4340861bec802f6920a87ee6e35cc168fc14d4657afb577596b689d75f97924",
+    "services/learning-history/topic-analysis.mjs": "beae650ef374fa984abfc931c928f87bc05869bda5f72a167d7e19df2416e73b",
+    "services/learning-history/topic-analysis-store.mjs": "8c88c6a4b2166fc3eba81b607f74972d00441c890ab8d8eca010c89aef7c029b",
+    "services/learning-history/topic-analysis-instructions.mjs": "c71d87701f1e83294fe2ae78e6bf9b0edc78c3af90d352515167173923a016b5",
+    "services/learning-history/topic-catalog.mjs": "aaa73b0f5dfe51cf44a01af155a3970fb7bc941f508a32ee12df90444af10300",
+    "services/learning-history/taxonomy/catalog.json": "2c4803c89d0601978503e14b05bc51e278f3b846cf85efe91f69f3a875c1f270",
+    "services/learning-history/topic-query.mjs": "bd4e8518c063858aed19807a95bf9f1098e77873b9defd6a0414e62ebe4dfc8f",
+    "services/learning-history/automatic-topic-query.mjs": "39b9895fc1be3cd2f179cdffae67a0c1addb8891d90d4460636bbd8722267a23",
+    "services/learning-history/topic-analysis-response.mjs": "5a1dc3e431479697f275a42a55df25c59626ae01e1aaf3920f5794f094387dac"
+  },
+  "prior_stopped_trial": {
+    "id": "phase2-task-v2-cases-20261022",
+    "requests_not_refunded": 6,
+    "reserved_usd_micros_not_refunded": 6600000,
+    "report": "TASK_V2_RUN1_STOPPED.json"
+  },
+  "purpose": "cost-measurement",
+  "case_ids": [
+    "task-slope-lesson",
+    "task-triangle-lesson"
+  ]
+}

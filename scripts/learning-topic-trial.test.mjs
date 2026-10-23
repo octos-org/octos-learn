@@ -228,3 +228,20 @@ test('task-v2 cases need their own pinned file, isolated route, limits and autho
     }
   } finally { store.close(); }
 });
+
+test('a task-v2 cost measurement uses the current catalog, a chosen subset and rule-checked limits', async () => {
+  const { TOPIC_TAXONOMY } = await import('../services/learning-history/topic-catalog.mjs');
+  const base = JSON.parse(await readFile('docs/personalized-teachers-phase2/TASK_V2_TRIAL.json'));
+  const taskBytes = await readFile('docs/personalized-teachers-phase2/TASK_V2_CASES.json');
+  const cost = { ...base, purpose: 'cost-measurement', status: 'prepared', authorization_reference: '', taxonomy_sha256: TOPIC_TAXONOMY.catalog_sha256,
+    case_ids: ['task-slope-lesson', 'task-triangle-lesson'],
+    limits: { tasks: 2, model_http_requests: 9, model_http_requests_per_task: 7, usd_micros: 4050000, reservation_usd_micros: 450000, request_bytes: 262144, output_tokens: 32768 } };
+  assert.deepEqual(validateTopicTrial(cost, taskBytes).map(c => c.id), ['task-slope-lesson', 'task-triangle-lesson']);
+  assert.throws(() => validateTopicTrial({ ...cost, taxonomy_sha256: base.taxonomy_sha256 }, taskBytes));
+  assert.throws(() => validateTopicTrial({ ...cost, limits: { ...cost.limits, usd_micros: 1 } }, taskBytes));
+  assert.throws(() => validateTopicTrial({ ...cost, limits: { ...cost.limits, model_http_requests: 15 } }, taskBytes));
+  assert.throws(() => validateTopicTrial({ ...cost, case_ids: ['invented'] }, taskBytes));
+  assert.throws(() => validateTopicTrial(cost, taskBytes, { execute: true }), /not authorized/);
+  // The recorded run-2 plan named the previous catalog and cannot be executed now.
+  assert.throws(() => validateTopicTrial({ ...base, pricing: { ...base.pricing, verified_at: '2026-10-23' } }, taskBytes, { execute: true, now: new Date('2026-10-23T00:00:00Z') }), /another catalog/);
+});

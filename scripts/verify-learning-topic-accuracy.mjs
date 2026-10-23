@@ -86,7 +86,22 @@ if (mode === '--check') {
     ...(resumeEvidence ? { preflight_resume: resumeEvidence } : {}), rows: [], semantic_quality: 'requires independent human review', state: 'preflight' };
   const save = () => writeFile(join(output, 'report.json'), JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flush: true });
   try {
-    const upstreamFetch = execute ? fetch : async (_url, options) => {
+    // Record each supplier response's token usage per case for the cost report.
+    const meteredFetch = async (url, init) => {
+      const response = await fetch(url, init);
+      if (!response.body) return response;
+      const [forward, meter] = response.body.tee();
+      const caseId = activeSample?.id;
+      void new Response(meter).text().then(text => {
+        const chunks = text.trim().startsWith('{') ? [text] : text.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5));
+        let usage;
+        for (const chunk of chunks) { try { usage = JSON.parse(chunk).usageMetadata ?? usage; } catch { /* partial line */ } }
+        (report.usage ??= []).push({ case_id: caseId, status: response.status, input_tokens: usage?.promptTokenCount ?? null,
+          output_tokens: usage ? (usage.candidatesTokenCount ?? 0) + (usage.thoughtsTokenCount ?? 0) : null });
+      }).catch(() => (report.usage ??= []).push({ case_id: caseId, status: response.status, input_tokens: null, output_tokens: null }));
+      return new Response(forward, { status: response.status, statusText: response.statusText, headers: response.headers });
+    };
+    const upstreamFetch = execute ? meteredFetch : async (_url, options) => {
       originalHttp++;
       const body = JSON.parse(options.body);
       const promptTexts = [body.system_instruction, body.systemInstruction, ...body.contents].filter(Boolean)
@@ -192,7 +207,15 @@ if (mode === '--check') {
     if (execute) throw Error('Topic trial stopped; retain the private report and budget ledger for inspection. Do not automatically retry or restore direct routing.');
     throw error;
   } finally {
-    report.budget = ledger.snapshot(); report.gateway_metrics = gateway?.metrics; await save();
+    report.budget = ledger.snapshot(); report.gateway_metrics = gateway?.metrics;
+    if (report.usage) {
+      const price = row => ((row.input_tokens ?? 0) * plan.pricing.input_per_million_usd + (row.output_tokens ?? 0) * plan.pricing.output_including_thinking_per_million_usd) / 1e6;
+      report.cost_by_case = Object.fromEntries([...new Set(report.usage.map(row => row.case_id))].map(id => {
+        const rows = report.usage.filter(row => row.case_id === id);
+        return [id, { requests: rows.length, unmetered: rows.filter(row => row.input_tokens === null).length, estimated_usd: rows.reduce((sum, row) => sum + price(row), 0) }];
+      }));
+    }
+    await save();
     await closeLocal(product); await vite?.close(); await fixture?.close();
     await closeLocal(gateway?.server); history?.close(); ledger.close();
     if (isolated) {
