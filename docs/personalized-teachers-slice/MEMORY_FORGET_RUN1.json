@@ -1,0 +1,103 @@
+{
+  "checked_at": "2026-10-23T15:48:21.977Z",
+  "mode": "live",
+  "plan_id": "teacher-memory-forget-20261023",
+  "delivery": "participant-field",
+  "plan_sha256": "84bb9d91a4e835e124f0c1cffff08954a5b0593fc21ccd39a2c66dd4f65742ea",
+  "model": "gemini-3.8-flash",
+  "phases": [
+    {
+      "sessions": [
+        "learn-forget-a"
+      ],
+      "memory_requests": [],
+      "extraction_staging": [],
+      "long_term_memory": "用户学习函数性质时，偏好先用 GeoGebra 画出图像。(updated: 2026-10-23) ^mibxcpf\n\n用户要求阿澜老师讲题时每一步都进行检查并说给用户听。(updated: 2026-10-23) ^m5ile62\n"
+    },
+    {
+      "sessions": [],
+      "memory_requests": [
+        {
+          "operation": "forget",
+          "match": "GeoGebra",
+          "entry_id": "^mibxcpf",
+          "entry_text": "用户学习函数性质时，偏好先用 GeoGebra 画出图像。(updated: 2026-10-23) ^mibxcpf",
+          "result": {
+            "request_id": "learn-memory-trial-teacher-memory-forget-20261023-1-0",
+            "operation": "forget",
+            "status": "accepted",
+            "refresh_enabled": false
+          }
+        }
+      ],
+      "extraction_staging": [],
+      "long_term_memory": "用户要求阿澜老师讲题时每一步都进行检查并说给用户听。(updated: 2026-10-23) ^m5ile62\n"
+    }
+  ],
+  "extraction_staging": [],
+  "long_term_memory": "用户要求阿澜老师讲题时每一步都进行检查并说给用户听。(updated: 2026-10-23) ^m5ile62\n",
+  "refresh_state": {
+    "date": "2026-10-23",
+    "extractions_today": 1,
+    "tokens_today": 3144,
+    "consolidations_today": 2,
+    "extracted_counts": {
+      "learn-forget-a": [
+        4,
+        "e6e38393eb09adc860dadc0f88c99d64d9167388b97a81c0257d80f64c501b9d"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "gateway": {
+    "forwarded": 3,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2324,
+      "teacher_labels": [
+        "阿澜老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 484,
+        "output": 373
+      }
+    },
+    {
+      "n": 2,
+      "kind": "consolidation",
+      "request_bytes": 4379,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1103,
+        "output": 1018
+      }
+    },
+    {
+      "n": 3,
+      "kind": "consolidation",
+      "request_bytes": 4362,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1114,
+        "output": 483
+      }
+    }
+  ],
+  "reserved_usd_micros": 1350000,
+  "usage": {
+    "input": 2701,
+    "output": 1874
+  },
+  "estimated_usd": 0.00905325,
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true
+}

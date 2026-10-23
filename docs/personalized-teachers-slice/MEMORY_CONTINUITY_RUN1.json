@@ -1,0 +1,192 @@
+{
+  "checked_at": "2026-10-23T15:46:34.684Z",
+  "mode": "live",
+  "plan_id": "teacher-memory-continuity-20261023",
+  "delivery": "participant-field",
+  "plan_sha256": "a27428578dde7502779e72900bc0ee44554ce02d137c7c4c602a4fc929229385",
+  "model": "gemini-3.8-flash",
+  "phases": [
+    {
+      "sessions": [
+        "learn-continuity-a",
+        "learn-continuity-b"
+      ],
+      "memory_requests": [],
+      "extraction_staging": [],
+      "long_term_memory": "平时最喜欢打篮球。(updated: 2026-10-23) ^mlvigay\n\n讲题时要求先说结论，再解释原因。(updated: 2026-10-23) ^mhnodal\n\n与豆豆老师讨论斜率时，觉得“山路”（向右走1步，上升几格）的比喻很好理解、很好记。(updated: 2026-10-23) ^m4273yk\n"
+    },
+    {
+      "sessions": [
+        "learn-continuity-c"
+      ],
+      "memory_requests": [
+        {
+          "operation": "forget",
+          "match": "期中",
+          "skipped": "0 entries match"
+        },
+        {
+          "operation": "correct",
+          "match": "先说结论",
+          "content": "对所有老师：先举一个例子，再说结论",
+          "entry_id": "^mhnodal",
+          "entry_text": "讲题时要求先说结论，再解释原因。(updated: 2026-10-23) ^mhnodal",
+          "result": {
+            "request_id": "learn-memory-trial-teacher-memory-continuity-20261023-1-1",
+            "operation": "correct",
+            "status": "accepted",
+            "refresh_enabled": false
+          }
+        },
+        {
+          "operation": "remember",
+          "content": "只对阿澜老师：讲新概念时可以用一个比喻",
+          "result": {
+            "request_id": "learn-memory-trial-teacher-memory-continuity-20261023-1-2",
+            "operation": "remember",
+            "status": "accepted",
+            "refresh_enabled": false
+          }
+        }
+      ],
+      "extraction_staging": [],
+      "long_term_memory": "平时最喜欢打篮球。(updated: 2026-10-23) ^mlvigay\n\n对所有老师：讲题时要求先举一个例子，再说结论。(updated: 2026-10-23) ^mhnodal\n\n与豆豆老师讨论斜率时，觉得“山路”（向右走1步，上升几格）的比喻很好理解、很好记。(updated: 2026-10-23) ^m4273yk\n\n只对阿澜老师：讲新概念时可以用一个比喻。(updated: 2026-10-23) ^m5miipg\n"
+    },
+    {
+      "sessions": [
+        "learn-continuity-d"
+      ],
+      "memory_requests": [],
+      "extraction_staging": [],
+      "long_term_memory": "最近不打篮球了，改踢足球了。(updated: 2026-10-23) ^mlvigay\n\n对所有老师：讲题时要求先举一个例子，再说结论。(updated: 2026-10-23) ^mhnodal\n\n与豆豆老师讨论斜率时，觉得“山路”（向右走1步，上升几格）的比喻很好理解、很好记。(updated: 2026-10-23) ^m4273yk\n\n只对阿澜老师：讲新概念时可以用一个比喻。(updated: 2026-10-23) ^m5miipg\n"
+    }
+  ],
+  "extraction_staging": [],
+  "long_term_memory": "最近不打篮球了，改踢足球了。(updated: 2026-10-23) ^mlvigay\n\n对所有老师：讲题时要求先举一个例子，再说结论。(updated: 2026-10-23) ^mhnodal\n\n与豆豆老师讨论斜率时，觉得“山路”（向右走1步，上升几格）的比喻很好理解、很好记。(updated: 2026-10-23) ^m4273yk\n\n只对阿澜老师：讲新概念时可以用一个比喻。(updated: 2026-10-23) ^m5miipg\n",
+  "refresh_state": {
+    "date": "2026-10-23",
+    "extractions_today": 4,
+    "tokens_today": 6800,
+    "consolidations_today": 3,
+    "extracted_counts": {
+      "learn-continuity-a": [
+        6,
+        "1d0038c23a2b123f27fe35926bdaaa1007bd249cb7ef8351e8d966a18030da49"
+      ],
+      "learn-continuity-b": [
+        4,
+        "1ec12ff78ff48ed7f62e7d8e1305cef133a38182ac0e4ce052355f88b4df5a53"
+      ],
+      "learn-continuity-c": [
+        6,
+        "063171a87be0f406cc0b0d6cafa77354f3ff0c9cd8135bd316544b5767941abb"
+      ],
+      "learn-continuity-d": [
+        4,
+        "2dbf1a1daf7f8d2b0d39e2590eea46b43af6cff79d4890264f09091a6172577d"
+      ]
+    },
+    "failures": {}
+  },
+  "passed": true,
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "gateway": {
+    "forwarded": 7,
+    "refused": 0
+  },
+  "calls": [
+    {
+      "n": 1,
+      "kind": "extraction",
+      "request_bytes": 2439,
+      "teacher_labels": [
+        "豆豆老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 524,
+        "output": 115
+      }
+    },
+    {
+      "n": 2,
+      "kind": "extraction",
+      "request_bytes": 2302,
+      "teacher_labels": [
+        "阿澜老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 495,
+        "output": 82
+      }
+    },
+    {
+      "n": 3,
+      "kind": "consolidation",
+      "request_bytes": 4590,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1192,
+        "output": 1505
+      }
+    },
+    {
+      "n": 4,
+      "kind": "extraction",
+      "request_bytes": 2578,
+      "teacher_labels": [
+        "阿澜老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 611,
+        "output": 62
+      }
+    },
+    {
+      "n": 5,
+      "kind": "consolidation",
+      "request_bytes": 4768,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1278,
+        "output": 1987
+      }
+    },
+    {
+      "n": 6,
+      "kind": "extraction",
+      "request_bytes": 2709,
+      "teacher_labels": [
+        "豆豆老师"
+      ],
+      "status": 200,
+      "usage": {
+        "input": 628,
+        "output": 596
+      }
+    },
+    {
+      "n": 7,
+      "kind": "consolidation",
+      "request_bytes": 4653,
+      "teacher_labels": [],
+      "status": 200,
+      "usage": {
+        "input": 1205,
+        "output": 1467
+      }
+    }
+  ],
+  "reserved_usd_micros": 3150000,
+  "usage": {
+    "input": 5933,
+    "output": 5814
+  },
+  "estimated_usd": 0.02625225,
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true
+}
