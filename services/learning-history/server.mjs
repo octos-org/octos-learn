@@ -128,6 +128,13 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         if (!body || Object.keys(body).some(key => !["events", "materials"].includes(key)) || !Array.isArray(body.events) || !body.events.length || body.events.length > HISTORY_BATCH_LIMIT
           || (body.materials !== undefined && (!Array.isArray(body.materials) || body.materials.length > body.events.length))) throw new HttpError(400, "Invalid event batch");
         send(200, { profile_id: owner, ...store().append(owner, body.events, body.materials) });
+      } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
+        if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
+        else {
+          const body = await limitedJson(request, 1024);
+          if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => !["teacher_id", "base_revision"].includes(key))) throw new HttpError(400, "Invalid teacher choice");
+          send(200, { profile_id: owner, ...store().chooseTeacher(owner, body.teacher_id, body.base_revision) });
+        }
       } else if (request.method === "GET" && path.length === 2 && path[0] === "materials") {
         if (url.search || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) throw new HttpError(400, "Invalid material query");
         const material = store().courseMaterial(owner, path[1]);
