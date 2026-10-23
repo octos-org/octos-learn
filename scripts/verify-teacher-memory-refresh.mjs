@@ -28,6 +28,10 @@ assert.ok(binary?.startsWith('/') && planPath && resultPath, 'Supply absolute Oc
 const plan = JSON.parse(await readFile(planPath, 'utf8'));
 assert.equal(plan.schema, 'octos.learn.teacher-memory-refresh-trial.v1');
 const { limits } = plan;
+// body-label: the current Octos Learn delivery (label in front of the text);
+// participant-field: UPCR-2026-053 `participant` on session/append_message.
+assert.ok(['body-label', 'participant-field'].includes(plan.delivery ?? 'body-label'));
+const viaField = plan.delivery === 'participant-field';
 assert.ok(Number.isSafeInteger(limits.model_http_requests) && limits.model_http_requests <= 12);
 assert.ok(limits.request_bytes <= 262144 && limits.output_tokens === 65536);
 // Extraction requests may omit an output cap, so each reservation covers the
@@ -65,7 +69,7 @@ const gate = createServer(async (request, response) => {
     const max = (body.generationConfig ?? body.generation_config)?.maxOutputTokens ?? (body.generationConfig ?? body.generation_config)?.max_output_tokens;
     assert.ok(max === undefined || max <= limits.output_tokens);
     assert.ok(calls.length < limits.model_http_requests, 'Request cap reached');
-    const call = { n: calls.length + 1, kind: kindOf(body), request_bytes: size, teacher_labels: ['【阿澜老师】', '【豆豆老师】'].filter(label => text.includes(label)) };
+    const call = { n: calls.length + 1, kind: kindOf(body), request_bytes: size, teacher_labels: ['阿澜老师', '豆豆老师'].filter(name => text.includes(viaField ? `(participant: ${name})` : `【${name}】`)) };
     calls.push(call);
     if (outDir) await writeFile(join(outDir, `call-${call.n}.request.json`), text, { mode: 0o600 });
     if (fixture) {
@@ -97,7 +101,7 @@ const gateway = `http://127.0.0.1:${gate.address().port}/v1beta`;
 const spare = createServer(); await new Promise(done => spare.listen(0, '127.0.0.1', done)); const port = spare.address().port; await new Promise(done => spare.close(done));
 const origin = `http://127.0.0.1:${port}`, data = join(root, 'octos'), config = join(root, 'config.json'), owner = 'memory-trial';
 const delay = ms => new Promise(done => setTimeout(done, ms));
-const log = [], report = { checked_at: new Date().toISOString(), mode: live ? 'live' : 'fixture', plan_id: plan.id, plan_sha256: sha256(JSON.stringify(plan)), model: plan.model };
+const log = [], report = { checked_at: new Date().toISOString(), mode: live ? 'live' : 'fixture', plan_id: plan.id, delivery: plan.delivery ?? 'body-label', plan_sha256: sha256(JSON.stringify(plan)), model: plan.model };
 let child, socket, failure;
 try {
   await writeFile(config, JSON.stringify({ provider: 'gemini', model: plan.model, base_url: gateway, api_key_env: 'GEMINI_API_KEY',
@@ -142,7 +146,8 @@ try {
     for (const exchange of lesson.exchanges) {
       const userId = `learn:user:${exchange.id}`;
       await rpc('session/append_message', { session_id: lesson.session_id, role: 'user', content: exchange.user, media: [], source: 'external_record:octos-learn', client_message_id: userId });
-      await rpc('session/append_message', { session_id: lesson.session_id, role: 'assistant', content: `【${lesson.teacher}老师】\n${exchange.teacher}`, media: [],
+      await rpc('session/append_message', { session_id: lesson.session_id, role: 'assistant', media: [],
+        ...(viaField ? { content: exchange.teacher, participant: `${lesson.teacher}老师` } : { content: `【${lesson.teacher}老师】\n${exchange.teacher}` }),
         source: 'external_record:octos-learn', client_message_id: `learn:answer:${exchange.id}`, thread_id: userId });
     }
   }
