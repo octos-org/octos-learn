@@ -201,6 +201,9 @@ export const METHODS = {
   // `/api/my/memory*` + `/api/my/cron*` REST panel handlers.
   MEMORY_OVERVIEW: "memory/overview",
   MEMORY_ENTITY: "memory/entity",
+  // Explicit remember/correct/forget requests (octos #2848). Acceptance
+  // only; the background consolidator applies them later.
+  MEMORY_REQUEST: "memory/request",
   CRON_LIST: "cron/list",
   CRON_TOGGLE: "cron/toggle",
   // Smart-home bridge integration: device control/state now lives
