@@ -37,6 +37,17 @@ export interface EarnedAchievement {
   teacher_id: string | null; earned_at: string; awarded_at: string; evidence_event_id: string; new: boolean;
 }
 export interface AchievementList { rules_version: string; achievements: EarnedAchievement[] }
+export interface WeeklyReportTopic {
+  topic_id: string; subject: string; domain: string; name: string; state_before: MapState | null; state_after: MapState;
+  change: { evidence_event_id: string; occurred_at: string; kind: 'beat_completed' | 'task_attempt' } | null;
+  played_beats: number; task_attempts: number;
+}
+export interface WeeklyReport {
+  rules_version: string; through: number; week_start: string; first_week: string | null; report_sha256: string;
+  activity: { days: string[]; runs: number; played_beats: number; task_attempts: number; unassisted_successes: number; questions: number };
+  topics: WeeklyReportTopic[];
+  achievements: Pick<EarnedAchievement, 'achievement_id' | 'scope' | 'topic_name' | 'teacher_id' | 'earned_at'>[];
+}
 /** Minutes east of UTC, so "different days" follow the learner's calendar. */
 export const localUtcOffsetMinutes = () => -new Date().getTimezoneOffset();
 export interface AccountTeacherChoice { teacher_id: string; revision: number; updated_at: string }
@@ -81,6 +92,9 @@ export class HistoryApi {
   }
   learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  weeklyReport(weekStart: string) {
+    return this.request<WeeklyReport>(`/report?${new URLSearchParams({ week_start: weekStart, utc_offset_minutes: String(localUtcOffsetMinutes()) })}`);
+  }
   teacherChoice() { return this.request<{ choice: AccountTeacherChoice | null }>('/teacher-choice'); }
   chooseTeacher(teacherId: string, baseRevision?: number) {
     return this.request<{ status: 'saved' | 'conflict'; choice: AccountTeacherChoice | null }>('/teacher-choice', 'PUT',

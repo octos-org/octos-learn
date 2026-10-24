@@ -9,6 +9,7 @@ import { topicCatalog } from "./topic-catalog.mjs";
 import { AnalysisControlStore } from "./analysis-control.mjs";
 import { queryLearningMap } from "./map-progress.mjs";
 import { evaluateAchievements } from "./achievements.mjs";
+import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
 
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -136,6 +137,13 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
         const utcOffsetMinutes = Number(raw);
         send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }) : evaluateAchievements(store(), owner, { utcOffsetMinutes })) });
+      } else if (request.method === "GET" && path.length === 1 && path[0] === "report") {
+        if ([...url.searchParams.keys()].some(key => !["week_start", "utc_offset_minutes"].includes(key))
+          || url.searchParams.getAll("week_start").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
+        const raw = url.searchParams.get("utc_offset_minutes") ?? "0", weekStart = url.searchParams.get("week_start");
+        if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
+        if (!isWeekStart(weekStart)) throw new HttpError(400, "Week must start on a Monday");
+        send(200, { profile_id: owner, ...queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) }) });
       } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
         if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
         else {

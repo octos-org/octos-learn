@@ -197,3 +197,14 @@ test("learning map and achievements are per account, start empty, and validate t
   assert.equal((await call("/map?owner=bob")).status, 400);
   assert.equal((await call("/achievements", "POST", {})).status, 404);
 });
+
+test("weekly report is per account and accepts only a Monday and a valid offset", async () => {
+  const report = await (await call("/report?week_start=2026-10-12&utc_offset_minutes=480")).json();
+  assert.deepEqual([report.profile_id, report.rules_version, report.week_start, report.topics, report.activity.runs], ["alice", "report-v1", "2026-10-12", [], 0]);
+  assert.match(report.report_sha256, /^[a-f0-9]{64}$/);
+  assert.equal((await call("/report?week_start=2026-10-13")).status, 400);
+  assert.equal((await call("/report?week_start=2026-02-30")).status, 400);
+  assert.equal((await call("/report")).status, 400);
+  assert.equal((await call("/report?week_start=2026-10-12&utc_offset_minutes=900")).status, 400);
+  assert.equal((await call("/report?week_start=2026-10-12&owner=bob")).status, 400);
+});

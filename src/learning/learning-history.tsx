@@ -1,5 +1,7 @@
 import { AccountHistoryPanel } from "./history/account-history-panel";
 import { LearningMapPanel } from "./map/learning-map-panel";
+import { WeeklyReportPanel } from "./report/weekly-report-panel";
+import { weeklyReportShown } from "./report/report-week";
 import { useEffect, useRef, useState } from "react";
 import { Plus, Search, X } from "lucide-react";
 import { adoptLearningSession, listLearningSessions, type LearningSessionRecord } from "./learning-session-store";
@@ -20,7 +22,8 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
 }) {
   const [sessions, setSessions] = useState(() => listLearningSessions().filter(s => s.source?.mode !== "preview"));
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"resume" | "facts" | "map">("resume");
+  const [tab, setTab] = useState<"resume" | "facts" | "map" | "report">("resume");
+  const [reportShown] = useState(weeklyReportShown);
   const [syncing, setSyncing] = useState(true);
   const [error, setError] = useState(false);
   const panel = useRef<HTMLElement>(null);
@@ -51,8 +54,9 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
         <button role="tab" aria-selected={tab === "resume"} onClick={() => setTab("resume")}>继续学习</button>
         <button role="tab" aria-selected={tab === "facts"} onClick={() => setTab("facts")}>学习经过</button>
         <button role="tab" aria-selected={tab === "map"} onClick={() => setTab("map")}>学习地图</button>
+        {reportShown && <button role="tab" aria-selected={tab === "report"} onClick={() => setTab("report")}>周报</button>}
       </div>
-      {tab === "map" ? <LearningMapPanel /> : tab === "facts" ? <AccountHistoryPanel onSelect={onSelect} /> : <>
+      {tab === "report" ? <WeeklyReportPanel /> : tab === "map" ? <LearningMapPanel /> : tab === "facts" ? <AccountHistoryPanel onSelect={onSelect} /> : <>
       <button className="learning-history-new" onClick={onNew}><Plus size={18} /> 新建白板</button>
       <label className="learning-history-search"><Search size={17} /><input aria-label="搜索学习记录" placeholder="搜索学习记录" value={query} onChange={e => setQuery(e.target.value)} /></label>
       {syncing && <p role="status">正在同步历史记录…</p>}

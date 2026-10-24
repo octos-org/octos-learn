@@ -30,6 +30,8 @@ export interface TeacherDefinition {
   reactions: TeacherReactions;
   /** How this teacher presents each achievement; {topic} is the topic name. */
   awards: TeacherAwards;
+  /** Fixed weekly-report lines, used when no teacher comment is available. */
+  report: TeacherReportLines;
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
@@ -60,7 +62,18 @@ export interface TeacherReactions {
 export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest" | "reunion";
 export type TeacherAwards = Readonly<Record<AchievementId, string>>;
 
-export const TEACHER_CATALOG_VERSION = 4;
+/** A weekly report states only what was recorded; none of these lines may
+ * claim mastery or improvement, or comment on a week without learning. */
+export interface TeacherReportLines {
+  /** Opening for a week with recorded learning. */
+  active: string;
+  /** Opening for a week without recorded learning; never a reproach. */
+  quiet: string;
+  /** Closing line under the facts. */
+  closing: string;
+}
+
+export const TEACHER_CATALOG_VERSION = 5;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -102,6 +115,11 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "did-it-alone": "这一步，是你自己验证出来的。值得记下来。",
       "regular-guest": "第三次回到{topic}了。每次回来，问题都更具体。",
       reunion: "隔了一段时间又回到{topic}，我们看看还记得哪些。",
+    },
+    report: {
+      active: "这一周的足迹整理好了，我们一起看看。",
+      quiet: "这周地图上没有新的足迹。想学的时候，我在这里。",
+      closing: "这些记录说明你学过、练过什么。下一步学什么，由你决定。",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
@@ -148,6 +166,11 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "did-it-alone": "没靠提示，自己拿下！这个徽章归你。",
       "regular-guest": "第三次见面！{topic}都想给你留个专座了。",
       reunion: "好久不见，老朋友！看看{topic}变了没有。",
+    },
+    report: {
+      active: "这周的地图又亮了几处，来看看！",
+      quiet: "这周地图在休息，等你来点灯～",
+      closing: "记录都在这儿啦，下次想从哪儿开始？",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_female_xiaohe_uranus_bigtts", name: "小何 2.0" },
@@ -246,3 +269,8 @@ export const PLAIN_AWARDS: TeacherAwards = {
   reunion: "隔了两周多，又回来学习{topic}。",
 };
 
+export const PLAIN_REPORT: TeacherReportLines = {
+  active: "这是本周的学习记录。",
+  quiet: "本周没有学习记录。",
+  closing: "这些记录说明学过、练过什么，都不等于已经掌握。",
+};

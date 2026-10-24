@@ -1,7 +1,9 @@
 import { Check, GraduationCap } from "lucide-react";
+import { useState } from "react";
 
 import { OctosSkinArt } from "@/components/octos-skin-art";
 import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
+import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
 import { TEACHERS, useSelectedTeacher } from "@/learning/teachers/teachers";
 
 export function TeacherPicker() {
@@ -105,6 +107,16 @@ export function TeacherSkinPicker({
   );
 }
 
+function WeeklyReportToggle() {
+  const [shown, setShown] = useState(weeklyReportShown);
+  return (
+    <label className="mt-5 flex items-center gap-2 text-sm text-text-strong">
+      <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />
+      在“学习记录”中显示学习周报
+    </label>
+  );
+}
+
 export function LearningCompanionTab() {
   return (
     <section className="glass-section p-5">
@@ -128,6 +140,7 @@ export function LearningCompanionTab() {
         老师的讲课风格和朗读音色用于新开始的课程；使用自定义语音资源或账号无权使用该音色时，仍用 Voice 设置里保存的音色。下面只改变外观；选择上面的老师时会同时换成这位老师的默认外观。
       </p>
       <TeacherSkinPicker />
+      <WeeklyReportToggle />
     </section>
   );
 }
