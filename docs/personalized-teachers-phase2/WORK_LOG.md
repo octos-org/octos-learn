@@ -137,3 +137,10 @@
 - 实现（本地，未推送前已全部通过测试）：learning-coach `codex/background-topic-analysis`（0.17.0，`learning.topics.analyze` / `oll_analyze_topics`，打包 os-taxonomy 目录）；octos-learn `codex/background-topic-analysis`（一次性凭证、回报接口、超时与旧任务处理、页面改为派发、成就提示随结果触发）。
 - 未做：真实环境运行（需要安装 0.17.0 到本机账号、用新环境变量重启 Octos，会用用户自己的 Key），独立审查，合并，发布。
 
+## 2026-10-24：后台分析真实环境验证；授权合并
+
+- 用户同意后：Learning Coach 0.17.0 安装到本机账号 yy；Octos 以 `OCTOS_LEARN_HISTORY_URL=https://127.0.0.1:5173`、`NODE_EXTRA_CA_CERTS=<mkcert CA>` 重启。用户把分析每日上限调到 20（agent 按用户指示写入设置，长期保留）。
+- 验证：首次因当日上限（10）用完，分析没有启动且页面无提示；调高后，两节课共 6 次后台分析全部成功、通过校验，地图与实际一致，agent 未手动排队。分析在讲解播完时开始，练习期间完成。详细记录见 REAL_ENV_ACCEPTANCE.md 第 4 节。
+- 补充（#78）：学习地图显示“正在分析 / 今日次数已用完”提示；服务端状态返回 `quota_used`；设置页增加每日次数选择（5/10/20），关闭再打开保留原次数。
+- 质量问题：目录没有反比例函数，相关课程归到“比例”（正比例）。留待补充高中目录。
+- 用户授权合并 learning-coach #31、octos-learn #77、#78（CI 通过后合并）。未发布、未部署。

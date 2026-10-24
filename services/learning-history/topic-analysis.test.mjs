@@ -76,6 +76,7 @@ test("queue (on by default, can be turned off) is idempotent and account scoped;
     assert.equal(recorded, true); assert.match(capability, /^[A-Za-z0-9_-]{43}$/);
     assert.equal(analysis.dispatch("alice", task.id, task.lease_id).recorded, false, "a job is dispatched once");
     assert.equal(analysis.claim("alice").reason, "daily-task-limit", "dispatched work does not hold the queue");
+    assert.equal(analysis.status("alice").quota_used, 1, "the page can tell the learner the limit is used up");
     // Only the right capability for the right job is accepted, and only once.
     assert.equal(analysis.callback(task.id, "x".repeat(43), { result: mapped(task.input) }).recorded, false);
     assert.equal(analysis.callback("f".repeat(64), capability, { result: mapped(task.input) }).recorded, false);

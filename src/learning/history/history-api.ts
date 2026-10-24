@@ -37,6 +37,8 @@ export interface EarnedAchievement {
   teacher_id: string | null; earned_at: string; awarded_at: string; evidence_event_id: string; new: boolean;
 }
 export interface AchievementList { rules_version: string; achievements: EarnedAchievement[] }
+/** `quota_used` counts analyses started today (UTC day) against `max_daily_tasks`. */
+export interface AnalysisStatus { enabled: boolean; max_daily_tasks: number; quota_used: number; analysis_through: number; states: { state: string; count: number }[] }
 export interface NextStep {
   id: string; type: 'continue' | 'foundation' | 'next' | 'revisit';
   topic: { topic_id: string; name: string; subject: string; domain: string; state: MapState; last_at: string };
@@ -112,7 +114,7 @@ export class HistoryApi {
     return this.request<{ status: 'saved' | 'conflict'; choice: AccountTeacherChoice | null }>('/teacher-choice', 'PUT',
       baseRevision === undefined ? { teacher_id: teacherId } : { teacher_id: teacherId, base_revision: baseRevision });
   }
-  analysisStatus() { return this.request<{ enabled: boolean; max_daily_tasks: number; states: { state: string; count: number }[] }>('/analysis'); }
+  analysisStatus() { return this.request<AnalysisStatus>('/analysis'); }
   async configureAnalysis(enabled: boolean, maxDailyTasks: number) {
     await this.request('/analysis/settings', 'POST', { enabled, max_daily_tasks: maxDailyTasks });
     window.dispatchEvent(new Event('octos:analysis-sync-needed'));

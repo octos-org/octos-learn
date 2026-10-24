@@ -72,7 +72,8 @@ export class TopicAnalysisStore {
     return { ...this.settings(owner), states: this.db.prepare(`SELECT CASE WHEN state IN ('pending','leased','uncertain')
         AND NOT ((rules_version=? OR octos_session_id IS NOT NULL) AND taxonomy_sha256=?)
         THEN 'superseded' ELSE state END AS state,COUNT(*) AS count FROM topic_analysis_jobs WHERE owner=? GROUP BY 1`).all(TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, owner),
-      analysis_through: this.db.prepare("SELECT COALESCE(MAX(seq),0) AS n FROM topic_analysis_results WHERE owner=?").get(owner).n };
+      analysis_through: this.db.prepare("SELECT COALESCE(MAX(seq),0) AS n FROM topic_analysis_results WHERE owner=?").get(owner).n,
+      quota_used: this.quotaUsed(owner) };
   }
   quotaUsed(owner) {
     const from = `${this.history.now().slice(0, 10)}T00:00:00.000Z`, until = new Date(Date.parse(from) + 86400000).toISOString();

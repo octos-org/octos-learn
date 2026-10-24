@@ -2,11 +2,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { AchievementList, EarnedAchievement, LearningMap } from '../history/history-api';
 
-const api = vi.hoisted(() => ({ learningMap: vi.fn(), achievements: vi.fn() }));
+const api = vi.hoisted(() => ({ learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn() }));
 vi.mock('../history/history-api', async (original) => ({ ...(await original<object>()), openHistoryApi: vi.fn(async () => api) }));
 vi.mock('../../api/client', async (original) => ({ ...(await original<object>()), getToken: () => 'token' }));
 
 import { LearningMapPanel } from './learning-map-panel';
+import { analysisNotice } from './analysis-notice';
 import { awardLine } from './award-line';
 import { PLAIN_AWARDS, TEACHERS } from '../teachers/teachers';
 
@@ -19,7 +20,7 @@ const MAP: LearningMap = { rules_version: 'map-states-v1', through: 9, taxonomy:
     evidence: { played_beats: 1, runs: 1, task_attempts: 0, unassisted_successes: 0, assisted_successes: 0, days: ['2026-10-05'], first_at: null, last_at: null } },
 ] };
 
-beforeEach(() => { localStorage.clear(); api.learningMap.mockResolvedValue(MAP); });
+beforeEach(() => { localStorage.clear(); api.learningMap.mockResolvedValue(MAP); api.analysisStatus.mockRejectedValue(new Error('unavailable')); });
 afterEach(cleanup);
 
 it('fills the presenting teacher\'s line with the topic, and falls back to plain wording', () => {
@@ -59,3 +60,19 @@ it('explains an empty map without inventing progress', async () => {
   expect(await screen.findByText(/还没有点亮的知识点/)).toBeTruthy();
   expect(screen.getByText(/还没有成就/)).toBeTruthy();
 });
+
+it('explains lessons not on the map yet: still analyzing, or today\'s limit used up', () => {
+  const status = (quota_used: number, waiting: number) => ({ enabled: true, max_daily_tasks: 20, quota_used, analysis_through: 3, states: [{ state: 'pending', count: waiting }, { state: 'complete', count: 9 }] });
+  expect(analysisNotice(status(4, 0))).toBeNull();
+  expect(analysisNotice({ ...status(4, 2), enabled: false })).toBeNull();
+  expect(analysisNotice(status(4, 2))).toBe('还有 2 项学习内容正在分析，学习地图稍后更新。');
+  expect(analysisNotice(status(20, 2))).toMatch(/^今天的 20 次知识点分析已经用完，还有 2 项学习内容没分析。之后打开应用时会自动补上/);
+});
+
+it('shows the analysis notice above the map without blocking it', async () => {
+  api.achievements.mockResolvedValue({ rules_version: 'achievements-v1', achievements: [] });
+  api.analysisStatus.mockResolvedValue({ enabled: true, max_daily_tasks: 10, quota_used: 10, analysis_through: 1, states: [{ state: 'pending', count: 1 }] });
+  render(<LearningMapPanel />);
+  expect(await screen.findByText(/今天的 10 次知识点分析已经用完/)).toBeTruthy();
+});
+
