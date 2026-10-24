@@ -43,6 +43,7 @@ import {
 } from "./learning-session-store";
 import { discoverServerLearningSessions } from "./learning-session-sync";
 import { LearningHistory, learningSessionHref } from "./learning-history";
+import { newBoardHref } from "./new-board-href";
 import { groupCoursePacks } from "./course-collections";
 import "./course-launcher.css";
 
@@ -418,7 +419,7 @@ export function CourseLauncher() {
     <main className="course-launcher">
       {history.status.cleanupPending > 0 && <p role="status">白板删除请求已保存，清理结果仍待确认。<button onClick={() => { void history.coordinator?.retry(); }}>重试清理</button></p>}
       {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
-        onNew={() => navigate("/board?new-board=1")}
+        onNew={draft => navigate(newBoardHref(draft))}
         onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
       <div className="course-launcher-inner" inert={historyOpen}>
         <header className="course-launcher-header">

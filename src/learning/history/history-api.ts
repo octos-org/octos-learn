@@ -37,6 +37,12 @@ export interface EarnedAchievement {
   teacher_id: string | null; earned_at: string; awarded_at: string; evidence_event_id: string; new: boolean;
 }
 export interface AchievementList { rules_version: string; achievements: EarnedAchievement[] }
+export interface NextStep {
+  id: string; type: 'continue' | 'foundation' | 'next' | 'revisit';
+  topic: { topic_id: string; name: string; subject: string; domain: string; state: MapState; last_at: string };
+  target?: { topic_id: string; name: string; subject: string; domain: string; strength: 'hard'; reason: string };
+  days_away?: number; resume: { session_id: string; run_id: string };
+}
 export interface WeeklyReportTopic {
   topic_id: string; subject: string; domain: string; name: string; state_before: MapState | null; state_after: MapState;
   change: { evidence_event_id: string; occurred_at: string; kind: 'beat_completed' | 'task_attempt' } | null;
@@ -94,6 +100,8 @@ export class HistoryApi {
   }
   learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  suggestions() { return this.request<{ rules_version: string; suggestions: NextStep[] }>(`/suggestions?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  dismissSuggestion(id: string) { return this.request<{ dismissed: boolean }>('/suggestions/dismiss', 'POST', { id }); }
   reportComments() { return this.request<{ enabled: boolean }>('/report-comments'); }
   setReportComments(enabled: boolean) { return this.request<{ enabled: boolean }>('/report-comments/settings', 'POST', { enabled }); }
   weeklyReport(weekStart: string) {

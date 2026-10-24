@@ -317,6 +317,14 @@ describe("LearningPage", () => {
     expect(learningWorkspaceMock.props!.sessionId).toBe(newSessionId);
   });
 
+  it("passes a suggested question to a new board's input once, without keeping it in the address", async () => {
+    window.history.replaceState({}, "", `/board?new-board=1&draft=${encodeURIComponent("坐标是什么？")}`);
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    expect(learningWorkspaceMock.props!.initialDraft).toBe("坐标是什么？");
+    expect(window.location.search).not.toContain("draft");
+  });
+
   it("uses a home action as the standalone navigation", async () => {
     window.history.replaceState({}, "", "/learn?oll-fixture=geometry-v2");
 

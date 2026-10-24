@@ -6,6 +6,8 @@ import { ACHIEVEMENT_NAME, readAwardTone } from "../map/award-line";
 import { domainLabel, subjectLabel, topicLabel } from "../map/taxonomy-labels";
 import { getTeacher, PLAIN_REPORT, resolveSelectedTeacherId } from "../teachers/teachers";
 import { localDayOf, shiftWeek, weekLabel, weekStartOf } from "./report-week";
+import { NextSteps } from "../map/next-steps";
+import type { LearningSessionRecord } from "../learning-session-store";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
 const shortDay = (iso: string) => new Date(iso).toLocaleDateString("zh-CN", { month: "numeric", day: "numeric" });
@@ -43,7 +45,9 @@ function ReportBody({ report }: { report: WeeklyReport }) {
   </>;
 }
 
-export function WeeklyReportPanel({ today = () => new Date() }: { today?: () => Date }) {
+export function WeeklyReportPanel({ today = () => new Date(), onSelect, onNew }: {
+  today?: () => Date; onSelect?: (session: LearningSessionRecord) => void; onNew?: (draft: string) => void;
+}) {
   const current = weekStartOf(localDayOf(today()));
   const [week, setWeek] = useState(current);
   const [report, setReport] = useState<WeeklyReport>();
@@ -71,5 +75,7 @@ export function WeeklyReportPanel({ today = () => new Date() }: { today?: () => 
     {error ? <p role="status">暂时读不到周报，请稍后再试。</p>
       : !shown ? <p role="status">正在整理周报…</p>
         : <ReportBody report={shown} />}
+    {/* Suggestions describe now, so they follow only this week and the last one. */}
+    {shown && week >= shiftWeek(current, -1) && <NextSteps onSelect={onSelect} onNew={onNew} />}
   </div>;
 }

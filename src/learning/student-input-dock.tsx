@@ -28,6 +28,7 @@ export function StudentInputDock({
   references = [],
   suggestions = [],
   onRemoveReference,
+  initialText = "",
 }: {
   voiceState: VoiceState;
   cameraActive: boolean;
@@ -43,8 +44,10 @@ export function StudentInputDock({
   references?: Array<{ id: string; label: string }>;
   suggestions?: string[];
   onRemoveReference?: (id: string) => void;
+  /** Prefilled text the learner may edit or send. */
+  initialText?: string;
 }) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText);
   const [sending, setSending] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLInputElement>(null);

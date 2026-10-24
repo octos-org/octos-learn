@@ -47,6 +47,16 @@ describe("StudentInputDock board references", () => {
     expect(dock.queryByLabelText("试着从一个主题开始")).toBeNull();
   });
 
+  it("starts with a suggested next-step question in the box, unsent", () => {
+    const send = vi.fn();
+    const view = render(
+      <StudentInputDock voiceState="idle" cameraActive={false} onMic={vi.fn()} onToggleCamera={vi.fn()}
+        onSendText={send} onSendImage={vi.fn()} initialText="坐标是什么？" />,
+    );
+    expect((within(view.container).getByRole("textbox", { name: "输入学习问题" }) as HTMLInputElement).value).toBe("坐标是什么？");
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("keeps only text and send controls in meeting-display mode", () => {
     const view = render(
       <StudentInputDock

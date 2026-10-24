@@ -342,6 +342,8 @@ function threadHasDeliverableArtifact(
 }
 
 export interface LearningWorkspaceProps {
+  /** Question text placed in the input box of a new board; never sent by itself. */
+  initialDraft?: string;
   sessionId: string;
   playbackMode?: "live" | "review";
   voiceEnabled?: boolean;
@@ -453,6 +455,7 @@ function readInkMergeSourceSessionId(
 }
 
 export function LearningWorkspace({
+  initialDraft,
   sessionId,
   playbackMode = "live",
   voiceEnabled = true,
@@ -3659,6 +3662,7 @@ export function LearningWorkspace({
 
       {!coursePreview ? <StudentInputDock
         textOnly={import.meta.env.MODE === "android"}
+        initialText={initialDraft}
         suggestions={!controlledOllLesson && whiteboardQuestions.length === 0
           ? ["斜率是什么？", "圆的面积为什么是 πr²？", "二次函数看不懂"]
           : []}

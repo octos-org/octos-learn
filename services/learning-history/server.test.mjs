@@ -222,3 +222,13 @@ test("report comments are on by default, can be turned off, and validate their r
   assert.equal((await (await call("/report-comments", "GET", undefined, { authorization: "Bearer bob" })).json()).enabled, true);
   assert.equal((await call("/report-comments/settings", "POST", { enabled: "no" })).status, 400);
 });
+
+test("suggestions are per account, start empty, and validate dismissals", async () => {
+  const empty = await (await call("/suggestions?utc_offset_minutes=480")).json();
+  assert.deepEqual([empty.profile_id, empty.rules_version, empty.suggestions], ["alice", "suggestions-v1", []]);
+  assert.equal((await call("/suggestions?owner=bob")).status, 400);
+  assert.equal((await (await call("/suggestions/dismiss", "POST", { id: "continue:mt_WBdHkc2HTf:" })).json()).dismissed, true);
+  assert.equal((await call("/suggestions/dismiss", "POST", { id: "anything" })).status, 400);
+  assert.equal((await call("/suggestions/dismiss", "POST", { id: "continue:mt_WBdHkc2HTf:", extra: 1 })).status, 400);
+  assert.equal((await call("/suggestions", "POST", {})).status, 404);
+});

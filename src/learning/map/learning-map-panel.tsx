@@ -5,6 +5,8 @@ import { openHistoryApi, type AchievementList, type EarnedAchievement, type Lear
 import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
 import { domainLabel, subjectLabel, topicLabel } from "./taxonomy-labels";
+import { NextSteps } from "./next-steps";
+import type { LearningSessionRecord } from "../learning-session-store";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
 
@@ -18,7 +20,7 @@ function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement
   </article>;
 }
 
-export function LearningMapPanel() {
+export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: LearningSessionRecord) => void; onNew?: (draft: string) => void } = {}) {
   const [map, setMap] = useState<LearningMap>();
   const [awards, setAwards] = useState<AchievementList>();
   const [error, setError] = useState(false);
@@ -50,6 +52,7 @@ export function LearningMapPanel() {
     groups.set(topic.subject, domains);
   }
   return <div className="learning-history-account learning-map">
+    <NextSteps onSelect={onSelect} onNew={onNew} />
     <section aria-label="成就">
       <h3>成就</h3>
       {awards.achievements.length
