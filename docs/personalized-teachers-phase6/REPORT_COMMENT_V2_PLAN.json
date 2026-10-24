@@ -1,0 +1,421 @@
+{
+  "schema": "octos.learn.performance-trial.v1",
+  "model": "gemini-3.8-flash",
+  "voice": "none",
+  "resource": "none",
+  "cost_basis": [
+    "gemini-3.8-flash standard paid (rechecked 2026-10-23): USD 0.75 / 1M input, USD 3.75 / 1M output including thinking.",
+    "Octos sends the comment with max_output_tokens 16384 (free fixture), so output <= USD 0.06144; the gateway refuses requests over 65536 bytes, so input <= 65536 tokens <= USD 0.049152. Sum USD 0.110592, reserved as USD 0.12 per request.",
+    "Six comments, at most 8 requests (USD 0.96). Expected: one request per comment of about 9k input tokens (Octos system prompt plus the report), about USD 0.01 each. Failed attempts keep their reservation. Upper bound, not a bill."
+  ],
+  "cost_basis_verified": true,
+  "id": "phase6-report-comments-v2-20261024",
+  "status": "approved",
+  "route_verified": true,
+  "authorization_reference": "User 2026-10-24: \"都按照你的建议来\", approving the proposed v2 prompt and its check: 6 comments, at most 8 requests / USD 0.96 (expected about USD 0.08).",
+  "limits": {
+    "courses": 6,
+    "speech_requests": 1,
+    "usd_micros": 960000,
+    "cny_micros": 1,
+    "model_request_usd_micros": 120000,
+    "speech_byte_cny_micros": 1,
+    "speech_utf8_bytes": 1,
+    "output_tokens": 16384,
+    "request_bytes": 65536,
+    "model_http_requests": 8
+  },
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/report-comments-v2",
+  "questions_answered": [
+    "Does each comment pass the program check (length, no mastery/progress/forgetting claims, own teacher only, report numbers only)?",
+    "Is every statement supported by the report (no invented topics, no overstating one success)?",
+    "Does it sound like the chosen teacher?",
+    "Compared with v1, does the comment pick out what matters instead of restating the counts, and does each teacher sound like themselves?"
+  ],
+  "samples": [
+    {
+      "id": "breakthrough-alan",
+      "version": "candidate",
+      "teacher": "alan",
+      "prompt": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "beat",
+          "2026-10-06",
+          19,
+          "r0",
+          {
+            "topic": "mt_WBdHkc2HTf"
+          }
+        ],
+        [
+          "question",
+          "2026-10-13",
+          19,
+          "r1",
+          {
+            "text": "斜率为负时直线怎么走？"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-13",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 2
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          20,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 1
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-15",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 0
+          }
+        ],
+        [
+          "beat",
+          "2026-10-15",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 3
+          }
+        ]
+      ]
+    },
+    {
+      "id": "light-alan",
+      "version": "candidate",
+      "teacher": "alan",
+      "prompt": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "question",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "text": "怎么画 y=2x+1 的图像？"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "topic": "mt_-3udyo6VyB"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "n": 1
+          }
+        ]
+      ]
+    },
+    {
+      "id": "busy-alan",
+      "version": "candidate",
+      "teacher": "alan",
+      "prompt": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "beat",
+          "2026-10-12",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-12",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 1
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "result": "failed",
+            "hints": 0
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 2
+          }
+        ],
+        [
+          "beat",
+          "2026-10-15",
+          19,
+          "r3",
+          {
+            "topic": "mt_-3udyo6VyB"
+          }
+        ],
+        [
+          "question",
+          "2026-10-15",
+          19,
+          "r3",
+          {
+            "text": "上升除以向右是什么意思？"
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-18",
+          10,
+          "r4",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "hints": 1
+          }
+        ],
+        [
+          "beat",
+          "2026-10-18",
+          10,
+          "r4",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "n": 1
+          }
+        ]
+      ]
+    },
+    {
+      "id": "breakthrough-doudou",
+      "version": "candidate",
+      "teacher": "doudou",
+      "prompt": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "beat",
+          "2026-10-06",
+          19,
+          "r0",
+          {
+            "topic": "mt_WBdHkc2HTf"
+          }
+        ],
+        [
+          "question",
+          "2026-10-13",
+          19,
+          "r1",
+          {
+            "text": "斜率为负时直线怎么走？"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-13",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 2
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          20,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 1
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-15",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 0
+          }
+        ],
+        [
+          "beat",
+          "2026-10-15",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 3
+          }
+        ]
+      ]
+    },
+    {
+      "id": "light-doudou",
+      "version": "candidate",
+      "teacher": "doudou",
+      "prompt": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "question",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "text": "怎么画 y=2x+1 的图像？"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "topic": "mt_-3udyo6VyB"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-17",
+          10,
+          "r1",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "n": 1
+          }
+        ]
+      ]
+    },
+    {
+      "id": "busy-doudou",
+      "version": "candidate",
+      "teacher": "doudou",
+      "prompt": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "now": "2026-10-21T02:00:00.000Z",
+      "events": [
+        [
+          "beat",
+          "2026-10-12",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf"
+          }
+        ],
+        [
+          "beat",
+          "2026-10-12",
+          19,
+          "r1",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "n": 1
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "result": "failed",
+            "hints": 0
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-13",
+          19,
+          "r2",
+          {
+            "topic": "mt_WBdHkc2HTf",
+            "hints": 2
+          }
+        ],
+        [
+          "beat",
+          "2026-10-15",
+          19,
+          "r3",
+          {
+            "topic": "mt_-3udyo6VyB"
+          }
+        ],
+        [
+          "question",
+          "2026-10-15",
+          19,
+          "r3",
+          {
+            "text": "上升除以向右是什么意思？"
+          }
+        ],
+        [
+          "attempt",
+          "2026-10-18",
+          10,
+          "r4",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "hints": 1
+          }
+        ],
+        [
+          "beat",
+          "2026-10-18",
+          10,
+          "r4",
+          {
+            "topic": "mt_-3udyo6VyB",
+            "n": 1
+          }
+        ]
+      ]
+    }
+  ],
+  "compared_with": "Same six reports as REPORT_COMMENT_RESULT.json (report-comment-v1). v2 asks the teacher to pick one or two things worth noticing in their own way instead of restating the counts.",
+  "route_check": "Free fixture through isolated Octos main 5d9e70b4 with the v2 instructions: one app-origin text-only request with no tools (about 34 KB, max_output_tokens 16384); 0 supplier calls."
+}

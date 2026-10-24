@@ -1,0 +1,280 @@
+{
+  "plan": "REPORT_COMMENT_PLAN.json",
+  "plan_sha256": "3eb2133b648b73094e810c7d0afd950f47f27c9e521595d63eb944b8e7c0c50c",
+  "checked_at": "2026-10-24T04:19:54.713Z",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "passed": true,
+  "gateway": {
+    "admitted": 6,
+    "refused": 0,
+    "failed": 0
+  },
+  "admitted_requests": 6,
+  "reserved_usd": 0.72,
+  "estimated_usd": 0.0765,
+  "calls": [
+    {
+      "sample": "breakthrough-alan",
+      "status": 200,
+      "request_bytes": 33481,
+      "max_output_tokens": 16384,
+      "input_tokens": 7942,
+      "output_tokens": 128,
+      "thinking_tokens": 2360,
+      "estimated_usd": 0.01529
+    },
+    {
+      "sample": "light-alan",
+      "status": 200,
+      "request_bytes": 33467,
+      "max_output_tokens": 16384,
+      "input_tokens": 7939,
+      "output_tokens": 113,
+      "thinking_tokens": 1126,
+      "estimated_usd": 0.0106
+    },
+    {
+      "sample": "busy-alan",
+      "status": 200,
+      "request_bytes": 33559,
+      "max_output_tokens": 16384,
+      "input_tokens": 7956,
+      "output_tokens": 126,
+      "thinking_tokens": 2005,
+      "estimated_usd": 0.01396
+    },
+    {
+      "sample": "breakthrough-doudou",
+      "status": 200,
+      "request_bytes": 33500,
+      "max_output_tokens": 16384,
+      "input_tokens": 7962,
+      "output_tokens": 122,
+      "thinking_tokens": 1376,
+      "estimated_usd": 0.01159
+    },
+    {
+      "sample": "light-doudou",
+      "status": 200,
+      "request_bytes": 33486,
+      "max_output_tokens": 16384,
+      "input_tokens": 7959,
+      "output_tokens": 127,
+      "thinking_tokens": 1516,
+      "estimated_usd": 0.01213
+    },
+    {
+      "sample": "busy-doudou",
+      "status": 200,
+      "request_bytes": 33578,
+      "max_output_tokens": 16384,
+      "input_tokens": 7979,
+      "output_tokens": 126,
+      "thinking_tokens": 1727,
+      "estimated_usd": 0.01293
+    }
+  ],
+  "results": [
+    {
+      "id": "breakthrough-alan",
+      "teacher": "alan",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周我们上了2节课。在一次函数图像的练习中，你有1次不用提示达到了要求，状态更新为“做出来过”。期间你提出了1个问题，并获得了“亲手搞定”与“常驻嘉宾”成就。",
+      "input": {
+        "achievements": [
+          "亲手搞定",
+          "常驻嘉宾"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 1,
+          "学习天数": 2,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 2,
+          "课数": 2
+        },
+        "input_sha256": "a0de2ff410c51cfb221b63e554ebc0e6a1d795e98cf4f881ffb3be17732e4448",
+        "teacher": "阿澜",
+        "topics": [
+          {
+            "after": "做出来过",
+            "before": "已探索",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    },
+    {
+      "id": "light-alan",
+      "teacher": "alan",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你上了一节课，探索了画一次函数图像，并获得了“初来乍到”成就。课上你提出了 1 个问题，播放了 2 段讲解。",
+      "input": {
+        "achievements": [
+          "初来乍到"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 1,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 0,
+          "课数": 1
+        },
+        "input_sha256": "ca9b6d44ba06d3256b3e524357952afcc4442d5e303ae3a5114e77acfc1bb754",
+        "teacher": "阿澜",
+        "topics": [
+          {
+            "after": "已探索",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    },
+    {
+      "id": "busy-alan",
+      "teacher": "alan",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周4天的学习里，你上了4课并进行了3次练习，提出了1个问题。目前“一次函数图像”和“画一次函数图像”都进入了正在练习状态，你还获得了“初来乍到”成就。",
+      "input": {
+        "achievements": [
+          "初来乍到"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 4,
+          "提问数": 1,
+          "播放讲解段数": 4,
+          "练习次数": 3,
+          "课数": 4
+        },
+        "input_sha256": "c8b1439b36cedcf1ce4322e4428c164e930f1c004fcf24c780aba320273386c3",
+        "teacher": "阿澜",
+        "topics": [
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          },
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    },
+    {
+      "id": "breakthrough-doudou",
+      "teacher": "doudou",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周我们一起学了2天，你在一次函数图像里有1次不用提示达到了练习要求，还拿到了“亲手搞定”和“常驻嘉宾”！敢于直接尝试，太棒啦！",
+      "input": {
+        "achievements": [
+          "亲手搞定",
+          "常驻嘉宾"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 1,
+          "学习天数": 2,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 2,
+          "课数": 2
+        },
+        "input_sha256": "33b08b85d97efd007c99cfb3d6720d7139ef30447f288b5d3e3ab11ab901ce23",
+        "teacher": "豆豆",
+        "topics": [
+          {
+            "after": "做出来过",
+            "before": "已探索",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    },
+    {
+      "id": "light-doudou",
+      "teacher": "doudou",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你上了 1 节课，解锁了“初来乍到”成就，还探索了画一次函数图像！你听了 2 段讲解，并提出了 1 个问题，敢于提问就是很棒的尝试！",
+      "input": {
+        "achievements": [
+          "初来乍到"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 1,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 0,
+          "课数": 1
+        },
+        "input_sha256": "e19ea33e2039d6f1f71a10d54a79e74cc976f1cbfbf11d4277138ccb0fa77731",
+        "teacher": "豆豆",
+        "topics": [
+          {
+            "after": "已探索",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    },
+    {
+      "id": "busy-doudou",
+      "teacher": "doudou",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你获得了「初来乍到」成就，在4天里上了4节课，提了1个问题，还完成了3次练习！一次函数图像和画一次函数图像这两个内容，状态都进入了正在练习。",
+      "input": {
+        "achievements": [
+          "初来乍到"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 4,
+          "提问数": 1,
+          "播放讲解段数": 4,
+          "练习次数": 3,
+          "课数": 4
+        },
+        "input_sha256": "d066e0a084227c6aa8f3e6a823c5b6c09b7aff85031c89ca993eeb232e4810a0",
+        "teacher": "豆豆",
+        "topics": [
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          },
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      }
+    }
+  ],
+  "key_scan": "22 output files, 0 key fragments",
+  "octos_log": "not saved (may contain pairing codes)"
+}

@@ -7,7 +7,7 @@ import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 // can only reach "explored"; an attempt reaches "practising"; a program-checked
 // success without any opened hint reaches "did-it". Nothing here is mastery.
 export const MAP_RULES_VERSION = "map-states-v1";
-const RANK = { explored: 1, practising: 2, "did-it": 3 };
+export const MAP_STATE_RANK = { explored: 1, practising: 2, "did-it": 3 };
 const ALL = 1_000_000;
 
 function candidateTopics(store, owner, through, mappings) {
@@ -36,7 +36,7 @@ export function topicFacts(store, owner, topicId, through, mappings = TOPIC_MAPP
 
 export function topicState(facts) {
   let state = null;
-  const raise = next => { if (!state || RANK[next] > RANK[state]) state = next; };
+  const raise = next => { if (!state || MAP_STATE_RANK[next] > MAP_STATE_RANK[state]) state = next; };
   for (const event of facts) {
     if (event.kind === "beat_completed") raise("explored");
     if (event.kind === "task_attempt") {

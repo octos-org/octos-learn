@@ -6,9 +6,12 @@ import { HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mj
 import { queryTopic, queryRunCoverage } from "./topic-query.mjs";
 import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { topicCatalog } from "./topic-catalog.mjs";
-import { AnalysisControlStore } from "./analysis-control.mjs";
+import { AnalysisControlStore, validReportControl } from "./analysis-control.mjs";
 import { queryLearningMap } from "./map-progress.mjs";
 import { evaluateAchievements } from "./achievements.mjs";
+import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
+import { ReportCommentStore } from "./report-comments.mjs";
+import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -31,11 +34,12 @@ function integer(search, name, fallback, max = Number.MAX_SAFE_INTEGER) {
   return value;
 }
 
-export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore } = {}) {
+export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore, mappings = TOPIC_MAPPINGS } = {}) {
   const base = new URL(octosBaseUrl).origin;
   let storage = suppliedStore;
   const store = () => storage ??= new HistoryStore(databasePath);
   const controls = new AnalysisControlStore(analysisControlDirectory);
+  const reportControls = new AnalysisControlStore(join(dirname(analysisControlDirectory), "report-host-controls"), validReportControl);
   const handle = async (request, response) => {
     const url = new URL(request.url, "http://local");
     if (url.pathname !== PREFIX && !url.pathname.startsWith(`${PREFIX}/`)) return false;
@@ -65,7 +69,45 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       const expectedOwner = request.headers["x-learning-owner"];
       if (expectedOwner !== undefined && expectedOwner !== owner) throw new HttpError(409, "Learning record account changed; keep the original local queue");
       const path = url.pathname.slice(PREFIX.length).split("/").filter(Boolean).map(decodeURIComponent);
-      if (path[0] === "analysis") {
+      if (path[0] === "report-comments") {
+        const comments = new ReportCommentStore(store(), mappings);
+        const post = async (allowed, max = 2048) => {
+          if (url.search || request.method !== "POST") throw new HttpError(400, "Invalid report comment request");
+          const body = await limitedJson(request, max);
+          if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => !allowed.includes(key))) throw new HttpError(400, "Invalid report comment fields");
+          return body;
+        };
+        let result;
+        if (request.method === "GET" && path.length === 1 && !url.search) result = comments.settings(owner);
+        else if (path.length === 2 && path[1] === "settings") result = comments.configure(owner, await post(["enabled"]));
+        else if (path.length === 2 && path[1] === "controls" && request.method === "GET" && !url.search) result = { controls: await reportControls.list(owner) };
+        else if (path.length === 3 && path[1] === "controls" && /^[a-f0-9]{64}$/.test(path[2])) {
+          if (request.method === "DELETE" && !url.search) { await reportControls.remove(owner, path[2]); result = { removed: true }; }
+          else {
+            const body = await post(["lease_id", "control"], 8192);
+            const job = store().db.prepare("SELECT id FROM report_comment_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=?").get(owner, path[2], body.lease_id);
+            if (!job) throw new HttpError(409, "Report comment lease changed");
+            await reportControls.put(owner, path[2], body.control); result = { recorded: true };
+          }
+        } else if (path.length === 2 && path[1] === "claim") {
+          const body = await post(["utc_offset_minutes"]);
+          if (!Number.isSafeInteger(body.utc_offset_minutes) || body.utc_offset_minutes < -720 || body.utc_offset_minutes > 840) throw new HttpError(400, "Invalid UTC offset");
+          result = comments.claim(owner, body.utc_offset_minutes);
+        } else if (path.length === 3 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2]) && request.method === "GET" && !url.search) {
+          const job = comments.job(owner, path[2]);
+          if (!job) throw new HttpError(404, "Report comment task unavailable");
+          result = { job };
+        } else if (path.length === 4 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2])) {
+          const body = await post(["lease_id", "execution", "result"], 16 * 1024);
+          if (typeof body.lease_id !== "string" || !/^[a-f0-9-]{36}$/.test(body.lease_id)) throw new HttpError(400, "Invalid report comment lease");
+          if (path[3] === "execution" && Object.keys(body).every(key => ["lease_id", "execution"].includes(key))) result = comments.execution(owner, path[2], body.lease_id, body.execution);
+          else if (path[3] === "result" && Object.keys(body).every(key => ["lease_id", "result"].includes(key))) result = comments.complete(owner, path[2], body.lease_id, body.result);
+          else if (path[3] === "pause" && Object.keys(body).length === 1) result = comments.pause(owner, path[2], body.lease_id);
+          else if (path[3] === "reject" && Object.keys(body).length === 1) result = comments.reject(owner, path[2], body.lease_id);
+          else throw new HttpError(400, "Invalid report comment operation");
+        } else throw new HttpError(404, "Unknown report comment endpoint");
+        send(200, { profile_id: owner, ...result });
+      } else if (path[0] === "analysis") {
         const analysis = new TopicAnalysisStore(store());
         const post = async (allowed, max = 2048) => {
           if (url.search || request.method !== "POST") throw new HttpError(400, "Invalid analysis request");
@@ -135,7 +177,16 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         const raw = url.searchParams.get("utc_offset_minutes") ?? "0";
         if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
         const utcOffsetMinutes = Number(raw);
-        send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }) : evaluateAchievements(store(), owner, { utcOffsetMinutes })) });
+        send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }, mappings) : evaluateAchievements(store(), owner, { utcOffsetMinutes }, mappings)) });
+      } else if (request.method === "GET" && path.length === 1 && path[0] === "report") {
+        if ([...url.searchParams.keys()].some(key => !["week_start", "utc_offset_minutes"].includes(key))
+          || url.searchParams.getAll("week_start").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
+        const raw = url.searchParams.get("utc_offset_minutes") ?? "0", weekStart = url.searchParams.get("week_start");
+        if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
+        if (!isWeekStart(weekStart)) throw new HttpError(400, "Week must start on a Monday");
+        const report = queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) }, mappings);
+        const teacherId = store().teacherChoice(owner)?.teacher_id ?? "alan";
+        send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store(), mappings).commentFor(owner, report, teacherId), comment_teacher_id: teacherId });
       } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
         if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
         else {
