@@ -76,3 +76,11 @@ it('shows the analysis notice above the map without blocking it', async () => {
   expect(await screen.findByText(/今天的 10 次知识点分析已经用完/)).toBeTruthy();
 });
 
+
+it('shows lit topics on the star atlas above the list by domain', async () => {
+  api.achievements.mockResolvedValue({ rules_version: 'achievements-v1', achievements: [] });
+  render(<LearningMapPanel />);
+  expect(await screen.findByRole('img', { name: /数之星域：点亮 \d+ 颗/ })).toBeTruthy();
+  expect(screen.getByText(/按星域列出/)).toBeTruthy();
+  expect(screen.getByRole('button', { name: '揭开全部迷雾' })).toBeTruthy();
+});

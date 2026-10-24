@@ -7,6 +7,7 @@ import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
 import { domainLabel, subjectLabel, topicLabel } from "./taxonomy-labels";
 import { NextSteps } from "./next-steps";
+import { StarAtlas } from "./star-atlas/star-atlas";
 import type { LearningSessionRecord } from "../learning-session-store";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
@@ -75,6 +76,9 @@ export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: Lea
       {analysisNotice(analysis) && <p role="status" className="learning-map-analysis">{analysisNotice(analysis)}</p>}
       <p>已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。</p>
       {!map.topics.length && <p>还没有点亮的知识点。完成课程片段或练习后，这里会留下足迹。</p>}
+      <StarAtlas topics={map.topics} onAsk={onNew} />
+      <details className="learning-map-list">
+      <summary>按星域列出（{map.topics.length} 个知识点）</summary>
       {[...groups].map(([subject, domains]) => <div key={subject} className="learning-map-subject">
         <h4>{subjectLabel(subject)}</h4>
         {[...domains].map(([domain, topics]) => <div key={domain} className="learning-map-domain">
@@ -88,6 +92,7 @@ export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: Lea
           </ul>
         </div>)}
       </div>)}
+      </details>
     </section>
   </div>;
 }
