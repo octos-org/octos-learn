@@ -152,7 +152,7 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
     }
     unsubscribe = bridge.onPeerToolCall(event => { void answerTool(event).catch(() => undefined); });
     await rpc('peer/tools/register', { session_id: control.host, peer: control.peer, host_token: control.token, generic_tools: [], max_result_bytes: 65536,
-      tools: [{ name: 'learning_topics.search', description: 'Look up pinned math topic definitions using English concepts or exact topic IDs.', risk: 'read', background: true,
+      tools: [{ name: 'learning_topics.search', description: 'Look up pinned learning topic definitions (all subjects) using English concepts or exact topic IDs.', risk: 'read', background: true,
         input_schema: { type: 'object', properties: { query: { type: 'string' }, ids: { type: 'array', items: { type: 'string' } }, limit: { type: 'integer' } }, additionalProperties: false } }] });
     await rpc('session/open', { session_id: control.session, cwd: workspace });
     if (!task.execution) {

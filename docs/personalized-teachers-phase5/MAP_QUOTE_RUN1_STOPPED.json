@@ -1,0 +1,113 @@
+{
+  "checked_at": "2026-10-23T17:58:32.030Z",
+  "mode": "live",
+  "passed": false,
+  "failure": "A failed measurement must stop the run\n\nfalse !== true\n",
+  "plan_id": "phase5-map-quote-20261023",
+  "plan_sha256": "2b4308530cceb5e2051d0fc3167d7e1dcc60936a5ea70c2ab841f176228c1010",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "78bf18f221b69de49503067a79f92b7eb3edbfc3fea61e25b9653ecbb1255223",
+  "gateway": {
+    "admitted": 3,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 3,
+  "reserved_usd_micros": 450000,
+  "calls": [
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 22263,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3629,
+        "candidatesTokenCount": 1426,
+        "totalTokenCount": 5055,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3629
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14203,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2337,
+        "candidatesTokenCount": 1165,
+        "totalTokenCount": 3502,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2337
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 14203,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2337,
+        "candidatesTokenCount": 1062,
+        "totalTokenCount": 3399,
+        "cachedContentTokenCount": 1313,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2337
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1313
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-map-alan",
+      "teacher": "alan",
+      "topic": "map-quote",
+      "status": "failed",
+      "elapsed_ms": 33879,
+      "model_requests": 3
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/map-quote-run1"
+}

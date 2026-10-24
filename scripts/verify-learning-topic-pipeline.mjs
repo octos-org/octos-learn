@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { createServer as createViteServer } from 'vite';
 import { createHistoryHandler } from '../services/learning-history/server.mjs';
 import { HistoryStore } from '../services/learning-history/store.mjs';
+import { TOPIC_TAXONOMY } from '../services/learning-history/topic-catalog.mjs';
 
 const [binary, output, mode = 'saved-receipt'] = process.argv.slice(2);
 assert.ok(binary?.startsWith('/') && output?.startsWith('/'), 'Supply an absolute Octos binary and NEW result JSON path');
@@ -169,7 +170,7 @@ try {
   } finally { await reader.stop(); }
   if (providerError) throw providerError;
   const report = { checked_at: new Date().toISOString(), passed: true, octos_binary_sha256: createHash('sha256').update(await readFile(binary)).digest('hex'),
-    actual_frontend_worker: true, actual_authenticated_product_api: true, actual_octos_app_peer: true, pinned_catalog_topics: 529,
+    actual_frontend_worker: true, actual_authenticated_product_api: true, actual_octos_app_peer: true, pinned_catalog_topics: TOPIC_TAXONOMY.topic_count,
     fixture_model_requests: requests.length, catalog_tool_roundtrips: catalogLookups, real_supplier_calls: 0, original_account_modified: false,
     failure_mode: mode, octos_and_sqlite_reopened: true, lost_result_receipt_and_octos_restart: mode === 'saved-receipt', unsaved_result_recovered: mode === 'before-result', cross_device_namespace_cleanup: true, exact_version_playback_count: true,
     task_units_analyzed: input.units.filter(unit => unit.kind === 'task').length, exact_version_task_counts: true,

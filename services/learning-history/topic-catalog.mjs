@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 
-export const TOPIC_RULES_VERSION = "separate-question-beat-and-task-units-v2";
+export const TOPIC_RULES_VERSION = "separate-question-beat-and-task-units-v3";
 export const TOPIC_TAXONOMY = Object.freeze(JSON.parse(readFileSync(new URL("./taxonomy/metadata.json", import.meta.url), "utf8")));
-let catalog;
+let catalog, structure;
 const words = text => String(text).toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
 
 export function topicCatalog() {
@@ -24,7 +24,7 @@ export function topicCatalog() {
       const terms = [...new Set(words(query))];
       if (!terms.length) return [];
       return topics.map(topic => {
-        const title = words(`${topic.name} ${topic.domain}`).join(" ");
+        const title = words(`${topic.name} ${topic.domain} ${topic.subject}`).join(" ");
         const body = words(`${topic.description} ${topic.evidence.join(" ")}`).join(" ");
         return { topic, score: terms.reduce((sum, term) => sum + (title.includes(term) ? 6 : 0) + (body.includes(term) ? 1 : 0), 0) };
       }).filter(row => row.score > 0).sort((a, b) => b.score - a.score || a.topic.id.localeCompare(b.topic.id)).slice(0, limit).map(row => row.topic);
@@ -32,3 +32,26 @@ export function topicCatalog() {
   };
   return catalog;
 }
+
+/** Prerequisite edges and domain clusters of the same pinned version. They
+ * describe the curriculum, never a learner: a missing prerequisite record does
+ * not mean the learner lacks it. */
+export function topicStructure() {
+  if (structure) return structure;
+  const load = (file, fingerprint) => {
+    const bytes = readFileSync(new URL(`./taxonomy/${file}`, import.meta.url));
+    if (createHash("sha256").update(bytes).digest("hex") !== fingerprint) throw new Error(`Taxonomy ${file} fingerprint mismatch`);
+    return JSON.parse(bytes);
+  };
+  const { dependencies } = load("dependencies.json", TOPIC_TAXONOMY.dependency_catalog_sha256);
+  const { clusters } = load("clusters.json", TOPIC_TAXONOMY.cluster_catalog_sha256);
+  const catalog = topicCatalog();
+  if (dependencies.length !== TOPIC_TAXONOMY.dependency_count || clusters.length !== TOPIC_TAXONOMY.cluster_count
+    || dependencies.some(edge => !catalog.has(edge.topicId) || !catalog.has(edge.prerequisiteId))) throw new Error("Invalid taxonomy structure");
+  structure = Object.freeze({
+    prerequisitesOf: id => dependencies.filter(edge => edge.topicId === id),
+    clustersOf: (subject, domain) => clusters.filter(cluster => cluster.subject === subject && cluster.domain === domain),
+  });
+  return structure;
+}
+

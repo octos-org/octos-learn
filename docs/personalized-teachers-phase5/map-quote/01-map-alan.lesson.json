@@ -1,0 +1,362 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "斜率与直线陡峭程度的关系",
+    "goals": [
+      "通过正斜率与负斜率的对比，澄清“斜率越大直线越陡”只在正数范围内成立的误区",
+      "理解并掌握决定直线陡峭程度的核心量是斜率的绝对值 |k|"
+    ],
+    "adaptation": {
+      "strategies": [
+        "运用阿澜老师看重寻找理由与意外反例的风格，直奔关键反例",
+        "结合学生前两天练习过一次函数图像与画图的背景，对比具体斜率数值下的倾斜程度",
+        "使用动态函数曲线演示斜率从正变负的过程，归纳出绝对值这一统一法则"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": -4,
+        "max": 4,
+        "label": "斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.04
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "把斜率 k 调整到 -2，观察这条负斜率直线的陡峭程度。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动滑杆向左，让数值变为负数。",
+          "将滑杆停在 -2 处，体会 |-2| = 2 带来的倾斜程度。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "很好！你找到了 k = -2，注意看它的陡峭程度正好和 k = 2 一样，再次验证了决定陡峭度的是绝对值。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -2,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "请将斜率 k 调到 -4，观察此时直线的陡峭程度与绝对值的对应关系。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动滑块向左滑动到最端点。",
+          "目标数值为负数中的极值 -4，它的绝对值是 4。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "很好，此时 |k| = 4，是范围内绝对值最大的状态，直线也呈现最陡峭的倾斜。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -4,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-01-reflection-02",
+        "prompt": "两条直线分别具有斜率 k1 = 2 和 k2 = -2，它们的陡峭程度有什么关系？为什么？",
+        "answer": "它们的陡峭程度完全相同。因为直线的陡峭程度由斜率的绝对值决定，|2| = |-2| = 2。它们只是倾斜方向不同（一增一减），但倾斜的剧烈程度一样。",
+        "anchor": "section-01-moment-04-item-02",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      },
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果两条直线的斜率分别满足 k1 = 3 和 k2 = -3，它们的陡峭程度有什么关系？",
+        "answer": "它们的陡峭程度完全相同。因为直线的陡峭程度由斜率的绝对值决定，而 |3| = |-3| = 3，两者偏离水平方向的竖直跨度完全一致，只是倾斜方向相反。",
+        "anchor": "section-02-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "展示一个关键反例，推翻“k 越大直线越陡”的猜测",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "你在学习一次函数图像时提出了一个好问题：斜率 k 越大，直线就真的越陡吗？这是一个值得收藏的问题。我们直接在坐标系中看直线 y 等于 k 乘以 x。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y = kx 的斜率与陡峭程度",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -6,
+                    "max": 6,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "当 k 是正数时，比如 k 从 1 增大到 3，横坐标增加 1，纵坐标增加得更快，直线确实肉眼可见地变陡了。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "但现在看一个意外的反例：如果把 k 调整到负数，比如减小到负 3，直线的倾斜程度和正 3 完全一样陡峭，只是方向变成了向右下方倾斜。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -3,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "比较一下：斜率负 0.5 显然比负 3 数值更大，可是负 0.5 的直线非常平缓，负 3 却更陡峭。所以‘k 越大越陡’在引入负数后并不成立，真正决定直线陡峭程度的是斜率的绝对值 |k|。课后请试着把斜率滑到负 2，亲自观察它的陡峭程度。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\text{陡峭程度} \\propto |k|"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直线的陡峭程度由谁决定？",
+                "items": [
+                  "误区：斜率 k 越大，直线越陡（仅在 k > 0 时成立）",
+                  "反例：-0.5 > -3，但 k = -3 比 k = -0.5 更陡峭",
+                  "核心结论：直线的陡峭程度取决于斜率的绝对值 |k|"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-04-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "建立统一判定规则：直线的陡峭程度由斜率的绝对值 |k| 决定",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "上一节我们发现，斜率负三比负一更小，但直线反而更陡。这就说明，单纯看 k 的代数大小，无法统一衡量陡峭程度。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "聚焦当前直线图像与斜率取值",
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们还是逐步比较变化量：当横坐标增加 1 时，直线在竖直方向偏离水平线的变化量是 Δy。陡峭程度关心的不是向上还是向下，而是偏离水平线的距离大小，也就是 |Δy|。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "|k| = \\frac{|\\Delta y|}{\\Delta x}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "现在我们看演示：把 k 从负三变为正二。虽然正二大于负三，但因为二的绝对值小于三的绝对值，直线其实变缓了；只有绝对值增大时，直线才真正变得更陡。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "所以结论很清晰：决定直线陡峭程度的是斜率的绝对值 |k|。|k| 越大，直线越陡；当 |k| 趋近于零时，直线趋近于水平。课后请你将斜率调整到绝对值最大的负四，观察它是否比刚才更陡峭。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "直线的陡峭程度判定",
+                "items": [
+                  "正负号表示倾斜方向：k > 0 向上，k < 0 向下",
+                  "绝对值表示倾斜程度：|k| 越大，直线越陡",
+                  "误区提示：不能直接比较 k 的代数大小"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "before_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "斜率 k 越大并不意味着直线一定越陡。直线的倾斜方向由 k 的正负决定，而陡峭程度取决于斜率的绝对值 |k|：|k| 越大，直线越陡峭。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

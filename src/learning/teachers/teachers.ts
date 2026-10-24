@@ -28,6 +28,8 @@ export interface TeacherDefinition {
   /** Fixed captions for classroom events the program already knows (S3-05).
    * Each line may only state what its event proves. */
   reactions: TeacherReactions;
+  /** How this teacher presents each achievement; {topic} is the topic name. */
+  awards: TeacherAwards;
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
@@ -53,6 +55,10 @@ export interface TeacherReactions {
   /** Several attempts missed; a hint is available. */
   taskNeedsHint: string;
 }
+
+/** Achievements decided by the learning-history rules (achievements-v1). */
+export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest" | "reunion";
+export type TeacherAwards = Readonly<Record<AchievementId, string>>;
 
 export const TEACHER_CATALOG_VERSION = 4;
 
@@ -90,6 +96,12 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       taskSucceededWithHint: "借助提示，你把这一步验证出来了。",
       taskRetry: "记下了。看看结果和目标差在哪里，再调一次。",
       taskNeedsHint: "还没达到目标。可以先看一条提示，再从第一步核对。",
+    },
+    awards: {
+      "first-footprint": "地图上有了第一个点。以后每一步都会留在这里。",
+      "did-it-alone": "这一步，是你自己验证出来的。值得记下来。",
+      "regular-guest": "第三次回到{topic}了。每次回来，问题都更具体。",
+      reunion: "隔了一段时间又回到{topic}，我们看看还记得哪些。",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
@@ -130,6 +142,12 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       taskSucceededWithHint: "提示帮了一把，你拿下了！",
       taskRetry: "这次还没到目标，没关系，再调一下！",
       taskNeedsHint: "还没到目标，看一条提示，我们再试一次！",
+    },
+    awards: {
+      "first-footprint": "第一盏灯亮啦！地图从这里开始长大。",
+      "did-it-alone": "没靠提示，自己拿下！这个徽章归你。",
+      "regular-guest": "第三次见面！{topic}都想给你留个专座了。",
+      reunion: "好久不见，老朋友！看看{topic}变了没有。",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_female_xiaohe_uranus_bigtts", name: "小何 2.0" },
@@ -218,4 +236,13 @@ export const NEUTRAL_REACTIONS: TeacherReactions = {
 export function teacherReactions(teacher: TeacherDefinition | null | undefined): TeacherReactions {
   return teacher?.reactions ?? NEUTRAL_REACTIONS;
 }
+
+/** Plain wording: used when no preset teacher gave the lesson, or when the
+ * learner turned the teachers' playful award lines off. */
+export const PLAIN_AWARDS: TeacherAwards = {
+  "first-footprint": "学习地图上点亮了第一个知识点。",
+  "did-it-alone": "第一次没用提示，达到了练习的要求。",
+  "regular-guest": "在 3 个不同的日子学习了{topic}。",
+  reunion: "隔了两周多，又回来学习{topic}。",
+};
 

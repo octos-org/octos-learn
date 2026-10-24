@@ -185,3 +185,15 @@ test("teacher choice belongs to the authenticated account and keeps a later choi
   assert.equal((await call("/teacher-choice", "POST", { teacher_id: "alan" })).status, 404);
   assert.equal((await (await call("/teacher-choice")).json()).choice.teacher_id, "alan");
 });
+
+test("learning map and achievements are per account, start empty, and validate the offset", async () => {
+  await call("/events", "POST", { events: [event("map-question")] });
+  const map = await (await call("/map?utc_offset_minutes=480")).json();
+  assert.deepEqual([map.profile_id, map.rules_version, map.utc_offset_minutes, map.topics], ["alice", "map-states-v1", 480, []]);
+  const achievements = await (await call("/achievements")).json();
+  assert.deepEqual([achievements.rules_version, achievements.achievements], ["achievements-v1", []]);
+  assert.equal((await call("/map?utc_offset_minutes=900")).status, 400);
+  assert.equal((await call("/map?utc_offset_minutes=8.5")).status, 400);
+  assert.equal((await call("/map?owner=bob")).status, 400);
+  assert.equal((await call("/achievements", "POST", {})).status, 404);
+});

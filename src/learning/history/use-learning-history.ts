@@ -75,10 +75,13 @@ export class LearningHistoryCoordinator {
       if (this.busy.size || !this.current()) return;
       const identity = await this.getIdentity();
       if (!this.current() || this.busy.size) return;
-      this.update({ pending: (await this.queue.list(identity.owner)).length });
+      const before = (await this.queue.list(identity.owner)).length;
+      this.update({ pending: before });
       await this.synchronizer.synchronize(identity, this.canMaintain);
       if (!this.canMaintain()) return;
       const remaining = await this.queue.list(identity.owner);
+      // New facts reached the account: rules such as achievements can be checked.
+      if (remaining.length < before) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: before - remaining.length } }));
       this.update({ pending: remaining.length, error: remaining.some(row => row.state === 'conflict') ? '有学习记录内容冲突，原记录已保留，等待核对。' : '' });
       if (!this.canMaintain()) return;
       const headers = { Authorization: `Bearer ${this.token}`, 'X-Learning-Owner': identity.owner };

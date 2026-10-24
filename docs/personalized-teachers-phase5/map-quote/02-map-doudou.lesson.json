@@ -1,0 +1,340 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "斜率与陡峭程度：k 越大就越陡吗？",
+    "goals": [
+      "理解斜率的正负只决定方向，绝对值才决定倾斜的陡峭程度",
+      "通过正斜率与负斜率的对比，澄清“k 越大越陡”只在正数范围内成立的误区"
+    ],
+    "adaptation": {
+      "strategies": [
+        "沿用豆豆老师经典的山路比喻：向右走一步，上升还是下降",
+        "先肯定直觉中成立的部分（正数部分），再展示负数反例，最后归纳绝对值法则"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 1,
+        "min": -4,
+        "max": 4,
+        "label": "斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.04
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "拖动滑杆将斜率 k 调到 -1，观察下坡的陡峭程度变化",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向右拖动一点，找到 -1",
+          "观察直线的倾斜程度是否变得平缓"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！|-1| = 1 小于 |-3| = 3，所以直线变得平缓多了！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -1,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "拖动滑块，把斜率 k 调整为 4，观察极其陡峭的直线图像。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向右拖动滑块增加数值。",
+          "将斜率滑块停在刻度 4 上。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！k=4 时绝对值很大，直线肉眼可见地非常陡峭！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 4,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果一条直线的斜率是 -5，另一条直线的斜率是 2，哪一条直线更陡峭？",
+        "answer": "斜率是 -5 的直线更陡峭。因为它的绝对值 |-5| = 5 大于 |2| = 2。负号只表示直线向下倾斜，不影响它更陡峭的事实。",
+        "anchor": "section-02-moment-02-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过观察直线变化，检验正斜率和负斜率下的倾斜程度，得出陡峭取决于绝对值的结论",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "看到你最近在练习画一次函数图像，而且不用提示就能顺利画出来，手感正热呢！你提出了一个非常敏锐的问题：斜率 k 越大，直线就真的越陡吗？我们直接来看图像！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -6,
+                    "max": 6,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "(number_01)*(x)",
+                    "label": "y = kx"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": 0,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "(number_01)*(0)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "(number_01)*(1)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们把直线看作一段山路：从左往右走，每向右走 1 步，看它是上升还是下降。现在 k 是 1，是一条平缓向上的坡道。如果把 k 调大到 3，山路一下子立起来了，确实变得更陡了！在正数的世界里，你的直觉完全正确！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 3,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "但奇妙的地方在负数。如果 k 变成 -3 呢？注意看，山路变成了极陡的下坡！数值上，-3 可比 1 小得多，但这条直线比 k 等于 1 的时候要陡峭得多。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -3,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "所以答案是：不能单看 k 本身的大小！正负号只代表是上坡还是下坡，真正决定山路有多陡的，是斜率的绝对值 |k|。|k| 越大，不论上坡下坡，直线都越陡峭！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\text{陡峭程度取决于 } |k|"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-02",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率与陡峭程度",
+                "items": [
+                  "正负号：决定方向（>0 上坡，<0 下坡）",
+                  "绝对值 |k|：决定陡峭程度（|k| 越大越陡）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-04-item-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "现在轮到你试试啦！把滑杆调到 -1，看看这条下坡路是不是比刚才 -3 的山路平缓很多？",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-04-item-02"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "应用绝对值规则快速判断不同直线的陡峭程度并进行互动练习",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "上一节我们发现，负数的斜率绝对值很大时，山路同样非常陡。现在我们把这个结论提炼成一条清晰的法则。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "|k_1| > |k_2| \\implies \\text{直线 1 比 直线 2 更陡峭}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "正负号只决定山路是向上爬还是向下俯冲；真正决定陡不陡的，只看绝对值的大小。比如斜率负 3 和斜率 0.5 相比，负 3 的绝对值是 3，比 0.5 大得多，所以它陡得多！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "判断陡峭两步走",
+                "items": [
+                  "符号看方向：正向上爬，负向下冲",
+                  "绝对值看陡峭：|k| 越大，直线越陡峭"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "我把斜率调到 0.5，你看，这时候山路平缓多了。轮到你来试试了：请把斜率 k 调到 4，看看最陡峭的爬坡山路！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 0.5,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "斜率 k 的正负号代表方向（上坡或下坡），而直线的陡峭程度由斜率的绝对值 |k| 决定。|k| 越大，直线越陡。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

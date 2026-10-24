@@ -1,0 +1,89 @@
+{
+  "checked_at": "2026-10-23T18:13:55.075Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "phase5-map-quote-doudou-20261023",
+  "plan_sha256": "f769e75d4f783bc09b4a1081579fed348011416a05d7bba1249fe71c0b9ae3ad",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 2,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 2,
+  "reserved_usd_micros": 300000,
+  "calls": [
+    {
+      "sample": "02-map-doudou",
+      "request_bytes": 22348,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3664,
+        "candidatesTokenCount": 1527,
+        "totalTokenCount": 5191,
+        "cachedContentTokenCount": 2818,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3664
+          }
+        ],
+        "cacheTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2818
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-map-doudou",
+      "request_bytes": 12559,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 2365,
+        "candidatesTokenCount": 707,
+        "totalTokenCount": 3072,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 2365
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "02-map-doudou",
+      "teacher": "doudou",
+      "topic": "map-quote",
+      "status": "succeeded",
+      "elapsed_ms": 28738,
+      "model_requests": 2,
+      "lesson_sha256": "3238e561b2aa92661b20c91e51f1ebf7f59bc656c2e94572eb08f89e50c431de"
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/map-quote-doudou"
+}

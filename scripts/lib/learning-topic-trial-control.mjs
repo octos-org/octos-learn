@@ -8,6 +8,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { analysisHash } from '../../services/learning-history/topic-analysis.mjs';
 import { ANALYSIS_MATERIAL_PREFIX } from '../../services/learning-history/topic-analysis-instructions.mjs';
+import { TOPIC_TAXONOMY } from '../../services/learning-history/topic-catalog.mjs';
 
 export const digest = value => createHash('sha256').update(value).digest('hex');
 const fields = (value, allowed) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
@@ -52,7 +53,10 @@ function validateTaskV2Trial(plan, casesBytes, { execute = false, now = new Date
   assert.equal(plan.owner, 'task-v2-trial'); assert.equal(plan.model, 'gemini-3.8-flash');
   assert.equal(plan.backend, undefined); assert.equal(plan.gateway, undefined);
   assert.equal(plan.cases_file, TASK_V2_CASES_FILE); assert.equal(plan.cases_sha256, digest(casesBytes));
-  assert.equal(plan.taxonomy_sha256, '27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522');
+  // A cost measurement uses the current catalog and a chosen subset of cases;
+  // earlier plans stay readable as records but name the catalog they ran on.
+  const costMeasurement = plan.purpose === 'cost-measurement';
+  assert.equal(plan.taxonomy_sha256, costMeasurement ? TOPIC_TAXONOMY.catalog_sha256 : '27e8e6d7ffe82f9ec86e374aa7edacd5ba758886d0ae92b9abadf3fff05a4522');
   assert.match(plan.id, /^[a-z0-9-]+$/); assert.ok(typeof plan.output_directory === 'string' && plan.output_directory.startsWith('/private/tmp/'));
   const cases = JSON.parse(casesBytes).cases;
   assert.equal(cases.length, 4); assert.equal(new Set(cases.map(c => c.id)).size, 4);
@@ -60,8 +64,22 @@ function validateTaskV2Trial(plan, casesBytes, { execute = false, now = new Date
   // Run 1 stopped at 6 requests per lesson: the model searches the catalog one
   // term per round trip. Requests are capped at 256 KiB, so input is at most
   // 262144 tokens and each reservation covers that plus full output capacity.
-  assert.deepEqual(plan.limits, { tasks: 4, model_http_requests: 30, model_http_requests_per_task: 10, usd_micros: 13500000,
-    reservation_usd_micros: 450000, request_bytes: 262144, output_tokens: 32768 });
+  let selected = cases;
+  if (costMeasurement) {
+    assert.ok(Array.isArray(plan.case_ids) && plan.case_ids.length >= 1 && new Set(plan.case_ids).size === plan.case_ids.length
+      && plan.case_ids.every(id => cases.some(c => c.id === id)), 'Cost measurement needs distinct existing case ids');
+    selected = cases.filter(c => plan.case_ids.includes(c.id));
+    const l = plan.limits;
+    assert.deepEqual(Object.keys(l).sort(), ['model_http_requests', 'model_http_requests_per_task', 'output_tokens', 'request_bytes', 'reservation_usd_micros', 'tasks', 'usd_micros']);
+    assert.equal(l.tasks, selected.length);
+    assert.ok(Number.isSafeInteger(l.model_http_requests_per_task) && l.model_http_requests_per_task >= 1 && l.model_http_requests_per_task <= 10);
+    assert.ok(Number.isSafeInteger(l.model_http_requests) && l.model_http_requests >= 1 && l.model_http_requests <= l.tasks * l.model_http_requests_per_task);
+    assert.equal(l.reservation_usd_micros, 450000); assert.equal(l.request_bytes, 262144); assert.equal(l.output_tokens, 32768);
+    assert.equal(l.usd_micros, l.model_http_requests * l.reservation_usd_micros);
+  } else {
+    assert.deepEqual(plan.limits, { tasks: 4, model_http_requests: 30, model_http_requests_per_task: 10, usd_micros: 13500000,
+      reservation_usd_micros: 450000, request_bytes: 262144, output_tokens: 32768 });
+  }
   const p = plan.pricing;
   assert.equal(p.input_per_million_usd, 0.75); assert.equal(p.output_including_thinking_per_million_usd, 3.75);
   assert.equal(p.max_output_tokens, 65536);
@@ -69,11 +87,12 @@ function validateTaskV2Trial(plan, casesBytes, { execute = false, now = new Date
   assert.ok((plan.limits.request_bytes * p.input_per_million_usd + p.max_output_tokens * p.output_including_thinking_per_million_usd) <= plan.limits.reservation_usd_micros);
   if (execute) {
     assert.equal(plan.status, 'approved', 'Task-v2 trial is not authorized');
+    assert.equal(plan.taxonomy_sha256, TOPIC_TAXONOMY.catalog_sha256, 'Plan was made for another catalog');
     assert.ok(typeof plan.authorization_reference === 'string' && plan.authorization_reference.trim(), 'Human authorization missing');
     assert.equal(p.verified_at, now.toISOString().slice(0, 10), 'Recheck the public price on execution day');
     assert.ok(now.toISOString().slice(0, 10) <= p.valid_until, 'Pricing basis expired');
   }
-  return cases;
+  return selected;
 }
 
 // A connection failure before Octos admission has not spent the authorization.

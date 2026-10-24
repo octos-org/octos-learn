@@ -3,6 +3,7 @@ import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
 import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { awardAnnouncement, readAwardTone } from "./map/award-line";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
@@ -180,6 +181,7 @@ const DELIVERABLE_ARTIFACT_SUFFIXES = [
 
 export const LESSON_COMPLETION_SPEECH = NEUTRAL_REACTIONS.lessonComplete;
 const INTERRUPT_CAPTION_MS = 3_000;
+const AWARD_CAPTION_MS = 6_000;
 export const LESSON_COMPLETION_BUBBLE_DURATION_MS = 6_000;
 
 interface PendingLessonJobRecord {
@@ -489,17 +491,40 @@ export function LearningWorkspace({
   // reactions for that lesson use this teacher even if the selection changes.
   const [lessonStyleTeacher, setLessonStyleTeacher] = useState<TeacherDefinition | null>(null);
   const [interruptCaption, setInterruptCaption] = useState<string | null>(null);
+  // Achievements are decided by the history service once new facts arrive;
+  // each newly earned one is announced once, naming the teacher who presents it.
+  const [awardCaptions, setAwardCaptions] = useState<string[]>([]);
+  useEffect(() => {
+    const announce = () => {
+      const token = getToken();
+      if (!token) return;
+      void openHistoryApi(token).then((api) => api.achievements()).then((list) => {
+        const lines = list.achievements.filter((item) => item.new).map((item) => awardAnnouncement(item, readAwardTone()));
+        if (lines.length) setAwardCaptions((queue) => [...queue, ...lines]);
+      }).catch(() => undefined);
+    };
+    window.addEventListener("octos:history-uploaded", announce);
+    return () => window.removeEventListener("octos:history-uploaded", announce);
+  }, []);
+  useEffect(() => {
+    if (!awardCaptions.length) return;
+    const timer = window.setTimeout(() => setAwardCaptions((queue) => queue.slice(1)), AWARD_CAPTION_MS);
+    return () => window.clearTimeout(timer);
+  }, [awardCaptions]);
   const interruptCaptionTimer = useRef<number | null>(null);
   useEffect(() => () => {
     if (interruptCaptionTimer.current !== null) window.clearTimeout(interruptCaptionTimer.current);
   }, []);
   const learnerBackground = useMemo(() => new LearnerBackgroundCache(async (token) => {
-    const [memory, runs] = await Promise.allSettled([
+    const history = openHistoryApi(token);
+    const [memory, runs, map] = await Promise.allSettled([
       // Only reuse an existing connection; never open one just for this.
       getAnyConnectedBridge() ? getMyMemory() : Promise.resolve(null),
-      openHistoryApi(token).then((api) => api.runs()),
+      history.then((api) => api.runs()),
+      history.then((api) => api.learningMap()),
     ]);
-    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null };
+    return { memory: memory.status === "fulfilled" ? memory.value : null, runs: runs.status === "fulfilled" ? runs.value.runs : null,
+      map: map.status === "fulfilled" ? map.value : null };
   }, { currentAccount: getToken }), []);
   const runtime = useOminixRuntimeSummary();
   const modelConfigured = useContext(LearningModelContext);
@@ -3295,6 +3320,7 @@ export function LearningWorkspace({
     : lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
     : interruptCaption ??
+      awardCaptions[0] ??
       plainReply?.text ??
       (textTurnPending
         ? lessonReactions.preparing

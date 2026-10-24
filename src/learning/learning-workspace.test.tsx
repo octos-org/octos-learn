@@ -87,6 +87,8 @@ const backgroundMock = vi.hoisted(() => ({
   getMyMemory: vi.fn(async () => ({ long_term: "学生说过以后讲新内容先看图。" })),
   connected: vi.fn(() => false),
   runs: vi.fn(async () => ({ runs: [] })),
+  learningMap: vi.fn(async () => ({ rules_version: "map-states-v1", through: 0, taxonomy: { commit: "c7ed549" }, topics: [] })),
+  achievements: vi.fn(async () => ({ rules_version: "achievements-v1", achievements: [] as unknown[] })),
 }));
 const sendMessageMock = vi.hoisted(() => vi.fn());
 const narrationTtsMock = vi.hoisted(() => ({
@@ -134,7 +136,7 @@ vi.mock("@/runtime/ui-protocol-runtime", async (importOriginal) => {
 });
 vi.mock("./history/history-api", async (importOriginal) => ({
   ...await importOriginal<typeof import("./history/history-api")>(),
-  openHistoryApi: vi.fn(async () => ({ runs: backgroundMock.runs })),
+  openHistoryApi: vi.fn(async () => ({ runs: backgroundMock.runs, learningMap: backgroundMock.learningMap, achievements: backgroundMock.achievements })),
 }));
 vi.mock("@/home/voice/audio-playback", () => ({ unlockAudio: vi.fn() }));
 vi.mock("@/home/voice/camera-preview", () => ({
@@ -354,6 +356,20 @@ describe("LearningWorkspace", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("announces a newly earned achievement once, naming the teacher who presents it", async () => {
+    setToken("award-token");
+    backgroundMock.achievements.mockResolvedValueOnce({ rules_version: "achievements-v1", achievements: [
+      { achievement_id: "did-it-alone", scope: "", topic_name: null, teacher_id: "doudou", earned_at: "2026-10-23T08:00:00.000Z",
+        awarded_at: "2026-10-23T08:00:01.000Z", evidence_event_id: "a1", new: true },
+      { achievement_id: "first-footprint", scope: "", topic_name: null, teacher_id: "alan", earned_at: "2026-10-22T08:00:00.000Z",
+        awarded_at: "2026-10-22T08:00:01.000Z", evidence_event_id: "b1", new: false },
+    ] });
+    await renderLearning(<LearningWorkspace sessionId="learn-award" voiceEnabled={false} onBack={vi.fn()} />);
+    act(() => { window.dispatchEvent(new CustomEvent("octos:history-uploaded", { detail: { owner: "o", uploaded: 1 } })); });
+    expect(await screen.findByText(`豆豆颁发「亲手搞定」：${getTeacher("doudou").awards["did-it-alone"]}`)).toBeTruthy();
+    expect(screen.queryByText(/初来乍到/)).toBeNull();
   });
 
   it("shows an explicit startup panel while voice dependencies are loading", async () => {

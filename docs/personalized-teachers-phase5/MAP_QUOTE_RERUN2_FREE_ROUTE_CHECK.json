@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-10-23T18:08:32.306Z",
+  "mode": "fixture",
+  "passed": true,
+  "plan_id": "phase5-map-quote-rerun2-20261023-fixture",
+  "plan_sha256": "7dcb40c521a521ce593234b0638aed190490d9f83aea83ce3cc27a05d4b3847b",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "installed_skill_sha256": "0fcbef173d5aaff14449d4caa74963883ee2c933db117a615419d9cdc3462063",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 2,
+    "rejected": 1,
+    "failures": 0
+  },
+  "admitted_requests": 2,
+  "reserved_usd_micros": 300000,
+  "calls": [
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 22329,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      }
+    },
+    {
+      "sample": "01-map-alan",
+      "request_bytes": 22329,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": true
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-map-alan",
+      "teacher": "alan",
+      "topic": "map-quote",
+      "status": "failed",
+      "elapsed_ms": 3803,
+      "model_requests": 2
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "real_supplier_calls": 0
+}
