@@ -111,25 +111,29 @@ export function TeacherSkinPicker({
   );
 }
 
+const DEFAULT_ANALYSIS_LIMIT = 10;
+const ANALYSIS_LIMITS = [5, 10, 20];
+
 function WeeklyReportToggle() {
   const [shown, setShown] = useState(weeklyReportShown);
   const [steps, setSteps] = useState(nextStepsShown);
   // Account setting in the learning-history service; null until it is read.
   const [comments, setComments] = useState<boolean | null>(null);
-  const [analysis, setAnalysis] = useState<boolean | null>(null);
+  const [analysis, setAnalysis] = useState<{ enabled: boolean; max: number } | null>(null);
   useEffect(() => {
     let active = true;
     const token = getToken();
     if (token) {
       void openHistoryApi(token).then((api) => api.reportComments()).then((value) => { if (active) setComments(value.enabled); }).catch(() => undefined);
-      void openHistoryApi(token).then((api) => api.analysisStatus()).then((value) => { if (active) setAnalysis(value.enabled); }).catch(() => undefined);
+      void openHistoryApi(token).then((api) => api.analysisStatus()).then((value) => { if (active) setAnalysis({ enabled: value.enabled, max: value.max_daily_tasks || DEFAULT_ANALYSIS_LIMIT }); }).catch(() => undefined);
     }
     return () => { active = false; };
   }, []);
-  const changeAnalysis = (enabled: boolean) => {
+  // Turning analysis off keeps the chosen daily limit for when it is back on.
+  const changeAnalysis = (enabled: boolean, max = analysis?.max ?? DEFAULT_ANALYSIS_LIMIT) => {
     const token = getToken();
     if (!token) return;
-    void openHistoryApi(token).then(async (api) => { await api.configureAnalysis(enabled, enabled ? 10 : 0); setAnalysis(enabled); }).catch(() => undefined);
+    void openHistoryApi(token).then(async (api) => { await api.configureAnalysis(enabled, max); setAnalysis({ enabled, max }); }).catch(() => undefined);
   };
   const changeComments = (enabled: boolean) => {
     const token = getToken();
@@ -139,8 +143,16 @@ function WeeklyReportToggle() {
   return (
     <div className="mt-5 space-y-2 text-sm text-text-strong">
       <label className="flex items-center gap-2">
-        <input type="checkbox" disabled={analysis === null} checked={analysis ?? false} onChange={(event) => changeAnalysis(event.target.checked)} />
-        自动分析课程涉及的知识点，用来点亮学习地图（使用你的模型 Key，约 0.06 美元一节课，每天最多 10 节，不在上课时运行）
+        <input type="checkbox" disabled={analysis === null} checked={analysis?.enabled ?? false} onChange={(event) => changeAnalysis(event.target.checked)} />
+        自动分析课程涉及的知识点，用来点亮学习地图（使用你的模型 Key，约 0.06 美元一节课；讲解播完后在后台运行，关掉页面也会完成）
+      </label>
+      <label className="ml-6 flex items-center gap-2 text-muted">
+        每天最多分析
+        <select aria-label="每天最多分析几次" disabled={!analysis?.enabled} value={analysis?.max ?? DEFAULT_ANALYSIS_LIMIT}
+          onChange={(event) => changeAnalysis(true, Number(event.target.value))} className="rounded border border-border bg-transparent px-1">
+          {[...new Set([...ANALYSIS_LIMITS, analysis?.max ?? DEFAULT_ANALYSIS_LIMIT])].sort((a, b) => a - b).map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
+        次（一节课的提问和内容各算一次）
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />

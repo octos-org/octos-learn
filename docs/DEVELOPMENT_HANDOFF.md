@@ -97,6 +97,8 @@ cargo build --release -p octos-cli --features api
 
 env -u OCTOS_SKILLS_PATH \
 ASR_API_URL=http://127.0.0.1:8094 \
+OCTOS_LEARN_HISTORY_URL=https://127.0.0.1:5173 \
+NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem" \
 ./target/release/octos serve \
   --host 127.0.0.1 \
   --port 50080 \
@@ -104,6 +106,8 @@ ASR_API_URL=http://127.0.0.1:8094 \
 ```
 
 说明：
+
+- `OCTOS_LEARN_HISTORY_URL` 告诉 Learning Coach 的后台知识点分析把结果交回哪里。本机开发时学习记录服务在 `pnpm dev:https` 里，所以是 5173；它使用 mkcert 本机证书，`NODE_EXTRA_CA_CERTS` 让技能进程信任这个证书。不设置时，知识点分析会失败并记为“轮次失败”，学习记录本身不受影响。
 
 - `ASR_API_URL` 只有在本机 SenseVoice 服务运行于 `8094` 时才设置；只开发文字白板时
   可以删除这一行。

@@ -4,6 +4,7 @@ import { HistoryStore } from "./store.mjs";
 import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { buildAnalysisInput, analysisHash, validateAnalysisResult } from "./topic-analysis.mjs";
 import { queryTopic } from "./topic-query.mjs";
+import { TOPIC_RULES_VERSION } from "./topic-catalog.mjs";
 const plotting = "mt_-3udyo6VyB", triangle = "mt_cdMlC7EpTJ";
 const q = { version: 1, id: "question", kind: "question_submitted", occurred_at: "2026-10-22T00:00:00.000Z", device_id: "tv", session_id: "board", run_id: "run", question_id: "q", data: { text: "三角形的第三个角是多少？", modality: "text" } };
 const task = { as: "compute-slope", prompt: "由点(1,3)和(4,9)求斜率，调整m到计算结果", allowed_operations: [{ kind: "variable_change", variable: "m" }], completion: { kind: "expression_target", expression: "m", value: 2, tolerance: 0.01 } };
@@ -74,16 +75,18 @@ test("question/beat topics never classify task attempts; exact task/version evid
   } finally { store.close(); }
 });
 
-test("a saved execution from the previous rules can still be reconciled without starting a new analysis", () => {
+test("an unresolved page-run execution from the previous rules is replaced by one retry under the current rules", () => {
   const store = new HistoryStore(":memory:");
   try {
     const analysis = new TopicAnalysisStore(store); analysis.configure("alice", { enabled: true, max_daily_tasks: 20 }); store.append("alice", [q]);
     const job = analysis.claim("alice").tasks[0];
     analysis.execution("alice", job.id, job.lease_id, execution);
     store.db.prepare("UPDATE topic_analysis_jobs SET rules_version=?,lease_until=0 WHERE id=?").run("separate-question-and-delivered-units-v1", job.id);
-    const recovered = analysis.claim("alice").tasks[0]; assert.deepEqual(recovered.execution, execution); assert.equal(recovered.id, job.id);
+    const retry = analysis.claim("alice").tasks[0]; assert.equal(retry.execution, null); assert.notEqual(retry.id, job.id);
+    assert.equal(retry.input.rules_version, TOPIC_RULES_VERSION);
+    assert.match(store.db.prepare("SELECT error FROM topic_analysis_jobs WHERE id=?").get(job.id).error, /^analysis-turn-failed: Page-run analysis replaced/);
     assert.equal(analysis.quotaUsed("alice"), 1);
-    finish(analysis, recovered);
+    finish(analysis, retry);
   } finally { store.close(); }
 });
 
@@ -116,9 +119,11 @@ test("unstarted jobs from previous rules are reported as superseded, not as pend
     const states = Object.fromEntries(analysis.status("alice").states.map(row => [row.state, row.count]));
     assert.deepEqual(states, { leased: 1, superseded: 1 });
     store.db.prepare("UPDATE topic_analysis_jobs SET lease_until=0").run();
-    assert.equal(analysis.claim("alice").tasks[0].id, started.id); // Only the started execution is recoverable.
-    store.db.prepare("UPDATE topic_analysis_jobs SET taxonomy_sha256='other-catalog' WHERE id=?").run(started.id);
-    assert.deepEqual(analysis.status("alice").states.map(row => row.state), ["superseded"]); // Another taxonomy is never claimable.
+    // Only the started execution gets a retry, under the current rules.
+    const retry = analysis.claim("alice").tasks[0];
+    assert.equal(retry.input.source_event_id, started.input.source_event_id); assert.notEqual(retry.id, started.id);
+    store.db.prepare("UPDATE topic_analysis_jobs SET taxonomy_sha256='other-catalog' WHERE id=?").run(retry.id);
+    assert.deepEqual(analysis.status("alice").states.map(row => row.state).sort(), ["blocked", "superseded"]); // Another taxonomy is never claimable.
   } finally { store.close(); }
 });
 

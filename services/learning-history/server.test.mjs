@@ -233,3 +233,22 @@ test("suggestions are per account, start empty, and validate dismissals", async 
   assert.equal((await call("/suggestions/dismiss", "POST", { id: "continue:mt_WBdHkc2HTf:", extra: 1 })).status, 400);
   assert.equal((await call("/suggestions", "POST", {})).status, 404);
 });
+
+test("a background analysis reports back with its single-use capability and no login", async () => {
+  await call("/events", "POST", { events: [event("background-question")] });
+  const task = (await (await call("/analysis/claim", "POST", {})).json()).tasks[0];
+  const dispatched = await (await call(`/analysis/jobs/${task.id}/dispatch`, "POST", { lease_id: task.lease_id })).json();
+  assert.equal(dispatched.recorded, true);
+  const report = (body, authorization = `Bearer ${dispatched.capability}`, id = task.id) => fetch(`${base}/api/learn/history/analysis/callback/${id}`, {
+    method: "POST", headers: { "content-type": "application/json", ...(authorization ? { authorization } : {}) }, body: JSON.stringify(body) });
+  const result = { schema: 1, input_sha256: task.input.input_sha256, units: [{ unit_id: "question", status: "mapped", topics: [{ topic_id: "mt_WBdHkc2HTf", quote: "斜率" }], reason: "Fixture" }] };
+  assert.equal((await report({ result }, null)).status, 401);
+  assert.equal((await report({ result }, "Bearer alice")).status, 401, "a login is not a capability");
+  assert.equal((await report({ result }, `Bearer ${"x".repeat(43)}`)).status, 403);
+  assert.equal((await report({ result, extra: true })).status, 400);
+  const accepted = await report({ result });
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(await accepted.json(), { recorded: true }, "the account is not disclosed to the reporter");
+  assert.equal((await report({ result })).status, 403, "a capability is single-use");
+  assert.equal((await (await call(`/analysis/jobs/${task.id}`)).json()).job.state, "complete");
+});

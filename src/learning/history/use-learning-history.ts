@@ -27,6 +27,7 @@ export class LearningHistoryCoordinator {
   private timerDue = 0;
   private active?: Promise<void>;
   private retryDelay = 30000;
+  private analysisThrough?: number;
   private busy = new Set<string>();
   constructor(token: string) { this.token = token; }
   private current = () => getToken() === this.token;
@@ -114,9 +115,17 @@ export class LearningHistoryCoordinator {
         try {
           const analysis = await analyzeTopics(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain });
           this.update({ analysisPending: analysis.pending, analysisError: '' });
-          // Played beats and answers count toward topics only once their lesson
-          // is analyzed, so this is when achievements usually become due.
-          if (analysis.completed && this.current()) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: 0, analyzed: analysis.completed } }));
+          // Analysis runs in the background and reports to the service, so a
+          // newer saved result is how this page learns it finished. Played
+          // beats and answers count toward topics only then, so achievements
+          // usually become due here.
+          // On the first look after opening, results may have arrived while the
+          // page was closed; checking once announces what was earned then.
+          const analyzed = this.analysisThrough === undefined ? Number(analysis.analysisThrough > 0) : analysis.analysisThrough - this.analysisThrough;
+          this.analysisThrough = analysis.analysisThrough;
+          if (analyzed > 0 && this.current()) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: 0, analyzed } }));
+          // A started analysis usually reports within half a minute; look then.
+          if (analysis.dispatched) this.retryDelay = 30000;
         } catch {
           this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
         }
@@ -132,8 +141,8 @@ export class LearningHistoryCoordinator {
     } finally {
       this.update({ syncing: false });
       // Lost HTTP/RPC replies leave durable tasks behind. Retry while this
-      // account remains active, including after a lease expires. Topic turns
-      // remain opt-in; existing executions are reconciled without replacement.
+      // account remains active, including after a lease expires, and while a
+      // background analysis has not reported yet.
       const unfinished = this.status.error || this.status.pending || this.status.conversationPending || this.status.cleanupPending || this.status.analysisPending;
       if (unfinished && this.current() && !this.timer) {
         const delay = this.retryDelay;

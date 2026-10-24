@@ -318,6 +318,13 @@ status are tracked in [the phase-two implementation record](personalized-teacher
    `/etc/octos-learn/byok.env` (0600). Keep credentials in Octos profile
    storage. Install the matching unit's `ReadWritePaths` permission and run
    `systemctl daemon-reload`. Database files are private, never web assets.
+2a. Topic analysis runs as Learning Coach's `learning.topics.analyze`
+   background action inside Octos and posts its result to
+   `/api/learn/history/analysis/callback/<job>` with a single-use capability.
+   Set `OCTOS_LEARN_HISTORY_URL=http://127.0.0.1:50081` in
+   `/etc/octos-learn/octos-learn.env` (see the example) and install Learning
+   Coach 0.17.0 or later, which bundles the topic catalog. The callback needs
+   no Nginx location: Octos reaches the product service on loopback.
 3. Install the `/api/learn/history/` Nginx location from the matching example,
    proxying to 50081 with Host and authentication preserved, cache disabled and
    a 1 MiB request limit. Validate with `nginx -t` before reloading. Without

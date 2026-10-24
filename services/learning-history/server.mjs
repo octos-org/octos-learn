@@ -56,6 +56,18 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         try { host = new URL(origin).host; } catch { throw new HttpError(403, "Invalid origin"); }
         if (host !== (request.headers.host ?? request.headers[":authority"])) throw new HttpError(403, "Cross-origin request refused");
       }
+      // A Learning Coach background analysis reports from inside Octos. Its
+      // single-use capability is the only authorization, never a login.
+      const callback = /^\/analysis\/callback\/([a-f0-9]{64})$/.exec(url.pathname.slice(PREFIX.length));
+      if (callback) {
+        if (request.method !== "POST" || url.search) throw new HttpError(405, "Analysis callback accepts only POST");
+        const bearer = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(request.headers.authorization ?? "");
+        if (!bearer) throw new HttpError(401, "Analysis capability required");
+        const { owner: _owner, ...result } = new TopicAnalysisStore(store()).callback(callback[1], bearer[1], await limitedJson(request, 1024 * 1024));
+        if (!result.recorded) throw new HttpError(403, "Analysis capability unknown, used or expired");
+        send(200, result);
+        return true;
+      }
       const credentials = {};
       for (const field of ["authorization", "cookie"]) if (typeof request.headers[field] === "string") credentials[field] = request.headers[field];
       if (!credentials.authorization && !credentials.cookie) throw new HttpError(401, "Authentication required");
@@ -164,6 +176,8 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
           else if (path[3] === "result" && Object.keys(body).every(key => ["lease_id", "result"].includes(key))) result = analysis.complete(owner, path[2], body.lease_id, body.result);
           else if (path[3] === "pause" && Object.keys(body).length === 1) result = analysis.pause(owner, path[2], body.lease_id);
           else if (path[3] === "reject" && Object.keys(body).every(key => ["lease_id", "reason", "detail"].includes(key))) result = analysis.reject(owner, path[2], body.lease_id, body.reason, body.detail);
+          else if (path[3] === "dispatch" && Object.keys(body).length === 1) result = analysis.dispatch(owner, path[2], body.lease_id);
+          else if (path[3] === "undispatch" && Object.keys(body).length === 1) result = analysis.undispatch(owner, path[2], body.lease_id);
           else throw new HttpError(400, "Invalid analysis operation");
         } else throw new HttpError(404, "Unknown analysis endpoint");
         send(200, { profile_id: owner, ...result });
