@@ -29,7 +29,8 @@ afterEach(async () => { await new Promise(resolve => server.close(resolve)); han
 
 test("analysis HTTP operations require the authenticated owner and current task; source deletion leaves cleanup authorization only", async () => {
   await call("/events", "POST", { events: [event("analysis-question")] });
-  assert.equal((await (await call("/analysis")).json()).enabled, false);
+  assert.deepEqual(await (await call("/analysis")).json().then(value => [value.enabled, value.max_daily_tasks]), [true, 10]);
+  await call("/analysis/settings", "POST", { enabled: false, max_daily_tasks: 0 });
   assert.deepEqual((await (await call("/analysis/claim", "POST", {})).json()).tasks, []);
   assert.equal((await call("/analysis/settings", "POST", { enabled: true, max_daily_tasks: 0 })).status, 400);
   assert.equal((await call("/analysis/settings", "POST", { enabled: true, max_daily_tasks: 1, owner: "bob" })).status, 400);
