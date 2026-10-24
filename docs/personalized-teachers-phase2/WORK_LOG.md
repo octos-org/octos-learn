@@ -113,3 +113,9 @@
 - 用户决定暂缓月考试卷（S6-04），以后再做，目标保留。
 - 用户提出“点亮地图”的视觉效果，具体设计以后再定，已记入总 TODO 阶段五。
 - 总 TODO 的全局状态表更新到 2026-10-24。
+## 2026-10-24：开始真实环境验收
+
+- 用户：“合并#76，开始真实环境验收”。验收方案见 [真实环境验收](../personalized-teachers-acceptance/REAL_ENV_ACCEPTANCE.md)。
+- 现场：本机 `~/.octos` 只有 cache，没有账号、配置，也没有安装 Learning Coach；也没有 mkcert 和本机证书。按约定不建临时账号，需要用户创建账号、填写自己的 Key、安装证书。
+- 发现：阶段五决定开启的自动分析从没落实（服务端默认关闭，设置页没有开关）。没有它，真实提问生成的课不会点亮地图。分支 `codex/acceptance-prep` 改为默认开启、每天最多 10 节，并在设置页加了开关。服务 78、前端 158（settings + history）通过，tsc 通过。
+- 正在后台构建 Octos 正式版（main `5d9e70b4`，`--no-default-features --features api`）。

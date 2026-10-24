@@ -3,6 +3,8 @@ import { canonicalHistoryJson, HistoryValidationError } from "./event-contract.m
 import { buildAnalysisInput, validateAnalysisResult, analysisHash } from "./topic-analysis.mjs";
 import { TOPIC_RULES_VERSION, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
 
+export const DEFAULT_DAILY_ANALYSIS_TASKS = 10;
+
 export function createAnalysisSchema(db) {
   db.exec(`CREATE TABLE IF NOT EXISTS topic_analysis_settings(owner TEXT PRIMARY KEY,enabled INTEGER NOT NULL,max_daily_tasks INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS topic_analysis_jobs(
@@ -33,7 +35,12 @@ export function enqueueAnalysis(store, owner, eventId, revision = 1) {
 
 export class TopicAnalysisStore {
   constructor(history) { this.history = history; this.db = history.db; }
-  settings(owner) { const row = this.db.prepare("SELECT enabled,max_daily_tasks FROM topic_analysis_settings WHERE owner=?").get(owner); return { enabled: Boolean(row?.enabled), max_daily_tasks: row?.max_daily_tasks ?? 0 }; }
+  // On by default with a daily cap (user decision for phase 5, after the cost
+  // measurement of about USD 0.06 per lesson); a learner can turn it off.
+  settings(owner) {
+    const row = this.db.prepare("SELECT enabled,max_daily_tasks FROM topic_analysis_settings WHERE owner=?").get(owner);
+    return row ? { enabled: Boolean(row.enabled), max_daily_tasks: row.max_daily_tasks } : { enabled: true, max_daily_tasks: DEFAULT_DAILY_ANALYSIS_TASKS };
+  }
   configure(owner, value) {
     if (!value || Object.keys(value).some(key => !["enabled", "max_daily_tasks"].includes(key)) || typeof value.enabled !== "boolean"
       || !Number.isSafeInteger(value.max_daily_tasks) || value.max_daily_tasks < (value.enabled ? 1 : 0) || value.max_daily_tasks > 20) throw new HistoryValidationError("Choose an explicit daily analysis task limit from 1 to 20");

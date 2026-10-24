@@ -56,12 +56,14 @@ test("question input excludes the generated explanation; unknown, missing media 
   } finally { store.close(); }
 });
 
-test("default-off queue is idempotent, account scoped, reconciles expired executions, and does not refund reservations when facts are deleted", () => {
+test("queue (on by default, can be turned off) is idempotent, account scoped, reconciles expired executions, and does not refund reservations when facts are deleted", () => {
   let clock = "2026-10-22T00:00:00.000Z";
   const store = new HistoryStore(":memory:", { now: () => clock });
   try {
     const analysis = new TopicAnalysisStore(store), q = question("first");
     store.append("alice", [q]); store.append("alice", [q]);
+    assert.deepEqual(analysis.settings("alice"), { enabled: true, max_daily_tasks: 10 });
+    analysis.configure("alice", { enabled: false, max_daily_tasks: 0 });
     assert.equal(analysis.claim("alice").reason, "disabled");
     assert.deepEqual(analysis.status("bob").states, []);
     assert.equal(analysis.status("alice").states[0].count, 1);

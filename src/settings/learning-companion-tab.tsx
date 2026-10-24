@@ -116,12 +116,21 @@ function WeeklyReportToggle() {
   const [steps, setSteps] = useState(nextStepsShown);
   // Account setting in the learning-history service; null until it is read.
   const [comments, setComments] = useState<boolean | null>(null);
+  const [analysis, setAnalysis] = useState<boolean | null>(null);
   useEffect(() => {
     let active = true;
     const token = getToken();
-    if (token) void openHistoryApi(token).then((api) => api.reportComments()).then((value) => { if (active) setComments(value.enabled); }).catch(() => undefined);
+    if (token) {
+      void openHistoryApi(token).then((api) => api.reportComments()).then((value) => { if (active) setComments(value.enabled); }).catch(() => undefined);
+      void openHistoryApi(token).then((api) => api.analysisStatus()).then((value) => { if (active) setAnalysis(value.enabled); }).catch(() => undefined);
+    }
     return () => { active = false; };
   }, []);
+  const changeAnalysis = (enabled: boolean) => {
+    const token = getToken();
+    if (!token) return;
+    void openHistoryApi(token).then(async (api) => { await api.configureAnalysis(enabled, enabled ? 10 : 0); setAnalysis(enabled); }).catch(() => undefined);
+  };
   const changeComments = (enabled: boolean) => {
     const token = getToken();
     if (!token) return;
@@ -129,6 +138,10 @@ function WeeklyReportToggle() {
   };
   return (
     <div className="mt-5 space-y-2 text-sm text-text-strong">
+      <label className="flex items-center gap-2">
+        <input type="checkbox" disabled={analysis === null} checked={analysis ?? false} onChange={(event) => changeAnalysis(event.target.checked)} />
+        自动分析课程涉及的知识点，用来点亮学习地图（使用你的模型 Key，约 0.06 美元一节课，每天最多 10 节，不在上课时运行）
+      </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />
         在“学习记录”中显示学习周报
