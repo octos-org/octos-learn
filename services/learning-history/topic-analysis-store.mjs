@@ -4,6 +4,9 @@ import { buildAnalysisInput, validateAnalysisResult, analysisHash } from "./topi
 import { TOPIC_RULES_VERSION, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
 
 export const DEFAULT_DAILY_ANALYSIS_TASKS = 10;
+// Why a started analysis was set aside: a reply that is not JSON, a reply the
+// service rejected, or a turn that ended without a reply.
+export const REJECT_REASONS = ["invalid-analysis-result", "unparseable-analysis-result", "analysis-turn-failed"];
 
 export function createAnalysisSchema(db) {
   db.exec(`CREATE TABLE IF NOT EXISTS topic_analysis_settings(owner TEXT PRIMARY KEY,enabled INTEGER NOT NULL,max_daily_tasks INTEGER NOT NULL);
@@ -143,9 +146,25 @@ export class TopicAnalysisStore {
     return { recorded: Number(this.db.prepare("UPDATE topic_analysis_jobs SET state=CASE WHEN octos_session_id IS NULL THEN 'pending' ELSE 'uncertain' END,lease_until=?,error=? WHERE owner=? AND id=? AND state='leased' AND lease_id=?")
       .run(Date.parse(this.history.now()) + 180000, String(reason).slice(0, 256), owner, id, lease).changes) > 0 };
   }
-  reject(owner, id, lease) {
-    return { recorded: Number(this.db.prepare("UPDATE topic_analysis_jobs SET state='blocked',error='invalid-analysis-result' WHERE owner=? AND id=? AND state='leased' AND lease_id=?")
-      .run(owner, id, lease).changes) > 0 };
+  /** Blocks a job whose turn produced no acceptable result, keeping why. A
+   * turn that failed without any reply (for example a provider outage) gets
+   * one new revision; a reply that was malformed or failed validation does
+   * not, since repeating the same request tends to repeat the same mistake.
+   * The retry still counts against the daily start limit. */
+  reject(owner, id, lease, reason = "invalid-analysis-result", detail) {
+    if (!REJECT_REASONS.includes(reason)) throw new HistoryValidationError("Unknown analysis rejection reason");
+    if (detail !== undefined && (typeof detail !== "string" || !/^[\x20-\x7e]{1,200}$/.test(detail))) throw new HistoryValidationError("Invalid analysis rejection detail");
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const job = this.db.prepare("SELECT source_event_id,revision FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=?").get(owner, id, lease);
+      if (!job) { this.db.exec("COMMIT"); return { recorded: false }; }
+      const earlierFailure = this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND error LIKE 'analysis-turn-failed%'").get(owner, job.source_event_id);
+      this.db.prepare("UPDATE topic_analysis_jobs SET state='blocked',error=? WHERE owner=? AND id=?").run(detail ? `${reason}: ${detail}` : reason, owner, id);
+      const latest = this.db.prepare("SELECT MAX(revision) AS n FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND rules_version=? AND taxonomy_sha256=?")
+        .get(owner, job.source_event_id, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256).n ?? job.revision;
+      const retry = reason === "analysis-turn-failed" && !earlierFailure ? enqueueAnalysis(this.history, owner, job.source_event_id, latest + 1) : undefined;
+      this.db.exec("COMMIT"); return { recorded: true, retried: Boolean(retry) };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
   reanalyze(owner, eventId) {
     this.db.exec("BEGIN IMMEDIATE");

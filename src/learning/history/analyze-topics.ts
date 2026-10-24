@@ -21,7 +21,9 @@ const analysisWorkspace = (value: unknown): string => {
 };
 class AnalysisHttpError extends Error {
   readonly status: number;
-  constructor(status: number) { super('知识点分析暂不可用，原始学习记录已保留'); this.status = status; }
+  /** The service's reason for a rejected request, kept with a rejected result. */
+  readonly detail?: string;
+  constructor(status: number, detail?: string) { super('知识点分析暂不可用，原始学习记录已保留'); this.status = status; this.detail = detail; }
 }
 const safeControl = (value: unknown): value is Control => {
   if (!value || typeof value !== 'object') return false;
@@ -53,7 +55,10 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
     const response = await fetcher(`${base}/api/learn/history/analysis${path}`, { method, headers,
       ...(body === undefined ? {} : { body: JSON.stringify(body) }), redirect: 'error', signal: historyRequestTimeout(10000) });
     if (!isCurrent()) throw new Error('账号已切换，知识点分析已停止');
-    if (!response.ok) throw new AnalysisHttpError(response.status);
+    if (!response.ok) {
+      const reason = response.status === 400 ? await response.json().then((body: { error?: unknown }) => body?.error, () => undefined) : undefined;
+      throw new AnalysisHttpError(response.status, typeof reason === 'string' && /^[\x20-\x7e]{1,200}$/.test(reason) ? reason : undefined);
+    }
     const result = await response.json() as T & { profile_id?: string };
     if (result.profile_id !== identity.owner) throw new Error('知识点分析账号不符');
     return result;
@@ -103,8 +108,8 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
   let outcome: TopicAnalysisProgress | undefined;
   const rpc = <T,>(method: string, params: Record<string, unknown>) => bridge.callMethod<T>(method, { ...params, profile_id: identity.owner });
   const interrupt = async () => { if (control) await rpc('turn/interrupt', { session_id: control.session, turn_id: control.turn }); };
-  const rejectResult = async () => {
-    const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/reject`, { lease_id: task.lease_id });
+  const rejectResult = async (reason: 'invalid-analysis-result' | 'unparseable-analysis-result' | 'analysis-turn-failed', detail?: string) => {
+    const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/reject`, { lease_id: task.lease_id, reason, ...(detail ? { detail } : {}) });
     if (!receipt.recorded) throw new Error('分析任务已重新领取，保留原执行等待核对');
     resultSaved = true;
   };
@@ -177,20 +182,20 @@ export async function analyzeTopics(identity: HistoryIdentity, base: string, {
           && (row.turn_id === control!.turn || (!row.turn_id && singleTurn))).at(-1);
         let candidate: unknown;
         try { candidate = parseTopicAnalysisResponse(message?.content ?? ''); }
-        catch { await rejectResult(); throw new Error('分析未返回有效结果，保留未知'); }
+        catch { await rejectResult('unparseable-analysis-result'); throw new Error('分析未返回有效结果，保留未知'); }
         try {
           const receipt = await request<{ recorded: boolean }>(`/jobs/${task.id}/result`, { lease_id: task.lease_id, result: candidate });
           if (!receipt.recorded) throw new Error('分析来源已删除或任务已重新领取');
           resultSaved = true;
         } catch (error) {
-          if (error instanceof AnalysisHttpError && error.status === 400) await rejectResult();
+          if (error instanceof AnalysisHttpError && error.status === 400) await rejectResult('invalid-analysis-result', error.detail);
           throw error;
         }
         const latest = await request<Status>('');
         outcome = { pending: pendingCount(latest), completed: 1, enabled: latest.enabled };
         return outcome;
       }
-      if (['errored', 'interrupted'].includes(state ?? '')) { await rejectResult(); throw new Error('上次分析已结束但没有有效结果，保留未知，不自动重复调用模型'); }
+      if (['errored', 'interrupted'].includes(state ?? '')) { await rejectResult('analysis-turn-failed'); throw new Error('上次分析已结束但没有有效结果，保留未知，不自动重复调用模型'); }
       if (task.execution && (!state || state === 'unknown')) throw new Error('上次分析未完成，不自动重复调用模型');
       if (tick % 10 === 0) await request(`/jobs/${task.id}`); // Notice deletion on another device.
       await sleep(500);

@@ -108,6 +108,9 @@ export class LearningHistoryCoordinator {
         try {
           const analysis = await analyzeTopics(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain });
           this.update({ analysisPending: analysis.pending, analysisError: '' });
+          // Played beats and answers count toward topics only once their lesson
+          // is analyzed, so this is when achievements usually become due.
+          if (analysis.completed && this.current()) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: 0, analyzed: analysis.completed } }));
         } catch {
           this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
         }

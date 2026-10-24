@@ -111,3 +111,23 @@ it('finishes an already-sent batch receipt but sends no next batch while teachin
   expect(coordinator.getSnapshot()).toMatchObject({ pending: 0, error: '' });
   localStorage.removeItem(TOKEN_KEY);
 });
+
+it('checks achievements again once analysis puts played lessons on topics', async () => {
+  vi.doMock('./analyze-topics', () => ({ analyzeTopics: async () => ({ pending: 0, completed: 1, enabled: true }) }));
+  vi.doMock('./comment-report', () => ({ commentWeeklyReport: async () => false }));
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    const path = String(input);
+    if (path.endsWith('/api/my/profile')) return Response.json({ id: 'alice' });
+    if (path.includes('/changes?')) return Response.json({ changes: [], through: 0, next_after: null });
+    if (path.endsWith('/deliveries')) return Response.json({ profile_id: 'alice', states: [], pending_session_deletions: 0 });
+    throw new Error(`Unexpected network request: ${path}`);
+  }));
+  const announced: unknown[] = [];
+  const listener = (event: Event) => announced.push((event as CustomEvent).detail);
+  window.addEventListener('octos:history-uploaded', listener);
+  try {
+    const { LearningHistoryCoordinator } = await import('./use-learning-history');
+    await new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!).synchronize();
+    expect(announced).toEqual([{ owner: 'alice', uploaded: 0, analyzed: 1 }]);
+  } finally { window.removeEventListener('octos:history-uploaded', listener); vi.doUnmock('./analyze-topics'); vi.doUnmock('./comment-report'); }
+});
