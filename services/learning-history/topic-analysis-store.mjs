@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { canonicalHistoryJson, HistoryValidationError } from "./event-contract.mjs";
 import { buildAnalysisInput, validateAnalysisResult, analysisHash } from "./topic-analysis.mjs";
 import { TOPIC_RULES_VERSION, TOPIC_TAXONOMY } from "./topic-catalog.mjs";
@@ -7,6 +7,17 @@ export const DEFAULT_DAILY_ANALYSIS_TASKS = 10;
 // Why a started analysis was set aside: a reply that is not JSON, a reply the
 // service rejected, or a turn that ended without a reply.
 export const REJECT_REASONS = ["invalid-analysis-result", "unparseable-analysis-result", "analysis-turn-failed"];
+// Analysis runs as a Learning Coach background action inside Octos, so it no
+// longer depends on the learner's page. Its execution is marked with this
+// value instead of an Octos session, and it must report back (with a
+// single-use capability) within the window or it counts as a failed turn.
+export const BACKGROUND_EXECUTION = "background";
+export const BACKGROUND_WINDOW_MS = 10 * 60 * 1000;
+const capabilityHash = capability => createHash("sha256").update(capability).digest("hex");
+function validRejection(reason, detail) {
+  if (!REJECT_REASONS.includes(reason)) throw new HistoryValidationError("Unknown analysis rejection reason");
+  if (detail !== undefined && (typeof detail !== "string" || !/^[\x20-\x7e]{1,200}$/.test(detail))) throw new HistoryValidationError("Invalid analysis rejection detail");
+}
 
 export function createAnalysisSchema(db) {
   db.exec(`CREATE TABLE IF NOT EXISTS topic_analysis_settings(owner TEXT PRIMARY KEY,enabled INTEGER NOT NULL,max_daily_tasks INTEGER NOT NULL);
@@ -25,6 +36,9 @@ export function createAnalysisSchema(db) {
       topic_id TEXT NOT NULL,quote TEXT NOT NULL,PRIMARY KEY(owner,result_seq,unit_id,topic_id));
     CREATE INDEX IF NOT EXISTS analysis_owner_topic ON topic_analysis_links(owner,topic_id,result_seq);`);
   db.exec("CREATE TABLE IF NOT EXISTS topic_analysis_starts(owner TEXT NOT NULL,job_id TEXT NOT NULL,started_at TEXT NOT NULL,PRIMARY KEY(owner,job_id));");
+  // Only the hash of a capability is kept; it is usable once, before expiry.
+  db.exec(`CREATE TABLE IF NOT EXISTS topic_analysis_dispatches(capability_sha256 TEXT PRIMARY KEY,owner TEXT NOT NULL,job_id TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,used_at TEXT,UNIQUE(owner,job_id));`);
 }
 
 export function enqueueAnalysis(store, owner, eventId, revision = 1) {
@@ -76,16 +90,21 @@ export class TopicAnalysisStore {
     const now = Date.parse(this.history.now());
     this.db.exec("BEGIN IMMEDIATE");
     try {
-      if (this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND state='leased' AND lease_until>?").get(owner, now)) { this.db.exec("COMMIT"); return { tasks: [], reason: "active-task" }; }
+      // A background analysis that never reported back, and an unresolved
+      // execution from the earlier page-run analysis (which this version no
+      // longer reconnects to), each count as a failed turn: one retry.
+      for (const stale of this.db.prepare(`SELECT id,source_event_id,revision,octos_session_id FROM topic_analysis_jobs WHERE owner=? AND octos_session_id IS NOT NULL
+        AND ((state='leased' AND lease_until<=?) OR (state='uncertain' AND octos_session_id<>?))`).all(owner, now, BACKGROUND_EXECUTION)) {
+        this.#setAside(owner, stale, "analysis-turn-failed", stale.octos_session_id === BACKGROUND_EXECUTION
+          ? "Background analysis did not report back in time" : "Page-run analysis replaced by background analysis");
+      }
+      // Dispatched background work runs in Octos and does not hold the queue.
+      if (this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND state='leased' AND lease_until>? AND (octos_session_id IS NULL OR octos_session_id<>?)")
+        .get(owner, now, BACKGROUND_EXECUTION)) { this.db.exec("COMMIT"); return { tasks: [], reason: "active-task" }; }
       const quotaAvailable = this.quotaUsed(owner) < this.settings(owner).max_daily_tasks;
-      // Unresolved executions are read-only reconciliation, never replacement
-      // turns. Prefer unattempted material, then rotate older recovery attempts;
-      // an old missing turn must not win every 5-minute coordinator retry.
-      // An exhausted start quota still permits recovering existing executions.
-      const job = this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND (rules_version=? OR octos_session_id IS NOT NULL) AND taxonomy_sha256=?
-        AND (state='pending' OR (state IN ('leased','uncertain') AND lease_until<=?))
-        AND (octos_session_id IS NOT NULL OR ?) ORDER BY COALESCE(lease_until,0),source_seq,revision LIMIT 1`)
-        .get(owner, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, now, Number(quotaAvailable));
+      const job = quotaAvailable ? this.db.prepare(`SELECT * FROM topic_analysis_jobs WHERE owner=? AND rules_version=? AND taxonomy_sha256=?
+        AND octos_session_id IS NULL AND (state='pending' OR (state='leased' AND lease_until<=?)) ORDER BY source_seq,revision LIMIT 1`)
+        .get(owner, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256, now) : undefined;
       if (!job) { this.db.exec("COMMIT"); return { tasks: [], ...(quotaAvailable ? {} : { reason: "daily-task-limit" }) }; }
       let input;
       try { input = job.input_json ? JSON.parse(job.input_json) : buildAnalysisInput(this.history, owner, job.source_event_id); }
@@ -152,19 +171,82 @@ export class TopicAnalysisStore {
    * not, since repeating the same request tends to repeat the same mistake.
    * The retry still counts against the daily start limit. */
   reject(owner, id, lease, reason = "invalid-analysis-result", detail) {
-    if (!REJECT_REASONS.includes(reason)) throw new HistoryValidationError("Unknown analysis rejection reason");
-    if (detail !== undefined && (typeof detail !== "string" || !/^[\x20-\x7e]{1,200}$/.test(detail))) throw new HistoryValidationError("Invalid analysis rejection detail");
+    validRejection(reason, detail);
     this.db.exec("BEGIN IMMEDIATE");
     try {
-      const job = this.db.prepare("SELECT source_event_id,revision FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=?").get(owner, id, lease);
+      const job = this.db.prepare("SELECT id,source_event_id,revision FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=?").get(owner, id, lease);
       if (!job) { this.db.exec("COMMIT"); return { recorded: false }; }
-      const earlierFailure = this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND error LIKE 'analysis-turn-failed%'").get(owner, job.source_event_id);
-      this.db.prepare("UPDATE topic_analysis_jobs SET state='blocked',error=? WHERE owner=? AND id=?").run(detail ? `${reason}: ${detail}` : reason, owner, id);
-      const latest = this.db.prepare("SELECT MAX(revision) AS n FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND rules_version=? AND taxonomy_sha256=?")
-        .get(owner, job.source_event_id, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256).n ?? job.revision;
-      const retry = reason === "analysis-turn-failed" && !earlierFailure ? enqueueAnalysis(this.history, owner, job.source_event_id, latest + 1) : undefined;
-      this.db.exec("COMMIT"); return { recorded: true, retried: Boolean(retry) };
+      const retried = this.#setAside(owner, job, reason, detail);
+      this.db.exec("COMMIT"); return { recorded: true, retried };
     } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+  /** Inside a transaction: block a job with its reason, and give a failed
+   * turn one new revision. Returns whether a retry was queued. */
+  #setAside(owner, job, reason, detail) {
+    const earlierFailure = this.db.prepare("SELECT 1 FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND error LIKE 'analysis-turn-failed%'").get(owner, job.source_event_id);
+    this.db.prepare("UPDATE topic_analysis_jobs SET state='blocked',error=? WHERE owner=? AND id=?").run(detail ? `${reason}: ${detail}` : reason, owner, job.id);
+    const latest = this.db.prepare("SELECT MAX(revision) AS n FROM topic_analysis_jobs WHERE owner=? AND source_event_id=? AND rules_version=? AND taxonomy_sha256=?")
+      .get(owner, job.source_event_id, TOPIC_RULES_VERSION, TOPIC_TAXONOMY.catalog_sha256).n ?? job.revision;
+    return Boolean(reason === "analysis-turn-failed" && !earlierFailure && enqueueAnalysis(this.history, owner, job.source_event_id, latest + 1));
+  }
+  /** Starts a claimed job as a background action: counts against the daily
+   * limit and issues the single-use capability the action reports back with. */
+  dispatch(owner, id, lease) {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const job = this.db.prepare("SELECT id FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND lease_id=? AND octos_session_id IS NULL").get(owner, id, lease);
+      if (!job) { this.db.exec("COMMIT"); return { recorded: false }; }
+      const settings = this.settings(owner);
+      if (!settings.enabled || this.quotaUsed(owner) >= settings.max_daily_tasks) { this.db.exec("COMMIT"); return { recorded: false, reason: "daily-task-limit" }; }
+      const now = this.history.now(), expires = Date.parse(now) + BACKGROUND_WINDOW_MS, capability = randomBytes(32).toString("base64url");
+      this.db.prepare("UPDATE topic_analysis_jobs SET octos_session_id=?,octos_turn_id=NULL,started_at=?,lease_until=? WHERE owner=? AND id=?")
+        .run(BACKGROUND_EXECUTION, now, expires, owner, id);
+      this.db.prepare("INSERT INTO topic_analysis_starts VALUES(?,?,?)").run(owner, id, now);
+      this.db.prepare("INSERT INTO topic_analysis_dispatches VALUES(?,?,?,?,NULL)").run(capabilityHash(capability), owner, id, expires);
+      this.db.exec("COMMIT"); return { recorded: true, capability };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+  /** The background action could not be started at all (nothing reached a
+   * model), so the job returns to the queue and the start is not counted. */
+  undispatch(owner, id, lease) {
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      const unused = this.db.prepare(`SELECT 1 FROM topic_analysis_jobs j JOIN topic_analysis_dispatches d ON d.owner=j.owner AND d.job_id=j.id
+        WHERE j.owner=? AND j.id=? AND j.state='leased' AND j.lease_id=? AND j.octos_session_id=? AND d.used_at IS NULL`).get(owner, id, lease, BACKGROUND_EXECUTION);
+      if (!unused) { this.db.exec("COMMIT"); return { recorded: false }; }
+      this.db.prepare("DELETE FROM topic_analysis_dispatches WHERE owner=? AND job_id=?").run(owner, id);
+      this.db.prepare("DELETE FROM topic_analysis_starts WHERE owner=? AND job_id=?").run(owner, id);
+      this.db.prepare("UPDATE topic_analysis_jobs SET state='pending',lease_id=NULL,lease_until=NULL,octos_session_id=NULL,started_at=NULL WHERE owner=? AND id=?").run(owner, id);
+      this.db.exec("COMMIT"); return { recorded: true };
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+  }
+  /** The background action's report, authorized only by its capability. A
+   * result still passes every validation rule; a rejected result keeps the
+   * service's reason. Returns the account it belongs to. */
+  callback(id, capability, body) {
+    if (typeof capability !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(capability)) throw new HistoryValidationError("Invalid analysis capability");
+    const isResult = body && typeof body === "object" && Object.keys(body).length === 1 && "result" in body;
+    const isFailure = body && typeof body === "object" && typeof body.failure === "string" && Object.keys(body).every(key => ["failure", "detail"].includes(key));
+    if (!isResult && !isFailure) throw new HistoryValidationError("Send either a result or a failure");
+    // Refuse a malformed report before it can use up the capability.
+    if (isFailure) validRejection(body.failure, body.detail);
+    this.db.exec("BEGIN IMMEDIATE");
+    let job;
+    try {
+      const dispatch = this.db.prepare("SELECT owner,expires_at,used_at FROM topic_analysis_dispatches WHERE capability_sha256=? AND job_id=?").get(capabilityHash(capability), id);
+      job = dispatch && !dispatch.used_at && dispatch.expires_at > Date.parse(this.history.now())
+        ? this.db.prepare("SELECT owner,id,lease_id,source_event_id,revision FROM topic_analysis_jobs WHERE owner=? AND id=? AND state='leased' AND octos_session_id=?").get(dispatch.owner, id, BACKGROUND_EXECUTION)
+        : undefined;
+      if (job) this.db.prepare("UPDATE topic_analysis_dispatches SET used_at=? WHERE capability_sha256=?").run(this.history.now(), capabilityHash(capability));
+      this.db.exec("COMMIT");
+    } catch (error) { this.db.exec("ROLLBACK"); throw error; }
+    if (!job) return { owner: null, recorded: false };
+    if (isFailure) return { owner: job.owner, ...this.reject(job.owner, id, job.lease_id, body.failure, body.detail) };
+    try { return { owner: job.owner, ...this.complete(job.owner, id, job.lease_id, body.result) }; }
+    catch (error) {
+      if (error instanceof HistoryValidationError) this.reject(job.owner, id, job.lease_id, "invalid-analysis-result", error.message.replace(/[^\x20-\x7e]/g, "?").slice(0, 200));
+      throw error;
+    }
   }
   reanalyze(owner, eventId) {
     this.db.exec("BEGIN IMMEDIATE");

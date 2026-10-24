@@ -56,7 +56,7 @@ test("question input excludes the generated explanation; unknown, missing media 
   } finally { store.close(); }
 });
 
-test("queue (on by default, can be turned off) is idempotent, account scoped, reconciles expired executions, and does not refund reservations when facts are deleted", () => {
+test("queue (on by default, can be turned off) is idempotent and account scoped; a dispatched job reports back once with its capability, and deleting facts does not refund the start", () => {
   let clock = "2026-10-22T00:00:00.000Z";
   const store = new HistoryStore(":memory:", { now: () => clock });
   try {
@@ -68,25 +68,69 @@ test("queue (on by default, can be turned off) is idempotent, account scoped, re
     assert.deepEqual(analysis.status("bob").states, []);
     assert.equal(analysis.status("alice").states[0].count, 1);
     analysis.configure("alice", { enabled: true, max_daily_tasks: 1 });
-    let task = analysis.claim("alice").tasks[0];
+    const task = analysis.claim("alice").tasks[0];
     assert.equal(task.execution, null);
     assert.equal(analysis.claim("alice").reason, "active-task");
-    assert.equal(analysis.execution("bob", task.id, task.lease_id, execution).recorded, false);
-    assert.equal(analysis.execution("alice", task.id, task.lease_id, execution).recorded, true);
-    const oldLease = task.lease_id;
-    clock = "2026-10-22T00:03:01.000Z";
-    task = analysis.claim("alice").tasks[0];
-    assert.deepEqual(task.execution, execution);
-    assert.equal(analysis.complete("alice", task.id, oldLease, mapped(task.input)).recorded, false);
-    assert.equal(analysis.complete("alice", task.id, task.lease_id, mapped(task.input)).recorded, true);
-    assert.equal(analysis.complete("alice", task.id, task.lease_id, mapped(task.input)).recorded, true);
-    assert.throws(() => analysis.complete("alice", task.id, task.lease_id, mapped(task.input, plotting)));
+    assert.equal(analysis.dispatch("bob", task.id, task.lease_id).recorded, false);
+    const { recorded, capability } = analysis.dispatch("alice", task.id, task.lease_id);
+    assert.equal(recorded, true); assert.match(capability, /^[A-Za-z0-9_-]{43}$/);
+    assert.equal(analysis.dispatch("alice", task.id, task.lease_id).recorded, false, "a job is dispatched once");
+    assert.equal(analysis.claim("alice").reason, "daily-task-limit", "dispatched work does not hold the queue");
+    // Only the right capability for the right job is accepted, and only once.
+    assert.equal(analysis.callback(task.id, "x".repeat(43), { result: mapped(task.input) }).recorded, false);
+    assert.equal(analysis.callback("f".repeat(64), capability, { result: mapped(task.input) }).recorded, false);
+    assert.deepEqual(analysis.callback(task.id, capability, { result: mapped(task.input) }), { owner: "alice", recorded: true });
+    assert.equal(analysis.callback(task.id, capability, { result: mapped(task.input) }).recorded, false);
+    assert.equal(store.db.prepare("SELECT state FROM topic_analysis_jobs WHERE id=?").get(task.id).state, "complete");
     store.deleteRun("alice", q.run_id);
     assert.equal(analysis.quotaUsed("alice"), 1);
     store.append("alice", [question("second")]);
     assert.equal(analysis.claim("alice").reason, "daily-task-limit");
     clock = "2026-10-23T00:00:00.000Z";
     assert.equal(analysis.claim("alice").tasks.length, 1);
+  } finally { store.close(); }
+});
+
+test("a background report that fails validation is set aside with the service reason; a reported failure follows the retry rule", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    const analysis = new TopicAnalysisStore(store);
+    store.append("alice", [question("invalid"), question("outage")]);
+    const start = () => { const task = analysis.claim("alice").tasks[0]; return { task, capability: analysis.dispatch("alice", task.id, task.lease_id).capability }; };
+    const invalid = start();
+    const wrong = { ...mapped(invalid.task.input), units: [{ unit_id: "question", status: "mapped", topics: [{ topic_id: slope, quote: "not in the question" }], reason: "x" }] };
+    assert.throws(() => analysis.callback(invalid.task.id, invalid.capability, { result: wrong }), /Analysis evidence or catalog reference is invalid/);
+    assert.equal(store.db.prepare("SELECT error FROM topic_analysis_jobs WHERE id=?").get(invalid.task.id).error,
+      "invalid-analysis-result: Analysis evidence or catalog reference is invalid");
+    const outage = start();
+    assert.throws(() => analysis.callback(outage.task.id, outage.capability, { failure: "made-up" }), /Unknown analysis rejection reason/);
+    // The refused report did not use up the capability; the real one counts.
+    assert.deepEqual(analysis.callback(outage.task.id, outage.capability, { failure: "analysis-turn-failed", detail: "fixture outage" }), { owner: "alice", recorded: true, retried: true });
+    const again = analysis.claim("alice").tasks[0];
+    assert.equal(again.input.source_event_id, "outage"); assert.notEqual(again.id, outage.task.id);
+  } finally { store.close(); }
+});
+
+test("a background analysis that never reports back counts as a failed turn; one that could not start is returned without counting", () => {
+  let clock = "2026-10-22T00:00:00.000Z";
+  const store = new HistoryStore(":memory:", { now: () => clock });
+  try {
+    const analysis = new TopicAnalysisStore(store);
+    store.append("alice", [question("silent"), question("unstarted")]);
+    const silent = analysis.claim("alice").tasks[0];
+    const { capability } = analysis.dispatch("alice", silent.id, silent.lease_id);
+    const unstarted = analysis.claim("alice").tasks[0];
+    analysis.dispatch("alice", unstarted.id, unstarted.lease_id);
+    assert.equal(analysis.quotaUsed("alice"), 2);
+    assert.deepEqual(analysis.undispatch("alice", unstarted.id, unstarted.lease_id), { recorded: true });
+    assert.equal(analysis.quotaUsed("alice"), 1);
+    clock = "2026-10-22T00:10:01.000Z";
+    const retry = analysis.claim("alice").tasks[0];
+    assert.equal(retry.input.source_event_id, "silent"); assert.notEqual(retry.id, silent.id);
+    assert.match(store.db.prepare("SELECT error FROM topic_analysis_jobs WHERE id=?").get(silent.id).error, /^analysis-turn-failed: Background analysis did not report back/);
+    assert.equal(analysis.callback(silent.id, capability, { result: mapped(silent.input) }).recorded, false, "an expired capability is refused");
+    analysis.dispatch("alice", retry.id, retry.lease_id);
+    assert.equal(analysis.claim("alice").tasks[0].input.source_event_id, "unstarted", "the returned job is claimable again");
   } finally { store.close(); }
 });
 
@@ -139,7 +183,7 @@ test("explicit reanalysis can replace an uncertain execution without rewriting f
   } finally { store.close(); }
 });
 
-test("an unresolved old execution cannot starve new sources, and quota exhaustion still allows reconciliation", () => {
+test("an unresolved page-run execution is replaced by one background retry, which still needs the daily limit", () => {
   let clock = "2026-10-22T00:00:00.000Z";
   const store = new HistoryStore(":memory:", { now: () => clock });
   try {
@@ -148,16 +192,13 @@ test("an unresolved old execution cannot starve new sources, and quota exhaustio
     store.append("alice", [question("first"), question("second")]);
     const first = analysis.claim("alice").tasks[0];
     analysis.execution("alice", first.id, first.lease_id, execution); analysis.pause("alice", first.id, first.lease_id);
-    clock = "2026-10-22T00:05:01.000Z";
-    const second = analysis.claim("alice").tasks[0];
-    assert.equal(second.input.source_event_id, "second"); finish(analysis, second, mapped(second.input));
-    store.append("alice", [question("third")]);
     const retry = analysis.claim("alice").tasks[0];
-    assert.equal(retry.id, first.id); assert.deepEqual(retry.execution, execution);
-    analysis.pause("alice", retry.id, retry.lease_id);
-    clock = "2026-10-22T00:10:02.000Z";
-    assert.equal(analysis.claim("alice").tasks[0].id, first.id);
+    assert.equal(retry.input.source_event_id, "first"); assert.notEqual(retry.id, first.id); assert.equal(retry.execution, null);
+    finish(analysis, retry, mapped(retry.input));
     assert.equal(analysis.quotaUsed("alice"), 2);
+    assert.equal(analysis.claim("alice").reason, "daily-task-limit");
+    clock = "2026-10-23T00:00:00.000Z";
+    assert.equal(analysis.claim("alice").tasks[0].input.source_event_id, "second");
   } finally { store.close(); }
 });
 

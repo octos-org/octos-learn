@@ -112,8 +112,9 @@ it('finishes an already-sent batch receipt but sends no next batch while teachin
   localStorage.removeItem(TOKEN_KEY);
 });
 
-it('checks achievements again once analysis puts played lessons on topics', async () => {
-  vi.doMock('./analyze-topics', () => ({ analyzeTopics: async () => ({ pending: 0, completed: 1, enabled: true }) }));
+it('checks achievements when a background analysis has saved a newer result, and once after opening', async () => {
+  const through = [2, 2, 3];
+  vi.doMock('./analyze-topics', () => ({ analyzeTopics: async () => ({ pending: 0, dispatched: 0, enabled: true, analysisThrough: through.shift() }) }));
   vi.doMock('./comment-report', () => ({ commentWeeklyReport: async () => false }));
   vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
     const path = String(input);
@@ -127,8 +128,11 @@ it('checks achievements again once analysis puts played lessons on topics', asyn
   window.addEventListener('octos:history-uploaded', listener);
   try {
     const { LearningHistoryCoordinator } = await import('./use-learning-history');
-    await new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!).synchronize();
-    expect(announced).toEqual([{ owner: 'alice', uploaded: 0, analyzed: 1 }]);
+    const coordinator = new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!);
+    await coordinator.synchronize(); // first look: results may have arrived while closed
+    await coordinator.synchronize(); // nothing new
+    await coordinator.synchronize(); // one more saved result
+    expect(announced).toEqual([{ owner: 'alice', uploaded: 0, analyzed: 1 }, { owner: 'alice', uploaded: 0, analyzed: 1 }]);
   } finally { window.removeEventListener('octos:history-uploaded', listener); vi.doUnmock('./analyze-topics'); vi.doUnmock('./comment-report'); }
 });
 
