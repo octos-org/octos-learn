@@ -201,6 +201,10 @@ export function useOllLessonRuntime({
     [source],
   );
   const capture = useMemo(() => new PlaybackHistoryCapture(storageKey), [storageKey]);
+  // StrictMode and interrupted renders can build a Runtime that is never
+  // committed, so the capture binds only the committed one, keeping the
+  // history binding from the render that built it.
+  const [runtimeBindings] = useState(() => new WeakMap<BrowserLessonSession, PlaybackHistoryBinding | undefined>());
   useLayoutEffect(() => { capture.updateBinding(history); }, [capture, history]);
   const historyEnabled = Boolean(history);
   const [hydratedStore, setHydratedStore] = useState<{ key: string; store: PlaybackStore } | null>(null);
@@ -229,7 +233,7 @@ export function useOllLessonRuntime({
                 ? { deliveredProgram: structuredClone(deliveredProgram) }
                 : {}),
             },
-          ); capture.bind(runtime, history); return runtime; })()
+          ); runtimeBindings.set(runtime, history); return runtime; })()
         : null,
     // `deliveredProgram` is a restore-time guard. A Step-only update must be
     // appended to the existing Runtime rather than reconstructing it; when
@@ -238,6 +242,9 @@ export function useOllLessonRuntime({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [events, incremental, narrationTiming, storageKey, playbackStore, capture],
   );
+  useLayoutEffect(() => {
+    if (session) capture.bind(session, runtimeBindings.get(session));
+  }, [capture, runtimeBindings, session]);
   const [revision, setRevision] = useState(0);
   const acceleratedStartupRef = useRef<{
     session: BrowserLessonSession;

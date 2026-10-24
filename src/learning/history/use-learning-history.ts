@@ -24,6 +24,7 @@ export class LearningHistoryCoordinator {
   private listeners = new Set<() => void>();
   private status = EMPTY;
   private timer?: ReturnType<typeof setTimeout>;
+  private timerDue = 0;
   private active?: Promise<void>;
   private retryDelay = 30000;
   private busy = new Set<string>();
@@ -58,7 +59,12 @@ export class LearningHistoryCoordinator {
     if (wasBusy && !busy) this.schedule();
   }
   private schedule() {
+    // A sync already due within a second stays due: playback can save every
+    // 200 ms, and pushing the timer back on each save would starve the upload.
+    const due = Date.now() + 1000;
+    if (this.timer && this.timerDue <= due) return;
     if (this.timer) clearTimeout(this.timer);
+    this.timerDue = due;
     this.timer = setTimeout(() => { this.timer = undefined; void this.synchronize(); }, 1000);
   }
   synchronize = (): Promise<void> => {
@@ -68,12 +74,13 @@ export class LearningHistoryCoordinator {
     return this.active;
   };
   private async run() {
-    this.update({ syncing: true, error: '' });
     try {
       await Promise.all([...this.recorders.values()].map(recorder => recorder.flush()));
       // Keep shared-process database work and message maintenance out of
-      // active generation/narration. Local durable capture continues normally.
+      // active generation/narration. Local durable capture continues normally,
+      // and the status stays "saved locally" instead of flashing a sync per beat.
       if (this.busy.size || !this.current()) return;
+      this.update({ syncing: true, error: '' });
       const identity = await this.getIdentity();
       if (!this.current() || this.busy.size) return;
       const before = (await this.queue.list(identity.owner)).length;
@@ -107,6 +114,9 @@ export class LearningHistoryCoordinator {
         try {
           const analysis = await analyzeTopics(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain });
           this.update({ analysisPending: analysis.pending, analysisError: '' });
+          // Played beats and answers count toward topics only once their lesson
+          // is analyzed, so this is when achievements usually become due.
+          if (analysis.completed && this.current()) window.dispatchEvent(new CustomEvent('octos:history-uploaded', { detail: { owner: identity.owner, uploaded: 0, analyzed: analysis.completed } }));
         } catch {
           this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
         }
@@ -128,6 +138,7 @@ export class LearningHistoryCoordinator {
       if (unfinished && this.current() && !this.timer) {
         const delay = this.retryDelay;
         this.retryDelay = Math.min(delay * 2, 300000);
+        this.timerDue = Date.now() + delay;
         this.timer = setTimeout(() => { this.timer = undefined; void this.synchronize(); }, delay);
       } else if (!unfinished) this.retryDelay = 30000;
     }

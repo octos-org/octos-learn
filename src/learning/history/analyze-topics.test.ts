@@ -14,7 +14,7 @@ function fixture({ disabled = false, resumed = false, invalid = false, lostRecei
   const old = { host, peer: 'topics-old', session: `${host}#peer-topics-old`, token: 'synthetic-control', namespace: 'app/learning-topics/topics-old', turn: lease };
   const input = { input_sha256: 'c'.repeat(64), units: [{ unit_id: 'question' }] };
   const result = { schema: 1, input_sha256: input.input_sha256, units: [{ unit_id: 'question', status: 'unknown', topics: [], reason: 'Missing context' }] };
-  const calls: { method: string; params: Record<string, unknown> }[] = [], http: string[] = [];
+  const calls: { method: string; params: Record<string, unknown> }[] = [], http: string[] = [], rejections: string[] = [];
   let completed = false, busy = false, subscriber: (event: PeerToolCall) => void = () => {}, control = resumed ? old : undefined;
   let session = old.session, turn = old.turn;
   const fetcher = vi.fn(async (url: string | URL | Request, options?: RequestInit) => {
@@ -32,7 +32,7 @@ function fixture({ disabled = false, resumed = false, invalid = false, lostRecei
     else if (path === `/jobs/${id}/result`) {
       expect(json.result).toEqual(result); expect(JSON.stringify(json)).not.toContain('synthetic-control');
       completed = true; if (lostReceipt) throw Error('Saved receipt lost'); payload = { recorded: true };
-    } else if (path.endsWith('/reject')) { completed = true; payload = { recorded: true }; }
+    } else if (path.endsWith('/reject')) { rejections.push(json.reason); completed = true; payload = { recorded: true }; }
     else if (path.endsWith('/pause')) payload = { recorded: true };
     else if (path.startsWith('/catalog?')) payload = { topics: [{ id: 'mt_WBdHkc2HTf', name: 'Linear Function Graphs' }] };
     else throw Error(`Unexpected HTTP ${path}`);
@@ -50,7 +50,7 @@ function fixture({ disabled = false, resumed = false, invalid = false, lostRecei
   });
   const connection = { start: vi.fn(async () => {}), stop: vi.fn(async () => {}), callMethod,
     onPeerToolCall: (callback: typeof subscriber) => { subscriber = callback; return () => { subscriber = () => {}; }; } } as unknown as UiProtocolBridge;
-  return { fetcher, calls, http, connection, result, setBusy: () => { busy = true; }, canContinue: () => !busy,
+  return { fetcher, calls, http, rejections, connection, result, setBusy: () => { busy = true; }, canContinue: () => !busy,
     emit: (overrides: Partial<PeerToolCall> = {}) => subscriber({ peer: control?.peer ?? '', session_id: session, turn_id: turn, call_id: 'catalog-call', name: 'learning_topics.search', args: { query: 'linear slope' }, ...overrides }) };
 }
 
@@ -116,6 +116,7 @@ it.each(['errored', 'interrupted'])('settles a definitively %s execution without
   };
   await expect(analyzeTopics(identity, '', { fetcher: f.fetcher, createBridge: () => f.connection })).rejects.toThrow('已结束但没有有效结果');
   expect(f.http).toContain(`/jobs/${id}/reject`);
+  expect(f.rejections).toEqual(['analysis-turn-failed']);
   expect(f.calls.some(call => call.method === 'turn/start')).toBe(false);
   expect(f.calls.some(call => call.method === 'peer/purge')).toBe(true);
 });
@@ -156,6 +157,7 @@ it('retains the control and execution after a lost receipt; malformed output is 
   const invalid = fixture({ invalid: true });
   await expect(analyzeTopics(identity, '', { fetcher: invalid.fetcher, createBridge: () => invalid.connection })).rejects.toThrow('保留未知');
   expect(invalid.http).toContain(`/jobs/${id}/reject`);
+  expect(invalid.rejections).toEqual(['unparseable-analysis-result']);
   expect(invalid.calls.filter(call => call.method === 'peer/purge')).toHaveLength(1);
 });
 
@@ -183,4 +185,16 @@ it('interrupts the captured analysis when teaching starts and preserves its book
   expect(f.calls.filter(call => call.method === 'turn/start')).toHaveLength(1);
   expect(f.calls.filter(call => call.method === 'turn/interrupt')).toHaveLength(1);
   expect(f.http).not.toContain(`/jobs/${id}/result`);
+});
+
+it('keeps the service reason when it rejects a reply', async () => {
+  const f = fixture();
+  const fetcher = async (url: string | URL | Request, options?: RequestInit) => String(url).endsWith('/result')
+    ? Response.json({ error: 'Analysis evidence or catalog reference is invalid' }, { status: 400 }) : f.fetcher(url, options);
+  const bodies: unknown[] = [];
+  await expect(analyzeTopics(identity, '', { fetcher: async (url, options) => {
+    if (String(url).endsWith('/reject')) bodies.push(JSON.parse(String(options?.body)));
+    return fetcher(url, options);
+  }, createBridge: () => f.connection })).rejects.toThrow();
+  expect(bodies).toEqual([{ lease_id: expect.any(String), reason: 'invalid-analysis-result', detail: 'Analysis evidence or catalog reference is invalid' }]);
 });

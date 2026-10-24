@@ -1176,6 +1176,16 @@ export function LearningWorkspace({
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
   // A background job can be generating before there is an OLL player at all.
   // Do not treat that first-artifact wait as idle maintenance time.
+  // Each played beat saves within milliseconds; only a save that is still
+  // running after a second is worth showing, or the status line flickers.
+  const historySaving = history.localStatus.pendingWrites > 0;
+  const [historySavingLong, setHistorySavingLong] = useState(false);
+  useEffect(() => {
+    if (!historySaving) return;
+    const timer = window.setTimeout(() => setHistorySavingLong(true), 1000);
+    return () => { window.clearTimeout(timer); setHistorySavingLong(false); };
+  }, [historySaving]);
+  const historySavingShown = historySaving && historySavingLong;
   const historyClassroomBusy = textTurnPending || ollGenerationSessionId === sessionId
     || hasUndeliveredOllEvents || Boolean(ollLesson?.playing);
   useEffect(() => {
@@ -3423,7 +3433,7 @@ export function LearningWorkspace({
   return (
     <div className="learning-workspace">
       {historyRecorder && <div className="learning-history-sync-status" data-learning-board-occlusion="" role="status">
-        {history.localStatus.error || history.status.error || (history.localStatus.pendingWrites ? "课堂记录保存中…" : history.status.syncing ? "学习记录同步中…" : history.status.pending ? "学习记录已保存在本机，等待同步" : history.status.conversationPending ? "学习记录已同步，问答仍待交给老师" : !history.status.checked ? "正在确认记录同步状态…" : "学习记录已同步")}
+        {history.localStatus.error || history.status.error || (historySavingShown ? "课堂记录保存中…" : history.status.syncing ? "学习记录同步中…" : history.status.pending ? "学习记录已保存在本机，等待同步" : history.status.conversationPending ? "学习记录已同步，问答仍待交给老师" : !history.status.checked ? "正在确认记录同步状态…" : "学习记录已同步")}
         {(history.localStatus.error || history.status.error || history.status.pending || history.status.conversationPending > 0) && <button onClick={() => { void history.coordinator?.retry(); }}>重试同步</button>}
       </div>}
       <header

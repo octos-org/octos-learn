@@ -158,12 +158,12 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
           if (!job) throw new HttpError(404, "Analysis task unavailable");
           result = { job };
         } else if (path.length === 4 && path[1] === "jobs" && /^[a-f0-9]{64}$/.test(path[2])) {
-          const body = await post(["lease_id", "execution", "result"], 1024 * 1024);
+          const body = await post(["lease_id", "execution", "result", "reason", "detail"], 1024 * 1024);
           if (typeof body.lease_id !== "string" || !/^[a-f0-9-]{36}$/.test(body.lease_id)) throw new HttpError(400, "Invalid analysis lease");
           if (path[3] === "execution" && Object.keys(body).every(key => ["lease_id", "execution"].includes(key))) result = analysis.execution(owner, path[2], body.lease_id, body.execution);
           else if (path[3] === "result" && Object.keys(body).every(key => ["lease_id", "result"].includes(key))) result = analysis.complete(owner, path[2], body.lease_id, body.result);
           else if (path[3] === "pause" && Object.keys(body).length === 1) result = analysis.pause(owner, path[2], body.lease_id);
-          else if (path[3] === "reject" && Object.keys(body).length === 1) result = analysis.reject(owner, path[2], body.lease_id);
+          else if (path[3] === "reject" && Object.keys(body).every(key => ["lease_id", "reason", "detail"].includes(key))) result = analysis.reject(owner, path[2], body.lease_id, body.reason, body.detail);
           else throw new HttpError(400, "Invalid analysis operation");
         } else throw new HttpError(404, "Unknown analysis endpoint");
         send(200, { profile_id: owner, ...result });

@@ -35,7 +35,12 @@ it('keeps durable local facts during active teaching, then uploads them once aft
   coordinator.setClassroomBusy('board', true);
   const recorder = coordinator.recorder('board');
   recorder.record({ kind: 'question_submitted', runKey: 'q1', questionId: 'q1', data: { text: '解释斜率', modality: 'text' } });
+  const syncingSeen: boolean[] = [];
+  const stop = coordinator.subscribe(() => syncingSeen.push(coordinator.getSnapshot().syncing));
   await recorder.flush(); await coordinator.synchronize();
+  stop();
+  // During class the status stays "saved locally"; it never flashes "syncing".
+  expect(syncingSeen).not.toContain(true);
   expect(calls.filter(path => path.includes('/history/'))).toHaveLength(0);
   expect(coordinator.getSnapshot().pending).toBeGreaterThan(0);
   coordinator.setClassroomBusy('board', false);
@@ -105,4 +110,37 @@ it('finishes an already-sent batch receipt but sends no next batch while teachin
   expect(batches.map(batch => batch.length)).toEqual([100, 1]); expect(new Set(batches.flat()).size).toBe(101);
   expect(coordinator.getSnapshot()).toMatchObject({ pending: 0, error: '' });
   localStorage.removeItem(TOKEN_KEY);
+});
+
+it('checks achievements again once analysis puts played lessons on topics', async () => {
+  vi.doMock('./analyze-topics', () => ({ analyzeTopics: async () => ({ pending: 0, completed: 1, enabled: true }) }));
+  vi.doMock('./comment-report', () => ({ commentWeeklyReport: async () => false }));
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request) => {
+    const path = String(input);
+    if (path.endsWith('/api/my/profile')) return Response.json({ id: 'alice' });
+    if (path.includes('/changes?')) return Response.json({ changes: [], through: 0, next_after: null });
+    if (path.endsWith('/deliveries')) return Response.json({ profile_id: 'alice', states: [], pending_session_deletions: 0 });
+    throw new Error(`Unexpected network request: ${path}`);
+  }));
+  const announced: unknown[] = [];
+  const listener = (event: Event) => announced.push((event as CustomEvent).detail);
+  window.addEventListener('octos:history-uploaded', listener);
+  try {
+    const { LearningHistoryCoordinator } = await import('./use-learning-history');
+    await new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!).synchronize();
+    expect(announced).toEqual([{ owner: 'alice', uploaded: 0, analyzed: 1 }]);
+  } finally { window.removeEventListener('octos:history-uploaded', listener); vi.doUnmock('./analyze-topics'); vi.doUnmock('./comment-report'); }
+});
+
+it('uploads within a second while playback keeps saving, instead of postponing on every save', async () => {
+  const { LearningHistoryCoordinator } = await import('./use-learning-history');
+  const coordinator = new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!);
+  const synchronize = vi.spyOn(coordinator, 'synchronize').mockResolvedValue();
+  vi.useFakeTimers();
+  // A phase animation saves every 200 ms; each committed save schedules a sync.
+  for (let elapsed = 0; elapsed < 3000; elapsed += 200) {
+    (coordinator as unknown as { schedule(): void }).schedule();
+    vi.advanceTimersByTime(200);
+  }
+  expect(synchronize.mock.calls.length).toBeGreaterThanOrEqual(2);
 });

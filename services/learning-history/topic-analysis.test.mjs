@@ -56,12 +56,14 @@ test("question input excludes the generated explanation; unknown, missing media 
   } finally { store.close(); }
 });
 
-test("default-off queue is idempotent, account scoped, reconciles expired executions, and does not refund reservations when facts are deleted", () => {
+test("queue (on by default, can be turned off) is idempotent, account scoped, reconciles expired executions, and does not refund reservations when facts are deleted", () => {
   let clock = "2026-10-22T00:00:00.000Z";
   const store = new HistoryStore(":memory:", { now: () => clock });
   try {
     const analysis = new TopicAnalysisStore(store), q = question("first");
     store.append("alice", [q]); store.append("alice", [q]);
+    assert.deepEqual(analysis.settings("alice"), { enabled: true, max_daily_tasks: 10 });
+    analysis.configure("alice", { enabled: false, max_daily_tasks: 0 });
     assert.equal(analysis.claim("alice").reason, "disabled");
     assert.deepEqual(analysis.status("bob").states, []);
     assert.equal(analysis.status("alice").states[0].count, 1);
@@ -192,3 +194,26 @@ test("the pinned catalog keeps every subject and the topic ids used by earlier r
   assert.ok(structure.clustersOf("Mathematics", "Algebra").length > 0);
 });
 
+
+test("a set-aside analysis keeps its reason; only a turn that ended without a reply gets one retry", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    const analysis = new TopicAnalysisStore(store), failed = question("turn-failed"), invalid = question("invalid");
+    analysis.configure("alice", { enabled: true, max_daily_tasks: 5 }); store.append("alice", [failed, invalid]);
+    const jobs = source => store.db.prepare("SELECT revision,state,error FROM topic_analysis_jobs WHERE owner='alice' AND source_event_id=? ORDER BY revision").all(source);
+    const start = () => { const task = analysis.claim("alice").tasks[0]; analysis.execution("alice", task.id, task.lease_id, execution); return task; };
+    assert.throws(() => analysis.reject("alice", "x", "y", "made-up"), /Unknown analysis rejection reason/);
+    // The first turn failure is retried once as a new revision; the second is not.
+    let task = start();
+    assert.deepEqual(analysis.reject("alice", task.id, task.lease_id, "analysis-turn-failed"), { recorded: true, retried: true });
+    task = analysis.claim("alice").tasks[0]; assert.equal(task.execution, null);
+    analysis.execution("alice", task.id, task.lease_id, execution);
+    assert.deepEqual(analysis.reject("alice", task.id, task.lease_id, "analysis-turn-failed"), { recorded: true, retried: false });
+    assert.deepEqual(jobs(failed.id).map(row => [row.revision, row.state, row.error]), [[1, "blocked", "analysis-turn-failed"], [2, "blocked", "analysis-turn-failed"]]);
+    // A reply the service rejected is not repeated, and keeps the service's reason.
+    task = start();
+    assert.deepEqual(analysis.reject("alice", task.id, task.lease_id, "invalid-analysis-result", "Analysis evidence or catalog reference is invalid"), { recorded: true, retried: false });
+    assert.deepEqual(jobs(invalid.id).map(row => row.error), ["invalid-analysis-result: Analysis evidence or catalog reference is invalid"]);
+    assert.equal(analysis.quotaUsed("alice"), 3);
+  } finally { store.close(); }
+});
