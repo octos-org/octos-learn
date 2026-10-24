@@ -1,0 +1,30 @@
+{
+  "plan": "DID_IT_WORDING_PLAN.json",
+  "plan_sha256": "3d474edb7795b0dc16669d31dab24273dda6c266bdc58566049c9b8d8063a5af",
+  "checked_at": "2026-10-24T04:20:33.528Z",
+  "model": "gemini-3.8-flash",
+  "passed": true,
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "admitted_requests": 2,
+  "reserved_usd": 0.3,
+  "estimated_usd": 0.0136,
+  "results": [
+    {
+      "id": "03-did-it-wording-doudou",
+      "teacher": "doudou",
+      "topic": "map-quote",
+      "status": "succeeded",
+      "elapsed_ms": 21994,
+      "model_requests": 2,
+      "lesson_sha256": "44ff34e660c5e55cd5f7532700f0b9741d9dd96c8e7b69f8308399658c23c32d"
+    }
+  ],
+  "lesson": "did-it-wording/03-did-it-wording-doudou.lesson.json",
+  "review": {
+    "map_quote": "你前几天练习过画一次函数的图像，今天这个提问特别敏锐！ — accurate; no longer states the one unassisted success as an ability (previous run: 不用提示就能顺利画出来).",
+    "mathematics": "Correct: steepness follows |k|; counterexample k=-3 vs -1.",
+    "practice_targets": "4 and -4, matching the narration invitations."
+  },
+  "key_scan": "included in the 22-file scan, 0 key fragments",
+  "octos_log": "deleted"
+}

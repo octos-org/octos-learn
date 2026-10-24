@@ -1,0 +1,45 @@
+{
+  "schema": "octos.learn.performance-trial.v1",
+  "model": "gemini-3.8-flash",
+  "voice": "none",
+  "resource": "none",
+  "cost_basis": [
+    "Same price basis as LIVE_TRIAL_PLAN.json (gemini-3.8-flash standard paid, rechecked 2026-10-22): USD 0.75 / 1M input, USD 3.75 / 1M output including thinking.",
+    "Gateway rejects requests over 32768 bytes (input <= 32768 tokens, USD 0.024576) and any maxOutputTokens above 32768; Gemini counts thinking tokens inside maxOutputTokens, so output <= 32768 tokens (USD 0.12288). Sum USD 0.147456, reserved as USD 0.15 per attempt. The earlier plan reserved output at 65536 tokens; this plan relies on the enforced request cap instead to stay within the stated USD 1.",
+    "Expected spend from run 3 usage: about USD 0.01 per lesson. Failed attempts keep their full reservation. Upper bound, not a bill."
+  ],
+  "cost_basis_verified": true,
+  "id": "phase6-did-it-wording-doudou-20261023",
+  "status": "approved",
+  "route_verified": true,
+  "authorization_reference": "User 2026-10-23: \"好的， 请开始\", approving the proposed phase-6 real-model check: report comments for both teachers (3 weekly reports each) plus the 豆豆 did-it wording lesson, capped at 12 requests / USD 1.80 in total. This plan: 1 lesson, at most 4 requests / USD 0.60.",
+  "limits": {
+    "courses": 1,
+    "speech_requests": 1,
+    "usd_micros": 600000,
+    "cny_micros": 1,
+    "model_request_usd_micros": 150000,
+    "speech_byte_cny_micros": 1,
+    "speech_utf8_bytes": 1,
+    "output_tokens": 32768,
+    "request_bytes": 32768
+  },
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/did-it-wording-doudou",
+  "compared_with": "Same lesson as MAP_QUOTE_DOUDOU_RESULT (Learning Coach 0.16.5, learning-coach 4685438), with teacher catalog 5 and the new learner_background wording for did-it.",
+  "questions_answered": [
+    "Does 豆豆 describe a did-it topic as done once, not as an ability she always has?",
+    "Is the mathematics still correct?"
+  ],
+  "samples": [
+    {
+      "id": "03-did-it-wording-doudou",
+      "version": "candidate",
+      "topic": "map-quote",
+      "teacher": "doudou",
+      "prompt": "斜率 k 越大，直线就越陡吗？内容简短，给出完整的小课程。",
+      "teacher_profile": "本次授课老师：豆豆（Octos Learn 预设老师，设定版本 5）。\n最看重：学生敢于尝试，并且感到数学可以亲近。相处方式：热情的学习搭档。\n学生出错时：先肯定尝试本身，再用同一个比喻指出卡住的地方。遇到质疑时：认真对待质疑，先说清楚哪里成立、哪里需要修正。\n认可学生：具体又轻快，说出这一步具体做对了什么，不夸大成已经掌握。感兴趣的话题：生活中的小场景、游戏和运动（只影响例子，不限制能教的内容）。\n小习惯：一次只用一个主要比喻，玩笑简短，讲完马上回到数学。表达节奏：轻快、短句、有适度的感叹，学生卡住时放慢。\n情境范例（体会这位老师在各情境下的做法，不要照抄句子）：讲斜率——“把这条直线想成一段山路：向右走一步，会往上升多少？”；学生答错——“敢算就很棒！只卡在一个地方：上升的格数要放在上面。我们再爬一次山路。”；学生质疑老师——“好问题，你抓到了比喻的漏洞！要是山路竖直向上，比喻就不灵了：竖直的直线没有斜率。”；学生反复问同一个点——“没关系，再来一次！这次只盯住一件事：向右走一步，往上升了几格。”；学生没有回应——“我等你一下。想好了随时说，想不出来也可以直接说“给个提示”。”；学生要求直接讲——“收到，不绕弯：斜率 = 上升 ÷ 向右 = 3。”；老师在这节课里讲错——“哎呀，我刚才说反了！应该是向右 1 步、上升 3 格，斜率是 3。谢谢你帮我抓到！”。\n如果学生背景中有与其他老师的经历，只能说明是那位老师与学生的经历，不能说成自己的；只对其他老师提出的要求不适用于你，除非学生说明对所有老师生效。\n学生说你以前讲过某句话时，你看不到那次课的内容：不要承认也不要否认说过，也不要为此道谢或道歉，直接核对这个说法本身，对就确认，错就讲清正确结论。只有这节课里你自己讲错的地方才承认并改正。",
+      "learner_background": "以下是学习应用提供的学生背景，截至 2026-10-23T08:00:00.000Z。只使用与本次问题相关的部分。\n【学习地图】（Octos Learn 程序统计，与学生看到的地图一致；已探索=播放过相关讲解，正在练习=做过相关练习，做出来过=不用提示达到过练习要求，只表示做对过，不要说成总能做到；都不等于掌握，不要说成已经学会）\n- 二次函数图像（Quadratic Graphs），数学·代数：已探索；1 天学过\n- 一次函数图像（Linear Function Graphs），数学·代数：正在练习；2 天学过，练习作答 2 次\n- 画一次函数图像（Plotting Linear Graphs），数学·代数：做出来过；1 天学过，练习作答 1 次，其中不用提示达到要求 1 次"
+    }
+  ],
+  "route_check": "Free fixture through isolated Octos main 5d9e70b4 and Learning Coach 0.16.5 (lesson-plan.js 5236dccc...): teacher profile, teacher rule and background rule present; 0 supplier calls."
+}

@@ -60,10 +60,11 @@ it('records the control and execution before one tool-less turn, saves the comme
   expect(await run(f)).toBe(true);
   expect(f.http).toEqual(['/controls', '/claim', `/controls/${id}`, `/jobs/${id}/execution`, `/jobs/${id}/result`, `/controls/${id}`]);
   const methods = f.calls.map(call => call.method);
-  expect(methods).toEqual(['peer/prepare', 'session/open', 'turn/start', 'session/hydrate', 'peer/purge']);
-  expect(methods).not.toContain('peer/tools/register');
+  expect(methods).toEqual(['peer/prepare', 'peer/tools/register', 'session/open', 'turn/start', 'session/hydrate', 'peer/purge']);
+  expect(f.calls[1].params).toMatchObject({ generic_tools: [], tools: [] });
   expect(f.calls[0].params).toMatchObject({ brief: REPORT_COMMENT_INSTRUCTIONS });
-  const text = ((f.calls[2].params.input as { text: string }[])[0]).text;
+  const text = ((f.calls[3].params.input as { text: string }[])[0]).text;
+  expect(f.calls[3].params).toMatchObject({ origin: { kind: 'app' } });
   expect(text).toContain('本次授课老师：豆豆');
   expect(text).toContain('"学习天数":2');
 });

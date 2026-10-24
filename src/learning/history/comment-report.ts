@@ -29,7 +29,7 @@ class CommentHttpError extends Error {
 }
 
 /** One teacher comment on the last finished week, through a single-use Octos
- * peer with no tools, following the topic-analysis lifecycle: the host control
+ * peer with every tool removed, following the topic-analysis lifecycle: the host control
  * is stored before the execution is recorded, the execution is recorded before
  * the turn starts, and a started turn is reconciled but never repeated. The
  * service checks the comment against the report; until it is accepted the
@@ -107,6 +107,9 @@ export async function commentWeeklyReport(identity: HistoryIdentity, base: strin
       const recorded = await request<{ recorded: boolean }>(`/jobs/${task.id}/execution`, { lease_id: task.lease_id, execution: { session_id: control.session, turn_id: control.turn } });
       if (!recorded.recorded || !canContinue()) throw new Error('评语暂停或已达到每日上限');
     }
+    // Registering an empty set removes the peer's kernel tools for this host's
+    // turns (and lets the host label them as the app's); a comment needs none.
+    await rpc('peer/tools/register', { session_id: control.host, peer: control.peer, host_token: control.token, generic_tools: [], max_result_bytes: 4096, tools: [] });
     await rpc('session/open', { session_id: control.session, cwd: workspace });
     if (!task.execution) {
       if (!canContinue()) throw new Error('课堂已开始，评语延后');

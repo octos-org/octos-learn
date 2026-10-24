@@ -1,6 +1,27 @@
 # 个性化老师与学习记忆：接手说明
 
-更新：2026-10-22（接手后第一轮：练习增量独立审查、修复、复核及免费恢复验证完成）。这是当前状态快照；历史细节见 [工作日志](WORK_LOG.md)、[全阶段 TODO](../PERSONALIZED_TEACHERS_TODO.md) 和 [阶段 TODO](TODO.md)。接手后持续维护这四份文件，每次重要推进、发现问题、结束一轮或交接前更新；不要等用户催促才补写。日志区分实现、作者测试、独立审查、真实质量、设备验收、合并、发布。
+## 当前状态（2026-10-24，优先阅读）
+
+- **合并情况**：阶段二到阶段五已经全部合并到 octos-learn main（最新为 #73 `f5b1b86`）。learning-coach main `4685438`（0.16.5）。octos 的参与者与记忆相关改动已合并（#2859、#2860）。合并清单见 [工作日志](WORK_LOG.md) 2026-10-23 各节。
+- **进行中**：阶段六第一项“学习周报”，分支 `codex/phase6-plan`，[PR #74](https://github.com/octos-org/octos-learn/pull/74)，尚未合并。方案、决定和进展见 [阶段六方案](../PERSONALIZED_TEACHERS_PHASE6_PLAN.md) 第 3、7、9 节。验证记录在 `docs/personalized-teachers-phase6/`。
+- **周报的实现**：
+  - 服务端 `weekly-report.mjs`（report-v1），以及 `GET /report`。
+  - 评语：服务端 `report-comments.mjs`（report-comment-v1），客户端 `src/learning/history/comment-report.ts`，在 `use-learning-history.ts` 的维护流程里执行。
+  - 界面：`src/learning/report/`。
+  - 付费验证脚本：`scripts/verify-report-comments-octos.mjs`。
+- **接手后先做**：
+  1. 核对 PR #74 的 CI 和远端 HEAD。
+  2. 等用户审阅两位老师的周报固定台词，并决定评语是否改成“挑一两件值得说的事，不复述全部数字”（改了需要再做一次小额付费验证）。
+  3. 用真实学习记录核对周报（S6-06），这需要正常的本机 Octos 账号。
+  4. 周报验收后，再做主动学习建议（S6-02）和月考试卷（S6-04）。这两项都需要先写方案，由用户确认后再动手。
+- **一直有效的边界**：
+  - 用户要求全部计划完成后再发布：不部署、不装 APK、不开启定时任务或推送。
+  - 新的付费调用必须另获预算。Key 只从 `~/.config/octos-trial/gemini.key` 传给隔离的 Octos 进程，不打印、不复制。每次运行后都要扫描输出里有没有 Key 片段。含配对码的 Octos 日志不保存、不提交。
+  - PR 用英文写。合并只在用户授权后进行。
+
+以下为 2026-10-22 的接手快照，保留供查阅；其中“未实施”的阶段状态已过时，以上文和总 TODO 为准。
+
+更新：2026-10-24（阶段二至五已合并，阶段六周报进行中；下方保留 2026-10-22 快照）。这是当前状态快照；历史细节见 [工作日志](WORK_LOG.md)、[全阶段 TODO](../PERSONALIZED_TEACHERS_TODO.md) 和 [阶段 TODO](TODO.md)。接手后持续维护这四份文件，每次重要推进、发现问题、结束一轮或交接前更新；不要等用户催促才补写。日志区分实现、作者测试、独立审查、真实质量、设备验收、合并、发布。
 
 ## 仓库、提交与审查入口
 

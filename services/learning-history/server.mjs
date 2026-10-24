@@ -11,6 +11,7 @@ import { queryLearningMap } from "./map-progress.mjs";
 import { evaluateAchievements } from "./achievements.mjs";
 import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
 import { ReportCommentStore } from "./report-comments.mjs";
+import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 
 const PREFIX = "/api/learn/history";
 class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
@@ -33,7 +34,7 @@ function integer(search, name, fallback, max = Number.MAX_SAFE_INTEGER) {
   return value;
 }
 
-export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore } = {}) {
+export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", databasePath = join(homedir(), ".octos-learn/learning/history.sqlite"), analysisControlDirectory = join(dirname(databasePath), "analysis-host-controls"), fetchImpl = fetch, store: suppliedStore, mappings = TOPIC_MAPPINGS } = {}) {
   const base = new URL(octosBaseUrl).origin;
   let storage = suppliedStore;
   const store = () => storage ??= new HistoryStore(databasePath);
@@ -69,7 +70,7 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
       if (expectedOwner !== undefined && expectedOwner !== owner) throw new HttpError(409, "Learning record account changed; keep the original local queue");
       const path = url.pathname.slice(PREFIX.length).split("/").filter(Boolean).map(decodeURIComponent);
       if (path[0] === "report-comments") {
-        const comments = new ReportCommentStore(store());
+        const comments = new ReportCommentStore(store(), mappings);
         const post = async (allowed, max = 2048) => {
           if (url.search || request.method !== "POST") throw new HttpError(400, "Invalid report comment request");
           const body = await limitedJson(request, max);
@@ -176,16 +177,16 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         const raw = url.searchParams.get("utc_offset_minutes") ?? "0";
         if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
         const utcOffsetMinutes = Number(raw);
-        send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }) : evaluateAchievements(store(), owner, { utcOffsetMinutes })) });
+        send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }, mappings) : evaluateAchievements(store(), owner, { utcOffsetMinutes }, mappings)) });
       } else if (request.method === "GET" && path.length === 1 && path[0] === "report") {
         if ([...url.searchParams.keys()].some(key => !["week_start", "utc_offset_minutes"].includes(key))
           || url.searchParams.getAll("week_start").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
         const raw = url.searchParams.get("utc_offset_minutes") ?? "0", weekStart = url.searchParams.get("week_start");
         if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
         if (!isWeekStart(weekStart)) throw new HttpError(400, "Week must start on a Monday");
-        const report = queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) });
+        const report = queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) }, mappings);
         const teacherId = store().teacherChoice(owner)?.teacher_id ?? "alan";
-        send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store()).commentFor(owner, report, teacherId), comment_teacher_id: teacherId });
+        send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store(), mappings).commentFor(owner, report, teacherId), comment_teacher_id: teacherId });
       } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
         if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
         else {

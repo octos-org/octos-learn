@@ -4,6 +4,7 @@ import { canonicalHistoryJson, HistoryValidationError } from "./event-contract.m
 import { analysisHash } from "./topic-analysis.mjs";
 import { localDay } from "./map-progress.mjs";
 import { queryWeeklyReport, REPORT_RULES_VERSION, weekStartOf } from "./weekly-report.mjs";
+import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 export { REPORT_COMMENT_INSTRUCTIONS, buildReportCommentPrompt } from "./report-comment-instructions.mjs";
 
 // A teacher comment on a finished week, written by the model through a
@@ -68,7 +69,8 @@ function weekRunIds(store, owner, report) {
 }
 
 export class ReportCommentStore {
-  constructor(history) { this.history = history; this.db = history.db; createReportCommentSchema(this.db); }
+  // Mappings are a parameter only so trials and tests can use reviewed test content.
+  constructor(history, mappings = TOPIC_MAPPINGS) { this.history = history; this.db = history.db; this.mappings = mappings; createReportCommentSchema(this.db); }
   // Comments are on by default (user decision, 2026-10-23); a learner can turn them off.
   settings(owner) { const row = this.db.prepare("SELECT enabled FROM report_comment_settings WHERE owner=?").get(owner); return { enabled: row ? Boolean(row.enabled) : true }; }
   configure(owner, value) {
@@ -100,7 +102,7 @@ export class ReportCommentStore {
         // Same default as the app when the account never chose a teacher.
         const teacherId = this.history.teacherChoice(owner)?.teacher_id ?? "alan";
         const lastWeek = new Date(Date.parse(`${weekStartOf(localDay(new Date(now).toISOString(), utcOffsetMinutes))}T00:00:00.000Z`) - 7 * 86_400_000).toISOString().slice(0, 10);
-        const report = queryWeeklyReport(this.history, owner, { weekStart: lastWeek, utcOffsetMinutes });
+        const report = queryWeeklyReport(this.history, owner, { weekStart: lastWeek, utcOffsetMinutes }, this.mappings);
         if (!TEACHER_NAMES[teacherId] || !report.activity.runs || this.quotaUsed(owner) >= REPORT_COMMENT_DAILY_LIMIT) {
           this.db.exec("COMMIT"); return { tasks: [], ...(this.quotaUsed(owner) >= REPORT_COMMENT_DAILY_LIMIT ? { reason: "daily-task-limit" } : {}) };
         }
