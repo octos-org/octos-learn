@@ -131,3 +131,16 @@ it('checks achievements again once analysis puts played lessons on topics', asyn
     expect(announced).toEqual([{ owner: 'alice', uploaded: 0, analyzed: 1 }]);
   } finally { window.removeEventListener('octos:history-uploaded', listener); vi.doUnmock('./analyze-topics'); vi.doUnmock('./comment-report'); }
 });
+
+it('uploads within a second while playback keeps saving, instead of postponing on every save', async () => {
+  const { LearningHistoryCoordinator } = await import('./use-learning-history');
+  const coordinator = new LearningHistoryCoordinator(localStorage.getItem(TOKEN_KEY)!);
+  const synchronize = vi.spyOn(coordinator, 'synchronize').mockResolvedValue();
+  vi.useFakeTimers();
+  // A phase animation saves every 200 ms; each committed save schedules a sync.
+  for (let elapsed = 0; elapsed < 3000; elapsed += 200) {
+    (coordinator as unknown as { schedule(): void }).schedule();
+    vi.advanceTimersByTime(200);
+  }
+  expect(synchronize.mock.calls.length).toBeGreaterThanOrEqual(2);
+});

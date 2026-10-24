@@ -24,6 +24,7 @@ export class LearningHistoryCoordinator {
   private listeners = new Set<() => void>();
   private status = EMPTY;
   private timer?: ReturnType<typeof setTimeout>;
+  private timerDue = 0;
   private active?: Promise<void>;
   private retryDelay = 30000;
   private busy = new Set<string>();
@@ -58,7 +59,12 @@ export class LearningHistoryCoordinator {
     if (wasBusy && !busy) this.schedule();
   }
   private schedule() {
+    // A sync already due within a second stays due: playback can save every
+    // 200 ms, and pushing the timer back on each save would starve the upload.
+    const due = Date.now() + 1000;
+    if (this.timer && this.timerDue <= due) return;
     if (this.timer) clearTimeout(this.timer);
+    this.timerDue = due;
     this.timer = setTimeout(() => { this.timer = undefined; void this.synchronize(); }, 1000);
   }
   synchronize = (): Promise<void> => {
@@ -132,6 +138,7 @@ export class LearningHistoryCoordinator {
       if (unfinished && this.current() && !this.timer) {
         const delay = this.retryDelay;
         this.retryDelay = Math.min(delay * 2, 300000);
+        this.timerDue = Date.now() + delay;
         this.timer = setTimeout(() => { this.timer = undefined; void this.synchronize(); }, delay);
       } else if (!unfinished) this.retryDelay = 30000;
     }
