@@ -64,6 +64,7 @@
 - [老师与记忆最小切片：实施进展](personalized-teachers-slice/PROGRESS.md)：两位预设老师、老师设定与学生背景进入课程生成、兼容旧技能安装、验证与已知限制。
 
 - [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
+- [星图学院：世界观设定（草案）](GAMIFICATION_WORLD_DRAFT.md)：2026-10-24 用户把重点转向游戏化（老师角色、知识点星图、成就）并选定魔法学院世界观；草案给出世界、导师身份、学习动作与星图变化的对应、成就扩充方向和 AI 美术做法，等用户挑选。
 
 - [个性化老师接手说明](personalized-teachers-phase2/HANDOFF.md)：当前提交、已验证与未验证范围、授权边界和接手顺序；与[持续工作日志](personalized-teachers-phase2/WORK_LOG.md)、[交接证据](personalized-teachers-phase2/HANDOFF_EVIDENCE.json)一起持续维护。
 
