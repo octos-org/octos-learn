@@ -36,3 +36,21 @@ it('freezes task sources from the binding of the render that rebuilt the Runtime
   expect(hints).toHaveLength(1);
   expect(hints[0].event.data).toMatchObject({ source_task_id: 'reach-sine-maximum', delivery_sha256: await historySha256('revised') });
 });
+
+it('records task progress from the committed Runtime under StrictMode', async () => {
+  const { StrictMode, createElement } = await import('react');
+  const { DeviceHistoryQueue } = await import('./device-queue');
+  const { LearningHistoryRecorder } = await import('./recorder');
+  const { useOllLessonRuntime } = await import('../oll/use-oll-lesson-runtime');
+  const queue = new DeviceHistoryQueue();
+  const recorder = new LearningHistoryRecorder('session-one', Promise.resolve({ owner: 'alice', token: 'credential' }), queue);
+  const context = { runKey: 'question:q', questionId: 'q', course: { kind: 'generated' as const, id: 'q', version: 'q' } };
+  const history = { recorder, forStep: () => context, forTask: () => ({ ...context, sourceTaskId: 'reach-sine-maximum' }) };
+  // StrictMode builds the Runtime twice and commits only one of them.
+  const { result } = renderHook(() => useOllLessonRuntime({ source, storageKey: 'task-strict', history, startAtEnd: true }),
+    { wrapper: ({ children }) => createElement(StrictMode, null, children) });
+  await waitFor(() => expect(result.current).not.toBeNull());
+  act(() => { result.current!.requestStudentTaskHint(result.current!.studentTasks[0].task_id); });
+  await recorder.flush();
+  expect((await queue.list('alice')).filter(row => row.event.kind === 'task_hint')).toHaveLength(1);
+});
