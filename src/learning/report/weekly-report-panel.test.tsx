@@ -18,7 +18,8 @@ const REPORT: WeeklyReport = { rules_version: 'report-v1', through: 9, week_star
     { topic_id: 'mt_x', subject: 'Science', domain: 'Energy', name: 'Energy transfer', state_before: null, state_after: 'explored',
       change: { evidence_event_id: 'b1', occurred_at: '2026-10-20T02:00:00.000Z', kind: 'beat_completed' }, played_beats: 1, task_attempts: 0 },
   ],
-  achievements: [{ achievement_id: 'did-it-alone', scope: '', topic_name: null, teacher_id: 'alan', earned_at: '2026-10-22T02:00:00.000Z' }] };
+  achievements: [{ achievement_id: 'did-it-alone', scope: '', topic_name: null, teacher_id: 'alan', earned_at: '2026-10-22T02:00:00.000Z' }],
+  comment: null, comment_teacher_id: 'doudou' };
 const today = () => new Date(2026, 9, 23, 12);
 
 beforeEach(() => { localStorage.clear(); api.weeklyReport.mockReset(); });
@@ -55,4 +56,16 @@ it('says nothing negative about a week without learning, and pages back only to 
   expect(await screen.findByText(PLAIN_REPORT.quiet)).toBeTruthy();
   expect(screen.getByRole('button', { name: '‹ 上一周' })).toHaveProperty('disabled', true);
   expect(TEACHERS.every(teacher => !/没有学|偷懒|落后/.test(teacher.report.quiet))).toBe(true);
+});
+
+it('shows a checked comment only for the teacher it was written as', async () => {
+  localStorage.setItem('octos-learn-teacher', 'doudou');
+  api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周来了 2 天，地图亮起来啦！' });
+  render(<WeeklyReportPanel today={today} />);
+  expect(await screen.findByText('豆豆：这周来了 2 天，地图亮起来啦！')).toBeTruthy();
+  expect(screen.getByText(/由模型根据本周记录生成/)).toBeTruthy();
+  cleanup();
+  localStorage.setItem('octos-learn-teacher', 'alan');
+  render(<WeeklyReportPanel today={today} />);
+  expect(await screen.findByText(`阿澜：${TEACHERS[0].report.active}`)).toBeTruthy();
 });

@@ -8,6 +8,7 @@ import { LearningHistoryRecorder } from './recorder';
 import { HistorySynchronizer, resolveHistoryIdentity, type HistoryIdentity } from './synchronize';
 import { deliverHistoryMessages } from './deliver-messages';
 import { analyzeTopics } from './analyze-topics';
+import { commentWeeklyReport } from './comment-report';
 
 export interface LearningHistoryStatus { saving: number; pending: number; syncing: boolean; error: string; conversationPending: number; checked: boolean; cleanupPending: number; analysisPending: number; analysisError: string }
 const EMPTY: LearningHistoryStatus = { saving: 0, pending: 0, syncing: false, error: '', conversationPending: 0, checked: false, cleanupPending: 0, analysisPending: 0, analysisError: '' };
@@ -109,6 +110,12 @@ export class LearningHistoryCoordinator {
         } catch {
           this.update({ analysisPending: 1, analysisError: '知识点分析尚未完成，原始学习记录已保留。' });
         }
+      }
+      if (this.canMaintain()) {
+        // At most one comment per finished week. A failure keeps the fixed
+        // lines and is not retried on a timer; a started turn is reconciled
+        // on the next ordinary synchronization.
+        await commentWeeklyReport(identity, API_BASE, { isCurrent: this.current, canContinue: this.canMaintain }).catch(() => undefined);
       }
     } catch {
       this.update({ error: '学习记录尚未全部同步，已保存的本机副本会保留，请稍后重试。' });

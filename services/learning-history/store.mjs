@@ -5,6 +5,7 @@ import { dirname } from "node:path";
 import { canonicalHistoryJson, historyCourseKey, validateHistoryEvent, HISTORY_BATCH_LIMIT, HistoryValidationError } from "./event-contract.mjs";
 import { validateCourseMaterial } from "./course-material.mjs";
 import { createAnalysisSchema, enqueueAnalysis, deleteAnalysisRun } from "./topic-analysis-store.mjs";
+import { createReportCommentSchema, deleteReportComments } from "./report-comments.mjs";
 
 export class HistorySnapshotChanged extends Error {}
 export class HistoryStore {
@@ -89,6 +90,7 @@ export class HistoryStore {
       );
     `);
     createAnalysisSchema(this.db);
+    createReportCommentSchema(this.db);
     this.db.exec("UPDATE history_schema SET version=5; COMMIT;");
     } catch (error) { this.db.close(); throw error; }
   }
@@ -319,6 +321,7 @@ export class HistoryStore {
           this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, run);
           this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, run);
           deleteAnalysisRun(this.db, owner, run);
+          deleteReportComments(this.db, owner, run);
         }
         this.db.prepare("DELETE FROM events WHERE owner=? AND session_id=?").run(owner, sessionId);
       } else if (deleteOctos && prior.state === "not_requested") {
@@ -362,6 +365,7 @@ export class HistoryStore {
         this.db.prepare("UPDATE delivery_tasks SET state='cancelled',payload=NULL,lease_id=NULL,lease_until=NULL WHERE owner=? AND run_id=?").run(owner, runId);
         this.db.prepare("DELETE FROM course_materials WHERE owner=? AND run_id=?").run(owner, runId);
         deleteAnalysisRun(this.db, owner, runId);
+        deleteReportComments(this.db, owner, runId);
       }
       this.db.exec("COMMIT");
       return { run_id: runId, seq: prior.seq, status: "deleted" };

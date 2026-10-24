@@ -47,6 +47,8 @@ export interface WeeklyReport {
   activity: { days: string[]; runs: number; played_beats: number; task_attempts: number; unassisted_successes: number; questions: number };
   topics: WeeklyReportTopic[];
   achievements: Pick<EarnedAchievement, 'achievement_id' | 'scope' | 'topic_name' | 'teacher_id' | 'earned_at'>[];
+  /** A checked model comment for these exact facts by comment_teacher_id, if any. */
+  comment: string | null; comment_teacher_id: string;
 }
 /** Minutes east of UTC, so "different days" follow the learner's calendar. */
 export const localUtcOffsetMinutes = () => -new Date().getTimezoneOffset();
@@ -92,6 +94,8 @@ export class HistoryApi {
   }
   learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  reportComments() { return this.request<{ enabled: boolean }>('/report-comments'); }
+  setReportComments(enabled: boolean) { return this.request<{ enabled: boolean }>('/report-comments/settings', 'POST', { enabled }); }
   weeklyReport(weekStart: string) {
     return this.request<WeeklyReport>(`/report?${new URLSearchParams({ week_start: weekStart, utc_offset_minutes: String(localUtcOffsetMinutes()) })}`);
   }

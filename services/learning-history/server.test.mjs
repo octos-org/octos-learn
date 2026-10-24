@@ -208,3 +208,17 @@ test("weekly report is per account and accepts only a Monday and a valid offset"
   assert.equal((await call("/report?week_start=2026-10-12&utc_offset_minutes=900")).status, 400);
   assert.equal((await call("/report?week_start=2026-10-12&owner=bob")).status, 400);
 });
+
+test("report comments are on by default, can be turned off, and validate their requests", async () => {
+  assert.deepEqual(await (await call("/report-comments")).json(), { profile_id: "alice", enabled: true });
+  const report = await (await call("/report?week_start=2026-10-12")).json();
+  assert.deepEqual([report.comment, report.comment_teacher_id], [null, "alan"]);
+  assert.equal((await call("/report-comments/claim", "POST", { utc_offset_minutes: 900 })).status, 400);
+  assert.equal((await call("/report-comments/claim", "POST", { utc_offset_minutes: 480, owner: "bob" })).status, 400);
+  assert.deepEqual((await (await call("/report-comments/claim", "POST", { utc_offset_minutes: 480 })).json()).tasks, []);
+  assert.deepEqual((await (await call("/report-comments/controls")).json()).controls, []);
+  assert.equal((await call(`/report-comments/jobs/${"a".repeat(64)}`)).status, 404);
+  assert.equal((await (await call("/report-comments/settings", "POST", { enabled: false })).json()).enabled, false);
+  assert.equal((await (await call("/report-comments", "GET", undefined, { authorization: "Bearer bob" })).json()).enabled, true);
+  assert.equal((await call("/report-comments/settings", "POST", { enabled: "no" })).status, 400);
+});

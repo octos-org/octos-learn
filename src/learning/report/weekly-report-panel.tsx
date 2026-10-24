@@ -13,6 +13,8 @@ const shortDay = (iso: string) => new Date(iso).toLocaleDateString("zh-CN", { mo
 function ReportBody({ report }: { report: WeeklyReport }) {
   const teacher = readAwardTone() === "playful" ? getTeacher(resolveSelectedTeacherId()) : null;
   const lines = teacher?.report ?? PLAIN_REPORT;
+  // A model comment shows only for the teacher it was written as, on these exact facts.
+  const comment = teacher && report.comment && report.comment_teacher_id === teacher.id ? report.comment : null;
   const { activity } = report;
   const lit = report.topics.filter(topic => !topic.state_before);
   const raised = report.topics.filter(topic => topic.state_before && topic.change);
@@ -21,7 +23,8 @@ function ReportBody({ report }: { report: WeeklyReport }) {
     return <p className="weekly-report-opening">{teacher ? `${teacher.name}：` : ""}{lines.quiet}</p>;
   }
   return <>
-    <p className="weekly-report-opening">{teacher ? `${teacher.name}：` : ""}{lines.active}</p>
+    <p className="weekly-report-opening">{teacher ? `${teacher.name}：` : ""}{comment ?? lines.active}</p>
+    {comment && <p className="weekly-report-meaning">老师评语由模型根据本周记录生成，可在设置中关闭。</p>}
     <p className="weekly-report-activity">学了 {activity.days.length} 天 · {activity.runs} 节课 · 播放 {activity.played_beats} 段 · 练习 {activity.task_attempts} 次 · 提问 {activity.questions} 个</p>
     {lit.length > 0 && <section aria-label="新点亮"><h4>新点亮</h4><ul>
       {lit.map(topic => <li key={topic.topic_id}><small>{place(topic)}</small> <strong>{topicLabel(topic.topic_id, topic.name)}</strong> <span>{STATE_LABEL[topic.state_after]}</span></li>)}

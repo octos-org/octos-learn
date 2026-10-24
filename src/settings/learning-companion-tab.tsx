@@ -1,5 +1,8 @@
 import { Check, GraduationCap } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+import { getToken } from "@/api/client";
+import { openHistoryApi } from "@/learning/history/history-api";
 
 import { OctosSkinArt } from "@/components/octos-skin-art";
 import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
@@ -109,11 +112,30 @@ export function TeacherSkinPicker({
 
 function WeeklyReportToggle() {
   const [shown, setShown] = useState(weeklyReportShown);
+  // Account setting in the learning-history service; null until it is read.
+  const [comments, setComments] = useState<boolean | null>(null);
+  useEffect(() => {
+    let active = true;
+    const token = getToken();
+    if (token) void openHistoryApi(token).then((api) => api.reportComments()).then((value) => { if (active) setComments(value.enabled); }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+  const changeComments = (enabled: boolean) => {
+    const token = getToken();
+    if (!token) return;
+    void openHistoryApi(token).then((api) => api.setReportComments(enabled)).then((value) => setComments(value.enabled)).catch(() => undefined);
+  };
   return (
-    <label className="mt-5 flex items-center gap-2 text-sm text-text-strong">
-      <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />
-      在“学习记录”中显示学习周报
-    </label>
+    <div className="mt-5 space-y-2 text-sm text-text-strong">
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />
+        在“学习记录”中显示学习周报
+      </label>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" disabled={comments === null} checked={comments ?? false} onChange={(event) => changeComments(event.target.checked)} />
+        周报里由老师写一句评语（每周最多一次模型请求，只根据周报中的记录）
+      </label>
+    </div>
   );
 }
 

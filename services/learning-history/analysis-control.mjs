@@ -12,13 +12,22 @@ export function validAnalysisControl(c) {
     && typeof c.turn === "string" && /^[a-f0-9-]{36}$/.test(c.turn);
 }
 
+/** The same capability shape for a single-use weekly-report comment peer. */
+export function validReportControl(c) {
+  return c && typeof c === "object" && !Array.isArray(c) && Object.keys(c).length === 6
+    && /^learn-report-[a-f0-9]{32}$/.test(c.host) && /^[a-z0-9-]{1,64}$/.test(c.peer)
+    && c.session === `${c.host}#peer-${c.peer}` && typeof c.token === "string" && c.token.length > 0 && c.token.length <= 2048
+    && typeof c.namespace === "string" && /^app\/learning-reports\/[a-z0-9-]{1,64}$/.test(c.namespace)
+    && typeof c.turn === "string" && /^[a-f0-9-]{36}$/.test(c.turn);
+}
+
 // This is the app host's Octos control capability, not a supplier API key or
 // learning memory. Keep it in host-private files scoped to the authenticated
 // Octos profile, outside agent workspaces and the facts database, so another owned device can
 // reconcile or purge a job after the first device disappears. No environment
 // values or LLM/speech keys are read or returned by this adapter.
 export class AnalysisControlStore {
-  constructor(directory) { this.root = resolve(directory); }
+  constructor(directory, valid = validAnalysisControl) { this.root = resolve(directory); this.valid = valid; }
   async directory(owner, create = false) {
     if (!/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(owner)) throw new HistoryValidationError("Invalid control owner");
     const directory = join(this.root, owner);
@@ -41,7 +50,7 @@ export class AnalysisControlStore {
       const stat = await file.stat();
       if (!stat.isFile() || stat.size > 8192 || (stat.mode & 0o077)) throw new Error("Unsafe analysis control file");
       const control = JSON.parse(await file.readFile("utf8"));
-      if (!validAnalysisControl(control)) throw new Error("Invalid stored analysis control");
+      if (!this.valid(control)) throw new Error("Invalid stored analysis control");
       return control;
     } finally { await file.close(); }
   }
@@ -58,7 +67,7 @@ export class AnalysisControlStore {
     return result;
   }
   async put(owner, id, control) {
-    if (!/^[a-f0-9]{64}$/.test(id) || !validAnalysisControl(control)) throw new HistoryValidationError("Invalid analysis control");
+    if (!/^[a-f0-9]{64}$/.test(id) || !this.valid(control)) throw new HistoryValidationError("Invalid analysis control");
     const directory = await this.directory(owner, true), content = canonicalHistoryJson(control);
     const temporary = join(directory, `.${id}-${randomUUID()}.tmp`);
     const file = await open(temporary, constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY, 0o600);
