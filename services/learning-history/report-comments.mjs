@@ -13,7 +13,7 @@ export { REPORT_COMMENT_INSTRUCTIONS, buildReportCommentPrompt } from "./report-
 // failed or rejected comment leaves the teacher's fixed lines. One comment per
 // account, week, teacher and report content; a started model request is never
 // repeated automatically.
-export const REPORT_COMMENT_VERSION = "report-comment-v1";
+export const REPORT_COMMENT_VERSION = "report-comment-v2";
 export const REPORT_COMMENT_DAILY_LIMIT = 3;
 const TEACHER_NAMES = { alan: "阿澜", doudou: "豆豆" };
 const STATE_NAMES = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };

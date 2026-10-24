@@ -1,0 +1,124 @@
+{
+  "plan": "REPORT_COMMENT_V2_PLAN.json",
+  "plan_sha256": "0c4141f8d1074dc8fbd580881859a5041a3d82f5989af2b5a2611b184e5f79be",
+  "checked_at": "2026-10-24T04:30:13.866Z",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "3d064152a8e738bd639b905f29a6fab8d53bb382baecc79cb896e4974718cab7",
+  "passed": true,
+  "gateway": {
+    "admitted": 6,
+    "refused": 0,
+    "failed": 0
+  },
+  "admitted_requests": 6,
+  "reserved_usd": 0.72,
+  "estimated_usd": 0.1035,
+  "calls": [
+    {
+      "sample": "breakthrough-alan",
+      "status": 200,
+      "request_bytes": 33804,
+      "input_tokens": 8012,
+      "output_tokens": 124,
+      "thinking_tokens": 4032,
+      "estimated_usd": 0.02159
+    },
+    {
+      "sample": "light-alan",
+      "status": 200,
+      "request_bytes": 33790,
+      "input_tokens": 8007,
+      "output_tokens": 114,
+      "thinking_tokens": 1729,
+      "estimated_usd": 0.01292
+    },
+    {
+      "sample": "busy-alan",
+      "status": 200,
+      "request_bytes": 33882,
+      "input_tokens": 8020,
+      "output_tokens": 112,
+      "thinking_tokens": 2925,
+      "estimated_usd": 0.0174
+    },
+    {
+      "sample": "breakthrough-doudou",
+      "status": 200,
+      "request_bytes": 33823,
+      "input_tokens": 8029,
+      "output_tokens": 123,
+      "thinking_tokens": 3233,
+      "estimated_usd": 0.01861
+    },
+    {
+      "sample": "light-doudou",
+      "status": 200,
+      "request_bytes": 33809,
+      "input_tokens": 8025,
+      "output_tokens": 130,
+      "thinking_tokens": 2650,
+      "estimated_usd": 0.01644
+    },
+    {
+      "sample": "busy-doudou",
+      "status": 200,
+      "request_bytes": 33901,
+      "input_tokens": 8042,
+      "output_tokens": 114,
+      "thinking_tokens": 2693,
+      "estimated_usd": 0.01656
+    }
+  ],
+  "results": [
+    {
+      "id": "breakthrough-alan",
+      "teacher": "alan",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你在‘一次函数图像’的练习中不用提示达到了要求，状态更新成了‘做出来过’，也获得了‘亲手搞定’成就。课上你的那次提问，是个值得收藏的问题。"
+    },
+    {
+      "id": "light-alan",
+      "teacher": "alan",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你的‘画一次函数图像’变为‘已探索’，并获得了‘初来乍到’。你在课上提了 1 个问题，这是个值得收藏的问题。"
+    },
+    {
+      "id": "busy-alan",
+      "teacher": "alan",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周你的“一次函数图像”与“画一次函数图像”进入了练习阶段，还获得了“初来乍到”成就。你提出的那个问题，是个很值得收藏的问题。"
+    },
+    {
+      "id": "breakthrough-doudou",
+      "teacher": "doudou",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "这周在“一次函数图像”里，你不用提示做出来过，拿到了“亲手搞定”成就！看到你还提了 1 个问题，直接把疑问抛出来讨论，这个动作特别利落！"
+    },
+    {
+      "id": "light-doudou",
+      "teacher": "doudou",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "太棒了，你不仅收获了“初来乍到”成就，还把“画一次函数图像”变成了“已探索”！而且你还主动提了问，敢于尝试的劲头特别好，很开心能和你成为学习搭档！"
+    },
+    {
+      "id": "busy-doudou",
+      "teacher": "doudou",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "state": "complete",
+      "rejected_reason": null,
+      "comment": "拿到“初来乍到”成就啦，这周你还提了问题！看到“一次函数图像”和“画一次函数图像”都变成了正在练习，敢于动手尝试就很棒！"
+    }
+  ],
+  "key_scan": "14 output files, 0 key fragments",
+  "octos_log": "not saved"
+}
