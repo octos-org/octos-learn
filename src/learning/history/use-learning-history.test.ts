@@ -35,7 +35,12 @@ it('keeps durable local facts during active teaching, then uploads them once aft
   coordinator.setClassroomBusy('board', true);
   const recorder = coordinator.recorder('board');
   recorder.record({ kind: 'question_submitted', runKey: 'q1', questionId: 'q1', data: { text: '解释斜率', modality: 'text' } });
+  const syncingSeen: boolean[] = [];
+  const stop = coordinator.subscribe(() => syncingSeen.push(coordinator.getSnapshot().syncing));
   await recorder.flush(); await coordinator.synchronize();
+  stop();
+  // During class the status stays "saved locally"; it never flashes "syncing".
+  expect(syncingSeen).not.toContain(true);
   expect(calls.filter(path => path.includes('/history/'))).toHaveLength(0);
   expect(coordinator.getSnapshot().pending).toBeGreaterThan(0);
   coordinator.setClassroomBusy('board', false);

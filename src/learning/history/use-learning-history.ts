@@ -68,12 +68,13 @@ export class LearningHistoryCoordinator {
     return this.active;
   };
   private async run() {
-    this.update({ syncing: true, error: '' });
     try {
       await Promise.all([...this.recorders.values()].map(recorder => recorder.flush()));
       // Keep shared-process database work and message maintenance out of
-      // active generation/narration. Local durable capture continues normally.
+      // active generation/narration. Local durable capture continues normally,
+      // and the status stays "saved locally" instead of flashing a sync per beat.
       if (this.busy.size || !this.current()) return;
+      this.update({ syncing: true, error: '' });
       const identity = await this.getIdentity();
       if (!this.current() || this.busy.size) return;
       const before = (await this.queue.list(identity.owner)).length;
