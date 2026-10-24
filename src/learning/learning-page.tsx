@@ -70,6 +70,7 @@ import {
   type LearningSessionRecord,
 } from "./learning-session-store";
 import { LearningHistory, learningSessionHref } from "./learning-history";
+import { newBoardHref } from "./new-board-href";
 import { discoverServerLearningSessions } from "./learning-session-sync";
 import { consumeWakeAudio } from "./wake-audio-handoff";
 import {
@@ -282,6 +283,11 @@ export function LearningPage() {
   const newBoardRequested = useMemo(() => new URLSearchParams(
     window.location.search,
   ).get("new-board") === "1", []);
+  // A suggested question for a new board only fills the input box.
+  const newBoardDraft = useMemo(() => {
+    const draft = newBoardRequested ? new URLSearchParams(window.location.search).get("draft")?.trim() : undefined;
+    return draft && draft.length <= 200 ? draft : undefined;
+  }, [newBoardRequested]);
   const coursePackId = useMemo(
     () => parseCoursePackId(requestedCoursePack),
     [requestedCoursePack],
@@ -372,6 +378,7 @@ export function LearningPage() {
     // mount lets refresh resume this board instead of creating another one.
     const url = new URL(window.location.href);
     url.searchParams.delete("new-board");
+    url.searchParams.delete("draft");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, [newBoardRequested]);
   const [record, setRecord] = useState<LearningSessionRecord>(
@@ -723,7 +730,7 @@ export function LearningPage() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
       {historyOpen && <LearningHistory currentId={record.id} onClose={() => setHistoryOpen(false)}
-        onNew={() => void leaveTo("/board?new-board=1")}
+        onNew={draft => void leaveTo(newBoardHref(draft))}
         onSelect={session => {
           if (session.id === record.id) { setHistoryOpen(false); return; }
           void leaveTo(learningSessionHref(session));
@@ -766,6 +773,7 @@ export function LearningPage() {
             <LearningWorkspace
               key={`${record.id}:${coursePackLoad.source?.pack.archiveSha256 ?? "live"}`}
               sessionId={record.id}
+              initialDraft={newBoardDraft}
               playbackMode={
                 reviewSessionId === record.id ? "review" : "live"
               }

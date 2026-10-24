@@ -18,7 +18,7 @@ export function learningSessionHref(session: LearningSessionRecord): string {
 
 export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
   currentId?: string; onClose: () => void;
-  onSelect: (session: LearningSessionRecord) => void; onNew: () => void;
+  onSelect: (session: LearningSessionRecord) => void; onNew: (draft?: string) => void;
 }) {
   const [sessions, setSessions] = useState(() => listLearningSessions().filter(s => s.source?.mode !== "preview"));
   const [query, setQuery] = useState("");
@@ -56,8 +56,8 @@ export function LearningHistory({ currentId, onClose, onSelect, onNew }: {
         <button role="tab" aria-selected={tab === "map"} onClick={() => setTab("map")}>学习地图</button>
         {reportShown && <button role="tab" aria-selected={tab === "report"} onClick={() => setTab("report")}>周报</button>}
       </div>
-      {tab === "report" ? <WeeklyReportPanel /> : tab === "map" ? <LearningMapPanel /> : tab === "facts" ? <AccountHistoryPanel onSelect={onSelect} /> : <>
-      <button className="learning-history-new" onClick={onNew}><Plus size={18} /> 新建白板</button>
+      {tab === "report" ? <WeeklyReportPanel onSelect={onSelect} onNew={onNew} /> : tab === "map" ? <LearningMapPanel onSelect={onSelect} onNew={onNew} /> : tab === "facts" ? <AccountHistoryPanel onSelect={onSelect} /> : <>
+      <button className="learning-history-new" onClick={() => onNew()}><Plus size={18} /> 新建白板</button>
       <label className="learning-history-search"><Search size={17} /><input aria-label="搜索学习记录" placeholder="搜索学习记录" value={query} onChange={e => setQuery(e.target.value)} /></label>
       {syncing && <p role="status">正在同步历史记录…</p>}
       {error && <p role="status">暂时无法同步，仍可打开本机保存的记录。</p>}

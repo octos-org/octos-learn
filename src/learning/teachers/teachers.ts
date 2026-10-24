@@ -32,6 +32,8 @@ export interface TeacherDefinition {
   awards: TeacherAwards;
   /** Fixed weekly-report lines, used when no teacher comment is available. */
   report: TeacherReportLines;
+  /** Next-step suggestion lines; {topic}, {target} and {days} are filled in. */
+  suggestions: TeacherSuggestionLines;
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
@@ -62,6 +64,11 @@ export interface TeacherReactions {
 export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest" | "reunion";
 export type TeacherAwards = Readonly<Record<AchievementId, string>>;
 
+/** Suggestions decided by suggestions-v1. A missing record is "not visited
+ * together yet", never inability; time away is never forgetting. */
+export type SuggestionType = "continue" | "foundation" | "next" | "revisit";
+export type TeacherSuggestionLines = Readonly<Record<SuggestionType, string>>;
+
 /** A weekly report states only what was recorded; none of these lines may
  * claim mastery or improvement, or comment on a week without learning. */
 export interface TeacherReportLines {
@@ -73,7 +80,7 @@ export interface TeacherReportLines {
   closing: string;
 }
 
-export const TEACHER_CATALOG_VERSION = 5;
+export const TEACHER_CATALOG_VERSION = 6;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -120,6 +127,12 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "这一周的足迹整理好了，我们一起看看。",
       quiet: "这周地图上没有新的足迹。想学的时候，我在这里。",
       closing: "这些记录说明你学过、练过什么。下一步学什么，由你决定。",
+    },
+    suggestions: {
+      continue: "{topic}的练习还在那儿等着，想再试一次吗？",
+      foundation: "{topic}会用到{target}，我们还没一起看过它。要不要先看看？",
+      next: "{topic}做出来过了。以它为基础的{target}，要不要看一看？",
+      revisit: "隔了 {days} 天，要不要回到{topic}看看？",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
@@ -171,6 +184,12 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "这周的地图又亮了几处，来看看！",
       quiet: "这周地图在休息，等你来点灯～",
       closing: "记录都在这儿啦，下次想从哪儿开始？",
+    },
+    suggestions: {
+      continue: "{topic}还差一点点，要不要再来一局？",
+      foundation: "{topic}背后藏着{target}，我们还没去过那儿，要不要顺路逛逛？",
+      next: "{topic}那关你自己过了！下一站{target}，去不去？",
+      revisit: "{topic}好久不见啦，回去打个招呼？",
     },
     voices: {
       "seed-tts-2.0": { id: "zh_female_xiaohe_uranus_bigtts", name: "小何 2.0" },
@@ -273,4 +292,11 @@ export const PLAIN_REPORT: TeacherReportLines = {
   active: "这是本周的学习记录。",
   quiet: "本周没有学习记录。",
   closing: "这些记录说明学过、练过什么，都不等于已经掌握。",
+};
+
+export const PLAIN_SUGGESTIONS: TeacherSuggestionLines = {
+  continue: "可以再练一次{topic}。",
+  foundation: "{topic}会用到{target}，可以先看看{target}。",
+  next: "{topic}做出来过一次，可以接着看{target}。",
+  revisit: "隔了 {days} 天，可以回顾{topic}。",
 };

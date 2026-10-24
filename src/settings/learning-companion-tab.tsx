@@ -7,6 +7,7 @@ import { openHistoryApi } from "@/learning/history/history-api";
 import { OctosSkinArt } from "@/components/octos-skin-art";
 import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
 import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
+import { nextStepsShown, showNextSteps } from "@/learning/map/next-step-line";
 import { TEACHERS, useSelectedTeacher } from "@/learning/teachers/teachers";
 
 export function TeacherPicker() {
@@ -112,6 +113,7 @@ export function TeacherSkinPicker({
 
 function WeeklyReportToggle() {
   const [shown, setShown] = useState(weeklyReportShown);
+  const [steps, setSteps] = useState(nextStepsShown);
   // Account setting in the learning-history service; null until it is read.
   const [comments, setComments] = useState<boolean | null>(null);
   useEffect(() => {
@@ -134,6 +136,10 @@ function WeeklyReportToggle() {
       <label className="flex items-center gap-2">
         <input type="checkbox" disabled={comments === null} checked={comments ?? false} onChange={(event) => changeComments(event.target.checked)} />
         周报里由老师写一句评语（每周最多一次模型请求，只根据周报中的记录）
+      </label>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={steps} onChange={(event) => { showNextSteps(event.target.checked); setSteps(event.target.checked); }} />
+        在学习地图和周报里显示“下一步可以做什么”（按学习记录和知识点前置关系，不调用模型）
       </label>
     </div>
   );

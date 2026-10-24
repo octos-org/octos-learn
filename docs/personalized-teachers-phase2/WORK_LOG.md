@@ -98,3 +98,11 @@
 - 14 个输出文件扫描，Key 片段 0。
 - 测试：服务 73 通过；评语客户端 4 通过。
 - PR #74 未合并，没有发布。
+
+## 2026-10-24：PR #74 合并；阶段六第二项——主动学习建议
+
+- 用户：“授权合并，然后按照你的建议继续做”。PR #74 等最新提交的 CI 两项通过后合并，merge `cec4a34`。
+- 分支 `codex/phase6-suggestions`：建议 suggestions-v1（服务端 `suggestions.mjs`，`GET /suggestions`、`POST /suggestions/dismiss`）。目录结构新增 `dependentsOf`。客户端新增建议卡片 `src/learning/map/next-steps.tsx` 和台词（老师目录第 6 版，另有普通说法）。新白板支持 `draft` 参数，只预填输入框，不自动发送。设置里可以关闭建议。
+- 不调用模型，没有付费调用。
+- 测试：服务 78、前端 1315 通过；tsc 和 build 通过；eslint 无新增问题（`newBoardHref` 已移到单独文件，避免新增 react-refresh 提醒）。
+- 未做：用户审阅台词、真实记录验收、合并、发布。

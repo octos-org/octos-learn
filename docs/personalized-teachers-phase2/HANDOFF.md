@@ -3,7 +3,7 @@
 ## 当前状态（2026-10-24，优先阅读）
 
 - **合并情况**：阶段二到阶段五已经全部合并到 octos-learn main（最新为 #73 `f5b1b86`）。learning-coach main `4685438`（0.16.5）。octos 的参与者与记忆相关改动已合并（#2859、#2860）。合并清单见 [工作日志](WORK_LOG.md) 2026-10-23 各节。
-- **进行中**：阶段六第一项“学习周报”，分支 `codex/phase6-plan`，[PR #74](https://github.com/octos-org/octos-learn/pull/74)，尚未合并。方案、决定和进展见 [阶段六方案](../PERSONALIZED_TEACHERS_PHASE6_PLAN.md) 第 3、7、9 节。验证记录在 `docs/personalized-teachers-phase6/`。
+- **进行中**：阶段六第一项“学习周报”已合并（PR #74，`cec4a34`）。第二项“主动学习建议”在分支 `codex/phase6-suggestions` 上，见阶段六方案第 4 节；PR 见工作日志最新一节。方案、决定和进展见 [阶段六方案](../PERSONALIZED_TEACHERS_PHASE6_PLAN.md) 第 3、7、9 节。验证记录在 `docs/personalized-teachers-phase6/`。
 - **周报的实现**：
   - 服务端 `weekly-report.mjs`（report-v1），以及 `GET /report`。
   - 评语：服务端 `report-comments.mjs`（report-comment-v1），客户端 `src/learning/history/comment-report.ts`，在 `use-learning-history.ts` 的维护流程里执行。
@@ -11,7 +11,7 @@
   - 付费验证脚本：`scripts/verify-report-comments-octos.mjs`。
 - **接手后先做**：
   1. 核对 PR #74 的 CI 和远端 HEAD。
-  2. 固定台词已获用户认可；评语已改为 v2 并验证（阶段六方案第 10 节）。等用户决定是否合并 PR #74。
+  2. 等用户审阅主动建议的台词（阶段六方案 4.2 节），并决定是否合并建议的 PR。
   3. 用真实学习记录核对周报（S6-06），这需要正常的本机 Octos 账号。
   4. 周报验收后，再做主动学习建议（S6-02）和月考试卷（S6-04）。这两项都需要先写方案，由用户确认后再动手。
 - **一直有效的边界**：

@@ -50,6 +50,7 @@ export function topicStructure() {
     || dependencies.some(edge => !catalog.has(edge.topicId) || !catalog.has(edge.prerequisiteId))) throw new Error("Invalid taxonomy structure");
   structure = Object.freeze({
     prerequisitesOf: id => dependencies.filter(edge => edge.topicId === id),
+    dependentsOf: id => dependencies.filter(edge => edge.prerequisiteId === id),
     clustersOf: (subject, domain) => clusters.filter(cluster => cluster.subject === subject && cluster.domain === domain),
   });
   return structure;

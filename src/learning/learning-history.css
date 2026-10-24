@@ -57,3 +57,13 @@
 .weekly-report li span { color: #1c5d36; font-size: 12px; }
 .weekly-report-closing { margin-top: 14px; color: #243b40 !important; font-size: 13px; }
 .weekly-report-meaning { color: #657c7c !important; font-size: 11px; }
+
+.next-steps { margin: 10px 0 14px; }
+.next-steps h4 { margin: 0 0 6px; font-size: 15px; }
+.next-step { padding: 10px 12px; margin: 6px 0; border: 1px solid #cfe1dc; border-radius: 10px; background: #f4faf7; font-size: 13px; }
+.next-step p { margin: 0 0 6px !important; color: #243b40 !important; overflow-wrap: anywhere; }
+.next-step-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.next-step-actions button { min-height: 36px; padding: 0 10px; border: 1px solid #d7dfd9; border-radius: 8px; background: #fff; color: #166a79; font-size: 12px; }
+.next-step details { margin-top: 6px; }
+.next-step summary { min-height: 28px; cursor: pointer; color: #5f7774; font-size: 12px; }
+.next-step details p { color: #5f7774 !important; font-size: 11px; }

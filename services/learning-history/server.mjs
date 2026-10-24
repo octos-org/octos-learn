@@ -11,6 +11,7 @@ import { queryLearningMap } from "./map-progress.mjs";
 import { evaluateAchievements } from "./achievements.mjs";
 import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
 import { ReportCommentStore } from "./report-comments.mjs";
+import { dismissSuggestion, querySuggestions } from "./suggestions.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 
 const PREFIX = "/api/learn/history";
@@ -178,6 +179,19 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
         const utcOffsetMinutes = Number(raw);
         send(200, { profile_id: owner, ...(path[0] === "map" ? queryLearningMap(store(), owner, { utcOffsetMinutes }, mappings) : evaluateAchievements(store(), owner, { utcOffsetMinutes }, mappings)) });
+      } else if (path[0] === "suggestions" && ((request.method === "GET" && path.length === 1) || (request.method === "POST" && path.length === 2 && path[1] === "dismiss"))) {
+        if (request.method === "POST") {
+          if (url.search) throw new HttpError(400, "Unexpected query");
+          const body = await limitedJson(request, 1024);
+          if (!body || Object.keys(body).length !== 1 || typeof body.id !== "string"
+            || !/^(continue|foundation|next|revisit):mt_[A-Za-z0-9_-]{1,64}:(mt_[A-Za-z0-9_-]{1,64})?$/.test(body.id)) throw new HttpError(400, "Invalid suggestion");
+          send(200, { profile_id: owner, ...dismissSuggestion(store(), owner, body.id) });
+        } else {
+          if ([...url.searchParams.keys()].some(key => key !== "utc_offset_minutes") || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
+          const raw = url.searchParams.get("utc_offset_minutes") ?? "0";
+          if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
+          send(200, { profile_id: owner, ...querySuggestions(store(), owner, { utcOffsetMinutes: Number(raw) }, mappings) });
+        }
       } else if (request.method === "GET" && path.length === 1 && path[0] === "report") {
         if ([...url.searchParams.keys()].some(key => !["week_start", "utc_offset_minutes"].includes(key))
           || url.searchParams.getAll("week_start").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
