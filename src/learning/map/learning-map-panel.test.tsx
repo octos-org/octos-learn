@@ -43,7 +43,7 @@ it('groups lit topics by subject and domain with their state, and puts new achie
   expect(screen.getByText('已探索')).toBeTruthy();
   expect(screen.getByText(/这些都不等于已经掌握/)).toBeTruthy();
   const cards = document.querySelectorAll('.learning-map-award');
-  expect(cards[0].textContent).toContain('常驻嘉宾 · 一次函数图像');
+  expect(cards[0].textContent).toContain('常客 · 一次函数图像');
   // Draft Chinese name first, the original English name kept beside it.
   expect(screen.getByText('一次函数图像')).toBeTruthy();
   expect(screen.getByText('Linear Function Graphs')).toBeTruthy();

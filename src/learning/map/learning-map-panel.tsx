@@ -4,7 +4,7 @@ import { getToken } from "../../api/client";
 import { openHistoryApi, type AchievementList, type AnalysisStatus, type EarnedAchievement, type LearningMap, type MapState } from "../history/history-api";
 import { analysisNotice } from "./analysis-notice";
 import { getTeacher, isTeacherId } from "../teachers/teachers";
-import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
+import { achievementName, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
 import { domainLabel, subjectLabel, topicLabel } from "./taxonomy-labels";
 import { NextSteps } from "./next-steps";
 import { Link } from "react-router-dom";
@@ -16,7 +16,7 @@ const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practisin
 function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement; tone: AwardTone }) {
   const teacher = isTeacherId(achievement.teacher_id) ? getTeacher(achievement.teacher_id) : null;
   return <article className={`learning-map-award${achievement.new ? " is-new" : ""}`}>
-    <strong>{ACHIEVEMENT_NAME[achievement.achievement_id]}{achievement.topic_name ? ` · ${topicLabel(achievement.scope, achievement.topic_name)}` : ""}</strong>
+    <strong>{achievementName(achievement.achievement_id)}{achievement.topic_name ? ` · ${topicLabel(achievement.scope, achievement.topic_name)}` : ""}</strong>
     {achievement.new && <span className="learning-map-new">新获得</span>}
     <p>{teacher && tone === "playful" ? `${teacher.name}：` : ""}{awardLine(achievement, tone)}</p>
     <time>{new Date(achievement.earned_at).toLocaleDateString("zh-CN")}</time>

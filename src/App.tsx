@@ -18,6 +18,7 @@ import { LearningSetupGate, SetupWhiteboard } from "./learning/setup-whiteboard"
 import { AdminSettingsPage } from "./settings/settings-page";
 import { AtlasPage } from "./learning/academy/atlas-page";
 import { TeachersPage } from "./learning/academy/teachers-page";
+import { AchievementsPage } from "./learning/academy/achievements-page";
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -72,6 +73,7 @@ export function AppRoutes() {
         <Route path="/settings" element={<AdminSettingsPage />} />
         <Route path="/atlas" element={<AtlasPage />} />
         <Route path="/teachers" element={<TeachersPage />} />
+        <Route path="/achievements" element={<AchievementsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

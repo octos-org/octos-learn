@@ -68,7 +68,9 @@ export interface TeacherReactions {
 
 /** Achievements decided by the learning-history rules (achievements-v1). */
 export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest" | "reunion";
-export type TeacherAwards = Readonly<Record<AchievementId, string>>;
+/** Lines for the original four achievements, and `other` for every other
+ * catalog achievement ({name} is its name). */
+export type TeacherAwards = Readonly<Record<AchievementId | "other", string>>;
 
 /** Suggestions decided by suggestions-v1. A missing record is "not visited
  * together yet", never inability; time away is never forgetting. */
@@ -128,6 +130,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "did-it-alone": "这一步，是你自己验证出来的。值得记下来。",
       "regular-guest": "第三次回到{topic}了。每次回来，问题都更具体。",
       reunion: "隔了一段时间又回到{topic}，我们看看还记得哪些。",
+      other: "「{name}」。这一枚，我放进收藏匣了。",
     },
     report: {
       active: "这一周的足迹整理好了，我们一起看看。",
@@ -190,6 +193,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "did-it-alone": "没靠提示，自己拿下！这个徽章归你。",
       "regular-guest": "第三次见面！{topic}都想给你留个专座了。",
       reunion: "好久不见，老朋友！看看{topic}变了没有。",
+      other: "叮！「{name}」到手啦！",
     },
     report: {
       active: "这周的地图又亮了几处，来看看！",
@@ -251,6 +255,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "did-it-alone": "没有提示，达到了要求。这一步，做得准确。",
       "regular-guest": "第三个不同的日子回到{topic}。这份坚持，记下了。",
       reunion: "隔了一段时间，又回到{topic}。从你记得的地方开始。",
+      other: "「{name}」。记录在案。",
     },
     report: {
       active: "本周的记录整理好了。逐条看。",
@@ -363,6 +368,7 @@ export const PLAIN_AWARDS: TeacherAwards = {
   "did-it-alone": "第一次没用提示，达到了练习的要求。",
   "regular-guest": "在 3 个不同的日子学习了{topic}。",
   reunion: "隔了两周多，又回来学习{topic}。",
+  other: "获得成就「{name}」。",
 };
 
 export const PLAIN_REPORT: TeacherReportLines = {

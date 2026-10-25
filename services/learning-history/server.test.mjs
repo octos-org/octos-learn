@@ -197,6 +197,10 @@ test("learning map and achievements are per account, start empty, and validate t
   assert.equal((await call("/map?utc_offset_minutes=8.5")).status, 400);
   assert.equal((await call("/map?owner=bob")).status, 400);
   assert.equal((await call("/achievements", "POST", {})).status, 404);
+  assert.equal(achievements.title.name, "启明学徒");
+  assert.equal((await call("/title", "PUT", { title_id: "night-owl" })).status, 400);
+  assert.equal((await call("/title", "PUT", { title_id: "default", extra: 1 })).status, 400);
+  assert.deepEqual(await (await call("/title", "PUT", { title_id: "default" })).json(), { profile_id: "alice", title: { id: "default", name: "启明学徒" } });
 });
 
 test("weekly report is per account and accepts only a Monday and a valid offset", async () => {

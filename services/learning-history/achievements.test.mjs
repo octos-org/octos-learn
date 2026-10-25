@@ -80,3 +80,25 @@ test("awards stay when the counting basis changes later; only deleted evidence w
     assert.deepEqual(later.achievements.filter(item => V1.has(item.achievement_id)).map(item => [item.achievement_id, item.evidence_event_id]), [["did-it-alone", "a1"]]);
   } finally { store.close(); }
 });
+
+test("titles: the default is always held, others only while their achievement is earned", async () => {
+  const { chooseTitle, currentTitle } = await import("./achievements.mjs");
+  const store = new HistoryStore(":memory:");
+  try {
+    assert.equal(currentTitle(store, "alice").name, "启明学徒");
+    assert.throws(() => chooseTitle(store, "alice", "night-owl"), /not earned/);
+    assert.throws(() => chooseTitle(store, "alice", "first-question"), /Unknown title/);
+    // A segment completed at 22:00 local earns 星夜学者.
+    store.append("alice", [routed("r1", at(10, 1), "alan"), beat("b1", "r1", "2026-10-01T14:00:00.000Z")]);
+    const result = evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved);
+    assert.equal(result.achievements.some(item => item.achievement_id === "night-owl"), true);
+    assert.equal(chooseTitle(store, "alice", "night-owl").title.name, "星夜学者");
+    assert.equal(evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved).title.name, "星夜学者");
+    assert.equal(currentTitle(store, "bob").name, "启明学徒");
+    // Deleting the evidence withdraws the achievement, and the title falls back.
+    store.deleteRun("alice", "r1");
+    evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved);
+    assert.equal(currentTitle(store, "alice").name, "启明学徒");
+    assert.equal(chooseTitle(store, "alice", "default").title.id, "default");
+  } finally { store.close(); }
+});

@@ -1,4 +1,4 @@
-import { ACHIEVEMENT_BY_ID, MID_AUTUMN, SPRING_FESTIVAL } from "./achievement-catalog.mjs";
+import { ACHIEVEMENT_BY_ID, DEFAULT_TITLE, MID_AUTUMN, SPRING_FESTIVAL, TITLES } from "./achievement-catalog.mjs";
 import { localDay, queryLearningMap, topicFacts } from "./map-progress.mjs";
 import { topicCatalog, topicStructure } from "./topic-catalog.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
@@ -22,6 +22,34 @@ export function createAchievementSchema(db) {
     teacher_id TEXT, awarded_at TEXT NOT NULL,
     PRIMARY KEY(owner, achievement_id, scope)
   )`);
+  db.exec(`CREATE TABLE IF NOT EXISTS learner_titles(
+    owner TEXT PRIMARY KEY, title_id TEXT NOT NULL, chosen_at TEXT NOT NULL
+  )`);
+}
+
+export class TitleError extends Error {}
+
+/** The title shown beside the learner's name: the chosen one while its
+ * achievement is still earned, otherwise the default. */
+export function currentTitle(store, owner) {
+  createAchievementSchema(store.db);
+  const row = store.db.prepare("SELECT title_id FROM learner_titles WHERE owner=?").get(owner);
+  if (!row || row.title_id === DEFAULT_TITLE.id) return DEFAULT_TITLE;
+  const owned = store.db.prepare("SELECT 1 FROM achievements WHERE owner=? AND achievement_id=? LIMIT 1").get(owner, row.title_id);
+  return owned ? TITLES.find(title => title.id === row.title_id) ?? DEFAULT_TITLE : DEFAULT_TITLE;
+}
+
+/** Choose a title the learner holds; the default is always available. */
+export function chooseTitle(store, owner, titleId, { now = () => new Date().toISOString() } = {}) {
+  createAchievementSchema(store.db);
+  const title = TITLES.find(item => item.id === titleId);
+  if (!title) throw new TitleError("Unknown title");
+  if (title.id !== DEFAULT_TITLE.id && !store.db.prepare("SELECT 1 FROM achievements WHERE owner=? AND achievement_id=? LIMIT 1").get(owner, title.id)) {
+    throw new TitleError("Title not earned");
+  }
+  store.db.prepare(`INSERT INTO learner_titles(owner,title_id,chosen_at) VALUES(?,?,?)
+    ON CONFLICT(owner) DO UPDATE SET title_id=excluded.title_id, chosen_at=excluded.chosen_at`).run(owner, title.id, now());
+  return { title };
 }
 
 const byTime = (a, b) => a.occurred_at.localeCompare(b.occurred_at) || a.id.localeCompare(b.id);
@@ -312,5 +340,6 @@ export function evaluateAchievements(store, owner, { utcOffsetMinutes = 0, now =
   const earned = new Set(rows.map(row => row.achievement_id));
   return { rules_version: ACHIEVEMENT_RULES_VERSION, through: map.through,
     achievements: rows.map(row => ({ ...row, topic_name: row.scope && names.has(row.scope) ? names.get(row.scope) : null, new: fresh.has(`${row.achievement_id}\u0000${row.scope}`) })),
-    progress: [...progress].filter(([id]) => !earned.has(id)).map(([achievement_id, value]) => ({ achievement_id, ...value })) };
+    progress: [...progress].filter(([id]) => !earned.has(id)).map(([achievement_id, value]) => ({ achievement_id, ...value })),
+    title: currentTitle(store, owner) };
 }

@@ -1,16 +1,18 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import type { LearningMap } from "../history/history-api";
 
-const api = vi.hoisted(() => ({ learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn() }));
+const api = vi.hoisted(() => ({ learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn(), setTitle: vi.fn() }));
 vi.mock("../history/history-api", async (original) => ({ ...(await original<object>()), openHistoryApi: vi.fn(async () => api) }));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
 
 import { AcademyHeader } from "./academy-header";
 import { AtlasPage } from "./atlas-page";
+import { AchievementsPage } from "./achievements-page";
+import { seasonWindows, upcomingSeasons } from "./achievement-display";
 import { HallHero } from "./hall-hero";
 import { TEACHERS } from "../teachers/teachers";
 
@@ -26,7 +28,9 @@ beforeEach(() => {
   api.learningMap.mockResolvedValue(MAP);
   api.achievements.mockResolvedValue({ rules_version: "achievements-v1", achievements: [
     { achievement_id: "first-footprint", scope: "", topic_name: null, teacher_id: "alan", earned_at: "2026-10-01T08:00:00.000Z", awarded_at: "2026-10-01T08:00:00.000Z", evidence_event_id: "b1", new: false },
-  ] });
+    { achievement_id: "night-owl", scope: "", topic_name: null, teacher_id: "sufei", earned_at: "2026-10-02T14:00:00.000Z", awarded_at: "2026-10-02T14:00:00.000Z", evidence_event_id: "b2", new: false },
+    { achievement_id: "mid-autumn", scope: "2026", topic_name: null, teacher_id: null, earned_at: "2026-09-25T08:00:00.000Z", awarded_at: "2026-09-25T08:00:00.000Z", evidence_event_id: "b3", new: false },
+  ], progress: [{ achievement_id: "ten-stars", current: 3, target: 10 }], title: { id: "default", name: "启明学徒" } });
   api.analysisStatus.mockRejectedValue(new Error("unavailable"));
 });
 afterEach(cleanup);
@@ -34,7 +38,7 @@ afterEach(cleanup);
 it("links the academy's places from every page, marking the current one", () => {
   render(<MemoryRouter initialEntries={["/atlas"]}><AcademyHeader /></MemoryRouter>);
   const places = screen.getByRole("navigation", { name: "学院" });
-  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["我的老师", "/teachers"]]);
+  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就殿", "/achievements"], ["我的老师", "/teachers"]]);
   expect(screen.getByRole("link", { name: "星图" }).getAttribute("aria-current")).toBe("page");
 });
 
@@ -45,9 +49,10 @@ it("greets with the chosen teacher's own line, offers the last board and sums up
   expect(screen.getByRole("link", { name: /继续上次的白板/ })).toBeTruthy();
   expect(await screen.findByText("颗已点亮")).toBeTruthy();
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");
-  expect(screen.getByText("初来乍到")).toBeTruthy();
+  expect(screen.getByText("第一个脚印")).toBeTruthy();
+  expect(await screen.findByText(new RegExp(`^启明学徒，${TEACHERS[0].hall.resume}`))).toBeTruthy();
   rerender(<MemoryRouter><HallHero latest={undefined} /></MemoryRouter>);
-  expect(screen.getByText(TEACHERS[0].hall.welcome)).toBeTruthy();
+  expect(screen.getByText(new RegExp(TEACHERS[0].hall.welcome))).toBeTruthy();
   expect(screen.queryByRole("link", { name: /继续上次的白板/ })).toBeNull();
 });
 
@@ -65,3 +70,40 @@ it("shows the star atlas as its own page, with the list by domain below", async 
   expect(screen.getByText(/按星域列出（2 个知识点）/)).toBeTruthy();
   expect(screen.getByText(/这些都不等于已经掌握/)).toBeTruthy();
 });
+
+it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
+  render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
+  expect(await screen.findByText("3")).toBeTruthy();
+  expect(screen.getByText("/ 74 枚已点亮")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
+  expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);
+  expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByText("3 / 10")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "星夜学者，已获得" }));
+  const dialog = screen.getByRole("dialog");
+  expect(within(dialog).getByText(/苏绯：「星夜学者」。记录在案。/)).toBeTruthy();
+  expect(within(dialog).getByText("解锁「星夜学者」")).toBeTruthy();
+  fireEvent.click(within(dialog).getByRole("button", { name: "关闭" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+});
+
+it("lets the learner wear an earned title and keeps others locked", async () => {
+  api.setTitle.mockResolvedValue({ title: { id: "night-owl", name: "星夜学者" } });
+  render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
+  fireEvent.click(await screen.findByRole("button", { name: /称号衣橱/ }));
+  expect(screen.getAllByRole("button", { name: /使用这个称号|正在使用/ }).length).toBe(2);
+  fireEvent.click(screen.getByRole("button", { name: "使用这个称号" }));
+  await waitFor(() => expect(api.setTitle).toHaveBeenCalledWith("night-owl"));
+  expect(await screen.findByText("星夜学者", { selector: ".academy-fame-title strong" })).toBeTruthy();
+});
+
+it("lays out seasonal windows from the lunar table, soonest first", () => {
+  const windows = seasonWindows(2027);
+  expect(windows.find((item) => item.id === "spring-festival")).toMatchObject({ start: "2027-02-05", end: "2027-02-12" });
+  expect(windows.find((item) => item.id === "lantern")).toMatchObject({ start: "2027-02-19", end: "2027-02-21" });
+  expect(windows.some((item) => item.id === "leap-day")).toBe(false);
+  expect(seasonWindows(2028).some((item) => item.id === "leap-day")).toBe(true);
+  const next = upcomingSeasons("2026-10-25");
+  expect(next[0]).toMatchObject({ id: "new-year", year: 2027, open: false, daysAway: 68 });
+  expect(upcomingSeasons("2026-10-03")[0]).toMatchObject({ id: "national-day", open: true });
+});
+
