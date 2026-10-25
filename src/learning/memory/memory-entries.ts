@@ -32,7 +32,7 @@ const LEARNER = /学|课|题|数学|物理|化学|生物|英语|语文|历史|�
  * preset teacher, teaching in general, the learner, or anything else (folded
  * away as unrelated to learning). This is a display hint, never a scope rule. */
 export function memoryGroup(text: string): MemoryGroup {
-  const named = TEACHERS.filter((teacher) => text.includes(teacher.name));
+  const named = TEACHERS.filter((teacher) => [teacher.name, ...(teacher.formerNames ?? [])].some((name) => text.includes(name)));
   if (named.length === 1 && !EVERY_TEACHER.test(text)) return named[0].id;
   if (named.length > 1 || EVERY_TEACHER.test(text) || TEACHING.test(text)) return "all";
   return LEARNER.test(text) ? "me" : "other";

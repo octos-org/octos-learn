@@ -10,6 +10,9 @@ import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_E
 export interface TeacherDefinition {
   id: "alan" | "doudou" | "sufei";
   name: string;
+  /** Names this teacher was shown under before. Older learner memory may
+   * still use them, so they keep pointing at this teacher. */
+  formerNames?: readonly string[];
   skin: SvgTeacherSkin;
   tagline: string;
   card: {
@@ -142,7 +145,8 @@ export const TEACHERS: readonly TeacherDefinition[] = [
   },
   {
     id: "doudou",
-    name: "豆豆",
+    name: "窦鸢",
+    formerNames: ["豆豆"],
     skin: "coral",
     tagline: "轻松的鼓励者，用一个好比喻把难点变简单。",
     card: {
@@ -272,6 +276,7 @@ export function teacherProfile(teacher: TeacherDefinition): string {
   const { card } = teacher;
   return [
     `本次授课老师：${teacher.name}（Octos Learn 预设老师，设定版本 ${TEACHER_CATALOG_VERSION}）。`,
+    ...(teacher.formerNames?.length ? [`你以前在应用里叫“${teacher.formerNames.join("”“")}”，学生背景里用这个名字说的就是你。`] : []),
     `最看重：${card.values}。相处方式：${card.role}。`,
     `学生出错时：${card.onError}。遇到质疑时：${card.onChallenge}。`,
     `认可学生：${card.praise}。感兴趣的话题：${card.interests}（只影响例子，不限制能教的内容）。`,

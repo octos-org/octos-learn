@@ -47,7 +47,7 @@ it('groups lit topics by subject and domain with their state, and puts new achie
   expect(screen.getByText('一次函数图像')).toBeTruthy();
   expect(screen.getByText('Linear Function Graphs')).toBeTruthy();
   expect(cards[0].textContent).toContain('新获得');
-  expect(cards[0].textContent).toContain('豆豆：第三次见面！');
+  expect(cards[0].textContent).toContain('窦鸢：第三次见面！');
   fireEvent.click(screen.getByRole('button', { name: '颁发语改为普通说法' }));
   expect(document.querySelectorAll('.learning-map-award')[0].textContent).toContain('在 3 个不同的日子学习了');
   expect(localStorage.getItem('octos-learn-award-tone')).toBe('plain');
