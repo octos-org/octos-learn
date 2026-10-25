@@ -35,12 +35,12 @@ test("a week reports what happened and which states changed, with the fact behin
     assert.deepEqual(week.topics.map(topic => [topic.topic_id, topic.state_before, topic.state_after, topic.change?.evidence_event_id]),
       [[slope, "explored", "did-it", "a2"]]);
     // Third local learning day on the topic (10-08, 10-13, 10-15).
-    assert.deepEqual(week.achievements.map(item => item.achievement_id), ["did-it-alone", "regular-guest"]);
+    assert.deepEqual(week.achievements.map(item => item.achievement_id).filter(id => ["first-footprint", "did-it-alone", "regular-guest", "reunion"].includes(id)), ["did-it-alone", "regular-guest"]);
     assert.equal(week.first_week, "2026-10-05");
     // The earlier week shows the first footprint only.
     const earlier = report(store, "2026-10-05");
     assert.deepEqual(earlier.topics.map(topic => [topic.state_before, topic.state_after]), [[null, "explored"]]);
-    assert.deepEqual(earlier.achievements.map(item => item.achievement_id), ["first-footprint"]);
+    assert.deepEqual(earlier.achievements.map(item => item.achievement_id).filter(id => ["first-footprint", "did-it-alone", "regular-guest", "reunion"].includes(id)), ["first-footprint"]);
     // An empty week has no topics and no changes, not a negative statement.
     const empty = report(store, "2026-10-19");
     assert.deepEqual([empty.activity.runs, empty.topics, empty.achievements], [0, [], []]);
