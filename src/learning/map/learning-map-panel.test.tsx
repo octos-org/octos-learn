@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { AchievementList, EarnedAchievement, LearningMap } from '../history/history-api';
 
@@ -34,7 +35,7 @@ it('groups lit topics by subject and domain with their state, and puts new achie
   const list: AchievementList = { rules_version: 'achievements-v1', achievements: [
     award({ achievement_id: 'first-footprint', scope: '', topic_name: null, teacher_id: 'alan', earned_at: '2026-10-01T08:00:00.000Z' }), award({ new: true })] };
   api.achievements.mockResolvedValue(list);
-  render(<LearningMapPanel />);
+  render(<MemoryRouter><LearningMapPanel /></MemoryRouter>);
   expect(await screen.findByText('数学')).toBeTruthy();
   expect(screen.getByText('代数（1 个点亮）')).toBeTruthy();
   expect(screen.getByText('做出来过')).toBeTruthy();
@@ -56,7 +57,7 @@ it('groups lit topics by subject and domain with their state, and puts new achie
 it('explains an empty map without inventing progress', async () => {
   api.learningMap.mockResolvedValue({ ...MAP, topics: [] });
   api.achievements.mockResolvedValue({ rules_version: 'achievements-v1', achievements: [] });
-  render(<LearningMapPanel />);
+  render(<MemoryRouter><LearningMapPanel /></MemoryRouter>);
   expect(await screen.findByText(/还没有点亮的知识点/)).toBeTruthy();
   expect(screen.getByText(/还没有成就/)).toBeTruthy();
 });
@@ -72,15 +73,15 @@ it('explains lessons not on the map yet: still analyzing, or today\'s limit used
 it('shows the analysis notice above the map without blocking it', async () => {
   api.achievements.mockResolvedValue({ rules_version: 'achievements-v1', achievements: [] });
   api.analysisStatus.mockResolvedValue({ enabled: true, max_daily_tasks: 10, quota_used: 10, analysis_through: 1, states: [{ state: 'pending', count: 1 }] });
-  render(<LearningMapPanel />);
+  render(<MemoryRouter><LearningMapPanel /></MemoryRouter>);
   expect(await screen.findByText(/今天的 10 次知识点分析已经用完/)).toBeTruthy();
 });
 
 
-it('shows lit topics on the star atlas above the list by domain', async () => {
+it('points to the star atlas page from the list by domain', async () => {
   api.achievements.mockResolvedValue({ rules_version: 'achievements-v1', achievements: [] });
-  render(<LearningMapPanel />);
-  expect(await screen.findByRole('img', { name: /数之星域：点亮 \d+ 颗/ })).toBeTruthy();
+  render(<MemoryRouter><LearningMapPanel /></MemoryRouter>);
+  expect((await screen.findByRole('link', { name: /在星图里查看 2 颗星/ })).getAttribute('href')).toBe('/atlas');
   expect(screen.getByText(/按星域列出/)).toBeTruthy();
-  expect(screen.getByRole('button', { name: '揭开全部迷雾' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: '揭开全部迷雾' })).toBeNull();
 });

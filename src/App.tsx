@@ -16,6 +16,8 @@ import { CourseLauncher } from "./learning/course-launcher";
 import { isCoursePackIdentity } from "./learning/course-pack/course-pack-catalog";
 import { LearningSetupGate, SetupWhiteboard } from "./learning/setup-whiteboard";
 import { AdminSettingsPage } from "./settings/settings-page";
+import { AtlasPage } from "./learning/academy/atlas-page";
+import { TeachersPage } from "./learning/academy/teachers-page";
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -68,6 +70,8 @@ export function AppRoutes() {
         <Route path="/board" element={<LearningSetupGate><LearningPage key={location.key} /></LearningSetupGate>} />
         <Route path="/setup" element={<SetupWhiteboard />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
+        <Route path="/atlas" element={<AtlasPage />} />
+        <Route path="/teachers" element={<TeachersPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

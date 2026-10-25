@@ -18,53 +18,6 @@
   padding-bottom: 72px;
 }
 
-.course-launcher-header {
-  display: flex;
-  min-height: 82px;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  border-bottom: 1px solid rgba(40, 65, 67, 0.14);
-}
-
-.course-launcher-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 19px;
-  font-weight: 700;
-}
-
-.course-launcher-brand img {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-}
-
-.course-launcher-header nav {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
-.course-launcher-header nav a,
-.course-launcher-header nav button {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 7px;
-  padding: 0;
-  border: 0;
-  color: #244f5a;
-  background: transparent;
-  font-family: inherit;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.course-launcher-header nav button { cursor: pointer; }
-.course-launcher-header nav button:disabled { opacity: 0.55; }
-
 .course-launcher-hero {
   max-width: 850px;
   padding: 56px 0 44px;
@@ -298,8 +251,8 @@
 .course-launcher-empty p { max-width: 420px; margin: 0; color: #6d7c7f; font-size: 13px; line-height: 1.6; }
 
 [data-runtime-platform="android"] .course-launcher-inner { width: min(960px, calc(100% - 42px)); padding-bottom: 38px; }
-[data-runtime-platform="android"] .course-launcher-header { min-height: 62px; }
-[data-runtime-platform="android"] .course-launcher-brand { font-size: 16px; }
+[data-runtime-platform="android"] .academy-header { min-height: 62px; }
+[data-runtime-platform="android"] .academy-brand { font-size: 18px; }
 [data-runtime-platform="android"] .course-launcher-brand img { width: 28px; height: 28px; }
 [data-runtime-platform="android"] .course-launcher-hero { padding: 42px 0 37px; }
 [data-runtime-platform="android"] .course-launcher-hero h1 { font-size: clamp(24px, 2.6vw, 34px); }

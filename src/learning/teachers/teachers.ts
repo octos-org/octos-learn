@@ -37,6 +37,9 @@ export interface TeacherDefinition {
   report: TeacherReportLines;
   /** Next-step suggestion lines; {topic}, {target} and {days} are filled in. */
   suggestions: TeacherSuggestionLines;
+  /** Greeting on the academy hall: `welcome` when there is no board to
+   * continue, `resume` when there is one. Neither may comment on absence. */
+  hall: { welcome: string; resume: string };
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
@@ -131,6 +134,10 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       quiet: "这周地图上没有新的足迹。想学的时候，我在这里。",
       closing: "这些记录说明你学过、练过什么。下一步学什么，由你决定。",
     },
+    hall: {
+      welcome: "你好。今天想先想清楚哪一个问题？",
+      resume: "上次的白板还在。接着推下去，还是换一个问题？",
+    },
     suggestions: {
       continue: "{topic}的练习还在那儿等着，想再试一次吗？",
       foundation: "{topic}会用到{target}，我们还没一起看过它。要不要先看看？",
@@ -189,6 +196,10 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       quiet: "这周地图在休息，等你来点灯～",
       closing: "记录都在这儿啦，下次想从哪儿开始？",
     },
+    hall: {
+      welcome: "来啦！今天想变出什么新问题？",
+      resume: "上次那块白板还开着呢，接着玩？",
+    },
     suggestions: {
       continue: "{topic}还差一点点，要不要再来一局？",
       foundation: "{topic}背后藏着{target}，我们还没去过那儿，要不要顺路逛逛？",
@@ -245,6 +256,10 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "本周的记录整理好了。逐条看。",
       quiet: "本周没有新的记录。需要时，我在。",
       closing: "记录只说明做过什么。下一步，由你来定。",
+    },
+    hall: {
+      welcome: "开始吧。先写下今天要弄清楚的问题。",
+      resume: "上次的白板停在一半。从停下的地方继续。",
     },
     suggestions: {
       continue: "{topic}的练习还没达到要求。要再做一次吗？",
