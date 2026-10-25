@@ -1,12 +1,14 @@
 # 个性化老师与学习记忆：接手说明
 
-## 当前状态（2026-10-24 下午，优先阅读）
+## 当前状态（2026-10-24 晚，优先阅读）
 
-- **合并情况**：阶段二至五、阶段六的周报（#74）和建议（#75）、状态同步（#76）已合并到 octos-learn main。正在合并（用户已授权，CI 通过后合并）：octos-learn #77（真实环境验收的修复）、#78（知识点分析改为后台执行，基于 #77）、learning-coach #31（0.17.0，后台分析动作）。合并后的实际提交以 GitHub 为准。
-- **真实环境验收**：进行中，记录在 [REAL_ENV_ACCEPTANCE.md](../personalized-teachers-acceptance/REAL_ENV_ACCEPTANCE.md) 第 4 节。第一天发现并修复：StrictMode 下记录器绑错运行时（播放和作答全部丢失）、同步提示闪烁和上传被推迟、分析失败原因不明且失败后永不重试、成就提示时机不对、分析依赖页面保持打开。第二天（老师是否引用过去的学习、换老师、成就颁发提示）尚未做。
-- **知识点分析已改为后台执行**：方案、核实和实现说明见 [SERVER_SIDE_ANALYSIS_PLAN.md](../personalized-teachers-acceptance/SERVER_SIDE_ANALYSIS_PLAN.md)。页面只派发；Learning Coach 的 `learning.topics.analyze` 在 Octos 里运行，凭一次性凭证把结果交回 `POST /api/learn/history/analysis/callback/<job>`。Octos 需要 `OCTOS_LEARN_HISTORY_URL`（开发：`https://127.0.0.1:5173` 加 `NODE_EXTRA_CA_CERTS`；生产：`http://127.0.0.1:50081`），以及 Learning Coach 0.17.0。
-- **本机环境（yy）**：Learning Coach 0.17.0 已安装到账号 yy；Octos 用上述两个变量运行在 50080；前端运行在 5173（#78 分支）。分析每日上限按用户要求设为 20。
-- **产品方向（用户，2026-10-24）**：记忆“有就行”；接下来重点是游戏化的老师角色（立绘、语录、头像框）、知识点星云图（点亮、升级）、成就系统（隐藏、收集、限时、成就册），并考虑世界观（魔法学院 / 仙侠等，尚未选定）。待用户选定世界观、美术来源、目标年龄和设备后写正式计划。
+- **合并情况**：阶段二至五、阶段六的周报（#74）、建议（#75）、状态同步（#76）、真实环境验收修复（#77 → `f7ae363`）、后台知识点分析（#78 → `f1c1c1e`，配合 learning-coach #31 → `3456f3d`，0.17.0）、学习地图星图（#79 → `5a13fee`）均已合并到 main。未发布、未部署。
+- **真实环境验收**：记录在 [REAL_ENV_ACCEPTANCE.md](../personalized-teachers-acceptance/REAL_ENV_ACCEPTANCE.md) 第 4 节。第一天的问题已修复并在真实环境验证（后台分析 6 次全部成功）。第二天（老师是否引用过去的学习、换老师、成就颁发提示）尚未做，用户已同意。
+- **知识点分析在后台执行**：见 [SERVER_SIDE_ANALYSIS_PLAN.md](../personalized-teachers-acceptance/SERVER_SIDE_ANALYSIS_PLAN.md)。Octos 需要 `OCTOS_LEARN_HISTORY_URL`（开发：`https://127.0.0.1:5173` 加 `NODE_EXTRA_CA_CERTS`；生产：`http://127.0.0.1:50081`）和 Learning Coach 0.17.0。
+- **本机环境（yy）**：Learning Coach 0.17.0 已装到账号 yy；Octos 用上述变量运行在 50080；前端运行在 5173（主目录，main）。分析每日上限按用户要求为 20。
+- **游戏化方向（用户，2026-10-24）**：记忆“有就行”；重点是老师角色（立绘、语录、头像框）、知识点星图、成就系统。世界观选定魔法学院“星图学院”，名字全部采用草案；覆盖小学到高中；设备为电脑浏览器和大屏触摸电视；美术用 AI 生成。
+- **设定集不在本仓库**：世界观、小说设定、人物档案按用户要求放在私有仓库 `alan0x/star-atlas-lore`（2026-10-24 从草稿 PR #80 迁出，#80 已关闭）。本仓库只放会进入产品的内容，例如老师的性格卡和台词。
+- **第三位老师司衡**：用户确认加入（PR 进行中，分支 `codex/teacher-siheng`）。性格卡来自设定集里的人物档案：严格而公正，只评价步骤，不评价学生。音色暂定（2.0：渊博小叔 2.0；1.0：温暖阿虎），用户的 TTS 尚未配置，未试听。
 - **已知问题**：知识点目录没有反比例函数等高中内容（相关课归到“比例”）；用户待审 TOPIC_MAPPING_REVIEW、topic-names-zh、HIGH_SCHOOL_EXTENSION_REVIEW。
 - **一直有效的边界**：
   - 全部计划完成后再发布：不部署、不装 APK、不开启定时任务或推送。
