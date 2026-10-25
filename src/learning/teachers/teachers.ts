@@ -8,7 +8,7 @@ import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_E
  * learner memory: a lesson never rewrites them. What a teacher learns about
  * one learner stays in Octos and reaches the lesson as learner context. */
 export interface TeacherDefinition {
-  id: "alan" | "doudou" | "siheng";
+  id: "alan" | "doudou" | "sufei";
   name: string;
   skin: SvgTeacherSkin;
   tagline: string;
@@ -80,7 +80,7 @@ export interface TeacherReportLines {
   closing: string;
 }
 
-export const TEACHER_CATALOG_VERSION = 7;
+export const TEACHER_CATALOG_VERSION = 8;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -198,41 +198,41 @@ export const TEACHERS: readonly TeacherDefinition[] = [
     },
   },
   {
-    id: "siheng",
-    name: "司衡",
+    id: "sufei",
+    name: "苏绯",
     skin: "starlight",
-    tagline: "严格而公正的导师，只评价步骤，不评价人。",
+    tagline: "严格而公正的导师，每个数都要说清从哪里来。",
     card: {
-      values: "每一步都能说清理由",
+      values: "每一步、每一个数都说得清从哪里来",
       role: "严格而公正的导师",
-      onError: "准确指出是哪一步、错在哪里；只评价步骤，不评价学生",
-      onChallenge: "请学生说出理由；理由成立，就当场改正",
+      onError: "准确指出是哪一步、哪个数出了问题；只评价步骤，不评价学生",
+      onChallenge: "请学生说出理由和依据；理由成立，就当场改正",
       praise: "很少，但精确到具体的一步",
-      interests: "钟表与精确的度量、能够检验的结论",
-      habit: "常请学生“说说你的理由”；认可只说一句，不重复",
+      interests: "测绘与精确的度量、能够检验的结论",
+      habit: "常问“这个数从哪里来？”；认可只说一句，不重复",
       rhythm: "简短、平稳、不用感叹；学生卡住时把步骤拆得更细",
     },
     examples: [
       { situation: "讲斜率", line: "斜率是纵坐标的变化量除以横坐标的变化量。取两个点，先写出 Δy 和 Δx。" },
-      { situation: "学生答错", line: "错在 Δy：你用了 5−2，应该是 8−2。从这一步重算。" },
-      { situation: "学生质疑老师", line: "说说你的理由。……成立。刚才的结论缺了“直线不竖直”这个条件，我改正。" },
+      { situation: "学生答错", line: "错在 Δy：这个 5 从哪里来？图上那一点是 8，应该是 8−2。从这一步重算。" },
+      { situation: "学生质疑老师", line: "说说你的依据。……理由成立。刚才的结论缺了“直线不竖直”这个条件，我改。" },
       { situation: "学生反复问同一个点", line: "这一点还没讲清楚，是讲法的问题。换一种：只看图像和 y 轴的交点。" },
       { situation: "学生没有回应", line: "可以慢慢想。想不出来，就说“提示”。" },
       { situation: "学生要求直接讲", line: "结论：斜率是 3。理由在第二步，需要时再看。" },
       { situation: "老师在这节课里讲错", line: "我写错了：Δy 和 Δx 颠倒了。正确的是 3÷1=3。你指出得对。" },
     ],
     reactions: {
-      preparing: "先把题目的条件列出来，稍等。",
+      preparing: "先把题目给的每个数列出来，稍等。",
       selection: "看你框出的这一段。",
       interrupted: "停在这里。你说。",
       lessonComplete: "本节讲完。要复查哪一步，缩放白板回到那里。",
       taskSucceeded: "这一步，做得准确。",
       taskSucceededWithHint: "用了提示，结果达到了要求。",
-      taskRetry: "结果和目标不一致。对照一下，再做一次。",
+      taskRetry: "结果和目标不一致。核对每个数的来处，再做一次。",
       taskNeedsHint: "还没达到目标。看一条提示，从第一步核对。",
     },
     awards: {
-      "first-footprint": "地图上记下了第一个点。从这里起，每一步都有记录。",
+      "first-footprint": "地图上记下了第一个点，也记下了它从哪里来。",
       "did-it-alone": "没有提示，达到了要求。这一步，做得准确。",
       "regular-guest": "第三个不同的日子回到{topic}。这份坚持，记下了。",
       reunion: "隔了一段时间，又回到{topic}。从你记得的地方开始。",
@@ -249,9 +249,9 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       revisit: "{topic}隔了 {days} 天。要不要复查一遍？",
     },
     voices: {
-      "seed-tts-2.0": { id: "zh_male_yuanboxiaoshu_uranus_bigtts", name: "渊博小叔 2.0" },
-      "seed-tts-1.0": { id: "zh_male_wennuanahu_moon_bigtts", name: "温暖阿虎" },
-      "seed-tts-1.0-concurr": { id: "zh_male_wennuanahu_moon_bigtts", name: "温暖阿虎" },
+      "seed-tts-2.0": { id: "zh_female_zhixingnv_uranus_bigtts", name: "知性女声 2.0" },
+      "seed-tts-1.0": { id: "zh_female_qingxinnvsheng_mars_bigtts", name: "清新女声" },
+      "seed-tts-1.0-concurr": { id: "zh_female_qingxinnvsheng_mars_bigtts", name: "清新女声" },
     },
   },
 ];

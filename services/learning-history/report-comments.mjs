@@ -15,7 +15,7 @@ export { REPORT_COMMENT_INSTRUCTIONS, buildReportCommentPrompt } from "./report-
 // repeated automatically.
 export const REPORT_COMMENT_VERSION = "report-comment-v2";
 export const REPORT_COMMENT_DAILY_LIMIT = 3;
-const TEACHER_NAMES = { alan: "阿澜", doudou: "豆豆", siheng: "司衡" };
+const TEACHER_NAMES = { alan: "阿澜", doudou: "豆豆", sufei: "苏绯" };
 const STATE_NAMES = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
 const ACHIEVEMENT_NAMES = { "first-footprint": "初来乍到", "did-it-alone": "亲手搞定", "regular-guest": "常驻嘉宾", reunion: "老朋友重逢" };
 // Draft Chinese topic names shared with the learning map (pending review).
