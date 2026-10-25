@@ -21,6 +21,12 @@
   height: 80px;
 }
 
+.teacher-portrait.octos-skin-card-art {
+  width: 60px;
+  height: 80px;
+  margin-top: 6px;
+}
+
 .octos-model-art .octos-model-fallback,
 .octos-model-art model-viewer {
   position: absolute;

@@ -3664,6 +3664,8 @@ export function LearningWorkspace({
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
         disabled={coursePreview}
+        teacherId={teacher.id}
+        celebrating={awardCaptions.length > 0}
       />
 
       {controlledOllLesson

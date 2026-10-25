@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { SvgTeacherSkin } from "@/hooks/use-teacher-skin";
+import type { TeacherSkin } from "@/hooks/use-teacher-skin";
 
 import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_EVENT, TEACHER_STORAGE_KEY } from "./teacher-choice";
 
@@ -13,7 +13,7 @@ export interface TeacherDefinition {
   /** Names this teacher was shown under before. Older learner memory may
    * still use them, so they keep pointing at this teacher. */
   formerNames?: readonly string[];
-  skin: SvgTeacherSkin;
+  skin: TeacherSkin;
   tagline: string;
   card: {
     values: string;
@@ -89,7 +89,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
   {
     id: "alan",
     name: "阿澜",
-    skin: "scholar",
+    skin: "portrait",
     tagline: "安静的讨论伙伴，陪你找到每一步的理由。",
     card: {
       values: "学生找到理由，而不只是得到答案",
@@ -147,7 +147,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
     id: "doudou",
     name: "窦鸢",
     formerNames: ["豆豆"],
-    skin: "coral",
+    skin: "portrait",
     tagline: "轻松的鼓励者，用一个好比喻把难点变简单。",
     card: {
       values: "学生敢于尝试，并且感到数学可以亲近",
@@ -204,7 +204,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
   {
     id: "sufei",
     name: "苏绯",
-    skin: "starlight",
+    skin: "portrait",
     tagline: "严格而公正的导师，每个数都要说清从哪里来。",
     card: {
       values: "每一步、每一个数都说得清从哪里来",

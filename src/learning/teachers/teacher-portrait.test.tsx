@@ -1,0 +1,48 @@
+import { act, cleanup, render, renderHook } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+
+import { OctosSkinArt } from "@/components/octos-skin-art";
+
+import { TeacherPortrait } from "./teacher-portrait";
+import { announceTeacherApproval, poseForActivity, useTeacherApproval } from "./teacher-portrait-state";
+
+afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+it("maps classroom activity to a pose, with speaking shown as explaining", () => {
+  expect(poseForActivity("idle")).toBe("idle");
+  expect(poseForActivity("listening")).toBe("listening");
+  expect(poseForActivity("thinking")).toBe("thinking");
+  expect(poseForActivity("speaking")).toBe("explaining");
+  expect(poseForActivity("error")).toBe("idle");
+});
+
+it("keeps every pose of only the current teacher mounted and shows one", () => {
+  const { container } = render(<TeacherPortrait teacherId="sufei" pose="thinking" />);
+  const poses = [...container.querySelectorAll<HTMLImageElement>(".teacher-portrait-pose")];
+  expect(poses).toHaveLength(5);
+  expect(poses.every((image) => image.src.includes("/teachers/sufei/"))).toBe(true);
+  expect(poses.filter((image) => image.dataset.active !== undefined).map((image) => image.src.split("/").pop())).toEqual(["bust-thinking.webp"]);
+});
+
+it("loads a single idle image for a still preview", () => {
+  const { container } = render(<TeacherPortrait teacherId="alan" pose="explaining" still />);
+  const poses = [...container.querySelectorAll<HTMLImageElement>(".teacher-portrait-pose")];
+  expect(poses.map((image) => image.src.split("/").pop())).toEqual(["bust-idle.webp"]);
+  expect(container.querySelector(".teacher-portrait")?.getAttribute("data-pose")).toBe("idle");
+});
+
+it("shows approval for a moment after a practice goal is met", () => {
+  vi.useFakeTimers();
+  const { result } = renderHook(() => useTeacherApproval());
+  expect(result.current).toBe(false);
+  act(() => announceTeacherApproval());
+  expect(result.current).toBe(true);
+  act(() => { vi.advanceTimersByTime(2500); });
+  expect(result.current).toBe(false);
+});
+
+it("draws the named teacher's portrait from the shared skin art, approving over the activity", () => {
+  const { container } = render(<OctosSkinArt skin="portrait" teacherId="doudou" activity="speaking" approving />);
+  expect(container.querySelector(".teacher-portrait")?.getAttribute("data-pose")).toBe("approving");
+  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-pose[data-active]")?.src).toContain("/teachers/doudou/bust-approving.webp");
+});

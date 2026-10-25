@@ -9,6 +9,7 @@ import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
 import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
 import { nextStepsShown, showNextSteps } from "@/learning/map/next-step-line";
 import { TEACHERS, useSelectedTeacher } from "@/learning/teachers/teachers";
+import { portraitAsset } from "@/learning/teachers/teacher-portrait-state";
 
 export function TeacherPicker() {
   const { teacher, setTeacherId } = useSelectedTeacher();
@@ -27,10 +28,16 @@ export function TeacherPicker() {
             onClick={() => { setTeacherId(option.id); setSkin(option.skin); }}
             className="teacher-skin-option workbench-card flex flex-col items-start gap-3 p-4 text-left"
           >
+            <img
+              src={portraitAsset(option.id, "card")}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              loading="lazy"
+              decoding="async"
+              className="aspect-[2/3] w-full rounded-md object-cover"
+            />
             <span className="flex w-full items-center gap-3">
-              <span className="teacher-skin-art flex shrink-0 justify-center" aria-hidden="true">
-                <OctosSkinArt skin={option.skin} className="octos-skin-card-art" staticPreview />
-              </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-text-strong">{option.name}</span>
                 <span className="mt-1 block text-xs leading-5 text-muted">{option.tagline}</span>
@@ -92,7 +99,7 @@ export function TeacherSkinPicker({
             </span>
             <span className="teacher-skin-status flex w-full items-center justify-between gap-2">
               <span className="workbench-status-pill" data-tone="neutral">
-                {option.kind === "model" ? "3D · Animated" : "2D · SVG"}
+                {option.kind === "model" ? "3D · Animated" : option.kind === "portrait" ? "Illustrated" : "2D · SVG"}
               </span>
               <span
                 className={`workbench-status-pill shrink-0 ${active ? "" : "invisible"}`}

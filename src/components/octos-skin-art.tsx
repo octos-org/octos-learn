@@ -8,6 +8,10 @@ import {
   type TeacherSkin,
 } from "@/hooks/use-teacher-skin";
 
+import { TeacherPortrait } from "@/learning/teachers/teacher-portrait";
+import { poseForActivity } from "@/learning/teachers/teacher-portrait-state";
+import { resolveSelectedTeacherId, type TeacherDefinition } from "@/learning/teachers/teachers";
+
 import { OctosAvatar } from "./octos-avatar";
 import "./octos-skin-art.css";
 
@@ -29,6 +33,8 @@ export function OctosSkinArt({
   staticPreview = false,
   activity = "idle",
   reactionKey = 0,
+  teacherId,
+  approving = false,
 }: {
   skin: TeacherSkin;
   className?: string;
@@ -36,8 +42,23 @@ export function OctosSkinArt({
   staticPreview?: boolean;
   activity?: TeacherActivity;
   reactionKey?: number;
+  /** Whose portrait to show; defaults to the teacher chosen on this device. */
+  teacherId?: TeacherDefinition["id"];
+  /** A practice goal was just met; the portrait shows approval. */
+  approving?: boolean;
 }) {
   const definition = getTeacherSkinDefinition(skin);
+
+  if (definition.kind === "portrait") {
+    return (
+      <TeacherPortrait
+        teacherId={teacherId ?? resolveSelectedTeacherId()}
+        pose={approving ? "approving" : poseForActivity(activity)}
+        still={staticPreview}
+        className={className}
+      />
+    );
+  }
 
   if (definition.kind === "svg") {
     return <OctosAvatar skin={definition.id} className={className} />;

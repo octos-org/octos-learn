@@ -3516,6 +3516,57 @@
   margin-top: -5px;
 }
 
+/* The chosen teacher's portrait: a gilded arch instead of the round tile. */
+.octos-teacher-avatar[data-portrait="true"] {
+  width: 120px;
+  height: 160px;
+  border: 0;
+  border-radius: 50% 50% 7px 7px / 36% 36% 7px 7px;
+  background: none;
+  box-shadow: none;
+}
+
+.octos-teacher-avatar[data-portrait="true"]:hover {
+  box-shadow: none;
+}
+
+.octos-teacher-avatar[data-portrait="true"] .octos-teacher-avatar-art {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+.octos-teacher-avatar[data-portrait="true"] .octos-teacher-halo {
+  /* Out of the grid flow in every state, so the arch keeps its full height. */
+  position: absolute;
+  inset: -9px;
+  border-color: rgba(226, 189, 102, 0.45);
+}
+
+.octos-teacher-avatar[data-portrait="true"] .octos-teacher-state {
+  right: 50%;
+  bottom: -10px;
+  left: auto;
+  z-index: 3;
+  padding: 2px 9px;
+  border: 1px solid rgba(226, 189, 102, 0.8);
+  border-radius: 999px;
+  color: #f3d68c;
+  background: #141a40;
+  white-space: nowrap;
+  transform: translateX(50%);
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar[data-portrait="true"] {
+  width: 66px;
+  height: 88px;
+}
+
+[data-runtime-platform="android"] .octos-teacher-avatar[data-portrait="true"] .octos-teacher-avatar-art {
+  width: 100%;
+  height: 100%;
+}
+
 .octos-teacher-state {
   position: absolute;
   right: 10px;
