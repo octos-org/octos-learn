@@ -4,6 +4,8 @@ import type { VoiceState } from "@/home/voice/use-voice-conversation";
 import { OctosSkinArt } from "@/components/octos-skin-art";
 import { MarkdownContent } from "@/components/markdown-renderer";
 import { useTeacherSkin } from "@/hooks/use-teacher-skin";
+import { useTeacherApproval } from "@/learning/teachers/teacher-portrait-state";
+import type { TeacherDefinition } from "@/learning/teachers/teachers";
 
 const STATE_LABEL: Record<VoiceState, string> = {
   idle: "轻触开始",
@@ -25,6 +27,8 @@ export function OctosTeacher({
   stateLabel,
   onClick,
   disabled = false,
+  teacherId,
+  celebrating = false,
 }: {
   state: VoiceState;
   speech: string;
@@ -32,8 +36,12 @@ export function OctosTeacher({
   stateLabel?: string;
   onClick: () => void;
   disabled?: boolean;
+  teacherId?: TeacherDefinition["id"];
+  /** An achievement was just presented; the portrait shows approval. */
+  celebrating?: boolean;
 }) {
   const { skin } = useTeacherSkin();
+  const taskApproved = useTeacherApproval();
   const [reactionKey, setReactionKey] = useState(0);
   const [reacting, setReacting] = useState(false);
   const reactionTimerRef = useRef<number | null>(null);
@@ -78,6 +86,7 @@ export function OctosTeacher({
         className="octos-teacher-avatar"
         data-learning-board-occlusion=""
         data-state={state}
+        data-portrait={skin === "portrait" ? "true" : undefined}
         data-preparing={preparing ? "true" : undefined}
         data-reacting={reacting ? "true" : undefined}
         onClick={handleClick}
@@ -116,11 +125,14 @@ export function OctosTeacher({
           skin={skin}
           className="octos-teacher-avatar-art"
           eager
-          staticPreview={teacherArtUsesStaticPreview(import.meta.env.MODE)}
+          // Portrait poses are plain images, cheap enough on every platform.
+          staticPreview={skin !== "portrait" && teacherArtUsesStaticPreview(import.meta.env.MODE)}
           activity={
             preparing ? "thinking" : state === "starting" ? "idle" : state
           }
           reactionKey={reactionKey}
+          teacherId={teacherId}
+          approving={taskApproved || celebrating}
         />
         <span className="octos-teacher-state">
           {preparing ? "稍等一下" : stateLabel ?? STATE_LABEL[state]}

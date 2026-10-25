@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 
 export type SvgTeacherSkin = "ocean" | "coral" | "scholar" | "starlight";
 export type ModelTeacherSkin = "panda-3d" | "penguin-3d" | "bee-3d";
-export type TeacherSkin = SvgTeacherSkin | ModelTeacherSkin;
+/** The chosen preset teacher's own illustrated portrait. */
+export type PortraitTeacherSkin = "portrait";
+export type TeacherSkin = PortraitTeacherSkin | SvgTeacherSkin | ModelTeacherSkin;
 
 export type TeacherActivity =
   | "idle"
@@ -12,6 +14,12 @@ export type TeacherActivity =
   | "error";
 
 export type TeacherSkinDefinition =
+  | {
+      id: PortraitTeacherSkin;
+      kind: "portrait";
+      label: string;
+      description: string;
+    }
   | {
       id: SvgTeacherSkin;
       kind: "svg";
@@ -32,6 +40,12 @@ export type TeacherSkinDefinition =
     };
 
 export const TEACHER_SKINS: readonly TeacherSkinDefinition[] = [
+  {
+    id: "portrait",
+    kind: "portrait",
+    label: "Teacher portrait",
+    description: "The chosen teacher in person, with a pose for each classroom moment.",
+  },
   {
     id: "ocean",
     kind: "svg",
@@ -111,6 +125,9 @@ export const TEACHER_SKINS: readonly TeacherSkinDefinition[] = [
 ];
 
 const STORAGE_KEY = "octos-teacher-skin";
+// Teacher portraits replace the earlier corner looks on every device; a look
+// chosen after portraits arrived is kept. Reading never writes storage.
+const PORTRAIT_INTRODUCED_KEY = "octos-teacher-skin-portrait-introduced";
 const CHANGE_EVENT = "octos-teacher-skin-change";
 
 export function isTeacherSkin(value: unknown): value is TeacherSkin {
@@ -124,11 +141,13 @@ export function getTeacherSkinDefinition(
 }
 
 export function resolveInitialTeacherSkin(): TeacherSkin {
+  if (!localStorage.getItem(PORTRAIT_INTRODUCED_KEY)) return "portrait";
   const stored = localStorage.getItem(STORAGE_KEY);
-  return isTeacherSkin(stored) ? stored : "ocean";
+  return isTeacherSkin(stored) ? stored : "portrait";
 }
 
 export function applyTeacherSkin(skin: TeacherSkin): void {
+  localStorage.setItem(PORTRAIT_INTRODUCED_KEY, "1");
   localStorage.setItem(STORAGE_KEY, skin);
 }
 

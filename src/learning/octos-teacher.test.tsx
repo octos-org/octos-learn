@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OctosTeacher, teacherArtUsesStaticPreview } from "./octos-teacher";
 
@@ -7,8 +7,8 @@ vi.mock("@/hooks/use-teacher-skin", () => ({
 }));
 
 vi.mock("@/components/octos-skin-art", () => ({
-  OctosSkinArt: ({ activity }: { activity: string }) => (
-    <span data-testid="teacher-art" data-activity={activity} />
+  OctosSkinArt: ({ activity, teacherId, approving }: { activity: string; teacherId?: string; approving?: boolean }) => (
+    <span data-testid="teacher-art" data-activity={activity} data-teacher={teacherId} data-approving={String(Boolean(approving))} />
   ),
 }));
 
@@ -88,5 +88,16 @@ describe("OctosTeacher", () => {
     expect(screen.queryByText("轻触开始")).toBeNull();
     expect(screen.getByTestId("teacher-art").getAttribute("data-activity"))
       .toBe("speaking");
+  });
+
+  it("shows the chosen teacher approving after a practice goal or an achievement", async () => {
+    const { announceTeacherApproval } = await import("@/learning/teachers/teacher-portrait-state");
+    const { rerender } = render(<OctosTeacher state="idle" speech="" onClick={vi.fn()} teacherId="sufei" />);
+    expect(screen.getByTestId("teacher-art").dataset.approving).toBe("false");
+    expect(screen.getByTestId("teacher-art").dataset.teacher).toBe("sufei");
+    act(() => announceTeacherApproval());
+    expect(screen.getByTestId("teacher-art").dataset.approving).toBe("true");
+    rerender(<OctosTeacher state="idle" speech="" onClick={vi.fn()} teacherId="sufei" celebrating />);
+    expect(screen.getByTestId("teacher-art").dataset.approving).toBe("true");
   });
 });

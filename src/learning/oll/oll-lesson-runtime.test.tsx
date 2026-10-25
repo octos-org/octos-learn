@@ -39,6 +39,7 @@ import type { SelectionClassification } from "../selection-enhancements";
 import { isLessonDeliverySettled } from "./lesson-delivery";
 import { useOllLessonRuntime } from "./use-oll-lesson-runtime";
 import { getTeacher, NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
+import { TEACHER_APPROVAL_EVENT } from "../teachers/teacher-portrait-state";
 
 const mountInkRuntimeMock = vi.hoisted(() => vi.fn());
 const selectionContextToPngFileMock = vi.hoisted(() => vi.fn(async () =>
@@ -2979,6 +2980,8 @@ describe("OLL lesson Runtime integration", () => {
 
   it("uses the lesson teacher's fixed lines for retry and success, and never says alone after a hint", async () => {
     const doudou = getTeacher("doudou").reactions;
+    const approvals = vi.fn();
+    window.addEventListener(TEACHER_APPROVAL_EVENT, approvals);
     await renderLearning(<StudentTaskRuntimeProbe taskReactions={doudou} storageKey="oll-student-task-teacher-lines" />);
     expect(await screen.findByText("把圆周点拖到 sin θ = 1")).toBeTruthy();
     const slider = screen.getByRole("slider", { name: "旋转角 θ" });
@@ -2996,6 +2999,9 @@ describe("OLL lesson Runtime integration", () => {
     fireEvent.pointerUp(retry, { pointerType: "mouse" });
     await waitFor(() => expect(screen.getByText(doudou.taskSucceededWithHint)).toBeTruthy());
     expect(screen.queryByText(doudou.taskSucceeded)).toBeNull();
+    // Only the newly met goal shows the classroom teacher's approval.
+    expect(approvals).toHaveBeenCalledTimes(1);
+    window.removeEventListener(TEACHER_APPROVAL_EVENT, approvals);
     // The lesson's own result line stays under the teacher's reaction.
     expect(screen.getByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
   });

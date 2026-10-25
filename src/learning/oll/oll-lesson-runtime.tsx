@@ -1,5 +1,6 @@
 import { indexedInkStore } from "../learning-document-store";
 import { NEUTRAL_REACTIONS, type TeacherReactions } from "../teachers/teachers";
+import { announceTeacherApproval } from "../teachers/teacher-portrait-state";
 import {
   BoxSelect,
   CheckCircle2,
@@ -1067,6 +1068,14 @@ export function LearningWhiteboard({
   }, [playbackCourseTarget]);
   const variableControls = runtime ? variableControlModels(runtime.board) : [];
   const studentTasks = runtime?.studentTasks ?? [];
+  // A newly met practice goal (checked by the program) shows the classroom
+  // teacher's approval; restoring an already finished board does not.
+  const succeededTaskCount = studentTasks.filter((task) => task.status === "succeeded").length;
+  const succeededTaskCountRef = useRef(succeededTaskCount);
+  useEffect(() => {
+    if (succeededTaskCount > succeededTaskCountRef.current) announceTeacherApproval();
+    succeededTaskCountRef.current = succeededTaskCount;
+  }, [succeededTaskCount]);
   // The Runtime opens practice only when the whole board has finished, so a
   // later lesson closes the practice of every earlier course. Once a course
   // has played to its end, keep its practice and thinking cards in the
