@@ -14,7 +14,7 @@ export function TeacherPicker() {
   const { teacher, setTeacherId } = useSelectedTeacher();
   const { setSkin } = useTeacherSkin();
   return (
-    <div className="mt-5 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="选择老师">
+    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="选择老师">
       {TEACHERS.map((option) => {
         const active = teacher.id === option.id;
         return (

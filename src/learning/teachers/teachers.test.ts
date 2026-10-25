@@ -8,13 +8,14 @@ import type { LearningRunSummary } from '../history/history-api';
 
 beforeEach(() => localStorage.clear());
 
-it('offers two distinct preset teachers whose settings bound shared memories', () => {
-  expect(TEACHERS.map(teacher => teacher.id)).toEqual(['alan', 'doudou']);
-  const alan = teacherProfile(getTeacher('alan')), doudou = teacherProfile(getTeacher('doudou'));
-  expect(alan).toContain('本次授课老师：阿澜');
-  expect(doudou).toContain('本次授课老师：豆豆');
-  expect(alan).not.toEqual(doudou);
-  for (const context of [alan, doudou]) {
+it('offers three distinct preset teachers whose settings bound shared memories', () => {
+  expect(TEACHERS.map(teacher => teacher.id)).toEqual(['alan', 'doudou', 'siheng']);
+  const profiles = TEACHERS.map(teacher => teacherProfile(teacher));
+  expect(profiles[0]).toContain('本次授课老师：阿澜');
+  expect(profiles[1]).toContain('本次授课老师：豆豆');
+  expect(profiles[2]).toContain('本次授课老师：司衡');
+  expect(new Set(profiles).size).toBe(TEACHERS.length);
+  for (const context of profiles) {
     expect(context).toContain('不能说成自己的');
     expect(context).toContain('不要照抄');
   }
@@ -136,10 +137,9 @@ it('gives every teacher a distinct example for each S3-02 situation, sent in the
     expect(profile).toContain('不要承认也不要否认说过');
     for (const example of teacher.examples) expect(profile).toContain(example.line);
   }
-  const [alan, doudou] = TEACHERS;
   for (const situation of SITUATIONS) {
-    const line = (teacher: typeof alan) => teacher.examples.find(example => example.situation === situation)!.line;
-    expect(line(alan)).not.toEqual(line(doudou));
+    const lines = TEACHERS.map(teacher => teacher.examples.find(example => example.situation === situation)!.line);
+    expect(new Set(lines).size).toBe(TEACHERS.length);
   }
 });
 
@@ -151,9 +151,8 @@ it('keeps fixed reactions within what each event proves', () => {
     expect(reactions.taskRetry).not.toMatch(/差一点|快了/);
     for (const line of Object.values(reactions)) expect(line.length).toBeLessThanOrEqual(40);
   }
-  const [alan, doudou] = TEACHERS;
-  for (const key of Object.keys(alan.reactions) as (keyof typeof alan.reactions)[]) {
-    expect(alan.reactions[key]).not.toEqual(doudou.reactions[key]);
+  for (const key of Object.keys(NEUTRAL_REACTIONS) as (keyof typeof NEUTRAL_REACTIONS)[]) {
+    expect(new Set(TEACHERS.map(teacher => teacher.reactions[key])).size).toBe(TEACHERS.length);
   }
   expect(teacherReactions(null)).toBe(NEUTRAL_REACTIONS);
   expect(teacherReactions(getTeacher('doudou'))).toBe(getTeacher('doudou').reactions);
@@ -169,7 +168,7 @@ it('gives every teacher a line for each achievement that never claims mastery', 
     expect(awards['regular-guest']).toContain('{topic}');
     expect(awards.reunion).toContain('{topic}');
   }
-  expect(TEACHERS[0].awards['regular-guest']).not.toEqual(TEACHERS[1].awards['regular-guest']);
+  for (const id of ids) expect(new Set(TEACHERS.map(teacher => teacher.awards[id])).size).toBe(TEACHERS.length);
 });
 
 it('adds the learning map to learner context with the same states and no mastery claim', () => {

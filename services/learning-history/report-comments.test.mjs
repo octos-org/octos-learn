@@ -22,10 +22,11 @@ test("a comment may only restate the report, in the right teacher's voice", () =
     assert.deepEqual([input.teacher, input.activity.学习天数, input.activity.课数], ["豆豆", 2, 2]);
     const check = comment => validateReportComment(input, { schema: 1, input_sha256: input.input_sha256, comment });
     assert.equal(check(" 这周你来了 2 天，讲解一段段听下来，节奏不错！ "), "这周你来了 2 天，讲解一段段听下来，节奏不错！");
-    for (const bad of ["这周你已经掌握了斜率！", "你比上周进步了！", "你来了 5 天，真棒！", "阿澜也说你很棒！", "好", "第一句。\n第二句。"]) {
+    for (const bad of ["这周你已经掌握了斜率！", "你比上周进步了！", "你来了 5 天，真棒！", "阿澜也说你很棒！", "司衡说这一步做得准确。", "好", "第一句。\n第二句。"]) {
       assert.throws(() => check(bad), /Report comment/, bad);
     }
     assert.throws(() => validateReportComment(input, { schema: 1, input_sha256: "x", comment: "这周来了 2 天。" }), /shape/);
+    assert.equal(buildCommentInput(queryWeeklyReport(store, "alice", { weekStart: "2026-10-12", utcOffsetMinutes: 480 }), "siheng").teacher, "司衡");
   } finally { store.close(); }
 });
 
