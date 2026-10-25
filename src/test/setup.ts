@@ -41,3 +41,10 @@ if (!storageLike || typeof storageLike.clear !== "function") {
     });
   }
 }
+
+// jsdom has no canvas and logs "Not implemented" on every getContext call.
+// Drawing components treat a missing context as nothing to paint; tests that
+// need a context still spy on this method.
+if (typeof HTMLCanvasElement !== "undefined") {
+  Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { configurable: true, writable: true, value: () => null });
+}
