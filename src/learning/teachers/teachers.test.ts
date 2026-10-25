@@ -190,3 +190,11 @@ it('adds the learning map to learner context with the same states and no mastery
   expect(context).not.toContain('Old topic'); // Only the six most recent topics.
   expect(buildLearnerContext({ map: { ...map, topics: [] } }, asOf)).toBeUndefined();
 });
+
+it('greets on the academy hall in each teacher\'s own words, never about time away', () => {
+  for (const key of ['welcome', 'resume'] as const) {
+    const lines = TEACHERS.map(teacher => teacher.hall[key]);
+    expect(new Set(lines).size).toBe(TEACHERS.length);
+    for (const line of lines) expect(line).not.toMatch(/好久|终于|又不来|忘了|掌握|学会/);
+  }
+});

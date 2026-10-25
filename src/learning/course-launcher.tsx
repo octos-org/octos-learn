@@ -8,11 +8,9 @@ import {
   Clock3,
   BookOpen,
   Eye,
-  LogOut,
   Pencil,
   Plus,
   RotateCcw,
-  Settings,
   Trash2,
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -45,6 +43,8 @@ import { discoverServerLearningSessions } from "./learning-session-sync";
 import { LearningHistory, learningSessionHref } from "./learning-history";
 import { newBoardHref } from "./new-board-href";
 import { groupCoursePacks } from "./course-collections";
+import { AcademyHeader } from "./academy/academy-header";
+import { HallHero } from "./academy/hall-hero";
 import "./course-launcher.css";
 
 type CatalogState = {
@@ -344,13 +344,12 @@ function WhiteboardSessionCard({
 
 export function CourseLauncher() {
   const history = useLearningHistoryRecorder("course-launcher");
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
   const navigate = useNavigate();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const collectionId = searchParams.get("collection");
   const state = useLauncherCatalog();
-  const [loggingOut, setLoggingOut] = useState(false);
   const [whiteboards, setWhiteboards] = useState(() =>
     listLearningSessions().filter((session) => !session.source));
   const refreshWhiteboards = () => {
@@ -422,37 +421,13 @@ export function CourseLauncher() {
         onNew={draft => navigate(newBoardHref(draft))}
         onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
       <div className="course-launcher-inner" inert={historyOpen}>
-        <header className="course-launcher-header">
-          <div className="course-launcher-brand">
-            <img src="/images/octos-logo-color.svg" alt="" />
-            <span>Octos Learn</span>
-          </div>
-          <nav aria-label="账户">
-            {token ? (
-              <>
-                <Link to="/settings"><Settings size={17} aria-hidden="true" /> 设置</Link>
-                <button
-                  type="button"
-                  disabled={loggingOut}
-                  onClick={() => {
-                    setLoggingOut(true);
-                    void logout().finally(() => setLoggingOut(false));
-                  }}
-                >
-                  <LogOut size={17} aria-hidden="true" />
-                  {loggingOut ? "正在退出…" : "退出"}
-                </button>
-              </>
-            ) : (
-              <Link to="/login">登录</Link>
-            )}
-          </nav>
-        </header>
+        <AcademyHeader />
 
-        {!collectionId && <section className="course-launcher-hero">
+        {!collectionId && token && <HallHero latest={whiteboards[0]} />}
+        {!collectionId && !token && <section className="course-launcher-hero">
           <p className="course-launcher-eyebrow">LEARN ON A LIVING WHITEBOARD</p>
           <h1>从一组课程，开始新的探索。</h1>
-          <p>跟着准备好的课程探索，也可以写下自己的问题，让小章鱼陪你一起推导。</p>
+          <p>跟着准备好的课程探索，也可以写下自己的问题，让老师陪你一起推导。</p>
           <Link to="/board?new-board=1" className="course-launcher-blank">
             <Plus size={20} aria-hidden="true" /> 新建空白白板
             <ArrowRight size={18} aria-hidden="true" />

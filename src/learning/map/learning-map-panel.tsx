@@ -7,7 +7,7 @@ import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { ACHIEVEMENT_NAME, awardLine, readAwardTone, saveAwardTone, type AwardTone } from "./award-line";
 import { domainLabel, subjectLabel, topicLabel } from "./taxonomy-labels";
 import { NextSteps } from "./next-steps";
-import { StarAtlas } from "./star-atlas/star-atlas";
+import { Link } from "react-router-dom";
 import type { LearningSessionRecord } from "../learning-session-store";
 
 const STATE_LABEL: Record<MapState, string> = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
@@ -21,6 +21,34 @@ function AchievementCard({ achievement, tone }: { achievement: EarnedAchievement
     <p>{teacher && tone === "playful" ? `${teacher.name}：` : ""}{awardLine(achievement, tone)}</p>
     <time>{new Date(achievement.earned_at).toLocaleDateString("zh-CN")}</time>
   </article>;
+}
+
+/** The lit topics grouped by subject and domain, with their recorded facts. */
+export function AtlasTopicList({ topics }: { topics: LearningMap["topics"] }) {
+  const groups = new Map<string, Map<string, LearningMap["topics"]>>();
+  for (const topic of topics) {
+    const domains = groups.get(topic.subject) ?? new Map();
+    domains.set(topic.domain, [...(domains.get(topic.domain) ?? []), topic]);
+    groups.set(topic.subject, domains);
+  }
+  return <>
+    <details className="learning-map-list">
+      <summary>按星域列出（{topics.length} 个知识点）</summary>
+      {[...groups].map(([subject, domains]) => <div key={subject} className="learning-map-subject">
+        <h4>{subjectLabel(subject)}</h4>
+        {[...domains].map(([domain, topics]) => <div key={domain} className="learning-map-domain">
+          <h5>{domainLabel(domain)}（{topics.length} 个点亮）</h5>
+          <ul>
+            {topics.map(topic => <li key={topic.topic_id} data-state={topic.state}>
+              <strong>{topicLabel(topic.topic_id, topic.name)}{topicLabel(topic.topic_id, topic.name) !== topic.name && <small className="learning-map-original">{topic.name}</small>}</strong>
+              <span>{STATE_LABEL[topic.state]}</span>
+              <small>{topic.evidence.days.length} 天学过 · 播放 {topic.evidence.played_beats} 段 · 练习 {topic.evidence.task_attempts} 次{topic.evidence.unassisted_successes ? ` · 不用提示做出 ${topic.evidence.unassisted_successes} 次` : ""}</small>
+            </li>)}
+          </ul>
+        </div>)}
+      </div>)}
+    </details>
+  </>;
 }
 
 export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: LearningSessionRecord) => void; onNew?: (draft: string) => void } = {}) {
@@ -53,12 +81,6 @@ export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: Lea
   if (error) return <p role="status">暂时读不到学习地图，请稍后再试。</p>;
   if (!map || !awards) return <p role="status">正在读取学习地图…</p>;
 
-  const groups = new Map<string, Map<string, LearningMap["topics"]>>();
-  for (const topic of map.topics) {
-    const domains = groups.get(topic.subject) ?? new Map();
-    domains.set(topic.domain, [...(domains.get(topic.domain) ?? []), topic]);
-    groups.set(topic.subject, domains);
-  }
   return <div className="learning-history-account learning-map">
     <NextSteps onSelect={onSelect} onNew={onNew} />
     <section aria-label="成就">
@@ -76,23 +98,8 @@ export function LearningMapPanel({ onSelect, onNew }: { onSelect?: (session: Lea
       {analysisNotice(analysis) && <p role="status" className="learning-map-analysis">{analysisNotice(analysis)}</p>}
       <p>已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。</p>
       {!map.topics.length && <p>还没有点亮的知识点。完成课程片段或练习后，这里会留下足迹。</p>}
-      <StarAtlas topics={map.topics} onAsk={onNew} />
-      <details className="learning-map-list">
-      <summary>按星域列出（{map.topics.length} 个知识点）</summary>
-      {[...groups].map(([subject, domains]) => <div key={subject} className="learning-map-subject">
-        <h4>{subjectLabel(subject)}</h4>
-        {[...domains].map(([domain, topics]) => <div key={domain} className="learning-map-domain">
-          <h5>{domainLabel(domain)}（{topics.length} 个点亮）</h5>
-          <ul>
-            {topics.map(topic => <li key={topic.topic_id} data-state={topic.state}>
-              <strong>{topicLabel(topic.topic_id, topic.name)}{topicLabel(topic.topic_id, topic.name) !== topic.name && <small className="learning-map-original">{topic.name}</small>}</strong>
-              <span>{STATE_LABEL[topic.state]}</span>
-              <small>{topic.evidence.days.length} 天学过 · 播放 {topic.evidence.played_beats} 段 · 练习 {topic.evidence.task_attempts} 次{topic.evidence.unassisted_successes ? ` · 不用提示做出 ${topic.evidence.unassisted_successes} 次` : ""}</small>
-            </li>)}
-          </ul>
-        </div>)}
-      </div>)}
-      </details>
+      {map.topics.length > 0 && <Link to="/atlas" className="learning-map-open-atlas">在星图里查看 {map.topics.length} 颗星 →</Link>}
+      <AtlasTopicList topics={map.topics} />
     </section>
   </div>;
 }
