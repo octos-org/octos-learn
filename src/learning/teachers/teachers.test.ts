@@ -9,11 +9,14 @@ import type { LearningRunSummary } from '../history/history-api';
 beforeEach(() => localStorage.clear());
 
 it('offers three distinct preset teachers whose settings bound shared memories', () => {
-  expect(TEACHERS.map(teacher => teacher.id)).toEqual(['alan', 'doudou', 'siheng']);
+  expect(TEACHERS.map(teacher => teacher.id)).toEqual(['alan', 'doudou', 'sufei']);
   const profiles = TEACHERS.map(teacher => teacherProfile(teacher));
   expect(profiles[0]).toContain('本次授课老师：阿澜');
-  expect(profiles[1]).toContain('本次授课老师：豆豆');
-  expect(profiles[2]).toContain('本次授课老师：司衡');
+  expect(profiles[1]).toContain('本次授课老师：窦鸢');
+  // Doudou was renamed; memories that still say 豆豆 are about her.
+  expect(profiles[1]).toContain('你以前在应用里叫“豆豆”');
+  expect(profiles[0]).not.toContain('以前在应用里叫');
+  expect(profiles[2]).toContain('本次授课老师：苏绯');
   expect(new Set(profiles).size).toBe(TEACHERS.length);
   for (const context of profiles) {
     expect(context).toContain('不能说成自己的');

@@ -368,7 +368,7 @@ describe("LearningWorkspace", () => {
     ] });
     await renderLearning(<LearningWorkspace sessionId="learn-award" voiceEnabled={false} onBack={vi.fn()} />);
     act(() => { window.dispatchEvent(new CustomEvent("octos:history-uploaded", { detail: { owner: "o", uploaded: 1 } })); });
-    expect(await screen.findByText(`豆豆颁发「亲手搞定」：${getTeacher("doudou").awards["did-it-alone"]}`)).toBeTruthy();
+    expect(await screen.findByText(`窦鸢颁发「亲手搞定」：${getTeacher("doudou").awards["did-it-alone"]}`)).toBeTruthy();
     expect(screen.queryByText(/初来乍到/)).toBeNull();
   });
 

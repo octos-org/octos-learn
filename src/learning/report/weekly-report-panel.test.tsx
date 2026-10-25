@@ -37,7 +37,7 @@ it('shows recorded learning and state changes with their evidence, in the chosen
   render(<WeeklyReportPanel today={today} />);
   expect(await screen.findByText('学了 2 天 · 4 节课 · 播放 18 段 · 练习 6 次 · 提问 2 个')).toBeTruthy();
   expect(api.weeklyReport).toHaveBeenCalledWith('2026-10-19');
-  expect(screen.getByText(`豆豆：${TEACHERS[1].report.active}`)).toBeTruthy();
+  expect(screen.getByText(`窦鸢：${TEACHERS[1].report.active}`)).toBeTruthy();
   expect(screen.getByLabelText('新点亮').textContent).toContain('Energy transfer');
   expect(screen.getByLabelText('状态变化').textContent).toMatch(/一次函数图像.*已探索 → 做出来过.*不用提示达到练习要求/);
   expect(screen.getByLabelText('新成就').textContent).toContain('亲手搞定');
@@ -62,7 +62,7 @@ it('shows a checked comment only for the teacher it was written as', async () =>
   localStorage.setItem('octos-learn-teacher', 'doudou');
   api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周来了 2 天，地图亮起来啦！' });
   render(<WeeklyReportPanel today={today} />);
-  expect(await screen.findByText('豆豆：这周来了 2 天，地图亮起来啦！')).toBeTruthy();
+  expect(await screen.findByText('窦鸢：这周来了 2 天，地图亮起来啦！')).toBeTruthy();
   expect(screen.getByText(/由模型根据本周记录生成/)).toBeTruthy();
   cleanup();
   localStorage.setItem('octos-learn-teacher', 'alan');

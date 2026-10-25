@@ -26,7 +26,7 @@ it('resumes the original board, or fills a new board without sending, in the cho
   localStorage.setItem('octos-learn-teacher', 'doudou');
   const onSelect = vi.fn(), onNew = vi.fn();
   render(<NextSteps onSelect={onSelect} onNew={onNew} />);
-  expect(await screen.findByText(`豆豆：${TEACHERS[1].suggestions.continue.replace('{topic}', '一次函数图像')}`)).toBeTruthy();
+  expect(await screen.findByText(`窦鸢：${TEACHERS[1].suggestions.continue.replace('{topic}', '一次函数图像')}`)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '回到那节课' }));
   expect(onSelect).toHaveBeenCalledWith(session);
   fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));

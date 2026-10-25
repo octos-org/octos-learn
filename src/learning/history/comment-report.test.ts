@@ -12,7 +12,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 function fixture({ none = false, resumed = false, invalid = false, rejected = false } = {}) {
   const host = `learn-report-${'b'.repeat(32)}`;
   const old = { host, peer: 'report-old', session: `${host}#peer-report-old`, token: 'synthetic-control', namespace: 'app/learning-reports/report-old', turn: lease };
-  const input = { input_sha256: 'c'.repeat(64), teacher: '豆豆', activity: { 学习天数: 2 } };
+  const input = { input_sha256: 'c'.repeat(64), teacher: '窦鸢', activity: { 学习天数: 2 } };
   const result = { schema: 1, input_sha256: input.input_sha256, comment: '这周来了 2 天，地图亮起来啦！' };
   const calls: { method: string; params: Record<string, unknown> }[] = [], http: string[] = [];
   let control = resumed ? old : undefined, turn = old.turn;
@@ -65,7 +65,7 @@ it('records the control and execution before one tool-less turn, saves the comme
   expect(f.calls[0].params).toMatchObject({ brief: REPORT_COMMENT_INSTRUCTIONS });
   const text = ((f.calls[3].params.input as { text: string }[])[0]).text;
   expect(f.calls[3].params).toMatchObject({ origin: { kind: 'app' } });
-  expect(text).toContain('本次授课老师：豆豆');
+  expect(text).toContain('本次授课老师：窦鸢');
   expect(text).toContain('"学习天数":2');
 });
 
