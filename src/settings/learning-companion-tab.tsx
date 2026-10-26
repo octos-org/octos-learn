@@ -9,13 +9,13 @@ import { TEACHER_SKINS, useTeacherSkin } from "@/hooks/use-teacher-skin";
 import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
 import { nextStepsShown, showNextSteps } from "@/learning/map/next-step-line";
 import { TEACHERS, useSelectedTeacher } from "@/learning/teachers/teachers";
-import { portraitAsset } from "@/learning/teachers/teacher-portrait-state";
+import { TeacherCard } from "@/learning/teachers/teacher-card";
 
 export function TeacherPicker() {
   const { teacher, setTeacherId } = useSelectedTeacher();
   const { setSkin } = useTeacherSkin();
   return (
-    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="选择老师">
+    <div className="mt-5 grid gap-x-6 gap-y-8 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="选择老师">
       {TEACHERS.map((option) => {
         const active = teacher.id === option.id;
         return (
@@ -26,17 +26,9 @@ export function TeacherPicker() {
             aria-checked={active}
             data-testid={`teacher-${option.id}`}
             onClick={() => { setTeacherId(option.id); setSkin(option.skin); }}
-            className="teacher-skin-option workbench-card flex flex-col items-start gap-3 p-4 text-left"
+            className="teacher-pick flex flex-col items-start gap-3 text-left"
           >
-            <img
-              src={portraitAsset(option.id, "card")}
-              alt=""
-              aria-hidden="true"
-              draggable={false}
-              loading="lazy"
-              decoding="async"
-              className="aspect-[2/3] w-full rounded-md object-cover"
-            />
+            <TeacherCard teacherId={option.id} />
             <span className="flex w-full items-center gap-3">
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-text-strong">{option.name}</span>

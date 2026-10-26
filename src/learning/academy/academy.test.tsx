@@ -38,7 +38,7 @@ afterEach(cleanup);
 it("links the academy's places from every page, marking the current one", () => {
   render(<MemoryRouter initialEntries={["/atlas"]}><AcademyHeader /></MemoryRouter>);
   const places = screen.getByRole("navigation", { name: "学院" });
-  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就殿", "/achievements"], ["我的老师", "/teachers"]]);
+  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"], ["我的老师", "/teachers"]]);
   expect(screen.getByRole("link", { name: "星图" }).getAttribute("aria-current")).toBe("page");
 });
 
