@@ -5,7 +5,8 @@ import { localDay, queryLearningMap, topicState } from "./map-progress.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 
 const candidate = TOPIC_MAPPINGS[0];
-const approved = [{ ...candidate, status: "approved" }]; // Test content only; no production activation.
+const approved = [{ ...candidate, status: "approved" }];
+const pending = [{ ...candidate, status: "pending-review" }];
 const at = (day, hour = 8) => `2026-10-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:00:00.000Z`;
 const beat = (id, index, { run = "run-1", day = 21 } = {}) => ({ version: 1, id, kind: "beat_completed", occurred_at: at(day), device_id: "tv",
   session_id: `board-${run}`, run_id: run, log_id: `log-${run}`, course: candidate.course,
@@ -28,7 +29,7 @@ test("the map shows only topics with associated facts, from an approved mapping,
     store.append("alice", [beat("b1", 2), beat("b2", 2, { run: "run-2", day: 23 }), attempt("a1", { result: "succeeded", hints: 1, day: 23, run: "run-2" })]);
     store.append("bob", [attempt("bob-a", { result: "succeeded" })]);
     // A pending mapping counts nothing: the map stays empty instead of guessing.
-    assert.deepEqual(queryLearningMap(store, "alice").topics, []);
+    assert.deepEqual(queryLearningMap(store, "alice", {}, pending).topics, []);
     const map = queryLearningMap(store, "alice", {}, approved);
     assert.equal(map.rules_version, "map-states-v1");
     assert.equal(map.taxonomy.commit, "c7ed549758d9fb430c4af54886c658e78162a0b1");
