@@ -21,9 +21,9 @@ export function AcademyHeader() {
   const [loggingOut, setLoggingOut] = useState(false);
   return (
     <header className="academy-header">
-      <Link to="/" className="academy-brand" aria-label="星图学院，回到大厅">
-        <i aria-hidden="true" />
-        <span>星图学院</span>
+      <Link to="/" className="academy-brand" aria-label="Octos Learn，回到大厅">
+        <img src="/images/octos-logo-color.svg" alt="" />
+        <span>Octos Learn</span>
       </Link>
       {token && (
         <nav className="academy-places" aria-label="学院">
