@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { getToken } from "@/api/client";
@@ -201,15 +202,14 @@ function AchievementDetail({ achievement, earned, progress, onClose }: {
   }, [onClose]);
   return (
     <div className="academy-detail-backdrop" onClick={onClose}>
-      <div className="academy-detail" role="dialog" aria-modal="true" aria-labelledby="academy-detail-name" onClick={(event) => event.stopPropagation()}>
+      <div className={`academy-detail is-${achievement.rarity}`} data-earned={earned ? true : undefined} role="dialog" aria-modal="true" aria-labelledby="academy-detail-name" onClick={(event) => event.stopPropagation()}>
+        <button type="button" className="academy-detail-close" onClick={onClose} aria-label="关闭" autoFocus><X size={18} aria-hidden="true" /></button>
         <div className="academy-detail-top">
-          <Medal achievement={achievement} locked={!earned} />
-          <div>
-            <span className={`academy-rarity is-${achievement.rarity}`}>{RARITY_NAME[achievement.rarity]}</span>
-            <h2 id="academy-detail-name">{secret ? "隐藏成就" : achievement.name}</h2>
-            {!secret && <p className="academy-detail-flavor">{achievement.flavor}</p>}
-            <p>{secret ? "获得之前不会告诉你条件。继续学下去，它会自己出现。" : achievement.condition}</p>
-          </div>
+          <div className="academy-detail-medal"><Medal achievement={achievement} locked={!earned} /></div>
+          <span className={`academy-rarity is-${achievement.rarity}`}>{RARITY_NAME[achievement.rarity]}</span>
+          <h2 id="academy-detail-name">{secret ? "隐藏成就" : achievement.name}</h2>
+          {!secret && <p className="academy-detail-flavor">{achievement.flavor}</p>}
+          <p className="academy-detail-condition">{secret ? "获得之前不会告诉你条件。继续学下去，它会自己出现。" : achievement.condition}</p>
         </div>
         <dl>
           <dt>分类</dt><dd>{category.name}</dd>
@@ -219,7 +219,6 @@ function AchievementDetail({ achievement, earned, progress, onClose }: {
           {achievement.season && <><dt>时间</dt><dd>{achievement.season}（每年都有，错过了明年还能获得）</dd></>}
           {achievement.title && !secret && <><dt>称号</dt><dd>解锁「{achievement.title}」</dd></>}
         </dl>
-        <button type="button" className="academy-primary" onClick={onClose} autoFocus>关闭</button>
       </div>
     </div>
   );
