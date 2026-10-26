@@ -7,20 +7,21 @@ import { getToken } from "@/api/client";
 import { openHistoryApi, type EarnedAchievement, type LearningMap } from "../history/history-api";
 import { learningSessionHref } from "../learning-history";
 import type { LearningSessionRecord } from "../learning-session-store";
-import { ACHIEVEMENT_NAME } from "../map/award-line";
+import { achievementName } from "../map/award-line";
 import { topicLabel } from "../map/taxonomy-labels";
 import { TeacherPortrait } from "../teachers/teacher-portrait";
 import { useSelectedTeacher } from "../teachers/teachers";
 
 // Same words as the atlas: a star is lit once it was done without hints;
 // every recorded topic leaves a footprint.
-type Summary = { lit: number; footprints: number; recent: EarnedAchievement[] };
+type Summary = { lit: number; footprints: number; recent: EarnedAchievement[]; title: string | null };
 
-function summarize(map: LearningMap, awards: EarnedAchievement[]): Summary {
+function summarize(map: LearningMap, awards: EarnedAchievement[], title: string | null): Summary {
   return {
     lit: map.topics.filter((topic) => topic.state === "did-it").length,
     footprints: map.topics.length,
     recent: [...awards].sort((a, b) => b.earned_at.localeCompare(a.earned_at)).slice(0, 3),
+    title,
   };
 }
 
@@ -36,7 +37,7 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
     let active = true;
     void openHistoryApi(token)
       .then((api) => Promise.all([api.learningMap(), api.achievements()]))
-      .then(([map, awards]) => { if (active) setSummary(summarize(map, awards.achievements)); })
+      .then(([map, awards]) => { if (active) setSummary(summarize(map, awards.achievements, awards.title?.name ?? null)); })
       .catch(() => undefined);
     return () => { active = false; };
   }, []);
@@ -49,7 +50,7 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
         </span>
         <div className="academy-greeting-body">
           <p className="academy-eyebrow">{teacher.name}</p>
-          <p className="academy-bubble">{latest ? teacher.hall.resume : teacher.hall.welcome}</p>
+          <p className="academy-bubble">{summary?.title ? `${summary.title}，` : ""}{latest ? teacher.hall.resume : teacher.hall.welcome}</p>
           <div className="academy-actions">
             {latest && (
               <Link to={learningSessionHref(latest)} className="academy-primary">
@@ -74,15 +75,15 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
           ) : <span className="academy-muted">每学完一段讲解或练习，星图上就会留下足迹。</span>}
           <span className="academy-more">打开星图 <ArrowRight size={16} aria-hidden="true" /></span>
         </Link>
-        <div className="academy-card">
-          <span className="academy-eyebrow">最近获得</span>
+        <Link to="/achievements" className="academy-card">
+          <span className="academy-eyebrow">最近获得 · 成就殿</span>
           {summary?.recent.length ? (
             <ul className="academy-awards">
               {summary.recent.map((award) => (
                 <li key={`${award.achievement_id}:${award.scope}`}>
                   <i aria-hidden="true" />
                   <span>
-                    {ACHIEVEMENT_NAME[award.achievement_id]}
+                    {achievementName(award.achievement_id)}
                     {award.topic_name ? ` · ${topicLabel(award.scope, award.topic_name)}` : ""}
                   </span>
                   <time dateTime={award.earned_at}>{new Date(award.earned_at).toLocaleDateString("zh-CN")}</time>
@@ -90,7 +91,7 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
               ))}
             </ul>
           ) : <span className="academy-muted">还没有成就。完成课程片段或练习后会出现在这里。</span>}
-        </div>
+        </Link>
       </div>
     </section>
   );

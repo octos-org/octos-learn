@@ -16,6 +16,7 @@ export function topicCatalog() {
   catalog = {
     metadata: TOPIC_TAXONOMY,
     has: id => byId.has(id),
+    list: () => [...byId.values()],
     read: ids => ids.map(id => byId.get(id)).filter(Boolean),
     // This is lexical retrieval, not semantic classification. The Octos
     // agent chooses English search terms; absence of a hit stays unknown.

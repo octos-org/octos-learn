@@ -4,6 +4,7 @@ import { Link, NavLink } from "react-router-dom";
 
 import { useAuth } from "@/auth/auth-context";
 
+import "../course-launcher.css";
 import "./academy.css";
 
 /** The academy's places. The hall is the home page; each other place is its
@@ -11,6 +12,7 @@ import "./academy.css";
 export const ACADEMY_PLACES = [
   { to: "/", label: "大厅", end: true },
   { to: "/atlas", label: "星图", end: false },
+  { to: "/achievements", label: "成就殿", end: false },
   { to: "/teachers", label: "我的老师", end: false },
 ] as const;
 

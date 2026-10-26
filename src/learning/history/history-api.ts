@@ -33,10 +33,13 @@ export interface LearningMapTopic {
 }
 export interface LearningMap { rules_version: string; through: number; taxonomy: { commit: string }; topics: LearningMapTopic[] }
 export interface EarnedAchievement {
-  achievement_id: 'first-footprint' | 'did-it-alone' | 'regular-guest' | 'reunion'; scope: string; topic_name: string | null;
+  /** An id from the shared achievement catalog. `scope` is a topic for topic-scoped ones, a year for seasonal ones, otherwise empty. */
+  achievement_id: string; scope: string; topic_name: string | null;
   teacher_id: string | null; earned_at: string; awarded_at: string; evidence_event_id: string; new: boolean;
 }
-export interface AchievementList { rules_version: string; achievements: EarnedAchievement[] }
+export interface AchievementProgress { achievement_id: string; current: number; target: number }
+export interface LearnerTitle { id: string; name: string }
+export interface AchievementList { rules_version: string; achievements: EarnedAchievement[]; progress?: AchievementProgress[]; title?: LearnerTitle }
 /** `quota_used` counts analyses started today (UTC day) against `max_daily_tasks`. */
 export interface AnalysisStatus { enabled: boolean; max_daily_tasks: number; quota_used: number; analysis_through: number; states: { state: string; count: number }[] }
 export interface NextStep {
@@ -102,6 +105,7 @@ export class HistoryApi {
   }
   learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  setTitle(titleId: string) { return this.request<{ title: LearnerTitle }>('/title', 'PUT', { title_id: titleId }); }
   suggestions() { return this.request<{ rules_version: string; suggestions: NextStep[] }>(`/suggestions?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   dismissSuggestion(id: string) { return this.request<{ dismissed: boolean }>('/suggestions/dismiss', 'POST', { id }); }
   reportComments() { return this.request<{ enabled: boolean }>('/report-comments'); }

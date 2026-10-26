@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import { getToken } from "../../api/client";
 import { openHistoryApi, type MapState, type WeeklyReport } from "../history/history-api";
-import { ACHIEVEMENT_NAME, readAwardTone } from "../map/award-line";
+import { achievementName, readAwardTone } from "../map/award-line";
 import { domainLabel, subjectLabel, topicLabel } from "../map/taxonomy-labels";
 import { getTeacher, PLAIN_REPORT, resolveSelectedTeacherId } from "../teachers/teachers";
 import { localDayOf, shiftWeek, weekLabel, weekStartOf } from "./report-week";
@@ -38,7 +38,7 @@ function ReportBody({ report }: { report: WeeklyReport }) {
     </ul></section>}
     {report.achievements.length > 0 && <section aria-label="新成就"><h4>新成就</h4><ul>
       {report.achievements.map(item => <li key={`${item.achievement_id}:${item.scope}`}>
-        {ACHIEVEMENT_NAME[item.achievement_id]}{item.topic_name ? ` · ${topicLabel(item.scope, item.topic_name)}` : ""}</li>)}
+        {achievementName(item.achievement_id)}{item.topic_name ? ` · ${topicLabel(item.scope, item.topic_name)}` : ""}</li>)}
     </ul></section>}
     <p className="weekly-report-closing">{lines.closing}</p>
     {teacher && <p className="weekly-report-meaning">这些记录说明你学过、练过什么，都不等于已经掌握。</p>}

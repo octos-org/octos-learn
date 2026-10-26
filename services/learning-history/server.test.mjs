@@ -192,11 +192,15 @@ test("learning map and achievements are per account, start empty, and validate t
   const map = await (await call("/map?utc_offset_minutes=480")).json();
   assert.deepEqual([map.profile_id, map.rules_version, map.utc_offset_minutes, map.topics], ["alice", "map-states-v1", 480, []]);
   const achievements = await (await call("/achievements")).json();
-  assert.deepEqual([achievements.rules_version, achievements.achievements], ["achievements-v1", []]);
+  assert.deepEqual([achievements.rules_version, achievements.achievements.map(item => item.achievement_id)], ["achievements-v2", ["first-question"]]);
   assert.equal((await call("/map?utc_offset_minutes=900")).status, 400);
   assert.equal((await call("/map?utc_offset_minutes=8.5")).status, 400);
   assert.equal((await call("/map?owner=bob")).status, 400);
   assert.equal((await call("/achievements", "POST", {})).status, 404);
+  assert.equal(achievements.title.name, "启明学徒");
+  assert.equal((await call("/title", "PUT", { title_id: "night-owl" })).status, 400);
+  assert.equal((await call("/title", "PUT", { title_id: "default", extra: 1 })).status, 400);
+  assert.deepEqual(await (await call("/title", "PUT", { title_id: "default" })).json(), { profile_id: "alice", title: { id: "default", name: "启明学徒" } });
 });
 
 test("weekly report is per account and accepts only a Monday and a valid offset", async () => {

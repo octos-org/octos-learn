@@ -8,7 +8,7 @@ import { TopicAnalysisStore } from "./topic-analysis-store.mjs";
 import { topicCatalog } from "./topic-catalog.mjs";
 import { AnalysisControlStore, validReportControl } from "./analysis-control.mjs";
 import { queryLearningMap } from "./map-progress.mjs";
-import { evaluateAchievements } from "./achievements.mjs";
+import { chooseTitle, evaluateAchievements, TitleError } from "./achievements.mjs";
 import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
 import { ReportCommentStore } from "./report-comments.mjs";
 import { dismissSuggestion, querySuggestions } from "./suggestions.mjs";
@@ -222,6 +222,11 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
           if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).some(key => !["teacher_id", "base_revision"].includes(key))) throw new HttpError(400, "Invalid teacher choice");
           send(200, { profile_id: owner, ...store().chooseTeacher(owner, body.teacher_id, body.base_revision) });
         }
+      } else if (path.length === 1 && path[0] === "title" && !url.search && request.method === "PUT") {
+        const body = await limitedJson(request, 1024);
+        if (!body || typeof body !== "object" || Array.isArray(body) || Object.keys(body).length !== 1 || typeof body.title_id !== "string") throw new HttpError(400, "Invalid title");
+        try { send(200, { profile_id: owner, ...chooseTitle(store(), owner, body.title_id) }); }
+        catch (error) { if (error instanceof TitleError) throw new HttpError(400, error.message); throw error; }
       } else if (request.method === "GET" && path.length === 2 && path[0] === "materials") {
         if (url.search || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) throw new HttpError(400, "Invalid material query");
         const material = store().courseMaterial(owner, path[1]);

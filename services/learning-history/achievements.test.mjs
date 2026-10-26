@@ -15,7 +15,9 @@ const attempt = (id, run, when, hints) => ({ ...base(id, run, when), kind: "task
   data: { task_id: "section-02-task-01", operation_id: id, result: "succeeded", hints_used: hints, value: 1 } });
 const routed = (run, when, teacher) => ({ ...base(`route-${run}`, run, when), kind: "question_routed", question_id: `q-${run}`,
   data: { conversation_route: "direct-action", ...(teacher ? { teacher_id: teacher, teacher_name: teacher === "alan" ? "阿澜" : "豆豆" } : {}) } });
-const ids = result => result.achievements.map(item => `${item.achievement_id}:${item.scope}:${item.teacher_id}:${item.new}`);
+// The original four rules; the account-wide rules have their own tests.
+const V1 = new Set(["first-footprint", "did-it-alone", "regular-guest", "reunion"]);
+const ids = result => result.achievements.filter(item => V1.has(item.achievement_id)).map(item => `${item.achievement_id}:${item.scope}:${item.teacher_id}:${item.new}`);
 
 test("achievements follow the rules once each, name the presenting teacher, and never repeat", () => {
   const store = new HistoryStore(":memory:");
@@ -29,8 +31,9 @@ test("achievements follow the rules once each, name the presenting teacher, and 
     store.append("alice", [routed("r3", at(10, 5), "doudou"), beat("b3", "r3", at(10, 5))]);
     const second = evaluateAchievements(store, "alice", { now: clock }, approved);
     assert.deepEqual(ids(second), [`first-footprint::doudou:false`, `did-it-alone::alan:true`, `regular-guest:${slope}:doudou:true`]);
-    assert.equal(second.achievements[2].topic_name, "Linear Function Graphs");
-    assert.equal(second.achievements[2].evidence_event_id, "b3");
+    const guest = second.achievements.find(item => item.achievement_id === "regular-guest");
+    assert.equal(guest.topic_name, "Linear Function Graphs");
+    assert.equal(guest.evidence_event_id, "b3");
     // Back after more than 14 days, in a course-pack run without a teacher.
     store.append("alice", [beat("b4", "r4", at(10, 25))]);
     const third = evaluateAchievements(store, "alice", { now: clock }, approved);
@@ -70,10 +73,32 @@ test("awards stay when the counting basis changes later; only deleted evidence w
   const store = new HistoryStore(":memory:");
   try {
     store.append("alice", [routed("r1", at(10, 1), "alan"), attempt("a1", "r1", at(10, 1), 0)]);
-    assert.equal(evaluateAchievements(store, "alice", {}, approved).achievements.length, 1);
+    assert.equal(evaluateAchievements(store, "alice", {}, approved).achievements.some(item => item.achievement_id === "did-it-alone"), true);
     // The course mapping is withdrawn (or a catalog upgrade supersedes analysis): the map
     // no longer counts the fact, but the earned award and its evidence remain.
     const later = evaluateAchievements(store, "alice", {}, []);
-    assert.deepEqual(later.achievements.map(item => [item.achievement_id, item.evidence_event_id]), [["did-it-alone", "a1"]]);
+    assert.deepEqual(later.achievements.filter(item => V1.has(item.achievement_id)).map(item => [item.achievement_id, item.evidence_event_id]), [["did-it-alone", "a1"]]);
+  } finally { store.close(); }
+});
+
+test("titles: the default is always held, others only while their achievement is earned", async () => {
+  const { chooseTitle, currentTitle } = await import("./achievements.mjs");
+  const store = new HistoryStore(":memory:");
+  try {
+    assert.equal(currentTitle(store, "alice").name, "启明学徒");
+    assert.throws(() => chooseTitle(store, "alice", "night-owl"), /not earned/);
+    assert.throws(() => chooseTitle(store, "alice", "first-question"), /Unknown title/);
+    // A segment completed at 22:00 local earns 星夜学者.
+    store.append("alice", [routed("r1", at(10, 1), "alan"), beat("b1", "r1", "2026-10-01T14:00:00.000Z")]);
+    const result = evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved);
+    assert.equal(result.achievements.some(item => item.achievement_id === "night-owl"), true);
+    assert.equal(chooseTitle(store, "alice", "night-owl").title.name, "星夜学者");
+    assert.equal(evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved).title.name, "星夜学者");
+    assert.equal(currentTitle(store, "bob").name, "启明学徒");
+    // Deleting the evidence withdraws the achievement, and the title falls back.
+    store.deleteRun("alice", "r1");
+    evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved);
+    assert.equal(currentTitle(store, "alice").name, "启明学徒");
+    assert.equal(chooseTitle(store, "alice", "default").title.id, "default");
   } finally { store.close(); }
 });
