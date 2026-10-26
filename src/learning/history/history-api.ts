@@ -3,6 +3,7 @@ import { getToken } from '../../api/client';
 import { API_BASE } from '../../lib/constants';
 import { DeviceHistoryQueue } from './device-queue';
 import { resolveHistoryIdentity, type HistoryIdentity } from './synchronize';
+import { announceNewAwards } from '../academy/award-events';
 import type { HistoryCourse, HistoryEvent } from '../../../services/learning-history/event-contract.mjs';
 
 export interface LearningRunSummary {
@@ -104,7 +105,13 @@ export class HistoryApi {
     return this.request<HistoryTopicPage>(`/topics/${encodeURIComponent(topicId)}?through=${through}&after=${after}&limit=50${analysisThrough === undefined ? '' : `&analysis_through=${analysisThrough}`}`);
   }
   learningMap() { return this.request<LearningMap>(`/map?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
-  achievements() { return this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
+  /** Reading achievements also records any newly earned ones; those are
+   * announced so the ceremony plays wherever the read happened. */
+  async achievements() {
+    const list = await this.request<AchievementList>(`/achievements?utc_offset_minutes=${localUtcOffsetMinutes()}`);
+    announceNewAwards(list.achievements);
+    return list;
+  }
   setTitle(titleId: string) { return this.request<{ title: LearnerTitle }>('/title', 'PUT', { title_id: titleId }); }
   suggestions() { return this.request<{ rules_version: string; suggestions: NextStep[] }>(`/suggestions?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   dismissSuggestion(id: string) { return this.request<{ dismissed: boolean }>('/suggestions/dismiss', 'POST', { id }); }
