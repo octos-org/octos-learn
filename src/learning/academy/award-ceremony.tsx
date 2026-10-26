@@ -3,7 +3,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
 import type { EarnedAchievement } from "../history/history-api";
 import { awardLine, readAwardTone } from "../map/award-line";
-import { portraitAsset } from "../teachers/teacher-portrait-state";
+import { TeacherPortrait } from "../teachers/teacher-portrait";
 import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { RARITY_NAME } from "./achievement-display";
 import { runAwardParticles } from "./award-particles";
@@ -108,12 +108,8 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
       <div className="award-presenter">
         <p className="award-bubble">{teacher && <b>{teacher.name}</b>}{awardLine(item, tone)}</p>
         {teacher && (
-          <span className="award-arch" aria-hidden="true">
-            <span className="award-arch-window">
-              <img src={portraitAsset(teacher.id, "arch-bg")} alt="" />
-              <img className="award-arch-bust" src={portraitAsset(teacher.id, "bust-approving")} alt="" />
-            </span>
-            <span className="award-arch-frame" />
+          <span className="award-arch">
+            <TeacherPortrait teacherId={teacher.id} pose="approving" frame="card" name={teacher.name} />
           </span>
         )}
       </div>

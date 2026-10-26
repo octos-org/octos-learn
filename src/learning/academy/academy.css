@@ -134,7 +134,7 @@
 .academy-greeting-portrait {
   display: block;
   aspect-ratio: 3 / 4;
-  margin-top: 12px;
+  margin: 8px 0 14px;
 }
 
 /* In the hall the arch is large, so the bust is drawn bigger and the head

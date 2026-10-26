@@ -62,10 +62,9 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
       <div className="academy-hall">
         <div className="academy-greeting">
           <span className="academy-greeting-portrait">
-            <TeacherPortrait teacherId={teacher.id} pose="idle" />
+            <TeacherPortrait teacherId={teacher.id} pose="idle" frame="card" name={teacher.name} />
           </span>
           <div className="academy-greeting-body">
-            <p className="academy-eyebrow">{teacher.name}</p>
             <p className="academy-bubble">{latest ? teacher.hall.resume : teacher.hall.welcome}</p>
             <div className="academy-actions">
               {latest && (

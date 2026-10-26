@@ -1,7 +1,9 @@
-/* A teacher's bust in a gilded arch, with a star lamp in the keystone that
-   brightens with the classroom pose. Pure CSS: no canvas, no per-frame work. */
+/* A teacher's bust, framed as a soft glow (classroom) or a collector's card
+   (hall, award ceremony). `--portrait-lamp` rises with the classroom pose and
+   brightens the glow or the card's corner stars. Pure CSS: no per-frame work. */
 .teacher-portrait {
   --portrait-gold: #e2bd66;
+  --portrait-gold-soft: #f6dfa0;
   --portrait-lamp: 0.35;
   position: relative;
   display: block;
@@ -9,12 +11,21 @@
   height: 100%;
 }
 
+.teacher-portrait[data-pose="listening"] { --portrait-lamp: 0.5; }
+.teacher-portrait[data-pose="thinking"] { --portrait-lamp: 0.7; }
+.teacher-portrait[data-pose="explaining"] { --portrait-lamp: 0.9; }
+.teacher-portrait[data-pose="approving"] { --portrait-lamp: 1; }
+
+/* Where each teacher's face sits across the bust image (0–1, read off the
+   idle pose); the bust is shifted so the face is centred. */
+.teacher-portrait[data-teacher="alan"] { --bust-head: 0.43; }
+.teacher-portrait[data-teacher="doudou"] { --bust-head: 0.53; }
+.teacher-portrait[data-teacher="sufei"] { --bust-head: 0.46; }
+
 .teacher-portrait-window {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: 50% 50% 6px 6px / 36% 36% 6px 6px;
-  background: #141a40;
 }
 
 .teacher-portrait-scene {
@@ -24,12 +35,6 @@
   height: 100%;
   object-fit: cover;
 }
-
-/* Where each teacher's face sits across the bust image (0–1, read off the
-   idle pose); the bust is shifted so the face is centred in the arch. */
-.teacher-portrait[data-teacher="alan"] { --bust-head: 0.43; }
-.teacher-portrait[data-teacher="doudou"] { --bust-head: 0.53; }
-.teacher-portrait[data-teacher="sufei"] { --bust-head: 0.46; }
 
 .teacher-portrait-pose {
   position: absolute;
@@ -46,7 +51,6 @@
   /* Busts are drawn close to the top edge; fade the crown into the sky. */
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
-  filter: drop-shadow(-2px -1px 4px rgba(150, 180, 255, 0.4));
   transition: opacity 320ms ease;
 }
 
@@ -55,52 +59,124 @@
   animation: teacher-portrait-breathe 4.8s ease-in-out infinite;
 }
 
-.teacher-portrait-frame {
+.teacher-portrait[data-still] .teacher-portrait-pose[data-active] { animation: none; }
+
+/* ---------- Glow: no frame ---------- */
+.teacher-portrait[data-frame="glow"] .teacher-portrait-window {
+  /* Fade out below and soften the sides so no straight edge shows. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 74%, transparent), linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, #000 74%, transparent), linear-gradient(to right, transparent, #000 9%, #000 91%, transparent);
+  mask-composite: intersect;
+}
+
+.teacher-portrait-glow {
   position: absolute;
-  inset: -3px;
-  border: 3px solid var(--portrait-gold);
-  border-radius: 50% 50% 7px 7px / 36% 36% 7px 7px;
-  box-shadow:
-    0 0 0 1px rgba(122, 86, 34, 0.55),
-    inset 0 0 0 1px rgba(10, 15, 44, 0.5),
-    0 10px 26px rgba(20, 26, 64, 0.35);
+  inset: 0;
   pointer-events: none;
 }
 
-.teacher-portrait-lamp {
+.teacher-portrait-glow::before {
+  content: "";
   position: absolute;
-  top: -9px;
+  inset: 2% -8% 12%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 42%, rgba(150, 168, 255, 0.5), rgba(96, 108, 214, 0.18) 46%, transparent 70%);
+  opacity: calc(0.45 + 0.55 * var(--portrait-lamp));
+  transition: opacity 400ms ease;
+}
+
+/* A faint star orbit behind the head, with two stars on it. */
+.teacher-portrait-glow::after {
+  content: "";
+  position: absolute;
   left: 50%;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--portrait-gold);
-  border-radius: 3px;
-  background: radial-gradient(circle, #fffdf2 0 22%, #ffd98a 45%, #c99a3e 100%);
-  box-shadow: 0 0 calc(6px + 18px * var(--portrait-lamp)) calc(2px * var(--portrait-lamp)) rgba(255, 214, 140, calc(0.3 + 0.6 * var(--portrait-lamp)));
-  transform: translateX(-50%) rotate(45deg);
+  top: 36%;
+  width: 94%;
+  aspect-ratio: 1;
+  border: 1px dashed rgba(201, 154, 62, 0.55);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.teacher-portrait-glow i {
+  position: absolute;
+  z-index: 1;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffe7a8;
+  box-shadow: 0 0 calc(3px + 9px * var(--portrait-lamp)) calc(1px * var(--portrait-lamp)) rgba(255, 210, 120, calc(0.35 + 0.6 * var(--portrait-lamp)));
   transition: box-shadow 400ms ease;
 }
 
-.teacher-portrait[data-pose="listening"] { --portrait-lamp: 0.5; }
-.teacher-portrait[data-pose="thinking"] { --portrait-lamp: 0.7; }
-.teacher-portrait[data-pose="explaining"] { --portrait-lamp: 0.9; }
-.teacher-portrait[data-pose="approving"] { --portrait-lamp: 1; }
+.teacher-portrait-glow i:first-child { top: 9%; left: 12%; }
+.teacher-portrait-glow i:last-child { top: 22%; right: 1%; }
 
-.teacher-portrait[data-pose="thinking"] .teacher-portrait-lamp {
-  animation: teacher-portrait-lamp-pulse 1.6s ease-in-out infinite;
-}
-
-.teacher-portrait[data-pose="approving"] .teacher-portrait-lamp::after {
+.teacher-portrait[data-frame="glow"][data-pose="thinking"] .teacher-portrait-glow i { animation: teacher-portrait-star-pulse 1.6s ease-in-out infinite; }
+.teacher-portrait[data-frame="glow"][data-pose="thinking"] .teacher-portrait-glow i:last-child { animation-delay: 0.8s; }
+.teacher-portrait[data-frame="glow"][data-pose="approving"] .teacher-portrait-glow i::after {
   content: "";
   position: absolute;
-  inset: -6px;
+  inset: -5px;
   border: 2px solid rgba(255, 223, 160, 0.9);
   border-radius: 50%;
-  animation: teacher-portrait-lamp-ring 900ms ease-out both;
+  animation: teacher-portrait-ring 900ms ease-out both;
 }
 
-.teacher-portrait[data-still] .teacher-portrait-pose[data-active] {
-  animation: none;
+/* ---------- Card: a collector's card with corner ornaments ---------- */
+.teacher-portrait[data-frame="card"] .teacher-portrait-window {
+  border-radius: 12px;
+  background: #141a40;
+}
+
+.teacher-portrait[data-frame="card"]::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 1.5px solid var(--portrait-gold);
+  border-radius: 15px;
+  box-shadow: 0 10px 26px rgba(10, 14, 40, 0.35);
+  pointer-events: none;
+}
+
+.teacher-portrait-inset {
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(246, 223, 160, 0.7);
+  border-radius: 7px;
+  pointer-events: none;
+}
+
+.teacher-portrait-corners i {
+  position: absolute;
+  width: 11%;
+  aspect-ratio: 1;
+  border: 2px solid var(--portrait-gold-soft);
+  filter: drop-shadow(0 0 calc(2px + 5px * var(--portrait-lamp)) rgba(255, 214, 140, 0.6));
+  pointer-events: none;
+}
+
+.teacher-portrait-corners i:nth-child(1) { top: 3px; left: 3px; border-right: 0; border-bottom: 0; border-radius: 6px 0 0 0; }
+.teacher-portrait-corners i:nth-child(2) { top: 3px; right: 3px; border-left: 0; border-bottom: 0; border-radius: 0 6px 0 0; }
+.teacher-portrait-corners i:nth-child(3) { bottom: 3px; left: 3px; border-right: 0; border-top: 0; border-radius: 0 0 0 6px; }
+.teacher-portrait-corners i:nth-child(4) { bottom: 3px; right: 3px; border-left: 0; border-top: 0; border-radius: 0 0 6px 0; }
+
+.teacher-portrait-plate {
+  position: absolute;
+  z-index: 2;
+  bottom: -12px;
+  left: 50%;
+  padding: 2px 16px;
+  border: 1px solid var(--portrait-gold);
+  border-radius: 4px;
+  color: var(--portrait-gold-soft);
+  background: #141a40;
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 @keyframes teacher-portrait-breathe {
@@ -108,20 +184,21 @@
   50% { transform: scale(1.012); }
 }
 
-@keyframes teacher-portrait-lamp-pulse {
-  0%, 100% { filter: brightness(0.85); }
-  50% { filter: brightness(1.25); }
+@keyframes teacher-portrait-star-pulse {
+  0%, 100% { filter: brightness(0.8); }
+  50% { filter: brightness(1.35); }
 }
 
-@keyframes teacher-portrait-lamp-ring {
+@keyframes teacher-portrait-ring {
   from { opacity: 1; transform: scale(0.6); }
   to { opacity: 0; transform: scale(2.6); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .teacher-portrait-pose,
-  .teacher-portrait-lamp { transition: none; }
+  .teacher-portrait-glow::before,
+  .teacher-portrait-glow i { transition: none; }
   .teacher-portrait-pose[data-active],
-  .teacher-portrait[data-pose="thinking"] .teacher-portrait-lamp,
-  .teacher-portrait[data-pose="approving"] .teacher-portrait-lamp::after { animation: none; }
+  .teacher-portrait-glow i,
+  .teacher-portrait-glow i::after { animation: none !important; }
 }
