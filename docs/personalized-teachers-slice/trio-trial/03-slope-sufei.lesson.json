@@ -1,0 +1,239 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直线 y=2x+1 中斜率 2 的几何与代数意义",
+    "goals": [
+      "理解斜率是纵坐标变化量与横坐标变化量的比值（Δy/Δx）",
+      "在直线 y=2x+1 上通过两点的坐标增量检验斜率 2 的具体含义"
+    ],
+    "adaptation": {
+      "strategies": [
+        "从坐标测量的变化量出发，严格核对每一个数值来源",
+        "通过点在直线上的移动，直观呈现横向增加 1 单位时纵向严格增加 2 单位的对应关系"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -2,
+        "max": 3,
+        "label": "点A横坐标 x_A",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": -1,
+        "max": 4,
+        "label": "点B横坐标 x_B",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "将点 A 的横坐标移动到 1",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "观察点 A 的位置变化",
+          "将滑块调整至 1"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "点 A 调整为 1。此时点 A 为 (1, 3)，点 B 为 (2, 5)，Δy/Δx = (5-3)/(2-1) = 2，斜率依然严格为 2。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 1,
+          "tolerance": 0.0125
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过直线上两点的坐标增量核对 Δy/Δx，明确斜率 2 代表横坐标每增加 1，纵坐标增加 2",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "来看直线 y=2x+1。我们先核对定义：斜率是纵坐标的变化量除以横坐标的变化量，即 Δy 除以 Δx。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y=2x+1 与斜率度量",
+                "axes": {
+                  "x": {
+                    "min": -2,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y=2x+1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 3,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((2)*(number_02))+(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{y_2 - y_1}{x_2 - x_1}"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "现在直线上有两个点。点 A 的横坐标是 0，算得纵坐标是 1；点 B 的横坐标是 1，算得纵坐标是 3。每一个数都来自方程计算。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "取点计算",
+                "items": [
+                  "点 A: (0, 1)",
+                  "点 B: (1, 3)",
+                  "Δx = 1 - 0 = 1",
+                  "Δy = 3 - 1 = 2"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              }
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "核对点A与点B的坐标增量"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "计算两者的比值：Δy 除以 Δx 等于 2 除以 1，结果是 2。这个 2 的几何含义就是：沿直线向右每走 1 个单位，垂直方向必定上升 2 个单位。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "我们把点 B 的横坐标移动到 2 来检验：此时点 B 纵坐标变为 5，Δx 是 2，Δy 是 4，比值 4 除以 2 依然是 2。请你将点 A 的横坐标调整到 1，继续验证斜率是否保持不变。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "直线 y=2x+1 中的斜率 2，表示直线上任意两点间纵坐标变化量与横坐标变化量的比值为 2；即 x 每增加 1，y 对应增加 2。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

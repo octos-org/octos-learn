@@ -30,6 +30,13 @@ test("a comment may only restate the report, in the right teacher's voice", () =
   } finally { store.close(); }
 });
 
+test("every achievement in the week is named from the shared catalog, so a claim never carries an empty value", () => {
+  const input = buildCommentInput({ week_start: "2026-10-12", report_sha256: "x".repeat(64),
+    activity: { days: ["2026-10-13"], runs: 1, played_beats: 1, task_attempts: 0, unassisted_successes: 0, questions: 1 }, topics: [],
+    achievements: [{ achievement_id: "first-footprint" }, { achievement_id: "first-question" }, { achievement_id: "regular-guest" }, { achievement_id: "retired-one" }] }, "sufei");
+  assert.deepEqual(input.achievements, ["第一个脚印", "第一个问题", "常客", "retired-one"]);
+});
+
 test("one comment for the last finished week; a started request is reconciled, never repeated", () => {
   const store = open();
   try {

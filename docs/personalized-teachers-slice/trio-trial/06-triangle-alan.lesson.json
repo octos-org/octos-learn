@@ -1,0 +1,171 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "三角形内角和为什么是 180 度",
+    "goals": [
+      "理解平行线的内错角相等性质如何将三角形三个角搬移到同一顶点",
+      "通过平角是 180 度的几何事实，严格说明三角形内角和恒为 180 度的理由"
+    ],
+    "adaptation": {
+      "strategies": [
+        "以寻找理由为核心，避免死记硬背公式",
+        "使用辅助平行线将分散的内角转换为由同一顶点出发的平角",
+        "语言严谨清楚，遵循阿澜老师注重推导步骤与清晰定义的风格"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "利用过顶点的平行线与内错角性质，推导三角形三个内角拼成平角的过程",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "这是一个值得收藏的问题。我们不满足于记住 180 度这个数字，关键是找到它成立的严谨理由。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "三角形内角和为什么是 180 度",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "证明核心思路",
+                "items": [
+                  "任取三角形 ABC，设三个内角为 ∠A、∠B、∠C",
+                  "过顶点 A 作底边 BC 的平行线 DE",
+                  "利用内错角相等把角转移到同一点"
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "来看具体的推导逻辑：过顶点 A 作一条平行于对边 BC 的直线 DE。因为 DE 平行于 BC，根据两直线平行、内错角相等，左边的 ∠DAB 就严格等于 ∠B，右边的 ∠EAC 就严格等于 ∠C。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "过程图",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "三角形 ABC 与内角 ∠A, ∠B, ∠C"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "过 A 作辅助平行线 DE // BC"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "由平行得内错角：∠DAB = ∠B, ∠EAC = ∠C"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "平角展开：∠DAB + ∠BAC + ∠EAC = 180°"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle DAB = \\angle B, \\quad \\angle EAC = \\angle C"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "现在观察直线 DE 上的角：∠DAB、∠BAC 和 ∠EAC 落在同一条直线上，恰好组成一个平角，也就是 180 度。把相等的角替换进去，就得到了 ∠B + ∠BAC + ∠C = 180 度。这就是三角形内角和必然是 180 度的原因。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle B + \\angle A + \\angle C = \\angle DAB + \\angle BAC + \\angle EAC = 180^\\circ"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-02"
+              },
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "通过过三角形一个顶点作对边的平行线，利用两直线平行、内错角相等的性质，三个内角刚好拼成一条直线上的平角，因此三角形内角和始终等于 180 度。",
+    "focus": [
+      "section-01-moment-02-item-01"
+    ]
+  }
+}

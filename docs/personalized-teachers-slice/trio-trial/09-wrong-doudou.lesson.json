@@ -1,0 +1,235 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "一次函数 y=3x-2 的斜率与截距",
+    "goals": [
+      "指出 -2 不是斜率，辨析斜截式中斜率 k 与截距 b 的不同含义",
+      "通过爬坡比喻直观理解斜率是变化率：向右 1 单位，向上 3 单位"
+    ],
+    "adaptation": {
+      "strategies": [
+        "认可敢于尝试的态度，精准指出把斜率与常数项截距混淆的点",
+        "使用贯穿的山路爬坡比喻：截距是出发的高度，斜率是每向右一步上升的坡度",
+        "用直观函数图像动态调节斜率，对比验证"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 3,
+        "min": -3,
+        "max": 5,
+        "label": "斜率 k",
+        "control": {
+          "kind": "slider",
+          "step": 0.04
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "拖动滑块，把斜率 k 调到 1，观察坡度是如何变平缓的：",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "找到标有“斜率 k”的滑杆",
+          "向右拖动直到数值显示为 1"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "太棒了！斜率为 1 时，向右走 1 格刚好上升 1 格，坡度比 3 缓和多啦！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 1,
+          "tolerance": 0.02
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "辨析斜率与截距：得出斜率是3，-2是截距，并通过山路坡度体验变化率",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "敢算就很棒！不过这里的斜率不是 -2，而是 3。你抓到了式子里的关键数字，只卡在了一步：把常数项和 x 前面的系数搞混了！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "opening-title",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "一次函数 y=3x-2 的斜率与截距",
+                "items": [
+                  "本课导入"
+                ]
+              },
+              "place": {
+                "relation": "new_region"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = kx + b \\implies y = 3x - 2"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "在斜截式 y=kx+b 中，x 前面的数字 k 才是斜率，后面的常数项 b 叫做截距。我们把这条线想象成一段山路：-2 代表你在 y 轴上的出发高度，也就是海拔 -2 米。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "两者的分工",
+                "items": [
+                  "斜率 k = 3：决定山路的坡度（每向右1步，上升3格）",
+                  "截距 b = -2：决定起跑点（与y轴交于点 (0, -2)）"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "现在看屏幕上的直线 y=n1*x-2。当斜率是 3 时，我们沿着山路向右走 1 个单位，高度就往上升了整整 3 个单位！如果像你刚才猜的斜率是 -2，山路可就是向下走的了，我演示给你看。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y = kx - 2",
+                "axes": {
+                  "x": {
+                    "min": -4,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -20,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((number_01)*(x))-(2)",
+                    "label": "y = kx - 2"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "reference-a",
+                    "x": 0,
+                    "y": -2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "reference-b",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "reference-a.y",
+                    "expression": "((number_01)*(0))-(2)"
+                  },
+                  {
+                    "target": "reference-b.y",
+                    "expression": "((number_01)*(1))-(2)"
+                  }
+                ],
+                "measurement": "secant",
+                "sample_input": "fixed_x"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": -2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "你看，斜率变成 -2 之后，向右走反而是往下降 2 格，整个山路就变成下坡了！所以原本式子 y=3x-2 的坡度，其实是稳稳上扬的 3。课后你可以亲自把滑块调回 1，看看坡度变得平缓时的样子！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-03-item-01"
+              ],
+              "intent": "观察直线倾斜方向的变化",
+              "when": "during_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在一次函数 y=kx+b 中，x 前面的系数 k 是斜率（表示倾斜程度和变化率），常数项 b 是 y 轴上的截距（表示与 y 轴交点的位置）。对于 y=3x-2，斜率是 3，截距是 -2。",
+    "focus": [
+      "section-01-moment-03-item-01"
+    ]
+  }
+}
