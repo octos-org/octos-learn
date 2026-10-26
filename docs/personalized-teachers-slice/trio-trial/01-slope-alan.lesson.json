@@ -1,0 +1,241 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直线 y=2x+1 中的斜率 2 究竟代表什么",
+    "goals": [
+      "理解斜率是纵坐标变化量与横坐标变化量的比值（Δy/Δx）",
+      "在直线 y=2x+1 上通过具体点的坐标移动验证斜率 2 的几何与代数含义"
+    ],
+    "adaptation": {
+      "strategies": [
+        "遵循阿澜老师风格：逐步比较两个变化量 Δx 与 Δy，注重推理与几何直观",
+        "利用 Cartesian 函数图上的移动点直观呈现 '横向走 1 格，纵向升 2 格' 的稳定比值"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -2,
+        "max": 3,
+        "label": "点A横坐标 x_A",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": -1,
+        "max": 4,
+        "label": "点B横坐标 x_B",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "拖动滑块，把点 B 的横坐标调到 3，观察对应的纵坐标和变化量比值。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "找到标有点 B 横坐标的滑块",
+          "向右拖动直到数值显示为 3"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "很好！此时 Δx 从 0 变为 3，Δy 从 1 变为 7（增加了 6），6/3 依然稳稳等于 2。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 3,
+          "tolerance": 0.0125
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "从变化量之比建立斜率的直观与代数定义，并在 y=2x+1 上检验",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "这是一个很值得收藏的问题：很多人能认出 2 是斜率，但关键是它到底衡量了什么。我们先来看直线 y=2x+1 的图像。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -2,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -5,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y=2x+1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 3,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((2)*(number_02))+(1)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              }
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = 2x + 1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              }
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "要理解斜率，核心是比较两个变化量。我们取直线上的点 A(0, 1) 和点 B(1, 3)。当 x 从 0 增加到 1 时，横坐标的变化量 Δx 是 1；纵坐标 y 从 1 变成 3，变化量 Δy 是 2。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "变化量之比",
+                "items": [
+                  "Δx = 1 - 0 = 1",
+                  "Δy = 3 - 1 = 2",
+                  "斜率 k = Δy / Δx = 2 / 1 = 2"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              }
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "观察从点A到点B时横向与纵向的变化"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果我们把点 B 向右移动到 x=2 呢？此时横坐标增加了 2，纵坐标从 1 变成 5，增加了 4。两者的比值依然是 4 除以 2，等于 2。斜率 2 说的就是：无论在哪一段，纵向变化始终是横向变化的 2 倍。",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "简而言之，斜率就是直线的坡度与变化速率。稍后请你亲自把点 B 的横坐标调整到 3，检验一下纵坐标是不是正好跟着上升到了 7。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在直线 y=2x+1 中，斜率 2 表示横坐标每增加 1 个单位，纵坐标就稳定增加 2 个单位，即变化率 Δy/Δx 始终恒等于 2。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}
