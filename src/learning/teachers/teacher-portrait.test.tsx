@@ -3,6 +3,7 @@ import { afterEach, expect, it, vi } from "vitest";
 
 import { OctosSkinArt } from "@/components/octos-skin-art";
 
+import { TeacherCard } from "./teacher-card";
 import { TeacherPortrait } from "./teacher-portrait";
 import { announceTeacherApproval, poseForActivity, useTeacherApproval } from "./teacher-portrait-state";
 
@@ -58,4 +59,10 @@ it("frames the bust as a soft glow by default and as a named card on request", (
   expect(container.querySelector(".teacher-portrait-glow")).toBeNull();
   expect(container.querySelector<HTMLImageElement>(".teacher-portrait-scene")?.src).toContain("/teachers/alan/arch-bg.webp");
   expect(container.querySelector(".teacher-portrait-plate")?.textContent).toBe("阿澜");
+});
+
+it("builds the teacher card from a background layer and a cut-out figure", () => {
+  const { container } = render(<TeacherCard teacherId="sufei" />);
+  expect([...container.querySelectorAll<HTMLImageElement>(".teacher-card img")].map((image) => image.src.split("/teachers/")[1])).toEqual(["sufei/card-bg.webp", "sufei/card-figure.webp"]);
+  expect(container.querySelector<HTMLElement>(".teacher-card")?.style.getPropertyValue("--figure")).toContain("sufei/card-figure.webp");
 });

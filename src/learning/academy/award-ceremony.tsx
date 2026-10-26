@@ -101,7 +101,7 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
                 <li key={`${other.achievement_id}:${other.scope}`}><Medal achievement={more} />{more.name}</li>
               ))}
             </ul>
-            {rest.length > MORE_SHOWN && <span>还有 {rest.length - MORE_SHOWN} 枚，去成就殿看看</span>}
+            {rest.length > MORE_SHOWN && <span>还有 {rest.length - MORE_SHOWN} 枚，去成就页看看</span>}
           </div>
         )}
       </div>

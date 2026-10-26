@@ -12,7 +12,7 @@ import "./academy.css";
 export const ACADEMY_PLACES = [
   { to: "/", label: "大厅", end: true, icon: Landmark },
   { to: "/atlas", label: "星图", end: false, icon: Sparkles },
-  { to: "/achievements", label: "成就殿", end: false, icon: Award },
+  { to: "/achievements", label: "成就", end: false, icon: Award },
   { to: "/teachers", label: "我的老师", end: false, icon: GraduationCap },
 ] as const;
 

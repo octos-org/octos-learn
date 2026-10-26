@@ -103,7 +103,7 @@ export function HallHero({ latest }: { latest: LearningSessionRecord | undefined
             <Link to="/atlas" className="academy-more">打开星图 <ArrowRight size={16} aria-hidden="true" /></Link>
           </div>
           <Link to="/achievements" className="academy-card">
-            <span className="academy-eyebrow">成就殿{summary ? ` · ${summary.earned} / ${ACHIEVEMENTS.length}` : ""}</span>
+            <span className="academy-eyebrow">成就{summary ? ` · ${summary.earned} / ${ACHIEVEMENTS.length}` : ""}</span>
             {summary?.recent.length ? (
               <ul className="academy-awards">
                 {summary.recent.map((award) => {

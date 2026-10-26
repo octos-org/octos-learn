@@ -75,11 +75,11 @@ export function AchievementsPage() {
   const today = localToday();
 
   return (
-    <main className="course-launcher academy-page academy-night-page">
+    <main className="course-launcher academy-page academy-achievements-page">
       <div className="course-launcher-inner">
         <AcademyHeader />
         <section className="academy-hall-of-fame" aria-labelledby="academy-achievements-title">
-          <h1 id="academy-achievements-title" className="academy-title">成就殿</h1>
+          <h1 id="academy-achievements-title" className="academy-title">成就</h1>
           {error && <p role="status">暂时读不到成就，请稍后再试。</p>}
           {!error && !list && <p role="status">正在读取成就…</p>}
           {list && <>

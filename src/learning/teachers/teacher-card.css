@@ -1,0 +1,83 @@
+/* The layered teacher card. --px / --py run from -1 to 1 (pointer or drift);
+   every layer is a transform of them, so nothing re-lays out. */
+.teacher-card {
+  --px: 0;
+  --py: 0;
+  display: block;
+  width: 100%;
+  perspective: 1200px;
+  touch-action: pan-y;
+}
+
+.teacher-card-tilt {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 1100 / 1640;
+  border-radius: 10px;
+  background: #f3f1ec;
+  box-shadow: 0 18px 40px rgba(20, 26, 64, 0.22);
+  transform: rotateY(calc(var(--px) * 4deg)) rotateX(calc(var(--py) * -4deg));
+  transform-style: preserve-3d;
+}
+
+.teacher-card-tilt > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  pointer-events: none;
+}
+
+.teacher-card-bg {
+  object-fit: cover;
+  transform: translate(calc(var(--px) * -0.35%), calc(var(--py) * -0.35%)) scale(1.03);
+}
+
+.teacher-card-figure,
+.teacher-card-light {
+  transform: translate(calc(var(--px) * 0.7%), calc(var(--py) * 0.7%));
+}
+
+.teacher-card-figure {
+  object-fit: cover;
+  filter: drop-shadow(calc(var(--px) * -4px) calc(var(--py) * -3px) 6px rgba(150, 180, 255, 0.35));
+}
+
+/* The key light follows the pointer and falls on the figure only; a cool
+   rim light comes from the other side. */
+.teacher-card-light {
+  background:
+    radial-gradient(45% 35% at calc(50% + var(--px) * 40%) calc(35% + var(--py) * 30%), rgba(255, 226, 160, 0.95), rgba(255, 226, 160, 0) 70%),
+    linear-gradient(calc(120deg + var(--px) * 30deg), rgba(120, 150, 255, 0.35), rgba(0, 0, 0, 0) 45%);
+  -webkit-mask: var(--figure) center / cover no-repeat;
+  mask: var(--figure) center / cover no-repeat;
+  mix-blend-mode: soft-light;
+}
+
+.teacher-card-glare {
+  background: linear-gradient(calc(115deg + var(--px) * 20deg), rgba(255, 255, 255, 0) calc(30% + var(--py) * 10%), rgba(255, 240, 210, 0.16) calc(45% + var(--px) * 8%), rgba(255, 255, 255, 0) calc(60% + var(--py) * 10%));
+  mix-blend-mode: screen;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-card-tilt { transform: none; }
+}
+
+/* The card as a choice in the teacher picker: no box around it, a gold ring
+   when it is the current teacher. */
+.teacher-pick {
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.teacher-pick .teacher-card-tilt { transition: box-shadow 200ms ease; }
+.teacher-pick:hover .teacher-card-tilt { box-shadow: 0 22px 48px rgba(20, 26, 64, 0.3); }
+.teacher-pick[aria-checked="true"] .teacher-card-tilt { box-shadow: 0 0 0 2px #e2bd66, 0 0 26px rgba(226, 189, 102, 0.55), 0 18px 40px rgba(20, 26, 64, 0.22); }
+.teacher-pick:focus-visible { outline: none; }
+.teacher-pick:focus-visible .teacher-card-tilt { box-shadow: 0 0 0 3px #238c98, 0 18px 40px rgba(20, 26, 64, 0.22); }
