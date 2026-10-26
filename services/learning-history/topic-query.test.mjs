@@ -4,7 +4,8 @@ import { HistoryStore, HistorySnapshotChanged } from "./store.mjs";
 import { queryTopic, queryRunCoverage } from "./topic-query.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 const candidate = TOPIC_MAPPINGS[0];
-const approvedFixture = [{ ...candidate, status: "approved" }]; // Test content only; no production activation.
+const approvedFixture = [{ ...candidate, status: "approved" }];
+const pendingFixture = [{ ...candidate, status: "pending-review" }];
 const beat = (id, index, run = "run-1", course = candidate.course) => ({ version: 1, id, kind: "beat_completed", occurred_at: "2026-10-21T08:00:00.000Z", device_id: "tv", session_id: `board-${run}`, run_id: run, log_id: `log-${run}`, course,
   data: { step_id: candidate.required_beats[index].split(":beat:")[0], beat_id: candidate.required_beats[index], presentation: "text" } });
 
@@ -12,10 +13,10 @@ test("pending editorial mapping never produces zero-looking progress or knowledg
   const store = new HistoryStore(":memory:");
   try {
     store.append("alice", [beat("b1", 2)]);
-    const result = queryTopic(store, "alice", "mt_WBdHkc2HTf");
+    const result = queryTopic(store, "alice", "mt_WBdHkc2HTf", {}, pendingFixture);
     assert.equal(result.status, "pending-review"); assert.equal(result.objectives[0].counts, null); assert.deepEqual(result.events, []);
-    assert.equal(queryRunCoverage(store, "alice", "run-1").course_playback, null);
-    assert.equal(queryTopic(store, "alice", "unknown").status, "unmapped");
+    assert.equal(queryRunCoverage(store, "alice", "run-1", {}, pendingFixture).course_playback, null);
+    assert.equal(queryTopic(store, "alice", "unknown", {}, pendingFixture).status, "unmapped");
   } finally { store.close(); }
 });
 
@@ -55,4 +56,22 @@ test("course completion needs every required beat; task attempts, hints and UTC 
     const filtered = queryTopic(store, "alice", "mt_WBdHkc2HTf", { from: "2026-10-22T00:00:00.000Z" }, approvedFixture);
     assert.equal(filtered.objectives[2].counts.played_runs, 0); assert.equal(filtered.events.length, 0);
   } finally { store.close(); }
+});
+
+test("every course pack mapping is pinned and names only its own beats and real catalog topics", async () => {
+  const { topicCatalog } = await import("./topic-catalog.mjs");
+  const catalog = topicCatalog();
+  for (const map of TOPIC_MAPPINGS) {
+    assert.equal(map.status, "approved", map.id);
+    assert.match(map.course.sha256, /^[a-f0-9]{64}$/); assert.match(map.entry_sha256, /^[a-f0-9]{64}$/);
+    const required = new Set(map.required_beats);
+    assert.equal(required.size, map.required_beats.length, `${map.id} repeats a beat`);
+    assert.equal(new Set(map.objectives.map(item => item.key)).size, map.objectives.length);
+    for (const objective of map.objectives) {
+      assert.ok(objective.beat_ids.every(id => required.has(id)), `${map.id}/${objective.key} names a beat outside the course`);
+      assert.ok(objective.task_ids.every(id => /^section-\d{2}-task-\d{2}$/.test(id)));
+      assert.ok(catalog.has(objective.topic_id), `${objective.topic_id} is not in the catalog`);
+    }
+  }
+  assert.deepEqual(TOPIC_MAPPINGS.map(map => map.course.id), ["slope-and-intercept", "linear-intro-and-slope", "linear-simultaneous-intersections"]);
 });
