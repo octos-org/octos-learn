@@ -9,23 +9,22 @@
   border-bottom: 1px solid rgba(40, 65, 67, 0.14);
 }
 
+/* The product keeps its own name and logo; 星图学院 is the story world
+   inside it, not the app's name. */
 .academy-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #1b2457;
-  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
-  font-size: 23px;
-  letter-spacing: 0.12em;
+  color: inherit;
+  font-size: 19px;
+  font-weight: 700;
   text-decoration: none;
 }
 
-.academy-brand i {
-  width: 13px;
-  height: 13px;
-  background: #d9a93f;
-  box-shadow: 0 0 10px rgba(217, 169, 63, 0.7);
-  transform: rotate(45deg);
+.academy-brand img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
 }
 
 .academy-places {

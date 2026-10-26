@@ -252,8 +252,8 @@
 
 [data-runtime-platform="android"] .course-launcher-inner { width: min(960px, calc(100% - 42px)); padding-bottom: 38px; }
 [data-runtime-platform="android"] .academy-header { min-height: 62px; }
-[data-runtime-platform="android"] .academy-brand { font-size: 18px; }
-[data-runtime-platform="android"] .course-launcher-brand img { width: 28px; height: 28px; }
+[data-runtime-platform="android"] .academy-brand { font-size: 16px; }
+[data-runtime-platform="android"] .academy-brand img { width: 28px; height: 28px; }
 [data-runtime-platform="android"] .course-launcher-hero { padding: 42px 0 37px; }
 [data-runtime-platform="android"] .course-launcher-hero h1 { font-size: clamp(24px, 2.6vw, 34px); }
 [data-runtime-platform="android"] .course-launcher-hero > p:not(.course-launcher-eyebrow) { font-size: 13px; }
