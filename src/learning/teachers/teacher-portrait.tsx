@@ -18,7 +18,7 @@ export function TeacherPortrait({
 }) {
   const poses = still ? (["idle"] as const) : PORTRAIT_POSES;
   return (
-    <span className={`teacher-portrait ${className}`} data-pose={still ? "idle" : pose} data-still={still || undefined} aria-hidden="true">
+    <span className={`teacher-portrait ${className}`} data-teacher={teacherId} data-pose={still ? "idle" : pose} data-still={still || undefined} aria-hidden="true">
       <span className="teacher-portrait-window">
         <img className="teacher-portrait-scene" src={portraitAsset(teacherId, "arch-bg")} alt="" draggable={false} decoding="async" />
         {poses.map((option) => (

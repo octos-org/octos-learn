@@ -25,11 +25,20 @@
   object-fit: cover;
 }
 
+/* Where each teacher's face sits across the bust image (0–1, read off the
+   idle pose); the bust is shifted so the face is centred in the arch. */
+.teacher-portrait[data-teacher="alan"] { --bust-head: 0.43; }
+.teacher-portrait[data-teacher="doudou"] { --bust-head: 0.53; }
+.teacher-portrait[data-teacher="sufei"] { --bust-head: 0.46; }
+
 .teacher-portrait-pose {
   position: absolute;
-  left: -12%;
+  left: calc(50% - var(--bust-head, 0.5) * 124%);
   bottom: -6%;
   width: 124%;
+  /* The app's base styles cap images at their container's width, which
+     shrank the bust and left it low in the corner. */
+  max-width: none;
   height: auto;
   aspect-ratio: 1;
   opacity: 0;
