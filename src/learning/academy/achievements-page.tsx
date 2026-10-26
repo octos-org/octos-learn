@@ -63,31 +63,64 @@ export function AchievementsPage() {
   };
   const medal = (achievement: AchievementDefinition) => {
     const locked = !earned.has(achievement.id);
+    const value = locked ? progress.get(achievement.id) : undefined;
     return (
-      <button key={achievement.id} type="button" className="academy-medal-button" data-locked={locked || undefined} onClick={() => setDetail(achievement)}
+      <button key={achievement.id} type="button" className="academy-medal-button" data-locked={locked || undefined} data-rarity={achievement.rarity} onClick={() => setDetail(achievement)}
         aria-label={`${locked && achievement.hidden ? "隐藏成就" : achievement.name}，${locked ? "未获得" : "已获得"}`}>
         <Medal achievement={achievement} locked={locked} />
         <span className="academy-medal-name">{locked && achievement.hidden ? "？？？" : achievement.name}</span>
-        <span className="academy-medal-sub">{subtitle(achievement)}</span>
+        {value
+          ? <span className="academy-medal-progress" aria-label={`进度 ${value.current} / ${value.target}`}><span><i style={{ width: `${Math.min(100, (value.current / value.target) * 100)}%` }} /></span><b>{value.current}/{value.target}</b></span>
+          : <span className="academy-medal-sub">{subtitle(achievement)}</span>}
       </button>
     );
   };
+  const recent = (list?.achievements ?? []).slice().sort((a, b) => b.earned_at.localeCompare(a.earned_at))
+    .filter((item, index, all) => all.findIndex(other => other.achievement_id === item.achievement_id) === index).slice(0, 5)
+    .flatMap(item => { const definition = ACHIEVEMENTS.find(a => a.id === item.achievement_id); return definition ? [{ item, definition }] : []; });
+  const share = ACHIEVEMENTS.length ? earned.size / ACHIEVEMENTS.length : 0;
   const today = localToday();
 
   return (
     <main className="course-launcher academy-page academy-achievements-page">
-      <div className="course-launcher-inner">
+      <div className="course-launcher-inner academy-wide">
         <AcademyHeader />
         <section className="academy-hall-of-fame" aria-labelledby="academy-achievements-title">
           <h1 id="academy-achievements-title" className="academy-title">成就</h1>
           {error && <p role="status">暂时读不到成就，请稍后再试。</p>}
           {!error && !list && <p role="status">正在读取成就…</p>}
           {list && <>
-            <div className="academy-fame-stats">
-              <span><b>{earned.size}</b>/ {ACHIEVEMENTS.length} 枚已点亮</span>
-              <span><b>{ownedTitles.length}</b>/ {TITLES.length} 个称号</span>
-              <span><b>{ACHIEVEMENTS.filter((item) => item.hidden && earned.has(item.id)).length}</b>个隐藏成就已发现</span>
-              <span className="academy-fame-title">正在使用的称号：<strong>{title.name}</strong></span>
+            <div className="academy-fame-hero">
+              <div className="academy-fame-ring" role="img" aria-label={`已点亮 ${earned.size} / ${ACHIEVEMENTS.length} 枚`}>
+                <svg viewBox="0 0 120 120" aria-hidden="true">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(226,189,102,0.18)" strokeWidth="8" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="url(#fame-ring)" strokeWidth="8" strokeLinecap="round"
+                    strokeDasharray={`${(share * 326.7).toFixed(1)} 326.7`} transform="rotate(-90 60 60)" />
+                  <defs><linearGradient id="fame-ring" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#f6dfa0" /><stop offset="1" stopColor="#c99a3e" /></linearGradient></defs>
+                </svg>
+                <span><b>{earned.size}</b><small>/ {ACHIEVEMENTS.length}</small></span>
+              </div>
+              <div className="academy-fame-summary">
+                <p className="academy-fame-title">正在使用的称号<strong>{title.name}</strong></p>
+                <div className="academy-fame-stats">
+                  <span><b>{ownedTitles.length}</b>/ {TITLES.length} 个称号</span>
+                  <span><b>{ACHIEVEMENTS.filter((item) => item.hidden && earned.has(item.id)).length}</b>个隐藏成就已发现</span>
+                  <span><b>{ACHIEVEMENTS.filter((item) => item.rarity === "x" && earned.has(item.id)).length}</b>枚星耀</span>
+                </div>
+              </div>
+              {recent.length > 0 && (
+                <ol className="academy-fame-shelf" aria-label="最近获得">
+                  {recent.map(({ item, definition }) => (
+                    <li key={definition.id}>
+                      <button type="button" onClick={() => setDetail(definition)} data-rarity={definition.rarity}>
+                        <Medal achievement={definition} />
+                        <span>{definition.name}</span>
+                        <small>{date(item.earned_at)}</small>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
             <div className="academy-tabs" role="group" aria-label="成就分类">
               {[{ id: "all", name: "全部" }, ...ACHIEVEMENT_CATEGORIES, { id: "titles", name: "称号衣橱" }].map((category) => {
@@ -174,6 +207,7 @@ function AchievementDetail({ achievement, earned, progress, onClose }: {
           <div>
             <span className={`academy-rarity is-${achievement.rarity}`}>{RARITY_NAME[achievement.rarity]}</span>
             <h2 id="academy-detail-name">{secret ? "隐藏成就" : achievement.name}</h2>
+            {!secret && <p className="academy-detail-flavor">{achievement.flavor}</p>}
             <p>{secret ? "获得之前不会告诉你条件。继续学下去，它会自己出现。" : achievement.condition}</p>
           </div>
         </div>

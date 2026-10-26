@@ -14,6 +14,7 @@ import { AtlasPage } from "./atlas-page";
 import { AchievementsPage } from "./achievements-page";
 import { currentWeek, seasonWindows, timeGreeting, upcomingSeasons } from "./achievement-display";
 import { HallHero } from "./hall-hero";
+import { TeachersPage } from "./teachers-page";
 import { TEACHERS } from "../teachers/teachers";
 
 const MAP: LearningMap = { rules_version: "map-states-v1", through: 9, taxonomy: { commit: "c7ed549" }, topics: [
@@ -74,15 +75,16 @@ it("shows the star atlas as its own page, with the list by domain below", async 
 
 it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
-  expect(await screen.findByText("3")).toBeTruthy();
-  expect(screen.getByText("/ 74 枚已点亮")).toBeTruthy();
+  expect(await screen.findByRole("img", { name: "已点亮 3 / 74 枚" })).toBeTruthy();
+  expect(within(screen.getByRole("list", { name: "最近获得" })).getAllByRole("button").length).toBe(3);
   expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);
-  expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByText("3 / 10")).toBeTruthy();
+  expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByLabelText("进度 3 / 10")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "星夜学者，已获得" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText(/苏绯：「星夜学者」。记录在案。/)).toBeTruthy();
   expect(within(dialog).getByText("解锁「星夜学者」")).toBeTruthy();
+  expect(within(dialog).getByText("夜深了，观星塔的灯和你都还亮着。")).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "关闭" }));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
@@ -113,3 +115,18 @@ it("greets by the learner's clock and lays out this week from Monday", () => {
   expect(currentWeek("2026-10-25")).toEqual(["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
   expect(currentWeek("2026-10-26")[0]).toBe("2026-10-26");
 });
+
+it("introduces each teacher with a portrait and their words, chooses the teacher, and explains how to hear them", async () => {
+  render(<MemoryRouter><TeachersPage /></MemoryRouter>);
+  for (const name of ["阿澜", "窦鸢", "苏绯"]) expect(screen.getByRole("heading", { level: 2, name })).toBeTruthy();
+  expect(screen.getByRole("list", { name: "苏绯的话" }).textContent).toContain("这个数，从哪里来？");
+  expect(screen.getByText(/一次只掏一样/)).toBeTruthy();
+  expect(screen.queryByText(/读一段小说/)).toBeNull();
+  fireEvent.click(screen.getByTestId("teacher-sufei"));
+  expect(screen.getByTestId("teacher-sufei").textContent).toContain("正在陪你上课");
+  expect(screen.getByTestId("teacher-alan").textContent).toContain("请阿澜上课");
+  // Without the learner's own speech service, the page says where to set it up.
+  fireEvent.click(screen.getAllByRole("button", { name: /听听我的声音/ })[0]);
+  expect(await screen.findByText(/配置自己的语音服务后，就能听到老师的声音/)).toBeTruthy();
+});
+
