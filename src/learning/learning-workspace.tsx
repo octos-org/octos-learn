@@ -3666,6 +3666,7 @@ export function LearningWorkspace({
         disabled={coursePreview}
         teacherId={teacher.id}
         celebrating={awardCaptions.length > 0}
+        recordedVoice={Boolean(coursePack)}
       />
 
       {controlledOllLesson

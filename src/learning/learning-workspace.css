@@ -4097,3 +4097,16 @@
   min-height: 36px; margin-left: 8px; border: 0; background: transparent;
   color: #166a79; font: inherit; text-decoration: underline; cursor: pointer;
 }
+
+/* A course pack narrates in its own recorded voice; the caption says so. */
+.octos-teacher-voice-note {
+  display: inline-block;
+  margin: 0 0 4px;
+  padding: 1px 8px;
+  border: 1px solid rgba(181, 138, 44, 0.45);
+  border-radius: 999px;
+  color: #8a6418;
+  background: rgba(226, 189, 102, 0.14);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}

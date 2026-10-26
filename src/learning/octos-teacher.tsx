@@ -29,6 +29,7 @@ export function OctosTeacher({
   disabled = false,
   teacherId,
   celebrating = false,
+  recordedVoice = false,
 }: {
   state: VoiceState;
   speech: string;
@@ -39,6 +40,9 @@ export function OctosTeacher({
   teacherId?: TeacherDefinition["id"];
   /** An achievement was just presented; the portrait shows approval. */
   celebrating?: boolean;
+  /** A course pack plays its own recorded narration, not the teacher's
+   * voice; the caption says so instead of implying the teacher is speaking. */
+  recordedVoice?: boolean;
 }) {
   const { skin } = useTeacherSkin();
   const taskApproved = useTeacherApproval();
@@ -75,6 +79,9 @@ export function OctosTeacher({
     <div className="octos-teacher">
       {speech && (
         <div className="octos-teacher-caption" aria-live="polite">
+          {recordedVoice && (
+            <span className="octos-teacher-voice-note" title="这节精品课的旁白是课程录制的原声，不是老师的声音">课程原声</span>
+          )}
           <MarkdownContent
             text={speech}
             className="octos-teacher-caption-content"
