@@ -291,6 +291,48 @@
 .academy-atlas .star-atlas { height: clamp(460px, calc(100vh - 220px), 1100px); }
 
 .academy-teachers { display: grid; gap: 4px; padding-bottom: 40px; }
+
+/* ---------- My teachers: one row per teacher ---------- */
+.academy-teacher-list { display: grid; gap: 28px; margin-top: 22px; }
+.academy-teacher {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+  padding: 28px;
+  border: 1px solid rgba(40, 65, 67, 0.12);
+  border-radius: 22px;
+  background: #fffef9;
+  box-shadow: 0 10px 30px rgba(20, 26, 64, 0.06);
+}
+.academy-teacher[data-chosen] { border-color: rgba(181, 138, 44, 0.55); box-shadow: 0 0 0 1px rgba(181, 138, 44, 0.35), 0 14px 34px rgba(20, 26, 64, 0.08); }
+.academy-teacher-card { position: sticky; top: 20px; }
+.academy-teacher-body { display: grid; gap: 14px; min-width: 0; }
+.academy-teacher-post { margin: 0; color: #8a6418; font-size: 13px; letter-spacing: 0.24em; }
+.academy-teacher-body h2 { margin: -6px 0 0; color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: clamp(30px, 3.4vw, 40px); font-weight: 400; letter-spacing: 0.08em; }
+.academy-teacher-profile { display: grid; gap: 8px; max-width: 62ch; }
+.academy-teacher-profile p { margin: 0; color: #3d5a63; font-size: 15px; line-height: 1.85; }
+.academy-teacher-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.academy-teacher-actions .academy-primary { min-height: 44px; }
+.academy-teacher-chosen, .academy-teacher-voice {
+  display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding: 0 18px;
+  border-radius: 12px; font: inherit; font-size: 15px; cursor: pointer;
+}
+.academy-teacher-chosen { border: 1px solid rgba(181, 138, 44, 0.5); color: #8a6418; background: rgba(226, 189, 102, 0.14); font-weight: 600; }
+.academy-teacher-voice { border: 1px solid rgba(27, 36, 87, 0.2); color: #1b2457; background: transparent; }
+.academy-teacher-voice:hover { background: rgba(27, 36, 87, 0.05); }
+.academy-teacher-voice:disabled { opacity: 0.6; cursor: progress; }
+.academy-teacher-note { margin: -4px 0 0; color: #875f46; font-size: 13px; }
+.academy-teacher-quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.academy-teacher-quotes li {
+  position: relative; padding: 12px 14px 12px 34px; border-radius: 12px; background: #f6f1e3;
+  color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: 17px; line-height: 1.5;
+}
+.academy-teacher-quotes li::before { content: "“"; position: absolute; top: 2px; left: 12px; color: #c99a3e; font-size: 30px; line-height: 1; }
+@media (max-width: 760px) {
+  .academy-teacher { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; }
+  .academy-teacher-card { position: static; max-width: 260px; justify-self: center; width: 100%; }
+}
 .academy-teachers .teacher-pick .workbench-status-pill { border-color: rgba(181, 138, 44, 0.5); color: #8a6418; background: rgba(226, 189, 102, 0.16); }
 .academy-teachers .teacher-pick .text-sm { color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: 20px; font-weight: 400; letter-spacing: 0.06em; }
 

@@ -144,6 +144,23 @@ export async function synthesizeDirect(text: string, signal?: AbortSignal, draft
     return audio;
   } catch (error) { throw serviceFailure("tts", error, !draft); }
 }
+/** One line in a teacher's own narration voice, for the teachers page. Uses
+ * the learner's saved speech service; an account without access to that
+ * voice hears the line in its own saved voice instead. */
+export async function synthesizeTeacherSample(text: string, voices: Readonly<Record<string, { id: string }>>, signal?: AbortSignal): Promise<Blob> {
+  try {
+    const config = requiredService("tts");
+    const listed = voices[config.params.resource_id?.trim() ?? ""]?.id;
+    if (listed && listed !== config.params.voice && !refusedLessonVoices.has(listed)) {
+      try { return await synthesizeWith(text, config, listed, signal); }
+      catch (error) {
+        if (!(error instanceof SpeakerRefused || (error instanceof ServiceError && error.state === "resource_not_enabled"))) throw error;
+        refusedLessonVoices.add(listed);
+      }
+    }
+    return await synthesizeWith(text, config, config.params.voice, signal);
+  } catch (error) { throw serviceFailure("tts", error, false); }
+}
 export async function transcribeDirect(wav: Blob, signal: AbortSignal, draft?: ClientService): Promise<{ status: "speech" | "no_speech"; transcript: string }> {
   const owned = serviceRequest(signal, "asr");
   signal = owned.signal;
