@@ -12,7 +12,7 @@
 - **豆豆改名窦鸢（2026-10-25，用户决定，“豆豆”显得太小）**：只改显示名，内部 id 仍是 `doudou`，账号里保存的选择和学习记录都不用迁移。目录里加了 `formerNames: ["豆豆"]`：记忆分组和老师设定都认这个旧名，Octos 记忆里写“豆豆老师”的内容仍算她的。同一个分支 `codex/teacher-sufei`（PR #82）。
 - **老师立绘（设定集仓库）**：三位老师（阿澜、窦鸢、苏绯）的人物卡和五张课堂胸像都已定稿，视差原型（可切换老师）是私有 Artifact。图像生成用 `gemini-3-pro-image`，按用户批准的预算逐批进行，记录在设定集仓库 `art/` 下。立绘还没有进应用。
 - **立绘进应用（分支 `codex/teacher-portraits`）**：外观新增“老师立绘”（`portrait`），三位老师的默认外观都改成它。课堂右下角显示当前老师的胸像，放在金色拱窗里，按课堂状态切换五种表情（等待、倾听、思考、讲解、认可），拱顶星灯随状态变亮；练习达成（程序判定）或颁发成就时显示“认可”约 2.4 秒。设置里的选老师卡片换成人物卡。图片是 `public/teachers/<id>/` 下的静态 webp（三位共约 690 KB），只加载当前老师的；纯 CSS 动画，尊重“减少动态效果”。旧设备上保存的卡通外观会先显示成立绘，用户之后再选的外观照常保留；读取时不写浏览器存储。
-- **学院大厅与成就系统（用户 2026-10-25 确认方向）**：计划见 [ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md](../ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md)。第一步已合并（#84）；第二步成就后端、成就殿与称号在分支 `codex/achievements-v2`（PR #85，待用户授权合并）；第三步获得动画在分支 `codex/award-ceremony`（基于第二步，PR #85 合并后再开 PR）。第四步美术打磨未开始。徽章图 23 张在设定集仓库 `art/badges/`。
+- **学院大厅与成就系统（用户 2026-10-25 确认方向）**：计划见 [ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md](../ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md)。第一步已合并（#84）；第二步成就后端、成就殿与称号在分支 `codex/achievements-v2`（PR #85，待用户授权合并）；第三步获得动画在分支 `codex/award-ceremony`（PR #86，基于第二步的分支；#85 合并后改为对 main）。第四步美术打磨未开始。徽章图 23 张在设定集仓库 `art/badges/`。
 - **已知问题**：知识点目录没有反比例函数等高中内容（相关课归到“比例”）；用户待审 TOPIC_MAPPING_REVIEW、topic-names-zh、HIGH_SCHOOL_EXTENSION_REVIEW。
 - **一直有效的边界**：
   - 全部计划完成后再发布：不部署、不装 APK、不开启定时任务或推送。
