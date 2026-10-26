@@ -1,0 +1,70 @@
+{
+  "checked_at": "2026-10-26T14:24:03.053Z",
+  "passed": true,
+  "plan_id": "isolated-first-visual-smoke-20261026",
+  "plan_sha256": "01c347b938d04795b884a511d80a1af0a0be145be67eb1f411e81ac18de9a334",
+  "model": "gemini-3.8-flash",
+  "measure": "submit to first visible course node of this lesson (no speech configured)",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 3,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 3,
+  "reserved_usd_micros": 450000,
+  "rows": [
+    {
+      "id": "pair-01-baseline",
+      "version": "baseline",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024603395-wjodcf",
+      "teacher_profile": false,
+      "visual_ms": 23718.700000047684,
+      "beat_id": "learn-learn-1793024603395-wjodcf-f2308691-c36a-4800-8313-25db39b62a24.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "0ce8ea6a3cfc8df635b0ac73c8ca17d936c4c6e6ca5c37c3b21f55bab00563a6",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-01-candidate",
+      "version": "candidate",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024627382-6u55qa",
+      "teacher_profile": true,
+      "visual_ms": 15546,
+      "beat_id": "learn-learn-1793024627382-6u55qa-738175f3-f68c-4be8-9a2d-f0f5d8f441a5.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "327c9552d2b5dc53b6c2e3d48e68eb51b8191aaea9461f3d1d3772145ad06d42",
+      "job_status": "succeeded",
+      "model_requests": 1
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "n": 1,
+      "p50_ms": 23718.700000047684,
+      "values_ms": [
+        23719
+      ]
+    },
+    "candidate": {
+      "n": 1,
+      "p50_ms": 15546,
+      "values_ms": [
+        15546
+      ]
+    }
+  },
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/speed-isolated-smoke"
+}

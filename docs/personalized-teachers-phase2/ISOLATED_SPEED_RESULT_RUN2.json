@@ -1,0 +1,122 @@
+{
+  "checked_at": "2026-10-26T14:34:00.032Z",
+  "passed": false,
+  "failure": "page.waitForFunction: Timeout 180000ms exceeded.",
+  "plan_id": "isolated-first-visual-run2-20261026",
+  "plan_sha256": "60099302d2f0923cb20f610ca1c8ee29a4dccd994bb0018c74a2f975e650f2e1",
+  "model": "gemini-3.8-flash",
+  "measure": "submit to first visible course node of this lesson (no speech configured)",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 9,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 9,
+  "reserved_usd_micros": 1350000,
+  "rows": [
+    {
+      "id": "pair-03-baseline",
+      "version": "baseline",
+      "topic": "formula",
+      "prompt_sha256": "7ef161c6bd3bb0711d28fb67fa68ebd5a9ca7c01b6f192af0089a878d2e94d18",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024948772-89lfpu",
+      "teacher_profile": false,
+      "visual_ms": 22401.80000001192,
+      "beat_id": "learn-learn-1793024948772-89lfpu-95c2b686-840d-4621-ac33-97a98cca4b7e.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "32005024c05741bced71b8fa71272e3522454156f16c1a44636f998e0d6f05f5",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-03-candidate",
+      "version": "candidate",
+      "topic": "formula",
+      "prompt_sha256": "7ef161c6bd3bb0711d28fb67fa68ebd5a9ca7c01b6f192af0089a878d2e94d18",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024971442-8w95vk",
+      "teacher_profile": true,
+      "visual_ms": 20183.200000047684,
+      "beat_id": "learn-learn-1793024971442-8w95vk-c33ca884-a14e-46cf-bc8c-93ae7e0cbdfe.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "ba69d3766773e58f42d1401d3fd76a4e047af63eea905e2aea866feb006ec7cc",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-04-candidate",
+      "version": "candidate",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024991892-3x1kha",
+      "teacher_profile": true,
+      "visual_ms": 22903.30000001192,
+      "beat_id": "learn-learn-1793024991892-3x1kha-c424698f-dd9d-4a8a-9310-0ec69c816f2d.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "ccfbcbd951cb3f699bf4a9844d37ccef3b77fd525c444baa403affc0905882ad",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-04-baseline",
+      "version": "baseline",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793025015054-6qnk8u",
+      "teacher_profile": false,
+      "visual_ms": 44574.5,
+      "beat_id": "learn-learn-1793025015054-6qnk8u-dd502aab-78c3-478c-8020-23e8fad96261.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "b06e2f39cbb32be6751903d9aaa6ecf3f2566d7fe528c97ead635886a03fb797",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-05-baseline",
+      "version": "baseline",
+      "topic": "geometry",
+      "prompt_sha256": "3613d4605c0f3c0e898d6ba85fbefd6d0cd8560b94345e8706d4036da747c2ed",
+      "state": "needs-inspection",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793025059896-f3s41q",
+      "teacher_profile": false,
+      "error": "page.waitForFunction: Timeout 180000ms exceeded.",
+      "page_text": "OCTOS LEARNING CANVAS\n新的学习白板\n启用语音\n启用摄像头\n我的问题\n已回答\n\n请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。\n\n画笔 1 已禁用\n以文本形式重绘\n开启声音探索\n全选\n0 项笔迹 · 已保存\n\n目前还不能完整生成这节课：系统当前未提供任意动态三角形顶点拖拽的交互图形能力，无法直接提供可任意拖动顶点的交互式三角形；但可通过结构化推导流程图与板书完整严谨地讲授 180 度的几何证明原理\n\n老师回复",
+      "browser_notes": [
+        "503 /api/learn/byok/prepare",
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ]
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "n": 2,
+      "p50_ms": 22401.80000001192,
+      "values_ms": [
+        22402,
+        44575
+      ]
+    },
+    "candidate": {
+      "n": 2,
+      "p50_ms": 20183.200000047684,
+      "values_ms": [
+        20183,
+        22903
+      ]
+    }
+  },
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/speed-isolated-run2"
+}

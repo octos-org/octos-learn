@@ -1,0 +1,58 @@
+{
+  "schema": "octos.learn.performance-trial.v1",
+  "status": "approved",
+  "cost_basis_verified": true,
+  "route_verified": true,
+  "authorization_reference": "User 2026-10-26: \"速度测试选B\" (isolated environment, trial Key, first visual only), after authorizing the paid speed test on 2026-10-25 (\"请你帮我完成所有的事项，包括付费速度测试\"). Cap: 30 model requests x USD 0.15 = USD 4.50; no speech.",
+  "model": "gemini-3.8-flash",
+  "voice": "none",
+  "resource": "none",
+  "frontends": {
+    "baseline": {
+      "ref": "4973499c0d8ede16a9897c918bdf587472fb57c8",
+      "entry": "/assets/index-fXyWRczv.js",
+      "entry_sha256": "b650528d3e01108d961070b3de09671ef6761467b0767375aa494d065c460f36",
+      "dist": "/private/tmp/octos-playable-builds-20261026/baseline/dist"
+    },
+    "candidate": {
+      "ref": "16155758a2752b8d602995736e46675bc9b23779",
+      "entry": "/assets/index-CEy6t2fm.js",
+      "entry_sha256": "96f6278ac3e6bb61f9b3e3788cbfa68801d21dc93edd5e82558591731e447f85",
+      "dist": "/private/tmp/octos-playable-builds-20261026/candidate/dist"
+    }
+  },
+  "cost_basis": [
+    "gemini-3.8-flash standard paid: USD 0.75 / 1M input, USD 3.75 / 1M output including thinking (as in the teacher trials).",
+    "Gateway rejects requests over 32768 bytes and maxOutputTokens above 32768: at most USD 0.147456 per attempt, reserved as USD 0.15. Upper bound, not a bill; earlier lessons cost about USD 0.01 each."
+  ],
+  "limits": {
+    "courses": 2,
+    "speech_requests": 1,
+    "usd_micros": 900000,
+    "cny_micros": 1,
+    "model_request_usd_micros": 150000,
+    "speech_byte_cny_micros": 1,
+    "speech_utf8_bytes": 1,
+    "output_tokens": 32768,
+    "request_bytes": 32768
+  },
+  "measure": "submit to first visible course node of this lesson, no speech",
+  "id": "isolated-first-visual-smoke-20261026",
+  "samples": [
+    {
+      "id": "pair-01-baseline",
+      "pair": 1,
+      "topic": "linear",
+      "version": "baseline",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    },
+    {
+      "id": "pair-01-candidate",
+      "pair": 1,
+      "topic": "linear",
+      "version": "candidate",
+      "prompt": "请用一张可调参数的函数图，讲清楚 y=2x+1 中斜率 2 和截距 1 分别是什么意思。内容简短，给出完整的小课程。"
+    }
+  ],
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/speed-isolated-smoke"
+}
