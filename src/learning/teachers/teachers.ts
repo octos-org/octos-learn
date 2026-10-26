@@ -86,6 +86,9 @@ export interface TeacherReportLines {
   quiet: string;
   /** Closing line under the facts. */
   closing: string;
+  /** Openings for the monthly report, with and without recorded learning. */
+  monthActive: string;
+  monthQuiet: string;
 }
 
 export const TEACHER_CATALOG_VERSION = 8;
@@ -136,6 +139,8 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "这一周的足迹整理好了，我们一起看看。",
       quiet: "这周地图上没有新的足迹。想学的时候，我在这里。",
       closing: "这些记录说明你学过、练过什么。下一步学什么，由你决定。",
+      monthActive: "这个月的足迹整理好了，我们一起回头看看。",
+      monthQuiet: "这个月地图上没有新的足迹。想学的时候，我在这里。",
     },
     hall: {
       welcome: "你好。今天想先想清楚哪一个问题？",
@@ -199,6 +204,8 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "这周的地图又亮了几处，来看看！",
       quiet: "这周地图在休息，等你来点灯～",
       closing: "记录都在这儿啦，下次想从哪儿开始？",
+      monthActive: "这个月的地图亮了好几处，一起来翻翻！",
+      monthQuiet: "这个月地图在休息，等你来点灯～",
     },
     hall: {
       welcome: "来啦！今天想变出什么新问题？",
@@ -261,6 +268,8 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       active: "本周的记录整理好了。逐条看。",
       quiet: "本周没有新的记录。需要时，我在。",
       closing: "记录只说明做过什么。下一步，由你来定。",
+      monthActive: "本月的记录整理好了。逐条看。",
+      monthQuiet: "本月没有新的记录。需要时，我在。",
     },
     hall: {
       welcome: "开始吧。先写下今天要弄清楚的问题。",
@@ -375,6 +384,8 @@ export const PLAIN_REPORT: TeacherReportLines = {
   active: "这是本周的学习记录。",
   quiet: "本周没有学习记录。",
   closing: "这些记录说明学过、练过什么，都不等于已经掌握。",
+  monthActive: "这是本月的学习记录。",
+  monthQuiet: "本月没有学习记录。",
 };
 
 export const PLAIN_SUGGESTIONS: TeacherSuggestionLines = {

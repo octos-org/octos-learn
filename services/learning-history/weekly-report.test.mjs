@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { HistoryStore } from "./store.mjs";
 import { evaluateAchievements } from "./achievements.mjs";
-import { isWeekStart, queryWeeklyReport, weekStartOf } from "./weekly-report.mjs";
+import { isMonth, isWeekStart, queryMonthlyReport, queryWeeklyReport, weekStartOf } from "./weekly-report.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
 
 const candidate = TOPIC_MAPPINGS[0];
@@ -69,3 +69,24 @@ test("the week boundary follows the learner's offset, and deleted facts leave th
     assert.deepEqual([report(store, "2026-10-12").activity.played_beats, report(store, "2026-10-12").first_week], [0, null]);
   } finally { store.close(); }
 });
+
+test("a month reports the same facts over the local calendar month, with days per week", () => {
+  const store = new HistoryStore(":memory:");
+  try {
+    // 09-30 23:30 local (UTC+8) is still September; 10-31 16:30 UTC is 11-01 local.
+    store.append("alice", [beat("b0", "r0", "2026-09-30T15:30:00.000Z"), beat("b1", "r1", "2026-10-08T02:00:00.000Z"),
+      question("q1", "r2", "2026-10-13T02:00:00.000Z"), attempt("a1", "r2", "2026-10-13T02:05:00.000Z", 1),
+      attempt("a2", "r3", "2026-10-15T02:00:00.000Z", 0), beat("b9", "r9", "2026-10-31T16:30:00.000Z")]);
+    evaluateAchievements(store, "alice", { utcOffsetMinutes: 480 }, approved);
+    const month = queryMonthlyReport(store, "alice", { month: "2026-10", utcOffsetMinutes: 480 }, approved);
+    assert.equal(month.rules_version, "report-month-v1");
+    assert.deepEqual(month.activity, { days: ["2026-10-08", "2026-10-13", "2026-10-15"], runs: 3, played_beats: 1, task_attempts: 2, unassisted_successes: 1, questions: 1 });
+    assert.deepEqual(month.weeks, [{ week_start: "2026-10-05", days: 1 }, { week_start: "2026-10-12", days: 2 }]);
+    assert.deepEqual(month.topics.map(topic => [topic.state_before, topic.state_after, topic.change?.evidence_event_id]), [["explored", "did-it", "a2"]]);
+    assert.equal(month.first_month, "2026-09");
+    assert.deepEqual(queryMonthlyReport(store, "alice", { month: "2026-11", utcOffsetMinutes: 480 }, approved).activity.days, ["2026-11-01"]);
+    assert.deepEqual(["2026-10", "2026-13", "2026-1", "x"].map(isMonth), [true, false, false, false]);
+    assert.throws(() => queryMonthlyReport(store, "alice", { month: "2026-13" }, approved), /YYYY-MM/);
+  } finally { store.close(); }
+});
+

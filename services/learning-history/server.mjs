@@ -9,7 +9,7 @@ import { topicCatalog } from "./topic-catalog.mjs";
 import { AnalysisControlStore, validReportControl } from "./analysis-control.mjs";
 import { queryLearningMap } from "./map-progress.mjs";
 import { chooseTitle, evaluateAchievements, TitleError } from "./achievements.mjs";
-import { isWeekStart, queryWeeklyReport } from "./weekly-report.mjs";
+import { isMonth, isWeekStart, queryMonthlyReport, queryWeeklyReport } from "./weekly-report.mjs";
 import { ReportCommentStore } from "./report-comments.mjs";
 import { dismissSuggestion, querySuggestions } from "./suggestions.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
@@ -215,6 +215,13 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         const report = queryWeeklyReport(store(), owner, { weekStart, utcOffsetMinutes: Number(raw) }, mappings);
         const teacherId = store().teacherChoice(owner)?.teacher_id ?? "alan";
         send(200, { profile_id: owner, ...report, comment: new ReportCommentStore(store(), mappings).commentFor(owner, report, teacherId), comment_teacher_id: teacherId });
+      } else if (request.method === "GET" && path.length === 1 && path[0] === "monthly-report") {
+        if ([...url.searchParams.keys()].some(key => !["month", "utc_offset_minutes"].includes(key))
+          || url.searchParams.getAll("month").length !== 1 || url.searchParams.getAll("utc_offset_minutes").length > 1) throw new HttpError(400, "Unknown query field");
+        const raw = url.searchParams.get("utc_offset_minutes") ?? "0", month = url.searchParams.get("month");
+        if (!/^-?\d{1,3}$/.test(raw) || Number(raw) < -720 || Number(raw) > 840) throw new HttpError(400, "Invalid UTC offset");
+        if (!isMonth(month)) throw new HttpError(400, "Month must be YYYY-MM");
+        send(200, { profile_id: owner, ...queryMonthlyReport(store(), owner, { month, utcOffsetMinutes: Number(raw) }, mappings) });
       } else if (path.length === 1 && path[0] === "teacher-choice" && !url.search && ["GET", "PUT"].includes(request.method)) {
         if (request.method === "GET") send(200, { profile_id: owner, choice: store().teacherChoice(owner) });
         else {

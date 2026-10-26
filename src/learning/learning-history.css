@@ -44,6 +44,10 @@
 .learning-map-tone { min-height: 36px; margin-top: 6px; padding: 0 10px; border: 1px solid #d7dfd9; border-radius: 8px; background: transparent; color: #166a79; font-size: 12px; }
 .learning-map li strong small.learning-map-original { display: block; font-weight: 400; font-size: 11px; color: #6c827f; }
 
+.weekly-report-period { display: inline-flex; margin-bottom: 8px; padding: 2px; border: 1px solid #d7dfd9; border-radius: 999px; }
+.weekly-report-period button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: #5f7774; font-size: 12px; }
+.weekly-report-period button[aria-pressed="true"] { background: #166a79; color: #fff; }
+.weekly-report-weeks { margin: 6px 0 0; color: #5f7774 !important; font-size: 12px; }
 .weekly-report-nav { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
 .weekly-report-nav h3 { margin: 0; font-size: 15px; text-align: center; }
 .weekly-report-nav button { min-height: 36px; padding: 0 10px; border: 1px solid #d7dfd9; border-radius: 8px; background: transparent; color: #166a79; font-size: 12px; }

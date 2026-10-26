@@ -20,6 +20,18 @@ export function weekLabel(weekStart: string): string {
   return `${day(weekStart)}–${day(sunday)}`;
 }
 
+export function shiftMonth(month: string, months: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const index = y * 12 + (m - 1) + months;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
+/** "2026年10月" */
+export function monthLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  return `${y}年${m}月`;
+}
+
 /** Learners can hide the weekly report; nothing is computed while hidden. */
 export function weeklyReportShown(): boolean {
   try { return localStorage.getItem(VISIBILITY_KEY) !== "hidden"; } catch { return true; }

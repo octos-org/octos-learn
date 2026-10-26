@@ -62,6 +62,12 @@ export interface WeeklyReport {
   /** A checked model comment for these exact facts by comment_teacher_id, if any. */
   comment: string | null; comment_teacher_id: string;
 }
+/** The same description over one local calendar month, with days per week. No model comment. */
+export interface MonthlyReport {
+  rules_version: string; through: number; month: string; first_month: string | null; report_sha256: string;
+  activity: WeeklyReport['activity']; weeks: { week_start: string; days: number }[];
+  topics: WeeklyReportTopic[]; achievements: WeeklyReport['achievements'];
+}
 /** Minutes east of UTC, so "different days" follow the learner's calendar. */
 export const localUtcOffsetMinutes = () => -new Date().getTimezoneOffset();
 export interface AccountTeacherChoice { teacher_id: string; revision: number; updated_at: string }
@@ -119,6 +125,9 @@ export class HistoryApi {
   setReportComments(enabled: boolean) { return this.request<{ enabled: boolean }>('/report-comments/settings', 'POST', { enabled }); }
   weeklyReport(weekStart: string) {
     return this.request<WeeklyReport>(`/report?${new URLSearchParams({ week_start: weekStart, utc_offset_minutes: String(localUtcOffsetMinutes()) })}`);
+  }
+  monthlyReport(month: string) {
+    return this.request<MonthlyReport>(`/monthly-report?${new URLSearchParams({ month, utc_offset_minutes: String(localUtcOffsetMinutes()) })}`);
   }
   teacherChoice() { return this.request<{ choice: AccountTeacherChoice | null }>('/teacher-choice'); }
   chooseTeacher(teacherId: string, baseRevision?: number) {
