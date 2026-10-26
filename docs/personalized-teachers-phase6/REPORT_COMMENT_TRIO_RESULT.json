@@ -1,0 +1,376 @@
+{
+  "checked_at": "2026-10-26T06:34:42.621Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "phase6-report-comments-trio-20261025",
+  "plan_sha256": "90afa14d9156a8580bfdf14d085a50d7608320aa392036a76669487b5fa9e436",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "gateway": {
+    "admitted": 6,
+    "refused": 0,
+    "failed": 0
+  },
+  "admitted_requests": 6,
+  "reserved_usd_micros": 720000,
+  "calls": [
+    {
+      "sample": "breakthrough-sufei",
+      "request_bytes": 33827,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8042,
+        "candidatesTokenCount": 110,
+        "totalTokenCount": 11466,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8042
+          }
+        ],
+        "thoughtsTokenCount": 3314,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    },
+    {
+      "sample": "light-sufei",
+      "request_bytes": 33771,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8024,
+        "candidatesTokenCount": 111,
+        "totalTokenCount": 10073,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8024
+          }
+        ],
+        "thoughtsTokenCount": 1938,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    },
+    {
+      "sample": "busy-sufei",
+      "request_bytes": 33914,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8056,
+        "candidatesTokenCount": 113,
+        "totalTokenCount": 9892,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8056
+          }
+        ],
+        "thoughtsTokenCount": 1723,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    },
+    {
+      "sample": "breakthrough-doudou",
+      "request_bytes": 33977,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8066,
+        "candidatesTokenCount": 127,
+        "totalTokenCount": 9947,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8066
+          }
+        ],
+        "thoughtsTokenCount": 1754,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    },
+    {
+      "sample": "light-doudou",
+      "request_bytes": 33921,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8050,
+        "candidatesTokenCount": 127,
+        "totalTokenCount": 10384,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8050
+          }
+        ],
+        "thoughtsTokenCount": 2207,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    },
+    {
+      "sample": "busy-doudou",
+      "request_bytes": 34064,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "usage": {
+        "promptTokenCount": 8085,
+        "candidatesTokenCount": 122,
+        "totalTokenCount": 9886,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 8085
+          }
+        ],
+        "thoughtsTokenCount": 1679,
+        "serviceTier": "standard"
+      },
+      "status": 200
+    }
+  ],
+  "results": [
+    {
+      "id": "breakthrough-sufei",
+      "teacher": "sufei",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "saved": true,
+      "elapsed_ms": 29387,
+      "state": "complete",
+      "comment": "本周你在“一次函数图像”上的状态变为“做出来过”，并且提出了问题。不用提示完成练习，步骤与数值的来源就经得起核验。",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个问题",
+          "一次就中",
+          "亲手搞定",
+          "初见星光",
+          "常客",
+          "三日之约"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 1,
+          "学习天数": 2,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 2,
+          "课数": 2
+        },
+        "input_sha256": "ca6c120bedd36bf57bb8200095753f08b83c4b7e2ead63c94297902792f1927b",
+        "teacher": "苏绯",
+        "topics": [
+          {
+            "after": "做出来过",
+            "before": "已探索",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    },
+    {
+      "id": "light-sufei",
+      "teacher": "sufei",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "saved": true,
+      "elapsed_ms": 18294,
+      "state": "complete",
+      "comment": "这周你在画一次函数图像上的状态变为了已探索，并获得了“第一个问题”成就。明确提出疑问，能让每一步的来源都可被检验。",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个脚印",
+          "第一个问题"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 1,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 0,
+          "课数": 1
+        },
+        "input_sha256": "a046f6c4907b6dde3758550bef53cc89a175b82682278c72209027ee69311735",
+        "teacher": "苏绯",
+        "topics": [
+          {
+            "after": "已探索",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    },
+    {
+      "id": "busy-sufei",
+      "teacher": "sufei",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "saved": true,
+      "elapsed_ms": 18292,
+      "state": "complete",
+      "comment": "本周“一次函数图像”和“画一次函数图像”进入了正在练习。你提出了问题，并拿到了“一次就中”。步骤清楚，结论就能检验。",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个脚印",
+          "越挫越勇",
+          "第一个问题",
+          "三日之约",
+          "一次就中"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 4,
+          "提问数": 1,
+          "播放讲解段数": 4,
+          "练习次数": 3,
+          "课数": 4
+        },
+        "input_sha256": "22fdc00d8578621d9c695eff1b5ed8510c9f75a57f5541d4d68169463da30f5d",
+        "teacher": "苏绯",
+        "topics": [
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          },
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    },
+    {
+      "id": "breakthrough-doudou",
+      "teacher": "doudou",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "saved": true,
+      "elapsed_ms": 18293,
+      "state": "complete",
+      "comment": "这周在“一次函数图像”上，你不用提示就做出来过一次，还达成了“第一个问题”的成就！敢提问、敢自己上手试，就像在山路上迈出步子一样干脆，太棒啦！",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个问题",
+          "一次就中",
+          "亲手搞定",
+          "初见星光",
+          "常客",
+          "三日之约"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 1,
+          "学习天数": 2,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 2,
+          "课数": 2
+        },
+        "input_sha256": "789c28ffcb2485b90d854cc6247938edc7761ff20ac40e85d36493e1ce6606b2",
+        "teacher": "窦鸢",
+        "topics": [
+          {
+            "after": "做出来过",
+            "before": "已探索",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    },
+    {
+      "id": "light-doudou",
+      "teacher": "doudou",
+      "case": "本周只学了一天，第一次接触画一次函数图像，只听了讲解，问了一个问题。",
+      "saved": true,
+      "elapsed_ms": 17798,
+      "state": "complete",
+      "comment": "这周你在“画一次函数图像”留下了“第一个脚印”，地图状态变成了已探索，还达成了“第一个问题”！遇到疑问直接抛给我，就像在球场上随时传球配合，敢于尝试就很棒！",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个脚印",
+          "第一个问题"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 1,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 0,
+          "课数": 1
+        },
+        "input_sha256": "719832a18594188265a583b1ab5d4c2d77eeed4e3a675f9d17916fff1e0a69b9",
+        "teacher": "窦鸢",
+        "topics": [
+          {
+            "after": "已探索",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    },
+    {
+      "id": "busy-doudou",
+      "teacher": "doudou",
+      "case": "本周学了四天、两个知识点，练习有没达标的一次，也有借提示达标的，没有不用提示做出来。",
+      "saved": true,
+      "elapsed_ms": 18312,
+      "state": "complete",
+      "comment": "这周你开启了一次函数图像的练习，还拿下了“第一个问题”成就！遇到疑问主动提出来，就像在爬数学山路时找准了支点，敢于尝试就很棒！",
+      "rejected_reason": null,
+      "input": {
+        "achievements": [
+          "第一个脚印",
+          "越挫越勇",
+          "第一个问题",
+          "三日之约",
+          "一次就中"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 0,
+          "学习天数": 4,
+          "提问数": 1,
+          "播放讲解段数": 4,
+          "练习次数": 3,
+          "课数": 4
+        },
+        "input_sha256": "4d6436f24cc56b33726480362abb74982c4f49426b4b52a401258425957d37c4",
+        "teacher": "窦鸢",
+        "topics": [
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "画一次函数图像"
+          },
+          {
+            "after": "正在练习",
+            "before": "暂无记录",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 1
+    }
+  ],
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/report-comments-trio"
+}

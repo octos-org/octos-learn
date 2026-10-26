@@ -1,0 +1,76 @@
+{
+  "checked_at": "2026-10-26T06:32:30.197Z",
+  "mode": "fixture",
+  "passed": true,
+  "plan_id": "phase6-report-comments-trio-20261025-fixture",
+  "plan_sha256": "de8fa036288be6923343152302378d4dbc56ce3db2fd424fe0dcd050cf9ebbab",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "gateway": {
+    "admitted": 2,
+    "refused": 1,
+    "failed": 0
+  },
+  "admitted_requests": 2,
+  "reserved_usd_micros": 240000,
+  "calls": [
+    {
+      "sample": "breakthrough-sufei",
+      "request_bytes": 33827,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "status": 503
+    },
+    {
+      "sample": "breakthrough-sufei",
+      "request_bytes": 33827,
+      "max_output_tokens": 16384,
+      "has_system": true,
+      "status": 503
+    }
+  ],
+  "results": [
+    {
+      "id": "breakthrough-sufei",
+      "teacher": "sufei",
+      "case": "上周探索过一次函数图像；本周先借提示做对，再不用提示做出来，并获得“亲手搞定”和“常驻嘉宾”。",
+      "saved": false,
+      "error": "评语请求已结束但没有结果，不自动重复调用模型",
+      "elapsed_ms": 3689,
+      "state": "blocked",
+      "comment": null,
+      "rejected_reason": "invalid-report-comment",
+      "input": {
+        "achievements": [
+          "第一个问题",
+          "一次就中",
+          "亲手搞定",
+          "初见星光",
+          "常客",
+          "三日之约"
+        ],
+        "activity": {
+          "不用提示达到练习要求次数": 1,
+          "学习天数": 2,
+          "提问数": 1,
+          "播放讲解段数": 2,
+          "练习次数": 2,
+          "课数": 2
+        },
+        "input_sha256": "ca6c120bedd36bf57bb8200095753f08b83c4b7e2ead63c94297902792f1927b",
+        "teacher": "苏绯",
+        "topics": [
+          {
+            "after": "做出来过",
+            "before": "已探索",
+            "name": "一次函数图像"
+          }
+        ],
+        "week": "2026-10-12起的一周"
+      },
+      "model_requests": 2
+    }
+  ],
+  "temporary_octos_data_deleted": true,
+  "real_supplier_calls": 0
+}

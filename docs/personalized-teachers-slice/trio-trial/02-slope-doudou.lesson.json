@@ -1,0 +1,240 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "直线 y = 2x + 1 中的斜率 2 是什么意思？",
+    "goals": [
+      "理解斜率表示当自变量 x 增加 1 时，因变量 y 增加的变化量",
+      "掌握在坐标系中通过两点直观读出‘向右 1 步、向上 2 格’的几何意义"
+    ],
+    "adaptation": {
+      "strategies": [
+        "贯穿‘爬坡山路’的比喻，把水平移动与垂直上升对应到坐标变化",
+        "通过点在直线上的移动演示，直观呈现 Δy / Δx 的比值关系"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -2,
+        "max": 3,
+        "label": "点 A 的横坐标 x",
+        "control": {
+          "kind": "slider",
+          "step": 0.025
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "把探险点的横坐标 x 移动到 -1，观察点的高度位置。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "向左滑动滑块，使 x 达到 -1",
+          "代入公式：2 × (-1) + 1 = -1"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "做得很棒！找得非常准，当 x 变成 -1 时，高度 y 也是 -1！",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": -1,
+          "tolerance": 0.0125
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "通过点沿直线运动，理解斜率 2 代表‘向右每走 1 个单位，高度就上升 2 个单位’",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "嗨！看到 y 等于 2x 加 1，我们直接把它想象成一段正在攀爬的山路！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "函数图像",
+                "axes": {
+                  "x": {
+                    "min": -2,
+                    "max": 3,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -4,
+                    "max": 8,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((2)*(x))+(1)",
+                    "label": "y = 2x + 1"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": 1,
+                    "label": "P(x, y)"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((2)*(number_01))+(1)"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = 2x + 1"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "现在的山路上有一个探险点。当它的横坐标 x 是 0 时，y 的高度是 1。我们让它沿着山路往前走一步！",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "观察点在 x=0 时的初始位置",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "看，向右跨出了 1 步，也就是 x 增加了 1；山路的高度 y 立刻从 1 爬到了 3，足足上升了 2 格！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 1,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "如果再向右走 1 步，从 1 走到 2 呢？高度又稳稳往上升了 2 格，来到了 5！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_01",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-05",
+          "say": "这就是斜率 2 的真正含义：斜率表示坡度，也就是高度变化除以水平步数。向右走 1 步，高度必涨 2！",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-05-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "斜率的含义",
+                "items": [
+                  "斜率 = 上升高度 ÷ 向右步数",
+                  "x 每增加 1，y 对应增加 2"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-06",
+          "say": "轮到你来体验这条山路了！请把探险点的横坐标 x 调整到负 1，看看此时对应的高度是多少！",
+          "delivery": "encouraging",
+          "actions": [
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-05-item-01"
+              ],
+              "intent": "继续观察当前画面",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "在直线 y = 2x + 1 中，斜率 2 表示直线的倾斜程度与变化率：x 每向右增加 1 个单位，y 就会稳定上升 2 个单位。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

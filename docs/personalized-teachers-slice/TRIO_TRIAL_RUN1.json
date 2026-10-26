@@ -1,0 +1,346 @@
+{
+  "checked_at": "2026-10-26T06:29:13.692Z",
+  "mode": "live",
+  "passed": true,
+  "plan_id": "teacher-trio-trial-20261025",
+  "plan_sha256": "700dcf93390864868d23571adbb0bc2aac6e68259a47e299892a083bcf639c16",
+  "model": "gemini-3.8-flash",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "installed_skill_sha256": "3842ba0325b41bac55c5692a35f29dd1e7e3e625fbb9913ffae2e256086f0aeb",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 10,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 10,
+  "reserved_usd_micros": 1500000,
+  "calls": [
+    {
+      "sample": "01-slope-alan",
+      "request_bytes": 20102,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3121,
+        "candidatesTokenCount": 1602,
+        "totalTokenCount": 4723,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3121
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "02-slope-doudou",
+      "request_bytes": 20211,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3161,
+        "candidatesTokenCount": 1498,
+        "totalTokenCount": 4659,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3161
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "03-slope-sufei",
+      "request_bytes": 20060,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3135,
+        "candidatesTokenCount": 1495,
+        "totalTokenCount": 4630,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3135
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "04-triangle-doudou",
+      "request_bytes": 20211,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3155,
+        "candidatesTokenCount": 1349,
+        "totalTokenCount": 4504,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3155
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "05-triangle-sufei",
+      "request_bytes": 20060,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3129,
+        "candidatesTokenCount": 707,
+        "totalTokenCount": 3836,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3129
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "06-triangle-alan",
+      "request_bytes": 20102,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3115,
+        "candidatesTokenCount": 1145,
+        "totalTokenCount": 4260,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3115
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "07-wrong-sufei",
+      "request_bytes": 20060,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3139,
+        "candidatesTokenCount": 1424,
+        "totalTokenCount": 4563,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3139
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "07-wrong-sufei",
+      "request_bytes": 10312,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 1873,
+        "candidatesTokenCount": 985,
+        "totalTokenCount": 2858,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 1873
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "08-wrong-alan",
+      "request_bytes": 20102,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3125,
+        "candidatesTokenCount": 1716,
+        "totalTokenCount": 4841,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3125
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    },
+    {
+      "sample": "09-wrong-doudou",
+      "request_bytes": 20211,
+      "max_output_tokens": 32768,
+      "prompt_has": {
+        "teacher_profile": true,
+        "learner_background": false,
+        "teacher_rule": true,
+        "background_rule": false
+      },
+      "status": 200,
+      "usage": {
+        "promptTokenCount": 3165,
+        "candidatesTokenCount": 1571,
+        "totalTokenCount": 4736,
+        "promptTokensDetails": [
+          {
+            "modality": "TEXT",
+            "tokenCount": 3165
+          }
+        ],
+        "serviceTier": "standard"
+      }
+    }
+  ],
+  "results": [
+    {
+      "id": "01-slope-alan",
+      "teacher": "alan",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 13657,
+      "model_requests": 1,
+      "lesson_sha256": "8453b9f43ed4021754287da18e8741db7f70fccb80596bcbf5e49d13d0ab0eb3"
+    },
+    {
+      "id": "02-slope-doudou",
+      "teacher": "doudou",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 12744,
+      "model_requests": 1,
+      "lesson_sha256": "cc9d8a3327519b6a133ee37fdce18de1a5a216d4965ead3497f20deaab68be89"
+    },
+    {
+      "id": "03-slope-sufei",
+      "teacher": "sufei",
+      "topic": "slope",
+      "status": "succeeded",
+      "elapsed_ms": 11512,
+      "model_requests": 1,
+      "lesson_sha256": "79a3a5828fcdc29c4e05615042bab504827e8fbc86b80e07576c20d7a5db03d8"
+    },
+    {
+      "id": "04-triangle-doudou",
+      "teacher": "doudou",
+      "topic": "triangle",
+      "status": "succeeded",
+      "elapsed_ms": 11612,
+      "model_requests": 1,
+      "lesson_sha256": "bac2030cdc3c14f9f893d834d5e6204514ec553d5597250b6a3a8de2f17a59d4"
+    },
+    {
+      "id": "05-triangle-sufei",
+      "teacher": "sufei",
+      "topic": "triangle",
+      "status": "succeeded",
+      "elapsed_ms": 8658,
+      "model_requests": 1,
+      "lesson_sha256": "48555e6866564141513d27058bbaebbf2655030c39c55cf891c6d57d973da06d"
+    },
+    {
+      "id": "06-triangle-alan",
+      "teacher": "alan",
+      "topic": "triangle",
+      "status": "succeeded",
+      "elapsed_ms": 11517,
+      "model_requests": 1,
+      "lesson_sha256": "10fe95fee9cdd03978baedd36de6150aa8cfa3ea53fc81999ac2caeba2cab365"
+    },
+    {
+      "id": "07-wrong-sufei",
+      "teacher": "sufei",
+      "topic": "wrong",
+      "status": "succeeded",
+      "elapsed_ms": 21610,
+      "model_requests": 2,
+      "lesson_sha256": "4e487c0150c81b83aaefd4079035b1ea8f162555625d525a7f5ba6a794c9b763"
+    },
+    {
+      "id": "08-wrong-alan",
+      "teacher": "alan",
+      "topic": "wrong",
+      "status": "succeeded",
+      "elapsed_ms": 14471,
+      "model_requests": 1,
+      "lesson_sha256": "be7a9c6d330368b42c4baf49cca08257c6c67321afdc27173132950917976e3c"
+    },
+    {
+      "id": "09-wrong-doudou",
+      "teacher": "doudou",
+      "topic": "wrong",
+      "status": "succeeded",
+      "elapsed_ms": 13851,
+      "model_requests": 1,
+      "lesson_sha256": "642bb9bbb4a6be0749b7b37831d72769522b036260f27aa98acbdf294c519ca9"
+    }
+  ],
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/trio-trial-run1"
+}

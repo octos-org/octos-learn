@@ -1,0 +1,184 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "为什么三角形的内角和是 180 度",
+    "goals": [
+      "理解三角形内角和为什么恒等于 180 度",
+      "掌握通过平行线与平角性质进行严格推导的步骤"
+    ],
+    "adaptation": {
+      "strategies": [
+        "利用测绘中基线平行的几何直觉，把三个分散的内角通过内错角转化到同一点",
+        "用平角严格给出每一步度数的来源，步步讲清依据"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "推导三角形内角和为什么等于 180 度，明确每一步内错角与平角的几何依据",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "在测绘和几何测量中，三角形三个角的和恒等于 180 度。我们看每一步从哪里来。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "diagram",
+              "role": "main_visual",
+              "content": {
+                "title": "过程图",
+                "elements": [
+                  {
+                    "as": "step-01",
+                    "label": "任意三角形 ABC"
+                  },
+                  {
+                    "as": "step-02",
+                    "label": "过顶点 A 作底边 BC 的平行线 DE"
+                  },
+                  {
+                    "as": "step-03",
+                    "label": "由平行线内错角性质得：角 DAB = 角 B，角 EAC = 角 C"
+                  },
+                  {
+                    "as": "step-04",
+                    "label": "平角 DAE 为 180 度，即 角 DAB + 角 BAC + 角 EAC = 180 度"
+                  },
+                  {
+                    "as": "step-05",
+                    "label": "代入替换得：角 B + 角 BAC + 角 C = 180 度"
+                  }
+                ],
+                "edges": [
+                  {
+                    "as": "edge-01",
+                    "from": "step-01",
+                    "to": "step-02",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-02",
+                    "from": "step-02",
+                    "to": "step-03",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-03",
+                    "from": "step-03",
+                    "to": "step-04",
+                    "label": "下一步"
+                  },
+                  {
+                    "as": "edge-04",
+                    "from": "step-04",
+                    "to": "step-05",
+                    "label": "下一步"
+                  }
+                ]
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "过顶点 A 引一条平行于底边 BC 的直线 DE。这个条件明确且唯一。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "辅助线依据",
+                "items": [
+                  "两直线平行，内错角相等",
+                  "平角定义：共线射线夹角为 180°"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "因为 DE 平行于 BC，内错角相等：角 DAB 等于角 B，角 EAC 等于角 C。两个数完全对应。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-03-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle DAB = \\angle B,\\quad \\angle EAC = \\angle C"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-02-item-01"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "直线 DE 上点 A 处的平角是 180 度。将内错角代入，便严格得出三角形三内角之和为 180 度。每一步都有据可查。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-04-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "\\angle B + \\angle BAC + \\angle C = 180^\\circ"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-03-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-04-item-01"
+              ],
+              "intent": "确认最终等式成立",
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "三角形内角和为 180 度的核心在于：通过顶点作底边的平行线，利用两直线平行、内错角相等，将三角形的三个角平移拼接为一个平角。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

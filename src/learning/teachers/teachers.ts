@@ -88,7 +88,7 @@ export interface TeacherReportLines {
   closing: string;
 }
 
-export const TEACHER_CATALOG_VERSION = 8;
+export const TEACHER_CATALOG_VERSION = 9;
 
 export const TEACHERS: readonly TeacherDefinition[] = [
   {
@@ -103,7 +103,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       onChallenge: "先检查自己的解释是否成立，允许修正结论",
       praise: "指出具体做对的那一步，不只说“真棒”",
       interests: "简洁的解法、意外的反例",
-      habit: "偶尔把好问题称为“值得收藏的问题”，但不声称已经保存",
+      habit: "一节课最多一次把学生提出的好问题称为“值得收藏的问题”，不用在学生答错的地方，也不声称已经保存",
       rhythm: "平静、句子清楚，庆祝简短而认真",
     },
     examples: [

@@ -1,0 +1,374 @@
+{
+  "dsl": "octos.lesson",
+  "version": "0.1",
+  "profile": "authoring",
+  "lesson": {
+    "mode": "explain",
+    "language": "zh-CN",
+    "title": "一次函数斜率与截距的辨析",
+    "goals": [
+      "准确区分斜截式 y = kx + b 中的斜率 k 与 y 轴截距 b",
+      "通过点坐标的变化量 Δy / Δx 验证直线 y = 3x - 2 的真实斜率"
+    ],
+    "adaptation": {
+      "strategies": [
+        "直接指明位置对应错误：-2 是常数项（截距），3 才是自变量系数（斜率）",
+        "利用测绘坐标核验法，取两点计算变化量，明确每个数的来源"
+      ]
+    },
+    "variables": [
+      {
+        "as": "number_01",
+        "initial": 0,
+        "min": -1,
+        "max": 3,
+        "label": "点A横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.02
+        }
+      },
+      {
+        "as": "number_02",
+        "initial": 1,
+        "min": 0,
+        "max": 4,
+        "label": "点B横坐标",
+        "control": {
+          "kind": "slider",
+          "step": 0.02
+        }
+      }
+    ],
+    "tasks": [
+      {
+        "as": "section-01-task-01",
+        "prompt": "将点 A 的横坐标调整到 1，观察对应点在直线上的位置。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "在滑块面板中找到点 A 的横坐标",
+          "将它的数值设为 1"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "点 A 横坐标已为 1，此时 y = 3(1) - 2 = 1。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_01",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_01",
+          "value": 1,
+          "tolerance": 0.01
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_01"
+          ]
+        }
+      },
+      {
+        "as": "section-02-task-01",
+        "prompt": "把点 B 的横坐标移动到 3，观察直线上对应的点坐标变化。",
+        "availability": {
+          "kind": "after_lesson"
+        },
+        "hints": [
+          "拖动滑块将点 B 横坐标设定为 3。",
+          "代入方程计算：当 x=3 时，y=3×3-2=7。"
+        ],
+        "hint_after_attempts": 2,
+        "success_message": "点 B 到达 (3, 7)。此时 Δx=3-0=3，Δy=7-(-2)=9，斜率仍为 9÷3=3。",
+        "allowed_operations": [
+          {
+            "kind": "variable_change",
+            "variable": "number_02",
+            "controls": [
+              "slider"
+            ]
+          }
+        ],
+        "completion": {
+          "kind": "expression_target",
+          "expression": "number_02",
+          "value": 3,
+          "tolerance": 0.01
+        },
+        "start": {
+          "kind": "practice",
+          "variables": [
+            "number_02"
+          ]
+        }
+      }
+    ],
+    "reflections": [
+      {
+        "as": "section-02-reflection-02",
+        "prompt": "如果一条直线的方程写成 y = -2 + 3x，它的斜率和 y 轴截距分别是多少？这个顺序颠倒会改变斜率吗？",
+        "answer": "斜率仍然是 3，y 轴截距仍然是 -2。斜率永远是自变量 x 的系数，与加法项排列的前后顺序无关。",
+        "anchor": "section-02-moment-04-item-01",
+        "availability": {
+          "kind": "after_lesson"
+        }
+      }
+    ]
+  },
+  "steps": [
+    {
+      "key": "section-01",
+      "purpose": "纠正结论：对比斜截式标准形式，指出 -2 与 3 的角色分工",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "结论是不对。直线 y = 3x - 2 的斜率是 3，而不是 -2。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-01",
+              "kind": "plot",
+              "role": "main_visual",
+              "content": {
+                "title": "直线 y = 3x - 2",
+                "axes": {
+                  "x": {
+                    "min": -1,
+                    "max": 4,
+                    "label": "x"
+                  },
+                  "y": {
+                    "min": -10,
+                    "max": 15,
+                    "label": "y"
+                  }
+                },
+                "curves": [
+                  {
+                    "as": "primary-curve",
+                    "expression": "((3)*(x))-(2)",
+                    "label": "y=3x-2"
+                  }
+                ],
+                "points": [
+                  {
+                    "as": "moving-point",
+                    "x": 0,
+                    "y": -2,
+                    "label": "A"
+                  },
+                  {
+                    "as": "second-point",
+                    "x": 1,
+                    "y": 1,
+                    "label": "B"
+                  }
+                ],
+                "bindings": [
+                  {
+                    "target": "moving-point.x",
+                    "expression": "number_01"
+                  },
+                  {
+                    "target": "moving-point.y",
+                    "expression": "((3)*(number_01))-(2)"
+                  },
+                  {
+                    "target": "second-point.x",
+                    "expression": "number_02"
+                  },
+                  {
+                    "target": "second-point.y",
+                    "expression": "((3)*(number_02))-(2)"
+                  }
+                ],
+                "measurement": "secant"
+              },
+              "place": {
+                "relation": "new_region",
+                "region_role": "section-01"
+              },
+              "when": "before_speech"
+            },
+            {
+              "do": "write",
+              "as": "section-01-moment-01-item-02",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "y = kx + b"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "我们核对式子：斜截式标准方程为 y = kx + b。这里的 k 对应斜率，b 对应常数截距。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-01-moment-02-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "各项对应关系",
+                "items": [
+                  "x 的系数 k = 3，代表直线的斜率",
+                  "常数项 b = -2，代表直线与 y 轴交点的纵坐标"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-02"
+              },
+              "when": "during_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01",
+                "section-01-moment-02-item-01"
+              ],
+              "intent": "核对系数与截距的对应",
+              "when": "after_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "你算出的 -2，来自常数项，它是当 x 为 0 时 y 的值，即直线与 y 轴交点 (0, -2) 的纵坐标。自变量 x 前面的系数 3，才是决定倾斜程度的斜率。你可以把滑块 A 调到 1，我们看自变量变化时纵坐标如何变化。",
+          "delivery": "emphatic",
+          "actions": [
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "before_speech"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section-02",
+      "purpose": "度量验证：在直线上取两点，计算 Δy/Δx 证实斜率为 3",
+      "beats": [
+        {
+          "key": "moment-01",
+          "say": "第一步的对应完成了，现在做测绘度量检验。在直线 y=3x-2 上取两个基准点：当 x 为 0 时，y 为 -2；当 x 为 1 时，y 为 1。",
+          "delivery": "careful",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-01-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "A(0, -2), \\quad B(1, 1)"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-01-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "point",
+              "target": "section-01-moment-01-item-01",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-02",
+          "say": "计算变化量。横坐标变化量 Δx 等于 1 减 0，得 1；纵坐标变化量 Δy 等于 1 减负 2，得 3。斜率等于纵坐标变化量除以横坐标变化量，结果是 3。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-02-item-01",
+              "kind": "math",
+              "role": "derivation",
+              "content": {
+                "latex": "k = \\frac{\\Delta y}{\\Delta x} = \\frac{1 - (-2)}{1 - 0} = \\frac{3}{1} = 3"
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-01-item-01"
+              },
+              "when": "after_speech"
+            },
+            {
+              "do": "focus",
+              "targets": [
+                "section-01-moment-01-item-01"
+              ],
+              "intent": "聚焦斜率计算过程",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-03",
+          "say": "如果把点 B 的横坐标移动到 2，对应的 y 值是 4。此时 Δx 为 2，Δy 为 6，比值依然是 6 除以 2，等于 3。",
+          "delivery": "neutral",
+          "actions": [
+            {
+              "do": "animate",
+              "variable": "number_02",
+              "value": 2,
+              "easing": "linear",
+              "duration_intent": "normal",
+              "when": "during_speech"
+            }
+          ]
+        },
+        {
+          "key": "moment-04",
+          "say": "总结两条核对规则：第一，标准斜截式中，x 的系数是斜率，常数项是纵截距；第二，斜率必须由两点的坐标变化量之比验证。请在课后把点 B 的横坐标调整到 3，核算对应的变化量。",
+          "delivery": "patient",
+          "actions": [
+            {
+              "do": "write",
+              "as": "section-02-moment-04-item-01",
+              "kind": "note",
+              "role": "explanation",
+              "content": {
+                "title": "度量验证结论",
+                "items": [
+                  "x 的系数 3 决定倾斜程度，即斜率",
+                  "常数项 -2 仅为直线与 y 轴交点的纵坐标",
+                  "任取两点计算 Δy/Δx，结果恒为 3"
+                ]
+              },
+              "place": {
+                "relation": "below",
+                "anchor": "section-02-moment-02-item-01"
+              },
+              "when": "after_speech"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "close": {
+    "summary": "结论是不对：-2 是直线在 y 轴上的截距，自变量 x 的系数 3 才是斜率；无论取哪两点，纵坐标变化与横坐标变化的比值始终为 3。",
+    "focus": [
+      "section-01-moment-01-item-01"
+    ]
+  }
+}

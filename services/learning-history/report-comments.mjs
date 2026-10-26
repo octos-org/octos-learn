@@ -5,6 +5,7 @@ import { analysisHash } from "./topic-analysis.mjs";
 import { localDay } from "./map-progress.mjs";
 import { queryWeeklyReport, REPORT_RULES_VERSION, weekStartOf } from "./weekly-report.mjs";
 import { TOPIC_MAPPINGS } from "./topic-mappings.mjs";
+import { ACHIEVEMENT_BY_ID } from "./achievement-catalog.mjs";
 export { REPORT_COMMENT_INSTRUCTIONS, buildReportCommentPrompt } from "./report-comment-instructions.mjs";
 
 // A teacher comment on a finished week, written by the model through a
@@ -17,7 +18,6 @@ export const REPORT_COMMENT_VERSION = "report-comment-v2";
 export const REPORT_COMMENT_DAILY_LIMIT = 3;
 const TEACHER_NAMES = { alan: "阿澜", doudou: "窦鸢", sufei: "苏绯" };
 const STATE_NAMES = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
-const ACHIEVEMENT_NAMES = { "first-footprint": "初来乍到", "did-it-alone": "亲手搞定", "regular-guest": "常驻嘉宾", reunion: "老朋友重逢" };
 // Draft Chinese topic names shared with the learning map (pending review).
 const TOPIC_NAMES = JSON.parse(readFileSync(new URL("../../src/learning/map/topic-names-zh.json", import.meta.url), "utf8")).names;
 const FORBIDDEN = /掌握|学会|会了|精通|进步|提高|提升|退步|变好|更好|更强|忘|落后|偷懒|笨|排名|分数|考试|测验|应该多|太少/;
@@ -30,7 +30,9 @@ export function buildCommentInput(report, teacherId) {
       练习次数: report.activity.task_attempts, 不用提示达到练习要求次数: report.activity.unassisted_successes, 提问数: report.activity.questions },
     topics: report.topics.map(topic => ({ name: TOPIC_NAMES[topic.topic_id] ?? topic.name, before: topic.state_before ? STATE_NAMES[topic.state_before] : "暂无记录",
       after: STATE_NAMES[topic.state_after] })),
-    achievements: report.achievements.map(item => ACHIEVEMENT_NAMES[item.achievement_id]),
+    // Every catalog achievement by its current name; an id the catalog no
+    // longer knows is passed as itself, never as a missing value.
+    achievements: report.achievements.map(item => ACHIEVEMENT_BY_ID.get(item.achievement_id)?.name ?? item.achievement_id),
   };
   return { input_sha256: analysisHash({ version: REPORT_COMMENT_VERSION, report_sha256: report.report_sha256, teacher_id: teacherId, facts }), ...facts };
 }
