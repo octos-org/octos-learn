@@ -415,7 +415,7 @@ export function CourseLauncher() {
     document.querySelector(".course-launcher")?.scrollTo?.(0, 0);
   }, [collectionId]);
   return (
-    <main className="course-launcher">
+    <main className={token ? "course-launcher academy-page" : "course-launcher"}>
       {history.status.cleanupPending > 0 && <p role="status">白板删除请求已保存，清理结果仍待确认。<button onClick={() => { void history.coordinator?.retry(); }}>重试清理</button></p>}
       {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
         onNew={draft => navigate(newBoardHref(draft))}

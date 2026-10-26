@@ -75,7 +75,7 @@ export function AchievementsPage() {
   const today = localToday();
 
   return (
-    <main className="course-launcher academy-page academy-night-page">
+    <main className="course-launcher academy-page">
       <div className="course-launcher-inner">
         <AcademyHeader />
         <section className="academy-hall-of-fame" aria-labelledby="academy-achievements-title">
