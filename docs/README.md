@@ -64,6 +64,7 @@
 - [老师与记忆最小切片：实施进展](personalized-teachers-slice/PROGRESS.md)：两位预设老师、老师设定与学生背景进入课程生成、兼容旧技能安装、验证与已知限制。
 
 - [学院大厅与成就系统计划](ACADEMY_HALL_AND_ACHIEVEMENTS_PLAN.md)：主页改为学院大厅，星图、成就殿、我的老师独立成页；74 个成就、称号、限时成就和获得动画的分步计划与清单。
+- [数学知识点中文名的审定](TOPIC_NAMES_ZH_REVIEW.md)：567 个中文名由模型审阅（用户 2026-10-26 决定），改了 65 条及原因。
 - [个性化老师全阶段 TODO](PERSONALIZED_TEACHERS_TODO.md)：覆盖底座、学习历史、老师性格、记忆成长、地图成就、主动建议与报告试卷六个阶段及持续改进；维护整体进展、当前下一步和后续决定。
 
 - [个性化老师接手说明](personalized-teachers-phase2/HANDOFF.md)：当前提交、已验证与未验证范围、授权边界和接手顺序；与[持续工作日志](personalized-teachers-phase2/WORK_LOG.md)、[交接证据](personalized-teachers-phase2/HANDOFF_EVIDENCE.json)一起持续维护。
