@@ -75,15 +75,16 @@ it("shows the star atlas as its own page, with the list by domain below", async 
 
 it("shows every achievement in the hall: earned with who presented it, progress, hidden ones as question marks", async () => {
   render(<MemoryRouter><AchievementsPage /></MemoryRouter>);
-  expect(await screen.findByText("3")).toBeTruthy();
-  expect(screen.getByText("/ 74 枚已点亮")).toBeTruthy();
+  expect(await screen.findByRole("img", { name: "已点亮 3 / 74 枚" })).toBeTruthy();
+  expect(within(screen.getByRole("list", { name: "最近获得" })).getAllByRole("button").length).toBe(3);
   expect(screen.getByRole("button", { name: "星夜学者，已获得" })).toBeTruthy();
   expect(screen.getAllByRole("button", { name: "隐藏成就，未获得" }).length).toBe(9);
-  expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByText("3 / 10")).toBeTruthy();
+  expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByLabelText("进度 3 / 10")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "星夜学者，已获得" }));
   const dialog = screen.getByRole("dialog");
   expect(within(dialog).getByText(/苏绯：「星夜学者」。记录在案。/)).toBeTruthy();
   expect(within(dialog).getByText("解锁「星夜学者」")).toBeTruthy();
+  expect(within(dialog).getByText("夜深了，观星塔的灯和你都还亮着。")).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "关闭" }));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
