@@ -50,3 +50,20 @@ export function upcomingSeasons(today: string, limit = 8): (SeasonWindow & { ope
 export function localToday(now = new Date()): string {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
+
+/** 早上好 / 下午好 … by the learner's clock. */
+export function timeGreeting(hour: number): string {
+  if (hour < 5) return "夜深了";
+  if (hour < 9) return "早上好";
+  if (hour < 11) return "上午好";
+  if (hour < 13) return "中午好";
+  if (hour < 18) return "下午好";
+  return "晚上好";
+}
+
+/** Monday to Sunday of the learner's current week, as local dates. */
+export function currentWeek(today: string): string[] {
+  const date = new Date(`${today}T00:00:00Z`);
+  const monday = date.getTime() - ((date.getUTCDay() + 6) % 7) * 86_400_000;
+  return Array.from({ length: 7 }, (_, i) => new Date(monday + i * 86_400_000).toISOString().slice(0, 10));
+}

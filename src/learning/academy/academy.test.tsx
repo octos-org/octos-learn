@@ -12,7 +12,7 @@ vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout
 import { AcademyHeader } from "./academy-header";
 import { AtlasPage } from "./atlas-page";
 import { AchievementsPage } from "./achievements-page";
-import { seasonWindows, upcomingSeasons } from "./achievement-display";
+import { currentWeek, seasonWindows, timeGreeting, upcomingSeasons } from "./achievement-display";
 import { HallHero } from "./hall-hero";
 import { TEACHERS } from "../teachers/teachers";
 
@@ -50,7 +50,8 @@ it("greets with the chosen teacher's own line, offers the last board and sums up
   expect(await screen.findByText("颗已点亮")).toBeTruthy();
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");
   expect(screen.getByText("第一个脚印")).toBeTruthy();
-  expect(await screen.findByText(new RegExp(`^启明学徒，${TEACHERS[0].hall.resume}`))).toBeTruthy();
+  expect((await screen.findByRole("heading", { level: 1 })).textContent).toMatch(/^(夜深了|早上好|上午好|中午好|下午好|晚上好)，启明学徒。$/);
+  expect(screen.getByText(TEACHERS[0].hall.resume)).toBeTruthy();
   rerender(<MemoryRouter><HallHero latest={undefined} /></MemoryRouter>);
   expect(screen.getByText(new RegExp(TEACHERS[0].hall.welcome))).toBeTruthy();
   expect(screen.queryByRole("link", { name: /继续上次的白板/ })).toBeNull();
@@ -107,3 +108,8 @@ it("lays out seasonal windows from the lunar table, soonest first", () => {
   expect(upcomingSeasons("2026-10-03")[0]).toMatchObject({ id: "national-day", open: true });
 });
 
+it("greets by the learner's clock and lays out this week from Monday", () => {
+  expect([0, 4, 5, 9, 11, 13, 18, 23].map(timeGreeting)).toEqual(["夜深了", "夜深了", "早上好", "上午好", "中午好", "下午好", "晚上好", "晚上好"]);
+  expect(currentWeek("2026-10-25")).toEqual(["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
+  expect(currentWeek("2026-10-26")[0]).toBe("2026-10-26");
+});

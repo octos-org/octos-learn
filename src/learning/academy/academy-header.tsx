@@ -1,4 +1,4 @@
-import { LogOut, Settings } from "lucide-react";
+import { Award, GraduationCap, Landmark, LogOut, Settings, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
@@ -10,10 +10,10 @@ import "./academy.css";
 /** The academy's places. The hall is the home page; each other place is its
  * own page so it can be opened, bookmarked and shown on a large screen. */
 export const ACADEMY_PLACES = [
-  { to: "/", label: "大厅", end: true },
-  { to: "/atlas", label: "星图", end: false },
-  { to: "/achievements", label: "成就殿", end: false },
-  { to: "/teachers", label: "我的老师", end: false },
+  { to: "/", label: "大厅", end: true, icon: Landmark },
+  { to: "/atlas", label: "星图", end: false, icon: Sparkles },
+  { to: "/achievements", label: "成就殿", end: false, icon: Award },
+  { to: "/teachers", label: "我的老师", end: false, icon: GraduationCap },
 ] as const;
 
 export function AcademyHeader() {
@@ -28,7 +28,7 @@ export function AcademyHeader() {
       {token && (
         <nav className="academy-places" aria-label="学院">
           {ACADEMY_PLACES.map((place) => (
-            <NavLink key={place.to} to={place.to} end={place.end}>{place.label}</NavLink>
+            <NavLink key={place.to} to={place.to} end={place.end}><place.icon size={17} aria-hidden="true" />{place.label}</NavLink>
           ))}
         </nav>
       )}

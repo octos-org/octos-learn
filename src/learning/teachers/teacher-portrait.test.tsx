@@ -46,3 +46,16 @@ it("draws the named teacher's portrait from the shared skin art, approving over 
   expect(container.querySelector(".teacher-portrait")?.getAttribute("data-pose")).toBe("approving");
   expect(container.querySelector<HTMLImageElement>(".teacher-portrait-pose[data-active]")?.src).toContain("/teachers/doudou/bust-approving.webp");
 });
+
+it("frames the bust as a soft glow by default and as a named card on request", () => {
+  const { container, rerender } = render(<TeacherPortrait teacherId="alan" pose="idle" />);
+  const portrait = () => container.querySelector(".teacher-portrait")!;
+  expect(portrait().getAttribute("data-frame")).toBe("glow");
+  expect(container.querySelector(".teacher-portrait-glow")).not.toBeNull();
+  expect(container.querySelector(".teacher-portrait-scene")).toBeNull();
+  rerender(<TeacherPortrait teacherId="alan" pose="idle" frame="card" name="阿澜" />);
+  expect(portrait().getAttribute("data-frame")).toBe("card");
+  expect(container.querySelector(".teacher-portrait-glow")).toBeNull();
+  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-scene")?.src).toContain("/teachers/alan/arch-bg.webp");
+  expect(container.querySelector(".teacher-portrait-plate")?.textContent).toBe("阿澜");
+});

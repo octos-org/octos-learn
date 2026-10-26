@@ -26,11 +26,15 @@ export function Medal({ achievement, locked = false, className = "" }: { achieve
   const metal = locked ? METAL.locked : METAL[achievement.rarity];
   const seal = locked && achievement.hidden ? "？" : ACHIEVEMENT_CATEGORIES.find((category) => category.id === achievement.category)?.seal ?? "星";
   const art = BADGE_ART.has(achievement.id) && !(locked && achievement.hidden);
-  const fill = `url(#m${id})`;
-  const outline = achievement.rarity === "b" ? <circle cx="60" cy="60" r="50" fill={fill} />
-    : achievement.rarity === "s" ? <polygon points={starPoints(6, 54, 47)} fill={fill} />
-    : achievement.rarity === "g" ? <polygon points={starPoints(8, 58, 46)} fill={fill} />
-    : <polygon points={starPoints(12, 60, 46)} fill={fill} />;
+  // The rim: the outer shape, a bevel (the same shape a little smaller in
+  // the reversed gradient), an engraved ring of dots, then the inner disc.
+  const shape = (fill: string, scale = 1, extra: Record<string, string | number> = {}) => {
+    const t = scale === 1 ? undefined : `translate(60 60) scale(${scale}) translate(-60 -60)`;
+    return achievement.rarity === "b" ? <circle cx="60" cy="60" r="50" fill={fill} transform={t} {...extra} />
+      : achievement.rarity === "s" ? <polygon points={starPoints(6, 54, 47)} fill={fill} transform={t} {...extra} />
+      : achievement.rarity === "g" ? <polygon points={starPoints(8, 58, 46)} fill={fill} transform={t} {...extra} />
+      : <polygon points={starPoints(12, 60, 46)} fill={fill} transform={t} {...extra} />;
+  };
   return (
     <svg className={`academy-medal ${className}`} viewBox="0 0 120 124" aria-hidden="true">
       <defs>
@@ -40,13 +44,23 @@ export function Medal({ achievement, locked = false, className = "" }: { achieve
         <radialGradient id={`c${id}`}>
           <stop offset="0" stopColor={locked ? "#1a1f3a" : "#24306e"} /><stop offset="1" stopColor={locked ? "#12152c" : "#0e1436"} />
         </radialGradient>
+        <linearGradient id={`r${id}`} x1="1" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor={metal[0]} /><stop offset="0.5" stopColor={metal[1]} /><stop offset="1" stopColor={metal[2]} />
+        </linearGradient>
+        <linearGradient id={`h${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.45" /><stop offset="0.45" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
         <clipPath id={`k${id}`}><circle cx="60" cy="60" r="33" /></clipPath>
       </defs>
       {!locked && (achievement.rarity === "g" || achievement.rarity === "x") && (
         <path d="M38,96 L30,118 L44,111 L50,122 L56,100 Z M82,96 L90,118 L76,111 L70,122 L64,100 Z" fill={achievement.rarity === "x" ? "#5a3fb5" : "#a3322e"} />
       )}
-      {outline}
-      <circle cx="60" cy="60" r="34" fill={`url(#c${id})`} stroke={metal[0]} strokeWidth="2" />
+      {shape(`url(#m${id})`, 1, { stroke: locked ? "#3a4270" : metal[1], strokeWidth: 1.2 })}
+      {!locked && shape(`url(#r${id})`, 0.86)}
+      {!locked && shape(`url(#h${id})`, 1)}
+      {!locked && <circle cx="60" cy="60" r="39.5" fill="none" stroke={metal[0]} strokeOpacity="0.8" strokeWidth="1.6" strokeDasharray="0.1 4.1" strokeLinecap="round" />}
+      <circle cx="60" cy="60" r="35.5" fill={locked ? "none" : metal[1]} opacity="0.9" />
+      <circle cx="60" cy="60" r="34" fill={`url(#c${id})`} stroke={metal[0]} strokeWidth="1.6" />
       {art ? (
         <image href={`${import.meta.env.BASE_URL}achievements/${achievement.id}.webp`} x="26" y="26" width="68" height="68"
           clipPath={`url(#k${id})`} preserveAspectRatio="xMidYMid slice" opacity={locked ? 0.28 : 1}
