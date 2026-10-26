@@ -68,7 +68,7 @@ Learning Coach 的 profile 模型继承已通过
 
 ### 1. 准备 Learning Coach
 
-本机单用户开发现使用 Octos 的账户级正式安装：Learning Coach 安装到 `alan0x` 的 `~/.octos/profiles/alan0x/data/skills/learning-coach/`，不再需要临时 `OCTOS_SKILLS_PATH`。这不改变公网产品技能的部署方式，也不自动安装到其他账户。
+本机单用户开发现使用 Octos 的账户级正式安装：Learning Coach 安装到本机 Octos 账户的 `~/.octos/profiles/<profile>/data/skills/learning-coach/`（最初交接时的机器上是 `alan0x`，2026-10-26 起的这台机器上是 `yy`），不再需要临时 `OCTOS_SKILLS_PATH`。这不改变公网产品技能的部署方式，也不自动安装到其他账户。
 
 2026-09-27 检查发现这里已存在旧安装（同为 0.15.0，但 OLL ref 为 `9599d46e8fe3327d2fed0dd9432c8178b9f03273`）；已备份到 `~/.octos/backups/learning-coach-before-closeout-20260927T162859Z`，通过正式安装器更新为主线版本，OLL ref 为 `f2a1c654041735f566385f9e208c868b270b8095`。
 
@@ -79,12 +79,12 @@ cd /Users/alan0x/Documents/projects/learning-coach
 npm ci
 npm run build
 cd /Users/alan0x/Documents/projects/octos
-./target/release/octos skills --profile alan0x install /Users/alan0x/Documents/projects/learning-coach --force
-cd "$HOME/.octos/profiles/alan0x/data/skills/learning-coach"
+./target/release/octos skills --profile <profile> install /Users/alan0x/Documents/projects/learning-coach --force
+cd "$HOME/.octos/profiles/<profile>/data/skills/learning-coach"
 npm ci
 ```
 
-安装器复制源码和构建产物，不是链接；仓库修改不会自动更新安装目录。用 `env -u OCTOS_SKILLS_PATH ./target/release/octos skills --profile alan0x info learning-coach` 可在 Octos 仓库下检查账户级发现结果。
+安装器复制源码和构建产物，不是链接；仓库修改不会自动更新安装目录。用 `env -u OCTOS_SKILLS_PATH ./target/release/octos skills --profile <profile> info learning-coach` 可在 Octos 仓库下检查账户级发现结果。
 
 ### 2. 启动 Octos
 
