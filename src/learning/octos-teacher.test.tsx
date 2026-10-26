@@ -36,6 +36,13 @@ describe("OctosTeacher", () => {
     rendered.unmount();
   });
 
+  it("labels a course pack's recorded narration as the course's own voice", () => {
+    const { rerender } = render(<OctosTeacher state="speaking" speech="先看这条直线。" onClick={vi.fn()} recordedVoice />);
+    expect(screen.getByText("课程原声").getAttribute("title")).toContain("不是老师的声音");
+    rerender(<OctosTeacher state="speaking" speech="先看这条直线。" onClick={vi.fn()} />);
+    expect(screen.queryByText("课程原声")).toBeNull();
+  });
+
   it("keeps completion captions out of camera occlusions while retaining the avatar", () => {
     const { container, rerender } = render(
       <OctosTeacher state="idle" stateLabel="课程完成" speech="这节课讲完了" onClick={vi.fn()} />,
