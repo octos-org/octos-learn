@@ -1,0 +1,247 @@
+/* The award ceremony. Layers switch on by rarity in award-ceremony.tsx; the
+   timeline: dust gathers (0–0.9s), the medal lands with a flash and shake,
+   then the name, condition, title banner and presenting teacher arrive. */
+.award-ceremony {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  background: radial-gradient(circle at 50% 42%, rgba(26, 22, 60, 0.6), rgba(3, 4, 14, 0.94) 70%);
+  color: #ede6d4;
+  animation: award-fade 350ms ease both;
+}
+.award-ceremony canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.award-ceremony > div:not(.award-stage):not(.award-presenter) { pointer-events: none; }
+
+.award-aurora {
+  position: absolute;
+  inset: -30%;
+  background: conic-gradient(from 0deg, rgba(120, 90, 255, 0), rgba(120, 90, 255, 0.35), rgba(60, 220, 210, 0.25), rgba(255, 200, 120, 0.25), rgba(120, 90, 255, 0));
+  filter: blur(60px);
+  animation: award-fade 1600ms 900ms ease both, award-spin 14s linear infinite;
+}
+.award-pillar {
+  position: absolute;
+  left: 50%;
+  top: -10%;
+  width: 220px;
+  height: 60%;
+  margin-left: -110px;
+  background: linear-gradient(180deg, rgba(255, 240, 200, 0), rgba(255, 236, 190, 0.5) 55%, rgba(255, 255, 255, 0.85) 82%, rgba(255, 255, 255, 0));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 35%, #000 65%, transparent);
+  transform-origin: top;
+  mix-blend-mode: screen;
+  animation: award-pillar 1500ms 500ms cubic-bezier(.3, .9, .3, 1) both;
+}
+.award-flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 42%, #fff, rgba(255, 245, 220, 0.6) 30%, transparent 70%);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: award-flash 700ms 900ms ease-out both;
+}
+.award-flare {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  width: 140vw;
+  height: 6px;
+  margin: -3px 0 0 -70vw;
+  background: linear-gradient(90deg, transparent, rgba(255, 240, 210, 0.9) 45%, #fff 50%, rgba(255, 240, 210, 0.9) 55%, transparent);
+  filter: blur(1px);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: award-flare 1100ms 950ms ease-out both;
+}
+
+.award-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  max-width: 100%;
+  perspective: 900px;
+  text-align: center;
+  animation: award-shake 420ms 950ms both;
+}
+.award-rays, .award-halo, .award-shock { position: absolute; top: 0; left: 50%; border-radius: 50%; pointer-events: none; }
+.award-rays {
+  width: 760px;
+  height: 760px;
+  margin: -250px 0 0 -380px;
+  background: repeating-conic-gradient(from 0deg, var(--award-ray) 0 5deg, transparent 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle, #000 18%, transparent 66%);
+  mask-image: radial-gradient(circle, #000 18%, transparent 66%);
+  animation: award-fade 900ms 900ms ease both, award-spin 12s linear infinite;
+}
+.award-rays.is-inner { width: 620px; height: 620px; margin: -180px 0 0 -310px; opacity: 0.8; animation: award-fade 900ms 1000ms ease both, award-spin 9s linear infinite reverse; }
+.award-halo {
+  width: 420px;
+  height: 420px;
+  margin: -80px 0 0 -210px;
+  background: radial-gradient(circle, var(--award-glow), transparent 62%);
+  opacity: 0;
+  mix-blend-mode: screen;
+  animation: award-halo 2400ms 950ms ease-in-out infinite;
+}
+.award-shock { top: 130px; width: 10px; height: 10px; margin: -5px; border: 3px solid var(--award-glow); animation: award-shock 1200ms 900ms ease-out both; }
+.award-shock.is-second { border-width: 1.5px; animation-delay: 1050ms; animation-duration: 1500ms; }
+
+.award-medal {
+  position: relative;
+  width: min(260px, 56vw, 34vh);
+  transform-style: preserve-3d;
+  animation: award-flip 1100ms cubic-bezier(.2, 1.4, .4, 1) 250ms both, award-bob 3.2s 1.6s ease-in-out infinite;
+}
+.award-medal svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 0 28px var(--award-glow)) drop-shadow(0 0 8px #fff8); }
+.award-sheen { position: absolute; inset: 6%; border-radius: 50%; overflow: hidden; pointer-events: none; mix-blend-mode: screen; }
+.award-sheen::before, .award-sheen::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: -60%;
+  width: 34%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  transform: skewX(-18deg);
+  animation: award-sheen 1000ms 1150ms ease-in-out both;
+}
+.award-sheen::after { width: 14%; animation-delay: 1350ms; }
+
+.award-kicker { font-size: 13px; letter-spacing: 0.5em; color: var(--award-glow); animation: award-up 600ms 1100ms ease both; }
+.award-name {
+  margin: 0;
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: clamp(32px, 7vw, 54px);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: #fff7e0;
+  text-shadow: 0 0 24px var(--award-glow), 0 0 4px #fff;
+  animation: award-word 900ms 1200ms cubic-bezier(.2, 1.3, .4, 1) both;
+}
+.award-condition { margin: 0; max-width: 36ch; color: #a3a8c4; animation: award-up 700ms 1400ms ease both; }
+.award-banner {
+  position: relative;
+  overflow: hidden;
+  margin-top: 14px;
+  padding: 8px 34px;
+  border: 1px solid #e2bd66;
+  color: #f6dfa0;
+  background: linear-gradient(90deg, transparent, rgba(226, 189, 102, 0.28), transparent);
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: 21px;
+  letter-spacing: 0.24em;
+  animation: award-banner 800ms 2300ms cubic-bezier(.2, .9, .3, 1) both;
+}
+.award-banner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  animation: award-sheen 1000ms 3000ms ease-in-out both;
+}
+.award-more { display: grid; justify-items: center; gap: 6px; margin-top: 8px; color: #a3a8c4; font-size: 13px; animation: award-up 700ms 2600ms ease both; }
+.award-more ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 0; padding: 0; list-style: none; }
+.award-more li { display: flex; align-items: center; gap: 6px; color: #ede6d4; font-size: 14px; }
+.award-more svg { width: 28px; height: 29px; }
+
+.award-presenter {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  max-width: 100%;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) 16px;
+  animation: award-slide 700ms 1800ms cubic-bezier(.2, .9, .3, 1) both;
+}
+.award-bubble {
+  max-width: 300px;
+  margin: 0 0 30px;
+  padding: 16px 18px;
+  border: 1px solid rgba(226, 189, 102, 0.28);
+  border-radius: 16px 16px 4px 16px;
+  background: rgba(10, 15, 38, 0.9);
+  font-size: 17px;
+  text-align: left;
+}
+.award-bubble b { margin-right: 6px; color: #f6dfa0; font-weight: 600; }
+.award-arch { position: relative; flex: 0 0 auto; width: clamp(100px, 18vw, 180px); aspect-ratio: 3 / 4; }
+.award-arch-window {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 50% 50% 8px 8px / 36% 36% 8px 8px;
+  background: radial-gradient(90% 70% at 50% 20%, #2a3473, #10163a);
+}
+.award-arch-window img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.award-arch-window .award-arch-bust {
+  inset: auto -12% -6%;
+  width: 124%;
+  height: auto;
+  max-width: none;
+  object-fit: initial;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
+}
+.award-arch-frame {
+  position: absolute;
+  inset: -3px;
+  border: 3px solid #e2bd66;
+  border-radius: 50% 50% 9px 9px / 36% 36% 9px 9px;
+  box-shadow: 0 0 0 1px rgba(122, 86, 34, 0.6), 0 14px 30px rgba(0, 0, 0, 0.4);
+}
+.award-skip {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top, 0px));
+  right: max(16px, env(safe-area-inset-right, 0px));
+  z-index: 2;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid rgba(226, 189, 102, 0.28);
+  border-radius: 999px;
+  background: rgba(10, 15, 38, 0.7);
+  color: #a3a8c4;
+  font: inherit;
+  cursor: pointer;
+}
+.award-skip:focus-visible { outline: 2px solid #f6dfa0; outline-offset: 2px; }
+
+/* On a phone the teacher's bubble sits under the stage instead of over it. */
+@media (max-width: 640px) {
+  .award-ceremony { align-content: start; padding-top: max(64px, env(safe-area-inset-top, 0px)); }
+  .award-presenter { left: 0; justify-content: flex-end; }
+  .award-bubble { font-size: 15px; margin-bottom: 18px; }
+  .award-rays { width: 520px; height: 520px; margin: -150px 0 0 -260px; }
+  .award-rays.is-inner { width: 420px; height: 420px; margin: -100px 0 0 -210px; }
+}
+
+@keyframes award-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes award-spin { to { transform: rotate(360deg); } }
+@keyframes award-pillar { 0% { opacity: 0; transform: scaleY(0); } 40% { opacity: 1; } 100% { opacity: 0.55; transform: scaleY(1); } }
+@keyframes award-flash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes award-flare { 0% { opacity: 0; transform: scaleX(0.1); } 20% { opacity: 1; } 100% { opacity: 0; transform: scaleX(1); } }
+@keyframes award-shake { 0%, 100% { transform: none; } 20% { transform: translate(-6px, 3px); } 40% { transform: translate(5px, -4px); } 60% { transform: translate(-3px, 2px); } 80% { transform: translate(2px, -1px); } }
+@keyframes award-halo { 0%, 100% { opacity: 0.35; transform: scale(0.92); } 50% { opacity: 0.75; transform: scale(1.06); } }
+@keyframes award-flip { 0% { opacity: 0; transform: rotateY(-720deg) scale(0.1); } 60% { opacity: 1; } 100% { transform: rotateY(0) scale(1); } }
+@keyframes award-bob { 0%, 100% { transform: translateY(0) rotateY(0); } 50% { transform: translateY(-8px) rotateY(10deg); } }
+@keyframes award-sheen { from { left: -60%; } to { left: 130%; } }
+@keyframes award-shock { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(70); } }
+@keyframes award-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes award-word { from { opacity: 0; transform: scale(1.8); letter-spacing: 0.6em; filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes award-slide { from { opacity: 0; transform: translateX(80px); } to { opacity: 1; transform: none; } }
+@keyframes award-banner { from { opacity: 0; transform: scaleX(0.05); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .award-ceremony, .award-ceremony * { animation-duration: 1ms !important; animation-delay: 0ms !important; animation-iteration-count: 1 !important; }
+  .award-flash, .award-flare, .award-shock, .award-aurora, .award-rays { display: none; }
+}

@@ -19,6 +19,7 @@ import { AdminSettingsPage } from "./settings/settings-page";
 import { AtlasPage } from "./learning/academy/atlas-page";
 import { TeachersPage } from "./learning/academy/teachers-page";
 import { AchievementsPage } from "./learning/academy/achievements-page";
+import { AwardHost } from "./learning/academy/award-host";
 
 function LegacyLearningRedirect() {
   const { search } = useLocation();
@@ -86,6 +87,7 @@ export function App() {
       <AuthProvider>
         <AppRoutes />
         <CapabilitySettingsDialog />
+        <AwardHost />
       </AuthProvider>
     </BrowserRouter>
   );
