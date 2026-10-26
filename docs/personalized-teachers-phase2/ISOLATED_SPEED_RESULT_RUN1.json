@@ -1,0 +1,105 @@
+{
+  "checked_at": "2026-10-26T14:28:39.357Z",
+  "passed": false,
+  "failure": "page.waitForFunction: Timeout 180000ms exceeded.",
+  "plan_id": "isolated-first-visual-20261026",
+  "plan_sha256": "c91196769c9f8def2add1518f37d6a1835c73652ba35d4ca9c517b1a9b339f3f",
+  "model": "gemini-3.8-flash",
+  "measure": "submit to first visible course node of this lesson (no speech configured)",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 7,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 7,
+  "reserved_usd_micros": 1050000,
+  "rows": [
+    {
+      "id": "pair-01-baseline",
+      "version": "baseline",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024656084-4398v7",
+      "teacher_profile": false,
+      "visual_ms": 22285.5,
+      "beat_id": "learn-learn-1793024656084-4398v7-fdbf760d-f8b8-4ea8-816f-05068294e643.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "f6c1e1c1673001e2d35175febaaf86fd08c2f2aa2a0807c81a9b4a277e63ce89",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-01-candidate",
+      "version": "candidate",
+      "topic": "linear",
+      "prompt_sha256": "3a60c2cf8ceef6d3561af5d7a6f0646e36161a50fec499766a7478a2c4448a87",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024678638-nyf8x0",
+      "teacher_profile": true,
+      "visual_ms": 47994.700000047684,
+      "beat_id": "learn-learn-1793024678638-nyf8x0-901c0bc6-6938-4198-ab1b-20498fabe1d3.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "0b887360dcec3ecaf9cf229208d2522b19eb6c2ed4a3f6c52cf018e82c35f3e0",
+      "job_status": "succeeded",
+      "model_requests": 3
+    },
+    {
+      "id": "pair-02-candidate",
+      "version": "candidate",
+      "topic": "geometry",
+      "prompt_sha256": "3613d4605c0f3c0e898d6ba85fbefd6d0cd8560b94345e8706d4036da747c2ed",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024726902-oxrf1a",
+      "teacher_profile": true,
+      "visual_ms": 12025.300000011921,
+      "beat_id": "learn-learn-1793024726902-oxrf1a-8b3bb575-bafc-4395-8e4a-c5a5a5556b7d.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "9ff63f84378ddb031e94722cd07a963e8d9045e0624625ec24a3fe4f54457a1f",
+      "job_status": "succeeded",
+      "model_requests": 1
+    },
+    {
+      "id": "pair-02-baseline",
+      "version": "baseline",
+      "topic": "geometry",
+      "prompt_sha256": "3613d4605c0f3c0e898d6ba85fbefd6d0cd8560b94345e8706d4036da747c2ed",
+      "state": "needs-inspection",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793024739194-b8fa7a",
+      "teacher_profile": false,
+      "error": "page.waitForFunction: Timeout 180000ms exceeded.",
+      "page_text": "OCTOS LEARNING CANVAS\n新的学习白板\n启用语音\n启用摄像头\n我的问题\n已回答\n\n请用可交互的三角形，解释三角形内角和为什么是 180 度。内容简短，给出完整的小课程。\n\n画笔 1 已禁用\n以文本形式重绘\n开启声音探索\n全选\n0 项笔迹 · 已保存\n\n目前还不能完整生成这节课：系统当前图形组件库不包含通用可自由拖动顶点的任意三角形及动态内角测量动画，故无法提供拖拽任意顶点的交互画面，转用几何严谨的步骤流程图进行直观推导。\n\n老师回复",
+      "browser_notes": [
+        "503 /api/learn/byok/prepare",
+        "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+      ]
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "n": 1,
+      "p50_ms": 22285.5,
+      "values_ms": [
+        22286
+      ]
+    },
+    "candidate": {
+      "n": 2,
+      "p50_ms": 12025.300000011921,
+      "values_ms": [
+        12025,
+        47995
+      ]
+    }
+  },
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/speed-isolated-run1"
+}

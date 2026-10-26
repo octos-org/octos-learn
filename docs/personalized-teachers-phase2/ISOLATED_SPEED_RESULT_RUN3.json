@@ -1,0 +1,70 @@
+{
+  "checked_at": "2026-10-26T14:35:13.968Z",
+  "passed": true,
+  "plan_id": "isolated-first-visual-run3-20261026",
+  "plan_sha256": "686a3248f3e85d70ab6772b070650247ef502aa2cc10c82a1fa5305027f17ff1",
+  "model": "gemini-3.8-flash",
+  "measure": "submit to first visible course node of this lesson (no speech configured)",
+  "octos_binary_sha256": "5213cd55e0e0f759098f19a02c016a554e8e3a34ee9a2d4ddcd8002853fb5399",
+  "installed_lesson_plan_sha256": "5236dccc41a5030634af69d934f6c55358ba1d771a845a474f2a775ff1c50795",
+  "gateway": {
+    "admitted": 4,
+    "rejected": 0,
+    "failures": 0
+  },
+  "admitted_requests": 4,
+  "reserved_usd_micros": 600000,
+  "rows": [
+    {
+      "id": "pair-06-candidate",
+      "version": "candidate",
+      "topic": "formula",
+      "prompt_sha256": "7ef161c6bd3bb0711d28fb67fa68ebd5a9ca7c01b6f192af0089a878d2e94d18",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793025261297-ysmuwu",
+      "teacher_profile": true,
+      "visual_ms": 23553.399999976158,
+      "beat_id": "learn-learn-1793025261297-ysmuwu-deded3f5-3a21-4b67-bab6-71bf7726d0d0.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "7328d2490c401e5d4e7a94ed7f4652361671c014ae8e7e3012ae927b6b679a5f",
+      "job_status": "succeeded",
+      "model_requests": 2
+    },
+    {
+      "id": "pair-06-baseline",
+      "version": "baseline",
+      "topic": "formula",
+      "prompt_sha256": "7ef161c6bd3bb0711d28fb67fa68ebd5a9ca7c01b6f192af0089a878d2e94d18",
+      "state": "completed",
+      "actions": 1,
+      "turns": 0,
+      "session_id": "learn-1793025285117-qpczul",
+      "teacher_profile": false,
+      "visual_ms": 28740.600000023842,
+      "beat_id": "learn-learn-1793025285117-qpczul-0fa16016-ecdf-4069-a6b8-a253d788bb28.octos-lesson.json:step:section-01:beat:moment-01",
+      "artifact_sha256": "7a00515f516a77404a0eb5a78f490ac4e4888e20cf6a795414f20cb3aba11ddf",
+      "job_status": "succeeded",
+      "model_requests": 2
+    }
+  ],
+  "summary": {
+    "baseline": {
+      "n": 1,
+      "p50_ms": 28740.600000023842,
+      "values_ms": [
+        28741
+      ]
+    },
+    "candidate": {
+      "n": 1,
+      "p50_ms": 23553.399999976158,
+      "values_ms": [
+        23553
+      ]
+    }
+  },
+  "octos_log_saved": true,
+  "temporary_octos_data_deleted": true,
+  "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/73416f0c-b396-4a1d-a7e0-3c8e5909bb74/scratchpad/speed-isolated-run3"
+}
