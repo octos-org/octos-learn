@@ -6,7 +6,7 @@ import { AcademyHeader } from "./academy-header";
 export function TeachersPage() {
   return (
     <main className="course-launcher academy-page">
-      <div className="course-launcher-inner">
+      <div className="course-launcher-inner academy-wide">
         <AcademyHeader />
         <section className="academy-teachers" aria-labelledby="academy-teachers-title">
           <h1 id="academy-teachers-title" className="academy-title">我的老师</h1>

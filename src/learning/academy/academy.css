@@ -283,6 +283,8 @@
   letter-spacing: 0.08em;
 }
 
+/* Every academy page uses the same wide frame, so moving between places
+   never changes the page width. */
 .course-launcher-inner.academy-wide { width: min(1400px, calc(100% - 48px)); }
 
 .academy-atlas { display: grid; gap: 14px; }

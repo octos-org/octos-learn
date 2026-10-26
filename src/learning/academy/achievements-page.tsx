@@ -76,7 +76,7 @@ export function AchievementsPage() {
 
   return (
     <main className="course-launcher academy-page academy-achievements-page">
-      <div className="course-launcher-inner">
+      <div className="course-launcher-inner academy-wide">
         <AcademyHeader />
         <section className="academy-hall-of-fame" aria-labelledby="academy-achievements-title">
           <h1 id="academy-achievements-title" className="academy-title">成就</h1>

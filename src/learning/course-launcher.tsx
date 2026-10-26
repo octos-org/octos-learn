@@ -420,7 +420,7 @@ export function CourseLauncher() {
       {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
         onNew={draft => navigate(newBoardHref(draft))}
         onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
-      <div className="course-launcher-inner" inert={historyOpen}>
+      <div className={token ? "course-launcher-inner academy-wide" : "course-launcher-inner"} inert={historyOpen}>
         <AcademyHeader />
 
         {!collectionId && token && <HallHero latest={whiteboards[0]} />}
