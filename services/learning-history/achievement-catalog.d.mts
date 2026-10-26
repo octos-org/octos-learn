@@ -1,7 +1,7 @@
 export type AchievementRarity = "b" | "s" | "g" | "x";
 export interface AchievementCategory { id: string; name: string; seal: string; description: string }
 export interface AchievementDefinition {
-  id: string; category: string; name: string; condition: string; rarity: AchievementRarity;
+  id: string; category: string; name: string; condition: string; /** One line in the academy's voice, beside the plain condition. */ flavor: string; rarity: AchievementRarity;
   hidden?: boolean; title?: string; season?: string; target?: number; teacher?: string; scoped?: "topic";
 }
 export interface TitleDefinition { id: string; name: string }
