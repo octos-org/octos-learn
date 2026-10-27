@@ -255,7 +255,9 @@ export function AdminSettingsPage() {
           </aside>
 
           <main className="settings-main min-w-0 flex-1 overflow-y-auto px-8 py-6 max-md:px-4 max-md:py-4">
-            <div className={`mx-auto ${isAdminOnlyTab ? "max-w-4xl" : "max-w-3xl"}`}>
+            {/* The teachers tab shows big portrait cards; it uses the academy
+                pages' width (1400px) rather than the form column. */}
+            <div className={`mx-auto ${activeTab === "teachers" ? "max-w-[1400px]" : isAdminOnlyTab ? "max-w-4xl" : "max-w-3xl"}`}>
               {activeTab === "authentication" && portal?.can_access_admin_portal && <AuthenticationTab />}
 
               {activeTab === "developer" ? (

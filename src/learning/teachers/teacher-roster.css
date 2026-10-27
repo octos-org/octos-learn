@@ -1,12 +1,12 @@
 /* The teachers in Settings → 我的老师: one light card per teacher, in the
    academy's navy and gold, readable in either theme of the settings page. */
-.teacher-roster { display: grid; gap: 24px; margin-top: 20px; }
+.teacher-roster { display: grid; gap: 24px; margin-top: 20px; container-type: inline-size; }
 .teacher-roster-row {
   display: grid;
-  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
-  gap: 28px;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 36px;
   align-items: start;
-  padding: 24px;
+  padding: 28px;
   border: 1px solid rgba(40, 65, 67, 0.12);
   border-radius: 22px;
   background: #fffef9;
@@ -16,7 +16,7 @@
 .teacher-roster-card { position: sticky; top: 20px; }
 .teacher-roster-body { display: grid; gap: 14px; min-width: 0; }
 .teacher-roster-post { margin: 0; color: #8a6418; font-size: 13px; letter-spacing: 0.24em; }
-.teacher-roster-body h2 { margin: -6px 0 0; color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: clamp(28px, 3vw, 36px); font-weight: 400; letter-spacing: 0.08em; }
+.teacher-roster-body h2 { margin: -6px 0 0; color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: clamp(30px, 3.4vw, 40px); font-weight: 400; letter-spacing: 0.08em; }
 .teacher-roster-profile { display: grid; gap: 8px; max-width: 62ch; }
 .teacher-roster-profile p { margin: 0; color: #3d5a63; font-size: 15px; line-height: 1.85; }
 .teacher-roster-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -30,13 +30,14 @@
 .teacher-roster-voice:hover { background: rgba(27, 36, 87, 0.05); }
 .teacher-roster-voice:disabled { opacity: 0.6; cursor: progress; }
 .teacher-roster-note { margin: -4px 0 0; color: #875f46; font-size: 13px; }
-.teacher-roster-quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
+.teacher-roster-quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin: 4px 0 0; padding: 0; list-style: none; }
 .teacher-roster-quotes li {
   position: relative; padding: 12px 14px 12px 34px; border-radius: 12px; background: #f6f1e3;
   color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: 17px; line-height: 1.5;
 }
 .teacher-roster-quotes li::before { content: "“"; position: absolute; top: 2px; left: 12px; color: #c99a3e; font-size: 30px; line-height: 1; }
-@media (max-width: 960px) {
+/* Stack by the roster's own width: the settings sidebar takes part of the window. */
+@container (max-width: 760px) {
   .teacher-roster-row { grid-template-columns: minmax(0, 1fr); padding: 18px; gap: 18px; }
-  .teacher-roster-card { position: static; max-width: 240px; justify-self: center; width: 100%; }
+  .teacher-roster-card { position: static; max-width: 260px; justify-self: center; width: 100%; }
 }
