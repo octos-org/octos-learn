@@ -153,7 +153,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       revisit: "隔了 {days} 天，要不要回到{topic}看看？",
     },
     voices: {
-      "seed-tts-2.0": { id: "zh_male_ruyaqingnian_uranus_bigtts", name: "儒雅青年 2.0" },
+      "seed-tts-2.0": { id: "zh_male_taocheng_uranus_bigtts", name: "小天 2.0" },
       "seed-tts-1.0": { id: "zh_male_yuanboxiaoshu_moon_bigtts", name: "渊博小叔" },
       "seed-tts-1.0-concurr": { id: "zh_male_yuanboxiaoshu_moon_bigtts", name: "渊博小叔" },
     },
