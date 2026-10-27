@@ -2,6 +2,7 @@ import { Check, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ServiceError, synthesizeTeacherSample } from "@/byok/providers";
+import { prepareClientServices } from "@/byok/services";
 import { useTeacherSkin } from "@/hooks/use-teacher-skin";
 
 import { TeacherCard } from "../teachers/teacher-card";
@@ -26,6 +27,8 @@ export function TeachersPage() {
 
   // The line is spoken with the learner's own speech service, in the
   // teacher's voice; each teacher's line is synthesized once per visit.
+  // Saved services load with the whiteboard or the voice settings, so a
+  // learner who comes here first loads them now.
   const listen = async (teacher: TeacherDefinition) => {
     audio.current?.pause();
     if (voice?.teacher === teacher.id && voice.state === "playing") { setVoice(null); return; }
@@ -33,6 +36,7 @@ export function TeachersPage() {
     try {
       let url = cache.current.get(teacher.id);
       if (!url) {
+        await prepareClientServices().catch(() => undefined);
         url = URL.createObjectURL(await synthesizeTeacherSample(TEACHER_LORE[teacher.id].voiceLine, teacher.voices));
         cache.current.set(teacher.id, url);
       }
