@@ -3768,7 +3768,9 @@
     animation: learning-course-generation-pulse 1.45s ease-in-out infinite;
   }
 
-  .octos-teacher-avatar[data-preparing="true"] .octos-teacher-avatar-art {
+  /* A teacher's bust has its own breathing and pose changes; it stays put
+     while the next sentence is prepared during narration. */
+  .octos-teacher-avatar[data-preparing="true"]:not([data-portrait="true"]) .octos-teacher-avatar-art {
     animation: learning-teacher-prepare 1.45s ease-in-out infinite;
   }
 

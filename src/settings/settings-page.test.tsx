@@ -106,7 +106,7 @@ describe("AdminSettingsPage", () => {
     expect(screen.getByText("Access")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Voice" })).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Learning Companion" }),
+      screen.getByRole("button", { name: "我的老师" }),
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "LLM" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "API Keys" })).toBeTruthy();
@@ -132,7 +132,7 @@ describe("AdminSettingsPage", () => {
     expect(screen.queryByRole("button", { name: "Skills" })).toBeNull();
   });
 
-  it("restores the learning companion picker without requiring profile data", async () => {
+  it("shows the teachers under 我的老师, also from the old companion link, without the old avatars", async () => {
     render(
       <MemoryRouter initialEntries={["/settings?tab=companion"]}>
         <AdminSettingsPage />
@@ -140,15 +140,22 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Learning Companion" })).toBeTruthy();
+      expect(screen.getByRole("heading", { level: 3, name: "我的老师" })).toBeTruthy();
     });
-    expect(screen.getByTestId("teacher-skin-ocean")).toBeTruthy();
-    expect(screen.getByTestId("teacher-skin-bee-3d")).toBeTruthy();
+    for (const name of ["阿澜", "窦鸢", "苏绯"]) expect(screen.getByRole("heading", { level: 2, name })).toBeTruthy();
+    expect(screen.queryByTestId("teacher-skin-ocean")).toBeNull();
+    expect(screen.queryByTestId("teacher-skin-bee-3d")).toBeNull();
 
-    fireEvent.click(screen.getByTestId("teacher-skin-bee-3d"));
-    expect(screen.getByTestId("teacher-skin-bee-3d").getAttribute("aria-pressed"))
-      .toBe("true");
-    expect(localStorage.getItem("octos-teacher-skin")).toBe("bee-3d");
+    fireEvent.click(screen.getByTestId("teacher-sufei"));
+    expect(screen.getByTestId("teacher-sufei").textContent).toContain("正在陪你上课");
+    expect(localStorage.getItem("octos-teacher-skin")).toBe("portrait");
+
+    // The learning-record switches sit under 高级选项, collapsed at first.
+    const advanced = screen.getByText("高级选项").closest("details");
+    expect(advanced?.open).toBe(false);
+    expect(advanced?.querySelectorAll("input[type=checkbox]")).toHaveLength(4);
+    fireEvent.click(screen.getByText("高级选项"));
+    expect(advanced?.open).toBe(true);
   });
 
   it("filters tabs by the search box", async () => {

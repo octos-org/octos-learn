@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useEffect, useRef, type CSSProperties } from "react";
 
 import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
@@ -36,12 +37,13 @@ function kicker(definition: AchievementDefinition, item: EarnedAchievement): str
   return `获得成就 · ${rarity}`;
 }
 
-/** A full-screen award ceremony that grows with rarity. It closes on its own,
- * on 跳过 or on Escape, and returns focus to where it was. */
+/** A full-screen award ceremony that grows with rarity. It stays until the
+ * learner closes it (the corner ✕ or Escape), then returns focus to where it
+ * was. */
 export default function AwardCeremony({ items, onDone }: { items: EarnedAchievement[]; onDone: () => void }) {
   const { lead, rest } = arrange(items);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const skip = useRef<HTMLButtonElement>(null);
+  const close = useRef<HTMLButtonElement>(null);
   const medal = useRef<HTMLDivElement>(null);
   // The host's onDone always drops the batch at the head of its queue.
   const done = useRef(onDone);
@@ -51,14 +53,12 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
   useEffect(() => {
     if (!lead) { done.current(); return; }
     const before = document.activeElement as HTMLElement | null;
-    skip.current?.focus();
+    close.current?.focus();
     const stop = !reduced && canvas.current ? runAwardParticles(canvas.current, rarity, medal.current) : () => undefined;
-    const timer = window.setTimeout(() => done.current(), AWARD_TIERS[rarity].ms + rest.length * 600);
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") done.current(); };
     window.addEventListener("keydown", onKey);
     return () => {
       stop();
-      window.clearTimeout(timer);
       window.removeEventListener("keydown", onKey);
       if (before?.isConnected) before.focus();
     };
@@ -113,7 +113,7 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
           </span>
         )}
       </div>
-      <button ref={skip} type="button" className="award-skip" onClick={() => done.current()}>{reduced ? "关闭" : "跳过"}</button>
+      <button ref={close} type="button" className="award-close" onClick={() => done.current()} aria-label="关闭"><X size={20} aria-hidden="true" /></button>
     </div>
   );
 }

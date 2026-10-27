@@ -14,7 +14,6 @@ import { AtlasPage } from "./atlas-page";
 import { AchievementsPage } from "./achievements-page";
 import { currentWeek, seasonWindows, timeGreeting, upcomingSeasons } from "./achievement-display";
 import { HallHero } from "./hall-hero";
-import { TeachersPage } from "./teachers-page";
 import { TEACHERS } from "../teachers/teachers";
 
 const MAP: LearningMap = { rules_version: "map-states-v1", through: 9, taxonomy: { commit: "c7ed549" }, topics: [
@@ -39,7 +38,7 @@ afterEach(cleanup);
 it("links the academy's places from every page, marking the current one", () => {
   render(<MemoryRouter initialEntries={["/atlas"]}><AcademyHeader /></MemoryRouter>);
   const places = screen.getByRole("navigation", { name: "学院" });
-  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"], ["我的老师", "/teachers"]]);
+  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"]]);
   expect(screen.getByRole("link", { name: "星图" }).getAttribute("aria-current")).toBe("page");
 });
 
@@ -114,19 +113,5 @@ it("greets by the learner's clock and lays out this week from Monday", () => {
   expect([0, 4, 5, 9, 11, 13, 18, 23].map(timeGreeting)).toEqual(["夜深了", "夜深了", "早上好", "上午好", "中午好", "下午好", "晚上好", "晚上好"]);
   expect(currentWeek("2026-10-25")).toEqual(["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"]);
   expect(currentWeek("2026-10-26")[0]).toBe("2026-10-26");
-});
-
-it("introduces each teacher with a portrait and their words, chooses the teacher, and explains how to hear them", async () => {
-  render(<MemoryRouter><TeachersPage /></MemoryRouter>);
-  for (const name of ["阿澜", "窦鸢", "苏绯"]) expect(screen.getByRole("heading", { level: 2, name })).toBeTruthy();
-  expect(screen.getByRole("list", { name: "苏绯的话" }).textContent).toContain("这个数，从哪里来？");
-  expect(screen.getByText(/一次只掏一样/)).toBeTruthy();
-  expect(screen.queryByText(/读一段小说/)).toBeNull();
-  fireEvent.click(screen.getByTestId("teacher-sufei"));
-  expect(screen.getByTestId("teacher-sufei").textContent).toContain("正在陪你上课");
-  expect(screen.getByTestId("teacher-alan").textContent).toContain("请阿澜上课");
-  // Without the learner's own speech service, the page says where to set it up.
-  fireEvent.click(screen.getAllByRole("button", { name: /听听我的声音/ })[0]);
-  expect(await screen.findByText(/配置自己的语音服务后，就能听到老师的声音/)).toBeTruthy();
 });
 
