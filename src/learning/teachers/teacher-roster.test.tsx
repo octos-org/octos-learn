@@ -27,19 +27,26 @@ it("introduces each teacher with a portrait and their words, chooses the teacher
   fireEvent.click(screen.getByTestId("teacher-sufei"));
   expect(screen.getByTestId("teacher-sufei").textContent).toContain("正在陪你上课");
   expect(screen.getByTestId("teacher-alan").textContent).toContain("请阿澜上课");
+  expect(screen.queryByRole("button", { name: /听听我的声音/ })).toBeNull();
   // Without the learner's own speech service, the roster says where to set it up.
-  fireEvent.click(screen.getAllByRole("button", { name: /听听我的声音/ })[0]);
+  fireEvent.click(screen.getByRole("button", { name: "听阿澜说：这是一个值得收藏的问题。" }));
   expect(await screen.findByText(/配置自己的语音服务后，就能听到老师的声音/)).toBeTruthy();
 });
 
-it("loads the learner's saved speech service before speaking, even when the whiteboard was never opened", async () => {
+it("reads each quote in the teacher's voice, after loading the learner's saved speech service", async () => {
   speech.synthesize.mockImplementation(async () => { speech.calls.push("synthesize"); return new Blob(["mp3"], { type: "audio/mpeg" }); });
   URL.createObjectURL = vi.fn(() => "blob:voice");
   URL.revokeObjectURL = vi.fn();
   vi.stubGlobal("Audio", class { onended: (() => void) | null = null; pause() {} async play() {} });
   render(<MemoryRouter><TeacherRoster /></MemoryRouter>);
-  fireEvent.click(screen.getAllByRole("button", { name: /听听我的声音/ })[0]);
-  await waitFor(() => expect(screen.getByRole("button", { name: /停止/ })).toBeTruthy());
+  // Every quote has its own speaker.
+  expect(screen.getAllByRole("button", { name: /^听(阿澜|窦鸢|苏绯)说：/ })).toHaveLength(12);
+  fireEvent.click(screen.getByRole("button", { name: "听苏绯说：这个数，从哪里来？" }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "停止播放：这个数，从哪里来？" })).toBeTruthy());
   expect(speech.calls).toEqual(["prepare", "synthesize"]);
+  expect(speech.synthesize).toHaveBeenCalledWith("这个数，从哪里来？", expect.objectContaining({ "seed-tts-2.0": expect.anything() }));
   expect(screen.queryByText(/配置自己的语音服务/)).toBeNull();
+  // A second tap on the playing quote stops it.
+  fireEvent.click(screen.getByRole("button", { name: "停止播放：这个数，从哪里来？" }));
+  expect(screen.getByRole("button", { name: "听苏绯说：这个数，从哪里来？" })).toBeTruthy();
 });

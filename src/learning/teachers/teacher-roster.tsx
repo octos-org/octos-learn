@@ -1,4 +1,4 @@
-import { Check, Volume2 } from "lucide-react";
+import { Check, Loader2, Square, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { ServiceError, synthesizeTeacherSample } from "@/byok/providers";
@@ -10,10 +10,12 @@ import { TEACHER_LORE } from "./teacher-lore";
 import { TEACHERS, useSelectedTeacher, type TeacherDefinition } from "./teachers";
 import "./teacher-roster.css";
 
-type VoiceState = { teacher: TeacherDefinition["id"]; state: "loading" | "playing" } | { teacher: TeacherDefinition["id"]; state: "error"; message: string } | null;
+/** One quote being read aloud, keyed by teacher and quote. */
+type VoiceState = { teacher: TeacherDefinition["id"]; quote: number; state: "loading" | "playing" } | { teacher: TeacherDefinition["id"]; quote: number; state: "error"; message: string } | null;
 
-/** The academy's teachers, one row each: their card, a short portrait, their
- * words and their voice. Choosing one sets who teaches the next lesson. */
+/** The academy's teachers, one row each: their card, a short portrait and
+ * their words, each of which can be heard in the teacher's voice. Choosing one
+ * sets who teaches the next lesson. */
 export function TeacherRoster() {
   const { teacher: current, setTeacherId } = useSelectedTeacher();
   const { setSkin } = useTeacherSkin();
@@ -25,31 +27,32 @@ export function TeacherRoster() {
     for (const url of cache.current.values()) URL.revokeObjectURL(url);
   }, []);
 
-  // The line is spoken with the learner's own speech service, in the
-  // teacher's voice; each teacher's line is synthesized once per visit.
-  // Saved services load with the whiteboard or the voice settings, so a
-  // learner who comes here first loads them now.
-  const listen = async (teacher: TeacherDefinition) => {
+  // A quote is spoken with the learner's own speech service, in the
+  // teacher's voice; each quote is synthesized once per visit. Saved services
+  // load with the whiteboard or the voice settings, so a learner who comes
+  // here first loads them now.
+  const listen = async (teacher: TeacherDefinition, quote: number) => {
     audio.current?.pause();
-    if (voice?.teacher === teacher.id && voice.state === "playing") { setVoice(null); return; }
-    setVoice({ teacher: teacher.id, state: "loading" });
+    if (voice?.teacher === teacher.id && voice.quote === quote && voice.state === "playing") { setVoice(null); return; }
+    setVoice({ teacher: teacher.id, quote, state: "loading" });
+    const key = `${teacher.id}:${quote}`;
     try {
-      let url = cache.current.get(teacher.id);
+      let url = cache.current.get(key);
       if (!url) {
         await prepareClientServices().catch(() => undefined);
-        url = URL.createObjectURL(await synthesizeTeacherSample(TEACHER_LORE[teacher.id].voiceLine, teacher.voices));
-        cache.current.set(teacher.id, url);
+        url = URL.createObjectURL(await synthesizeTeacherSample(TEACHER_LORE[teacher.id].quotes[quote], teacher.voices));
+        cache.current.set(key, url);
       }
       const player = new Audio(url);
       audio.current = player;
-      player.onended = () => setVoice(null);
+      player.onended = () => setVoice((current) => current?.teacher === teacher.id && current.quote === quote ? null : current);
       await player.play();
-      setVoice({ teacher: teacher.id, state: "playing" });
+      setVoice({ teacher: teacher.id, quote, state: "playing" });
     } catch (error) {
       const message = error instanceof ServiceError && error.state === "unconfigured"
         ? "在“设置”里配置自己的语音服务后，就能听到老师的声音。"
         : "暂时播放不了老师的声音，请稍后再试。";
-      setVoice({ teacher: teacher.id, state: "error", message });
+      setVoice({ teacher: teacher.id, quote, state: "error", message });
     }
   };
 
@@ -71,15 +74,25 @@ export function TeacherRoster() {
                   data-testid={`teacher-${teacher.id}`} onClick={() => { setTeacherId(teacher.id); setSkin(teacher.skin); }}>
                   {chosen ? <><Check size={17} aria-hidden="true" /> 正在陪你上课</> : `请${teacher.name}上课`}
                 </button>
-                <button type="button" className="teacher-roster-voice" onClick={() => void listen(teacher)} disabled={mine?.state === "loading"}>
-                  <Volume2 size={17} aria-hidden="true" />
-                  {mine?.state === "loading" ? "正在准备…" : mine?.state === "playing" ? "停止" : "听听我的声音"}
-                </button>
               </div>
-              {mine?.state === "error" && <p className="teacher-roster-note" role="status">{mine.message}</p>}
               <ul className="teacher-roster-quotes" aria-label={`${teacher.name}的话`}>
-                {lore.quotes.map((quote) => <li key={quote}>{quote}</li>)}
+                {lore.quotes.map((quote, index) => {
+                  const state = mine?.quote === index ? mine.state : null;
+                  return (
+                    <li key={quote}>
+                      <span>{quote}</span>
+                      <button type="button" className="teacher-roster-listen" data-state={state ?? undefined}
+                        aria-label={state === "playing" ? `停止播放：${quote}` : `听${teacher.name}说：${quote}`}
+                        onClick={() => void listen(teacher, index)} disabled={state === "loading"}>
+                        {state === "loading" ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                          : state === "playing" ? <Square size={13} fill="currentColor" aria-hidden="true" />
+                          : <Volume2 size={17} aria-hidden="true" />}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
+              {mine?.state === "error" && <p className="teacher-roster-note" role="status">{mine.message}</p>}
             </div>
           </article>
         );
