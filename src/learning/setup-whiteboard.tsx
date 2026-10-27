@@ -12,7 +12,7 @@ import {
 import { LLM_PROVIDERS, isLessonCapable } from "@/settings/llm-providers";
 import { ServiceSettings } from "@/byok/service-settings";
 import { prepareClientServices, setLessonConfigured } from "@/byok/services";
-import { TeacherSkinPicker } from "@/settings/learning-companion-tab";
+import { TeacherSkinPicker } from "@/settings/teacher-skin-picker";
 import {
   isEmbeddedCourseLocation,
   isKnownEmbeddedCourseLocation,

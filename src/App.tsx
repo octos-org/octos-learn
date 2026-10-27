@@ -17,7 +17,6 @@ import { isCoursePackIdentity } from "./learning/course-pack/course-pack-catalog
 import { LearningSetupGate, SetupWhiteboard } from "./learning/setup-whiteboard";
 import { AdminSettingsPage } from "./settings/settings-page";
 import { AtlasPage } from "./learning/academy/atlas-page";
-import { TeachersPage } from "./learning/academy/teachers-page";
 import { AchievementsPage } from "./learning/academy/achievements-page";
 import { AwardHost } from "./learning/academy/award-host";
 
@@ -73,7 +72,7 @@ export function AppRoutes() {
         <Route path="/setup" element={<SetupWhiteboard />} />
         <Route path="/settings" element={<AdminSettingsPage />} />
         <Route path="/atlas" element={<AtlasPage />} />
-        <Route path="/teachers" element={<TeachersPage />} />
+        <Route path="/teachers" element={<Navigate to="/settings?tab=teachers" replace />} />
         <Route path="/achievements" element={<AchievementsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

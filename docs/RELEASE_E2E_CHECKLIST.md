@@ -135,7 +135,7 @@ page and restart the frontend once.
 Pass when:
 
 - Settings opens directly from the learning canvas;
-- Settings contains “Learning Companion”, changing it updates the teacher in
+- Settings contains “我的老师”, choosing a teacher there updates the teacher in
   the lower-right corner, and the choice survives refresh;
 - returning from Settings returns to Octos Learn rather than an unrelated Octos page;
 - the new course title and pen stroke remain after refresh and frontend restart.

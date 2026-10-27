@@ -24,7 +24,7 @@ import { LlmTab } from "./llm-tab";
 import { ApiKeysTab } from "./api-keys-tab";
 import { VoiceTab } from "./voice-tab";
 import { AuthenticationTab } from "./authentication-tab";
-import { LearningCompanionTab } from "./learning-companion-tab";
+import { TeachersTab } from "./teachers-tab";
 import { TeacherMemoryTab } from "./teacher-memory-tab";
 import { DeveloperTab } from "./developer-tab";
 
@@ -33,7 +33,7 @@ type TabId =
   | "llm"
   | "api-keys"
   | "voice"
-  | "companion"
+  | "teachers"
   | "memory"
   | "authentication"
   | "developer";
@@ -57,12 +57,7 @@ const TAB_GROUPS: Array<{ id: TabGroup; label: string }> = [
 
 const TABS: TabDef[] = [
   { id: "profile", label: "Profile", icon: User, group: "personal" },
-  {
-    id: "companion",
-    label: "Learning Companion",
-    icon: GraduationCap,
-    group: "personal",
-  },
+  { id: "teachers", label: "我的老师", icon: GraduationCap, group: "personal" },
   { id: "memory", label: "老师记得的事", icon: BookHeart, group: "personal" },
   { id: "llm", label: "LLM", icon: Cpu, group: "learning" },
   { id: "voice", label: "Voice", icon: Volume2, group: "learning" },
@@ -89,6 +84,8 @@ function SettingsThemeButton() {
 
 function asTabId(value: string | null): TabId | null {
   if (value === "debug") return "developer";
+  // The teachers page and the old Learning Companion tab both live here now.
+  if (value === "companion") return "teachers";
   return TABS.some((tab) => tab.id === value) ? value as TabId : null;
 }
 
@@ -200,7 +197,7 @@ export function AdminSettingsPage() {
         icon={SettingsIcon}
         context="Octos Learn"
         title="Settings"
-        subtitle="Profile, companion, models, voice, and access"
+        subtitle="Profile, teachers, models, voice, and access"
         actions={
           <><button className="text-sm text-accent" onClick={()=>navigate("/setup")}>新手设置白板</button><SettingsThemeButton /></>
         }
@@ -263,8 +260,8 @@ export function AdminSettingsPage() {
 
               {activeTab === "developer" ? (
                 <DeveloperTab />
-              ) : activeTab === "companion" ? (
-                <LearningCompanionTab />
+              ) : activeTab === "teachers" ? (
+                <TeachersTab />
               ) : !isAdminOnlyTab && profile ? (
                 <>
                   {activeTab === "profile" && (
