@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import type { VoiceState } from "@/home/voice/use-voice-conversation";
 import { OctosSkinArt } from "@/components/octos-skin-art";
@@ -46,30 +46,13 @@ export function OctosTeacher({
 }) {
   const { skin } = useTeacherSkin();
   const taskApproved = useTeacherApproval();
+  // A tap has no decoration of its own: the pose and caption already answer
+  // it. The 3D companion skins still play their model's reaction clip.
   const [reactionKey, setReactionKey] = useState(0);
-  const [reacting, setReacting] = useState(false);
-  const reactionTimerRef = useRef<number | null>(null);
-
-  useEffect(
-    () => () => {
-      if (reactionTimerRef.current !== null) {
-        window.clearTimeout(reactionTimerRef.current);
-      }
-    },
-    [],
-  );
 
   const handleClick = () => {
     if (disabled) return;
-    if (reactionTimerRef.current !== null) {
-      window.clearTimeout(reactionTimerRef.current);
-    }
     setReactionKey((current) => current + 1);
-    setReacting(true);
-    reactionTimerRef.current = window.setTimeout(() => {
-      setReacting(false);
-      reactionTimerRef.current = null;
-    }, 760);
     onClick();
   };
 
@@ -95,7 +78,6 @@ export function OctosTeacher({
         data-state={state}
         data-portrait={skin === "portrait" ? "true" : undefined}
         data-preparing={preparing ? "true" : undefined}
-        data-reacting={reacting ? "true" : undefined}
         onClick={handleClick}
         disabled={disabled}
         aria-busy={preparing}
@@ -115,17 +97,6 @@ export function OctosTeacher({
             <span />
             <span />
             <span />
-          </span>
-        )}
-        {reacting && (
-          <span
-            key={reactionKey}
-            className="octos-teacher-reaction"
-            aria-hidden="true"
-          >
-            <span>✦</span>
-            <span>●</span>
-            <span>✦</span>
           </span>
         )}
         <OctosSkinArt

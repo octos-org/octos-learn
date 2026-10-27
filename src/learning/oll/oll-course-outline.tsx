@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import type { PlaybackOutlineBeat, PlaybackOutlineStep } from "octos-lesson-language/player";
 import { unlockAudio } from "@/home/voice/audio-playback";
+import { useTeacherSkin } from "@/hooks/use-teacher-skin";
 import type { OllLessonRuntimeController } from "./use-oll-lesson-runtime";
 
 function itemState(
@@ -24,6 +25,7 @@ export function OllCourseOutline({
 }: {
   runtime: OllLessonRuntimeController;
 }) {
+  const { skin } = useTeacherSkin();
   const [open, setOpen] = useState(false);
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const rootRef = useRef<HTMLDivElement>(null);
@@ -66,7 +68,7 @@ export function OllCourseOutline({
   };
 
   return (
-    <div className="oll-course-outline" ref={rootRef}>
+    <div className="oll-course-outline" data-portrait={skin === "portrait" ? "true" : undefined} ref={rootRef}>
       <button
         type="button"
         className="oll-course-outline-trigger"

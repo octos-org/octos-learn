@@ -549,10 +549,21 @@
   bottom: 116px;
 }
 
+[data-runtime-platform="android"] .oll-course-outline[data-portrait="true"] {
+  right: 10px;
+  bottom: 152px;
+}
+
 [data-runtime-platform="android"] .oll-course-outline-trigger {
   width: 34px;
   height: 34px;
   border-radius: 10px;
+}
+
+[data-runtime-platform="android"] .oll-course-outline[data-portrait="true"] .oll-course-outline-trigger {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
 }
 
 [data-runtime-platform="android"] .oll-course-outline-panel {
@@ -1277,6 +1288,37 @@
   line-height: 1.45;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+}
+
+/* With a teacher's bust (taller than the round tile) the outline sits above
+   the bust's shoulder instead of over the face, dressed in the bust's navy
+   and gold. */
+.oll-course-outline[data-portrait="true"] {
+  right: 24px;
+  bottom: 276px;
+}
+
+.oll-course-outline[data-portrait="true"] .oll-course-outline-trigger {
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(226, 189, 102, 0.8);
+  border-radius: 50%;
+  color: #f3d68c;
+  background: #141a40;
+  box-shadow: 0 10px 24px rgba(20, 26, 64, 0.28), inset 0 0 0 3px #141a40, inset 0 0 0 4px rgba(226, 189, 102, 0.22);
+}
+
+.oll-course-outline[data-portrait="true"] .oll-course-outline-trigger:hover,
+.oll-course-outline[data-portrait="true"] .oll-course-outline-trigger[aria-expanded="true"] {
+  color: #fff3c4;
+  border-color: #f6dfa0;
+  background: #1d2657;
+}
+
+.oll-course-outline[data-portrait="true"] .oll-course-outline-panel {
+  right: 0;
+  max-height: min(680px, calc(100vh - 360px));
+  border-top: 2px solid rgba(226, 189, 102, 0.75);
 }
 
 .oll-course-outline-help {
@@ -3446,39 +3488,6 @@
     inset 0 1px rgba(255, 255, 255, 0.8);
 }
 
-.octos-teacher-reaction {
-  position: absolute;
-  inset: -14px;
-  z-index: 4;
-  pointer-events: none;
-}
-
-.octos-teacher-reaction > span {
-  position: absolute;
-  color: #e9a83d;
-  font-family: var(--font-label);
-  line-height: 1;
-  text-shadow: 0 2px 8px rgba(120, 78, 21, 0.22);
-}
-
-.octos-teacher-reaction > span:nth-child(1) {
-  top: 10px;
-  left: 5px;
-}
-
-.octos-teacher-reaction > span:nth-child(2) {
-  top: -1px;
-  left: 50%;
-  color: #62b6c8;
-  font-size: 10px;
-}
-
-.octos-teacher-reaction > span:nth-child(3) {
-  top: 12px;
-  right: 3px;
-  font-size: 12px;
-}
-
 .octos-teacher-avatar[data-state="listening"] .octos-teacher-halo,
 .octos-teacher-avatar[data-state="speaking"] .octos-teacher-halo,
 .octos-teacher-avatar[data-state="thinking"] .octos-teacher-halo,
@@ -3528,6 +3537,7 @@
 
 .octos-teacher-avatar[data-portrait="true"]:hover {
   box-shadow: none;
+  transform: none;
 }
 
 .octos-teacher-avatar[data-portrait="true"] .octos-teacher-avatar-art {
@@ -3743,18 +3753,6 @@
   }
 }
 
-@keyframes learning-teacher-react {
-  0%, 100% { transform: translateY(0) rotate(0) scale(1); }
-  38% { transform: translateY(-7px) rotate(-3deg) scale(1.04); }
-  65% { transform: translateY(-2px) rotate(2deg) scale(1.02); }
-}
-
-@keyframes learning-teacher-spark {
-  0% { opacity: 0; transform: translateY(8px) scale(0.4) rotate(-12deg); }
-  32% { opacity: 1; }
-  100% { opacity: 0; transform: translateY(-12px) scale(1.12) rotate(12deg); }
-}
-
 @keyframes learning-teacher-prepare {
   0%, 100% { transform: translateY(0) rotate(0); }
   50% { transform: translateY(-3px) rotate(-1deg); }
@@ -3784,22 +3782,6 @@
 
   .octos-teacher-preparing > span:nth-child(3) {
     animation-delay: 240ms;
-  }
-
-  .octos-teacher-avatar[data-reacting="true"] {
-    animation: learning-teacher-react 680ms cubic-bezier(0.2, 0.8, 0.3, 1);
-  }
-
-  .octos-teacher-reaction > span {
-    animation: learning-teacher-spark 720ms ease-out both;
-  }
-
-  .octos-teacher-reaction > span:nth-child(2) {
-    animation-delay: 55ms;
-  }
-
-  .octos-teacher-reaction > span:nth-child(3) {
-    animation-delay: 100ms;
   }
 }
 
@@ -3876,6 +3858,16 @@
   .oll-course-outline-panel {
     right: -14px;
     max-height: min(620px, calc(100vh - 262px));
+  }
+
+  .oll-course-outline[data-portrait="true"] {
+    right: 16px;
+    bottom: 268px;
+  }
+
+  .oll-course-outline[data-portrait="true"] .oll-course-outline-panel {
+    right: 0;
+    max-height: min(620px, calc(100vh - 340px));
   }
 
   .learning-input-dock {
@@ -4035,6 +4027,10 @@
     right: 18px;
   }
 
+  .oll-course-outline[data-portrait="true"] {
+    right: 16px;
+  }
+
   .oll-course-outline-panel {
     position: fixed;
     top: auto;
@@ -4054,6 +4050,11 @@
   .octos-teacher-caption {
     width: calc(100vw - 120px);
     font-size: 15px;
+  }
+
+  /* The bust is wider than the round tile; keep the caption on screen. */
+  .octos-teacher:has(.octos-teacher-avatar[data-portrait="true"]) .octos-teacher-caption {
+    width: calc(100vw - 172px);
   }
 }
 
