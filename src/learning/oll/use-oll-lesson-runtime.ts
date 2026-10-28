@@ -120,6 +120,8 @@ export interface OllLessonRuntimeController {
   ): string | void;
   requestStudentTaskHint(taskId: string): void;
   retryStudentTask(taskId: string): void;
+  /** A typed answer to the open numeric answer task; `false` when the text is not a number. */
+  submitStudentAnswer(taskId: string, text: string): boolean;
   recordStudentInkSelection(
     source: StudentInkSelectionSource,
     input: StudentInputMethod,
@@ -503,6 +505,13 @@ export function useOllLessonRuntime({
     },
     [session],
   );
+  const submitStudentAnswer = useCallback(
+    (taskId: string, text: string) => {
+      const result = guardedStudentInput(session, () => session!.submitStudentAnswer(taskId, text, "keyboard"));
+      return !(result && "unreadable" in result);
+    },
+    [session],
+  );
   const retryStudentTask = useCallback(
     (taskId: string) => {
       guardedStudentInput(session, () => session!.retryStudentTask(taskId));
@@ -680,6 +689,7 @@ export function useOllLessonRuntime({
     handleStudentVariableInput,
     requestStudentTaskHint,
     retryStudentTask,
+    submitStudentAnswer,
     recordStudentInkSelection,
     handleStudentScene3dInput,
     setDeliverySettled,
