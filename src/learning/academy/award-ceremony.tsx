@@ -97,6 +97,7 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
   // stays on screen and nothing plays.
   useEffect(() => {
     if (!teacher || !line || silent) return;
+    const cache = voices.current;
     const controller = new AbortController();
     let stopped = false;
     let arrived = false;
@@ -104,12 +105,12 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
     let src: string | null = null;
     void (async () => {
       try {
-        let audio = voices.current.get(leadKey);
+        let audio = cache.get(leadKey);
         if (!audio) {
           audio = prepareClientServices().catch(() => undefined)
             .then(() => synthesizeTeacherSample(line, teacher.voices, controller.signal));
-          voices.current.set(leadKey, audio);
-          audio.catch(() => voices.current.delete(leadKey));
+          cache.set(leadKey, audio);
+          audio.catch(() => cache.delete(leadKey));
         }
         const blob = await audio;
         arrived = true;
@@ -127,7 +128,7 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
       // medals does not pay for lines nobody hears.
       controller.abort();
       // A cancelled request is not kept for the next time this award is in front.
-      if (!arrived) voices.current.delete(leadKey);
+      if (!arrived) cache.delete(leadKey);
       player?.pause();
       if (src) URL.revokeObjectURL(src);
     };
