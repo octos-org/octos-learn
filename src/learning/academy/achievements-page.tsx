@@ -5,9 +5,8 @@ import { getToken } from "@/api/client";
 
 import { ACHIEVEMENT_CATEGORIES, ACHIEVEMENTS, DEFAULT_TITLE, TITLES, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
 import { openHistoryApi, type AchievementList, type EarnedAchievement, type LearnerTitle } from "../history/history-api";
-import { awardLine, readAwardTone } from "../map/award-line";
+import { awardLine, awardPresenter, readAwardTone } from "../map/award-line";
 import { topicLabel } from "../map/taxonomy-labels";
-import { getTeacher, isTeacherId } from "../teachers/teachers";
 import { AcademyHeader } from "./academy-header";
 import { localToday, RARITY_NAME, upcomingSeasons } from "./achievement-display";
 import { Medal } from "./medal";
@@ -15,15 +14,18 @@ import { Medal } from "./medal";
 const RARITY_ORDER = { b: 0, s: 1, g: 2, x: 3 } as const;
 const date = (iso: string) => new Date(iso).toLocaleDateString("zh-CN");
 
+const presenterName = (award: Parameters<typeof awardPresenter>[0]) => { const teacher = awardPresenter(award, readAwardTone()); return teacher ? `${teacher.name}：` : ""; };
+
 function earnedLine(items: EarnedAchievement[]): string {
   const latest = items.at(-1)!;
-  const teacher = isTeacherId(latest.teacher_id) ? getTeacher(latest.teacher_id).name : null;
+  const teacher = awardPresenter(latest, readAwardTone())?.name ?? null;
   const count = items.length > 1 ? (/^\d{4}$/.test(latest.scope) ? `${items.length} 年 · ` : `${items.length} 个知识点 · `) : "";
   return `${count}${teacher ? `${teacher} · ` : ""}${date(latest.earned_at)}`;
 }
 
 /** The hall of achievements: every catalog achievement, lit or not, with
  * progress, the seasonal calendar and the learner's titles. */
+
 export function AchievementsPage() {
   const [list, setList] = useState<AchievementList>();
   const [error, setError] = useState(() => !getToken());
@@ -214,7 +216,7 @@ function AchievementDetail({ achievement, earned, progress, onClose }: {
         <dl>
           <dt>分类</dt><dd>{category.name}</dd>
           {latest && <><dt>获得</dt><dd>{earned!.length > 1 ? earned!.map((item) => /^\d{4}$/.test(item.scope) ? `${item.scope} 年` : item.topic_name ? topicLabel(item.scope, item.topic_name) : date(item.earned_at)).join("、") : date(latest.earned_at)}</dd>
-            <dt>颁发</dt><dd>{isTeacherId(latest.teacher_id) ? `${getTeacher(latest.teacher_id).name}：` : ""}{awardLine(latest, readAwardTone())}</dd></>}
+            <dt>颁发</dt><dd>{presenterName(latest)}{awardLine(latest, readAwardTone())}</dd></>}
           {!earned && progress && <><dt>进度</dt><dd>{progress.current} / {progress.target}</dd></>}
           {achievement.season && <><dt>时间</dt><dd>{achievement.season}（每年都有，错过了明年还能获得）</dd></>}
           {achievement.title && !secret && <><dt>称号</dt><dd>解锁「{achievement.title}」</dd></>}

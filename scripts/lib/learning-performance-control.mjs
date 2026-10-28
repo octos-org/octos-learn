@@ -152,7 +152,9 @@ async function readJson(request, maxBytes) {
  */
 export function createModelBudgetGateway({ ledger, activeSample, upstreamFetch }) {
   assert.equal(typeof upstreamFetch, 'function');
-  const metrics = { admitted: 0, rejected: 0, failures: 0 };
+  // Actual usage from each response's usageMetadata (the reservation above is
+  // only an upper bound), so the real cost can be reported and capped.
+  const metrics = { admitted: 0, rejected: 0, failures: 0, prompt_tokens: 0, output_tokens: 0 };
   const handler = async (request, response) => {
     try {
       const url = new URL(request.url, 'http://fixture');
@@ -182,8 +184,26 @@ export function createModelBudgetGateway({ ledger, activeSample, upstreamFetch }
         signal: AbortSignal.timeout(120000),
       });
       response.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json', 'cache-control': 'no-store' });
-      if (upstream.body) await pipeline(Readable.fromWeb(upstream.body), response);
-      else response.end();
+      if (upstream.body) {
+        let tail = '';
+        const reader = Readable.fromWeb(upstream.body);
+        reader.on('data', chunk => { tail = (tail + chunk.toString('utf8')).slice(-8192); });
+        await pipeline(reader, response);
+        // The last usageMetadata object in the response (it may nest details).
+        const at = tail.lastIndexOf('"usageMetadata"'), open = at < 0 ? -1 : tail.indexOf('{', at);
+        let usage = null;
+        if (open >= 0) for (let depth = 0, i = open; i < tail.length; i++) {
+          if (tail[i] === '{') depth++;
+          else if (tail[i] === '}' && --depth === 0) { usage = tail.slice(open, i + 1); break; }
+        }
+        if (usage) {
+          try {
+            const u = JSON.parse(usage);
+            metrics.prompt_tokens += u.promptTokenCount ?? 0;
+            metrics.output_tokens += (u.candidatesTokenCount ?? 0) + (u.thoughtsTokenCount ?? 0);
+          } catch { /* usage left uncounted; the reservation still bounds it */ }
+        }
+      } else response.end();
     } catch {
       // Never serialize request bodies, headers, provider errors or credentials.
       if (response.headersSent) { metrics.failures++; response.destroy(); }

@@ -37,6 +37,7 @@ const historyRecordingMock = vi.hoisted(() => {
   return { enabled: false, record, stage, recorder: { record, stage }, setClassroomBusy: vi.fn() };
 });
 import { setToken } from "@/api/client";
+import { awardsHeld } from "./academy/award-events";
 import { getTeacher } from "./teachers/teachers";
 
 vi.mock("./history/use-learning-history", () => ({
@@ -358,18 +359,16 @@ describe("LearningWorkspace", () => {
     }
   });
 
-  it("announces a newly earned achievement once, naming the teacher who presents it", async () => {
+  it("reads new achievements after an upload and holds their ceremony while a lesson is in progress", async () => {
     setToken("award-token");
-    backgroundMock.achievements.mockResolvedValueOnce({ rules_version: "achievements-v1", achievements: [
-      { achievement_id: "did-it-alone", scope: "", topic_name: null, teacher_id: "doudou", earned_at: "2026-10-23T08:00:00.000Z",
-        awarded_at: "2026-10-23T08:00:01.000Z", evidence_event_id: "a1", new: true },
-      { achievement_id: "first-footprint", scope: "", topic_name: null, teacher_id: "alan", earned_at: "2026-10-22T08:00:00.000Z",
-        awarded_at: "2026-10-22T08:00:01.000Z", evidence_event_id: "b1", new: false },
-    ] });
-    await renderLearning(<LearningWorkspace sessionId="learn-award" voiceEnabled={false} onBack={vi.fn()} />);
+    await renderLearning(<LearningWorkspace sessionId="learn-award" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" />);
+    expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
+    // The fixture lesson has started but not finished.
+    await waitFor(() => expect(awardsHeld()).toBe(true));
     act(() => { window.dispatchEvent(new CustomEvent("octos:history-uploaded", { detail: { owner: "o", uploaded: 1 } })); });
-    expect(await screen.findByText(`窦鸢颁发「亲手搞定」：${getTeacher("doudou").awards["did-it-alone"]}`)).toBeTruthy();
-    expect(screen.queryByText(/第一个脚印/)).toBeNull();
+    await waitFor(() => expect(backgroundMock.achievements).toHaveBeenCalled());
+    // No caption repeats what the ceremony announces.
+    expect(screen.queryByText(/颁发「/)).toBeNull();
   });
 
   it("shows an explicit startup panel while voice dependencies are loading", async () => {

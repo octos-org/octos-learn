@@ -97,14 +97,12 @@ describe("OctosTeacher", () => {
       .toBe("speaking");
   });
 
-  it("shows the chosen teacher approving after a practice goal or an achievement", async () => {
+  it("shows the chosen teacher approving after a practice goal", async () => {
     const { announceTeacherApproval } = await import("@/learning/teachers/teacher-portrait-state");
-    const { rerender } = render(<OctosTeacher state="idle" speech="" onClick={vi.fn()} teacherId="sufei" />);
+    render(<OctosTeacher state="idle" speech="" onClick={vi.fn()} teacherId="sufei" />);
     expect(screen.getByTestId("teacher-art").dataset.approving).toBe("false");
     expect(screen.getByTestId("teacher-art").dataset.teacher).toBe("sufei");
     act(() => announceTeacherApproval());
-    expect(screen.getByTestId("teacher-art").dataset.approving).toBe("true");
-    rerender(<OctosTeacher state="idle" speech="" onClick={vi.fn()} teacherId="sufei" celebrating />);
     expect(screen.getByTestId("teacher-art").dataset.approving).toBe("true");
   });
 });
