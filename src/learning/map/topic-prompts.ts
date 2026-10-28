@@ -7,7 +7,8 @@ export interface TopicPrompt { kind: PromptKind; label: string; text: string; re
 
 const KINDS: readonly PromptKind[] = ["hook", "try", "stretch"];
 const LABEL: Record<PromptKind, string> = { hook: "从生活里问起", try: "试一道题", stretch: "挑战一下" };
-const PROMPTS = bank.prompts as Readonly<Record<string, readonly [string, string, string]>>;
+// Every entry has three questions (checked by topic-prompts.test.ts).
+const PROMPTS = bank.prompts as unknown as Readonly<Record<string, readonly [string, string, string]>>;
 
 /** Where the learner is decides which question comes first: a real-life hook
  * for a topic not yet visited, a problem to try while practising, a stretch
