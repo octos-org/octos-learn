@@ -3,9 +3,11 @@ import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react
 
 import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
 import type { EarnedAchievement } from "../history/history-api";
-import { awardLine, readAwardTone } from "../map/award-line";
+import { awardLine, readAwardTone, type AwardTone } from "../map/award-line";
 import { TeacherPortrait } from "../teachers/teacher-portrait";
-import { getTeacher, isTeacherId } from "../teachers/teachers";
+import { ServiceError, synthesizeTeacherSample } from "@/byok/providers";
+import { prepareClientServices } from "@/byok/services";
+import { getTeacher, isTeacherId, resolveSelectedTeacherId, type TeacherDefinition } from "../teachers/teachers";
 import { RARITY_NAME } from "./achievement-display";
 import { runAwardParticles } from "./award-particles";
 import { AWARD_TIERS, RARITY_RANK } from "./award-tiers";
@@ -29,6 +31,13 @@ function arrange(items: EarnedAchievement[]) {
     || Number(Boolean(b.definition.title)) - Number(Boolean(a.definition.title)));
 }
 const awardKey = (item: EarnedAchievement) => `${item.achievement_id}:${item.scope}`;
+
+/** The teacher of the lesson that earned the award, else the learner's
+ * current teacher; nobody when playful lines are off. */
+function presenterOf(item: EarnedAchievement, tone: AwardTone): TeacherDefinition | null {
+  if (tone !== "playful") return null;
+  return getTeacher(isTeacherId(item.teacher_id) ? item.teacher_id : resolveSelectedTeacherId());
+}
 
 function kicker(definition: AchievementDefinition, item: EarnedAchievement): string {
   const rarity = RARITY_NAME[definition.rarity];
@@ -56,6 +65,13 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
   const done = useRef(onDone);
   const reduced = reducedMotion();
   const rarity = lead?.definition.rarity ?? "b";
+  const [tone] = useState(readAwardTone);
+  const teacher = lead ? presenterOf(lead.item, tone) : null;
+  const line = lead ? awardLine(lead.item, tone, teacher) : "";
+  const leadKey = lead ? awardKey(lead.item) : "";
+  // One synthesis per award, shared by every play of it (and by a remounted
+  // effect while the first request is still on its way).
+  const voices = useRef(new Map<string, Promise<Blob>>());
 
   useEffect(() => {
     if (!lead) { done.current(); return; }
@@ -75,6 +91,38 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
     if (reduced || !canvas.current) return;
     return runAwardParticles(canvas.current, rarity, medal.current);
   }, [focus, rarity, reduced]);
+  // The presenting teacher reads the line aloud with the learner's own speech
+  // service, once per award in front. No service or blocked audio: the line
+  // stays on screen and nothing plays.
+  useEffect(() => {
+    if (!teacher || !line) return;
+    let stopped = false;
+    let player: HTMLAudioElement | null = null;
+    let src: string | null = null;
+    void (async () => {
+      try {
+        let audio = voices.current.get(leadKey);
+        if (!audio) {
+          audio = prepareClientServices().catch(() => undefined)
+            .then(() => synthesizeTeacherSample(line, teacher.voices));
+          voices.current.set(leadKey, audio);
+          audio.catch(() => voices.current.delete(leadKey));
+        }
+        const blob = await audio;
+        if (stopped) return;
+        src = URL.createObjectURL(blob);
+        player = new Audio(src);
+        await player.play();
+      } catch (error) {
+        if (!(error instanceof ServiceError) && !(error instanceof DOMException)) console.warn("award voice", error);
+      }
+    })();
+    return () => {
+      stopped = true;
+      player?.pause();
+      if (src) URL.revokeObjectURL(src);
+    };
+  }, [leadKey, line, teacher]);
   useEffect(() => {
     if (listSpot.current === null) return;
     const buttons = list.current?.querySelectorAll("button");
@@ -85,8 +133,6 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
   if (!lead) return null;
   const { item, definition } = lead;
   const tier = AWARD_TIERS[rarity];
-  const tone = readAwardTone();
-  const teacher = tone === "playful" && isTeacherId(item.teacher_id) ? getTeacher(item.teacher_id) : null;
   const style = { "--award-glow": tier.glow, "--award-ray": tier.ray } as CSSProperties;
 
   const choose = (key: string, spot: number) => {
@@ -95,8 +141,6 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
     listSpot.current = spot;
     setFocus(index);
   };
-  const leadKey = awardKey(item);
-
   return (
     <div className="award-ceremony" data-rarity={rarity} role="dialog" aria-modal="true" aria-labelledby="award-ceremony-name" style={style}>
       {/* Keyed by the award in front, so its arrival plays again when chosen. */}
@@ -140,7 +184,7 @@ export default function AwardCeremony({ items, onDone }: { items: EarnedAchievem
         )}
       </div>
       <div key={leadKey} className="award-presenter">
-        <p className="award-bubble">{teacher && <b>{teacher.name}</b>}{awardLine(item, tone)}</p>
+        <p className="award-bubble">{teacher && <b>{teacher.name}</b>}{line}</p>
         {teacher && (
           <span className="award-arch">
             <TeacherPortrait teacherId={teacher.id} pose="approving" frame="card" name={teacher.name} />

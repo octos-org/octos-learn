@@ -70,7 +70,17 @@ export interface TeacherReactions {
 export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest" | "reunion";
 /** Lines for the original four achievements, and `other` for every other
  * catalog achievement ({name} is its name). */
-export type TeacherAwards = Readonly<Record<AchievementId | "other", string>>;
+/** Achievements that grant a title get a line of their own. */
+export type TitledAchievementId = "hundred-stars" | "many-stars" | "three-domains" | "thirty-days" | "hundred-days" | "fifty-alone"
+  | "fifty-questions" | "alan-30" | "doudou-30" | "sufei-30" | "three-teachers" | "night-owl" | "early-star" | "old-friend" | "pi-day" | "leap-day";
+export type AwardRarity = "b" | "s" | "g" | "x";
+/** How an award is presented: the four first awards each have a line, titled
+ * awards have their own, every other award is presented by its rarity
+ * ({name} is the award's name), and `other` covers ids the app does not know. */
+export type TeacherAwards = Readonly<Record<AchievementId | "other", string>> & {
+  readonly rarity?: Readonly<Record<AwardRarity, string>>;
+  readonly titled?: Readonly<Record<TitledAchievementId, string>>;
+};
 
 /** Suggestions decided by suggestions-v1. A missing record is "not visited
  * together yet", never inability; time away is never forgetting. */
@@ -134,6 +144,30 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "regular-guest": "第三次回到{topic}了。每次回来，问题都更具体。",
       reunion: "隔了一段时间又回到{topic}，我们看看还记得哪些。",
       other: "「{name}」。这一枚，我放进收藏匣了。",
+      rarity: {
+        b: "「{name}」。从这里开始，一步一步来。",
+        s: "「{name}」。这一枚，是你一节一节攒出来的。",
+        g: "「{name}」。走到这里不容易，我认真地说一声：恭喜。",
+        x: "「{name}」。这样的时刻不多。今晚的星星，也替你亮着。",
+      },
+      titled: {
+        "hundred-stars": "一百颗星。每一颗，都是你自己去看过的。",
+        "many-stars": "三百颗星。这片夜空，已经有很大一块是你画出来的。",
+        "three-domains": "三个星域都有了你的足迹。不同的地方，常常连着同一个道理。",
+        "thirty-days": "三十个不同的日子。灯是你一次一次点起来的。",
+        "hundred-days": "一百个日子。我想不出更好的话，只想说：谢谢你一直来。",
+        "fifty-alone": "五十个练习，没有看提示。每一次，都是你自己核对出来的。",
+        "fifty-questions": "五十个问题。好问题，比答案更值得收藏。",
+        "alan-30": "我们一起上了三十节课。和你讨论，我也常常有新的发现。",
+        "doudou-30": "和窦鸢上了三十节课。她的幻象，你已经看过很多了。",
+        "sufei-30": "和苏绯上了三十节课。她的标尺很严，你跟上了。",
+        "three-teachers": "三位老师你都见过了。同一个问题换个人讲，就多一条路。",
+        "night-owl": "夜里还在听讲解。观星塔的灯，也是这个时候最亮。别熬太晚。",
+        "early-star": "天还没亮就开始了。晨星升起的时候，你已经在路上。",
+        "old-friend": "一百节课。我们是老朋友了。",
+        "pi-day": "三月十四日，和圆一起过。π 写不完，问题也是。",
+        "leap-day": "二月二十九日，四年才有一次。这节课，值得记住。",
+      },
     },
     report: {
       active: "这一周的足迹整理好了，我们一起看看。",
@@ -199,6 +233,30 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "regular-guest": "第三次见面！{topic}都想给你留个专座了。",
       reunion: "好久不见，老朋友！看看{topic}变了没有。",
       other: "叮！「{name}」到手啦！",
+      rarity: {
+        b: "叮！「{name}」到手啦！好的开头！",
+        s: "「{name}」！银光闪闪，口袋都快装不下啦！",
+        g: "哇——「{name}」！金灿灿的，我要给你放个烟花幻象！",
+        x: "「{name}」！！星星都在给你鼓掌，我也是！",
+      },
+      titled: {
+        "hundred-stars": "一百颗星！你的夜空快要热闹成集市啦！",
+        "many-stars": "三百颗星！我的口袋可装不下这么大一片星空！",
+        "three-domains": "三个星域都去过啦！你是到处串门的小旅人！",
+        "thirty-days": "三十个日子！灯一盏一盏点起来，亮堂堂！",
+        "hundred-days": "一百天！这可不是幻象，是你真真切切走出来的！",
+        "fifty-alone": "五十个练习不看提示！你的手比我的魔法还稳！",
+        "fifty-questions": "五十个问题！问号多多，好奇心满满！",
+        "alan-30": "和阿澜上了三十节课！观星塔的台阶你都走熟啦！",
+        "doudou-30": "我们一起上了三十节课！我的幻象你都快背出来啦！",
+        "sufei-30": "和苏绯上了三十节课！她的尺子那么严，你都跟上了，厉害！",
+        "three-teachers": "三位老师都见过啦！我们仨，各有各的讲法！",
+        "night-owl": "夜猫子学者！不过记得早点睡哦！",
+        "early-star": "天没亮就开工！你比晨星还早！",
+        "old-friend": "一百节课！老朋友，来，击个掌！",
+        "pi-day": "π 日快乐！今天的圆，都在为你转圈圈！",
+        "leap-day": "闰日！四年才一次的日子，被你用来上课啦！",
+      },
     },
     report: {
       active: "这周的地图又亮了几处，来看看！",
@@ -263,6 +321,30 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       "regular-guest": "第三个不同的日子回到{topic}。这份坚持，记下了。",
       reunion: "隔了一段时间，又回到{topic}。从你记得的地方开始。",
       other: "「{name}」。记录在案。",
+      rarity: {
+        b: "「{name}」。记录在案。",
+        s: "「{name}」。这一枚，有据可查。",
+        g: "「{name}」。数据清楚，这一枚分量很足。",
+        x: "「{name}」。少见。我核对了两遍，确实是你。",
+      },
+      titled: {
+        "hundred-stars": "一百颗星，每一颗都有来处。记录在案。",
+        "many-stars": "三百颗星。这份星图，已经画得很细了。",
+        "three-domains": "三个星域，三组坐标。测绘范围扩大了。",
+        "thirty-days": "三十个不同的日子。数字不会说谎。",
+        "hundred-days": "一百个日子。我核对过，一天不少。",
+        "fifty-alone": "五十个练习，没有提示，都达到了要求。精确测绘员，名副其实。",
+        "fifty-questions": "五十个问题。问得多，说明你在追来处。",
+        "alan-30": "和阿澜上了三十节课。观星塔的记录里，你有一大页。",
+        "doudou-30": "和窦鸢上了三十节课。记录在案。",
+        "sufei-30": "三十节课。你一直跟得上我的标尺。记录在案。",
+        "three-teachers": "三位老师的课都上过了。多一个角度，多一份核对。",
+        "night-owl": "夜里九点后还在听讲。记录在案，也请按时休息。",
+        "early-star": "清晨开始学习。时间记下了：天还没亮。",
+        "old-friend": "一百节课。这个数字，我不需要再核对。",
+        "pi-day": "三月十四日，一节关于圆的课。π 的朋友，确认。",
+        "leap-day": "二月二十九日的一节课。四年一次，记录在案。",
+      },
     },
     report: {
       active: "本周的记录整理好了。逐条看。",
