@@ -25,6 +25,21 @@ afterEach(() => {
 });
 
 describe("award ceremony", () => {
+  it("brings another award earned at the same time to the front and keeps focus in the list", async () => {
+    render(<AwardHost />);
+    act(() => announceNewAwards([award("first-question"), award("leap-day", { scope: "2028" }), award("alan-1")]));
+    expect(await screen.findByRole("dialog", { name: "闰日旅人" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "查看「第一个问题」" }));
+    const dialog = screen.getByRole("dialog", { name: "第一个问题" });
+    // The former lead joins the list; the teacher's line follows the award in front.
+    expect(screen.getByRole("button", { name: "查看「闰日旅人」" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "查看「第一个问题」" })).toBeNull();
+    expect(dialog.textContent).toContain("阿澜「第一个问题」");
+    expect(document.activeElement?.closest(".award-more")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it("waits while a lesson is in progress and plays once it has finished", async () => {
     // A hold set before the host mounts still counts.
     holdAwards("classroom:test", true);
