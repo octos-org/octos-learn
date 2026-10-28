@@ -152,6 +152,8 @@ it('keeps fixed reactions within what each event proves', () => {
     expect(reactions.taskSucceededWithHint).not.toMatch(/自己|独立|靠你/);
     expect(reactions.lessonComplete).not.toMatch(/学会|掌握|懂了/);
     expect(reactions.taskRetry).not.toMatch(/差一点|快了/);
+    // A typed answer is computed again, not adjusted.
+    expect(reactions.answerRetry).not.toMatch(/差一点|快了|调/);
     for (const line of Object.values(reactions)) expect(line.length).toBeLessThanOrEqual(40);
   }
   for (const key of Object.keys(NEUTRAL_REACTIONS) as (keyof typeof NEUTRAL_REACTIONS)[]) {

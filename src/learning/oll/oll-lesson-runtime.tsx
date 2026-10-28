@@ -37,6 +37,7 @@ import {
 } from "octos-lesson-language/web-runtime";
 import {
   evaluateMathExpression,
+  type AuthoringAnswerStudentTask,
   type AuthoringVariableStudentTask,
 } from "octos-lesson-language";
 import {
@@ -53,6 +54,7 @@ import {
   type InkCameraBoard,
   type InkCameraGate,
 } from "./ink-camera-gate";
+import { lastAnswerMistake, visibleAnswerTasks } from "./visible-answer-tasks";
 import { visibleReflections } from "./visible-reflections";
 import { planHostTeachingFocus } from "./host-camera-policy";
 import {
@@ -282,6 +284,7 @@ interface InternalInfiniteBoardView {
 }
 
 const REFLECTION_CARD_ESTIMATED_HEIGHT = 150;
+const ANSWER_CARD_ESTIMATED_HEIGHT = 190;
 const OPEN_REFLECTIONS_KEY = "octos-learn:open-reflections:v1";
 
 function readOpenReflections(): Record<string, boolean> {
@@ -948,6 +951,8 @@ export function LearningWhiteboard({
     useState<ReadonlyMap<string, InkSelectionSnapshot["bounds"]>>(() => new Map());
   const [inkColorPaletteOpen, setInkColorPaletteOpen] = useState(false);
   const [taskError, setTaskError] = useState("");
+  const [answerDrafts, setAnswerDrafts] = useState<Record<string, string>>({});
+  const [unreadableAnswerTask, setUnreadableAnswerTask] = useState<string | null>(null);
   const [enhancementLayer, setEnhancementLayer] =
     useState<HTMLDivElement | null>(null);
   const [visibleBoardBounds, setVisibleBoardBounds] =
@@ -1164,15 +1169,18 @@ export function LearningWhiteboard({
   const presentationTopicsRef = useRef(presentationTopics);
   presentationTopicsRef.current = presentationTopics;
 
+  // Typed-answer tasks sit by their own board card, not with a visual's controls.
+  const studentTaskDefinitions = runtime?.studentTaskDefinitions;
+  const answerDefinitions = useMemo(() => new Map((studentTaskDefinitions ?? [])
+    .flatMap((definition) => definition.completion.kind === "numeric_answer"
+      ? [[definition.as, definition as AuthoringAnswerStudentTask] as const] : [])), [studentTaskDefinitions]);
   const interactionPlans = presentationTopics.flatMap((topic) => {
     const topicControls = variableControls.filter((control) =>
       topic.variableAliases?.includes(control.alias));
     const reservedTopicTasks = studentTasks.filter((task) =>
-      topic.taskAliases?.includes(task.task_id));
+      topic.taskAliases?.includes(task.task_id) && !answerDefinitions.has(task.task_id));
     const topicEnded = topicPlaybackEnded(topic);
-    const topicTasks = studentTasks.filter((task) =>
-      topic.taskAliases?.includes(task.task_id)
-      && (task.available || topicEnded));
+    const topicTasks = reservedTopicTasks.filter((task) => task.available || topicEnded);
     const clusters = buildInteractionClusters(
       runtime?.board ?? null,
       {
@@ -1234,6 +1242,13 @@ export function LearningWhiteboard({
       const key = `${reflection.topic.id}:${reflection.id}`;
       return { ...reflection, key, attachmentId: `reflection:${key}` };
     }), [runtime?.reflections, runtime?.outline, runtimeCursor, runtime?.deliverySettled]);
+  // Typed-answer practice opens under its own board card, like a thinking question.
+  const runtimeStudentTasks = runtime?.studentTasks;
+  const answerCards = useMemo(() => visibleAnswerTasks(runtimeStudentTasks ?? [], answerDefinitions, runtime?.outline ?? [], runtimeCursor, Boolean(runtime?.deliverySettled))
+    .map((card) => {
+      const key = `${card.topic.id}:${card.task_id}`;
+      return { ...card, key, attachmentId: `answer:${key}` };
+    }), [runtimeStudentTasks, answerDefinitions, runtime?.outline, runtimeCursor, runtime?.deliverySettled]);
   const toggleReflection = useCallback((key: string) => {
     setOpenReflections((current) => {
       const next = { ...current, [key]: !current[key] };
@@ -1269,6 +1284,12 @@ export function LearningWhiteboard({
           .map((card) => ({
             id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.anchor,
             width: 330, height: reflectionHeights[card.attachmentId] ?? REFLECTION_CARD_ESTIMATED_HEIGHT,
+          })))
+        .concat(answerCards
+          .filter((card) => card.topic.id === topic.id)
+          .map((card) => ({
+            id: card.attachmentId, kind: "reflection" as const, anchorNodeId: card.definition.anchor,
+            width: 330, height: reflectionHeights[card.attachmentId] ?? ANSWER_CARD_ESTIMATED_HEIGHT,
           })));
       // Course composition depends on course content, never learner ink.
       if (!region) {
@@ -1327,13 +1348,16 @@ export function LearningWhiteboard({
     runtime?.outline,
     runtimeRegionIdForTopic,
     reflectionCards,
+    answerCards,
     reflectionHeights,
   ]);
 
-  // Measure rendered thinking-question cards (collapsed or open) so the
-  // layout reserves their real height under the anchor card.
+  // Measure rendered thinking-question and typed-answer cards (their height
+  // changes with feedback and hints) so the layout reserves their real height
+  // under the anchor card.
   useEffect(() => {
-    if (!enhancementLayer || reflectionCards.length === 0 || typeof ResizeObserver === "undefined") return;
+    if (!enhancementLayer || (reflectionCards.length === 0 && answerCards.length === 0)
+      || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver((entries) => {
       const measured: Record<string, number> = {};
       for (const entry of entries) {
@@ -1350,7 +1374,7 @@ export function LearningWhiteboard({
       }
     });
     return () => { window.cancelAnimationFrame(frame); observer.disconnect(); };
-  }, [enhancementLayer, reflectionCards, runtimeAttachmentBounds]);
+  }, [enhancementLayer, reflectionCards, answerCards, runtimeAttachmentBounds]);
 
   const coursePresentations = interactionPlans.flatMap((plan) => {
     const { topic } = plan;
@@ -1774,6 +1798,17 @@ export function LearningWhiteboard({
       setTaskError("");
     } catch (cause) {
       setTaskError(cause instanceof Error ? cause.message : "暂时无法显示提示");
+    }
+  }, []);
+
+  const submitAnswer = useCallback((taskId: string, text: string) => {
+    if (!text.trim()) return;
+    try {
+      const readable = runtimeRef.current?.submitStudentAnswer(taskId, text.trim());
+      setUnreadableAnswerTask(readable === false ? taskId : null);
+      setTaskError("");
+    } catch (cause) {
+      setTaskError(cause instanceof Error ? cause.message : "暂时无法提交答案");
     }
   }, []);
 
@@ -4072,6 +4107,116 @@ export function LearningWhiteboard({
                     {open ? (
                       <div className="learning-reflection-answer">{card.answer}</div>
                     ) : null}
+                  </section>
+                );
+              })}
+              {answerCards.map((card) => {
+                const bounds = runtimeAttachmentBounds[card.attachmentId];
+                if (!bounds) return null;
+                const locked = !card.available;
+                const attempts = card.attempts.length;
+                const mistake = lastAnswerMistake(card);
+                const unit = card.definition.completion.unit;
+                const draft = answerDrafts[card.task_id] ?? "";
+                return (
+                  <section
+                    key={card.attachmentId}
+                    className="learning-student-tasks is-world learning-answer-card"
+                    style={{ left: bounds.x, top: bounds.y, width: bounds.width }}
+                    data-course-tasks-id={card.topic.questionId ?? card.topic.id}
+                    data-reflection-attachment-id={card.attachmentId}
+                    data-oll-ink-input="ignore"
+                    aria-label="算一算"
+                    data-testid="oll-answer-task"
+                  >
+                    <header>
+                      <span>算一算</span>
+                      <small>输入答案，程序马上核对</small>
+                    </header>
+                    <article
+                      className={`learning-student-task is-${card.status}${locked ? " is-locked" : ""}`}
+                      aria-live="polite"
+                      aria-disabled={locked || undefined}
+                    >
+                      <p>{card.prompt}</p>
+                      {locked && card.status !== "succeeded" ? (
+                        <div className="learning-student-task-feedback">
+                          <span>{lockedTaskMessage(card.topic.id)}</span>
+                          {attempts > 0 ? <small>已尝试 {attempts} 次</small> : null}
+                        </div>
+                      ) : card.status === "succeeded" ? (
+                        <div className="learning-student-task-feedback is-success">
+                          <CheckCircle2 size={17} />
+                          <span>
+                            {taskReactions === NEUTRAL_REACTIONS
+                              ? card.success_message ?? NEUTRAL_REACTIONS.taskSucceeded
+                              : card.hints_revealed > 0
+                                ? taskReactions.taskSucceededWithHint
+                                : taskReactions.taskSucceeded}
+                            <small>答案：{card.attempts.at(-1)?.answer}{unit ? ` ${unit}` : ""}</small>
+                          </span>
+                        </div>
+                      ) : (
+                        <form
+                          className="learning-answer-entry"
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            submitAnswer(card.task_id, draft);
+                          }}
+                        >
+                          <input
+                            type="text"
+                            inputMode="text"
+                            autoComplete="off"
+                            enterKeyHint="done"
+                            aria-label="你的答案"
+                            placeholder="如 12、0.5、3/4、2 3/4"
+                            value={draft}
+                            maxLength={32}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              setAnswerDrafts((current) => ({ ...current, [card.task_id]: value }));
+                              if (unreadableAnswerTask === card.task_id) setUnreadableAnswerTask(null);
+                            }}
+                          />
+                          {unit ? <span className="learning-answer-unit">{unit}</span> : null}
+                          <button type="submit" disabled={!draft.trim()}>提交</button>
+                        </form>
+                      )}
+                      {!locked && card.status !== "succeeded" ? (
+                        unreadableAnswerTask === card.task_id ? (
+                          <div className="learning-student-task-feedback">
+                            <span>请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。</span>
+                          </div>
+                        ) : attempts > 0 ? (
+                          <div className="learning-student-task-feedback">
+                            <span>
+                              {mistake === "form"
+                                ? "数值对了，再写成最简分数。"
+                                : card.status === "needs_hint"
+                                  ? taskReactions.taskNeedsHint
+                                  : taskReactions.answerRetry}
+                            </span>
+                            <small>已尝试 {attempts} 次</small>
+                          </div>
+                        ) : null
+                      ) : null}
+                      {card.current_hint ? (
+                        <div className="learning-student-task-hint" role="status">
+                          <Lightbulb size={16} />
+                          <span>{card.current_hint}</span>
+                        </div>
+                      ) : null}
+                      {!locked && card.status !== "succeeded" && attempts > 0
+                        && card.hints_revealed < card.hints.length ? (
+                        <div className="learning-student-task-actions">
+                          <button type="button" onClick={() => requestTaskHint(card.task_id)}>
+                            <Lightbulb size={15} />
+                            {card.current_hint ? "下一个提示" : "给我提示"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </article>
                   </section>
                 );
               })}

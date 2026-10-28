@@ -5,6 +5,7 @@ import {
   fireEvent,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { useEffect, useState, type ComponentProps } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -778,6 +779,41 @@ function StudentTaskRuntimeProbe({ startAtEnd = true, taskReactions, storageKey 
   return (
     <div style={{ width: 1200, height: 800 }}>
       <OllLessonBoard runtime={runtime} taskReactions={taskReactions} />
+    </div>
+  );
+}
+
+// The unit-circle lesson with its practice replaced by one typed question
+// that sits by the first card the lesson writes.
+const answerTaskLessonSource = (() => {
+  const events = unitCircleSineLessonSource.split(/\r?\n/).filter(Boolean)
+    .map((line) => JSON.parse(line) as CanonicalEvent);
+  const anchor = events.flatMap((event) => event.step?.beats ?? [])
+    .flatMap((beat) => Object.values(beat.stage).flat())
+    .find((action) => action.op === "board.create" && action.node)!.node!.id;
+  events[0]!.lesson!.tasks = [{
+    as: "simplify",
+    anchor,
+    prompt: "把 6/8 化成最简分数",
+    availability: { kind: "after_lesson" },
+    allowed_operations: [{ kind: "answer_entry" }],
+    completion: { kind: "numeric_answer", answer: "3/4", form: "simplest_fraction" },
+    hints: ["分子分母同时除以 2。"],
+    success_message: "对，6/8 = 3/4。",
+  }];
+  return events.map((event) => JSON.stringify(event)).join("\n");
+})();
+
+function AnswerTaskRuntimeProbe() {
+  const runtime = useOllLessonRuntime({
+    source: answerTaskLessonSource,
+    storageKey: "oll-answer-task-runtime-test",
+    startAtEnd: true,
+  });
+  if (!runtime) return null;
+  return (
+    <div style={{ width: 1200, height: 800 }}>
+      <OllLessonBoard runtime={runtime} />
     </div>
   );
 }
@@ -2976,6 +3012,38 @@ describe("OLL lesson Runtime integration", () => {
     await renderLearning(<StudentTaskRuntimeProbe />);
     expect(await screen.findByText("正确，圆周点在最高点时 sin θ = 1。")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "重新开始" })).toBeNull();
+  });
+
+  it("takes a typed answer by its card, explains unreadable text and the wrong form, then restores success", async () => {
+    const first = await renderLearning(<AnswerTaskRuntimeProbe />);
+    const card = await screen.findByTestId("oll-answer-task");
+    expect(screen.queryByTestId("oll-student-tasks")).toBeNull();
+    expect(screen.getByText("把 6/8 化成最简分数")).toBeTruthy();
+    const input = screen.getByRole("textbox", { name: "你的答案" });
+    const submit = screen.getByRole("button", { name: "提交" });
+    expect((submit as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(input, { target: { value: "四分之三" } });
+    fireEvent.click(submit);
+    expect(screen.getByText(/请写一个数/)).toBeTruthy();
+    expect(screen.queryByText(/已尝试/)).toBeNull();
+
+    fireEvent.change(input, { target: { value: "6/8" } });
+    fireEvent.click(submit);
+    await waitFor(() => expect(screen.getByText("数值对了，再写成最简分数。")).toBeTruthy());
+    expect(screen.getByText("已尝试 1 次")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "给我提示" }));
+    expect(screen.getByText("分子分母同时除以 2。")).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: "3/4" } });
+    fireEvent.submit(input.closest("form")!);
+    await waitFor(() => expect(within(card).getByText("对，6/8 = 3/4。")).toBeTruthy());
+    expect(screen.queryByRole("textbox", { name: "你的答案" })).toBeNull();
+
+    first.unmount();
+    await renderLearning(<AnswerTaskRuntimeProbe />);
+    expect(await screen.findByText("对，6/8 = 3/4。")).toBeTruthy();
+    expect(screen.getByText("答案：3/4")).toBeTruthy();
   });
 
   it("uses the lesson teacher's fixed lines for retry and success, and never says alone after a hint", async () => {

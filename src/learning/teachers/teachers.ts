@@ -63,6 +63,8 @@ export interface TeacherReactions {
   taskSucceededWithHint: string;
   /** An attempt did not meet the goal yet. */
   taskRetry: string;
+  /** A typed answer was not right yet (taskRetry speaks of adjusting a control). */
+  answerRetry: string;
   /** Several attempts missed; a hint is available. */
   taskNeedsHint: string;
 }
@@ -139,6 +141,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       taskSucceeded: "这一步，你自己验证出来了。",
       taskSucceededWithHint: "借助提示，你把这一步验证出来了。",
       taskRetry: "记下了。看看结果和目标差在哪里，再调一次。",
+      answerRetry: "记下了。对照题目，从第一步再算一遍。",
       taskNeedsHint: "还没达到目标。可以先看一条提示，再从第一步核对。",
     },
     awards: {
@@ -228,6 +231,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       taskSucceeded: "拿下！这次它没绕住你。",
       taskSucceededWithHint: "提示帮了一把，你拿下了！",
       taskRetry: "这次还没到目标，没关系，再调一下！",
+      answerRetry: "这次还不对，没关系，再算一次！",
       taskNeedsHint: "还没到目标，看一条提示，我们再试一次！",
     },
     awards: {
@@ -316,6 +320,7 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       taskSucceeded: "这一步，做得准确。",
       taskSucceededWithHint: "用了提示，结果达到了要求。",
       taskRetry: "结果和目标不一致。核对每个数的来处，再做一次。",
+      answerRetry: "答案不对。核对每一步的计算，再写一次。",
       taskNeedsHint: "还没达到目标。看一条提示，从第一步核对。",
     },
     awards: {
@@ -448,6 +453,7 @@ export const NEUTRAL_REACTIONS: TeacherReactions = {
   taskSucceeded: "完成得很好，已经达到目标。",
   taskSucceededWithHint: "完成得很好，已经达到目标。",
   taskRetry: "已经记录这次操作，再调整一下试试。",
+  answerRetry: "已经记录这次答案，再算一次试试。",
   taskNeedsHint: "还没达到目标，可以查看提示后再试。",
 };
 

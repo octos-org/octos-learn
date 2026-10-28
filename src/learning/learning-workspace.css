@@ -1888,6 +1888,50 @@
   background: rgba(22, 131, 152, 0.07);
 }
 
+.learning-answer-entry {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.learning-answer-entry > input {
+  min-width: 0;
+  flex: 1;
+  min-height: 34px;
+  padding: 5px 10px;
+  border: 1px solid rgba(13, 112, 130, 0.24);
+  border-radius: 9px;
+  background: #fff;
+  color: #2f3532;
+  font-size: 15px;
+}
+
+.learning-answer-entry > input:focus {
+  border-color: #0d7082;
+  outline: 2px solid rgba(13, 112, 130, 0.18);
+}
+
+.learning-answer-unit {
+  color: #4f5752;
+  font-size: 13px;
+}
+
+.learning-answer-entry > button {
+  min-height: 34px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: #0d7082;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.learning-answer-entry > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* An earlier course keeps its practice in place while a later lesson plays. */
 .learning-student-task.is-locked {
   opacity: 0.62;
