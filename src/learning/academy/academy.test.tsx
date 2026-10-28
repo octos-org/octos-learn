@@ -81,7 +81,7 @@ it("shows every achievement in the hall: earned with who presented it, progress,
   expect(within(screen.getByRole("button", { name: "十星成列，未获得" })).getByLabelText("进度 3 / 10")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "星夜学者，已获得" }));
   const dialog = screen.getByRole("dialog");
-  expect(within(dialog).getByText(/苏绯：「星夜学者」。记录在案。/)).toBeTruthy();
+  expect(within(dialog).getByText(/苏绯：夜里九点后还在听讲。记录在案，也请按时休息。/)).toBeTruthy();
   expect(within(dialog).getByText("解锁「星夜学者」")).toBeTruthy();
   expect(within(dialog).getByText("夜深了，观星塔的灯和你都还亮着。")).toBeTruthy();
   fireEvent.click(within(dialog).getByRole("button", { name: "关闭" }));

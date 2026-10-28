@@ -10,7 +10,7 @@ vi.mock('../../api/client', async (original) => ({ ...(await original<object>())
 import { LearningMapPanel } from './learning-map-panel';
 import { analysisNotice } from './analysis-notice';
 import { awardLine } from './award-line';
-import { PLAIN_AWARDS, TEACHERS } from '../teachers/teachers';
+import { TEACHERS } from '../teachers/teachers';
 
 const award = (extra: Partial<EarnedAchievement>): EarnedAchievement => ({ achievement_id: 'regular-guest', scope: 'mt_WBdHkc2HTf', topic_name: 'Linear Function Graphs',
   teacher_id: 'doudou', earned_at: '2026-10-23T08:00:00.000Z', awarded_at: '2026-10-23T09:00:00.000Z', evidence_event_id: 'b3', new: false, ...extra });
@@ -27,7 +27,8 @@ afterEach(cleanup);
 it('fills the presenting teacher\'s line with the topic, and falls back to plain wording', () => {
   expect(awardLine(award({}), 'playful')).toBe('第三次见面！一次函数图像都想给你留个专座了。');
   expect(awardLine(award({}), 'plain')).toBe('在 3 个不同的日子学习了一次函数图像。');
-  expect(awardLine(award({ teacher_id: null }), 'playful')).toBe(PLAIN_AWARDS['regular-guest'].replace('{topic}', '一次函数图像'));
+  // No recorded teacher: the learner's current teacher presents it (阿澜 by default).
+  expect(awardLine(award({ teacher_id: null }), 'playful')).toBe(TEACHERS[0].awards['regular-guest'].replace('{topic}', '一次函数图像'));
   expect(awardLine(award({ achievement_id: 'did-it-alone', scope: '', topic_name: null, teacher_id: 'alan' }), 'playful')).toBe(TEACHERS[0].awards['did-it-alone']);
 });
 

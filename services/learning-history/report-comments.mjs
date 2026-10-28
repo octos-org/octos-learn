@@ -42,10 +42,15 @@ export function validateReportComment(input, candidate) {
     || candidate.schema !== 1 || candidate.input_sha256 !== input.input_sha256 || typeof candidate.comment !== "string") throw new HistoryValidationError("Invalid report comment shape");
   const comment = candidate.comment.trim();
   if ([...comment].length < 6 || [...comment].length > 120 || /[\r\n]/.test(comment)) throw new HistoryValidationError("Report comment length");
-  if (FORBIDDEN.test(comment)) throw new HistoryValidationError("Report comment claims more than the facts");
+  // Topic and achievement names come from the report itself, and many carry
+  // words or digits the checks below refuse on their own (分数 in "分数乘整数",
+  // an age such as "（9 岁+）"); they are set aside before those checks.
+  const bare = [...input.topics.map(topic => topic.name), ...input.achievements].sort((a, b) => b.length - a.length)
+    .reduce((text, name) => name ? text.split(name).join("「」") : text, comment);
+  if (FORBIDDEN.test(bare)) throw new HistoryValidationError("Report comment claims more than the facts");
   if (Object.entries(TEACHER_NAMES).some(([, name]) => name !== input.teacher && comment.includes(name))) throw new HistoryValidationError("Report comment speaks for another teacher");
   const allowed = new Set([...Object.values(input.activity), input.topics.length, input.achievements.length].map(String));
-  if ((comment.match(/\d+/g) ?? []).some(number => !allowed.has(String(Number(number))))) throw new HistoryValidationError("Report comment uses a number not in the report");
+  if ((bare.match(/\d+/g) ?? []).some(number => !allowed.has(String(Number(number))))) throw new HistoryValidationError("Report comment uses a number not in the report");
   return comment;
 }
 

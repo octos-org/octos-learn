@@ -149,10 +149,19 @@
   background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.7), transparent);
   animation: award-sheen 1000ms 3000ms ease-in-out both;
 }
-.award-more { display: grid; justify-items: center; gap: 6px; margin-top: 8px; color: #a3a8c4; font-size: 13px; animation: award-up 700ms 2600ms ease both; }
-.award-more ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin: 0; padding: 0; list-style: none; }
-.award-more li { display: flex; align-items: center; gap: 6px; color: #ede6d4; font-size: 14px; }
-.award-more svg { width: 28px; height: 29px; }
+.award-more { display: grid; justify-items: center; gap: 8px; margin-top: 14px; color: #a3a8c4; font-size: 13px; letter-spacing: 0.08em; animation: award-up 700ms 2600ms ease both; }
+.award-more ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 0; padding: 0; list-style: none; }
+/* Each award earned at the same time is a medal the learner can bring to the front. */
+.award-more button {
+  display: grid; justify-items: center; gap: 6px; width: 104px; padding: 10px 6px 8px;
+  border: 1px solid rgba(226, 189, 102, 0.22); border-radius: 14px;
+  color: #ede6d4; background: rgba(255, 255, 255, 0.04); font: inherit; font-size: 13px; line-height: 1.35; letter-spacing: 0;
+  cursor: pointer; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.award-more button:hover { transform: translateY(-2px); border-color: rgba(226, 189, 102, 0.6); background: rgba(226, 189, 102, 0.1); }
+.award-more button:focus-visible { outline: 2px solid #f2d17f; outline-offset: 2px; }
+.award-more button svg { width: 60px; height: 62px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45)); }
+.award-more button span { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; text-align: center; }
 
 .award-presenter {
   position: absolute;
@@ -198,6 +207,9 @@
 
 /* On a phone the teacher's bubble sits under the stage instead of over it. */
 @media (max-width: 640px) {
+  .award-more ul { gap: 8px; }
+  .award-more button { width: 76px; padding: 8px 4px 6px; font-size: 12px; }
+  .award-more button svg { width: 42px; height: 44px; }
   .award-ceremony { align-content: start; padding-top: max(64px, env(safe-area-inset-top, 0px)); }
   .award-presenter { left: 0; justify-content: flex-end; }
   .award-bubble { font-size: 15px; margin-bottom: 18px; }
