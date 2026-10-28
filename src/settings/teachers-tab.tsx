@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { getToken } from "@/api/client";
 import { openHistoryApi } from "@/learning/history/history-api";
 import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
-import { nextStepsShown, showNextSteps } from "@/learning/map/next-step-line";
+import { nextStepsShown, showNextSteps } from "@/learning/map/next-steps-visibility";
 import { TeacherRoster } from "@/learning/teachers/teacher-roster";
 
 const DEFAULT_ANALYSIS_LIMIT = 10;

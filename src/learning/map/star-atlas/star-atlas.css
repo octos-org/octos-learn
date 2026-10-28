@@ -44,7 +44,14 @@
 .star-atlas-card dt { color: var(--atlas-dim); }
 .star-atlas-card dd { margin: 0; }
 .star-atlas-note { margin: 6px 0; font-size: 12px; line-height: 1.6; color: var(--atlas-dim); }
-.star-atlas-ask { min-height: 40px; margin: 6px 0 4px; padding: 0 14px; border: 1px solid var(--atlas-gold); border-radius: 8px; background: rgba(242, 199, 102, 0.12); color: var(--atlas-gold-soft); }
+/* Three starter questions; the one that fits where the learner is comes first. */
+.star-atlas-asks { display: grid; gap: 6px; margin: 6px 0 4px; }
+.star-atlas-asks h4 { margin: 6px 0 0; font-size: 11px; letter-spacing: 0.16em; color: var(--atlas-gold); }
+.star-atlas-ask { display: grid; gap: 3px; padding: 8px 12px; border: 1px solid var(--atlas-line); border-radius: 8px; background: transparent; color: var(--atlas-ink); font-size: 13px; line-height: 1.45; text-align: left; cursor: pointer; }
+.star-atlas-ask span { display: flex; align-items: center; gap: 6px; color: var(--atlas-gold-soft); font-size: 11px; letter-spacing: 0.08em; }
+.star-atlas-ask em { padding: 0 6px; border-radius: 999px; background: rgba(242, 199, 102, 0.2); color: var(--atlas-gold); font-style: normal; }
+.star-atlas-ask[data-recommended] { border-color: var(--atlas-gold); background: rgba(242, 199, 102, 0.12); }
+.star-atlas-ask:hover { border-color: var(--atlas-gold-soft); }
 .star-atlas-links h4 { margin: 12px 0 6px; font-size: 11px; letter-spacing: 0.16em; color: var(--atlas-gold); }
 .star-atlas-links div { display: flex; flex-wrap: wrap; gap: 6px; }
 .star-atlas-links button { min-height: 34px; padding: 0 10px; border: 1px solid var(--atlas-line); border-radius: 8px; background: transparent; color: var(--atlas-ink); font-size: 12px; }

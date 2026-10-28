@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { getSelectedProfileId, getToken } from "../../api/client";
 import { openHistoryApi, type HistoryApi, type NextStep } from "../history/history-api";
 import { getLearningSession, type LearningSessionRecord } from "../learning-session-store";
-import { nextStepDraft, nextStepLine, nextStepsShown } from "./next-step-line";
+import { nextStepDraft, nextStepLine } from "./next-step-line";
+import { nextStepsShown } from "./next-steps-visibility";
+import { loadPromptBank } from "./topic-prompts";
 
 const STATE = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" } as const;
 
@@ -14,8 +16,12 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
   const [shown] = useState(nextStepsShown);
   const [api, setApi] = useState<HistoryApi>();
   const [steps, setSteps] = useState<NextStep[]>();
+  // One new board per click, however long the questions take to arrive.
+  const opening = useRef(false);
   useEffect(() => {
     if (!shown) return;
+    // The starter questions are fetched with the suggestions, not on click.
+    if (onNew) void loadPromptBank().catch(() => undefined);
     let active = true;
     const token = getToken();
     void Promise.resolve().then(() => {
@@ -24,9 +30,14 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
     }).then(async next => { const result = await next.suggestions(); if (active) { setApi(next); setSteps(result.suggestions); } })
       .catch(() => { if (active) setSteps([]); });
     return () => { active = false; };
-  }, [shown]);
+  }, [shown, onNew]);
   if (!shown || !steps?.length) return null;
 
+  const open = (step: NextStep) => {
+    if (opening.current || !onNew) return;
+    opening.current = true;
+    void nextStepDraft(step).then(onNew).finally(() => { opening.current = false; });
+  };
   const dismiss = (step: NextStep) => {
     setSteps(steps.filter(item => item.id !== step.id));
     void api?.dismissSuggestion(step.id).catch(() => undefined);
@@ -41,7 +52,7 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
         <p>{line.speaker ? `${line.speaker}：` : ""}{line.text}</p>
         <div className="next-step-actions">
           {local && onSelect ? <button type="button" onClick={() => onSelect(local)}>回到那节课</button>
-            : onNew && <button type="button" onClick={() => onNew(nextStepDraft(step))}>在新白板上问问</button>}
+            : onNew && <button type="button" onClick={() => open(step)}>在新白板上问问</button>}
           <button type="button" onClick={() => dismiss(step)}>不感兴趣</button>
         </div>
         <details>
