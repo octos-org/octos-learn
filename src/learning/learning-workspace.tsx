@@ -161,6 +161,8 @@ import {
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
 import { buildCurrentLessonContext } from "./current-lesson-context";
+import { chooseExperiences } from "./teachers/teacher-experiences";
+import { getSelectedProfileId } from "@/api/client";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
@@ -1286,6 +1288,10 @@ export function LearningWorkspace({
     const contextFields = lessonContextFields.current.get(actionId);
     const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
     const currentLessonText = contextFields?.has("current_lesson") ? currentLesson() : undefined;
+    // Only a lesson in this teacher's style may bring up the teacher's own life;
+    // the offer counts once the lesson has actually started.
+    const experiences = contextFields?.has("teacher_profile") && contextFields.has("teacher_experiences")
+      ? chooseExperiences(getSelectedProfileId() ?? "", lessonTeacher.id) : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1320,6 +1326,7 @@ export function LearningWorkspace({
           ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
+          ...(experiences?.text ? { teacher_experiences: experiences.text } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1338,6 +1345,7 @@ export function LearningWorkspace({
           failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
         );
       }
+      experiences?.commit();
       const jobs = invocation.jobs ?? [];
       learnTrace.recordOnce(`${turnId}:skill-invocation-accepted`, {
         turnId,
