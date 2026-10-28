@@ -2,7 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { EarnedAchievement } from "../history/history-api";
-import { announceNewAwards } from "./award-events";
+import { announceNewAwards, holdAwards } from "./award-events";
 import { AwardHost } from "./award-host";
 
 let seq = 0;
@@ -25,6 +25,17 @@ afterEach(() => {
 });
 
 describe("award ceremony", () => {
+  it("waits while a lesson is in progress and plays once it has finished", async () => {
+    // A hold set before the host mounts still counts.
+    holdAwards("classroom:test", true);
+    render(<AwardHost />);
+    act(() => announceNewAwards([award("first-question")]));
+    await act(async () => {});
+    expect(screen.queryByRole("dialog")).toBeNull();
+    act(() => holdAwards("classroom:test", false));
+    expect(await screen.findByRole("dialog", { name: "第一个问题" })).toBeTruthy();
+  });
+
   it("plays the rarest new award, lists the others and closes on ✕", async () => {
     render(<AwardHost />);
     act(() => announceNewAwards([award("first-question"), award("leap-day", { scope: "2028" }), award("alan-1"), award("ten-stars", { new: false })]));
