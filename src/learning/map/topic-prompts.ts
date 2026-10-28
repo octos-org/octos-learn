@@ -13,16 +13,20 @@ const LABEL: Record<PromptKind, string> = { hook: "从生活里问起", try: "�
 // About 185 KB of question text, loaded only where questions are shown.
 let loading: Promise<PromptBank> | null = null;
 export function loadPromptBank(): Promise<PromptBank> {
-  loading ??= import("./topic-prompts-zh.json").then((module) => module.default.prompts as PromptBank);
+  loading ??= import("./topic-prompts-zh.json").then((module) => module.default.prompts as PromptBank)
+    // A failed download is tried again next time instead of being remembered.
+    .catch((error: unknown) => { loading = null; throw error; });
   return loading;
 }
-export function usePromptBank(): PromptBank | null {
+/** The bank once loaded (null until then, or when `enabled` is false). */
+export function usePromptBank(enabled = true): PromptBank | null {
   const [bank, setBank] = useState<PromptBank | null>(null);
   useEffect(() => {
+    if (!enabled) return;
     let live = true;
     void loadPromptBank().then((loaded) => { if (live) setBank(loaded); }, () => undefined);
     return () => { live = false; };
-  }, []);
+  }, [enabled]);
   return bank;
 }
 
@@ -47,8 +51,9 @@ export function topicPrompts(bank: PromptBank | null, topicId: string, name: str
  * topic to continue or revisit gets a problem to try. Topics without starter
  * questions (other subjects) keep the plain request. */
 export async function topicDraft(topicId: string, name: string, kind: "hook" | "try"): Promise<string> {
-  const texts = (await loadPromptBank().catch(() => null))?.[topicId];
+  const bank = await loadPromptBank().catch(() => null);
   const label = topicLabel(topicId, name);
-  if (texts?.length !== 3) return kind === "hook" ? `${label}是什么？生活里哪里会用到它？` : `我想再学一下${label}`;
-  return texts[KINDS.indexOf(kind)]!;
+  const [first] = topicPrompts(bank, topicId, label, kind);
+  // Without starter questions, continuing a topic keeps the plain request.
+  return first!.kind === kind || kind === "hook" ? first!.text : `我想再学一下${label}`;
 }

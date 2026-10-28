@@ -4,7 +4,6 @@ import { readAwardTone } from "./award-line";
 import { topicLabel } from "./taxonomy-labels";
 import { topicDraft } from "./topic-prompts";
 
-
 /** The chosen teacher's line, or plain wording when playful lines are off. */
 export function nextStepLine(step: NextStep): { speaker: string | null; text: string } {
   const teacher = readAwardTone() === "playful" ? getTeacher(resolveSelectedTeacherId()) : null;

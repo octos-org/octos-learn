@@ -29,9 +29,12 @@ it('resumes the original board, or fills a new board without sending, in the cho
   expect(await screen.findByText(`窦鸢：${TEACHERS[1].suggestions.continue.replace('{topic}', '一次函数图像')}`)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '回到那节课' }));
   expect(onSelect).toHaveBeenCalledWith(session);
+  // A double click opens one board.
+  fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));
   fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));
   const draft = await nextStepDraft(STEPS[1]);
   await waitFor(() => expect(onNew).toHaveBeenCalledWith(draft));
+  expect(onNew).toHaveBeenCalledTimes(1);
   expect(document.body.textContent).toContain('这不代表不会');
   expect(document.body.textContent).not.toMatch(/你还不会|忘了|没掌握/);
 });
