@@ -30,6 +30,20 @@ test("a comment may only restate the report, in the right teacher's voice", () =
   } finally { store.close(); }
 });
 
+test("a topic's own name may be quoted even when it contains 分数 or an age", () => {
+  const store = open();
+  try {
+    store.append("alice", [beat("b1", "r1", "2026-10-13T02:00:00.000Z"), beat("b2", "r2", "2026-10-15T02:00:00.000Z")]);
+    const input = buildCommentInput(queryWeeklyReport(store, "alice", { weekStart: "2026-10-12", utcOffsetMinutes: 480 }), "doudou");
+    input.topics = [{ name: "分数乘整数应用题", before: "暂无记录", after: "已探索" }, { name: "6、7、9、25、1000 个一数", before: "暂无记录", after: "已探索" }];
+    const check = comment => validateReportComment(input, { schema: 1, input_sha256: input.input_sha256, comment });
+    assert.equal(check("这周你探索了分数乘整数应用题，还有6、7、9、25、1000 个一数！"), "这周你探索了分数乘整数应用题，还有6、7、9、25、1000 个一数！");
+    // Outside a topic's name the same words and numbers are still refused.
+    assert.throws(() => check("这周你的分数提高了！"), /Report comment/);
+    assert.throws(() => check("你在分数乘整数应用题上做对了 9 题！"), /number not in the report/);
+  } finally { store.close(); }
+});
+
 test("every achievement in the week is named from the shared catalog, so a claim never carries an empty value", () => {
   const input = buildCommentInput({ week_start: "2026-10-12", report_sha256: "x".repeat(64),
     activity: { days: ["2026-10-13"], runs: 1, played_beats: 1, task_attempts: 0, unassisted_successes: 0, questions: 1 }, topics: [],
