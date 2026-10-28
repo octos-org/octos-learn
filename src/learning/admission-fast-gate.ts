@@ -13,6 +13,9 @@ export interface AdmissionFastGateInput {
   modality: "voice" | "text";
   hasSelection?: boolean;
   hasCameraFrame?: boolean;
+  /** What this board just taught (`buildCurrentLessonContext`), so a request
+   * that points back at it ("the reflection question") counts as complete. */
+  currentLesson?: string;
 }
 
 export type AdmissionDisposition = "generate_lesson" | "clarify" | "ignore";
@@ -186,14 +189,17 @@ export async function evaluateAdmissionFastGate(
           input_modality: input.modality,
           has_camera_frame: Boolean(input.hasCameraFrame),
           has_selection: Boolean(input.hasSelection),
+          ...(input.currentLesson ? { current_lesson: input.currentLesson } : {}),
         },
         questions: {
           disposition: {
             type: "choice",
-            instructions: "判断用户当前的输入是否构成一个清晰、可实质性展开教学的学习主题或提问",
+            instructions: input.currentLesson
+              ? "判断用户当前的输入是否构成一个清晰、可实质性展开教学的学习主题或提问。state.current_lesson 是同一块白板上刚讲过的内容；输入指向其中的题目或内容时（如'反思题我不会'、'刚才那道题'），指代是清楚的"
+              : "判断用户当前的输入是否构成一个清晰、可实质性展开教学的学习主题或提问",
             criteria: {
-              generate_lesson: "提出了具体的学习问题、概念解释或明确的学习主题（包括简短但清晰的主题，如'勾股定理'、'为什么负负得正'）",
-              clarify: "是真实的口语，但内容残缺不全、指代不明或缺少主干，需要向用户追问（如'这本书'、'刚才那个'）",
+              generate_lesson: `提出了具体的学习问题、概念解释或明确的学习主题（包括简短但清晰的主题，如'勾股定理'、'为什么负负得正'）${input.currentLesson ? "，或明确指向 current_lesson 里的题目或内容" : ""}`,
+              clarify: `是真实的口语，但内容残缺不全、指代不明或缺少主干${input.currentLesson ? "，在 current_lesson 里也找不到所指" : ""}，需要向用户追问（如'这本书'、'刚才那个'）`,
               ignore: "仅为语气词、口头填充、停顿、唤醒词或无实际教学意图的噪音（如'呃'、'啊对'、'嗯'、'好'）",
             },
           },
@@ -210,7 +216,7 @@ export async function evaluateAdmissionFastGate(
           },
           is_self_contained: {
             type: "noul",
-            instructions: "该输入是否无需额外依赖上下文即可独立理解并直接展开一堂课？",
+            instructions: `该输入是否无需额外依赖上下文即可独立理解并直接展开一堂课？${input.currentLesson ? "（state.current_lesson 不算额外上下文）" : ""}`,
           },
         },
       },
@@ -274,7 +280,11 @@ export async function evaluateAdmissionFastGate(
 
     let clarificationPrompt: string | undefined;
     if (disposition === "clarify") {
-      clarificationPrompt = `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`;
+      // Echo a short fragment ("这本书"); repeating a whole sentence back reads
+      // as not having listened.
+      clarificationPrompt = trimmed.length <= 12
+        ? `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`
+        : "我没能确定你指的是哪道题或哪部分内容。可以把题目或想学的知识点说具体一点吗？";
     }
 
     const elapsedMs = Date.now() - startedAt;

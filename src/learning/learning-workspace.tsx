@@ -160,6 +160,7 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { buildCurrentLessonContext } from "./current-lesson-context";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
@@ -1096,6 +1097,18 @@ export function LearningWorkspace({
     topics: activeOllTopics,
     deliveredProgram: activeOllEvents,
   });
+  // What this board just taught, read when a question is submitted so a
+  // follow-up such as "the reflection question" can be resolved.
+  const lessonOutline = ollLesson?.outline;
+  const lessonReflections = ollLesson?.reflections;
+  const lessonTasks = ollLesson?.studentTasks;
+  const currentLesson = useMemo(() => buildCurrentLessonContext({
+    outline: lessonOutline ?? [],
+    reflections: lessonReflections ?? [],
+    studentTasks: lessonTasks ?? [],
+  }), [lessonOutline, lessonReflections, lessonTasks]);
+  const currentLessonRef = useRef<string | undefined>(undefined);
+  useEffect(() => { currentLessonRef.current = currentLesson; }, [currentLesson]);
   // Audio ownership follows playback intent, not the current speech sample.
   // A live lesson claims the microphone on its first render and keeps it
   // through Beat/event gaps, then releases it once the Runtime has consumed
@@ -1268,6 +1281,7 @@ export function LearningWorkspace({
         : "learning.lesson.generate";
     const contextFields = lessonContextFields.current.get(actionId);
     const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
+    const currentLessonText = contextFields?.has("current_lesson") ? currentLessonRef.current : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1301,6 +1315,7 @@ export function LearningWorkspace({
           language: "zh-CN",
           ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
+          ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1502,6 +1517,7 @@ export function LearningWorkspace({
               modality: "voice",
               hasCameraFrame: Boolean(context.currentFramePath),
               hasSelection,
+              currentLesson: currentLessonRef.current,
             });
 
             if (admission.disposition === "ignore") {
@@ -2943,6 +2959,7 @@ export function LearningWorkspace({
           modality: "text",
           hasCameraFrame: Boolean(conv.cameraActive),
           hasSelection,
+          currentLesson: currentLessonRef.current,
         });
         if (admission.disposition === "ignore") {
           return;
