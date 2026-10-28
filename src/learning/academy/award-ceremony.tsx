@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Fragment, useEffect, useRef, useState, useSyncExternalStore, type CSSProperties } from "react";
 
 import { ACHIEVEMENT_BY_ID, type AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
 import type { EarnedAchievement } from "../history/history-api";
@@ -9,7 +9,7 @@ import { ServiceError, synthesizeTeacherSample } from "@/byok/providers";
 import { prepareClientServices } from "@/byok/services";
 import { RARITY_NAME } from "./achievement-display";
 import { runAwardParticles } from "./award-particles";
-import { awardVoiceMuted } from "./award-events";
+import { awardsHeld, awardVoiceMuted, subscribeAwardHold } from "./award-events";
 import { AWARD_TIERS, RARITY_RANK } from "./award-tiers";
 import { Medal } from "./medal";
 import "./award-ceremony.css";
@@ -57,8 +57,10 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
   // The chosen medal leaves the list and the one it replaces joins it; focus
   // moves to that one, so pressing it again goes back.
   const returning = useRef<string | null>(null);
-  // The host's onDone always drops the batch at the head of its queue.
-  const done = useRef(onDone);
+  // The host's onDone always drops the batch at the head of its queue, so it
+  // runs at most once per ceremony (also when an effect runs twice).
+  const finished = useRef(false);
+  const done = useRef(() => { if (!finished.current) { finished.current = true; onDone(); } });
   const reduced = reducedMotion();
   const rarity = lead?.definition.rarity ?? "b";
   const [tone] = useState(readAwardTone);
@@ -68,6 +70,8 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
   // One synthesis per award, shared by every play of it (and by a remounted
   // effect while the first request is still on its way).
   const voices = useRef(new Map<string, Promise<Blob>>());
+  // A lesson starting or the teacher being muted while this is open stops the line.
+  const silent = useSyncExternalStore(subscribeAwardHold, () => awardsHeld() || awardVoiceMuted());
 
   useEffect(() => {
     if (!lead) { done.current(); return; }
@@ -92,9 +96,10 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
   // service, once per award in front. No service or blocked audio: the line
   // stays on screen and nothing plays.
   useEffect(() => {
-    if (!teacher || !line || awardVoiceMuted()) return;
+    if (!teacher || !line || silent) return;
     const controller = new AbortController();
     let stopped = false;
+    let arrived = false;
     let player: HTMLAudioElement | null = null;
     let src: string | null = null;
     void (async () => {
@@ -107,6 +112,7 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
           audio.catch(() => voices.current.delete(leadKey));
         }
         const blob = await audio;
+        arrived = true;
         if (stopped) return;
         src = URL.createObjectURL(blob);
         player = new Audio(src);
@@ -120,10 +126,12 @@ export default function AwardCeremony({ items, onShown, onDone }: { items: Earne
       // A request still on its way is cancelled; switching quickly through the
       // medals does not pay for lines nobody hears.
       controller.abort();
+      // A cancelled request is not kept for the next time this award is in front.
+      if (!arrived) voices.current.delete(leadKey);
       player?.pause();
       if (src) URL.revokeObjectURL(src);
     };
-  }, [leadKey, line, teacher]);
+  }, [leadKey, line, teacher, silent]);
   useEffect(() => {
     if (returning.current === null) return;
     [...list.current?.querySelectorAll<HTMLButtonElement>("button") ?? []].find((button) => button.dataset.award === returning.current)?.focus();

@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const speech = vi.hoisted(() => ({ synthesize: vi.fn(), played: [] as string[] }));
@@ -63,6 +64,29 @@ describe("award ceremony", () => {
     fireEvent.click(screen.getByRole("button", { name: "关闭" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     act(() => holdAwards("classroom:busy", false));
+    expect(await screen.findByRole("dialog", { name: "初见星光" })).toBeTruthy();
+  });
+
+  it("stops the line when a lesson starts while the ceremony is open", async () => {
+    let finish: (blob: Blob) => void = () => undefined;
+    speech.synthesize.mockImplementation(() => new Promise<Blob>((resolve) => { finish = resolve; }));
+    URL.createObjectURL = vi.fn(() => "blob:line") as typeof URL.createObjectURL;
+    URL.revokeObjectURL = vi.fn();
+    vi.stubGlobal("Audio", class { pause() {} async play() { speech.played.push("played"); } });
+    render(<AwardHost />);
+    act(() => announceNewAwards([award("first-star")]));
+    await screen.findByRole("dialog", { name: "初见星光" });
+    await waitFor(() => expect(speech.synthesize).toHaveBeenCalled());
+    act(() => holdAwards("classroom:busy", true));
+    await act(async () => { finish(new Blob(["x"])); });
+    expect(speech.played).toEqual([]);
+    expect(screen.getByRole("dialog", { name: "初见星光" })).toBeTruthy();
+    act(() => holdAwards("classroom:busy", false));
+  });
+
+  it("under StrictMode, a batch the app cannot show does not drop the next one", async () => {
+    render(<StrictMode><AwardHost /></StrictMode>);
+    act(() => { announceNewAwards([award("from-the-future")]); announceNewAwards([award("first-star")]); });
     expect(await screen.findByRole("dialog", { name: "初见星光" })).toBeTruthy();
   });
 

@@ -2514,11 +2514,11 @@ export function LearningWorkspace({
     coursePack ? coursePackNarrationBlob(coursePack, narrationId) : null,
   [coursePack]);
   // Award ceremonies wait while the teacher is busy: a lesson from generation
-  // until it has played to the end (also while paused, not once it failed), or
-  // a spoken reply that is still being read. They stay quiet while the learner
+  // until it has played to the end (also while paused, not once it failed), a
+  // spoken question being answered, or a reply that is still being read. They stay quiet while the learner
   // has muted the teacher on this board.
   const replyAudible = Boolean(plainReplyNarrationId) && narrationAudioEnabled && runtime.ttsReady;
-  const teacherBusy = historyClassroomBusy || conv.state === "speaking" || replyAudible
+  const teacherBusy = historyClassroomBusy || conv.state === "thinking" || conv.state === "speaking" || replyAudible
     || Boolean(ollLesson && !ollLesson.completed && !ollLesson.failure && ollLesson.cursor > 0);
   useEffect(() => {
     holdAwards(`classroom:${sessionId}`, teacherBusy);

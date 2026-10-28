@@ -37,7 +37,6 @@ export function OctosTeacher({
   onClick: () => void;
   disabled?: boolean;
   teacherId?: TeacherDefinition["id"];
-  /** An achievement was just presented; the portrait shows approval. */
   /** A course pack plays its own recorded narration, not the teacher's
    * voice; the caption says so instead of implying the teacher is speaking. */
   recordedVoice?: boolean;
