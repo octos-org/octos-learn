@@ -40,7 +40,8 @@ const COURSE_PACK_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u;
 const COURSE_PACK_VERSION = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 
-function accountStorageScope(): string {
+/** Scopes device storage to the signed-in account. */
+export function accountStorageScope(): string {
   return encodeURIComponent(getSelectedProfileId() ?? "anonymous");
 }
 

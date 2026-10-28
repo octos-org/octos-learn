@@ -1,7 +1,7 @@
 import type { SkillActionDefinition } from "@/api/skill-actions";
 
-export type LessonContextField = "teacher_profile" | "learner_background" | "current_lesson";
-const FIELDS: readonly LessonContextField[] = ["teacher_profile", "learner_background", "current_lesson"];
+export type LessonContextField = "teacher_profile" | "learner_background" | "current_lesson" | "teacher_experiences";
+const FIELDS: readonly LessonContextField[] = ["teacher_profile", "learner_background", "current_lesson", "teacher_experiences"];
 
 /** Which host context fields each installed lesson action declares. Lesson
  * actions reject undeclared fields, and the older tutor_context and

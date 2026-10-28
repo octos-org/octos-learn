@@ -161,6 +161,8 @@ import {
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
 import { buildCurrentLessonContext } from "./current-lesson-context";
+import { chooseExperiences } from "./teachers/teacher-experiences";
+import { accountStorageScope } from "./learning-session-store";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
@@ -1277,6 +1279,10 @@ export function LearningWorkspace({
     const contextFields = lessonContextFields.current.get(actionId);
     const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
     const currentLessonText = contextFields?.has("current_lesson") ? currentLesson() : undefined;
+    // Only a lesson in this teacher's style may bring up the teacher's own life;
+    // a request that fails gives the offer back.
+    const experiences = contextFields?.has("teacher_profile") && contextFields.has("teacher_experiences")
+      ? chooseExperiences(accountStorageScope(), lessonTeacher.id) : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1311,6 +1317,7 @@ export function LearningWorkspace({
           ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
+          ...(experiences?.text ? { teacher_experiences: experiences.text } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1360,6 +1367,7 @@ export function LearningWorkspace({
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
       setOllGenerationSessionId(sessionId);
     } catch (cause) {
+      experiences?.release();
       learnTrace.recordOnce(`${turnId}:skill-invocation-failed`, {
         turnId,
         source: "octos-web",
