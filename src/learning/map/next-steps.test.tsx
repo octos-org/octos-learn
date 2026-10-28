@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { NextStep } from '../history/history-api';
 
@@ -30,7 +30,8 @@ it('resumes the original board, or fills a new board without sending, in the cho
   fireEvent.click(screen.getByRole('button', { name: '回到那节课' }));
   expect(onSelect).toHaveBeenCalledWith(session);
   fireEvent.click(screen.getByRole('button', { name: '在新白板上问问' }));
-  expect(onNew).toHaveBeenCalledWith(nextStepDraft(STEPS[1]));
+  const draft = await nextStepDraft(STEPS[1]);
+  await waitFor(() => expect(onNew).toHaveBeenCalledWith(draft));
   expect(document.body.textContent).toContain('这不代表不会');
   expect(document.body.textContent).not.toMatch(/你还不会|忘了|没掌握/);
 });

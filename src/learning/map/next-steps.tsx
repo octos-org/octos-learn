@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { getSelectedProfileId, getToken } from "../../api/client";
 import { openHistoryApi, type HistoryApi, type NextStep } from "../history/history-api";
 import { getLearningSession, type LearningSessionRecord } from "../learning-session-store";
-import { nextStepDraft, nextStepLine, nextStepsShown } from "./next-step-line";
+import { nextStepDraft, nextStepLine } from "./next-step-line";
+import { nextStepsShown } from "./next-steps-visibility";
 
 const STATE = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" } as const;
 
@@ -41,7 +42,7 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
         <p>{line.speaker ? `${line.speaker}：` : ""}{line.text}</p>
         <div className="next-step-actions">
           {local && onSelect ? <button type="button" onClick={() => onSelect(local)}>回到那节课</button>
-            : onNew && <button type="button" onClick={() => onNew(nextStepDraft(step))}>在新白板上问问</button>}
+            : onNew && <button type="button" onClick={() => void nextStepDraft(step).then(onNew)}>在新白板上问问</button>}
           <button type="button" onClick={() => dismiss(step)}>不感兴趣</button>
         </div>
         <details>

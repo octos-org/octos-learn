@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
-import { topicPrompts } from "../topic-prompts";
+import { recommendedPrompt, topicPrompts, usePromptBank } from "../topic-prompts";
 import { buildAtlas, fitView, frameLevel, placeTopics, type View } from "./atlas-model";
 import { igniteDuration, paintAtlas, RING_NAMES, toScreen, toWorld, type PaintState } from "./paint-atlas";
 import "./star-atlas.css";
@@ -20,6 +20,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
   const placed = useMemo(() => placeTopics(atlas, topics), [topics]);
   const [selected, setSelected] = useState<number | null>(null);
   const [unveil, setUnveil] = useState(false);
+  const prompts = usePromptBank();
   // Everything the animation frame reads lives in one ref, so a frame never sees stale props.
   const live = useRef({ view: { x: 0, y: 0, k: 1 } as View, hover: null as number | null, selected: null as number | null, unveil: false,
     placed, width: 0, height: 0, flight: null as null | { from: View; to: View; start: number; ms: number }, igniteFrom: null as number | null });
@@ -175,7 +176,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
       {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? "它就在你去过的星辰旁边，迷雾已经变薄。" : "这片星空还被迷雾遮着。"}</p>}
       {onAsk && <div className="star-atlas-asks" role="group" aria-label="在新白板上问问">
         <h4>在新白板上问问</h4>
-        {topicPrompts(atlas.stars[selected!].id, topic?.name ?? atlas.stars[selected!].id, topic?.state).map((prompt) => (
+        {topicPrompts(prompts, star.id, name, recommendedPrompt(topic?.state)).map((prompt) => (
           <button key={prompt.kind} type="button" className="star-atlas-ask" data-recommended={prompt.recommended || undefined} onClick={() => onAsk(prompt.text)}>
             <span>{prompt.label}{prompt.recommended && <em>推荐</em>}</span>{prompt.text}
           </button>
