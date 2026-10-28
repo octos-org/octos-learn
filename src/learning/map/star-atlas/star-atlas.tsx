@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
+import { topicPrompts } from "../topic-prompts";
 import { buildAtlas, fitView, frameLevel, placeTopics, type View } from "./atlas-model";
 import { igniteDuration, paintAtlas, RING_NAMES, toScreen, toWorld, type PaintState } from "./paint-atlas";
 import "./star-atlas.css";
@@ -172,7 +173,14 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
       {frameLevel(topic) > 0 && <p className="star-atlas-note">{FRAME_TEXT[frameLevel(topic)]}</p>}
       {topic?.state === "did-it" && <p className="star-atlas-note">“做出来过”表示不看提示做对过，不等于已经掌握。点亮的星辰不会熄灭。</p>}
       {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? "它就在你去过的星辰旁边，迷雾已经变薄。" : "这片星空还被迷雾遮着。"}</p>}
-      {onAsk && <button type="button" className="star-atlas-ask" onClick={() => onAsk(`${name}是什么？`)}>在新白板上问问</button>}
+      {onAsk && <div className="star-atlas-asks" role="group" aria-label="在新白板上问问">
+        <h4>在新白板上问问</h4>
+        {topicPrompts(atlas.stars[selected!].id, topic?.name ?? atlas.stars[selected!].id, topic?.state).map((prompt) => (
+          <button key={prompt.kind} type="button" className="star-atlas-ask" data-recommended={prompt.recommended || undefined} onClick={() => onAsk(prompt.text)}>
+            <span>{prompt.label}{prompt.recommended && <em>推荐</em>}</span>{prompt.text}
+          </button>
+        ))}
+      </div>}
       {links(atlas.prerequisites[selected!], "前置星辰")}
       {links(atlas.leadsTo[selected!], "由此通往")}
     </div>}
