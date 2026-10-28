@@ -7,7 +7,7 @@ vi.mock("@/byok/providers", async (original) => ({ ...(await original<object>())
 
 import { ServiceError } from "@/byok/providers";
 import type { EarnedAchievement } from "../history/history-api";
-import { announceNewAwards, holdAwards } from "./award-events";
+import { announceNewAwards, holdAwards, muteAwardVoice } from "./award-events";
 import { getTeacher } from "../teachers/teachers";
 import { AwardHost } from "./award-host";
 
@@ -46,9 +46,35 @@ describe("award ceremony", () => {
     expect(screen.getByRole("button", { name: "查看「闰日旅人」" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "查看「第一个问题」" })).toBeNull();
     expect(dialog.textContent).toContain("阿澜「第一个问题」");
-    expect(document.activeElement?.closest(".award-more")).toBeTruthy();
+    // Focus moves to the award that left the front, so pressing it goes back.
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "查看「闰日旅人」" }));
     fireEvent.click(screen.getByRole("button", { name: "关闭" }));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("a ceremony already on screen stays when a lesson starts meanwhile", async () => {
+    render(<AwardHost />);
+    act(() => announceNewAwards([award("first-question")]));
+    const dialog = await screen.findByRole("dialog", { name: "第一个问题" });
+    act(() => holdAwards("classroom:busy", true));
+    expect(screen.getByRole("dialog", { name: "第一个问题" })).toBe(dialog);
+    // The next batch waits for the lesson.
+    act(() => announceNewAwards([award("first-star")]));
+    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    act(() => holdAwards("classroom:busy", false));
+    expect(await screen.findByRole("dialog", { name: "初见星光" })).toBeTruthy();
+  });
+
+  it("does not read the line on a board where the learner muted the teacher", async () => {
+    speech.synthesize.mockImplementation(async (text: string) => new Blob([text]));
+    muteAwardVoice("classroom:muted", true);
+    render(<AwardHost />);
+    act(() => announceNewAwards([award("first-star")]));
+    await screen.findByRole("dialog", { name: "初见星光" });
+    await act(async () => {});
+    expect(speech.synthesize).not.toHaveBeenCalled();
+    muteAwardVoice("classroom:muted", false);
   });
 
   it("waits while a lesson is in progress and plays once it has finished", async () => {
@@ -112,10 +138,10 @@ describe("award ceremony", () => {
     // An award without a recorded teacher is presented by the learner's current teacher.
     act(() => announceNewAwards([award("hundred-stars", { teacher_id: "sufei" }), award("first-star", { teacher_id: null })]));
     await screen.findByRole("dialog", { name: "百星观测者" });
-    await waitFor(() => expect(speech.synthesize).toHaveBeenCalledWith("一百颗星，每一颗都有来处。记录在案。", getTeacher("sufei").voices));
+    await waitFor(() => expect(speech.synthesize).toHaveBeenCalledWith("一百颗星，每一颗都有来处。记录在案。", getTeacher("sufei").voices, expect.any(AbortSignal)));
     await waitFor(() => expect(speech.played).toHaveLength(1));
     fireEvent.click(screen.getByRole("button", { name: "查看「初见星光」" }));
-    await waitFor(() => expect(speech.synthesize).toHaveBeenLastCalledWith("「初见星光」。从这里开始，一步一步来。", getTeacher("alan").voices));
+    await waitFor(() => expect(speech.synthesize).toHaveBeenLastCalledWith("「初见星光」。从这里开始，一步一步来。", getTeacher("alan").voices, expect.any(AbortSignal)));
     expect(screen.getByRole("dialog", { name: "初见星光" }).textContent).toContain("阿澜");
     await waitFor(() => expect(speech.played).toHaveLength(2));
   });

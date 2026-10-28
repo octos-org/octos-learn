@@ -3,7 +3,7 @@ import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
 import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
-import { holdAwards } from "./academy/award-events";
+import { holdAwards, muteAwardVoice } from "./academy/award-events";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
@@ -1183,14 +1183,6 @@ export function LearningWorkspace({
     history.coordinator?.setClassroomBusy(sessionId, historyClassroomBusy);
     return () => history.coordinator?.setClassroomBusy(sessionId, false);
   }, [history.coordinator, sessionId, historyClassroomBusy]);
-  // A lesson is in progress from generation until it has played to the end,
-  // including while the learner has paused it; award ceremonies wait for it.
-  const lessonInProgress = historyClassroomBusy
-    || Boolean(ollLesson && !ollLesson.completed && ollLesson.cursor > 0);
-  useEffect(() => {
-    holdAwards(`classroom:${sessionId}`, lessonInProgress);
-    return () => holdAwards(`classroom:${sessionId}`, false);
-  }, [sessionId, lessonInProgress]);
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
@@ -2521,6 +2513,21 @@ export function LearningWorkspace({
   const resolvePackagedNarration = useCallback((narrationId: string) =>
     coursePack ? coursePackNarrationBlob(coursePack, narrationId) : null,
   [coursePack]);
+  // Award ceremonies wait while the teacher is busy: a lesson from generation
+  // until it has played to the end (also while paused, not once it failed), or
+  // a spoken reply that is still being read. They stay quiet while the learner
+  // has muted the teacher on this board.
+  const replyAudible = Boolean(plainReplyNarrationId) && narrationAudioEnabled && runtime.ttsReady;
+  const teacherBusy = historyClassroomBusy || conv.state === "speaking" || replyAudible
+    || Boolean(ollLesson && !ollLesson.completed && !ollLesson.failure && ollLesson.cursor > 0);
+  useEffect(() => {
+    holdAwards(`classroom:${sessionId}`, teacherBusy);
+    return () => holdAwards(`classroom:${sessionId}`, false);
+  }, [sessionId, teacherBusy]);
+  useEffect(() => {
+    muteAwardVoice(`classroom:${sessionId}`, !narrationAudioEnabled);
+    return () => muteAwardVoice(`classroom:${sessionId}`, false);
+  }, [sessionId, narrationAudioEnabled]);
   const ollNarrationTts = useOllNarrationTts({
     enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled

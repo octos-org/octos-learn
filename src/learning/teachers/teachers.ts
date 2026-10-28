@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { TeacherSkin } from "@/hooks/use-teacher-skin";
+import type { AchievementDefinition } from "../../../services/learning-history/achievement-catalog.mjs";
 
 import { chooseTeacher, deviceTeacherChoice, syncTeacherChoice, TEACHER_CHANGE_EVENT, TEACHER_STORAGE_KEY } from "./teacher-choice";
 
@@ -73,13 +74,15 @@ export type AchievementId = "first-footprint" | "did-it-alone" | "regular-guest"
 /** Achievements that grant a title get a line of their own. */
 export type TitledAchievementId = "hundred-stars" | "many-stars" | "three-domains" | "thirty-days" | "hundred-days" | "fifty-alone"
   | "fifty-questions" | "alan-30" | "doudou-30" | "sufei-30" | "three-teachers" | "night-owl" | "early-star" | "old-friend" | "pi-day" | "leap-day";
-export type AwardRarity = "b" | "s" | "g" | "x";
-/** How an award is presented: the four first awards each have a line, titled
- * awards have their own, every other award is presented by its rarity
- * ({name} is the award's name), and `other` covers ids the app does not know. */
-export type TeacherAwards = Readonly<Record<AchievementId | "other", string>> & {
-  readonly rarity?: Readonly<Record<AwardRarity, string>>;
-  readonly titled?: Readonly<Record<TitledAchievementId, string>>;
+export type AwardRarity = AchievementDefinition["rarity"];
+/** Plain award wording: the four first awards each have a line; `other`
+ * ({name} is the award's name) covers the rest. */
+export type PlainAwards = Readonly<Record<AchievementId | "other", string>>;
+/** A teacher also gives each titled award its own line and presents every
+ * other award by its rarity; `other` covers ids the app does not know. */
+export type TeacherAwards = PlainAwards & {
+  readonly rarity: Readonly<Record<AwardRarity, string>>;
+  readonly titled: Readonly<Record<TitledAchievementId, string>>;
 };
 
 /** Suggestions decided by suggestions-v1. A missing record is "not visited
@@ -454,7 +457,7 @@ export function teacherReactions(teacher: TeacherDefinition | null | undefined):
 
 /** Plain wording: used when no preset teacher gave the lesson, or when the
  * learner turned the teachers' playful award lines off. */
-export const PLAIN_AWARDS: TeacherAwards = {
+export const PLAIN_AWARDS: PlainAwards = {
   "first-footprint": "学习地图上点亮了第一个知识点。",
   "did-it-alone": "第一次没用提示，达到了练习的要求。",
   "regular-guest": "在 3 个不同的日子学习了{topic}。",

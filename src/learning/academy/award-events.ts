@@ -35,3 +35,10 @@ export function subscribeAwardHold(listener: () => void): () => void {
   holdListeners.add(listener);
   return () => { holdListeners.delete(listener); };
 }
+
+// A page where the learner muted the teacher keeps award lines silent too.
+const muters = new Set<string>();
+export function muteAwardVoice(holder: string, muted: boolean) {
+  if (muted) muters.add(holder); else muters.delete(holder);
+}
+export function awardVoiceMuted(): boolean { return muters.size > 0; }

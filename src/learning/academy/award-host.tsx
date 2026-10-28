@@ -21,11 +21,14 @@ export function AwardHost() {
     return () => window.removeEventListener(AWARDS_EARNED_EVENT, onEarned);
   }, []);
   const held = useSyncExternalStore(subscribeAwardHold, awardsHeld);
+  // A ceremony already on screen finishes even if a lesson starts meanwhile.
+  const [showing, setShowing] = useState<number | null>(null);
   const batch = queue[0];
-  if (!batch || held) return null;
+  if (!batch || (held && showing !== batch.id)) return null;
   return (
     <Suspense fallback={null}>
-      <AwardCeremony key={batch.id} items={batch.items} onDone={() => setQueue((current) => current.slice(1))} />
+      <AwardCeremony key={batch.id} items={batch.items} onShown={() => setShowing(batch.id)}
+        onDone={() => setQueue((current) => current.slice(1))} />
     </Suspense>
   );
 }
