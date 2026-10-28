@@ -4195,7 +4195,7 @@ export function LearningWhiteboard({
                                 ? "数值对了，再写成最简分数。"
                                 : card.status === "needs_hint"
                                   ? taskReactions.taskNeedsHint
-                                  : taskReactions.taskRetry}
+                                  : taskReactions.answerRetry}
                             </span>
                             <small>已尝试 {attempts} 次</small>
                           </div>
