@@ -3,7 +3,7 @@ import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
 import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
-import { awardAnnouncement, readAwardTone } from "./map/award-line";
+import { holdAwards, muteAwardVoice } from "./academy/award-events";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
@@ -181,7 +181,6 @@ const DELIVERABLE_ARTIFACT_SUFFIXES = [
 
 export const LESSON_COMPLETION_SPEECH = NEUTRAL_REACTIONS.lessonComplete;
 const INTERRUPT_CAPTION_MS = 3_000;
-const AWARD_CAPTION_MS = 6_000;
 export const LESSON_COMPLETION_BUBBLE_DURATION_MS = 6_000;
 
 interface PendingLessonJobRecord {
@@ -494,26 +493,18 @@ export function LearningWorkspace({
   // reactions for that lesson use this teacher even if the selection changes.
   const [lessonStyleTeacher, setLessonStyleTeacher] = useState<TeacherDefinition | null>(null);
   const [interruptCaption, setInterruptCaption] = useState<string | null>(null);
-  // Achievements are decided by the history service once new facts arrive;
-  // each newly earned one is announced once, naming the teacher who presents it.
-  const [awardCaptions, setAwardCaptions] = useState<string[]>([]);
+  // Achievements are decided by the history service once new facts arrive.
+  // Reading them announces each newly earned one to the ceremony host, which
+  // waits while a lesson is in progress (see the hold below).
   useEffect(() => {
-    const announce = () => {
+    const read = () => {
       const token = getToken();
       if (!token) return;
-      void openHistoryApi(token).then((api) => api.achievements()).then((list) => {
-        const lines = list.achievements.filter((item) => item.new).map((item) => awardAnnouncement(item, readAwardTone()));
-        if (lines.length) setAwardCaptions((queue) => [...queue, ...lines]);
-      }).catch(() => undefined);
+      void openHistoryApi(token).then((api) => api.achievements()).catch(() => undefined);
     };
-    window.addEventListener("octos:history-uploaded", announce);
-    return () => window.removeEventListener("octos:history-uploaded", announce);
+    window.addEventListener("octos:history-uploaded", read);
+    return () => window.removeEventListener("octos:history-uploaded", read);
   }, []);
-  useEffect(() => {
-    if (!awardCaptions.length) return;
-    const timer = window.setTimeout(() => setAwardCaptions((queue) => queue.slice(1)), AWARD_CAPTION_MS);
-    return () => window.clearTimeout(timer);
-  }, [awardCaptions]);
   const interruptCaptionTimer = useRef<number | null>(null);
   useEffect(() => () => {
     if (interruptCaptionTimer.current !== null) window.clearTimeout(interruptCaptionTimer.current);
@@ -2522,6 +2513,21 @@ export function LearningWorkspace({
   const resolvePackagedNarration = useCallback((narrationId: string) =>
     coursePack ? coursePackNarrationBlob(coursePack, narrationId) : null,
   [coursePack]);
+  // Award ceremonies wait while the teacher is busy: a lesson from generation
+  // until it has played to the end (also while paused, not once it failed), a
+  // spoken question being answered, or a reply that is still being read. They stay quiet while the learner
+  // has muted the teacher on this board.
+  const replyAudible = Boolean(plainReplyNarrationId) && narrationAudioEnabled && runtime.ttsReady;
+  const teacherBusy = historyClassroomBusy || conv.state === "thinking" || conv.state === "speaking" || replyAudible
+    || Boolean(ollLesson && !ollLesson.completed && !ollLesson.failure && ollLesson.cursor > 0);
+  useEffect(() => {
+    holdAwards(`classroom:${sessionId}`, teacherBusy);
+    return () => holdAwards(`classroom:${sessionId}`, false);
+  }, [sessionId, teacherBusy]);
+  useEffect(() => {
+    muteAwardVoice(`classroom:${sessionId}`, !narrationAudioEnabled);
+    return () => muteAwardVoice(`classroom:${sessionId}`, false);
+  }, [sessionId, narrationAudioEnabled]);
   const ollNarrationTts = useOllNarrationTts({
     enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled
@@ -3333,7 +3339,6 @@ export function LearningWorkspace({
     : lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
     : interruptCaption ??
-      awardCaptions[0] ??
       plainReply?.text ??
       (textTurnPending
         ? lessonReactions.preparing
@@ -3665,7 +3670,6 @@ export function LearningWorkspace({
         onClick={handleTeacherClick}
         disabled={coursePreview}
         teacherId={teacher.id}
-        celebrating={awardCaptions.length > 0}
         recordedVoice={Boolean(coursePack)}
       />
 

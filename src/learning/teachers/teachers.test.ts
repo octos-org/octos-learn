@@ -174,6 +174,17 @@ it('gives every teacher a line for each achievement that never claims mastery', 
   for (const id of ids) expect(new Set(TEACHERS.map(teacher => teacher.awards[id])).size).toBe(TEACHERS.length);
 });
 
+it('gives every teacher a line for each titled award and each rarity, in their own words', async () => {
+  const { ACHIEVEMENT_BY_ID } = await import('../../../services/learning-history/achievement-catalog.mjs');
+  const titled = [...ACHIEVEMENT_BY_ID.values()].filter((entry) => entry.title).map((entry) => entry.id).sort();
+  for (const teacher of TEACHERS) {
+    expect(Object.keys(teacher.awards.titled ?? {}).sort()).toEqual(titled);
+    for (const line of [...Object.values(teacher.awards.titled!), ...Object.values(teacher.awards.rarity!)]) expect(line).not.toMatch(/学会|掌握|精通/);
+    for (const line of Object.values(teacher.awards.rarity!)) expect(line).toContain('{name}');
+  }
+  for (const id of titled) expect(new Set(TEACHERS.map((teacher) => teacher.awards.titled![id as keyof NonNullable<typeof teacher.awards.titled>])).size).toBe(TEACHERS.length);
+});
+
 it('adds the learning map to learner context with the same states and no mastery claim', () => {
   const asOf = new Date('2026-10-23T00:00:00.000Z');
   const topic = (name: string, state: 'explored' | 'practising' | 'did-it', last: string) => ({ topic_id: name, subject: 'Mathematics', domain: 'Algebra', name, state,

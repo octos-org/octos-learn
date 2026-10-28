@@ -28,7 +28,6 @@ export function OctosTeacher({
   onClick,
   disabled = false,
   teacherId,
-  celebrating = false,
   recordedVoice = false,
 }: {
   state: VoiceState;
@@ -38,8 +37,6 @@ export function OctosTeacher({
   onClick: () => void;
   disabled?: boolean;
   teacherId?: TeacherDefinition["id"];
-  /** An achievement was just presented; the portrait shows approval. */
-  celebrating?: boolean;
   /** A course pack plays its own recorded narration, not the teacher's
    * voice; the caption says so instead of implying the teacher is speaking. */
   recordedVoice?: boolean;
@@ -110,7 +107,7 @@ export function OctosTeacher({
           }
           reactionKey={reactionKey}
           teacherId={teacherId}
-          approving={taskApproved || celebrating}
+          approving={taskApproved}
         />
         <span className="octos-teacher-state">
           {preparing ? "稍等一下" : stateLabel ?? STATE_LABEL[state]}
