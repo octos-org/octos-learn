@@ -137,6 +137,37 @@ describe("admission-fast-gate", () => {
     expect(result.source).toBe("jev_direct");
   });
 
+  it("shows the gate what the board just taught, and does not repeat a long sentence back", async () => {
+    const clarify = {
+      answers: {
+        disposition: { choice: "clarify", probabilities: { clarify: 0.9, ignore: 0.05, generate_lesson: 0.05 }, confidence: 0.9 },
+        subject: { choice: "math", probabilities: { math: 0.9 }, confidence: 0.9 },
+        is_self_contained: { noul: 0.1 },
+      },
+      model: "jev-latest",
+    };
+    const fetchFn = vi.fn().mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue(clarify) });
+    const lesson = "本白板刚讲过的内容（学生看得到）：\n最近一节课：用整百数估算商\n课后思考题：如果除数是23，怎样估算商？（参考答案：把23看作20）";
+    const text = "我不知道反思题，你能给我讲讲吗？";
+    const result = await evaluateAdmissionFastGate(
+      { text, modality: "text", currentLesson: lesson },
+      { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey },
+    );
+    const body = JSON.parse(fetchFn.mock.calls[0]![1].body);
+    expect(body.state.current_lesson).toBe(lesson);
+    expect(body.questions.disposition.criteria.generate_lesson).toContain("current_lesson");
+    expect(result.clarificationPrompt).not.toContain(text);
+
+    // A short follow-up about the board is not echoed back either.
+    await evaluateAdmissionFastGate({ text: "反思题不会", modality: "text", currentLesson: lesson }, { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey })
+      .then((short) => expect(short.clarificationPrompt).not.toContain("反思题不会"));
+    // Without a lesson on the board the prompt is unchanged.
+    await evaluateAdmissionFastGate({ text: "这本书", modality: "text" }, { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey });
+    const plain = JSON.parse(fetchFn.mock.calls[2]![1].body);
+    expect(plain.state).not.toHaveProperty("current_lesson");
+    expect(JSON.stringify(plain.questions)).not.toContain("current_lesson");
+  });
+
   it.each([
     { modality: "voice" as const, hasSelection: true },
     { modality: "text" as const, hasSelection: true },

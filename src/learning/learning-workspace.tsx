@@ -160,6 +160,7 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
+import { buildCurrentLessonContext } from "./current-lesson-context";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
@@ -1087,6 +1088,22 @@ export function LearningWorkspace({
     topics: activeOllTopics,
     deliveredProgram: activeOllEvents,
   });
+  // What this board just taught, built only when a question is submitted so
+  // that a follow-up such as "the reflection question" can be resolved.
+  const lessonRef = useRef(ollLesson);
+  useEffect(() => { lessonRef.current = ollLesson; }, [ollLesson]);
+  const currentLesson = useCallback(() => {
+    const lesson = lessonRef.current;
+    return lesson ? buildCurrentLessonContext({
+      outline: lesson.outline, reflections: lesson.reflections, studentTasks: lesson.studentTasks,
+      cursor: lesson.cursor, settled: lesson.deliverySettled,
+    }) : undefined;
+  }, []);
+  // The gate may count "the reflection question" as clear only when the lesson
+  // it starts (from text, the camera or a selection) will receive the same context.
+  const gateLessonContext = useCallback((source: "text" | "camera" | "selection") => lessonContextFields.current
+    .get(source === "camera" ? "learning.lesson.generate-from-camera" : source === "selection" ? "learning.lesson.generate-from-selection" : "learning.lesson.generate")
+    ?.has("current_lesson") ? currentLesson() : undefined, [currentLesson]);
   // Audio ownership follows playback intent, not the current speech sample.
   // A live lesson claims the microphone on its first render and keeps it
   // through Beat/event gaps, then releases it once the Runtime has consumed
@@ -1259,6 +1276,7 @@ export function LearningWorkspace({
         : "learning.lesson.generate";
     const contextFields = lessonContextFields.current.get(actionId);
     const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
+    const currentLessonText = contextFields?.has("current_lesson") ? currentLesson() : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1292,6 +1310,7 @@ export function LearningWorkspace({
           language: "zh-CN",
           ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
+          ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
           input_modality: inputModality,
           ...(clientTiming ? {
             client_timing: {
@@ -1353,7 +1372,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, learnerBackground, teacher]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, learnerBackground, teacher, currentLesson]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
@@ -1493,6 +1512,7 @@ export function LearningWorkspace({
               modality: "voice",
               hasCameraFrame: Boolean(context.currentFramePath),
               hasSelection,
+              currentLesson: gateLessonContext(hasSelection ? "selection" : context.currentFramePath ? "camera" : "text"),
             });
 
             if (admission.disposition === "ignore") {
@@ -1654,6 +1674,7 @@ export function LearningWorkspace({
       };
     },
     [
+      gateLessonContext,
       conversationOptions,
       handleTurnComplete,
       handleVoiceTurnError,
@@ -2949,6 +2970,7 @@ export function LearningWorkspace({
           modality: "text",
           hasCameraFrame: Boolean(conv.cameraActive),
           hasSelection,
+          currentLesson: gateLessonContext(hasSelection ? "selection" : conv.cameraActive ? "camera" : "text"),
         });
         if (admission.disposition === "ignore") {
           return;
@@ -3145,6 +3167,7 @@ export function LearningWorkspace({
       }
     },
     [
+      gateLessonContext,
       buildTurnText,
       aiUnavailable,
       aiUnavailableMessage,

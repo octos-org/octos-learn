@@ -53,6 +53,7 @@ import {
   type InkCameraBoard,
   type InkCameraGate,
 } from "./ink-camera-gate";
+import { visibleReflections } from "./visible-reflections";
 import { planHostTeachingFocus } from "./host-camera-policy";
 import {
   BOARD_OCCLUSION_SELECTOR,
@@ -1228,18 +1229,11 @@ export function LearningWhiteboard({
   // board card that poses them; the answer stays collapsed until opened.
   const [reflectionHeights, setReflectionHeights] = useState<Record<string, number>>({});
   const [openReflections, setOpenReflections] = useState<Record<string, boolean>>(readOpenReflections);
-  const reflectionCards = useMemo(() => (runtime?.reflections ?? [])
-    .flatMap((reflection) => {
-      const outline = runtime?.outline ?? [];
-      const topic = outline.find((candidate) => candidate.nodeIds?.includes(reflection.anchor))
-        ?? (outline.length === 1 ? outline[0] : undefined);
-      if (!topic) return [];
-      const end = topic.steps.at(-1)?.end_cursor;
-      const topicEnded = typeof end === "number" && runtimeCursor >= end;
-      if (!reflection.available && !topicEnded) return [];
-      const key = `${topic.id}:${reflection.id}`;
-      return [{ ...reflection, topic, key, attachmentId: `reflection:${key}` }];
-    }), [runtime?.reflections, runtime?.outline, runtimeCursor]);
+  const reflectionCards = useMemo(() => visibleReflections(runtime?.reflections ?? [], runtime?.outline ?? [], runtimeCursor, Boolean(runtime?.deliverySettled))
+    .map((reflection) => {
+      const key = `${reflection.topic.id}:${reflection.id}`;
+      return { ...reflection, key, attachmentId: `reflection:${key}` };
+    }), [runtime?.reflections, runtime?.outline, runtimeCursor, runtime?.deliverySettled]);
   const toggleReflection = useCallback((key: string) => {
     setOpenReflections((current) => {
       const next = { ...current, [key]: !current[key] };

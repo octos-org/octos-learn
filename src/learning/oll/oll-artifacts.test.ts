@@ -622,6 +622,7 @@ describe("OLL lesson artifacts", () => {
           completion: { kind: "expression_target", expression: variable, value: initial + 3, tolerance: .1 },
           hints: ["移动滑块"],
         }],
+        reflections: [{ as: "think", prompt: `${variable} 为 ${initial} 时会怎样？`, answer: "看图", anchor: "graph", availability: { kind: "after_lesson" } }],
       },
       steps: [{
         ...structuredClone(authoringLesson.steps[0]),
@@ -700,6 +701,14 @@ describe("OLL lesson artifacts", () => {
     expect(new Set(starts)).toEqual(new Set(variableNames));
     expect(classroom[0]!.lesson!.tasks!.map(task => task.start?.variables))
       .toEqual(variableNames.map(alias => [alias]));
+    // Both lessons' thinking questions reach the board, each by its own card.
+    const reflections = classroom[0]!.lesson!.reflections!;
+    expect(reflections.map(reflection => reflection.prompt)).toEqual(["offset 为 0 时会怎样？", "offset 为 1 时会怎样？"]);
+    expect(new Set(reflections.map(reflection => reflection.as)).size).toBe(2);
+    const graphs = classroom.flatMap(event => event.step?.beats.flatMap(beat => Object.values(beat.stage).flatMap(actions =>
+      actions.flatMap(action => action.op === "board.create" && action.node?.kind === "plot" ? [action.node.id] : []))) ?? []);
+    expect(reflections.map(reflection => reflection.anchor)).toEqual(graphs);
+    expect(new Set(graphs).size).toBe(2);
     expect(classroom[0]!.lesson!.tasks!.map(task => Object.keys(task.start?.values ?? {})))
       .toEqual(variableNames.map(alias => [alias]));
     expect(buildOllLessonTopics([first, second]).map((topic) =>

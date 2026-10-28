@@ -1545,6 +1545,44 @@ describe("LearningWorkspace", () => {
     expect(params.learner_background).toContain("“什么是斜率”：提问 2 次");
   });
 
+  it("tells the lesson what this board just taught when the Learning Coach declares current_lesson", async () => {
+    historyRecordingMock.enabled = true;
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate");
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext.map((action) => ({ ...action,
+      input_schema: { properties: { ...action.input_schema.properties, current_lesson: {} } } })));
+    backgroundMock.connected.mockReturnValue(true);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" playbackMode="review" />);
+    expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "刚才最后那一步我没懂" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
+    const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, string>;
+    expect(params.current_lesson).toContain("最近一节课：");
+    expect(params.current_lesson).toContain("连接 AD：一步一步看懂 SSS 全等");
+    expect(gateSpy.mock.calls.at(-1)?.[0].currentLesson).toBe(params.current_lesson);
+    gateSpy.mockRestore();
+  });
+
+  it("does not show the admission gate the board when the installed Learning Coach cannot receive it", async () => {
+    historyRecordingMock.enabled = true;
+    const gateSpy = vi.spyOn(admissionFastGate, "evaluateAdmissionFastGate");
+    sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext);
+    backgroundMock.connected.mockReturnValue(true);
+    sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
+    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson-old" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" playbackMode="review" />);
+    expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
+    await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
+    await act(async () => {});
+    fireEvent.change(screen.getByLabelText("输入学习问题"), { target: { value: "刚才最后那一步我没懂" } });
+    fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
+    await waitFor(() => expect(gateSpy).toHaveBeenCalled());
+    expect(gateSpy.mock.calls.at(-1)?.[0].currentLesson).toBeUndefined();
+    gateSpy.mockRestore();
+  });
+
   it("omits teacher settings for a Learning Coach install that does not declare them", async () => {
     historyRecordingMock.enabled = true;
     // Learning Coach 0.15 declared learner_context (a nearby problem) but not the new fields.
@@ -1559,7 +1597,7 @@ describe("LearningWorkspace", () => {
     fireEvent.click(screen.getByRole("button", { name: "发送问题" }));
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalled());
     const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, unknown>;
-    for (const field of ["teacher_profile", "learner_background", "tutor_context", "learner_context"]) expect(params).not.toHaveProperty(field);
+    for (const field of ["teacher_profile", "learner_background", "current_lesson", "tutor_context", "learner_context"]) expect(params).not.toHaveProperty(field);
     expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed", data: { conversation_route: "direct-action", media: [] } }));
   });
 
