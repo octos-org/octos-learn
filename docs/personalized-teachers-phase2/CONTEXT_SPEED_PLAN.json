@@ -1,0 +1,194 @@
+{
+ "schema": "octos.learn.performance-trial.v1",
+ "status": "approved",
+ "cost_basis_verified": true,
+ "route_verified": true,
+ "authorization_reference": "User 2026-10-28: \"Approved: You have my authorization to run the formal speed benchmark using approximately 10 interleaved lesson pairs, with an estimated cost of $0.30–$0.50.\" Actual spend is capped at USD 0.50 across the smoke and main runs (--max-actual-usd); the reservation below is only a per-request upper bound. Main run: 6 pairs with teacher experiences due for the candidate, 3 follow-up pairs where the candidate sends current_lesson; version order alternates by pair.",
+ "model": "gemini-3.8-flash",
+ "voice": "none",
+ "resource": "none",
+ "frontends": {
+  "baseline": {
+   "ref": "0561a0ac943cdae21b6072baa27c8a5f90627d2b",
+   "entry": "/assets/index-COShWgUX.js",
+   "entry_sha256": "f078741056853760af5dbd4f0692bf6b3691bc5d35a7d3fd99a0af4ffc58a78f",
+   "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/862175eb-abb5-4fe4-b688-4ab030c9f0a6/scratchpad/bench/baseline/dist"
+  },
+  "candidate": {
+   "ref": "111cead971b094e60b71f28e0b330b8f995f348f",
+   "entry": "/assets/index-BDgIaXnS.js",
+   "entry_sha256": "c6dd3d406b804538f3674f23d28d93e8ed3a79edfea9a6c706897124188b39cc",
+   "dist": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/862175eb-abb5-4fe4-b688-4ab030c9f0a6/scratchpad/bench/candidate/dist"
+  }
+ },
+ "cost_basis": [
+  "gemini-3.8-flash standard paid: USD 0.75 / 1M input, USD 3.75 / 1M output including thinking.",
+  "Gateway rejects requests over 32768 bytes and maxOutputTokens above 32768: at most USD 0.147456 per attempt, reserved as USD 0.15. Upper bound, not a bill."
+ ],
+ "limits": {
+  "courses": 18,
+  "speech_requests": 1,
+  "usd_micros": 16200000,
+  "cny_micros": 1,
+  "model_request_usd_micros": 150000,
+  "speech_byte_cny_micros": 1,
+  "speech_utf8_bytes": 1,
+  "output_tokens": 32768,
+  "request_bytes": 32768
+ },
+ "measure": "submit to first visible course node of this lesson, no speech",
+ "id": "speed-context-main-20261028",
+ "samples": [
+  {
+   "id": "pair-01-candidate",
+   "pair": 1,
+   "topic": "experiences-linear",
+   "version": "candidate",
+   "prompt": "请讲一下一次函数 y=2x+1 的图像怎么画，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-01-baseline",
+   "pair": 1,
+   "topic": "experiences-linear",
+   "version": "baseline",
+   "prompt": "请讲一下一次函数 y=2x+1 的图像怎么画，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-02-baseline",
+   "pair": 2,
+   "topic": "experiences-formula",
+   "version": "baseline",
+   "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-02-candidate",
+   "pair": 2,
+   "topic": "experiences-formula",
+   "version": "candidate",
+   "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-03-candidate",
+   "pair": 3,
+   "topic": "experiences-estimate",
+   "version": "candidate",
+   "prompt": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-03-baseline",
+   "pair": 3,
+   "topic": "experiences-estimate",
+   "version": "baseline",
+   "prompt": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-04-baseline",
+   "pair": 4,
+   "topic": "experiences-linear",
+   "version": "baseline",
+   "prompt": "请讲一下一次函数 y=2x+1 的图像怎么画，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-04-candidate",
+   "pair": 4,
+   "topic": "experiences-linear",
+   "version": "candidate",
+   "prompt": "请讲一下一次函数 y=2x+1 的图像怎么画，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-05-candidate",
+   "pair": 5,
+   "topic": "experiences-formula",
+   "version": "candidate",
+   "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-05-baseline",
+   "pair": 5,
+   "topic": "experiences-formula",
+   "version": "baseline",
+   "prompt": "请用配方法解释如何求解 x²+4x+3=0。写清每一步为什么成立，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-06-baseline",
+   "pair": 6,
+   "topic": "experiences-estimate",
+   "version": "baseline",
+   "prompt": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。"
+  },
+  {
+   "id": "pair-06-candidate",
+   "pair": 6,
+   "topic": "experiences-estimate",
+   "version": "candidate",
+   "prompt": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "storage": {
+    "octos-learn-teacher-experiences:playable-trial": "{\"lessons\": 2, \"lastOffer\": 0, \"offered\": {}}"
+   }
+  },
+  {
+   "id": "pair-07-candidate",
+   "pair": 7,
+   "topic": "followup",
+   "version": "candidate",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  },
+  {
+   "id": "pair-07-baseline",
+   "pair": 7,
+   "topic": "followup",
+   "version": "baseline",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  },
+  {
+   "id": "pair-08-baseline",
+   "pair": 8,
+   "topic": "followup",
+   "version": "baseline",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  },
+  {
+   "id": "pair-08-candidate",
+   "pair": 8,
+   "topic": "followup",
+   "version": "candidate",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  },
+  {
+   "id": "pair-09-candidate",
+   "pair": 9,
+   "topic": "followup",
+   "version": "candidate",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  },
+  {
+   "id": "pair-09-baseline",
+   "pair": 9,
+   "topic": "followup",
+   "version": "baseline",
+   "warmup": "用整百数估算三位数除以两位数的商，比如 612÷98，内容简短，给出完整的小课程。",
+   "prompt": "刚才用整百数估算商的方法，如果除数是 23 这种不接近整百的数，该怎么估？内容简短。"
+  }
+ ],
+ "output_directory": "/private/tmp/claude-501/-Users-yy-Documents-projects-OctosLearn/862175eb-abb5-4fe4-b688-4ab030c9f0a6/scratchpad/bench/speed-context-main-20261028"
+}

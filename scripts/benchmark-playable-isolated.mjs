@@ -6,7 +6,13 @@
 // the question to the first course node of this lesson being visible and
 // playable — not the full audio-and-visual "first playable" of the LIVE runner.
 //
-//   node scripts/benchmark-playable-isolated.mjs OCTOS_BINARY SKILL_DIR PLAN.json RESULT.json --key-file F
+//   node scripts/benchmark-playable-isolated.mjs OCTOS_BINARY SKILL_DIR PLAN.json RESULT.json --key-file F [--max-actual-usd N]
+//
+// A sample may also carry `storage` (localStorage entries set before the app
+// loads) and `warmup` (a first question on the same board, played to the end
+// and not measured), so a follow-up's context is exercised. --max-actual-usd
+// stops before the next sample once the actual cost, from the responses'
+// usage, reaches N.
 //
 // The Key goes only into the temporary Octos profile; it is never printed or
 // written to results, and the temporary Octos data directory is deleted.
@@ -14,7 +20,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer, request as httpRequest } from 'node:http';
 import { connect } from 'node:net';
-import { cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { chromium } from 'playwright';
@@ -33,6 +39,10 @@ assert.ok(keyFile?.startsWith('/'), 'Supply --key-file with an absolute path');
 assert.equal((await stat(keyFile)).mode & 0o077, 0, 'Key file must not be readable by other users (chmod 600)');
 const key = (await readFile(keyFile, 'utf8')).trim();
 assert.ok(key && !/\s/.test(key), 'Key file must hold one Key');
+const maxActualUsd = args.includes('--max-actual-usd') ? Number(args[args.indexOf('--max-actual-usd') + 1]) : Infinity;
+assert.ok(maxActualUsd > 0, '--max-actual-usd must be positive');
+// Gemini flash standard pricing per token, as in the plan's cost basis.
+const actualUsd = metrics => metrics.prompt_tokens * 0.75e-6 + metrics.output_tokens * 3.75e-6;
 const outDir = plan.output_directory; await mkdir(outDir, { recursive: true, mode: 0o700 });
 await writeFile(resultPath, '{}\n', { flag: 'wx', mode: 0o600 });
 
@@ -139,6 +149,7 @@ try {
 
   try {
     for (const sample of plan.samples) {
+      if (actualUsd(gate.metrics) >= maxActualUsd) { failure = `Stopped before ${sample.id}: actual cost reached USD ${actualUsd(gate.metrics).toFixed(3)}`; break; }
       version = sample.version;
       const row = { id: sample.id, version: sample.version, topic: sample.topic, prompt_sha256: sha256(sample.prompt), state: 'preflight', actions: 0, turns: 0 };
       rows.push(row);
@@ -155,12 +166,17 @@ try {
         localStorage.setItem(`octos-learn:setup-skipped:${owner}`, 'yes');
         localStorage.setItem('octos_learning_auto_camera', 'false'); localStorage.setItem('octos_learning_input_mode', 'text');
       }, { token, owner });
+      if (sample.storage) await context.addInitScript(entries => { for (const [k, v] of Object.entries(entries)) localStorage.setItem(k, v); }, sample.storage);
       await context.addInitScript(installLivePlayableProbe);
       page.on('websocket', socketView => socketView.on('framesent', frame => {
         try {
           const q = JSON.parse(String(frame.payload));
           if (q.method === 'turn/start') row.turns++;
-          if (q.method === 'skill/action/invoke' && q.params.action_id === 'learning.lesson.generate') { row.actions++; turnId = q.params.arguments.turn_id; row.teacher_profile = Boolean(q.params.arguments.teacher_profile); }
+          if (q.method === 'skill/action/invoke' && q.params.action_id === 'learning.lesson.generate') {
+            row.actions++; turnId = q.params.arguments.turn_id; row.teacher_profile = Boolean(q.params.arguments.teacher_profile);
+            row.current_lesson_chars = q.params.arguments.current_lesson?.length ?? 0;
+            row.teacher_experiences_chars = q.params.arguments.teacher_experiences?.length ?? 0;
+          }
         } catch { /* binary frame */ }
       }));
       await context.route(`${origin}/api/files**`, async route => {
@@ -179,23 +195,53 @@ try {
         await page.waitForFunction(() => !document.querySelector('input[aria-label="输入学习问题"]')?.disabled);
         sessionId = await page.evaluate(owner => localStorage.getItem(`octos_learning_current_session_v2:${encodeURIComponent(owner)}`), owner);
         assert.ok(sessionId); row.session_id = sessionId;
-        await input.fill(sample.prompt); ledger.reserveSample(sample.id, sessionId); row.state = 'reserved';
-        await page.getByRole('button', { name: '发送问题', exact: true }).click();
-        await page.waitForFunction(() => window.__livePlayableProbe.visual, null, { timeout: 180000 });
-        const probe = await page.evaluate(() => { const s = window.__livePlayableProbe; return { visual_ms: s.visual - s.start, beat_id: s.target?.beatId, artifact_sha256: s.target?.artifactSha256 }; });
-        Object.assign(row, probe); row.state = 'first-visual';
-        // Wait for the generation job itself; closing the page does not stop it.
-        let job;
-        for (let i = 0; i < 3000; i++) {
-          const { jobs = [] } = await rpc('skill/action/job/list', { session_id: sessionId });
-          const own = jobs.filter(j => j.action_id === 'learning.lesson.generate');
-          if (own.length && own.every(j => !['queued', 'running'].includes(j.status))) { job = own; break; }
+        ledger.reserveSample(sample.id, sessionId); row.state = 'reserved';
+        const awaitJobs = async () => {
+          for (let i = 0; i < 3000; i++) {
+            const { jobs = [] } = await rpc('skill/action/job/list', { session_id: sessionId });
+            const own = jobs.filter(j => j.action_id === 'learning.lesson.generate');
+            if (own.length && own.every(j => !['queued', 'running'].includes(j.status))) return own;
+            await delay(1000);
+          }
+          return null;
+        };
+        if (sample.warmup) {
+          // The board's first lesson, not measured: let it finish, then step it
+          // to the end so the follow-up asks about a lesson the learner has seen.
+          await input.fill(sample.warmup);
+          await page.getByRole('button', { name: '发送问题', exact: true }).click();
+          const warm = await awaitJobs();
+          assert.ok(warm?.every(j => j.status === 'succeeded'), 'Warm-up lesson failed');
+          await page.waitForFunction(() => window.__livePlayableProbe.visual, null, { timeout: 180000 });
+          const next = page.getByRole('button', { name: '下一 OLL Beat', exact: true });
+          // Step through what is delivered, then wait for the teacher's closing
+          // line, which appears once the lesson has played to the end.
+          for (let i = 0; i < 600; i++) {
+            if (await page.getByText('这节课讲完').count()) break;
+            if (await next.isEnabled().catch(() => false)) await next.click().catch(() => undefined);
+            await delay(400);
+          }
+          assert.ok(await page.getByText('这节课讲完').count(), 'Warm-up lesson did not play to the end');
           await delay(1000);
+          await page.evaluate(() => Object.assign(window.__livePlayableProbe, { start: 0, visual: 0, target: null }));
+          target = undefined;
         }
+        await input.fill(sample.prompt);
+        await page.getByRole('button', { name: '发送问题', exact: true }).click();
+        // A follow-up's board waits for the earlier lesson's playback before it
+        // shows the new one, so it is compared on generation (prefix_ms) only.
+        if (!sample.warmup) {
+          await page.waitForFunction(() => window.__livePlayableProbe.visual, null, { timeout: 180000 });
+          const probe = await page.evaluate(() => { const s = window.__livePlayableProbe; return { visual_ms: s.visual - s.start, beat_id: s.target?.beatId, artifact_sha256: s.target?.artifactSha256 }; });
+          Object.assign(row, probe); row.state = 'first-visual';
+        }
+        // Wait for the generation job itself; closing the page does not stop it.
+        const job = await awaitJobs();
+        row.turn_id = turnId;
         assert.ok(job, 'Generation remains in flight');
         row.job_status = job.every(j => j.status === 'succeeded') ? 'succeeded' : 'failed';
         row.model_requests = ledger.snapshot().expenses.filter(e => e.sample_id === sample.id && e.kind === 'model').length;
-        assert.equal(row.job_status, 'succeeded'); assert.equal(row.actions, 1); assert.equal(row.turns, 0);
+        assert.equal(row.job_status, 'succeeded'); assert.equal(row.actions, sample.warmup ? 2 : 1); assert.equal(row.turns, 0);
         row.state = 'completed'; ledger.complete(sample.id, { jobsTerminal: true, measurementValid: true });
       } catch (error) {
         row.state = 'needs-inspection'; row.error = error instanceof Error ? error.message.slice(0, 300) : String(error);
@@ -216,18 +262,42 @@ try {
   const octosLog = Buffer.concat(log);
   const logSaved = !octosLog.includes(key);
   if (logSaved) await writeFile(join(outDir, 'octos.log'), octosLog, { mode: 0o600 });
+  // Keep the lesson generation traces and job records (they hold no Key) for
+  // inspection; the rest of the temporary Octos data, including the Key, goes.
+  const kept = join(outDir, 'skill-traces'); await mkdir(kept, { recursive: true, mode: 0o700 });
+  const keep = async dir => {
+    for (const entry of await readdir(dir, { withFileTypes: true }).catch(() => [])) {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) await keep(path);
+      else if (/\.generation-trace\.jsonl$|\.job\.json$/.test(entry.name)) {
+        const body = await readFile(path); if (!body.includes(key)) await writeFile(join(kept, entry.name), body, { mode: 0o600 });
+      }
+    }
+  };
+  await keep(join(data, 'profiles'));
+  // Server-side time from the lesson tool starting to its first playable
+  // prefix, for every measured lesson (the warm-up's turn is not recorded).
+  for (const row of rows) {
+    if (!row.turn_id) continue;
+    const trace = await readFile(join(kept, `${row.turn_id}.generation-trace.jsonl`), 'utf8').catch(() => '');
+    const prefix = trace.split('\n').filter(Boolean).map(line => JSON.parse(line)).find(entry => entry.stage === 'lesson-prefix-published');
+    if (prefix) row.prefix_ms = prefix.elapsed_ms;
+  }
   await rm(root, { recursive: true, force: true });
   const summary = {};
+  const p50 = values => values.length ? values[Math.floor((values.length - 1) / 2)] : null;
   for (const v of ['baseline', 'candidate']) {
-    const values = rows.filter(r => r.version === v && r.state === 'completed').map(r => r.visual_ms).sort((a, b) => a - b);
-    summary[v] = { n: values.length, p50_ms: values.length ? values[Math.floor((values.length - 1) / 2)] : null, values_ms: values.map(x => Math.round(x)) };
+    const done = rows.filter(r => r.version === v && r.state === 'completed');
+    const values = done.filter(r => typeof r.visual_ms === 'number').map(r => r.visual_ms).sort((a, b) => a - b);
+    const prefix = done.filter(r => typeof r.prefix_ms === 'number').map(r => r.prefix_ms).sort((a, b) => a - b);
+    summary[v] = { n: values.length, p50_ms: p50(values), values_ms: values.map(x => Math.round(x)), prefix_n: prefix.length, prefix_p50_ms: p50(prefix), prefix_values_ms: prefix };
   }
   const report = { checked_at: new Date().toISOString(), passed: !failure, failure, plan_id: plan.id, plan_sha256: sha256(JSON.stringify(plan)), model: plan.model,
     measure: 'submit to first visible course node of this lesson (no speech configured)',
     octos_binary_sha256: sha256(await readFile(binary)), installed_lesson_plan_sha256: sha256(await readFile(join(skill, 'lesson-plan.js'))),
-    gateway: gate.metrics, admitted_requests: spent.expenses.length, reserved_usd_micros: spent.expenses.reduce((sum, x) => sum + x.usd, 0),
+    gateway: gate.metrics, actual_usd: Number(actualUsd(gate.metrics).toFixed(4)), admitted_requests: spent.expenses.length, reserved_usd_micros: spent.expenses.reduce((sum, x) => sum + x.usd, 0),
     rows, summary, octos_log_saved: logSaved, temporary_octos_data_deleted: true, output_directory: outDir };
   await writeFile(resultPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600 });
-  console.log(JSON.stringify({ passed: report.passed, failure, summary, admitted_requests: report.admitted_requests }, null, 2));
+  console.log(JSON.stringify({ passed: report.passed, failure, summary, admitted_requests: report.admitted_requests, actual_usd: report.actual_usd }, null, 2));
   if (failure) process.exitCode = 1;
 }
