@@ -282,7 +282,7 @@ export async function evaluateAdmissionFastGate(
     if (disposition === "clarify") {
       // Echo a short fragment ("这本书"); repeating a whole sentence back reads
       // as not having listened.
-      clarificationPrompt = trimmed.length <= 12
+      clarificationPrompt = trimmed.length <= 12 && !input.currentLesson
         ? `你想了解关于“${trimmed}”的哪部分内容呢？请具体告诉我。`
         : "我没能确定你指的是哪道题或哪部分内容。可以把题目或想学的知识点说具体一点吗？";
     }

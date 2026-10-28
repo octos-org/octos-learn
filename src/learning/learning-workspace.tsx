@@ -1097,8 +1097,6 @@ export function LearningWorkspace({
     topics: activeOllTopics,
     deliveredProgram: activeOllEvents,
   });
-  // What this board just taught, read when a question is submitted so a
-  // follow-up such as "the reflection question" can be resolved.
   // What this board just taught, built only when a question is submitted so
   // that a follow-up such as "the reflection question" can be resolved.
   const lessonRef = useRef(ollLesson);
@@ -1106,13 +1104,15 @@ export function LearningWorkspace({
   const currentLesson = useCallback(() => {
     const lesson = lessonRef.current;
     return lesson ? buildCurrentLessonContext({
-      outline: lesson.outline, reflections: lesson.reflections, studentTasks: lesson.studentTasks, cursor: lesson.cursor,
+      outline: lesson.outline, reflections: lesson.reflections, studentTasks: lesson.studentTasks,
+      cursor: lesson.cursor, settled: lesson.deliverySettled,
     }) : undefined;
   }, []);
   // The gate may count "the reflection question" as clear only when the lesson
-  // it starts will receive the same context.
-  const gateLessonContext = useCallback(() => lessonContextFields.current.get("learning.lesson.generate")?.has("current_lesson")
-    ? currentLesson() : undefined, [currentLesson]);
+  // it starts (from text, the camera or a selection) will receive the same context.
+  const gateLessonContext = useCallback((source: "text" | "camera" | "selection") => lessonContextFields.current
+    .get(source === "camera" ? "learning.lesson.generate-from-camera" : source === "selection" ? "learning.lesson.generate-from-selection" : "learning.lesson.generate")
+    ?.has("current_lesson") ? currentLesson() : undefined, [currentLesson]);
   // Audio ownership follows playback intent, not the current speech sample.
   // A live lesson claims the microphone on its first render and keeps it
   // through Beat/event gaps, then releases it once the Runtime has consumed
@@ -1521,7 +1521,7 @@ export function LearningWorkspace({
               modality: "voice",
               hasCameraFrame: Boolean(context.currentFramePath),
               hasSelection,
-              currentLesson: gateLessonContext(),
+              currentLesson: gateLessonContext(hasSelection ? "selection" : context.currentFramePath ? "camera" : "text"),
             });
 
             if (admission.disposition === "ignore") {
@@ -2964,7 +2964,7 @@ export function LearningWorkspace({
           modality: "text",
           hasCameraFrame: Boolean(conv.cameraActive),
           hasSelection,
-          currentLesson: gateLessonContext(),
+          currentLesson: gateLessonContext(hasSelection ? "selection" : conv.cameraActive ? "camera" : "text"),
         });
         if (admission.disposition === "ignore") {
           return;

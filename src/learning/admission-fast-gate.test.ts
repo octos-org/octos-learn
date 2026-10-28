@@ -158,9 +158,12 @@ describe("admission-fast-gate", () => {
     expect(body.questions.disposition.criteria.generate_lesson).toContain("current_lesson");
     expect(result.clarificationPrompt).not.toContain(text);
 
+    // A short follow-up about the board is not echoed back either.
+    await evaluateAdmissionFastGate({ text: "反思题不会", modality: "text", currentLesson: lesson }, { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey })
+      .then((short) => expect(short.clarificationPrompt).not.toContain("反思题不会"));
     // Without a lesson on the board the prompt is unchanged.
     await evaluateAdmissionFastGate({ text: "这本书", modality: "text" }, { fetchFn: fetchFn as unknown as typeof fetch, apiKey: dummyKey });
-    const plain = JSON.parse(fetchFn.mock.calls[1]![1].body);
+    const plain = JSON.parse(fetchFn.mock.calls[2]![1].body);
     expect(plain.state).not.toHaveProperty("current_lesson");
     expect(JSON.stringify(plain.questions)).not.toContain("current_lesson");
   });

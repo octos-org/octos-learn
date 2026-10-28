@@ -1553,7 +1553,7 @@ describe("LearningWorkspace", () => {
       input_schema: { properties: { ...action.input_schema.properties, current_lesson: {} } } })));
     backgroundMock.connected.mockReturnValue(true);
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
-    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" />);
+    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" playbackMode="review" />);
     expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
     await act(async () => {});
@@ -1573,7 +1573,7 @@ describe("LearningWorkspace", () => {
     sessionFilesMock.listSkillActions.mockResolvedValue(lessonActionsWithContext);
     backgroundMock.connected.mockReturnValue(true);
     sessionFilesMock.invokeSkillAction.mockResolvedValueOnce({ action_id: "learning.lesson.generate", ok: true, results: [{ success: true, output: "ok" }] });
-    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson-old" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" />);
+    await renderLearning(<LearningWorkspace sessionId="learn-current-lesson-old" voiceEnabled={false} onBack={vi.fn()} ollFixture="geometry-v2" playbackMode="review" />);
     expect(await screen.findByText("连接 AD：一步一步看懂 SSS 全等")).toBeTruthy();
     await waitFor(() => expect(sessionFilesMock.listSkillActions).toHaveBeenCalled());
     await act(async () => {});

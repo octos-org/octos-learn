@@ -1229,11 +1229,11 @@ export function LearningWhiteboard({
   // board card that poses them; the answer stays collapsed until opened.
   const [reflectionHeights, setReflectionHeights] = useState<Record<string, number>>({});
   const [openReflections, setOpenReflections] = useState<Record<string, boolean>>(readOpenReflections);
-  const reflectionCards = useMemo(() => visibleReflections(runtime?.reflections ?? [], runtime?.outline ?? [], runtimeCursor)
+  const reflectionCards = useMemo(() => visibleReflections(runtime?.reflections ?? [], runtime?.outline ?? [], runtimeCursor, Boolean(runtime?.deliverySettled))
     .map((reflection) => {
       const key = `${reflection.topic.id}:${reflection.id}`;
       return { ...reflection, key, attachmentId: `reflection:${key}` };
-    }), [runtime?.reflections, runtime?.outline, runtimeCursor]);
+    }), [runtime?.reflections, runtime?.outline, runtimeCursor, runtime?.deliverySettled]);
   const toggleReflection = useCallback((key: string) => {
     setOpenReflections((current) => {
       const next = { ...current, [key]: !current[key] };

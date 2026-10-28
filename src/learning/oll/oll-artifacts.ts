@@ -378,6 +378,7 @@ export function composeOllClassroomEvents(
   if (result[0]?.lesson) {
     result[0].lesson.variables = structuredClone(variables);
     result[0].lesson.tasks = structuredClone(tasks);
+    // Left unset rather than empty when no lesson asked a thinking question.
     if (reflections.length) result[0].lesson.reflections = structuredClone(reflections);
   }
   let activeRegionId = firstOpen.board?.region_id ?? firstOpen.lesson_id;
