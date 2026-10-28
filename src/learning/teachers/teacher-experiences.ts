@@ -97,29 +97,31 @@ function readLog(account: string): OfferLog {
   return { lessons: 0, lastOffer: 0, offered: {} };
 }
 
-/** What one lesson by this teacher should be offered (`text`, or nothing for
- * this lesson). Call `commit` once the lesson has started, so a request that
- * failed neither counts as a lesson nor uses up the offer. */
-export function chooseExperiences(account: string, teacher: TeacherDefinition["id"]): { text?: string; commit(): void } {
-  const log = readLog(account);
-  const lesson = log.lessons + 1;
-  const chosen = lesson - log.lastOffer > LESSONS_BETWEEN_OFFERS
+/** What one lesson by this teacher is offered (`text`, or nothing for this
+ * lesson). The offer is recorded at once, so two lessons sent close together
+ * cannot both be offered; `release` gives it back if the lesson's request
+ * failed, so a failure neither counts as a lesson nor uses up the facts. */
+export function chooseExperiences(account: string, teacher: TeacherDefinition["id"]): { text?: string; release(): void } {
+  const before = readLog(account);
+  const log: OfferLog = { ...before, offered: { ...before.offered }, lessons: before.lessons + 1 };
+  const chosen = log.lessons - log.lastOffer > LESSONS_BETWEEN_OFFERS
     ? TEACHER_EXPERIENCES[teacher]
       .map((fact, order) => ({ fact, order, last: log.offered[fact.id] ?? 0 }))
       .sort((a, b) => a.last - b.last || a.order - b.order)
       .slice(0, OFFERED)
       .sort((a, b) => a.order - b.order)
     : [];
+  if (chosen.length) {
+    log.lastOffer = log.lessons;
+    for (const { fact } of chosen) log.offered[fact.id] = log.lessons;
+  }
+  const saved = JSON.stringify(log);
+  try { localStorage.setItem(storageKey(account), saved); } catch { /* offered again sooner on this device */ }
   return {
     text: chosen.length ? chosen.map(({ fact }) => `- ${fact.text}`).join("\n") : undefined,
-    commit() {
-      const next = readLog(account);
-      next.lessons += 1;
-      if (chosen.length) {
-        next.lastOffer = next.lessons;
-        for (const { fact } of chosen) next.offered[fact.id] = next.lessons;
-      }
-      try { localStorage.setItem(storageKey(account), JSON.stringify(next)); } catch { /* offered again sooner on this device */ }
+    release() {
+      // Only undo this lesson's record, not one written after it.
+      try { if (localStorage.getItem(storageKey(account)) === saved) localStorage.setItem(storageKey(account), JSON.stringify(before)); } catch { /* nothing to undo */ }
     },
   };
 }

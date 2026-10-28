@@ -162,7 +162,7 @@ import {
 import { evaluateAdmissionFastGate } from "./admission-fast-gate";
 import { buildCurrentLessonContext } from "./current-lesson-context";
 import { chooseExperiences } from "./teachers/teacher-experiences";
-import { getSelectedProfileId } from "@/api/client";
+import { accountStorageScope } from "./learning-session-store";
 import { JevAdmissionDebugger } from "./jev-admission-debugger";
 import { useDebugSettings } from "@/hooks/use-debug-settings";
 import "./learning-workspace.css";
@@ -1289,9 +1289,9 @@ export function LearningWorkspace({
     const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
     const currentLessonText = contextFields?.has("current_lesson") ? currentLesson() : undefined;
     // Only a lesson in this teacher's style may bring up the teacher's own life;
-    // the offer counts once the lesson has actually started.
+    // a request that fails gives the offer back.
     const experiences = contextFields?.has("teacher_profile") && contextFields.has("teacher_experiences")
-      ? chooseExperiences(getSelectedProfileId() ?? "", lessonTeacher.id) : undefined;
+      ? chooseExperiences(accountStorageScope(), lessonTeacher.id) : undefined;
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1345,7 +1345,6 @@ export function LearningWorkspace({
           failedResult?.output?.trim() || "课程生成任务启动失败，请重试",
         );
       }
-      experiences?.commit();
       const jobs = invocation.jobs ?? [];
       learnTrace.recordOnce(`${turnId}:skill-invocation-accepted`, {
         turnId,
@@ -1377,6 +1376,7 @@ export function LearningWorkspace({
       savePendingLessonJobs(sessionId, pendingLessonJobsRef.current);
       setOllGenerationSessionId(sessionId);
     } catch (cause) {
+      experiences?.release();
       learnTrace.recordOnce(`${turnId}:skill-invocation-failed`, {
         turnId,
         source: "octos-web",

@@ -4,11 +4,7 @@ import { TEACHER_EXPERIENCES, chooseExperiences } from "./teacher-experiences";
 
 afterEach(() => localStorage.clear());
 
-const lesson = (teacher: "alan" | "doudou" | "sufei", account = "learner") => {
-  const offer = chooseExperiences(account, teacher);
-  offer.commit();
-  return offer.text;
-};
+const lesson = (teacher: "alan" | "doudou" | "sufei", account = "learner") => chooseExperiences(account, teacher).text;
 
 it("offers experiences with about one lesson in three, the teacher's least recently offered facts first", () => {
   const offers = Array.from({ length: 9 }, () => lesson("alan"));
@@ -27,12 +23,25 @@ it("never offers two lessons in a row, even when the learner switches teachers",
     .toEqual([false, false, true, false, false, true]);
 });
 
-it("counts a lesson only once it has started, and each account keeps its own count", () => {
+it("gives the offer back when the lesson's request fails, and each account keeps its own count", () => {
   lesson("alan"); lesson("alan");
-  // The third lesson is due, but its request fails: nothing is used up.
-  expect(chooseExperiences("learner", "alan").text).toBeTruthy();
-  expect(chooseExperiences("learner", "alan").text).toBeTruthy();
+  const failed = chooseExperiences("learner", "alan");
+  expect(failed.text).toBeTruthy();
+  failed.release();
+  // Retrying is still the third lesson, and the same facts are offered.
+  expect(lesson("alan")).toBe(failed.text);
   expect(lesson("alan", "sibling")).toBeUndefined();
+});
+
+it("does not offer two lessons sent close together", () => {
+  lesson("alan"); lesson("alan");
+  const first = chooseExperiences("learner", "alan");
+  const second = chooseExperiences("learner", "alan");
+  expect(first.text).toBeTruthy();
+  expect(second.text).toBeUndefined();
+  // A late failure of the first does not undo the second lesson's record.
+  first.release();
+  expect(lesson("alan")).toBeUndefined();
 });
 
 it("recovers from a damaged log instead of failing the lesson", () => {
