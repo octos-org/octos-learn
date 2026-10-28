@@ -102,6 +102,7 @@ function namespaceContentVariables(
  * append several lessons. Give lesson variables and tasks stable internal
  * identities before composition so two independent turns may both use names
  * such as `x` or `theta` without sharing state or hiding each other's metadata.
+ * Thinking questions are scoped the same way.
  */
 function namespaceCanonicalLesson(
   events: CanonicalEvent[],
@@ -145,6 +146,7 @@ function namespaceCanonicalLesson(
       );
     }
   }
+  for (const reflection of lesson.reflections ?? []) reflection.as = scopedIdentifier(namespace, reflection.as);
   for (const event of result) {
     for (const beat of event.step?.beats ?? []) {
       for (const stage of Object.values(beat.stage)) {
@@ -370,9 +372,13 @@ export function composeOllClassroomEvents(
     lesson.find((event) => event.event === "lesson.open")?.lesson?.variables ?? []);
   const tasks = classroomLessons.flatMap((lesson) =>
     lesson.find((event) => event.event === "lesson.open")?.lesson?.tasks ?? []);
+  // Every lesson's thinking questions, not only the first lesson's.
+  const reflections = classroomLessons.flatMap((lesson) =>
+    lesson.find((event) => event.event === "lesson.open")?.lesson?.reflections ?? []);
   if (result[0]?.lesson) {
     result[0].lesson.variables = structuredClone(variables);
     result[0].lesson.tasks = structuredClone(tasks);
+    if (reflections.length) result[0].lesson.reflections = structuredClone(reflections);
   }
   let activeRegionId = firstOpen.board?.region_id ?? firstOpen.lesson_id;
   for (const lesson of classroomLessons) {
