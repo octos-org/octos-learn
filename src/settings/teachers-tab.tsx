@@ -62,7 +62,7 @@ function AdvancedOptions() {
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={steps} onChange={(event) => { showNextSteps(event.target.checked); setSteps(event.target.checked); }} />
-        在大厅和周报里显示“下一步可以做什么”（按学习记录和知识点前置关系，不调用模型）
+        在大厅显示“下一步可以做什么”（按学习记录和知识点前置关系，不调用模型）
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={tone === "playful"} onChange={(event) => { const next = event.target.checked ? "playful" : "plain"; saveAwardTone(next); setTone(next); }} />

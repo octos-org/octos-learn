@@ -35,7 +35,9 @@ it('shows recorded learning and state changes with their evidence, in the chosen
   localStorage.setItem('octos-learn-teacher', 'doudou');
   api.weeklyReport.mockResolvedValue(REPORT);
   render(<ReportPanel period="week" today={today} />);
-  expect(await screen.findByLabelText('学了 2 天，上了 4 节课，播放 18 段，练习 6 次，提问 2 个')).toBeTruthy();
+  const stats = await screen.findByLabelText('学了 2 天，上了 4 节课，播放 18 段，练习 6 次，提问 2 个');
+  // The figures are on screen too, not only in the label.
+  expect([...stats.querySelectorAll('dd')].map(item => item.textContent)).toEqual(['2天', '4节课', '18段', '6次', '2个']);
   expect(api.weeklyReport).toHaveBeenCalledWith('2026-10-19');
   expect(screen.getByText(TEACHERS[1].report.active).closest('figure')?.textContent).toContain('窦鸢');
   expect(screen.getByLabelText('新点亮').textContent).toContain('Energy transfer');

@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import type { LearningMap } from "../history/history-api";
@@ -119,6 +119,25 @@ it("opens the weekly and monthly reports as tabs of the records page, straight f
   fireEvent.click(screen.getByRole("tab", { name: "周报" }));
   expect(await screen.findByText(TEACHERS[0].report.quiet)).toBeTruthy();
   expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/^本周/);
+});
+
+it("moves between the records tabs with arrow keys, and Back returns to the previous tab", async () => {
+  api.weeklyReport.mockReturnValue(new Promise(() => undefined));
+  api.monthlyReport.mockReturnValue(new Promise(() => undefined));
+  const router = createMemoryRouter([{ path: "/records", element: <RecordsPage /> }], { initialEntries: ["/records"] });
+  render(<RouterProvider router={router} />);
+  const tab = (name: string) => screen.getByRole("tab", { name });
+  expect([tab("学习记录").tabIndex, tab("周报").tabIndex, tab("月报").tabIndex]).toEqual([0, -1, -1]);
+  tab("学习记录").focus();
+  fireEvent.keyDown(tab("学习记录"), { key: "ArrowRight" });
+  expect(tab("周报").getAttribute("aria-selected")).toBe("true");
+  expect(document.activeElement).toBe(tab("周报"));
+  fireEvent.keyDown(tab("周报"), { key: "End" });
+  expect(router.state.location.search).toBe("?tab=month");
+  fireEvent.keyDown(tab("月报"), { key: "ArrowRight" });
+  expect(tab("学习记录").getAttribute("aria-selected")).toBe("true");
+  await act(async () => { await router.navigate(-1); });
+  expect(tab("月报").getAttribute("aria-selected")).toBe("true");
 });
 
 it("opens a star's topic evidence on the records page", async () => {

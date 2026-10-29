@@ -27,8 +27,12 @@ export interface OllNarrationTtsOptions {
   upcomingText?: string;
   upcomingNarrationId?: string;
   /** The teacher's voices for this narration; a prefetch made for another
-   * teacher's voice is not reused. */
+   * teacher's voice is not reused. A clip already playing keeps the voice it
+   * started with. */
   voices?: LessonVoices | null;
+  /** Voices for the upcoming narration when it belongs to another teacher's
+   * lesson; defaults to `voices`. */
+  upcomingVoices?: LessonVoices | null;
   /** Resolve narration bytes from a verified local CoursePack. When supplied,
    * neither native TTS nor the hosted synthesis API is consulted. */
   resolveAudio?: (
@@ -83,6 +87,7 @@ export function useOllNarrationTts({
   upcomingText = "",
   upcomingNarrationId,
   voices,
+  upcomingVoices,
   resolveAudio,
   onSpeakingChange,
   onPlaybackStart,
@@ -92,11 +97,19 @@ export function useOllNarrationTts({
   const normalizedText = text.trim();
   const normalizedPrewarmText = prewarmText.trim();
   const normalizedUpcomingText = upcomingText.trim();
-  const voiceTag = voices ? JSON.stringify(voices) : "";
+  const requestedVoiceTag = voices ? JSON.stringify(voices) : "";
+  // Once a clip plays, a change of voice waits for the next clip rather than
+  // cutting the sentence off and starting it again.
+  const [clipVoice, setClipVoice] = useState<{ id: string; tag: string } | null>(null);
+  if (playing && narrationId && clipVoice?.id !== narrationId) setClipVoice({ id: narrationId, tag: requestedVoiceTag });
+  const voiceTag = clipVoice && playing && clipVoice.id === narrationId ? clipVoice.tag : requestedVoiceTag;
+  const upcomingVoiceTag = upcomingVoices === undefined ? requestedVoiceTag : upcomingVoices ? JSON.stringify(upcomingVoices) : "";
   const lessonVoices = useMemo<LessonVoices | null>(() => voiceTag ? JSON.parse(voiceTag) : null, [voiceTag]);
+  const requestedVoices = useMemo<LessonVoices | null>(() => requestedVoiceTag ? JSON.parse(requestedVoiceTag) : null, [requestedVoiceTag]);
+  const nextVoices = useMemo<LessonVoices | null>(() => upcomingVoiceTag ? JSON.parse(upcomingVoiceTag) : null, [upcomingVoiceTag]);
   const currentKey = speechKey(narrationId, normalizedText, voiceTag);
-  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText, voiceTag);
-  const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText, voiceTag);
+  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText, requestedVoiceTag);
+  const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText, upcomingVoiceTag);
   const [failure, setFailure] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [startedKey, setStartedKey] = useState<string | null>(null);
@@ -334,6 +347,7 @@ export function useOllNarrationTts({
     const candidateText = currentHasStarted
       ? normalizedUpcomingText
       : normalizedPrewarmText;
+    const candidateVoices = currentHasStarted ? nextVoices : requestedVoices;
     if (!candidateKey || !candidateText) return;
     // The playback effect above claims a web prefetch before this effect runs.
     // Do not immediately recreate the same request while audio startup is
@@ -371,8 +385,8 @@ export function useOllNarrationTts({
         if (controller.signal.aborted || routing.tts === "private"
           || (routing.tts === "cloud" && nativeTtsAvailable())) return null;
         return routing.tts === "cloud"
-          ? synthesizeCloudSpeech(candidateText, controller.signal, lessonVoices)
-          : synthesizeSpeech(candidateText, controller.signal, lessonVoices);
+          ? synthesizeCloudSpeech(candidateText, controller.signal, candidateVoices)
+          : synthesizeSpeech(candidateText, controller.signal, candidateVoices);
       })
         .then((audio) => audio)
         .catch(cause => { entry.failure = { cause }; return null; }),
@@ -381,7 +395,8 @@ export function useOllNarrationTts({
   }, [
     currentKey,
     enabled,
-    lessonVoices,
+    nextVoices,
+    requestedVoices,
     normalizedPrewarmText,
     normalizedUpcomingText,
     prefetchEnabled,

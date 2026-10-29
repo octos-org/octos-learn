@@ -1,3 +1,4 @@
+import { useRef, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { AccountHistoryPanel } from "../history/account-history-panel";
@@ -30,7 +31,19 @@ export function RecordsPage() {
     updateLearningSession(session.id, { status: "active" });
     navigate(learningSessionHref(session));
   };
-  const show = (next: Tab | "facts") => setParams(next === "records" ? {} : { tab: next }, { replace: true });
+  // Each tab is its own entry in history, so Back returns to the previous tab.
+  const show = (next: Tab | "facts") => setParams(next === "records" ? {} : { tab: next });
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Arrow keys, Home and End move between the tabs and open the one reached.
+  const onTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const index = TABS.findIndex((item) => item.id === tab);
+    const target = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: TABS.length - 1 }[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    const next = (target + TABS.length) % TABS.length;
+    show(TABS[next].id);
+    tabRefs.current[next]?.focus();
+  };
   return (
     <main className="course-launcher academy-page">
       <div className="course-launcher-inner academy-wide">
@@ -39,9 +52,10 @@ export function RecordsPage() {
           <div className="academy-records-head">
             <h1 id="academy-records-title" className="academy-title">记录</h1>
             <div className="academy-records-tabs" role="tablist" aria-label="记录与报告">
-              {TABS.map((item) => (
-                <button key={item.id} id={`academy-records-tab-${item.id}`} type="button" role="tab" aria-selected={tab === item.id}
-                  aria-controls="academy-records-panel" onClick={() => show(item.id)}>{item.label}</button>
+              {TABS.map((item, index) => (
+                <button key={item.id} ref={(node) => { tabRefs.current[index] = node; }} id={`academy-records-tab-${item.id}`} type="button" role="tab"
+                  aria-selected={tab === item.id} tabIndex={tab === item.id ? 0 : -1} aria-controls="academy-records-panel"
+                  onClick={() => show(item.id)} onKeyDown={onTabKey}>{item.label}</button>
               ))}
             </div>
           </div>
