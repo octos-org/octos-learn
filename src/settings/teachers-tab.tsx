@@ -5,6 +5,7 @@ import { getToken } from "@/api/client";
 import { openHistoryApi } from "@/learning/history/history-api";
 import { showWeeklyReport, weeklyReportShown } from "@/learning/report/report-week";
 import { nextStepsShown, showNextSteps } from "@/learning/map/next-steps-visibility";
+import { readAwardTone, saveAwardTone } from "@/learning/map/award-line";
 import { TeacherRoster } from "@/learning/teachers/teacher-roster";
 
 const DEFAULT_ANALYSIS_LIMIT = 10;
@@ -13,6 +14,7 @@ const ANALYSIS_LIMITS = [5, 10, 20];
 function AdvancedOptions() {
   const [shown, setShown] = useState(weeklyReportShown);
   const [steps, setSteps] = useState(nextStepsShown);
+  const [tone, setTone] = useState(readAwardTone);
   // Account setting in the learning-history service; null until it is read.
   const [comments, setComments] = useState<boolean | null>(null);
   const [analysis, setAnalysis] = useState<{ enabled: boolean; max: number } | null>(null);
@@ -40,7 +42,7 @@ function AdvancedOptions() {
     <div className="mt-3 space-y-2 text-sm text-text-strong">
       <label className="flex items-center gap-2">
         <input type="checkbox" disabled={analysis === null} checked={analysis?.enabled ?? false} onChange={(event) => changeAnalysis(event.target.checked)} />
-        自动分析课程涉及的知识点，用来点亮学习地图（使用你的模型 Key，约 0.06 美元一节课；讲解播完后在后台运行，关掉页面也会完成）
+        自动分析课程涉及的知识点，用来点亮星图（使用你的模型 Key，约 0.06 美元一节课；讲解播完后在后台运行，关掉页面也会完成）
       </label>
       <label className="ml-6 flex items-center gap-2 text-muted">
         每天最多分析
@@ -52,7 +54,7 @@ function AdvancedOptions() {
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={shown} onChange={(event) => { showWeeklyReport(event.target.checked); setShown(event.target.checked); }} />
-        在“学习记录”中显示学习周报
+        在大厅显示学习周报
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" disabled={comments === null} checked={comments ?? false} onChange={(event) => changeComments(event.target.checked)} />
@@ -60,7 +62,11 @@ function AdvancedOptions() {
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={steps} onChange={(event) => { showNextSteps(event.target.checked); setSteps(event.target.checked); }} />
-        在学习地图和周报里显示“下一步可以做什么”（按学习记录和知识点前置关系，不调用模型）
+        在大厅和周报里显示“下一步可以做什么”（按学习记录和知识点前置关系，不调用模型）
+      </label>
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={tone === "playful"} onChange={(event) => { const next = event.target.checked ? "playful" : "plain"; saveAwardTone(next); setTone(next); }} />
+        颁发成就时用老师自己的口吻（关掉后用普通说法）
       </label>
     </div>
   );

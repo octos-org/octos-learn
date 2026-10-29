@@ -2,6 +2,8 @@
 
 ## 当前状态（2026-10-28，优先阅读）
 
+**2026-10-29 新增**：学习记录归位与大厅改版（问候、会动的老师卡）在分支 `codex/learning-records-placement` 上提交并开 PR，未合并、未在真实账号验收、未做独立审查。详情见 WORK_LOG 同日条目和 [LEARNING_RECORDS_PLACEMENT.md](../LEARNING_RECORDS_PLACEMENT.md)。
+
 **早上先看（2026-10-28 夜间，用户授权自行推进）**：
 - 所有 PR 的 CI 都通过：octos-learn #100–#104，learning-coach #33/#34。#105 刚推送。都没有合并，合并等用户决定。
 - 新增 PR #105：93+3 个知识点中文名改为与实际内容一致，并修复周报评语检查误拒知识点名的问题（原有问题）。做过独立 agent 审查和一轮全新会话代码审查。

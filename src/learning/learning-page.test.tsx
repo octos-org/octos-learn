@@ -396,6 +396,18 @@ describe("LearningPage", () => {
     expect(save).toHaveBeenCalledOnce();
   });
 
+  it("saves ink before leaving the board for the records page", async () => {
+    window.history.replaceState({}, "", "/board?new-board=1&oll-fixture=geometry-v2");
+    render(<LearningPage />);
+    await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());
+    const save = vi.fn(async () => {});
+    act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
+    fireEvent.click(screen.getByRole("button", { name: "打开学习记录" }));
+    fireEvent.click(screen.getByRole("button", { name: /每次学习的经过与删除/u }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/records?tab=facts"));
+    expect(save).toHaveBeenCalledOnce();
+  });
+
   it("treats learning-coach as a built-in product capability", async () => {
     render(<LearningPage />);
     await waitFor(() => expect(learningWorkspaceMock.props).not.toBeNull());

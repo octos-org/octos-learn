@@ -43,6 +43,7 @@
 .star-atlas-card dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 12px 0; font-size: 13px; font-variant-numeric: tabular-nums; }
 .star-atlas-card dt { color: var(--atlas-dim); }
 .star-atlas-card dd { margin: 0; }
+.star-atlas-evidence { display: inline-flex; min-height: 36px; align-items: center; color: var(--atlas-gold-soft); font-size: 12px; }
 .star-atlas-note { margin: 6px 0; font-size: 12px; line-height: 1.6; color: var(--atlas-dim); }
 /* Three starter questions; the one that fits where the learner is comes first. */
 .star-atlas-asks { display: grid; gap: 6px; margin: 6px 0 4px; }

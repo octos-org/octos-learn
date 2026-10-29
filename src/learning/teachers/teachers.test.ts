@@ -206,8 +206,12 @@ it('adds the learning map to learner context with the same states and no mastery
 
 it('greets on the academy hall in each teacher\'s own words, never about time away', () => {
   for (const key of ['welcome', 'resume'] as const) {
-    const lines = TEACHERS.map(teacher => teacher.hall[key]);
-    expect(new Set(lines).size).toBe(TEACHERS.length);
-    for (const line of lines) expect(line).not.toMatch(/好久|终于|又不来|忘了|掌握|学会/);
+    const lines = TEACHERS.flatMap(teacher => teacher.hall[key]);
+    // Several lines each, and no teacher borrows another's.
+    for (const teacher of TEACHERS) expect(teacher.hall[key].length).toBeGreaterThanOrEqual(4);
+    expect(new Set(lines).size).toBe(lines.length);
+    for (const line of lines) expect(line).not.toMatch(/好久|终于|又不来|忘了|掌握|学会|！{2}|玩/);
   }
+  // 苏绯 never exclaims.
+  expect(TEACHERS.find(teacher => teacher.id === 'sufei')!.hall.welcome.concat(TEACHERS.find(teacher => teacher.id === 'sufei')!.hall.resume).join('')).not.toMatch(/[！!～]/);
 });

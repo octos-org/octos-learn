@@ -305,7 +305,7 @@
 /* Exactly two rows; hidden cards are removed from keyboard navigation too. */
 .course-launcher-session-grid, [data-runtime-platform="android"] .course-launcher-session-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .course-launcher-session-grid > :nth-child(n+9) { display: none; }
-.course-launcher-history-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; color: #166a79; font: inherit; font-size: 13px; cursor: pointer; }
+.course-launcher-history-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: transparent; color: #166a79; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
 @media (max-width: 1100px) {
   .course-launcher-session-grid, [data-runtime-platform="android"] .course-launcher-session-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .course-launcher-session-grid > :nth-child(n+7) { display: none; }

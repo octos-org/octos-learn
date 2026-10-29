@@ -4,16 +4,21 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import type { LearningMap } from "../history/history-api";
 
-const api = vi.hoisted(() => ({ learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn(), setTitle: vi.fn() }));
+const api = vi.hoisted(() => ({ owner: "p1", learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn(), setTitle: vi.fn(), suggestions: vi.fn(), runs: vi.fn(), topic: vi.fn() }));
 vi.mock("../history/history-api", async (original) => ({ ...(await original<object>()), openHistoryApi: vi.fn(async () => api) }));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
+vi.mock("../learning-session-sync", () => ({ discoverServerLearningSessions: vi.fn(async () => []) }));
 
 import { AcademyHeader } from "./academy-header";
 import { AtlasPage } from "./atlas-page";
 import { AchievementsPage } from "./achievements-page";
 import { currentWeek, seasonWindows, timeGreeting, upcomingSeasons } from "./achievement-display";
 import { HallHero } from "./hall-hero";
+import { RecordsPage } from "./records-page";
+import { LearningHistory } from "../learning-history";
+import { showWeeklyReport } from "../report/report-week";
+import { adoptLearningSession } from "../learning-session-store";
 import { TEACHERS } from "../teachers/teachers";
 
 const MAP: LearningMap = { rules_version: "map-states-v1", through: 9, taxonomy: { commit: "c7ed549" }, topics: [
@@ -32,6 +37,9 @@ beforeEach(() => {
     { achievement_id: "mid-autumn", scope: "2026", topic_name: null, teacher_id: null, earned_at: "2026-09-25T08:00:00.000Z", awarded_at: "2026-09-25T08:00:00.000Z", evidence_event_id: "b3", new: false },
   ], progress: [{ achievement_id: "ten-stars", current: 3, target: 10 }], title: { id: "default", name: "启明学徒" } });
   api.analysisStatus.mockRejectedValue(new Error("unavailable"));
+  api.suggestions.mockResolvedValue({ suggestions: [] });
+  api.runs.mockResolvedValue({ runs: [], through: 9, next_before: null });
+  api.topic.mockResolvedValue({ topic_id: "mt_WBdHkc2HTf", through: 9, counting_rule: "rule", objectives: [], events: [], next_after: null });
 });
 afterEach(cleanup);
 
@@ -44,22 +52,84 @@ it("links the academy's places from every page, marking the current one", () => 
 
 it("greets with the chosen teacher's own line, offers the last board and sums up the atlas", async () => {
   const latest = { id: "s1", title: "斜率", createdAt: 1, updatedAt: 2, status: "active" } as never;
-  const { rerender } = render(<MemoryRouter><HallHero latest={latest} /></MemoryRouter>);
-  expect(screen.getByText(TEACHERS[0].hall.resume)).toBeTruthy();
-  expect(screen.getByRole("link", { name: /继续上次的白板/ })).toBeTruthy();
+  const { rerender } = render(<MemoryRouter><HallHero recent={[latest]} /></MemoryRouter>);
+  expect(TEACHERS[0].hall.resume).toContain(document.querySelector(".academy-bubble")?.textContent);
+  expect(screen.getByText("观星塔导师")).toBeTruthy();
+  // The teacher's living card, the same one as in Settings.
+  expect(document.querySelector(".academy-greeting-card .teacher-card")).toBeTruthy();
+  expect(screen.getByRole("link", { name: /继续上次的学习/ })).toBeTruthy();
   expect(await screen.findByText("颗已点亮")).toBeTruthy();
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");
   expect(screen.getByText("第一个脚印")).toBeTruthy();
   expect((await screen.findByRole("heading", { level: 1 })).textContent).toMatch(/^(夜深了|早上好|上午好|中午好|下午好|晚上好)，启明学徒。$/);
-  expect(screen.getByText(TEACHERS[0].hall.resume)).toBeTruthy();
-  rerender(<MemoryRouter><HallHero latest={undefined} /></MemoryRouter>);
-  expect(screen.getByText(new RegExp(TEACHERS[0].hall.welcome))).toBeTruthy();
-  expect(screen.queryByRole("link", { name: /继续上次的白板/ })).toBeNull();
+  rerender(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
+  expect(TEACHERS[0].hall.welcome).toContain(document.querySelector(".academy-bubble")?.textContent);
+  expect(screen.queryByRole("link", { name: /继续上次的学习/ })).toBeNull();
+});
+
+it("picks one of the teacher's greetings at random and keeps it while the hall is open", () => {
+  const random = vi.spyOn(Math, "random").mockReturnValue(0.99);
+  const { rerender } = render(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
+  const welcome = TEACHERS[0].hall.welcome;
+  expect(document.querySelector(".academy-bubble")?.textContent).toBe(welcome[welcome.length - 1]);
+  random.mockReturnValue(0);
+  rerender(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
+  expect(document.querySelector(".academy-bubble")?.textContent).toBe(welcome[welcome.length - 1]);
+  random.mockRestore();
+});
+
+it("continues the last board or lesson by name, links all records and this week's report", async () => {
+  const course = { id: "c1", title: "斜率和截距", createdAt: 1, updatedAt: 2, status: "active", source: { kind: "course-pack", packId: "slope", version: "0.1.6", mode: "instance" } } as never;
+  const board = { id: "b1", title: "勾股定理", createdAt: 1, updatedAt: 1, status: "active" } as never;
+  render(<MemoryRouter><HallHero recent={[course, board]} /></MemoryRouter>);
+  const resume = screen.getByRole("link", { name: /继续上次的学习/ });
+  expect(resume.textContent).toContain("斜率和截距");
+  expect(resume.getAttribute("href")).toBe("/course/slope?version=0.1.6&title=%E6%96%9C%E7%8E%87%E5%92%8C%E6%88%AA%E8%B7%9D&mode=learn&instance=c1");
+  expect(screen.getByRole("link", { name: /全部学习记录/ }).getAttribute("href")).toBe("/records");
+  // Topics learned on a day of this week; the fixture's October days are not this week.
+  expect((await screen.findByRole("link", { name: /学习周报/ })).getAttribute("href")).toBe("/report");
+  expect(screen.getByText(/这周的学习会整理在这里/)).toBeTruthy();
+});
+
+it("leaves the report card out when the report is turned off", async () => {
+  showWeeklyReport(false);
+  render(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
+  expect(await screen.findByText("颗已点亮")).toBeTruthy();
+  expect(screen.queryByRole("link", { name: /学习周报/ })).toBeNull();
+});
+
+it("keeps every board and lesson on the records page, and what happened in each one tab away", async () => {
+  adoptLearningSession({ id: "learn-c1", title: "斜率和截距", createdAt: 1, updatedAt: 2, status: "active", source: { kind: "course-pack", packId: "slope", version: "0.1.6", mode: "instance" } } as never);
+  render(<MemoryRouter initialEntries={["/records"]}><RecordsPage /></MemoryRouter>);
+  expect(screen.getByRole("heading", { level: 1, name: "学习记录" })).toBeTruthy();
+  expect(await screen.findByText("斜率和截距")).toBeTruthy();
+  expect(screen.getByText(/课程学习/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: "学习经过" }));
+  expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
+});
+
+it("opens a star's topic evidence on the records page", async () => {
+  render(<MemoryRouter initialEntries={["/records?topic=mt_WBdHkc2HTf&name=Linear+Function+Graphs"]}><RecordsPage /></MemoryRouter>);
+  expect(await screen.findByRole("heading", { level: 3, name: "一次函数图像" })).toBeTruthy();
+  await waitFor(() => expect(api.topic).toHaveBeenCalledWith("mt_WBdHkc2HTf", 9));
+  expect(await screen.findByText(/不代表整个知识点已掌握/)).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "返回列表" }));
+  expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
+});
+
+it("keeps the board's drawer to switching boards, pointing to the records page for the rest", async () => {
+  const onOpenRecords = vi.fn();
+  render(<MemoryRouter><LearningHistory onClose={vi.fn()} onSelect={vi.fn()} onNew={vi.fn()} onOpenRecords={onOpenRecords} /></MemoryRouter>);
+  expect(screen.queryByRole("tablist")).toBeNull();
+  expect(screen.getByLabelText("搜索学习记录")).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /每次学习的经过与删除/ }));
+  expect(onOpenRecords).toHaveBeenCalledOnce();
+  await waitFor(() => expect(screen.queryByText("正在同步历史记录…")).toBeNull());
 });
 
 it("keeps the hall usable when the summary is unavailable", async () => {
   api.learningMap.mockRejectedValue(new Error("offline"));
-  render(<MemoryRouter><HallHero latest={undefined} /></MemoryRouter>);
+  render(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
   expect(await screen.findByText(/每学完一段讲解或练习/)).toBeTruthy();
   expect(screen.getByRole("link", { name: /新建空白白板/ })).toBeTruthy();
 });

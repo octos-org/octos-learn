@@ -5,7 +5,7 @@ import { getToken } from "@/api/client";
 
 import { openHistoryApi, type AnalysisStatus, type LearningMap } from "../history/history-api";
 import { analysisNotice } from "../map/analysis-notice";
-import { AtlasTopicList } from "../map/learning-map-panel";
+import { AtlasTopicList } from "../map/atlas-topic-list";
 import { StarAtlas } from "../map/star-atlas/star-atlas";
 import { newBoardHref } from "../new-board-href";
 import { AcademyHeader } from "./academy-header";
