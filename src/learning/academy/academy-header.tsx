@@ -1,4 +1,4 @@
-import { Award, Landmark, LogOut, Settings, Sparkles } from "lucide-react";
+import { Award, Landmark, LogOut, ScrollText, Settings, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
@@ -13,6 +13,7 @@ export const ACADEMY_PLACES = [
   { to: "/", label: "大厅", end: true, icon: Landmark },
   { to: "/atlas", label: "星图", end: false, icon: Sparkles },
   { to: "/achievements", label: "成就", end: false, icon: Award },
+  { to: "/records", label: "记录", end: false, icon: ScrollText },
 ] as const;
 
 export function AcademyHeader() {

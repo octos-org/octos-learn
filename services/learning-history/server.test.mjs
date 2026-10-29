@@ -256,3 +256,12 @@ test("a background analysis reports back with its single-use capability and no l
   assert.equal((await report({ result })).status, 403, "a capability is single-use");
   assert.equal((await (await call(`/analysis/jobs/${task.id}`)).json()).job.state, "complete");
 });
+
+test("reports the teacher each lesson on a board was taught by, for this account only", async () => {
+  const routed = (id, teacher) => ({ ...event(id), kind: "question_routed", data: { conversation_route: "direct-action", media: [], ...(teacher ? { teacher_id: teacher, teacher_name: teacher } : {}) } });
+  assert.equal((await call("/events", "POST", { events: [routed("a", "alan"), routed("b", "sufei"), routed("c")] })).status, 200);
+  const body = await (await call("/sessions/learn-board/teachers")).json();
+  assert.deepEqual([body.profile_id, body.teachers], ["alice", { "q-a": "alan", "q-b": "sufei" }]);
+  assert.deepEqual((await (await call("/sessions/learn-board/teachers", "GET", undefined, { authorization: "Bearer bob" })).json()).teachers, {});
+  assert.equal((await call("/sessions/learn-board/teachers?x=1")).status, 400);
+});

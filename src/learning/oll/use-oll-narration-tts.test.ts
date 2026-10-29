@@ -91,6 +91,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
         "先从三出发。",
         expect.any(AbortSignal),
+        null,
       ),
     );
     await waitFor(() =>
@@ -131,7 +132,7 @@ describe("useOllNarrationTts", () => {
       onPlaybackComplete,
     }));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
-      "Continue the narration.", expect.any(AbortSignal),
+      "Continue the narration.", expect.any(AbortSignal), null,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     expect(nativePlay).not.toHaveBeenCalled();
@@ -255,6 +256,7 @@ describe("useOllNarrationTts", () => {
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "第一段旁白。",
       expect.any(AbortSignal),
+      null,
     ));
     expect(mocks.playAudioBlob).not.toHaveBeenCalled();
 
@@ -402,6 +404,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith(
         "第二段。",
         expect.any(AbortSignal),
+        null,
       ),
     );
   });
@@ -511,7 +514,7 @@ describe("useOllNarrationTts", () => {
     ));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "这是小模型即时生成的追问课程讲解。",
-      expect.any(AbortSignal),
+      expect.any(AbortSignal), null,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
       liveAudio,

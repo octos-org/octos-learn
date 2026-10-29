@@ -278,6 +278,9 @@ export function createHistoryHandler({ octosBaseUrl = "http://127.0.0.1:50080", 
         else if (path[0] === "runs" && path.length === 1) send(200, store().listRuns(owner, options));
         else if (path[0] === "runs" && path.length === 2 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) send(200, store().runEvents(owner, path[1], options));
         else throw new HttpError(404, "Unknown history endpoint");
+      } else if (request.method === "GET" && path[0] === "sessions" && path.length === 3 && path[2] === "teachers" && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) {
+        if (url.search) throw new HttpError(400, "Unexpected query");
+        send(200, { profile_id: owner, ...store().lessonTeachers(owner, path[1]) });
       } else if (request.method === "DELETE" && path[0] === "sessions" && path.length === 2 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(path[1])) {
         if (url.search) throw new HttpError(400, "Unexpected query");
         const body = await limitedJson(request, 1024);

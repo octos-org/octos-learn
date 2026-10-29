@@ -1542,6 +1542,9 @@ describe("LearningWorkspace", () => {
     const params = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2] as Record<string, string>;
     expect(params.teacher_profile).toContain("本次授课老师：阿澜");
     expect(params.learner_background).toContain("学生说过以后讲新内容先看图。");
+    // The lesson remembers who taught it, so a replay keeps this teacher.
+    const taught = Object.keys(localStorage).find((key) => key.startsWith("octos-learn-lesson-teachers:v1:") && key.endsWith(":learn-background"));
+    expect(Object.values(JSON.parse(localStorage.getItem(taught!)!))).toEqual(["alan"]);
     expect(params.learner_background).toContain("“什么是斜率”：提问 2 次");
   });
 

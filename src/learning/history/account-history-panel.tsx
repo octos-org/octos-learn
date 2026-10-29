@@ -179,10 +179,10 @@ export function AccountHistoryPanel({ onSelect, topic, onTopicClose }: {
       {detail?.events.filter(row => row.event.kind !== 'question_routed').map(row => <EventDetail key={row.seq} event={row.event} />)}
       {detail?.next_after != null && <button onClick={() => void moreDetails()} disabled={busy}>继续查看原始记录</button>}
     </> : <>
-      {page?.runs.map(run => <button className="learning-history-item" key={run.run_id} onClick={() => void open(run)}>
+      {!!page?.runs.length && <div className="learning-history-runs">{page.runs.map(run => <button className="learning-history-item" key={run.run_id} onClick={() => void open(run)}>
         <strong>{run.question_preview || run.course?.id || '课程学习'}</strong><span>{new Date(run.first_occurred_at).toLocaleString('zh-CN')} · 提问 {run.question_count} 次 · 已播放 {run.completed_beats} 个片段 · 作答 {run.task_attempts} 次</span>
-      </button>)}
-      {page?.runs.length === 0 && <p>还没有已同步的学习经过。此前的白板仍可从“继续学习”打开。</p>}
+      </button>)}</div>}
+      {page?.runs.length === 0 && <p>还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。</p>}
       {page?.next_before != null && <button onClick={() => void loadMore()} disabled={busy}>加载更多</button>}
     </>}
   </section>;

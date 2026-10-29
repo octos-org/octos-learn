@@ -12,8 +12,10 @@ const reducedMotion = () => {
  * figure. The card tilts toward the pointer (or a finger), the layers shift
  * by different amounts and a warm key light follows, falling on the figure
  * only. Left alone it drifts slowly; it rests still under reduced motion and
- * stops working while scrolled out of view. */
-export function TeacherCard({ teacherId }: { teacherId: TeacherDefinition["id"] }) {
+ * stops working while scrolled out of view. `bare` drops the card: the
+ * figure stands in a scene of its own, with the card's painted background
+ * kept only as a faded glimpse behind it, without the card's edges. */
+export function TeacherCard({ teacherId, bare = false }: { teacherId: TeacherDefinition["id"]; bare?: boolean }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const el = ref.current;
@@ -62,12 +64,12 @@ export function TeacherCard({ teacherId }: { teacherId: TeacherDefinition["id"] 
 
   const figure = portraitAsset(teacherId, "card-figure");
   return (
-    <span ref={ref} className="teacher-card" aria-hidden="true" style={{ "--figure": `url("${figure}")` } as CSSProperties}>
+    <span ref={ref} className={bare ? "teacher-card is-bare" : "teacher-card"} aria-hidden="true" style={{ "--figure": `url("${figure}")` } as CSSProperties}>
       <span className="teacher-card-tilt">
-        <img className="teacher-card-bg" src={portraitAsset(teacherId, "card-bg")} alt="" draggable={false} loading="lazy" decoding="async" />
+        <img className={bare ? "teacher-card-scene" : "teacher-card-bg"} src={portraitAsset(teacherId, "card-bg")} alt="" draggable={false} loading="lazy" decoding="async" />
         <img className="teacher-card-figure" src={figure} alt="" draggable={false} loading="lazy" decoding="async" />
         <span className="teacher-card-light" />
-        <span className="teacher-card-glare" />
+        {!bare && <span className="teacher-card-glare" />}
       </span>
     </span>
   );

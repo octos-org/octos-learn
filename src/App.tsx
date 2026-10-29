@@ -19,7 +19,6 @@ import { AdminSettingsPage } from "./settings/settings-page";
 import { AtlasPage } from "./learning/academy/atlas-page";
 import { AchievementsPage } from "./learning/academy/achievements-page";
 import { RecordsPage } from "./learning/academy/records-page";
-import { ReportPage } from "./learning/academy/report-page";
 import { AwardHost } from "./learning/academy/award-host";
 
 function LegacyLearningRedirect() {
@@ -77,7 +76,7 @@ export function AppRoutes() {
         <Route path="/teachers" element={<Navigate to="/settings?tab=teachers" replace />} />
         <Route path="/achievements" element={<AchievementsPage />} />
         <Route path="/records" element={<RecordsPage />} />
-        <Route path="/report" element={<ReportPage />} />
+        <Route path="/report" element={<Navigate to="/records?tab=week" replace />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

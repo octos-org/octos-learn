@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { synthesizeSpeech, synthesizeCloudSpeech } from "@/api/voice";
 import { getVoiceRouting, markPrivateTtsFailed, peekVoiceRouting } from "@/api/voice-routing";
-import { ServiceError } from "@/byok/providers";
+import { ServiceError, type LessonVoices } from "@/byok/providers";
 import { playPrivateSpeech } from "@/home/voice/private-tts";
 import {
   playAudioBlob,
@@ -26,6 +26,9 @@ export interface OllNarrationTtsOptions {
   prewarmNarrationId?: string;
   upcomingText?: string;
   upcomingNarrationId?: string;
+  /** The teacher's voices for this narration; a prefetch made for another
+   * teacher's voice is not reused. */
+  voices?: LessonVoices | null;
   /** Resolve narration bytes from a verified local CoursePack. When supplied,
    * neither native TTS nor the hosted synthesis API is consulted. */
   resolveAudio?: (
@@ -59,8 +62,8 @@ function narrationFailure(cause: unknown): string {
     : "课程语音暂时不可用，旁白仍会显示。";
 }
 
-function speechKey(narrationId: string | undefined, text: string): string | null {
-  return narrationId && text ? `${narrationId}\u0000${text}` : null;
+function speechKey(narrationId: string | undefined, text: string, voiceTag: string): string | null {
+  return narrationId && text ? `${narrationId}\u0000${text}\u0000${voiceTag}` : null;
 }
 
 /**
@@ -79,6 +82,7 @@ export function useOllNarrationTts({
   prewarmNarrationId,
   upcomingText = "",
   upcomingNarrationId,
+  voices,
   resolveAudio,
   onSpeakingChange,
   onPlaybackStart,
@@ -88,9 +92,11 @@ export function useOllNarrationTts({
   const normalizedText = text.trim();
   const normalizedPrewarmText = prewarmText.trim();
   const normalizedUpcomingText = upcomingText.trim();
-  const currentKey = speechKey(narrationId, normalizedText);
-  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText);
-  const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText);
+  const voiceTag = voices ? JSON.stringify(voices) : "";
+  const lessonVoices = useMemo<LessonVoices | null>(() => voiceTag ? JSON.parse(voiceTag) : null, [voiceTag]);
+  const currentKey = speechKey(narrationId, normalizedText, voiceTag);
+  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText, voiceTag);
+  const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText, voiceTag);
   const [failure, setFailure] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
   const [startedKey, setStartedKey] = useState<string | null>(null);
@@ -197,13 +203,13 @@ export function useOllNarrationTts({
         ? playNativeTts(normalizedText, finishAudio, audioRequest.signal)
           .catch((error) => {
             if (audioRequest.signal.aborted) throw error;
-            return synthesizeCloudSpeech(normalizedText, audioRequest.signal)
+            return synthesizeCloudSpeech(normalizedText, audioRequest.signal, lessonVoices)
               .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
           })
-        : (useCache && cached ? cached.promise : synthesizeCloudSpeech(normalizedText, audioRequest.signal))
+        : (useCache && cached ? cached.promise : synthesizeCloudSpeech(normalizedText, audioRequest.signal, lessonVoices))
           .then(audio => {
             if (useCache && cached?.failure) throw cached.failure.cause;
-            return audio ?? synthesizeCloudSpeech(normalizedText, audioRequest.signal);
+            return audio ?? synthesizeCloudSpeech(normalizedText, audioRequest.signal, lessonVoices);
           })
           .then(audio => playAudioBlob(audio, finishAudio, audioRequest.signal));
     const playFallbackTts = async () => {
@@ -232,10 +238,11 @@ export function useOllNarrationTts({
       return (cached?.promise ?? synthesizeSpeech(
             normalizedText,
             audioRequest.signal,
+            lessonVoices,
           ).then((audio) => audio as Blob | null))
           .then((audio) => {
             if (cached?.failure) throw cached.failure.cause;
-            return audio ?? synthesizeSpeech(normalizedText, audioRequest.signal);
+            return audio ?? synthesizeSpeech(normalizedText, audioRequest.signal, lessonVoices);
           })
           .then((audio) => playAudioBlob(
             audio,
@@ -303,6 +310,7 @@ export function useOllNarrationTts({
     narrationId,
     normalizedText,
     currentKey,
+    lessonVoices,
     playing,
     resolveAudio,
   ]);
@@ -363,8 +371,8 @@ export function useOllNarrationTts({
         if (controller.signal.aborted || routing.tts === "private"
           || (routing.tts === "cloud" && nativeTtsAvailable())) return null;
         return routing.tts === "cloud"
-          ? synthesizeCloudSpeech(candidateText, controller.signal)
-          : synthesizeSpeech(candidateText, controller.signal);
+          ? synthesizeCloudSpeech(candidateText, controller.signal, lessonVoices)
+          : synthesizeSpeech(candidateText, controller.signal, lessonVoices);
       })
         .then((audio) => audio)
         .catch(cause => { entry.failure = { cause }; return null; }),
@@ -373,6 +381,7 @@ export function useOllNarrationTts({
   }, [
     currentKey,
     enabled,
+    lessonVoices,
     normalizedPrewarmText,
     normalizedUpcomingText,
     prefetchEnabled,

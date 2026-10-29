@@ -144,7 +144,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
 
   return <section className="star-atlas" aria-label="星图">
     <canvas ref={canvasRef} className="star-atlas-sky" role="img"
-      aria-label={`数之星域：点亮 ${counts.lit} 颗，正在破印 ${counts.sealed} 颗，显现 ${counts.seen} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情；下方有按星域列出的版本。`} />
+      aria-label={`数之星域：点亮 ${counts.lit} 颗，正在破印 ${counts.sealed} 颗，显现 ${counts.seen} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情。`} />
     <div className="star-atlas-top">
       <div className="star-atlas-title"><span>Star Atlas Academy</span><strong>数之星域</strong></div>
       <div className="star-atlas-tally" aria-live="polite">

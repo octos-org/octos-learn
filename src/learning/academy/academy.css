@@ -126,30 +126,32 @@
   letter-spacing: 0.06em;
 }
 
-/* The teacher's living card, and beside it what they say. */
+/* The teacher stands in the night band, and beside them what they say. The
+   figure is cut off at the thigh, so it stands on the band's lower edge and
+   the cut disappears into it. */
 .academy-greeting {
+  --greeting-pad: clamp(24px, 3.2vw, 44px);
   display: grid;
-  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
-  gap: clamp(24px, 3.4vw, 48px);
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
   align-items: center;
-  padding: clamp(24px, 3.2vw, 44px);
+  padding: var(--greeting-pad);
+  padding-left: clamp(8px, 1.6vw, 24px);
 }
 
-.academy-greeting-card { position: relative; }
-/* A pool of warm light under the card, as if it stood in the lamplight. */
-.academy-greeting-card::after {
+.academy-greeting-card { position: relative; align-self: end; margin: calc(-1 * var(--greeting-pad)) 0 calc(-1 * var(--greeting-pad)); }
+/* Lamplight behind the figure, so it is lit by the same sky as the band. */
+.academy-greeting-card::before {
   content: "";
   position: absolute;
-  left: 10%;
-  right: 10%;
-  bottom: -18px;
-  height: 36px;
+  inset: 8% -6% 6%;
   border-radius: 50%;
-  background: radial-gradient(closest-side, rgba(226, 189, 102, 0.28), transparent);
-  filter: blur(6px);
+  background:
+    radial-gradient(48% 42% at 52% 34%, rgba(243, 214, 140, 0.24), transparent 70%),
+    radial-gradient(60% 55% at 50% 50%, rgba(98, 116, 214, 0.32), transparent 72%);
+  filter: blur(4px);
   pointer-events: none;
 }
-.academy-greeting-card .teacher-card-tilt { border-radius: 14px; box-shadow: 0 0 0 1px rgba(226, 189, 102, 0.35), 0 26px 50px -12px rgba(0, 0, 0, 0.55); }
 
 .academy-greeting-body { display: grid; gap: 26px; min-width: 0; }
 
@@ -343,7 +345,8 @@
 @media (max-width: 640px) {
   .academy-hall-wrap { margin-top: 24px; }
   .academy-hall { border-radius: 20px; }
-  .academy-greeting { grid-template-columns: minmax(104px, 38%) minmax(0, 1fr); gap: 22px 18px; padding: 22px 18px 24px; }
+  .academy-greeting { grid-template-columns: minmax(112px, 40%) minmax(0, 1fr); gap: 22px 14px; padding: 22px 18px 24px 8px; }
+  .academy-greeting-card { align-self: center; margin: -8px 0 0; }
   .academy-greeting-body { display: contents; }
   .academy-words { padding-left: 0; }
   .academy-words::before { display: none; }
@@ -537,7 +540,7 @@
     left: 0;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     padding: 6px 8px max(6px, env(safe-area-inset-bottom, 0px));
     border-top: 1px solid rgba(40, 65, 67, 0.14);
@@ -614,11 +617,6 @@
   .academy-fame-shelf::before { display: none; }
 }
 
-/* Records and the report are read on the light page, at a readable width. */
-.academy-records { max-width: 760px; padding-bottom: 40px; color: #243b40; }
-.academy-records .learning-history-tabs { max-width: 360px; }
-.academy-records .learning-history-account, .academy-records .learning-history-list { overflow: visible; }
-.academy-records .learning-history-new { max-width: 240px; }
 
 /* What to do next, on the light page under the hall: the teacher's line set
    like a note, the actions quiet until wanted. */
@@ -639,7 +637,6 @@
 .academy-next .next-step-actions button { min-height: 36px; padding: 0 14px; border: 1px solid rgba(181, 138, 44, 0.4); border-radius: 999px; background: transparent; color: #8a6418; font-size: 13px; cursor: pointer; }
 .academy-next .next-step-actions button:first-child { border-color: #c99a3e; background: rgba(226, 189, 102, 0.16); color: #5f4410; }
 .academy-next .next-step-actions button:hover { border-color: #c99a3e; }
-.academy-next .next-step summary { color: #7a8a8c; }
 
 /* Section headings on the academy pages share the hall's voice: a gold
    eyebrow and a serif title over a hairline. */
@@ -647,3 +644,312 @@
 .academy-wide .course-launcher-section-title p { color: #8a6418; font-family: inherit; font-size: 11px; letter-spacing: 0.3em; }
 .academy-wide .course-launcher-section-title h2 { color: #1b2457; font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: clamp(26px, 2.6vw, 32px); font-weight: 400; letter-spacing: 0.06em; }
 .academy-wide .course-launcher-history-link { color: #8a6418; letter-spacing: 0.04em; }
+
+/* ---------- Records: learning records, the weekly and the monthly report.
+   The cream page of the academy; the teacher's words sit on the same night
+   band as the hall, and everything else is paper with gold hairlines. ---------- */
+.academy-records {
+  --paper: #fffdf7;
+  --hair: rgba(181, 138, 44, 0.2);
+  --gold-ink: #8a6418;
+  --navy: #1b2457;
+  --muted: #6f8185;
+  display: grid;
+  gap: 24px;
+  padding-bottom: 56px;
+  color: #33494e;
+}
+
+.academy-records-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--hair);
+}
+.academy-records-head .academy-title { margin-bottom: 0; }
+
+/* The three tabs are the achievements page's pills. */
+.academy-records-tabs { display: flex; gap: 6px; padding: 4px; border: 1px solid var(--hair); border-radius: 999px; background: var(--paper); }
+.academy-records-tabs button {
+  min-height: 42px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  color: #3d5a63;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.academy-records-tabs button:hover { color: var(--navy); background: rgba(226, 189, 102, 0.12); }
+.academy-records-tabs button[aria-selected="true"] { color: #f6dfa0; background: var(--navy); box-shadow: 0 6px 16px -8px rgba(27, 36, 87, 0.6); }
+
+.academy-records-panel { display: grid; gap: 20px; min-width: 0; }
+
+/* Inside 学习记录: two quiet views, underlined rather than boxed. */
+.academy-records-views { display: flex; gap: 26px; border-bottom: 1px solid var(--hair); }
+.academy-records-views button {
+  min-height: 44px;
+  margin-bottom: -1px;
+  padding: 0 2px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.academy-records-views button[aria-pressed="true"] { border-bottom-color: #c99a3e; color: var(--navy); font-weight: 600; }
+
+.academy-records :is(button, input, a):focus-visible { outline: 2px solid #c99a3e; outline-offset: 3px; }
+
+/* Boards and lessons: search and a new board on one line, then cards. */
+.academy-sessions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.academy-sessions .learning-history-search {
+  flex: 1 1 280px;
+  max-width: 440px;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 0 18px;
+  border: 1px solid rgba(181, 138, 44, 0.3);
+  border-radius: 999px;
+  color: var(--gold-ink);
+  background: var(--paper);
+}
+.academy-sessions .learning-history-search:focus-within { border-color: #c99a3e; box-shadow: 0 0 0 3px rgba(226, 189, 102, 0.2); }
+.academy-sessions .learning-history-search input { color: #243b40; font-size: 15px; outline: none; }
+.academy-sessions .learning-history-new {
+  order: 1;
+  min-height: 46px;
+  margin: 0 0 0 auto;
+  padding: 0 22px;
+  border-radius: 999px;
+  color: #f6dfa0;
+  background: var(--navy);
+  font: inherit;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 10px 22px -12px rgba(27, 36, 87, 0.7);
+}
+.academy-sessions > p { order: 2; flex-basis: 100%; margin: 0; color: var(--muted); font-size: 13px; }
+.academy-sessions .learning-history-list {
+  order: 3;
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 6px;
+  overflow: visible;
+}
+.academy-sessions .learning-history-list > p { grid-column: 1 / -1; color: var(--muted); }
+
+.academy-records .learning-history-item {
+  position: relative;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 116px;
+  box-sizing: border-box;
+  padding: 20px 22px 18px;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: var(--paper);
+  box-shadow: 0 10px 24px -20px rgba(20, 26, 64, 0.45);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+.academy-records .learning-history-item::before { content: ""; position: absolute; top: 20px; left: 0; width: 3px; height: 22px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #e2bd66, #c99a3e); opacity: 0; transition: opacity 160ms ease; }
+.academy-records .learning-history-item:hover { border-color: rgba(201, 154, 62, 0.6); box-shadow: 0 16px 30px -20px rgba(20, 26, 64, 0.5); transform: translateY(-2px); }
+.academy-records .learning-history-item:hover::before { opacity: 1; }
+.academy-records .learning-history-item strong {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--navy);
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.academy-records .learning-history-item span { color: var(--muted); font-size: 12px; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+
+/* What each lesson recorded: read as a document, not a form. */
+.academy-records .learning-history-account { display: grid; gap: 12px; max-width: 880px; overflow: visible; font-size: 14px; line-height: 1.75; }
+.academy-records .learning-history-account p { margin: 0; color: #4a5f63; }
+.academy-records .learning-history-account > p:first-child { color: var(--muted); font-size: 13px; }
+.academy-records .learning-history-account [role="alert"] { color: #9b3b2a; }
+.academy-records .learning-history-runs { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.academy-records .learning-history-account h3 {
+  margin: 8px 0 0;
+  color: var(--navy);
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: clamp(22px, 2.4vw, 28px);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+}
+.academy-records .learning-history-account button:not(.learning-history-item) {
+  justify-self: start;
+  min-height: 40px;
+  margin: 2px 8px 2px 0;
+  padding: 0 18px;
+  border: 1px solid rgba(181, 138, 44, 0.4);
+  border-radius: 999px;
+  color: var(--gold-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.academy-records .learning-history-account button:not(.learning-history-item):hover { border-color: #c99a3e; background: rgba(226, 189, 102, 0.1); }
+.academy-records .learning-history-account section { display: grid; gap: 10px; }
+.academy-records .learning-history-account article:not(.learning-history-evidence) { display: grid; gap: 6px; padding: 16px 18px; border: 1px solid var(--hair); border-radius: 14px; background: var(--paper); }
+.academy-records .learning-history-account article strong { color: var(--navy); }
+.academy-records .learning-history-account blockquote { margin: 0 0 0 18px; padding-left: 12px; border-left: 2px solid rgba(201, 154, 62, 0.5); color: var(--muted); font-size: 13px; }
+.academy-records .learning-history-account summary { min-height: 32px; color: var(--gold-ink); cursor: pointer; }
+
+/* Raw records as a quiet timeline. */
+.academy-records .learning-history-evidence { position: relative; margin-left: 6px; padding: 14px 0 14px 22px; border-top: 0; border-left: 1px solid var(--hair); font-size: 13px; }
+.academy-records .learning-history-evidence::before { content: ""; position: absolute; top: 22px; left: -4px; width: 7px; height: 7px; background: #d9b25c; transform: rotate(45deg); }
+.academy-records .learning-history-evidence strong { color: var(--navy); font-size: 14px; }
+.academy-records .learning-history-evidence time { margin: 2px 0 6px; color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* ---------- The reports ---------- */
+.academy-report { display: grid; gap: 22px; min-width: 0; }
+
+.academy-report-nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; }
+.academy-report-nav h2 {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--navy);
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: clamp(24px, 2.6vw, 30px);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+.academy-report-nav h2 span { color: var(--muted); font-family: "Inter Variable", "Noto Sans CJK SC", sans-serif; font-size: 13px; letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+.academy-report-nav button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(181, 138, 44, 0.35);
+  border-radius: 999px;
+  color: var(--gold-ink);
+  background: var(--paper);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+.academy-report-nav button:first-child { justify-self: start; }
+.academy-report-nav button:last-child { justify-self: end; }
+.academy-report-nav button:hover:not(:disabled) { border-color: #c99a3e; background: rgba(226, 189, 102, 0.12); }
+.academy-report-nav button:disabled { border-color: rgba(40, 65, 67, 0.1); color: #b3bdbc; cursor: default; }
+.academy-report-status { color: var(--muted); text-align: center; }
+
+.academy-report-band {
+  --academy-gold: #e2bd66;
+  --academy-gold-soft: #f6dfa0;
+  --academy-dim: #a3a8c4;
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 28px 48px;
+  align-items: center;
+  padding: clamp(24px, 3vw, 38px) clamp(22px, 3.4vw, 44px);
+  border-radius: 24px;
+  color: #ede6d4;
+  background:
+    radial-gradient(1.5px 1.5px at 14% 20%, rgba(255, 255, 255, 0.55), transparent 60%),
+    radial-gradient(1px 1px at 46% 12%, rgba(255, 255, 255, 0.45), transparent 60%),
+    radial-gradient(1px 1px at 72% 82%, rgba(255, 255, 255, 0.35), transparent 60%),
+    radial-gradient(1.5px 1.5px at 90% 30%, rgba(255, 244, 214, 0.45), transparent 60%),
+    radial-gradient(90% 120% at 0% 0%, rgba(78, 92, 180, 0.5), transparent 60%),
+    linear-gradient(160deg, #141b44, #0c1130 60%, #0a0e26);
+  box-shadow: inset 0 0 0 1px rgba(226, 189, 102, 0.12), 0 24px 50px -26px rgba(13, 19, 48, 0.55);
+}
+.academy-report-band[data-quiet] { grid-template-columns: minmax(0, 1fr); }
+
+.academy-report-words { position: relative; margin: 0; padding-left: 30px; }
+.academy-report-words::before { content: "“"; position: absolute; top: -8px; left: 0; color: var(--academy-gold); font-family: "Songti SC", "STSong", serif; font-size: 52px; line-height: 1; opacity: 0.7; }
+.academy-report-words blockquote {
+  margin: 0;
+  max-width: 24em;
+  color: #f5eedc;
+  font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif;
+  font-size: clamp(19px, 1.8vw, 24px);
+  line-height: 1.65;
+  letter-spacing: 0.03em;
+  text-wrap: balance;
+}
+.academy-report-words figcaption { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: var(--academy-dim); font-size: 13px; letter-spacing: 0.12em; }
+.academy-report-words figcaption::before { content: ""; width: 22px; height: 1px; background: var(--academy-gold); opacity: 0.6; }
+.academy-report-words figcaption span { color: var(--academy-gold-soft); letter-spacing: 0.2em; }
+
+.academy-report-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px 8px; margin: 0; }
+.academy-report-stats div { display: grid; gap: 6px; padding-left: 12px; border-left: 1px solid rgba(226, 189, 102, 0.18); }
+.academy-report-stats dt { color: var(--academy-dim); font-size: 12px; letter-spacing: 0.2em; }
+.academy-report-stats dd { margin: 0; color: var(--academy-dim); font-size: 12px; }
+.academy-report-stats b { margin-right: 4px; color: var(--academy-gold-soft); font-family: "ZCOOL XiaoWei", "Songti SC", serif; font-size: 34px; font-weight: 400; line-height: 1; font-variant-numeric: tabular-nums; }
+
+/* A month: each week as seven small stars, one lit per day of learning. */
+.academy-report-weeks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px 32px; margin: 0; padding: 18px 0 0; border-top: 1px solid rgba(226, 189, 102, 0.16); list-style: none; }
+.academy-report-weeks li { display: flex; align-items: center; gap: 10px; color: var(--academy-dim); font-size: 12px; font-variant-numeric: tabular-nums; }
+.academy-report-weeks b { color: var(--academy-gold-soft); font-weight: 500; }
+.academy-report-dots { display: inline-flex; gap: 4px; }
+.academy-report-dots i { width: 7px; height: 7px; border: 1px solid rgba(237, 230, 212, 0.25); transform: rotate(45deg); }
+.academy-report-dots i[data-on] { border-color: transparent; background: #f2c95e; box-shadow: 0 0 6px rgba(242, 201, 94, 0.7); }
+
+.academy-report-sections { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; align-items: start; }
+.academy-report-sections section { padding: 20px 22px 8px; border: 1px solid var(--hair); border-radius: 18px; background: var(--paper); box-shadow: 0 10px 24px -20px rgba(20, 26, 64, 0.4); }
+.academy-report-sections h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; color: var(--gold-ink); font-size: 12px; font-weight: 500; letter-spacing: 0.28em; }
+.academy-report-sections h3 small { padding: 0 8px; border-radius: 999px; background: rgba(226, 189, 102, 0.16); font-size: 11px; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.academy-report-sections ul { margin: 0; padding: 0; list-style: none; }
+.academy-report-sections li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: baseline; padding: 12px 0; border-top: 1px solid rgba(181, 138, 44, 0.12); }
+.academy-report-sections li:first-child { border-top: 0; }
+.academy-report-sections li > small { grid-column: 1 / -1; color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
+.academy-report-sections li strong { min-width: 0; color: var(--navy); font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: 17px; font-weight: 400; overflow-wrap: anywhere; }
+.academy-report-sections li em { grid-column: 1 / -1; color: var(--muted); font-size: 12px; font-style: normal; }
+
+.academy-state { padding: 1px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.academy-state[data-state="explored"] { color: #2b5f72; background: #e4eff2; }
+.academy-state[data-state="practising"] { color: #7d4a14; background: #f8ebd8; }
+.academy-state[data-state="did-it"] { color: #6a4a0c; background: rgba(226, 189, 102, 0.28); }
+
+.academy-report-awards li { grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; }
+.academy-report-awards li > small { grid-column: 2 / 3; }
+.academy-report-medal { grid-row: span 2; width: 34px; max-width: none; height: auto; }
+.academy-report-awards li em { grid-column: 3; grid-row: 1; font-variant-numeric: tabular-nums; }
+
+.academy-report-closing { margin: 0; color: var(--navy); font-family: "ZCOOL XiaoWei", "Songti SC", "STSong", serif; font-size: 17px; letter-spacing: 0.03em; }
+.academy-report-note { margin: -8px 0 0; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 900px) {
+  .academy-report-band { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .academy-records { gap: 18px; }
+  .academy-records-head { align-items: stretch; flex-direction: column; }
+  .academy-records-tabs button { flex: 1; padding: 0 10px; }
+  .academy-sessions .learning-history-search { max-width: none; }
+  .academy-sessions .learning-history-new { flex: 1 1 100%; justify-content: center; margin: 0; }
+  .academy-report-nav { gap: 8px; }
+  .academy-report-nav button { padding: 0 12px; }
+  .academy-report-nav button span { display: none; }
+  .academy-report-words { padding-left: 0; }
+  .academy-report-words::before { display: none; }
+  .academy-report-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .academy-report-stats b { font-size: 28px; }
+}

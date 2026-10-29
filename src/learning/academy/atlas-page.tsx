@@ -5,7 +5,6 @@ import { getToken } from "@/api/client";
 
 import { openHistoryApi, type AnalysisStatus, type LearningMap } from "../history/history-api";
 import { analysisNotice } from "../map/analysis-notice";
-import { AtlasTopicList } from "../map/atlas-topic-list";
 import { StarAtlas } from "../map/star-atlas/star-atlas";
 import { newBoardHref } from "../new-board-href";
 import { AcademyHeader } from "./academy-header";
@@ -40,7 +39,6 @@ export function AtlasPage() {
           {map && <>
             <StarAtlas topics={map.topics} onAsk={(draft) => navigate(newBoardHref(draft))} />
             <p className="academy-muted">已探索：播放过相关讲解；正在练习：做过相关练习；做出来过：不用提示达到过练习要求。这些都不等于已经掌握。</p>
-            {map.topics.length > 0 && <AtlasTopicList topics={map.topics} />}
           </>}
         </section>
       </div>

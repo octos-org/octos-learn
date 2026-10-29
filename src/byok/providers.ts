@@ -107,11 +107,10 @@ export function markVerified(capability: Capability, config: ClientService): voi
   if ([...fields].some(field => current.params[field] !== config.params[field])) return;
   setServiceStatus(capability, "ready", "已成功调用本人服务。");
 }
-// Narration voices of the teacher who started the current lesson, keyed by
+// Narration voices of the teacher who taught the lesson being read, keyed by
 // speech resource. Voice tests (drafts) always use the voice being tested.
-let lessonVoices: Readonly<Record<string, { id: string }>> | null = null;
+export type LessonVoices = Readonly<Record<string, { id: string }>>;
 const refusedLessonVoices = new Set<string>();
-export function setLessonVoices(voices: Readonly<Record<string, { id: string }>> | null): void { lessonVoices = voices; }
 class SpeakerRefused extends ServiceError {}
 async function synthesizeWith(text: string, config: ClientService, speaker: string, signal?: AbortSignal): Promise<Blob> {
   const response = await directJson("tts", config, { user: { uid: "byok-client" }, req_params: { text, speaker, audio_params: { format: "mp3", sample_rate: 24000 } } }, signal);
@@ -124,7 +123,7 @@ async function synthesizeWith(text: string, config: ClientService, speaker: stri
   if (!audio.length) throw new ServiceError("network_error", "供应商未返回可播放音频。");
   return new Blob(audio, { type: "audio/mpeg" });
 }
-export async function synthesizeDirect(text: string, signal?: AbortSignal, draft?: ClientService): Promise<Blob> {
+export async function synthesizeDirect(text: string, signal?: AbortSignal, draft?: ClientService, lessonVoices?: LessonVoices | null): Promise<Blob> {
   try {
     const config = draft ?? requiredService("tts");
     const listed = draft ? undefined : lessonVoices?.[config.params.resource_id?.trim() ?? ""]?.id;

@@ -2,13 +2,13 @@ import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
 import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
+import { useLessonTeachers } from "./teachers/lesson-teachers";
 import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { holdAwards, muteAwardVoice } from "./academy/award-events";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
 import type { PlaybackHistoryBinding, PlaybackHistoryContext } from "./history/playback-recorder";
 import { openCapabilitySettings } from "@/byok/events";
-import { setLessonVoices } from "@/byok/providers";
 import { LessonModelError, lessonModelErrorCode, lessonModelErrorMessage } from "./lesson-model-errors";
 import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
@@ -490,9 +490,12 @@ export function LearningWorkspace({
       data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacher.name } : {}) } });
   }, [historyRecorder]);
   const { teacher } = useSelectedTeacher();
-  // The teacher whose settings the current generated lesson received; fixed
-  // reactions for that lesson use this teacher even if the selection changes.
-  const [lessonStyleTeacher, setLessonStyleTeacher] = useState<TeacherDefinition | null>(null);
+  // Who taught each lesson on this board. A lesson keeps its teacher when it
+  // is replayed, whoever is chosen now.
+  const { teacherOf: lessonTeacherOf, remember: rememberLessonTeacher } = useLessonTeachers(sessionId);
+  // The teacher a question being prepared was asked of (null when the lesson
+  // did not take a teacher's settings).
+  const [pendingLessonTeacher, setPendingLessonTeacher] = useState<TeacherDefinition | null>(null);
   const [interruptCaption, setInterruptCaption] = useState<string | null>(null);
   // Achievements are decided by the history service once new facts arrive.
   // Reading them announces each newly earned one to the ceremony host, which
@@ -938,8 +941,6 @@ export function LearningWorkspace({
     });
   }, [deliveredOllLessons, deliveredOllQuestionIds, learnTrace]);
   const packagedPlayback = Boolean(ollFixture || coursePack);
-  // Course packs and fixtures carry their own narration; they keep the neutral lines.
-  const lessonReactionTeacher = packagedPlayback ? null : lessonStyleTeacher;
   const packagedOllEvents = coursePack?.playbackEvents
     ?? coursePack?.pack.events
     ?? (ollFixture ? ollFixtureEvents[ollFixture] : null);
@@ -1124,6 +1125,11 @@ export function LearningWorkspace({
     : undefined) ?? activeOllTopics.find((t) =>
         ollLesson?.outline.find((o) => o.id === t.id)?.steps.at(-1)?.end_cursor === ollLesson?.cursor
       ) ?? activeOllTopics.at(-1);
+  // The lesson on screen speaks, looks and reacts as the teacher who taught
+  // it; a question still being prepared belongs to the teacher it was asked of.
+  const lessonTeacherOnScreen = currentActiveTopic
+    ? lessonTeacherOf(currentActiveTopic.questionId)
+    : pendingLessonTeacher;
   const rawTargetTopicEndCursor = currentActiveTopic
     ? ollLesson?.outline.find((cand) => cand.id === currentActiveTopic.id)?.steps.at(-1)?.end_cursor
     : undefined;
@@ -1179,6 +1185,8 @@ export function LearningWorkspace({
     !lessonDeliverySettled &&
     pausedLessonSource !== ollOpenSource;
   const [textTurnPending, setTextTurnPending] = useState(false);
+  // Course packs and fixtures carry their own narration; they keep the neutral lines.
+  const lessonReactionTeacher = packagedPlayback ? null : textTurnPending ? pendingLessonTeacher : lessonTeacherOnScreen;
   const [sendError, setSendError] = useState<string | null>(null);
   const [sendErrorCode, setSendErrorCode] = useState<string | undefined>();
   const [completionPromptDismissed, setCompletionPromptDismissed] = useState(false);
@@ -1281,8 +1289,8 @@ export function LearningWorkspace({
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
     // Narration uses this teacher's voice only for lessons in this teacher's style.
-    setLessonVoices(contextFields?.has("teacher_profile") ? lessonTeacher.voices : null);
-    setLessonStyleTeacher(contextFields?.has("teacher_profile") ? lessonTeacher : null);
+    if (contextFields?.has("teacher_profile")) rememberLessonTeacher(turnId, lessonTeacher.id);
+    setPendingLessonTeacher(contextFields?.has("teacher_profile") ? lessonTeacher : null);
     setTextTurnPending(true);
     const requestSource = visualContext?.kind ?? "self_contained";
     const invocationStartedAt = Date.now();
@@ -1372,7 +1380,7 @@ export function LearningWorkspace({
     } finally {
       setTextTurnPending(false);
     }
-  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, learnerBackground, teacher, currentLesson]);
+  }, [setTextTurnPending, handleTurnComplete, learnTrace, sessionId, setWhiteboardQuestionStatus, recordHistoryRoute, rememberLessonTeacher, learnerBackground, teacher, currentLesson]);
   const handleVoiceTurnError = useCallback((turnId: string, error: Error) => {
     const message = error.message.trim() || "课程生成失败，请稍后再试";
     const errorCode = error instanceof LessonModelError ? error.code : undefined;
@@ -2571,6 +2579,7 @@ export function LearningWorkspace({
     upcomingNarrationId: lessonOwnsNarration
       ? ollLesson?.nextNarration?.beatId
       : undefined,
+    voices: lessonOwnsNarration ? lessonTeacherOnScreen?.voices : pendingLessonTeacher?.voices,
     resolveAudio: coursePack && lessonOwnsNarration
       ? resolvePackagedNarration
       : undefined,
@@ -3692,7 +3701,7 @@ export function LearningWorkspace({
         stateLabel={teacherStateLabel}
         onClick={handleTeacherClick}
         disabled={coursePreview}
-        teacherId={teacher.id}
+        teacherId={(selectionPending || textTurnPending ? teacher : lessonTeacherOnScreen ?? teacher).id}
         recordedVoice={Boolean(coursePack)}
       />
 

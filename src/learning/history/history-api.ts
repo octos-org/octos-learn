@@ -119,6 +119,8 @@ export class HistoryApi {
     return list;
   }
   setTitle(titleId: string) { return this.request<{ title: LearnerTitle }>('/title', 'PUT', { title_id: titleId }); }
+  /** Teacher ids by question id, for every lesson recorded on one board. */
+  lessonTeachers(sessionId: string) { return this.request<{ teachers: Record<string, string> }>(`/sessions/${encodeURIComponent(sessionId)}/teachers`); }
   suggestions() { return this.request<{ rules_version: string; suggestions: NextStep[] }>(`/suggestions?utc_offset_minutes=${localUtcOffsetMinutes()}`); }
   dismissSuggestion(id: string) { return this.request<{ dismissed: boolean }>('/suggestions/dismiss', 'POST', { id }); }
   reportComments() { return this.request<{ enabled: boolean }>('/report-comments'); }

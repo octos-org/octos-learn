@@ -250,6 +250,16 @@ export class HistoryStore {
       next_before: rows.length > limit ? page.at(-1).updated_seq : null };
   }
 
+  /** The teacher each question on a board was routed to, as recorded when it
+   * was asked; a lesson is replayed with this teacher, not today's choice. */
+  lessonTeachers(owner, sessionId) {
+    const teachers = {};
+    for (const row of this.db.prepare("SELECT question_id,body FROM events WHERE owner=? AND session_id=? AND kind='question_routed' AND question_id IS NOT NULL ORDER BY seq").all(owner, sessionId)) {
+      const teacherId = JSON.parse(row.body).data?.teacher_id;
+      if (typeof teacherId === "string") teachers[row.question_id] = teacherId;
+    }
+    return { session_id: sessionId, teachers };
+  }
   runEvents(owner, runId, { after = 0, limit = 100, through = this.upperBound(owner) } = {}) {
     this.checkSnapshot(owner, through);
     const rows = this.db.prepare("SELECT seq,body FROM events WHERE owner=? AND run_id=? AND seq>? AND seq<=? ORDER BY seq LIMIT ?")

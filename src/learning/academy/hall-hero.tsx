@@ -44,8 +44,8 @@ function summarize(map: LearningMap, awards: EarnedAchievement[], title: string 
   };
 }
 
-/** The academy hall: a dated greeting, then the chosen teacher's living card
- * beside their own words and the way back into the last board or lesson, a
+/** The academy hall: a dated greeting, then the chosen teacher standing in
+ * the night band beside their own words and the way back into the last board or lesson, a
  * ledger of the star map, this week, the report and the latest awards, and
  * what to do next. The ledger is optional; the hall works the same without it. */
 export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
@@ -85,7 +85,7 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
       </div>
       <div className="academy-hall">
         <div className="academy-greeting">
-          <div className="academy-greeting-card"><TeacherCard teacherId={teacher.id} /></div>
+          <div className="academy-greeting-card"><TeacherCard teacherId={teacher.id} bare /></div>
           <div className="academy-greeting-body">
             <figure className="academy-words">
               <blockquote className="academy-bubble">{line}</blockquote>
@@ -129,7 +129,7 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
             <Link to="/atlas" className="academy-more">打开星图 <ArrowRight size={15} aria-hidden="true" /></Link>
           </div>
           {reportShown && (
-            <Link to="/report" className="academy-ledger-row academy-ledger-link">
+            <Link to="/records?tab=week" className="academy-ledger-row academy-ledger-link">
               <span className="academy-eyebrow">学习周报</span>
               <span className="academy-ledger-line">
                 {weekTopics ? `这周学过 ${weekTopics} 个知识点` : "这周的学习会整理在这里"}

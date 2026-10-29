@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import type { WeeklyReport } from '../history/history-api';
 
@@ -6,7 +6,7 @@ const api = vi.hoisted(() => ({ weeklyReport: vi.fn(), monthlyReport: vi.fn() })
 vi.mock('../history/history-api', async (original) => ({ ...(await original<object>()), openHistoryApi: vi.fn(async () => api) }));
 vi.mock('../../api/client', async (original) => ({ ...(await original<object>()), getToken: () => 'token' }));
 
-import { WeeklyReportPanel } from './weekly-report-panel';
+import { ReportPanel } from './report-panel';
 import { monthLabel, shiftMonth, shiftWeek, weekLabel, weekStartOf } from './report-week';
 import { PLAIN_REPORT, TEACHERS } from '../teachers/teachers';
 
@@ -34,10 +34,10 @@ it('computes local weeks the same way as the service', () => {
 it('shows recorded learning and state changes with their evidence, in the chosen teacher\'s words', async () => {
   localStorage.setItem('octos-learn-teacher', 'doudou');
   api.weeklyReport.mockResolvedValue(REPORT);
-  render(<WeeklyReportPanel today={today} />);
-  expect(await screen.findByText('学了 2 天 · 4 节课 · 播放 18 段 · 练习 6 次 · 提问 2 个')).toBeTruthy();
+  render(<ReportPanel period="week" today={today} />);
+  expect(await screen.findByLabelText('学了 2 天，上了 4 节课，播放 18 段，练习 6 次，提问 2 个')).toBeTruthy();
   expect(api.weeklyReport).toHaveBeenCalledWith('2026-10-19');
-  expect(screen.getByText(`窦鸢：${TEACHERS[1].report.active}`)).toBeTruthy();
+  expect(screen.getByText(TEACHERS[1].report.active).closest('figure')?.textContent).toContain('窦鸢');
   expect(screen.getByLabelText('新点亮').textContent).toContain('Energy transfer');
   expect(screen.getByLabelText('状态变化').textContent).toMatch(/一次函数图像.*已探索 → 做出来过.*不用提示达到练习要求/);
   expect(screen.getByLabelText('新成就').textContent).toContain('亲手搞定');
@@ -49,44 +49,43 @@ it('says nothing negative about a week without learning, and pages back only to 
   api.weeklyReport.mockImplementation(async (week: string) => week === '2026-10-19' ? REPORT
     : { ...REPORT, week_start: week, activity: { days: [], runs: 0, played_beats: 0, task_attempts: 0, unassisted_successes: 0, questions: 0 }, topics: [], achievements: [] });
   localStorage.setItem('octos-learn-award-tone', 'plain');
-  render(<WeeklyReportPanel today={today} />);
-  await screen.findByText(/学了 2 天/);
-  expect(screen.getByRole('button', { name: '下一周 ›' })).toHaveProperty('disabled', true);
-  fireEvent.click(screen.getByRole('button', { name: '‹ 上一周' }));
+  render(<ReportPanel period="week" today={today} />);
+  await screen.findByLabelText(/学了 2 天/);
+  expect(screen.getByRole('button', { name: '下一周' })).toHaveProperty('disabled', true);
+  fireEvent.click(screen.getByRole('button', { name: '上一周' }));
   expect(await screen.findByText(PLAIN_REPORT.quiet)).toBeTruthy();
-  expect(screen.getByRole('button', { name: '‹ 上一周' })).toHaveProperty('disabled', true);
+  expect(screen.getByRole('button', { name: '上一周' })).toHaveProperty('disabled', true);
   expect(TEACHERS.every(teacher => !/没有学|偷懒|落后/.test(teacher.report.quiet))).toBe(true);
 });
 
 it('shows a checked comment only for the teacher it was written as', async () => {
   localStorage.setItem('octos-learn-teacher', 'doudou');
   api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周来了 2 天，地图亮起来啦！' });
-  render(<WeeklyReportPanel today={today} />);
-  expect(await screen.findByText('窦鸢：这周来了 2 天，地图亮起来啦！')).toBeTruthy();
+  render(<ReportPanel period="week" today={today} />);
+  expect((await screen.findByText('这周来了 2 天，地图亮起来啦！')).closest('figure')?.textContent).toContain('窦鸢');
   expect(screen.getByText(/由模型根据本周记录生成/)).toBeTruthy();
   cleanup();
   localStorage.setItem('octos-learn-teacher', 'alan');
-  render(<WeeklyReportPanel today={today} />);
-  expect(await screen.findByText(`阿澜：${TEACHERS[0].report.active}`)).toBeTruthy();
+  render(<ReportPanel period="week" today={today} />);
+  expect((await screen.findByText(TEACHERS[0].report.active)).closest('figure')?.textContent).toContain('阿澜');
 });
 
-it('switches to a monthly report in the teacher\'s month words, with days per week and no model comment', async () => {
+it('shows the monthly report in the teacher\'s month words, with days per week and no model comment', async () => {
   localStorage.setItem('octos-learn-teacher', 'sufei');
   api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周的评语。', comment_teacher_id: 'sufei' });
   api.monthlyReport.mockImplementation(async (month: string) => ({ ...REPORT, rules_version: 'report-month-v1', month, first_month: '2026-09',
     weeks: [{ week_start: '2026-10-12', days: 1 }, { week_start: '2026-10-19', days: 2 }] }));
-  render(<WeeklyReportPanel today={today} />);
-  await screen.findByText('学了 2 天 · 4 节课 · 播放 18 段 · 练习 6 次 · 提问 2 个');
-  fireEvent.click(screen.getByRole('button', { name: '月报' }));
-  expect(await screen.findByText(`苏绯：${TEACHERS[2].report.monthActive}`)).toBeTruthy();
+  render(<ReportPanel period="month" today={today} />);
+  expect((await screen.findByText(TEACHERS[2].report.monthActive)).closest('figure')?.textContent).toContain('苏绯');
   expect(api.monthlyReport).toHaveBeenCalledWith('2026-10');
-  expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('本月 · 2026年10月');
-  expect(screen.getByText('10月12日–10月18日 1 天 · 10月19日–10月25日 2 天')).toBeTruthy();
+  expect(api.weeklyReport).not.toHaveBeenCalled();
+  expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('本月2026年10月');
+  expect(screen.getByLabelText('10月12日–10月18日 1 天')).toBeTruthy();
+  expect(screen.getByLabelText('10月19日–10月25日 2 天')).toBeTruthy();
   expect(document.body.textContent).not.toContain('这周的评语');
-  expect(screen.getByRole('button', { name: '下一个月 ›' }).hasAttribute('disabled')).toBe(true);
-  fireEvent.click(screen.getByRole('button', { name: '‹ 上一个月' }));
-  expect(await screen.findByText('月报 · 2026年9月')).toBeTruthy();
-  expect(screen.getByRole('button', { name: '‹ 上一个月' }).hasAttribute('disabled')).toBe(true);
+  expect(screen.getByRole('button', { name: '下一个月' }).hasAttribute('disabled')).toBe(true);
+  fireEvent.click(screen.getByRole('button', { name: '上一个月' }));
+  await waitFor(() => expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('月报2026年9月'));
+  expect(screen.getByRole('button', { name: '上一个月' }).hasAttribute('disabled')).toBe(true);
   expect([shiftMonth('2026-01', -1), shiftMonth('2026-12', 1), monthLabel('2026-03')]).toEqual(['2025-12', '2027-01', '2026年3月']);
 });
-

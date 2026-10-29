@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import type { LearningMap } from "../history/history-api";
 
-const api = vi.hoisted(() => ({ owner: "p1", learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn(), setTitle: vi.fn(), suggestions: vi.fn(), runs: vi.fn(), topic: vi.fn() }));
+const api = vi.hoisted(() => ({ owner: "p1", learningMap: vi.fn(), achievements: vi.fn(), analysisStatus: vi.fn(), setTitle: vi.fn(), suggestions: vi.fn(), runs: vi.fn(), topic: vi.fn(), weeklyReport: vi.fn(), monthlyReport: vi.fn() }));
 vi.mock("../history/history-api", async (original) => ({ ...(await original<object>()), openHistoryApi: vi.fn(async () => api) }));
 vi.mock("@/api/client", async (original) => ({ ...(await original<object>()), getToken: () => "token" }));
 vi.mock("@/auth/auth-context", () => ({ useAuth: () => ({ token: "token", logout: vi.fn(async () => undefined) }) }));
@@ -46,7 +46,7 @@ afterEach(cleanup);
 it("links the academy's places from every page, marking the current one", () => {
   render(<MemoryRouter initialEntries={["/atlas"]}><AcademyHeader /></MemoryRouter>);
   const places = screen.getByRole("navigation", { name: "学院" });
-  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"]]);
+  expect([...places.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["大厅", "/"], ["星图", "/atlas"], ["成就", "/achievements"], ["记录", "/records"]]);
   expect(screen.getByRole("link", { name: "星图" }).getAttribute("aria-current")).toBe("page");
 });
 
@@ -87,7 +87,7 @@ it("continues the last board or lesson by name, links all records and this week'
   expect(resume.getAttribute("href")).toBe("/course/slope?version=0.1.6&title=%E6%96%9C%E7%8E%87%E5%92%8C%E6%88%AA%E8%B7%9D&mode=learn&instance=c1");
   expect(screen.getByRole("link", { name: /全部学习记录/ }).getAttribute("href")).toBe("/records");
   // Topics learned on a day of this week; the fixture's October days are not this week.
-  expect((await screen.findByRole("link", { name: /学习周报/ })).getAttribute("href")).toBe("/report");
+  expect((await screen.findByRole("link", { name: /学习周报/ })).getAttribute("href")).toBe("/records?tab=week");
   expect(screen.getByText(/这周的学习会整理在这里/)).toBeTruthy();
 });
 
@@ -98,14 +98,27 @@ it("leaves the report card out when the report is turned off", async () => {
   expect(screen.queryByRole("link", { name: /学习周报/ })).toBeNull();
 });
 
-it("keeps every board and lesson on the records page, and what happened in each one tab away", async () => {
+it("keeps every board and lesson on the records page, and what happened in each one view away", async () => {
   adoptLearningSession({ id: "learn-c1", title: "斜率和截距", createdAt: 1, updatedAt: 2, status: "active", source: { kind: "course-pack", packId: "slope", version: "0.1.6", mode: "instance" } } as never);
   render(<MemoryRouter initialEntries={["/records"]}><RecordsPage /></MemoryRouter>);
-  expect(screen.getByRole("heading", { level: 1, name: "学习记录" })).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 1, name: "记录" })).toBeTruthy();
+  expect(screen.getAllByRole("tab").map((tab) => [tab.textContent, tab.getAttribute("aria-selected")])).toEqual([["学习记录", "true"], ["周报", "false"], ["月报", "false"]]);
   expect(await screen.findByText("斜率和截距")).toBeTruthy();
   expect(screen.getByText(/课程学习/)).toBeTruthy();
-  fireEvent.click(screen.getByRole("tab", { name: "学习经过" }));
+  fireEvent.click(screen.getByRole("button", { name: "每次学习的经过" }));
   expect(await screen.findByText(/还没有已同步的学习经过/)).toBeTruthy();
+});
+
+it("opens the weekly and monthly reports as tabs of the records page, straight from a link", async () => {
+  const empty = { rules_version: "report-v1", through: 9, report_sha256: "a".repeat(64), activity: { days: [], runs: 0, played_beats: 0, task_attempts: 0, unassisted_successes: 0, questions: 0 }, topics: [], achievements: [], comment: null, comment_teacher_id: null };
+  api.weeklyReport.mockImplementation(async (week: string) => ({ ...empty, week_start: week, first_week: week }));
+  api.monthlyReport.mockImplementation(async (month: string) => ({ ...empty, month, first_month: month, weeks: [] }));
+  render(<MemoryRouter initialEntries={["/records?tab=month"]}><RecordsPage /></MemoryRouter>);
+  expect(screen.getByRole("tab", { name: "月报" }).getAttribute("aria-selected")).toBe("true");
+  expect(await screen.findByText(TEACHERS[0].report.monthQuiet)).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: "周报" }));
+  expect(await screen.findByText(TEACHERS[0].report.quiet)).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 2 }).textContent).toMatch(/^本周/);
 });
 
 it("opens a star's topic evidence on the records page", async () => {
@@ -134,11 +147,11 @@ it("keeps the hall usable when the summary is unavailable", async () => {
   expect(screen.getByRole("link", { name: /新建空白白板/ })).toBeTruthy();
 });
 
-it("shows the star atlas as its own page, with the list by domain below", async () => {
+it("shows the star atlas as its own page, without a second list of topics", async () => {
   render(<MemoryRouter><AtlasPage /></MemoryRouter>);
   expect(await screen.findByRole("img", { name: /数之星域：点亮 \d+ 颗/ })).toBeTruthy();
   expect(screen.getByRole("button", { name: "揭开全部迷雾" })).toBeTruthy();
-  expect(screen.getByText(/按星域列出（2 个知识点）/)).toBeTruthy();
+  expect(screen.queryByText(/按星域列出/)).toBeNull();
   expect(screen.getByText(/这些都不等于已经掌握/)).toBeTruthy();
 });
 
