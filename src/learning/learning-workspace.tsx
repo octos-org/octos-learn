@@ -4,6 +4,7 @@ import { LearnerBackgroundCache } from "./teachers/learner-background";
 import { lessonContextSupport, type LessonContextField } from "./teachers/lesson-context-support";
 import { classroomTeacher } from "./teachers/classroom-teacher";
 import { useLessonTeachers } from "./teachers/lesson-teachers";
+import { narrationTeacher } from "./teachers/narration-teacher";
 import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { holdAwards, muteAwardVoice } from "./academy/award-events";
 import { getMyMemory } from "../settings/settings-api";
@@ -2557,21 +2558,25 @@ export function LearningWorkspace({
     return () => muteAwardVoice(`classroom:${sessionId}`, false);
   }, [sessionId, narrationAudioEnabled]);
   // Narration speaks as the teacher who taught the lesson the beat belongs to.
-  // On a board opened where this device did not ask, it waits until the
-  // history service has said who that was, so a sentence never restarts in
-  // another voice.
-  const narrationQuestionId = ollLesson?.currentBeatId ? courseTopicForBeat(ollLesson.currentBeatId)?.questionId : undefined;
-  const narrationTeacher = lessonTeacherOf(narrationQuestionId);
-  const narrationTeacherKnown = !narrationQuestionId || narrationTeacher !== null || lessonTeachersSettled;
-  const upcomingNarrationBeatId = ollLesson?.nextNarration?.beatId;
-  const upcomingNarrationTeacher = lessonTeacherOf(upcomingNarrationBeatId ? courseTopicForBeat(upcomingNarrationBeatId)?.questionId : undefined);
+  // When this device has no record of that lesson, audible narration and
+  // prefetching wait until the history service has said who it was, so no
+  // sentence is spoken or synthesized in a voice that turns out to be wrong.
+  const narrationVoice = narrationTeacher({
+    currentBeatId: ollLesson?.currentBeatId,
+    upcomingBeatId: ollLesson?.nextNarration?.beatId,
+    startup: startupNarration,
+    questionOfBeat: (beatId) => courseTopicForBeat(beatId)?.questionId,
+    teacherOf: lessonTeacherOf,
+    settled: lessonTeachersSettled,
+  });
   const ollNarrationTts = useOllNarrationTts({
     enabled: (coursePack && lessonOwnsNarration ? true : runtime.ttsReady)
       && narrationAudioEnabled
       && (Boolean(ollLesson) || Boolean(plainReply)),
     playing: lessonOwnsNarration
-      ? ollNarrationActive && narrationTeacherKnown
+      ? ollNarrationActive
       : Boolean(plainReplyNarrationId),
+    voicePending: lessonOwnsNarration && narrationVoice.current.pending,
     text: lessonOwnsNarration
       ? ollLesson?.activeSpeech ?? ""
       : plainReply?.text ?? "",
@@ -2579,16 +2584,17 @@ export function LearningWorkspace({
       ? ollLesson?.currentBeatId
       : plainReplyNarrationId,
     prefetchEnabled: lessonOwnsNarration && !coursePack,
-    prewarmText: startupNarration?.text,
+    prewarmText: narrationVoice.prewarm.pending ? undefined : startupNarration?.text,
+    prewarmVoices: narrationVoice.prewarm.voices,
     prewarmNarrationId: startupNarration?.beatId,
-    upcomingText: lessonOwnsNarration
+    upcomingText: lessonOwnsNarration && !narrationVoice.upcoming.pending
       ? ollLesson?.nextNarration?.text
       : undefined,
     upcomingNarrationId: lessonOwnsNarration
       ? ollLesson?.nextNarration?.beatId
       : undefined,
-    voices: lessonOwnsNarration ? narrationTeacher?.voices ?? null : pendingLessonTeacher?.voices ?? null,
-    upcomingVoices: lessonOwnsNarration ? upcomingNarrationTeacher?.voices ?? null : undefined,
+    voices: lessonOwnsNarration ? narrationVoice.current.voices : pendingLessonTeacher?.voices ?? null,
+    upcomingVoices: lessonOwnsNarration ? narrationVoice.upcoming.voices : undefined,
     resolveAudio: coursePack && lessonOwnsNarration
       ? resolvePackagedNarration
       : undefined,
@@ -3374,13 +3380,14 @@ export function LearningWorkspace({
   const pendingSelectionQuestion = whiteboardQuestions.find((question) =>
     question.origin === "selection" && question.status === "pending");
   const selectionPending = Boolean(pendingSelectionQuestion) || Boolean(conv.selectionTurnPending);
-  // A lesson accepted for background generation stays with the teacher it was
-  // asked of until it arrives, unless an older lesson is playing meanwhile.
+  // A lesson accepted for background generation, from the composer, the
+  // camera or a selection and also after a reload, stays with the teacher it
+  // was asked of until it arrives, unless an older lesson is playing meanwhile.
   const generatingQuestion = [...whiteboardQuestions].reverse().find((question) =>
-    isCourseWhiteboardQuestion(question) && question.status === "pending");
+    (isCourseWhiteboardQuestion(question) || question.origin === "selection") && question.status === "pending");
   const classroom = classroomTeacher({
     selected: teacher,
-    asking: selectionPending || textTurnPending,
+    asking: textTurnPending || Boolean(conv.selectionTurnPending),
     askedTeacher: pendingLessonTeacher,
     generating: generatingQuestion ? { teacher: lessonTeacherOf(generatingQuestion.id) } : null,
     playing: Boolean(ollLesson?.playing),
@@ -3390,7 +3397,7 @@ export function LearningWorkspace({
   const lessonReactionTeacher = classroom.reactions;
   const lessonReactions = teacherReactions(lessonReactionTeacher);
   const teacherSpeech = selectionPending
-    ? teacherReactions(teacher).selection
+    ? teacherReactions(classroom.portrait).selection
     : lessonOwnsNarration
     ? ollLesson?.activeSpeech ?? ""
     : interruptCaption ??

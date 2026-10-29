@@ -30,6 +30,13 @@ it("gives a new question to the chosen teacher while it is asked and while it is
   expect(pick({ onScreen: old, generating: { teacher: sufei }, playing: true })).toEqual(["alan", "alan", false]);
 });
 
+it("keeps a restored selection lesson with the teacher it was asked of, and that teacher while asking even if the choice changes", () => {
+  // Reloaded while a selection lesson asked of 苏绯 is still generating; 窦鸢 is chosen now.
+  expect(pick({ selected: doudou, generating: { teacher: sufei } })).toEqual(["sufei", "sufei", false]);
+  // Still being sent, and the choice changed meanwhile: the recorded teacher stands.
+  expect(pick({ selected: doudou, asking: true, askedTeacher: sufei, generating: { teacher: sufei } })).toEqual(["sufei", "sufei", false]);
+});
+
 it("keeps neutral lines only for a course pack's or fixture's own lesson, not for lessons generated onto it", () => {
   expect(pick({ onScreen: { teacher: null } })).toEqual(["sufei", null, true]);
   expect(pick({ onScreen: { questionId: "q3", teacher: sufei }, playing: true })).toEqual(["sufei", "sufei", false]);

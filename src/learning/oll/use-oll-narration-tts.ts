@@ -33,6 +33,12 @@ export interface OllNarrationTtsOptions {
   /** Voices for the upcoming narration when it belongs to another teacher's
    * lesson; defaults to `voices`. */
   upcomingVoices?: LessonVoices | null;
+  /** Voices for the prewarmed first sentence, which may belong to another
+   * lesson than the current narration; defaults to `voices`. */
+  prewarmVoices?: LessonVoices | null;
+  /** The voice is not known yet: audible narration and prewarming wait for
+   * it. Narration with audio off still completes at once. */
+  voicePending?: boolean;
   /** Resolve narration bytes from a verified local CoursePack. When supplied,
    * neither native TTS nor the hosted synthesis API is consulted. */
   resolveAudio?: (
@@ -88,6 +94,8 @@ export function useOllNarrationTts({
   upcomingNarrationId,
   voices,
   upcomingVoices,
+  prewarmVoices,
+  voicePending = false,
   resolveAudio,
   onSpeakingChange,
   onPlaybackStart,
@@ -101,14 +109,15 @@ export function useOllNarrationTts({
   // Once a clip plays, a change of voice waits for the next clip rather than
   // cutting the sentence off and starting it again.
   const [clipVoice, setClipVoice] = useState<{ id: string; tag: string } | null>(null);
-  if (playing && narrationId && clipVoice?.id !== narrationId) setClipVoice({ id: narrationId, tag: requestedVoiceTag });
+  if (playing && !voicePending && narrationId && clipVoice?.id !== narrationId) setClipVoice({ id: narrationId, tag: requestedVoiceTag });
   const voiceTag = clipVoice && playing && clipVoice.id === narrationId ? clipVoice.tag : requestedVoiceTag;
   const upcomingVoiceTag = upcomingVoices === undefined ? requestedVoiceTag : upcomingVoices ? JSON.stringify(upcomingVoices) : "";
+  const prewarmVoiceTag = prewarmVoices === undefined ? requestedVoiceTag : prewarmVoices ? JSON.stringify(prewarmVoices) : "";
   const lessonVoices = useMemo<LessonVoices | null>(() => voiceTag ? JSON.parse(voiceTag) : null, [voiceTag]);
-  const requestedVoices = useMemo<LessonVoices | null>(() => requestedVoiceTag ? JSON.parse(requestedVoiceTag) : null, [requestedVoiceTag]);
+  const warmVoices = useMemo<LessonVoices | null>(() => prewarmVoiceTag ? JSON.parse(prewarmVoiceTag) : null, [prewarmVoiceTag]);
   const nextVoices = useMemo<LessonVoices | null>(() => upcomingVoiceTag ? JSON.parse(upcomingVoiceTag) : null, [upcomingVoiceTag]);
   const currentKey = speechKey(narrationId, normalizedText, voiceTag);
-  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText, requestedVoiceTag);
+  const prewarmKey = speechKey(prewarmNarrationId, normalizedPrewarmText, prewarmVoiceTag);
   const upcomingKey = speechKey(upcomingNarrationId, normalizedUpcomingText, upcomingVoiceTag);
   const [failure, setFailure] = useState<string | null>(null);
   const [preparing, setPreparing] = useState(false);
@@ -145,13 +154,22 @@ export function useOllNarrationTts({
     };
   }, [onPlaybackComplete, onPlaybackEnd, onPlaybackStart, onSpeakingChange]);
 
+  // One end per playback of a beat: the effect below reruns when the voice
+  // becomes known or changes, and must not end the same playback again. A
+  // beat played again (after a stop or a seek back) is a new playback.
+  const endedNarrationRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!playing || endedNarrationRef.current !== narrationId) endedNarrationRef.current = null;
+  }, [narrationId, playing]);
+
   useEffect(() => {
     const request = new AbortController();
     let current = true;
     let completed = false;
     const reportEnd = (reason: "ended" | "disabled" | "failed" | "cancelled") => {
-      if (!current || completed || !narrationId) return false;
+      if (!current || completed || !narrationId || endedNarrationRef.current === narrationId) return false;
       completed = true;
+      endedNarrationRef.current = narrationId;
       callbacksRef.current.onPlaybackEnd?.(narrationId, reason);
       return true;
     };
@@ -169,6 +187,19 @@ export function useOllNarrationTts({
       stopAudio();
       stopNativeTts();
       if (!enabled && playing && normalizedText) completePlayback("disabled");
+      return () => {
+        current = false;
+        request.abort();
+      };
+    }
+    // Audible narration waits until its teacher's voice is known; nothing is
+    // synthesized meanwhile, so no sentence starts in one voice and restarts.
+    if (voicePending) {
+      queueMicrotask(() => {
+        if (!current) return;
+        setPreparing(true);
+        setStartedKey(null);
+      });
       return () => {
         current = false;
         request.abort();
@@ -326,6 +357,7 @@ export function useOllNarrationTts({
     lessonVoices,
     playing,
     resolveAudio,
+    voicePending,
   ]);
 
   useEffect(() => {
@@ -342,12 +374,14 @@ export function useOllNarrationTts({
       }
       return;
     }
+    // Nothing is prewarmed in a voice that may turn out to be the wrong one.
+    if (voicePending) return;
     const currentHasStarted = Boolean(currentKey && startedKey === currentKey);
     const candidateKey = currentHasStarted ? upcomingKey : prewarmKey;
     const candidateText = currentHasStarted
       ? normalizedUpcomingText
       : normalizedPrewarmText;
-    const candidateVoices = currentHasStarted ? nextVoices : requestedVoices;
+    const candidateVoices = currentHasStarted ? nextVoices : warmVoices;
     if (!candidateKey || !candidateText) return;
     // The playback effect above claims a web prefetch before this effect runs.
     // Do not immediately recreate the same request while audio startup is
@@ -396,7 +430,7 @@ export function useOllNarrationTts({
     currentKey,
     enabled,
     nextVoices,
-    requestedVoices,
+    warmVoices,
     normalizedPrewarmText,
     normalizedUpcomingText,
     prefetchEnabled,
@@ -405,6 +439,7 @@ export function useOllNarrationTts({
     startedKey,
     upcomingKey,
     resolveAudio,
+    voicePending,
   ]);
 
   useEffect(() => () => {

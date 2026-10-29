@@ -36,7 +36,7 @@ const historyRecordingMock = vi.hoisted(() => {
   const record = vi.fn(), stage = vi.fn();
   return { enabled: false, record, stage, recorder: { record, stage }, setClassroomBusy: vi.fn() };
 });
-import { setToken } from "@/api/client";
+import { getSelectedProfileId, setToken } from "@/api/client";
 import { awardsHeld } from "./academy/award-events";
 import { getTeacher } from "./teachers/teachers";
 
@@ -1516,6 +1516,18 @@ describe("LearningWorkspace", () => {
     ).map((node) => Number.parseFloat(node.style.left)
       + Number.parseFloat(node.style.width)));
     expect(region.origin!.x).toBeGreaterThanOrEqual(oldLessonRight + 180);
+  });
+
+  it("shows a restored selection lesson still generating with the teacher it was asked of, not today's choice", async () => {
+    const sessionId = "learn-restored-selection";
+    localStorage.setItem("octos-learn-teacher", "doudou");
+    localStorage.setItem(`octos-learning-questions:v1:${sessionId}`, JSON.stringify([{ id: "q-selection", sessionId, text: "解释这部分",
+      origin: "selection", createdAt: "2026-10-29T08:00:00.000Z", status: "pending", answerPresentation: "lesson",
+      source: { sourceId: "s1", bounds: { x: 0, y: 0, width: 10, height: 10 } } }]));
+    const owner = encodeURIComponent(getSelectedProfileId() ?? "anonymous");
+    localStorage.setItem(`octos-learn-lesson-teachers:v1:${owner}:${sessionId}`, JSON.stringify({ "q-selection": "sufei" }));
+    await renderLearning(<LearningWorkspace sessionId={sessionId} voiceEnabled={false} onBack={vi.fn()} />);
+    await waitFor(() => expect(document.querySelector(".teacher-portrait")?.getAttribute("data-teacher")).toBe("sufei"));
   });
 
   it("sends learner background read while idle, and learns action support once the bridge connects", async () => {

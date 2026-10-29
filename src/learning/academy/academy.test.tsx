@@ -138,6 +138,11 @@ it("moves between the records tabs with arrow keys, and Back returns to the prev
   expect(tab("学习记录").getAttribute("aria-selected")).toBe("true");
   await act(async () => { await router.navigate(-1); });
   expect(tab("月报").getAttribute("aria-selected")).toBe("true");
+  // Focus follows the tab Back selected, rather than staying on one out of the tab order.
+  expect(document.activeElement).toBe(tab("月报"));
+  await act(async () => { await router.navigate(-1); });
+  expect(document.activeElement).toBe(tab("周报"));
+  expect(tab("周报").tabIndex).toBe(0);
 });
 
 it("opens a star's topic evidence on the records page", async () => {

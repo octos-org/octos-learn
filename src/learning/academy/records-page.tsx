@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { AccountHistoryPanel } from "../history/account-history-panel";
@@ -34,6 +34,12 @@ export function RecordsPage() {
   // Each tab is its own entry in history, so Back returns to the previous tab.
   const show = (next: Tab | "facts") => setParams(next === "records" ? {} : { tab: next });
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Back and Forward change the selected tab too; focus inside the tab list
+  // follows it, so it never rests on a tab that is out of the tab order.
+  useEffect(() => {
+    const selected = tabRefs.current[TABS.findIndex((item) => item.id === tab)];
+    if (selected && document.activeElement !== selected && tabRefs.current.includes(document.activeElement as HTMLButtonElement)) selected.focus();
+  }, [tab]);
   // Arrow keys, Home and End move between the tabs and open the one reached.
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     const index = TABS.findIndex((item) => item.id === tab);
