@@ -32,7 +32,7 @@
       (function () {
         var locale;
         try { locale = localStorage.getItem("octos-locale"); } catch (e) {}
-        if (locale !== "zh-CN" && locale !== "en-US") locale = /^zh/i.test(navigator.language || "en") ? "zh-CN" : "en-US";
+        if (locale !== "zh-CN" && locale !== "en-US") locale = "zh-CN";
         document.documentElement.lang = locale;
         var zh = locale === "zh-CN";
         window.setTimeout(function () {

@@ -1,7 +1,9 @@
 import { createInstance } from "i18next";
 import { initReactI18next } from "react-i18next";
-import en from "./messages/en.json";
-import zh from "./messages/zh.json";
+// Import attributes keep this module loadable by native Node ESM (Playwright
+// helpers import product catalogs) as well as by Vite.
+import en from "./messages/en.json" with { type: "json" };
+import zh from "./messages/zh.json" with { type: "json" };
 
 export type Locale = "zh-CN" | "en-US";
 export const LOCALE_STORAGE_KEY = "octos-locale";
@@ -16,7 +18,9 @@ export function initialLocale(): Locale {
     const saved = localStorage.getItem(LOCALE_STORAGE_KEY);
     if (saved === "zh-CN" || saved === "en-US") return saved;
   } catch { /* Browsers may disable persistent storage. */ }
-  return normalizeLocale(typeof navigator === "undefined" ? "en" : navigator.languages?.[0] ?? navigator.language);
+  // Chinese until the learner chooses otherwise, whatever the browser or
+  // device language (TV and WebView system languages are often English).
+  return "zh-CN";
 }
 
 export const i18n = createInstance();
@@ -33,7 +37,16 @@ void i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
-export function getLocale(): Locale { return normalizeLocale(i18n.language); }
+let requestLocale: Locale | null = null;
+export function getLocale(): Locale { return requestLocale ?? normalizeLocale(i18n.language); }
+
+/** Formats model-facing request text in the language captured at submission,
+ * even if the interface has switched since. `format` must be synchronous. */
+export function withLocale<T>(locale: Locale, format: () => T): T {
+  const previous = requestLocale;
+  requestLocale = locale;
+  try { return format(); } finally { requestLocale = previous; }
+}
 
 // Async status strings may outlive the language in which they were created.
 // Keep only a small in-memory set of message recipes; learner content is never

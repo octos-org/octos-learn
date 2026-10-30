@@ -2,7 +2,8 @@ import { act, renderHook } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { NEUTRAL_REACTIONS, PLAIN_AWARDS, TEACHERS, getTeacher, teacherProfile, teacherReactions, useSelectedTeacher } from './teachers';
+import { setLocale, withLocale } from '@/i18n';
+import { NEUTRAL_REACTIONS, PLAIN_AWARDS, TEACHERS, getTeacher, teacherProfile, teacherReactions, teacherStoredName, useSelectedTeacher } from './teachers';
 import { buildLearnerContext, LearnerBackgroundCache } from './learner-background';
 import type { LearningRunSummary } from '../history/history-api';
 
@@ -214,4 +215,29 @@ it('greets on the academy hall in each teacher\'s own words, never about time aw
   }
   // 苏绯 never exclaims.
   expect(TEACHERS.find(teacher => teacher.id === 'sufei')!.hall.welcome.concat(TEACHERS.find(teacher => teacher.id === 'sufei')!.hall.resume).join('')).not.toMatch(/[！!～]/);
+});
+
+it('keeps one stored teacher name across interface languages and links both names in the profile', () => {
+  setLocale('en-US', false);
+  expect(getTeacher('alan').name).toBe('Alan');
+  expect(TEACHERS.map((teacher) => teacherStoredName(teacher.id))).toEqual(['阿澜', '窦鸢', '苏绯']);
+  const english = teacherProfile(getTeacher('alan'));
+  expect(english).toContain('Teacher for this lesson: Alan');
+  expect(english).toContain('“阿澜”');
+  const chinese = withLocale('zh-CN', () => teacherProfile(getTeacher('doudou')));
+  expect(chinese).toContain('本次授课老师：窦鸢');
+  expect(chinese).toContain('你以前在应用里叫“豆豆”');
+  expect(chinese).toContain('学生背景里的“Dou Yuan”“Doudou”也是指你。');
+  setLocale('zh-CN', false);
+  expect(TEACHERS.map((teacher) => teacherStoredName(teacher.id))).toEqual(TEACHERS.map((teacher) => teacher.name));
+});
+
+it('formats cached background in the language of the lesson that reads it', async () => {
+  const cache = new LearnerBackgroundCache(async () => ({ memory: { long_term: '偏好看图' } }), { currentAccount: () => 'alice' });
+  await cache.refresh('alice');
+  expect(cache.current('alice')).toContain('【Octos 长期记忆】');
+  const english = withLocale('en-US', () => cache.current('alice'));
+  expect(english).not.toContain('【Octos 长期记忆】');
+  expect(english).toContain('偏好看图');
+  expect(cache.current('alice')).toContain('【Octos 长期记忆】');
 });

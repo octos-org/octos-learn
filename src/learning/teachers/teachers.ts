@@ -423,7 +423,15 @@ export function isTeacherId(value: unknown): value is TeacherDefinition["id"] {
 }
 
 // i18n-exempt: stable aliases used to recognize historical memories in either language.
+// The first name of each list is the teacher's stored name.
 export const TEACHER_NAME_ALIASES = { alan: ["阿澜", "Alan"], doudou: ["窦鸢", "豆豆", "Dou Yuan", "Doudou"], sufei: ["苏绯", "Su Fei"] } as const;
+
+/** The name recorded in learning history and sent to Octos as the memory
+ * participant. It never follows the interface language, so one teacher keeps
+ * one identity in durable memory. Display uses `teacher.name`. */
+export function teacherStoredName(id: TeacherDefinition["id"]): string {
+  return TEACHER_NAME_ALIASES[id][0];
+}
 
 export function getTeacher(id: TeacherDefinition["id"]): TeacherDefinition {
   return TEACHERS.find((teacher) => teacher.id === id) ?? TEACHERS[0];
@@ -438,6 +446,9 @@ export function teacherProfile(teacher: TeacherDefinition): string {
   return [
     tr("本次授课老师：{{v0}}（Octos Learn 预设老师，设定版本 {{v1}}）。", { v0: teacher.name, v1: TEACHER_CATALOG_VERSION }),
     ...(teacher.formerNames?.length ? [tr("你以前在应用里叫“{{v0}}”，学生背景里用这个名字说的就是你。", { v0: teacher.formerNames.join("”“") })] : []),
+    // Memory may name this teacher in the other interface language.
+    tr("学生背景里的“{{v0}}”也是指你。", { v0: TEACHER_NAME_ALIASES[teacher.id]
+      .filter((name) => name !== teacher.name && !teacher.formerNames?.includes(name)).join("”“") }),
     tr("最看重：{{v0}}。相处方式：{{v1}}。", { v0: card.values, v1: card.role }),
     tr("学生出错时：{{v0}}。遇到质疑时：{{v1}}。", { v0: card.onError, v1: card.onChallenge }),
     tr("认可学生：{{v0}}。感兴趣的话题：{{v1}}（只影响例子，不限制能教的内容）。", { v0: card.praise, v1: card.interests }),

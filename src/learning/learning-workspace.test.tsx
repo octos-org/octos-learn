@@ -639,6 +639,7 @@ describe("LearningWorkspace", () => {
   });
 
   it("pins an English course request before a UI language switch and submits only once", async () => {
+    historyRecordingMock.enabled = true;
     setLocale("en-US", false);
     await renderLearning(<LearningWorkspace sessionId="learn-language-pinning" voiceEnabled={false} onBack={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(tr("输入学习问题")), { target: { value: "请解释勾股定理 x²+y²=z²" } });
@@ -647,6 +648,13 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledOnce());
     expect(sessionFilesMock.invokeSkillAction).toHaveBeenCalledWith("learn-language-pinning", "learning.lesson.generate", expect.objectContaining({ language: "en-US", learner_request: "请解释勾股定理 x²+y²=z²" }));
     expect(sendMessageMock).not.toHaveBeenCalled();
+    // The model context follows the submitted course, and history keeps the
+    // teacher's stored name whatever the interface language.
+    const profile = sessionFilesMock.invokeSkillAction.mock.calls[0]?.[2]?.teacher_profile;
+    expect(profile).toContain("Teacher for this lesson: Alan");
+    expect(profile).not.toContain("本次授课老师");
+    expect(historyRecordingMock.record).toHaveBeenCalledWith(expect.objectContaining({ kind: "question_routed",
+      data: expect.objectContaining({ teacher_id: "alan", teacher_name: "阿澜" }) }));
   });
 
   it("places lesson generation feedback on the whiteboard", async () => {

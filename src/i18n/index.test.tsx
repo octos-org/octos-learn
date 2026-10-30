@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { getLocale, initialLocale, initLocale, localizedCatalog, LOCALE_STORAGE_KEY, normalizeLocale, setLocale, tr, translateStatus } from "./index";
+import { getLocale, initialLocale, initLocale, localizedCatalog, LOCALE_STORAGE_KEY, normalizeLocale, setLocale, tr, translateStatus, withLocale } from "./index";
 import en from "./messages/en.json";
 import zh from "./messages/zh.json";
 import { memoryGroup } from "../learning/memory/memory-entries";
@@ -25,16 +25,36 @@ describe("language preference", () => {
     expect(memoryGroup("For all teachers: use examples")).toBe("all");
   });
 
+  it("formats request text in a captured language and restores the interface language", () => {
+    setLocale("zh-CN", false);
+    const labels = localizedCatalog({ home: "返回首页" });
+    expect(withLocale("en-US", () => [getLocale(), tr("返回首页"), labels.home])).toEqual(["en-US", "Back to home", "Back to home"]);
+    expect(getLocale()).toBe("zh-CN");
+    expect(() => withLocale("en-US", () => { throw new Error("format failed"); })).toThrow("format failed");
+    expect(getLocale()).toBe("zh-CN");
+  });
+
   it("has matching resources and interpolation variables in both languages", () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(zh).sort());
     const tokens = (message: string) => [...message.matchAll(/\{\{\w+\}\}|\{(?:topic|name|target|days)\}/g)].map(match => match[0]).sort();
     for (const key of Object.keys(en) as (keyof typeof en)[]) expect(tokens(en[key]), key).toEqual(tokens(zh[key]));
     expect(tr("课程主题 {{v0}}", { v0: 2 }, "en-US")).toBe("Lesson topic 2");
   });
-  it("normalizes browser languages and honours an explicit device choice", () => {
+  it("starts in Chinese whatever the browser language and honours an explicit device choice", () => {
     expect(normalizeLocale("zh-TW")).toBe("zh-CN");
     expect(normalizeLocale("en-GB")).toBe("en-US");
     expect(normalizeLocale("fr")).toBe("en-US");
+    const languages = Object.getOwnPropertyDescriptor(navigator, "languages")!, language = Object.getOwnPropertyDescriptor(navigator, "language")!;
+    try {
+      Object.defineProperty(navigator, "languages", { configurable: true, value: ["en-US"] });
+      Object.defineProperty(navigator, "language", { configurable: true, value: "en-US" });
+      expect(initialLocale()).toBe("zh-CN");
+      localStorage.setItem(LOCALE_STORAGE_KEY, "en-US");
+      expect(initialLocale()).toBe("en-US");
+    } finally {
+      Object.defineProperty(navigator, "languages", languages);
+      Object.defineProperty(navigator, "language", language);
+    }
     localStorage.setItem(LOCALE_STORAGE_KEY, "zh-CN");
     expect(initialLocale()).toBe("zh-CN");
   });

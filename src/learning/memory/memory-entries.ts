@@ -1,5 +1,5 @@
 import { tr } from "@/i18n";
-import { TEACHERS, TEACHER_NAME_ALIASES, type TeacherDefinition } from "../teachers/teachers";
+import { TEACHERS, TEACHER_NAME_ALIASES, teacherStoredName, type TeacherDefinition } from "../teachers/teachers";
 
 /** One block of Octos `MEMORY.md`: `text (updated: 2026-10-23) ^mabc234`.
  * Blocks without an id (a legacy file) are shown but cannot be targeted by
@@ -52,5 +52,7 @@ export function scopedContent(group: Exclude<MemoryGroup, "other">, content: str
   const text = content.trim();
   if (group === "all") return tr("对所有老师：{{v0}}", { v0: text });
   if (group === "me") return text;
-  return tr("只对{{v0}}老师：{{v1}}", { v0: memoryGroupLabel(group), v1: text });
+  // Memory keeps the stored name so the scope matches the Octos participant.
+  const shown = memoryGroupLabel(group), stored = teacherStoredName(group);
+  return tr("只对{{v0}}老师：{{v1}}", { v0: shown === stored ? stored : `${shown} (${stored})`, v1: text });
 }

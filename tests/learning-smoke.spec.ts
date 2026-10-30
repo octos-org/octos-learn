@@ -45,9 +45,27 @@ test("opens the standalone learning canvas at the product root", async ({ page }
   await installLearningMocks(page);
   await page.goto("/?oll-fixture=unit-circle-sine");
 
-  await expect(page.getByText("Octos Learning Canvas")).toBeVisible();
+  await expect(page.getByText("Octos 学习白板")).toBeVisible();
   await expect(page.getByRole("button", { name: "返回首页" })).toBeVisible();
   await expect(page).toHaveTitle("Octos Learn");
+});
+
+test.describe("in an English browser", () => {
+  test.use({ locale: "en-US" });
+
+  test("starts in Chinese and keeps an English choice after reload", async ({ page }) => {
+    await installLearningMocks(page);
+    await page.goto("/?oll-fixture=unit-circle-sine");
+
+    await expect(page.getByRole("button", { name: "返回首页" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+    await page.getByRole("button", { name: "English", exact: true }).click();
+    await expect(page.getByText("Octos Learning Canvas")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back to home" })).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-US");
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Back to home" })).toBeVisible();
+  });
 });
 
 test("redirects the inherited /learn URL to the standalone root", async ({ page }) => {
@@ -55,5 +73,5 @@ test("redirects the inherited /learn URL to the standalone root", async ({ page 
   await page.goto("/learn?oll-fixture=geometry-v2");
 
   await expect(page).toHaveURL(/\/?(?:\?.*)?$/);
-  await expect(page.getByText("Octos Learning Canvas")).toBeVisible();
+  await expect(page.getByText("Octos 学习白板")).toBeVisible();
 });

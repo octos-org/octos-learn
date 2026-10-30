@@ -1905,6 +1905,7 @@
   "清新女声": "Qingxin Nvsheng",
   "本次授课老师：{{v0}}（Octos Learn 预设老师，设定版本 {{v1}}）。": "Teacher for this lesson: {{v0}} (Octos Learn preset teacher, settings version {{v1}}).",
   "你以前在应用里叫“{{v0}}”，学生背景里用这个名字说的就是你。": "You were previously called “{{v0}}” in the app. References to that name in learner background refer to you.",
+  "学生背景里的“{{v0}}”也是指你。": "References to “{{v0}}” in learner background also refer to you.",
   "最看重：{{v0}}。相处方式：{{v1}}。": "Main value: {{v0}}. Relationship: {{v1}}.",
   "学生出错时：{{v0}}。遇到质疑时：{{v1}}。": "When the student makes an error: {{v0}}. When challenged: {{v1}}.",
   "认可学生：{{v0}}。感兴趣的话题：{{v1}}（只影响例子，不限制能教的内容）。": "How to acknowledge students: {{v0}}. Interests: {{v1}} (affect examples only, not the subjects you can teach).",

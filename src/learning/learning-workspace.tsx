@@ -1,4 +1,4 @@
-import { getLocale, tr, type Locale } from "@/i18n";
+import { getLocale, tr, withLocale, type Locale } from "@/i18n";
 import { useLocale } from "@/i18n/use-locale";
 import { useLearningHistoryRecorder } from "./history/use-learning-history";
 import { openHistoryApi } from "./history/history-api";
@@ -7,7 +7,7 @@ import { lessonContextSupport, type LessonContextField } from "./teachers/lesson
 import { classroomTeacher } from "./teachers/classroom-teacher";
 import { useLessonTeachers } from "./teachers/lesson-teachers";
 import { narrationTeacher } from "./teachers/narration-teacher";
-import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
+import { NEUTRAL_REACTIONS, teacherProfile, teacherReactions, teacherStoredName, useSelectedTeacher, type TeacherDefinition } from "./teachers/teachers";
 import { holdAwards, muteAwardVoice } from "./academy/award-events";
 import { getMyMemory } from "../settings/settings-api";
 import { recordDeliveredLesson, recordFailedRequest, recordTeacherText } from "./history/delivered-material";
@@ -493,7 +493,7 @@ export function LearningWorkspace({
   }, [historyRecorder, sessionId]);
   const recordHistoryRoute = useCallback((id: string, route: "direct-action" | "turn", media: string[] = [], teacher?: TeacherDefinition) => {
     historyRecorder?.record({ kind: "question_routed", runKey: `question:${id}`, questionId: id, stableKey: `route:${id}`,
-      data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacher.name } : {}) } });
+      data: { conversation_route: route, media, ...(teacher ? { teacher_id: teacher.id, teacher_name: teacherStoredName(teacher.id) } : {}) } });
   }, [historyRecorder]);
   const { teacher } = useSelectedTeacher();
   // Who taught each lesson on this board. A lesson keeps its teacher when it
@@ -1293,8 +1293,13 @@ export function LearningWorkspace({
         ? "learning.lesson.generate-from-selection"
         : "learning.lesson.generate";
     const contextFields = lessonContextFields.current.get(actionId);
-    const learnerBackgroundText = contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined;
-    const currentLessonText = contextFields?.has("current_lesson") ? currentLesson() : undefined;
+    // Context follows the course language captured at submission, not an
+    // interface switch made while uploads or admission were pending.
+    const { learnerBackgroundText, currentLessonText, teacherProfileText } = withLocale(lessonLanguage, () => ({
+      learnerBackgroundText: contextFields?.has("learner_background") ? learnerBackground.current(getToken()) : undefined,
+      currentLessonText: contextFields?.has("current_lesson") ? currentLesson() : undefined,
+      teacherProfileText: contextFields?.has("teacher_profile") ? teacherProfile(lessonTeacher) : undefined,
+    }));
     // Name the teacher in the record only when the lesson received its settings.
     recordHistoryRoute(turnId, "direct-action", visualContext ? [visualContext.mediaPath] : [],
       contextFields?.has("teacher_profile") ? lessonTeacher : undefined);
@@ -1326,7 +1331,7 @@ export function LearningWorkspace({
           learner_request: learnerRequest,
           request_source: requestSource === "camera" ? "current_image" : requestSource,
           language: lessonLanguage,
-          ...(contextFields?.has("teacher_profile") ? { teacher_profile: teacherProfile(lessonTeacher) } : {}),
+          ...(teacherProfileText ? { teacher_profile: teacherProfileText } : {}),
           ...(learnerBackgroundText ? { learner_background: learnerBackgroundText } : {}),
           ...(currentLessonText ? { current_lesson: currentLessonText } : {}),
           input_modality: inputModality,
@@ -2748,7 +2753,7 @@ export function LearningWorkspace({
           learnerRequest: question,
           lessonTitle: ollLesson?.title,
           boardSummary: ollLesson
-            ? tr("{{v0}}；进度 {{v1}}/{{v2}}", { v0: ollLesson.title, v1: ollLesson.cursor, v2: ollLesson.totalOperations })
+            ? tr("{{v0}}；进度 {{v1}}/{{v2}}", { v0: ollLesson.title, v1: ollLesson.cursor, v2: ollLesson.totalOperations }, requestLanguage)
             : undefined,
           boardContext,
           toolId,

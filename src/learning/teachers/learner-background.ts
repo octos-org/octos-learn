@@ -1,4 +1,4 @@
-import { localizedCatalog, tr } from "@/i18n";
+import { getLocale, localizedCatalog, tr } from "@/i18n";
 import type { LearningMap, LearningRunSummary } from "../history/history-api";
 import { domainLabel, subjectLabel, topicLabel } from "../map/taxonomy-labels";
 
@@ -49,7 +49,9 @@ export function buildLearnerContext(sources: LearnerBackgroundSources, asOf: Dat
  * value and the lesson starts without it. A result is stored only if the
  * signed-in account is still the one it was loaded for. */
 export class LearnerBackgroundCache {
-  private value?: { account: string; text: string | undefined; at: number };
+  // Sources, not text: the text is formatted in the language of the lesson
+  // that reads it, which may differ from the interface language at prefetch.
+  private value?: { account: string; sources: LearnerBackgroundSources; asOf: Date; at: number; texts: Map<string, string | undefined> };
   private readonly inflight = new Map<string, Promise<void>>();
   private readonly forcedAfter = new Map<string, Promise<void>>();
   private readonly load: (account: string) => Promise<LearnerBackgroundSources>;
@@ -66,7 +68,11 @@ export class LearnerBackgroundCache {
   }
 
   current(account: string | null): string | undefined {
-    return account && this.value?.account === account ? this.value.text : undefined;
+    const value = account && this.value?.account === account ? this.value : undefined;
+    if (!value) return undefined;
+    const locale = getLocale();
+    if (!value.texts.has(locale)) value.texts.set(locale, buildLearnerContext(value.sources, value.asOf));
+    return value.texts.get(locale);
   }
 
   refresh(account: string | null, force = false): Promise<void> {
@@ -90,7 +96,8 @@ export class LearnerBackgroundCache {
       .then((sources) => {
         if (this.currentAccount() !== account) return;
         const now = this.now();
-        this.value = { account, text: buildLearnerContext(sources, now), at: now.getTime() };
+        // Pre-format the current language so submitting a question stays a lookup.
+        this.value = { account, sources, asOf: now, at: now.getTime(), texts: new Map([[getLocale(), buildLearnerContext(sources, now)]]) };
       })
       .catch(() => { /* keep the previous value; lessons start without background */ })
       .finally(() => { clearTimeout(timer); this.inflight.delete(account); });

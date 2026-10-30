@@ -1,7 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
+import zh from "../src/i18n/messages/zh.json" with { type: "json" };
+
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+
+// Settings labels are written in English source text; the suite runs in the
+// Chinese UI, so resolve them through the same catalog the app uses.
+const t = (source: keyof typeof zh) => zh[source];
 
 const microphoneFile = join(tmpdir(), `octos-learn-test-microphone-${process.pid}.wav`);
 test.beforeAll(() => {
@@ -62,49 +68,49 @@ async function mockVoiceAccount(page: Page, initial: Record<string, Service> = {
 test("saving a key connects Voice without another switch or an implicit supplier test", async ({ page }) => {
   const { services, writes, relay } = await mockVoiceAccount(page);
   await page.goto("/settings?tab=voice");
-  const tts = page.getByRole("region", { name: "Text to Speech" });
+  const tts = page.getByRole("region", { name: t("Text to Speech") });
   await expect(tts).toBeVisible();
   await expect(page.locator('main input[type="password"]')).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Save Changes" })).toBeDisabled();
-  await page.getByRole("textbox", { name: "Find a setting" }).fill("learning");
-  await expect(page.getByRole("button", { name: "Voice", exact: true })).toBeVisible();
-  await page.getByRole("textbox", { name: "Find a setting" }).fill("");
+  await expect(page.getByRole("button", { name: t("Save Changes") })).toBeDisabled();
+  await page.getByRole("textbox", { name: t("Find a setting") }).fill("learning");
+  await expect(page.getByRole("button", { name: t("Voice"), exact: true })).toBeVisible();
+  await page.getByRole("textbox", { name: t("Find a setting") }).fill("");
 
-  await tts.getByRole("link", { name: "Set up API key" }).click();
-  const keys = page.getByRole("region", { name: "Speech & Learning" });
+  await tts.getByRole("link", { name: t("Set up API key") }).click();
+  const keys = page.getByRole("region", { name: t("Speech & Learning") });
   await expect(keys).toBeInViewport();
-  await page.getByLabel("Volcano TTS API Key").fill("synthetic-tts-key");
-  await page.getByLabel("TypeSafe Jev API Key").fill("synthetic-jev-key");
-  await page.getByRole("button", { name: "Save Changes" }).click();
-  await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
+  await page.getByLabel(t("Volcano TTS API Key")).fill("synthetic-tts-key");
+  await page.getByLabel(t("TypeSafe Jev API Key")).fill("synthetic-jev-key");
+  await page.getByRole("button", { name: t("Save Changes") }).click();
+  await expect(page.getByRole("button", { name: t("Saved") })).toBeVisible();
   expect(writes).toHaveLength(2); expect(relay).toHaveLength(0);
   expect(services.tts.enabled).toBe(true); expect(services.admission.enabled).toBe(true);
-  expect(await page.getByLabel("Volcano TTS API Key").inputValue()).toBe("••••••••");
+  expect(await page.getByLabel(t("Volcano TTS API Key")).inputValue()).toBe("••••••••");
   await keys.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-api-keys-desktop.png" });
 
-  await page.getByRole("button", { name: "Voice", exact: true }).click();
-  await expect(tts.getByRole("button", { name: "Test voice" })).toBeDisabled();
-  await expect(tts.getByText("Voice required", { exact: true })).toBeVisible();
-  await expect(tts.getByLabel("Voice ID", { exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: t("Voice"), exact: true }).click();
+  await expect(tts.getByRole("button", { name: t("Test voice") })).toBeDisabled();
+  await expect(tts.getByText(t("Voice required"), { exact: true })).toBeVisible();
+  await expect(tts.getByLabel(t("Voice ID"), { exact: true })).toBeEnabled();
   await expect(tts.getByRole("option", { name: "Vivi 2.0", exact: true })).toHaveCount(1);
-  await tts.getByLabel("Voice ID", { exact: true }).selectOption("zh_female_vv_uranus_bigtts");
+  await tts.getByLabel(t("Voice ID"), { exact: true }).selectOption("zh_female_vv_uranus_bigtts");
   await expect(tts.getByRole("switch")).toHaveCount(0);
-  await tts.getByRole("button", { name: "Test voice" }).click();
-  await expect(tts.getByText("Voice synthesized and played successfully.")).toBeVisible();
-  await expect(tts.getByText(/Unsaved changes. Tests preview/)).toBeVisible();
+  await tts.getByRole("button", { name: t("Test voice") }).click();
+  await expect(tts.getByText(t("Voice synthesized and played successfully."))).toBeVisible();
+  await expect(tts.getByText(t("Unsaved changes. Tests preview these edits; lessons still use your saved settings."))).toBeVisible();
   expect(writes).toHaveLength(2); expect(services.tts.params.voice).toBe("");
-  await tts.getByRole("button", { name: "Save voice for lessons" }).click();
-  await expect(page.getByRole("button", { name: "Saved" })).toBeVisible();
-  await expect(tts.getByText("Voice required", { exact: true })).toHaveCount(0);
+  await tts.getByRole("button", { name: t("Save voice for lessons") }).click();
+  await expect(page.getByRole("button", { name: t("Saved") })).toBeVisible();
+  await expect(tts.getByText(t("Voice required"), { exact: true })).toHaveCount(0);
   expect(writes).toHaveLength(3);
   expect(writes[2]).not.toHaveProperty("key");
   expect(writes[2]).toMatchObject({ enabled: true, params: { voice: "zh_female_vv_uranus_bigtts" } });
   await tts.scrollIntoViewIfNeeded();
   await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-settings-desktop.png" });
-  const jev = page.getByRole("region", { name: "Input Understanding" });
-  await jev.getByRole("button", { name: "Test connection" }).click();
-  await expect(jev.getByText("Jev connected successfully.")).toBeVisible();
+  const jev = page.getByRole("region", { name: t("Input Understanding") });
+  await jev.getByRole("button", { name: t("Test connection") }).click();
+  await expect(jev.getByText(t("Jev connected successfully."))).toBeVisible();
   expect(relay).toHaveLength(2);
   expect(services.admission.enabled).toBe(true);
   expect(writes).toHaveLength(3);
@@ -220,20 +226,20 @@ test.describe("browser microphone runtime", () => {
     const failures: string[] = [];
     page.on("console", message => { if (message.type() === "error" && message.text().includes("[voice]")) failures.push(message.text()); });
     await page.goto("/settings?tab=voice");
-    const asr = page.getByRole("region", { name: "Speech Recognition" });
-    await expect(asr.getByRole("button", { name: "Test microphone" })).toBeEnabled();
+    const asr = page.getByRole("region", { name: t("Speech Recognition") });
+    await expect(asr.getByRole("button", { name: t("Test microphone") })).toBeEnabled();
     await page.waitForLoadState("networkidle");
     const started = page.waitForEvent("console", { predicate: message => message.text().includes("started micVAD"), timeout: 20_000 });
-    await asr.getByRole("button", { name: "Test microphone" }).click();
+    await asr.getByRole("button", { name: t("Test microphone") }).click();
     await started.catch(error => { throw new Error(`${String(error)}; capture errors: ${failures.join("; ")}`); });
-    await expect(asr.getByText("Listening — speak now.")).toBeVisible();
-    await expect(asr.getByRole("button", { name: "Finish and recognize" })).toBeEnabled();
-    await expect.poll(() => asr.getByLabel("Microphone input level").evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
-    await expect(asr.getByText("Waiting for microphone audio…")).toHaveCount(0);
+    await expect(asr.getByText(t("Listening — speak now."))).toBeVisible();
+    await expect(asr.getByRole("button", { name: t("Finish and recognize") })).toBeEnabled();
+    await expect.poll(() => asr.getByLabel(t("Microphone input level")).evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
+    await expect(asr.getByText(t("Waiting for microphone audio…"))).toHaveCount(0);
     await asr.scrollIntoViewIfNeeded();
     await page.screenshot({ path: "docs/byok-migration-2026-10-19/voice-microphone-test-desktop.png" });
-    await asr.getByRole("button", { name: "Stop test" }).click();
-    await expect(asr.getByText("Test canceled.")).toBeVisible();
+    await asr.getByRole("button", { name: t("Stop test") }).click();
+    await expect(asr.getByText(t("Test canceled."))).toBeVisible();
     await expect.poll(() => page.evaluate(() => {
       const tracks = (window as unknown as { testMicTracks: MediaStreamTrack[] }).testMicTracks;
       return tracks.length > 0 && tracks.every(track => track.readyState === "ended");
@@ -243,11 +249,11 @@ test.describe("browser microphone runtime", () => {
   test("can explicitly submit microphone PCM without waiting for a detected sentence", async ({ page }) => {
     const { relay } = await mockVoiceAccount(page, { asr: { provider: "volcano", enabled: false, key: "synthetic-asr-key", revision: "r1", execution_target: "client", params: { auth_mode: "api-key", resource_id: "volc.bigasr.auc_turbo" } } });
     await page.goto("/settings?tab=voice"); await page.waitForLoadState("networkidle");
-    const asr = page.getByRole("region", { name: "Speech Recognition" });
-    await asr.getByRole("button", { name: "Test microphone" }).click();
-    const finish = asr.getByRole("button", { name: "Finish and recognize" });
+    const asr = page.getByRole("region", { name: t("Speech Recognition") });
+    await asr.getByRole("button", { name: t("Test microphone") }).click();
+    const finish = asr.getByRole("button", { name: t("Finish and recognize") });
     await expect(finish).toBeEnabled();
-    await expect.poll(() => asr.getByLabel("Microphone input level").evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
+    await expect.poll(() => asr.getByLabel(t("Microphone input level")).evaluate(meter => (meter as HTMLMeterElement).value), { timeout: 5000 }).toBeGreaterThan(0);
     await finish.click();
     await expect(asr.getByText("synthetic microphone recognized")).toBeVisible();
     expect(relay).toHaveLength(1);
@@ -259,7 +265,7 @@ test.describe("browser microphone runtime", () => {
     expect(wav.readUInt32LE(24)).toBe(16000);
     expect(wav.length).toBeGreaterThanOrEqual(16044);
     expect(wav.subarray(44).some(byte => byte !== 0)).toBe(true);
-    await expect(asr.getByRole("button", { name: "Test microphone" })).toBeVisible();
+    await expect(asr.getByRole("button", { name: t("Test microphone") })).toBeVisible();
     expect(await page.evaluate(() => JSON.stringify(localStorage))).not.toContain("synthetic-asr-key");
   });
 });
