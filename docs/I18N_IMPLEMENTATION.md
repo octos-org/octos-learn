@@ -16,7 +16,7 @@ The normal local frontend is HTTPS 5173 and Octos is on loopback 50080. The exis
 
 ## Behavior
 
-- Supported interface locales: `zh-CN`, `en-US`. First use follows browser language; other browser languages use English. An explicit choice is stored in `octos-locale`, survives refresh, and synchronizes between tabs. The document language follows it.
+- Supported interface locales: `zh-CN`, `en-US`. First use is Chinese whatever the browser or device language (user decision, 2026-10-30); English is chosen with the header switch. An explicit choice is stored in `octos-locale`, survives refresh, and synchronizes between tabs. The document language follows it.
 - Header switches are available on the academy pages, settings, setup, login, and whiteboard. Components and the whiteboard keep their identity; switching does not restart the lesson, rebuild the ink editor, discard input, or reset the camera.
 - A new course keeps the language selected when its request was submitted, including while admission checks, image uploads, or skill execution are pending. Switching later affects subsequent requests. Learner text and attachments remain unchanged.
 - New lesson titles, narration, board text, hints, feedback, and explanations receive the selected output-language instruction on the existing generation calls. Compiler-owned fallback teaching text uses the lesson language. No translation model call is added.
@@ -99,3 +99,17 @@ Cumulative usage is **2 actual courses, 4 model HTTP attempts including retries,
 The normal local model route and network setting have been restored. Speech credential revisions, saved voice and teacher choice match the pre-trial metadata, both generation jobs are terminal, the normal backend is running on port 50080, and the budget gateway is closed. Raw courses, traces, screenshots, clips, authorization records and ledgers remain private under ignored `.local-dev/i18n-live/`; only sanitized results are committed. See [language acceptance results](i18n/language-acceptance-results.json).
 
 These two samples establish actual language propagation, generation, synthesis and playback. They do not establish the repository's live p50 speed gate, broader provider/voice coverage or Android-device behavior. No merge or public deployment was performed.
+
+## Independent review fixes (2026-10-30)
+
+An independent review of the three PR heads (`17730ef`, learning-coach `cf00485`, OLL `8e11d8d`) found the following; all are fixed on the same branches.
+
+- **CI e2e smoke failed** because first use followed the browser language and CI Chromium reports `en-US`. By user decision the interface now starts in Chinese whatever the browser language (`initialLocale` and the boot-failure page); the smoke suite adds an English-browser case that starts in Chinese, switches to English in place and keeps it after reload. Labels that were English source text and are now translated in the Chinese UI (`Octos 学习白板`, Settings labels in `voice-settings.spec.ts`) are resolved through the message catalog.
+- **The full Playwright run aborted at collection**: a test helper imports `course-collections`, which now imports `@/i18n`, whose bare JSON imports are invalid native ESM. `src/i18n/index.ts` uses JSON import attributes. `geometry-plot-runtime.spec.ts:84` also fails on `main` (course-pack catalog data) and is unrelated.
+- **One teacher had two durable identities**: `teacher.name` is a localized getter, so history recorded `Alan` in English and the Octos memory participant became `Alan老师` vs `阿澜老师`. History and the participant now use `teacherStoredName()` (never translated); the teacher profile names the other-language aliases as the same teacher; English memory scope text includes the stored name.
+- **Model context could follow a mid-flight switch**: the teacher profile, learner background and current-lesson context were formatted after uploads/admission in the then-current UI language. They are now formatted with `withLocale(lessonLanguage, …)`; the background cache keeps its sources and formats per language (the current language is pre-formatted, so submission remains a lookup).
+- **Learning Coach** is bumped to 0.22.0 (manifest, package, lockfile, SKILL.md, changelog) so version-gated installs and updates pick up language support.
+- **OLL runtime**: the plot coordinate readout is now bound like its other states, so a language switch no longer replaces live coordinates with the hint, and the secant hint keeps `A、B` in Chinese (`A and B` in English). The frontend, lockfile and stack BOM pin the new OLL commit `21e04c4`; Learning Coach is `60c9fc4` (0.22.0).
+- **Acceptance harness**: the probe also counts stops of the matching narration; the switch check waits 1.5 s and requires no stop, no replay and no repeated first-narration request. The isolated probe self-check adds a deliberate stop control.
+
+Not addressed: Android native speech still receives no language hint (requires the native bridge); the Chinese default was confirmed by the user.
