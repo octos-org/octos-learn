@@ -7,7 +7,7 @@ import {homedir} from 'node:os';
 import {chromium,request as browserRequest} from 'playwright';
 import {createServer as createViteServer} from 'vite';
 import {TrialLedger,validateTrialPlan,sha256} from './lib/learning-performance-control.mjs';
-import {createLanguageSpeechGate} from './lib/i18n-acceptance-control.mjs';
+import {createLanguageSpeechGate,reserveLanguageInvocation} from './lib/i18n-acceptance-control.mjs';
 import {loginExistingTrialOwner} from './lib/learning-performance-auth.mjs';
 import {firstPlayableTarget} from './lib/learning-performance-target.mjs';
 import {installLivePlayableProbe,readLivePlayable} from './lib/learning-playable-probe.mjs';
@@ -64,7 +64,7 @@ try{
  browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});report.status='running';await save();
  for(const sample of plan.samples){
   currentRow={id:sample.id,language:sample.language,prompt:sample.prompt,state:'opening',actions:0,turns:0,speech_forwarded:0,speech_blocked:0,artifacts:[],page_errors:[]};report.rows.push(currentRow);const row=currentRow;turnId=null;sessionId=null;invalid=false;let target=null,speechGate=null,resolveTarget;
-  const targetReady=new Promise(done=>{resolveTarget=done;});
+  const targetReady=new Promise(done=>{resolveTarget=done;});const openedSessions=new Set();
   context=await browser.newContext({ignoreHTTPSErrors:true,serviceWorkers:'block',viewport:{width:1440,height:1000}});
   await context.addInitScript(({token,owner,locale,teacher})=>{localStorage.setItem('octos_session_token',token);localStorage.setItem('selected_profile',owner);localStorage.setItem(`octos-learn:setup-skipped:${owner}`,'yes');localStorage.setItem('octos_learning_auto_camera','false');localStorage.setItem('octos_learning_input_mode','text');localStorage.setItem('octos-locale',locale);localStorage.setItem('octos-learn-teacher',teacher);localStorage.setItem('octos-learn-teacher-owner',owner);},{token,owner:plan.owner,locale:sample.language,teacher:plan.teacher_id});
   await context.grantPermissions(['local-network-access'],{origin});
@@ -76,8 +76,9 @@ try{
    const remote=socket.connectToServer();ownedSocket=socket;
    socket.onMessage(data=>{let method;try{const q=JSON.parse(String(data));method=q.method;if(q.method==='turn/start'){row.turns++;throw Error('Unexpected ordinary model turn');}
     if(q.method==='skill/action/invoke'){
-     assert.equal(row.state,'reserved');assert.equal(row.actions,0);assert.equal(q.params.session_id,sessionId);assert.equal(q.params.action_id,'learning.lesson.generate');assert.equal(q.params.arguments.language,sample.language);assert.equal(q.params.arguments.learner_request,sample.prompt);turnId=q.params.arguments.turn_id;row.turn_id=turnId;row.actions++;
-    }else if(q.method)assert.ok(['session/open','session/hydrate','session/files.list','session/list','skill/action/list','skill/action/job/list','session/status.get','session/workspace.get','session/title.set','loop/list','session/goal/get','memory/overview','session/messages_page','ping'].includes(q.method),'Unreviewed RPC');remote.send(data);
+     assert.equal(row.state,'armed');assert.equal(row.actions,0);
+     ({sessionId,turnId}=reserveLanguageInvocation({ledger,sample,openedSessions},q));row.session_id=sessionId;row.turn_id=turnId;row.state='reserved';row.actions++;
+    }else if(q.method){assert.ok(['session/open','session/hydrate','session/files.list','session/list','skill/action/list','skill/action/job/list','session/status.get','session/workspace.get','session/title.set','loop/list','session/goal/get','memory/overview','session/messages_page','ping'].includes(q.method),'Unreviewed RPC');if(q.method==='session/open')openedSessions.add(q.params.session_id);}remote.send(data);
    }catch(error){row.blocked_rpc=method;row.rpc_error=error.message;invalid=true;socket.close();}});remote.onMessage(data=>socket.send(data));
   });
   const page=await context.newPage();page.on('pageerror',e=>row.page_errors.push(e.message));
@@ -120,10 +121,10 @@ try{
   try{
    await save();await page.goto(`${origin}/board?new-board=1`);
    const input=page.getByRole('textbox',{name:sample.language==='zh-CN'?'输入学习问题':en['输入学习问题'],exact:true});await input.waitFor({state:'visible',timeout:30000});await page.waitForFunction(()=>document.querySelector('input[aria-label],textarea[aria-label]')&&!document.querySelector('input[aria-label],textarea[aria-label]').disabled);
-   sessionId=await page.evaluate(owner=>localStorage.getItem(`octos_learning_current_session_v2:${encodeURIComponent(owner)}`),plan.owner);assert.ok(sessionId);row.session_id=sessionId;
+   row.initial_session_id=await page.evaluate(owner=>localStorage.getItem(`octos_learning_current_session_v2:${encodeURIComponent(owner)}`),plan.owner);assert.ok(row.initial_session_id);
    // A known speaker follows this existing teacher; do not select another teacher.
    assert.equal(await page.evaluate(()=>localStorage.getItem('octos-learn-teacher')),plan.teacher_id);
-   await input.fill(sample.prompt);ledger.reserveSample(sample.id,sessionId);row.state='reserved';await save();
+   await input.fill(sample.prompt);row.state='armed';await save();
    await page.getByRole('button',{name:sample.language==='zh-CN'?'发送问题':en['发送问题'],exact:true}).click();
    await page.waitForFunction(()=>window.__livePlayableProbe.audio&&window.__livePlayableProbe.visual,null,{timeout:mode==='--fixture'?7000:180000});
    Object.assign(row,await readLivePlayable(page));row.state='first-playable';await page.screenshot({path:join(output,sample.id+'-course.png'),fullPage:true});await save();

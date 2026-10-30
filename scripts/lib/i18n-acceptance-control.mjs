@@ -2,6 +2,21 @@
 import assert from 'node:assert/strict';
 import { createFirstSpeechGate, createModelBudgetGateway } from './learning-performance-control.mjs';
 
+// New-board navigation may replace the initial persisted session before the
+// composer submits. Reserve the session on the reviewed wire invocation,
+// before forwarding it, rather than trusting the earlier storage snapshot.
+export function reserveLanguageInvocation({ ledger, sample, openedSessions }, request) {
+  assert.equal(request.method, 'skill/action/invoke');
+  const params = request.params;
+  assert.equal(params?.action_id, 'learning.lesson.generate');
+  assert.ok(openedSessions.has(params.session_id), 'Course session has not been opened');
+  assert.equal(params.arguments?.language, sample.language);
+  assert.equal(params.arguments?.learner_request, sample.prompt);
+  assert.ok(typeof params.arguments.turn_id === 'string' && params.arguments.turn_id);
+  ledger.reserveSample(sample.id, params.session_id);
+  return { sessionId: params.session_id, turnId: params.arguments.turn_id };
+}
+
 export function createLanguageSpeechGate({ ledger, sampleId, text, language, speaker, send }) {
   assert.ok(['zh-CN', 'en-US'].includes(language));
   assert.ok(typeof speaker === 'string' && speaker);
