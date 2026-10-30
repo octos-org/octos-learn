@@ -731,6 +731,7 @@ export function LearningPage() {
     <div className="flex h-screen w-screen overflow-hidden bg-black text-white">
       {historyOpen && <LearningHistory currentId={record.id} onClose={() => setHistoryOpen(false)}
         onNew={draft => void leaveTo(newBoardHref(draft))}
+        onOpenRecords={() => void leaveTo("/records?tab=facts")}
         onSelect={session => {
           if (session.id === record.id) { setHistoryOpen(false); return; }
           void leaveTo(learningSessionHref(session));

@@ -40,8 +40,7 @@ import {
   type LearningSessionRecord,
 } from "./learning-session-store";
 import { discoverServerLearningSessions } from "./learning-session-sync";
-import { LearningHistory, learningSessionHref } from "./learning-history";
-import { newBoardHref } from "./new-board-href";
+import { learningSessionHref } from "./learning-history";
 import { groupCoursePacks } from "./course-collections";
 import { AcademyHeader } from "./academy/academy-header";
 import { HallHero } from "./academy/hall-hero";
@@ -345,15 +344,15 @@ function WhiteboardSessionCard({
 export function CourseLauncher() {
   const history = useLearningHistoryRecorder("course-launcher");
   const { token } = useAuth();
-  const navigate = useNavigate();
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const collectionId = searchParams.get("collection");
   const state = useLauncherCatalog();
-  const [whiteboards, setWhiteboards] = useState(() =>
-    listLearningSessions().filter((session) => !session.source));
+  // Boards and course lessons to pick up; course previews are not lessons.
+  const [sessions, setSessions] = useState(() =>
+    listLearningSessions().filter((session) => session.source?.mode !== "preview"));
+  const whiteboards = sessions.filter((session) => !session.source);
   const refreshWhiteboards = () => {
-    setWhiteboards(listLearningSessions().filter((session) => !session.source));
+    setSessions(listLearningSessions().filter((session) => session.source?.mode !== "preview"));
   };
   useEffect(() => {
     if (!token) return;
@@ -362,7 +361,7 @@ export function CourseLauncher() {
       .then((sessions) => {
         if (!active) return;
         sessions.forEach((session) => adoptLearningSession(session));
-        setWhiteboards(listLearningSessions().filter((session) => !session.source));
+        setSessions(listLearningSessions().filter((session) => session.source?.mode !== "preview"));
       })
       .catch(() => {
         // Local whiteboards remain available while the server is offline.
@@ -417,13 +416,10 @@ export function CourseLauncher() {
   return (
     <main className="course-launcher">
       {history.status.cleanupPending > 0 && <p role="status">白板删除请求已保存，清理结果仍待确认。<button onClick={() => { void history.coordinator?.retry(); }}>重试清理</button></p>}
-      {historyOpen && <LearningHistory onClose={() => { setHistoryOpen(false); refreshWhiteboards(); }}
-        onNew={draft => navigate(newBoardHref(draft))}
-        onSelect={session => { updateLearningSession(session.id, { status: "active" }); navigate(learningSessionHref(session)); }} />}
-      <div className={token ? "course-launcher-inner academy-wide" : "course-launcher-inner"} inert={historyOpen}>
+      <div className={token ? "course-launcher-inner academy-wide" : "course-launcher-inner"}>
         <AcademyHeader />
 
-        {!collectionId && token && <HallHero latest={whiteboards[0]} />}
+        {!collectionId && token && <HallHero recent={sessions} />}
         {!collectionId && !token && <section className="course-launcher-hero">
           <p className="course-launcher-eyebrow">LEARN ON A LIVING WHITEBOARD</p>
           <h1>从一组课程，开始新的探索。</h1>
@@ -441,7 +437,7 @@ export function CourseLauncher() {
                 <p>RECENT WHITEBOARDS</p>
                 <h2 id="course-launcher-sessions-title">最近白板</h2>
               </div>
-              <button type="button" className="course-launcher-history-link" onClick={() => setHistoryOpen(true)}>全部学习记录 <ArrowRight size={16} /></button>
+              <Link to="/records" className="course-launcher-history-link">全部学习记录 <ArrowRight size={16} /></Link>
             </div>
             <div className="course-launcher-session-grid">
               {whiteboards.map((session) => (

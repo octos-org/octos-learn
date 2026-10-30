@@ -153,7 +153,7 @@ describe("AdminSettingsPage", () => {
     // The learning-record switches sit under 高级选项, collapsed at first.
     const advanced = screen.getByText("高级选项").closest("details");
     expect(advanced?.open).toBe(false);
-    expect(advanced?.querySelectorAll("input[type=checkbox]")).toHaveLength(4);
+    expect(advanced?.querySelectorAll("input[type=checkbox]")).toHaveLength(5);
     fireEvent.click(screen.getByText("高级选项"));
     expect(advanced?.open).toBe(true);
   });

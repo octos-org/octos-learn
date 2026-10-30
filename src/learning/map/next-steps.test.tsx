@@ -35,7 +35,6 @@ it('resumes the original board, or fills a new board without sending, in the cho
   const draft = await nextStepDraft(STEPS[1]);
   await waitFor(() => expect(onNew).toHaveBeenCalledWith(draft));
   expect(onNew).toHaveBeenCalledTimes(1);
-  expect(document.body.textContent).toContain('这不代表不会');
   expect(document.body.textContent).not.toMatch(/你还不会|忘了|没掌握/);
 });
 
@@ -43,6 +42,7 @@ it('hides a dismissed step and records it; plain wording when playful lines are 
   localStorage.setItem('octos-learn-award-tone', 'plain');
   render(<NextSteps onNew={vi.fn()} />);
   expect(await screen.findByText(PLAIN_SUGGESTIONS.continue.replace('{topic}', '一次函数图像'))).toBeTruthy();
+  expect(screen.queryByText('为什么推荐这个')).toBeNull();
   fireEvent.click(screen.getAllByRole('button', { name: '不感兴趣' })[0]);
   expect(screen.queryByText(PLAIN_SUGGESTIONS.continue.replace('{topic}', '一次函数图像'))).toBeNull();
   expect(api.dismissSuggestion).toHaveBeenCalledWith('continue:mt_WBdHkc2HTf:');

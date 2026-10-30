@@ -15,9 +15,8 @@
 .learning-history-item:hover, .learning-history-item[aria-current] { background: #edf4ef; }
 .learning-history-panel :is(button,input):focus-visible { outline: 2px solid #16818c; outline-offset: 2px; }
 
-.learning-history-tabs { display: flex; gap: 6px; margin: 8px 0; }
-.learning-history-tabs button { flex: 1; min-height: 40px; border: 1px solid #d7dfd9; border-radius: 8px; background: transparent; color: inherit; }
-.learning-history-tabs button[aria-selected="true"] { background: #e3f0e8; border-color: #166a79; }
+.learning-history-more { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 8px; padding: 0; border: 0; background: transparent; color: #166a79; font-size: 13px; }
+
 .learning-history-account { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 .learning-history-account > button { min-height: 40px; margin: 4px; border: 1px solid #d7dfd9; border-radius: 8px; background: #f5f8f3; color: inherit; }
 .learning-history-account h3 { font-size: 16px; overflow-wrap: anywhere; }
@@ -26,23 +25,6 @@
 .learning-history-original-text { white-space: pre-wrap; color: #243b40 !important; }
 .learning-history-evidence summary { min-height: 32px; cursor: pointer; color: #166a79; }
 
-.learning-map h4 { margin: 18px 0 4px; font-size: 15px; }
-.learning-map h5 { margin: 10px 0 4px; font-size: 13px; color: #3c5558; }
-.learning-map ul { list-style: none; margin: 0; padding: 0; }
-.learning-map li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; margin: 4px 0; border-radius: 8px; background: #f2f5f1; font-size: 13px; }
-.learning-map li strong { font-weight: 600; overflow-wrap: anywhere; }
-.learning-map li span { font-size: 12px; padding: 1px 8px; border-radius: 10px; align-self: start; }
-.learning-map li small { grid-column: 1 / -1; color: #5f7774; font-size: 11px; }
-.learning-map li[data-state="explored"] span { background: #e3eef0; color: #1d5f6b; }
-.learning-map li[data-state="practising"] span { background: #fbecd9; color: #7d4510; }
-.learning-map li[data-state="did-it"] span { background: #d9efe1; color: #1c5d36; }
-.learning-map-award { position: relative; padding: 10px 12px; margin: 6px 0; border: 1px solid #d7dfd9; border-radius: 10px; font-size: 13px; }
-.learning-map-award.is-new { border-color: #166a79; background: #edf6f3; }
-.learning-map-award p { margin: 4px 0 !important; color: #243b40 !important; }
-.learning-map-award time { color: #657c7c; font-size: 11px; }
-.learning-map-new { position: absolute; top: 10px; right: 12px; font-size: 11px; color: #166a79; }
-.learning-map-tone { min-height: 36px; margin-top: 6px; padding: 0 10px; border: 1px solid #d7dfd9; border-radius: 8px; background: transparent; color: #166a79; font-size: 12px; }
-.learning-map li strong small.learning-map-original { display: block; font-weight: 400; font-size: 11px; color: #6c827f; }
 
 .weekly-report-period { display: inline-flex; margin-bottom: 8px; padding: 2px; border: 1px solid #d7dfd9; border-radius: 999px; }
 .weekly-report-period button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: #5f7774; font-size: 12px; }
@@ -68,6 +50,3 @@
 .next-step p { margin: 0 0 6px !important; color: #243b40 !important; overflow-wrap: anywhere; }
 .next-step-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .next-step-actions button { min-height: 36px; padding: 0 10px; border: 1px solid #d7dfd9; border-radius: 8px; background: #fff; color: #166a79; font-size: 12px; }
-.next-step details { margin-top: 6px; }
-.next-step summary { min-height: 28px; cursor: pointer; color: #5f7774; font-size: 12px; }
-.next-step details p { color: #5f7774 !important; font-size: 11px; }

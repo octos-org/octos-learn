@@ -5,6 +5,7 @@ import {
   writeRecoverableJson,
 } from "./recoverable-storage";
 import { getSelectedProfileId } from "../api/client";
+import { forgetLessonTeachers } from "./teachers/lesson-teachers";
 
 export type LearningSessionStatus =
   | "provisional"
@@ -369,6 +370,7 @@ export function removeLearningSession(id: string): LearningSessionRecord | null 
   if (localStorage.getItem(currentKey) === id) {
     localStorage.removeItem(currentKey);
   }
+  forgetLessonTeachers(id);
   return removed;
 }
 

@@ -7,8 +7,6 @@ import { nextStepDraft, nextStepLine } from "./next-step-line";
 import { nextStepsShown } from "./next-steps-visibility";
 import { loadPromptBank } from "./topic-prompts";
 
-const STATE = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" } as const;
-
 /** Up to three next steps from suggestions-v1. Resuming opens the original
  * board; other steps only fill a new board's input box, so nothing is sent
  * (or paid for) until the learner sends it. */
@@ -38,6 +36,7 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
     opening.current = true;
     void nextStepDraft(step).then(onNew).finally(() => { opening.current = false; });
   };
+  // Hidden for 14 days by the history service, for this account on every device.
   const dismiss = (step: NextStep) => {
     setSteps(steps.filter(item => item.id !== step.id));
     void api?.dismissSuggestion(step.id).catch(() => undefined);
@@ -55,11 +54,6 @@ export function NextSteps({ onSelect, onNew }: { onSelect?: (session: LearningSe
             : onNew && <button type="button" onClick={() => open(step)}>在新白板上问问</button>}
           <button type="button" onClick={() => dismiss(step)}>不感兴趣</button>
         </div>
-        <details>
-          <summary>为什么推荐这个</summary>
-          <p>{step.topic.name}：{STATE[step.topic.state]}，上次学习 {new Date(step.topic.last_at).toLocaleDateString("zh-CN")}。
-            {step.target ? ` 目录中的前置关系：${step.type === "foundation" ? `${step.target.name} → ${step.topic.name}` : `${step.topic.name} → ${step.target.name}`}（${step.target.reason}）。还没有和${step.target.name}有关的学习记录，这不代表不会。` : ""}</p>
-        </details>
       </article>;
     })}
   </section>;

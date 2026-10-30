@@ -91,6 +91,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
         "先从三出发。",
         expect.any(AbortSignal),
+        null,
       ),
     );
     await waitFor(() =>
@@ -131,7 +132,7 @@ describe("useOllNarrationTts", () => {
       onPlaybackComplete,
     }));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
-      "Continue the narration.", expect.any(AbortSignal),
+      "Continue the narration.", expect.any(AbortSignal), null,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
     expect(nativePlay).not.toHaveBeenCalled();
@@ -255,6 +256,7 @@ describe("useOllNarrationTts", () => {
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "第一段旁白。",
       expect.any(AbortSignal),
+      null,
     ));
     expect(mocks.playAudioBlob).not.toHaveBeenCalled();
 
@@ -367,6 +369,91 @@ describe("useOllNarrationTts", () => {
     ).toHaveLength(1);
   });
 
+  it("prefetches a beat from another teacher's lesson in that teacher's voice and plays it without synthesizing again", async () => {
+    const alanVoices = { "seed-tts-2.0": { id: "alan-voice" } };
+    const sufeiVoices = { "seed-tts-2.0": { id: "sufei-voice" } };
+    let resolvePlaybackStart: ((started: boolean) => void) | undefined;
+    mocks.playAudioBlob.mockImplementationOnce(() => new Promise<boolean>((resolve) => { resolvePlaybackStart = resolve; }));
+    const { rerender } = renderHook(
+      (props: { text: string; narrationId: string; voices: typeof alanVoices; upcomingText: string; upcomingNarrationId?: string; upcomingVoices?: typeof alanVoices }) =>
+        useOllNarrationTts({ enabled: true, playing: true, prefetchEnabled: true, ...props }),
+      { initialProps: { text: "阿澜的最后一句。", narrationId: "alan-last", voices: alanVoices,
+        upcomingText: "苏绯的第一句。", upcomingNarrationId: "sufei-first", upcomingVoices: sufeiVoices } },
+    );
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    act(() => resolvePlaybackStart?.(true));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2));
+    expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith("苏绯的第一句。", expect.any(AbortSignal), sufeiVoices);
+    rerender({ text: "苏绯的第一句。", narrationId: "sufei-first", voices: sufeiVoices, upcomingText: "" });
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledTimes(2));
+    expect(mocks.synthesizeSpeech.mock.calls.filter(([text]) => text === "苏绯的第一句。")).toHaveLength(1);
+  });
+
+  it("keeps the voice a playing clip started with when the teacher becomes known mid-sentence", async () => {
+    const onPlaybackEnd = vi.fn();
+    let finish: (() => void) | undefined;
+    mocks.playAudioBlob.mockImplementation((_audio: Blob, onEnded: () => void) => { finish = onEnded; return Promise.resolve(true); });
+    const { rerender } = renderHook(
+      ({ voices }: { voices: { "seed-tts-2.0": { id: string } } | null }) =>
+        useOllNarrationTts({ enabled: true, playing: true, text: "第一句。", narrationId: "beat-1", voices, onPlaybackEnd }),
+      { initialProps: { voices: null as { "seed-tts-2.0": { id: string } } | null } },
+    );
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    rerender({ voices: { "seed-tts-2.0": { id: "doudou-voice" } } });
+    await act(async () => {});
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    expect(mocks.playAudioBlob).toHaveBeenCalledOnce();
+    expect(onPlaybackEnd).not.toHaveBeenCalledWith("beat-1", "cancelled");
+    act(() => finish?.());
+    expect(onPlaybackEnd).toHaveBeenCalledWith("beat-1", "ended");
+  });
+
+  it("waits for the teacher's voice before speaking or prewarming, and starts once it is known", async () => {
+    const voices = { "seed-tts-2.0": { id: "sufei-voice" } };
+    const onPlaybackEnd = vi.fn();
+    const { rerender } = renderHook(
+      ({ voicePending, voices: current }: { voicePending: boolean; voices: typeof voices | null }) =>
+        useOllNarrationTts({ enabled: true, playing: true, text: "第一句。", narrationId: "beat-1", prefetchEnabled: true,
+          prewarmText: "第一句。", prewarmNarrationId: "beat-1", voices: current, voicePending, onPlaybackEnd }),
+      { initialProps: { voicePending: true, voices: null as typeof voices | null } },
+    );
+    await act(async () => {});
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+    expect(onPlaybackEnd).not.toHaveBeenCalled();
+    rerender({ voicePending: false, voices });
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("第一句。", expect.any(AbortSignal), voices);
+  });
+
+  it("completes narration with audio off at once, even while the teacher's voice is still unknown", async () => {
+    const onPlaybackEnd = vi.fn();
+    renderHook(() => useOllNarrationTts({ enabled: false, playing: true, text: "第一句。", narrationId: "beat-1", voicePending: true, onPlaybackEnd }));
+    await waitFor(() => expect(onPlaybackEnd).toHaveBeenCalledWith("beat-1", "disabled"));
+    expect(mocks.synthesizeSpeech).not.toHaveBeenCalled();
+  });
+
+  it("ends a muted beat once, even when its teacher's voice becomes known right after", async () => {
+    const onPlaybackEnd = vi.fn();
+    const { rerender } = renderHook(
+      ({ voicePending }: { voicePending: boolean }) =>
+        useOllNarrationTts({ enabled: false, playing: true, text: "第一句。", narrationId: "beat-1", voicePending, onPlaybackEnd,
+          voices: voicePending ? null : { "seed-tts-2.0": { id: "sufei-voice" } } }),
+      { initialProps: { voicePending: true } },
+    );
+    await waitFor(() => expect(onPlaybackEnd).toHaveBeenCalledWith("beat-1", "disabled"));
+    rerender({ voicePending: false });
+    await act(async () => {});
+    expect(onPlaybackEnd).toHaveBeenCalledOnce();
+  });
+
+  it("prewarms the first sentence in its own lesson's voice", async () => {
+    const warm = { "seed-tts-2.0": { id: "sufei-voice" } };
+    renderHook(() => useOllNarrationTts({ enabled: true, playing: false, text: "", prefetchEnabled: true,
+      prewarmText: "苏绯的第一句。", prewarmNarrationId: "sufei-1", voices: { "seed-tts-2.0": { id: "alan-voice" } }, prewarmVoices: warm }));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith("苏绯的第一句。", expect.any(AbortSignal), warm));
+  });
+
   it("cancels stale synthesis and playback when the Beat changes", async () => {
     let firstSignal: AbortSignal | undefined;
     const onPlaybackComplete = vi.fn();
@@ -402,6 +489,7 @@ describe("useOllNarrationTts", () => {
       expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith(
         "第二段。",
         expect.any(AbortSignal),
+        null,
       ),
     );
   });
@@ -511,7 +599,7 @@ describe("useOllNarrationTts", () => {
     ));
     await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledWith(
       "这是小模型即时生成的追问课程讲解。",
-      expect.any(AbortSignal),
+      expect.any(AbortSignal), null,
     ));
     await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledWith(
       liveAudio,

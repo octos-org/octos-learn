@@ -6,7 +6,7 @@
  * Both are per-tenant on the backend (see octos `api/voices.rs`).
  */
 import { request } from "./client";
-import { synthesizeDirect } from "@/byok/providers";
+import { synthesizeDirect, type LessonVoices } from "@/byok/providers";
 
 export interface VoiceInfo {
   id: string;
@@ -81,10 +81,11 @@ export async function setVoice(voice: string): Promise<SetVoiceResponse> {
 export async function synthesizeSpeech(
   text: string,
   signal?: AbortSignal,
+  voices?: LessonVoices | null,
 ): Promise<Blob> {
-  return synthesizeDirect(text, signal);
+  return synthesizeDirect(text, signal, undefined, voices);
 }
 
-export function synthesizeCloudSpeech(text: string, signal?: AbortSignal): Promise<Blob> {
-  return synthesizeDirect(text, signal);
+export function synthesizeCloudSpeech(text: string, signal?: AbortSignal, voices?: LessonVoices | null): Promise<Blob> {
+  return synthesizeDirect(text, signal, undefined, voices);
 }

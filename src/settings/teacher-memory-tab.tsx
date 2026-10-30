@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { BookHeart, Loader2, Plus, RefreshCw } from "lucide-react";
 
 import { ConfirmDialog } from "./confirm-dialog";
@@ -185,6 +186,10 @@ export function TeacherMemoryTab({ profileId }: { profileId: string }) {
           <div className="min-w-0">
             <h3 className="text-base font-semibold text-text-strong">老师记得的事</h3>
             <p className="mt-1 text-sm text-muted">老师从你们的对话里记住这些，下次上课时会用上。不对的可以改，不想让老师记着的可以让他们忘掉。</p>
+            <p className="mt-1 text-sm text-muted">
+              每次学习的经过（播放、作答、提问）另存在学习记录里，星图和成就都按它计算，可以逐条查看或删除：
+              <Link to="/records?tab=facts" className="ml-1 text-accent underline">打开学习记录</Link>
+            </p>
           </div>
         </div>
         <div className="flex shrink-0 gap-2">

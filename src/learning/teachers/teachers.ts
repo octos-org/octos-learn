@@ -38,9 +38,11 @@ export interface TeacherDefinition {
   report: TeacherReportLines;
   /** Next-step suggestion lines; {topic}, {target} and {days} are filled in. */
   suggestions: TeacherSuggestionLines;
-  /** Greeting on the academy hall: `welcome` when there is no board to
-   * continue, `resume` when there is one. Neither may comment on absence. */
-  hall: { welcome: string; resume: string };
+  /** Greetings on the academy hall, one picked at random per visit:
+   * `welcome` when there is nothing to continue, `resume` when there is.
+   * Plain and warm in the teacher's own voice; none may comment on absence
+   * or claim what the learner has learned. */
+  hall: { welcome: readonly string[]; resume: readonly string[] };
   /** Standard narration voice per speech resource. A resource not listed here
    * (for example a custom one) keeps the learner's saved voice. */
   voices: Readonly<Record<string, { id: string; name: string }>>;
@@ -183,8 +185,20 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       monthQuiet: "这个月地图上没有新的足迹。想学的时候，我在这里。",
     },
     hall: {
-      welcome: "你好。今天想先想清楚哪一个问题？",
-      resume: "上次的白板还在。接着推下去，还是换一个问题？",
+      welcome: [
+        "你好。今天想先想清楚哪一个问题？",
+        "坐吧。想问什么都可以，我们慢慢想。",
+        "有没有哪件事，你一直想知道为什么？可以从它开始。",
+        "我刚把笔记合上。今天想看哪个问题？",
+        "先说问题，理由我们一起找。",
+      ],
+      resume: [
+        "上次的白板还在。接着推下去，还是换一个问题？",
+        "上次我们停在半路。要从那一步接着想吗？",
+        "白板我没动过。你想接着看，还是先问点别的？",
+        "接着上次的也好，换个新问题也好，都可以。",
+        "上次留下的那一步还在。想好了，我们就从那里开始。",
+      ],
     },
     suggestions: {
       continue: "{topic}的练习还在那儿等着，想再试一次吗？",
@@ -273,8 +287,20 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       monthQuiet: "这个月地图在休息，等你来点灯～",
     },
     hall: {
-      welcome: "来啦！今天想变出什么新问题？",
-      resume: "上次那块白板还开着呢，接着玩？",
+      welcome: [
+        "来啦。今天想弄明白点什么？",
+        "今天从哪儿开始？挑一个你好奇的就行。",
+        "我口袋里正好空着。今天想看点什么？",
+        "有什么想问的，直接说。我们一次只看一样。",
+        "先别想太难的，说说今天最想弄懂的那一件。",
+      ],
+      resume: [
+        "上次那块白板还在，要接着往下走吗？",
+        "上回停在半路，我们从那儿接着来？",
+        "白板给你留着呢。接着上次的，还是换个新问题？",
+        "上次的路走了一半，要不要接着走？",
+        "接着上次的来，还是今天想看点别的？",
+      ],
     },
     suggestions: {
       continue: "{topic}还差一点点，要不要再来一局？",
@@ -362,8 +388,20 @@ export const TEACHERS: readonly TeacherDefinition[] = [
       monthQuiet: "本月没有新的记录。需要时，我在。",
     },
     hall: {
-      welcome: "开始吧。先写下今天要弄清楚的问题。",
-      resume: "上次的白板停在一半。从停下的地方继续。",
+      welcome: [
+        "开始吧。先写下今天要弄清楚的问题。",
+        "今天要弄清楚什么？说具体一点。",
+        "从一个问题开始。一次一个。",
+        "先说问题。其余的，我们一步步来。",
+        "准备好了就开始。想问什么？",
+      ],
+      resume: [
+        "上次的白板停在一半。从停下的地方继续。",
+        "上次的白板还在。接着做，还是换一题？",
+        "白板留着。先看一眼上次写到哪里，再往下。",
+        "要继续，就从上次最后一步核对起。",
+        "继续上次的，或者开一个新问题。你定。",
+      ],
     },
     suggestions: {
       continue: "{topic}的练习还没达到要求。要再做一次吗？",
@@ -464,7 +502,7 @@ export function teacherReactions(teacher: TeacherDefinition | null | undefined):
 /** Plain wording: used when no preset teacher gave the lesson, or when the
  * learner turned the teachers' playful award lines off. */
 export const PLAIN_AWARDS: PlainAwards = {
-  "first-footprint": "学习地图上点亮了第一个知识点。",
+  "first-footprint": "星图上点亮了第一个知识点。",
   "did-it-alone": "第一次没用提示，达到了练习的要求。",
   "regular-guest": "在 3 个不同的日子学习了{topic}。",
   reunion: "隔了两周多，又回来学习{topic}。",

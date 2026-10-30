@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 
 import type { LearningMapTopic } from "../../history/history-api";
 import { domainLabel, topicLabel } from "../taxonomy-labels";
@@ -143,7 +144,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
 
   return <section className="star-atlas" aria-label="星图">
     <canvas ref={canvasRef} className="star-atlas-sky" role="img"
-      aria-label={`数之星域：点亮 ${counts.lit} 颗，正在破印 ${counts.sealed} 颗，显现 ${counts.seen} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情；下方有按星域列出的版本。`} />
+      aria-label={`数之星域：点亮 ${counts.lit} 颗，正在破印 ${counts.sealed} 颗，显现 ${counts.seen} 颗。拖动平移，滚轮或双指缩放，点击星辰查看详情。`} />
     <div className="star-atlas-top">
       <div className="star-atlas-title"><span>Star Atlas Academy</span><strong>数之星域</strong></div>
       <div className="star-atlas-tally" aria-live="polite">
@@ -171,6 +172,7 @@ export function StarAtlas({ topics, onAsk }: { topics: LearningMapTopic[]; onAsk
           <dt>学过的日子</dt><dd>{topic.evidence.days.length} 天</dd>
         </>}
       </dl>
+      {topic && <Link className="star-atlas-evidence" to={`/records?${new URLSearchParams({ topic: topic.topic_id, name: topic.name })}`}>查看这颗星的学习依据 →</Link>}
       {frameLevel(topic) > 0 && <p className="star-atlas-note">{FRAME_TEXT[frameLevel(topic)]}</p>}
       {topic?.state === "did-it" && <p className="star-atlas-note">“做出来过”表示不看提示做对过，不等于已经掌握。点亮的星辰不会熄灭。</p>}
       {!topic && <p className="star-atlas-note">{placed.near.has(selected!) ? "它就在你去过的星辰旁边，迷雾已经变薄。" : "这片星空还被迷雾遮着。"}</p>}
