@@ -39,8 +39,9 @@ export function installLivePlayableProbe() {
   const start = AudioBufferSourceNode.prototype.start;
   AudioBufferSourceNode.prototype.start = function (...args) {
     const result = start.apply(this, args);
-    if (!state.start || state.audio || !matching.has(this.buffer)) return result;
+    if (!state.start || !matching.has(this.buffer)) return result;
     state.audioSources++;
+    if (state.audio) return result;
     const ctx = this.context, analyser = ctx.createAnalyser(), mute = ctx.createGain();
     analyser.fftSize = 256; mute.gain.value = 0;
     this.connect(analyser); analyser.connect(mute); mute.connect(ctx.destination);

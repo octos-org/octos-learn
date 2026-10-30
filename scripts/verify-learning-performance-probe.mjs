@@ -40,6 +40,7 @@ try {
         if (scenario !== 'no-audio') {
           const c = new AudioContext(); await c.resume();
           const b = await c.decodeAudioData(Uint8Array.from(atob(base64), ch => ch.charCodeAt(0)).buffer);
+          window.__probeControlReplay = () => { const replay = c.createBufferSource(); replay.buffer = b; replay.connect(c.destination); replay.start(); };
           const source = c.createBufferSource(); source.buffer = b; source.connect(c.destination); source.start();
         }
       }, { scenario, base64: bytes.toString('base64') });
@@ -49,6 +50,13 @@ try {
       assert.equal(!!result, scenario === 'valid', `False completion for ${scenario}`);
       report.rows.push({ scenario, expected_complete: scenario === 'valid', actual_complete: !!result,
         metrics: await page.evaluate(() => { const s = window.__livePlayableProbe; return { audio: s.audio > 0, visual: s.visual > 0, matching_sources: s.audioSources }; }) });
+      if (scenario === 'valid') {
+        await page.evaluate(() => window.__probeControlReplay());
+        const replayed = await readLivePlayable(page);
+        assert.equal(replayed.matched_audio_sources, 2, 'A replay after first audio must be counted');
+        assert.equal(replayed.audio_ms, result.audio_ms, 'A replay must not overwrite first readiness');
+        report.replay_control = { matching_sources: replayed.matched_audio_sources, first_timestamp_preserved: true };
+      }
     } finally { await context.close(); }
   }
   report.passed = true; report.checked_at = new Date().toISOString();
