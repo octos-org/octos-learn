@@ -387,7 +387,7 @@ describe("LearningWorkspace", () => {
     expect(screen.getByRole("status", {
       name: tr("正在准备语音识别"),
     }).textContent).toContain("正在连接语音识别服务并启动人声检测");
-    expect(screen.getByText(new RegExp(tr("首次使用需要加载约 17 MB，请保持页面打开。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("首次使用需要加载约 17 MB，请保持页面打开。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   });
 
   it("lets the learner calibrate the exact camera frame sent to the teacher", async () => {
@@ -413,7 +413,7 @@ describe("LearningWorkspace", () => {
       rotation: 90,
     });
     expect(
-      screen.getByRole("button", { name: new RegExp(tr("试卷清晰模式").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") }).getAttribute("aria-pressed"),
+      screen.getByRole("button", { name: new RegExp(tr("试卷清晰模式").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "") }).getAttribute("aria-pressed"),
     ).toBe("true");
   });
 
@@ -2953,7 +2953,7 @@ describe("LearningWorkspace", () => {
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("读取旧笔迹失败"));
     expect(localStorage.getItem(`octos-learning-ink-merge-source:v2:${id}`)).toBe(id);
     expect(localStorage.getItem(`octos-learning-ink-cumulative-run:v2:${id}`)).not.toBe("1");
-    expect(screen.getByText(new RegExp(tr(" · 恢复失败").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr(" · 恢复失败").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   });
 
   it("restores all composite board nodes from fullBoard when delivery is settled", async () => {

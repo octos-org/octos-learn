@@ -56,7 +56,7 @@ describe("BYOK voice settings", () => {
     await screen.findByText(tr("Voice synthesized and played successfully."));
     expect(state.synthesize.mock.calls[0][2]).toMatchObject({ key: "synthetic-own-key", enabled: true });
     expect(within(region).queryByRole("switch")).toBeNull();
-    expect(within(region).getByText(new RegExp(tr("Connected automatically with your saved API key. Remove the key in API Keys to disconnect.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(within(region).getByText(new RegExp(tr("Connected automatically with your saved API key. Remove the key in API Keys to disconnect.").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
     expect(state.save).not.toHaveBeenCalled();
   });
   it("preserves unsaved parameters after a failed test", async () => {
@@ -77,12 +77,12 @@ describe("BYOK voice settings", () => {
     fireEvent.change(within(region).getByLabelText(tr("Custom Voice ID")), { target: { value: "previewed-voice" } });
     fireEvent.click(within(region).getByRole("button", { name: tr("Test voice") }));
     await screen.findByText(tr("Voice synthesized and played successfully."));
-    expect(within(region).getByText(new RegExp(tr("Unsaved changes. Tests preview these edits; lessons still use your saved settings.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(within(region).getByText(new RegExp(tr("Unsaved changes. Tests preview these edits; lessons still use your saved settings.").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
     expect(state.save).not.toHaveBeenCalled();
     fireEvent.click(within(region).getByRole("button", { name: tr("Save voice for lessons") }));
     await waitFor(() => expect(state.save).toHaveBeenCalledWith("tts", expect.objectContaining({ params: expect.objectContaining({ voice: "previewed-voice" }) }), "r1"));
     await waitFor(() => expect(within(region).queryByText(tr("Voice required"))).toBeNull());
-    expect(within(region).queryByText(new RegExp(tr("Unsaved changes. Tests preview these edits; lessons still use your saved settings.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeNull();
+    expect(within(region).queryByText(new RegExp(tr("Unsaved changes. Tests preview these edits; lessons still use your saved settings.").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeNull();
   });
   it("cancels a running draft test when its parameters change", async () => {
     let signal: AbortSignal | undefined;

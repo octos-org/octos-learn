@@ -72,7 +72,7 @@ it('remembers with the chosen teacher scope and corrects an entry by id', async 
   api.getMyMemory.mockResolvedValue(overview(MEMORY));
   render(<MemoryRouter><TeacherMemoryTab profileId="alice" /></MemoryRouter>);
   await screen.findByText('下周三有数学期中考试。');
-  fireEvent.click(screen.getByRole('button', { name: new RegExp(tr("让老师记住一件事").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "") }));
+  fireEvent.click(screen.getByRole('button', { name: new RegExp(tr("让老师记住一件事").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "") }));
   fireEvent.change(screen.getByLabelText(tr("想让老师记住什么")), { target: { value: '讲新概念时可以用一个比喻' } });
   fireEvent.click(screen.getByLabelText('只对阿澜'));
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: tr("提交") }));
@@ -105,8 +105,8 @@ it('keeps the request open and reuses its id when sending fails', async () => {
 it('says when background consolidation is off', async () => {
   api.getMyMemory.mockResolvedValue(overview('', { refresh_enabled: false }));
   render(<MemoryRouter><TeacherMemoryTab profileId="alice" /></MemoryRouter>);
-  expect(await screen.findByText(new RegExp(tr("后台整理记忆没有开启：你的请求会被保存，但要等开启后才会生效。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
-  expect(screen.getByText(new RegExp(tr("老师还没有记住什么。上课时说过的偏好和经历，整理后会出现在这里。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(await screen.findByText(new RegExp(tr("后台整理记忆没有开启：你的请求会被保存，但要等开启后才会生效。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("老师还没有记住什么。上课时说过的偏好和经历，整理后会出现在这里。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it('refreshes instead of failing when the entry is already gone', async () => {

@@ -3523,7 +3523,9 @@ export function LearningWorkspace({
         className="learning-workspace-topbar"
         data-learning-board-occlusion=""
       >
-        <LanguageSwitch />
+        <span title={tr("当前课程语言不变；新课程将使用所选语言。")}>
+          <LanguageSwitch />
+        </span>
         <div>
           <span>{tr("Octos Learning Canvas")}</span>
           <strong>{ollLesson?.title ?? tr("新的学习白板")}</strong>

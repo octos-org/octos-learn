@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { setLocale, tr } from "@/i18n";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOllNarrationTts } from "./use-oll-narration-tts";
@@ -46,6 +46,29 @@ describe("useOllNarrationTts", () => {
   afterEach(() => {
     delete window.OctosNativeTts;
     vi.restoreAllMocks();
+  });
+
+  it("keeps active audio stable on a UI switch and prefetches the next course in its own language", async () => {
+    setLocale("en-US", false);
+    let started: ((value: boolean) => void) | undefined;
+    mocks.playAudioBlob.mockImplementationOnce(() => new Promise<boolean>(resolve => { started = resolve; }));
+    const { rerender, unmount } = renderHook(
+      (props: { text: string; narrationId: string; language: string; upcomingText: string; upcomingNarrationId?: string; upcomingLanguage?: string }) =>
+        useOllNarrationTts({ enabled: true, playing: true, prefetchEnabled: true, ...props }),
+      { initialProps: { text: "Draw a circle.", narrationId: "english", language: "en-US", upcomingText: "再看圆心。", upcomingNarrationId: "chinese", upcomingLanguage: "zh-CN" } },
+    );
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith("Draw a circle.", expect.any(AbortSignal), null, "en-US");
+    act(() => setLocale("zh-CN", false));
+    rerender({ text: "Draw a circle.", narrationId: "english", language: "en-US", upcomingText: "再看圆心。", upcomingNarrationId: "chinese", upcomingLanguage: "zh-CN" });
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    act(() => started?.(true));
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2));
+    expect(mocks.synthesizeSpeech).toHaveBeenLastCalledWith("再看圆心。", expect.any(AbortSignal), null, "zh-CN");
+    rerender({ text: "再看圆心。", narrationId: "chinese", language: "zh-CN", upcomingText: "" });
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledTimes(2));
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2);
+    unmount();
   });
 
   it("prefers receive-only private TTS over cloud and native synthesis", async () => {

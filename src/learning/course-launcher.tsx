@@ -233,11 +233,12 @@ function CourseCard({
       <div className="course-launcher-card-body">
         <div className="course-launcher-card-meta">
           <span className="course-launcher-grade">{courseTags(entry)}</span>
+          <span className="course-launcher-language">{entry.locale.startsWith("zh") ? tr("中文课程") : entry.locale.startsWith("en") ? tr("英文课程") : entry.locale}</span>
           <span className="course-launcher-version">{tr("课程包 v")}{entry.version}</span>
         </div>
         <div className="course-lesson-number">{tr("第") + " "}{String(index + 1).padStart(2, "0")} {tr("课")}</div>
-        <h3>{entry.title}</h3>
-        <p>{entry.description}</p>
+        <h3>{tr(entry.title)}</h3>
+        <p>{tr(entry.description)}</p>
         <div className="course-launcher-facts">
           <span><Clock3 size={14} aria-hidden="true" /> {Math.max(1, Math.ceil(entry.durationSeconds / 60))} {tr("分钟")}</span>
           <span>{embedded ? tr("内置课程 · 可离线") : installed ? tr("已下载 · 可离线") : tr("尚未下载")}</span>
@@ -255,7 +256,7 @@ function CourseCard({
                     }} onBlur={event => {
                       if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.open = false;
                     }}>
-                      <summary aria-label={tr("更多操作：{{v0}}", { v0: entry.title })}><MoreHorizontal size={20} /></summary>
+                      <summary aria-label={tr("更多操作：{{v0}}", { v0: tr(entry.title) })}><MoreHorizontal size={20} /></summary>
                       <div className="course-launcher-more-panel" onClick={event => { event.currentTarget.closest("details")?.removeAttribute("open"); }}>
                     <button type="button" className="course-launcher-restart" onClick={restartCourse}>
                       <RotateCcw size={14} aria-hidden="true" /> {tr("重新开始")}</button>
@@ -263,7 +264,7 @@ function CourseCard({
                       type="button"
                       className="course-launcher-delete"
                       onClick={deleteProgress}
-                      aria-label={tr("删除“{{v0}}”的学习记录", { v0: entry.title })}
+                      aria-label={tr("删除“{{v0}}”的学习记录", { v0: tr(entry.title) })}
                       title={tr("删除学习记录")}
                     >
                       <Trash2 size={14} aria-hidden="true" /> {tr("删除学习记录")}</button>

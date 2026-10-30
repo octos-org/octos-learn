@@ -66,9 +66,9 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") })).toBeTruthy();
+      expect(screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
     });
-    const button = screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") });
+    const button = screen.getByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
     const icon = button.querySelector("svg");
 
     expect(icon?.classList.contains("shrink-0")).toBe(true);
@@ -83,13 +83,13 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     });
     expect(
       screen.getByRole("button", { name: tr("Profile") }).getAttribute("data-active"),
     ).toBe("true");
     expect(
-      screen.queryByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }),
+      screen.queryByRole("button", { name: new RegExp(tr("Authentication").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }),
     ).toBeNull();
   });
 
@@ -125,7 +125,7 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+      expect(screen.getByText(new RegExp(tr("No profile available").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     });
     expect(
       screen.getByRole("button", { name: tr("Profile") }).getAttribute("data-active"),
@@ -203,7 +203,7 @@ describe("AdminSettingsPage", () => {
       target: { value: "zzz-nothing" },
     });
 
-    expect(screen.getByText(new RegExp(tr("No settings match \"").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("No settings match \"").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     expect(screen.queryByRole("button", { name: tr("Profile") })).toBeNull();
   });
 
@@ -215,7 +215,7 @@ describe("AdminSettingsPage", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") })).toBeTruthy();
+      expect(screen.getByRole("heading", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
     });
 
     const toggle = screen.getByTestId("toggle-debug-mode");
@@ -242,7 +242,7 @@ describe("AdminSettingsPage", () => {
       target: { value: "debug" },
     });
 
-    expect(screen.getByRole("button", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
     expect(screen.queryByRole("button", { name: tr("Profile") })).toBeNull();
   });
 });

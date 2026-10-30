@@ -91,7 +91,7 @@ describe("ApiKeysTab", () => {
     expect(openaiInput.value).toBe("sk-p***xyz");
 
     const saveBtn = screen.getByRole("button", {
-      name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
+      name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
     }) as HTMLButtonElement;
     expect(saveBtn.disabled).toBe(true);
   });
@@ -105,7 +105,7 @@ describe("ApiKeysTab", () => {
     fireEvent.change(screen.getByLabelText("NGROK_AUTHTOKEN"), {
       target: { value: "ngrok-token-1" },
     });
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() =>
       expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled(),
@@ -125,7 +125,7 @@ describe("ApiKeysTab", () => {
     fireEvent.change(screen.getByLabelText("OPENAI_API_KEY"), {
       target: { value: "" },
     });
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save Changes").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() =>
       expect(apiMocks.updateMyProfileConfig).toHaveBeenCalled(),

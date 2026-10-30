@@ -47,7 +47,7 @@ describe("WhiteboardQuestionCard", () => {
       ...cameraQuestion, imagePath: undefined, status: "failed",
       errorCode: "LESSON_CREDENTIAL_MISSING",
     }} left={0} top={0} />);
-    expect(screen.getByText(new RegExp(tr("请在设置中填写你的 Gemini API Key").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("请在设置中填写你的 Gemini API Key").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
     expect(screen.getByRole("link", { name: tr("前往设置") }).getAttribute("href")).toBe("/settings?tab=llm");
   });
   it("loads the camera frame with profile-aware headers and opens it", async () => {

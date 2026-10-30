@@ -404,7 +404,7 @@ describe("LearningPage", () => {
     const save = vi.fn(async () => {});
     act(() => learningWorkspaceMock.props?.onInkSaveHandlerChange?.(save));
     fireEvent.click(screen.getByRole("button", { name: tr("打开学习记录") }));
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("每次学习的经过与删除").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("每次学习的经过与删除").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }));
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/records?tab=facts"));
     expect(save).toHaveBeenCalledOnce();
   });

@@ -61,28 +61,28 @@ describe("AuthenticationTab", () => {
     expect(await screen.findByDisplayValue("smtp.example.com")).toBeTruthy();
     expect(
       (screen.getByRole("radio", {
-        name: new RegExp(tr("Restricted registration").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
+        name: new RegExp(tr("Restricted registration").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
       }) as HTMLInputElement).checked,
     ).toBe(true);
-    expect((screen.getByLabelText(new RegExp(tr("SMTP Password").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")) as HTMLInputElement).value).toBe("");
-    expect(screen.getByText(new RegExp(tr("A password is already configured. It is never returned to the browser.").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+    expect((screen.getByLabelText(new RegExp(tr("SMTP Password").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")) as HTMLInputElement).value).toBe("");
+    expect(screen.getByText(new RegExp(tr("A password is already configured. It is never returned to the browser.").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
   });
 
   it("enables open registration and preserves the stored password when saving", async () => {
     render(<AuthenticationTab />);
     await screen.findByDisplayValue("smtp.example.com");
 
-    fireEvent.click(screen.getByRole("radio", { name: new RegExp(tr("Open registration").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("radio", { name: new RegExp(tr("Open registration").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     const warning = screen.getByRole("note", {
-      name: new RegExp(tr("Open registration warning").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"),
+      name: new RegExp(tr("Open registration warning").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
     });
     expect(warning.className).toContain(
       "[color:var(--workbench-warning-text)]",
     );
-    expect(screen.getByText(new RegExp(tr("Anyone with an email address can register").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("Anyone with an email address can register").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() => {
       expect(apiMocks.saveAuthenticationSettings).toHaveBeenCalledWith({
@@ -106,7 +106,7 @@ describe("AuthenticationTab", () => {
     await screen.findByDisplayValue("smtp.example.com");
 
     fireEvent.click(
-      screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }),
+      screen.getByRole("button", { name: new RegExp(tr("Save authentication settings").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }),
     );
 
     const error = await screen.findByRole("alert");
@@ -120,10 +120,10 @@ describe("AuthenticationTab", () => {
     render(<AuthenticationTab />);
     await screen.findByDisplayValue("smtp.example.com");
 
-    fireEvent.change(screen.getByLabelText(new RegExp(tr("Test recipient").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i")), {
+    fireEvent.change(screen.getByLabelText(new RegExp(tr("Test recipient").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")), {
       target: { value: "new-user@example.com" },
     });
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Send test email").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Send test email").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     await waitFor(() => {
       expect(apiMocks.sendAuthenticationTestEmail).toHaveBeenCalledWith(

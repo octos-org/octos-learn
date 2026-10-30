@@ -17,7 +17,7 @@ describe("DeveloperTab", () => {
   it("renders the master debug mode switch and sub-feature toggles", () => {
     render(<DeveloperTab />);
 
-    expect(screen.getByText(new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i"))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("Developer Options").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"))).toBeTruthy();
     expect(screen.getByTestId("toggle-debug-mode")).toBeTruthy();
     expect(screen.getByTestId("toggle-jev-debugger")).toBeTruthy();
     expect(screen.getByTestId("toggle-trace-inspector")).toBeTruthy();

@@ -27,7 +27,7 @@ it('shows separately counted facts and lets the learner inspect the original evi
   expect(screen.getByText('提问 1 次 · 已播放 2 个不同片段 · 作答 1 次')).toBeTruthy();
   fireEvent.click(screen.getByText(tr("查看原始依据编号")));
   expect(screen.getByText(/记录：event-1/)).toBeTruthy();
-  expect(screen.getByText(new RegExp(tr("从记录功能启用后开始统计。播放次数和作答结果不代表已经理解或掌握。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("从记录功能启用后开始统计。播放次数和作答结果不代表已经理解或掌握。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 it('keeps pagination pinned to the initial upper sequence and refreshes after a deletion invalidates it', async () => {
   let first = true;
@@ -55,7 +55,7 @@ it('deletes only learning facts and clearly distinguishes this from forgetting t
   render(<AccountHistoryPanel onSelect={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
   await screen.findByText(tr("学生提问")); fireEvent.click(screen.getByRole('button', { name: tr("删除这次学习记录") }));
-  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   expect(confirm).toHaveBeenCalledWith(expect.stringContaining('这不会删除 Octos 已保存的对话或长期记忆'));
 });
 it('never displays a delayed account-A detail response after switching to account B', async () => {
@@ -73,7 +73,7 @@ it('never displays a delayed account-A detail response after switching to accoun
     resolveOld(Response.json({ events: [{ seq: 1, event }], through: 8, next_after: null }));
   });
   await waitFor(() => expect(screen.queryByText(tr("学生提问"))).toBeNull());
-  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(await screen.findByText(new RegExp(tr("还没有已同步的学习经过。此前的白板仍可从“白板与课程”打开。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 it('shows unreviewed course mappings as pending rather than zero progress', async () => {
   stubFetch(url => {
@@ -82,8 +82,8 @@ it('shows unreviewed course mappings as pending rather than zero progress', asyn
   });
   render(<AccountHistoryPanel onSelect={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
-  expect(await screen.findByText(new RegExp(tr("课程与知识点的对应表尚待内容审核，暂不计算知识点进度。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
-  expect(screen.queryByText(new RegExp(tr("本遍课程实际播放了").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeNull();
+  expect(await screen.findByText(new RegExp(tr("课程与知识点的对应表尚待内容审核，暂不计算知识点进度。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.queryByText(new RegExp(tr("本遍课程实际播放了").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeNull();
 });
 
 it('shows automatic evidence separately and pins its pagination without turning unknown records into zero', async () => {
@@ -117,7 +117,7 @@ it('shows a failed request separately from delivered content and played progress
   render(<AccountHistoryPanel onSelect={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
   expect(await screen.findByText(tr("一次请求执行未完成"))).toBeTruthy();
-  expect(screen.getByText(new RegExp(tr("已经交付的内容仍保留，是否播放另看播放记录。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("已经交付的内容仍保留，是否播放另看播放记录。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 
@@ -135,7 +135,7 @@ it('shows generated whole-course playback with its actual source and counted rec
   fireEvent.click(screen.getByText(tr("查看整课播放的依据")));
   expect(screen.getByText(/课程交付记录：final-delivery/)).toBeTruthy();
   expect(screen.getByText(/播放记录：old-part-playback/)).toBeTruthy();
-  expect(screen.getByText(new RegExp(tr("按实际交付课程的全部片段核对；未改变的早期分段可以计入，改写后的内容需要重新播放。这不表示练习完成或掌握。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("按实际交付课程的全部片段核对；未改变的早期分段可以计入，改写后的内容需要重新播放。这不表示练习完成或掌握。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
 });
 
 it('keeps generated whole-course playback unknown when a final source is unavailable', async () => {
@@ -146,6 +146,6 @@ it('keeps generated whole-course playback unknown when a final source is unavail
   });
   render(<AccountHistoryPanel onSelect={vi.fn()} />);
   fireEvent.click(await screen.findByRole('button', { name: /为什么直线会变陡/ }));
-  expect(await screen.findByText(new RegExp(tr("尚无足够的完整课程与内容版本依据，暂不能判断整课是否播放完成；已有片段记录仍保留。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
-  expect(screen.queryByText(new RegExp(tr("本遍课程实际播放了").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeNull();
+  expect(await screen.findByText(new RegExp(tr("尚无足够的完整课程与内容版本依据，暂不能判断整课是否播放完成；已有片段记录仍保留。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.queryByText(new RegExp(tr("本遍课程实际播放了").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeNull();
 });

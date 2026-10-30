@@ -101,7 +101,7 @@ describe("shared course launcher", () => {
   it("always offers a blank whiteboard while no packs are published", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([])), { status: 200 })));
     showLauncher("/");
-    expect(screen.getByRole("link", { name: new RegExp(tr("新建空白白板").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }).getAttribute("href")).toBe("/board?new-board=1");
+    expect(screen.getByRole("link", { name: new RegExp(tr("新建空白白板").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }).getAttribute("href")).toBe("/board?new-board=1");
     expect(await screen.findByText(tr("课程包还在准备中"))).toBeTruthy();
   });
 
@@ -113,12 +113,12 @@ describe("shared course launcher", () => {
     ].map(pack => ({ ...pack, archiveUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/archive.ocpack`, manifestUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/manifest.json`, thumbnailUrl: `/api/learn/course-packs/${pack.packId}/1.0.0/files/thumbnail.webp` }));
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog(packs)), { status: 200 })));
     showLauncher("/");
-    fireEvent.click(await screen.findByRole("link", { name: new RegExp(tr("用截面理解多元函数").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
+    fireEvent.click(await screen.findByRole("link", { name: new RegExp(tr("用截面理解多元函数").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }));
     expect((await screen.findAllByRole("heading", { level: 3 })).map(h => h.textContent))
       .toEqual(["等高线", "偏导数", "鞍点"]);
-    fireEvent.click(screen.getByRole("link", { name: new RegExp(tr("全部课程集").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
+    fireEvent.click(screen.getByRole("link", { name: new RegExp(tr("全部课程集").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }));
     expect(screen.queryByRole("heading", { name: "等高线" })).toBeNull();
-    expect(screen.getByRole("link", { name: new RegExp(tr("用截面理解多元函数").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy();
+    expect(screen.getByRole("link", { name: new RegExp(tr("用截面理解多元函数").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy();
   });
 
   it.each([
@@ -139,11 +139,11 @@ describe("shared course launcher", () => {
   it("offers separate preview and interactive entry for a version-pinned pack", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(catalog([release])), { status: 200 })));
     showLauncher();
-    const preview = await screen.findByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") });
+    const preview = await screen.findByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") });
     expect(preview.getAttribute("href")).toBe(
       "/course/grade-3-math?version=1.0.0&title=%E4%B8%89%E5%B9%B4%E7%BA%A7%E6%95%B0%E5%AD%A6&mode=preview&collection=other",
     );
-    expect(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy();
     expect(screen.getByText("三年级数学")).toBeTruthy();
   });
 
@@ -160,12 +160,12 @@ describe("shared course launcher", () => {
     showLauncher();
 
     expect(await screen.findByText(tr("内置课程 · 可离线"))).toBeTruthy();
-    expect(screen.getByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy();
+    expect(screen.getByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledWith(
       "/course-packs/embedded/catalog.json",
       expect.objectContaining({ cache: "no-store" }),
     );
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }));
     expect(localStorage.getItem("octos_learning_sessions_v2:anonymous"))
       .toContain('"mode":"instance"');
   });
@@ -239,8 +239,8 @@ describe("shared course launcher", () => {
     vi.stubGlobal("fetch", vi.fn(async () => { throw new Error("network down"); }));
     showLauncher();
     expect(await screen.findByText(tr("联网后可打开"))).toBeTruthy();
-    expect(screen.queryByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeNull();
-    expect(screen.getByRole("link", { name: new RegExp(tr("全部课程集").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeNull();
+    expect(screen.getByRole("link", { name: new RegExp(tr("全部课程集").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy();
   });
 
   it("opens an installed pinned version when the catalog is offline", async () => {
@@ -257,7 +257,7 @@ describe("shared course launcher", () => {
 
     expect(await screen.findByText(tr("已下载 · 可离线"))).toBeTruthy();
     expect(screen.getByText("3 分钟")).toBeTruthy();
-    expect(screen.getByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }).getAttribute("href"))
+    expect(screen.getByRole("link", { name: new RegExp(tr("预览").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }).getAttribute("href"))
       .toContain("mode=preview");
   });
 
@@ -285,7 +285,7 @@ describe("shared course launcher", () => {
       ? Response.json({ id: "alice" }) : Response.json(catalog([release])));
     vi.stubGlobal("fetch", fetcher);
     showLauncher();
-    fireEvent.click(await screen.findByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }));
+    fireEvent.click(await screen.findByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }));
     const destination = new URL(screen.getByTestId("location").textContent!, "https://example.test");
     expect(destination.pathname).toBe("/course/grade-3-math");
     expect(destination.searchParams.get("collection")).toBe("other");
@@ -295,13 +295,13 @@ describe("shared course launcher", () => {
     expect(raw).toContain('"mode":"instance"');
     cleanup();
     showLauncher();
-    const continueLink = await screen.findByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") });
+    const continueLink = await screen.findByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") });
     expect(continueLink.getAttribute("href")).toContain("&collection=other&instance=");
     fireEvent.click(screen.getByLabelText(/更多操作/u));
-    expect(screen.getByRole("button", { name: new RegExp(tr("重新开始").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: new RegExp(tr("重新开始").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy();
     vi.spyOn(window, "confirm").mockReturnValue(true);
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
-    await waitFor(() => expect(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: new RegExp(tr("开始互动").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") })).toBeTruthy());
     expect(fetcher).toHaveBeenCalledWith(expect.stringContaining("/api/learn/history/sessions/"),
       expect.objectContaining({ method: "DELETE", body: JSON.stringify({ delete_octos_session: true }) }));
   });
@@ -313,13 +313,13 @@ describe("shared course launcher", () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json(catalog([release]))));
     vi.spyOn(window, "confirm").mockReturnValue(true);
     showLauncher();
-    const link = await screen.findByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") });
+    const link = await screen.findByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") });
     const destination = link.getAttribute("href");
     fireEvent.click(screen.getByLabelText(/更多操作/u));
     fireEvent.click(screen.getByRole("button", { name: /删除.*学习记录/u }));
     expect((await screen.findByRole("alert")).textContent).toContain("删除请求尚未保存");
     expect(getLearningSession(instance.id)).toBeTruthy();
-    expect(screen.getByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "u") }).getAttribute("href")).toBe(destination);
+    expect(screen.getByRole("link", { name: new RegExp(tr("继续学习").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "u") }).getAttribute("href")).toBe(destination);
   });
 
   it("manages ordinary whiteboards and logout from the launcher", async () => {

@@ -66,7 +66,7 @@ it('shows a checked comment only for the teacher it was written as', async () =>
   api.weeklyReport.mockResolvedValue({ ...REPORT, comment: '这周来了 2 天，地图亮起来啦！' });
   render(<ReportPanel period="week" today={today} />);
   expect((await screen.findByText('这周来了 2 天，地图亮起来啦！')).closest('figure')?.textContent).toContain(tr("窦鸢"));
-  expect(screen.getByText(new RegExp(tr("老师评语由模型根据本周记录生成，可在设置中关闭。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+  expect(screen.getByText(new RegExp(tr("老师评语由模型根据本周记录生成，可在设置中关闭。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
   cleanup();
   localStorage.setItem('octos-learn-teacher', 'alan');
   render(<ReportPanel period="week" today={today} />);

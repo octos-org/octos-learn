@@ -3026,8 +3026,8 @@ describe("OLL lesson Runtime integration", () => {
 
     fireEvent.change(input, { target: { value: "四分之三" } });
     fireEvent.click(submit);
-    expect(screen.getByText(new RegExp(tr("请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
-    expect(screen.queryByText(new RegExp(tr("已尝试").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeNull();
+    expect(screen.getByText(new RegExp(tr("请写一个数：整数、小数、分数（3/4）或带分数（2 3/4）。").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.queryByText(new RegExp(tr("已尝试").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeNull();
 
     fireEvent.change(input, { target: { value: "6/8" } });
     fireEvent.click(submit);

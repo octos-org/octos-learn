@@ -25,7 +25,7 @@ describe("JevAdmissionDebugger", () => {
 
     render(<JevAdmissionDebugger />);
 
-    const trigger = screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") });
+    const trigger = screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") });
     expect(trigger).toBeTruthy();
     expect(screen.queryByText(tr("TypeSafe Jev 准入监视"))).toBeNull();
 
@@ -72,7 +72,7 @@ describe("JevAdmissionDebugger", () => {
     render(<JevAdmissionDebugger />);
 
     // Expand
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     expect(await screen.findByText("“呃...那个”")).toBeTruthy();
     expect(screen.getByText("“勾股定理怎么证明”")).toBeTruthy();
@@ -89,7 +89,7 @@ describe("JevAdmissionDebugger", () => {
     render(<JevAdmissionDebugger />);
 
     // Expand
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
     expect(await screen.findByText(tr("TypeSafe Jev 准入监视"))).toBeTruthy();
 
     // Collapse
@@ -97,7 +97,7 @@ describe("JevAdmissionDebugger", () => {
     await waitFor(() => {
       expect(screen.queryByText(tr("TypeSafe Jev 准入监视"))).toBeNull();
     });
-    expect(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") })).toBeTruthy();
+    expect(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") })).toBeTruthy();
   });
 
   it("triggers quick test when quick test button is clicked", async () => {
@@ -115,7 +115,7 @@ describe("JevAdmissionDebugger", () => {
     });
 
     render(<JevAdmissionDebugger />);
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     const testBtn = await screen.findByRole("button", { name: tr("测试语气词") });
     fireEvent.click(testBtn);
@@ -145,11 +145,11 @@ describe("JevAdmissionDebugger", () => {
     );
 
     render(<JevAdmissionDebugger />);
-    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), "i") }));
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(tr("Jev 准入").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }));
 
     expect(await screen.findByText("“测试降级放行”")).toBeTruthy();
     expect(screen.getByText(tr("🔄 降级放行"))).toBeTruthy();
-    expect(screen.getByText(new RegExp(tr("未配置 Jev 凭据，已降级直通排课流程").replace(/[.*+?^${}()|[]\\]/g, "\\$&"), ""))).toBeTruthy();
+    expect(screen.getByText(new RegExp(tr("未配置 Jev 凭据，已降级直通排课流程").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), ""))).toBeTruthy();
     expect(screen.getByText(tr("降级:"))).toBeTruthy();
   });
 });
