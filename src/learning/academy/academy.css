@@ -62,8 +62,8 @@
   margin-left: auto;
 }
 
-.academy-account a,
-.academy-account button {
+.academy-account > a,
+.academy-account > button {
   display: inline-flex;
   min-height: 40px;
   align-items: center;
@@ -79,6 +79,23 @@
 }
 
 .academy-account button:disabled { opacity: 0.55; }
+
+/* The academy stays cream even when the workbench uses a dark theme. */
+.academy-account .language-switch { color: #244f5a; }
+.academy-account .language-switch button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.academy-account .language-switch button[aria-pressed="true"] {
+  border-color: rgba(217, 169, 63, 0.55);
+  color: #1b2457;
+  background: rgba(217, 169, 63, 0.12);
+}
+.academy-account .language-switch button:hover { opacity: 1; }
 
 .academy-hall {
   --academy-gold: #e2bd66;
