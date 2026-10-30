@@ -10,7 +10,7 @@ This task changes application language and language propagation only. All affect
 | learning-coach | `93a583b` | `b8c700e`, `cf00485`: generation/compiler language and selection assistance |
 | octos-lesson-language | `c4e891f` | `8e11d8d43a16a45328664df8b40f55aab0ee1092`: in-place board/ink UI language |
 
-The OLL branch was pushed to its original repository after explicit user approval. The frontend pins that complete Git commit; no local archive or dependency link remains. The frontend and Learning Coach commits remain local. Nothing has been merged or deployed publicly.
+The OLL branch was pushed to its original repository after explicit user approval. The frontend pins that complete Git commit; no local archive or dependency link remains. After the user subsequently authorized pushing the remaining repositories, all three `codex/complete-i18n` branches were pushed to their original remotes with their individual commits preserved. Nothing has been merged or deployed publicly.
 
 The normal local frontend is HTTPS 5173 and Octos is on loopback 50080. The existing `yy` profile was used. Its Learning Coach installation was backed up to `~/.octos/backups/learning-coach-before-i18n-20261030T042539Z`, updated with the official installer, and its locked dependencies restored. Installed `manifest.json`, `main`, and `lesson-plan.js` match the repository by SHA-256. No account, credential, primary model, voice choice, or analysis setting was changed.
 
