@@ -4,8 +4,8 @@
 
 ## 当前使用
 
-- [中英文本地化实施与验收](I18N_IMPLEMENTATION.md)：语言切换、实时课程与旁白语言、三仓库提交、回归结果与未完成的真实供应商验收。
-- [中英文课程验收结果](i18n/language-acceptance-results.json)：真实验收在供应商调用前停止、0 费用、脚本修复与免费回归结果。
+- [中英文本地化实施与验收](I18N_IMPLEMENTATION.md)：语言切换、实时课程与旁白语言、三仓库提交、回归结果、真实中英文课程与语音播放验证。
+- [中英文课程验收结果](i18n/language-acceptance-results.json)：两门真实课程、4 次模型 / 2 次语音、费用预留、失败记录及待人工试听项。
 
 - [2026-10-20 BYOK 公网部署与电视安装](BYOK_PUBLIC_DEPLOYMENT_2026_10_20.md)：Octos 2.0.3 升级、本人凭据产品服务、网页资源校验、Android 13 Keystore 测试与待完成的电视 E2E。
 

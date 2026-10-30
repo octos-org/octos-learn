@@ -18,7 +18,11 @@
     "279e0a6 fix(i18n): keep active audio stable when prewarm language clears",
     "4178778 fix(i18n): identify cached voices by speaker IDs rather than labels",
     "d3da946 test(i18n): enforce language acceptance request and speech limits",
-    "8176582 fix(test): reserve the submitted language trial session before forwarding"
+    "8176582 fix(test): reserve the submitted language trial session before forwarding",
+    "7e08397 docs(i18n): record stopped live attempt and corrected free acceptance",
+    "d5ca8d4 fix(test): negotiate final course file queries in the language trial",
+    "713a35d fix(test): count matching audio replays after first readiness",
+    "61a1584 test(i18n): preserve cumulative limits when continuing the reviewed trial"
   ],
   "learning-coach": [
     "b8c700e feat(i18n): carry lesson language through generation and compiled teaching text",

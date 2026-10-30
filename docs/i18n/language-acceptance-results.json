@@ -1,6 +1,6 @@
 {
-  "status": "implementation-complete-real-language-and-voice-acceptance-incomplete",
-  "recorded_at_utc": "2026-10-30T05:26:47.625436+00:00",
+  "status": "real-text-generation-speech-synthesis-and-browser-playback-verified-listening-pending",
+  "recorded_at_utc": "2026-10-30T05:42:46.064702+00:00",
   "runtime_fixes": [
     {
       "commit": "279e0a6",
@@ -16,7 +16,7 @@
       "files": 159,
       "tests_passed": 1407
     },
-    "acceptance_controls_tests_passed": 13,
+    "acceptance_controls_tests_passed": 14,
     "build": "passed",
     "lint": {
       "errors": 0,
@@ -49,7 +49,9 @@
   },
   "free_browser_after_fix": {
     "real_supplier_calls": 0,
-    "synthetic_audio": "One-second test tone, not synthesized speech; this does not establish voice quality.",
+    "synthetic_audio": "One-second test tone, not synthesized speech; no voice-quality claim.",
+    "strict_final_files_feature_gate": true,
+    "corrected_matching_audio_replay_counter": true,
     "rows": [
       {
         "language": "zh-CN",
@@ -57,7 +59,7 @@
         "actions": 1,
         "speech_forwarded": 1,
         "model_http_reservations": 2,
-        "playable_ms": 696.5,
+        "playable_ms": 696.9000000953674,
         "switch_check": {
           "same_nodes": true,
           "same_audio_sources": true,
@@ -71,7 +73,7 @@
         "actions": 1,
         "speech_forwarded": 1,
         "model_http_reservations": 2,
-        "playable_ms": 515.1000000238419,
+        "playable_ms": 513.7000000476837,
         "switch_check": {
           "same_nodes": true,
           "same_audio_sources": true,
@@ -82,10 +84,103 @@
     ]
   },
   "remaining": [
-    "Real generated text inspection in both languages",
-    "First narrated segment listening in both languages using the existing teacher voice",
-    "Live end-to-end p50 performance gate (two language samples alone are insufficient)",
+    "Human listening review of saved Chinese and English first narration clips; assistant cannot directly hear audio",
+    "Live end-to-end p50 performance gate (two samples are insufficient)",
     "Android device acceptance"
   ],
-  "retry_policy": "The failed real attempt is not reset or automatically resubmitted. Continuing it requires the user to authorize resumption under the existing failure-stop rule; preserve cumulative supplier counts and cost caps."
+  "retry_policy": "Real acceptance has ended. Both actual courses completed and their cumulative 4 model / 2 speech expenses remain in the same ledger. Preserve original failures; no additional paid calls or regeneration.",
+  "verifier_fixes": [
+    {
+      "commit": "d5ca8d4",
+      "behavior": "Negotiate auxiliary.rest_to_ws.v1 for final file queries; free fixture now enforces the same gate."
+    },
+    {
+      "commit": "713a35d",
+      "behavior": "Count every matching audio start, including after initial readiness; deliberate replay negative control verified."
+    },
+    {
+      "commit": "61a1584",
+      "behavior": "After renewed authorization and independent read-only job/trace checks, complete the reviewed Chinese slot and run only English on the same ledger, retaining all expenses."
+    }
+  ],
+  "authorized_resumption": {
+    "status": "two_real_courses_completed_without_regeneration",
+    "rows": [
+      {
+        "language": "zh-CN",
+        "job_status": "succeeded",
+        "original_question_unchanged": true,
+        "course_text_review": "passed: titles, narration, labels, hints, feedback, practice and summary use selected language; y=2x+1 retained",
+        "model_http_attempts": 2,
+        "speech_requests": 1,
+        "speech_language_hint": "zh-cn",
+        "same_existing_teacher_voice": true,
+        "speech_seconds": 15.864,
+        "audio_sha256": "acb792393f49932a8ac7f0da1695d0d524523e89e2440246ed16f921cc745904",
+        "actual_matching_audio_decoded_and_played": true,
+        "first_visual_ms": 12386.6,
+        "first_audio_and_playable_ms": 16819.6,
+        "same_board_nodes_after_switch": true,
+        "matching_audio_start_count_after_switch": null,
+        "audio_switch_probe": "initial counter could not detect replay after readiness; this field is inconclusive for this real sample",
+        "full_course_artifact_sha256": "6e47f69ebfa2cc62f2ad8ec2f2125edcef2b1e242c708b5535d70e3dc1c204ad"
+      },
+      {
+        "language": "en-US",
+        "job_status": "succeeded",
+        "original_question_unchanged": true,
+        "course_text_review": "passed: titles, narration, labels, hints, feedback, practice and summary use selected language; y=2x+1 retained",
+        "model_http_attempts": 2,
+        "speech_requests": 1,
+        "speech_language_hint": "en",
+        "same_existing_teacher_voice": true,
+        "speech_seconds": 9.216,
+        "audio_sha256": "93ae7e14bc93d90a4404a185ac94733bce536497b36c36888804782f5bf02305",
+        "actual_matching_audio_decoded_and_played": true,
+        "first_visual_ms": 12772.6,
+        "first_audio_and_playable_ms": 15793.5,
+        "same_board_nodes_after_switch": true,
+        "matching_audio_start_count_after_switch": 1,
+        "audio_switch_probe": "passed with corrected replay counter",
+        "full_course_artifact_sha256": "ca9da195a836a283fe515ea19ebd6daa1d8c263d8c73b3f0c065c91652e4e7c6"
+      }
+    ],
+    "english_complete_artifact_han_strings": 0,
+    "normal_ports_used": true,
+    "existing_account_model_and_teacher_used": true,
+    "original_failed_report_and_ledger_preserved": true,
+    "intermediate_monitor_failure": {
+      "course_generation": "Chinese job succeeded; first narration played.",
+      "monitor": "An independent read-only socket lacked the opt-in auxiliary feature and failed to list final files.",
+      "supplier_calls_paused": true,
+      "read_only_recovery": "Final job and course/trace files were read with the correct feature. Both model calls succeeded and matched the persistent reservations.",
+      "renewed_user_authorization_received": true,
+      "paid_course_resubmissions": 0,
+      "expenses_reset": false
+    },
+    "cumulative_supplier_calls": {
+      "actual_courses": 2,
+      "model_http_attempts_including_retries": 4,
+      "first_narration_requests": 2,
+      "ordinary_model_turns": 0,
+      "asr_jev_reports_or_maintenance": 0
+    },
+    "costs": {
+      "model_prompt_tokens": 9366,
+      "model_output_tokens_including_thinking": 3945,
+      "model_usd_estimate_at_current_standard_rate": 0.02181825,
+      "estimate_is_not_a_provider_invoice": true,
+      "reserved_upper_usd": 2.8,
+      "reserved_upper_speech_cny": 0.2528,
+      "speech_request_characters": {
+        "zh": 87,
+        "en": 137
+      },
+      "pricing_sources": [
+        "https://ai.google.dev/gemini-api/docs/pricing",
+        "https://docs.volcengine.com/docs/doubao-voice/billing-instructions?lang=zh"
+      ]
+    },
+    "restoration": "Verified original route and sandbox network setting, unchanged speech credential revisions and teacher choice; normal backend restarted and budget gateway closed."
+  }
 }

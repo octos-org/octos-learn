@@ -1,5 +1,5 @@
 {
-  "status": "authorized-attempt-stopped-before-supplier-send",
+  "status": "authorized-completed-technical-verification-listening-pending",
   "scope": "Two real-provider language acceptance samples; not a statistically sufficient live performance comparison and not deployment authorization.",
   "account": "existing local yy profile",
   "origin": "https://127.0.0.1:5173",
@@ -25,7 +25,7 @@
     "speech_cny": 2
   },
   "execution_preconditions": [
-    "User authorized the listed caps in this conversation. The first attempt stopped before any supplier send; that failed attempt and its ledger are retained. No automatic resubmission is permitted under its failure-stop rule.",
+    "The user authorized the original limits, the zero-supplier-call resumption, and English-only continuation after the read-only monitor failure. Original failures and ledger remain intact. No additional paid call is authorized by this completed plan.",
     "Verify the current model is the existing direct Google Gemini 3.6 Flash route and the saved speech resource is supported; do not change provider, primary model or voice.",
     "Check current provider pricing again before execution. Existing pricing references are https://ai.google.dev/gemini-api/docs/pricing and https://docs.volcengine.com/docs/doubao-voice/billing-instructions?lang=zh .",
     "Enforce request, output, retry and speech limits before supplier sends; include automatic retries and in-flight reservations in the limits. Abort before sending if limits or route coverage cannot be established.",
@@ -42,5 +42,10 @@
     "Record first playable and matching audio timestamps, actual request counts, failures and limitations without claiming a live p50 result from two samples."
   ],
   "authorization_received": true,
-  "result": "language-acceptance-results.json"
+  "result": "language-acceptance-results.json",
+  "cumulative_actual_usage": {
+    "courses": 2,
+    "model_http_attempts_including_retries": 4,
+    "speech_requests": 2
+  }
 }
