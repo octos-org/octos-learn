@@ -15,11 +15,11 @@ import { NextSteps } from "../map/next-steps";
 import { topicLabel } from "../map/taxonomy-labels";
 import { newBoardHref } from "../new-board-href";
 import { weeklyReportShown } from "../report/report-week";
-import { TeacherCard } from "../teachers/teacher-card";
 import { TEACHER_LORE } from "../teachers/teacher-lore";
 import { useSelectedTeacher } from "../teachers/teachers";
 import { currentWeek, localToday, timeGreeting } from "./achievement-display";
 import { Medal } from "./medal";
+import { HallTeacherArt } from "./hall-teacher-art";
 
 // Same words as the atlas: a star is lit once it was done without hints;
 // every recorded topic leaves a footprint.
@@ -88,7 +88,7 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
       </div>
       <div className="academy-hall">
         <div className="academy-greeting">
-          <div className="academy-greeting-card"><TeacherCard teacherId={teacher.id} bare /></div>
+          <HallTeacherArt teacherId={teacher.id} />
           <div className="academy-greeting-body">
             <figure className="academy-words">
               <blockquote className="academy-bubble">{line}</blockquote>

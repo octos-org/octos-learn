@@ -57,6 +57,42 @@
       "sha256": "e7400945333606b6999a4ae4d2ac81a6997b880e1ef711f519fe12e6eb7a904c"
     },
     {
+      "teacher": "alan",
+      "file": "bust-listening.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 65830,
+      "alpha": true,
+      "sha256": "856557757859db3e1eadcafc8d48f8e3870f5cf2c089dca394cd5eae16264c8a"
+    },
+    {
+      "teacher": "alan",
+      "file": "bust-thinking.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 65190,
+      "alpha": true,
+      "sha256": "56f65b18a55bb710f598cb78aaec9d90674da32031301c0f14ca97f2a7271c46"
+    },
+    {
+      "teacher": "alan",
+      "file": "bust-explaining.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 65922,
+      "alpha": true,
+      "sha256": "0136680e6c491152fa1a71a9f9bcd6a0430166b7d36dfaea2e512fccfe119948"
+    },
+    {
+      "teacher": "alan",
+      "file": "bust-approving.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 65740,
+      "alpha": true,
+      "sha256": "8f8745fde22fd52233cbcff28b55d6860df66ae6ce1ce81ed9e334da981a71f1"
+    },
+    {
       "teacher": "doudou",
       "file": "portrait.webp",
       "width": 720,
@@ -111,6 +147,42 @@
       "sha256": "caba8ae8a2d003de5285cf5386c5139bc394736b152e4720134a3c35309934be"
     },
     {
+      "teacher": "doudou",
+      "file": "bust-listening.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 80506,
+      "alpha": true,
+      "sha256": "85dbe08bd757f742a05dd6bf393e713769c4051fcc676482e9b13f18c671838b"
+    },
+    {
+      "teacher": "doudou",
+      "file": "bust-thinking.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 79710,
+      "alpha": true,
+      "sha256": "4021d54ccf87788c3a88d447fcc597d27ea3eafacf63dcc3a1319e3aae68ccb1"
+    },
+    {
+      "teacher": "doudou",
+      "file": "bust-explaining.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 81202,
+      "alpha": true,
+      "sha256": "c442e9211c7bd334ad71929673537bafa88f17e0ce4ddf8d5636a889d31dee9b"
+    },
+    {
+      "teacher": "doudou",
+      "file": "bust-approving.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 81150,
+      "alpha": true,
+      "sha256": "051cff163537324c06f0a8e0dbc0323f82f4bed7bf6fcc67fe849ed40624592e"
+    },
+    {
       "teacher": "sufei",
       "file": "portrait.webp",
       "width": 720,
@@ -163,20 +235,43 @@
       "bytes": 60302,
       "alpha": true,
       "sha256": "a53d5f81730679cf955e29a7577445d4e411037606ccea4c55f319bd56ff8f89"
+    },
+    {
+      "teacher": "sufei",
+      "file": "bust-listening.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 56004,
+      "alpha": true,
+      "sha256": "f911b62e8aa224b7c8c29a0f58651f1f183d8e67bad797068fcf4614fc359724"
+    },
+    {
+      "teacher": "sufei",
+      "file": "bust-thinking.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 56122,
+      "alpha": true,
+      "sha256": "4932cec0b0a66c03f68cfa9f4b558a4ba1ac48e674df703b7817fec9931f143c"
+    },
+    {
+      "teacher": "sufei",
+      "file": "bust-explaining.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 56454,
+      "alpha": true,
+      "sha256": "42f61e5b085fc85b9c7df5da0cd2dee7837534b1207f2418add459b2afe27d73"
+    },
+    {
+      "teacher": "sufei",
+      "file": "bust-approving.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 55154,
+      "alpha": true,
+      "sha256": "dee0069a470e5488635f7123762c7f7bfe7a6956605fca4de540f631790d78ee"
     }
   ],
-  "pending": [
-    "alan/bust-listening",
-    "alan/bust-thinking",
-    "alan/bust-explaining",
-    "alan/bust-approving",
-    "doudou/bust-listening",
-    "doudou/bust-thinking",
-    "doudou/bust-explaining",
-    "doudou/bust-approving",
-    "sufei/bust-listening",
-    "sufei/bust-thinking",
-    "sufei/bust-explaining",
-    "sufei/bust-approving"
-  ]
+  "pending": []
 }

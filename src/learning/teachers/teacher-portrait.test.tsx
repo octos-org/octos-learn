@@ -22,7 +22,7 @@ it("keeps every pose of only the current teacher mounted and shows one", () => {
   const { container } = render(<TeacherPortrait teacherId="sufei" pose="thinking" />);
   const poses = [...container.querySelectorAll<HTMLImageElement>(".teacher-portrait-pose")];
   expect(poses).toHaveLength(5);
-  expect(poses.every((image) => image.src.includes("/teachers/sufei/"))).toBe(true);
+  expect(poses.every((image) => image.src.includes("/teachers/2026-10-30/sufei/"))).toBe(true);
   expect(poses.filter((image) => image.dataset.active !== undefined).map((image) => image.src.split("/").pop())).toEqual(["bust-thinking.webp"]);
 });
 
@@ -46,7 +46,7 @@ it("shows approval for a moment after a practice goal is met", () => {
 it("draws the named teacher's portrait from the shared skin art, approving over the activity", () => {
   const { container } = render(<OctosSkinArt skin="portrait" teacherId="doudou" activity="speaking" approving />);
   expect(container.querySelector(".teacher-portrait")?.getAttribute("data-pose")).toBe("approving");
-  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-pose[data-active]")?.src).toContain("/teachers/doudou/bust-approving.webp");
+  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-pose[data-active]")?.src).toContain("/teachers/2026-10-30/doudou/bust-approving.webp");
 });
 
 it("frames the bust as a soft glow by default and as a named card on request", () => {
@@ -58,12 +58,12 @@ it("frames the bust as a soft glow by default and as a named card on request", (
   rerender(<TeacherPortrait teacherId="alan" pose="idle" frame="card" name="阿澜" />);
   expect(portrait().getAttribute("data-frame")).toBe("card");
   expect(container.querySelector(".teacher-portrait-glow")).toBeNull();
-  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-scene")?.src).toContain("/teachers/alan/arch-bg.webp");
+  expect(container.querySelector<HTMLImageElement>(".teacher-portrait-scene")?.src).toContain("/teachers/2026-10-30/alan/arch-bg.webp");
   expect(container.querySelector(".teacher-portrait-plate")?.textContent).toBe(tr("阿澜"));
 });
 
 it("builds the teacher card from a background layer and a cut-out figure", () => {
   const { container } = render(<TeacherCard teacherId="sufei" />);
-  expect([...container.querySelectorAll<HTMLImageElement>(".teacher-card img")].map((image) => image.src.split("/teachers/")[1])).toEqual(["sufei/card-bg.webp", "sufei/card-figure.webp"]);
+  expect([...container.querySelectorAll<HTMLImageElement>(".teacher-card img")].map((image) => image.src.split("/teachers/")[1])).toEqual(["2026-10-30/sufei/card-bg.webp", "2026-10-30/sufei/card-figure.webp"]);
   expect(container.querySelector<HTMLElement>(".teacher-card")?.style.getPropertyValue("--figure")).toContain("sufei/card-figure.webp");
 });

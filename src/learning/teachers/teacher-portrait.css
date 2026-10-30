@@ -16,11 +16,10 @@
 .teacher-portrait[data-pose="explaining"] { --portrait-lamp: 0.9; }
 .teacher-portrait[data-pose="approving"] { --portrait-lamp: 1; }
 
-/* Where each teacher's face sits across the bust image (0–1, read off the
-   idle pose); the bust is shifted so the face is centred. */
-.teacher-portrait[data-teacher="alan"] { --bust-head: 0.43; }
-.teacher-portrait[data-teacher="doudou"] { --bust-head: 0.53; }
-.teacher-portrait[data-teacher="sufei"] { --bust-head: 0.46; }
+/* Centre the face, rather than the wider hair silhouette, across all poses. */
+.teacher-portrait[data-teacher="alan"] { --bust-head: 0.44; }
+.teacher-portrait[data-teacher="doudou"] { --bust-head: 0.60; }
+.teacher-portrait[data-teacher="sufei"] { --bust-head: 0.49; }
 
 .teacher-portrait-window {
   position: absolute;
@@ -38,9 +37,9 @@
 
 .teacher-portrait-pose {
   position: absolute;
-  left: calc(50% - var(--bust-head, 0.5) * 124%);
-  bottom: -6%;
-  width: 124%;
+  left: calc(50% - var(--bust-head, 0.5) * 116%);
+  bottom: 0;
+  width: 116%;
   /* The app's base styles cap images at their container's width, which
      shrank the bust and left it low in the corner. */
   max-width: none;
@@ -48,9 +47,6 @@
   aspect-ratio: 1;
   opacity: 0;
   pointer-events: none;
-  /* Busts are drawn close to the top edge; fade the crown into the sky. */
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 14%);
   transition: opacity 320ms ease;
 }
 

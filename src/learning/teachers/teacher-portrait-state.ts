@@ -8,9 +8,12 @@ import type { TeacherDefinition } from "./teachers";
 export const PORTRAIT_POSES = ["idle", "listening", "thinking", "explaining", "approving"] as const;
 export type PortraitPose = (typeof PORTRAIT_POSES)[number];
 
-/** Static files under public/teachers/<id>/: bust-<pose>, arch-bg and card. */
+/** Versioned URLs prevent an older cached face from mixing with the new art. */
+export const TEACHER_ART_VERSION = "2026-10-30";
+
+/** Static files: bust-<pose>, arch-bg, card layers, portrait and hall-wide. */
 export function portraitAsset(teacherId: TeacherDefinition["id"], file: string): string {
-  return `${import.meta.env.BASE_URL}teachers/${teacherId}/${file}.webp`;
+  return `${import.meta.env.BASE_URL}teachers/${TEACHER_ART_VERSION}/${teacherId}/${file}.webp`;
 }
 
 export function poseForActivity(activity: TeacherActivity): PortraitPose {

@@ -2,6 +2,8 @@
 
 ## 当前状态（2026-10-28，优先阅读）
 
+**2026-10-30 美术更新待用户验看**：三位老师已按用户定稿完成 30 个 WebP（含 15 张课堂表情、人物卡和首页横版）并接入程序。分支 `codex/teacher-art-refresh` 从 main 建立，保留待合并 PR #111 两项修复；首批素材提交 `cda7406`。1410 项单元、lint（零错误/38 原有警告）、构建及本地页面/表情/真实课堂检查通过。用户明确要求先在正常程序中验看，再创建本轮 PR；尚未获程序验收、未开本轮 PR、未部署。入口、范围和实际检查见 [美术更新记录](../TEACHER_ART_REFRESH.md)。
+
 **2026-10-30 新增**：中英文界面（PR octos-learn #109 / learning-coach #36 / OLL #25）独立审查后，修复了老师身份随界面语言分裂的问题（学习记录与 Octos 参与者改用不翻译的存储名），界面默认改为中文。三个 PR 已按 OLL → Learning Coach → 前端的顺序合并（OLL `2b25c43`、learning-coach `60b9e75`、octos-learn `75518ba`），未发布、未部署。公网发布时只需更新 `/opt/octos-learn/skills/learning-coach` 这一份 Learning Coach 0.22.0；本机 `yy` 账号装的是同内容的 PR 版本（版本号仍显示 0.21.0）。未做 Android 设备、真实账号和速度对照验收。详情见 WORK_LOG 同日条目。
 
 **2026-10-29 新增**：学习记录归位与大厅改版（问候、会动的老师卡）在分支 `codex/learning-records-placement` 上提交并开 PR，未合并、未在真实账号验收、未做独立审查。详情见 WORK_LOG 同日条目和 [LEARNING_RECORDS_PLACEMENT.md](../LEARNING_RECORDS_PLACEMENT.md)。
