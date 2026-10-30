@@ -116,6 +116,7 @@ export function SetupWhiteboard() {
   return (
     <main className="setup-board">
       <header className="setup-header">
+        <LanguageSwitch />
         <div>
           <p className="setup-eyebrow">OCTOS LEARN · 第一块白板</p>
           <h1>把白板准备好，就可以开始了</h1>
@@ -341,3 +342,4 @@ function ModelCard({
     </form>
   );
 }
+import { LanguageSwitch } from "@/i18n/language-switch";

@@ -267,6 +267,7 @@ export function LoginPage() {
   return (
     <div className="workbench-shell flex h-screen items-center justify-center px-4">
       <div className="workbench-panel w-full max-w-sm p-8">
+        <div className="mb-4 flex justify-end"><LanguageSwitch /></div>
         <img
           src="/images/octos-logo-color.svg"
           alt="Octos"
@@ -395,3 +396,4 @@ export function LoginPage() {
     </div>
   );
 }
+import { LanguageSwitch } from "@/i18n/language-switch";

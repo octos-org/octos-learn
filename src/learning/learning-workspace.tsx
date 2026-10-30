@@ -16,6 +16,7 @@ import { hasStoredInk } from "./learning-document-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { LearningModelContext, LearningModelIssueContext } from "./setup-state";
 import type { CanonicalEvent } from "octos-lesson-language";
+import { LanguageSwitch } from "@/i18n/language-switch";
 import { compilePlaybackOperations, HeadlessLessonPlayer } from "octos-lesson-language/player";
 import { parseCanonicalJsonl } from "octos-lesson-language/web-runtime";
 import {
@@ -3507,6 +3508,7 @@ export function LearningWorkspace({
         className="learning-workspace-topbar"
         data-learning-board-occlusion=""
       >
+        <LanguageSwitch />
         <div>
           <span>Octos Learning Canvas</span>
           <strong>{ollLesson?.title ?? "新的学习白板"}</strong>

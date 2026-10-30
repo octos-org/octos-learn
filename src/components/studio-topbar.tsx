@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
+import { LanguageSwitch } from "@/i18n/language-switch";
 
 /**
  * Tool-page chrome in the Ivory Obsidian design language. API-compatible
@@ -71,6 +72,7 @@ export function StudioTopbar({
           )}
           {afterTitle}
         </div>
+        <LanguageSwitch />
         {actions && (
           <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
             {actions}

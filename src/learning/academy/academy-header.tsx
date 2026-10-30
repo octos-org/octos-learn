@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 import { useAuth } from "@/auth/auth-context";
+import { LanguageSwitch } from "@/i18n/language-switch";
 
 import "../course-launcher.css";
 import "./academy.css";
@@ -33,6 +34,7 @@ export function AcademyHeader() {
         </nav>
       )}
       <nav className="academy-account" aria-label="账户">
+        <LanguageSwitch />
         {token ? (
           <>
             <Link to="/settings"><Settings size={17} aria-hidden="true" /> 设置</Link>
