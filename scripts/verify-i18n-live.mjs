@@ -13,8 +13,8 @@ import {firstPlayableTarget} from './lib/learning-performance-target.mjs';
 import {installLivePlayableProbe,readLivePlayable} from './lib/learning-playable-probe.mjs';
 
 const [mode,planPath]=process.argv.slice(2);
-assert.ok(['--check','--execute','--fixture'].includes(mode)&&planPath);
-const plan=validateTrialPlan(JSON.parse(await readFile(planPath,'utf8')),{execute:mode==='--execute'});
+assert.ok(['--check','--execute','--fixture','--continue-reviewed'].includes(mode)&&planPath);
+const plan=validateTrialPlan(JSON.parse(await readFile(planPath,'utf8')),{execute:['--execute','--continue-reviewed'].includes(mode)});
 assert.equal(plan.limits.courses,2);assert.equal(plan.limits.model_requests,6);assert.equal(plan.limits.speech_requests,2);
 assert.ok(plan.limits.usd_micros<=5000000&&plan.limits.cny_micros<=2000000);
 assert.ok(plan.limits.request_bytes<=131072&&plan.limits.output_tokens<=32768&&plan.limits.speech_utf8_bytes<=1200);
@@ -23,7 +23,7 @@ if(mode==='--check'){console.log(JSON.stringify({approved:plan.status==='approve
 const output=resolve(plan.output_directory);assert.ok(output.startsWith(resolve('.local-dev/i18n-live')+'/'));
 await mkdir(output,{recursive:true,mode:0o700});
 let fixture=null,ledger=null,context=null,browser=null,vite=null,client=null;
-const resultPath=join(output,'result.json');
+const resultPath=join(output,mode==='--continue-reviewed'?'continued-result.json':'result.json');
 const report={scope:'Two existing-account language samples; not a live p50 comparison',status:'preflight',plan_sha256:sha256(JSON.stringify(plan)),rows:[],started_at:new Date().toISOString(),real_supplier_calls:mode==='--fixture'?0:'see persistent ledger'};
 await writeFile(resultPath,JSON.stringify(report),{flag:'wx',mode:0o600});
 const save=()=>writeFile(resultPath,JSON.stringify(report,null,2)+'\n',{mode:0o600,flush:true});
@@ -33,7 +33,22 @@ if(mode==='--fixture'){
  ledger=new TrialLedger(join(output,'ledger.sqlite'),plan);
  fixture=await createLiveTrialFixture({plan,ledger,directory:join(output,'fixture'),languageAware:true});origin=fixture.origin;backend=fixture.origin;gatewayUrl=fixture.gateway;
 }else ledger=new TrialLedger(join(output,'ledger.sqlite'),plan);
-assert.equal(ledger.snapshot().samples.length,0,'A prior attempt exists; do not reset or resubmit');
+let samples=plan.samples;
+if(mode==='--continue-reviewed'){
+ // An explicit renewed authorization and independent read-only evidence are
+ // required. Preserve the stopped report and its expenses; never rerun Chinese.
+ const originalBytes=await readFile(join(output,'result.json'));const original=JSON.parse(originalBytes);
+ const review=JSON.parse(await readFile(join(output,'zh-readonly-review.json'),'utf8'));
+ const permission=JSON.parse(await readFile(join(output,'continuation-authorization.json'),'utf8'));
+ assert.equal(permission.status,'approved');assert.equal(permission.next_sample_id,'en');assert.deepEqual(permission.limits,plan.limits);assert.ok(permission.authorization_reference?.trim());
+ assert.equal(permission.previous_result_sha256,sha256(originalBytes));assert.equal(review.original_result_sha256,sha256(originalBytes));assert.equal(original.status,'stopped');assert.equal(original.rows.length,1);
+ const row=original.rows[0];assert.equal(row.id,'zh');assert.equal(row.actions,1);assert.equal(row.turns,0);assert.equal(row.speech_forwarded,1);assert.equal(row.page_errors.length,0);assert.ok(row.audio_ms&&row.visual_ms);assert.match(row.error,/Job reader RPC failed/);
+ assert.equal(review.job.status,'succeeded');assert.equal(review.speech.audio_sha256,sha256(await readFile(join(output,'zh-first.mp3'))));assert.equal(review.speech.audio_sha256,row.audio_sha256);
+ const snapshot=ledger.snapshot();assert.equal(snapshot.samples.length,1);assert.equal(snapshot.samples[0].id,'zh');assert.equal(snapshot.samples[0].session_id,row.session_id);assert.equal(snapshot.samples[0].state,'reserved');
+ const model=snapshot.expenses.filter(x=>x.kind==='model');assert.ok(model.length>0&&model.length<plan.limits.model_requests);assert.equal(review.model_http_attempts,model.length);assert.equal(review.model_trace.reduce((n,x)=>n+x.request_attempts,0),model.length);assert.ok(review.model_trace.every(x=>x.status==='completed'&&x.model===plan.model));assert.equal(snapshot.expenses.filter(x=>x.kind==='speech').length,1);
+ report.reviewed_previous_sample={id:'zh',source_result_sha256:sha256(originalBytes),readonly_review_sha256:sha256(await readFile(join(output,'zh-readonly-review.json'))),model_requests:model.length,speech_requests:1};
+ ledger.complete('zh',{jobsTerminal:true,measurementValid:true});samples=plan.samples.slice(1);
+}else assert.equal(ledger.snapshot().samples.length,0,'A prior attempt exists; do not reset or resubmit');
 const en=JSON.parse(await readFile('src/i18n/messages/en.json','utf8'));
 let currentRow=null,turnId=null,sessionId=null,invalid=false,ownedSocket=null;
 async function readonlyJob(page,wait=true){
@@ -62,7 +77,7 @@ try{
  vite=await createViteServer({configFile:false,resolve:{alias:{'@':resolve('src')}},server:{middlewareMode:true,hmr:false},appType:'custom',logLevel:'error'});
  const {materializeOllLesson}=await vite.ssrLoadModule('/src/learning/oll/oll-materialization.ts');const {ollArtifactIdentity}=await vite.ssrLoadModule('/src/learning/oll/oll-artifacts.ts');
  browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});report.status='running';await save();
- for(const sample of plan.samples){
+ for(const sample of samples){
   currentRow={id:sample.id,language:sample.language,prompt:sample.prompt,state:'opening',actions:0,turns:0,speech_forwarded:0,speech_blocked:0,artifacts:[],page_errors:[]};report.rows.push(currentRow);const row=currentRow;turnId=null;sessionId=null;invalid=false;let target=null,speechGate=null,resolveTarget;
   const targetReady=new Promise(done=>{resolveTarget=done;});const openedSessions=new Set();
   context=await browser.newContext({ignoreHTTPSErrors:true,serviceWorkers:'block',viewport:{width:1440,height:1000}});

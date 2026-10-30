@@ -37,6 +37,17 @@ test('the seventh model request is blocked even when money remains', () => {
  const p=plan();p.limits.model_request_usd_micros=1;const ledger=new TrialLedger(':memory:',p);ledger.reserveSample('zh','learn-zh');
  try{for(let i=0;i<6;i++)ledger.reserveModel('zh');assert.throws(()=>ledger.reserveModel('zh'),/Model request limit/);assert.equal(ledger.snapshot().expenses.length,6);}finally{ledger.close();}
 });
+test('completing Chinese preserves all supplier reservations for the English sample', () => {
+ const ledger=new TrialLedger(':memory:',plan());
+ try {
+  ledger.reserveSample('zh','learn-zh');ledger.reserveModel('zh');ledger.reserveModel('zh');ledger.reserveSpeech('zh','中文。');
+  ledger.complete('zh',{jobsTerminal:true,measurementValid:true});ledger.reserveSample('en','learn-en');
+  for(let i=0;i<4;i++)ledger.reserveModel('en');assert.throws(()=>ledger.reserveModel('en'),/Model request limit/);
+  ledger.reserveSpeech('en','Slope is two.');assert.throws(()=>ledger.reserveSpeech('en','Retry.'));
+  assert.equal(ledger.snapshot().expenses.filter(x=>x.kind==='model').length,6);assert.equal(ledger.snapshot().expenses.filter(x=>x.kind==='speech').length,2);
+  assert.throws(()=>ledger.reserveSample('zh','learn-new-zh'));
+ }finally{ledger.close();}
+});
 test('wrong-language initial request and requests after a supplier failure are blocked before transport', async()=>{
  const ledger=new TrialLedger(':memory:',plan());ledger.reserveSample('zh','learn-zh');let calls=0;
  const gate=createLanguageModelGateway({ledger,activeSample:()=> 'zh',upstreamFetch:async()=>{calls++;return new Response('{}',{status:503});}});await new Promise(done=>gate.server.listen(0,'127.0.0.1',done));
