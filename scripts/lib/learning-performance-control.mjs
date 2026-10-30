@@ -82,6 +82,9 @@ export class TrialLedger {
       assert.equal(sample?.state, 'reserved', 'No active reserved sample');
       const total = this.db.prepare('SELECT COALESCE(SUM(usd),0) usd, COALESCE(SUM(cny),0) cny FROM expenses').get();
       assert.ok(total.usd + usd <= this.plan.limits.usd_micros && total.cny + cny <= this.plan.limits.cny_micros, 'Reserved cost limit exhausted');
+      if (kind === 'model' && this.plan.limits.model_requests !== undefined) {
+        assert.ok(this.db.prepare("SELECT COUNT(*) n FROM expenses WHERE kind='model'").get().n < this.plan.limits.model_requests, 'Model request limit exhausted');
+      }
       if (kind === 'speech') {
         assert.equal(this.db.prepare("SELECT COUNT(*) n FROM expenses WHERE sample_id=? AND kind='speech'").get(sampleId).n, 0, 'Only one speech request per sample');
         assert.ok(this.db.prepare("SELECT COUNT(*) n FROM expenses WHERE kind='speech'").get().n < this.plan.limits.speech_requests, 'Speech request limit exhausted');
@@ -150,7 +153,7 @@ async function readJson(request, maxBytes) {
  * fixed, with no forwarding of Octos session auth or arbitrary targets.
  * upstreamFetch is mandatory so tests cannot accidentally contact a supplier.
  */
-export function createModelBudgetGateway({ ledger, activeSample, upstreamFetch }) {
+export function createModelBudgetGateway({ ledger, activeSample, upstreamFetch, reviewRequest }) {
   assert.equal(typeof upstreamFetch, 'function');
   // Actual usage from each response's usageMetadata (the reservation above is
   // only an upper bound), so the real cost can be reported and capped.
@@ -177,6 +180,7 @@ export function createModelBudgetGateway({ ledger, activeSample, upstreamFetch }
         assert.ok(Array.isArray(content.parts) && content.parts.every(p => Object.keys(p).length === 1 && typeof p.text === 'string'));
       }
       assert.ok(typeof request.headers['x-goog-api-key'] === 'string' && request.headers['x-goog-api-key']);
+      reviewRequest?.(body, activeSample());
       ledger.reserveModel(activeSample()); metrics.admitted++;
       const upstream = await upstreamFetch(`https://generativelanguage.googleapis.com${url.pathname}${url.search}`, {
         method: 'POST', redirect: 'error', body: JSON.stringify(body),
