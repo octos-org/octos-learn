@@ -76,6 +76,14 @@ function narrationFailure(cause: unknown): string {
     : tr("课程语音暂时不可用，旁白仍会显示。");
 }
 
+// Display names can change with the interface language. Only resource and
+// speaker IDs determine synthesis identity and whether a prefetch is reusable.
+function voiceIdentity(voices: LessonVoices | null | undefined): string {
+  return voices ? JSON.stringify(Object.fromEntries(Object.entries(voices)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([resource, voice]) => [resource, { id: voice.id }]))) : "";
+}
+
 function speechKey(narrationId: string | undefined, text: string, voiceTag: string, language?: string): string | null {
   return narrationId && text ? `${narrationId}\u0000${text}\u0000${voiceTag}\u0000${language ?? ""}` : null;
 }
@@ -112,14 +120,14 @@ export function useOllNarrationTts({
   const normalizedText = text.trim();
   const normalizedPrewarmText = prewarmText.trim();
   const normalizedUpcomingText = upcomingText.trim();
-  const requestedVoiceTag = voices ? JSON.stringify(voices) : "";
+  const requestedVoiceTag = voiceIdentity(voices);
   // Once a clip plays, a change of voice waits for the next clip rather than
   // cutting the sentence off and starting it again.
   const [clipVoice, setClipVoice] = useState<{ id: string; tag: string } | null>(null);
   if (playing && !voicePending && narrationId && clipVoice?.id !== narrationId) setClipVoice({ id: narrationId, tag: requestedVoiceTag });
   const voiceTag = clipVoice && playing && clipVoice.id === narrationId ? clipVoice.tag : requestedVoiceTag;
-  const upcomingVoiceTag = upcomingVoices === undefined ? requestedVoiceTag : upcomingVoices ? JSON.stringify(upcomingVoices) : "";
-  const prewarmVoiceTag = prewarmVoices === undefined ? requestedVoiceTag : prewarmVoices ? JSON.stringify(prewarmVoices) : "";
+  const upcomingVoiceTag = upcomingVoices === undefined ? requestedVoiceTag : voiceIdentity(upcomingVoices);
+  const prewarmVoiceTag = prewarmVoices === undefined ? requestedVoiceTag : voiceIdentity(prewarmVoices);
   const lessonVoices = useMemo<LessonVoices | null>(() => voiceTag ? JSON.parse(voiceTag) : null, [voiceTag]);
   const warmVoices = useMemo<LessonVoices | null>(() => prewarmVoiceTag ? JSON.parse(prewarmVoiceTag) : null, [prewarmVoiceTag]);
   const nextVoices = useMemo<LessonVoices | null>(() => upcomingVoiceTag ? JSON.parse(upcomingVoiceTag) : null, [upcomingVoiceTag]);

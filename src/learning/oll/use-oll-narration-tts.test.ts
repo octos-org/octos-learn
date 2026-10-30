@@ -86,6 +86,20 @@ describe("useOllNarrationTts", () => {
     expect(mocks.playAudioBlob).toHaveBeenCalledOnce();
   });
 
+  it("reuses next audio when only localized voice display names change", async () => {
+    const { rerender } = renderHook(({ name }: { name: string }) => useOllNarrationTts({
+      enabled: true, playing: true, prefetchEnabled: true, text: "First.", narrationId: "voice-label-first", language: "en-US",
+      upcomingText: "Next.", upcomingNarrationId: "voice-label-next", upcomingLanguage: "en-US",
+      voices: { "seed-tts-2.0": { id: "same-speaker", name } } as never,
+      upcomingVoices: { "seed-tts-2.0": { id: "same-speaker", name } } as never,
+    }), { initialProps: { name: "知性女声 2.0" } });
+    await waitFor(() => expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2));
+    rerender({ name: "Expressive female voice 2.0" });
+    await act(async () => undefined);
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledTimes(2);
+    expect(mocks.playAudioBlob).toHaveBeenCalledOnce();
+  });
+
   it("prefers receive-only private TTS over cloud and native synthesis", async () => {
     mocks.route = "private"; mocks.playPrivateSpeech.mockResolvedValue(true);
     renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "私有旁白", narrationId: "private-1" }));
