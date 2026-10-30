@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { setLocale, tr } from "@/i18n";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, MemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -63,6 +63,14 @@ it("greets with the chosen teacher's own line, offers the last board and sums up
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");
   expect(screen.getByText(tr("第一个脚印"))).toBeTruthy();
   expect((await screen.findByRole("heading", { level: 1 })).textContent).toMatch(/^(夜深了|早上好|上午好|中午好|下午好|晚上好)，启明学徒。$/);
+  const heading = screen.getByRole("heading", { level: 1 });
+  const reads = api.achievements.mock.calls.length;
+  act(() => setLocale("en-US", false));
+  expect(screen.getByRole("heading", { level: 1 })).toBe(heading);
+  expect(heading.textContent).toContain(tr("启明学徒"));
+  expect(heading.textContent).not.toMatch(/[\p{Script=Han}]/u);
+  expect(api.achievements.mock.calls.length).toBe(reads);
+  act(() => setLocale("zh-CN", false));
   rerender(<MemoryRouter><HallHero recent={[]} /></MemoryRouter>);
   expect(TEACHERS[0].hall.welcome).toContain(document.querySelector(".academy-bubble")?.textContent);
   expect(screen.queryByRole("link", { name: new RegExp(tr("继续上次的学习").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "") })).toBeNull();
