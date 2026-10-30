@@ -2248,5 +2248,7 @@
   "Voice engine check unavailable": "暂时无法检查语音服务",
   "3D · Animated": "3D · 动画",
   "2D · SVG": "2D · 矢量图",
-  "image": "图片"
+  "image": "图片",
+  "{{greeting}}，{{title}}。": "{{greeting}}，{{title}}。",
+  "{{greeting}}。": "{{greeting}}。"
 }

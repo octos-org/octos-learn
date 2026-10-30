@@ -107,7 +107,7 @@ export function AchievementsPage() {
                 <span><b>{earned.size}</b><small>/ {ACHIEVEMENTS.length}</small></span>
               </div>
               <div className="academy-fame-summary">
-                <p className="academy-fame-title">{tr("正在使用的称号")}<strong>{title.name}</strong></p>
+                <p className="academy-fame-title">{tr("正在使用的称号")}<strong>{tr(title.name)}</strong></p>
                 <div className="academy-fame-stats">
                   <span><b>{ownedTitles.length}</b>/ {TITLES.length} {tr("个称号")}</span>
                   <span><b>{ACHIEVEMENTS.filter((item) => item.hidden && earned.has(item.id)).length}</b>{tr("个隐藏成就已发现")}</span>

@@ -84,7 +84,7 @@ export function HallHero({ recent }: { recent: LearningSessionRecord[] }) {
     <section className="academy-hall-wrap" aria-labelledby="academy-hello">
       <div className="academy-hall-intro">
         <p className="academy-date">{formatDate(now, { month: "long", day: "numeric", weekday: "long" })}</p>
-        <h1 id="academy-hello" className="academy-hello">{timeGreeting(now.getHours())}{summary?.title ? `，${summary.title}` : ""}。</h1>
+        <h1 id="academy-hello" className="academy-hello">{summary?.title ? tr("{{greeting}}，{{title}}。", { greeting: timeGreeting(now.getHours()), title: tr(summary.title) }) : tr("{{greeting}}。", { greeting: timeGreeting(now.getHours()) })}</h1>
       </div>
       <div className="academy-hall">
         <div className="academy-greeting">

@@ -1,6 +1,6 @@
 {
   "status": "translated",
-  "note": "Starter questions for each Mathematics topic on the star atlas: [real-life hook, a problem to try, a stretch], in the learner's voice. Drafted by agents from each topic's catalog description and examples and reviewed by independent agents on 2026-10-28 (16 of 567 topics corrected), at the user's decision (no human review). Where a topic's Chinese name and its catalog description disagree, the questions follow the description.",
+  "note": "English translations of all 1701 starter questions in the Chinese bank. Topic IDs, question order, mathematical examples, currencies and measurement units are preserved. Chinese characters remain only where the question explicitly teaches reading Chinese numerals or tally marks. These translations were checked during the i18n implementation; they have not received an independent content review.",
   "catalog_commit": "c7ed549758d9fb430c4af54886c658e78162a0b1",
   "language": "en-US",
   "source_language": "zh-CN",
@@ -2840,5 +2840,6 @@
       "Why can 56 + 19 be calculated by adding 20 then subtracting 1? Where does that extra 1 come from?",
       "In column subtraction for 63 − 27, why does borrowing 1 from the tens give 10 ones?"
     ]
-  }
+  },
+  "source_note": "Starter questions for each Mathematics topic on the star atlas: [real-life hook, a problem to try, a stretch], in the learner's voice. Drafted by agents from each topic's catalog description and examples and reviewed by independent agents on 2026-10-28 (16 of 567 topics corrected), at the user's decision (no human review). Where a topic's Chinese name and its catalog description disagree, the questions follow the description."
 }

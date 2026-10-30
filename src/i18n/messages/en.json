@@ -2248,5 +2248,7 @@
   "Voice engine check unavailable": "Voice engine check unavailable",
   "3D · Animated": "3D · Animated",
   "2D · SVG": "2D · SVG",
-  "image": "image"
+  "image": "image",
+  "{{greeting}}，{{title}}。": "{{greeting}}, {{title}}.",
+  "{{greeting}}。": "{{greeting}}."
 }
