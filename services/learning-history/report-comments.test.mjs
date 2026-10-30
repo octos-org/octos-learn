@@ -98,3 +98,27 @@ test("comment requests stop at the daily limit", () => {
     assert.equal(comments.claim("alice", 480).reason, "daily-task-limit");
   } finally { store.close(); }
 });
+
+test("English comments follow the selected language and switching languages never creates another paid request", () => {
+  const store = open();
+  try {
+    store.append("alice", [beat("b-en", "r-en", "2026-10-13T02:00:00.000Z")]);
+    const comments = new ReportCommentStore(store);
+    const [task] = comments.claim("alice", 480, "en-US").tasks;
+    assert.equal(task.input.language, "en-US");
+    assert.equal(task.input.teacher, "Alan");
+    assert.equal(task.input.activity.days_studied, 1);
+    assert.doesNotMatch(JSON.stringify(task.input), /[\p{Script=Han}]/u);
+    comments.execution("alice", task.id, task.lease_id, execution(TURN));
+    const result = comment => ({ schema: 1, input_sha256: task.input.input_sha256, comment });
+    assert.throws(() => comments.complete("alice", task.id, task.lease_id, result("You have mastered this topic.")), /claims more/);
+    assert.throws(() => comments.complete("alice", task.id, task.lease_id, result("You visited on 99 days.")), /number/);
+    comments.complete("alice", task.id, task.lease_id, result("Your map has a new footprint this week."));
+    const report = queryWeeklyReport(store, "alice", { weekStart: "2026-10-12", utcOffsetMinutes: 480 });
+    assert.equal(comments.commentFor("alice", report, "alan", "en-US"), "Your map has a new footprint this week.");
+    assert.equal(comments.commentFor("alice", report, "alan", "zh-CN"), null);
+    assert.deepEqual(comments.claim("alice", 480, "zh-CN").tasks, []);
+    assert.deepEqual(comments.claim("alice", 480, "en-US").tasks, []);
+    assert.equal(comments.quotaUsed("alice"), 1);
+  } finally { store.close(); }
+});

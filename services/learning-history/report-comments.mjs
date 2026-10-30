@@ -20,20 +20,30 @@ const TEACHER_NAMES = { alan: "阿澜", doudou: "窦鸢", sufei: "苏绯" };
 const STATE_NAMES = { explored: "已探索", practising: "正在练习", "did-it": "做出来过" };
 // Draft Chinese topic names shared with the learning map (pending review).
 const TOPIC_NAMES = JSON.parse(readFileSync(new URL("../../src/learning/map/topic-names-zh.json", import.meta.url), "utf8")).names;
+const ENGLISH_NAMES = JSON.parse(readFileSync(new URL("../../src/learning/map/topic-names-en.json", import.meta.url), "utf8")).names;
+const ENGLISH_MESSAGES = JSON.parse(readFileSync(new URL("../../src/i18n/messages/en.json", import.meta.url), "utf8"));
+const FORBIDDEN_ENGLISH = /\b(?:master(?:ed|y)?|improv(?:ed|ement)|forget(?:ting)?|lazy|stupid|rankings?|scores?|exams?|tests?)\b/i;
 const FORBIDDEN = /掌握|学会|会了|精通|进步|提高|提升|退步|变好|更好|更强|忘|落后|偷懒|笨|排名|分数|考试|测验|应该多|太少/;
 
 /** The report facts a comment may use, with the learner-facing Chinese names. */
-export function buildCommentInput(report, teacherId) {
+export function buildCommentInput(report, teacherId, language = "zh-CN") {
+  const english = language === "en-US";
+  const label = text => english ? ENGLISH_MESSAGES[text] ?? text : text;
   const facts = {
-    teacher: TEACHER_NAMES[teacherId], week: `${report.week_start}起的一周`,
+    ...(english ? { language: "en-US" } : {}),
+    teacher: label(TEACHER_NAMES[teacherId]), week: english ? `Week beginning ${report.week_start}` : `${report.week_start}起的一周`,
     activity: { 学习天数: report.activity.days.length, 课数: report.activity.runs, 播放讲解段数: report.activity.played_beats,
       练习次数: report.activity.task_attempts, 不用提示达到练习要求次数: report.activity.unassisted_successes, 提问数: report.activity.questions },
-    topics: report.topics.map(topic => ({ name: TOPIC_NAMES[topic.topic_id] ?? topic.name, before: topic.state_before ? STATE_NAMES[topic.state_before] : "暂无记录",
-      after: STATE_NAMES[topic.state_after] })),
+    topics: report.topics.map(topic => ({ name: (english ? ENGLISH_NAMES : TOPIC_NAMES)[topic.topic_id] ?? topic.name, before: topic.state_before ? label(STATE_NAMES[topic.state_before]) : english ? "No records" : "暂无记录",
+      after: label(STATE_NAMES[topic.state_after]) })),
     // Every catalog achievement by its current name; an id the catalog no
     // longer knows is passed as itself, never as a missing value.
-    achievements: report.achievements.map(item => ACHIEVEMENT_BY_ID.get(item.achievement_id)?.name ?? item.achievement_id),
+    achievements: report.achievements.map(item => label(ACHIEVEMENT_BY_ID.get(item.achievement_id)?.name ?? item.achievement_id)),
   };
+  if (english) {
+    const a = facts.activity;
+    facts.activity = { days_studied: a.学习天数, lessons: a.课数, explanations_played: a.播放讲解段数, practice_attempts: a.练习次数, unassisted_successes: a.不用提示达到练习要求次数, questions: a.提问数 };
+  }
   return { input_sha256: analysisHash({ version: REPORT_COMMENT_VERSION, report_sha256: report.report_sha256, teacher_id: teacherId, facts }), ...facts };
 }
 
@@ -41,14 +51,14 @@ export function validateReportComment(input, candidate) {
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate) || Object.keys(candidate).sort().join() !== "comment,input_sha256,schema"
     || candidate.schema !== 1 || candidate.input_sha256 !== input.input_sha256 || typeof candidate.comment !== "string") throw new HistoryValidationError("Invalid report comment shape");
   const comment = candidate.comment.trim();
-  if ([...comment].length < 6 || [...comment].length > 120 || /[\r\n]/.test(comment)) throw new HistoryValidationError("Report comment length");
+  if ([...comment].length < 6 || [...comment].length > (input.language === "en-US" ? 480 : 120) || /[\r\n]/.test(comment)) throw new HistoryValidationError("Report comment length");
   // Topic and achievement names come from the report itself, and many carry
   // words or digits the checks below refuse on their own (分数 in "分数乘整数",
   // an age such as "（9 岁+）"); they are set aside before those checks.
   const bare = [...input.topics.map(topic => topic.name), ...input.achievements].sort((a, b) => b.length - a.length)
     .reduce((text, name) => name ? text.split(name).join("「」") : text, comment);
-  if (FORBIDDEN.test(bare)) throw new HistoryValidationError("Report comment claims more than the facts");
-  if (Object.entries(TEACHER_NAMES).some(([, name]) => name !== input.teacher && comment.includes(name))) throw new HistoryValidationError("Report comment speaks for another teacher");
+  if (FORBIDDEN.test(bare) || (input.language === "en-US" && FORBIDDEN_ENGLISH.test(bare))) throw new HistoryValidationError("Report comment claims more than the facts");
+  if (Object.entries(TEACHER_NAMES).some(([, name]) => name !== input.teacher && (comment.includes(name) || (ENGLISH_MESSAGES[name] !== input.teacher && comment.includes(ENGLISH_MESSAGES[name] ?? name))))) throw new HistoryValidationError("Report comment speaks for another teacher");
   const allowed = new Set([...Object.values(input.activity), input.topics.length, input.achievements.length].map(String));
   if ((bare.match(/\d+/g) ?? []).some(number => !allowed.has(String(Number(number))))) throw new HistoryValidationError("Report comment uses a number not in the report");
   return comment;
@@ -90,14 +100,14 @@ export class ReportCommentStore {
     return this.db.prepare("SELECT COUNT(*) AS n FROM report_comment_jobs WHERE owner=? AND started_at>=? AND started_at<?").get(owner, from, until).n;
   }
   /** The shown comment for this report, only when it was written for the same facts and teacher. */
-  commentFor(owner, report, teacherId) {
+  commentFor(owner, report, teacherId, language = "zh-CN") {
     if (!teacherId || !this.settings(owner).enabled) return null;
-    const row = this.db.prepare("SELECT comment FROM report_comment_jobs WHERE owner=? AND week_start=? AND teacher_id=? AND report_sha256=? AND state='complete'")
+    const row = this.db.prepare("SELECT comment,input_json FROM report_comment_jobs WHERE owner=? AND week_start=? AND teacher_id=? AND report_sha256=? AND state='complete'")
       .get(owner, report.week_start, teacherId, report.report_sha256);
-    return row?.comment ?? null;
+    return row && (JSON.parse(row.input_json).language ?? "zh-CN") === language ? row.comment : null;
   }
   /** Lease the comment for the last finished week, or recover a started one. */
-  claim(owner, utcOffsetMinutes) {
+  claim(owner, utcOffsetMinutes, language = "zh-CN") {
     if (!this.settings(owner).enabled) return { tasks: [], reason: "disabled" };
     const now = Date.parse(this.history.now());
     this.db.exec("BEGIN IMMEDIATE");
@@ -113,7 +123,7 @@ export class ReportCommentStore {
         if (!TEACHER_NAMES[teacherId] || !report.activity.runs || this.quotaUsed(owner) >= REPORT_COMMENT_DAILY_LIMIT) {
           this.db.exec("COMMIT"); return { tasks: [], ...(this.quotaUsed(owner) >= REPORT_COMMENT_DAILY_LIMIT ? { reason: "daily-task-limit" } : {}) };
         }
-        const input = buildCommentInput(report, teacherId);
+        const input = buildCommentInput(report, teacherId, language);
         const id = analysisHash([owner, REPORT_RULES_VERSION, REPORT_COMMENT_VERSION, report.week_start, teacherId, report.report_sha256]);
         this.db.prepare(`INSERT OR IGNORE INTO report_comment_jobs(owner,id,week_start,teacher_id,report_sha256,run_ids,input_json) VALUES(?,?,?,?,?,?,?)`)
           .run(owner, id, report.week_start, teacherId, report.report_sha256, JSON.stringify(weekRunIds(this.history, owner, report)), canonicalHistoryJson(input));

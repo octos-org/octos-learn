@@ -1,5 +1,6 @@
-import { localizedCatalog } from "@/i18n";
+import { getLocale, localizedCatalog } from "@/i18n";
 import topicNames from "./topic-names-zh.json";
+import englishNames from "./topic-names-en.json";
 
 /** Chinese labels for the pinned os-taxonomy subjects and domains. */
 export const SUBJECT_LABELS: Readonly<Record<string, string>> = localizedCatalog({
@@ -89,5 +90,6 @@ export const domainLabel = (domain: string) => DOMAIN_LABELS[domain] ?? domain;
 /** Draft Chinese topic names (Mathematics only, pending review); other topics
  * keep their original English name. */
 const TOPIC_NAMES: Readonly<Record<string, string>> = topicNames.names;
-export const topicLabel = (topicId: string, name: string) => TOPIC_NAMES[topicId] ?? name;
+const ENGLISH_NAMES: Readonly<Record<string, string>> = englishNames.names;
+export const topicLabel = (topicId: string, name: string) => (getLocale() === "zh-CN" ? TOPIC_NAMES : ENGLISH_NAMES)[topicId] ?? name;
 

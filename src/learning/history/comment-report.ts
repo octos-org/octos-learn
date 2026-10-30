@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { getLocale, tr } from "@/i18n";
 import { parseTopicAnalysisResponse } from '../../../services/learning-history/topic-analysis-response.mjs';
 import { REPORT_COMMENT_INSTRUCTIONS, buildReportCommentPrompt } from '../../../services/learning-history/report-comment-instructions.mjs';
 import { createRequestId } from '../../lib/request-id';
@@ -44,7 +44,7 @@ export async function commentWeeklyReport(identity: HistoryIdentity, base: strin
   now = Date.now,
 }: { fetcher?: typeof fetch; createBridge?: () => UiProtocolBridge; isCurrent?: () => boolean; canContinue?: () => boolean;
   sleep?: (ms: number) => Promise<void>; now?: () => number } = {}): Promise<boolean> {
-  const headers = { Authorization: `Bearer ${identity.token}`, 'X-Learning-Owner': identity.owner, 'Content-Type': 'application/json' };
+  const headers = { Authorization: `Bearer ${identity.token}`, 'X-Learning-Owner': identity.owner, 'Content-Type': 'application/json', 'X-Octos-Locale': getLocale() };
   const request = async <T,>(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<T> => {
     if (!isCurrent()) throw new Error(tr("账号已切换，老师评语已停止"));
     const response = await fetcher(`${base}/api/learn/history/report-comments${path}`, { method, headers,

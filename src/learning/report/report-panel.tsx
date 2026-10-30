@@ -88,7 +88,7 @@ function ReportBody({ report }: { report: WeeklyReport | MonthlyReport }) {
 
 /** The weekly or monthly report, paged back to the first period with records. */
 export function ReportPanel({ period, today = () => new Date() }: { period: ReportPeriod; today?: () => Date }) {
-  useLocale();
+  const locale = useLocale();
   const current = weekStartOf(localDayOf(today()));
   const currentMonth = localDayOf(today()).slice(0, 7);
   const [week, setWeek] = useState(current);
@@ -105,7 +105,7 @@ export function ReportPanel({ period, today = () => new Date() }: { period: Repo
       if (active) { setReport(next); setError(false); }
     }).catch(() => { if (active) setError(true); });
     return () => { active = false; };
-  }, [period, week, month]);
+  }, [period, week, month, locale]);
 
   const shown = period === "week"
     ? (report && "week_start" in report && report.week_start === week ? report : undefined)

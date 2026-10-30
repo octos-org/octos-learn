@@ -1,4 +1,4 @@
-import { tr } from "@/i18n";
+import { getLocale, tr } from "@/i18n";
 import { historyRequestTimeout } from './request-timeout';
 import { getToken } from '../../api/client';
 import { API_BASE } from '../../lib/constants';
@@ -83,7 +83,7 @@ export class HistoryApi {
   private async request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
     if (this.currentToken() !== this.identity.token) throw new Error(tr("账号已切换，请重新打开学习记录"));
     const response = await this.fetcher(`${API_BASE}/api/learn/history${path}`, {
-      method, headers: { Authorization: `Bearer ${this.identity.token}`, 'X-Learning-Owner': this.identity.owner, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+      method, headers: { Authorization: `Bearer ${this.identity.token}`, 'X-Learning-Owner': this.identity.owner, ...(path.startsWith('/report') ? { 'X-Octos-Locale': getLocale() } : {}), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       redirect: 'error', signal: historyRequestTimeout(10000),
     });

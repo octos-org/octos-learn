@@ -1216,6 +1216,7 @@ export function LearningWorkspace({
   // Prefetch learner background only while the classroom is idle, so it is
   // never on the path between submitting a question and the first lesson.
   const lessonContextFields = useRef(new Map<string, Set<LessonContextField>>());
+  const languageAwareActions = useRef(new Set<string>());
   const classroomBusyRef = useRef(historyClassroomBusy);
   const backgroundStaleRef = useRef(false);
   // Installed action support changes only with a (re)connection, e.g. after a
@@ -1228,7 +1229,10 @@ export function LearningWorkspace({
       const read = ++latest;
       void Promise.resolve()
         .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
-        .then((lists) => { if (!cancelled && read === latest) lessonContextFields.current = lessonContextSupport(lists.flat()); })
+        .then((lists) => { if (!cancelled && read === latest) {
+          lessonContextFields.current = lessonContextSupport(lists.flat());
+          languageAwareActions.current = new Set(lists.flat().filter(action => "language" in ((action.input_schema as { properties?: Record<string, unknown> }).properties ?? {})).map(action => action.id));
+        } })
         .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
     };
     const onConnected = () => {
@@ -2748,7 +2752,10 @@ export function LearningWorkspace({
         const invocation = await invokeSkillAction(
           sessionId,
           "learning.selection.enhance",
-          boardWritingReady ? { ...actionArguments, capabilities: ["board_writing"] } : actionArguments,
+          { ...actionArguments,
+            ...(languageAwareActions.current.has("learning.selection.enhance") ? { language: getLocale() } : {}),
+            ...(boardWritingReady ? { capabilities: ["board_writing"] } : {}),
+          },
         );
         if (!selectionScope.active) return;
         const failedResult = (invocation.results ?? [])
