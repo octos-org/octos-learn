@@ -2,7 +2,7 @@
 
 ## 当前状态（2026-10-28，优先阅读）
 
-**2026-10-30 新增**：中英文界面（PR octos-learn #109 / learning-coach #36 / OLL #25）独立审查后，在 `codex/complete-i18n` 工作区修复了老师身份随界面语言分裂的问题（学习记录与 Octos 参与者改用不翻译的存储名），已推送到各 PR 分支，未合并。详情见 WORK_LOG 同日条目。
+**2026-10-30 新增**：中英文界面（PR octos-learn #109 / learning-coach #36 / OLL #25）独立审查后，修复了老师身份随界面语言分裂的问题（学习记录与 Octos 参与者改用不翻译的存储名），界面默认改为中文。三个 PR 已按 OLL → Learning Coach → 前端的顺序合并（OLL `2b25c43`、learning-coach `60b9e75`、octos-learn `75518ba`），未发布、未部署。公网发布时只需更新 `/opt/octos-learn/skills/learning-coach` 这一份 Learning Coach 0.22.0；本机 `yy` 账号装的是同内容的 PR 版本（版本号仍显示 0.21.0）。未做 Android 设备、真实账号和速度对照验收。详情见 WORK_LOG 同日条目。
 
 **2026-10-29 新增**：学习记录归位与大厅改版（问候、会动的老师卡）在分支 `codex/learning-records-placement` 上提交并开 PR，未合并、未在真实账号验收、未做独立审查。详情见 WORK_LOG 同日条目和 [LEARNING_RECORDS_PLACEMENT.md](../LEARNING_RECORDS_PLACEMENT.md)。
 

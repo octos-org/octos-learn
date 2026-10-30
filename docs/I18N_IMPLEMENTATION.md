@@ -10,7 +10,7 @@ This task changes application language and language propagation only. All affect
 | learning-coach | `93a583b` | `b8c700e`, `cf00485`: generation/compiler language and selection assistance |
 | octos-lesson-language | `c4e891f` | `8e11d8d43a16a45328664df8b40f55aab0ee1092`: in-place board/ink UI language |
 
-The OLL branch was pushed to its original repository after explicit user approval. The frontend pins that complete Git commit; no local archive or dependency link remains. After the user subsequently authorized pushing the remaining repositories, all three `codex/complete-i18n` branches were pushed to their original remotes with their individual commits preserved. Nothing has been merged or deployed publicly.
+The OLL branch was pushed to its original repository after explicit user approval. The frontend pins that complete Git commit; no local archive or dependency link remains. After the user subsequently authorized pushing the remaining repositories, all three `codex/complete-i18n` branches were pushed to their original remotes with their individual commits preserved. On 2026-10-30, after the review fixes below, the user approved merging: OLL #25 (`2b25c43`), then Learning Coach #36 (`60b9e75`, 0.22.0), then octos-learn #109 (`75518ba`), all as merge commits so the pinned OLL commit `21e04c4` is on OLL `main`. Nothing has been deployed publicly.
 
 The normal local frontend is HTTPS 5173 and Octos is on loopback 50080. The existing `yy` profile was used. Its Learning Coach installation was backed up to `~/.octos/backups/learning-coach-before-i18n-20261030T042539Z`, updated with the official installer, and its locked dependencies restored. Installed `manifest.json`, `main`, and `lesson-plan.js` match the repository by SHA-256. No account, credential, primary model, voice choice, or analysis setting was changed.
 
@@ -98,7 +98,7 @@ Cumulative usage is **2 actual courses, 4 model HTTP attempts including retries,
 
 The normal local model route and network setting have been restored. Speech credential revisions, saved voice and teacher choice match the pre-trial metadata, both generation jobs are terminal, the normal backend is running on port 50080, and the budget gateway is closed. Raw courses, traces, screenshots, clips, authorization records and ledgers remain private under ignored `.local-dev/i18n-live/`; only sanitized results are committed. See [language acceptance results](i18n/language-acceptance-results.json).
 
-These two samples establish actual language propagation, generation, synthesis and playback. They do not establish the repository's live p50 speed gate, broader provider/voice coverage or Android-device behavior. No merge or public deployment was performed.
+These two samples establish actual language propagation, generation, synthesis and playback. They do not establish the repository's live p50 speed gate, broader provider/voice coverage or Android-device behavior. No public deployment was performed.
 
 ## Independent review fixes (2026-10-30)
 
@@ -113,3 +113,7 @@ An independent review of the three PR heads (`17730ef`, learning-coach `cf00485`
 - **Acceptance harness**: the probe also counts stops of the matching narration; the switch check waits 1.5 s and requires no stop, no replay and no repeated first-narration request. The isolated probe self-check adds a deliberate stop control.
 
 Not addressed: Android native speech still receives no language hint (requires the native bridge); the Chinese default was confirmed by the user.
+
+## Release notes
+
+Public deployment uses one product-owned Learning Coach at `/opt/octos-learn/skills/learning-coach` (`OCTOS_SKILLS_PATH`), not a copy per user profile; deploying 0.22.0 there is the only skill update the public product needs (see [PUBLIC_DEPLOYMENT_RUNBOOK.md](PUBLIC_DEPLOYMENT_RUNBOOK.md)). Local development installs into a profile (`~/.octos/profiles/<profile>/data/skills/learning-coach/`) as a copy, so it changes only when reinstalled; the local `yy` installation already has the reviewed language behavior under the earlier 0.21.0 label. Still unverified: Android devices, a real-account run of the merged build, and a live speed comparison.
