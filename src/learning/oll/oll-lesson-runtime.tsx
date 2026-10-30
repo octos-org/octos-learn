@@ -1172,7 +1172,7 @@ export function LearningWhiteboard({
     if (!activeStudentTaskTopic || activeStudentTaskTopic.id === topicId) {
       return tr("先完成前面的练习，这一题就会开放。");
     }
-    return tr("先完成「{{v0}}」里的练习，这一题就会开放。", { v0: activeStudentTaskTopic.title });
+    return tr("先完成「{{v0}}」里的练习，这一题就会开放。", { v0: String(activeStudentTaskTopic.title) });
   };
   const presentationTopicsRef = useRef(presentationTopics);
   presentationTopicsRef.current = presentationTopics;
@@ -3781,7 +3781,7 @@ export function LearningWhiteboard({
                         data-course-controls-id={courseId}
                         data-interaction-controls-id={presentation.id}
                         data-oll-ink-input="ignore"
-                        aria-label={tr("{{v0}}的课程变量控制", { v0: presentation.topic.title })}
+                        aria-label={tr("{{v0}}的课程变量控制", { v0: String(presentation.topic.title) })}
                         data-testid="oll-variable-controls"
                       >
                         {presentation.controls.map((control) => {
@@ -3938,8 +3938,8 @@ export function LearningWhiteboard({
                                       );
                                     }
                                   }}
-                                  aria-label={tr("复位{{v0}}", { v0: control.label })}
-                                  title={tr("复位{{v0}}", { v0: control.label })}
+                                  aria-label={tr("复位{{v0}}", { v0: String(control.label) })}
+                                  title={tr("复位{{v0}}", { v0: String(control.label) })}
                                 >
                                   <RotateCcw size={12} aria-hidden="true" />
                                 </button>
@@ -3972,7 +3972,7 @@ export function LearningWhiteboard({
                         data-course-tasks-id={courseId}
                         data-interaction-tasks-id={presentation.id}
                         data-oll-ink-input="ignore"
-                        aria-label={tr("{{v0}}的动手任务", { v0: presentation.topic.title })}
+                        aria-label={tr("{{v0}}的动手任务", { v0: String(presentation.topic.title) })}
                         data-testid="oll-student-tasks"
                       >
                         <header>
