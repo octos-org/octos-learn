@@ -56,8 +56,9 @@ it("greets with the chosen teacher's own line, offers the last board and sums up
   const { rerender } = render(<MemoryRouter><HallHero recent={[latest]} /></MemoryRouter>);
   expect(TEACHERS[0].hall.resume).toContain(document.querySelector(".academy-bubble")?.textContent);
   expect(screen.getByText(tr("观星塔导师"))).toBeTruthy();
-  // The teacher's living card, the same one as in Settings.
-  expect(document.querySelector(".academy-greeting-card .teacher-card")).toBeTruthy();
+  // Dedicated wide artwork on desktop; the matching portrait on phones.
+  expect(document.querySelector<HTMLImageElement>(".academy-greeting-art img")?.src).toContain("/hall-wide.webp");
+  expect(document.querySelector(".academy-greeting-art source")?.getAttribute("media")).toBe("(max-width: 640px)");
   expect(screen.getByRole("link", { name: new RegExp(tr("继续上次的学习").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "") })).toBeTruthy();
   expect(await screen.findByText(tr("颗已点亮"))).toBeTruthy();
   expect(document.querySelector(".academy-stats")?.textContent).toBe("1颗已点亮2个知识点留下足迹");

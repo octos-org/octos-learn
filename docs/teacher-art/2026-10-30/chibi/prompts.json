@@ -1,0 +1,279 @@
+{
+  "characters": [
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook."
+    }
+  ],
+  "expressions": [
+    {
+      "id": "greeting",
+      "label": "打招呼",
+      "action": "Warm hello. Open eyes, welcoming small smile; raise one open hand beside the face in a friendly greeting, other hand naturally resting by the characteristic prop."
+    },
+    {
+      "id": "thinking",
+      "label": "思考",
+      "action": "Thoughtfully concentrating. Eyes glance gently upward to one side, mouth closed, one finger touches chin, characteristic prop held low by other hand; one small pale-gold thought sparkle. Keep a kind face."
+    },
+    {
+      "id": "explaining",
+      "label": "讲解",
+      "action": "Patiently explaining a discovery. Attentive open eyes and small speaking mouth; one index finger raised in a clear teaching gesture, characteristic prop cradled by other arm; one tiny gold idea sparkle."
+    },
+    {
+      "id": "approval",
+      "label": "认可",
+      "action": "Pleased approval. Clear small thumbs-up and gentle confident smile with open eyes; other arm holds characteristic prop close. Quiet positive energy."
+    },
+    {
+      "id": "confused",
+      "label": "疑惑",
+      "action": "Lovably puzzled by a challenging question. Slight head tilt, subtly uneven eyebrows, small uncertain mouth, one hand touching cheek, prop in other arm; one very small floating question-mark symbol, no other text."
+    },
+    {
+      "id": "encouragement",
+      "label": "加油",
+      "action": "Reassuring encouragement. Both eyes warmly open and hopeful smile; a small encouraging fist raised near chest, other hand holds characteristic prop. A couple small warm gold sparkles; friendly and supportive."
+    },
+    {
+      "id": "happy",
+      "label": "开心",
+      "action": "Delighted by a student's breakthrough. Bright eyes curved in a joyful smile, modest open laughing mouth, a small celebratory hand gesture, characteristic prop securely held; tiny gold star accents. Keep recognizable face."
+    },
+    {
+      "id": "goodbye",
+      "label": "再见",
+      "action": "Warm farewell. Slight head tilt, tender smiling open eyes, one open hand raised in a relaxed waving gesture with small motion arcs; other hand holds characteristic prop. Peaceful and friendly."
+    }
+  ],
+  "jobs": [
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "greeting",
+      "label": "打招呼",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Warm hello. Open eyes, welcoming small smile; raise one open hand beside the face in a friendly greeting, other hand naturally resting by the characteristic prop.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "thinking",
+      "label": "思考",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Thoughtfully concentrating. Eyes glance gently upward to one side, mouth closed, one finger touches chin, characteristic prop held low by other hand; one small pale-gold thought sparkle. Keep a kind face.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "explaining",
+      "label": "讲解",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Patiently explaining a discovery. Attentive open eyes and small speaking mouth; one index finger raised in a clear teaching gesture, characteristic prop cradled by other arm; one tiny gold idea sparkle.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "approval",
+      "label": "认可",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Pleased approval. Clear small thumbs-up and gentle confident smile with open eyes; other arm holds characteristic prop close. Quiet positive energy.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "confused",
+      "label": "疑惑",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Lovably puzzled by a challenging question. Slight head tilt, subtly uneven eyebrows, small uncertain mouth, one hand touching cheek, prop in other arm; one very small floating question-mark symbol, no other text.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "happy",
+      "label": "开心",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Delighted by a student's breakthrough. Bright eyes curved in a joyful smile, modest open laughing mouth, a small celebratory hand gesture, characteristic prop securely held; tiny gold star accents. Keep recognizable face.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "alan",
+      "name": "阿澜",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/alan-chibi-v1.png",
+      "existing": "encouragement",
+      "identity": "Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.",
+      "expression": "goodbye",
+      "label": "再见",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Gentle scholarly adult male Alan. Ink-indigo half-tied hair, thin round spectacles, violet eyes, navy star-patterned robe, ivory high-collar frog-button shirt, faded bronze badge with dark-blue X repair. Preserve his softly masculine appearance exactly; neither feminize him nor add a broad muscular jaw. His characteristic prop is a shallow wooden box of question slips.\nExpression/gesture: Warm farewell. Slight head tilt, tender smiling open eyes, one open hand raised in a relaxed waving gesture with small motion arcs; other hand holds characteristic prop. Peaceful and friendly.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "greeting",
+      "label": "打招呼",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Warm hello. Open eyes, welcoming small smile; raise one open hand beside the face in a friendly greeting, other hand naturally resting by the characteristic prop.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "thinking",
+      "label": "思考",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Thoughtfully concentrating. Eyes glance gently upward to one side, mouth closed, one finger touches chin, characteristic prop held low by other hand; one small pale-gold thought sparkle. Keep a kind face.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "explaining",
+      "label": "讲解",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Patiently explaining a discovery. Attentive open eyes and small speaking mouth; one index finger raised in a clear teaching gesture, characteristic prop cradled by other arm; one tiny gold idea sparkle.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "approval",
+      "label": "认可",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Pleased approval. Clear small thumbs-up and gentle confident smile with open eyes; other arm holds characteristic prop close. Quiet positive energy.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "confused",
+      "label": "疑惑",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Lovably puzzled by a challenging question. Slight head tilt, subtly uneven eyebrows, small uncertain mouth, one hand touching cheek, prop in other arm; one very small floating question-mark symbol, no other text.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "encouragement",
+      "label": "加油",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Reassuring encouragement. Both eyes warmly open and hopeful smile; a small encouraging fist raised near chest, other hand holds characteristic prop. A couple small warm gold sparkles; friendly and supportive.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "doudou",
+      "name": "窦鸢",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/douyuan-chibi-v1.png",
+      "existing": "happy",
+      "identity": "Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.",
+      "expression": "goodbye",
+      "label": "再见",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Cheerful adult woman Douyuan. Chestnut high ponytail with coral ribbon, gold star hairclip, amber eyes, coral cropped jacket with handmade stitching, ivory frog-button blouse, rust-brown long skirt, small faded gray-blue belt pouch with red cord. Preserve the lovely approved face. Characteristic prop: tiny glowing golden origami bird.\nExpression/gesture: Warm farewell. Slight head tilt, tender smiling open eyes, one open hand raised in a relaxed waving gesture with small motion arcs; other hand holds characteristic prop. Peaceful and friendly.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "greeting",
+      "label": "打招呼",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Warm hello. Open eyes, welcoming small smile; raise one open hand beside the face in a friendly greeting, other hand naturally resting by the characteristic prop.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "thinking",
+      "label": "思考",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Thoughtfully concentrating. Eyes glance gently upward to one side, mouth closed, one finger touches chin, characteristic prop held low by other hand; one small pale-gold thought sparkle. Keep a kind face.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "explaining",
+      "label": "讲解",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Patiently explaining a discovery. Attentive open eyes and small speaking mouth; one index finger raised in a clear teaching gesture, characteristic prop cradled by other arm; one tiny gold idea sparkle.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "confused",
+      "label": "疑惑",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Lovably puzzled by a challenging question. Slight head tilt, subtly uneven eyebrows, small uncertain mouth, one hand touching cheek, prop in other arm; one very small floating question-mark symbol, no other text.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "encouragement",
+      "label": "加油",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Reassuring encouragement. Both eyes warmly open and hopeful smile; a small encouraging fist raised near chest, other hand holds characteristic prop. A couple small warm gold sparkles; friendly and supportive.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "happy",
+      "label": "开心",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Delighted by a student's breakthrough. Bright eyes curved in a joyful smile, modest open laughing mouth, a small celebratory hand gesture, characteristic prop securely held; tiny gold star accents. Keep recognizable face.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    },
+    {
+      "id": "sufei",
+      "name": "苏绯",
+      "ref": "/Users/yy/.codex/visualizations/2026/10/30/01a18d63-de00-7803-9049-36b296208cd0/teacher-art-preview/chibi/sufei-chibi-v1.png",
+      "existing": "approval",
+      "identity": "Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.",
+      "expression": "goodbye",
+      "label": "再见",
+      "prompt": "Use case: identity-preserve.\nAsset type: one transparent chibi expression sticker for a coordinated eight-image teacher set.\nInput image 1 is the approved chibi identity and exact style reference. Create a new expression/gesture variant of THIS SAME character, not a redesign.\nSubject: Composed adult woman Sufei. Cool gray eyes, tiny beauty mole below HER left eye (viewer right), black center-parted hair and thick braid over HER left shoulder tied with burgundy ribbon, charcoal long coat with burgundy cuffs, modest gray blouse, brass folding magnifier or pen chain. Preserve the lovely approved face. Characteristic prop: brown leather survey notebook.\nExpression/gesture: Warm farewell. Slight head tilt, tender smiling open eyes, one open hand raised in a relaxed waving gesture with small motion arcs; other hand holds characteristic prop. Peaceful and friendly.\nInvariants: exactly the reference's polished hand-painted anime chibi rendering, face design, hair and costume details, soft colors, delicate highlights, 2.5-head full-body proportions and thin warm cream-white sticker outline. Keep the same front three-quarter view and centered full-body scale as reference; character occupies about 82% of square canvas height with clear padding all around. Keep entire hair, hands, clothing and feet visible.\nBackdrop: genuinely transparent alpha; no colored background, no ground plane or large cast shadow, no checkerboard painted into the image.\nChange only expression, arms and slight head gesture. Natural correct anatomy and hands. Props small and tidy, no extra person. No speech balloon, no words, no watermark. One single sticker per image. Distinct readable emotion at small size without exaggerated distortion."
+    }
+  ]
+}
