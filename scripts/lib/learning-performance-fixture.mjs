@@ -100,11 +100,17 @@ export async function createLiveTrialFixture({ plan, ledger, directory, scenario
     void handle().catch(() => { res.writeHead(500); res.end('{}'); });
   });
   const wss = new WebSocketServer({ server });
-  wss.on('connection', socket => {
+  wss.on('connection', (socket, request) => {
+    const features = new URL(request.url, origin).searchParams.getAll('ui_feature');
     sockets.add(socket); socket.on('close', () => sockets.delete(socket));
     socket.on('message', data => {
       const q = JSON.parse(String(data)), p = q.params ?? {}; let result = {};
       if (!q.id) return;
+      // Match the real server's opt-in gate, including on the independent
+      // read-only job monitor. Otherwise a missing negotiation passes fixtures.
+      if (languageAware && q.method === 'session/files.list' && !features.includes('auxiliary.rest_to_ws.v1')) {
+        socket.send(JSON.stringify({jsonrpc:'2.0',id:q.id,error:{code:-32601,message:'Missing auxiliary.rest_to_ws.v1'}}));return;
+      }
       switch (q.method) {
         case 'session/open': result = { opened: { session_id: p.session_id, active_profile_id: plan.owner, capabilities: { supported_features: ['projection.envelope.v2', 'skill.actions.v1', 'skill.action_jobs.v1', 'state.session_hydrate.v1'] } } }; break;
         case 'session/hydrate': result = { session_id: p.session_id, cursor: { stream: 'fixture', seq: 0 }, messages: [], envelopes: [] }; break;

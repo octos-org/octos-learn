@@ -38,7 +38,7 @@ const en=JSON.parse(await readFile('src/i18n/messages/en.json','utf8'));
 let currentRow=null,turnId=null,sessionId=null,invalid=false,ownedSocket=null;
 async function readonlyJob(page,wait=true){
  return page.evaluate(async({sessionId,turnId,owner,wait})=>{
-  const token=localStorage.getItem('octos_session_token');const url=new URL('/api/ui-protocol/ws',location.href);url.protocol='wss:';url.searchParams.set('token',token);for(const f of ['skill.actions.v1','skill.action_jobs.v1'])url.searchParams.append('ui_feature',f);
+  const token=localStorage.getItem('octos_session_token');const url=new URL('/api/ui-protocol/ws',location.href);url.protocol='wss:';url.searchParams.set('token',token);for(const f of ['skill.actions.v1','skill.action_jobs.v1','auxiliary.rest_to_ws.v1'])url.searchParams.append('ui_feature',f);
   const ws=new WebSocket(url);await new Promise((done,fail)=>{ws.onopen=done;ws.onerror=()=>fail(Error('Job reader connection failed'));});let seq=0;
   const rpc=(method,params)=>new Promise((done,fail)=>{const id=`language-read-${++seq}`,timer=setTimeout(()=>fail(Error('Job reader timeout')),10000);ws.onmessage=e=>{const r=JSON.parse(e.data);if(r.id!==id)return;clearTimeout(timer);r.error?fail(Error('Job reader RPC failed')):done(r.result);};ws.send(JSON.stringify({jsonrpc:'2.0',id,method,params:{...params,profile_id:owner}}));});
   try{const deadline=Date.now()+(wait?300000:1000);do{const{jobs=[]}=await rpc('skill/action/job/list',{session_id:sessionId});const own=jobs.filter(j=>j.action_id==='learning.lesson.generate');
