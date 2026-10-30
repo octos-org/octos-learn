@@ -1,0 +1,182 @@
+{
+  "release": "2026-10-30",
+  "generator": "built-in image_gen",
+  "assets": [
+    {
+      "teacher": "alan",
+      "file": "portrait.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 157024,
+      "alpha": false,
+      "sha256": "ea9e49217b877bed7c39f574083bbf169fb61f59c94936987700162484797d18"
+    },
+    {
+      "teacher": "alan",
+      "file": "card-figure.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 162384,
+      "alpha": true,
+      "sha256": "79517ad4e109df3113d38df2f7c3b09777a18986bee295ec6f7d6909d83a3b28"
+    },
+    {
+      "teacher": "alan",
+      "file": "card-bg.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 196276,
+      "alpha": false,
+      "sha256": "4dc3400612f213aa954b85ec9f7771538bca264aa64f674c78031b929e14a8d7"
+    },
+    {
+      "teacher": "alan",
+      "file": "arch-bg.webp",
+      "width": 480,
+      "height": 720,
+      "bytes": 106460,
+      "alpha": false,
+      "sha256": "2b54bcc1c214de4b9ca258a445d1a8feeca00e6f90c9ed9c71a7e7da9f8af29a"
+    },
+    {
+      "teacher": "alan",
+      "file": "hall-wide.webp",
+      "width": 1760,
+      "height": 800,
+      "bytes": 164360,
+      "alpha": false,
+      "sha256": "1727aacb67b4a1d392ea02d46025733069f2161a71e7fea8c809c517fc96b640"
+    },
+    {
+      "teacher": "alan",
+      "file": "bust-idle.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 67732,
+      "alpha": true,
+      "sha256": "e7400945333606b6999a4ae4d2ac81a6997b880e1ef711f519fe12e6eb7a904c"
+    },
+    {
+      "teacher": "doudou",
+      "file": "portrait.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 148098,
+      "alpha": false,
+      "sha256": "f8faefcadfa966964bbf67e94ff2ebcaa4c8bb7abf03837c1fadaaef3a204c09"
+    },
+    {
+      "teacher": "doudou",
+      "file": "card-figure.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 200660,
+      "alpha": true,
+      "sha256": "02c3e2fd39468dc209f844ad6e50b078fe9d035ed268a81b634fc38927d6efc6"
+    },
+    {
+      "teacher": "doudou",
+      "file": "card-bg.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 177736,
+      "alpha": false,
+      "sha256": "fea55e60dec1d2b2ea96cb48b118eeb7431a865685f360758f5167b439674b01"
+    },
+    {
+      "teacher": "doudou",
+      "file": "arch-bg.webp",
+      "width": 480,
+      "height": 720,
+      "bytes": 94094,
+      "alpha": false,
+      "sha256": "6d9727a06b9de72175f2e1edf1bb5e7c120b890df0e6a72fea3143b7724e7c0b"
+    },
+    {
+      "teacher": "doudou",
+      "file": "hall-wide.webp",
+      "width": 1760,
+      "height": 800,
+      "bytes": 138414,
+      "alpha": false,
+      "sha256": "dd35193571fc283a178e858377b4baf01e8dbe6fda05fd3cb33f3a621de65243"
+    },
+    {
+      "teacher": "doudou",
+      "file": "bust-idle.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 88022,
+      "alpha": true,
+      "sha256": "caba8ae8a2d003de5285cf5386c5139bc394736b152e4720134a3c35309934be"
+    },
+    {
+      "teacher": "sufei",
+      "file": "portrait.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 130284,
+      "alpha": false,
+      "sha256": "6418d63f440d4d2743581e72989bd078ab223da5d6bebfd99a024eaaa75fef23"
+    },
+    {
+      "teacher": "sufei",
+      "file": "card-figure.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 127922,
+      "alpha": true,
+      "sha256": "af73564b4cbef1c8887fcf6df1fbb7d4f16aef2ce7c9a56b1698ca11618d8541"
+    },
+    {
+      "teacher": "sufei",
+      "file": "card-bg.webp",
+      "width": 720,
+      "height": 1080,
+      "bytes": 178810,
+      "alpha": false,
+      "sha256": "1d156db6f26879f95d3df19a07564ccd3543400cb14e46f5bf02bdeee21abef6"
+    },
+    {
+      "teacher": "sufei",
+      "file": "arch-bg.webp",
+      "width": 480,
+      "height": 720,
+      "bytes": 97908,
+      "alpha": false,
+      "sha256": "7db44319755e7940a0c05b8d680916b2bba5727008f108f32ad2883b951bdd3f"
+    },
+    {
+      "teacher": "sufei",
+      "file": "hall-wide.webp",
+      "width": 1760,
+      "height": 800,
+      "bytes": 127610,
+      "alpha": false,
+      "sha256": "6fb1fb66fca22a2af2cc69d3e4cc6b1d62c5b784b6abb3cfb73e888f3d04504f"
+    },
+    {
+      "teacher": "sufei",
+      "file": "bust-idle.webp",
+      "width": 512,
+      "height": 512,
+      "bytes": 60302,
+      "alpha": true,
+      "sha256": "a53d5f81730679cf955e29a7577445d4e411037606ccea4c55f319bd56ff8f89"
+    }
+  ],
+  "pending": [
+    "alan/bust-listening",
+    "alan/bust-thinking",
+    "alan/bust-explaining",
+    "alan/bust-approving",
+    "doudou/bust-listening",
+    "doudou/bust-thinking",
+    "doudou/bust-explaining",
+    "doudou/bust-approving",
+    "sufei/bust-listening",
+    "sufei/bust-thinking",
+    "sufei/bust-explaining",
+    "sufei/bust-approving"
+  ]
+}
