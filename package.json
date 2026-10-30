@@ -34,7 +34,8 @@
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "oll:materialize": "vite-node scripts/materialize-oll-lesson.ts",
-    "course-pack:verify-parity": "vite-node scripts/verify-course-pack-parity.ts"
+    "course-pack:verify-parity": "vite-node scripts/verify-course-pack-parity.ts",
+    "check:i18n": "node scripts/check-i18n.mjs"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",

@@ -112,7 +112,7 @@ const mdComponents: Components = {
     if (!src) return null;
     return (
       <a href={src} target="_blank" rel="noopener noreferrer" className="block my-2">
-        <img src={src} alt={alt || "image"} className="max-w-full max-h-96 rounded-lg border border-border" loading="lazy" />
+        <img src={src} alt={alt || tr("image")} className="max-w-full max-h-96 rounded-lg border border-border" loading="lazy" />
       </a>
     );
   },

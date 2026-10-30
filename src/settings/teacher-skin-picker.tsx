@@ -52,7 +52,7 @@ export function TeacherSkinPicker({
             </span>
             <span className="teacher-skin-status flex w-full items-center justify-between gap-2">
               <span className="workbench-status-pill" data-tone="neutral">
-                {option.kind === "model" ? "3D · Animated" : option.kind === "portrait" ? tr("Illustrated") : "2D · SVG"}
+                {option.kind === "model" ? tr("3D · Animated") : option.kind === "portrait" ? tr("Illustrated") : tr("2D · SVG")}
               </span>
               <span
                 className={`workbench-status-pill shrink-0 ${active ? "" : "invisible"}`}

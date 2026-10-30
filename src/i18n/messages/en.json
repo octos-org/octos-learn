@@ -2245,5 +2245,8 @@
   "（本地修改）": " (local changes)",
   "Checking voice engine": "Checking voice engine",
   "Voice engine ready": "Voice engine ready",
-  "Voice engine check unavailable": "Voice engine check unavailable"
+  "Voice engine check unavailable": "Voice engine check unavailable",
+  "3D · Animated": "3D · Animated",
+  "2D · SVG": "2D · SVG",
+  "image": "image"
 }
