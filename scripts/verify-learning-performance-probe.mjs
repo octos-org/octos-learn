@@ -42,6 +42,7 @@ try {
           const b = await c.decodeAudioData(Uint8Array.from(atob(base64), ch => ch.charCodeAt(0)).buffer);
           window.__probeControlReplay = () => { const replay = c.createBufferSource(); replay.buffer = b; replay.connect(c.destination); replay.start(); };
           const source = c.createBufferSource(); source.buffer = b; source.connect(c.destination); source.start();
+          window.__probeControlStop = () => source.stop();
         }
       }, { scenario, base64: bytes.toString('base64') });
       if (scenario === 'valid') await page.waitForFunction(() => window.__livePlayableProbe.audio && window.__livePlayableProbe.visual);
@@ -56,6 +57,9 @@ try {
         assert.equal(replayed.matched_audio_sources, 2, 'A replay after first audio must be counted');
         assert.equal(replayed.audio_ms, result.audio_ms, 'A replay must not overwrite first readiness');
         report.replay_control = { matching_sources: replayed.matched_audio_sources, first_timestamp_preserved: true };
+        const stops = await page.evaluate(() => { window.__probeControlStop(); return window.__livePlayableProbe.audioStops; });
+        assert.equal(stops, 1, 'Stopping the matching narration must be counted');
+        report.stop_control = { matching_stops: stops };
       }
     } finally { await context.close(); }
   }

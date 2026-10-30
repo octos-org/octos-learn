@@ -107,6 +107,7 @@ try{
      await Promise.race([targetReady,new Promise((_,fail)=>setTimeout(()=>fail(Error('No first narration target')),30000))]);
      const body=req.postDataJSON();
      (row.speech_requests??=[]).push({text:body.payload?.req_params?.text,speaker:body.payload?.req_params?.speaker,additions:body.payload?.req_params?.additions});
+     if(body.payload?.req_params?.text?.trim()===target.narrationText&&row.speech_forwarded)row.first_narration_repeats=(row.first_narration_repeats??0)+1;
      if(body.payload?.req_params?.text?.trim()!==target.narrationText||row.speech_forwarded){row.speech_blocked++;return route.fulfill({status:503,json:{}});}
      const actual=await speechGate(body);return route.fulfill({response:actual});
     }
@@ -143,9 +144,12 @@ try{
    await page.getByRole('button',{name:sample.language==='zh-CN'?'发送问题':en['发送问题'],exact:true}).click();
    await page.waitForFunction(()=>window.__livePlayableProbe.audio&&window.__livePlayableProbe.visual,null,{timeout:mode==='--fixture'?7000:180000});
    Object.assign(row,await readLivePlayable(page));row.state='first-playable';await page.screenshot({path:join(output,sample.id+'-course.png'),fullPage:true});await save();
-   const before=await page.evaluate(()=>{window.__languageNodes=[...document.querySelectorAll('.board-node')];return{audio:window.__livePlayableProbe.audioSources,nodes:window.__languageNodes.length};});const callsBefore=row.actions;
-   await page.getByRole('button',{name:sample.language==='zh-CN'?'English':'中文',exact:true}).click();await page.waitForTimeout(200);
-   row.switch_check=await page.evaluate(before=>({same_nodes:window.__languageNodes.every(n=>n.isConnected),same_audio_sources:window.__livePlayableProbe.audioSources===before.audio,nodes:before.nodes}),before);assert.ok(row.switch_check.same_nodes&&row.switch_check.same_audio_sources);assert.equal(row.actions,callsBefore);
+   const before=await page.evaluate(()=>{window.__languageNodes=[...document.querySelectorAll('.board-node')];return{audio:window.__livePlayableProbe.audioSources,stops:window.__livePlayableProbe.audioStops,nodes:window.__languageNodes.length};});const callsBefore=row.actions,repeatsBefore=row.first_narration_repeats??0;
+   // Long enough for a re-run playback effect to stop, re-request or replay the clip.
+   await page.getByRole('button',{name:sample.language==='zh-CN'?'English':'中文',exact:true}).click();await page.waitForTimeout(1500);
+   row.switch_check=await page.evaluate(before=>({same_nodes:window.__languageNodes.every(n=>n.isConnected),same_audio_sources:window.__livePlayableProbe.audioSources===before.audio,audio_not_stopped:window.__livePlayableProbe.audioStops===before.stops,nodes:before.nodes}),before);
+   row.switch_check.no_repeated_narration_request=(row.first_narration_repeats??0)===repeatsBefore;
+   assert.ok(row.switch_check.same_nodes&&row.switch_check.same_audio_sources&&row.switch_check.audio_not_stopped&&row.switch_check.no_repeated_narration_request);assert.equal(row.actions,callsBefore);
    const pause=page.getByRole('button',{name:sample.language==='zh-CN'?en['暂停 OLL 课程']:'暂停 OLL 课程',exact:true});if(await pause.count())await pause.click();
    const final=await readonlyJob(page);row.jobs=final.jobs;assert.ok(final.jobs.length===1&&final.jobs.every(j=>j.status==='succeeded'));
    row.files=final.files.filter(f=>f.filename.startsWith(turnId)).map(f=>({filename:f.filename,path:f.path}));
