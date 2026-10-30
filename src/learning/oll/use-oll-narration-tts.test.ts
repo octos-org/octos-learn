@@ -71,6 +71,21 @@ describe("useOllNarrationTts", () => {
     unmount();
   });
 
+  it("keeps current audio when startup prewarm metadata clears and the next course language changes", async () => {
+    let audioSignal: AbortSignal | undefined;
+    mocks.playAudioBlob.mockImplementation(async (_blob: Blob, _ended: unknown, signal: AbortSignal) => { audioSignal = signal; return true; });
+    const { rerender } = renderHook((props: { prewarmLanguage?: string; upcomingLanguage?: string }) => useOllNarrationTts({
+      enabled: true, playing: true, text: "The slope is two.", narrationId: "active-language-clip", language: "en-US", ...props,
+    }), { initialProps: { prewarmLanguage: "en-US", upcomingLanguage: "en-US" } });
+    await waitFor(() => expect(mocks.playAudioBlob).toHaveBeenCalledOnce());
+    expect(audioSignal?.aborted).toBe(false);
+    rerender({ prewarmLanguage: undefined, upcomingLanguage: "zh-CN" });
+    await act(async () => undefined);
+    expect(audioSignal?.aborted).toBe(false);
+    expect(mocks.synthesizeSpeech).toHaveBeenCalledOnce();
+    expect(mocks.playAudioBlob).toHaveBeenCalledOnce();
+  });
+
   it("prefers receive-only private TTS over cloud and native synthesis", async () => {
     mocks.route = "private"; mocks.playPrivateSpeech.mockResolvedValue(true);
     renderHook(() => useOllNarrationTts({ enabled: true, playing: true, text: "私有旁白", narrationId: "private-1" }));

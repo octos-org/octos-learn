@@ -367,8 +367,6 @@ export function useOllNarrationTts({
     resolveAudio,
     voicePending,
     language,
-    upcomingLanguage,
-    prewarmLanguage,
   ]);
 
   useEffect(() => {
