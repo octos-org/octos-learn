@@ -53,10 +53,16 @@ export type VoiceState =
   | "speaking"
   | "error";
 
+export function isPrivateAsrBusy(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return message === "语音服务正在使用中，你可以继续打字" || normalized.includes("busy") || normalized.includes("in use") || normalized.includes("single-session capacity");
+}
+
 function privateAsrErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   const normalized = message.toLowerCase();
-  if (message === "语音服务正在使用中，你可以继续打字" || normalized.includes("busy") || normalized.includes("in use") || normalized.includes("single-session capacity")) {
+  if (isPrivateAsrBusy(error)) {
     return tr("语音服务正在使用中，你可以继续打字");
   }
   if (normalized.includes("bridge") || normalized.includes("offline")) {
@@ -1849,7 +1855,7 @@ export function useVoiceConversation(
           setStartupDetail(null);
           return;
         }
-        if (!useCloudFallback && message === "语音服务正在使用中，你可以继续打字") {
+        if (!useCloudFallback && isPrivateAsrBusy(privateResult.reason)) {
           // Capacity is not a transport failure: don't keep recording into an
           // unavailable service or silently send the audio through another ASR.
           stateRef.current = "idle";

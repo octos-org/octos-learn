@@ -1231,7 +1231,7 @@ export function LearningWorkspace({
         .then(() => Promise.all([listSkillActions(sessionId, "learning.composer"), listSkillActions(sessionId, "learning.selection")]))
         .then((lists) => { if (!cancelled && read === latest) {
           lessonContextFields.current = lessonContextSupport(lists.flat());
-          languageAwareActions.current = new Set(lists.flat().filter(action => "language" in ((action.input_schema as { properties?: Record<string, unknown> }).properties ?? {})).map(action => action.id));
+          languageAwareActions.current = new Set(lists.flat().filter(action => "language" in ((action.input_schema as { properties?: Record<string, unknown> } | undefined)?.properties ?? {})).map(action => action.id));
         } })
         .catch(() => { /* keep the last known support; unknown means fields are not sent */ });
     };
