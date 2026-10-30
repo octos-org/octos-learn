@@ -39,7 +39,7 @@ The initial inventory covered 220 frontend source files. The final catalog has 2
 
 | Check | Result |
 | --- | --- |
-| Frontend full unit suite | 159 files, 1405 tests passed |
+| Frontend full unit suite | 159 files, 1407 tests passed |
 | Final academy/course-directory checks | 35 tests passed, including saved-title translation without re-fetching |
 | Frontend TypeScript and production build | Passed |
 | Frontend lint | 0 errors; 38 existing warnings remain |
@@ -53,7 +53,7 @@ The browser verified language persistence, bilingual settings search, unchanged 
 
 Targeted regressions cover original question text, request-language pinning before asynchronous admission, one skill submission, stable board/ink instances, unchanged current audio, language-specific prefetch reuse, and ASR capacity decisions independent of translated messages. English compilation is compared with Chinese compilation across course fixtures for unchanged numerical operations and authored content. Model-capture tests confirm the language instruction arrives on the first existing call.
 
-A free timing check compared 50 interleaved pairs against the main-branch Learning Coach bundle, after five warm-up pairs, using identical deterministic unit-circle model responses. Both versions made 3 model calls per course. Time to first compiled playable prefix had p50 **0.688 ms baseline / 0.759 ms candidate** (about **+0.071 ms**). See [raw timing evidence](i18n/deterministic-performance.json). This is a local compilation measurement, not end-to-end supplier performance. It does not establish the live p50 speed gate or voice quality. No real paid course generation, TTS synthesis, Android device test, public deployment, or public upgrade was performed.
+A free timing check compared 50 interleaved pairs against the main-branch Learning Coach bundle, after five warm-up pairs, using identical deterministic unit-circle model responses. Both versions made 3 model calls per course. Time to first compiled playable prefix had p50 **0.688 ms baseline / 0.759 ms candidate** (about **+0.071 ms**). See [raw timing evidence](i18n/deterministic-performance.json). This is a local compilation measurement, not end-to-end supplier performance. It does not establish the live p50 speed gate or voice quality. The later authorized attempt, described below, was stopped by a runner session check before any supplier send. No real course or speech supplier call, Android device test, public deployment, or public upgrade was performed.
 
 Provider semantics were checked against the official [unidirectional HTTP speech documentation](https://docs.volcengine.com/docs/DoubaoVoice/HTTPChunkedSSEUnidirectionalStreaming-V3?lang=zh) and [speech-synthesis parameter documentation](https://docs.volcengine.com/docs/lake-ai-service/speech-synthesis?lang=en). Specific voice/resource language quality still requires listening to real provider output.
 
@@ -61,6 +61,19 @@ Provider semantics were checked against the official [unidirectional HTTP speech
 
 The initial delivery summary listed only the newest commit in each repository. It did not describe the full history: at that point there were 12 frontend commits, 2 Learning Coach commits, and 1 OLL commit, with no squash. See the [complete implementation commit list](i18n/commit-history.json). OLL's single 194-line addition / 45-line removal commit introduced one shared explicit-control binding mechanism, applied it to plot/geometry/scene/ink controls, and tested its in-place language updates.
 
-The implementation and automated checks are complete; real-provider language/voice acceptance and live end-to-end timing are still unverified. The earlier completion summary should not be read as a completed live acceptance.
+The implementation and automated checks are complete; real-provider language/voice acceptance and live end-to-end timing remain unverified. The earlier completion summary should not be read as a completed live acceptance.
 
 A follow-up browser sweep visited 15 actual pages in both languages: hall, atlas, achievements, records, weekly/monthly records, all eight settings tabs, and setup. It found no page errors or horizontal overflow, and no remaining Chinese-owned control label in the English UI. Chinese historical question/session text was retained. See the [sanitized page audit](i18n/page-audit.json); private screenshots and raw labels remain local. No supplier call was made.
+
+
+## Authorized language acceptance attempt and follow-up fixes
+
+The user authorized at most 2 real courses, 6 total model HTTP attempts including retries, and 2 first-narration speech requests, with model USD 5 and speech CNY 2 caps, stopping on failure. Free supplier simulations exposed two real i18n audio regressions before live sends: clearing prewarm-language state restarted current audio (`279e0a6`), and translating a voice display name invalidated speaker caches (`4178778`). Both were fixed and tested separately. These changes add no model or synthesis request.
+
+The full frontend suite now passes **1407 tests in 159 files**. The production build passes; lint remains at 0 errors / 38 existing warnings. The bounded acceptance controls pass **13 free tests**, including persistence, simultaneous reservations, duplicate speech, lost responses, wrong language/voice, supplier failure, and session replacement.
+
+On 2026-10-30 UTC, the real attempt stopped because the new-board startup replaced the session initially read from browser storage. The runner rejected the actual course invocation against that stale session, before forwarding it. There were **0 model supplier attempts, 0 speech supplier requests, and 0 supplier charges**. No course reached the backend; read-only checks found no generation jobs in either involved session. The failed attempt, reserved course slot and ledger remain intact; no automatic resubmission occurred.
+
+Runner fix `8176582` verifies the language/question and opened session on the actual wire invocation, then atomically reserves that session before forwarding. The subsequent free browser fixture passed Chinese and English generation, first matching non-silent test audio, and switching without replacing board nodes or restarting audio. It uses a fixed test tone and establishes neither real speech language nor voice quality. See the [sanitized results](i18n/language-acceptance-results.json).
+
+The original profile route and network setting were restored, model and speech credential revisions and the teacher choice were verified unchanged, the normal local backend was restarted, and the budget gateway was closed. Real text/voice inspection remains incomplete. The trial's user-approved failure-stop condition requires authorization to resume; any resumed attempt must retain cumulative counts and cost limits and preserve the failed record.

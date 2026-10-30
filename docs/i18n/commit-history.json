@@ -11,7 +11,14 @@
     "4e8b6db fix(i18n): preserve private speech capacity handling across languages",
     "1756e6c chore(i18n): guard visible labels against untranslated additions",
     "746ff74 fix(i18n): translate saved achievement titles when displayed",
-    "d23d6ff docs(i18n): record coverage and cross-repository regression results"
+    "d23d6ff docs(i18n): record coverage and cross-repository regression results",
+    "459ee35 docs(i18n): clarify commit history and extend page verification",
+    "989e36d docs(i18n): record publication of the implementation branches",
+    "bddecfb docs(i18n): bound the remaining real-provider language acceptance",
+    "279e0a6 fix(i18n): keep active audio stable when prewarm language clears",
+    "4178778 fix(i18n): identify cached voices by speaker IDs rather than labels",
+    "d3da946 test(i18n): enforce language acceptance request and speech limits",
+    "8176582 fix(test): reserve the submitted language trial session before forwarding"
   ],
   "learning-coach": [
     "b8c700e feat(i18n): carry lesson language through generation and compiled teaching text",

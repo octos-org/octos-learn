@@ -1,0 +1,91 @@
+{
+  "status": "implementation-complete-real-language-and-voice-acceptance-incomplete",
+  "recorded_at_utc": "2026-10-30T05:26:47.625436+00:00",
+  "runtime_fixes": [
+    {
+      "commit": "279e0a6",
+      "behavior": "Clearing startup/prewarm language must not restart currently playing audio."
+    },
+    {
+      "commit": "4178778",
+      "behavior": "Localized voice display names must not change speaker cache identity or discard current/next clips."
+    }
+  ],
+  "automated_validation": {
+    "frontend": {
+      "files": 159,
+      "tests_passed": 1407
+    },
+    "acceptance_controls_tests_passed": 13,
+    "build": "passed",
+    "lint": {
+      "errors": 0,
+      "existing_warnings": 38
+    }
+  },
+  "real_attempt": {
+    "candidate_commit": "d3da946",
+    "started_at_utc": "2026-10-30T05:20:12.775Z",
+    "status": "stopped",
+    "languages_submitted_to_backend": [],
+    "course_slots_reserved": 1,
+    "supplier_model_http_attempts": 0,
+    "supplier_speech_requests": 0,
+    "reserved_model_usd": 0.0,
+    "reserved_speech_cny": 0.0,
+    "observed_supplier_charges": {
+      "model_usd": 0,
+      "speech_cny": 0
+    },
+    "failure": "The new-board startup replaced the initial persisted session. The runner checked invocation against the earlier session and blocked it before forwarding. Its subsequent page RPC timeout is a harness failure, not a supplier response.",
+    "failed_attempt_preserved": true,
+    "automatic_resubmission": false,
+    "background_jobs": "Read-only queries confirmed no generation jobs in either involved session.",
+    "restoration": "Original model route and sandbox network setting restored; same model, credential revisions and teacher choice verified; normal local backend restarted; budget gateway closed."
+  },
+  "runner_fix": {
+    "commit": "8176582",
+    "behavior": "Review the actual invocation and require its session to have been opened. Atomically reserve that session immediately before forwarding; still reject wrong language, altered question and duplicate invocation."
+  },
+  "free_browser_after_fix": {
+    "real_supplier_calls": 0,
+    "synthetic_audio": "One-second test tone, not synthesized speech; this does not establish voice quality.",
+    "rows": [
+      {
+        "language": "zh-CN",
+        "state": "completed",
+        "actions": 1,
+        "speech_forwarded": 1,
+        "model_http_reservations": 2,
+        "playable_ms": 696.5,
+        "switch_check": {
+          "same_nodes": true,
+          "same_audio_sources": true,
+          "nodes": 1
+        },
+        "page_errors": []
+      },
+      {
+        "language": "en-US",
+        "state": "completed",
+        "actions": 1,
+        "speech_forwarded": 1,
+        "model_http_reservations": 2,
+        "playable_ms": 515.1000000238419,
+        "switch_check": {
+          "same_nodes": true,
+          "same_audio_sources": true,
+          "nodes": 1
+        },
+        "page_errors": []
+      }
+    ]
+  },
+  "remaining": [
+    "Real generated text inspection in both languages",
+    "First narrated segment listening in both languages using the existing teacher voice",
+    "Live end-to-end p50 performance gate (two language samples alone are insufficient)",
+    "Android device acceptance"
+  ],
+  "retry_policy": "The failed real attempt is not reset or automatically resubmitted. Continuing it requires the user to authorize resumption under the existing failure-stop rule; preserve cumulative supplier counts and cost caps."
+}

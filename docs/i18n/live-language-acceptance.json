@@ -1,12 +1,18 @@
 {
-  "status": "draft-awaiting-user-authorization",
+  "status": "authorized-attempt-stopped-before-supplier-send",
   "scope": "Two real-provider language acceptance samples; not a statistically sufficient live performance comparison and not deployment authorization.",
   "account": "existing local yy profile",
   "origin": "https://127.0.0.1:5173",
   "backend": "http://127.0.0.1:50080",
   "samples": [
-    { "language": "zh-CN", "request": "请用一节简短课程解释直线 y=2x+1 的斜率和截距。" },
-    { "language": "en-US", "request": "请用一节简短课程解释直线 y=2x+1 的斜率和截距。" }
+    {
+      "language": "zh-CN",
+      "request": "请用一节简短课程解释直线 y=2x+1 的斜率和截距。"
+    },
+    {
+      "language": "en-US",
+      "request": "请用一节简短课程解释直线 y=2x+1 的斜率和截距。"
+    }
   ],
   "limits": {
     "courses": 2,
@@ -19,7 +25,7 @@
     "speech_cny": 2
   },
   "execution_preconditions": [
-    "Explicit user authorization of the stated charges is required; this draft authorizes no supplier calls.",
+    "User authorized the listed caps in this conversation. The first attempt stopped before any supplier send; that failed attempt and its ledger are retained. No automatic resubmission is permitted under its failure-stop rule.",
     "Verify the current model is the existing direct Google Gemini 3.6 Flash route and the saved speech resource is supported; do not change provider, primary model or voice.",
     "Check current provider pricing again before execution. Existing pricing references are https://ai.google.dev/gemini-api/docs/pricing and https://docs.volcengine.com/docs/doubao-voice/billing-instructions?lang=zh .",
     "Enforce request, output, retry and speech limits before supplier sends; include automatic retries and in-flight reservations in the limits. Abort before sending if limits or route coverage cannot be established.",
@@ -34,5 +40,7 @@
     "Play and listen to the first narrated segment in each language; verify it matches its own course and preserves the existing voice.",
     "Switch interface language during the active course and verify no extra generation or synthesis request, no replay or lost board state.",
     "Record first playable and matching audio timestamps, actual request counts, failures and limitations without claiming a live p50 result from two samples."
-  ]
+  ],
+  "authorization_received": true,
+  "result": "language-acceptance-results.json"
 }
